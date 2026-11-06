@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,6 +31,7 @@ import java.time.LocalDate
  * Riga di un'attività: la casella spunta l'attività, il resto della riga (se [onClick] non è nullo)
  * la apre per modificarla. La scadenza passata è scritta nel colore degli avvisi.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskRow(
     title: String,
@@ -75,6 +77,7 @@ fun TaskRow(
 }
 
 /** Scheda di una nota nelle liste: titolo, anteprima del testo, ora di modifica e stato "fissata". */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteCard(
     title: String,

@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.StickyNote2
+import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.outlined.StickyNote2
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
@@ -48,7 +48,7 @@ private enum class Section(
     val selectedIcon: ImageVector,
 ) {
     Today("today", R.string.section_today, Icons.Outlined.WbSunny, Icons.Filled.WbSunny),
-    Notes("notes", R.string.section_notes, Icons.Outlined.StickyNote2, Icons.Filled.StickyNote2),
+    Notes("notes", R.string.section_notes, Icons.AutoMirrored.Outlined.StickyNote2, Icons.AutoMirrored.Filled.StickyNote2),
     Tasks("tasks", R.string.section_tasks, Icons.Outlined.TaskAlt, Icons.Filled.TaskAlt),
 }
 

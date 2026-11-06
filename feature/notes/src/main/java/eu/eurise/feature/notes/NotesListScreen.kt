@@ -12,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.StickyNote2
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -97,7 +97,7 @@ internal fun NotesListScreen(
                 notes == null -> Unit
                 notes.isEmpty() && query.isBlank() -> item(key = "empty") {
                     EmptyState(
-                        icon = Icons.Outlined.StickyNote2,
+                        icon = Icons.AutoMirrored.Outlined.StickyNote2,
                         title = stringResource(R.string.notes_empty_title),
                         message = stringResource(R.string.notes_empty_message),
                     )
