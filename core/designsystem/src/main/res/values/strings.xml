@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_today">Oggi</string>
+    <string name="ds_tomorrow">Domani</string>
+    <string name="ds_yesterday">Ieri</string>
+    <string name="ds_overdue">In ritardo · %1$s</string>
+    <string name="ds_untitled_note">Nota senza titolo</string>
+    <string name="ds_pinned">Fissata</string>
+</resources>

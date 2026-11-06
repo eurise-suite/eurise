@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Eurise</string>
+    <string name="section_today">Oggi</string>
+    <string name="section_notes">Note</string>
+    <string name="section_tasks">Attività</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notes_title">Note</string>
+    <string name="notes_new">Nuova nota</string>
+    <string name="notes_search">Cerca nelle note</string>
+    <string name="notes_search_clear">Cancella la ricerca</string>
+    <string name="notes_empty_title">Nessuna nota</string>
+    <string name="notes_empty_message">Le note restano sul telefono. Tocca \"Nuova nota\" per scrivere la prima.</string>
+    <string name="notes_no_results_title">Nessun risultato</string>
+    <string name="notes_no_results_message">Nessuna nota contiene \"%1$s\".</string>
+    <string name="notes_back">Indietro</string>
+    <string name="notes_done">Fine</string>
+    <string name="notes_pin">Fissa in alto</string>
+    <string name="notes_unpin">Togli dall\'alto</string>
+    <string name="notes_delete">Elimina</string>
+    <string name="notes_delete_title">Eliminare la nota?</string>
+    <string name="notes_delete_message">La nota verrà eliminata dal telefono.</string>
+    <string name="notes_cancel">Annulla</string>
+    <string name="notes_title_placeholder">Titolo</string>
+    <string name="notes_body_placeholder">Scrivi qui…</string>
+</resources>

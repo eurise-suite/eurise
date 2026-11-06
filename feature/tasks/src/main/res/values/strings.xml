@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_title">Attività</string>
+    <string name="tasks_new">Nuova attività</string>
+    <string name="tasks_edit">Modifica attività</string>
+    <string name="tasks_filter_open">Da fare</string>
+    <string name="tasks_filter_open_count">Da fare · %1$d</string>
+    <string name="tasks_filter_done">Completate</string>
+    <string name="tasks_empty_title">Niente da fare</string>
+    <string name="tasks_empty_message">Aggiungi un\'attività con \"Nuova attività\" o dalla schermata Oggi.</string>
+    <string name="tasks_done_empty_title">Nessuna attività completata</string>
+    <string name="tasks_done_empty_message">Le attività spuntate compaiono qui.</string>
+    <string name="tasks_field_title">Cosa c\'è da fare</string>
+    <string name="tasks_field_notes">Note</string>
+    <string name="tasks_due_none">Senza scadenza</string>
+    <string name="tasks_due_today">Oggi</string>
+    <string name="tasks_due_tomorrow">Domani</string>
+    <string name="tasks_due_pick">Scegli data</string>
+    <string name="tasks_save">Salva</string>
+    <string name="tasks_delete">Elimina</string>
+    <string name="tasks_ok">OK</string>
+    <string name="tasks_cancel">Annulla</string>
+    <string name="tasks_clear_completed">Elimina le completate</string>
+    <string name="tasks_clear_title">Eliminare le attività completate?</string>
+    <string name="tasks_clear_message">Le attività completate verranno eliminate dal telefono.</string>
+    <string name="tasks_clear_confirm">Elimina</string>
+</resources>

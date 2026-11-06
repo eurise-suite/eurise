@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_good_morning">Buongiorno</string>
+    <string name="today_good_afternoon">Buon pomeriggio</string>
+    <string name="today_good_evening">Buonasera</string>
+    <string name="today_capture_placeholder">Un\'idea o una cosa da fare…</string>
+    <string name="today_capture_note">Nota</string>
+    <string name="today_capture_task">Da fare oggi</string>
+    <string name="today_section_tasks">Da fare oggi</string>
+    <string name="today_all_tasks">Tutte</string>
+    <string name="today_tasks_empty">Niente in scadenza oggi.</string>
+    <string name="today_section_notes">Note recenti</string>
+    <string name="today_all_notes">Tutte</string>
+    <string name="today_notes_empty">Le note che scrivi compaiono qui.</string>
+</resources>

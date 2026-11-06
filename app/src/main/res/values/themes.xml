@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema della finestra prima che Compose disegni: stesso fondo avorio, niente lampo bianco. -->
+    <style name="Theme.Eurise" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/eurise_background</item>
+    </style>
+
+    <color name="eurise_background">#F7F3EC</color>
+    <color name="eurise_icon_background">#1F2A44</color>
+</resources>

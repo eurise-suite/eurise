@@ -1,0 +1,15 @@
+*.iml
+.gradle/
+.kotlin/
+.idea/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+# Chiavi di firma: non vanno mai nel repository
+*.jks
+*.keystore
+keystore.properties

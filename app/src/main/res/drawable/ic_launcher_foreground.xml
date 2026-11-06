@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simbolo dell'hub: il sole che sorge sull'orizzonte (Eu-rise). Area sicura 66 dp al centro. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M38,62 A16,16 0 0 1 70,62"
+        android:strokeWidth="4.5"
+        android:strokeColor="#F3EBDD"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M32,68 L76,68"
+        android:strokeWidth="4.5"
+        android:strokeColor="#F3EBDD"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M42,75 L66,75"
+        android:strokeWidth="4.5"
+        android:strokeColor="#D2B47A"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M54,33 L54,40 M33.5,41.5 L38.5,46.5 M74.5,41.5 L69.5,46.5"
+        android:strokeWidth="4.5"
+        android:strokeColor="#F3EBDD"
+        android:strokeLineCap="round" />
+</vector>
