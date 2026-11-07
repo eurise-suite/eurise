@@ -60,6 +60,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -661,7 +662,11 @@ private fun PhoneHome(
             }
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
             Spacer(Modifier.height(10.dp))
-            Column(Modifier.padding(horizontal = (-6).dp.coerceAtLeast(0.dp)), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro (i preferiti restano fermi).
+            Column(
+                Modifier.weight(1000f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
                 AgendaPill(
                     now = now,
                     events = state.eventsToday,
@@ -692,7 +697,7 @@ private fun PhoneHome(
                     MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, Modifier.weight(1f), welcome.onPlayer, actions.grantNotifications)
                 }
             }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f).heightIn(min = 6.dp))
             if (state.favorites.isEmpty()) {
                 androidx.compose.material3.Text(
                     stringResource(R.string.favorites_empty),
