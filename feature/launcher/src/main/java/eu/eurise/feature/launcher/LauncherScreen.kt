@@ -269,9 +269,20 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
     EuriseTheme(darkTheme = scene.dark) {
-      val accent = settings.accent.color(scene.dark)
+      // Di notte l'accento si abbassa e si intona allo sfondo: meno acceso, più scuro.
+      val accent = settings.accent.color(scene.dark).let { if (scene.dark) nightAccent(it) else it }
       val onAccent = if (0.2126f * accent.red + 0.7152f * accent.green + 0.0722f * accent.blue > 0.55f) Color(0xFF14171C) else Color.White
-      MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent)) {
+      MaterialTheme(
+          colorScheme = MaterialTheme.colorScheme.copy(
+              primary = accent,
+              onPrimary = onAccent,
+              // Binari di cursori e interruttori spenti: grigi neutri, non la salvia del tema.
+              secondaryContainer = if (scene.dark) Color(0xFF2E343E) else Color(0xFFE2E2DC),
+              onSecondaryContainer = MaterialTheme.colorScheme.onSurface,
+          ),
+      ) {
+      // Il colore del testo segue il tema: senza questo i testi senza colore esplicito restano neri anche di notte.
+      androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
       // Testi più compatti: interlinea stretta su tutta la Scrivania.
       ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.4.em)) {
       androidx.compose.runtime.CompositionLocalProvider(
@@ -305,6 +316,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var editingCards by remember { mutableStateOf(false) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
+        var searchPerson by remember { mutableStateOf<eu.eurise.feature.launcher.contacts.Person?>(null) }
         var signPicker by remember { mutableStateOf(false) }
         // Cartella aperta (id) e scelta delle app per crearne una o aggiungerne.
         var openFolder by remember { mutableStateOf<String?>(null) }
@@ -546,6 +558,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onOpenNote = { searching = false; actions.openEurise("note:${it.id}") },
                     onOpenTask = { searching = false; actions.openEurise("tasks") },
                     onClose = { searching = false },
+                    conversations = messages,
+                    searchContacts = { viewModel.contacts.search(it) },
+                    searchFiles = { viewModel.files.search(it) },
+                    onOpenContact = { searchPerson = it; peopleSheet = "search" },
+                    onOpenMessage = { searching = false; actions.openMessage(it) },
+                    onOpenFile = { searching = false; viewModel.files.open(it) },
                 )
             }
             if (weatherSheet && weather != null) {
@@ -620,18 +638,23 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 var people by remember(kind) { mutableStateOf<List<eu.eurise.feature.launcher.contacts.Person>?>(null) }
                 var granted by remember(kind) { mutableStateOf(viewModel.contacts.hasContacts()) }
                 LaunchedEffect(kind, granted) {
-                    people = if (kind == "recent") viewModel.contacts.recent() else viewModel.contacts.starred()
+                    people = when (kind) {
+                        "recent" -> viewModel.contacts.recent()
+                        "search" -> listOfNotNull(searchPerson)
+                        else -> viewModel.contacts.starred()
+                    }
                 }
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { granted = viewModel.contacts.hasContacts() }
                 PeopleSheet(
-                    title = stringResource(if (kind == "recent") R.string.people_recent else R.string.people_starred),
+                    title = if (kind == "search") searchPerson?.name.orEmpty() else stringResource(if (kind == "recent") R.string.people_recent else R.string.people_starred),
+                    initial = if (kind == "search") searchPerson else null,
                     people = people,
                     needsPermission = !granted || (kind == "recent" && !viewModel.contacts.hasCallLog()),
                     onGrant = {
                         contactsPermission.launch(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG))
                     },
                     loadActions = { viewModel.contacts.actions(it) },
-                    onAction = { peopleSheet = null; viewModel.contacts.start(it) },
+                    onAction = { peopleSheet = null; searching = false; viewModel.contacts.start(it) },
                     onOpenContact = { peopleSheet = null; viewModel.contacts.openContact(it) },
                     onClose = { peopleSheet = null },
                 )
@@ -652,6 +675,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 )
             }
         }
+      }
       }
       }
       }
@@ -1208,5 +1232,8 @@ private fun WeatherSheet(days: List<eu.eurise.feature.launcher.weather.DayForeca
  * dallo sfondo illustrato anche quando i colori sono chiari e simili.
  */
 private fun launcherGlass(base: eu.eurise.core.designsystem.theme.EuriseExtraColors) = base.copy(
-    glass = if (base.isDark) androidx.compose.ui.graphics.Color(0xBF20252E) else androidx.compose.ui.graphics.Color(0xC2FBFBF9),
+    glass = if (base.isDark) androidx.compose.ui.graphics.Color(0xE6161A21) else androidx.compose.ui.graphics.Color(0xC2FBFBF9),
 )
+
+/** Accento per il tema scuro: si avvicina al blu-grafite dello sfondo e perde un po' di brillantezza. */
+private fun nightAccent(color: Color): Color = androidx.compose.ui.graphics.lerp(color, Color(0xFF2A303B), 0.32f)

@@ -388,8 +388,9 @@ fun PeopleSheet(
     onAction: (ContactAction) -> Unit,
     onOpenContact: (Person) -> Unit,
     onClose: () -> Unit,
+    initial: Person? = null,
 ) {
-    var open by remember { mutableStateOf<Person?>(null) }
+    var open by remember { mutableStateOf(initial) }
     var actions by remember { mutableStateOf<List<ContactAction>?>(null) }
     LaunchedEffect(open) { actions = open?.let { loadActions(it) } }
     Box(
@@ -481,7 +482,7 @@ fun PeopleSheet(
 }
 
 @Composable
-private fun Avatar(person: Person, size: Int) {
+internal fun Avatar(person: Person, size: Int) {
     val initial = person.name.trim().firstOrNull()?.uppercase() ?: "?"
     Box(
         Modifier.size(size.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f))

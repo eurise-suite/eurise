@@ -62,7 +62,7 @@ fun AppearanceSheet(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.18f))
+            .background(Color.Black.copy(alpha = 0.35f))
             .pointerInput(Unit) { detectTapGestures { onClose() } },
         contentAlignment = Alignment.BottomCenter,
     ) {
@@ -70,7 +70,7 @@ fun AppearanceSheet(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .pointerInput(Unit) { detectTapGestures { } }
                 .verticalScroll(rememberScrollState())
                 .windowInsetsPadding(WindowInsets.navigationBars)

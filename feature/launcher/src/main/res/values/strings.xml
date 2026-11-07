@@ -50,6 +50,8 @@
     <string name="grant">Consenti</string>
     <string name="grant_restricted">Se Android risponde «Impostazione con restrizioni»: apri Informazioni sull\'app, tocca ⋮ in alto a destra, scegli «Consenti impostazioni con restrizioni» e torna su Consenti.</string>
     <string name="search_recent">Recenti</string>
+    <string name="search_chats">Conversazioni</string>
+    <string name="search_files">Documenti</string>
     <string name="weather_title">Meteo</string>
 
     <string name="setup_title">Prepara la Scrivania</string>

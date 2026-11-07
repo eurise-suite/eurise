@@ -33,7 +33,11 @@ class RecentFilesRepository(private val context: Context) {
         Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:${context.packageName}"))
     } else null
 
-    suspend fun recent(limit: Int = 10): List<RecentFile> = withContext(Dispatchers.IO) {
+    /** Documenti il cui nome contiene [query], i più recenti prima. */
+    suspend fun search(query: String, limit: Int = 8): List<RecentFile> =
+        if (query.isBlank()) emptyList() else recent(limit, query.trim())
+
+    suspend fun recent(limit: Int = 10, nameLike: String? = null): List<RecentFile> = withContext(Dispatchers.IO) {
         if (!hasAccess()) return@withContext emptyList()
         val collection = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
@@ -44,11 +48,13 @@ class RecentFilesRepository(private val context: Context) {
             MediaStore.Files.FileColumns.RELATIVE_PATH,
         )
         val mimeClauses = WorkMimes.joinToString(" OR ") { "${MediaStore.Files.FileColumns.MIME_TYPE} LIKE ?" }
-        val selection = "($mimeClauses) AND ${MediaStore.Files.FileColumns.SIZE} > 0"
+        val selection = "($mimeClauses) AND ${MediaStore.Files.FileColumns.SIZE} > 0" +
+            (if (nameLike != null) " AND ${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?" else "")
+        val args = WorkMimes + listOfNotNull(nameLike?.let { "%$it%" })
         val out = mutableListOf<RecentFile>()
         runCatching {
             context.contentResolver.query(
-                collection, projection, selection, WorkMimes.toTypedArray(),
+                collection, projection, selection, args.toTypedArray(),
                 "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC",
             )?.use { c ->
                 while (c.moveToNext() && out.size < limit) {

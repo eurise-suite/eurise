@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import eu.eurise.feature.launcher.contacts.Person
+import eu.eurise.feature.launcher.files.RecentFile
+import eu.eurise.feature.launcher.notifications.MessageItem
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -181,6 +184,12 @@ fun SearchOverlay(
     onOpenNote: (Note) -> Unit,
     onOpenTask: (Task) -> Unit,
     onClose: () -> Unit,
+    conversations: List<MessageItem> = emptyList(),
+    searchContacts: suspend (String) -> List<Person> = { emptyList() },
+    searchFiles: suspend (String) -> List<RecentFile> = { emptyList() },
+    onOpenContact: (Person) -> Unit = {},
+    onOpenMessage: (MessageItem) -> Unit = {},
+    onOpenFile: (RecentFile) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val focus = remember { FocusRequester() }
@@ -189,6 +198,17 @@ fun SearchOverlay(
     val foundApps = if (q.isEmpty()) emptyList() else apps.filter { it.label.contains(q, ignoreCase = true) }.take(8)
     val foundNotes = if (q.isEmpty()) emptyList() else notes.filter { it.title.contains(q, true) || it.body.contains(q, true) }.take(5)
     val foundTasks = if (q.isEmpty()) emptyList() else tasks.filter { it.title.contains(q, true) }.take(5)
+    val foundChats = if (q.isEmpty()) emptyList() else conversations
+        .filter { it.title.contains(q, true) || it.text.contains(q, true) || it.appLabel.contains(q, true) }
+        .distinctBy { it.packageName + it.title }.take(5)
+    var foundPeople by remember { mutableStateOf<List<Person>>(emptyList()) }
+    var foundFiles by remember { mutableStateOf<List<RecentFile>>(emptyList()) }
+    LaunchedEffect(q) {
+        if (q.isEmpty()) { foundPeople = emptyList(); foundFiles = emptyList(); return@LaunchedEffect }
+        kotlinx.coroutines.delay(150)
+        foundPeople = runCatching { searchContacts(q) }.getOrDefault(emptyList())
+        foundFiles = runCatching { searchFiles(q) }.getOrDefault(emptyList())
+    }
 
     Column(
         Modifier
@@ -260,6 +280,28 @@ fun SearchOverlay(
                 .glass(hazeState, RoundedCornerShape(28.dp), elevation = 8.dp, outline = false),
             contentPadding = PaddingValues(vertical = 10.dp),
         ) {
+            // Ordine: contatti, poi aggiungi/salva/nuovo, app, conversazioni, note e attività, documenti.
+            if (foundPeople.isNotEmpty()) {
+                item {
+                    androidx.compose.foundation.lazy.LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                    ) {
+                        items(foundPeople.size) { i ->
+                            val person = foundPeople[i]
+                            Column(
+                                Modifier.width(64.dp).clip(RoundedCornerShape(14.dp)).clickable { onOpenContact(person) }.padding(vertical = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                eu.eurise.feature.launcher.home.Avatar(person, 48)
+                                Spacer(Modifier.height(4.dp))
+                                Text(person.name, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
+            }
             if (q.isNotEmpty()) {
                 item { CaptureRow(EuriseIcons.task(), stringResource(R.string.capture_task), q) { capture.onTask(q); onClose() } }
                 item { CaptureRow(EuriseIcons.note(), stringResource(R.string.capture_note), q) { capture.onNote(q); onClose() } }
@@ -273,6 +315,21 @@ fun SearchOverlay(
                             AppIcon(app, 36.dp, dark)
                             Spacer(Modifier.width(12.dp))
                             Text(app.label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        }
+                    }
+                }
+            }
+            if (foundChats.isNotEmpty()) {
+                item { SectionLabel(stringResource(R.string.search_chats)) }
+                foundChats.forEach { m ->
+                    item(key = "m${m.key}") {
+                        ResultRow(onClick = { onOpenMessage(m) }) {
+                            Icon(EuriseIcons.chat(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(m.title + " · " + m.appLabel, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(m.text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
                     }
                 }
@@ -302,6 +359,21 @@ fun SearchOverlay(
                             Icon(EuriseIcons.task(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(12.dp))
                             Text(task.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+            if (foundFiles.isNotEmpty()) {
+                item { SectionLabel(stringResource(R.string.search_files)) }
+                foundFiles.forEach { file ->
+                    item(key = "f${file.uri}") {
+                        ResultRow(onClick = { onOpenFile(file) }) {
+                            Icon(EuriseIcons.folder(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(file.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(file.folder, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
                     }
                 }

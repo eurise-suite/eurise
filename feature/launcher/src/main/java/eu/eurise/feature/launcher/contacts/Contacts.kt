@@ -94,6 +94,23 @@ class ContactsRepository(private val context: Context) {
         }.getOrNull().orEmpty()
     }
 
+    /** Contatti della Rubrica il cui nome contiene [query] (prima i preferiti). */
+    suspend fun search(query: String, limit: Int = 8): List<Person> = withContext(Dispatchers.IO) {
+        if (!hasContacts() || query.isBlank()) return@withContext emptyList()
+        runCatching {
+            context.contentResolver.query(
+                ContactsContract.Contacts.CONTENT_URI,
+                arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY, ContactsContract.Contacts.PHOTO_THUMBNAIL_URI),
+                "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?", arrayOf("%" + query.trim() + "%"),
+                "${ContactsContract.Contacts.STARRED} DESC, ${ContactsContract.Contacts.TIMES_CONTACTED} DESC, ${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC",
+            )?.use { c ->
+                val out = mutableListOf<Person>()
+                while (c.moveToNext() && out.size < limit) out += Person(c.getString(1).orEmpty(), c.getLong(0), c.getString(2)?.let(Uri::parse))
+                out
+            }
+        }.getOrNull().orEmpty()
+    }
+
     private fun findContact(name: String): Pair<Long, Uri?>? = runCatching {
         context.contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI,

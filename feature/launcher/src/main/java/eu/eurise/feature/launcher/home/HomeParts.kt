@@ -415,4 +415,4 @@ fun android.content.Context.openWebSearch() {
 
 /** Velo leggero dietro le pagine delle categorie e della ricerca, perché il testo resti leggibile. */
 @Composable
-fun scrimColor(): Color = if (EuriseThemeExtras.colors.isDark) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.25f)
+fun scrimColor(): Color = if (EuriseThemeExtras.colors.isDark) Color(0xFF0E1116).copy(alpha = 0.72f) else Color.White.copy(alpha = 0.25f)
