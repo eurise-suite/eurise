@@ -2,20 +2,107 @@
 <resources>
     <string name="notes_title">Note</string>
     <string name="notes_new">Nuova nota</string>
+    <string name="notes_untitled">Nota senza titolo</string>
     <string name="notes_search">Cerca nelle note</string>
-    <string name="notes_search_clear">Cancella la ricerca</string>
+    <string name="notes_search_clear">Chiudi la ricerca</string>
     <string name="notes_empty_title">Nessuna nota</string>
     <string name="notes_empty_message">Le note restano sul telefono. Tocca il + in basso per scrivere la prima.</string>
     <string name="notes_no_results_title">Nessun risultato</string>
     <string name="notes_no_results_message">Nessuna nota contiene \"%1$s\".</string>
-    <string name="notes_back">Indietro</string>
+    <string name="notes_filter_all">Tutte</string>
+    <string name="notes_section_pinned">Fissate</string>
+    <string name="notes_section_recent">Recenti</string>
+    <string name="notes_pinned">Fissata</string>
+    <string name="notes_progress">%1$d di %2$d fatte</string>
+    <string name="notes_yesterday">ieri</string>
+    <string name="notes_organize">Organizza</string>
+
+    <!-- Editor -->
     <string name="notes_done">Fine</string>
+    <string name="notes_undo">Annulla l\'ultima modifica</string>
+    <string name="notes_more">Altre azioni</string>
     <string name="notes_pin">Fissa in alto</string>
     <string name="notes_unpin">Togli dall\'alto</string>
-    <string name="notes_delete">Elimina</string>
-    <string name="notes_delete_title">Eliminare la nota?</string>
-    <string name="notes_delete_message">La nota verrà eliminata dal telefono.</string>
-    <string name="notes_cancel">Annulla</string>
+    <string name="notes_share">Condividi</string>
+    <string name="notes_trash">Sposta nel cestino</string>
     <string name="notes_title_placeholder">Titolo</string>
-    <string name="notes_body_placeholder">Scrivi qui…</string>
+    <string name="notes_body_placeholder">Scrivi qui… usa #parola per i tag</string>
+    <string name="notes_edited_at">Modificata alle %1$s</string>
+    <string name="notes_edited_on">Modificata il %1$s</string>
+    <string name="notes_check_item">Voce dell\'elenco</string>
+    <string name="notes_check_done">fatta</string>
+    <string name="notes_check_open">da fare</string>
+    <string name="notes_check_in_tasks">Anche tra le Attività</string>
+    <string name="notes_check_add_to_tasks">Aggiungi anche alle Attività</string>
+    <string name="notes_link_remove">Togli il collegamento</string>
+    <string name="notes_table_add_row">+ Riga</string>
+    <string name="notes_table_add_column">+ Colonna</string>
+    <string name="notes_table_remove">Elimina tabella</string>
+
+    <!-- Barra di formattazione -->
+    <string name="notes_format_style">Stile del paragrafo</string>
+    <string name="notes_format_bold">Grassetto</string>
+    <string name="notes_format_italic">Corsivo</string>
+    <string name="notes_format_underline">Sottolineato</string>
+    <string name="notes_format_colors">Colore del testo ed evidenziatore</string>
+    <string name="notes_color_text">Colore del testo</string>
+    <string name="notes_color_highlight">Evidenziatore</string>
+    <string name="notes_color_none">Nessuno</string>
+    <string name="notes_kind_text">Testo</string>
+    <string name="notes_kind_heading">Titolo</string>
+    <string name="notes_kind_subheading">Sottotitolo</string>
+    <string name="notes_kind_bullet">Elenco puntato</string>
+    <string name="notes_kind_numbered">Elenco numerato</string>
+    <string name="notes_kind_check">Elenco di controllo</string>
+
+    <!-- Inserisci -->
+    <string name="notes_insert">Inserisci</string>
+    <string name="notes_insert_table">Tabella</string>
+    <string name="notes_insert_link">Altra nota</string>
+    <string name="notes_insert_divider">Linea</string>
+    <string name="notes_insert_soon">Foto, scansioni, note vocali e disegno arrivano con le prossime versioni.</string>
+
+    <!-- Taccuini e tag -->
+    <string name="notes_notebooks">Taccuini</string>
+    <string name="notes_notebooks_empty">Nessun taccuino. Creane uno per raccogliere le note di un progetto, della casa o di un viaggio.</string>
+    <string name="notes_notebook_choose">Taccuino</string>
+    <string name="notes_notebook_none">Nessun taccuino</string>
+    <string name="notes_notebook_new">Nuovo taccuino</string>
+    <string name="notes_notebook_new_short">Nuovo</string>
+    <string name="notes_notebook_edit">Modifica taccuino</string>
+    <string name="notes_notebook_name">Nome</string>
+    <string name="notes_notebook_actions">Azioni per %1$s</string>
+    <string name="notes_notebook_delete_title">Eliminare il taccuino \"%1$s\"?</string>
+    <string name="notes_notebook_delete_message">Le note che contiene restano, senza taccuino.</string>
+    <string name="notes_tags">Tag</string>
+    <string name="notes_tags_hint">Scrivi #parola in una nota (per esempio #casa) e la ritrovi qui tra i tag.</string>
+
+    <!-- Cestino -->
+    <string name="notes_trash_title">Cestino</string>
+    <string name="notes_trash_hint">si svuota da solo dopo %1$d giorni</string>
+    <string name="notes_trash_none">Il cestino è vuoto.</string>
+    <string name="notes_trash_empty">Svuota</string>
+    <string name="notes_trash_empty_title">Svuotare il cestino?</string>
+    <string name="notes_trash_empty_message">Le note nel cestino verranno eliminate per sempre.</string>
+    <string name="notes_restore">Ripristina</string>
+    <string name="notes_delete_forever">Elimina per sempre</string>
+    <plurals name="notes_trash_days_left">
+        <item quantity="one">Ancora %1$d giorno nel cestino</item>
+        <item quantity="other">Ancora %1$d giorni nel cestino</item>
+    </plurals>
+
+    <!-- Comuni -->
+    <string name="notes_save">Salva</string>
+    <string name="notes_cancel">Annulla</string>
+    <string name="notes_delete">Elimina</string>
+
+    <!-- Tinte della suite -->
+    <string name="notes_tint_blu_notte">Blu notte</string>
+    <string name="notes_tint_salvia">Salvia</string>
+    <string name="notes_tint_ottone">Ottone</string>
+    <string name="notes_tint_borgogna">Borgogna</string>
+    <string name="notes_tint_petrolio">Petrolio</string>
+    <string name="notes_tint_prugna">Prugna</string>
+    <string name="notes_tint_terracotta">Terracotta</string>
+    <string name="notes_tint_grafite">Grafite</string>
 </resources>

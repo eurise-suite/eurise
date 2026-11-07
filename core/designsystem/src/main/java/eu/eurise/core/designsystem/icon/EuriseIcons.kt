@@ -195,6 +195,22 @@ object EuriseIcons {
 
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
 
+    // Note
+    fun check(stroke: Float = 2.6f) = icon("check", stroke, "M5 12l4 4 10-10")
+    fun close(stroke: Float = 2.4f) = icon("close", stroke, "M6 6l12 12M18 6L6 18")
+    fun undo(stroke: Float = 2.2f) = icon("undo", stroke, "M9 14L4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 0 11H11")
+    fun more(stroke: Float = 2.8f) = icon("more", stroke, "M5 12h.01M12 12h.01M19 12h.01")
+    fun checklist(stroke: Float = 2.2f) = icon("checklist", stroke, "M3.5 4h6v6h-6z", "M5 7l1 1 2-2", "M13 7h7M13 17h7", "M3.5 14h6v6h-6z")
+    fun bullets(stroke: Float = 2.2f) = icon("bullets", stroke, "M9 6h11M9 12h11M9 18h11", "M4.5 6h.01M4.5 12h.01M4.5 18h.01")
+    fun numbers(stroke: Float = 2.2f) = icon("numbers", stroke, "M10 6h10M10 12h10M10 18h10", "M4 5l1.5-1v5", "M3.8 14.2a1.6 1.6 0 0 1 2.7 1.2c0 1-2.7 2.6-2.7 2.6h2.8")
+    fun table(stroke: Float = 2.2f) = icon("table", stroke, "M3.5 4.5h17v15h-17z", "M3.5 10h17M3.5 15h17M10 4.5v15")
+    fun divider(stroke: Float = 2.2f) = icon("divider", stroke, "M4 12h16", "M8 6h8M8 18h8")
+    fun notebook(stroke: Float = Stroke) = icon("notebook", stroke, "M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6z", "M6 3.5v17M3.5 8H6M3.5 12H6M3.5 16H6M10 8h5")
+    fun pin(stroke: Float = Stroke) = icon("pin", stroke, "M12 17v4", "M8 3h8l-1 6 3 3H6l3-3z")
+    fun share(stroke: Float = Stroke) = icon("share", stroke, "M12 15V4", "M7.5 8.5L12 4l4.5 4.5", "M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13")
+    fun bell(stroke: Float = Stroke) = icon("bell", stroke, "M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z", "M10 20.5a2 2 0 0 0 4 0")
+    fun heading(stroke: Float = 2.2f) = icon("heading", stroke, "M6 5v14M18 5v14M6 12h12")
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"
 

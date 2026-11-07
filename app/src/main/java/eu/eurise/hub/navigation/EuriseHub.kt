@@ -41,7 +41,10 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.calendar.CalendarRoute
 import eu.eurise.feature.calendar.EventEditorRoute
 import eu.eurise.feature.notes.NoteEditorRoute
+import eu.eurise.feature.notes.NotesFilterRequest
 import eu.eurise.feature.notes.NotesListRoute
+import eu.eurise.feature.notes.OrganizeRoute
+import eu.eurise.feature.notes.TrashRoute
 import eu.eurise.feature.tasks.TasksRoute
 import eu.eurise.feature.today.TodayRoute
 import eu.eurise.hub.R
@@ -57,11 +60,12 @@ private enum class Section(val route: String, @StringRes val label: Int, val ico
 /** Richiesta di aprire una sezione arrivata da fuori (la Scrivania); [id] distingue due richieste uguali. */
 data class HubRequest(val section: String, val id: Int)
 
-private const val NOTE_ROUTE = "note?id={id}"
+private const val NOTE_ROUTE = "note?id={id}&nb={nb}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
 private const val NO_ID = -1L
 
-private fun NavHostController.openNote(id: Long?) = navigate("note?id=${id ?: NO_ID}")
+private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
+    navigate("note?id=${id ?: NO_ID}&nb=${notebook ?: NO_ID}")
 
 private fun NavHostController.openEvent(id: Long?, begin: Long?, start: Long?) =
     navigate("event?id=${id ?: NO_ID}&begin=${begin ?: NO_ID}&start=${start ?: NO_ID}")
@@ -83,6 +87,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     val current = Section.entries.firstOrNull { s -> destination?.hierarchy?.any { it.route == s.route } == true }
     val hazeState = remember { HazeState() }
     var newTaskRequests by rememberSaveable { mutableIntStateOf(0) }
+    var notesFilter by remember { androidx.compose.runtime.mutableStateOf<NotesFilterRequest?>(null) }
     var calendarDay by remember { androidx.compose.runtime.mutableStateOf<java.time.LocalDate?>(null) }
 
     fun goTo(section: Section) = navController.navigate(section.route) {
@@ -147,19 +152,50 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 composable("dates") { eu.eurise.feature.calendar.reminders.ImportantDatesRoute(onBack = { navController.popBackStack() }) }
                 composable("medicines") { eu.eurise.feature.calendar.reminders.MedicinesRoute(onBack = { navController.popBackStack() }) }
                 composable(Section.Notes.route) {
-                    NotesListRoute(repository = data.notes, onOpenNote = { navController.openNote(it) })
+                    NotesListRoute(
+                        repository = data.notes,
+                        notebooks = data.notebooks,
+                        filterRequest = notesFilter,
+                        onOpenNote = { id, notebook -> navController.openNote(id, notebook) },
+                        onOrganize = { navController.navigate("notes/organize") },
+                    )
+                }
+                composable("notes/organize") {
+                    OrganizeRoute(
+                        notes = data.notes,
+                        notebooks = data.notebooks,
+                        onBack = { navController.closeIfOn("notes/organize") },
+                        onFilter = { filter ->
+                            notesFilter = NotesFilterRequest(filter, (notesFilter?.serial ?: 0) + 1)
+                            navController.closeIfOn("notes/organize")
+                        },
+                        onTrash = { navController.navigate("notes/trash") },
+                    )
+                }
+                composable("notes/trash") {
+                    TrashRoute(notes = data.notes, onBack = { navController.closeIfOn("notes/trash") })
                 }
                 composable(Section.Tasks.route) {
                     TasksRoute(repository = data.tasks, newTaskRequests = newTaskRequests)
                 }
                 composable(
                     route = NOTE_ROUTE,
-                    arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = NO_ID }),
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.LongType; defaultValue = NO_ID },
+                        navArgument("nb") { type = NavType.LongType; defaultValue = NO_ID },
+                    ),
                 ) { entry ->
                     NoteEditorRoute(
-                        repository = data.notes,
+                        notes = data.notes,
+                        notebooks = data.notebooks,
+                        tasks = data.tasks,
                         noteId = entry.arguments?.getLong("id")?.takeIf { it != NO_ID },
+                        notebookId = entry.arguments?.getLong("nb")?.takeIf { it != NO_ID },
                         onClose = { navController.closeIfOn(NOTE_ROUTE) },
+                        onOpenNote = { target ->
+                            navController.closeIfOn(NOTE_ROUTE)
+                            navController.openNote(target)
+                        },
                     )
                 }
                 composable(
