@@ -149,6 +149,9 @@ private object SystemGlyphs {
 /** Vero quando i simboli delle icone prendono colori vari invece del colore della categoria. */
 val LocalVariedIcons = androidx.compose.runtime.compositionLocalOf { false }
 
+/** Vero quando il simbolo prende il colore dell'icona originale dell'app, portato alle tinte della suite. */
+val LocalAppIconColors = androidx.compose.runtime.compositionLocalOf { false }
+
 /** Colore del simbolo secondo la categoria della barra in cui sta l'app (fornito dalla Scrivania). */
 val LocalCategoryTint = androidx.compose.runtime.compositionLocalOf<(AppEntry) -> Color?> { { null } }
 
@@ -165,7 +168,14 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     val px = with(androidx.compose.ui.platform.LocalDensity.current) { size.roundToPx() }
     var image by remember(entry.key) { mutableStateOf<IconImage?>(null) }
     LaunchedEffect(entry.key) { image = IconLoader.load(context, entry, px) }
-    val tint = if (LocalVariedIcons.current) {
+    val fromApp = LocalAppIconColors.current
+    var appTint by remember(entry.key) { mutableStateOf(AppColors.cached(entry)) }
+    if (fromApp && entry.euriseSection == null) {
+        LaunchedEffect(entry.key) { if (appTint == null) appTint = AppColors.suiteTint(context, entry) }
+    }
+    val tint = if (fromApp && appTint != null) {
+        appTint!!
+    } else if (LocalVariedIcons.current) {
         eu.eurise.feature.launcher.settings.IconPalette[Math.floorMod(entry.packageName.hashCode() + entry.label.hashCode(), eu.eurise.feature.launcher.settings.IconPalette.size)]
     } else {
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark

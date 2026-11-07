@@ -287,6 +287,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.4.em)) {
       androidx.compose.runtime.CompositionLocalProvider(
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
+          eu.eurise.feature.launcher.apps.LocalAppIconColors provides settings.appIconColors,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
           // Sulla Scrivania le bolle si staccano appena un po' di più dallo sfondo.
           eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors),

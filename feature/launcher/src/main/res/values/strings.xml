@@ -132,6 +132,7 @@
     <string name="appearance_icon_colors">Colore dei simboli</string>
     <string name="appearance_icons_category">Per categoria</string>
     <string name="appearance_icons_varied">Vario</string>
+    <string name="appearance_icons_app">Dall’app</string>
 
     <string name="favorite_move_before">Sposta prima</string>
     <string name="favorite_move_after">Sposta dopo</string>

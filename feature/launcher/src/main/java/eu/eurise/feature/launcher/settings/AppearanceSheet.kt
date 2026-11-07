@@ -129,12 +129,14 @@ fun AppearanceSheet(
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
                 ) {
-                    listOf(false to R.string.appearance_icons_category, true to R.string.appearance_icons_varied).forEach { (value, label) ->
-                        val on = settings.variedIcons == value
+                    // 0 = dall'app, 1 = per categoria, 2 = vario
+                    val mode = when { settings.appIconColors -> 0; settings.variedIcons -> 2; else -> 1 }
+                    listOf(0 to R.string.appearance_icons_app, 1 to R.string.appearance_icons_category, 2 to R.string.appearance_icons_varied).forEach { (value, label) ->
+                        val on = mode == value
                         Box(
                             Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(50))
                                 .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
-                                .clickable(role = Role.RadioButton) { onChange { it.copy(variedIcons = value) } },
+                                .clickable(role = Role.RadioButton) { onChange { it.copy(appIconColors = value == 0, variedIcons = value == 2) } },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
