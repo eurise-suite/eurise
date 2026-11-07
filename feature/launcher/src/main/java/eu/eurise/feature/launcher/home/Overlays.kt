@@ -93,16 +93,25 @@ fun CategoryPages(
     onClose: () -> Unit,
     onAppearance: () -> Unit,
     modifier: Modifier = Modifier,
+    favorites: List<AppEntry> = emptyList(),
 ) {
     HorizontalPager(pager, modifier.closeOnSwipe(up = false, onClose = onClose)) { page ->
         val category = categories[page]
         // Le cartelle di questa categoria vengono prima; le app che contengono non si ripetono nella griglia.
-        val here = folders.filter { it.place == category.id }
-        val inFolders = here.flatMap { it.keys }.toSet()
-        val list = apps.filter { categoryOf(it)?.id == category.id && it.key !in inFolders }
+        // I Preferiti mostrano le app e le cartelle della home, nell'ordine scelto.
+        val here = if (category.isFavorites) {
+            folders.filter { f -> favorites.any { it.key == f.key } }
+        } else folders.filter { it.place == category.id }
+        val inFolders = here.flatMap { it.keys }.toSet() + here.map { it.key }
+        val list = if (category.isFavorites) favorites.filter { it.key !in inFolders }
+        else apps.filter { categoryOf(it)?.id == category.id && it.key !in inFolders }
         val byKey = apps.associateBy { it.key }
-        Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(24.dp))
+        // Le app stanno in basso, vicino al pollice, con il titolo della categoria subito sopra.
+        Box(
+            Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+        Column(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     category.label,
@@ -116,15 +125,18 @@ fun CategoryPages(
                     contentAlignment = Alignment.Center,
                 ) { Icon(EuriseIcons.grid(), stringResource(R.string.appearance_title), tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(22.dp)) }
             }
-            Spacer(Modifier.height(16.dp))
-            if (list.isEmpty()) {
-                Text(stringResource(R.string.category_empty), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f), modifier = Modifier.padding(8.dp))
+            Spacer(Modifier.height(12.dp))
+            if (list.isEmpty() && here.isEmpty()) {
+                Text(
+                    stringResource(R.string.category_empty), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = bottomClearance),
+                )
             }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 contentPadding = PaddingValues(bottom = bottomClearance),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f, fill = false),
             ) {
                 items(here, key = { it.key }) { folder ->
                     Box(contentAlignment = Alignment.Center) {
@@ -143,7 +155,7 @@ fun CategoryPages(
                             onOpen = { onOpen(app) },
                             onToggleFavorite = { onToggleFavorite(app) },
                             onInfo = if (app.component != null) ({ onInfo(app) }) else null,
-                            moveTargets = categories.filter { it.id != category.id },
+                            moveTargets = categories.filter { it.id != category.id && !it.isFavorites },
                             onMoveTo = { onMoveTo(app, it) },
                             iconSize = iconSize,
                             showLabel = showLabels,
@@ -152,6 +164,7 @@ fun CategoryPages(
                     }
                 }
             }
+        }
         }
     }
 }

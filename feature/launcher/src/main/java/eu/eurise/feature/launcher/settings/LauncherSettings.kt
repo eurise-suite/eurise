@@ -104,6 +104,8 @@ data class LauncherSettings(
     val folders: List<AppFolder> = emptyList(),
     /** Cosa fa cambiare lo sfondo. */
     val wallpaper: eu.eurise.feature.launcher.home.WallpaperOptions = eu.eurise.feature.launcher.home.WallpaperOptions(),
+    /** Tema: 0 segue lo sfondo, 1 sempre chiaro, 2 sempre scuro. */
+    val themeMode: Int = 0,
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -165,6 +167,8 @@ class SettingsStore(context: Context) {
             .putBoolean("wp_weather", next.wallpaper.weather)
             .putBoolean("wp_holidays", next.wallpaper.holidays)
             .putBoolean("wp_moment", next.wallpaper.moment)
+            .putString("wp_fixed", next.wallpaper.fixed)
+            .putInt("theme_mode", next.themeMode)
             .apply()
     }
 
@@ -190,7 +194,9 @@ class SettingsStore(context: Context) {
             weather = prefs.getBoolean("wp_weather", true),
             holidays = prefs.getBoolean("wp_holidays", true),
             moment = prefs.getBoolean("wp_moment", true),
+            fixed = prefs.getString("wp_fixed", null),
         ),
+        themeMode = prefs.getInt("theme_mode", 0),
     )
 }
 

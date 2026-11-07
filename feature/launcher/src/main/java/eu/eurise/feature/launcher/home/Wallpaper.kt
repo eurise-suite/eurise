@@ -32,7 +32,17 @@ enum class Season { Winter, Spring, Summer, Autumn }
 enum class Festivity { ChristmasEve, Christmas, NewYearsEve, NewYear, Epiphany, Easter, SpringStart, SummerStart, AutumnStart, WinterStart, Birthday, Anniversary }
 
 /** Cosa fa cambiare lo sfondo (Griglia e icone → "Lo sfondo cambia con"). */
-data class WallpaperOptions(val season: Boolean = true, val weather: Boolean = true, val holidays: Boolean = true, val moment: Boolean = true)
+data class WallpaperOptions(
+    val season: Boolean = true,
+    val weather: Boolean = true,
+    val holidays: Boolean = true,
+    val moment: Boolean = true,
+    /** Sfondo scelto dall'utente: "season:Autumn" o "fest:Christmas"; null = automatico. */
+    val fixed: String? = null,
+) {
+    val fixedSeason: Season? get() = fixed?.removePrefix("season:")?.takeIf { fixed.startsWith("season:") }?.let { n -> Season.entries.firstOrNull { it.name == n } }
+    val fixedFestivity: Festivity? get() = fixed?.removePrefix("fest:")?.takeIf { fixed.startsWith("fest:") }?.let { n -> Festivity.entries.firstOrNull { it.name == n } }
+}
 
 /** Le date personali che hanno uno sfondo: il proprio compleanno e il proprio anniversario. */
 data class PersonalDays(val birthday: MonthDay? = null, val anniversary: MonthDay? = null)
@@ -50,9 +60,11 @@ data class Scene(
     val festivity: Festivity? = null,
     val weather: Sky? = null,
     val moment: Moment = Moment.Morning,
+    /** Tema scelto dall'utente: vero scuro, falso chiaro, null segue lo sfondo. */
+    val forceDark: Boolean? = null,
 ) {
-    /** Sopra le scene scure il testo è chiaro. */
-    val dark: Boolean get() = moon || sky.first().luma() < 0.3f
+    /** Sopra le scene scure il testo è chiaro, a meno che l'utente non abbia scelto il tema. */
+    val dark: Boolean get() = forceDark ?: (moon || sky.first().luma() < 0.3f)
 
     /**
      * Il cielo in alto (dove stanno saluto, orario e meteo) è ancora abbastanza chiaro per un testo scuro,
@@ -190,8 +202,11 @@ private fun weatherTint(colors: List<Color>, sky: Sky?, dark: Boolean): List<Col
 /** La scena per un istante, secondo le opzioni scelte. */
 fun sceneFor(now: LocalDateTime, options: WallpaperOptions = WallpaperOptions(), weather: Sky? = null, personal: PersonalDays = PersonalDays()): Scene {
     val moment = if (options.moment) momentOf(now.hour) else Moment.Morning
-    val festivity = if (options.holidays) festivityOf(now.toLocalDate(), personal) else null
-    val palette = festivity?.let { Festive.getValue(it) } ?: Seasons.getValue(if (options.season) seasonOf(now.month) else Season.Autumn)
+    // Uno sfondo scelto a mano resta fermo: non cambia con stagione e ricorrenze.
+    val festivity = options.fixedFestivity
+        ?: if (options.fixed == null && options.holidays) festivityOf(now.toLocalDate(), personal) else null
+    val season = options.fixedSeason ?: if (options.season) seasonOf(now.month) else Season.Autumn
+    val palette = festivity?.let { Festive.getValue(it) } ?: Seasons.getValue(season)
     val (sky0, hills0) = palette.at(moment, seasonal = festivity == null)
     val night = moment == Moment.Night
     val w = if (options.weather) weather else null

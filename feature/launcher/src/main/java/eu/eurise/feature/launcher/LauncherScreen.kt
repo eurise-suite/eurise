@@ -115,7 +115,6 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
-import eu.eurise.feature.launcher.apps.FAVORITES
 import eu.eurise.feature.launcher.apps.LocalCategoryTint
 import eu.eurise.feature.launcher.apps.resolveCategory
 import eu.eurise.feature.launcher.settings.CategoryEditor
@@ -279,6 +278,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         anniversary = importantDates.firstOrNull { it.mine && it.kind.isAnniversary }?.monthDay,
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
+        .let { s -> when (settings.themeMode) { 1 -> s.copy(forceDark = false); 2 -> s.copy(forceDark = true); else -> s } }
     EuriseTheme(darkTheme = scene.dark) {
       // Di notte l'accento si abbassa e si intona allo sfondo: meno acceso, più scuro.
       val accent = settings.accent.color(scene.dark).let { if (scene.dark) nightAccent(it) else it }
@@ -315,12 +315,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 else -> actions.askLocation()
             }
         }
-        // Categoria scelta nella barra, per id; "favorites" è la home.
-        var category by remember { mutableStateOf(FAVORITES) }
+        // Categoria scelta nella barra, per id; HomePageId è la home. I Preferiti sono una categoria come le altre.
+        var category by remember { mutableStateOf(HomePageId) }
         var categoryEditor by remember { mutableStateOf(false) }
         val barCategories = settings.categories
-        val pageCategories = barCategories.filterNot { it.isFavorites }
-        if (category != FAVORITES && pageCategories.none { it.id == category }) category = FAVORITES
+        val pageCategories = barCategories
+        if (category != HomePageId && pageCategories.none { it.id == category }) category = HomePageId
         val categoryOf: (AppEntry) -> BarCategory? = { entry -> resolveCategory(entry, barCategories, settings.categoryOverrides) }
         var searching by remember { mutableStateOf(false) }
         var panelOpen by remember { mutableStateOf(false) }
@@ -390,8 +390,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
         LaunchedEffect(homePresses) {
             if (homePresses > 0) {
-                if (category == FAVORITES && !searching) homePager.animateScrollToPage(HomePage)
-                category = FAVORITES
+                if (category == HomePageId && !searching) homePager.animateScrollToPage(HomePage)
+                category = HomePageId
                 categoryEditor = false
                 searching = false
                 panelOpen = false
@@ -401,9 +401,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             }
         }
         LaunchedEffect(categoryPager.currentPage) {
-            if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
+            if (category != HomePageId) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
+        BackHandler(enabled = replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != HomePageId || homePager.currentPage != HomePage) {
             when {
                 replyTo != null -> replyTo = null
                 homeCatalog -> homeCatalog = false
@@ -422,14 +422,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 editingCards -> editingCards = false
                 searching -> searching = false
                 categoryEditor -> categoryEditor = false
-                category != FAVORITES -> category = FAVORITES
+                category != HomePageId -> category = HomePageId
                 else -> scope.launch { homePager.animateScrollToPage(HomePage) }
             }
         }
 
         fun select(c: BarCategory) {
+            // Toccare la categoria già aperta riporta alla home.
+            if (category == c.id) { category = HomePageId; return }
             category = c.id
-            if (!c.isFavorites) scope.launch { categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == c.id }.coerceAtLeast(0)) }
+            scope.launch { categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == c.id }.coerceAtLeast(0)) }
         }
 
         val setup = listOf(
@@ -480,7 +482,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
                 if (searching || panelOpen) {
                     // Durante la ricerca e nel pannello resta solo lo sfondo sfocato.
-                } else if (category == FAVORITES) {
+                } else if (category == HomePageId) {
                     if (tablet) {
                         TabletHome(
                             now = now, weather = weather, hasLocation = hasLocation, state = state,
@@ -562,7 +564,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         columns = settings.columns,
                         iconSize = settings.iconSize.dp,
                         showLabels = settings.showLabels,
-                        onClose = { category = FAVORITES },
+                        onClose = { category = HomePageId },
+                        favorites = state.favorites,
                         onAppearance = { appearance = true },
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -1394,3 +1397,7 @@ private fun launcherGlass(base: eu.eurise.core.designsystem.theme.EuriseExtraCol
 
 /** Accento per il tema scuro: si avvicina al blu-grafite dello sfondo e perde un po' di brillantezza. */
 private fun nightAccent(color: Color): Color = androidx.compose.ui.graphics.lerp(color, Color(0xFF2A303B), 0.32f)
+
+
+/** Valore di "categoria aperta" che indica la home (nessuna categoria). */
+private const val HomePageId = "@home"

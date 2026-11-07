@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -159,6 +160,44 @@ fun AppearanceSheet(
                     )
                 }
                 Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // Tema: segue lo sfondo oppure sempre chiaro / sempre scuro.
+            Column {
+                Text(stringResource(R.string.appearance_theme), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Segmented(
+                    listOf(R.string.theme_auto, R.string.theme_light, R.string.theme_dark).map { stringResource(it) },
+                    settings.themeMode,
+                ) { v -> onChange { it.copy(themeMode = v) } }
+            }
+            // Sfondo: automatico oppure uno scelto tra quelli disponibili.
+            Column {
+                Text(stringResource(R.string.wallpaper_pick), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                val choices = listOf<Pair<String?, Int>>(
+                    null to R.string.wallpaper_auto,
+                    "season:Spring" to R.string.wp_spring, "season:Summer" to R.string.wp_summer,
+                    "season:Autumn" to R.string.wp_autumn, "season:Winter" to R.string.wp_winter,
+                    "fest:Christmas" to R.string.wp_christmas, "fest:NewYearsEve" to R.string.wp_newyear,
+                    "fest:Epiphany" to R.string.wp_epiphany, "fest:Easter" to R.string.wp_easter,
+                    "fest:Birthday" to R.string.wp_birthday, "fest:Anniversary" to R.string.wp_anniversary,
+                )
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    choices.forEach { (key, label) ->
+                        val on = settings.wallpaper.fixed == key
+                        Text(
+                            stringResource(label), fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                            color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.clip(RoundedCornerShape(16.dp))
+                                .background(if (on) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                                .clickable(role = Role.RadioButton) { onChange { it.copy(wallpaper = it.wallpaper.copy(fixed = key)) } }
+                                .padding(horizontal = 12.dp, vertical = 7.dp),
+                        )
+                    }
+                }
             }
             // Lo sfondo cambia con: stagione, meteo, festività, momento della giornata.
             Column {
@@ -320,4 +359,27 @@ private fun hueOf(c: Color): Float {
         else -> (c.red - c.green) / d + 4f
     } * 60f
     return if (h < 0) h + 360f else h
+}
+
+/** Scelta tra poche voci, a pillola, come "Colore dei simboli". */
+@Composable
+private fun Segmented(labels: List<String>, selected: Int, onPick: (Int) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
+    ) {
+        labels.forEachIndexed { i, label ->
+            val on = i == selected
+            Box(
+                Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(50))
+                    .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                    .clickable(role = Role.RadioButton) { onPick(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label, fontSize = 13.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                    color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }
