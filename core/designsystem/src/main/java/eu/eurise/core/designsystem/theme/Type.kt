@@ -17,7 +17,8 @@ private val Default = Typography()
 internal val EuriseTypography = Typography(
     displaySmall = Default.displaySmall.copy(fontFamily = Base, fontWeight = FontWeight.Light, letterSpacing = (-0.02).em),
     headlineLarge = Default.headlineLarge.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.01).em),
-    headlineMedium = Default.headlineMedium.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.01).em),
+    // Titoli delle sezioni (Oggi, Calendario, Note, Attività): stessa scala ovunque.
+    headlineMedium = Default.headlineMedium.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.01).em),
     headlineSmall = Default.headlineSmall.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold),
     titleLarge = Default.titleLarge.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold),
     titleMedium = Default.titleMedium.copy(fontFamily = Base, fontWeight = FontWeight.SemiBold),

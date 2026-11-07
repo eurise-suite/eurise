@@ -5,7 +5,7 @@
     <string name="notes_search">Cerca nelle note</string>
     <string name="notes_search_clear">Cancella la ricerca</string>
     <string name="notes_empty_title">Nessuna nota</string>
-    <string name="notes_empty_message">Le note restano sul telefono. Tocca \"Nuova nota\" per scrivere la prima.</string>
+    <string name="notes_empty_message">Le note restano sul telefono. Tocca il + in basso per scrivere la prima.</string>
     <string name="notes_no_results_title">Nessun risultato</string>
     <string name="notes_no_results_message">Nessuna nota contiene \"%1$s\".</string>
     <string name="notes_back">Indietro</string>

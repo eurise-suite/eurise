@@ -1,6 +1,7 @@
 package eu.eurise.core.data
 
 import android.content.Context
+import eu.eurise.core.data.calendar.CalendarRepository
 import eu.eurise.core.data.local.EuriseDatabase
 import eu.eurise.core.data.local.NoteDao
 import eu.eurise.core.data.local.TaskDao
@@ -65,6 +66,10 @@ class TaskRepository internal constructor(
     fun observeDueBy(day: LocalDate): Flow<List<Task>> =
         dao.observeDueBy(day.toEpochDay()).map { list -> list.map { it.toModel() } }
 
+    /** Attività con scadenza nei giorni da [from] a [to] inclusi, anche quelle già fatte. */
+    fun observeDueBetween(from: LocalDate, to: LocalDate): Flow<List<Task>> =
+        dao.observeDueBetween(from.toEpochDay(), to.toEpochDay()).map { list -> list.map { it.toModel() } }
+
     fun observeCompletedSince(epochMillis: Long): Flow<List<Task>> =
         dao.observeCompletedSince(epochMillis).map { list -> list.map { it.toModel() } }
 
@@ -89,12 +94,13 @@ class TaskRepository internal constructor(
 }
 
 /** Punto unico di accesso ai dati locali dell'app hub. */
-class EuriseData private constructor(database: EuriseDatabase, clock: Clock) {
+class EuriseData private constructor(context: Context, database: EuriseDatabase, clock: Clock) {
     val notes = NoteRepository(database.noteDao(), clock)
     val tasks = TaskRepository(database.taskDao(), clock)
+    val calendar = CalendarRepository(context)
 
     companion object {
         fun create(context: Context, clock: Clock = Clock.System): EuriseData =
-            EuriseData(EuriseDatabase.create(context), clock)
+            EuriseData(context.applicationContext, EuriseDatabase.create(context), clock)
     }
 }

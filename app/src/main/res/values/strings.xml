@@ -2,6 +2,10 @@
 <resources>
     <string name="app_name">Eurise</string>
     <string name="section_today">Oggi</string>
+    <string name="section_calendar">Calendario</string>
     <string name="section_notes">Note</string>
     <string name="section_tasks">Attività</string>
+    <string name="action_new_event">Nuovo appuntamento</string>
+    <string name="action_new_note">Nuova nota</string>
+    <string name="action_new_task">Nuova attività</string>
 </resources>

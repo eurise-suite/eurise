@@ -2,6 +2,7 @@ package eu.eurise.feature.notes
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,11 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -35,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.eurise.core.data.NoteRepository
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.designsystem.component.EmptyState
+import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.component.NoteCard
 import java.time.LocalDate
 
@@ -68,17 +68,12 @@ internal fun NotesListScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // La barra delle sezioni flotta sopra il contenuto: lo spazio in fondo lo dà LocalDockClearance.
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             LargeTopAppBar(
                 title = { Text(stringResource(R.string.notes_title)) },
                 scrollBehavior = scrollBehavior,
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { onOpenNote(null) },
-                icon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-                text = { Text(stringResource(R.string.notes_new)) },
             )
         },
     ) { padding ->
@@ -86,7 +81,7 @@ internal fun NotesListScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding() + 96.dp,
+                bottom = LocalDockClearance.current + 16.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {

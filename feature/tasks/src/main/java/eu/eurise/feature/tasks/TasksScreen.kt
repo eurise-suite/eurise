@@ -1,18 +1,17 @@
 package eu.eurise.feature.tasks
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -25,7 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.eurise.core.data.TaskRepository
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.designsystem.component.EmptyState
+import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.component.TaskRow
 import java.time.LocalDate
 
@@ -47,8 +49,12 @@ private sealed interface EditorTarget {
     data class Existing(val task: Task) : EditorTarget
 }
 
+/**
+ * @param newTaskRequests contatore che il guscio incrementa quando si tocca il + della barra:
+ * ogni aumento apre il foglio per una nuova attività.
+ */
 @Composable
-fun TasksRoute(repository: TaskRepository) {
+fun TasksRoute(repository: TaskRepository, newTaskRequests: Int = 0) {
     val viewModel = viewModel { TasksViewModel(repository) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     TasksScreen(
@@ -60,6 +66,7 @@ fun TasksRoute(repository: TaskRepository) {
         onUpdate = viewModel::update,
         onDelete = viewModel::delete,
         onClearCompleted = viewModel::clearCompleted,
+        newTaskRequests = newTaskRequests,
     )
 }
 
@@ -74,14 +81,24 @@ internal fun TasksScreen(
     onUpdate: (Task) -> Unit,
     onDelete: (Task) -> Unit,
     onClearCompleted: () -> Unit,
+    newTaskRequests: Int = 0,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var editor by remember { mutableStateOf<EditorTarget?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
+    // Il valore presente all'apertura è già "servito": si reagisce solo agli aumenti successivi.
+    var handledRequests by remember { mutableIntStateOf(newTaskRequests) }
+    LaunchedEffect(newTaskRequests) {
+        if (newTaskRequests > handledRequests) {
+            handledRequests = newTaskRequests
+            editor = EditorTarget.New
+        }
+    }
     val visible = if (state.filter == TaskFilter.Open) state.open else state.done
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             LargeTopAppBar(
                 title = { Text(stringResource(R.string.tasks_title)) },
@@ -95,19 +112,12 @@ internal fun TasksScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { editor = EditorTarget.New },
-                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.tasks_new)) },
-            )
-        },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding() + 96.dp,
+                bottom = LocalDockClearance.current + 16.dp,
             ),
         ) {
             item(key = "filter") {

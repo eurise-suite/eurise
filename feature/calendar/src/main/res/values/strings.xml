@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cal_title">Calendario</string>
+    <string name="cal_today">Oggi</string>
+    <string name="cal_previous">Periodo precedente</string>
+    <string name="cal_next">Periodo successivo</string>
+    <string name="cal_view_agenda">Agenda</string>
+    <string name="cal_view_day">Giorno</string>
+    <string name="cal_view_three">3 giorni</string>
+    <string name="cal_view_week">Settimana</string>
+    <string name="cal_view_month">Mese</string>
+    <string name="cal_all_day">tutto il giorno</string>
+    <string name="cal_tasks_count">%1$d da fare</string>
+    <string name="cal_tasks_count_late">%1$d da fare, una in ritardo</string>
+    <string name="cal_now">Ora attuale %1$s</string>
+    <string name="cal_label_today">Oggi</string>
+    <string name="cal_label_tomorrow">Domani</string>
+    <string name="cal_agenda_empty_title">Niente in programma</string>
+    <string name="cal_agenda_empty_message">Nei prossimi trenta giorni non ci sono appuntamenti né attività con scadenza.</string>
+    <string name="cal_day_empty">Nessun appuntamento</string>
+    <string name="cal_repeats">si ripete</string>
+    <string name="cal_overdue">In ritardo</string>
+
+    <string name="cal_permission_title">Collega i calendari del telefono</string>
+    <string name="cal_permission_message">Eurise legge e scrive gli appuntamenti nei calendari già presenti sul telefono, compresi quelli di Murena sincronizzati dal sistema. Nulla passa da altri server.</string>
+    <string name="cal_permission_allow">Consenti l\'accesso</string>
+    <string name="cal_permission_settings">Apri le impostazioni dell\'app</string>
+
+    <string name="cal_new_event">Nuovo appuntamento</string>
+    <string name="cal_edit_event">Modifica appuntamento</string>
+    <string name="cal_event_details">Appuntamento</string>
+    <string name="cal_close">Chiudi</string>
+    <string name="cal_save">Salva</string>
+    <string name="cal_delete">Elimina</string>
+    <string name="cal_cancel">Annulla</string>
+    <string name="cal_ok">OK</string>
+    <string name="cal_field_title">Titolo</string>
+    <string name="cal_field_all_day">Tutto il giorno</string>
+    <string name="cal_field_start">Inizio</string>
+    <string name="cal_field_end">Fine</string>
+    <string name="cal_field_calendar">Calendario</string>
+    <string name="cal_field_location">Luogo</string>
+    <string name="cal_field_notes">Note</string>
+    <string name="cal_sync_note">Si salva nel calendario del telefono e arriva sul cloud con la sincronizzazione di sistema. Promemoria e ripetizioni arrivano con la prossima versione.</string>
+    <string name="cal_local_note">Questo calendario resta solo sul telefono.</string>
+    <string name="cal_recurring_note">È un appuntamento che si ripete: in questa versione si può solo consultare. Per modificarlo usa per ora l\'app del calendario di sistema.</string>
+    <string name="cal_readonly_note">Questo calendario è in sola lettura.</string>
+    <string name="cal_no_calendar_title">Nessun calendario in cui scrivere</string>
+    <string name="cal_no_calendar_message">Sul telefono non c\'è un calendario sincronizzato in cui aggiungere appuntamenti. Puoi crearne uno che resta solo sul telefono.</string>
+    <string name="cal_create_local">Crea il calendario Eurise</string>
+    <string name="cal_local_name">Eurise (sul telefono)</string>
+    <string name="cal_error_title">Scrivi un titolo per l\'appuntamento.</string>
+    <string name="cal_error_end">La fine deve venire dopo l\'inizio.</string>
+    <string name="cal_error_save">Il sistema non ha accettato l\'appuntamento. Riprova.</string>
+    <string name="cal_delete_title">Eliminare l\'appuntamento?</string>
+    <string name="cal_delete_message">Verrà eliminato dal calendario del telefono e, con la sincronizzazione, anche dal cloud.</string>
+</resources>

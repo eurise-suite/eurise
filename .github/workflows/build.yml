@@ -2,7 +2,7 @@ name: Compila APK
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
@@ -32,7 +32,16 @@ jobs:
       - name: Compila e prova
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug testDebugUnitTest
+          set -o pipefail
+          ./gradlew --no-daemon assembleDebug testDebugUnitTest 2>&1 | tee build.log
+
+      # Gli errori di compilazione diventano annotazioni, leggibili anche senza scaricare il registro.
+      - name: Riassunto degli errori
+        if: failure()
+        run: |
+          grep -E "^e: |What went wrong|Could not (resolve|find)|error:" build.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
       - name: Carica l'APK
         uses: actions/upload-artifact@v4

@@ -7,7 +7,7 @@
     <string name="tasks_filter_open_count">Da fare · %1$d</string>
     <string name="tasks_filter_done">Completate</string>
     <string name="tasks_empty_title">Niente da fare</string>
-    <string name="tasks_empty_message">Aggiungi un\'attività con \"Nuova attività\" o dalla schermata Oggi.</string>
+    <string name="tasks_empty_message">Aggiungi un\'attività con il + in basso o dalla schermata Oggi.</string>
     <string name="tasks_done_empty_title">Nessuna attività completata</string>
     <string name="tasks_done_empty_message">Le attività spuntate compaiono qui.</string>
     <string name="tasks_field_title">Cosa c\'è da fare</string>

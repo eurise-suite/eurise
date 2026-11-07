@@ -49,6 +49,10 @@ internal interface TaskDao {
     @Query("SELECT * FROM tasks WHERE done = 0 AND due_day IS NOT NULL AND due_day <= :day ORDER BY due_day, created_at")
     fun observeDueBy(day: Long): Flow<List<TaskEntity>>
 
+    /** Tutte le attività (fatte o no) con scadenza tra [from] e [to] inclusi: servono al Calendario. */
+    @Query("SELECT * FROM tasks WHERE due_day BETWEEN :from AND :to ORDER BY done, due_day, created_at")
+    fun observeDueBetween(from: Long, to: Long): Flow<List<TaskEntity>>
+
     /** Completate dopo [since] (millisecondi): servono a "Oggi" per mostrare quelle appena spuntate. */
     @Query("SELECT * FROM tasks WHERE done = 1 AND completed_at >= :since ORDER BY completed_at DESC")
     fun observeCompletedSince(since: Long): Flow<List<TaskEntity>>

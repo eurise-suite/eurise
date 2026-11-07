@@ -4,5 +4,5 @@
         <item name="android:windowBackground">@color/eurise_background</item>
     </style>
 
-    <color name="eurise_background">#121315</color>
+    <color name="eurise_background">#14171C</color>
 </resources>

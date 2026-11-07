@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Nessun permesso: in questa prima versione tutti i dati restano sul telefono. -->
+    <!-- Calendari del telefono (su /e/OS anche quelli di Murena): chiesti solo aprendo il Calendario. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
         android:name=".EuriseApplication"
