@@ -88,6 +88,24 @@ fun AppearanceSheet(
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClose).padding(6.dp),
                 )
             }
+            // Nome per il saluto della home.
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.appearance_name), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Box(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(horizontal = 14.dp, vertical = 11.dp),
+                ) {
+                    if (settings.userName.isEmpty()) Text(stringResource(R.string.appearance_name_hint), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = settings.userName,
+                        onValueChange = { v -> onChange { it.copy(userName = v.take(30)) } },
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             Stepper(stringResource(R.string.appearance_columns), settings.columns, LauncherSettings.ColumnChoices) { v -> onChange { it.copy(columns = v) } }
             Stepper(stringResource(R.string.appearance_rows), settings.rows, LauncherSettings.RowChoices) { v -> onChange { it.copy(rows = v) } }
             Column {

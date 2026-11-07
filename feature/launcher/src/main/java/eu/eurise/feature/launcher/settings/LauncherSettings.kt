@@ -82,6 +82,8 @@ data class LauncherSettings(
     val showLabels: Boolean = true,
     /** Simboli delle icone colorati per categoria (falso) o con colori vari per app (vero). */
     val variedIcons: Boolean = false,
+    /** Nome per il saluto della home ("Buongiorno, …!"); vuoto per il solo saluto. */
+    val userName: String = "",
     val accent: Accent = Accent.Default,
     val cards: List<PlacedCard> = decodeCards(null),
     /** Schede della pagina a sinistra della home. */
@@ -103,7 +105,14 @@ data class LauncherSettings(
 /** Salva le impostazioni sul telefono; nessun account, nessuna sincronizzazione. */
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("eurise_launcher", Context.MODE_PRIVATE)
-    private val _settings = MutableStateFlow(load())
+    private val _settings = MutableStateFlow(migrate(load()))
+
+    /** Con l'accoglienza la home ospita due righe di preferiti con icone un poco più piccole (una volta sola). */
+    private fun migrate(s: LauncherSettings): LauncherSettings {
+        if (prefs.getBoolean("welcome_v1", false)) return s
+        prefs.edit().putBoolean("welcome_v1", true).putInt("grid_rows", maxOf(2, s.rows)).putInt("icon_size", minOf(48, s.iconSize)).apply()
+        return s.copy(rows = maxOf(2, s.rows), iconSize = minOf(48, s.iconSize))
+    }
     val settings: StateFlow<LauncherSettings> = _settings.asStateFlow()
 
     fun update(transform: (LauncherSettings) -> LauncherSettings) {
@@ -121,6 +130,7 @@ class SettingsStore(context: Context) {
             .putInt("icon_size", next.iconSize)
             .putBoolean("show_labels", next.showLabels)
             .putBoolean("varied_icons", next.variedIcons)
+            .putString("user_name", next.userName)
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
             .putString("left_cards", next.leftCards.encode())
@@ -135,6 +145,7 @@ class SettingsStore(context: Context) {
         iconSize = prefs.getInt("icon_size", 56),
         showLabels = prefs.getBoolean("show_labels", true),
         variedIcons = prefs.getBoolean("varied_icons", false),
+        userName = prefs.getString("user_name", "").orEmpty(),
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),
         leftCards = decodeCards(prefs.getString("left_cards", null), DefaultLeftCards),

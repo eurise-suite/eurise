@@ -14,6 +14,12 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
+import eu.eurise.feature.launcher.contacts.ContactsRepository
+import eu.eurise.feature.launcher.files.RecentFile
+import eu.eurise.feature.launcher.files.RecentFilesRepository
+import eu.eurise.feature.launcher.notifications.NotificationStore
+import eu.eurise.feature.launcher.route.RouteRepository
+import eu.eurise.feature.launcher.route.Travel
 import eu.eurise.feature.launcher.markets.MarketsRepository
 import eu.eurise.feature.launcher.markets.Quote
 import eu.eurise.feature.launcher.news.NewsItem
@@ -122,8 +128,35 @@ class LauncherViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LauncherState())
 
     /** Da richiamare quando la Scrivania torna in primo piano: permessi e meteo possono essere cambiati. */
+    val contacts = ContactsRepository(application)
+    val files = RecentFilesRepository(application)
+    private val routes = RouteRepository(application)
+
+    private val _recentFiles = MutableStateFlow<List<RecentFile>>(emptyList())
+    val recentFiles: StateFlow<List<RecentFile>> = _recentFiles
+    private val _travel = MutableStateFlow<Travel?>(null)
+    val travel: StateFlow<Travel?> = _travel
+
+    init {
+        // Chi scrive in chat entra nei contatti recenti (solo sul telefono).
+        viewModelScope.launch {
+            NotificationStore.messages.collect { list -> list.forEach { contacts.remember(it.title, it.appLabel, it.postedAt) } }
+        }
+    }
+
+    /** Tempo per arrivare al luogo del prossimo appuntamento di oggi, se ha un indirizzo. */
+    fun refreshTravel(destination: String?) {
+        if (destination.isNullOrBlank()) { _travel.value = null; return }
+        viewModelScope.launch { _travel.value = routes.travelTo(destination) }
+    }
+
+    fun refreshFiles() {
+        viewModelScope.launch { _recentFiles.value = files.recent() }
+    }
+
     fun refresh() {
         calendarPermission.value = calendar.hasPermission()
+        refreshFiles()
         viewModelScope.launch { _weather.value = weatherRepo.forecast() }
         refreshNews()
         refreshQuotes()

@@ -1,6 +1,12 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.home.AgendaPill
+import eu.eurise.feature.launcher.home.CommsPill
+import eu.eurise.feature.launcher.home.MusicHalf
+import eu.eurise.feature.launcher.home.PeopleSheet
+import eu.eurise.feature.launcher.home.WorkPill
+import eu.eurise.feature.launcher.home.greeting
 import eu.eurise.feature.launcher.summary.NewsCard
 import eu.eurise.feature.launcher.summary.NewsSourcesSheet
 import eu.eurise.feature.launcher.summary.StocksCard
@@ -155,6 +161,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val calendarMonth by viewModel.calendarMonth.collectAsStateWithLifecycle()
     val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
     val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()
+    val recentFiles by viewModel.recentFiles.collectAsStateWithLifecycle()
+    val travel by viewModel.travel.collectAsStateWithLifecycle()
+    var filesAccess by remember { mutableStateOf(viewModel.files.hasAccess()) }
+    // Luogo del prossimo appuntamento di oggi con un indirizzo: per il tempo di viaggio.
+    val destination = state.eventsToday
+        .firstOrNull { !it.allDay && it.end.isAfter(now) && it.location.isNotBlank() }?.location
+    LaunchedEffect(destination, hasLocation) { viewModel.refreshTravel(destination) }
+    val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+    val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        filesAccess = viewModel.files.hasAccess(); viewModel.refreshFiles()
+    }
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -171,6 +188,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         notificationsOn = NotificationStore.isEnabled(context)
         isHome = isDefaultHome(context)
         hasLocation = viewModel.hasLocationPermission()
+        filesAccess = viewModel.files.hasAccess()
         viewModel.refresh()
     }
 
@@ -252,6 +270,34 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
+        // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
+        var peopleSheet by remember { mutableStateOf<String?>(null) }
+        val welcome = WelcomeData(
+            travel = travel,
+            destination = destination,
+            messages = messages,
+            notificationsOn = notificationsOn,
+            nowPlaying = nowPlaying,
+            files = recentFiles,
+            filesAccess = filesAccess,
+            onRoute = { place ->
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(place))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
+            onRecent = { peopleSheet = "recent" },
+            onStarred = { peopleSheet = "starred" },
+            onOpenFile = { viewModel.files.open(it) },
+            onFilesGrant = {
+                val intent = viewModel.files.accessIntent()
+                if (intent != null) runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                else storagePermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            },
+            onPlayer = {
+                val pkg = nowPlaying?.controller?.packageName
+                val intent = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) }
+                    ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MUSIC)
+                runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
+        )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }
         var newsSheet by remember { mutableStateOf(false) }
@@ -273,8 +319,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
+        BackHandler(enabled = peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
             when {
+                peopleSheet != null -> peopleSheet = null
                 weatherSheet -> weatherSheet = false
                 newsSheet -> { newsSheet = false; viewModel.refreshNews(force = true) }
                 stocksSheet -> { stocksSheet = false; viewModel.refreshQuotes() }
@@ -353,6 +400,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     onAppearance = { appearance = true },
                                     settings = settings,
                                     onMoveFavorite = viewModel::moveFavorite,
+                                    welcome = welcome,
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -448,6 +496,26 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (stocksSheet) {
                 StocksSheet(viewModel.markets, onClose = { stocksSheet = false; viewModel.refreshQuotes() })
             }
+            peopleSheet?.let { kind ->
+                var people by remember(kind) { mutableStateOf<List<eu.eurise.feature.launcher.contacts.Person>?>(null) }
+                var granted by remember(kind) { mutableStateOf(viewModel.contacts.hasContacts()) }
+                LaunchedEffect(kind, granted) {
+                    people = if (kind == "recent") viewModel.contacts.recent() else viewModel.contacts.starred()
+                }
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { granted = viewModel.contacts.hasContacts() }
+                PeopleSheet(
+                    title = stringResource(if (kind == "recent") R.string.people_recent else R.string.people_starred),
+                    people = people,
+                    needsPermission = !granted || (kind == "recent" && !viewModel.contacts.hasCallLog()),
+                    onGrant = {
+                        contactsPermission.launch(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG))
+                    },
+                    loadActions = { viewModel.contacts.actions(it) },
+                    onAction = { peopleSheet = null; viewModel.contacts.start(it) },
+                    onOpenContact = { peopleSheet = null; viewModel.contacts.openContact(it) },
+                    onClose = { peopleSheet = null },
+                )
+            }
             if (categoryEditor) {
                 CategoryEditor(
                     categories = barCategories,
@@ -469,6 +537,23 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       }
     }
 }
+
+/** Dati e azioni dell'accoglienza della home. */
+private class WelcomeData(
+    val travel: eu.eurise.feature.launcher.route.Travel?,
+    val destination: String?,
+    val messages: List<MessageItem>,
+    val notificationsOn: Boolean,
+    val nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,
+    val files: List<eu.eurise.feature.launcher.files.RecentFile>,
+    val filesAccess: Boolean,
+    val onRoute: (String) -> Unit,
+    val onRecent: () -> Unit,
+    val onStarred: () -> Unit,
+    val onOpenFile: (eu.eurise.feature.launcher.files.RecentFile) -> Unit,
+    val onFilesGrant: () -> Unit,
+    val onPlayer: () -> Unit,
+)
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
@@ -507,7 +592,10 @@ private fun PhoneHome(
     onAppearance: () -> Unit,
     settings: LauncherSettings,
     onMoveFavorite: (AppEntry, Int) -> Unit,
+    welcome: WelcomeData,
 ) {
+    // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
+    val compact = settings.rows >= 3 || (settings.rows == 2 && LocalConfiguration.current.screenHeightDp < 820)
     // Sullo sfondo libero: in su ricerca e recenti, in giù il Pannello Eurise, pressione lunga Griglia e icone.
     val threshold = with(LocalDensity.current) { 56.dp.toPx() }
     Box(Modifier.fillMaxSize()) {
@@ -535,22 +623,47 @@ private fun PhoneHome(
                 HomeBanner(hazeState, actions.becomeHome)
                 Spacer(Modifier.height(12.dp))
             } else {
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(16.dp))
             }
-            ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
-            Spacer(Modifier.height(4.dp))
-            WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
-            Spacer(Modifier.height(16.dp))
-            TodayCard(
-                now = now,
-                events = state.eventsToday,
-                calendarConnected = state.calendarConnected,
-                tasks = state.tasksDue,
-                hazeState = hazeState,
-                onOpen = { actions.openEurise("today") },
-                onConnectCalendar = actions.connectCalendar,
-                onTaskDone = onTaskDone,
+            // Accoglienza: saluto, orario, data e meteo, poi le tre pillole.
+            androidx.compose.material3.Text(
+                greeting(now, settings.userName),
+                fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
             )
+            ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false)
+            WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
+            Spacer(Modifier.height(10.dp))
+            Column(Modifier.padding(horizontal = (-6).dp.coerceAtLeast(0.dp)), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                AgendaPill(
+                    now = now,
+                    events = state.eventsToday,
+                    calendarConnected = state.calendarConnected,
+                    tasks = state.tasksDue,
+                    travel = welcome.travel,
+                    destination = welcome.destination,
+                    hazeState = hazeState,
+                    compact = compact,
+                    onCalendar = { actions.openEurise("calendar") },
+                    onConnectCalendar = actions.connectCalendar,
+                    onTasks = { actions.openEurise("tasks") },
+                    onRoute = welcome.onRoute,
+                )
+                CommsPill(
+                    messages = welcome.messages,
+                    enabled = welcome.notificationsOn,
+                    hazeState = hazeState,
+                    compact = compact,
+                    onOpen = actions.openMessage,
+                    onRecent = welcome.onRecent,
+                    onStarred = welcome.onStarred,
+                    onGrant = actions.grantNotifications,
+                    onHub = { actions.openEurise("today") },
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    WorkPill(welcome.files, welcome.filesAccess, hazeState, Modifier.weight(1.35f), welcome.onOpenFile, welcome.onFilesGrant)
+                    MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, Modifier.weight(1f), welcome.onPlayer, actions.grantNotifications)
+                }
+            }
             Spacer(Modifier.weight(1f))
             if (state.favorites.isEmpty()) {
                 androidx.compose.material3.Text(

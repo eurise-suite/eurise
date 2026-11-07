@@ -187,4 +187,33 @@
     <string name="calendar_day_free">Niente in programma</string>
 
     <string name="message_no_preview">Nuovo messaggio · tocca per aprire</string>
+
+    <string name="greet_morning">Buongiorno</string>
+    <string name="greet_afternoon">Buon pomeriggio</string>
+    <string name="greet_evening">Buonasera</string>
+    <string name="greet_night">Buonanotte</string>
+    <string name="welcome_events">I tuoi appuntamenti</string>
+    <string name="welcome_in_min">tra %1$d min</string>
+    <string name="welcome_at">alle %1$s</string>
+    <string name="welcome_tasks">Le cose da fare · %1$d</string>
+    <string name="welcome_route">Per arrivare a %1$s</string>
+    <string name="welcome_route_minutes">%1$d min in auto</string>
+    <string name="welcome_route_unknown">Calcola il percorso</string>
+    <string name="welcome_leave_by">parti entro le %1$s</string>
+    <string name="welcome_route_open">Percorso</string>
+    <string name="welcome_comms">Ti hanno cercato</string>
+    <string name="welcome_work">Un\'occhiata ai lavori?</string>
+    <string name="welcome_work_grant">Consenti l\'accesso ai file per vedere gli ultimi documenti</string>
+    <string name="welcome_work_empty">Nessun documento recente</string>
+    <string name="welcome_music">Un po\' di musica?</string>
+    <string name="welcome_music_start">Apri il lettore</string>
+    <string name="people_recent">Contatti recenti</string>
+    <string name="people_starred">Contatti preferiti</string>
+    <string name="people_grant">Per mostrare i contatti serve l\'accesso alla Rubrica; per i recenti anche al registro chiamate (che Android tratta come impostazione con restrizioni, da sbloccare come per le notifiche). Le chat recenti arrivano comunque dalle notifiche.</string>
+    <string name="people_empty">Ancora nessun contatto qui.</string>
+    <string name="people_no_actions">Nessun numero o chat collegati. Tocca per aprire il contatto.</string>
+    <string name="pill_collapse">Riduci</string>
+    <string name="pill_expand">Mostra</string>
+    <string name="appearance_name">Come ti chiamo</string>
+    <string name="appearance_name_hint">Il tuo nome, per il saluto</string>
 </resources>

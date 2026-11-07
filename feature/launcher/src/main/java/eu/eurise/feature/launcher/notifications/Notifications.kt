@@ -84,8 +84,11 @@ object NotificationStore {
             .map { it.toMessage(service) }
         val active = visible.filter { it.isClearable }
         _counts.value = active.groupingBy { it.packageName }.eachCount()
-        _messages.value = active
+        // Le comunicazioni si prendono da tutte le notifiche visibili: alcune app (WhatsApp tra queste)
+        // marcano certe notifiche come non cancellabili o le raggruppano in modo diverso dalle altre.
+        _messages.value = visible
             .filter { it.isMessage() }
+            .distinctBy { it.key }
             .sortedByDescending { it.postTime }
             .take(8)
             .map { it.toMessage(service) }
@@ -157,7 +160,8 @@ object NotificationStore {
             title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
                 ?.takeIf { it.isNotBlank() } ?: extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
                 ?: labelOf(context, packageName),
-            text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty(),
+            text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))
+                ?.toString()?.takeIf { it.isNotBlank() } ?: lastMessageText(extras),
             postedAt = postTime,
             contentIntent = notification.contentIntent,
             actions = notification.actions.orEmpty()
@@ -168,6 +172,14 @@ object NotificationStore {
             isMessage = isMessage(),
         )
     }
+
+    /** Ultimo messaggio di una notifica in stile conversazione (WhatsApp, Signal…), se il testo semplice manca. */
+    private fun lastMessageText(extras: android.os.Bundle): String = runCatching {
+        @Suppress("DEPRECATION")
+        val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES) ?: return@runCatching ""
+        val last = messages.lastOrNull() as? android.os.Bundle ?: return@runCatching ""
+        last.getCharSequence("text")?.toString().orEmpty()
+    }.getOrDefault("")
 
     private fun labelOf(context: Context, pkg: String): String = runCatching {
         val pm = context.packageManager
