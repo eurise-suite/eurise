@@ -41,7 +41,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Date importanti (compleanni, anniversari, relazione, promemoria regalo 10 giorni prima).
 - Farmaci con orari di assunzione; le voci entrano automaticamente tra le attività con un avviso.
 
-## Note (`feature/notes`) – testo ricco provato e unito a `main`; disegno sul ramo `disegno`
+## Note (`feature/notes`) – testo ricco e disegno provati e uniti a `main`
 - Anteprime approvate: tela, pagina "Note".
 - Editor a blocchi: paragrafi, titolo e sottotitolo, elenchi puntati e numerati, elenchi di controllo,
   tabelle, collegamenti ad altre note, linea; grassetto, corsivo, sottolineato, colori ed evidenziatore
@@ -53,7 +53,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Salvataggio: database del telefono (Room v2, migrazione da v1) con il contenuto in HTML5 aperto
   (`doc/NoteHtml.kt`, con test). Lo stesso HTML diventerà la cartella della nota su Murena con la
   sincronizzazione: `NoteHtml.document()` produce già il file completo.
-- Disegno (ramo `disegno`, da provare): blocco disegno salvato come SVG dentro l'HTML (contorni pieni + punti
+- Disegno (provato col dito; col pennino si prova quando arriva il tablet): blocco disegno salvato come SVG dentro l'HTML (contorni pieni + punti
   originali in `data-points`), editor a schermo intero con penna e matita sensibili alla pressione,
   pennarello, evidenziatore, gomma, righello, inchiostro e otto tinte, tre spessori, fogli bianco/righe/
   quadretti, annulla e ripeti, forme riconosciute con "Tieni a mano", dito ignorato quando si usa il pennino.
@@ -67,7 +67,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Formato su cloud: una cartella per nota (HTML, disegni, allegati), come nel documento di progetto.
 - Proton Drive: l'SDK ufficiale è in anteprima e Proton lo dichiara non pronto per app di terze parti in
   produzione, senza login incluso (github.com/ProtonDriveApps/sdk, gennaio 2026). Da decidere con il proprietario.
-- Prima le anteprime sulla tela: account cloud nelle impostazioni, stato della sincronizzazione, conflitti.
+- Anteprime sulla tela, pagina "Cloud": account e cosa va dove, collegare un account, sincronizzazione,
+  nota cambiata in due posti. In attesa dell'approvazione del proprietario.
 - Idea del proprietario: taccuini "diario di viaggio" legati a Mappe e Galleria (il tipo di taccuino
   `travel` è già previsto nel database).
 
@@ -75,4 +76,4 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
-- Prossimo passo: provare il disegno (APK dal ramo `disegno`), poi anteprime e motore del cloud.
+- Prossimo passo: approvazione delle anteprime del cloud, poi il motore di sincronizzazione in `core`.
