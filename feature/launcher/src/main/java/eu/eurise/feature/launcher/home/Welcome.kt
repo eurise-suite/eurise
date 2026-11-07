@@ -306,8 +306,19 @@ private fun SmallRound(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 /** Terza pillola, a sinistra: gli ultimi lavori sul telefono. */
 @Composable
-fun WorkPill(files: List<RecentFile>, hasAccess: Boolean, hazeState: HazeState, modifier: Modifier, onOpen: (RecentFile) -> Unit, onGrant: () -> Unit) {
-    Pill(hazeState, modifier, title = stringResource(R.string.welcome_work)) {
+fun WorkPill(
+    files: List<RecentFile>,
+    hasAccess: Boolean,
+    hazeState: HazeState,
+    modifier: Modifier,
+    onOpen: (RecentFile) -> Unit,
+    onGrant: () -> Unit,
+    onScan: () -> Unit,
+) {
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_work), trailing = {
+        SmallRound(EuriseIcons.camera(2f), stringResource(R.string.welcome_scan), onScan)
+        Spacer(Modifier.width(2.dp))
+    }) {
         when {
             !hasAccess -> PillLine(EuriseIcons.folder(), stringResource(R.string.welcome_work_grant), null, onGrant)
             files.isEmpty() -> Text(stringResource(R.string.welcome_work_empty), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

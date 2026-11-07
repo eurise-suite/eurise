@@ -293,6 +293,15 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 if (intent != null) runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 else storagePermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
             },
+            onScan = {
+                // Lo scanner della suite non c'è ancora: si apre un'app di scansione installata, altrimenti la fotocamera.
+                val scanner = state.apps.firstOrNull { a ->
+                    a.euriseSection == null && (a.label.contains("scan", ignoreCase = true) || a.packageName.contains("scanner", ignoreCase = true) ||
+                        a.packageName.startsWith("de.schliweb.makeacopy"))
+                }
+                if (scanner != null) actions.openApp(scanner)
+                else runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
             onPlayer = {
                 val pkg = nowPlaying?.controller?.packageName
                 val intent = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) }
@@ -556,6 +565,7 @@ private class WelcomeData(
     val onOpenFile: (eu.eurise.feature.launcher.files.RecentFile) -> Unit,
     val onFilesGrant: () -> Unit,
     val onPlayer: () -> Unit,
+    val onScan: () -> Unit,
 )
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
@@ -663,7 +673,7 @@ private fun PhoneHome(
                     onHub = { actions.openEurise("today") },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    WorkPill(welcome.files, welcome.filesAccess, hazeState, Modifier.weight(1.35f), welcome.onOpenFile, welcome.onFilesGrant)
+                    WorkPill(welcome.files, welcome.filesAccess, hazeState, Modifier.weight(1.35f), welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
                     MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, Modifier.weight(1f), welcome.onPlayer, actions.grantNotifications)
                 }
             }
