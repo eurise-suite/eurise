@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -238,6 +239,7 @@ fun AppTile(
     modifier: Modifier = Modifier,
     iconSize: Dp = 56.dp,
     labelColor: Color = MaterialTheme.colorScheme.onBackground,
+    showLabel: Boolean = true,
 ) {
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
@@ -249,6 +251,7 @@ fun AppTile(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AppIcon(entry, iconSize, dark, badge)
+            if (showLabel) {
             Spacer(Modifier.height(6.dp))
             Text(
                 entry.label,
@@ -258,8 +261,9 @@ fun AppTile(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.width(iconSize + 20.dp),
+                modifier = Modifier.widthIn(max = iconSize + 20.dp),
             )
+            }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(

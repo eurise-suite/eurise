@@ -61,4 +61,61 @@
     <string name="setup_done">Attivo</string>
 
     <string name="time_now">adesso</string>
+
+    <string name="size_small">Piccola</string>
+    <string name="size_medium">Media</string>
+    <string name="size_wide">Larga</string>
+    <string name="size_large">Grande</string>
+    <string name="card_calendar_desc">Mese e prossimi appuntamenti</string>
+    <string name="card_messages_desc">Mail, chat, SMS e chiamate in un elenco</string>
+    <string name="card_music_desc">Il brano in ascolto da qualsiasi app</string>
+    <string name="card_weather_desc">Oggi e i prossimi giorni</string>
+    <string name="card_notes">Note fissate</string>
+    <string name="card_notes_desc">Le note fissate in cima alla lista</string>
+    <string name="card_notes_empty">Fissa una nota in Eurise Note per vederla qui.</string>
+    <string name="card_add">+ Scheda</string>
+    <string name="card_done">Fine</string>
+    <string name="card_remove">Togli la scheda</string>
+    <string name="card_edit_hint">Tieni premuta una scheda e trascinala per spostarla; toccala per cambiarne la misura.</string>
+    <string name="card_size_of">%1$s · misura</string>
+    <string name="card_catalog">Schede</string>
+    <string name="card_catalog_hint">Metti o togli le schede del Riepilogo, poi spostale e ridimensionale direttamente sulla pagina.</string>
+    <string name="card_inside">Nel Riepilogo · %1$d</string>
+    <string name="card_outside">Da aggiungere</string>
+    <string name="card_coming">In arrivo: Notizie, Borsa, Percorso, Documenti e i widget di altre app come Advanced Privacy.</string>
+
+    <string name="panel_display">Schermo e luminosità</string>
+    <string name="panel_note">Wi-Fi e Bluetooth aprono il pannello di sistema: Android non permette alle app di accenderli da sole.</string>
+    <string name="panel_other">Altro</string>
+    <string name="panel_empty">Nessuna notifica.</string>
+    <string name="state_on">Acceso</string>
+    <string name="state_off">Spento</string>
+    <string name="rotation_auto">Automatica</string>
+    <string name="rotation_locked">Bloccata</string>
+    <string name="tile_wifi">Wi-Fi</string>
+    <string name="tile_bluetooth">Bluetooth</string>
+    <string name="tile_torch">Torcia</string>
+    <string name="tile_dnd">Non disturbare</string>
+    <string name="tile_rotation">Rotazione</string>
+    <string name="tile_system">Tendina di sistema</string>
+    <string name="tile_system_sub">Tutti i comandi</string>
+
+    <string name="appearance_title">Griglia e icone</string>
+    <string name="appearance_columns">Colonne</string>
+    <string name="appearance_rows">Righe</string>
+    <string name="appearance_icon_size">Dimensione icone</string>
+    <string name="appearance_labels">Mostra i nomi delle app</string>
+    <string name="appearance_accent">Colore d\'accento</string>
+    <string name="appearance_custom">Colore personale</string>
+    <string name="appearance_hue">Tonalità</string>
+    <string name="appearance_light">Luminosità</string>
+    <string name="appearance_hint">Si apre tenendo premuto uno spazio vuoto della home. Le righe in più spingono in alto la scheda Oggi.</string>
+    <string name="tint_blu_notte">Blu notte</string>
+    <string name="tint_salvia">Salvia</string>
+    <string name="tint_ottone">Ottone</string>
+    <string name="tint_borgogna">Borgogna</string>
+    <string name="tint_petrolio">Petrolio</string>
+    <string name="tint_prugna">Prugna</string>
+    <string name="tint_terracotta">Terracotta</string>
+    <string name="tint_grafite">Grafite</string>
 </resources>

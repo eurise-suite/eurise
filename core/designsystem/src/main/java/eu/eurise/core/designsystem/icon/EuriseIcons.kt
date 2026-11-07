@@ -113,6 +113,20 @@ object EuriseIcons {
 
     fun mic(stroke: Float = Stroke) = icon("mic", stroke, "M9 4a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0z", "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21")
 
+    fun wifi(stroke: Float = Stroke) = icon("wifi", stroke, "M4.5 9.5a11 11 0 0 1 15 0M7.5 12.8a6.8 6.8 0 0 1 9 0M10.5 16a2.5 2.5 0 0 1 3 0M12 19.2h.01")
+
+    fun bluetooth(stroke: Float = Stroke) = icon("bluetooth", stroke, "M7 7l10 10-5 4V3l5 4L7 17")
+
+    fun torch(stroke: Float = Stroke) = icon("torch", stroke, "M8 3h8v4l-2 3v11h-4V10L8 7z", "M8 7h8")
+
+    fun moon(stroke: Float = Stroke) = icon("moon", stroke, "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z")
+
+    fun rotate(stroke: Float = Stroke) = icon("rotate", stroke, "M20 11a8 8 0 0 0-14.5-4.5M4 4v3.5h3.5M4 13a8 8 0 0 0 14.5 4.5M20 20v-3.5h-3.5")
+
+    fun minus(stroke: Float = 2.4f) = icon("minus", stroke, "M5 12h14")
+
+    fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"
 

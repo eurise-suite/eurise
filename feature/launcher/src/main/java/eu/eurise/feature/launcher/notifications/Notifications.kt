@@ -25,7 +25,13 @@ data class MessageItem(
     val postedAt: Long,
     /** Apre la conversazione nell'app che ha inviato la notifica. */
     val contentIntent: PendingIntent?,
+    /** Azioni della notifica che non chiedono di scrivere (per esempio "Segna come letto"). */
+    val actions: List<NotificationAction> = emptyList(),
+    val clearable: Boolean = true,
+    val isMessage: Boolean = false,
 )
+
+data class NotificationAction(val title: String, val intent: PendingIntent)
 
 /** Il brano in riproduzione, da qualsiasi app che usi una sessione multimediale. */
 data class NowPlaying(
@@ -47,6 +53,17 @@ object NotificationStore {
     private val _messages = MutableStateFlow<List<MessageItem>>(emptyList())
     val messages: StateFlow<List<MessageItem>> = _messages.asStateFlow()
 
+    /** Tutte le notifiche, per il Pannello Eurise. */
+    private val _all = MutableStateFlow<List<MessageItem>>(emptyList())
+    val all: StateFlow<List<MessageItem>> = _all.asStateFlow()
+
+    private var service: java.lang.ref.WeakReference<NotificationListenerService>? = null
+
+    /** Toglie una notifica, come lo scorrimento nella tendina di sistema. */
+    fun dismiss(key: String) {
+        service?.get()?.let { runCatching { it.cancelNotification(key) } }
+    }
+
     private val _nowPlaying = MutableStateFlow<NowPlaying?>(null)
     val nowPlaying: StateFlow<NowPlaying?> = _nowPlaying.asStateFlow()
 
@@ -54,8 +71,15 @@ object NotificationStore {
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
     internal fun update(service: NotificationListenerService) {
-        val active = runCatching { service.activeNotifications }.getOrNull().orEmpty()
-            .filter { it.isClearable && !it.notification.isGroupSummary() }
+        this.service = java.lang.ref.WeakReference(service)
+        val visible = runCatching { service.activeNotifications }.getOrNull().orEmpty()
+            .filter { !it.notification.isGroupSummary() && it.packageName != service.packageName }
+        _all.value = visible
+            .filter { it.notification.extras.getCharSequence(Notification.EXTRA_TITLE) != null }
+            .sortedByDescending { it.postTime }
+            .take(30)
+            .map { it.toMessage(service) }
+        val active = visible.filter { it.isClearable }
         _counts.value = active.groupingBy { it.packageName }.eachCount()
         _messages.value = active
             .filter { it.isMessage() }
@@ -85,7 +109,7 @@ object NotificationStore {
     internal fun setConnected(value: Boolean) {
         _connected.value = value
         if (!value) {
-            _counts.value = emptyMap(); _messages.value = emptyList(); _nowPlaying.value = null
+            _counts.value = emptyMap(); _messages.value = emptyList(); _all.value = emptyList(); _nowPlaying.value = null
         }
     }
 
@@ -114,6 +138,12 @@ object NotificationStore {
             text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty(),
             postedAt = postTime,
             contentIntent = notification.contentIntent,
+            actions = notification.actions.orEmpty()
+                .filter { it.remoteInputs.isNullOrEmpty() && it.actionIntent != null && !it.title.isNullOrBlank() }
+                .take(2)
+                .map { NotificationAction(it.title.toString(), it.actionIntent) },
+            clearable = isClearable,
+            isMessage = isMessage(),
         )
     }
 

@@ -14,6 +14,8 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
+import eu.eurise.feature.launcher.settings.LauncherSettings
+import eu.eurise.feature.launcher.settings.SettingsStore
 import eu.eurise.feature.launcher.weather.DayForecast
 import eu.eurise.feature.launcher.weather.WeatherRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,6 +59,8 @@ class LauncherViewModel(
     private val apps = AppsRepository(application)
     private val weatherRepo = WeatherRepository(application)
     private val prefs = application.getSharedPreferences("eurise_launcher", Context.MODE_PRIVATE)
+    private val settingsStore = SettingsStore(application)
+    val settings: StateFlow<LauncherSettings> = settingsStore.settings
     private val today = LocalDate.now()
 
     private val favoriteKeys = MutableStateFlow(loadFavoriteKeys())
@@ -101,10 +105,12 @@ class LauncherViewModel(
 
     fun toggleFavorite(entry: AppEntry) {
         val current = favoriteKeys.value
-        val next = if (entry.key in current) current - entry.key else (current + entry.key).take(MAX_FAVORITES)
+        val next = if (entry.key in current) current - entry.key else (current + entry.key).take(settings.value.maxFavorites)
         favoriteKeys.value = next
         prefs.edit().putString(KEY_FAVORITES, next.joinToString("|")).apply()
     }
+
+    fun updateSettings(transform: (LauncherSettings) -> LauncherSettings) = settingsStore.update(transform)
 
     /** Ricorda l'app appena aperta per la fila "Recenti" della ricerca. */
     fun recordLaunch(entry: AppEntry) {
@@ -144,7 +150,6 @@ class LauncherViewModel(
 
     private companion object {
         const val KEY_FAVORITES = "favorites"
-        const val MAX_FAVORITES = 5
         const val KEY_RECENTS = "recents"
         const val MAX_RECENTS = 8
     }

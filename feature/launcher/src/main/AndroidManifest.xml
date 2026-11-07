@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Scorrere in giù sulla Scrivania apre la tendina delle notifiche. -->
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <!-- Pannello Eurise: stato di Wi-Fi e Bluetooth, Non disturbare e rotazione (gli ultimi due solo se l'utente li consente). -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <!-- Elenco delle app da mostrare nelle categorie (solo quelle con un'icona nel launcher). -->
     <queries>

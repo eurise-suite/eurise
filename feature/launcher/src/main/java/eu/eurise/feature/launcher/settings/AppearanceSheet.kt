@@ -1,0 +1,212 @@
+package eu.eurise.feature.launcher.settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.feature.launcher.R
+
+/**
+ * Griglia e icone: colonne e righe dei preferiti, dimensione e nomi delle icone, colore d'accento.
+ * Le modifiche si vedono subito sulla home dietro il foglio.
+ */
+@Composable
+fun AppearanceSheet(settings: LauncherSettings, dark: Boolean, onChange: ((LauncherSettings) -> LauncherSettings) -> Unit, onClose: () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.18f))
+            .pointerInput(Unit) { detectTapGestures { onClose() } },
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
+                .pointerInput(Unit) { detectTapGestures { } }
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                Modifier.align(Alignment.CenterHorizontally).width(36.dp).height(4.dp)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), RoundedCornerShape(2.dp)),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.appearance_title), fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(
+                    stringResource(R.string.card_done), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClose).padding(6.dp),
+                )
+            }
+            Stepper(stringResource(R.string.appearance_columns), settings.columns, LauncherSettings.ColumnChoices) { v -> onChange { it.copy(columns = v) } }
+            Stepper(stringResource(R.string.appearance_rows), settings.rows, LauncherSettings.RowChoices) { v -> onChange { it.copy(rows = v) } }
+            Column {
+                Row {
+                    Text(stringResource(R.string.appearance_icon_size), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Text("${settings.iconSize} dp", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+                Slider(
+                    value = settings.iconSize.toFloat(),
+                    onValueChange = { v -> onChange { it.copy(iconSize = v.toInt()) } },
+                    valueRange = LauncherSettings.IconSizes.first.toFloat()..LauncherSettings.IconSizes.last.toFloat(),
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.appearance_labels), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
+            }
+            AccentPicker(settings.accent, dark) { a -> onChange { it.copy(accent = a) } }
+            Text(stringResource(R.string.appearance_hint), fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun Stepper(label: String, value: Int, choices: IntRange, onPick: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(96.dp))
+        Row(
+            Modifier.weight(1f).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
+        ) {
+            choices.forEach { option ->
+                val on = option == value
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(34.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                        .clickable(role = Role.RadioButton) { onPick(option) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "$option", fontSize = 14.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Le otto tinte della suite più un colore personale scelto con tonalità e luminosità. */
+@Composable
+private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit) {
+    val custom = accent as? Accent.Custom
+    var hue by remember { mutableFloatStateOf(custom?.let { hueOf(Color(it.argb)) } ?: 200f) }
+    var light by remember { mutableFloatStateOf(0.42f) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(stringResource(R.string.appearance_accent), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        val names = tintNames()
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            CalendarTint.entries.forEach { tint ->
+                Swatch(if (dark) tint.dark else tint.light, accent == Accent.Suite(tint), names[tint].orEmpty()) { onPick(Accent.Suite(tint)) }
+            }
+            Swatch(
+                color = custom?.color(dark) ?: Color.Transparent,
+                selected = custom != null,
+                label = stringResource(R.string.appearance_custom),
+                rainbow = custom == null,
+            ) { onPick(Accent.Custom(customColor(hue, light))) }
+        }
+        if (custom != null) {
+            Text(stringResource(R.string.appearance_hue), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp))
+                    .background(Brush.horizontalGradient((0..6).map { Color.hsl(it * 60f, 0.45f, 0.5f) })),
+            )
+            Slider(value = hue, onValueChange = { hue = it; onPick(Accent.Custom(customColor(hue, light))) }, valueRange = 0f..360f)
+            Text(stringResource(R.string.appearance_light), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Slider(value = light, onValueChange = { light = it; onPick(Accent.Custom(customColor(hue, light))) }, valueRange = 0.2f..0.75f)
+        }
+    }
+}
+
+@Composable
+private fun Swatch(color: Color, selected: Boolean, label: String, rainbow: Boolean = false, onClick: () -> Unit) {
+    val ring = MaterialTheme.colorScheme.onSurface
+    Box(
+        Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .then(if (selected) Modifier.border(2.dp, ring, CircleShape) else Modifier)
+            .padding(if (selected) 4.dp else 0.dp)
+            .clip(CircleShape)
+            .background(
+                if (rainbow) Brush.sweepGradient((0..6).map { Color.hsl(it * 60f % 360f, 0.45f, 0.55f) })
+                else Brush.linearGradient(listOf(color, color)),
+            )
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = label },
+    )
+}
+
+@Composable
+private fun tintNames(): Map<CalendarTint, String> = mapOf(
+    CalendarTint.BluNotte to stringResource(R.string.tint_blu_notte),
+    CalendarTint.Salvia to stringResource(R.string.tint_salvia),
+    CalendarTint.Ottone to stringResource(R.string.tint_ottone),
+    CalendarTint.Borgogna to stringResource(R.string.tint_borgogna),
+    CalendarTint.Petrolio to stringResource(R.string.tint_petrolio),
+    CalendarTint.Prugna to stringResource(R.string.tint_prugna),
+    CalendarTint.Terracotta to stringResource(R.string.tint_terracotta),
+    CalendarTint.Grafite to stringResource(R.string.tint_grafite),
+)
+
+private fun hueOf(c: Color): Float {
+    val max = maxOf(c.red, c.green, c.blue)
+    val min = minOf(c.red, c.green, c.blue)
+    val d = max - min
+    if (d == 0f) return 0f
+    val h = when (max) {
+        c.red -> ((c.green - c.blue) / d) % 6f
+        c.green -> (c.blue - c.red) / d + 2f
+        else -> (c.red - c.green) / d + 4f
+    } * 60f
+    return if (h < 0) h + 360f else h
+}

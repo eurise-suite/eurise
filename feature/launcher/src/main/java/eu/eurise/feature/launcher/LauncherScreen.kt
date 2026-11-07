@@ -1,6 +1,16 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.graphics.Color
+import eu.eurise.feature.launcher.panel.EurisePanel
+import eu.eurise.feature.launcher.settings.AppearanceSheet
+import eu.eurise.feature.launcher.settings.LauncherSettings
+import eu.eurise.feature.launcher.summary.CardKind
+import eu.eurise.feature.launcher.summary.PlacedCard
+import eu.eurise.feature.launcher.summary.PinnedNotesCard
+import eu.eurise.feature.launcher.summary.SummaryBoard
+import eu.eurise.feature.launcher.summary.WeatherCard
 import android.annotation.SuppressLint
 import android.provider.AlarmClock
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -132,6 +142,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val badges by NotificationStore.counts.collectAsState()
     val messages by NotificationStore.messages.collectAsState()
     val nowPlaying by NotificationStore.nowPlaying.collectAsState()
+    val allNotifications by NotificationStore.all.collectAsState()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -194,6 +206,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
     val scene = sceneFor(now)
     EuriseTheme(darkTheme = scene.dark) {
+      val accent = settings.accent.color(scene.dark)
+      val onAccent = if (0.2126f * accent.red + 0.7152f * accent.green + 0.0722f * accent.blue > 0.55f) Color(0xFF14171C) else Color.White
+      MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent)) {
       // Testi più compatti: interlinea stretta su tutta la Scrivania.
       ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.3.em)) {
         val hazeState = remember { HazeState() }
@@ -210,6 +225,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         }
         var category by remember { mutableStateOf(Category.Favorites) }
         var searching by remember { mutableStateOf(false) }
+        var panelOpen by remember { mutableStateOf(false) }
+        var appearance by remember { mutableStateOf(false) }
+        var editingCards by remember { mutableStateOf(false) }
         val homePager = rememberPagerState { 2 }
         val categoryPager = rememberPagerState { PageCategories.size }
         val scope = rememberCoroutineScope()
@@ -219,14 +237,20 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 if (category == Category.Favorites && !searching) homePager.animateScrollToPage(0)
                 category = Category.Favorites
                 searching = false
+                panelOpen = false
+                appearance = false
+                editingCards = false
             }
         }
         LaunchedEffect(categoryPager.currentPage) {
             if (category != Category.Favorites) category = PageCategories[categoryPager.currentPage]
         }
-        BackHandler(enabled = weatherSheet || searching || category != Category.Favorites || homePager.currentPage != 0) {
+        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || category != Category.Favorites || homePager.currentPage != 0) {
             when {
                 weatherSheet -> weatherSheet = false
+                appearance -> appearance = false
+                panelOpen -> panelOpen = false
+                editingCards -> editingCards = false
                 searching -> searching = false
                 category != Category.Favorites -> category = Category.Favorites
                 else -> scope.launch { homePager.animateScrollToPage(0) }
@@ -258,11 +282,15 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val summary: @Composable (Modifier) -> Unit = { modifier ->
-                    SummaryColumn(state, messages, nowPlaying, notificationsOn, setup, hazeState, actions, clearance, modifier)
+                    SummaryColumn(
+                        state, messages, nowPlaying, notificationsOn, setup, hazeState, actions, clearance, modifier,
+                        weather = weather, settings = settings, editing = editingCards, onEditingChange = { editingCards = it },
+                        onCardsChange = { cards -> viewModel.updateSettings { it.copy(cards = cards) } },
+                    )
                 }
 
-                if (searching) {
-                    // Durante la ricerca resta solo lo sfondo sfocato dietro al foglio.
+                if (searching || panelOpen) {
+                    // Durante la ricerca e nel pannello resta solo lo sfondo sfocato.
                 } else if (category == Category.Favorites) {
                     if (tablet) {
                         TabletHome(
@@ -271,7 +299,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                             clearance = clearance, summary = summary, onWeather = openWeather,
                         )
                     } else {
-                        HorizontalPager(homePager, Modifier.fillMaxSize()) { page ->
+                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards) { page ->
                             if (page == 0) {
                                 PhoneHome(
                                     now = now, weather = weather, hasLocation = hasLocation, state = state, badges = badges,
@@ -281,12 +309,15 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     isHome = isHome,
                                     onWeather = openWeather,
                                     onSearch = { searching = true },
+                                    onPanel = { panelOpen = true },
+                                    onAppearance = { appearance = true },
+                                    settings = settings,
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
                             }
                         }
-                        PageDots(homePager.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 6.dp))
+                        if (!editingCards) PageDots(homePager.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 6.dp))
                     }
                 } else {
                     Box(Modifier.fillMaxSize().background(scrimColor()))
@@ -309,11 +340,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
-                if (searching) {
+                if (searching || panelOpen || editingCards) {
                     // nessuna barra
                 } else if (tablet) {
                     TabletDock(
-                        favorites = state.favorites, badges = badges, dark = scene.dark, selected = category,
+                        favorites = state.favorites.take(settings.columns), badges = badges, dark = scene.dark, selected = category,
                         onOpen = actions.openApp, onSelect = ::select, onSearch = { searching = true },
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
                     )
@@ -343,7 +374,24 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (weatherSheet && weather != null) {
                 WeatherSheet(weather!!, onClose = { weatherSheet = false })
             }
+            if (panelOpen) {
+                EurisePanel(
+                    now = now,
+                    notifications = allNotifications,
+                    nowPlaying = nowPlaying,
+                    notificationsOn = notificationsOn,
+                    hazeState = hazeState,
+                    onOpen = { panelOpen = false; actions.openMessage(it) },
+                    onGrant = actions.grantNotifications,
+                    onSystemShade = { panelOpen = false; actions.expandNotifications() },
+                    onClose = { panelOpen = false },
+                )
+            }
+            if (appearance) {
+                AppearanceSheet(settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false })
+            }
         }
+      }
       }
     }
 }
@@ -380,70 +428,87 @@ private fun PhoneHome(
     isHome: Boolean,
     onWeather: () -> Unit,
     onSearch: () -> Unit,
+    onPanel: () -> Unit,
+    onAppearance: () -> Unit,
+    settings: LauncherSettings,
 ) {
-    // Scorrere in su apre ricerca e app recenti; scorrere in giù apre le notifiche.
+    // Sullo sfondo libero: in su ricerca e recenti, in giù il Pannello Eurise, pressione lunga Griglia e icone.
     val threshold = with(LocalDensity.current) { 56.dp.toPx() }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                var total = 0f
-                detectVerticalDragGestures(
-                    onDragStart = { total = 0f },
-                    onDragEnd = {
-                        if (total < -threshold) onSearch() else if (total > threshold) actions.expandNotifications()
-                    },
-                    onVerticalDrag = { _, dy -> total += dy },
-                )
-            }
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(horizontal = 20.dp),
-    ) {
-        if (!isHome) {
-            Spacer(Modifier.height(12.dp))
-            HomeBanner(hazeState, actions.becomeHome)
-            Spacer(Modifier.height(12.dp))
-        } else {
-            Spacer(Modifier.height(28.dp))
-        }
-        ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
-        Spacer(Modifier.height(4.dp))
-        WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
-        Spacer(Modifier.height(16.dp))
-        TodayCard(
-            now = now,
-            events = state.eventsToday,
-            calendarConnected = state.calendarConnected,
-            tasks = state.tasksDue,
-            hazeState = hazeState,
-            onOpen = { actions.openEurise("today") },
-            onConnectCalendar = actions.connectCalendar,
-            onTaskDone = onTaskDone,
-        )
-        Spacer(Modifier.weight(1f))
-        Label(stringResource(R.string.favorites), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
-        Spacer(Modifier.height(8.dp))
-        if (state.favorites.isEmpty()) {
-            androidx.compose.material3.Text(
-                stringResource(R.string.favorites_empty),
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-            )
-        } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                state.favorites.forEach { entry ->
-                    AppTile(
-                        entry = entry,
-                        dark = dark,
-                        badge = badges[entry.packageName] ?: 0,
-                        favorite = isFavorite(entry),
-                        onOpen = { actions.openApp(entry) },
-                        onToggleFavorite = { onToggleFavorite(entry) },
-                        onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    var total = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = { if (total < -threshold) onSearch() else if (total > threshold) onPanel() },
+                        onVerticalDrag = { _, dy -> total += dy },
                     )
                 }
+                .pointerInput(Unit) { detectTapGestures(onLongPress = { onAppearance() }) },
+        )
+        Column(
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 20.dp),
+        ) {
+            if (!isHome) {
+                Spacer(Modifier.height(12.dp))
+                HomeBanner(hazeState, actions.becomeHome)
+                Spacer(Modifier.height(12.dp))
+            } else {
+                Spacer(Modifier.height(28.dp))
             }
+            ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
+            Spacer(Modifier.height(4.dp))
+            WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
+            Spacer(Modifier.height(16.dp))
+            TodayCard(
+                now = now,
+                events = state.eventsToday,
+                calendarConnected = state.calendarConnected,
+                tasks = state.tasksDue,
+                hazeState = hazeState,
+                onOpen = { actions.openEurise("today") },
+                onConnectCalendar = actions.connectCalendar,
+                onTaskDone = onTaskDone,
+            )
+            Spacer(Modifier.weight(1f))
+            if (state.favorites.isEmpty()) {
+                androidx.compose.material3.Text(
+                    stringResource(R.string.favorites_empty),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                )
+            } else {
+                // Griglia dei preferiti: colonne e righe scelte in Griglia e icone.
+                val shown = state.favorites.take(settings.maxFavorites)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    shown.chunked(settings.columns).forEach { row ->
+                        Row(Modifier.fillMaxWidth()) {
+                            row.forEach { entry ->
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    AppTile(
+                                        entry = entry,
+                                        dark = dark,
+                                        badge = badges[entry.packageName] ?: 0,
+                                        favorite = isFavorite(entry),
+                                        onOpen = { actions.openApp(entry) },
+                                        onToggleFavorite = { onToggleFavorite(entry) },
+                                        onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
+                                        iconSize = settings.iconSize.dp,
+                                        showLabel = settings.showLabels,
+                                    )
+                                }
+                            }
+                            repeat(settings.columns - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(clearance - 4.dp))
         }
-        Spacer(Modifier.height(clearance - 4.dp))
     }
 }
 
@@ -458,31 +523,50 @@ private fun SummaryColumn(
     actions: LauncherActions,
     clearance: Dp,
     modifier: Modifier,
+    weather: List<eu.eurise.feature.launcher.weather.DayForecast>?,
+    settings: LauncherSettings,
+    editing: Boolean,
+    onEditingChange: (Boolean) -> Unit,
+    onCardsChange: (List<PlacedCard>) -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
-    LazyColumn(
-        modifier
-            .padding(horizontal = 16.dp)
-            .padding(top = insets.calculateTopPadding())
-            .clipToBounds(),
-        contentPadding = PaddingValues(top = 20.dp, bottom = clearance + 8.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            CalendarCard(
+    SummaryBoard(
+        cards = settings.cards,
+        editing = editing,
+        onEditingChange = onEditingChange,
+        onChange = onCardsChange,
+        hazeState = hazeState,
+        topPadding = 20.dp,
+        bottomPadding = if (editing) insets.calculateBottomPadding() + 16.dp else clearance + 8.dp,
+        modifier = modifier.padding(top = insets.calculateTopPadding()).clipToBounds(),
+        footer = { SetupCard(setup, hazeState) },
+    ) { card, cardModifier ->
+        when (card.kind) {
+            CardKind.Calendar -> CalendarCard(
                 today = state.today,
                 upcoming = state.upcoming,
                 connected = state.calendarConnected,
                 hazeState = hazeState,
                 onOpen = { actions.openEurise("calendar") },
                 onConnect = actions.connectCalendar,
+                size = card.size,
+                modifier = cardModifier,
+            )
+            CardKind.Messages -> MessagesCard(
+                messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.ownAppInfo,
+                actions.openMessage, size = card.size, modifier = cardModifier,
+            )
+            CardKind.Music -> MusicCard(nowPlaying, notificationsOn, hazeState, actions.grantNotifications, actions.ownAppInfo, card.size, cardModifier)
+            CardKind.Weather -> WeatherCard(weather, hazeState, actions.askLocation, card.size, cardModifier)
+            CardKind.PinnedNotes -> PinnedNotesCard(
+                notes = state.notes.filter { it.pinned },
+                hazeState = hazeState,
+                onOpen = { actions.openEurise("note:${it.id}") },
+                onOpenAll = { actions.openEurise("notes") },
+                size = card.size,
+                modifier = cardModifier,
             )
         }
-        item {
-            MessagesCard(messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.ownAppInfo, actions.openMessage)
-        }
-        item { MusicCard(nowPlaying, notificationsOn, hazeState, actions.grantNotifications, actions.ownAppInfo) }
-        item { SetupCard(setup, hazeState) }
     }
 }
 

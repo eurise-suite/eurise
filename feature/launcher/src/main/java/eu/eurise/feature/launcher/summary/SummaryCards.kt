@@ -40,6 +40,10 @@ import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.theme.colors
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.home.Label
+import eu.eurise.feature.launcher.home.skyIcon
+import eu.eurise.feature.launcher.weather.DayForecast
+import eu.eurise.core.data.model.Note
+import androidx.compose.ui.draw.clipToBounds
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NowPlaying
 import java.time.DayOfWeek
@@ -64,6 +68,7 @@ fun SummaryCard(
     Column(
         modifier
             .fillMaxWidth()
+            .clipToBounds()
             .glass(hazeState, RoundedCornerShape(28.dp), elevation = 8.dp, outline = false)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -83,17 +88,25 @@ fun CalendarCard(
     hazeState: HazeState,
     onOpen: () -> Unit,
     onConnect: () -> Unit,
+    size: CardSize = CardSize.Large,
+    modifier: Modifier = Modifier,
 ) {
-    SummaryCard(stringResource(R.string.card_calendar), hazeState, onClick = onOpen) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            MiniMonth(today, upcoming.map { it.firstDay }.toSet(), Modifier.weight(1f))
-            Column(Modifier.weight(1.1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                when {
-                    !connected -> TextButton(onClick = onConnect) { Text(stringResource(R.string.today_connect_calendar)) }
-                    upcoming.isEmpty() -> Text(stringResource(R.string.card_calendar_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    else -> upcoming.take(4).forEach { e -> UpcomingRow(e, today) }
-                }
+    val list: @Composable (Int) -> Unit = { max ->
+        when {
+            !connected -> TextButton(onClick = onConnect) { Text(stringResource(R.string.today_connect_calendar)) }
+            upcoming.isEmpty() -> Text(stringResource(R.string.card_calendar_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            else -> upcoming.take(max).forEach { e -> UpcomingRow(e, today) }
+        }
+    }
+    SummaryCard(stringResource(R.string.card_calendar), hazeState, modifier, onClick = onOpen) {
+        when (size) {
+            CardSize.Large -> Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                MiniMonth(today, upcoming.map { it.firstDay }.toSet(), Modifier.weight(1f))
+                Column(Modifier.weight(1.1f), verticalArrangement = Arrangement.spacedBy(10.dp)) { list(4) }
             }
+            CardSize.Wide -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { list(2) }
+            CardSize.Medium -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { list(3) }
+            CardSize.Small -> list(1)
         }
     }
 }
@@ -171,12 +184,15 @@ fun MessagesCard(
     onGrant: () -> Unit,
     onAppInfo: () -> Unit,
     onOpen: (MessageItem) -> Unit,
+    size: CardSize = CardSize.Large,
+    modifier: Modifier = Modifier,
 ) {
-    SummaryCard(stringResource(R.string.card_messages), hazeState) {
+    val max = when (size) { CardSize.Large -> 4; CardSize.Medium -> 3; else -> 2 }
+    SummaryCard(stringResource(R.string.card_messages), hazeState, modifier) {
         when {
             !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant, onAppInfo)
             messages.isEmpty() -> Text(stringResource(R.string.card_messages_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
-            else -> messages.take(4).forEach { m ->
+            else -> messages.take(max).forEach { m ->
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onOpen(m) }.padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -215,27 +231,124 @@ private fun ago(now: Long, at: Long): String {
 
 /** Musica: il brano in ascolto in qualsiasi app, con i comandi. Nessun logo: solo titolo, artista e app. */
 @Composable
-fun MusicCard(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, onGrant: () -> Unit, onAppInfo: () -> Unit) {
-    SummaryCard(stringResource(R.string.card_music), hazeState) {
+fun MusicCard(
+    playing: NowPlaying?,
+    enabled: Boolean,
+    hazeState: HazeState,
+    onGrant: () -> Unit,
+    onAppInfo: () -> Unit,
+    size: CardSize = CardSize.Wide,
+    modifier: Modifier = Modifier,
+) {
+    SummaryCard(stringResource(R.string.card_music), hazeState, modifier) {
         when {
             !enabled -> GrantText(stringResource(R.string.card_music_grant), onGrant, onAppInfo)
             playing == null -> Text(stringResource(R.string.card_music_idle), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
-            else -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(playing.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        listOf(playing.artist, playing.appLabel).filter { it.isNotBlank() }.joinToString(" · "),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
+            else -> MusicBody(playing, compact = size.half)
+        }
+    }
+}
+
+/** Titolo, artista e comandi; nelle schede strette i comandi vanno sotto. */
+@Composable
+fun MusicBody(playing: NowPlaying, compact: Boolean) {
+    val controls = playing.controller.transportControls
+    val info: @Composable () -> Unit = {
+        Column {
+            Text(playing.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOf(playing.artist, playing.appLabel).filter { it.isNotBlank() }.joinToString(" · "),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+    val buttons: @Composable () -> Unit = {
+        MediaButton(EuriseIcons.previous(), stringResource(R.string.music_previous)) { controls.skipToPrevious() }
+        MediaButton(
+            if (playing.playing) EuriseIcons.pause() else EuriseIcons.play(),
+            stringResource(if (playing.playing) R.string.music_pause else R.string.music_play),
+            filled = true,
+        ) { if (playing.playing) controls.pause() else controls.play() }
+        MediaButton(EuriseIcons.next(), stringResource(R.string.music_next)) { controls.skipToNext() }
+    }
+    if (compact) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            info()
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { buttons() }
+        }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { info() }
+            buttons()
+        }
+    }
+}
+
+/** Meteo: oggi, i prossimi giorni in riga o l'intera settimana. */
+@Composable
+fun WeatherCard(
+    forecast: List<DayForecast>?,
+    hazeState: HazeState,
+    onAsk: () -> Unit,
+    size: CardSize,
+    modifier: Modifier = Modifier,
+) {
+    SummaryCard(stringResource(R.string.weather_title), hazeState, modifier, onClick = if (forecast == null) onAsk else null) {
+        if (forecast.isNullOrEmpty()) {
+            Text(stringResource(R.string.weather_grant), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        } else if (size == CardSize.Wide) {
+            val days = 5
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                forecast.take(days).forEachIndexed { i, d ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(dayName(i, d), fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                        Icon(skyIcon(d.sky), null, modifier = Modifier.padding(vertical = 4.dp).size(20.dp))
+                        Text("${d.max}°", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("${d.min}°", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                val controls = playing.controller.transportControls
-                MediaButton(EuriseIcons.previous(), stringResource(R.string.music_previous)) { controls.skipToPrevious() }
-                MediaButton(
-                    if (playing.playing) EuriseIcons.pause() else EuriseIcons.play(),
-                    stringResource(if (playing.playing) R.string.music_pause else R.string.music_play),
-                    filled = true,
-                ) { if (playing.playing) controls.pause() else controls.play() }
-                MediaButton(EuriseIcons.next(), stringResource(R.string.music_next)) { controls.skipToNext() }
+            }
+        } else {
+            val days = when (size) { CardSize.Small -> 1; CardSize.Medium -> 3; else -> 7 }
+            forecast.take(days).forEachIndexed { i, d ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(skyIcon(d.sky), null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(dayName(i, d), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Text("${d.max}°", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    Text(" ${d.min}°", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun dayName(index: Int, d: DayForecast): String =
+    if (index == 0) stringResource(R.string.weather_today)
+    else d.date.format(DateTimeFormatter.ofPattern("EEE", Italian)).replaceFirstChar { it.titlecase(Italian) }
+
+/** Note fissate: le note in cima alla lista di Eurise. */
+@Composable
+fun PinnedNotesCard(
+    notes: List<Note>,
+    hazeState: HazeState,
+    onOpen: (Note) -> Unit,
+    onOpenAll: () -> Unit,
+    size: CardSize,
+    modifier: Modifier = Modifier,
+) {
+    val max = when (size) { CardSize.Large -> 5; CardSize.Medium -> 3; else -> 2 }
+    SummaryCard(stringResource(R.string.card_notes), hazeState, modifier, onClick = onOpenAll) {
+        if (notes.isEmpty()) {
+            Text(stringResource(R.string.card_notes_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
+        }
+        notes.take(max).forEach { n ->
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp)) {
+                Text(n.title.ifBlank { n.body.lineSequence().firstOrNull().orEmpty() }, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (n.title.isNotBlank() && n.body.isNotBlank()) {
+                    Text(n.body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
         }
     }
