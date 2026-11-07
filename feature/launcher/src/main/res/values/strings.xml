@@ -220,4 +220,7 @@
     <string name="welcome_places">Per arrivare a</string>
 
     <string name="welcome_scan">Scansiona un documento</string>
+
+    <string name="quick_camera">Fotocamera</string>
+    <string name="quick_gallery">Galleria</string>
 </resources>

@@ -643,7 +643,21 @@ private fun PhoneHome(
                 greeting(now, settings.userName),
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
             )
-            ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false)
+            val context = LocalContext.current
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f))
+                // Accanto all'orario: fotocamera sopra, galleria sotto.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.camera(2f), stringResource(R.string.quick_camera)) {
+                        runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    }
+                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.image(2f), stringResource(R.string.quick_gallery)) {
+                        runCatching {
+                            context.startActivity(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_GALLERY).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    }
+                }
+            }
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
             Spacer(Modifier.height(10.dp))
             Column(Modifier.padding(horizontal = (-6).dp.coerceAtLeast(0.dp)), verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -915,6 +929,15 @@ private fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
 
 /** Pagina della home nel pager (al centro tra Notizie e Riepilogo). */
 private const val HomePage = 1
+
+/** Piccola icona toccabile accanto all'orario, grande come i simboli del meteo. */
+@Composable
+private fun QuickIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { androidx.compose.material3.Icon(icon, label, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(18.dp)) }
+}
 
 /** Tre puntini sopra la barra: Notizie, Home e Riepilogo. */
 @Composable
