@@ -92,6 +92,32 @@ object FeedReader {
         return out
     }
 
+    /**
+     * Scarica una pagina web come testo semplice, limitandosi al corpo dell'articolo quando la pagina lo
+     * segna (`<article>` o il contenitore del testo dei siti WordPress).
+     */
+    fun pageText(url: String): String? {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 8_000
+            readTimeout = 10_000
+            instanceFollowRedirects = true
+            setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
+            setRequestProperty("Accept-Language", "it-IT,it;q=0.9")
+        }
+        return try {
+            if (connection.responseCode !in 200..299) return null
+            val html = connection.inputStream.bufferedReader().use { it.readText() }
+            val body = Regex("""(?is)<article\b.*?</article>""").find(html)?.value
+                ?: Regex("""(?is)<div[^>]+class="[^"]*(entry-content|article-body|post-content)[^"]*".*""").find(html)?.value
+                ?: html
+            stripHtml(body.replace(Regex("""(?is)<style.*?</style>"""), " ").replace(Regex("""(?i)</h[1-6]>|</li>|</strong>"""), "\n"))
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     fun stripHtml(html: String): String = html
         .replace(Regex("""(?s)<script.*?</script>"""), " ")
         .replace(Regex("""<br\s*/?>|</p>""", RegexOption.IGNORE_CASE), "\n")

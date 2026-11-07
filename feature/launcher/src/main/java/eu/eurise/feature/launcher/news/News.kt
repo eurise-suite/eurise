@@ -24,7 +24,15 @@ enum class FeedGroup { Agencies, National, Foreign, Local, Custom }
 data class Feed(val id: String, val name: String, val url: String, val group: FeedGroup)
 
 /** Una notizia da mostrare nella scheda. */
-data class NewsItem(val title: String, val source: String, val link: String, val publishedAt: Long, val province: String? = null)
+data class NewsItem(
+    val title: String,
+    val source: String,
+    val link: String,
+    val publishedAt: Long,
+    val province: String? = null,
+    /** Foto della notizia, se il feed ne indica una e l'utente ha scelto di vederle. */
+    val image: String? = null,
+)
 
 /**
  * Fonti proposte: agenzie, testate nazionali e locali (Campania). Si leggono direttamente dai siti, senza
@@ -69,6 +77,17 @@ class NewsRepository(context: Context) {
 
     private var cache: Pair<Long, List<NewsItem>>? = null
 
+    private val _photos = MutableStateFlow(prefs.getBoolean("photos", false))
+
+    /** Piccola foto accanto a ogni notizia (scaricata dal sito della testata). */
+    val photos: StateFlow<Boolean> = _photos
+
+    fun setPhotos(on: Boolean) {
+        _photos.value = on
+        prefs.edit().putBoolean("photos", on).apply()
+        cache = null
+    }
+
     fun setProvince(province: String, on: Boolean) {
         val next = if (on) _provinces.value + province else _provinces.value - province
         _provinces.value = next
@@ -112,6 +131,7 @@ class NewsRepository(context: Context) {
             // Le notizie della propria provincia delle ultime 24 ore vanno in cima, le altre per data.
             .sortedWith(compareByDescending<NewsItem> { it.province != null && now - it.publishedAt < 24 * 3_600_000L }.thenByDescending { it.publishedAt })
             .take(40)
+            .map { if (_photos.value) it else it.copy(image = null) }
         if (items.isNotEmpty()) cache = now to items
         return items
     }
@@ -137,22 +157,30 @@ class NewsRepository(context: Context) {
         parser.setInput(stream, null)
         val out = mutableListOf<NewsItem>()
         var inItem = false
-        var title = ""; var link = ""; var date = ""
+        var title = ""; var link = ""; var date = ""; var image: String? = null
         var event = parser.eventType
         while (event != XmlPullParser.END_DOCUMENT && out.size < 15) {
             when (event) {
                 XmlPullParser.START_TAG -> when (parser.name.lowercase()) {
-                    "item", "entry" -> { inItem = true; title = ""; link = ""; date = "" }
+                    "item", "entry" -> { inItem = true; title = ""; link = ""; date = ""; image = null }
                     "title" -> if (inItem) title = parser.nextText().trim()
                     "link" -> if (inItem) {
                         val href = parser.getAttributeValue(null, "href")
                         link = href ?: parser.nextText().trim()
                     }
                     "pubdate", "updated", "published", "dc:date" -> if (inItem && date.isEmpty()) date = parser.nextText().trim()
+                    "enclosure", "media:content", "media:thumbnail" -> if (inItem && image == null) {
+                        val type = parser.getAttributeValue(null, "type").orEmpty()
+                        val u = parser.getAttributeValue(null, "url")
+                        if (u != null && (type.isEmpty() || type.startsWith("image"))) image = u
+                    }
+                    "description", "content:encoded" -> if (inItem && image == null) {
+                        image = Regex("""<img[^>]+src=["']([^"']+)""").find(parser.nextText())?.groupValues?.get(1)
+                    }
                 }
                 XmlPullParser.END_TAG -> if (parser.name.lowercase() in setOf("item", "entry") && inItem) {
                     inItem = false
-                    if (title.isNotBlank() && link.isNotBlank()) out += NewsItem(clean(title), feed.name, link, parseDate(date))
+                    if (title.isNotBlank() && link.isNotBlank()) out += NewsItem(clean(title), feed.name, link, parseDate(date), image = image)
                 }
             }
             event = parser.next()

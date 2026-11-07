@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.feeds
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -74,9 +76,14 @@ enum class Sign(@StringRes val label: Int, val light: Color, val dark: Color) {
     fun color(dark: Boolean) = if (dark) this.dark else light
 }
 
-/** Oroscopo: Paolo Fox, l'astrologo più seguito in Italia, dalle testate che pubblicano il suo oroscopo del giorno. */
+/**
+ * Oroscopo: Paolo Fox, l'astrologo più seguito in Italia, dalle testate che pubblicano il suo oroscopo del giorno.
+ * Il Sussidiario si legge con la ricerca del suo sito (WordPress), che restituisce solo gli articoli
+ * dell'oroscopo; il testo del segno si prende poi dalla pagina dell'articolo.
+ */
 val HoroscopeSources = listOf(
-    FeedSource("sussidiario", "Paolo Fox · Il Sussidiario", "https://www.ilsussidiario.net/feed/"),
+    FeedSource("sussidiario", "Paolo Fox · Il Sussidiario", "https://www.ilsussidiario.net/?s=oroscopo+paolo+fox&feed=rss2"),
+    FeedSource("sussidiario_cat", "Oroscopo · Il Sussidiario", "https://www.ilsussidiario.net/news/oroscopo/feed/"),
     FeedSource("leggo", "Oroscopo · Leggo", "https://www.leggo.it/rss/oroscopo.xml"),
     FeedSource("ilmessaggero", "Oroscopo · Il Messaggero", "https://www.ilmessaggero.it/rss/oroscopo.xml"),
 )
@@ -89,22 +96,52 @@ val RecipeSources = listOf(
     FeedSource("misya", "Misya", "https://www.misya.info/feed"),
 )
 
-class DailyRepository(context: Context) {
+class DailyRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("eurise_daily", Context.MODE_PRIVATE)
-    val horoscope = FeedSources(context, "horoscope", HoroscopeSources, setOf("sussidiario", "leggo", "ilmessaggero"))
+    val horoscope = FeedSources(context, "horoscope", HoroscopeSources, setOf("sussidiario", "sussidiario_cat", "leggo", "ilmessaggero"))
     val recipes = FeedSources(context, "recipes", RecipeSources, setOf("giallozafferano", "cucchiaio", "cookist"))
 
     var sign: Sign
         get() = Sign.entries.getOrNull(prefs.getInt("sign", Sign.Leone.ordinal)) ?: Sign.Leone
         set(value) { prefs.edit().putInt("sign", value.ordinal).apply() }
 
-    /** L'oroscopo di oggi: la voce più recente che parla di oroscopo, con il passaggio sul segno scelto. */
-    suspend fun horoscopeFor(sign: Sign, name: String, force: Boolean = false): FeedEntry? {
-        val entries = horoscope.entries(force).filter { it.title.contains("oroscopo", ignoreCase = true) || it.title.contains("Paolo Fox", ignoreCase = true) }
-        val entry = entries.firstOrNull { it.title.contains(name, ignoreCase = true) } ?: entries.firstOrNull() ?: return null
-        val at = entry.text.indexOf(name, ignoreCase = true)
-        val excerpt = if (at >= 0) entry.text.substring(at).take(420) else entry.text.take(420)
-        return entry.copy(text = excerpt)
+    private val pageCache = mutableMapOf<String, String?>()
+
+    /**
+     * L'oroscopo di oggi per il segno scelto. Prende gli articoli più recenti che parlano di oroscopo, apre
+     * la pagina e ritaglia il passaggio sul segno: dal nome del segno fino al segno successivo. Se la pagina
+     * non si lascia leggere, usa il testo del feed.
+     */
+    suspend fun horoscopeFor(sign: Sign, name: String, force: Boolean = false): FeedEntry? = withContext(Dispatchers.IO) {
+        if (force) pageCache.clear()
+        val names = Sign.entries.map { context.getString(it.label) }
+        val entries = horoscope.entries(force)
+            .filter { it.title.contains("oroscopo", ignoreCase = true) || it.title.contains("Paolo Fox", ignoreCase = true) }
+            .sortedByDescending { it.publishedAt }
+        // Prima gli articoli del giorno con tutti i segni, poi quelli dedicati al segno scelto.
+        for (entry in entries.take(4)) {
+            val page = pageCache.getOrPut(entry.link) { FeedReader.pageText(entry.link) }
+            val passage = page?.let { signPassage(it, name, names) } ?: signPassage(entry.text, name, names)
+            if (passage != null) return@withContext entry.copy(text = passage)
+        }
+        val entry = entries.firstOrNull { it.title.contains(name, ignoreCase = true) } ?: return@withContext null
+        entry.copy(text = entry.text.take(420))
+    }
+
+    /** Il tratto di testo che parla del segno: la parte più lunga che va dal suo nome al nome di un altro segno. */
+    private fun signPassage(text: String, name: String, names: List<String>): String? {
+        val others = names.filterNot { it.equals(name, ignoreCase = true) }
+        val mine = Regex("""\b${Regex.escape(name)}\b""", RegexOption.IGNORE_CASE).findAll(text).map { it.range.last + 1 }.toList()
+        if (mine.isEmpty()) return null
+        val boundaries = others.flatMap { o ->
+            Regex("""\b${Regex.escape(o)}\b""", RegexOption.IGNORE_CASE).findAll(text).map { it.range.first }.toList()
+        }.sorted()
+        val best = mine.map { start ->
+            val end = boundaries.firstOrNull { it > start } ?: minOf(text.length, start + 900)
+            text.substring(start, end)
+        }.maxByOrNull { it.length } ?: return null
+        val clean = best.trimStart(':', '.', ' ', '\n', '-', '–', ',').replace(Regex("""\s+"""), " ").trim()
+        return clean.takeIf { it.length >= 60 }?.take(700)
     }
 
     /** Una ricetta per sito, la più recente di ciascuno. */

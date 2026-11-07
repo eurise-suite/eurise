@@ -85,6 +85,10 @@
     <string name="card_coming">In arrivo: Percorso, Documenti e i widget di altre app come Advanced Privacy.</string>
 
     <string name="panel_display">Schermo e luminosità</string>
+    <string name="panel_settings">Impostazioni</string>
+    <string name="panel_brightness">Luminosità</string>
+    <string name="panel_brightness_auto">Auto</string>
+    <string name="panel_volume">Volume</string>
     <string name="panel_note">Wi-Fi e Bluetooth aprono il pannello di sistema: Android non permette alle app di accenderli da sole.</string>
     <string name="panel_other">Altro</string>
     <string name="panel_empty">Nessuna notifica.</string>
@@ -137,6 +141,7 @@
     <string name="news_loading">Aggiornamento…</string>
     <string name="news_empty">Nessuna notizia. Controlla la connessione o scegli le fonti.</string>
     <string name="news_sources_title">Fonti delle notizie</string>
+    <string name="news_photos">Foto piccola accanto a ogni notizia</string>
     <string name="news_group_agencies">Agenzie</string>
     <string name="news_group_national">Testate nazionali</string>
     <string name="news_group_foreign">Testate estere</string>

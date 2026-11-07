@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import java.time.YearMonth
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -615,18 +617,47 @@ fun NewsCard(
             items == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             items.isEmpty() -> Text(stringResource(R.string.news_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
             else -> items.take(max).forEach { n ->
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp)) {
-                    Text(
-                        n.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, lineHeight = 17.sp,
-                        maxLines = if (size.half) 3 else 2, overflow = TextOverflow.Ellipsis,
-                    )
-                    val meta = listOfNotNull(n.province, n.source, if (n.publishedAt > 0) agoText(now, n.publishedAt) else null).joinToString(" · ")
-                    Text(meta, color = if (n.province != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (n.image != null) {
+                        NewsThumb(n.image)
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            n.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, lineHeight = 18.sp,
+                            maxLines = if (size.half) 3 else 2, overflow = TextOverflow.Ellipsis,
+                        )
+                        val meta = listOfNotNull(n.province, n.source, if (n.publishedAt > 0) agoText(now, n.publishedAt) else null).joinToString(" · ")
+                        Text(meta, color = if (n.province != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
         }
     }
 }
+
+/** Foto piccola della notizia; le immagini già scaricate restano in memoria finché il launcher è aperto. */
+@Composable
+private fun NewsThumb(url: String) {
+    var bitmap by remember(url) { mutableStateOf(NewsThumbs[url]) }
+    LaunchedEffect(url) {
+        if (bitmap == null) eu.eurise.feature.launcher.feeds.FeedReader.image(url, maxSide = 160)?.let { NewsThumbs[url] = it; bitmap = it }
+    }
+    Box(
+        Modifier.size(52.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
+    ) {
+        bitmap?.let {
+            androidx.compose.foundation.Image(it, null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+    }
+}
+
+private val NewsThumbs = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, androidx.compose.ui.graphics.ImageBitmap>(64, 0.75f, true) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, androidx.compose.ui.graphics.ImageBitmap>?) = size > 80
+})
 
 @Composable
 private fun agoText(now: Long, at: Long): String = ago(now, at)

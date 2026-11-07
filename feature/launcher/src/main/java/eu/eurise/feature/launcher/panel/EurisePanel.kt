@@ -138,12 +138,13 @@ fun EurisePanel(
                             fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                    RoundButton(EuriseIcons.sun(), stringResource(R.string.panel_display), hazeState) {
-                        context.startSafely(Intent(Settings.ACTION_DISPLAY_SETTINGS))
+                    RoundButton(EuriseIcons.gear(), stringResource(R.string.panel_settings), hazeState) {
+                        context.startSafely(Intent(Settings.ACTION_SETTINGS))
                     }
                 }
             }
             item { QuickTiles(context, refresh, hazeState, onSystemShade) { refresh++ } }
+            item { LevelSliders(context, refresh, hazeState) }
             item {
                 Text(
                     stringResource(R.string.panel_note),
@@ -471,4 +472,83 @@ private fun NotificationRow(n: MessageItem, hazeState: HazeState, onOpen: (Messa
 
 private fun Context.startSafely(intent: Intent) {
     runCatching { startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+
+/**
+ * Luminosità e volume, come nella tendina di sistema. La luminosità chiede una volta il permesso di
+ * modificare le impostazioni; finché manca, toccare la barra apre la pagina per concederlo.
+ */
+@Composable
+private fun LevelSliders(context: Context, refresh: Int, hazeState: HazeState) {
+    val audio = remember { context.getSystemService(android.media.AudioManager::class.java) }
+    val stream = android.media.AudioManager.STREAM_MUSIC
+    val maxVolume = remember { audio.getStreamMaxVolume(stream).coerceAtLeast(1) }
+    var canWrite by remember(refresh) { mutableStateOf(Settings.System.canWrite(context)) }
+    var brightness by remember(refresh) {
+        mutableStateOf(runCatching { Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255f }.getOrDefault(0.5f))
+    }
+    var auto by remember(refresh) {
+        mutableStateOf(
+            runCatching { Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE) }.getOrDefault(0) ==
+                Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
+        )
+    }
+    var volume by remember(refresh) { mutableStateOf(audio.getStreamVolume(stream) / maxVolume.toFloat()) }
+    fun askWrite() = context.startSafely(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, android.net.Uri.parse("package:" + context.packageName)))
+
+    Column(
+        Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(24.dp), elevation = 6.dp, outline = false)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.sun(), stringResource(R.string.panel_brightness), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            Box(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                androidx.compose.material3.Slider(
+                    value = brightness,
+                    onValueChange = { v ->
+                        if (!canWrite) { canWrite = Settings.System.canWrite(context); if (!canWrite) { askWrite(); return@Slider } }
+                        brightness = v
+                        runCatching {
+                            if (auto) {
+                                Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                                auto = false
+                            }
+                            Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (v * 255).toInt().coerceIn(1, 255))
+                        }
+                    },
+                )
+            }
+            Text(
+                stringResource(R.string.panel_brightness_auto), fontSize = 12.sp, fontWeight = if (auto) FontWeight.Bold else FontWeight.Normal,
+                color = if (auto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable {
+                    if (!Settings.System.canWrite(context)) { askWrite(); return@clickable }
+                    auto = !auto
+                    runCatching {
+                        Settings.System.putInt(
+                            context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                            if (auto) Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC else Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+                        )
+                    }
+                }.padding(horizontal = 6.dp, vertical = 4.dp),
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.music(), stringResource(R.string.panel_volume), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            Box(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                androidx.compose.material3.Slider(
+                    value = volume,
+                    onValueChange = { v ->
+                        volume = v
+                        runCatching { audio.setStreamVolume(stream, (v * maxVolume).toInt(), 0) }
+                    },
+                )
+            }
+            Text(
+                "${(volume * 100).toInt()}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(40.dp),
+            )
+        }
+    }
 }

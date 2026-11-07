@@ -2,6 +2,7 @@ package eu.eurise.feature.launcher
 
 import android.Manifest
 import eu.eurise.feature.launcher.home.HealthPill
+import eu.eurise.feature.launcher.home.openOnSwipe
 import eu.eurise.feature.launcher.home.PersonalDays
 import eu.eurise.feature.launcher.home.SunTimesColumn
 import eu.eurise.feature.launcher.folders.AppPicker
@@ -272,10 +273,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       val onAccent = if (0.2126f * accent.red + 0.7152f * accent.green + 0.0722f * accent.blue > 0.55f) Color(0xFF14171C) else Color.White
       MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent)) {
       // Testi più compatti: interlinea stretta su tutta la Scrivania.
-      ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.3.em)) {
+      ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.4.em)) {
       androidx.compose.runtime.CompositionLocalProvider(
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
+          // Sulla Scrivania le bolle si staccano appena un po' di più dallo sfondo.
+          eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors),
       ) {
         val hazeState = remember { HazeState() }
         var weatherSheet by remember { mutableStateOf(false) }
@@ -413,7 +416,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         Box(Modifier.fillMaxSize()) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))
 
-            BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Da ogni pagina: in su ricerca e app, in giù il Pannello Eurise (non mentre si modifica o c'è un foglio aperto).
+            BoxWithConstraints(
+                Modifier.fillMaxSize().then(
+                    if (searching || panelOpen || editingCards || categoryEditor || appearance) Modifier
+                    else Modifier.openOnSwipe(onUp = { searching = true }, onDown = { panelOpen = true }),
+                ),
+            ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
                     SummaryColumn(
@@ -739,14 +748,6 @@ private fun PhoneHome(
         Box(
             Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    var total = 0f
-                    detectVerticalDragGestures(
-                        onDragStart = { total = 0f },
-                        onDragEnd = { if (total < -threshold) onSearch() else if (total > threshold) onPanel() },
-                        onVerticalDrag = { _, dy -> total += dy },
-                    )
-                }
                 .pointerInput(Unit) { detectTapGestures(onLongPress = { onAppearance() }) },
         )
         Column(
@@ -1200,3 +1201,12 @@ private fun WeatherSheet(days: List<eu.eurise.feature.launcher.weather.DayForeca
         }
     }
 }
+
+
+/**
+ * Vetro della Scrivania: un velo un poco più pieno di quello delle app, così le bolle si distinguono
+ * dallo sfondo illustrato anche quando i colori sono chiari e simili.
+ */
+private fun launcherGlass(base: eu.eurise.core.designsystem.theme.EuriseExtraColors) = base.copy(
+    glass = if (base.isDark) androidx.compose.ui.graphics.Color(0xBF20252E) else androidx.compose.ui.graphics.Color(0xC2FBFBF9),
+)

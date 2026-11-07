@@ -145,7 +145,9 @@ fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
         FeedGroup.National to R.string.news_group_national,
         FeedGroup.Foreign to R.string.news_group_foreign,
     )
+    val photos by repository.photos.collectAsState()
     BottomSheet(stringResource(R.string.news_sources_title), onClose) {
+        item { SwitchRow(stringResource(R.string.news_photos), photos, { repository.setPhotos(it) }) }
         groups.forEach { (group, label) ->
             item { Box(Modifier.padding(top = 12.dp, bottom = 2.dp)) { Label(stringResource(label)) } }
             items(BuiltInFeeds.filter { it.group == group }, key = { it.id }) { feed ->
