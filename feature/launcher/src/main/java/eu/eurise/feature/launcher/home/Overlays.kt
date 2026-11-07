@@ -64,13 +64,14 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
-import eu.eurise.feature.launcher.apps.Category
+import eu.eurise.feature.launcher.apps.BarCategory
 
 /** Le pagine delle categorie: si scorre dall'una all'altra; la barra in basso segue la pagina. */
 @Composable
 fun CategoryPages(
     pager: PagerState,
-    categories: List<Category>,
+    categories: List<BarCategory>,
+    categoryOf: (AppEntry) -> BarCategory?,
     apps: List<AppEntry>,
     dark: Boolean,
     badges: Map<String, Int>,
@@ -78,12 +79,13 @@ fun CategoryPages(
     onOpen: (AppEntry) -> Unit,
     onToggleFavorite: (AppEntry) -> Unit,
     onInfo: (AppEntry) -> Unit,
+    onMoveTo: (AppEntry, BarCategory) -> Unit,
     bottomClearance: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
     HorizontalPager(pager, modifier) { page ->
         val category = categories[page]
-        val list = apps.filter { it.category == category }
+        val list = apps.filter { categoryOf(it)?.id == category.id }
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(24.dp))
             Text(
@@ -112,6 +114,8 @@ fun CategoryPages(
                             onOpen = { onOpen(app) },
                             onToggleFavorite = { onToggleFavorite(app) },
                             onInfo = if (app.component != null) ({ onInfo(app) }) else null,
+                            moveTargets = categories.filter { it.id != category.id },
+                            onMoveTo = { onMoveTo(app, it) },
                         )
                     }
                 }

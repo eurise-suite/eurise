@@ -153,4 +153,18 @@
     <string name="stocks_title">Titoli della Borsa</string>
     <string name="stocks_hint">Simboli come su Yahoo Finance: ENI.MI per Eni a Milano, ^GDAXI per il DAX, EURUSD=X per il cambio euro/dollaro.</string>
     <string name="stocks_add_hint">Simbolo da aggiungere</string>
+
+    <string name="app_move_to">Sposta in…</string>
+    <string name="categories_title">Barra delle categorie</string>
+    <string name="categories_summary">%1$d categorie · riordina, aggiungi, cambia simboli</string>
+    <string name="categories_hint">Da 3 a 7 categorie. Trascina dalla maniglia per riordinarle; tocca una categoria per cambiarne nome e simbolo. Le app si spostano tenendole premute → Sposta in…</string>
+    <string name="categories_reorder">Trascina per riordinare</string>
+    <string name="categories_home">La home</string>
+    <string name="categories_apps">%1$d app</string>
+    <string name="categories_remove">Togli la categoria</string>
+    <string name="categories_new">Nuova categoria</string>
+    <string name="categories_add">Aggiungi</string>
+    <string name="categories_count">%1$d di %2$d</string>
+    <string name="categories_symbol">Simbolo di %1$s</string>
+    <string name="categories_select_hint">Tocca una categoria per sceglierne il simbolo. Tieni premuta la barra in basso per tornare qui.</string>
 </resources>

@@ -95,7 +95,11 @@ import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
-import eu.eurise.feature.launcher.apps.Category
+import eu.eurise.feature.launcher.apps.BarCategory
+import eu.eurise.feature.launcher.apps.FAVORITES
+import eu.eurise.feature.launcher.apps.LocalCategoryTint
+import eu.eurise.feature.launcher.apps.resolveCategory
+import eu.eurise.feature.launcher.settings.CategoryEditor
 import eu.eurise.feature.launcher.apps.launch
 import eu.eurise.feature.launcher.apps.openEurise
 import eu.eurise.feature.launcher.home.AppTile
@@ -124,8 +128,6 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 /** Le categorie della barra; Preferiti riporta alla home. */
-private val BarCategories = Category.entries.toList()
-private val PageCategories = BarCategories.drop(1)
 
 /** Lato corto da cui il dispositivo è un tablet: un telefono in orizzontale resta un telefono. */
 private const val TabletSmallestWidth = 600
@@ -220,7 +222,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent)) {
       // Testi più compatti: interlinea stretta su tutta la Scrivania.
       ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.3.em)) {
-      androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons) {
+      androidx.compose.runtime.CompositionLocalProvider(
+          eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
+          LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
+      ) {
         val hazeState = remember { HazeState() }
         var weatherSheet by remember { mutableStateOf(false) }
         val openWeather: () -> Unit = {
@@ -233,7 +238,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 else -> actions.askLocation()
             }
         }
-        var category by remember { mutableStateOf(Category.Favorites) }
+        // Categoria scelta nella barra, per id; "favorites" è la home.
+        var category by remember { mutableStateOf(FAVORITES) }
+        var categoryEditor by remember { mutableStateOf(false) }
+        val barCategories = settings.categories
+        val pageCategories = barCategories.filterNot { it.isFavorites }
+        if (category != FAVORITES && pageCategories.none { it.id == category }) category = FAVORITES
+        val categoryOf: (AppEntry) -> BarCategory? = { entry -> resolveCategory(entry, barCategories, settings.categoryOverrides) }
         var searching by remember { mutableStateOf(false) }
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
@@ -242,13 +253,14 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }
         var newsSheet by remember { mutableStateOf(false) }
         var stocksSheet by remember { mutableStateOf(false) }
-        val categoryPager = rememberPagerState { PageCategories.size }
+        val categoryPager = rememberPagerState { pageCategories.size }
         val scope = rememberCoroutineScope()
 
         LaunchedEffect(homePresses) {
             if (homePresses > 0) {
-                if (category == Category.Favorites && !searching) homePager.animateScrollToPage(HomePage)
-                category = Category.Favorites
+                if (category == FAVORITES && !searching) homePager.animateScrollToPage(HomePage)
+                category = FAVORITES
+                categoryEditor = false
                 searching = false
                 panelOpen = false
                 appearance = false
@@ -256,9 +268,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             }
         }
         LaunchedEffect(categoryPager.currentPage) {
-            if (category != Category.Favorites) category = PageCategories[categoryPager.currentPage]
+            if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || category != Category.Favorites || homePager.currentPage != HomePage) {
+        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
             when {
                 weatherSheet -> weatherSheet = false
                 newsSheet -> { newsSheet = false; viewModel.refreshNews(force = true) }
@@ -267,14 +279,15 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 panelOpen -> panelOpen = false
                 editingCards -> editingCards = false
                 searching -> searching = false
-                category != Category.Favorites -> category = Category.Favorites
+                categoryEditor -> categoryEditor = false
+                category != FAVORITES -> category = FAVORITES
                 else -> scope.launch { homePager.animateScrollToPage(HomePage) }
             }
         }
 
-        fun select(c: Category) {
-            category = c
-            if (c != Category.Favorites) scope.launch { categoryPager.scrollToPage(PageCategories.indexOf(c)) }
+        fun select(c: BarCategory) {
+            category = c.id
+            if (!c.isFavorites) scope.launch { categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == c.id }.coerceAtLeast(0)) }
         }
 
         val setup = listOf(
@@ -311,7 +324,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
                 if (searching || panelOpen) {
                     // Durante la ricerca e nel pannello resta solo lo sfondo sfocato.
-                } else if (category == Category.Favorites) {
+                } else if (category == FAVORITES) {
                     if (tablet) {
                         TabletHome(
                             now = now, weather = weather, hasLocation = hasLocation, state = state,
@@ -346,7 +359,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     Box(Modifier.fillMaxSize().background(scrimColor()))
                     CategoryPages(
                         pager = categoryPager,
-                        categories = PageCategories,
+                        categories = pageCategories,
+                        categoryOf = categoryOf,
                         apps = state.apps,
                         dark = scene.dark,
                         badges = badges,
@@ -354,6 +368,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         onOpen = actions.openApp,
                         onToggleFavorite = viewModel::toggleFavorite,
                         onInfo = actions.appInfo,
+                        onMoveTo = { app, target ->
+                            viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to target.id)) }
+                        },
                         bottomClearance = clearance,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -363,18 +380,19 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
-                if (searching || panelOpen || editingCards) {
+                if (searching || panelOpen || editingCards || categoryEditor) {
                     // nessuna barra
                 } else if (tablet) {
                     TabletDock(
-                        favorites = state.favorites.take(settings.columns), badges = badges, dark = scene.dark, selected = category,
-                        onOpen = actions.openApp, onSelect = ::select, onSearch = { searching = true },
+                        favorites = state.favorites.take(settings.columns), badges = badges, dark = scene.dark,
+                        categories = barCategories, selected = category,
+                        onOpen = actions.openApp, onSelect = ::select, onSearch = { searching = true }, onEdit = { categoryEditor = true },
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
                     )
                 } else {
                     CategoryBar(
-                        categories = BarCategories, selected = category, onSelect = ::select, onSearch = { searching = true },
-                        hazeState = hazeState, modifier = barModifier.fillMaxWidth(),
+                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true },
+                        hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
                     )
                 }
             }
@@ -416,8 +434,20 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (stocksSheet) {
                 StocksSheet(viewModel.markets, onClose = { stocksSheet = false; viewModel.refreshQuotes() })
             }
+            if (categoryEditor) {
+                CategoryEditor(
+                    categories = barCategories,
+                    appCount = { c -> state.apps.count { categoryOf(it)?.id == c.id } },
+                    hazeState = hazeState,
+                    onChange = { list -> viewModel.updateSettings { it.copy(categories = list) } },
+                    onClose = { categoryEditor = false },
+                )
+            }
             if (appearance) {
-                AppearanceSheet(settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false })
+                AppearanceSheet(
+                    settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false },
+                    onEditCategories = { appearance = false; categoryEditor = true },
+                )
             }
         }
       }
@@ -664,10 +694,12 @@ private fun TabletDock(
     favorites: List<AppEntry>,
     badges: Map<String, Int>,
     dark: Boolean,
-    selected: Category,
+    categories: List<BarCategory>,
+    selected: String,
     onOpen: (AppEntry) -> Unit,
-    onSelect: (Category) -> Unit,
+    onSelect: (BarCategory) -> Unit,
     onSearch: () -> Unit,
+    onEdit: () -> Unit,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
@@ -692,7 +724,7 @@ private fun TabletDock(
             }
             if (favorites.isNotEmpty()) DockDivider()
             Row(Modifier.weight(1f)) {
-                BarCategories.forEach { c -> CategoryButton(c, c == selected, { onSelect(c) }, Modifier.weight(1f)) }
+                categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
             }
         }
         SearchCircle(hazeState, onSearch, Modifier)

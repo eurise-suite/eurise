@@ -52,7 +52,13 @@ import eu.eurise.feature.launcher.R
  * Le modifiche si vedono subito sulla home dietro il foglio.
  */
 @Composable
-fun AppearanceSheet(settings: LauncherSettings, dark: Boolean, onChange: ((LauncherSettings) -> LauncherSettings) -> Unit, onClose: () -> Unit) {
+fun AppearanceSheet(
+    settings: LauncherSettings,
+    dark: Boolean,
+    onChange: ((LauncherSettings) -> LauncherSettings) -> Unit,
+    onClose: () -> Unit,
+    onEditCategories: () -> Unit,
+) {
     Box(
         Modifier
             .fillMaxSize()
@@ -120,6 +126,19 @@ fun AppearanceSheet(settings: LauncherSettings, dark: Boolean, onChange: ((Launc
                         }
                     }
                 }
+            }
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onEditCategories).padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.categories_title), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        stringResource(R.string.categories_summary, settings.categories.size),
+                        fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             AccentPicker(settings.accent, dark) { a -> onChange { it.copy(accent = a) } }
             Text(stringResource(R.string.appearance_hint), fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

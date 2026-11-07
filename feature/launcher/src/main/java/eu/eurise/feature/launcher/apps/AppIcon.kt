@@ -149,6 +149,9 @@ private object SystemGlyphs {
 /** Vero quando i simboli delle icone prendono colori vari invece del colore della categoria. */
 val LocalVariedIcons = androidx.compose.runtime.compositionLocalOf { false }
 
+/** Colore del simbolo secondo la categoria della barra in cui sta l'app (fornito dalla Scrivania). */
+val LocalCategoryTint = androidx.compose.runtime.compositionLocalOf<(AppEntry) -> Color?> { { null } }
+
 /** Fondo dei tondi delle icone: blu notte di giorno, grafite di sera. */
 val IconBackgroundLight = Color(0xFF1F2A44)
 val IconBackgroundDark = Color(0xFF262B33)
@@ -165,7 +168,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     val tint = if (LocalVariedIcons.current) {
         eu.eurise.feature.launcher.settings.IconPalette[Math.floorMod(entry.packageName.hashCode() + entry.label.hashCode(), eu.eurise.feature.launcher.settings.IconPalette.size)]
     } else {
-        entry.category.tint.dark
+        LocalCategoryTint.current(entry) ?: entry.category.tint.dark
     }
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Box(

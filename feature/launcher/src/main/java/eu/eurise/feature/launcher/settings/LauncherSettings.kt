@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.feature.launcher.apps.BarCategory
+import eu.eurise.feature.launcher.apps.DefaultBarCategories
+import eu.eurise.feature.launcher.apps.decodeCategories
+import eu.eurise.feature.launcher.apps.encodeCategories
 import eu.eurise.feature.launcher.summary.DefaultLeftCards
 import eu.eurise.feature.launcher.summary.PlacedCard
 import eu.eurise.feature.launcher.summary.decodeCards
@@ -82,6 +86,10 @@ data class LauncherSettings(
     val cards: List<PlacedCard> = decodeCards(null),
     /** Schede della pagina a sinistra della home. */
     val leftCards: List<PlacedCard> = DefaultLeftCards,
+    /** Categorie della barra in basso, da 3 a 7, nell'ordine scelto. */
+    val categories: List<BarCategory> = DefaultBarCategories,
+    /** App spostate a mano in un'altra categoria: chiave dell'app → id della categoria. */
+    val categoryOverrides: Map<String, String> = emptyMap(),
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -116,6 +124,8 @@ class SettingsStore(context: Context) {
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
             .putString("left_cards", next.leftCards.encode())
+            .putString("bar_categories", next.categories.encodeCategories())
+            .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .apply()
     }
 
@@ -128,6 +138,10 @@ class SettingsStore(context: Context) {
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),
         leftCards = decodeCards(prefs.getString("left_cards", null), DefaultLeftCards),
+        categories = decodeCategories(prefs.getString("bar_categories", null)),
+        categoryOverrides = prefs.getString("category_overrides", "").orEmpty().lines()
+            .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
+            .toMap(),
     )
 }
 

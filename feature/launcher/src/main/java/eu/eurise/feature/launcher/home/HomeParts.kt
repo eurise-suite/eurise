@@ -53,7 +53,7 @@ import eu.eurise.core.designsystem.theme.colors
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
-import eu.eurise.feature.launcher.apps.Category
+import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.weather.DayForecast
 import eu.eurise.feature.launcher.weather.Sky
 import java.time.LocalDateTime
@@ -242,7 +242,11 @@ fun AppTile(
     showLabel: Boolean = true,
     /** Sposta il preferito di un posto: -1 prima, +1 dopo. Nullo fuori dai preferiti. */
     onMove: ((Int) -> Unit)? = null,
+    /** Categorie in cui spostare l'app; vuoto per non mostrare la voce. */
+    moveTargets: List<BarCategory> = emptyList(),
+    onMoveTo: (BarCategory) -> Unit = {},
 ) {
+    var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
         Column(
@@ -267,7 +271,23 @@ fun AppTile(
             )
             }
         }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+        DropdownMenu(expanded = menu && moving, onDismissRequest = { menu = false; moving = false }) {
+            moveTargets.forEach { target ->
+                DropdownMenuItem(
+                    text = { Text(target.label) },
+                    leadingIcon = { Icon(target.iconVector(2f), null) },
+                    onClick = { menu = false; moving = false; onMoveTo(target) },
+                )
+            }
+        }
+        DropdownMenu(expanded = menu && !moving, onDismissRequest = { menu = false }) {
+            if (moveTargets.isNotEmpty()) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.app_move_to)) },
+                    leadingIcon = { Icon(EuriseIcons.folder(), null) },
+                    onClick = { moving = true },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(if (favorite) R.string.favorite_remove else R.string.favorite_add)) },
                 leadingIcon = { Icon(EuriseIcons.star(), null) },
@@ -302,12 +322,13 @@ fun AppTile(
  */
 @Composable
 fun CategoryBar(
-    categories: List<Category>,
-    selected: Category,
-    onSelect: (Category) -> Unit,
+    categories: List<BarCategory>,
+    selected: String,
+    onSelect: (BarCategory) -> Unit,
     onSearch: () -> Unit,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
+    onEdit: () -> Unit = {},
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
@@ -317,25 +338,27 @@ fun CategoryBar(
                 .glass(hazeState, RoundedCornerShape(50), outline = false)
                 .padding(GlassDefaults.Padding),
         ) {
-            categories.forEach { c -> CategoryButton(c, c == selected, { onSelect(c) }, Modifier.weight(1f)) }
+            categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
         }
         SearchCircle(hazeState, onSearch)
     }
 }
 
+/** Una categoria della barra; tenendola premuta si apre la modifica della barra. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CategoryButton(category: Category, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CategoryButton(category: BarCategory, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, onLongClick: () -> Unit = {}) {
     val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Column(
         modifier
             .height(GlassDefaults.ItemHeight)
             .clip(CircleShape)
-            .clickable(role = Role.Tab, onClickLabel = category.label, onClick = onClick),
+            .combinedClickable(role = Role.Tab, onClickLabel = category.label, onClick = onClick, onLongClick = onLongClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            category.icon(if (active) 2.8f else 2.2f),
+            category.iconVector(if (active) 2.8f else 2.2f),
             contentDescription = category.label,
             tint = color,
             modifier = Modifier.size(24.dp),

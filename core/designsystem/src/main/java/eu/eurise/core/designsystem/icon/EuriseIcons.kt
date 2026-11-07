@@ -127,6 +127,24 @@ object EuriseIcons {
 
     fun news(stroke: Float = Stroke) = icon("news", stroke, "M5 4h11v16H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z", "M16 8h3v10a2 2 0 0 1-2 2", "M8 8h5M8 12h5M8 16h3")
 
+    fun heart(stroke: Float = Stroke) = icon("heart", stroke, "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z")
+
+    fun home(stroke: Float = Stroke) = icon("home", stroke, "M4 11l8-6.5 8 6.5", "M6 9.5V20h12V9.5", "M10 20v-5h4v5")
+
+    fun work(stroke: Float = Stroke) = icon("work", stroke, "M4 8h16v11H4z", "M9 8V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2", "M4 13h16")
+
+    fun cart(stroke: Float = Stroke) = icon("cart", stroke, "M3 4h2.5l2 11h10l2-8H7", circle(9.5f, 19f, 1.3f), circle(16.5f, 19f, 1.3f))
+
+    fun ball(stroke: Float = Stroke) = icon("ball", stroke, circle(12f, 12f, 8.5f), "M3.5 12h17", "M12 3.5c3 2.5 3 14.5 0 17M12 3.5c-3 2.5-3 14.5 0 17")
+
+    fun plane(stroke: Float = Stroke) = icon("plane", stroke, "M3 13l18-8-6 16-3-7z", "M12 14l9-9")
+
+    fun book(stroke: Float = Stroke) = icon("book", stroke, "M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6z", "M12 6v14.5")
+
+    fun bank(stroke: Float = Stroke) = icon("bank", stroke, "M3.5 9.5L12 4l8.5 5.5z", "M5.5 10v7M10 10v7M14 10v7M18.5 10v7", "M3.5 20h17")
+
+    fun train(stroke: Float = Stroke) = icon("train", stroke, "M7 3.5h10a2 2 0 0 1 2 2V15a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5.5a2 2 0 0 1 2-2z", "M5 11h14", "M8 21l2-3M16 21l-2-3", "M9 14.5h.01M15 14.5h.01")
+
     fun minus(stroke: Float = 2.4f) = icon("minus", stroke, "M5 12h14")
 
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
