@@ -41,9 +41,26 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Date importanti (compleanni, anniversari, relazione, promemoria regalo 10 giorni prima).
 - Farmaci con orari di assunzione; le voci entrano automaticamente tra le attività con un avviso.
 
+## Note (`feature/notes`) – prima parte fatta (ramo `note`, da provare prima di unirlo a `main`)
+- Anteprime approvate: tela, pagina "Note".
+- Editor a blocchi: paragrafi, titolo e sottotitolo, elenchi puntati e numerati, elenchi di controllo,
+  tabelle, collegamenti ad altre note, linea; grassetto, corsivo, sottolineato, colori ed evidenziatore
+  nelle otto tinte; Annulla; barra di formattazione satinata che segue la tastiera.
+- Voci di un elenco di controllo aggiungibili alle Attività: spuntarle nella nota spunta l'attività,
+  e all'apertura la nota riprende lo stato dall'attività.
+- Taccuini con tinta, tag ricavati dalle parole con `#`, note fissate, cestino che si svuota dopo 30 giorni,
+  schermate Organizza e Cestino.
+- Salvataggio: database del telefono (Room v2, migrazione da v1) con il contenuto in HTML5 aperto
+  (`doc/NoteHtml.kt`, con test). Lo stesso HTML diventerà la cartella della nota su Murena con la
+  sincronizzazione: `NoteHtml.document()` produce già il file completo.
+- Prossimi passi delle Note: disegno e scrittura a mano (SVG), note bloccate, foto e scansioni, note vocali,
+  sincronizzazione con Murena, tema Notte da rivedere sul telefono.
+- Idea del proprietario: taccuini "diario di viaggio" legati a Mappe e Galleria (il tipo di taccuino
+  `travel` è già previsto nel database).
+
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
-- Prossimo passo: scegliere con il proprietario la prossima app (Calendario da completare, oppure Note,
-  Attività, File, Contatti…), partendo dalle anteprime sulla tela.
+- Prossimo passo: provare le Note sul telefono (APK dal ramo `note`), poi disegno nelle note oppure Attività,
+  sempre partendo dalle anteprime sulla tela.
