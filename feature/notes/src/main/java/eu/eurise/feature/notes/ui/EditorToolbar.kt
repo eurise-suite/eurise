@@ -58,6 +58,7 @@ internal class ToolbarActions(
     val onHighlight: (String?) -> Unit,
     val onKind: (TextKind) -> Unit,
     val onInsert: () -> Unit,
+    val onDraw: () -> Unit,
 )
 
 /**
@@ -135,6 +136,9 @@ internal fun FormatToolbar(
             ToolButton(stringResource(R.string.notes_kind_check), pressed = kind == TextKind.Check, enabled = enabled, onClick = { actions.onKind(TextKind.Check) }) {
                 Icon(EuriseIcons.checklist(), contentDescription = null, tint = it, modifier = Modifier.size(20.dp))
             }
+            ToolButton(stringResource(R.string.notes_insert_drawing), pressed = false, enabled = true, onClick = actions.onDraw) {
+                Icon(EuriseIcons.pen(), contentDescription = null, tint = it, modifier = Modifier.size(20.dp))
+            }
             ToolButton(stringResource(R.string.notes_insert), pressed = false, enabled = true, accent = true, onClick = actions.onInsert) {
                 Icon(EuriseIcons.plus(), contentDescription = null, tint = it, modifier = Modifier.size(20.dp))
             }
@@ -160,7 +164,7 @@ private fun ToolButton(
     }
     Box(
         modifier = Modifier
-            .size(width = 42.dp, height = GlassDefaults.ItemHeight)
+            .size(width = 40.dp, height = GlassDefaults.ItemHeight)
             .then(
                 when {
                     pressed -> Modifier.shadow(2.dp, CircleShape).background(extra.glassSelected, CircleShape)

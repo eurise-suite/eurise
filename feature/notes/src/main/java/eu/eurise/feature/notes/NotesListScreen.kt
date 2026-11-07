@@ -63,6 +63,9 @@ import eu.eurise.core.designsystem.component.EmptyState
 import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.feature.notes.doc.DrawingBlock
+import eu.eurise.feature.notes.doc.NoteHtml
+import eu.eurise.feature.notes.ui.DrawingThumbnail
 import eu.eurise.feature.notes.ui.inkColors
 import java.time.Instant
 import java.time.LocalDate
@@ -325,6 +328,13 @@ private fun PinnedCard(note: Note, book: NotebookSummary?, onClick: () -> Unit) 
         if (snippet.isNotEmpty()) {
             Text(snippet, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
         }
+        val drawing = remember(note.content) {
+            if ("data-eurise=\"drawing\"" in note.content) {
+                var n = 0L
+                NoteHtml.read(note.content) { ++n }.firstOrNull { it is DrawingBlock } as? DrawingBlock
+            } else null
+        }
+        drawing?.let { DrawingThumbnail(it) }
         checklistProgress(note)?.let { (done, total) -> Progress(done, total) }
     }
 }

@@ -210,6 +210,14 @@ object EuriseIcons {
     fun share(stroke: Float = Stroke) = icon("share", stroke, "M12 15V4", "M7.5 8.5L12 4l4.5 4.5", "M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13")
     fun bell(stroke: Float = Stroke) = icon("bell", stroke, "M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z", "M10 20.5a2 2 0 0 0 4 0")
     fun heading(stroke: Float = 2.2f) = icon("heading", stroke, "M6 5v14M18 5v14M6 12h12")
+    fun redo(stroke: Float = 2.2f) = icon("redo", stroke, "M15 14l5-5-5-5", "M20 9H9.5a5.5 5.5 0 0 0 0 11H13")
+
+    // Strumenti di disegno
+    fun pencil(stroke: Float = 2.1f) = icon("pencil", stroke, "M15 4l5 5L9 20H4v-5z", "M12.5 6.5l5 5")
+    fun marker(stroke: Float = 2.1f) = icon("marker", stroke, "M14 3h6v6L10 19H4v-6z", "M4 21h6")
+    fun highlighter(stroke: Float = 2.1f) = icon("highlighter", stroke, "M14 4l6 6-8 8H6v-6z", "M4 21h9")
+    fun eraser(stroke: Float = 2.1f) = icon("eraser", stroke, "M8 20l-4.5-4.5a2 2 0 0 1 0-2.8L13 3.2a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L12 20z", "M8 20h12M9 9l6 6")
+    fun ruler(stroke: Float = 2.1f) = icon("ruler", stroke, "M3 16.5L16.5 3 21 7.5 7.5 21z", "M7 12.5l2 2M10 9.5l2 2M13 6.5l2 2")
 
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"

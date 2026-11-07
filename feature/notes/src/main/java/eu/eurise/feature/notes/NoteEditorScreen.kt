@@ -77,11 +77,14 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.TableBlock
 import eu.eurise.feature.notes.doc.TextBlock
 import eu.eurise.feature.notes.doc.TextKind
 import eu.eurise.feature.notes.ui.DividerView
+import eu.eurise.feature.notes.ui.DrawingEditor
+import eu.eurise.feature.notes.ui.DrawingPreview
 import eu.eurise.feature.notes.ui.FormatToolbar
 import eu.eurise.feature.notes.ui.InsertGrid
 import eu.eurise.feature.notes.ui.InsertOption
@@ -244,6 +247,7 @@ private fun NoteEditorScreen(
                     )
                     is NoteLinkBlock -> NoteLinkView(block, onOpen = { onOpenNote(block.noteId) }, onRemove = { viewModel.removeBlock(block.id) })
                     is DividerBlock -> DividerView()
+                    is DrawingBlock -> DrawingPreview(block, onOpen = { viewModel.openDrawing(block.id) }, modifier = Modifier.padding(vertical = 8.dp))
                 }
                 if (block !is TextBlock) number = 0
             }
@@ -340,6 +344,7 @@ private fun NoteEditorScreen(
                     onHighlight = viewModel::setHighlight,
                     onKind = viewModel::setKind,
                     onInsert = { insertSheet = true },
+                    onDraw = viewModel::insertDrawing,
                 )
             },
             modifier = Modifier
@@ -351,6 +356,19 @@ private fun NoteEditorScreen(
 
         if (isNew) {
             LaunchedEffect(Unit) { runCatching { titleFocus.requestFocus() } }
+        }
+
+        // Disegno a schermo intero, sopra tutto.
+        val drawing = state.blocks.firstOrNull { it.id == state.drawingId } as? DrawingBlock
+        LaunchedEffect(drawing?.id) { if (drawing != null) focusManager.clearFocus() }
+        if (drawing != null) {
+            androidx.compose.runtime.key(drawing.id) {
+                DrawingEditor(
+                    initial = drawing,
+                    onDone = viewModel::finishDrawing,
+                    onDelete = { viewModel.deleteDrawing(drawing.id) },
+                )
+            }
         }
     }
 
@@ -369,6 +387,7 @@ private fun NoteEditorScreen(
                         InsertOption(R.string.notes_kind_check, { EuriseIcons.checklist() }) { insertSheet = false; viewModel.insertKind(TextKind.Check) },
                         InsertOption(R.string.notes_kind_bullet, { EuriseIcons.bullets() }) { insertSheet = false; viewModel.insertKind(TextKind.Bullet) },
                         InsertOption(R.string.notes_kind_numbered, { EuriseIcons.numbers() }) { insertSheet = false; viewModel.insertKind(TextKind.Numbered) },
+                        InsertOption(R.string.notes_insert_drawing, { EuriseIcons.pen() }) { insertSheet = false; viewModel.insertDrawing() },
                         InsertOption(R.string.notes_insert_table, { EuriseIcons.table() }) { insertSheet = false; viewModel.insertTable() },
                         InsertOption(R.string.notes_insert_link, { EuriseIcons.link() }) { insertSheet = false; pickLink = true },
                         InsertOption(R.string.notes_insert_divider, { EuriseIcons.divider() }) { insertSheet = false; viewModel.insertDivider() },

@@ -32,6 +32,14 @@ class NoteDocumentTest {
         NoteLinkBlock(9, 17, "Misure della cucina"),
         DividerBlock(10),
         TextBlock(11, TextKind.Subheading, RichText("Fine")),
+        DrawingBlock(
+            12, height = 640, paper = Paper.Lines,
+            strokes = listOf(
+                Stroke(Tool.Pen, null, 6f, listOf(InkPoint(10f, 20f, 0.5f), InkPoint(40.25f, 60.5f, 0.8f), InkPoint(90f, 70f, 0.3f))),
+                Stroke(Tool.Highlighter, "Ottone", 8f, listOf(InkPoint(100f, 100f), InkPoint(300f, 100f)), shape = true),
+            ),
+        ),
+        TextBlock(13, TextKind.Paragraph, RichText("dopo il disegno")),
     )
 
     /** I blocchi senza id, per confrontare il contenuto. */
@@ -41,6 +49,7 @@ class NoteDocumentTest {
             is TableBlock -> it.copy(id = 0)
             is NoteLinkBlock -> it.copy(id = 0)
             is DividerBlock -> it.copy(id = 0)
+            is DrawingBlock -> it.copy(id = 0)
         }
     }
 
@@ -132,5 +141,49 @@ class NoteDocumentTest {
             ),
             blocks,
         )
+    }
+
+    @Test
+    fun drawingIsSvgReadableByBrowsers() {
+        val html = NoteHtml.write(sample())
+        assertTrue(html.contains("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1000 640\""))
+        assertTrue(html.contains("fill-opacity=\"0.35\""))
+    }
+
+    @Test
+    fun recognizesStraightLine() {
+        val pts = (0..20).map { InkPoint(100f + it * 20f, 300f + (if (it % 2 == 0) 3f else -3f)) }
+        val shape = Stroke(Tool.Pen, null, 6f, pts).recognizeShape()
+        assertEquals(2, shape?.points?.size)
+        assertTrue(shape!!.shape)
+    }
+
+    @Test
+    fun recognizesCircleAndRectangle() {
+        val circle = (0..60).map { k ->
+            val a = 2 * Math.PI * k / 60
+            InkPoint(500f + (200 * Math.cos(a)).toFloat() + (k % 3), 500f + (200 * Math.sin(a)).toFloat())
+        }
+        val c = Stroke(Tool.Pen, null, 6f, circle).recognizeShape()
+        assertTrue(c != null && c.points.size == 65)
+
+        val rect = buildList {
+            for (i in 0..20) add(InkPoint(100f + i * 20f, 100f))
+            for (i in 0..15) add(InkPoint(500f, 100f + i * 20f))
+            for (i in 0..20) add(InkPoint(500f - i * 20f, 400f))
+            for (i in 0..15) add(InkPoint(100f + (i % 2), 400f - i * 20f))
+        }
+        val r = Stroke(Tool.Pen, null, 6f, rect).recognizeShape()
+        assertTrue(r != null && r.points.size != 65 && r.points.size > 5)
+
+        val scribble = (0..40).map { InkPoint(100f + it * 10f, 100f + (it * it % 97) * 4f) }
+        assertEquals(null, Stroke(Tool.Pen, null, 6f, scribble).recognizeShape())
+    }
+
+    @Test
+    fun outlineIsClosedPolygon() {
+        val o = Stroke(Tool.Pen, null, 6f, listOf(InkPoint(0f, 0f), InkPoint(100f, 0f))).outline()
+        assertTrue(o.size >= 8 && o.size % 2 == 0)
+        assertTrue(Stroke(Tool.Pen, null, 6f, listOf(InkPoint(5f, 5f))).outline().size == 32)
     }
 }

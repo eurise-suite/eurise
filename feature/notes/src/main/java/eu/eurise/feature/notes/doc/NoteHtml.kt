@@ -33,6 +33,7 @@ object NoteHtml {
     /** Il contenuto della nota (solo i blocchi, senza intestazione), come viene salvato nel database. */
     fun write(blocks: List<Block>): String = buildString {
         var openList: String? = null
+        var drawingIndex = 0
         fun closeList() {
             openList?.let { append("</").append(if (it == "ol") "ol" else "ul").append(">\n") }
             openList = null
@@ -81,6 +82,7 @@ object NoteHtml {
                     .append(block.noteId).append("\" data-note=\"").append(block.noteId).append("\">")
                     .append(escape(block.title)).append("</a></p>\n")
                 is DividerBlock -> append("<hr>\n")
+                is DrawingBlock -> append(drawingSvg(block, drawingIndex++))
             }
         }
         closeList()
@@ -93,6 +95,56 @@ object NoteHtml {
             "<meta name=\"generator\" content=\"Eurise Note\">\n" +
             "<title>${escape(title)}</title>\n<style>$STYLE</style>\n</head>\n<body>\n" +
             "<h1>${escape(title)}</h1>\n" + write(blocks) + "</body>\n</html>\n"
+
+    /** Colore pieno di una tinta nell'SVG (l'inchiostro è il nero caldo della suite). */
+    private fun inkHex(tint: String?): String = tint?.let { tintHex[it]?.first } ?: "#1E1D1B"
+
+    /**
+     * Il disegno come SVG dentro un `<figure>`. Ogni tratto è il suo contorno pieno (si vede uguale in ogni
+     * browser) e porta negli attributi `data-*` i punti originali, per poterlo modificare di nuovo.
+     */
+    private fun drawingSvg(d: DrawingBlock, index: Int): String = buildString {
+        val w = DrawingBlock.WIDTH
+        val h = d.height
+        val paper = when (d.paper) { Paper.Blank -> "blank"; Paper.Lines -> "lines"; Paper.Grid -> "grid" }
+        append("<figure class=\"drawing\">")
+        append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 $w $h\" width=\"100%\" data-eurise=\"drawing\" data-paper=\"$paper\">")
+        val step = DrawingBlock.PAPER_STEP.toInt()
+        append("<rect width=\"$w\" height=\"$h\" fill=\"#FFFFFF\"/>")
+        when (d.paper) {
+            Paper.Grid -> append("<defs><pattern id=\"paper$index\" width=\"$step\" height=\"$step\" patternUnits=\"userSpaceOnUse\"><path d=\"M$step 0H0V$step\" fill=\"none\" stroke=\"#E6E4DD\" stroke-width=\"2\"/></pattern></defs><rect width=\"$w\" height=\"$h\" fill=\"url(#paper$index)\"/>")
+            Paper.Lines -> append("<defs><pattern id=\"paper$index\" width=\"$w\" height=\"$step\" patternUnits=\"userSpaceOnUse\"><path d=\"M0 ${step - 1}H$w\" stroke=\"#E6E4DD\" stroke-width=\"2\"/></pattern></defs><rect width=\"$w\" height=\"$h\" fill=\"url(#paper$index)\"/>")
+            Paper.Blank -> Unit
+        }
+        for (s in d.strokes) {
+            val o = s.outline()
+            if (o.size < 6) continue
+            append("<path d=\"M")
+            for (i in o.indices step 2) {
+                if (i > 0) append('L')
+                append(num(o[i])).append(' ').append(num(o[i + 1]))
+            }
+            append("Z\" fill=\"").append(inkHex(s.tint)).append('"')
+            if (s.tool.alpha() < 1f) append(" fill-opacity=\"").append(num(s.tool.alpha())).append('"')
+            append(" data-tool=\"").append(s.tool.name.lowercase()).append('"')
+            s.tint?.let { append(" data-tint=\"").append(it).append('"') }
+            append(" data-size=\"").append(num(s.size)).append('"')
+            if (s.shape) append(" data-shape=\"1\"")
+            append(" data-points=\"")
+            s.points.forEachIndexed { i, p ->
+                if (i > 0) append(' ')
+                append(num(p.x)).append(',').append(num(p.y)).append(',').append(num(p.p))
+            }
+            append("\"/>")
+        }
+        append("</svg></figure>\n")
+    }
+
+    /** Numero con al più due decimali, senza zeri inutili: tiene piccolo il file. */
+    private fun num(v: Float): String {
+        val r = kotlin.math.round(v * 100f) / 100f
+        return if (r == r.toLong().toFloat()) r.toLong().toString() else r.toString()
+    }
 
     private fun inline(rich: RichText): String {
         val text = rich.text
@@ -169,7 +221,7 @@ object NoteHtml {
             is TextBlock -> block.text.text
             is TableBlock -> block.rows.joinToString("\n") { it.joinToString(" · ") }
             is NoteLinkBlock -> block.title
-            is DividerBlock -> ""
+            is DividerBlock, is DrawingBlock -> ""
         }
     }.trim('\n')
 
@@ -196,6 +248,9 @@ object NoteHtml {
         private var table: MutableList<MutableList<String>>? = null
         private var cell: StringBuilder? = null
 
+        // Disegno in costruzione.
+        private var drawing: DrawingBlock? = null
+
         // Collegamento a una nota in costruzione.
         private var linkNote: Long? = null
         private val linkText = StringBuilder()
@@ -219,11 +274,12 @@ object NoteHtml {
             }
             finishText()
             finishTable()
+            finishDrawing()
             return blocks
         }
 
         private fun onText(raw: String) {
-            if (skipDepth > 0 || !inBody) return
+            if (skipDepth > 0 || !inBody || drawing != null) return
             cell?.let { it.append(raw.collapse()); return }
             if (table != null) return
             if (linkNote != null) { linkText.append(raw); return }
@@ -252,7 +308,20 @@ object NoteHtml {
             if (n == "h1" && !tag.closing) { inBody = false; return }
             if (n == "h1" && tag.closing) { inBody = true; return }
             if (!inBody) return
+            if (drawing != null) {
+                onDrawingTag(tag)
+                return
+            }
             when (n) {
+                "figure" -> if (!tag.closing && tag.attrs["class"]?.split(' ')?.contains("drawing") == true) {
+                    finishText()
+                    drawing = DrawingBlock(ids())
+                }
+                "svg" -> if (!tag.closing && tag.attrs["data-eurise"] == "drawing") {
+                    finishText()
+                    drawing = DrawingBlock(ids())
+                    onDrawingTag(tag)
+                }
                 "p", "div" -> if (tag.closing) {
                     finishLink()
                     finishText()
@@ -295,6 +364,42 @@ object NoteHtml {
                 "span" -> inline(tag, tag.attrs["data-color"]?.let { Mark.Color(it) })
                 "mark" -> inline(tag, Mark.Highlight(tag.attrs["data-tint"] ?: "Ottone"))
             }
+        }
+
+        private fun onDrawingTag(tag: Tag) {
+            val d = drawing ?: return
+            when {
+                tag.name == "figure" && tag.closing -> finishDrawing()
+                tag.name == "svg" && tag.closing -> finishDrawing()
+                tag.name == "svg" -> {
+                    val height = tag.attrs["viewbox"]?.trim()?.split(Regex("[\\s,]+"))?.getOrNull(3)?.toFloatOrNull()?.toInt()
+                    val paper = when (tag.attrs["data-paper"]) { "blank" -> Paper.Blank; "lines" -> Paper.Lines; else -> Paper.Grid }
+                    drawing = d.copy(height = (height ?: d.height).coerceIn(100, DrawingBlock.MAX_HEIGHT), paper = paper)
+                }
+                tag.name == "path" && !tag.closing -> {
+                    val tool = tag.attrs["data-tool"]?.let { t -> Tool.entries.firstOrNull { it.name.equals(t, true) } } ?: return
+                    val points = tag.attrs["data-points"].orEmpty().trim().split(Regex("\\s+")).mapNotNull { triple ->
+                        val v = triple.split(',')
+                        val x = v.getOrNull(0)?.toFloatOrNull() ?: return@mapNotNull null
+                        val y = v.getOrNull(1)?.toFloatOrNull() ?: return@mapNotNull null
+                        InkPoint(x, y, v.getOrNull(2)?.toFloatOrNull() ?: 0.5f)
+                    }
+                    if (points.isEmpty()) return
+                    val stroke = Stroke(
+                        tool = tool,
+                        tint = tag.attrs["data-tint"],
+                        size = tag.attrs["data-size"]?.toFloatOrNull() ?: 6f,
+                        points = points,
+                        shape = tag.attrs["data-shape"] == "1",
+                    )
+                    drawing = d.copy(strokes = d.strokes + stroke)
+                }
+            }
+        }
+
+        private fun finishDrawing() {
+            drawing?.let { blocks += it }
+            drawing = null
         }
 
         private fun heading(tag: Tag, k: TextKind) {

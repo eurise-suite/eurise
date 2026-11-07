@@ -60,7 +60,28 @@
     <string name="notes_insert_table">Tabella</string>
     <string name="notes_insert_link">Altra nota</string>
     <string name="notes_insert_divider">Linea</string>
-    <string name="notes_insert_soon">Foto, scansioni, note vocali e disegno arrivano con le prossime versioni.</string>
+    <string name="notes_insert_drawing">Disegno</string>
+    <string name="notes_insert_soon">Foto, scansioni e note vocali arrivano con le prossime versioni.</string>
+
+    <!-- Disegno -->
+    <string name="notes_drawing_open">Disegno: tocca per modificarlo</string>
+    <string name="notes_drawing_back">Torna alla nota</string>
+    <string name="notes_redo">Ripeti</string>
+    <string name="notes_drawing_more_space">Più spazio in basso</string>
+    <string name="notes_drawing_delete">Elimina disegno</string>
+    <string name="notes_drawing_shape">Forma riconosciuta</string>
+    <string name="notes_drawing_keep_hand">Tieni a mano</string>
+    <string name="notes_drawing_ink">Inchiostro</string>
+    <string name="notes_drawing_size">Spessore del tratto</string>
+    <string name="notes_tool_pen">Penna</string>
+    <string name="notes_tool_pencil">Matita</string>
+    <string name="notes_tool_marker">Pennarello</string>
+    <string name="notes_tool_highlighter">Evidenziatore</string>
+    <string name="notes_tool_eraser">Gomma</string>
+    <string name="notes_tool_ruler">Righello: linee dritte</string>
+    <string name="notes_paper_blank">Bianca</string>
+    <string name="notes_paper_lines">Righe</string>
+    <string name="notes_paper_grid">Quadretti</string>
 
     <!-- Taccuini e tag -->
     <string name="notes_notebooks">Taccuini</string>

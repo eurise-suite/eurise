@@ -11,6 +11,7 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.NotebookSummary
 import eu.eurise.feature.notes.doc.Block
 import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.Mark
 import eu.eurise.feature.notes.doc.NoteHtml
 import eu.eurise.feature.notes.doc.NoteLinkBlock
@@ -55,6 +56,8 @@ data class NoteEditorState(
     val notebookId: Long? = null,
     val updatedAt: Long? = null,
     val canUndo: Boolean = false,
+    /** Disegno aperto a schermo intero, se c'è. */
+    val drawingId: Long? = null,
 ) {
     val focusedText: TextBlock? get() = blocks.firstOrNull { it.id == focusedId } as? TextBlock
 
@@ -359,8 +362,36 @@ class NoteEditorViewModel(
         else insert(TextBlock(newId(), kind, RichText()))
     }
 
+    /** Aggiunge un disegno dopo il blocco col cursore e lo apre a schermo intero. */
+    fun insertDrawing() {
+        val drawing = DrawingBlock(newId())
+        insert(drawing, focus = false)
+        _state.update { it.copy(drawingId = drawing.id, focusedId = null) }
+    }
+
+    fun openDrawing(blockId: Long) = _state.update { it.copy(drawingId = blockId, focusedId = null) }
+
+    /** Chiude l'editor del disegno e salva; un disegno rimasto vuoto sparisce. */
+    fun finishDrawing(drawing: DrawingBlock) {
+        val existing = _state.value.blocks.firstOrNull { it.id == drawing.id } as? DrawingBlock
+        _state.update { it.copy(drawingId = null) }
+        when {
+            existing == null -> Unit
+            drawing.strokes.isEmpty() -> _state.update { s -> s.copy(blocks = s.blocks.filterNot { it.id == drawing.id }) }.also { scheduleSave() }
+            drawing != existing -> {
+                remember(coalesce = false)
+                replaceBlock(drawing)
+            }
+        }
+    }
+
+    fun deleteDrawing(blockId: Long) {
+        _state.update { it.copy(drawingId = null) }
+        removeBlock(blockId)
+    }
+
     /** Inserisce [block] dopo quello col cursore (o in fondo), con un paragrafo dopo se serve per continuare a scrivere. */
-    private fun insert(block: Block) {
+    private fun insert(block: Block, focus: Boolean = true) {
         remember(coalesce = false)
         val s = _state.value
         val at = s.blocks.indexOfFirst { it.id == s.focusedId }.let { if (it < 0) s.blocks.lastIndex else it }
@@ -374,8 +405,8 @@ class NoteEditorViewModel(
         _state.update {
             it.copy(
                 blocks = before + block + trailing + after,
-                focusedId = focusTarget?.id ?: it.focusedId,
-                focusRequest = focusTarget?.let { t -> FocusRequest(t.id, 0, ++serial) } ?: it.focusRequest,
+                focusedId = if (focus) focusTarget?.id ?: it.focusedId else it.focusedId,
+                focusRequest = if (focus) focusTarget?.let { t -> FocusRequest(t.id, 0, ++serial) } ?: it.focusRequest else it.focusRequest,
             )
         }
         scheduleSave()
