@@ -387,6 +387,17 @@ fun MessagesCard(
     }
 }
 
+@Composable
+internal fun ago(now: Long, at: Long): String {
+    val min = ((now - at) / 60_000).coerceAtLeast(0)
+    return when {
+        min < 1 -> stringResource(R.string.time_now)
+        min < 60 -> "$min min"
+        min < 24 * 60 -> "${min / 60} h"
+        else -> "${min / (24 * 60)} g"
+    }
+}
+
 /** Musica: il brano in ascolto in qualsiasi app, con i comandi. Nessun logo: solo titolo, artista e app. */
 @Composable
 fun MusicCard(
