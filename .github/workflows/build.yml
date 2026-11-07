@@ -39,7 +39,11 @@ jobs:
       - name: Riassunto degli errori
         if: failure()
         run: |
-          grep -E "^e: |What went wrong|Could not (resolve|find)|error:" build.log | head -40 | while IFS= read -r line; do
+          grep -E "^e: |Could not (resolve|find)|error:" build.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          # Anche le righe che seguono "What went wrong" (per esempio i controlli sulle librerie).
+          grep -A 12 "What went wrong" build.log | head -60 | grep -v "^\s*$" | while IFS= read -r line; do
             echo "::error::${line}"
           done
 
