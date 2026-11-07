@@ -15,9 +15,9 @@
     <string name="today_more_tasks">e altre %1$d</string>
 
     <string name="favorites">Preferiti</string>
-    <string name="favorites_empty">Tieni premuta un\'app per aggiungerla ai preferiti</string>
-    <string name="favorite_add">Aggiungi ai preferiti</string>
-    <string name="favorite_remove">Togli dai preferiti</string>
+    <string name="favorites_empty">Tieni premuta un\'app nelle categorie o nella ricerca e scegli «Aggiungi alla home»</string>
+    <string name="favorite_add">Aggiungi alla home</string>
+    <string name="favorite_remove">Togli dalla home</string>
     <string name="app_info">Informazioni sull\'app</string>
     <string name="category_empty">Nessuna app in questa categoria</string>
 
@@ -76,7 +76,7 @@
     <string name="card_add">+ Scheda</string>
     <string name="card_done">Fine</string>
     <string name="card_remove">Togli la scheda</string>
-    <string name="card_edit_hint">Tieni premuta una scheda e trascinala per spostarla; toccala per cambiarne la misura.</string>
+    <string name="card_edit_hint">Tieni premuta una scheda e trascinala per spostarla; toccala e tira le maniglie per cambiarne larghezza e altezza.</string>
     <string name="card_size_of">%1$s · misura</string>
     <string name="card_catalog">Schede</string>
     <string name="card_catalog_hint">Metti o togli le schede del Riepilogo, poi spostale e ridimensionale direttamente sulla pagina.</string>
@@ -109,7 +109,7 @@
     <string name="appearance_custom">Colore personale</string>
     <string name="appearance_hue">Tonalità</string>
     <string name="appearance_light">Luminosità</string>
-    <string name="appearance_hint">Si apre tenendo premuto uno spazio vuoto della home. Le righe in più spingono in alto la scheda Oggi.</string>
+    <string name="appearance_hint">Si apre tenendo premuto uno spazio vuoto della home o dal simbolo in alto nelle categorie. Colonne, dimensione e nomi valgono per home, categorie e ricerca; le righe solo per la home.</string>
     <string name="tint_blu_notte">Blu notte</string>
     <string name="tint_salvia">Salvia</string>
     <string name="tint_ottone">Ottone</string>
@@ -167,4 +167,17 @@
     <string name="categories_count">%1$d di %2$d</string>
     <string name="categories_symbol">Simbolo di %1$s</string>
     <string name="categories_select_hint">Tocca una categoria per sceglierne il simbolo. Tieni premuta la barra in basso per tornare qui.</string>
+
+    <string name="tile_location">Posizione</string>
+    <string name="tile_airplane">Modalità aereo</string>
+    <string name="tile_saver">Risparmio energetico</string>
+    <string name="tile_ringer">Suoneria</string>
+    <string name="tile_brightness">Luminosità automatica</string>
+    <string name="tile_hotspot">Hotspot</string>
+    <string name="tile_cast">Trasmetti schermo</string>
+    <string name="tile_nfc">NFC</string>
+    <string name="tile_system_open">Apri impostazioni</string>
+    <string name="ringer_sound">Suono</string>
+    <string name="ringer_vibrate">Vibrazione</string>
+    <string name="ringer_silent">Silenzioso</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -65,8 +66,9 @@ import eu.eurise.feature.launcher.home.Label
 import eu.eurise.feature.launcher.home.scrimColor
 
 /** Altezza delle schede basse e alte sulla griglia del Riepilogo. */
-private val ShortHeight = 112.dp
-private val TallHeight = 232.dp
+/** Altezza di una riga della griglia delle schede. */
+private val RowUnit = 56.dp
+private val Gap = 12.dp
 
 /**
  * Il Riepilogo: schede su una griglia di 4 colonne. Tenendo premuta una scheda si entra in modifica:
@@ -98,19 +100,20 @@ fun SummaryBoard(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = topPadding, bottom = bottomPadding + if (selected != null) 76.dp else 0.dp),
+                .padding(top = topPadding, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (editing) EditHeader(onAdd = { catalog = true }, onDone = { onEditingChange(false) })
             layoutRows(cards).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.Top) {
                     row.forEach { index ->
                         val card = cards[index]
                         val isDragged = dragging == index
                         Box(
                             Modifier
-                                .weight(if (card.size.half) 1f else 2f, fill = true)
-                                .height(if (card.size.tall) TallHeight else ShortHeight)
+                                .weight(card.cols.toFloat(), fill = true)
+                                .height(RowUnit * card.rows + Gap * (card.rows - 1) / 2)
+                                .then(if (!editing) Modifier.longPressToEdit { onEditingChange(true) } else Modifier)
                                 .onGloballyPositioned { bounds[index] = it.boundsInRoot() }
                                 .zIndex(if (isDragged) 1f else 0f)
                                 .graphicsLayer {
@@ -123,6 +126,8 @@ fun SummaryBoard(
                             cardContent(card, Modifier.fillMaxSize())
                             if (editing) {
                                 EditOverlay(
+                                    card = card,
+                                    onResize = { c, r -> onChange(cards.map { if (it.kind == card.kind) it.resized(c, r) else it }) },
                                     selected = selected == card.kind,
                                     onTap = { selected = if (selected == card.kind) null else card.kind },
                                     onDragStart = { dragging = index; dragOffset = Offset.Zero; selected = null },
@@ -148,29 +153,16 @@ fun SummaryBoard(
                                         if (selected == card.kind) selected = null
                                     },
                                 )
-                            } else {
-                                LongPressCatcher { onEditingChange(true) }
                             }
                         }
                     }
-                    if (row.size == 1 && cards[row.first()].size.half) Spacer(Modifier.weight(1f))
+                    val used = row.sumOf { cards[it].cols }
+                    if (used < GRID_COLS) Spacer(Modifier.weight((GRID_COLS - used).toFloat()))
                 }
             }
             if (!editing) footer()
         }
 
-        val current = selected?.let { kind -> cards.firstOrNull { it.kind == kind } }
-        if (editing && current != null) {
-            SizePicker(
-                card = current,
-                hazeState = hazeState,
-                onPick = { size -> onChange(cards.map { if (it.kind == current.kind) it.copy(size = size) else it }) },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = bottomPadding)
-                    .padding(horizontal = 16.dp),
-            )
-        }
         if (catalog) {
             CardCatalog(
                 cards = cards,
@@ -183,35 +175,35 @@ fun SummaryBoard(
     }
 }
 
-/** Sopra una scheda fuori dalla modifica: una pressione lunga apre la modifica senza aprire la scheda. */
-@Composable
-private fun LongPressCatcher(onLongPress: () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().pointerInput(Unit) {
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                val finished = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        val moved = event.changes.any { (it.position - down.position).getDistance() > viewConfiguration.touchSlop }
-                        if (event.changes.none { it.pressed } || moved) break
-                    }
-                    true
-                }
-                if (finished == null) {
-                    onLongPress()
-                    do {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        event.changes.forEach { it.consume() }
-                    } while (event.changes.any { it.pressed })
-                }
+/**
+ * Fuori dalla modifica: una pressione lunga su una scheda apre la modifica senza aprire la scheda. Si legge
+ * nel passaggio iniziale, prima dei pulsanti della scheda, che così restano toccabili normalmente.
+ */
+private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        val finished = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val moved = event.changes.any { (it.position - down.position).getDistance() > viewConfiguration.touchSlop }
+                if (event.changes.none { it.pressed } || moved) break
             }
-        },
-    )
+            true
+        }
+        if (finished == null) {
+            onLongPress()
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                event.changes.forEach { it.consume() }
+            } while (event.changes.any { it.pressed })
+        }
+    }
 }
 
 @Composable
 private fun EditOverlay(
+    card: PlacedCard,
+    onResize: (Int, Int) -> Unit,
     selected: Boolean,
     onTap: () -> Unit,
     onDragStart: () -> Unit,
@@ -249,7 +241,62 @@ private fun EditOverlay(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(16.dp),
         )
+        if (selected) ResizeHandles(card, onResize)
     }
+}
+
+/**
+ * Maniglie per ridimensionare: quella a destra cambia le colonne (da 1 a 4), quella in basso le righe,
+ * quella nell'angolo entrambe. Al centro in basso la misura attuale.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.ResizeHandles(card: PlacedCard, onResize: (Int, Int) -> Unit) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var widthPx by remember { mutableStateOf(0) }
+    val latest by androidx.compose.runtime.rememberUpdatedState(card)
+    val rowPx = with(density) { (RowUnit + Gap / 2).toPx() }
+    Box(Modifier.matchParentSize().onGloballyPositioned { widthPx = it.size.width })
+    val colPx = if (latest.cols > 0 && widthPx > 0) widthPx.toFloat() / latest.cols else 1f
+
+    @Composable
+    fun handle(alignment: Alignment, horizontal: Boolean, vertical: Boolean) {
+        var accX by remember { mutableStateOf(0f) }
+        var accY by remember { mutableStateOf(0f) }
+        Box(
+            Modifier
+                .align(alignment)
+                .offset(x = if (horizontal) 10.dp else 0.dp, y = if (vertical) 10.dp else 0.dp)
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .pointerInput(horizontal, vertical) {
+                    detectDragGestures(
+                        onDragStart = { accX = 0f; accY = 0f },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            if (horizontal) accX += amount.x
+                            if (vertical) accY += amount.y
+                            val dc = (accX / colPx).toInt()
+                            val dr = (accY / rowPx).toInt()
+                            if (dc != 0 || dr != 0) {
+                                onResize(latest.cols + dc, latest.rows + dr)
+                                accX -= dc * colPx; accY -= dr * rowPx
+                            }
+                        },
+                    )
+                },
+        )
+    }
+    handle(Alignment.CenterEnd, horizontal = true, vertical = false)
+    handle(Alignment.BottomCenter, horizontal = false, vertical = true)
+    handle(Alignment.BottomEnd, horizontal = true, vertical = true)
+    Text(
+        "${card.cols}×${card.rows}",
+        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
+        modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
+    )
 }
 
 @Composable
@@ -286,43 +333,6 @@ private fun Pill(text: String, filled: Boolean, onClick: () -> Unit) {
             text, fontWeight = FontWeight.Bold, fontSize = 14.sp,
             color = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
         )
-    }
-}
-
-@Composable
-private fun SizePicker(card: PlacedCard, hazeState: HazeState, onPick: (CardSize) -> Unit, modifier: Modifier) {
-    Column(
-        modifier
-            .fillMaxWidth()
-            .glass(hazeState, RoundedCornerShape(24.dp), elevation = 8.dp, outline = false)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(
-            stringResource(R.string.card_size_of, stringResource(card.kind.title)),
-            fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            card.kind.sizes.forEach { size ->
-                val on = size == card.size
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(38.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(if (on) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(alpha = 0f))
-                        .clickable(role = Role.RadioButton) { onPick(size) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        stringResource(size.label), fontSize = 13.sp, maxLines = 1,
-                        fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
     }
 }
 

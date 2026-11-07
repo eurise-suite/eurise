@@ -372,6 +372,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                             viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to target.id)) }
                         },
                         bottomClearance = clearance,
+                        columns = settings.columns,
+                        iconSize = settings.iconSize.dp,
+                        showLabels = settings.showLabels,
+                        onClose = { category = FAVORITES },
+                        onAppearance = { appearance = true },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -399,6 +404,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
             if (searching) {
                 SearchOverlay(
+                    columns = settings.columns,
+                    iconSize = settings.iconSize.dp,
+                    isFavorite = viewModel::isFavorite,
+                    onToggleFavorite = viewModel::toggleFavorite,
                     apps = state.apps,
                     recents = state.recents,
                     notes = state.notes,

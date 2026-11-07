@@ -81,25 +81,37 @@ fun CategoryPages(
     onInfo: (AppEntry) -> Unit,
     onMoveTo: (AppEntry, BarCategory) -> Unit,
     bottomClearance: androidx.compose.ui.unit.Dp,
+    columns: Int,
+    iconSize: androidx.compose.ui.unit.Dp,
+    showLabels: Boolean,
+    onClose: () -> Unit,
+    onAppearance: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HorizontalPager(pager, modifier) { page ->
+    HorizontalPager(pager, modifier.closeOnSwipe(up = false, onClose = onClose)) { page ->
         val category = categories[page]
         val list = apps.filter { categoryOf(it)?.id == category.id }
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(24.dp))
-            Text(
-                category.label,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    category.label,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+                )
+                // Griglia e icone: colonne e dimensione valgono per home, categorie e ricerca.
+                Box(
+                    Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.appearance_title), onClick = onAppearance),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(EuriseIcons.grid(), stringResource(R.string.appearance_title), tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(22.dp)) }
+            }
             Spacer(Modifier.height(16.dp))
             if (list.isEmpty()) {
                 Text(stringResource(R.string.category_empty), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f), modifier = Modifier.padding(8.dp))
             }
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(84.dp),
+                columns = GridCells.Fixed(columns),
                 contentPadding = PaddingValues(bottom = bottomClearance),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize(),
@@ -116,6 +128,8 @@ fun CategoryPages(
                             onInfo = if (app.component != null) ({ onInfo(app) }) else null,
                             moveTargets = categories.filter { it.id != category.id },
                             onMoveTo = { onMoveTo(app, it) },
+                            iconSize = iconSize,
+                            showLabel = showLabels,
                         )
                     }
                 }
@@ -137,6 +151,10 @@ class CaptureActions(
  */
 @Composable
 fun SearchOverlay(
+    columns: Int,
+    iconSize: androidx.compose.ui.unit.Dp,
+    isFavorite: (AppEntry) -> Boolean,
+    onToggleFavorite: (AppEntry) -> Unit,
     apps: List<AppEntry>,
     recents: List<AppEntry>,
     notes: List<Note>,
@@ -162,6 +180,7 @@ fun SearchOverlay(
             .fillMaxSize()
             .glass(hazeState, RectangleShape, elevation = 0.dp, outline = false)
             .background(scrimColor())
+            .closeOnSwipe(up = false, onClose = onClose)
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .windowInsetsPadding(WindowInsets.ime)
             .padding(horizontal = GlassDefaults.SideMargin),
@@ -203,18 +222,17 @@ fun SearchOverlay(
                 Label(stringResource(R.string.search_recent), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
                 Spacer(Modifier.height(10.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
+                    columns = GridCells.Fixed(columns),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    items(recents.take(8), key = { it.key }) { app ->
-                        Column(
-                            Modifier.clip(RoundedCornerShape(16.dp)).clickable { onOpenApp(app) }.padding(vertical = 6.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            AppIcon(app, 52.dp, dark)
-                            Spacer(Modifier.height(6.dp))
-                            Text(app.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onBackground)
+                    items(recents.take(columns * 2), key = { it.key }) { app ->
+                        Box(contentAlignment = Alignment.Center) {
+                            AppTile(
+                                entry = app, dark = dark, badge = 0, favorite = isFavorite(app),
+                                onOpen = { onOpenApp(app) }, onToggleFavorite = { onToggleFavorite(app) }, onInfo = null,
+                                iconSize = iconSize,
+                            )
                         }
                     }
                 }

@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,6 +69,7 @@ import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.home.Label
+import eu.eurise.feature.launcher.home.closeOnSwipe
 import eu.eurise.feature.launcher.home.scrimColor
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NotificationStore
@@ -108,7 +111,8 @@ fun EurisePanel(
         Modifier
             .fillMaxSize()
             .glass(hazeState, RectangleShape, elevation = 0.dp, outline = false)
-            .background(scrimColor()),
+            .background(scrimColor())
+            .closeOnSwipe(up = true, onClose = onClose),
     ) {
         LazyColumn(
             Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -275,23 +279,127 @@ private fun QuickTiles(context: Context, refresh: Int, hazeState: HazeState, onS
             }
         },
         Triple(EuriseIcons.grid(), stringResource(R.string.tile_system), TileState(false, stringResource(R.string.tile_system_sub))) to onSystemShade,
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        tiles.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { (info, action) ->
-                    val (icon, label, state) = info
-                    Tile(icon, label, state, hazeState, action, Modifier.weight(1f))
+    ) + moreTiles(context, refresh, onChanged)
+
+    // Sei interruttori per pagina; scorrendo di lato si vedono gli altri.
+    val pages = tiles.chunked(6)
+    val pager = rememberPagerState { pages.size }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalPager(pager, Modifier.fillMaxWidth().height(68.dp * 3 + 20.dp), pageSpacing = 16.dp, verticalAlignment = Alignment.Top) { index ->
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                pages[index].chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { (info, action) ->
+                            val (icon, label, state) = info
+                            Tile(icon, label, state, hazeState, action, Modifier.weight(1f))
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
                 }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            repeat(pages.size) { i ->
+                Box(
+                    Modifier.padding(horizontal = 3.dp)
+                        .size(width = if (i == pager.currentPage) 14.dp else 5.dp, height = 5.dp)
+                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = if (i == pager.currentPage) 0.85f else 0.35f), CircleShape),
+                )
             }
         }
     }
 }
 
+/** Gli altri interruttori: posizione, modalità aereo, risparmio energetico, suoneria, luminosità, NFC, trasmissione, hotspot. */
+@Composable
+private fun moreTiles(context: Context, refresh: Int, onChanged: () -> Unit): List<Pair<Triple<ImageVector, String, TileState>, () -> Unit>> {
+    val on = stringResource(R.string.state_on)
+    val off = stringResource(R.string.state_off)
+    val location = remember(refresh) {
+        val enabled = runCatching {
+            val lm = context.getSystemService(android.location.LocationManager::class.java)
+            if (Build.VERSION.SDK_INT >= 28) lm?.isLocationEnabled == true else lm?.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER) == true
+        }.getOrDefault(false)
+        TileState(enabled, if (enabled) on else off)
+    }
+    val airplane = remember(refresh) {
+        val enabled = runCatching { Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON) == 1 }.getOrDefault(false)
+        TileState(enabled, if (enabled) on else off)
+    }
+    val saver = remember(refresh) {
+        val enabled = context.getSystemService(android.os.PowerManager::class.java)?.isPowerSaveMode == true
+        TileState(enabled, if (enabled) on else off)
+    }
+    val audio = remember { context.getSystemService(android.media.AudioManager::class.java) }
+    val ringer = remember(refresh) {
+        when (audio?.ringerMode) {
+            android.media.AudioManager.RINGER_MODE_VIBRATE -> TileState(true, context.getString(R.string.ringer_vibrate))
+            android.media.AudioManager.RINGER_MODE_SILENT -> TileState(true, context.getString(R.string.ringer_silent))
+            else -> TileState(false, context.getString(R.string.ringer_sound))
+        }
+    }
+    val autoBrightness = remember(refresh) {
+        val auto = runCatching {
+            Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+        }.getOrDefault(false)
+        TileState(auto, if (auto) on else off)
+    }
+    val nfc = remember(refresh) { runCatching { android.nfc.NfcAdapter.getDefaultAdapter(context) }.getOrNull() }
+    val list = mutableListOf<Pair<Triple<ImageVector, String, TileState>, () -> Unit>>(
+        Triple(EuriseIcons.map(), stringResource(R.string.tile_location), location) to {
+            context.startSafely(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        },
+        Triple(EuriseIcons.plane(), stringResource(R.string.tile_airplane), airplane) to {
+            context.startSafely(Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS))
+        },
+        Triple(EuriseIcons.shield(), stringResource(R.string.tile_saver), saver) to {
+            context.startSafely(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))
+        },
+        Triple(EuriseIcons.music(), stringResource(R.string.tile_ringer), ringer) to {
+            val ok = runCatching {
+                audio?.ringerMode = if (audio?.ringerMode == android.media.AudioManager.RINGER_MODE_NORMAL) {
+                    android.media.AudioManager.RINGER_MODE_VIBRATE
+                } else {
+                    android.media.AudioManager.RINGER_MODE_NORMAL
+                }
+            }.isSuccess
+            if (ok) onChanged() else context.startSafely(Intent(Settings.ACTION_SOUND_SETTINGS))
+        },
+        Triple(EuriseIcons.sun(), stringResource(R.string.tile_brightness), autoBrightness) to {
+            if (Settings.System.canWrite(context)) {
+                Settings.System.putInt(
+                    context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    if (autoBrightness.on) Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL else Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
+                )
+                onChanged()
+            } else {
+                context.startSafely(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, android.net.Uri.parse("package:${context.packageName}")))
+            }
+        },
+        Triple(EuriseIcons.globe(), stringResource(R.string.tile_hotspot), TileState(false, stringResource(R.string.tile_system_open))) to {
+            val tether = Intent().setClassName("com.android.settings", "com.android.settings.TetherSettings")
+            if (runCatching { context.startActivity(tether.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isFailure) {
+                context.startSafely(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+            }
+        },
+        Triple(EuriseIcons.camera(), stringResource(R.string.tile_cast), TileState(false, stringResource(R.string.tile_system_open))) to {
+            context.startSafely(Intent(Settings.ACTION_CAST_SETTINGS))
+        },
+    )
+    if (nfc != null) {
+        val enabled = nfc.isEnabled
+        list += Triple(EuriseIcons.wifi(), stringResource(R.string.tile_nfc), TileState(enabled, if (enabled) on else off)) to {
+            context.startSafely(Intent(Settings.ACTION_NFC_SETTINGS))
+        }
+    }
+    return list
+}
+
 @Composable
 private fun Tile(icon: ImageVector, label: String, state: TileState, hazeState: HazeState, onClick: () -> Unit, modifier: Modifier) {
     val shape = RoundedCornerShape(22.dp)
-    val bg = if (state.on) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else Color.Transparent
+    // Acceso: lo stesso bianco delle voci selezionate nel resto della suite, simbolo nel colore d'accento.
+    val bg = if (state.on) eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors.glassSelected else Color.Transparent
     Column(
         modifier
             .height(68.dp)

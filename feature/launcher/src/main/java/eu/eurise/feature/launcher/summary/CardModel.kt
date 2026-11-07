@@ -47,8 +47,28 @@ enum class CardKind(
     }
 }
 
-/** Una scheda messa nel Riepilogo, con la misura scelta. */
-data class PlacedCard(val kind: CardKind, val size: CardSize)
+/**
+ * Una scheda messa in una pagina, con la sua misura libera: [cols] colonne su 4 e [rows] righe da 56 dp.
+ * Il contenuto si adatta alla classe di misura più vicina ([size]).
+ */
+data class PlacedCard(val kind: CardKind, val cols: Int, val rows: Int) {
+    constructor(kind: CardKind, size: CardSize) : this(kind, size.columns, if (size.tall) 4 else 2)
+
+    val size: CardSize
+        get() = when {
+            cols >= 3 && rows >= 4 -> CardSize.Large
+            cols >= 3 -> CardSize.Wide
+            rows >= 4 -> CardSize.Medium
+            else -> CardSize.Small
+        }
+
+    fun resized(newCols: Int, newRows: Int) = copy(cols = newCols.coerceIn(MIN_COLS, GRID_COLS), rows = newRows.coerceIn(MIN_ROWS, MAX_ROWS))
+}
+
+const val GRID_COLS = 4
+const val MIN_COLS = 1
+const val MIN_ROWS = 2
+const val MAX_ROWS = 9
 
 /** Schede di partenza a destra della home: Calendario e Comunicazioni. */
 val DefaultCards = listOf(
@@ -63,35 +83,35 @@ val DefaultLeftCards = listOf(
     PlacedCard(CardKind.Music, CardSize.Wide),
 )
 
-fun List<PlacedCard>.encode(): String = joinToString("|") { "${it.kind.id}:${it.size.name}" }
+fun List<PlacedCard>.encode(): String = joinToString("|") { "${it.kind.id}:${it.cols}:${it.rows}" }
 
+/** Legge le schede salvate; accetta anche il formato precedente con le misure a nome (es. "calendar:Large"). */
 fun decodeCards(raw: String?, default: List<PlacedCard> = DefaultCards): List<PlacedCard> {
     if (raw == null) return default
     return raw.split('|').mapNotNull { part ->
-        val kind = CardKind.byId(part.substringBefore(':')) ?: return@mapNotNull null
-        val size = CardSize.entries.firstOrNull { it.name == part.substringAfter(':') } ?: kind.defaultSize
-        PlacedCard(kind, if (size in kind.sizes) size else kind.defaultSize)
+        val bits = part.split(':')
+        val kind = CardKind.byId(bits[0]) ?: return@mapNotNull null
+        when {
+            bits.size >= 3 -> PlacedCard(kind, bits[1].toIntOrNull() ?: 4, bits[2].toIntOrNull() ?: 2).resized(bits[1].toIntOrNull() ?: 4, bits[2].toIntOrNull() ?: 2)
+            bits.size == 2 -> PlacedCard(kind, CardSize.entries.firstOrNull { it.name == bits[1] } ?: kind.defaultSize)
+            else -> PlacedCard(kind, kind.defaultSize)
+        }
     }.distinctBy { it.kind }
 }
 
 /**
- * Dispone le schede in righe: una scheda da 4 colonne sta da sola, due schede da 2 si affiancano.
- * Una scheda da 2 rimasta sola occupa metà riga.
+ * Dispone le schede in righe da 4 colonne, nell'ordine: una scheda va accanto alla precedente finché c'è
+ * spazio, altrimenti passa alla riga sotto.
  */
 fun layoutRows(cards: List<PlacedCard>): List<List<Int>> {
-    val rows = mutableListOf<List<Int>>()
-    var pending: Int? = null
+    val rows = mutableListOf<MutableList<Int>>()
+    var used = GRID_COLS
     cards.forEachIndexed { i, c ->
-        if (!c.size.half) {
-            pending?.let { rows += listOf(it); pending = null }
-            rows += listOf(i)
-        } else if (pending == null) {
-            pending = i
+        if (used + c.cols > GRID_COLS) {
+            rows += mutableListOf(i); used = c.cols
         } else {
-            rows += listOf(pending!!, i)
-            pending = null
+            rows.last() += i; used += c.cols
         }
     }
-    pending?.let { rows += listOf(it) }
     return rows
 }
