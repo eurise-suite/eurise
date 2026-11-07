@@ -507,6 +507,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     welcome = welcome,
                                     onOpenFolder = { openFolder = it.id },
                                     onCreateFolder = { app -> folderPicker = FolderRequest(null, eu.eurise.feature.launcher.folders.AppFolder.HOME, app.key) },
+                                    skyLight = scene.skyLight,
                                     home = HomeBoardData(
                                         editing = editingHome,
                                         onEditing = { editingHome = it },
@@ -852,6 +853,7 @@ private fun PhoneHome(
     onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit,
     onCreateFolder: (AppEntry) -> Unit,
     home: HomeBoardData,
+    skyLight: Boolean,
 ) {
     // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
     val compact = settings.rows >= 3 || (settings.rows == 2 && LocalConfiguration.current.screenHeightDp < 820)
@@ -876,7 +878,16 @@ private fun PhoneHome(
             } else {
                 Spacer(Modifier.height(16.dp))
             }
-            // Accoglienza: saluto, orario, data e meteo, poi le tre pillole.
+            // Accoglienza: saluto, orario, data e meteo, poi le pillole. Sul cielo ancora chiaro il testo prende
+            // il colore delle pillole; quando il cielo si scurisce passa al chiaro.
+            val headerColor = if (skyLight) (if (dark) Color(0xFF1B1F27) else Color(0xFF1E1D1B)) else Color(0xFFF1EEE8)
+            MaterialTheme(
+                colorScheme = MaterialTheme.colorScheme.copy(
+                    onBackground = headerColor, onSurface = headerColor, onSurfaceVariant = headerColor.copy(alpha = 0.82f),
+                ),
+            ) {
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides headerColor) {
+            Column {
             androidx.compose.material3.Text(
                 greeting(now, settings.userName),
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
@@ -902,6 +913,9 @@ private fun PhoneHome(
             }
             Spacer(Modifier.height(6.dp))
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
+            }
+            }
+            }
             Spacer(Modifier.height(12.dp))
             // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro. I preferiti
             // restano ancorati in basso anche quando una pillola si riduce.

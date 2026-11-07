@@ -53,6 +53,12 @@ data class Scene(
 ) {
     /** Sopra le scene scure il testo è chiaro. */
     val dark: Boolean get() = moon || sky.first().luma() < 0.3f
+
+    /**
+     * Il cielo in alto (dove stanno saluto, orario e meteo) è ancora abbastanza chiaro per un testo scuro,
+     * anche quando il resto della Scrivania è già in tema scuro (per esempio al tramonto).
+     */
+    val skyLight: Boolean get() = sky.take(2).map { it.luma() }.average() >= 0.32
 }
 
 private fun Color.luma(): Float = 0.2126f * red + 0.7152f * green + 0.0722f * blue
