@@ -7,6 +7,7 @@ import eu.eurise.feature.launcher.home.MusicHalf
 import eu.eurise.feature.launcher.home.PeopleSheet
 import eu.eurise.feature.launcher.home.WorkPill
 import eu.eurise.feature.launcher.home.greeting
+import eu.eurise.feature.launcher.home.openWebSearch
 import eu.eurise.feature.launcher.summary.NewsCard
 import eu.eurise.feature.launcher.summary.NewsSourcesSheet
 import eu.eurise.feature.launcher.summary.StocksCard
@@ -460,7 +461,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     )
                 } else {
                     CategoryBar(
-                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true },
+                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { context.openWebSearch() },
                         hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
                     )
                 }

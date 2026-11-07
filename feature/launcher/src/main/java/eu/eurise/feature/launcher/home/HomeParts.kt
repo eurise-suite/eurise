@@ -340,7 +340,8 @@ fun CategoryBar(
         ) {
             categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
         }
-        SearchCircle(hazeState, onSearch)
+        // Sul telefono la ricerca delle app si apre scorrendo in su: il cerchio cerca sul web.
+        SearchCircle(hazeState, onSearch, web = true)
     }
 }
 
@@ -369,15 +370,32 @@ fun CategoryButton(category: BarCategory, active: Boolean, onClick: () -> Unit, 
 }
 
 @Composable
-fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier = Modifier) {
+fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier = Modifier, web: Boolean = false) {
+    val label = stringResource(if (web) R.string.search_web else R.string.search)
     Box(
         modifier
             .size(GlassDefaults.PillHeight)
             .glass(hazeState, CircleShape, outline = false)
-            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.search), onClick = onSearch),
+            .clickable(role = Role.Button, onClickLabel = label, onClick = onSearch),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(EuriseIcons.search(), stringResource(R.string.search), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+        Icon(if (web) EuriseIcons.globe() else EuriseIcons.search(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+    }
+}
+
+/** Apre la ricerca sul web con il browser predefinito; se il browser non la gestisce, apre il browser. */
+fun android.content.Context.openWebSearch() {
+    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH)
+        .putExtra(android.app.SearchManager.QUERY, "")
+        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    val ok = runCatching { startActivity(search) }.isSuccess
+    if (!ok) {
+        runCatching {
+            startActivity(
+                android.content.Intent.makeMainSelectorActivity(android.content.Intent.ACTION_MAIN, android.content.Intent.CATEGORY_APP_BROWSER)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
     }
 }
 
