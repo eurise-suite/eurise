@@ -29,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,11 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -63,9 +63,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.data.TaskRepository
 import eu.eurise.core.data.calendar.CalendarEvent
@@ -75,7 +72,6 @@ import eu.eurise.core.designsystem.component.GlassSegmented
 import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
-import eu.eurise.core.designsystem.theme.EuriseThemeExtras
 import eu.eurise.core.designsystem.theme.colors
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -150,7 +146,6 @@ internal fun CalendarScreen(
 ) {
     val headerHaze = remember { HazeState() }
     val density = LocalDensity.current
-    var headerHeight by remember { mutableStateOf(0.dp) }
     val clearance = LocalDockClearance.current
     val now by produceState(LocalDateTime.now()) {
         while (true) {
@@ -161,85 +156,14 @@ internal fun CalendarScreen(
     val timeline = state.view in setOf(CalendarView.Day, CalendarView.ThreeDays, CalendarView.Week)
     val swipeThreshold = with(density) { 72.dp.toPx() }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // Contenuto: scorre dietro la testata; si cambia periodo scorrendo di lato.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .hazeSource(headerHaze)
-                .pointerInput(state.view) {
-                    var total = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { total = 0f },
-                        onDragEnd = {
-                            if (total > swipeThreshold) onStep(false) else if (total < -swipeThreshold) onStep(true)
-                        },
-                    ) { _, dx -> total += dx }
-                },
-        ) {
-            when {
-                !state.hasPermission -> PermissionCard(
-                    showSettingsLink = showSettingsLink,
-                    onAllow = onRequestPermission,
-                    onOpenSettings = onOpenSettings,
-                    modifier = Modifier.padding(top = headerHeight + 16.dp),
-                )
-                timeline -> {
-                    val scroll = rememberScrollState()
-                    val hour = hourPx()
-                    LaunchedEffect(state.view, state.from) {
-                        scroll.scrollTo((initialScrollHour(state.days, state.today) * hour).toInt())
-                    }
-                    TimelineGrid(
-                        days = state.days,
-                        events = state.events,
-                        today = state.today,
-                        now = now,
-                        scrollState = scroll,
-                        topPadding = headerHeight + 8.dp,
-                        bottomPadding = clearance,
-                        onEventClick = onEventClick,
-                        onSlotClick = onSlotClick,
-                    )
-                }
-                state.view == CalendarView.Month -> MonthView(
-                    state = state,
-                    now = now,
-                    topPadding = headerHeight,
-                    bottomPadding = clearance,
-                    onSelectDay = { onOpenDay(it, false) },
-                    onEventClick = onEventClick,
-                    onToggleTask = onToggleTask,
-                )
-                else -> AgendaView(
-                    state = state,
-                    now = now,
-                    topPadding = headerHeight,
-                    bottomPadding = clearance,
-                    onEventClick = onEventClick,
-                    onToggleTask = onToggleTask,
-                )
-            }
-        }
-
-        // Testata fissa e satinata.
-        val extra = EuriseThemeExtras.colors
-        val bg = MaterialTheme.colorScheme.background
+    // La testata è piena e ferma: il calendario scorre solo sotto di lei, così mese, viste e giorni
+    // restano sempre nitidi, qualunque cosa ci sia in agenda.
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .hazeEffect(
-                    state = headerHaze,
-                    style = HazeStyle(
-                        backgroundColor = bg,
-                        tints = listOf(HazeTint(bg.copy(alpha = 0.72f))),
-                        blurRadius = 22.dp,
-                        noiseFactor = 0f,
-                        fallbackTint = HazeTint(bg.copy(alpha = 0.95f)),
-                    ),
-                )
+                .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .onSizeChanged { headerHeight = with(density) { it.height.toDp() } }
                 .padding(top = 12.dp, bottom = 10.dp),
         ) {
             TitleRow(state.anchor, onStep, onToday)
@@ -263,14 +187,69 @@ internal fun CalendarScreen(
                 AllDayRow(state, onToggleTask, onOpenDay = { onOpenDay(it, true) })
             }
         }
-        // Separatore appena percettibile sotto la testata.
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        // Contenuto: si cambia periodo anche scorrendo di lato.
         Box(
             Modifier
-                .padding(top = headerHeight)
+                .weight(1f)
                 .fillMaxWidth()
-                .height(1.dp)
-                .background(extra.glassOutline)
-        )
+                .clipToBounds()
+                .hazeSource(headerHaze)
+                .pointerInput(state.view) {
+                    var total = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = {
+                            if (total > swipeThreshold) onStep(false) else if (total < -swipeThreshold) onStep(true)
+                        },
+                    ) { _, dx -> total += dx }
+                },
+        ) {
+            when {
+                !state.hasPermission -> PermissionCard(
+                    showSettingsLink = showSettingsLink,
+                    onAllow = onRequestPermission,
+                    onOpenSettings = onOpenSettings,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+                timeline -> {
+                    val scroll = rememberScrollState()
+                    val hour = hourPx()
+                    LaunchedEffect(state.view, state.from) {
+                        scroll.scrollTo((initialScrollHour(state.days, state.today) * hour).toInt())
+                    }
+                    TimelineGrid(
+                        days = state.days,
+                        events = state.events,
+                        today = state.today,
+                        now = now,
+                        scrollState = scroll,
+                        topPadding = 10.dp,
+                        bottomPadding = clearance,
+                        onEventClick = onEventClick,
+                        onSlotClick = onSlotClick,
+                    )
+                }
+                state.view == CalendarView.Month -> MonthView(
+                    state = state,
+                    now = now,
+                    topPadding = 0.dp,
+                    bottomPadding = clearance,
+                    onSelectDay = { onOpenDay(it, false) },
+                    onEventClick = onEventClick,
+                    onToggleTask = onToggleTask,
+                )
+                else -> AgendaView(
+                    state = state,
+                    now = now,
+                    topPadding = 0.dp,
+                    bottomPadding = clearance,
+                    onEventClick = onEventClick,
+                    onToggleTask = onToggleTask,
+                )
+            }
+        }
     }
 }
 
