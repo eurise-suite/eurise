@@ -120,6 +120,12 @@
     <string name="tint_grafite">Grafite</string>
     <string name="tint_arancio">Arancio</string>
     <string name="tint_viola">Viola</string>
+    <string name="tint_cuoio">Cuoio</string>
+    <string name="tint_verde_inglese">Verde inglese</string>
+    <string name="tint_azzurro_costiera">Azzurro costiera</string>
+    <string name="appearance_icon_colors">Colore dei simboli</string>
+    <string name="appearance_icons_category">Per categoria</string>
+    <string name="appearance_icons_varied">Vario</string>
 
     <string name="favorite_move_before">Sposta prima</string>
     <string name="favorite_move_after">Sposta dopo</string>

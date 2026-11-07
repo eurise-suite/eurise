@@ -99,6 +99,28 @@ fun AppearanceSheet(settings: LauncherSettings, dark: Boolean, onChange: ((Launc
                 Text(stringResource(R.string.appearance_labels), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
             }
+            Column {
+                Text(stringResource(R.string.appearance_icon_colors), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
+                ) {
+                    listOf(false to R.string.appearance_icons_category, true to R.string.appearance_icons_varied).forEach { (value, label) ->
+                        val on = settings.variedIcons == value
+                        Box(
+                            Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(50))
+                                .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                .clickable(role = Role.RadioButton) { onChange { it.copy(variedIcons = value) } },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(label), fontSize = 13.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
             AccentPicker(settings.accent, dark) { a -> onChange { it.copy(accent = a) } }
             Text(stringResource(R.string.appearance_hint), fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
@@ -143,7 +165,7 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.appearance_accent), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         val names = tintNames()
-        // Le otto tinte dei calendari, l'arancio e il viola, e il colore personale: due file da sei.
+        // Le otto tinte dei calendari, le cinque in più e il colore personale: due file da sette.
         val options: List<@Composable () -> Unit> =
             CalendarTint.entries.map { tint ->
                 @Composable { Swatch(if (dark) tint.dark else tint.light, accent == Accent.Suite(tint), names[tint].orEmpty()) { onPick(Accent.Suite(tint)) } }
@@ -151,7 +173,7 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
                 @Composable {
                     Swatch(
                         if (dark) tint.dark else tint.light, accent == Accent.Extra(tint),
-                        stringResource(if (tint == ExtraTint.Arancio) R.string.tint_arancio else R.string.tint_viola),
+                        stringResource(extraName(tint)),
                     ) { onPick(Accent.Extra(tint)) }
                 }
             } + listOf(
@@ -164,10 +186,10 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
                     ) { onPick(Accent.Custom(customColor(hue, light))) }
                 },
             )
-        options.chunked(6).forEach { row ->
+        options.chunked(7).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.forEach { it() }
-                repeat(6 - row.size) { Spacer(Modifier.size(32.dp)) }
+                repeat(7 - row.size) { Spacer(Modifier.size(32.dp)) }
             }
         }
         if (custom != null) {
@@ -213,6 +235,14 @@ private fun tintNames(): Map<CalendarTint, String> = mapOf(
     CalendarTint.Terracotta to stringResource(R.string.tint_terracotta),
     CalendarTint.Grafite to stringResource(R.string.tint_grafite),
 )
+
+private fun extraName(tint: ExtraTint) = when (tint) {
+    ExtraTint.Arancio -> R.string.tint_arancio
+    ExtraTint.Viola -> R.string.tint_viola
+    ExtraTint.Cuoio -> R.string.tint_cuoio
+    ExtraTint.VerdeInglese -> R.string.tint_verde_inglese
+    ExtraTint.AzzurroCostiera -> R.string.tint_azzurro_costiera
+}
 
 private fun hueOf(c: Color): Float {
     val max = maxOf(c.red, c.green, c.blue)

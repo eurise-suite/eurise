@@ -17,13 +17,20 @@ import kotlinx.coroutines.flow.asStateFlow
  * Ogni tinta ha una versione per il giorno e una più chiara per la sera.
  */
 /**
- * Tinte d'accento in più rispetto a quelle dei calendari, per completare i colori secondari:
- * un arancio vero (Terracotta tende al bruno) e un viola bluastro (Prugna tende al rosso).
+ * Tinte in più rispetto a quelle dei calendari: completano i colori secondari (un arancio vero e un viola
+ * bluastro) e aggiungono cuoio, verde inglese e azzurro costiera. Servono per l'accento e per le icone.
  */
 enum class ExtraTint(val light: Color, val dark: Color) {
     Arancio(Color(0xFFB8621E), Color(0xFFF2A866)),
     Viola(Color(0xFF5A4BA0), Color(0xFFB3A6F0)),
+    Cuoio(Color(0xFF7A4A2A), Color(0xFFC9956B)),
+    VerdeInglese(Color(0xFF1F4D3A), Color(0xFF7FB59A)),
+    AzzurroCostiera(Color(0xFF1E78A8), Color(0xFF7CC4EA)),
 }
+
+/** Colori per i simboli delle icone quando si sceglie "Vario": tutte le tinte tranne la Grafite. */
+val IconPalette: List<Color> =
+    CalendarTint.entries.filter { it != CalendarTint.Grafite }.map { it.dark } + ExtraTint.entries.map { it.dark }
 
 sealed interface Accent {
     data class Suite(val tint: CalendarTint) : Accent
@@ -69,6 +76,8 @@ data class LauncherSettings(
     val rows: Int = 1,
     val iconSize: Int = 56,
     val showLabels: Boolean = true,
+    /** Simboli delle icone colorati per categoria (falso) o con colori vari per app (vero). */
+    val variedIcons: Boolean = false,
     val accent: Accent = Accent.Default,
     val cards: List<PlacedCard> = decodeCards(null),
     /** Schede della pagina a sinistra della home. */
@@ -103,6 +112,7 @@ class SettingsStore(context: Context) {
             .putInt("grid_rows", next.rows)
             .putInt("icon_size", next.iconSize)
             .putBoolean("show_labels", next.showLabels)
+            .putBoolean("varied_icons", next.variedIcons)
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
             .putString("left_cards", next.leftCards.encode())
@@ -114,6 +124,7 @@ class SettingsStore(context: Context) {
         rows = prefs.getInt("grid_rows", 1),
         iconSize = prefs.getInt("icon_size", 56),
         showLabels = prefs.getBoolean("show_labels", true),
+        variedIcons = prefs.getBoolean("varied_icons", false),
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),
         leftCards = decodeCards(prefs.getString("left_cards", null), DefaultLeftCards),

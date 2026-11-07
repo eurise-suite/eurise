@@ -220,6 +220,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = accent, onPrimary = onAccent)) {
       // Testi più compatti: interlinea stretta su tutta la Scrivania.
       ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.3.em)) {
+      androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons) {
         val hazeState = remember { HazeState() }
         var weatherSheet by remember { mutableStateOf(false) }
         val openWeather: () -> Unit = {
@@ -419,6 +420,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 AppearanceSheet(settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false })
             }
         }
+      }
       }
       }
     }

@@ -146,6 +146,9 @@ private object SystemGlyphs {
     }
 }
 
+/** Vero quando i simboli delle icone prendono colori vari invece del colore della categoria. */
+val LocalVariedIcons = androidx.compose.runtime.compositionLocalOf { false }
+
 /** Fondo dei tondi delle icone: blu notte di giorno, grafite di sera. */
 val IconBackgroundLight = Color(0xFF1F2A44)
 val IconBackgroundDark = Color(0xFF262B33)
@@ -159,7 +162,11 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     val px = with(androidx.compose.ui.platform.LocalDensity.current) { size.roundToPx() }
     var image by remember(entry.key) { mutableStateOf<IconImage?>(null) }
     LaunchedEffect(entry.key) { image = IconLoader.load(context, entry, px) }
-    val tint = entry.category.tint.dark
+    val tint = if (LocalVariedIcons.current) {
+        eu.eurise.feature.launcher.settings.IconPalette[Math.floorMod(entry.packageName.hashCode() + entry.label.hashCode(), eu.eurise.feature.launcher.settings.IconPalette.size)]
+    } else {
+        entry.category.tint.dark
+    }
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Box(
             Modifier
