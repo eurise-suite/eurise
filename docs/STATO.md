@@ -5,7 +5,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 ## Riferimenti
 - Documento di progetto: Claude Doc `81d73EgPHtgsSEd7YkavhU`.
 - Tela di design "Icone della suite": https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
-  (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud).
+  (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud, Attività,
+  Drive e Scanner, Orologio, Galleria).
 - Repository: `eurise-suite/eurise`. Un ramo per lavoro (`launcher`, `note`, `disegno`, `cloud`…), unito in
   `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
@@ -90,10 +91,37 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `user_info`, creato in Manager → token API), come fanno FolderSync e l'integrazione kDrive di Home Assistant.
   Da verificare che l'API risponda anche con my kSuite+ prima di costruire il client.
 
+## Attività (`feature/tasks`) – anteprime approvate, codice da scrivere
+- Tela, pagina "Attività": elenco Oggi (In ritardo, Oggi, Domani; viste Oggi, Programmate, Importanti ed elenchi),
+  scheda (elenco, scadenza con ora, promemoria, ripetizione, importanza, passi, note, collegamenti a nota e contatto),
+  aggiunta rapida "come si parla" con i pezzi riconosciuti togliibili, elenchi, avviso prima di sincronizzare.
+- Decisioni del proprietario (8 novembre):
+  - Importanza a tre livelli: No, Media, Alta (in CalDAV PRIORITY 0, 5, 1).
+  - Le attività con un orario compaiono anche nel Calendario: interruttore acceso di base.
+  - Farmaci e Date importanti diventano elenchi automatici, di base solo sul telefono; ognuno ha un interruttore
+    "Sincronizza" con il servizio scelto, e accenderlo apre un avviso sui rischi (server che può leggerli,
+    account rubato, altre app CalDAV, copie nei salvataggi del servizio) con "Lascia sul telefono" in evidenza.
+- Codice oggi: solo titolo, note, giorno di scadenza, fatta (database v3). Da fare nel ramo `attivita`:
+  database v4 (tabella degli elenchi con tinta, tipo e sincronizzazione; nelle attività elenco, ora, promemoria,
+  ripetizione RRULE, importanza, attività madre per i passi, uid ed etag), voci di `Reminders.kt` spostate negli
+  elenchi automatici, schermate nello stile delle Note (testata satinata, pillole, schede bianche), lettore della
+  frase con test, notifiche dei promemoria. Poi la sincronizzazione CalDAV (VTODO) con Murena.
+
+## Anteprime nuove da discutere (8 novembre, nell'ordine del documento di progetto)
+- Drive e Scanner (pagina "Drive e Scanner"): un solo navigatore per telefono, Murena e kDrive con pillole per
+  luogo, cartelle sincronizzate e cifrate, spazio usato; file aperto con offline, link, versioni e scadenza letta;
+  scanner con bordi e scatto automatico; esito con nome automatico, cartella proposta e promemoria della scadenza.
+- Orologio (pagina "Orologio"): sveglie con frase "suona domani alle…", festivi e ferie dal calendario,
+  sveglia smart, ora di dormire; modifica della sveglia; timer multipli, Pomodoro, avvio rapido.
+- Galleria (pagina "Galleria"): foto per giorno con barra di anni e mesi, coda di caricamento solo Wi-Fi,
+  Accadde oggi con "Mettile in un diario di viaggio", eliminazione a tre scelte (di base "Solo dal telefono").
+- Da decidere: quale delle tre si scrive per prima; se Drive, Orologio e Galleria entrano nell'app hub come
+  sezioni o restano app separate (il documento prevede fork di Fossify per Orologio e Galleria).
+
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
 - kDrive da sistemare (vedi Cloud).
-- Prossimo passo: Attività (completare l'app, poi sincronizzazione CalDAV con Murena), sempre partendo dalle
-  anteprime sulla tela; poi le altre app nell'ordine del documento di progetto.
+- Prossimo passo: discutere le anteprime di Drive, Orologio e Galleria; poi il codice delle Attività (ramo
+  `attivita`) e la sincronizzazione CalDAV con Murena.
