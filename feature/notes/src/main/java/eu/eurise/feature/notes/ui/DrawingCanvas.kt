@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -190,6 +191,7 @@ private val SIZES = listOf(4f, 7f, 12f)
  * Le forme tracciate a mano (linea, cerchio, rettangolo) diventano precise, con "Tieni a mano" per tornare
  * al tratto originale. Con il pennino il dito non disegna (si appoggia la mano senza lasciare segni).
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun DrawingEditor(
     initial: DrawingBlock,
