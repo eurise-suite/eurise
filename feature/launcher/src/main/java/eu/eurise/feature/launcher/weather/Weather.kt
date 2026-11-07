@@ -54,6 +54,9 @@ class WeatherRepository(private val context: Context) {
         return prefs.getString("json", null)?.let { parse(it) }
     }
 
+    /** Ultima posizione approssimata nota (per alba e tramonto), senza chiederne una nuova. */
+    fun lastLocation(): Pair<Double, Double>? = location()
+
     private fun location(): Pair<Double, Double>? {
         if (!hasLocationPermission()) return null
         val lm = context.getSystemService(LocationManager::class.java) ?: return null

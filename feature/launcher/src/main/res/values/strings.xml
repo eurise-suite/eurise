@@ -258,4 +258,23 @@
     <string name="folder_add">+ App</string>
     <string name="folder_remove_app">Togli dalla cartella</string>
     <string name="folder_hint">Tieni premuta un\'app per toglierla dalla cartella. Una cartella con una sola app torna icona normale.</string>
+
+    <string name="wallpaper_changes">Lo sfondo cambia con</string>
+    <string name="wallpaper_season">Stagione</string>
+    <string name="wallpaper_weather">Meteo</string>
+    <string name="wallpaper_holidays">Festività e date importanti</string>
+    <string name="wallpaper_moment">Momento della giornata</string>
+    <string name="welcome_health">Salute</string>
+    <string name="health_updated">aggiornato %1$s</string>
+    <string name="health_tip">Collega orologio o band: installa Gadgetbridge (F-Droid, senza account), associa il dispositivo e attiva la sincronizzazione con Health Connect. I dati compariranno qui.</string>
+    <string name="health_tip_action">Apri Gadgetbridge</string>
+    <string name="health_grant">Mostra i dati di salute</string>
+    <string name="health_grant_sub">Consenti a Eurise di leggerli da Health Connect</string>
+    <string name="health_empty">Ancora nessun dato oggi. Controlla che Gadgetbridge (o l\'app del tuo orologio) sincronizzi con Health Connect.</string>
+    <string name="health_bpm">battiti</string>
+    <string name="health_steps">passi</string>
+    <string name="health_sleep">sonno</string>
+    <string name="health_kcal">kcal</string>
+    <string name="health_privacy_title">Eurise e i dati di salute</string>
+    <string name="health_privacy_text">Eurise legge da Health Connect passi, battiti, sonno e calorie solo per mostrarli nella pillola Salute della Scrivania. Non li scrive, non li salva altrove e non li invia a nessuno: restano sul telefono.</string>
 </resources>

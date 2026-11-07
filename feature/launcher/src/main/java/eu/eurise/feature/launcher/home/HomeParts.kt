@@ -76,8 +76,10 @@ fun ClockBlock(
     onDate: () -> Unit,
     modifier: Modifier = Modifier,
     large: Boolean = true,
+    beside: @Composable () -> Unit = {},
 ) {
     Column(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             now.format(TimeFormat),
             fontFamily = PlusJakartaSans,
@@ -88,6 +90,9 @@ fun ClockBlock(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClock),
         )
+        Spacer(Modifier.width(12.dp))
+        beside()
+        }
         Text(
             now.format(DateFormat).replaceFirstChar { it.titlecase(Italian) },
             fontSize = 16.sp,

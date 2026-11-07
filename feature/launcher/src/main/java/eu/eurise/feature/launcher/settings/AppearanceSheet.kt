@@ -158,6 +158,32 @@ fun AppearanceSheet(
                 }
                 Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            // Lo sfondo cambia con: stagione, meteo, festività, momento della giornata.
+            Column {
+                Text(stringResource(R.string.wallpaper_changes), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                listOf(
+                    R.string.wallpaper_season to settings.wallpaper.season,
+                    R.string.wallpaper_weather to settings.wallpaper.weather,
+                    R.string.wallpaper_holidays to settings.wallpaper.holidays,
+                    R.string.wallpaper_moment to settings.wallpaper.moment,
+                ).forEachIndexed { i, (label, on) ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(label), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Switch(checked = on, onCheckedChange = { v ->
+                            onChange {
+                                it.copy(
+                                    wallpaper = when (i) {
+                                        0 -> it.wallpaper.copy(season = v)
+                                        1 -> it.wallpaper.copy(weather = v)
+                                        2 -> it.wallpaper.copy(holidays = v)
+                                        else -> it.wallpaper.copy(moment = v)
+                                    },
+                                )
+                            }
+                        })
+                    }
+                }
+            }
             AccentPicker(settings.accent, dark) { a -> onChange { it.copy(accent = a) } }
             Text(stringResource(R.string.appearance_hint), fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))

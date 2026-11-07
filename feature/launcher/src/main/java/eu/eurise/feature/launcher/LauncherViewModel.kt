@@ -16,6 +16,10 @@ import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
 import eu.eurise.feature.launcher.contacts.ContactsRepository
 import eu.eurise.feature.launcher.feeds.DailyRepository
+import eu.eurise.feature.launcher.health.HealthRepository
+import eu.eurise.feature.launcher.health.HealthState
+import eu.eurise.feature.launcher.health.HealthToday
+import eu.eurise.feature.launcher.weather.SunTimes
 import eu.eurise.feature.launcher.folders.AppFolder
 import eu.eurise.feature.launcher.feeds.FeedEntry
 import eu.eurise.feature.launcher.feeds.Sign
@@ -133,6 +137,28 @@ class LauncherViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LauncherState())
 
     /** Da richiamare quando la Scrivania torna in primo piano: permessi e meteo possono essere cambiati. */
+    val health = HealthRepository(application)
+    private val _healthState = MutableStateFlow(HealthState.Unavailable)
+    val healthState: StateFlow<HealthState> = _healthState
+    private val _healthToday = MutableStateFlow<HealthToday?>(null)
+    val healthToday: StateFlow<HealthToday?> = _healthToday
+
+    fun refreshHealth() {
+        viewModelScope.launch {
+            _healthState.value = health.state()
+            if (_healthState.value == HealthState.Ready) _healthToday.value = health.today()
+        }
+    }
+
+    /** Alba e tramonto di oggi dalla posizione approssimata (calcolati sul telefono). */
+    private val _sun = MutableStateFlow<Pair<java.time.LocalTime, java.time.LocalTime>?>(null)
+    val sun: StateFlow<Pair<java.time.LocalTime, java.time.LocalTime>?> = _sun
+
+    fun refreshSun() {
+        val loc = weatherRepo.lastLocation() ?: return
+        _sun.value = SunTimes.of(LocalDate.now(), loc.first, loc.second)
+    }
+
     val daily = DailyRepository(application)
     private val _sign = MutableStateFlow(daily.sign)
     val sign: StateFlow<Sign> = _sign
@@ -186,6 +212,8 @@ class LauncherViewModel(
     fun refresh() {
         calendarPermission.value = calendar.hasPermission()
         refreshFiles()
+        refreshHealth()
+        refreshSun()
         viewModelScope.launch { _weather.value = weatherRepo.forecast() }
         refreshNews()
         refreshQuotes()

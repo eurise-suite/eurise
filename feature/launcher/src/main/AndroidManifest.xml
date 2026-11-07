@@ -15,12 +15,19 @@
     <!-- Accoglienza: contatti recenti e preferiti (Rubrica e registro chiamate) e ultimi lavori (file recenti).
          Tutti chiesti solo quando l'utente tocca la voce relativa. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Pillola Salute: solo lettura da Health Connect. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
     <!-- Elenco delle app da mostrare nelle categorie (solo quelle con un'icona nel launcher). -->
     <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="nodomain.freeyourgadget.gadgetbridge" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -28,6 +35,25 @@
     </queries>
 
     <application>
+        <!-- Informativa sui dati di salute, richiesta da Health Connect. -->
+        <activity
+            android:name=".health.HealthPrivacyActivity"
+            android:exported="true"
+            android:label="@string/health_privacy_title">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name="eu.eurise.feature.launcher.health.ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".health.HealthPrivacyActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
         <!-- Numeri sulle icone, Comunicazioni e Musica: attivo solo se l'utente concede l'accesso. -->
         <service
             android:name=".notifications.EuriseNotificationListener"

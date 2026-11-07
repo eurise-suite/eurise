@@ -1,6 +1,9 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.home.HealthPill
+import eu.eurise.feature.launcher.home.PersonalDays
+import eu.eurise.feature.launcher.home.SunTimesColumn
 import eu.eurise.feature.launcher.folders.AppPicker
 import eu.eurise.feature.launcher.folders.FolderOverlay
 import eu.eurise.feature.launcher.folders.FolderTile
@@ -177,6 +180,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
     val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()
     val recentFiles by viewModel.recentFiles.collectAsStateWithLifecycle()
+    val sun by viewModel.sun.collectAsStateWithLifecycle()
+    val healthState by viewModel.healthState.collectAsStateWithLifecycle()
+    val healthToday by viewModel.healthToday.collectAsStateWithLifecycle()
+    val healthPermission = rememberLauncherForActivityResult(
+        androidx.health.connect.client.PermissionController.createRequestPermissionResultContract(),
+    ) { viewModel.refreshHealth() }
+    val importantDates by data.dates.dates.collectAsStateWithLifecycle()
     val travel by viewModel.travel.collectAsStateWithLifecycle()
     var filesAccess by remember { mutableStateOf(viewModel.files.hasAccess()) }
     val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -252,7 +262,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         )
     }
 
-    val scene = sceneFor(now)
+    val personal = PersonalDays(
+        birthday = importantDates.firstOrNull { it.mine && it.kind == eu.eurise.core.data.dates.ImportantDate.Kind.Birthday }?.monthDay,
+        anniversary = importantDates.firstOrNull { it.mine && it.kind == eu.eurise.core.data.dates.ImportantDate.Kind.Anniversary }?.monthDay,
+    )
+    val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
     EuriseTheme(darkTheme = scene.dark) {
       val accent = settings.accent.color(scene.dark)
       val onAccent = if (0.2126f * accent.red + 0.7152f * accent.green + 0.0722f * accent.blue > 0.55f) Color(0xFF14171C) else Color.White
@@ -314,6 +328,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 if (intent != null) runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 else storagePermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
             },
+            sun = sun,
+            healthState = healthState,
+            healthToday = healthToday,
+            onHealthGrant = { healthPermission.launch(viewModel.health.permissions) },
+            onGadgetbridge = { runCatching { context.startActivity(viewModel.health.gadgetbridgeIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } },
+            hazeState = hazeState,
             onScan = {
                 // Lo scanner della suite non c'è ancora: si apre un'app di scansione installata, altrimenti la fotocamera.
                 val scanner = state.apps.firstOrNull { a ->
@@ -661,7 +681,14 @@ private class WelcomeData(
     val onFilesGrant: () -> Unit,
     val onPlayer: () -> Unit,
     val onScan: () -> Unit,
+    val sun: Pair<java.time.LocalTime, java.time.LocalTime>?,
+    val healthState: eu.eurise.feature.launcher.health.HealthState,
+    val healthToday: eu.eurise.feature.launcher.health.HealthToday?,
+    val onHealthGrant: () -> Unit,
+    val onGadgetbridge: () -> Unit,
+    val hazeState: HazeState,
 )
+
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
@@ -743,7 +770,10 @@ private fun PhoneHome(
             Spacer(Modifier.height(2.dp))
             val context = LocalContext.current
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f))
+                ClockBlock(
+                    now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f),
+                    beside = { SunTimesColumn(welcome.sun) },
+                )
                 // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.image(2f), stringResource(R.string.quick_gallery)) {
@@ -789,6 +819,7 @@ private fun PhoneHome(
                     onGrant = actions.grantNotifications,
                     onHub = { actions.openEurise("today") },
                 )
+                HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge)
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     WorkPill(welcome.files, welcome.filesAccess, hazeState, Modifier.weight(1.35f), welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
                     MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, Modifier.weight(1f), welcome.onPlayer, actions.grantNotifications)

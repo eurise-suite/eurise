@@ -98,6 +98,8 @@ data class LauncherSettings(
     val categoryOverrides: Map<String, String> = emptyMap(),
     /** Cartelle di app, sulla home o nelle categorie. */
     val folders: List<AppFolder> = emptyList(),
+    /** Cosa fa cambiare lo sfondo. */
+    val wallpaper: eu.eurise.feature.launcher.home.WallpaperOptions = eu.eurise.feature.launcher.home.WallpaperOptions(),
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -153,6 +155,10 @@ class SettingsStore(context: Context) {
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .putString("folders", next.folders.encodeFolders())
+            .putBoolean("wp_season", next.wallpaper.season)
+            .putBoolean("wp_weather", next.wallpaper.weather)
+            .putBoolean("wp_holidays", next.wallpaper.holidays)
+            .putBoolean("wp_moment", next.wallpaper.moment)
             .apply()
     }
 
@@ -171,6 +177,12 @@ class SettingsStore(context: Context) {
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
         folders = decodeFolders(prefs.getString("folders", null)),
+        wallpaper = eu.eurise.feature.launcher.home.WallpaperOptions(
+            season = prefs.getBoolean("wp_season", true),
+            weather = prefs.getBoolean("wp_weather", true),
+            holidays = prefs.getBoolean("wp_holidays", true),
+            moment = prefs.getBoolean("wp_moment", true),
+        ),
     )
 }
 

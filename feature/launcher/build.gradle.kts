@@ -21,6 +21,8 @@ dependencies {
     implementation(project(":core:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    // Salute: lettura dei dati che orologi e band (per esempio tramite Gadgetbridge) scrivono in Health Connect.
+    implementation(libs.androidx.health.connect)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

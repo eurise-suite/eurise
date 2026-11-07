@@ -98,6 +98,7 @@ class EuriseData private constructor(context: Context, database: EuriseDatabase,
     val notes = NoteRepository(database.noteDao(), clock)
     val tasks = TaskRepository(database.taskDao(), clock)
     val calendar = CalendarRepository(context)
+    val dates = eu.eurise.core.data.dates.ImportantDatesRepository(context)
 
     companion object {
         fun create(context: Context, clock: Clock = Clock.System): EuriseData =

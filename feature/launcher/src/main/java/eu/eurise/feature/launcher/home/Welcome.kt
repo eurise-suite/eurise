@@ -515,3 +515,76 @@ private fun ContactPhoto(uri: android.net.Uri, modifier: Modifier) {
         androidx.compose.foundation.Image(it, null, modifier, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
     }
 }
+
+/**
+ * Pillola Salute: battiti, passi, sonno e calorie da Health Connect. Se mancano i dati, un suggerimento su
+ * come collegare orologio o band (Gadgetbridge da F-Droid, con la sincronizzazione verso Health Connect).
+ */
+@Composable
+fun HealthPill(
+    state: eu.eurise.feature.launcher.health.HealthState,
+    today: eu.eurise.feature.launcher.health.HealthToday?,
+    hazeState: HazeState,
+    onGrant: () -> Unit,
+    onGadgetbridge: () -> Unit,
+) {
+    val updated = today?.updatedAt?.atZone(java.time.ZoneId.systemDefault())?.format(TimeFormat)
+    Pill(hazeState, Modifier.fillMaxWidth(), title = stringResource(R.string.welcome_health), trailing = {
+        if (updated != null) Text(stringResource(R.string.health_updated, updated), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }) {
+        when {
+            state == eu.eurise.feature.launcher.health.HealthState.Unavailable -> {
+                Text(stringResource(R.string.health_tip), fontSize = 12.5.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.health_tip_action), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onGadgetbridge).padding(vertical = 2.dp),
+                )
+            }
+            state == eu.eurise.feature.launcher.health.HealthState.NeedsPermission -> PillLine(
+                EuriseIcons.heart(), stringResource(R.string.health_grant), stringResource(R.string.health_grant_sub), onGrant,
+            )
+            today == null || (today.steps == null && today.heartRate == null && today.sleep == null) -> {
+                Text(stringResource(R.string.health_empty), fontSize = 12.5.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.health_tip_action), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onGadgetbridge).padding(vertical = 2.dp),
+                )
+            }
+            else -> Row(Modifier.fillMaxWidth().padding(end = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                HealthValue(EuriseIcons.heart(2f), today.heartRate?.toString() ?: "—", stringResource(R.string.health_bpm))
+                HealthValue(EuriseIcons.task(2f), today.steps?.let { String.format(java.util.Locale.ITALIAN, "%,d", it) } ?: "—", stringResource(R.string.health_steps))
+                HealthValue(
+                    EuriseIcons.moon(2f),
+                    today.sleep?.let { "${it.toHours()} h ${it.toMinutes() % 60}" } ?: "—",
+                    stringResource(R.string.health_sleep),
+                )
+                HealthValue(EuriseIcons.sun(2f), today.kcal?.let { "%.0f".format(it) } ?: "—", stringResource(R.string.health_kcal))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthValue(icon: ImageVector, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Alba e tramonto accanto all'orario. */
+@Composable
+fun SunTimesColumn(sun: Pair<java.time.LocalTime, java.time.LocalTime>?) {
+    if (sun == null) return
+    val color = MaterialTheme.colorScheme.onBackground
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        listOf("↑ " + sun.first.format(TimeFormat), "↓ " + sun.second.format(TimeFormat)).forEachIndexed { i, text ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(EuriseIcons.sun(2f), null, tint = color.copy(alpha = if (i == 0) 1f else 0.7f), modifier = Modifier.size(13.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = color)
+            }
+        }
+    }
+}
