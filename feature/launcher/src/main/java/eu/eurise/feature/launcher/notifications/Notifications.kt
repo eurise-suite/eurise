@@ -72,10 +72,13 @@ object NotificationStore {
 
     internal fun update(service: NotificationListenerService) {
         this.service = java.lang.ref.WeakReference(service)
-        val visible = runCatching { service.activeNotifications }.getOrNull().orEmpty()
-            .filter { !it.notification.isGroupSummary() && it.packageName != service.packageName }
+        val raw = runCatching { service.activeNotifications }.getOrNull().orEmpty().filter { it.packageName != service.packageName }
+        // Il riepilogo di un gruppo si scarta solo se il gruppo ha anche le notifiche singole: alcune app
+        // (per esempio Proton Mail) a volte lasciano solo il riepilogo.
+        val groupsWithChildren = raw.filter { !it.notification.isGroupSummary() }.mapNotNull { it.groupKey }.toSet()
+        val visible = raw.filter { !it.notification.isGroupSummary() || it.groupKey !in groupsWithChildren }
         _all.value = visible
-            .filter { it.notification.extras.getCharSequence(Notification.EXTRA_TITLE) != null }
+            .filter { it.notification.extras.getCharSequence(Notification.EXTRA_TITLE) != null || it.isMessage() }
             .sortedByDescending { it.postTime }
             .take(30)
             .map { it.toMessage(service) }
@@ -122,11 +125,28 @@ object NotificationStore {
 
     private fun Notification.isGroupSummary() = (flags and Notification.FLAG_GROUP_SUMMARY) != 0
 
+    /**
+     * Una comunicazione: per categoria dichiarata, per stile "conversazione", oppure perché viene da un'app
+     * di posta, chat, SMS o telefono nota (alcune, come Proton Mail, non dichiarano la categoria).
+     */
     private fun StatusBarNotification.isMessage(): Boolean {
         val cat = notification.category
-        return cat == Notification.CATEGORY_MESSAGE || cat == Notification.CATEGORY_EMAIL ||
+        if (cat == Notification.CATEGORY_MESSAGE || cat == Notification.CATEGORY_EMAIL ||
             cat == Notification.CATEGORY_CALL || cat == Notification.CATEGORY_MISSED_CALL
+        ) return true
+        if (notification.extras.containsKey(Notification.EXTRA_MESSAGES)) return true
+        if (notification.extras.getString(Notification.EXTRA_TEMPLATE)?.endsWith("MessagingStyle") == true) return true
+        return CommunicationPackages.any { packageName.startsWith(it) }
     }
+
+    private val CommunicationPackages = listOf(
+        "ch.protonmail", "me.proton", "com.infomaniak.mail", "foundation.e.mail", "com.fsck.k9", "net.thunderbird",
+        "eu.faircode.email", "com.tutao.tutanota", "de.tutao", "com.google.android.gm", "com.microsoft.office.outlook",
+        "com.whatsapp", "org.telegram", "org.thunderdog.challegram", "org.thoughtcrime.securesms", "im.vector", "io.element",
+        "chat.simplex", "eu.siacs.conversations", "com.android.dialer", "com.google.android.dialer", "org.fossify.phone",
+        "foundation.e.message", "com.android.messaging", "org.fossify.messages", "com.google.android.apps.messaging",
+        "com.moez.QKSMS", "dev.octoshrimpy.quik",
+    )
 
     private fun StatusBarNotification.toMessage(context: Context): MessageItem {
         val extras = notification.extras
@@ -134,7 +154,9 @@ object NotificationStore {
             key = key,
             packageName = packageName,
             appLabel = labelOf(context, packageName),
-            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
+            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+                ?.takeIf { it.isNotBlank() } ?: extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
+                ?: labelOf(context, packageName),
             text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty(),
             postedAt = postTime,
             contentIntent = notification.contentIntent,

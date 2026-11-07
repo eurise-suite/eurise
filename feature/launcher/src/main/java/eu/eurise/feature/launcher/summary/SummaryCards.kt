@@ -377,7 +377,11 @@ fun MessagesCard(
                             Text(m.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                             Text(" · ${m.appLabel}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, maxLines = 1)
                         }
-                        Text(m.text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        // Se l'app non mostra l'anteprima (per esempio la posta cifrata) resta almeno l'avviso.
+                        Text(
+                            m.text.ifBlank { stringResource(R.string.message_no_preview) },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
                     }
                     Text(ago(now, m.postedAt), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 }

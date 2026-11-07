@@ -185,4 +185,6 @@
     <string name="calendar_prev">Mese precedente</string>
     <string name="calendar_next">Mese successivo</string>
     <string name="calendar_day_free">Niente in programma</string>
+
+    <string name="message_no_preview">Nuovo messaggio · tocca per aprire</string>
 </resources>
