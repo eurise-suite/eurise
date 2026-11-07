@@ -83,7 +83,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - kDrive: rifiutato con 403. L'app usa `https://<numero>.connect.kdrive.infomaniak.com/` e, se rifiutato,
   `https://connect.drive.infomaniak.com/<numero>/`; mostra il codice del server. Cause possibili: numero del
   kDrive sbagliato (si legge in kdrive.infomaniak.com/app/drive/NUMERO/…), password non "per le app", piano
-  senza WebDAV (non incluso in kSuite Free e Standard). Da riprovare con il proprietario.
+  senza WebDAV (non incluso in kSuite Free e Standard). Prova del proprietario nel browser con il numero giusto:
+  `<error/>` senza richiesta di credenziali (un WebDAV attivo chiederebbe email e password), quindi molto
+  probabilmente il piano non include WebDAV. Da verificare il nome del piano nel Manager Infomaniak; se
+  WebDAV non c'è, valutare l'API di kDrive (api.infomaniak.com, con accesso OAuth) al posto di WebDAV.
 
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
