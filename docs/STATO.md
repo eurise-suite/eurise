@@ -41,7 +41,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Date importanti (compleanni, anniversari, relazione, promemoria regalo 10 giorni prima).
 - Farmaci con orari di assunzione; le voci entrano automaticamente tra le attività con un avviso.
 
-## Note (`feature/notes`) – prima parte fatta (ramo `note`, da provare prima di unirlo a `main`)
+## Note (`feature/notes`) – testo ricco provato e unito a `main`; disegno sul ramo `disegno`
 - Anteprime approvate: tela, pagina "Note".
 - Editor a blocchi: paragrafi, titolo e sottotitolo, elenchi puntati e numerati, elenchi di controllo,
   tabelle, collegamenti ad altre note, linea; grassetto, corsivo, sottolineato, colori ed evidenziatore
@@ -53,8 +53,21 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Salvataggio: database del telefono (Room v2, migrazione da v1) con il contenuto in HTML5 aperto
   (`doc/NoteHtml.kt`, con test). Lo stesso HTML diventerà la cartella della nota su Murena con la
   sincronizzazione: `NoteHtml.document()` produce già il file completo.
-- Prossimi passi delle Note: disegno e scrittura a mano (SVG), note bloccate, foto e scansioni, note vocali,
-  sincronizzazione con Murena, tema Notte da rivedere sul telefono.
+- Disegno (ramo `disegno`, da provare): blocco disegno salvato come SVG dentro l'HTML (contorni pieni + punti
+  originali in `data-points`), editor a schermo intero con penna e matita sensibili alla pressione,
+  pennarello, evidenziatore, gomma, righello, inchiostro e otto tinte, tre spessori, fogli bianco/righe/
+  quadretti, annulla e ripeti, forme riconosciute con "Tieni a mano", dito ignorato quando si usa il pennino.
+  Codice in `doc/Drawing.kt` (geometria e forme, con test) e `ui/DrawingCanvas.kt`.
+- Prossimi passi delle Note: note bloccate, foto e scansioni, note vocali, tema Notte da rivedere sul telefono.
+
+## Cloud (richiesto dal proprietario il 7 novembre) – prossimo lavoro
+- Note e tutto il resto della suite devono salvarsi anche sul cloud: Nextcloud, Murena, Infomaniak kDrive,
+  Proton Drive.
+- Nextcloud, Murena e kDrive usano WebDAV: un solo motore di sincronizzazione in `core` li copre tutti.
+  Formato su cloud: una cartella per nota (HTML, disegni, allegati), come nel documento di progetto.
+- Proton Drive: l'SDK ufficiale è in anteprima e Proton lo dichiara non pronto per app di terze parti in
+  produzione, senza login incluso (github.com/ProtonDriveApps/sdk, gennaio 2026). Da decidere con il proprietario.
+- Prima le anteprime sulla tela: account cloud nelle impostazioni, stato della sincronizzazione, conflitti.
 - Idea del proprietario: taccuini "diario di viaggio" legati a Mappe e Galleria (il tipo di taccuino
   `travel` è già previsto nel database).
 
@@ -62,5 +75,4 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
-- Prossimo passo: provare le Note sul telefono (APK dal ramo `note`), poi disegno nelle note oppure Attività,
-  sempre partendo dalle anteprime sulla tela.
+- Prossimo passo: provare il disegno (APK dal ramo `disegno`), poi anteprime e motore del cloud.
