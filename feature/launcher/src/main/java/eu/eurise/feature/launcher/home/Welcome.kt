@@ -1,6 +1,8 @@
 package eu.eurise.feature.launcher.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -224,6 +226,16 @@ fun AgendaPill(
     }
 }
 
+/** Mostra [lines] righe e fa scorrere in verticale le altre. */
+@Composable
+private fun ScrollBox(lines: Int, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier.heightIn(max = (lines * 37).dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+        content = content,
+    )
+}
+
 /** Una sezione che mostra un elemento alla volta e si scorre di lato; a destra il contatore "2/5". */
 @Composable
 private fun <T> SwipeSection(items: List<T>, content: @Composable (T) -> Unit) {
@@ -266,7 +278,8 @@ fun CommsPill(
         when {
             !enabled -> PillLine(EuriseIcons.chat(), stringResource(R.string.setup_notifications), stringResource(R.string.grant), onGrant)
             messages.isEmpty() -> PillLine(EuriseIcons.chat(), stringResource(R.string.card_messages_empty), null, onHub)
-            else -> messages.take(if (compact) 2 else 3).forEach { m ->
+            // Si vedono le prime due o tre; le altre (fino a dodici) scorrendo dentro la pillola.
+            else -> ScrollBox(if (compact) 2 else 3) { messages.take(12).forEach { m ->
                 PillLine(
                     if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
                     "${m.title} · ${m.appLabel}",
@@ -274,7 +287,7 @@ fun CommsPill(
                     { onOpen(m) },
                     right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault()).format(TimeFormat),
                 )
-            }
+            } }
         }
     }
 }
@@ -298,14 +311,14 @@ fun WorkPill(files: List<RecentFile>, hasAccess: Boolean, hazeState: HazeState, 
         when {
             !hasAccess -> PillLine(EuriseIcons.folder(), stringResource(R.string.welcome_work_grant), null, onGrant)
             files.isEmpty() -> Text(stringResource(R.string.welcome_work_empty), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> files.take(2).forEach { f ->
+            else -> ScrollBox(2) { files.take(10).forEach { f ->
                 val icon = when {
                     f.mime.startsWith("audio/") -> EuriseIcons.mic()
                     f.mime == "application/pdf" -> EuriseIcons.note()
                     else -> EuriseIcons.folder()
                 }
                 PillLine(icon, f.name, f.folder, { onOpen(f) })
-            }
+            } }
         }
     }
 }

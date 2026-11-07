@@ -1,6 +1,8 @@
 package eu.eurise.feature.launcher.summary
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -98,7 +100,12 @@ fun SummaryCard(
         } else {
             Label(title)
         }
-        content()
+        // Il contenuto scorre dentro la scheda: si vede quanto entra, il resto scendendo.
+        Column(
+            Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content,
+        )
     }
 }
 
@@ -130,7 +137,7 @@ fun CalendarCard(
         when {
             !connected -> TextButton(onClick = onConnect) { Text(stringResource(R.string.today_connect_calendar)) }
             upcoming.isEmpty() -> Text(stringResource(R.string.card_calendar_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-            else -> upcoming.take(max).forEach { e -> UpcomingRow(e, today) }
+            else -> upcoming.take(maxOf(max, 9)).forEach { e -> UpcomingRow(e, today) }
         }
     }
     SummaryCard(stringResource(R.string.card_calendar), hazeState, modifier, onClick = onOpen) {
@@ -355,7 +362,7 @@ fun MessagesCard(
     size: CardSize = CardSize.Large,
     modifier: Modifier = Modifier,
 ) {
-    val max = when (size) { CardSize.Large -> 4; CardSize.Medium -> 3; else -> 2 }
+    val max = 15
     SummaryCard(stringResource(R.string.card_messages), hazeState, modifier) {
         when {
             !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant, onAppInfo)
@@ -510,7 +517,7 @@ fun PinnedNotesCard(
     size: CardSize,
     modifier: Modifier = Modifier,
 ) {
-    val max = when (size) { CardSize.Large -> 5; CardSize.Medium -> 3; else -> 2 }
+    val max = 12
     SummaryCard(stringResource(R.string.card_notes), hazeState, modifier, onClick = onOpenAll) {
         if (notes.isEmpty()) {
             Text(stringResource(R.string.card_notes_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
@@ -601,7 +608,7 @@ fun NewsCard(
     size: CardSize,
     modifier: Modifier = Modifier,
 ) {
-    val max = when (size) { CardSize.Large -> 6; CardSize.Medium -> 3; else -> 2 }
+    val max = 25
     val now = System.currentTimeMillis()
     SummaryCard(stringResource(R.string.card_news), hazeState, modifier, action = stringResource(R.string.news_sources), onAction = onSources) {
         when {
@@ -634,7 +641,7 @@ fun StocksCard(
     size: CardSize,
     modifier: Modifier = Modifier,
 ) {
-    val max = when (size) { CardSize.Small -> 1; CardSize.Wide -> 3; else -> 5 }
+    val max = 20
     SummaryCard(stringResource(R.string.card_stocks), hazeState, modifier, action = stringResource(R.string.stocks_symbols), onAction = onSymbols) {
         when {
             quotes == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)

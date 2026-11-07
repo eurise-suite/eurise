@@ -33,7 +33,7 @@ class RecentFilesRepository(private val context: Context) {
         Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:${context.packageName}"))
     } else null
 
-    suspend fun recent(limit: Int = 6): List<RecentFile> = withContext(Dispatchers.IO) {
+    suspend fun recent(limit: Int = 10): List<RecentFile> = withContext(Dispatchers.IO) {
         if (!hasAccess()) return@withContext emptyList()
         val collection = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
