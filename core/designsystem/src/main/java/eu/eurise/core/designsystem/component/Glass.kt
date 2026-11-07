@@ -63,9 +63,11 @@ val LocalDockClearance = compositionLocalOf { 0.dp }
 /**
  * Vetro satinato: sfoca ciò che scorre dietro (registrato con `hazeSource` sullo stesso [state]) e lo
  * vela con la tinta del tema. Sotto Android 12 la sfocatura diventa un velo semitrasparente.
+ *
+ * @param outline filo sottile attorno al vetro; la Scrivania usa il vetro piatto, senza filo.
  */
 @Composable
-fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp): Modifier {
+fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp, outline: Boolean = true): Modifier {
     val extra = EuriseThemeExtras.colors
     val style = HazeStyle(
         backgroundColor = MaterialTheme.colorScheme.background,
@@ -79,7 +81,7 @@ fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp): Modif
         .shadow(elevation, shape, ambientColor = shadowColor, spotColor = shadowColor)
         .clip(shape)
         .hazeEffect(state = state, style = style)
-        .border(1.dp, extra.glassOutline, shape)
+        .then(if (outline) Modifier.border(1.dp, extra.glassOutline, shape) else Modifier)
 }
 
 @Immutable

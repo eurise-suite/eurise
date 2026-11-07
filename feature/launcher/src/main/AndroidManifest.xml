@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Meteo da Open-Meteo con la posizione approssimata: chiesta solo toccando "Mostra il meteo". -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Elenco delle app da mostrare nelle categorie (solo quelle con un'icona nel launcher). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application>
+        <!-- Numeri sulle icone, Comunicazioni e Musica: attivo solo se l'utente concede l'accesso. -->
+        <service
+            android:name=".notifications.EuriseNotificationListener"
+            android:exported="true"
+            android:label="@string/launcher_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

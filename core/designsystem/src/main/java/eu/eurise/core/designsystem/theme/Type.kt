@@ -2,16 +2,22 @@ package eu.eurise.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import eu.eurise.core.designsystem.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-/*
- * Per ora si usa il carattere di sistema. Il font della suite (Plus Jakarta Sans, licenza OFL)
- * andrà incluso come file in res/font: niente font scaricati da servizi Google.
- */
-private val Base = FontFamily.Default
+/** Plus Jakarta Sans, il carattere della suite (licenza OFL, file inclusi nell'app: nessun download). */
+val PlusJakartaSans = FontFamily(
+    Font(R.font.plus_jakarta_sans_light, FontWeight.Light),
+    Font(R.font.plus_jakarta_sans_regular, FontWeight.Normal),
+    Font(R.font.plus_jakarta_sans_medium, FontWeight.Medium),
+    Font(R.font.plus_jakarta_sans_semibold, FontWeight.SemiBold),
+    Font(R.font.plus_jakarta_sans_bold, FontWeight.Bold),
+)
+private val Base = PlusJakartaSans
 private val Default = Typography()
 
 internal val EuriseTypography = Typography(

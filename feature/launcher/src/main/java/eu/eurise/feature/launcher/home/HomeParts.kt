@@ -1,0 +1,328 @@
+package eu.eurise.feature.launcher.home
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
+import eu.eurise.core.data.calendar.CalendarEvent
+import eu.eurise.core.data.model.Task
+import eu.eurise.core.designsystem.component.GlassDefaults
+import eu.eurise.core.designsystem.component.glass
+import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.core.designsystem.theme.EuriseThemeExtras
+import eu.eurise.core.designsystem.theme.PlusJakartaSans
+import eu.eurise.core.designsystem.theme.colors
+import eu.eurise.feature.launcher.R
+import eu.eurise.feature.launcher.apps.AppEntry
+import eu.eurise.feature.launcher.apps.AppIcon
+import eu.eurise.feature.launcher.apps.Category
+import eu.eurise.feature.launcher.weather.DayForecast
+import eu.eurise.feature.launcher.weather.Sky
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+private val Italian = Locale.ITALIAN
+private val TimeFormat = DateTimeFormatter.ofPattern("HH:mm")
+private val DateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Italian)
+private val WeekdayShort = DateTimeFormatter.ofPattern("EEE", Italian)
+
+/** Orario grande in Plus Jakarta Sans medio (variante A approvata), con la data sotto. */
+@Composable
+fun ClockBlock(now: LocalDateTime, modifier: Modifier = Modifier, large: Boolean = true) {
+    Column(modifier) {
+        Text(
+            now.format(TimeFormat),
+            fontFamily = PlusJakartaSans,
+            fontWeight = FontWeight.Medium,
+            fontSize = if (large) 84.sp else 64.sp,
+            lineHeight = if (large) 88.sp else 68.sp,
+            letterSpacing = (-2).sp,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Text(
+            now.format(DateFormat).replaceFirstChar { it.titlecase(Italian) },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+fun skyIcon(sky: Sky) = when (sky) {
+    Sky.Clear -> EuriseIcons.sun()
+    Sky.Cloudy -> EuriseIcons.cloud()
+    Sky.Fog -> EuriseIcons.fog()
+    Sky.Rain -> EuriseIcons.rain()
+    Sky.Snow -> EuriseIcons.snow()
+    Sky.Storm -> EuriseIcons.storm()
+}
+
+/** Meteo in una riga semplice, senza pillola: oggi e i due giorni seguenti. */
+@Composable
+fun WeatherRow(forecast: List<DayForecast>?, canAsk: Boolean, onAsk: () -> Unit, modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.onBackground
+    if (forecast.isNullOrEmpty()) {
+        if (canAsk) {
+            Row(
+                modifier.clip(RoundedCornerShape(50)).clickable(onClick = onAsk).padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(EuriseIcons.sun(), null, tint = color.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.weather_grant), color = color.copy(alpha = 0.8f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+        return
+    }
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
+        forecast.take(3).forEachIndexed { i, day ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(skyIcon(day.sky), null, tint = color, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                if (i == 0) {
+                    Text("${day.max}°", color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(" / ${day.min}°", color = color.copy(alpha = 0.75f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                } else {
+                    Text(
+                        day.date.format(WeekdayShort).replaceFirstChar { it.titlecase(Italian) } + " ${day.max}°",
+                        color = color.copy(alpha = 0.85f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun eventTime(e: CalendarEvent, allDay: String) =
+    if (e.allDay) allDay else "${e.start.format(TimeFormat)} – ${e.end.format(TimeFormat)}"
+
+/** Scheda di vetro "Oggi": il prossimo appuntamento e le prime cose da fare. */
+@Composable
+fun TodayCard(
+    now: LocalDateTime,
+    events: List<CalendarEvent>,
+    calendarConnected: Boolean,
+    tasks: List<Task>,
+    hazeState: HazeState,
+    onOpen: () -> Unit,
+    onConnectCalendar: () -> Unit,
+    onTaskDone: (Task) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val shape = RoundedCornerShape(28.dp)
+    Column(
+        modifier
+            .fillMaxWidth()
+            .glass(hazeState, shape, elevation = 8.dp, outline = false)
+            .clickable(onClick = onOpen)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Label(stringResource(R.string.today_next))
+        val next = events.firstOrNull { it.allDay || it.end.isAfter(now) }
+        when {
+            !calendarConnected -> Text(
+                stringResource(R.string.today_connect_calendar),
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onConnectCalendar),
+            )
+            next == null -> Text(stringResource(R.string.today_free), color = muted, fontWeight = FontWeight.SemiBold)
+            else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                val tint = CalendarTint.nearest(next.color).colors()
+                Box(Modifier.width(4.dp).height(40.dp).background(tint.dot, RoundedCornerShape(2.dp)))
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(next.title, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    val where = next.location.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+                    Text(eventTime(next, stringResource(R.string.today_all_day)) + where, color = muted, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Label(stringResource(R.string.today_todo))
+        if (tasks.isEmpty()) {
+            Text(stringResource(R.string.today_no_tasks), color = muted, fontWeight = FontWeight.SemiBold)
+        } else {
+            tasks.take(3).forEach { task ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), CircleShape)
+                            .clickable(role = Role.Checkbox) { onTaskDone(task) },
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(task.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            if (tasks.size > 3) Text(stringResource(R.string.today_more_tasks, tasks.size - 3), color = muted, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+fun Label(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Text(text.uppercase(Italian), color = color, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+}
+
+/**
+ * Un'app con icona a tema ed etichetta. Tenendola premuta si aggiunge o toglie dai preferiti.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppTile(
+    entry: AppEntry,
+    dark: Boolean,
+    badge: Int,
+    favorite: Boolean,
+    onOpen: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onInfo: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 56.dp,
+    labelColor: Color = MaterialTheme.colorScheme.onBackground,
+) {
+    var menu by remember { mutableStateOf(false) }
+    Box(modifier) {
+        Column(
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .combinedClickable(onClick = onOpen, onLongClick = { menu = true })
+                .padding(vertical = 6.dp, horizontal = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            AppIcon(entry, iconSize, dark, badge)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                entry.label,
+                color = labelColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.width(iconSize + 20.dp),
+            )
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(if (favorite) R.string.favorite_remove else R.string.favorite_add)) },
+                leadingIcon = { Icon(EuriseIcons.star(), null) },
+                onClick = { menu = false; onToggleFavorite() },
+            )
+            if (onInfo != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.app_info)) },
+                    leadingIcon = { Icon(EuriseIcons.tools(), null) },
+                    onClick = { menu = false; onInfo() },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Barra in basso: pillola di vetro con le categorie e cerchio di ricerca staccato. La categoria attiva
+ * prende il colore d'accento, il tratto più marcato e una lineetta sotto.
+ */
+@Composable
+fun CategoryBar(
+    categories: List<Category>,
+    selected: Category,
+    onSelect: (Category) -> Unit,
+    onSearch: () -> Unit,
+    hazeState: HazeState,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .weight(1f)
+                .height(GlassDefaults.PillHeight)
+                .glass(hazeState, RoundedCornerShape(50), outline = false)
+                .padding(GlassDefaults.Padding),
+        ) {
+            categories.forEach { c -> CategoryButton(c, c == selected, { onSelect(c) }, Modifier.weight(1f)) }
+        }
+        SearchCircle(hazeState, onSearch)
+    }
+}
+
+@Composable
+fun CategoryButton(category: Category, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier
+            .height(GlassDefaults.ItemHeight)
+            .clip(CircleShape)
+            .clickable(role = Role.Tab, onClickLabel = category.label, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            category.icon(if (active) EuriseIcons.StrokeSelected else EuriseIcons.Stroke),
+            contentDescription = category.label,
+            tint = color,
+            modifier = Modifier.size(22.dp),
+        )
+        Spacer(Modifier.height(4.dp))
+        Box(Modifier.width(14.dp).height(3.dp).background(if (active) color else Color.Transparent, RoundedCornerShape(2.dp)))
+    }
+}
+
+@Composable
+fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(GlassDefaults.PillHeight)
+            .glass(hazeState, CircleShape, outline = false)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.search), onClick = onSearch),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(EuriseIcons.search(), stringResource(R.string.search), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+    }
+}
+
+/** Velo leggero dietro le pagine delle categorie e della ricerca, perché il testo resti leggibile. */
+@Composable
+fun scrimColor(): Color = if (EuriseThemeExtras.colors.isDark) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.25f)

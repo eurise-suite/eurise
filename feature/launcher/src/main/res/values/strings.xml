@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_name">Eurise Scrivania</string>
+
+    <string name="weather_today">Oggi</string>
+    <string name="weather_grant">Mostra il meteo</string>
+
+    <string name="today_card_title">Oggi</string>
+    <string name="today_next">Prossimo</string>
+    <string name="today_todo">Da fare</string>
+    <string name="today_free">Nessun altro impegno oggi</string>
+    <string name="today_no_tasks">Niente da fare per oggi</string>
+    <string name="today_all_day">Tutto il giorno</string>
+    <string name="today_connect_calendar">Collega il calendario</string>
+    <string name="today_more_tasks">e altre %1$d</string>
+
+    <string name="favorites">Preferiti</string>
+    <string name="favorites_empty">Tieni premuta un\'app per aggiungerla ai preferiti</string>
+    <string name="favorite_add">Aggiungi ai preferiti</string>
+    <string name="favorite_remove">Togli dai preferiti</string>
+    <string name="app_info">Informazioni sull\'app</string>
+    <string name="category_empty">Nessuna app in questa categoria</string>
+
+    <string name="search">Cerca</string>
+    <string name="search_hint">Cerca o scrivi qualcosa…</string>
+    <string name="search_apps">App</string>
+    <string name="search_notes">Note</string>
+    <string name="search_tasks">Da fare</string>
+    <string name="capture_task">Aggiungi a Da fare</string>
+    <string name="capture_note">Salva come nota</string>
+    <string name="capture_event">Nuovo appuntamento</string>
+    <string name="capture_done">Fatto: %1$s</string>
+    <string name="close">Chiudi</string>
+
+    <string name="page_home">Home</string>
+    <string name="page_summary">Riepilogo</string>
+
+    <string name="card_calendar">Calendario</string>
+    <string name="card_calendar_empty">Nessun appuntamento nei prossimi giorni</string>
+    <string name="card_messages">Comunicazioni</string>
+    <string name="card_messages_empty">Nessun messaggio nuovo</string>
+    <string name="card_messages_grant">Per vedere qui messaggi, mail e chiamate perse, consenti a Eurise di leggere le notifiche. Restano sul telefono.</string>
+    <string name="card_music">Musica</string>
+    <string name="card_music_idle">Niente in riproduzione</string>
+    <string name="card_music_grant">Consenti l\'accesso alle notifiche per controllare la musica da qui.</string>
+    <string name="music_play">Riproduci</string>
+    <string name="music_pause">Pausa</string>
+    <string name="music_next">Brano successivo</string>
+    <string name="music_previous">Brano precedente</string>
+    <string name="grant">Consenti</string>
+
+    <string name="setup_title">Prepara la Scrivania</string>
+    <string name="setup_home">Usa Eurise come schermata iniziale</string>
+    <string name="setup_notifications">Numeri sulle icone e messaggi</string>
+    <string name="setup_location">Meteo della tua zona</string>
+    <string name="setup_calendar">Appuntamenti nella Scrivania</string>
+    <string name="setup_done">Attivo</string>
+
+    <string name="time_now">adesso</string>
+</resources>

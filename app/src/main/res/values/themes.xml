@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema della finestra prima che Compose disegni: stesso fondo avorio, niente lampo bianco. -->
+    <!-- Tema della finestra prima che Compose disegni: stesso fondo Perla, niente lampo bianco. -->
     <style name="Theme.Eurise" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/eurise_background</item>
     </style>
 
+    <!-- Scrivania: fondo neutro finché non si disegna la scena; niente anteprima nei recenti. -->
+    <style name="Theme.Eurise.Launcher" parent="Theme.Eurise">
+        <item name="android:windowBackground">@color/eurise_launcher_background</item>
+        <item name="android:windowShowWallpaper">false</item>
+    </style>
+
+    <color name="eurise_launcher_background">#9FA6B6</color>
     <color name="eurise_background">#F4F4F1</color>
     <color name="eurise_icon_background">#1F2A44</color>
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -53,6 +54,9 @@ private enum class Section(val route: String, @StringRes val label: Int, val ico
     Tasks("tasks", R.string.section_tasks, { EuriseIcons.task(it) }, R.string.action_new_task),
 }
 
+/** Richiesta di aprire una sezione arrivata da fuori (la Scrivania); [id] distingue due richieste uguali. */
+data class HubRequest(val section: String, val id: Int)
+
 private const val NOTE_ROUTE = "note?id={id}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
 private const val NO_ID = -1L
@@ -72,7 +76,7 @@ private fun NavHostController.closeIfOn(route: String) {
  * Il contenuto scorre sotto la barra, che lo sfoca.
  */
 @Composable
-fun EuriseHub(data: EuriseData) {
+fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val destination = backStack?.destination
@@ -84,6 +88,20 @@ fun EuriseHub(data: EuriseData) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+
+    LaunchedEffect(request) {
+        val section = request?.section ?: return@LaunchedEffect
+        when {
+            section == "today" -> goTo(Section.Today)
+            section == "calendar" -> goTo(Section.Calendar)
+            section == "notes" -> goTo(Section.Notes)
+            section == "tasks" -> goTo(Section.Tasks)
+            section == "new_event" -> navController.openEvent(null, null, null)
+            section == "new_note" -> navController.openNote(null)
+            section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
+            section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
+        }
     }
 
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
