@@ -178,6 +178,21 @@ object EuriseIcons {
 
     fun play2(stroke: Float = Stroke) = icon("play2", stroke, "M8 5.5v13l10.5-6.5z")
 
+    // Simboli in più per le categorie della barra.
+    fun game(stroke: Float = Stroke) = icon("game", stroke, "M7 8h10a4 4 0 0 1 4 4v1a3.5 3.5 0 0 1-6.3 2.1L14 14h-4l-.7 1.1A3.5 3.5 0 0 1 3 13v-1a4 4 0 0 1 4-4z", "M8 10.5v3M6.5 12h3", "M15.5 11h.01M17.5 13h.01")
+    fun car(stroke: Float = Stroke) = icon("car", stroke, "M5 16V12l2-5h10l2 5v4z", "M4 16h16v2.5H4z", "M7.5 13h.01M16.5 13h.01")
+    fun paw(stroke: Float = Stroke) = icon("paw", stroke, circle(7f, 9f, 1.6f), circle(11f, 6.5f, 1.6f), circle(15f, 6.5f, 1.6f), circle(18f, 10f, 1.6f), "M12.5 11.5c-3 0-5.5 3.5-5.5 6a2.5 2.5 0 0 0 3.5 2.2l1.5-.6a1.5 1.5 0 0 1 1 0l1.5.6A2.5 2.5 0 0 0 18 17.5c0-2.5-2.5-6-5.5-6z")
+    fun gift(stroke: Float = Stroke) = icon("gift", stroke, "M4 9h16v3H4z", "M5.5 12v8h13v-8", "M12 9v11", "M12 9c-1.5-3-5-3.5-5-1.2C7 9 9.5 9 12 9zM12 9c1.5-3 5-3.5 5-1.2C17 9 14.5 9 12 9z")
+    fun school(stroke: Float = Stroke) = icon("school", stroke, "M2.5 9.5 12 5l9.5 4.5L12 14z", "M6.5 11.5v4c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2v-4", "M21.5 9.5v5")
+    fun medical(stroke: Float = Stroke) = icon("medical", stroke, "M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z")
+    fun fitness(stroke: Float = Stroke) = icon("fitness", stroke, "M3 12h18", "M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5")
+    fun leaf(stroke: Float = Stroke) = icon("leaf", stroke, "M5 19c0-8 5-13 14-14 0 9-5 14-13 14", "M5 19l7-7")
+    fun code(stroke: Float = Stroke) = icon("code", stroke, "M8.5 7 3.5 12l5 5", "M15.5 7l5 5-5 5", "M13.5 5l-3 14")
+    fun palette(stroke: Float = Stroke) = icon("palette", stroke, "M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.2-1-1.5-1-2.6 0-1 .8-1.7 1.8-1.7h2.2A3.7 3.7 0 0 0 20.5 11 7.8 7.8 0 0 0 12 3.5z", "M8 11h.01M10 7.5h.01M14.5 7.5h.01")
+    fun lock(stroke: Float = Stroke) = icon("lock", stroke, "M5.5 11h13v9h-13z", "M8 11V8a4 4 0 0 1 8 0v3")
+    fun coffee(stroke: Float = Stroke) = icon("coffee", stroke, "M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z", "M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16", "M8.5 3.5v2.5M12 3.5v2.5")
+    fun baby(stroke: Float = Stroke) = icon("baby", stroke, circle(12f, 13f, 7f), "M9.5 12h.01M14.5 12h.01", "M10 15.5c1.2 1 2.8 1 4 0", "M12 6c-.5-1.5.5-2.5 1.5-2.5")
+
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
 
     private fun circle(cx: Float, cy: Float, r: Float) =

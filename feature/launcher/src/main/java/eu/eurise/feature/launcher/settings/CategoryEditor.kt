@@ -173,7 +173,7 @@ fun CategoryEditor(
                             fontSize = 12.5.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    val canRemove = !category.isFavorites && categories.size > MIN_CATEGORIES
+                    val canRemove = categories.size > MIN_CATEGORIES
                     Box(
                         Modifier.size(36.dp).clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = if (canRemove) 0.08f else 0.03f))
@@ -192,40 +192,26 @@ fun CategoryEditor(
                 }
             } }
             if (categories.size < MAX_CATEGORIES) {
-                Row(Modifier.fillMaxWidth().height(RowHeight).padding(start = 36.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Un tocco aggiunge la categoria e la apre: nome e simbolo si cambiano subito sotto.
+                val defaultName = stringResource(R.string.categories_new)
+                Row(
+                    Modifier.fillMaxWidth().height(RowHeight).clip(RoundedCornerShape(16.dp))
+                        .clickable(role = Role.Button) {
+                            val added = BarCategory("custom-${System.currentTimeMillis()}", defaultName, "home")
+                            onChange(current + added); selectedId = added.id
+                        }
+                        .padding(start = 36.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Box(
                         Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
                         contentAlignment = Alignment.Center,
                     ) { Icon(EuriseIcons.plus(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(12.dp))
-                    Box(Modifier.weight(1f)) {
-                        if (newName.isEmpty()) Text(stringResource(R.string.categories_new), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
-                        BasicTextField(
-                            value = newName,
-                            onValueChange = { newName = it.take(24) },
-                            singleLine = true,
-                            textStyle = TextStyle(fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = {
-                                if (newName.isNotBlank()) {
-                                    val added = BarCategory("custom-${System.currentTimeMillis()}", newName.trim(), "home")
-                                    onChange(current + added); selectedId = added.id; newName = ""
-                                }
-                            }),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                    Text(stringResource(R.string.categories_add_new), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
                     Text(
                         stringResource(R.string.categories_count, categories.size, MAX_CATEGORIES),
                         fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 8.dp),
-                    )
-                    Text(
-                        stringResource(R.string.categories_add), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(enabled = newName.isNotBlank()) {
-                            val added = BarCategory("custom-${System.currentTimeMillis()}", newName.trim(), "home")
-                            onChange(current + added); selectedId = added.id; newName = ""
-                        }.padding(8.dp),
                     )
                 }
             }

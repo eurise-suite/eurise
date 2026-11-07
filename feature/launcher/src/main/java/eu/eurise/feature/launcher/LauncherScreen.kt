@@ -899,9 +899,11 @@ private fun PhoneHome(
             Spacer(Modifier.height(6.dp))
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
             Spacer(Modifier.height(12.dp))
-            // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro (i preferiti restano fermi).
+            // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro. I preferiti
+            // restano ancorati in basso anche quando una pillola si riduce.
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             Column(
-                Modifier.weight(1000f, fill = false).verticalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 eu.eurise.feature.launcher.home.HomeBoard(
@@ -957,7 +959,8 @@ private fun PhoneHome(
                     }
                 }
             }
-            Spacer(Modifier.weight(1f).heightIn(min = 6.dp))
+            }
+            Spacer(Modifier.height(6.dp))
             if (state.favorites.isEmpty()) {
                 androidx.compose.material3.Text(
                     stringResource(R.string.favorites_empty),
@@ -996,7 +999,8 @@ private fun PhoneHome(
                     }
                 }
             }
-            Spacer(Modifier.height(clearance - 4.dp))
+            // Poco spazio tra i preferiti e i puntini delle pagine.
+            Spacer(Modifier.height((clearance + 10.dp - WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()).coerceAtLeast(8.dp)))
         }
     }
 }

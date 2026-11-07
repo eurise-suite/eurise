@@ -17,6 +17,20 @@ val CategoryIcons: Map<String, (Float) -> ImageVector> = linkedMapOf(
     "bank" to { s -> EuriseIcons.bank(s) }, "train" to { s -> EuriseIcons.train(s) },
     "camera" to { s -> EuriseIcons.camera(s) }, "globe" to { s -> EuriseIcons.globe(s) },
     "news" to { s -> EuriseIcons.news(s) }, "shield" to { s -> EuriseIcons.shield(s) },
+    "image" to { s -> EuriseIcons.image(s) }, "play" to { s -> EuriseIcons.play2(s) },
+    "phone" to { s -> EuriseIcons.phone(s) }, "mail" to { s -> EuriseIcons.mail(s) },
+    "map" to { s -> EuriseIcons.map(s) }, "clock" to { s -> EuriseIcons.clock(s) },
+    "chart" to { s -> EuriseIcons.chart(s) }, "calculator" to { s -> EuriseIcons.calculator(s) },
+    "person" to { s -> EuriseIcons.person(s) }, "mic" to { s -> EuriseIcons.mic(s) },
+    "bag" to { s -> EuriseIcons.bag(s) }, "spoon" to { s -> EuriseIcons.spoon(s) },
+    "cloud" to { s -> EuriseIcons.cloud(s) }, "moon" to { s -> EuriseIcons.moon(s) },
+    "game" to { s -> EuriseIcons.game(s) }, "car" to { s -> EuriseIcons.car(s) },
+    "paw" to { s -> EuriseIcons.paw(s) }, "gift" to { s -> EuriseIcons.gift(s) },
+    "school" to { s -> EuriseIcons.school(s) }, "medical" to { s -> EuriseIcons.medical(s) },
+    "fitness" to { s -> EuriseIcons.fitness(s) }, "leaf" to { s -> EuriseIcons.leaf(s) },
+    "code" to { s -> EuriseIcons.code(s) }, "palette" to { s -> EuriseIcons.palette(s) },
+    "lock" to { s -> EuriseIcons.lock(s) }, "coffee" to { s -> EuriseIcons.coffee(s) },
+    "baby" to { s -> EuriseIcons.baby(s) }, "pen" to { s -> EuriseIcons.pen(s) },
 )
 
 /**
@@ -35,8 +49,8 @@ data class BarCategory(val id: String, val label: String, val icon: String) {
 }
 
 const val FAVORITES = "favorites"
-const val MIN_CATEGORIES = 3
-const val MAX_CATEGORIES = 7
+const val MIN_CATEGORIES = 2
+const val MAX_CATEGORIES = 8
 
 private val BuiltInIds = linkedMapOf(
     Category.Favorites to FAVORITES,
@@ -63,7 +77,8 @@ fun decodeCategories(raw: String?): List<BarCategory> {
         val bits = part.split(';')
         if (bits.size < 3) null else BarCategory(bits[0], bits[1], bits[2])
     }.distinctBy { it.id }
-    return if (list.none { it.isFavorites }) DefaultBarCategories.take(1) + list else list
+    // I Preferiti si possono togliere come le altre categorie: la home resta raggiungibile con il tasto Home.
+    return list.ifEmpty { DefaultBarCategories }
 }
 
 /**
