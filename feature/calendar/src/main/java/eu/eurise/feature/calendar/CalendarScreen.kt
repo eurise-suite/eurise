@@ -29,6 +29,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,6 +54,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -72,6 +76,7 @@ import eu.eurise.core.designsystem.component.GlassSegmented
 import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.core.designsystem.theme.EuriseThemeExtras
 import eu.eurise.core.designsystem.theme.colors
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -155,6 +160,15 @@ internal fun CalendarScreen(
     }
     val timeline = state.view in setOf(CalendarView.Day, CalendarView.ThreeDays, CalendarView.Week)
     val swipeThreshold = with(density) { 72.dp.toPx() }
+    var sheet by remember { mutableStateOf<EventsSheet?>(null) }
+    sheet?.let { content ->
+        EventsListSheet(
+            content = content,
+            now = now,
+            onDismiss = { sheet = null },
+            onEventClick = { sheet = null; onEventClick(it) },
+        )
+    }
 
     // La testata è piena e ferma: il calendario scorre solo sotto di lei, così mese, viste e giorni
     // restano sempre nitidi, qualunque cosa ci sia in agenda.
@@ -184,7 +198,13 @@ internal fun CalendarScreen(
             if (timeline && state.hasPermission) {
                 Spacer(Modifier.height(10.dp))
                 DayHeads(state.days, state.today, onClick = { onOpenDay(it, state.view != CalendarView.Day) })
-                AllDayRow(state, onToggleTask, onOpenDay = { onOpenDay(it, true) })
+                AllDayRow(
+                    state = state,
+                    now = now,
+                    onToggleTask = onToggleTask,
+                    onOpenDay = { onOpenDay(it, true) },
+                    onNight = { day, events -> sheet = EventsSheet.Night(day, events) },
+                )
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -216,8 +236,8 @@ internal fun CalendarScreen(
                 timeline -> {
                     val scroll = rememberScrollState()
                     val hour = hourPx()
-                    LaunchedEffect(state.view, state.from) {
-                        scroll.scrollTo((initialScrollHour(state.days, state.today) * hour).toInt())
+                    LaunchedEffect(state.view, state.from, state.loaded) {
+                        scroll.scrollTo((initialScrollHour(state.days, state.events) * hour).toInt())
                     }
                     TimelineGrid(
                         days = state.days,
@@ -227,7 +247,7 @@ internal fun CalendarScreen(
                         scrollState = scroll,
                         topPadding = 10.dp,
                         bottomPadding = clearance,
-                        onEventClick = onEventClick,
+                        onGroupClick = { g -> if (g.events.size == 1) onEventClick(g.first) else sheet = EventsSheet.Group(g) },
                         onSlotClick = onSlotClick,
                     )
                 }
@@ -345,14 +365,25 @@ private fun DayHeads(days: List<LocalDate>, today: LocalDate, onClick: (LocalDat
  * si vedono per intero; con più giorni compare un'etichetta compatta ("2 da fare") che apre quel giorno.
  */
 @Composable
-private fun AllDayRow(state: CalendarState, onToggleTask: (Task, Boolean) -> Unit, onOpenDay: (LocalDate) -> Unit) {
+private fun AllDayRow(
+    state: CalendarState,
+    now: LocalDateTime,
+    onToggleTask: (Task, Boolean) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onNight: (LocalDate, List<CalendarEvent>) -> Unit,
+) {
     val days = state.days
-    val anything = state.events.any { it.allDay } || state.tasks.isNotEmpty()
+    val anything = state.events.any { it.allDay || days.any { d -> it.continuesInto(d) } } || state.tasks.isNotEmpty()
     if (!anything) return
     Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp), verticalAlignment = Alignment.Top) {
         Spacer(Modifier.width(Gutter))
         days.forEach { day ->
             Column(Modifier.weight(1f).padding(horizontal = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val night = state.events.filter { it.continuesInto(day) }
+                if (night.isNotEmpty()) {
+                    val running = day == now.toLocalDate() && night.any { it.end.isAfter(now) }
+                    NightChip(night.size, running) { onNight(day, night) }
+                }
                 state.events.filter { it.allDay && it.occursOn(day) }.forEach { e ->
                     val tint = CalendarTint.nearest(e.color).colors()
                     Text(
@@ -451,6 +482,96 @@ private fun PermissionCard(
         Button(onClick = onAllow) { Text(stringResource(R.string.cal_permission_allow)) }
         if (showSettingsLink) {
             TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.cal_permission_settings)) }
+        }
+    }
+}
+
+@Composable
+private fun NightChip(count: Int, running: Boolean, onClick: () -> Unit) {
+    // Stesso aspetto satinato della capsula attiva nella pillola delle viste.
+    val label = stringResource(if (running) R.string.cal_from_night_now else R.string.cal_from_night, count)
+    val color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier
+            .shadow(2.dp, CircleShape)
+            .background(EuriseThemeExtras.colors.glassSelected, CircleShape)
+            .clip(CircleShape)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        if (running) Box(Modifier.size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+        Text(
+            label,
+            fontSize = 11.sp,
+            fontWeight = if (running) FontWeight.Bold else FontWeight.SemiBold,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Contenuto del foglio dal basso: i turni dalla notte di un giorno, o le persone di un turno raggruppato. */
+internal sealed interface EventsSheet {
+    val events: List<CalendarEvent>
+
+    data class Night(val day: LocalDate, override val events: List<CalendarEvent>) : EventsSheet
+    data class Group(val group: EventGroup) : EventsSheet {
+        override val events: List<CalendarEvent> get() = group.events
+    }
+}
+
+private val SpanFormat = DateTimeFormatter.ofPattern("EEE H:mm", Locale.ITALIAN)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EventsListSheet(
+    content: EventsSheet,
+    now: LocalDateTime,
+    onDismiss: () -> Unit,
+    onEventClick: (CalendarEvent) -> Unit,
+) {
+    val first = content.events.first()
+    val running = content.events.any { !it.start.isAfter(now) && it.end.isAfter(now) }
+    val title = when (content) {
+        is EventsSheet.Night -> stringResource(R.string.cal_night_title)
+        is EventsSheet.Group -> content.group.shiftLabel ?: "${first.start.toLocalTime().format(TimeFormat)}–${first.end.toLocalTime().format(TimeFormat)}"
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                if (running) {
+                    Text(
+                        stringResource(R.string.cal_running_until, first.end.toLocalTime().format(TimeFormat)),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            if (content is EventsSheet.Night) {
+                Text(stringResource(R.string.cal_night_message), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            content.events.forEach { e ->
+                val tint = CalendarTint.nearest(e.color).colors()
+                val name = if (content is EventsSheet.Group && content.group.shiftLabel != null) splitShift(e.title).first else e.title
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(
+                    Modifier.fillMaxWidth().clickable { onEventClick(e) }.padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.width(4.dp).height(36.dp).background(tint.dot, RoundedCornerShape(2.dp)))
+                    Column(Modifier.weight(1f)) {
+                        Text(name, style = MaterialTheme.typography.titleSmall)
+                        val span = stringResource(R.string.cal_span, e.start.format(SpanFormat), e.end.format(SpanFormat))
+                        val sub = listOfNotNull(span, e.location.takeIf { it.isNotBlank() }).joinToString(" · ")
+                        Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
         }
     }
 }

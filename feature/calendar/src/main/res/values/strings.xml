@@ -20,6 +20,14 @@
     <string name="cal_day_empty">Nessun appuntamento</string>
     <string name="cal_repeats">si ripete</string>
     <string name="cal_overdue">In ritardo</string>
+    <string name="cal_from_night">Dalla notte · %1$d</string>
+    <string name="cal_from_night_now">Dalla notte · %1$d · ora</string>
+    <string name="cal_night_title">Dalla notte</string>
+    <string name="cal_night_message">Turni e appuntamenti iniziati il giorno prima.</string>
+    <string name="cal_running_until">in corso, fino alle %1$s</string>
+    <string name="cal_span">da %1$s a %2$s</string>
+    <string name="cal_night_label">notte</string>
+    <string name="cal_until">fino alle %1$s</string>
 
     <string name="cal_permission_title">Collega i calendari del telefono</string>
     <string name="cal_permission_message">Eurise legge e scrive gli appuntamenti nei calendari già presenti sul telefono, compresi quelli di Murena sincronizzati dal sistema. Nulla passa da altri server.</string>

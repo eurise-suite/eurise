@@ -136,7 +136,7 @@ internal fun EventRow(event: CalendarEvent, day: LocalDate, now: LocalDateTime, 
             } else {
                 val startsToday = event.start.toLocalDate() == day
                 Text(
-                    if (startsToday) event.start.toLocalTime().format(TimeFormat) else "0:00",
+                    if (startsToday) event.start.toLocalTime().format(TimeFormat) else stringResource(R.string.cal_night_label),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
