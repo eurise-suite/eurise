@@ -744,15 +744,15 @@ private fun PhoneHome(
             val context = LocalContext.current
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f))
-                // Accanto all'orario: fotocamera sopra, galleria sotto.
+                // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.camera(2f), stringResource(R.string.quick_camera)) {
-                        runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    }
                     QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.image(2f), stringResource(R.string.quick_gallery)) {
                         runCatching {
                             context.startActivity(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_GALLERY).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
+                    }
+                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.camera(2f), stringResource(R.string.quick_camera)) {
+                        runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                     }
                 }
             }
