@@ -250,4 +250,12 @@
     <string name="sign_capricorno">Capricorno</string>
     <string name="sign_acquario">Acquario</string>
     <string name="sign_pesci">Pesci</string>
+
+    <string name="folder_create">Crea cartella con…</string>
+    <string name="folder_add_apps">App della cartella</string>
+    <string name="folder_default_name">Cartella</string>
+    <string name="folder_rename">Rinomina</string>
+    <string name="folder_add">+ App</string>
+    <string name="folder_remove_app">Togli dalla cartella</string>
+    <string name="folder_hint">Tieni premuta un\'app per toglierla dalla cartella. Una cartella con una sola app torna icona normale.</string>
 </resources>

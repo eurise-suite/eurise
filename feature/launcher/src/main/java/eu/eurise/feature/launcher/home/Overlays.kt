@@ -73,6 +73,9 @@ fun CategoryPages(
     categories: List<BarCategory>,
     categoryOf: (AppEntry) -> BarCategory?,
     apps: List<AppEntry>,
+    folders: List<eu.eurise.feature.launcher.folders.AppFolder> = emptyList(),
+    onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit = {},
+    onCreateFolder: (AppEntry, BarCategory) -> Unit = { _, _ -> },
     dark: Boolean,
     badges: Map<String, Int>,
     isFavorite: (AppEntry) -> Boolean,
@@ -90,7 +93,11 @@ fun CategoryPages(
 ) {
     HorizontalPager(pager, modifier.closeOnSwipe(up = false, onClose = onClose)) { page ->
         val category = categories[page]
-        val list = apps.filter { categoryOf(it)?.id == category.id }
+        // Le cartelle di questa categoria vengono prima; le app che contengono non si ripetono nella griglia.
+        val here = folders.filter { it.place == category.id }
+        val inFolders = here.flatMap { it.keys }.toSet()
+        val list = apps.filter { categoryOf(it)?.id == category.id && it.key !in inFolders }
+        val byKey = apps.associateBy { it.key }
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(24.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -116,6 +123,13 @@ fun CategoryPages(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                items(here, key = { it.key }) { folder ->
+                    Box(contentAlignment = Alignment.Center) {
+                        eu.eurise.feature.launcher.folders.FolderTile(
+                            folder, folder.keys.mapNotNull { byKey[it] }, dark, iconSize, showLabels, onOpen = { onOpenFolder(folder) },
+                        )
+                    }
+                }
                 items(list, key = { it.key }) { app ->
                     Box(contentAlignment = Alignment.Center) {
                         AppTile(
@@ -130,6 +144,7 @@ fun CategoryPages(
                             onMoveTo = { onMoveTo(app, it) },
                             iconSize = iconSize,
                             showLabel = showLabels,
+                            onCreateFolder = { onCreateFolder(app, category) },
                         )
                     }
                 }

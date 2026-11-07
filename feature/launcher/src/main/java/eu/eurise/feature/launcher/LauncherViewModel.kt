@@ -16,6 +16,7 @@ import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
 import eu.eurise.feature.launcher.contacts.ContactsRepository
 import eu.eurise.feature.launcher.feeds.DailyRepository
+import eu.eurise.feature.launcher.folders.AppFolder
 import eu.eurise.feature.launcher.feeds.FeedEntry
 import eu.eurise.feature.launcher.feeds.Sign
 import eu.eurise.feature.launcher.files.RecentFile
@@ -79,7 +80,7 @@ class LauncherViewModel(
 
     private val favoriteKeys = MutableStateFlow(loadFavoriteKeys())
     private val recentKeys = MutableStateFlow(prefs.getString(KEY_RECENTS, "").orEmpty().split('|').filter { it.isNotBlank() })
-    private val keys = combine(favoriteKeys, recentKeys) { f, r -> f to r }
+    private val keys = combine(favoriteKeys, recentKeys, settingsStore.settings) { f, r, s -> Triple(f, r, s.folders) }
     private val calendarPermission = MutableStateFlow(calendar.hasPermission())
 
     val news = NewsRepository(application)
@@ -114,11 +115,12 @@ class LauncherViewModel(
         if (granted) calendar.observeEvents(today, today.plusDays(6)) else flowOf(emptyList())
     }
 
-    val state: StateFlow<LauncherState> = combine(apps.observe(), keys, local, events, calendarPermission) { list, (favs, recent), part, ev, granted ->
+    val state: StateFlow<LauncherState> = combine(apps.observe(), keys, local, events, calendarPermission) { list, (favs, recent, folders), part, ev, granted ->
         val byKey = list.associateBy { it.key }
         LauncherState(
             apps = list,
-            favorites = favs.mapNotNull { byKey[it] },
+            // Le cartelle sulla home compaiono tra i preferiti come voci speciali "folder:…".
+            favorites = favs.mapNotNull { k -> byKey[k] ?: folders.firstOrNull { it.key == k }?.let { folderEntry(it) } },
             recents = recent.mapNotNull { byKey[it] },
             today = today,
             eventsToday = ev.filter { it.occursOn(today) }.sortedBy { it.start },
@@ -200,6 +202,43 @@ class LauncherViewModel(
     fun hasLocationPermission() = weatherRepo.hasLocationPermission()
 
     fun isFavorite(entry: AppEntry) = entry.key in favoriteKeys.value
+
+    private fun folderEntry(folder: AppFolder) =
+        AppEntry(folder.key, folder.name, "", null, eu.eurise.feature.launcher.apps.Category.Other)
+
+    /** Crea una cartella con [apps]; sulla home prende il posto della prima app tra i preferiti. */
+    fun createFolder(apps: List<AppEntry>, place: String, name: String) {
+        if (apps.size < 2) return
+        val folder = AppFolder("f${System.currentTimeMillis()}", name, place, apps.map { it.key })
+        settingsStore.update { it.copy(folders = it.folders + folder) }
+        if (place == AppFolder.HOME) {
+            val current = favoriteKeys.value
+            val index = current.indexOfFirst { k -> apps.any { it.key == k } }.let { if (it < 0) current.size else it }
+            val next = current.filterNot { k -> apps.any { it.key == k } }.toMutableList()
+            next.add(index.coerceAtMost(next.size), folder.key)
+            saveFavorites(next)
+        }
+    }
+
+    fun renameFolder(folder: AppFolder, name: String) =
+        settingsStore.update { s -> s.copy(folders = s.folders.map { if (it.id == folder.id) it.copy(name = name) else it }) }
+
+    fun setFolderApps(folder: AppFolder, keys: List<String>) {
+        if (keys.size <= 1) {
+            // Una cartella con una sola app torna icona normale.
+            settingsStore.update { s -> s.copy(folders = s.folders.filterNot { it.id == folder.id }) }
+            if (folder.place == AppFolder.HOME) {
+                saveFavorites(favoriteKeys.value.flatMap { if (it == folder.key) keys else listOf(it) })
+            }
+            return
+        }
+        settingsStore.update { s -> s.copy(folders = s.folders.map { if (it.id == folder.id) it.copy(keys = keys) else it }) }
+    }
+
+    private fun saveFavorites(list: List<String>) {
+        favoriteKeys.value = list
+        prefs.edit().putString(KEY_FAVORITES, list.joinToString("|")).apply()
+    }
 
     fun toggleFavorite(entry: AppEntry) {
         val current = favoriteKeys.value

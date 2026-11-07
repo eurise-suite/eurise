@@ -1,6 +1,9 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.folders.AppPicker
+import eu.eurise.feature.launcher.folders.FolderOverlay
+import eu.eurise.feature.launcher.folders.FolderTile
 import eu.eurise.feature.launcher.feeds.HoroscopeCard
 import eu.eurise.feature.launcher.feeds.RecipeCard
 import eu.eurise.feature.launcher.feeds.SignPicker
@@ -286,6 +289,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
         var signPicker by remember { mutableStateOf(false) }
+        // Cartella aperta (id) e scelta delle app per crearne una o aggiungerne.
+        var openFolder by remember { mutableStateOf<String?>(null) }
+        var folderPicker by remember { mutableStateOf<FolderRequest?>(null) }
         // Fonti di oroscopo o ricette in modifica: "horoscope" o "recipes".
         var dailySheet by remember { mutableStateOf<String?>(null) }
         val welcome = WelcomeData(
@@ -345,8 +351,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
+        BackHandler(enabled = folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
             when {
+                folderPicker != null -> folderPicker = null
+                openFolder != null -> openFolder = null
                 signPicker -> signPicker = false
                 dailySheet != null -> dailySheet = null
                 peopleSheet != null -> peopleSheet = null
@@ -433,6 +441,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     settings = settings,
                                     onMoveFavorite = viewModel::moveFavorite,
                                     welcome = welcome,
+                                    onOpenFolder = { openFolder = it.id },
+                                    onCreateFolder = { app -> folderPicker = FolderRequest(null, eu.eurise.feature.launcher.folders.AppFolder.HOME, app.key) },
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -447,6 +457,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         categories = pageCategories,
                         categoryOf = categoryOf,
                         apps = state.apps,
+                        folders = settings.folders,
+                        onOpenFolder = { openFolder = it.id },
+                        onCreateFolder = { app, cat -> folderPicker = FolderRequest(null, cat.id, app.key) },
                         dark = scene.dark,
                         badges = badges,
                         isFavorite = viewModel::isFavorite,
@@ -528,6 +541,36 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (stocksSheet) {
                 StocksSheet(viewModel.markets, onClose = { stocksSheet = false; viewModel.refreshQuotes() })
             }
+            settings.folders.firstOrNull { it.id == openFolder }?.let { folder ->
+                val byKey = state.apps.associateBy { it.key }
+                FolderOverlay(
+                    folder = folder,
+                    apps = folder.keys.mapNotNull { byKey[it] },
+                    dark = scene.dark,
+                    iconSize = settings.iconSize.dp,
+                    badges = badges,
+                    onOpenApp = { openFolder = null; actions.openApp(it) },
+                    onRename = { viewModel.renameFolder(folder, it) },
+                    onAdd = { folderPicker = FolderRequest(folder.id, folder.place, null) },
+                    onRemove = { app -> viewModel.setFolderApps(folder, folder.keys - app.key); if (folder.keys.size <= 2) openFolder = null },
+                    onClose = { openFolder = null },
+                )
+            }
+            folderPicker?.let { req ->
+                val existing = settings.folders.firstOrNull { it.id == req.folderId }
+                AppPicker(
+                    title = stringResource(if (existing != null) R.string.folder_add_apps else R.string.folder_create),
+                    apps = state.apps,
+                    preselected = existing?.keys?.toSet() ?: setOfNotNull(req.startKey),
+                    dark = scene.dark,
+                    onDone = { chosen ->
+                        folderPicker = null
+                        if (existing != null) viewModel.setFolderApps(existing, chosen.map { it.key })
+                        else viewModel.createFolder(chosen, req.place, context.getString(R.string.folder_default_name))
+                    },
+                    onClose = { folderPicker = null },
+                )
+            }
             if (signPicker) {
                 SignPicker(sign, scene.dark, onPick = { picked ->
                     signPicker = false
@@ -585,6 +628,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       }
     }
 }
+
+/** Richiesta di scelta delle app: per una cartella nuova (con l'app di partenza) o per una esistente. */
+private data class FolderRequest(val folderId: String?, val place: String, val startKey: String?)
 
 /** Oroscopo e ricette per le schede delle pagine laterali. */
 private class DailyData(
@@ -655,6 +701,8 @@ private fun PhoneHome(
     settings: LauncherSettings,
     onMoveFavorite: (AppEntry, Int) -> Unit,
     welcome: WelcomeData,
+    onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit,
+    onCreateFolder: (AppEntry) -> Unit,
 ) {
     // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
     val compact = settings.rows >= 3 || (settings.rows == 2 && LocalConfiguration.current.screenHeightDp < 820)
@@ -760,7 +808,11 @@ private fun PhoneHome(
                         Row(Modifier.fillMaxWidth()) {
                             row.forEach { entry ->
                                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                    AppTile(
+                                    val folder = settings.folders.firstOrNull { it.key == entry.key }
+                                    if (folder != null) {
+                                        val byKey = state.apps.associateBy { it.key }
+                                        FolderTile(folder, folder.keys.mapNotNull { byKey[it] }, dark, settings.iconSize.dp, false, onOpen = { onOpenFolder(folder) })
+                                    } else AppTile(
                                         entry = entry,
                                         dark = dark,
                                         badge = badges[entry.packageName] ?: 0,
@@ -769,6 +821,7 @@ private fun PhoneHome(
                                         onToggleFavorite = { onToggleFavorite(entry) },
                                         onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
                                         onMove = { delta -> onMoveFavorite(entry, delta) },
+                                        onCreateFolder = { onCreateFolder(entry) },
                                         iconSize = settings.iconSize.dp,
                                         // Sulla home le icone vanno senza nome: più spazio per l'accoglienza.
                                         showLabel = false,

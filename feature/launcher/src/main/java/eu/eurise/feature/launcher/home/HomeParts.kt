@@ -245,6 +245,8 @@ fun AppTile(
     /** Categorie in cui spostare l'app; vuoto per non mostrare la voce. */
     moveTargets: List<BarCategory> = emptyList(),
     onMoveTo: (BarCategory) -> Unit = {},
+    /** Crea una cartella partendo da questa app; nullo per non mostrare la voce. */
+    onCreateFolder: (() -> Unit)? = null,
 ) {
     var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
@@ -281,6 +283,13 @@ fun AppTile(
             }
         }
         DropdownMenu(expanded = menu && !moving, onDismissRequest = { menu = false }) {
+            if (onCreateFolder != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.folder_create)) },
+                    leadingIcon = { Icon(EuriseIcons.grid(), null) },
+                    onClick = { menu = false; onCreateFolder() },
+                )
+            }
             if (moveTargets.isNotEmpty()) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.app_move_to)) },

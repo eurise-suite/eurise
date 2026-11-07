@@ -8,6 +8,9 @@ import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.DefaultBarCategories
 import eu.eurise.feature.launcher.apps.decodeCategories
 import eu.eurise.feature.launcher.apps.encodeCategories
+import eu.eurise.feature.launcher.folders.AppFolder
+import eu.eurise.feature.launcher.folders.decodeFolders
+import eu.eurise.feature.launcher.folders.encodeFolders
 import eu.eurise.feature.launcher.summary.CardKind
 import eu.eurise.feature.launcher.summary.DefaultLeftCards
 import eu.eurise.feature.launcher.summary.PlacedCard
@@ -93,6 +96,8 @@ data class LauncherSettings(
     val categories: List<BarCategory> = DefaultBarCategories,
     /** App spostate a mano in un'altra categoria: chiave dell'app → id della categoria. */
     val categoryOverrides: Map<String, String> = emptyMap(),
+    /** Cartelle di app, sulla home o nelle categorie. */
+    val folders: List<AppFolder> = emptyList(),
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -147,6 +152,7 @@ class SettingsStore(context: Context) {
             .putString("left_cards", next.leftCards.encode())
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
+            .putString("folders", next.folders.encodeFolders())
             .apply()
     }
 
@@ -164,6 +170,7 @@ class SettingsStore(context: Context) {
         categoryOverrides = prefs.getString("category_overrides", "").orEmpty().lines()
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
+        folders = decodeFolders(prefs.getString("folders", null)),
     )
 }
 
