@@ -4,6 +4,9 @@ import android.content.Context
 import eu.eurise.core.data.calendar.CalendarRepository
 import eu.eurise.core.data.local.EuriseDatabase
 import eu.eurise.core.data.local.NoteDao
+import eu.eurise.core.data.local.NoteEntity
+import eu.eurise.core.data.local.NoteTombstoneEntity
+import eu.eurise.core.data.local.toSyncModel
 import eu.eurise.core.data.local.NoteTagEntity
 import eu.eurise.core.data.local.NotebookDao
 import eu.eurise.core.data.local.NotebookEntity
@@ -12,6 +15,7 @@ import eu.eurise.core.data.local.toEntity
 import eu.eurise.core.data.local.toModel
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.NoteCollections
+import eu.eurise.core.data.model.NoteSyncState
 import eu.eurise.core.data.model.Notebook
 import eu.eurise.core.data.model.NotebookSummary
 import eu.eurise.core.data.model.TagCount
@@ -78,17 +82,23 @@ class NoteRepository internal constructor(
         val existing = id?.let { dao.get(it) }
         val noteId = if (existing == null) {
             dao.upsert(
-                Note(0, title, body, pinned = false, createdAt = now, updatedAt = now, content = content, notebookId = notebookId)
-                    .toEntity()
+                NoteEntity(
+                    title = title, body = body, pinned = false, createdAt = now, updatedAt = now,
+                    content = content, notebookId = notebookId,
+                )
             )
         } else {
             dao.upsert(existing.copy(title = title, body = body, content = content, updatedAt = now))
             existing.id
         }
+        retag(noteId, title, body)
+        return noteId
+    }
+
+    private suspend fun retag(noteId: Long, title: String, body: String) {
         dao.clearTags(noteId)
         val tags = extractTags("$title\n$body")
         if (tags.isNotEmpty()) dao.insertTags(tags.map { NoteTagEntity(noteId, it) })
-        return noteId
     }
 
     suspend fun tagsOf(id: Long): List<String> = dao.tagsOf(id)
@@ -102,8 +112,12 @@ class NoteRepository internal constructor(
 
     suspend fun restore(id: Long) = dao.setTrashed(id, null)
 
-    /** Elimina subito e per sempre (per esempio una nota rimasta vuota). Le attività collegate restano. */
+    /**
+     * Elimina subito e per sempre (per esempio una nota rimasta vuota). Le attività collegate restano.
+     * Se la nota era già sul cloud, alla prossima sincronizzazione sparisce anche da lì.
+     */
     suspend fun delete(id: Long) {
+        dao.get(id)?.let { note -> if (note.uid != null && note.remoteEtag != null) dao.addTombstone(NoteTombstoneEntity(note.uid, note.remoteEtag)) }
         tasks.detachNote(id)
         dao.clearTags(id)
         dao.delete(id)
@@ -116,6 +130,54 @@ class NoteRepository internal constructor(
         val limit = clock.now() - TRASH_DAYS * 24L * 60 * 60 * 1000
         dao.trashedBefore(limit).forEach { delete(it) }
     }
+
+    // Sincronizzazione
+
+    /** Tutte le note, anche nel cestino, con il loro stato di sincronizzazione. */
+    suspend fun syncStates(): List<NoteSyncState> = dao.allForSync().map { it.toSyncModel() }
+
+    suspend fun syncState(id: Long): NoteSyncState? = dao.get(id)?.toSyncModel()
+
+    suspend fun assignUid(id: Long, uid: String) = dao.setUid(id, uid)
+
+    /** Registra che il cloud ha ora il file [base] con [etag]. */
+    suspend fun markSynced(id: Long, etag: String?, base: String?) = dao.markSynced(id, etag, base)
+
+    /** Mette da parte la versione del cloud che non si è potuta unire da sola. */
+    suspend fun setConflict(id: Long, remote: String, etag: String?) = dao.setConflict(id, remote, etag)
+
+    /**
+     * Salva la nota con le scelte fatte sul conflitto. La versione del cloud diventa la base, così alla
+     * prossima sincronizzazione parte la versione scelta, al posto di quella del cloud.
+     */
+    suspend fun resolveConflict(id: Long, title: String, plain: String, html: String) {
+        val state = dao.get(id) ?: return
+        write(id, title, plain, html, null)
+        dao.markSynced(id, state.conflictEtag, state.conflict)
+    }
+
+    /**
+     * Crea o aggiorna una nota con i dati arrivati dal cloud, senza cambiarne le date: [id] nullo la crea.
+     * Restituisce l'id della nota.
+     */
+    suspend fun importRemote(
+        id: Long?, uid: String, title: String, plain: String, html: String, pinned: Boolean,
+        notebookId: Long?, createdAt: Long, updatedAt: Long, trashedAt: Long?,
+    ): Long {
+        val existing = id?.let { dao.get(it) }
+        val entity = (existing ?: NoteEntity(title = title, body = plain, pinned = pinned, createdAt = createdAt, updatedAt = updatedAt))
+            .copy(
+                title = title, body = plain, content = html, pinned = pinned, notebookId = notebookId,
+                createdAt = createdAt, updatedAt = updatedAt, trashedAt = trashedAt, uid = uid,
+            )
+        val noteId = dao.upsert(entity).let { if (existing != null) existing.id else it }
+        retag(noteId, title, plain)
+        return noteId
+    }
+
+    suspend fun tombstones(): List<Pair<String, String?>> = dao.tombstones().map { it.uid to it.etag }
+
+    suspend fun removeTombstone(uid: String) = dao.removeTombstone(uid)
 
     companion object {
         const val TRASH_DAYS = 30
@@ -134,6 +196,10 @@ class NotebookRepository internal constructor(
         }
 
     suspend fun get(id: Long): Notebook? = dao.get(id)?.toModel()
+
+    /** Il taccuino con questo nome (senza badare a maiuscole), creato con [tint] se non c'è. */
+    suspend fun findOrCreate(name: String, tint: String): Long =
+        dao.byName(name.trim())?.id ?: add(name, tint)
 
     /** Crea un taccuino in fondo all'elenco e ne restituisce l'id. */
     suspend fun add(name: String, tint: String, kind: String = Notebook.KIND_NORMAL): Long =

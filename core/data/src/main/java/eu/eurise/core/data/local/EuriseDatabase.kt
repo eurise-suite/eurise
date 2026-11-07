@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class],
-    version = 2,
+    entities = [NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class],
+    version = 3,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
@@ -20,7 +20,7 @@ internal abstract class EuriseDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }
@@ -43,5 +43,18 @@ internal val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_note_tags_tag ON note_tags (tag)")
         db.execSQL("ALTER TABLE tasks ADD COLUMN note_id INTEGER")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_note_id ON tasks (note_id)")
+    }
+}
+
+/** Versione 3: identità e stato di sincronizzazione delle note, note eliminate da togliere anche dal cloud. */
+internal val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE notes ADD COLUMN uid TEXT")
+        db.execSQL("ALTER TABLE notes ADD COLUMN remote_etag TEXT")
+        db.execSQL("ALTER TABLE notes ADD COLUMN sync_base TEXT")
+        db.execSQL("ALTER TABLE notes ADD COLUMN conflict TEXT")
+        db.execSQL("ALTER TABLE notes ADD COLUMN conflict_etag TEXT")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_notes_uid ON notes (uid)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS note_tombstones (uid TEXT NOT NULL, etag TEXT, PRIMARY KEY(uid))")
     }
 }

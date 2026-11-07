@@ -212,6 +212,8 @@ object EuriseIcons {
     fun heading(stroke: Float = 2.2f) = icon("heading", stroke, "M6 5v14M18 5v14M6 12h12")
     fun redo(stroke: Float = 2.2f) = icon("redo", stroke, "M15 14l5-5-5-5", "M20 9H9.5a5.5 5.5 0 0 0 0 11H13")
 
+    fun refresh(stroke: Float = Stroke) = icon("refresh", stroke, "M20 12a8 8 0 1 1-2.3-5.6", "M20 4v4h-4")
+
     // Strumenti di disegno
     fun pencil(stroke: Float = 2.1f) = icon("pencil", stroke, "M15 4l5 5L9 20H4v-5z", "M12.5 6.5l5 5")
     fun marker(stroke: Float = 2.1f) = icon("marker", stroke, "M14 3h6v6L10 19H4v-6z", "M4 21h6")

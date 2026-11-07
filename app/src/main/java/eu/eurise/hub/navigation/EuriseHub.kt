@@ -40,6 +40,7 @@ import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.calendar.CalendarRoute
 import eu.eurise.feature.calendar.EventEditorRoute
+import eu.eurise.feature.cloud.CloudRoute
 import eu.eurise.feature.notes.NoteEditorRoute
 import eu.eurise.feature.notes.NotesFilterRequest
 import eu.eurise.feature.notes.NotesListRoute
@@ -170,7 +171,11 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                             navController.closeIfOn("notes/organize")
                         },
                         onTrash = { navController.navigate("notes/trash") },
+                        onCloud = { navController.navigate("cloud") },
                     )
+                }
+                composable("cloud") {
+                    CloudRoute(onBack = { navController.closeIfOn("cloud") })
                 }
                 composable("notes/trash") {
                     TrashRoute(notes = data.notes, onBack = { navController.closeIfOn("notes/trash") })

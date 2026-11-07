@@ -5,11 +5,15 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import eu.eurise.core.data.model.Note
+import eu.eurise.core.data.model.NoteSyncState
 import eu.eurise.core.data.model.Notebook
 import eu.eurise.core.data.model.Task
 import java.time.LocalDate
 
-@Entity(tableName = "notes", indices = [Index("updated_at"), Index("notebook_id"), Index("trashed_at")])
+@Entity(
+    tableName = "notes",
+    indices = [Index("updated_at"), Index("notebook_id"), Index("trashed_at"), Index(value = ["uid"], unique = true)],
+)
 internal data class NoteEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
@@ -20,6 +24,21 @@ internal data class NoteEntity(
     val content: String = "",
     @ColumnInfo(name = "notebook_id") val notebookId: Long? = null,
     @ColumnInfo(name = "trashed_at") val trashedAt: Long? = null,
+    /** Identità stabile della nota tra telefono e cloud (nome del file); nulla finché non si sincronizza. */
+    val uid: String? = null,
+    @ColumnInfo(name = "remote_etag") val remoteEtag: String? = null,
+    /** Il file com'era all'ultima sincronizzazione: serve a capire chi ha cambiato cosa. */
+    @ColumnInfo(name = "sync_base") val syncBase: String? = null,
+    /** Versione del cloud in conflitto con quella del telefono, in attesa di una scelta. */
+    val conflict: String? = null,
+    @ColumnInfo(name = "conflict_etag") val conflictEtag: String? = null,
+)
+
+/** Nota eliminata per sempre sul telefono, da eliminare anche sul cloud alla prossima sincronizzazione. */
+@Entity(tableName = "note_tombstones")
+internal data class NoteTombstoneEntity(
+    @PrimaryKey val uid: String,
+    val etag: String?,
 )
 
 @Entity(tableName = "notebooks")
@@ -52,10 +71,9 @@ internal data class TaskEntity(
 )
 
 internal fun NoteEntity.toModel() =
-    Note(id, title, body, pinned, createdAt, updatedAt, content, notebookId, trashedAt)
+    Note(id, title, body, pinned, createdAt, updatedAt, content, notebookId, trashedAt, uid, conflict != null)
 
-internal fun Note.toEntity() =
-    NoteEntity(id, title, body, pinned, createdAt, updatedAt, content, notebookId, trashedAt)
+internal fun NoteEntity.toSyncModel() = NoteSyncState(toModel(), uid, remoteEtag, syncBase, conflict, conflictEtag)
 
 internal fun NotebookEntity.toModel() = Notebook(id, name, tint, position, kind)
 

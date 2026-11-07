@@ -70,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.data.NoteRepository
 import eu.eurise.core.data.NotebookRepository
 import eu.eurise.core.data.TaskRepository
@@ -82,6 +83,7 @@ import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.TableBlock
 import eu.eurise.feature.notes.doc.TextBlock
 import eu.eurise.feature.notes.doc.TextKind
+import eu.eurise.feature.notes.ui.ConflictSheet
 import eu.eurise.feature.notes.ui.DividerView
 import eu.eurise.feature.notes.ui.DrawingEditor
 import eu.eurise.feature.notes.ui.DrawingPreview
@@ -118,19 +120,22 @@ fun NoteEditorRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val books by viewModel.notebooks.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    BackHandler { viewModel.close(onClose) }
+    // Chiusa la nota, il cloud la riceve dopo pochi secondi (se è collegato).
+    val closeAndSync = { CloudSync.get(context).requestSoon(); onClose() }
+    BackHandler { viewModel.close(closeAndSync) }
     NoteEditorScreen(
         state = state,
         notebookName = books.firstOrNull { it.notebook.id == state.notebookId }?.notebook?.name,
         isNew = noteId == null,
         viewModel = viewModel,
-        onDone = { viewModel.close(onClose) },
-        onTrash = { viewModel.trash(onClose) },
+        onDone = { viewModel.close(closeAndSync) },
+        onTrash = { viewModel.trash(closeAndSync) },
         onShare = {
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, viewModel.shareText())
             context.startActivity(Intent.createChooser(send, null))
         },
-        onOpenNote = { target -> viewModel.close { onOpenNote(target) } },
+        onOpenNote = { target -> viewModel.close { CloudSync.get(context).requestSoon(); onOpenNote(target) } },
+        onConflictResolved = { CloudSync.get(context).requestSoon() },
         notebookPicker = { onDismiss ->
             NotebookPickerSheet(
                 notebooks = books,
@@ -162,6 +167,7 @@ private fun NoteEditorScreen(
     onTrash: () -> Unit,
     onShare: () -> Unit,
     onOpenNote: (Long) -> Unit,
+    onConflictResolved: () -> Unit,
     notebookPicker: @Composable (onDismiss: () -> Unit) -> Unit,
     linkPicker: @Composable (onDismiss: () -> Unit) -> Unit,
 ) {
@@ -401,6 +407,9 @@ private fun NoteEditorScreen(
                 )
             }
         }
+    }
+    state.conflict?.let { conflict ->
+        ConflictSheet(conflict) { choice -> viewModel.chooseConflict(choice, onConflictResolved) }
     }
     if (pickNotebook) notebookPicker { pickNotebook = false }
     if (pickLink) linkPicker { pickLink = false }

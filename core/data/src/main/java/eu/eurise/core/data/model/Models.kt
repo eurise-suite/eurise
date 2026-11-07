@@ -21,6 +21,24 @@ data class Note(
     val content: String = "",
     val notebookId: Long? = null,
     val trashedAt: Long? = null,
+    val uid: String? = null,
+    /** Vero se la nota è cambiata in due posti e aspetta che si scelga quale versione tenere. */
+    val hasConflict: Boolean = false,
+)
+
+/**
+ * Lo stato di sincronizzazione di una nota.
+ *
+ * @property base il file della nota com'era all'ultima sincronizzazione (null se non è mai stata sincronizzata).
+ * @property conflict il file del cloud in conflitto, con il suo [conflictEtag].
+ */
+data class NoteSyncState(
+    val note: Note,
+    val uid: String?,
+    val remoteEtag: String?,
+    val base: String?,
+    val conflict: String?,
+    val conflictEtag: String?,
 )
 
 /**

@@ -89,10 +89,11 @@ object NoteHtml {
     }
 
     /** Il documento HTML completo, con titolo e stile: è il file che si apre nel browser. */
-    fun document(title: String, blocks: List<Block>): String =
+    fun document(title: String, blocks: List<Block>, meta: Map<String, String> = emptyMap()): String =
         "<!doctype html>\n<html lang=\"it\">\n<head>\n<meta charset=\"utf-8\">\n" +
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
             "<meta name=\"generator\" content=\"Eurise Note\">\n" +
+            meta.entries.joinToString("") { (k, v) -> "<meta name=\"eurise:$k\" content=\"${escape(v)}\">\n" } +
             "<title>${escape(title)}</title>\n<style>$STYLE</style>\n</head>\n<body>\n" +
             "<h1>${escape(title)}</h1>\n" + write(blocks) + "</body>\n</html>\n"
 
@@ -210,6 +211,19 @@ object NoteHtml {
      * sconosciuti vengono ignorati e il loro testo resta. [ids] assegna l'identità ai blocchi.
      */
     fun read(html: String, ids: () -> Long): List<Block> = Reader(html, ids).run()
+
+    /** I `<meta name="eurise:…">` di un documento, senza il prefisso. */
+    fun meta(html: String): Map<String, String> {
+        val head = html.substringBefore("</head>", html.take(4_000))
+        return META.findAll(head).associate { it.groupValues[1] to decode(it.groupValues[2]) }
+    }
+
+    /** Il titolo di un documento (`<title>`). */
+    fun title(html: String): String =
+        TITLE.find(html)?.groupValues?.get(1)?.let { decode(it).trim() }.orEmpty()
+
+    private val META = Regex("""<meta\s+name="eurise:([a-z-]+)"\s+content="([^"]*)"""")
+    private val TITLE = Regex("""<title>(.*?)</title>""", RegexOption.DOT_MATCHES_ALL)
 
     /** Una nota di solo testo: ogni riga diventa un paragrafo. */
     fun fromPlain(text: String, ids: () -> Long): List<Block> =

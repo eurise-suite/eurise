@@ -112,6 +112,25 @@
         <item quantity="other">Ancora %1$d giorni nel cestino</item>
     </plurals>
 
+    <!-- Cloud -->
+    <string name="notes_cloud">Cloud e sincronizzazione</string>
+    <string name="notes_cloud_hint">Murena, Nextcloud, kDrive</string>
+    <string name="notes_conflict_title">Cambiata in due posti</string>
+    <string name="notes_conflict_message">I cambi in punti diversi si uniscono da soli. Qui la stessa parte è stata scritta in due modi: scegli tu.</string>
+    <string name="notes_conflict_step">%1$d di %2$d</string>
+    <string name="notes_conflict_here">Su questo telefono</string>
+    <string name="notes_conflict_cloud">Sul cloud</string>
+    <string name="notes_conflict_today">oggi %1$s</string>
+    <string name="notes_conflict_keep">Tieni questa</string>
+    <string name="notes_conflict_both">Tienile entrambe, una sotto l\'altra</string>
+    <string name="notes_conflict_empty">(qui è stata cancellata)</string>
+    <string name="notes_conflict_badge">Da scegliere: cambiata in due posti</string>
+    <string name="sync_sent">Inviata \"%1$s\"</string>
+    <string name="sync_received">Ricevuta \"%1$s\"</string>
+    <string name="sync_deleted">Eliminata, come sul cloud: \"%1$s\"</string>
+    <string name="sync_merged">Unite da sole le modifiche a \"%1$s\"</string>
+    <string name="sync_conflict">Da scegliere: \"%1$s\" è cambiata in due posti</string>
+
     <!-- Comuni -->
     <string name="notes_save">Salva</string>
     <string name="notes_cancel">Annulla</string>

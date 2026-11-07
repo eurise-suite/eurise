@@ -73,6 +73,32 @@ internal interface NoteDao {
     @Query("SELECT id FROM notes WHERE trashed_at IS NOT NULL")
     suspend fun allTrashed(): List<Long>
 
+    // Sincronizzazione
+
+    @Query("SELECT * FROM notes")
+    suspend fun allForSync(): List<NoteEntity>
+
+    @Query("SELECT * FROM notes WHERE uid = :uid")
+    suspend fun byUid(uid: String): NoteEntity?
+
+    @Query("UPDATE notes SET uid = :uid WHERE id = :id")
+    suspend fun setUid(id: Long, uid: String)
+
+    @Query("UPDATE notes SET remote_etag = :etag, sync_base = :base, conflict = NULL, conflict_etag = NULL WHERE id = :id")
+    suspend fun markSynced(id: Long, etag: String?, base: String?)
+
+    @Query("UPDATE notes SET conflict = :conflict, conflict_etag = :etag WHERE id = :id")
+    suspend fun setConflict(id: Long, conflict: String?, etag: String?)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTombstone(tombstone: NoteTombstoneEntity)
+
+    @Query("SELECT * FROM note_tombstones")
+    suspend fun tombstones(): List<NoteTombstoneEntity>
+
+    @Query("DELETE FROM note_tombstones WHERE uid = :uid")
+    suspend fun removeTombstone(uid: String)
+
     // Tag
 
     @Query("DELETE FROM note_tags WHERE note_id = :noteId")
@@ -120,6 +146,9 @@ internal interface NotebookDao {
 
     @Query("SELECT * FROM notebooks WHERE id = :id")
     suspend fun get(id: Long): NotebookEntity?
+
+    @Query("SELECT * FROM notebooks WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
+    suspend fun byName(name: String): NotebookEntity?
 
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM notebooks")
     suspend fun nextPosition(): Int

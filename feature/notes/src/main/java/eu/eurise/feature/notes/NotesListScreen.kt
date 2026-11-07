@@ -335,6 +335,7 @@ private fun PinnedCard(note: Note, book: NotebookSummary?, onClick: () -> Unit) 
             } else null
         }
         drawing?.let { DrawingThumbnail(it) }
+        if (note.hasConflict) ConflictBadge()
         checklistProgress(note)?.let { (done, total) -> Progress(done, total) }
     }
 }
@@ -388,6 +389,7 @@ private fun NoteRow(note: Note, book: NotebookSummary?, today: LocalDate, onClic
                 Text(snippet, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             val progress = checklistProgress(note)
+            if (note.hasConflict) ConflictBadge()
             when {
                 progress != null -> Progress(progress.first, progress.second)
                 book != null -> Text(book.notebook.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -405,4 +407,15 @@ private fun shortTime(millis: Long, today: LocalDate): String {
         today.minusDays(1) -> stringResource(R.string.notes_yesterday)
         else -> time.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
     }
+}
+
+/** Segno delle note cambiate in due posti, in attesa di una scelta. */
+@Composable
+private fun ConflictBadge() {
+    Text(
+        stringResource(R.string.notes_conflict_badge),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        color = inkColors().text("Borgogna"),
+    )
 }

@@ -107,6 +107,7 @@ fun OrganizeRoute(
     onBack: () -> Unit,
     onFilter: (NotesFilter) -> Unit,
     onTrash: () -> Unit,
+    onCloud: () -> Unit,
 ) {
     val viewModel = viewModel { OrganizeViewModel(notes, notebooks) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -128,6 +129,11 @@ fun OrganizeRoute(
                     subtitle = stringResource(R.string.notes_trash_hint, NoteRepository.TRASH_DAYS),
                     onClick = onTrash,
                 )
+            }
+        }
+        item(key = "cloud") {
+            Group {
+                ListRow(EuriseIcons.cloud(), stringResource(R.string.notes_cloud), "", subtitle = stringResource(R.string.notes_cloud_hint), onClick = onCloud)
             }
         }
         item(key = "h-books") {

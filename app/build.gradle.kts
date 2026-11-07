@@ -77,6 +77,8 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
+    implementation(project(":core:cloud"))
+    implementation(project(":feature:cloud"))
     implementation(project(":feature:today"))
     implementation(project(":feature:notes"))
     implementation(project(":feature:tasks"))

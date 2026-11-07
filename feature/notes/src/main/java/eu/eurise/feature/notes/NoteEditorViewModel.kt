@@ -13,6 +13,11 @@ import eu.eurise.feature.notes.doc.Block
 import eu.eurise.feature.notes.doc.DividerBlock
 import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.Mark
+import eu.eurise.feature.notes.doc.MergeChoice
+import eu.eurise.feature.notes.doc.MergePart
+import eu.eurise.feature.notes.doc.MergeResult
+import eu.eurise.feature.notes.doc.NoteFile
+import eu.eurise.feature.notes.doc.NoteMerge
 import eu.eurise.feature.notes.doc.NoteHtml
 import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.RichText
@@ -58,6 +63,8 @@ data class NoteEditorState(
     val canUndo: Boolean = false,
     /** Disegno aperto a schermo intero, se c'è. */
     val drawingId: Long? = null,
+    /** Nota cambiata in due posti: le scelte da fare prima di continuare. */
+    val conflict: ConflictUi? = null,
 ) {
     val focusedText: TextBlock? get() = blocks.firstOrNull { it.id == focusedId } as? TextBlock
 
@@ -71,6 +78,25 @@ data class NoteEditorState(
         }
 
     val tags: List<String> get() = extractTags(title + "\n" + NoteHtml.plainText(blocks)).toList()
+}
+
+/**
+ * Le scelte da fare su una nota cambiata sul telefono e sul cloud. Si sceglie un punto per volta:
+ * prima il titolo (se serve), poi le parti del testo.
+ */
+data class ConflictUi(
+    val result: MergeResult,
+    val titleChoice: MergeChoice? = null,
+    val choices: List<MergeChoice> = emptyList(),
+    /** Quando è stata cambiata la versione del cloud. */
+    val remoteUpdated: Long = 0,
+) {
+    private val titleSteps get() = if (result.titleConflict != null) 1 else 0
+    val total: Int get() = titleSteps + result.conflicts.size
+    val step: Int get() = (if (titleChoice != null) titleSteps else 0) + choices.size
+    val choosingTitle: Boolean get() = result.titleConflict != null && titleChoice == null
+    val current: MergePart.Conflict? get() = if (choosingTitle) null else result.conflicts.getOrNull(choices.size)
+    val done: Boolean get() = step >= total
 }
 
 /**
@@ -93,6 +119,8 @@ class NoteEditorViewModel(
     private val newId = { ++nextId }
     private var serial = 0L
     private var pendingSave: Job? = null
+    /** Vero se c'è qualcosa di non ancora salvato: aprire e chiudere una nota non la cambia. */
+    private var dirty = false
     private val writeLock = Mutex()
 
     /** Titoli delle attività collegate, per aggiornarle quando cambia il testo della voce. */
@@ -116,16 +144,52 @@ class NoteEditorViewModel(
                 val first = TextBlock(newId(), TextKind.Paragraph, RichText())
                 _state.value = NoteEditorState(loaded = true, blocks = listOf(first), notebookId = newNotebookId)
             } else {
+                val blocks = load(note)
                 _state.value = NoteEditorState(
                     loaded = true,
                     title = note.title,
-                    blocks = load(note),
+                    blocks = blocks,
                     pinned = note.pinned,
                     saved = true,
                     notebookId = note.notebookId,
                     updatedAt = note.updatedAt,
+                    conflict = if (note.hasConflict) conflictFor(note.id, note.title, blocks) else null,
                 )
             }
+        }
+    }
+
+    /** Prepara le scelte del conflitto confrontando telefono, cloud e ultima versione comune. */
+    private suspend fun conflictFor(noteId: Long, title: String, blocks: List<Block>): ConflictUi? {
+        val sync = notes.syncState(noteId) ?: return null
+        val remoteText = sync.conflict ?: return null
+        val uid = sync.uid.orEmpty()
+        val remote = NoteFile.read(remoteText, uid, newId)
+        val base = sync.base?.let { NoteFile.read(it, uid, newId) }
+        val result = NoteMerge.merge(base?.title.orEmpty(), base?.blocks.orEmpty(), title, blocks, remote.title, remote.blocks)
+        return ConflictUi(result, remoteUpdated = remote.updated)
+    }
+
+    /** Una scelta sul punto in conflitto mostrato; all'ultima la nota si salva con le scelte fatte. */
+    fun chooseConflict(choice: MergeChoice, onResolved: () -> Unit) {
+        val c = _state.value.conflict ?: return
+        val next = if (c.choosingTitle) c.copy(titleChoice = choice) else c.copy(choices = c.choices + choice)
+        if (!next.done) {
+            _state.update { it.copy(conflict = next) }
+            return
+        }
+        val title = next.result.title(next.titleChoice)
+        val blocks = next.result.blocks(next.choices).ifEmpty { listOf(TextBlock(newId(), TextKind.Paragraph, RichText())) }
+        viewModelScope.launch {
+            val current = id ?: return@launch
+            writeLock.withLock {
+                notes.resolveConflict(current, title.trim(), NoteHtml.plainText(blocks), NoteHtml.write(blocks))
+            }
+            history.clear()
+            _state.update {
+                it.copy(title = title, blocks = blocks, conflict = null, canUndo = false, updatedAt = System.currentTimeMillis())
+            }
+            onResolved()
         }
     }
 
@@ -514,7 +578,7 @@ class NoteEditorViewModel(
                     id?.let { notes.delete(it) }
                     id = null
                 }
-            } else {
+            } else if (dirty || id == null) {
                 saveNow(force = true)
             }
             onClosed()
@@ -541,6 +605,7 @@ class NoteEditorViewModel(
     }
 
     private fun scheduleSave() {
+        dirty = true
         pendingSave?.cancel()
         pendingSave = viewModelScope.launch {
             delay(SAVE_DELAY_MS)
@@ -553,6 +618,7 @@ class NoteEditorViewModel(
         if (isEmpty() && !force) return@withLock
         val s = _state.value
         if (isEmpty() && id == null) return@withLock
+        dirty = false
         id = notes.saveRich(id, s.title.trim(), NoteHtml.plainText(s.blocks), NoteHtml.write(s.blocks), s.notebookId)
         _state.update { it.copy(saved = true, updatedAt = System.currentTimeMillis()) }
         syncTaskTitles(s.blocks)
