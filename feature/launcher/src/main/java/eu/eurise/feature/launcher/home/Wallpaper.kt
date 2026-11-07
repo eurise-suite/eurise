@@ -71,7 +71,8 @@ private val Seasons = mapOf(
     Season.Autumn to Palette(listOf(c(0xB9C7DD), c(0xD7DCE6), c(0xEBDCCB)), listOf(c(0xAEB9C9), c(0x93A1B4), c(0x7A889C)), NightSky, NightHills, c(0xF6E7D3)),
     Season.Winter to Palette(listOf(c(0xAEBBCD), c(0xCCD5E0), c(0xE6E3E2)), listOf(c(0xA7B3C3), c(0x8E9BAE), c(0x76849A)), NightSky, NightHills, c(0xF1E4D6)),
     Season.Spring to Palette(listOf(c(0xB4C6CF), c(0xD3DCD8), c(0xE8E2D3)), listOf(c(0xA7B8B3), c(0x8DA29C), c(0x748A84)), NightSky, NightHills, c(0xF6EBDA)),
-    Season.Summer to Palette(listOf(c(0xC9C2B8), c(0xE3D6C4), c(0xF0DDC2)), listOf(c(0xBCAB97), c(0xA3907C), c(0x887562)), NightSky, NightHills, c(0xFBEBD2)),
+    // Estate: cielo azzurro e colline color mare, sole caldo.
+    Season.Summer to Palette(listOf(c(0xA9CDE0), c(0xCFE4EC), c(0xF1EBDA)), listOf(c(0x9CC6D0), c(0x7EAEBB), c(0x5F94A3)), NightSky, NightHills, c(0xFBE3A8)),
 )
 
 private val Festive = mapOf(
@@ -89,8 +90,8 @@ private val Festive = mapOf(
         listOf(c(0x16201C), c(0x26362F), c(0x3B4C43)), listOf(c(0x2B3A31), c(0x222F28), c(0x1A241F))),
     Festivity.SpringStart to Palette(listOf(c(0xD3E2DC), c(0xE7EEE6), c(0xF3EFE2)), listOf(c(0xB7CDBF), c(0x9DB7A7), c(0x82A08E)),
         listOf(c(0x13201D), c(0x22362F), c(0x354C43)), listOf(c(0x283A33), c(0x1F2F29), c(0x18241F))),
-    Festivity.SummerStart to Palette(listOf(c(0xE9D8BE), c(0xF2E3C8), c(0xF6EBD6)), listOf(c(0xD5BE9D), c(0xC0A580), c(0xA88C68)),
-        listOf(c(0x1C1A26), c(0x352E3E), c(0x544557)), listOf(c(0x3B3240), c(0x2E2733), c(0x221D26)), c(0xF7DFA8)),
+    Festivity.SummerStart to Palette(listOf(c(0x9FCAE0), c(0xC9E3EE), c(0xF4ECD6)), listOf(c(0x94C3CE), c(0x74A9B7), c(0x56909F)),
+        listOf(c(0x0F1D2A), c(0x1C3346), c(0x2E4A60)), listOf(c(0x203546), c(0x182A38), c(0x11202B)), c(0xF7D98E)),
     Festivity.AutumnStart to Palette(listOf(c(0xE3D3C3), c(0xEEDFCF), c(0xF4E8DA)), listOf(c(0xCFB49C), c(0xB8977C), c(0x9E7C62)),
         listOf(c(0x1E1A22), c(0x372D35), c(0x55444A)), listOf(c(0x3C3036), c(0x2F262B), c(0x231C20)), c(0xF4DDBE)),
     Festivity.WinterStart to Palette(listOf(c(0xC9D2DC), c(0xDDE2E8), c(0xEEEEEC)), listOf(c(0xB3BECB), c(0x9DA9B9), c(0x8693A5)),
