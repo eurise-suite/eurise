@@ -1,12 +1,13 @@
-# Eurise – stato dei lavori (7 novembre 2026)
+# Eurise – stato dei lavori (8 novembre 2026)
 
 Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima questo file e `CLAUDE.md`.
 
 ## Riferimenti
 - Documento di progetto: Claude Doc `81d73EgPHtgsSEd7YkavhU`.
 - Tela di design "Icone della suite": https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
-  (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet).
-- Repository: `eurise-suite/eurise`. Ramo di lavoro `launcher`, unito in `main` a ogni versione provata.
+  (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud).
+- Repository: `eurise-suite/eurise`. Un ramo per lavoro (`launcher`, `note`, `disegno`, `cloud`…), unito in
+  `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
 
 ## Metodo concordato con il proprietario
@@ -60,7 +61,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Codice in `doc/Drawing.kt` (geometria e forme, con test) e `ui/DrawingCanvas.kt`.
 - Prossimi passi delle Note: note bloccate, foto e scansioni, note vocali, tema Notte da rivedere sul telefono.
 
-## Cloud – note sincronizzate (ramo `cloud`, da provare prima di unirlo a `main`)
+## Cloud – note sincronizzate (provato con Murena e unito a `main`)
 - Anteprime approvate: tela, pagina "Cloud".
 - `core/cloud`: account con password per le app cifrate dal Keystore (`CloudAccounts`), client WebDAV
   (`WebDav`, OkHttp, con test), accesso dal browser per Murena e Nextcloud (`NextcloudLogin`, Login Flow v2),
@@ -78,9 +79,16 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Prossimi passi del cloud: Attività via CalDAV (elenco "Attività" su Murena), copia delle impostazioni,
   allegati delle note, note bloccate cifrate (formato Cryptomator), account di sistema Android.
 - Proton Drive: SDK in anteprima, non pronto per app di terze parti, senza login (gennaio 2026).
+- Murena: collegamento dal browser provato e funzionante (spazio mostrato, sincronizzazione partita).
+- kDrive: rifiutato con 403. L'app usa `https://<numero>.connect.kdrive.infomaniak.com/` e, se rifiutato,
+  `https://connect.drive.infomaniak.com/<numero>/`; mostra il codice del server. Cause possibili: numero del
+  kDrive sbagliato (si legge in kdrive.infomaniak.com/app/drive/NUMERO/…), password non "per le app", piano
+  senza WebDAV (non incluso in kSuite Free e Standard). Da riprovare con il proprietario.
 
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
-- Prossimo passo: provare il cloud (APK dal ramo `cloud`) con Murena e kDrive, poi Attività via CalDAV.
+- kDrive da sistemare (vedi Cloud).
+- Prossimo passo: Attività (completare l'app, poi sincronizzazione CalDAV con Murena), sempre partendo dalle
+  anteprime sulla tela; poi le altre app nell'ordine del documento di progetto.
