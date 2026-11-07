@@ -165,6 +165,19 @@ object EuriseIcons {
 
     fun minus(stroke: Float = 2.4f) = icon("minus", stroke, "M5 12h14")
 
+    /** Catena: due elementi legati (per esempio schede alte uguali). */
+    fun link(stroke: Float = Stroke) = icon("link", stroke, "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5", "M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5")
+
+    fun reply(stroke: Float = Stroke) = icon("reply", stroke, "M10 7l-5.5 5 5.5 5", "M5 12h8.5a6 6 0 0 1 6 6v1")
+
+    fun trash(stroke: Float = Stroke) = icon("trash", stroke, "M4.5 7h15", "M9.5 7V4.5h5V7", "M6.5 7l1 13h9l1-13")
+
+    fun read(stroke: Float = Stroke) = icon("read", stroke, "M3.5 12.5l4 4 8-9", "M12.5 16.5l1 0 8-9")
+
+    fun send(stroke: Float = Stroke) = icon("send", stroke, "M4 12L20 4l-4 16-4-7z", "M12 13l8-9")
+
+    fun play2(stroke: Float = Stroke) = icon("play2", stroke, "M8 5.5v13l10.5-6.5z")
+
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
 
     private fun circle(cx: Float, cy: Float, r: Float) =

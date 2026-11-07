@@ -94,6 +94,8 @@ data class LauncherSettings(
     val cards: List<PlacedCard> = decodeCards(null),
     /** Schede della pagina a sinistra della home. */
     val leftCards: List<PlacedCard> = DefaultLeftCards,
+    /** Le schede (bolle) della home, nell'ordine, con larghezza, altezza e legame. */
+    val homeSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = eu.eurise.feature.launcher.home.DefaultHomeSlots,
     /** Categorie della barra in basso, da 3 a 7, nell'ordine scelto. */
     val categories: List<BarCategory> = DefaultBarCategories,
     /** App spostate a mano in un'altra categoria: chiave dell'app → id della categoria. */
@@ -155,6 +157,7 @@ class SettingsStore(context: Context) {
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
             .putString("left_cards", next.leftCards.encode())
+            .putString("home_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.homeSlots))
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .putString("folders", next.folders.encodeFolders())
@@ -176,6 +179,7 @@ class SettingsStore(context: Context) {
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),
         leftCards = decodeCards(prefs.getString("left_cards", null), DefaultLeftCards),
+        homeSlots = eu.eurise.feature.launcher.home.decodeHome(prefs.getString("home_slots", null)),
         categories = decodeCategories(prefs.getString("bar_categories", null)),
         categoryOverrides = prefs.getString("category_overrides", "").orEmpty().lines()
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }

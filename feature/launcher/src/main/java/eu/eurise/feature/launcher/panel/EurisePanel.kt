@@ -98,6 +98,7 @@ fun EurisePanel(
     onGrant: () -> Unit,
     onSystemShade: () -> Unit,
     onClose: () -> Unit,
+    onReply: (MessageItem) -> Unit = {},
 ) {
     val context = LocalContext.current
     val insets = WindowInsets.safeDrawing.asPaddingValues()
@@ -172,13 +173,22 @@ fun EurisePanel(
                     }
                 }
             }
-            if (messages.isNotEmpty()) {
-                item { SectionHead(stringResource(R.string.card_messages)) }
-                items(messages, key = { it.key }) { n -> NotificationRow(n, hazeState, onOpen) }
+            // Raggruppate per app e, dentro l'app, per conversazione; quelle di servizio in una riga sola.
+            val messageGroups = messages.groupBy { it.packageName }.values.toList()
+            val otherGroups = others.filterNot { it.service }.groupBy { it.packageName }.values.toList()
+            val services = others.filter { it.service }
+            if (messageGroups.isNotEmpty()) {
+                item { SectionHead(stringResource(R.string.card_messages) + " · " + messages.sumOf { it.count }) }
+                items(messageGroups, key = { "g" + it.first().packageName }) { g ->
+                    if (g.size == 1) NotificationRow(g.first(), hazeState, onOpen, onReply) else NotificationGroup(g, hazeState, onOpen)
+                }
             }
-            if (others.isNotEmpty()) {
-                item { SectionHead(stringResource(R.string.panel_other)) }
-                items(others, key = { it.key }) { n -> NotificationRow(n, hazeState, onOpen) }
+            if (otherGroups.isNotEmpty() || services.isNotEmpty()) {
+                item { SectionHead(stringResource(R.string.panel_other) + " · " + others.size) }
+                items(otherGroups, key = { "o" + it.first().packageName }) { g ->
+                    if (g.size == 1) NotificationRow(g.first(), hazeState, onOpen, onReply) else NotificationGroup(g, hazeState, onOpen)
+                }
+                if (services.isNotEmpty()) item(key = "services") { ServiceSummary(services, hazeState, onOpen) }
             }
             if (notificationsOn && notifications.isEmpty()) {
                 item {
@@ -420,7 +430,7 @@ private fun Tile(icon: ImageVector, label: String, state: TileState, hazeState: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NotificationRow(n: MessageItem, hazeState: HazeState, onOpen: (MessageItem) -> Unit) {
+private fun NotificationRow(n: MessageItem, hazeState: HazeState, onOpen: (MessageItem) -> Unit, onReply: (MessageItem) -> Unit = {}) {
     val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
         if (value != SwipeToDismissBoxValue.Settled && n.clearable) {
             NotificationStore.dismiss(n.key); true
@@ -450,9 +460,20 @@ private fun NotificationRow(n: MessageItem, hazeState: HazeState, onOpen: (Messa
                 if (n.text.isNotBlank()) {
                     Text(n.text, fontSize = 13.sp, lineHeight = 17.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
                 }
-                if (n.actions.isNotEmpty()) {
+                if (n.actions.isNotEmpty() || n.reply != null) {
                     Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        n.actions.forEach { a ->
+                        if (n.reply != null) {
+                            Text(
+                                stringResource(R.string.reply),
+                                fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .clickable { onReply(n) }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
+                        n.actions.take(if (n.reply != null) 1 else 2).forEach { a ->
                             Text(
                                 a.title,
                                 fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
@@ -549,6 +570,105 @@ private fun LevelSliders(context: Context, refresh: Int, hazeState: HazeState) {
                 "${(volume * 100).toInt()}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(40.dp),
             )
+        }
+    }
+}
+
+
+private fun timeOf(at: Long): String =
+    java.time.Instant.ofEpochMilli(at).atZone(java.time.ZoneId.systemDefault()).format(TimeFormat)
+
+/**
+ * Più notifiche della stessa app: una riga per conversazione con il numero di messaggi, le prime tre in
+ * vista e le altre dietro "+ altre". Scorrendo di lato si tolgono tutte quelle cancellabili.
+ */
+@Composable
+private fun NotificationGroup(items: List<MessageItem>, hazeState: HazeState, onOpen: (MessageItem) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val conversations = items.groupBy { it.conversation.ifBlank { it.title } }
+        .map { (name, list) -> Triple(name, list.maxBy { it.postedAt }, list.sumOf { it.count }) }
+        .sortedByDescending { it.second.postedAt }
+    val shown = if (expanded) conversations else conversations.take(3)
+    val clearable = items.any { it.clearable }
+    val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+        if (value != SwipeToDismissBoxValue.Settled && clearable) {
+            items.filter { it.clearable }.forEach { NotificationStore.dismiss(it.key) }; true
+        } else false
+    })
+    SwipeToDismissBox(state = dismiss, backgroundContent = {}, enableDismissFromStartToEnd = clearable, enableDismissFromEndToStart = clearable) {
+        Column(
+            Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(22.dp), elevation = 4.dp, outline = false).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(if (items.first().isMessage) EuriseIcons.message(2f) else EuriseIcons.grid(2f), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(items.first().appLabel, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(
+                    "${items.sumOf { it.count }}", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)).padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
+            shown.forEach { (name, latest, count) ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(latest) }.padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(0.42f, fill = false))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        latest.text + if (count > 1) " · $count" else "", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(timeOf(latest.postedAt), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (conversations.size > 3) {
+                Text(
+                    if (expanded) stringResource(R.string.panel_less) else stringResource(R.string.panel_more, conversations.size - 3),
+                    fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { expanded = !expanded }.padding(vertical = 2.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Notifiche di servizio (aggiornamenti, download, sincronizzazioni): una riga riassuntiva che si apre a richiesta. */
+@Composable
+private fun ServiceSummary(items: List<MessageItem>, hazeState: HazeState, onOpen: (MessageItem) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(22.dp), elevation = 4.dp, outline = false)
+            .clickable { expanded = !expanded }.padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                items.groupBy { it.appLabel }.entries.joinToString(" · ") { (app, list) -> if (list.size > 1) "$app ${list.size}" else app },
+                fontSize = 13.sp, lineHeight = 18.sp, maxLines = if (expanded) 4 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(if (expanded) R.string.panel_less else R.string.panel_open),
+                fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        if (expanded) items.forEach { n ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(n.appLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+                Text(listOf(n.title, n.text).filter { it.isNotBlank() }.joinToString(" · "), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            }
         }
     }
 }

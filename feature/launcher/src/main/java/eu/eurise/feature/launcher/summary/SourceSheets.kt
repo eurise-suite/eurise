@@ -63,7 +63,7 @@ import eu.eurise.feature.launcher.news.Regions
 
 /** Foglio dal basso comune alle impostazioni delle schede. */
 @Composable
-private fun BottomSheet(title: String, onClose: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+internal fun BottomSheet(title: String, onClose: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)).pointerInput(Unit) { detectTapGestures { onClose() } },
         contentAlignment = Alignment.BottomCenter,
@@ -122,7 +122,7 @@ private fun AddField(hint: String, keyboard: KeyboardType, onAdd: (String) -> Un
 }
 
 @Composable
-private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, trailing: (@Composable () -> Unit)? = null) {
+internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, trailing: (@Composable () -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onChange(!checked) }, verticalAlignment = Alignment.CenterVertically) {
         Text(label, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
         trailing?.invoke()

@@ -181,6 +181,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
     val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()
     val recentFiles by viewModel.recentFiles.collectAsStateWithLifecycle()
+    val videoList by viewModel.videoList.collectAsStateWithLifecycle()
+    val videoChannels by viewModel.videos.channels.collectAsStateWithLifecycle()
+    val importScope = androidx.compose.runtime.rememberCoroutineScope()
+    val importedLabel = stringResource(R.string.videos_imported, 0).substringBefore("0")
+    val newPipeImport = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) importScope.launch {
+            val added = runCatching { viewModel.videos.importNewPipe(uri) }.getOrDefault(0)
+            android.widget.Toast.makeText(context, importedLabel + added, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.refreshVideos(force = true)
+        }
+    }
     val sun by viewModel.sun.collectAsStateWithLifecycle()
     val healthState by viewModel.healthState.collectAsStateWithLifecycle()
     val healthToday by viewModel.healthToday.collectAsStateWithLifecycle()
@@ -315,6 +326,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
+        var editingHome by remember { mutableStateOf(false) }
+        var homeCatalog by remember { mutableStateOf(false) }
+        var channelsSheet by remember { mutableStateOf(false) }
+        var replyTo by remember { mutableStateOf<MessageItem?>(null) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
         var searchPerson by remember { mutableStateOf<eu.eurise.feature.launcher.contacts.Person?>(null) }
@@ -382,13 +397,18 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 panelOpen = false
                 appearance = false
                 editingCards = false
+                editingHome = false
             }
         }
         LaunchedEffect(categoryPager.currentPage) {
             if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
+        BackHandler(enabled = replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
             when {
+                replyTo != null -> replyTo = null
+                homeCatalog -> homeCatalog = false
+                channelsSheet -> { channelsSheet = false; viewModel.refreshVideos(force = true) }
+                editingHome -> editingHome = false
                 folderPicker != null -> folderPicker = null
                 openFolder != null -> openFolder = null
                 signPicker -> signPicker = false
@@ -432,7 +452,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             // Da ogni pagina: in su ricerca e app, in giù il Pannello Eurise (non mentre si modifica o c'è un foglio aperto).
             BoxWithConstraints(
                 Modifier.fillMaxSize().then(
-                    if (searching || panelOpen || editingCards || categoryEditor || appearance) Modifier
+                    if (searching || panelOpen || editingCards || editingHome || categoryEditor || appearance || replyTo != null) Modifier
                     else Modifier.openOnSwipe(onUp = { searching = true }, onDown = { panelOpen = true }),
                 ),
             ) {
@@ -466,7 +486,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                             clearance = clearance, summary = summary, onWeather = openWeather,
                         )
                     } else {
-                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards) { page ->
+                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards && !editingHome) { page ->
                             if (page == 0) {
                                 board(true, Modifier.fillMaxSize())
                             } else if (page == HomePage) {
@@ -485,12 +505,34 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     welcome = welcome,
                                     onOpenFolder = { openFolder = it.id },
                                     onCreateFolder = { app -> folderPicker = FolderRequest(null, eu.eurise.feature.launcher.folders.AppFolder.HOME, app.key) },
+                                    home = HomeBoardData(
+                                        editing = editingHome,
+                                        onEditing = { editingHome = it },
+                                        onChange = { slots -> viewModel.updateSettings { it.copy(homeSlots = slots) } },
+                                        onCatalog = { homeCatalog = true },
+                                        videos = videoList,
+                                        hasChannels = videoChannels.isNotEmpty(),
+                                        onOpenVideo = { viewModel.videos.open(it) },
+                                        onChannels = { channelsSheet = true },
+                                        onReply = { replyTo = it },
+                                        cardBody = { kind, modifier ->
+                                            SummaryCardBody(
+                                                PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
+                                                hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
+                                                DailyData(
+                                                    horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
+                                                    onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
+                                                ),
+                                                calendarMonth, monthEvents, monthTasks, viewModel::setCalendarMonth,
+                                            )
+                                        },
+                                    ),
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
                             }
                         }
-                        if (!editingCards) PageDots(homePager.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 6.dp))
+                        if (!editingCards && !editingHome) PageDots(homePager.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 6.dp))
                     }
                 } else {
                     Box(Modifier.fillMaxSize().background(scrimColor()))
@@ -525,7 +567,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
-                if (searching || panelOpen || editingCards || categoryEditor) {
+                if (searching || panelOpen || editingCards || editingHome || categoryEditor) {
                     // nessuna barra
                 } else if (tablet) {
                     TabletDock(
@@ -581,6 +623,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onGrant = actions.grantNotifications,
                     onSystemShade = { panelOpen = false; actions.expandNotifications() },
                     onClose = { panelOpen = false },
+                    onReply = { replyTo = it },
                 )
             }
             if (newsSheet) {
@@ -669,10 +712,36 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onClose = { categoryEditor = false },
                 )
             }
+            if (homeCatalog) {
+                eu.eurise.feature.launcher.home.HomeCatalog(
+                    slots = settings.homeSlots,
+                    onAdd = { kind ->
+                        viewModel.updateSettings { it.copy(homeSlots = it.homeSlots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth)) }
+                        if (kind == eu.eurise.feature.launcher.home.HomeKind.Videos) viewModel.refreshVideos()
+                    },
+                    onRemove = { kind -> viewModel.updateSettings { it.copy(homeSlots = it.homeSlots.filterNot { s -> s.kind == kind }) } },
+                    onClose = { homeCatalog = false },
+                )
+            }
+            if (channelsSheet) {
+                eu.eurise.feature.launcher.videos.ChannelsSheet(
+                    viewModel.videos,
+                    onImport = { newPipeImport.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) },
+                    onClose = { channelsSheet = false; viewModel.refreshVideos(force = true) },
+                )
+            }
             if (appearance) {
                 AppearanceSheet(
                     settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false },
                     onEditCategories = { appearance = false; categoryEditor = true },
+                )
+            }
+            // Risposta rapida: sopra a tutto, dal Pannello o dalla bolla "Ti hanno cercato".
+            replyTo?.let { m ->
+                eu.eurise.feature.launcher.notifications.QuickReplyDialog(
+                    message = m,
+                    onOpenChat = { replyTo = null; panelOpen = false; actions.openMessage(it) },
+                    onClose = { replyTo = null },
                 )
             }
         }
@@ -724,6 +793,20 @@ private class WelcomeData(
 )
 
 
+/** Ciò che serve alla home per le sue schede modificabili e per le bolle nuove (video, risposta rapida). */
+private class HomeBoardData(
+    val editing: Boolean,
+    val onEditing: (Boolean) -> Unit,
+    val onChange: (List<eu.eurise.feature.launcher.home.HomeSlot>) -> Unit,
+    val onCatalog: () -> Unit,
+    val videos: List<eu.eurise.feature.launcher.videos.Video>?,
+    val hasChannels: Boolean,
+    val onOpenVideo: (eu.eurise.feature.launcher.videos.Video) -> Unit,
+    val onChannels: () -> Unit,
+    val onReply: (MessageItem) -> Unit,
+    val cardBody: @Composable (CardKind, Modifier) -> Unit,
+)
+
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
     val openApp: (AppEntry) -> Unit,
@@ -764,6 +847,7 @@ private fun PhoneHome(
     welcome: WelcomeData,
     onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit,
     onCreateFolder: (AppEntry) -> Unit,
+    home: HomeBoardData,
 ) {
     // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
     val compact = settings.rows >= 3 || (settings.rows == 2 && LocalConfiguration.current.screenHeightDp < 820)
@@ -820,35 +904,57 @@ private fun PhoneHome(
                 Modifier.weight(1000f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                AgendaPill(
-                    now = now,
-                    events = state.eventsToday,
-                    calendarConnected = state.calendarConnected,
-                    tasks = state.tasksDue,
-                    travel = welcome.travel,
-                    destinations = welcome.destinations,
-                    hazeState = hazeState,
-                    compact = compact,
-                    onCalendar = { actions.openEurise("calendar") },
-                    onConnectCalendar = actions.connectCalendar,
-                    onTasks = { actions.openEurise("tasks") },
-                    onRoute = welcome.onRoute,
-                )
-                CommsPill(
-                    messages = welcome.messages,
-                    enabled = welcome.notificationsOn,
-                    hazeState = hazeState,
-                    compact = compact,
-                    onOpen = actions.openMessage,
-                    onRecent = welcome.onRecent,
-                    onStarred = welcome.onStarred,
-                    onGrant = actions.grantNotifications,
-                    onHub = { actions.openEurise("today") },
-                )
-                HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge)
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    WorkPill(welcome.files, welcome.filesAccess, hazeState, Modifier.weight(1.35f), welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
-                    MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, Modifier.weight(1f), welcome.onPlayer, actions.grantNotifications)
+                eu.eurise.feature.launcher.home.HomeBoard(
+                    slots = settings.homeSlots,
+                    editing = home.editing,
+                    onEditingChange = home.onEditing,
+                    onChange = home.onChange,
+                    onCatalog = home.onCatalog,
+                ) { slot, mod ->
+                    when (slot.kind) {
+                        eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
+                            now = now,
+                            events = state.eventsToday,
+                            calendarConnected = state.calendarConnected,
+                            tasks = state.tasksDue,
+                            travel = welcome.travel,
+                            destinations = welcome.destinations,
+                            hazeState = hazeState,
+                            compact = compact,
+                            onCalendar = { actions.openEurise("calendar") },
+                            onConnectCalendar = actions.connectCalendar,
+                            onTasks = { actions.openEurise("tasks") },
+                            onRoute = welcome.onRoute,
+                            modifier = mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Comms -> CommsPill(
+                            messages = welcome.messages,
+                            enabled = welcome.notificationsOn,
+                            hazeState = hazeState,
+                            compact = compact,
+                            onOpen = actions.openMessage,
+                            onRecent = welcome.onRecent,
+                            onStarred = welcome.onStarred,
+                            onGrant = actions.grantNotifications,
+                            onHub = { actions.openEurise("today") },
+                            onReply = home.onReply,
+                            modifier = mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Health ->
+                            HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge, mod)
+                        eu.eurise.feature.launcher.home.HomeKind.Work ->
+                            WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
+                        eu.eurise.feature.launcher.home.HomeKind.Music ->
+                            MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
+                        eu.eurise.feature.launcher.home.HomeKind.Videos -> eu.eurise.feature.launcher.videos.VideosPill(
+                            home.videos, home.hasChannels, hazeState, mod, home.onOpenVideo, home.onChannels,
+                        )
+                        else -> slot.kind.card?.let { kind ->
+                            // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
+                            val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
+                            home.cardBody(kind, sized)
+                        }
+                    }
                 }
             }
             Spacer(Modifier.weight(1f).heightIn(min = 6.dp))
@@ -933,6 +1039,35 @@ private fun SummaryColumn(
         modifier = modifier.padding(top = insets.calculateTopPadding()).clipToBounds(),
         footer = { if (setup.isNotEmpty()) SetupCard(setup, hazeState) },
     ) { card, cardModifier ->
+        SummaryCardBody(
+            card, cardModifier, state, messages, nowPlaying, notificationsOn, hazeState, actions, weather, news, quotes,
+            onNewsSources, onSymbols, daily, calendarMonth, monthEvents, monthTasks, onCalendarMonth,
+        )
+    }
+}
+
+/** Il contenuto di una scheda delle pagine laterali; si usa anche quando la scheda sta sulla home. */
+@Composable
+private fun SummaryCardBody(
+    card: PlacedCard,
+    cardModifier: Modifier,
+    state: LauncherState,
+    messages: List<MessageItem>,
+    nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,
+    notificationsOn: Boolean,
+    hazeState: HazeState,
+    actions: LauncherActions,
+    weather: List<eu.eurise.feature.launcher.weather.DayForecast>?,
+    news: List<eu.eurise.feature.launcher.news.NewsItem>?,
+    quotes: List<eu.eurise.feature.launcher.markets.Quote>?,
+    onNewsSources: () -> Unit,
+    onSymbols: () -> Unit,
+    daily: DailyData,
+    calendarMonth: java.time.YearMonth,
+    monthEvents: List<eu.eurise.core.data.calendar.CalendarEvent>,
+    monthTasks: List<eu.eurise.core.data.model.Task>,
+    onCalendarMonth: (java.time.YearMonth) -> Unit,
+) {
         when (card.kind) {
             CardKind.Calendar -> CalendarCard(
                 today = state.today,
@@ -978,7 +1113,6 @@ private fun SummaryColumn(
                 onSources = daily.onRecipeSources, onOpen = { actions.openLink(it.link) },
             )
         }
-    }
 }
 
 /** Tablet a tocco: orario, meteo e Oggi a sinistra, Riepilogo a destra. */

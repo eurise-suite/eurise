@@ -1,0 +1,394 @@
+package eu.eurise.feature.launcher.home
+
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.feature.launcher.R
+import eu.eurise.feature.launcher.summary.BottomSheet
+import eu.eurise.feature.launcher.summary.CardKind
+import eu.eurise.feature.launcher.summary.longPressToEdit
+
+/**
+ * Le schede che si possono mettere sulla home: le bolle della home e le schede delle altre pagine.
+ * [defaultHeight] 0 vuol dire "alta quanto il contenuto"; le schede delle altre pagine hanno bisogno di
+ * un'altezza fissa.
+ */
+enum class HomeKind(
+    val id: String,
+    @StringRes val title: Int,
+    @StringRes val description: Int,
+    val icon: () -> ImageVector,
+    val defaultWidth: Float = 1f,
+    val defaultHeight: Int = 0,
+    val card: CardKind? = null,
+) {
+    Agenda("agenda", R.string.welcome_events, R.string.home_agenda_desc, { EuriseIcons.calendar(1.9f) }),
+    Comms("comms", R.string.welcome_comms, R.string.home_comms_desc, { EuriseIcons.chat(1.9f) }),
+    Health("health", R.string.welcome_health, R.string.home_health_desc, { EuriseIcons.heart(1.9f) }),
+    Work("work", R.string.welcome_work, R.string.home_work_desc, { EuriseIcons.folder(1.9f) }, 0.57f),
+    Music("music", R.string.welcome_music, R.string.home_music_desc, { EuriseIcons.music(1.9f) }, 0.43f),
+    Videos("videos", R.string.card_videos, R.string.card_videos_desc, { EuriseIcons.play2(1.9f) }),
+    Weather("weather", R.string.weather_title, R.string.card_weather_desc, { EuriseIcons.sun(1.9f) }, 1f, 200, CardKind.Weather),
+    Notes("notes", R.string.card_notes, R.string.card_notes_desc, { EuriseIcons.note(1.9f) }, 1f, 200, CardKind.PinnedNotes),
+    Horoscope("horoscope", R.string.card_horoscope, R.string.card_horoscope_desc, { EuriseIcons.zodiac(4, 1.9f) }, 1f, 170, CardKind.Horoscope),
+    Recipe("recipe", R.string.card_recipe, R.string.card_recipe_desc, { EuriseIcons.spoon(1.9f) }, 1f, 220, CardKind.Recipe),
+    News("news", R.string.card_news, R.string.card_news_desc, { EuriseIcons.news(1.9f) }, 1f, 240, CardKind.News),
+    Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) }, 1f, 170, CardKind.Stocks);
+
+    companion object {
+        fun byId(id: String) = entries.firstOrNull { it.id == id }
+    }
+}
+
+/**
+ * Una scheda sulla home: larghezza come frazione della riga (da 0,3 a 1), altezza in dp (0 = quanto il
+ * contenuto). Le schede affiancate restano alte uguali finché l'utente non le scioglie ([free]).
+ */
+data class HomeSlot(val kind: HomeKind, val width: Float, val height: Int = kind.defaultHeight, val free: Boolean = false)
+
+val DefaultHomeSlots = listOf(
+    HomeSlot(HomeKind.Agenda, 1f),
+    HomeSlot(HomeKind.Comms, 1f),
+    HomeSlot(HomeKind.Health, 1f),
+    HomeSlot(HomeKind.Work, 0.57f),
+    HomeSlot(HomeKind.Music, 0.43f),
+)
+
+fun encodeHomeSlots(slots: List<HomeSlot>): String = slots.encodeHome()
+
+fun List<HomeSlot>.encodeHome(): String =
+    joinToString("|") { "${it.kind.id}:${"%.3f".format(java.util.Locale.ROOT, it.width)}:${it.height}:${if (it.free) 1 else 0}" }
+
+fun decodeHome(raw: String?): List<HomeSlot> {
+    if (raw.isNullOrBlank()) return if (raw == null) DefaultHomeSlots else emptyList()
+    return raw.split('|').mapNotNull { part ->
+        val b = part.split(':')
+        val kind = HomeKind.byId(b[0]) ?: return@mapNotNull null
+        HomeSlot(
+            kind,
+            (b.getOrNull(1)?.toFloatOrNull() ?: kind.defaultWidth).coerceIn(MinWidth, 1f),
+            b.getOrNull(2)?.toIntOrNull() ?: kind.defaultHeight,
+            b.getOrNull(3) == "1",
+        )
+    }.distinctBy { it.kind }
+}
+
+private const val MinWidth = 0.3f
+private const val MinHeight = 64
+
+/** Righe della home: una scheda va accanto alla precedente finché la somma delle larghezze non supera la riga. */
+fun homeRows(slots: List<HomeSlot>): List<List<Int>> {
+    val rows = mutableListOf<MutableList<Int>>()
+    var used = 2f
+    slots.forEachIndexed { i, s ->
+        if (used + s.width > 1.001f) {
+            rows += mutableListOf(i); used = s.width
+        } else {
+            rows.last() += i; used += s.width
+        }
+    }
+    return rows
+}
+
+/** Le bolle riferiscono qui la loro altezza naturale, per allineare quelle affiancate. */
+val LocalPillMeasure = compositionLocalOf<((Int) -> Unit)?> { null }
+
+private val Gap = 9.dp
+
+/**
+ * Le schede della home, modificabili come quelle delle altre pagine: pressione lunga per entrare in
+ * modifica, maniglie che si trascinano in modo continuo (larghezza a destra, altezza in basso), il meno per
+ * togliere, la catena per unire o sciogliere l'altezza delle affiancate, "Aggiungi scheda" per il catalogo.
+ */
+@Composable
+fun HomeBoard(
+    slots: List<HomeSlot>,
+    editing: Boolean,
+    onEditingChange: (Boolean) -> Unit,
+    onChange: (List<HomeSlot>) -> Unit,
+    onCatalog: () -> Unit,
+    content: @Composable (HomeSlot, Modifier) -> Unit,
+) {
+    val naturals = remember { mutableStateMapOf<HomeKind, Int>() }
+    val density = LocalDensity.current
+    val latest by rememberUpdatedState(slots)
+    // In modifica si lascia un margine per le maniglie, che sporgono dai bordi delle schede.
+    Column(
+        Modifier.padding(horizontal = if (editing) 12.dp else 0.dp, vertical = if (editing) 12.dp else 0.dp),
+        verticalArrangement = Arrangement.spacedBy(if (editing) 18.dp else Gap),
+    ) {
+        if (editing) EditBar(onAdd = onCatalog, onDone = { onEditingChange(false) })
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val rowPx = with(density) { maxWidth.toPx() }
+            Column(verticalArrangement = Arrangement.spacedBy(if (editing) 18.dp else Gap)) {
+                homeRows(slots).forEach { row ->
+                    // Altezza comune delle schede legate: quella scelta dall'utente o la più alta delle naturali.
+                    val linked = if (row.size > 1) row.filter { !slots[it].free } else emptyList()
+                    val chosen = linked.map { slots[it].height }.filter { it > 0 }.maxOrNull()
+                    val natural = linked.mapNotNull { naturals[slots[it].kind] }.maxOrNull()?.let { with(density) { it.toDp() } }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.Top) {
+                        row.forEachIndexed { pos, index ->
+                            val slot = slots[index]
+                            val heightMod = when {
+                                index in linked && chosen != null -> Modifier.height(chosen.dp)
+                                index in linked && natural != null -> Modifier.heightIn(min = natural)
+                                slot.height > 0 -> Modifier.height(slot.height.dp)
+                                else -> Modifier
+                            }
+                            Box(Modifier.weight(slot.width).zIndex(if (editing) 1f else 0f)) {
+                                androidx.compose.runtime.CompositionLocalProvider(
+                                    LocalPillMeasure provides { h -> if (naturals[slot.kind] != h) naturals[slot.kind] = h },
+                                ) {
+                                    content(
+                                        slot,
+                                        Modifier.fillMaxWidth().then(heightMod)
+                                            .then(if (!editing) Modifier.longPressToEdit { onEditingChange(true) } else Modifier),
+                                    )
+                                }
+                                if (editing) {
+                                    EditFrame(
+                                        slot = slot,
+                                        linkedLeft = pos > 0,
+                                        isLinked = pos > 0 && !slot.free && !slots[row[pos - 1]].free,
+                                        rowPx = rowPx,
+                                        onRemove = { onChange(latest.filterNot { it.kind == slot.kind }) },
+                                        onWidth = { w -> onChange(latest.map { if (it.kind == slot.kind) it.copy(width = w.coerceIn(MinWidth, 1f)) else it }) },
+                                        currentHeightPx = {
+                                            val s = latest.firstOrNull { it.kind == slot.kind }
+                                            when {
+                                                s != null && s.height > 0 -> with(density) { s.height.dp.toPx() }
+                                                else -> (naturals[slot.kind] ?: 200).toFloat()
+                                            }
+                                        },
+                                        onHeight = { px ->
+                                            val dp = with(density) { px.toDp().value.toInt() }.coerceIn(MinHeight, 900)
+                                            onChange(applyHeight(latest, slot.kind, dp))
+                                        },
+                                        onToggleLink = { onChange(toggleHomeLink(latest, row.map { latest.getOrNull(it)?.kind }, pos)) },
+                                    )
+                                }
+                            }
+                        }
+                        val used = row.sumOf { slots[it].width.toDouble() }.toFloat()
+                        if (used < 0.999f) Spacer(Modifier.weight(1f - used))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Nuova altezza per una scheda; se è legata, la prendono anche le legate della stessa riga. */
+private fun applyHeight(slots: List<HomeSlot>, kind: HomeKind, dp: Int): List<HomeSlot> {
+    val index = slots.indexOfFirst { it.kind == kind }
+    val row = homeRows(slots).firstOrNull { index in it }.orEmpty()
+    val target = slots[index]
+    return slots.mapIndexed { i, s ->
+        when {
+            i == index -> s.copy(height = dp)
+            !target.free && row.size > 1 && i in row && !s.free -> s.copy(height = dp)
+            else -> s
+        }
+    }
+}
+
+/** La catena tra una scheda e quella alla sua sinistra: se sono legate si sciolgono, altrimenti si legano. */
+private fun toggleHomeLink(slots: List<HomeSlot>, rowKinds: List<HomeKind?>, pos: Int): List<HomeSlot> {
+    val a = rowKinds.getOrNull(pos - 1) ?: return slots
+    val b = rowKinds.getOrNull(pos) ?: return slots
+    val sa = slots.first { it.kind == a }
+    val sb = slots.first { it.kind == b }
+    val linked = !sa.free && !sb.free
+    val common = maxOf(sa.height, sb.height)
+    return slots.map {
+        when (it.kind) {
+            a, b -> if (linked) it.copy(free = true) else it.copy(free = false, height = common)
+            else -> it
+        }
+    }
+}
+
+@Composable
+private fun EditBar(onAdd: () -> Unit, onDone: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+            BarButton(stringResource(R.string.home_add_card), filled = false, onClick = onAdd)
+            BarButton(stringResource(R.string.card_done), filled = true, onClick = onDone)
+        }
+        Text(
+            stringResource(R.string.home_edit_hint), fontSize = 12.sp, lineHeight = 16.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+        )
+    }
+}
+
+@Composable
+private fun BarButton(text: String, filled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.height(38.dp).clip(RoundedCornerShape(50))
+            .background(if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)
+    }
+}
+
+/**
+ * Cornice di modifica sopra una scheda: blocca i tocchi sul contenuto, mostra il meno, le maniglie e, tra
+ * due schede affiancate, la catena.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.EditFrame(
+    slot: HomeSlot,
+    linkedLeft: Boolean,
+    isLinked: Boolean,
+    rowPx: Float,
+    onRemove: () -> Unit,
+    onWidth: (Float) -> Unit,
+    currentHeightPx: () -> Float,
+    onHeight: (Float) -> Unit,
+    onToggleLink: () -> Unit,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val latest by rememberUpdatedState(slot)
+    Box(
+        Modifier.matchParentSize()
+            .border(2.dp, primary, RoundedCornerShape(22.dp))
+            .pointerInput(Unit) { detectTapGestures { } },
+    )
+    // Togli
+    Box(
+        Modifier.align(Alignment.TopStart).offset(x = (-8).dp, y = (-8).dp).size(24.dp).clip(CircleShape)
+            .background(MaterialTheme.colorScheme.error)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.card_remove), onClick = onRemove),
+        contentAlignment = Alignment.Center,
+    ) { Icon(EuriseIcons.minus(), stringResource(R.string.card_remove), tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(13.dp)) }
+    // Larghezza: maniglia a destra, continua.
+    var startWidth by remember { mutableStateOf(0f) }
+    var dragX by remember { mutableStateOf(0f) }
+    Handle(
+        Modifier.align(Alignment.CenterEnd).offset(x = 11.dp),
+        onStart = { startWidth = latest.width; dragX = 0f },
+        onDrag = { dx, _ -> dragX += dx; if (rowPx > 0f) onWidth(startWidth + dragX / rowPx) },
+    )
+    // Altezza: maniglia in basso, continua.
+    var startHeight by remember { mutableStateOf(0f) }
+    var dragY by remember { mutableStateOf(0f) }
+    Handle(
+        Modifier.align(Alignment.BottomCenter).offset(y = 11.dp),
+        onStart = { startHeight = currentHeightPx(); dragY = 0f },
+        onDrag = { _, dy -> dragY += dy; onHeight(startHeight + dragY) },
+    )
+    if (linkedLeft) {
+        val label = stringResource(if (isLinked) R.string.card_unlink else R.string.card_link)
+        Box(
+            Modifier.align(Alignment.CenterStart).offset(x = (-19).dp).size(28.dp).clip(CircleShape)
+                .background(if (isLinked) primary else MaterialTheme.colorScheme.surface)
+                .border(1.5.dp, primary, CircleShape)
+                .clickable(role = Role.Button, onClickLabel = label, onClick = onToggleLink),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(EuriseIcons.link(2f), label, tint = if (isLinked) MaterialTheme.colorScheme.onPrimary else primary, modifier = Modifier.size(15.dp))
+        }
+    }
+}
+
+@Composable
+private fun Handle(modifier: Modifier, onStart: () -> Unit, onDrag: (Float, Float) -> Unit) {
+    val start by rememberUpdatedState(onStart)
+    val drag by rememberUpdatedState(onDrag)
+    Box(
+        modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { start() },
+                    onDrag = { change, amount -> change.consume(); drag(amount.x, amount.y) },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) { Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onPrimary)) }
+}
+
+/** Catalogo delle schede della home: quelle presenti (si tolgono) e quelle da aggiungere. */
+@Composable
+fun HomeCatalog(slots: List<HomeSlot>, onAdd: (HomeKind) -> Unit, onRemove: (HomeKind) -> Unit, onClose: () -> Unit) {
+    val present = slots.map { it.kind }.toSet()
+    BottomSheet(stringResource(R.string.home_cards_title), onClose) {
+        HomeKind.entries.forEach { kind ->
+            item(key = kind.id) {
+                val on = kind in present
+                Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(kind.icon(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(kind.title), fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            stringResource(kind.description), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        stringResource(if (on) R.string.on_home else R.string.videos_add),
+                        fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                        color = if (on) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp))
+                            .background(if (on) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                            .clickable { if (on) onRemove(kind) else onAdd(kind) }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Altezza minima di comodo per le schede delle altre pagine messe sulla home. */
+internal val HomeCardMinHeight: Dp = 120.dp

@@ -28,6 +28,8 @@
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
         <package android:name="nodomain.freeyourgadget.gadgetbridge" />
+        <package android:name="org.schabi.newpipe" />
+        <package android:name="org.polymorphicshade.tubular" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

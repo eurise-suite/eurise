@@ -205,6 +205,15 @@ class LauncherViewModel(
         viewModelScope.launch { _travel.value = routes.travelTo(destination) }
     }
 
+    val videos = eu.eurise.feature.launcher.videos.VideosRepository(application)
+    private val _videoList = MutableStateFlow<List<eu.eurise.feature.launcher.videos.Video>?>(null)
+    val videoList: StateFlow<List<eu.eurise.feature.launcher.videos.Video>?> = _videoList
+
+    fun refreshVideos(force: Boolean = false) {
+        if (videos.channels.value.isEmpty()) { _videoList.value = emptyList(); return }
+        viewModelScope.launch { _videoList.value = videos.latest(force) }
+    }
+
     fun refreshFiles() {
         viewModelScope.launch { _recentFiles.value = files.recent() }
     }
@@ -212,6 +221,7 @@ class LauncherViewModel(
     fun refresh() {
         calendarPermission.value = calendar.hasPermission()
         refreshFiles()
+        refreshVideos()
         refreshHealth()
         refreshSun()
         viewModelScope.launch { _weather.value = weatherRepo.forecast() }

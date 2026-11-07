@@ -400,7 +400,7 @@ fun MessagesCard(
 }
 
 @Composable
-private fun ago(now: Long, at: Long): String {
+internal fun ago(now: Long, at: Long): String {
     val min = ((now - at) / 60_000).coerceAtLeast(0)
     return when {
         min < 1 -> stringResource(R.string.time_now)

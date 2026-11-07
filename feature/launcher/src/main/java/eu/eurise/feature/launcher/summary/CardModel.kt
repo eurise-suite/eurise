@@ -52,27 +52,32 @@ enum class CardKind(
 }
 
 /**
- * Una scheda messa in una pagina, con la sua misura libera: [cols] colonne su 4 e [rows] righe da 56 dp.
+ * Una scheda messa in una pagina, con misura libera e fine: [cols] su [GRID_COLS] colonne sottili e [rows]
+ * passi da [ROW_STEP_DP] dp, così il ridimensionamento è continuo e non a scatti. Le schede affiancate
+ * hanno la stessa altezza, a meno che l'utente non sciolga il legame ([free]).
  * Il contenuto si adatta alla classe di misura più vicina ([size]).
  */
-data class PlacedCard(val kind: CardKind, val cols: Int, val rows: Int) {
-    constructor(kind: CardKind, size: CardSize) : this(kind, size.columns, if (size.tall) 4 else 2)
+data class PlacedCard(val kind: CardKind, val cols: Int, val rows: Int, val free: Boolean = false) {
+    constructor(kind: CardKind, size: CardSize) : this(kind, size.columns * 6, if (size.tall) TALL_ROWS else LOW_ROWS)
 
     val size: CardSize
         get() = when {
-            cols >= 3 && rows >= 4 -> CardSize.Large
-            cols >= 3 -> CardSize.Wide
-            rows >= 4 -> CardSize.Medium
+            cols >= 18 && rows >= 26 -> CardSize.Large
+            cols >= 18 -> CardSize.Wide
+            rows >= 26 -> CardSize.Medium
             else -> CardSize.Small
         }
 
     fun resized(newCols: Int, newRows: Int) = copy(cols = newCols.coerceIn(MIN_COLS, GRID_COLS), rows = newRows.coerceIn(MIN_ROWS, MAX_ROWS))
 }
 
-const val GRID_COLS = 4
-const val MIN_COLS = 1
-const val MIN_ROWS = 2
-const val MAX_ROWS = 9
+const val GRID_COLS = 24
+const val MIN_COLS = 6
+const val MIN_ROWS = 12
+const val MAX_ROWS = 90
+const val ROW_STEP_DP = 8
+private const val LOW_ROWS = 15
+private const val TALL_ROWS = 30
 
 /** Schede di partenza a destra della home: Calendario e Comunicazioni. */
 val DefaultCards = listOf(
@@ -89,16 +94,26 @@ val DefaultLeftCards = listOf(
     PlacedCard(CardKind.Recipe, CardSize.Large),
 )
 
-fun List<PlacedCard>.encode(): String = joinToString("|") { "${it.kind.id}:${it.cols}:${it.rows}" }
+fun List<PlacedCard>.encode(): String = "v2|" + joinToString("|") { "${it.kind.id}:${it.cols}:${it.rows}:${if (it.free) 1 else 0}" }
 
-/** Legge le schede salvate; accetta anche il formato precedente con le misure a nome (es. "calendar:Large"). */
+/**
+ * Legge le schede salvate. Accetta anche i formati precedenti: misure a nome (es. "calendar:Large") e la
+ * griglia a scatti di 4 colonne e righe da 56 dp, che si converte nella griglia fine.
+ */
 fun decodeCards(raw: String?, default: List<PlacedCard> = DefaultCards): List<PlacedCard> {
     if (raw == null) return default
-    return raw.split('|').mapNotNull { part ->
+    val fine = raw.startsWith("v2|")
+    return raw.removePrefix("v2|").split('|').mapNotNull { part ->
         val bits = part.split(':')
         val kind = CardKind.byId(bits[0]) ?: return@mapNotNull null
         when {
-            bits.size >= 3 -> PlacedCard(kind, bits[1].toIntOrNull() ?: 4, bits[2].toIntOrNull() ?: 2).resized(bits[1].toIntOrNull() ?: 4, bits[2].toIntOrNull() ?: 2)
+            fine && bits.size >= 3 -> PlacedCard(kind, 0, 0, bits.getOrNull(3) == "1")
+                .resized(bits[1].toIntOrNull() ?: GRID_COLS, bits[2].toIntOrNull() ?: 15)
+            bits.size >= 3 -> {
+                val c = bits[1].toIntOrNull() ?: 4
+                val r = bits[2].toIntOrNull() ?: 2
+                PlacedCard(kind, 0, 0).resized(c * 6, Math.round((56f * r + 6f * (r - 1)) / ROW_STEP_DP))
+            }
             bits.size == 2 -> PlacedCard(kind, CardSize.entries.firstOrNull { it.name == bits[1] } ?: kind.defaultSize)
             else -> PlacedCard(kind, kind.defaultSize)
         }
@@ -106,7 +121,7 @@ fun decodeCards(raw: String?, default: List<PlacedCard> = DefaultCards): List<Pl
 }
 
 /**
- * Dispone le schede in righe da 4 colonne, nell'ordine: una scheda va accanto alla precedente finché c'è
+ * Dispone le schede in righe larghe [GRID_COLS], nell'ordine: una scheda va accanto alla precedente finché c'è
  * spazio, altrimenti passa alla riga sotto.
  */
 fun layoutRows(cards: List<PlacedCard>): List<List<Int>> {

@@ -18,11 +18,20 @@ android {
         applicationId = "eu.eurise.hub"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // Su GitHub Actions il numero cresce a ogni compilazione: ogni versione aggiorna la precedente.
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
     }
 
     signingConfigs {
+        // Chiave di debug fissa (nel repository, senza valore): le versioni di prova si aggiornano senza
+        // disinstallare. Non è la chiave delle versioni ufficiali.
+        getByName("debug") {
+            storeFile = rootProject.file("app/debug-key/eurise-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (releaseKeystore != null) {
             create("release") {
                 storeFile = file(releaseKeystore)

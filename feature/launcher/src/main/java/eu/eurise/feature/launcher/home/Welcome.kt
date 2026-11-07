@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -99,9 +100,13 @@ fun Pill(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var collapsed by rememberSaveable(title) { mutableStateOf(false) }
+    val report = LocalPillMeasure.current
+    // Fuori il vetro (che può essere più alto, per allinearsi alle bolle accanto), dentro il contenuto,
+    // che riferisce la sua altezza naturale.
+    Column(modifier.glass(hazeState, RoundedCornerShape(22.dp), elevation = 8.dp, outline = false)) {
     Column(
-        modifier
-            .glass(hazeState, RoundedCornerShape(22.dp), elevation = 8.dp, outline = false)
+        Modifier
+            .then(if (report != null) Modifier.onSizeChanged { report(it.height) } else Modifier)
             .padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
@@ -121,6 +126,7 @@ fun Pill(
             }
         }
         if (!collapsed) Column(Modifier.padding(end = 6.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
+    }
     }
 }
 
@@ -170,13 +176,14 @@ fun AgendaPill(
     onConnectCalendar: () -> Unit,
     onTasks: () -> Unit,
     onRoute: (String) -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val upcoming = events.filter { it.allDay || it.end.isAfter(now) }
     val next = upcoming.firstOrNull { !it.allDay } ?: upcoming.firstOrNull()
     val showRoute = destinations.isNotEmpty() && !compact
     val showTasks = tasks.isNotEmpty()
     val perPage = if (!compact && (!showTasks || !showRoute)) 2 else 1
-    Pill(hazeState, Modifier.fillMaxWidth(), title = stringResource(R.string.welcome_events), trailing = {
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_events), trailing = {
         if (next != null && !next.allDay && next.start.isAfter(now)) {
             val minutes = Duration.between(now, next.start).toMinutes()
             val text = if (minutes < 60) stringResource(R.string.welcome_in_min, minutes) else stringResource(R.string.welcome_at, next.start.format(TimeFormat))
@@ -268,8 +275,10 @@ fun CommsPill(
     onStarred: () -> Unit,
     onGrant: () -> Unit,
     onHub: () -> Unit,
+    onReply: (MessageItem) -> Unit = {},
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
-    Pill(hazeState, Modifier.fillMaxWidth(), title = stringResource(R.string.welcome_comms), trailing = {
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_comms), trailing = {
         SmallRound(EuriseIcons.clock(2f), stringResource(R.string.people_recent), onRecent)
         Spacer(Modifier.width(6.dp))
         SmallRound(EuriseIcons.star(2f), stringResource(R.string.people_starred), onStarred)
@@ -279,14 +288,17 @@ fun CommsPill(
             !enabled -> PillLine(EuriseIcons.chat(), stringResource(R.string.setup_notifications), stringResource(R.string.grant), onGrant)
             messages.isEmpty() -> PillLine(EuriseIcons.chat(), stringResource(R.string.card_messages_empty), null, onHub)
             // Si vedono le prime due o tre; le altre (fino a dodici) scorrendo dentro la pillola.
+            // Scorrendo una riga verso sinistra compaiono Rispondi, Segna come letto ed Elimina.
             else -> ScrollBox(if (compact) 2 else 3) { messages.take(12).forEach { m ->
-                PillLine(
-                    if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
-                    "${m.title} · ${m.appLabel}",
-                    m.text.ifBlank { stringResource(R.string.message_no_preview) },
-                    { onOpen(m) },
-                    right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault()).format(TimeFormat),
-                )
+                eu.eurise.feature.launcher.notifications.SwipeActionsRow(eu.eurise.feature.launcher.notifications.messageActions(m, onReply)) {
+                    PillLine(
+                        if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
+                        "${m.title} · ${m.appLabel}",
+                        m.text.ifBlank { stringResource(R.string.message_no_preview) },
+                        { onOpen(m) },
+                        right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault()).format(TimeFormat),
+                    )
+                }
             } }
         }
     }
@@ -528,9 +540,10 @@ fun HealthPill(
     hazeState: HazeState,
     onGrant: () -> Unit,
     onGadgetbridge: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val updated = today?.updatedAt?.atZone(java.time.ZoneId.systemDefault())?.format(TimeFormat)
-    Pill(hazeState, Modifier.fillMaxWidth(), title = stringResource(R.string.welcome_health), trailing = {
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_health), trailing = {
         if (updated != null) Text(stringResource(R.string.health_updated, updated), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }) {
         when {

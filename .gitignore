@@ -12,4 +12,7 @@ captures/
 # Chiavi di firma: non vanno mai nel repository
 *.jks
 *.keystore
+# Eccezione: chiave di DEBUG pubblica e senza valore, serve solo perché le versioni di prova si
+# aggiornino una sull'altra. La chiave delle versioni ufficiali resta fuori (segreti di GitHub).
+!app/debug-key/eurise-debug.keystore
 keystore.properties

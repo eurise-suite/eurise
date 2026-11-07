@@ -65,9 +65,8 @@ import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.home.Label
 import eu.eurise.feature.launcher.home.scrimColor
 
-/** Altezza delle schede basse e alte sulla griglia del Riepilogo. */
-/** Altezza di una riga della griglia delle schede. */
-private val RowUnit = 56.dp
+/** Passo dell'altezza delle schede: piccolo, perché il ridimensionamento sia continuo. */
+private val RowUnit = ROW_STEP_DP.dp
 private val Gap = 12.dp
 
 /**
@@ -112,7 +111,7 @@ fun SummaryBoard(
                         Box(
                             Modifier
                                 .weight(card.cols.toFloat(), fill = true)
-                                .height(RowUnit * card.rows + Gap * (card.rows - 1) / 2)
+                                .height(RowUnit * card.rows)
                                 .then(if (!editing) Modifier.longPressToEdit { onEditingChange(true) } else Modifier)
                                 .onGloballyPositioned { bounds[index] = it.boundsInRoot() }
                                 .zIndex(if (isDragged) 1f else 0f)
@@ -127,7 +126,8 @@ fun SummaryBoard(
                             if (editing) {
                                 EditOverlay(
                                     card = card,
-                                    onResize = { c, r -> onChange(cards.map { if (it.kind == card.kind) it.resized(c, r) else it }) },
+                                    onResize = { c, r -> onChange(resize(cards, card, c, r)) },
+                                    onToggleLink = { onChange(toggleLink(cards, card)) },
                                     selected = selected == card.kind,
                                     onTap = { selected = if (selected == card.kind) null else card.kind },
                                     onDragStart = { dragging = index; dragOffset = Offset.Zero; selected = null },
@@ -179,7 +179,7 @@ fun SummaryBoard(
  * Fuori dalla modifica: una pressione lunga su una scheda apre la modifica senza aprire la scheda. Si legge
  * nel passaggio iniziale, prima dei pulsanti della scheda, che così restano toccabili normalmente.
  */
-private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointerInput(Unit) {
+internal fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
         val finished = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
@@ -204,6 +204,7 @@ private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointe
 private fun EditOverlay(
     card: PlacedCard,
     onResize: (Int, Int) -> Unit,
+    onToggleLink: () -> Unit,
     selected: Boolean,
     onTap: () -> Unit,
     onDragStart: () -> Unit,
@@ -241,7 +242,7 @@ private fun EditOverlay(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(16.dp),
         )
-        if (selected) ResizeHandles(card, onResize)
+        if (selected) ResizeHandles(card, onResize, onToggleLink)
     }
 }
 
@@ -250,11 +251,11 @@ private fun EditOverlay(
  * quella nell'angolo entrambe. Al centro in basso la misura attuale.
  */
 @Composable
-private fun androidx.compose.foundation.layout.BoxScope.ResizeHandles(card: PlacedCard, onResize: (Int, Int) -> Unit) {
+private fun androidx.compose.foundation.layout.BoxScope.ResizeHandles(card: PlacedCard, onResize: (Int, Int) -> Unit, onToggleLink: () -> Unit) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     var widthPx by remember { mutableStateOf(0) }
     val latest by androidx.compose.runtime.rememberUpdatedState(card)
-    val rowPx = with(density) { (RowUnit + Gap / 2).toPx() }
+    val rowPx = with(density) { RowUnit.toPx() }
     Box(Modifier.matchParentSize().onGloballyPositioned { widthPx = it.size.width })
     val colPx = if (latest.cols > 0 && widthPx > 0) widthPx.toFloat() / latest.cols else 1f
 
@@ -291,8 +292,25 @@ private fun androidx.compose.foundation.layout.BoxScope.ResizeHandles(card: Plac
     handle(Alignment.CenterEnd, horizontal = true, vertical = false)
     handle(Alignment.BottomCenter, horizontal = false, vertical = true)
     handle(Alignment.BottomEnd, horizontal = true, vertical = true)
+    // Legame d'altezza con le schede accanto: unite (stessa altezza) o libere.
+    Box(
+        Modifier
+            .align(Alignment.BottomStart)
+            .padding(10.dp)
+            .size(30.dp)
+            .clip(CircleShape)
+            .background(if (card.free) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primary)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            .clickable(role = Role.Button, onClickLabel = stringResource(if (card.free) R.string.card_link else R.string.card_unlink), onClick = onToggleLink),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            EuriseIcons.link(2f), stringResource(if (card.free) R.string.card_link else R.string.card_unlink),
+            tint = if (card.free) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp),
+        )
+    }
     Text(
-        "${card.cols}×${card.rows}",
+        "${card.cols * 100 / GRID_COLS}% · ${card.rows * ROW_STEP_DP} dp",
         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
             .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
@@ -413,6 +431,34 @@ private fun CatalogBlock(kinds: List<CardKind>, hazeState: HazeState, present: B
                     )
                 }
             }
+        }
+    }
+}
+
+
+/**
+ * Cambia la misura di una scheda. Se la scheda è legata, anche le schede legate della stessa riga prendono
+ * la nuova altezza, così le affiancate restano alte uguali.
+ */
+internal fun resize(cards: List<PlacedCard>, card: PlacedCard, cols: Int, rows: Int): List<PlacedCard> {
+    val index = cards.indexOfFirst { it.kind == card.kind }
+    val row = layoutRows(cards).firstOrNull { index in it }.orEmpty()
+    val resized = cards.map { if (it.kind == card.kind) it.resized(cols, rows) else it }
+    if (card.free) return resized
+    val newRows = resized[index].rows
+    return resized.mapIndexed { i, c -> if (i in row && i != index && !c.free) c.resized(c.cols, newRows) else c }
+}
+
+/** Scioglie o rifà il legame d'altezza; quando si rilega, la scheda prende l'altezza delle legate accanto. */
+internal fun toggleLink(cards: List<PlacedCard>, card: PlacedCard): List<PlacedCard> {
+    val index = cards.indexOfFirst { it.kind == card.kind }
+    val row = layoutRows(cards).firstOrNull { index in it }.orEmpty()
+    val partner = row.filter { it != index }.map { cards[it] }.firstOrNull { !it.free }
+    return cards.map {
+        when {
+            it.kind != card.kind -> it
+            it.free -> it.copy(free = false, rows = partner?.rows ?: it.rows)
+            else -> it.copy(free = true)
         }
     }
 }

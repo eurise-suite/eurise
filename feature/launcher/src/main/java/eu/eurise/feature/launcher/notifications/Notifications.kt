@@ -1,5 +1,6 @@
 package eu.eurise.feature.launcher.notifications
 
+import android.os.Build
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.ComponentName
@@ -29,9 +30,33 @@ data class MessageItem(
     val actions: List<NotificationAction> = emptyList(),
     val clearable: Boolean = true,
     val isMessage: Boolean = false,
-)
+    /** Notifica di servizio (in corso, download, sincronizzazioni…): nel Pannello finisce nella riga riassuntiva. */
+    val service: Boolean = false,
+    /** Nome della chat (gruppo o persona) quando l'app lo indica; altrimenti il titolo. */
+    val conversation: String = title,
+    /** I messaggi arrivati nella notifica, dal più vecchio: mittente (se c'è) e testo. */
+    val history: List<Pair<String?, String>> = emptyList(),
+    /** Risposta diretta offerta dall'app (WhatsApp, Signal, Telegram, Messaggi, molte mail). */
+    val reply: ReplyAction? = null,
+    /** "Segna come letto", se l'app lo offre. */
+    val markRead: NotificationAction? = null,
+) {
+    /** Quanti messaggi rappresenta la notifica (almeno uno). */
+    val count: Int get() = history.size.coerceAtLeast(1)
+}
 
 data class NotificationAction(val title: String, val intent: PendingIntent)
+
+/** Azione di risposta: il testo scritto si consegna all'app attraverso il suo [input]. */
+data class ReplyAction(val title: String, val intent: PendingIntent, val input: android.app.RemoteInput) {
+    /** Invia [text] come risposta, come farebbe la tendina di sistema. */
+    fun send(context: Context, text: String): Boolean = runCatching {
+        val fill = android.content.Intent()
+        val results = android.os.Bundle().apply { putCharSequence(input.resultKey, text) }
+        android.app.RemoteInput.addResultsToIntent(arrayOf(input), fill, results)
+        intent.send(context, 0, fill)
+    }.isSuccess
+}
 
 /** Il brano in riproduzione, da qualsiasi app che usi una sessione multimediale. */
 data class NowPlaying(
@@ -80,7 +105,7 @@ object NotificationStore {
         _all.value = visible
             .filter { it.notification.extras.getCharSequence(Notification.EXTRA_TITLE) != null || it.isMessage() }
             .sortedByDescending { it.postTime }
-            .take(30)
+            .take(80)
             .map { it.toMessage(service) }
         val active = visible.filter { it.isClearable }
         _counts.value = active.groupingBy { it.packageName }.eachCount()
@@ -153,6 +178,20 @@ object NotificationStore {
 
     private fun StatusBarNotification.toMessage(context: Context): MessageItem {
         val extras = notification.extras
+        val all = notification.actions.orEmpty().filter { it.actionIntent != null }
+        val replyAction = all.firstOrNull { a ->
+            a.remoteInputs?.any { it.allowFreeFormInput } == true &&
+                (Build.VERSION.SDK_INT < 28 || a.semanticAction == Notification.Action.SEMANTIC_ACTION_REPLY || a.semanticAction == Notification.Action.SEMANTIC_ACTION_NONE)
+        }
+        val readAction = all.firstOrNull { a ->
+            a.remoteInputs.isNullOrEmpty() && (
+                (Build.VERSION.SDK_INT >= 28 && a.semanticAction == Notification.Action.SEMANTIC_ACTION_MARK_AS_READ) ||
+                    a.title?.toString()?.lowercase()?.let { t -> "lett" in t || "read" in t } == true
+                )
+        }
+        val history = messageHistory(extras)
+        val cat = notification.category
+        val isMsg = isMessage()
         return MessageItem(
             key = key,
             packageName = packageName,
@@ -169,9 +208,36 @@ object NotificationStore {
                 .take(2)
                 .map { NotificationAction(it.title.toString(), it.actionIntent) },
             clearable = isClearable,
-            isMessage = isMessage(),
+            isMessage = isMsg,
+            service = !isMsg && (isOngoing || !isClearable || cat in ServiceCategories ||
+                extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0) > 0),
+            conversation = extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.takeIf { it.isNotBlank() }
+                ?: extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
+            history = history,
+            reply = replyAction?.let { a ->
+                val input = a.remoteInputs!!.first { it.allowFreeFormInput }
+                ReplyAction(a.title?.toString().orEmpty(), a.actionIntent, input)
+            },
+            markRead = readAction?.let { NotificationAction(it.title.toString(), it.actionIntent) },
         )
     }
+
+    private val ServiceCategories = setOf(
+        Notification.CATEGORY_PROGRESS, Notification.CATEGORY_SERVICE, Notification.CATEGORY_STATUS,
+        Notification.CATEGORY_SYSTEM, Notification.CATEGORY_TRANSPORT, Notification.CATEGORY_RECOMMENDATION,
+    )
+
+    /** I messaggi di una notifica in stile conversazione, con il mittente quando c'è. */
+    private fun messageHistory(extras: android.os.Bundle): List<Pair<String?, String>> = runCatching {
+        @Suppress("DEPRECATION")
+        val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES) ?: return@runCatching emptyList()
+        messages.mapNotNull { it as? android.os.Bundle }.mapNotNull { b ->
+            val text = b.getCharSequence("text")?.toString()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            @Suppress("DEPRECATION")
+            val person = if (Build.VERSION.SDK_INT >= 28) (b.getParcelable("sender_person") as? android.app.Person)?.name?.toString() else null
+            (person ?: b.getCharSequence("sender")?.toString()) to text
+        }
+    }.getOrDefault(emptyList())
 
     /** Ultimo messaggio di una notifica in stile conversazione (WhatsApp, Signal…), se il testo semplice manca. */
     private fun lastMessageText(extras: android.os.Bundle): String = runCatching {
