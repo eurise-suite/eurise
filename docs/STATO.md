@@ -23,6 +23,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Home: saluto, orario con alba e tramonto, galleria e fotocamera, meteo, schede modificabili
   (pressione lunga: aggiungi, togli, ridimensiona in modo continuo, altezze unite con la catena),
   preferiti ancorati in basso, cartelle, barra delle categorie (fino a 8, Preferiti eliminabili, 50 simboli).
+- Le categorie (Preferiti compresi, ora categoria come le altre) si aprono con le app in basso, vicino al
+  pollice, e il titolo subito sopra; toccare di nuovo la categoria aperta torna alla home.
+- Griglia e icone: tema (segue lo sfondo, chiaro, scuro) e sfondo (automatico o scelto: stagioni e feste).
 - Schede della home: appuntamenti, Ti hanno cercato (scorrimento: Rispondi, Letto, Elimina; risposta rapida),
   Salute (Health Connect), Lavoro, Musica, Video dai canali (NewPipe), più le schede delle pagine laterali.
 - Pannello Eurise (scorrendo in giù da ogni pagina): interruttori, luminosità e volume, impostazioni,
