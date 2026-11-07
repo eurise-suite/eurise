@@ -626,6 +626,7 @@ fun StocksCard(
     quotes: List<Quote>?,
     hazeState: HazeState,
     onSymbols: () -> Unit,
+    onOpenQuote: (Quote) -> Unit = {},
     size: CardSize,
     modifier: Modifier = Modifier,
 ) {
@@ -637,7 +638,10 @@ fun StocksCard(
             else -> {
                 quotes.take(max).forEach { q ->
                     val up = q.changePercent >= 0
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onOpenQuote(q) }.padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(q.name, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         if (!size.half) {
                             Text(String.format(Italian, "%,.2f", q.price), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))

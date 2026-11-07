@@ -658,7 +658,10 @@ private fun SummaryColumn(
                 modifier = cardModifier,
             )
             CardKind.News -> NewsCard(news, hazeState, { actions.openLink(it.link) }, onNewsSources, card.size, cardModifier)
-            CardKind.Stocks -> StocksCard(quotes, hazeState, onSymbols, card.size, cardModifier)
+            CardKind.Stocks -> StocksCard(
+                quotes, hazeState, onSymbols, card.size, cardModifier,
+                onOpenQuote = { q -> actions.openLink("https://finance.yahoo.com/quote/" + java.net.URLEncoder.encode(q.symbol, "UTF-8")) },
+            )
         }
     }
 }
