@@ -42,6 +42,8 @@ import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.home.Label
 import eu.eurise.feature.launcher.home.skyIcon
 import eu.eurise.feature.launcher.weather.DayForecast
+import eu.eurise.feature.launcher.news.NewsItem
+import eu.eurise.feature.launcher.markets.Quote
 import eu.eurise.core.data.model.Note
 import androidx.compose.ui.draw.clipToBounds
 import eu.eurise.feature.launcher.notifications.MessageItem
@@ -63,6 +65,8 @@ fun SummaryCard(
     hazeState: HazeState,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    action: String? = null,
+    onAction: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -74,7 +78,17 @@ fun SummaryCard(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Label(title)
+        if (action != null && onAction != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { Label(title) }
+                Text(
+                    action, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onAction).padding(horizontal = 4.dp, vertical = 2.dp),
+                )
+            }
+        } else {
+            Label(title)
+        }
         content()
     }
 }
@@ -414,6 +428,76 @@ fun SetupCard(steps: List<SetupStep>, hazeState: HazeState) {
                 Spacer(Modifier.width(10.dp))
                 Text(step.label, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 if (step.done) Text(stringResource(R.string.setup_done), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+/** Notizie dalle fonti scelte; quelle della propria provincia in cima, con il nome della provincia. */
+@Composable
+fun NewsCard(
+    items: List<NewsItem>?,
+    hazeState: HazeState,
+    onOpen: (NewsItem) -> Unit,
+    onSources: () -> Unit,
+    size: CardSize,
+    modifier: Modifier = Modifier,
+) {
+    val max = when (size) { CardSize.Large -> 6; CardSize.Medium -> 3; else -> 2 }
+    val now = System.currentTimeMillis()
+    SummaryCard(stringResource(R.string.card_news), hazeState, modifier, action = stringResource(R.string.news_sources), onAction = onSources) {
+        when {
+            items == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            items.isEmpty() -> Text(stringResource(R.string.news_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
+            else -> items.take(max).forEach { n ->
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp)) {
+                    Text(
+                        n.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, lineHeight = 17.sp,
+                        maxLines = if (size.half) 3 else 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    val meta = listOfNotNull(n.province, n.source, if (n.publishedAt > 0) agoText(now, n.publishedAt) else null).joinToString(" · ")
+                    Text(meta, color = if (n.province != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun agoText(now: Long, at: Long): String = ago(now, at)
+
+/** Borsa: indici, cambi e titoli scelti, con la variazione del giorno. */
+@Composable
+fun StocksCard(
+    quotes: List<Quote>?,
+    hazeState: HazeState,
+    onSymbols: () -> Unit,
+    size: CardSize,
+    modifier: Modifier = Modifier,
+) {
+    val max = when (size) { CardSize.Small -> 1; CardSize.Wide -> 3; else -> 5 }
+    SummaryCard(stringResource(R.string.card_stocks), hazeState, modifier, action = stringResource(R.string.stocks_symbols), onAction = onSymbols) {
+        when {
+            quotes == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            quotes.isEmpty() -> Text(stringResource(R.string.stocks_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
+            else -> {
+                quotes.take(max).forEach { q ->
+                    val up = q.changePercent >= 0
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(q.name, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        if (!size.half) {
+                            Text(String.format(Italian, "%,.2f", q.price), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+                        }
+                        Text(
+                            String.format(Italian, "%+.2f%%", q.changePercent),
+                            fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                            color = if (up) CalendarTint.Salvia.colors().dot else CalendarTint.Borgogna.colors().dot,
+                        )
+                    }
+                }
+                if (size.tall || !size.half) {
+                    Text(stringResource(R.string.stocks_delay), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

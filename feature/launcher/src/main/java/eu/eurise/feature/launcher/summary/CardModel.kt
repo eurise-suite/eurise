@@ -36,7 +36,11 @@ enum class CardKind(
     Weather("weather", R.string.weather_title, R.string.card_weather_desc, { EuriseIcons.sun(1.9f) },
         CardSize.entries.toList(), CardSize.Medium),
     PinnedNotes("notes", R.string.card_notes, R.string.card_notes_desc, { EuriseIcons.note(1.9f) },
-        listOf(CardSize.Medium, CardSize.Wide, CardSize.Large), CardSize.Medium);
+        listOf(CardSize.Medium, CardSize.Wide, CardSize.Large), CardSize.Medium),
+    News("news", R.string.card_news, R.string.card_news_desc, { EuriseIcons.news(1.9f) },
+        listOf(CardSize.Medium, CardSize.Wide, CardSize.Large), CardSize.Large),
+    Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) },
+        CardSize.entries.toList(), CardSize.Wide);
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }
@@ -46,17 +50,23 @@ enum class CardKind(
 /** Una scheda messa nel Riepilogo, con la misura scelta. */
 data class PlacedCard(val kind: CardKind, val size: CardSize)
 
-/** Schede di partenza: Calendario grande, Comunicazioni, Musica. */
+/** Schede di partenza a destra della home: Calendario e Comunicazioni. */
 val DefaultCards = listOf(
     PlacedCard(CardKind.Calendar, CardSize.Large),
     PlacedCard(CardKind.Messages, CardSize.Large),
+)
+
+/** Schede di partenza a sinistra della home: Notizie, Borsa e Musica. */
+val DefaultLeftCards = listOf(
+    PlacedCard(CardKind.News, CardSize.Large),
+    PlacedCard(CardKind.Stocks, CardSize.Wide),
     PlacedCard(CardKind.Music, CardSize.Wide),
 )
 
 fun List<PlacedCard>.encode(): String = joinToString("|") { "${it.kind.id}:${it.size.name}" }
 
-fun decodeCards(raw: String?): List<PlacedCard> {
-    if (raw == null) return DefaultCards
+fun decodeCards(raw: String?, default: List<PlacedCard> = DefaultCards): List<PlacedCard> {
+    if (raw == null) return default
     return raw.split('|').mapNotNull { part ->
         val kind = CardKind.byId(part.substringBefore(':')) ?: return@mapNotNull null
         val size = CardSize.entries.firstOrNull { it.name == part.substringAfter(':') } ?: kind.defaultSize

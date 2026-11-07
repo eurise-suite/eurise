@@ -1,6 +1,10 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.summary.NewsCard
+import eu.eurise.feature.launcher.summary.NewsSourcesSheet
+import eu.eurise.feature.launcher.summary.StocksCard
+import eu.eurise.feature.launcher.summary.StocksSheet
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.Color
 import eu.eurise.feature.launcher.panel.EurisePanel
@@ -144,6 +148,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val nowPlaying by NotificationStore.nowPlaying.collectAsState()
     val allNotifications by NotificationStore.all.collectAsState()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val newsItems by viewModel.newsItems.collectAsStateWithLifecycle()
+    val quotes by viewModel.quotes.collectAsStateWithLifecycle()
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -173,6 +179,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val actions = remember(context) {
         LauncherActions(
             openApp = { viewModel.recordLaunch(it); context.launch(it) },
+            openLink = { url ->
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
             openClock = {
                 runCatching { context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             },
@@ -228,13 +237,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
-        val homePager = rememberPagerState { 2 }
+        // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
+        val homePager = rememberPagerState(initialPage = HomePage) { 3 }
+        var newsSheet by remember { mutableStateOf(false) }
+        var stocksSheet by remember { mutableStateOf(false) }
         val categoryPager = rememberPagerState { PageCategories.size }
         val scope = rememberCoroutineScope()
 
         LaunchedEffect(homePresses) {
             if (homePresses > 0) {
-                if (category == Category.Favorites && !searching) homePager.animateScrollToPage(0)
+                if (category == Category.Favorites && !searching) homePager.animateScrollToPage(HomePage)
                 category = Category.Favorites
                 searching = false
                 panelOpen = false
@@ -245,15 +257,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != Category.Favorites) category = PageCategories[categoryPager.currentPage]
         }
-        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || category != Category.Favorites || homePager.currentPage != 0) {
+        BackHandler(enabled = weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || category != Category.Favorites || homePager.currentPage != HomePage) {
             when {
                 weatherSheet -> weatherSheet = false
+                newsSheet -> { newsSheet = false; viewModel.refreshNews(force = true) }
+                stocksSheet -> { stocksSheet = false; viewModel.refreshQuotes() }
                 appearance -> appearance = false
                 panelOpen -> panelOpen = false
                 editingCards -> editingCards = false
                 searching -> searching = false
                 category != Category.Favorites -> category = Category.Favorites
-                else -> scope.launch { homePager.animateScrollToPage(0) }
+                else -> scope.launch { homePager.animateScrollToPage(HomePage) }
             }
         }
 
@@ -281,13 +295,18 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
-                val summary: @Composable (Modifier) -> Unit = { modifier ->
+                val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
                     SummaryColumn(
-                        state, messages, nowPlaying, notificationsOn, setup, hazeState, actions, clearance, modifier,
-                        weather = weather, settings = settings, editing = editingCards, onEditingChange = { editingCards = it },
-                        onCardsChange = { cards -> viewModel.updateSettings { it.copy(cards = cards) } },
+                        state, messages, nowPlaying, notificationsOn, if (left) emptyList() else setup, hazeState, actions, clearance, modifier,
+                        weather = weather,
+                        cards = if (left) settings.leftCards else settings.cards,
+                        news = newsItems, quotes = quotes,
+                        onNewsSources = { newsSheet = true }, onSymbols = { stocksSheet = true },
+                        editing = editingCards, onEditingChange = { editingCards = it },
+                        onCardsChange = { cards -> viewModel.updateSettings { if (left) it.copy(leftCards = cards) else it.copy(cards = cards) } },
                     )
                 }
+                val summary: @Composable (Modifier) -> Unit = { modifier -> board(false, modifier) }
 
                 if (searching || panelOpen) {
                     // Durante la ricerca e nel pannello resta solo lo sfondo sfocato.
@@ -301,6 +320,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     } else {
                         HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards) { page ->
                             if (page == 0) {
+                                board(true, Modifier.fillMaxSize())
+                            } else if (page == HomePage) {
                                 PhoneHome(
                                     now = now, weather = weather, hasLocation = hasLocation, state = state, badges = badges,
                                     dark = scene.dark, hazeState = hazeState, actions = actions,
@@ -312,6 +333,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     onPanel = { panelOpen = true },
                                     onAppearance = { appearance = true },
                                     settings = settings,
+                                    onMoveFavorite = viewModel::moveFavorite,
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -387,6 +409,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onClose = { panelOpen = false },
                 )
             }
+            if (newsSheet) {
+                NewsSourcesSheet(viewModel.news, onClose = { newsSheet = false; viewModel.refreshNews(force = true) })
+            }
+            if (stocksSheet) {
+                StocksSheet(viewModel.markets, onClose = { stocksSheet = false; viewModel.refreshQuotes() })
+            }
             if (appearance) {
                 AppearanceSheet(settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false })
             }
@@ -399,6 +427,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
     val openApp: (AppEntry) -> Unit,
+    val openLink: (String) -> Unit,
     val openClock: () -> Unit,
     val ownAppInfo: () -> Unit,
     val expandNotifications: () -> Unit,
@@ -431,6 +460,7 @@ private fun PhoneHome(
     onPanel: () -> Unit,
     onAppearance: () -> Unit,
     settings: LauncherSettings,
+    onMoveFavorite: (AppEntry, Int) -> Unit,
 ) {
     // Sullo sfondo libero: in su ricerca e recenti, in giù il Pannello Eurise, pressione lunga Griglia e icone.
     val threshold = with(LocalDensity.current) { 56.dp.toPx() }
@@ -497,6 +527,7 @@ private fun PhoneHome(
                                         onOpen = { actions.openApp(entry) },
                                         onToggleFavorite = { onToggleFavorite(entry) },
                                         onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
+                                        onMove = { delta -> onMoveFavorite(entry, delta) },
                                         iconSize = settings.iconSize.dp,
                                         showLabel = settings.showLabels,
                                     )
@@ -524,14 +555,18 @@ private fun SummaryColumn(
     clearance: Dp,
     modifier: Modifier,
     weather: List<eu.eurise.feature.launcher.weather.DayForecast>?,
-    settings: LauncherSettings,
+    cards: List<PlacedCard>,
+    news: List<eu.eurise.feature.launcher.news.NewsItem>?,
+    quotes: List<eu.eurise.feature.launcher.markets.Quote>?,
+    onNewsSources: () -> Unit,
+    onSymbols: () -> Unit,
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
     onCardsChange: (List<PlacedCard>) -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     SummaryBoard(
-        cards = settings.cards,
+        cards = cards,
         editing = editing,
         onEditingChange = onEditingChange,
         onChange = onCardsChange,
@@ -539,7 +574,7 @@ private fun SummaryColumn(
         topPadding = 20.dp,
         bottomPadding = if (editing) insets.calculateBottomPadding() + 16.dp else clearance + 8.dp,
         modifier = modifier.padding(top = insets.calculateTopPadding()).clipToBounds(),
-        footer = { SetupCard(setup, hazeState) },
+        footer = { if (setup.isNotEmpty()) SetupCard(setup, hazeState) },
     ) { card, cardModifier ->
         when (card.kind) {
             CardKind.Calendar -> CalendarCard(
@@ -566,6 +601,8 @@ private fun SummaryColumn(
                 size = card.size,
                 modifier = cardModifier,
             )
+            CardKind.News -> NewsCard(news, hazeState, { actions.openLink(it.link) }, onNewsSources, card.size, cardModifier)
+            CardKind.Stocks -> StocksCard(quotes, hazeState, onSymbols, card.size, cardModifier)
         }
     }
 }
@@ -689,11 +726,14 @@ private fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
     }
 }
 
-/** Due puntini sopra la barra: Home e Riepilogo. */
+/** Pagina della home nel pager (al centro tra Notizie e Riepilogo). */
+private const val HomePage = 1
+
+/** Tre puntini sopra la barra: Notizie, Home e Riepilogo. */
 @Composable
 private fun PageDots(current: Int, modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        repeat(2) { i ->
+        repeat(3) { i ->
             Box(
                 Modifier
                     .size(width = if (i == current) 16.dp else 6.dp, height = 6.dp)

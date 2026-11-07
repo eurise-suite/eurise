@@ -240,6 +240,8 @@ fun AppTile(
     iconSize: Dp = 56.dp,
     labelColor: Color = MaterialTheme.colorScheme.onBackground,
     showLabel: Boolean = true,
+    /** Sposta il preferito di un posto: -1 prima, +1 dopo. Nullo fuori dai preferiti. */
+    onMove: ((Int) -> Unit)? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
@@ -271,6 +273,18 @@ fun AppTile(
                 leadingIcon = { Icon(EuriseIcons.star(), null) },
                 onClick = { menu = false; onToggleFavorite() },
             )
+            if (onMove != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.favorite_move_before)) },
+                    leadingIcon = { Icon(EuriseIcons.chevronLeft(), null) },
+                    onClick = { menu = false; onMove(-1) },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.favorite_move_after)) },
+                    leadingIcon = { Icon(EuriseIcons.chevronRight(), null) },
+                    onClick = { menu = false; onMove(1) },
+                )
+            }
             if (onInfo != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.app_info)) },

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.feature.launcher.summary.DefaultLeftCards
 import eu.eurise.feature.launcher.summary.PlacedCard
 import eu.eurise.feature.launcher.summary.decodeCards
 import eu.eurise.feature.launcher.summary.encode
@@ -15,17 +16,29 @@ import kotlinx.coroutines.flow.asStateFlow
  * Colore d'accento della Scrivania: una delle otto tinte della suite oppure un colore scelto dall'utente.
  * Ogni tinta ha una versione per il giorno e una più chiara per la sera.
  */
+/**
+ * Tinte d'accento in più rispetto a quelle dei calendari, per completare i colori secondari:
+ * un arancio vero (Terracotta tende al bruno) e un viola bluastro (Prugna tende al rosso).
+ */
+enum class ExtraTint(val light: Color, val dark: Color) {
+    Arancio(Color(0xFFB8621E), Color(0xFFF2A866)),
+    Viola(Color(0xFF5A4BA0), Color(0xFFB3A6F0)),
+}
+
 sealed interface Accent {
     data class Suite(val tint: CalendarTint) : Accent
+    data class Extra(val tint: ExtraTint) : Accent
     data class Custom(val argb: Int) : Accent
 
     fun color(dark: Boolean): Color = when (this) {
         is Suite -> if (dark) tint.dark else tint.light
+        is Extra -> if (dark) tint.dark else tint.light
         is Custom -> Color(argb).let { if (dark) lighten(it) else it }
     }
 
     fun encode(): String = when (this) {
         is Suite -> "suite:${tint.name}"
+        is Extra -> "extra:${tint.name}"
         is Custom -> "custom:$argb"
     }
 
@@ -35,6 +48,7 @@ sealed interface Accent {
         fun decode(raw: String?): Accent = when {
             raw == null -> Default
             raw.startsWith("suite:") -> CalendarTint.entries.firstOrNull { it.name == raw.removePrefix("suite:") }?.let { Suite(it) } ?: Default
+            raw.startsWith("extra:") -> ExtraTint.entries.firstOrNull { it.name == raw.removePrefix("extra:") }?.let { Extra(it) } ?: Default
             raw.startsWith("custom:") -> raw.removePrefix("custom:").toIntOrNull()?.let { Custom(it) } ?: Default
             else -> Default
         }
@@ -57,6 +71,8 @@ data class LauncherSettings(
     val showLabels: Boolean = true,
     val accent: Accent = Accent.Default,
     val cards: List<PlacedCard> = decodeCards(null),
+    /** Schede della pagina a sinistra della home. */
+    val leftCards: List<PlacedCard> = DefaultLeftCards,
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -89,6 +105,7 @@ class SettingsStore(context: Context) {
             .putBoolean("show_labels", next.showLabels)
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
+            .putString("left_cards", next.leftCards.encode())
             .apply()
     }
 
@@ -99,6 +116,7 @@ class SettingsStore(context: Context) {
         showLabels = prefs.getBoolean("show_labels", true),
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),
+        leftCards = decodeCards(prefs.getString("left_cards", null), DefaultLeftCards),
     )
 }
 

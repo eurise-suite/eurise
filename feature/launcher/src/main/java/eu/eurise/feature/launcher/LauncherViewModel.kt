@@ -14,6 +14,10 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
+import eu.eurise.feature.launcher.markets.MarketsRepository
+import eu.eurise.feature.launcher.markets.Quote
+import eu.eurise.feature.launcher.news.NewsItem
+import eu.eurise.feature.launcher.news.NewsRepository
 import eu.eurise.feature.launcher.settings.LauncherSettings
 import eu.eurise.feature.launcher.settings.SettingsStore
 import eu.eurise.feature.launcher.weather.DayForecast
@@ -68,6 +72,13 @@ class LauncherViewModel(
     private val keys = combine(favoriteKeys, recentKeys) { f, r -> f to r }
     private val calendarPermission = MutableStateFlow(calendar.hasPermission())
 
+    val news = NewsRepository(application)
+    val markets = MarketsRepository(application)
+    private val _newsItems = MutableStateFlow<List<NewsItem>?>(null)
+    val newsItems: StateFlow<List<NewsItem>?> = _newsItems
+    private val _quotes = MutableStateFlow<List<Quote>?>(null)
+    val quotes: StateFlow<List<Quote>?> = _quotes
+
     private val _weather = MutableStateFlow<List<DayForecast>?>(null)
     val weather: StateFlow<List<DayForecast>?> = _weather
 
@@ -97,6 +108,16 @@ class LauncherViewModel(
     fun refresh() {
         calendarPermission.value = calendar.hasPermission()
         viewModelScope.launch { _weather.value = weatherRepo.forecast() }
+        refreshNews()
+        refreshQuotes()
+    }
+
+    fun refreshNews(force: Boolean = false) {
+        viewModelScope.launch { _newsItems.value = news.latest(force) }
+    }
+
+    fun refreshQuotes() {
+        viewModelScope.launch { _quotes.value = markets.quotes() }
     }
 
     fun hasLocationPermission() = weatherRepo.hasLocationPermission()
@@ -108,6 +129,17 @@ class LauncherViewModel(
         val next = if (entry.key in current) current - entry.key else (current + entry.key).take(settings.value.maxFavorites)
         favoriteKeys.value = next
         prefs.edit().putString(KEY_FAVORITES, next.joinToString("|")).apply()
+    }
+
+    /** Sposta un preferito di un posto avanti (+1) o indietro (-1). */
+    fun moveFavorite(entry: AppEntry, delta: Int) {
+        val list = favoriteKeys.value.toMutableList()
+        val i = list.indexOf(entry.key)
+        val j = i + delta
+        if (i < 0 || j !in list.indices) return
+        list.add(j, list.removeAt(i))
+        favoriteKeys.value = list
+        prefs.edit().putString(KEY_FAVORITES, list.joinToString("|")).apply()
     }
 
     fun updateSettings(transform: (LauncherSettings) -> LauncherSettings) = settingsStore.update(transform)

@@ -82,7 +82,7 @@
     <string name="card_catalog_hint">Metti o togli le schede del Riepilogo, poi spostale e ridimensionale direttamente sulla pagina.</string>
     <string name="card_inside">Nel Riepilogo · %1$d</string>
     <string name="card_outside">Da aggiungere</string>
-    <string name="card_coming">In arrivo: Notizie, Borsa, Percorso, Documenti e i widget di altre app come Advanced Privacy.</string>
+    <string name="card_coming">In arrivo: Percorso, Documenti e i widget di altre app come Advanced Privacy.</string>
 
     <string name="panel_display">Schermo e luminosità</string>
     <string name="panel_note">Wi-Fi e Bluetooth aprono il pannello di sistema: Android non permette alle app di accenderli da sole.</string>
@@ -118,4 +118,33 @@
     <string name="tint_prugna">Prugna</string>
     <string name="tint_terracotta">Terracotta</string>
     <string name="tint_grafite">Grafite</string>
+    <string name="tint_arancio">Arancio</string>
+    <string name="tint_viola">Viola</string>
+
+    <string name="favorite_move_before">Sposta prima</string>
+    <string name="favorite_move_after">Sposta dopo</string>
+    <string name="card_news">Notizie</string>
+    <string name="card_news_desc">Agenzie, testate nazionali, estere e della tua provincia</string>
+    <string name="card_stocks">Borsa</string>
+    <string name="card_stocks_desc">Indici, cambi e titoli scelti, con 15 minuti di ritardo</string>
+    <string name="news_sources">Fonti</string>
+    <string name="news_loading">Aggiornamento…</string>
+    <string name="news_empty">Nessuna notizia. Controlla la connessione o scegli le fonti.</string>
+    <string name="news_sources_title">Fonti delle notizie</string>
+    <string name="news_group_agencies">Agenzie</string>
+    <string name="news_group_national">Testate nazionali</string>
+    <string name="news_group_foreign">Testate estere</string>
+    <string name="news_group_local">Regioni e province</string>
+    <string name="news_local_hint">Ogni regione ha il feed regionale dell\'ANSA. Scegli le province da seguire: le loro notizie vanno in cima con il nome della provincia.</string>
+    <string name="news_provinces">Province</string>
+    <string name="news_provinces_count">Province · %1$d</string>
+    <string name="news_group_custom">Aggiunte da te</string>
+    <string name="news_add_hint">Indirizzo di un feed RSS (es. giornale locale)</string>
+    <string name="news_remove">Togli</string>
+    <string name="stocks_symbols">Titoli</string>
+    <string name="stocks_empty">Nessun dato. Controlla la connessione o i simboli scelti.</string>
+    <string name="stocks_delay">Dati pubblici con circa 15 minuti di ritardo</string>
+    <string name="stocks_title">Titoli della Borsa</string>
+    <string name="stocks_hint">Simboli come su Yahoo Finance: ENI.MI per Eni a Milano, ^GDAXI per il DAX, EURUSD=X per il cambio euro/dollaro.</string>
+    <string name="stocks_add_hint">Simbolo da aggiungere</string>
 </resources>

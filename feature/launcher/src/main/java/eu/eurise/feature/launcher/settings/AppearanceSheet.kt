@@ -143,16 +143,32 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.appearance_accent), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         val names = tintNames()
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            CalendarTint.entries.forEach { tint ->
-                Swatch(if (dark) tint.dark else tint.light, accent == Accent.Suite(tint), names[tint].orEmpty()) { onPick(Accent.Suite(tint)) }
+        // Le otto tinte dei calendari, l'arancio e il viola, e il colore personale: due file da sei.
+        val options: List<@Composable () -> Unit> =
+            CalendarTint.entries.map { tint ->
+                @Composable { Swatch(if (dark) tint.dark else tint.light, accent == Accent.Suite(tint), names[tint].orEmpty()) { onPick(Accent.Suite(tint)) } }
+            } + ExtraTint.entries.map { tint ->
+                @Composable {
+                    Swatch(
+                        if (dark) tint.dark else tint.light, accent == Accent.Extra(tint),
+                        stringResource(if (tint == ExtraTint.Arancio) R.string.tint_arancio else R.string.tint_viola),
+                    ) { onPick(Accent.Extra(tint)) }
+                }
+            } + listOf(
+                @Composable {
+                    Swatch(
+                        color = custom?.color(dark) ?: Color.Transparent,
+                        selected = custom != null,
+                        label = stringResource(R.string.appearance_custom),
+                        rainbow = custom == null,
+                    ) { onPick(Accent.Custom(customColor(hue, light))) }
+                },
+            )
+        options.chunked(6).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                row.forEach { it() }
+                repeat(6 - row.size) { Spacer(Modifier.size(32.dp)) }
             }
-            Swatch(
-                color = custom?.color(dark) ?: Color.Transparent,
-                selected = custom != null,
-                label = stringResource(R.string.appearance_custom),
-                rainbow = custom == null,
-            ) { onPick(Accent.Custom(customColor(hue, light))) }
         }
         if (custom != null) {
             Text(stringResource(R.string.appearance_hue), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

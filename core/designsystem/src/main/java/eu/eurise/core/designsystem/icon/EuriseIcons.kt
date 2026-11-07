@@ -123,6 +123,10 @@ object EuriseIcons {
 
     fun rotate(stroke: Float = Stroke) = icon("rotate", stroke, "M20 11a8 8 0 0 0-14.5-4.5M4 4v3.5h3.5M4 13a8 8 0 0 0 14.5 4.5M20 20v-3.5h-3.5")
 
+    fun chart(stroke: Float = Stroke) = icon("chart", stroke, "M4 17l5-5 4 3 7-8", "M15 7h5v5")
+
+    fun news(stroke: Float = Stroke) = icon("news", stroke, "M5 4h11v16H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z", "M16 8h3v10a2 2 0 0 1-2 2", "M8 8h5M8 12h5M8 16h3")
+
     fun minus(stroke: Float = 2.4f) = icon("minus", stroke, "M5 12h14")
 
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
