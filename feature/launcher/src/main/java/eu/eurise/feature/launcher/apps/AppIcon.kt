@@ -157,7 +157,7 @@ val LocalCategoryTint = androidx.compose.runtime.compositionLocalOf<(AppEntry) -
 
 /** Fondo dei tondi delle icone: blu notte di giorno, grafite di sera. */
 val IconBackgroundLight = Color(0xFF1F2A44)
-val IconBackgroundDark = Color(0xFF262B33)
+val IconBackgroundDark = Color(0xFF1A1E25)
 
 /**
  * Icona a tema nel tondo della suite, con il numero di notifiche in alto a destra se [badge] è maggiore di zero.

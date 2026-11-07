@@ -216,7 +216,7 @@ fun HoroscopeCard(
 @Composable
 fun SignBadge(sign: Sign, dark: Boolean, size: Int) {
     Box(
-        Modifier.size(size.dp).clip(CircleShape).background(if (dark) Color(0xFF262B33) else Color(0xFF1F2A44)),
+        Modifier.size(size.dp).clip(CircleShape).background(if (dark) Color(0xFF1A1E25) else Color(0xFF1F2A44)),
         contentAlignment = Alignment.Center,
     ) { Icon(EuriseIcons.zodiac(sign.ordinal, 2f), null, tint = sign.dark, modifier = Modifier.size((size * 0.55f).dp)) }
 }
