@@ -26,6 +26,11 @@ class LauncherActivity : ComponentActivity() {
         setContent { LauncherRoute(data, homePresses) }
     }
 
+    override fun onResume() {
+        super.onResume()
+        eu.eurise.feature.calendar.reminders.Reminders.refresh(this)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.hasCategory(Intent.CATEGORY_HOME)) homePresses++

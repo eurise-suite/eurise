@@ -98,6 +98,8 @@ fun CalendarRoute(
     onOpenEvent: (eventId: Long, beginMillis: Long) -> Unit,
     onNewEvent: (startMillis: Long) -> Unit,
     openDay: LocalDate? = null,
+    onDates: () -> Unit = {},
+    onMedicines: () -> Unit = {},
 ) {
     val viewModel = viewModel { CalendarViewModel(calendar, tasks) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -120,6 +122,8 @@ fun CalendarRoute(
         state = state,
         onViewChange = viewModel::setView,
         onToday = viewModel::goToToday,
+        onDates = onDates,
+        onMedicines = onMedicines,
         onStep = viewModel::step,
         onOpenDay = viewModel::openDay,
         onToggleTask = viewModel::setTaskDone,
@@ -151,6 +155,8 @@ internal fun CalendarScreen(
     showSettingsLink: Boolean,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
+    onDates: () -> Unit = {},
+    onMedicines: () -> Unit = {},
 ) {
     val headerHaze = remember { HazeState() }
     val density = LocalDensity.current
@@ -183,7 +189,7 @@ internal fun CalendarScreen(
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(top = 12.dp, bottom = 10.dp),
         ) {
-            TitleRow(state.anchor, onStep, onToday)
+            TitleRow(state.anchor, onStep, onToday, onDates, onMedicines)
             Spacer(Modifier.height(14.dp))
             GlassSegmented(
                 options = listOf(
@@ -277,7 +283,7 @@ internal fun CalendarScreen(
 }
 
 @Composable
-private fun TitleRow(anchor: LocalDate, onStep: (Boolean) -> Unit, onToday: () -> Unit) {
+private fun TitleRow(anchor: LocalDate, onStep: (Boolean) -> Unit, onToday: () -> Unit, onDates: () -> Unit, onMedicines: () -> Unit) {
     val month = anchor.format(DateTimeFormatter.ofPattern("LLLL", Locale.ITALIAN)).replaceFirstChar { it.titlecase(Locale.ITALIAN) }
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         // Frecce piccole, area di tocco piena: servono anche a TalkBack, che non può scorrere.
@@ -290,6 +296,14 @@ private fun TitleRow(anchor: LocalDate, onStep: (Boolean) -> Unit, onToday: () -
         Text("${anchor.year}", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Chevron(EuriseIcons.chevronRight(), stringResource(R.string.cal_next)) { onStep(true) }
         Spacer(Modifier.weight(1f))
+        // Date importanti e Farmaci: due moduli del Calendario.
+        Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.dates_title), onClick = onDates), contentAlignment = Alignment.Center) {
+            Icon(EuriseIcons.star(), stringResource(R.string.dates_title), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        }
+        Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.meds_title), onClick = onMedicines), contentAlignment = Alignment.Center) {
+            Icon(EuriseIcons.heart(), stringResource(R.string.meds_title), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(6.dp))
         Surface(
             onClick = onToday,
             shape = CircleShape,

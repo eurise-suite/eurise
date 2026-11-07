@@ -19,8 +19,22 @@ data class ImportantDate(
     val kind: Kind,
     /** Il proprio compleanno o il proprio anniversario: cambiano anche lo sfondo della Scrivania. */
     val mine: Boolean,
+    val relation: Relation = if (mine) Relation.Self else Relation.Other,
+    /** "Regalo per …?" tra le cose da fare dieci giorni prima, finché non lo si spunta o passa il giorno. */
+    val giftReminder: Boolean = relation.closeFamily,
+    /** Avviso il giorno prima e il giorno stesso. */
+    val notify: Boolean = true,
 ) {
-    enum class Kind { Birthday, Anniversary }
+    enum class Kind {
+        Birthday, Wedding, Engagement, Anniversary;
+
+        val isAnniversary: Boolean get() = this != Birthday
+    }
+
+    /** Chi è per l'utente: decide il promemoria regalo predefinito. */
+    enum class Relation(val closeFamily: Boolean) {
+        Self(false), Partner(true), Child(true), Mother(true), Father(true), Sibling(true), Grandparent(true), Friend(false), Other(false)
+    }
 
     val monthDay: MonthDay get() = MonthDay.of(month, day)
 
@@ -50,7 +64,7 @@ class ImportantDatesRepository internal constructor(context: Context) {
         val withId = if (date.id == 0L) date.copy(id = System.currentTimeMillis()) else date
         // Uno solo "mio" compleanno e un solo "mio" anniversario.
         val others = _dates.value.filterNot { it.id == withId.id }
-            .map { if (withId.mine && it.mine && it.kind == withId.kind) it.copy(mine = false) else it }
+            .map { if (withId.mine && it.mine && it.kind.isAnniversary == withId.kind.isAnniversary) it.copy(mine = false, relation = ImportantDate.Relation.Other) else it }
         persist((others + withId).sortedWith(compareBy({ it.month }, { it.day })))
     }
 
@@ -65,7 +79,9 @@ class ImportantDatesRepository internal constructor(context: Context) {
         persist((existing + fresh).sortedWith(compareBy({ it.month }, { it.day })))
     }
 
-    fun mine(kind: ImportantDate.Kind): ImportantDate? = _dates.value.firstOrNull { it.mine && it.kind == kind }
+    fun myBirthday(): ImportantDate? = _dates.value.firstOrNull { it.mine && it.kind == ImportantDate.Kind.Birthday }
+
+    fun myAnniversary(): ImportantDate? = _dates.value.firstOrNull { it.mine && it.kind.isAnniversary }
 
     private fun persist(list: List<ImportantDate>) {
         _dates.value = list
@@ -73,7 +89,8 @@ class ImportantDatesRepository internal constructor(context: Context) {
         list.forEach { d ->
             array.put(
                 JSONObject().put("id", d.id).put("name", d.name).put("month", d.month).put("day", d.day)
-                    .put("year", d.year ?: 0).put("kind", d.kind.name).put("mine", d.mine),
+                    .put("year", d.year ?: 0).put("kind", d.kind.name).put("mine", d.mine)
+                    .put("relation", d.relation.name).put("gift", d.giftReminder).put("notify", d.notify),
             )
         }
         prefs.edit().putString("dates", array.toString()).apply()
@@ -83,9 +100,13 @@ class ImportantDatesRepository internal constructor(context: Context) {
         val array = JSONArray(prefs.getString("dates", "[]"))
         (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
+            val mine = o.optBoolean("mine")
+            val relation = runCatching { ImportantDate.Relation.valueOf(o.getString("relation")) }.getOrElse { if (mine) ImportantDate.Relation.Self else ImportantDate.Relation.Other }
             ImportantDate(
                 o.getLong("id"), o.getString("name"), o.getInt("month"), o.getInt("day"),
-                o.optInt("year").takeIf { it > 0 }, ImportantDate.Kind.valueOf(o.getString("kind")), o.optBoolean("mine"),
+                o.optInt("year").takeIf { it > 0 },
+                runCatching { ImportantDate.Kind.valueOf(o.getString("kind")) }.getOrDefault(ImportantDate.Kind.Birthday),
+                mine, relation, o.optBoolean("gift", relation.closeFamily), o.optBoolean("notify", true),
             )
         }
     }.getOrDefault(emptyList())

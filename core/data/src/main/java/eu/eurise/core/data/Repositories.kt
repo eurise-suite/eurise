@@ -99,9 +99,15 @@ class EuriseData private constructor(context: Context, database: EuriseDatabase,
     val tasks = TaskRepository(database.taskDao(), clock)
     val calendar = CalendarRepository(context)
     val dates = eu.eurise.core.data.dates.ImportantDatesRepository(context)
+    val medicines = eu.eurise.core.data.meds.MedicinesRepository(context)
 
     companion object {
+        @Volatile private var instance: EuriseData? = null
+
+        /** Un solo accesso ai dati per processo: lo condividono schermate, Scrivania e promemoria. */
         fun create(context: Context, clock: Clock = Clock.System): EuriseData =
-            EuriseData(context.applicationContext, EuriseDatabase.create(context), clock)
+            instance ?: synchronized(this) {
+                instance ?: EuriseData(context.applicationContext, EuriseDatabase.create(context), clock).also { instance = it }
+            }
     }
 }

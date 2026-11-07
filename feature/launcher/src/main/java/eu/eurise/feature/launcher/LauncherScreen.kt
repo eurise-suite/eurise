@@ -264,7 +264,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
     val personal = PersonalDays(
         birthday = importantDates.firstOrNull { it.mine && it.kind == eu.eurise.core.data.dates.ImportantDate.Kind.Birthday }?.monthDay,
-        anniversary = importantDates.firstOrNull { it.mine && it.kind == eu.eurise.core.data.dates.ImportantDate.Kind.Anniversary }?.monthDay,
+        anniversary = importantDates.firstOrNull { it.mine && it.kind.isAnniversary }?.monthDay,
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
     EuriseTheme(darkTheme = scene.dark) {

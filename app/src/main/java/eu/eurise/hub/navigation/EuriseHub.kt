@@ -96,6 +96,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
         when {
             section == "today" -> goTo(Section.Today)
             section == "calendar" -> goTo(Section.Calendar)
+            section == "dates" -> navController.navigate("dates")
+            section == "medicines" -> navController.navigate("medicines")
             section.startsWith("day:") -> {
                 calendarDay = runCatching { java.time.LocalDate.parse(section.removePrefix("day:")) }.getOrNull()
                 goTo(Section.Calendar)
@@ -138,8 +140,12 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onOpenEvent = { id, begin -> navController.openEvent(id, begin, null) },
                         onNewEvent = { start -> navController.openEvent(null, null, start) },
                         openDay = calendarDay,
+                        onDates = { navController.navigate("dates") },
+                        onMedicines = { navController.navigate("medicines") },
                     )
                 }
+                composable("dates") { eu.eurise.feature.calendar.reminders.ImportantDatesRoute(onBack = { navController.popBackStack() }) }
+                composable("medicines") { eu.eurise.feature.calendar.reminders.MedicinesRoute(onBack = { navController.popBackStack() }) }
                 composable(Section.Notes.route) {
                     NotesListRoute(repository = data.notes, onOpenNote = { navController.openNote(it) })
                 }
