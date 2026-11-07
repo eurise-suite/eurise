@@ -329,6 +329,7 @@ private fun statusLine(lastSync: Long?, error: String?, running: Boolean): Strin
         }
     )
     lastSync == null -> stringResource(R.string.cloud_status_never)
+    System.currentTimeMillis() - lastSync < 60_000 -> stringResource(R.string.cloud_last_sync_now)
     else -> stringResource(R.string.cloud_last_sync, DateUtils.getRelativeTimeSpanString(lastSync, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString().lowercase(Locale.getDefault()))
 }
 
@@ -546,7 +547,7 @@ private fun ConnectingDialog(state: Connecting, onCancel: () -> Unit) {
                 )
             )
         },
-        text = {
+        text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (state !is Connecting.Failed) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 Text(
@@ -567,7 +568,10 @@ private fun ConnectingDialog(state: Connecting, onCancel: () -> Unit) {
                     lineHeight = 20.sp,
                 )
             }
-        },
+            (state as? Connecting.Failed)?.code?.let {
+                Text(stringResource(R.string.cloud_failed_code, it), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        } },
         confirmButton = {
             TextButton(onClick = onCancel) {
                 Text(stringResource(if (state is Connecting.Failed) R.string.cloud_close else R.string.cloud_cancel))

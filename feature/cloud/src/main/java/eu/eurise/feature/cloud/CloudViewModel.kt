@@ -25,8 +25,8 @@ sealed interface Connecting {
     data class Browser(val kind: CloudKind, val url: String) : Connecting
     /** Stiamo provando indirizzo e password. */
     data object Checking : Connecting
-    /** Non è andata: [reason] dice perché. */
-    data class Failed(val reason: Reason) : Connecting
+    /** Non è andata: [reason] dice perché, [code] è la risposta del server (se c'è stata). */
+    data class Failed(val reason: Reason, val code: Int? = null) : Connecting
 }
 
 enum class Reason { Password, Address, Network, Timeout, Plan }
@@ -91,33 +91,44 @@ class CloudViewModel(private val cloud: CloudSync) : ViewModel() {
             fail(Reason.Address)
             return
         }
-        connectWithPassword(CloudKind.KDrive, email.trim(), email.trim(), CloudAccounts.kDriveDav(id), appPassword)
+        connectWithPassword(
+            CloudKind.KDrive, email.trim(), email.trim(),
+            listOf(CloudAccounts.kDriveDav(id), CloudAccounts.kDriveDavAlt(id)), appPassword,
+        )
     }
 
     fun connectWebDav(url: String, user: String, password: String) {
         val address = NextcloudLogin.normalizeServer(url).let { if (it.endsWith("/")) it else "$it/" }
-        connectWithPassword(CloudKind.WebDav, user.trim().ifEmpty { address }, user.trim(), address, password)
+        connectWithPassword(CloudKind.WebDav, user.trim().ifEmpty { address }, user.trim(), listOf(address), password)
     }
 
-    private fun connectWithPassword(kind: CloudKind, name: String, user: String, dav: String, password: String) {
+    /** Prova gli indirizzi [davs] uno dopo l'altro e collega il primo che accetta nome e password. */
+    private fun connectWithPassword(kind: CloudKind, name: String, user: String, davs: List<String>, password: String) {
         login?.cancel()
         _ui.update { it.copy(connecting = Connecting.Checking) }
         login = viewModelScope.launch {
-            val reason = try {
-                WebDav(dav, user, password).quota()
-                null
-            } catch (e: DavException) {
-                when (e.code) {
-                    401 -> Reason.Password
-                    403 -> if (kind == CloudKind.KDrive) Reason.Plan else Reason.Password
-                    else -> Reason.Address
+            var failure: Connecting.Failed? = null
+            for (dav in davs) {
+                failure = try {
+                    WebDav(dav, user, password).quota()
+                    added(cloud.accounts.add(kind, name, user, dav, password))
+                    return@launch
+                } catch (e: DavException) {
+                    val reason = when (e.code) {
+                        401 -> Reason.Password
+                        403 -> if (kind == CloudKind.KDrive) Reason.Plan else Reason.Password
+                        else -> Reason.Address
+                    }
+                    Connecting.Failed(reason, e.code)
+                } catch (e: IllegalArgumentException) {
+                    Connecting.Failed(Reason.Address)
+                } catch (e: Exception) {
+                    failure ?: Connecting.Failed(Reason.Network)
                 }
-            } catch (e: IllegalArgumentException) {
-                Reason.Address
-            } catch (e: Exception) {
-                Reason.Network
+                // Una password sbagliata resta sbagliata anche con l'altro indirizzo: inutile insistere.
+                if (failure.code == 401) break
             }
-            if (reason != null) fail(reason) else added(cloud.accounts.add(kind, name, user, dav, password))
+            _ui.update { it.copy(connecting = failure ?: Connecting.Failed(Reason.Address)) }
         }
     }
 

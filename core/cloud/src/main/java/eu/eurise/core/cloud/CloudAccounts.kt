@@ -105,6 +105,9 @@ class CloudAccounts private constructor(context: Context) {
 
         /** Indirizzo WebDAV di un kDrive: il numero è quello dopo "/drive/" nell'indirizzo di kDrive sul web. */
         fun kDriveDav(driveId: String): String = "https://${driveId.trim()}.connect.kdrive.infomaniak.com/"
+
+        /** Secondo formato dello stesso indirizzo, citato da alcune guide: si prova se il primo viene rifiutato. */
+        fun kDriveDavAlt(driveId: String): String = "https://connect.drive.infomaniak.com/${driveId.trim()}/"
     }
 }
 

@@ -37,7 +37,7 @@
     <string name="cloud_field_user">Nome utente</string>
     <string name="cloud_field_password">Password</string>
     <string name="cloud_nextcloud_form_hint">Per esempio cloud.esempio.it. Dopo si apre la pagina di accesso nel browser.</string>
-    <string name="cloud_kdrive_form_hint">La password per le app si crea nel Manager Infomaniak, in Sicurezza. Il numero del kDrive è quello dopo /drive/ nell\'indirizzo di kDrive sul web.</string>
+    <string name="cloud_kdrive_form_hint">Il numero del kDrive: apri kDrive nel browser, l\'indirizzo è del tipo kdrive.infomaniak.com/app/drive/NUMERO/files. La password per le app si crea nel Manager Infomaniak, in Sicurezza; con la verifica in due passaggi attiva è obbligatoria.</string>
     <string name="cloud_browser_title">Approva nel browser</string>
     <string name="cloud_browser_message">Accedi nella pagina che si è aperta e approva Eurise. Poi torna qui: il resto avviene da solo.</string>
     <string name="cloud_checking">Un momento</string>
@@ -47,7 +47,8 @@
     <string name="cloud_failed_address">Il server non risponde a questo indirizzo. Controlla com\'è scritto.</string>
     <string name="cloud_failed_network">Manca la rete, o il server non si raggiunge. Riprova tra poco.</string>
     <string name="cloud_failed_timeout">L\'approvazione nel browser non è arrivata in tempo. Riprova.</string>
-    <string name="cloud_failed_plan">kDrive ha rifiutato l\'accesso: il piano potrebbe non includere WebDAV, oppure serve una password per le app.</string>
+    <string name="cloud_failed_plan">kDrive ha rifiutato l\'accesso. Le cause possibili: il numero del kDrive non è quello giusto, la password non è una password per le app, oppure il piano non include WebDAV (kSuite Free e Standard non lo includono).</string>
+    <string name="cloud_failed_code">Risposta del server: %1$d</string>
     <string name="cloud_close">Chiudi</string>
     <string name="cloud_cancel">Annulla</string>
     <string name="cloud_account_actions">Azioni dell\'account</string>
@@ -63,6 +64,7 @@
     <string name="cloud_status_never">Non ancora sincronizzato</string>
     <string name="cloud_status_error">Non è riuscita</string>
     <string name="cloud_last_sync">Ultimo controllo %1$s</string>
+    <string name="cloud_last_sync_now">Ultimo controllo adesso</string>
     <string name="cloud_error_auth">Il cloud non accetta più la password: ricollega l\'account.</string>
     <string name="cloud_error_full">Il cloud è pieno.</string>
     <string name="cloud_error_network">Senza rete: riprovo da solo.</string>
