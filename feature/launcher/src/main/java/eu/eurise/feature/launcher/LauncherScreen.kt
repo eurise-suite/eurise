@@ -458,6 +458,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
+                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }) {
                     SummaryColumn(
                         state, messages, nowPlaying, notificationsOn, if (left) emptyList() else setup, hazeState, actions, clearance, modifier,
                         weather = weather,
@@ -473,6 +474,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         editing = editingCards, onEditingChange = { editingCards = it },
                         onCardsChange = { cards -> viewModel.updateSettings { if (left) it.copy(leftCards = cards) else it.copy(cards = cards) } },
                     )
+                    }
                 }
                 val summary: @Composable (Modifier) -> Unit = { modifier -> board(false, modifier) }
 
@@ -516,6 +518,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                         onChannels = { channelsSheet = true },
                                         onReply = { replyTo = it },
                                         cardBody = { kind, modifier ->
+                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }) {
                                             SummaryCardBody(
                                                 PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
                                                 hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
@@ -525,6 +528,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                                 ),
                                                 calendarMonth, monthEvents, monthTasks, viewModel::setCalendarMonth,
                                             )
+                                            }
                                         },
                                     ),
                                 )

@@ -363,50 +363,27 @@ fun MessagesCard(
     onOpen: (MessageItem) -> Unit,
     size: CardSize = CardSize.Large,
     modifier: Modifier = Modifier,
+    onReply: (MessageItem) -> Unit = eu.eurise.feature.launcher.notifications.LocalQuickReply.current,
 ) {
     val max = 15
     SummaryCard(stringResource(R.string.card_messages), hazeState, modifier) {
         when {
             !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant, onAppInfo)
             messages.isEmpty() -> Text(stringResource(R.string.card_messages_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
+            // Righe identiche a quelle della bolla "Ti hanno cercato", con le stesse azioni a scorrimento.
             else -> messages.take(max).forEach { m ->
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onOpen(m) }.padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        Modifier.size(34.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(m.title.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(m.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                            Text(" · ${m.appLabel}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, maxLines = 1)
-                        }
-                        // Se l'app non mostra l'anteprima (per esempio la posta cifrata) resta almeno l'avviso.
-                        Text(
-                            m.text.ifBlank { stringResource(R.string.message_no_preview) },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Text(ago(now, m.postedAt), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                eu.eurise.feature.launcher.notifications.SwipeActionsRow(eu.eurise.feature.launcher.notifications.messageActions(m, onReply)) {
+                    eu.eurise.feature.launcher.home.PillLine(
+                        if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
+                        "${m.title} · ${m.appLabel}",
+                        m.text.ifBlank { stringResource(R.string.message_no_preview) },
+                        { onOpen(m) },
+                        right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault())
+                            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")),
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-internal fun ago(now: Long, at: Long): String {
-    val min = ((now - at) / 60_000).coerceAtLeast(0)
-    return when {
-        min < 1 -> stringResource(R.string.time_now)
-        min < 60 -> "$min min"
-        min < 24 * 60 -> "${min / 60} h"
-        else -> "${min / (24 * 60)} g"
     }
 }
 

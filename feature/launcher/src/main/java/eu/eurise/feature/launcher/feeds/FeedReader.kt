@@ -84,7 +84,10 @@ object FeedReader {
                 }
                 XmlPullParser.END_TAG -> if (inItem && parser.name.lowercase() in setOf("item", "entry")) {
                     inItem = false
-                    if (title.isNotBlank() && link.isNotBlank()) out += FeedEntry(stripHtml(title), link, text, image, parseDate(date), source)
+                    if ((title.isNotBlank() || text.isNotBlank()) && link.isNotBlank()) {
+                        // Alcuni feed (per esempio l'oroscopo per segno) non hanno titolo: si usa l'inizio del testo.
+                        out += FeedEntry(stripHtml(title).ifBlank { text.take(60) }, link, text, image, parseDate(date), source)
+                    }
                 }
             }
             event = parser.next()

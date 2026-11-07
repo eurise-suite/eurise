@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -65,6 +66,9 @@ import eu.eurise.feature.launcher.R
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+/** Apre la risposta rapida per un messaggio; la fornisce la Scrivania. */
+val LocalQuickReply = androidx.compose.runtime.compositionLocalOf<(MessageItem) -> Unit> { {} }
+
 /** Azione che compare scorrendo di lato una notifica. */
 data class SwipeAction(val label: String, val icon: ImageVector, val color: Color, val onClick: () -> Unit)
 
@@ -78,12 +82,12 @@ fun messageActions(m: MessageItem, onReply: (MessageItem) -> Unit): List<SwipeAc
     val list = mutableListOf<SwipeAction>()
     if (m.reply != null) list += SwipeAction(stringResource(R.string.reply), EuriseIcons.reply(2f), MaterialTheme.colorScheme.primary) { onReply(m) }
     m.markRead?.let { a ->
-        list += SwipeAction(stringResource(R.string.mark_read), EuriseIcons.read(2f), if (dark) Color(0xFF4F6E9E) else Color(0xFF3E5C8A)) {
+        list += SwipeAction(stringResource(R.string.mark_read), EuriseIcons.read(2f), if (dark) Color(0xFF8FA9D9) else Color(0xFF3E5C8A)) {
             runCatching { a.intent.send() }
         }
     }
     if (m.clearable) {
-        list += SwipeAction(stringResource(R.string.delete), EuriseIcons.trash(2f), if (dark) Color(0xFF9E4A52) else Color(0xFF8C2F39)) {
+        list += SwipeAction(stringResource(R.string.delete), EuriseIcons.trash(2f), if (dark) Color(0xFFE8939B) else Color(0xFF8C2F39)) {
             NotificationStore.dismiss(m.key)
         }
     }
@@ -108,7 +112,8 @@ fun SwipeActionsRow(actions: List<SwipeAction>, modifier: Modifier = Modifier, c
     val scope = rememberCoroutineScope()
     val drag = rememberDraggableState { delta -> scope.launch { offset.snapTo((offset.value + delta).coerceIn(-revealPx, 0f)) } }
     Box(modifier.clip(RoundedCornerShape(14.dp))) {
-        Row(
+        // Le azioni esistono solo mentre la riga è spostata: a riposo non si vedono e non si toccano.
+        if (offset.value < -1f) Row(
             Modifier.matchParentSize().padding(end = 2.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
@@ -121,8 +126,12 @@ fun SwipeActionsRow(actions: List<SwipeAction>, modifier: Modifier = Modifier, c
                     },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Box(Modifier.size(34.dp).clip(CircleShape).background(a.color), contentAlignment = Alignment.Center) {
-                        Icon(a.icon, a.label, tint = Color.White, modifier = Modifier.size(17.dp))
+                    // Tondi dello stesso vetro delle pillole; il simbolo prende il colore dell'azione.
+                    Box(
+                        Modifier.size(34.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(a.icon, a.label, tint = a.color, modifier = Modifier.size(17.dp))
                     }
                     Text(a.label, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -131,7 +140,7 @@ fun SwipeActionsRow(actions: List<SwipeAction>, modifier: Modifier = Modifier, c
         Box(
             Modifier
                 .offset { IntOffset(offset.value.roundToInt(), 0) }
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = if (offset.value < -1f) 0.96f else 0f), RoundedCornerShape(14.dp))
+                .graphicsLayer { alpha = if (offset.value < -1f) 0.55f else 1f }
                 .draggable(
                     drag, Orientation.Horizontal,
                     onDragStopped = { velocity ->

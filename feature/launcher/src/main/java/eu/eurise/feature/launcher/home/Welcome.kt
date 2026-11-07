@@ -108,14 +108,15 @@ fun Pill(
         Modifier
             .then(if (report != null) Modifier.onSizeChanged { report(it.height) } else Modifier)
             .padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
+        // Titolo più vicino al contenuto: la riga del titolo è bassa quanto basta per la freccia.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { Label(title) }
             if (!collapsed) trailing?.invoke()
             val label = stringResource(if (collapsed) R.string.pill_expand else R.string.pill_collapse)
             Box(
-                Modifier.size(26.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label) { collapsed = !collapsed },
+                Modifier.size(24.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label) { collapsed = !collapsed },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -140,14 +141,15 @@ private fun PillLabel(text: String, trailing: (@Composable () -> Unit)? = null) 
 
 /** Una riga toccabile con simbolo, testo principale e riga secondaria. */
 @Composable
-private fun PillLine(icon: ImageVector, main: String, sub: String?, onClick: () -> Unit, tint: Color? = null, right: String? = null) {
+internal fun PillLine(icon: ImageVector, main: String, sub: String?, onClick: () -> Unit, tint: Color? = null, right: String? = null) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(onClick = onClick).padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, null, tint = tint ?: MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(9.dp))
-        Column(Modifier.weight(1f)) {
+        // Un po' d'aria tra la riga principale e quella secondaria.
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(main, fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!sub.isNullOrBlank()) {
                 Text(sub, fontSize = 11.5.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -308,7 +310,7 @@ fun CommsPill(
 private fun SmallRound(icon: ImageVector, label: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(28.dp)
+            .size(26.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
             .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),

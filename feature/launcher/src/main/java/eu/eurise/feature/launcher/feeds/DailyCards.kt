@@ -82,6 +82,8 @@ enum class Sign(@StringRes val label: Int, val light: Color, val dark: Color) {
  * dell'oroscopo; il testo del segno si prende poi dalla pagina dell'articolo.
  */
 val HoroscopeSources = listOf(
+    // Un elemento per segno, aggiornato ogni giorno: è la fonte più affidabile da leggere.
+    FeedSource("oroscopi", "Oroscopo del giorno · oroscopi.info", "https://www.oroscopi.info/rss-oroscopo_del_giorno.xml"),
     FeedSource("sussidiario", "Paolo Fox · Il Sussidiario", "https://www.ilsussidiario.net/?s=oroscopo+paolo+fox&feed=rss2"),
     FeedSource("sussidiario_cat", "Oroscopo · Il Sussidiario", "https://www.ilsussidiario.net/news/oroscopo/feed/"),
     FeedSource("leggo", "Oroscopo · Leggo", "https://www.leggo.it/rss/oroscopo.xml"),
@@ -98,7 +100,15 @@ val RecipeSources = listOf(
 
 class DailyRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("eurise_daily", Context.MODE_PRIVATE)
-    val horoscope = FeedSources(context, "horoscope", HoroscopeSources, setOf("sussidiario", "sussidiario_cat", "leggo", "ilmessaggero"))
+    val horoscope = FeedSources(context, "horoscope", HoroscopeSources, setOf("oroscopi", "sussidiario", "sussidiario_cat", "leggo", "ilmessaggero"))
+
+    init {
+        // Chi aveva già scelto le fonti riceve comunque la nuova fonte per segno.
+        if (!prefs.getBoolean("horoscope_v2", false)) {
+            horoscope.setEnabled("oroscopi", true)
+            prefs.edit().putBoolean("horoscope_v2", true).apply()
+        }
+    }
     val recipes = FeedSources(context, "recipes", RecipeSources, setOf("giallozafferano", "cucchiaio", "cookist"))
 
     var sign: Sign
@@ -115,7 +125,23 @@ class DailyRepository(private val context: Context) {
     suspend fun horoscopeFor(sign: Sign, name: String, force: Boolean = false): FeedEntry? = withContext(Dispatchers.IO) {
         if (force) pageCache.clear()
         val names = Sign.entries.map { context.getString(it.label) }
-        val entries = horoscope.entries(force)
+        val all = horoscope.entries(force)
+        // 1) Feed con un elemento per segno: il titolo è il nome del segno.
+        val signWord = Regex("""\b${Regex.escape(name)}\b""", RegexOption.IGNORE_CASE)
+        all.filter { e ->
+            e.title.trim().startsWith(name, ignoreCase = true) ||
+                (e.title.length < 60 && signWord.containsMatchIn(e.title)) ||
+                (e.text.length < 1500 && signWord.containsMatchIn(e.text.take(60)) && names.none { it != name && e.text.take(60).contains(it, true) })
+        }
+            .sortedByDescending { it.publishedAt }
+            .firstOrNull()?.let { e ->
+                val short = e.text.replace(Regex("""\[?\s*Leggi tutto\s*\]?""", RegexOption.IGNORE_CASE), "").trim()
+                val longer = if (short.length < 220) pageCache.getOrPut(e.link) { FeedReader.pageText(e.link) }?.let { signPassage(it, name, names) } else null
+                val text = listOfNotNull(longer, short).maxByOrNull { it.length }.orEmpty()
+                if (text.length >= 30) return@withContext e.copy(text = text.take(700))
+            }
+        // 2) Articoli con tutti i segni (Paolo Fox): si ritaglia il passaggio sul segno.
+        val entries = all
             .filter { it.title.contains("oroscopo", ignoreCase = true) || it.title.contains("Paolo Fox", ignoreCase = true) }
             .sortedByDescending { it.publishedAt }
         // Prima gli articoli del giorno con tutti i segni, poi quelli dedicati al segno scelto.
