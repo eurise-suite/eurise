@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 
 /** Quello che serve alla home e al riepilogo. */
 data class LauncherState(
@@ -78,6 +79,22 @@ class LauncherViewModel(
     val newsItems: StateFlow<List<NewsItem>?> = _newsItems
     private val _quotes = MutableStateFlow<List<Quote>?>(null)
     val quotes: StateFlow<List<Quote>?> = _quotes
+
+    /** Mese mostrato nella scheda Calendario, con appuntamenti e cose da fare di quel mese. */
+    private val _calendarMonth = MutableStateFlow(YearMonth.now())
+    val calendarMonth: StateFlow<YearMonth> = _calendarMonth
+
+    fun setCalendarMonth(month: YearMonth) { _calendarMonth.value = month }
+
+    val monthEvents: StateFlow<List<CalendarEvent>> = combine(calendarPermission, _calendarMonth) { granted, month -> granted to month }
+        .flatMapLatest { (granted, month) ->
+            if (granted) calendar.observeEvents(month.atDay(1), month.atEndOfMonth()) else flowOf(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val monthTasks: StateFlow<List<Task>> = _calendarMonth
+        .flatMapLatest { month -> tasks.observeDueBetween(month.atDay(1), month.atEndOfMonth()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _weather = MutableStateFlow<List<DayForecast>?>(null)
     val weather: StateFlow<List<DayForecast>?> = _weather

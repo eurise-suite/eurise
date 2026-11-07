@@ -97,9 +97,12 @@ fun CalendarRoute(
     tasks: TaskRepository,
     onOpenEvent: (eventId: Long, beginMillis: Long) -> Unit,
     onNewEvent: (startMillis: Long) -> Unit,
+    openDay: LocalDate? = null,
 ) {
     val viewModel = viewModel { CalendarViewModel(calendar, tasks) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Giorno chiesto da fuori (per esempio dalla scheda Calendario della Scrivania): vista Giorno.
+    LaunchedEffect(openDay) { openDay?.let { viewModel.openDay(it, switchToDay = true) } }
     val context = LocalContext.current
     var refusals by rememberSaveable { mutableIntStateOf(0) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->

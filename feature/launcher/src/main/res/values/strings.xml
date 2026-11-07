@@ -180,4 +180,9 @@
     <string name="ringer_sound">Suono</string>
     <string name="ringer_vibrate">Vibrazione</string>
     <string name="ringer_silent">Silenzioso</string>
+
+    <string name="calendar_open">Apri</string>
+    <string name="calendar_prev">Mese precedente</string>
+    <string name="calendar_next">Mese successivo</string>
+    <string name="calendar_day_free">Niente in programma</string>
 </resources>

@@ -83,6 +83,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     val current = Section.entries.firstOrNull { s -> destination?.hierarchy?.any { it.route == s.route } == true }
     val hazeState = remember { HazeState() }
     var newTaskRequests by rememberSaveable { mutableIntStateOf(0) }
+    var calendarDay by remember { androidx.compose.runtime.mutableStateOf<java.time.LocalDate?>(null) }
 
     fun goTo(section: Section) = navController.navigate(section.route) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -95,6 +96,10 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
         when {
             section == "today" -> goTo(Section.Today)
             section == "calendar" -> goTo(Section.Calendar)
+            section.startsWith("day:") -> {
+                calendarDay = runCatching { java.time.LocalDate.parse(section.removePrefix("day:")) }.getOrNull()
+                goTo(Section.Calendar)
+            }
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
@@ -132,6 +137,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         tasks = data.tasks,
                         onOpenEvent = { id, begin -> navController.openEvent(id, begin, null) },
                         onNewEvent = { start -> navController.openEvent(null, null, start) },
+                        openDay = calendarDay,
                     )
                 }
                 composable(Section.Notes.route) {

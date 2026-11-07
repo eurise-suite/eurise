@@ -152,6 +152,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val newsItems by viewModel.newsItems.collectAsStateWithLifecycle()
     val quotes by viewModel.quotes.collectAsStateWithLifecycle()
+    val calendarMonth by viewModel.calendarMonth.collectAsStateWithLifecycle()
+    val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
+    val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -316,6 +319,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         cards = if (left) settings.leftCards else settings.cards,
                         news = newsItems, quotes = quotes,
                         onNewsSources = { newsSheet = true }, onSymbols = { stocksSheet = true },
+                        calendarMonth = calendarMonth, monthEvents = monthEvents, monthTasks = monthTasks,
+                        onCalendarMonth = viewModel::setCalendarMonth,
                         editing = editingCards, onEditingChange = { editingCards = it },
                         onCardsChange = { cards -> viewModel.updateSettings { if (left) it.copy(leftCards = cards) else it.copy(cards = cards) } },
                     )
@@ -601,6 +606,10 @@ private fun SummaryColumn(
     quotes: List<eu.eurise.feature.launcher.markets.Quote>?,
     onNewsSources: () -> Unit,
     onSymbols: () -> Unit,
+    calendarMonth: java.time.YearMonth,
+    monthEvents: List<eu.eurise.core.data.calendar.CalendarEvent>,
+    monthTasks: List<eu.eurise.core.data.model.Task>,
+    onCalendarMonth: (java.time.YearMonth) -> Unit,
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
     onCardsChange: (List<PlacedCard>) -> Unit,
@@ -627,6 +636,12 @@ private fun SummaryColumn(
                 onConnect = actions.connectCalendar,
                 size = card.size,
                 modifier = cardModifier,
+                month = calendarMonth,
+                monthEvents = monthEvents,
+                monthTasks = monthTasks,
+                onMonthChange = onCalendarMonth,
+                onOpenDay = { day -> actions.openEurise("day:$day") },
+                onOpenTasks = { actions.openEurise("tasks") },
             )
             CardKind.Messages -> MessagesCard(
                 messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.ownAppInfo,

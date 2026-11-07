@@ -1,6 +1,15 @@
 package eu.eurise.feature.launcher.summary
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import eu.eurise.core.data.model.Task
+import java.time.YearMonth
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,7 +113,19 @@ fun CalendarCard(
     onConnect: () -> Unit,
     size: CardSize = CardSize.Large,
     modifier: Modifier = Modifier,
+    month: YearMonth = YearMonth.from(today),
+    monthEvents: List<CalendarEvent> = emptyList(),
+    monthTasks: List<Task> = emptyList(),
+    onMonthChange: (YearMonth) -> Unit = {},
+    onOpenDay: (LocalDate) -> Unit = {},
+    onOpenTasks: () -> Unit = {},
 ) {
+    if (size == CardSize.Large && connected) {
+        SummaryCard(stringResource(R.string.card_calendar), hazeState, modifier, action = stringResource(R.string.calendar_open), onAction = onOpen) {
+            InteractiveMonth(today, month, monthEvents, monthTasks, onMonthChange, onOpenDay, onOpenTasks)
+        }
+        return
+    }
     val list: @Composable (Int) -> Unit = { max ->
         when {
             !connected -> TextButton(onClick = onConnect) { Text(stringResource(R.string.today_connect_calendar)) }
@@ -138,6 +159,139 @@ private fun UpcomingRow(e: CalendarEvent, today: LocalDate) {
             Text(day.replaceFirstChar { it.titlecase(Italian) } + time, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
     }
+}
+
+/**
+ * Mese interattivo: frecce per cambiare mese, tocco sul titolo per scegliere l'anno, tocco su un giorno per
+ * vederne appuntamenti e cose da fare accanto.
+ */
+@Composable
+private fun InteractiveMonth(
+    today: LocalDate,
+    month: YearMonth,
+    events: List<CalendarEvent>,
+    tasks: List<Task>,
+    onMonthChange: (YearMonth) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onOpenTasks: () -> Unit,
+) {
+    var selected by remember { mutableStateOf(today) }
+    var yearMenu by remember { mutableStateOf(false) }
+    if (YearMonth.from(selected) != month) selected = if (YearMonth.from(today) == month) today else month.atDay(1)
+    val busy = remember(events, tasks) {
+        events.flatMap { e -> generateSequence(e.firstDay) { it.plusDays(1) }.takeWhile { !it.isAfter(e.lastDay) }.take(40).toList() }.toSet() +
+            tasks.mapNotNull { it.due }
+    }
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SmallArrow(EuriseIcons.chevronLeft(), stringResource(R.string.calendar_prev)) { onMonthChange(month.minusMonths(1)) }
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        month.month.getDisplayName(TextStyle.FULL_STANDALONE, Italian).replaceFirstChar { it.titlecase(Italian) } + " " + month.year,
+                        fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { yearMenu = true }.padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                    DropdownMenu(expanded = yearMenu, onDismissRequest = { yearMenu = false }) {
+                        (month.year - 5..month.year + 5).forEach { y ->
+                            DropdownMenuItem(
+                                text = { Text("$y", fontWeight = if (y == month.year) FontWeight.Bold else FontWeight.Normal) },
+                                onClick = { yearMenu = false; onMonthChange(month.withYear(y)) },
+                            )
+                        }
+                    }
+                }
+                SmallArrow(EuriseIcons.chevronRight(), stringResource(R.string.calendar_next)) { onMonthChange(month.plusMonths(1)) }
+            }
+            Row {
+                DayOfWeek.values().forEach { d ->
+                    Text(
+                        d.getDisplayName(TextStyle.NARROW_STANDALONE, Italian),
+                        color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            val first = month.atDay(1)
+            val lead = first.dayOfWeek.value - 1
+            val days = month.lengthOfMonth()
+            for (week in 0 until (lead + days + 6) / 7) {
+                Row {
+                    for (col in 0 until 7) {
+                        val n = week * 7 + col - lead + 1
+                        Box(
+                            Modifier.weight(1f).aspectRatio(1f).clip(CircleShape)
+                                .then(if (n in 1..days) Modifier.clickable { selected = month.atDay(n) } else Modifier),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (n in 1..days) {
+                                val date = month.atDay(n)
+                                val isToday = date == today
+                                val isSelected = date == selected
+                                when {
+                                    isToday -> Box(Modifier.size(22.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    isSelected -> Box(Modifier.size(22.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), CircleShape))
+                                }
+                                Text(
+                                    "$n", fontSize = 10.5.sp,
+                                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                )
+                                if (!isToday && date in busy) {
+                                    Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp).size(3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Il giorno scelto: appuntamenti e cose da fare.
+        Column(Modifier.weight(1.05f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val dayEvents = events.filter { it.occursOn(selected) }.sortedBy { it.start }
+            val dayTasks = tasks.filter { it.due == selected && !it.done }
+            Text(
+                (if (selected == today) stringResource(R.string.weather_today) else selected.format(DateTimeFormatter.ofPattern("EEEE d", Italian)))
+                    .replaceFirstChar { it.titlecase(Italian) },
+                fontWeight = FontWeight.Bold, fontSize = 13.5.sp,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { onOpenDay(selected) }.padding(vertical = 2.dp),
+            )
+            if (dayEvents.isEmpty() && dayTasks.isEmpty()) {
+                Text(stringResource(R.string.calendar_day_free), color = muted, fontSize = 12.5.sp, lineHeight = 16.sp)
+            }
+            dayEvents.take(4).forEach { e ->
+                val tint = CalendarTint.nearest(e.color).colors()
+                Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable { onOpenDay(selected) }, verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(3.dp).height(30.dp).background(tint.dot, RoundedCornerShape(2.dp)))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(e.title, fontWeight = FontWeight.Bold, fontSize = 12.5.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat) + " – " + e.end.format(TimeFormat),
+                            color = muted, fontSize = 11.5.sp, lineHeight = 14.sp,
+                        )
+                    }
+                }
+            }
+            if (dayEvents.size > 4) Text(stringResource(R.string.today_more_tasks, dayEvents.size - 4), color = muted, fontSize = 11.5.sp)
+            dayTasks.take(3).forEach { t ->
+                Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpenTasks), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(13.dp).border(1.6.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), CircleShape))
+                    Spacer(Modifier.width(8.dp))
+                    Text(t.title, fontSize = 12.5.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmallArrow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(28.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, modifier = Modifier.size(16.dp)) }
 }
 
 /** Mese corrente in sette colonne, da lunedì; oggi in accento, un puntino sui giorni con appuntamenti. */
