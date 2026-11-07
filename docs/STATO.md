@@ -85,8 +85,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   kDrive sbagliato (si legge in kdrive.infomaniak.com/app/drive/NUMERO/…), password non "per le app", piano
   senza WebDAV (non incluso in kSuite Free e Standard). Prova del proprietario nel browser con il numero giusto:
   `<error/>` senza richiesta di credenziali (un WebDAV attivo chiederebbe email e password), quindi molto
-  probabilmente il piano non include WebDAV. Da verificare il nome del piano nel Manager Infomaniak; se
-  WebDAV non c'è, valutare l'API di kDrive (api.infomaniak.com, con accesso OAuth) al posto di WebDAV.
+  probabilmente il piano non include WebDAV. Confermato: il piano è **my kSuite+**, che secondo Infomaniak
+  non include WebDAV. Strada scelta da valutare: l'API di kDrive con un token personale (portata `drive` e
+  `user_info`, creato in Manager → token API), come fanno FolderSync e l'integrazione kDrive di Home Assistant.
+  Da verificare che l'API risponda anche con my kSuite+ prima di costruire il client.
 
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
