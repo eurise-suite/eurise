@@ -30,7 +30,6 @@
             android:launchMode="singleTask"
             android:taskAffinity=""
             android:stateNotNeeded="true"
-            android:excludeFromRecents="true"
             android:clearTaskOnLaunch="true"
             android:resizeableActivity="true"
             android:theme="@style/Theme.Eurise.Launcher"
@@ -39,6 +38,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- Icona propria nell'elenco delle app, per aprirla e sceglierla come schermata iniziale. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>

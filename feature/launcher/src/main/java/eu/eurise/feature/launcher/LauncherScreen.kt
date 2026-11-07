@@ -238,6 +238,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     dark = scene.dark, hazeState = hazeState, actions = actions,
                                     isFavorite = viewModel::isFavorite, onToggleFavorite = viewModel::toggleFavorite,
                                     onTaskDone = { viewModel.setTaskDone(it, true) }, clearance = clearance,
+                                    isHome = isHome,
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -324,6 +325,7 @@ private fun PhoneHome(
     onToggleFavorite: (AppEntry) -> Unit,
     onTaskDone: (eu.eurise.core.data.model.Task) -> Unit,
     clearance: Dp,
+    isHome: Boolean,
 ) {
     Column(
         Modifier
@@ -331,7 +333,13 @@ private fun PhoneHome(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(horizontal = 20.dp),
     ) {
-        Spacer(Modifier.height(36.dp))
+        if (!isHome) {
+            Spacer(Modifier.height(12.dp))
+            HomeBanner(hazeState, actions.becomeHome)
+            Spacer(Modifier.height(12.dp))
+        } else {
+            Spacer(Modifier.height(36.dp))
+        }
         ClockBlock(now)
         Spacer(Modifier.height(10.dp))
         WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation)
@@ -501,6 +509,30 @@ private fun TabletDock(
 @Composable
 private fun DockDivider() {
     Box(Modifier.width(1.dp).height(28.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)))
+}
+
+/** Finché la Scrivania non è la schermata iniziale, un invito in alto a renderla tale. */
+@Composable
+private fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glass(hazeState, RoundedCornerShape(50), elevation = 6.dp, outline = false)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.Text(
+            stringResource(R.string.setup_home),
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
+        )
+        androidx.compose.material3.Text(
+            stringResource(R.string.setup_home_action),
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        )
+    }
 }
 
 /** Due puntini sopra la barra: Home e Riepilogo. */
