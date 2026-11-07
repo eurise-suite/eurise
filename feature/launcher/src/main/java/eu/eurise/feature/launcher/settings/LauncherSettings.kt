@@ -8,6 +8,7 @@ import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.DefaultBarCategories
 import eu.eurise.feature.launcher.apps.decodeCategories
 import eu.eurise.feature.launcher.apps.encodeCategories
+import eu.eurise.feature.launcher.summary.CardKind
 import eu.eurise.feature.launcher.summary.DefaultLeftCards
 import eu.eurise.feature.launcher.summary.PlacedCard
 import eu.eurise.feature.launcher.summary.decodeCards
@@ -109,9 +110,19 @@ class SettingsStore(context: Context) {
 
     /** Con l'accoglienza la home ospita due righe di preferiti con icone un poco più piccole (una volta sola). */
     private fun migrate(s: LauncherSettings): LauncherSettings {
-        if (prefs.getBoolean("welcome_v1", false)) return s
+        if (prefs.getBoolean("welcome_v1", false)) return migrateDaily(s)
         prefs.edit().putBoolean("welcome_v1", true).putInt("grid_rows", maxOf(2, s.rows)).putInt("icon_size", minOf(48, s.iconSize)).apply()
-        return s.copy(rows = maxOf(2, s.rows), iconSize = minOf(48, s.iconSize))
+        return migrateDaily(s.copy(rows = maxOf(2, s.rows), iconSize = minOf(48, s.iconSize)))
+    }
+
+    /** Oroscopo e Ricetta del giorno arrivano nella pagina a sinistra (una volta sola). */
+    private fun migrateDaily(s: LauncherSettings): LauncherSettings {
+        if (prefs.getBoolean("daily_v1", false)) return s
+        val added = s.leftCards + listOf(CardKind.Horoscope, CardKind.Recipe)
+            .filter { k -> s.leftCards.none { it.kind == k } && s.cards.none { it.kind == k } }
+            .map { PlacedCard(it, it.defaultSize) }
+        prefs.edit().putBoolean("daily_v1", true).putString("left_cards", added.encode()).apply()
+        return s.copy(leftCards = added)
     }
     val settings: StateFlow<LauncherSettings> = _settings.asStateFlow()
 

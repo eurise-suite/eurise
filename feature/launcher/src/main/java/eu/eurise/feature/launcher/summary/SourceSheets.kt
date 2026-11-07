@@ -217,3 +217,25 @@ fun StocksSheet(repository: MarketsRepository, onClose: () -> Unit) {
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
+
+/** Fonti di una scheda a feed (oroscopo, ricette): proposte con interruttore e feed aggiunti a mano. */
+@Composable
+fun FeedSourcesSheet(title: String, sources: eu.eurise.feature.launcher.feeds.FeedSources, onClose: () -> Unit) {
+    val enabled by sources.enabled.collectAsState()
+    val custom by sources.custom.collectAsState()
+    BottomSheet(title, onClose) {
+        item { Box(Modifier.padding(top = 4.dp, bottom = 2.dp)) { Label(stringResource(R.string.feeds_proposed)) } }
+        items(sources.builtIn, key = { it.id }) { s -> SwitchRow(s.name, s.id in enabled, { sources.setEnabled(s.id, it) }) }
+        item { Box(Modifier.padding(top = 12.dp, bottom = 6.dp)) { Label(stringResource(R.string.news_group_custom)) } }
+        items(custom, key = { it.id }) { s ->
+            SwitchRow(s.name, s.id in enabled, { sources.setEnabled(s.id, it) }, trailing = {
+                Text(
+                    stringResource(R.string.news_remove), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { sources.removeCustom(s) }.padding(8.dp),
+                )
+            })
+        }
+        item { AddField(stringResource(R.string.news_add_hint), KeyboardType.Uri) { sources.addCustom(it) } }
+        item { Spacer(Modifier.height(24.dp)) }
+    }
+}

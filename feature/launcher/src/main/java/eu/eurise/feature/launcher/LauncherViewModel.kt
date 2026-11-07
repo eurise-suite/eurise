@@ -15,6 +15,9 @@ import eu.eurise.core.data.model.Task
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppsRepository
 import eu.eurise.feature.launcher.contacts.ContactsRepository
+import eu.eurise.feature.launcher.feeds.DailyRepository
+import eu.eurise.feature.launcher.feeds.FeedEntry
+import eu.eurise.feature.launcher.feeds.Sign
 import eu.eurise.feature.launcher.files.RecentFile
 import eu.eurise.feature.launcher.files.RecentFilesRepository
 import eu.eurise.feature.launcher.notifications.NotificationStore
@@ -128,6 +131,30 @@ class LauncherViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LauncherState())
 
     /** Da richiamare quando la Scrivania torna in primo piano: permessi e meteo possono essere cambiati. */
+    val daily = DailyRepository(application)
+    private val _sign = MutableStateFlow(daily.sign)
+    val sign: StateFlow<Sign> = _sign
+    private val _horoscope = MutableStateFlow<FeedEntry?>(null)
+    val horoscope: StateFlow<FeedEntry?> = _horoscope
+    private val _horoscopeLoaded = MutableStateFlow(false)
+    val horoscopeLoaded: StateFlow<Boolean> = _horoscopeLoaded
+    private val _recipes = MutableStateFlow<List<FeedEntry>?>(null)
+    val recipes: StateFlow<List<FeedEntry>?> = _recipes
+
+    fun setSign(sign: Sign, name: String) {
+        daily.sign = sign
+        _sign.value = sign
+        refreshHoroscope(name)
+    }
+
+    fun refreshHoroscope(name: String, force: Boolean = false) {
+        viewModelScope.launch { _horoscope.value = daily.horoscopeFor(_sign.value, name, force); _horoscopeLoaded.value = true }
+    }
+
+    fun refreshRecipes(force: Boolean = false) {
+        viewModelScope.launch { _recipes.value = daily.recipesOfDay(force) }
+    }
+
     val contacts = ContactsRepository(application)
     val files = RecentFilesRepository(application)
     private val routes = RouteRepository(application)

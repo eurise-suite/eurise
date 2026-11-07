@@ -83,7 +83,7 @@ fun ClockBlock(
             fontFamily = PlusJakartaSans,
             fontWeight = FontWeight.Medium,
             fontSize = if (large) 80.sp else 64.sp,
-            lineHeight = if (large) 82.sp else 66.sp,
+            lineHeight = if (large) 84.sp else 70.sp,
             letterSpacing = (-2).sp,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClock),

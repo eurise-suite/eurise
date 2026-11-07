@@ -1,6 +1,10 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.feeds.HoroscopeCard
+import eu.eurise.feature.launcher.feeds.RecipeCard
+import eu.eurise.feature.launcher.feeds.SignPicker
+import eu.eurise.feature.launcher.summary.FeedSourcesSheet
 import eu.eurise.feature.launcher.home.AgendaPill
 import eu.eurise.feature.launcher.home.CommsPill
 import eu.eurise.feature.launcher.home.MusicHalf
@@ -160,6 +164,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val newsItems by viewModel.newsItems.collectAsStateWithLifecycle()
     val quotes by viewModel.quotes.collectAsStateWithLifecycle()
+    val horoscope by viewModel.horoscope.collectAsStateWithLifecycle()
+    val horoscopeLoaded by viewModel.horoscopeLoaded.collectAsStateWithLifecycle()
+    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+    val sign by viewModel.sign.collectAsStateWithLifecycle()
+    val signName = stringResource(sign.label)
+    LaunchedEffect(signName) { viewModel.refreshHoroscope(signName); viewModel.refreshRecipes() }
     val calendarMonth by viewModel.calendarMonth.collectAsStateWithLifecycle()
     val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
     val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()
@@ -275,6 +285,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var editingCards by remember { mutableStateOf(false) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
+        var signPicker by remember { mutableStateOf(false) }
+        // Fonti di oroscopo o ricette in modifica: "horoscope" o "recipes".
+        var dailySheet by remember { mutableStateOf<String?>(null) }
         val welcome = WelcomeData(
             travel = travel,
             destination = destination,
@@ -332,8 +345,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != FAVORITES) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
+        BackHandler(enabled = signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != FAVORITES || homePager.currentPage != HomePage) {
             when {
+                signPicker -> signPicker = false
+                dailySheet != null -> dailySheet = null
                 peopleSheet != null -> peopleSheet = null
                 weatherSheet -> weatherSheet = false
                 newsSheet -> { newsSheet = false; viewModel.refreshNews(force = true) }
@@ -379,6 +394,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         cards = if (left) settings.leftCards else settings.cards,
                         news = newsItems, quotes = quotes,
                         onNewsSources = { newsSheet = true }, onSymbols = { stocksSheet = true },
+                        daily = DailyData(
+                            horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
+                            onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
+                        ),
                         calendarMonth = calendarMonth, monthEvents = monthEvents, monthTasks = monthTasks,
                         onCalendarMonth = viewModel::setCalendarMonth,
                         editing = editingCards, onEditingChange = { editingCards = it },
@@ -509,6 +528,22 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (stocksSheet) {
                 StocksSheet(viewModel.markets, onClose = { stocksSheet = false; viewModel.refreshQuotes() })
             }
+            if (signPicker) {
+                SignPicker(sign, scene.dark, onPick = { picked ->
+                    signPicker = false
+                    viewModel.setSign(picked, context.getString(picked.label))
+                }, onClose = { signPicker = false })
+            }
+            dailySheet?.let { kind ->
+                val sources = if (kind == "horoscope") viewModel.daily.horoscope else viewModel.daily.recipes
+                FeedSourcesSheet(
+                    stringResource(if (kind == "horoscope") R.string.horoscope_sources else R.string.recipe_sources), sources,
+                    onClose = {
+                        dailySheet = null
+                        if (kind == "horoscope") viewModel.refreshHoroscope(signName, force = true) else viewModel.refreshRecipes(force = true)
+                    },
+                )
+            }
             peopleSheet?.let { kind ->
                 var people by remember(kind) { mutableStateOf<List<eu.eurise.feature.launcher.contacts.Person>?>(null) }
                 var granted by remember(kind) { mutableStateOf(viewModel.contacts.hasContacts()) }
@@ -550,6 +585,18 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       }
     }
 }
+
+/** Oroscopo e ricette per le schede delle pagine laterali. */
+private class DailyData(
+    val horoscope: eu.eurise.feature.launcher.feeds.FeedEntry?,
+    val horoscopeLoaded: Boolean,
+    val sign: eu.eurise.feature.launcher.feeds.Sign,
+    val dark: Boolean,
+    val recipes: List<eu.eurise.feature.launcher.feeds.FeedEntry>?,
+    val onSign: () -> Unit,
+    val onHoroscopeSources: () -> Unit,
+    val onRecipeSources: () -> Unit,
+)
 
 /** Dati e azioni dell'accoglienza della home. */
 private class WelcomeData(
@@ -645,6 +692,7 @@ private fun PhoneHome(
                 greeting(now, settings.userName),
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
             )
+            Spacer(Modifier.height(2.dp))
             val context = LocalContext.current
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f))
@@ -660,8 +708,9 @@ private fun PhoneHome(
                     }
                 }
             }
+            Spacer(Modifier.height(6.dp))
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro (i preferiti restano fermi).
             Column(
                 Modifier.weight(1000f, fill = false).verticalScroll(rememberScrollState()),
@@ -721,7 +770,8 @@ private fun PhoneHome(
                                         onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
                                         onMove = { delta -> onMoveFavorite(entry, delta) },
                                         iconSize = settings.iconSize.dp,
-                                        showLabel = settings.showLabels,
+                                        // Sulla home le icone vanno senza nome: più spazio per l'accoglienza.
+                                        showLabel = false,
                                     )
                                 }
                             }
@@ -752,6 +802,7 @@ private fun SummaryColumn(
     quotes: List<eu.eurise.feature.launcher.markets.Quote>?,
     onNewsSources: () -> Unit,
     onSymbols: () -> Unit,
+    daily: DailyData,
     calendarMonth: java.time.YearMonth,
     monthEvents: List<eu.eurise.core.data.calendar.CalendarEvent>,
     monthTasks: List<eu.eurise.core.data.model.Task>,
@@ -807,6 +858,14 @@ private fun SummaryColumn(
             CardKind.Stocks -> StocksCard(
                 quotes, hazeState, onSymbols, size = card.size, modifier = cardModifier,
                 onOpenQuote = { q -> actions.openLink("https://finance.yahoo.com/quote/" + java.net.URLEncoder.encode(q.symbol, "UTF-8")) },
+            )
+            CardKind.Horoscope -> HoroscopeCard(
+                daily.horoscope, daily.horoscopeLoaded, daily.sign, daily.dark, hazeState, card.size, cardModifier,
+                onSign = daily.onSign, onSources = daily.onHoroscopeSources, onOpen = { actions.openLink(it.link) },
+            )
+            CardKind.Recipe -> RecipeCard(
+                daily.recipes, hazeState, card.size, cardModifier,
+                onSources = daily.onRecipeSources, onOpen = { actions.openLink(it.link) },
             )
         }
     }

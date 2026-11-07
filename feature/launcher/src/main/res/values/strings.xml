@@ -202,10 +202,10 @@
     <string name="welcome_leave_by">parti entro le %1$s</string>
     <string name="welcome_route_open">Percorso</string>
     <string name="welcome_comms">Ti hanno cercato</string>
-    <string name="welcome_work">Un\'occhiata ai lavori?</string>
+    <string name="welcome_work">Lavoro?</string>
     <string name="welcome_work_grant">Consenti l\'accesso ai file per vedere gli ultimi documenti</string>
     <string name="welcome_work_empty">Nessun documento recente</string>
-    <string name="welcome_music">Un po\' di musica?</string>
+    <string name="welcome_music">Musica?</string>
     <string name="welcome_music_start">Apri il lettore</string>
     <string name="people_recent">Contatti recenti</string>
     <string name="people_starred">Contatti preferiti</string>
@@ -225,4 +225,29 @@
     <string name="quick_gallery">Galleria</string>
 
     <string name="search_web">Cerca sul web</string>
+
+    <string name="card_horoscope">Oroscopo</string>
+    <string name="card_horoscope_desc">Il tuo segno, oggi</string>
+    <string name="card_recipe">Ricetta del giorno</string>
+    <string name="card_recipe_desc">Dai siti di cucina più seguiti</string>
+    <string name="horoscope_change">· cambia</string>
+    <string name="horoscope_empty">Oroscopo non disponibile ora. Controlla la connessione o scegli altre fonti.</string>
+    <string name="horoscope_read">Leggi tutto</string>
+    <string name="horoscope_pick">Il tuo segno</string>
+    <string name="horoscope_sources">Fonti dell\'oroscopo</string>
+    <string name="recipe_empty">Nessuna ricetta ora. Controlla la connessione o scegli altre fonti.</string>
+    <string name="recipe_sources">Fonti delle ricette</string>
+    <string name="feeds_proposed">Proposte</string>
+    <string name="sign_ariete">Ariete</string>
+    <string name="sign_toro">Toro</string>
+    <string name="sign_gemelli">Gemelli</string>
+    <string name="sign_cancro">Cancro</string>
+    <string name="sign_leone">Leone</string>
+    <string name="sign_vergine">Vergine</string>
+    <string name="sign_bilancia">Bilancia</string>
+    <string name="sign_scorpione">Scorpione</string>
+    <string name="sign_sagittario">Sagittario</string>
+    <string name="sign_capricorno">Capricorno</string>
+    <string name="sign_acquario">Acquario</string>
+    <string name="sign_pesci">Pesci</string>
 </resources>

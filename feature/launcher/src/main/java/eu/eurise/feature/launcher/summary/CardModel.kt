@@ -40,7 +40,11 @@ enum class CardKind(
     News("news", R.string.card_news, R.string.card_news_desc, { EuriseIcons.news(1.9f) },
         listOf(CardSize.Medium, CardSize.Wide, CardSize.Large), CardSize.Large),
     Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) },
-        CardSize.entries.toList(), CardSize.Wide);
+        CardSize.entries.toList(), CardSize.Wide),
+    Horoscope("horoscope", R.string.card_horoscope, R.string.card_horoscope_desc, { EuriseIcons.zodiac(4, 1.9f) },
+        CardSize.entries.toList(), CardSize.Wide),
+    Recipe("recipe", R.string.card_recipe, R.string.card_recipe_desc, { EuriseIcons.spoon(1.9f) },
+        CardSize.entries.toList(), CardSize.Large);
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }
@@ -81,6 +85,8 @@ val DefaultLeftCards = listOf(
     PlacedCard(CardKind.News, CardSize.Large),
     PlacedCard(CardKind.Stocks, CardSize.Wide),
     PlacedCard(CardKind.Music, CardSize.Wide),
+    PlacedCard(CardKind.Horoscope, CardSize.Wide),
+    PlacedCard(CardKind.Recipe, CardSize.Large),
 )
 
 fun List<PlacedCard>.encode(): String = joinToString("|") { "${it.kind.id}:${it.cols}:${it.rows}" }

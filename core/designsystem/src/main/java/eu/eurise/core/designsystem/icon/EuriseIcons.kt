@@ -145,6 +145,24 @@ object EuriseIcons {
 
     fun train(stroke: Float = Stroke) = icon("train", stroke, "M7 3.5h10a2 2 0 0 1 2 2V15a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5.5a2 2 0 0 1 2-2z", "M5 11h14", "M8 21l2-3M16 21l-2-3", "M9 14.5h.01M15 14.5h.01")
 
+    // Segni zodiacali, tratto della suite.
+    fun zodiac(index: Int, stroke: Float = 2f): ImageVector = when (index) {
+        0 -> icon("z0", stroke, "M12 20V8", "M12 8c0-3-2-4.5-4-4.5S4 5 4 7.5 6 11 7 11", "M12 8c0-3 2-4.5 4-4.5s4 1.5 4 4-2 3.5-3 3.5")
+        1 -> icon("z1", stroke, circle(12f, 15f, 5f), "M5 4c1.5 3 4 5 7 5s5.5-2 7-5")
+        2 -> icon("z2", stroke, "M6 4h12M6 20h12M9 4v16M15 4v16")
+        3 -> icon("z3", stroke, circle(7f, 9f, 2.5f), circle(17f, 15f, 2.5f), "M4.5 9C5 5 9 4 13 4s6 1.5 7 3", "M19.5 15c-.5 4-4.5 5-8.5 5S5 18.5 4 17")
+        4 -> icon("z4", stroke, circle(7f, 15f, 3f), "M10 15V8a4 4 0 0 1 8 0c0 3-3 4-3 7a3 3 0 0 0 5 2")
+        5 -> icon("z5", stroke, "M4 6v12", "M4 9a2.5 2.5 0 0 1 5 0v9", "M9 9a2.5 2.5 0 0 1 5 0v8c0 2 1 3 3 3", "M14 13c2-2 5-1 5 2s-3 5-6 6")
+        6 -> icon("z6", stroke, "M4 20h16", "M4 16h5a4.5 4.5 0 1 1 6 0h5")
+        7 -> icon("z7", stroke, "M4 6v12", "M4 9a2.5 2.5 0 0 1 5 0v9", "M9 9a2.5 2.5 0 0 1 5 0v9c0 1 1 2 2 2h4", "M18 18l2 2-2 2")
+        8 -> icon("z8", stroke, "M5 19L19 5", "M12 5h7v7", "M8 12l4 4")
+        9 -> icon("z9", stroke, "M4 6l3 10 3-10v9a4 4 0 1 0 4-4c3 0 5 2 5 5s-2 4-4 4")
+        10 -> icon("z10", stroke, "M3 10l3-3 3 3 3-3 3 3 3-3 3 3", "M3 16l3-3 3 3 3-3 3 3 3-3 3 3")
+        else -> icon("z11", stroke, "M6 4c4 4 4 12 0 16", "M18 4c-4 4-4 12 0 16", "M6 12h12")
+    }
+
+    fun spoon(stroke: Float = Stroke) = icon("spoon", stroke, "M12 13v8", "M9 7.5a3 4.5 0 1 0 6 0a3 4.5 0 1 0-6 0")
+
     fun minus(stroke: Float = 2.4f) = icon("minus", stroke, "M5 12h14")
 
     fun drag(stroke: Float = 2.4f) = icon("drag", stroke, "M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01")
