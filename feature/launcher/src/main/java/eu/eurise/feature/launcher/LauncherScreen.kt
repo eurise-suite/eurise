@@ -164,10 +164,6 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val recentFiles by viewModel.recentFiles.collectAsStateWithLifecycle()
     val travel by viewModel.travel.collectAsStateWithLifecycle()
     var filesAccess by remember { mutableStateOf(viewModel.files.hasAccess()) }
-    // Luogo del prossimo appuntamento di oggi con un indirizzo: per il tempo di viaggio.
-    val destination = state.eventsToday
-        .firstOrNull { !it.allDay && it.end.isAfter(now) && it.location.isNotBlank() }?.location
-    LaunchedEffect(destination, hasLocation) { viewModel.refreshTravel(destination) }
     val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
     val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         filesAccess = viewModel.files.hasAccess(); viewModel.refreshFiles()
@@ -192,6 +188,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         viewModel.refresh()
     }
 
+    // Luogo del prossimo appuntamento di oggi con un indirizzo: per il tempo di viaggio.
+    val destinations = state.eventsToday
+        .filter { !it.allDay && it.end.isAfter(now) && it.location.isNotBlank() }
+    val destination = destinations.firstOrNull()?.location
+    LaunchedEffect(destination, hasLocation) { viewModel.refreshTravel(destination) }
     val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { viewModel.refresh() }
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         hasLocation = it
@@ -275,6 +276,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         val welcome = WelcomeData(
             travel = travel,
             destination = destination,
+            destinations = destinations,
             messages = messages,
             notificationsOn = notificationsOn,
             nowPlaying = nowPlaying,
@@ -542,6 +544,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 private class WelcomeData(
     val travel: eu.eurise.feature.launcher.route.Travel?,
     val destination: String?,
+    val destinations: List<eu.eurise.core.data.calendar.CalendarEvent>,
     val messages: List<MessageItem>,
     val notificationsOn: Boolean,
     val nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,
@@ -640,7 +643,7 @@ private fun PhoneHome(
                     calendarConnected = state.calendarConnected,
                     tasks = state.tasksDue,
                     travel = welcome.travel,
-                    destination = welcome.destination,
+                    destinations = welcome.destinations,
                     hazeState = hazeState,
                     compact = compact,
                     onCalendar = { actions.openEurise("calendar") },

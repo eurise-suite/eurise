@@ -150,8 +150,9 @@ private fun PillLine(icon: ImageVector, main: String, sub: String?, onClick: () 
 }
 
 /**
- * Prima pillola: appuntamenti, cose da fare e tempo per arrivare. Ogni parte apre la sua app; se mancano
- * le cose da fare o il percorso, gli appuntamenti mostrati diventano di più.
+ * Prima pillola: appuntamenti, cose da fare e luoghi dove andare. Ogni sezione mostra il primo elemento e
+ * si scorre di lato per vedere fino a otto successivi; toccando si apre l'app relativa. Se mancano le cose
+ * da fare o i luoghi, gli appuntamenti si mostrano a due a due.
  */
 @Composable
 fun AgendaPill(
@@ -160,7 +161,7 @@ fun AgendaPill(
     calendarConnected: Boolean,
     tasks: List<Task>,
     travel: Travel?,
-    destination: String?,
+    destinations: List<CalendarEvent>,
     hazeState: HazeState,
     compact: Boolean,
     onCalendar: () -> Unit,
@@ -170,9 +171,9 @@ fun AgendaPill(
 ) {
     val upcoming = events.filter { it.allDay || it.end.isAfter(now) }
     val next = upcoming.firstOrNull { !it.allDay } ?: upcoming.firstOrNull()
-    val showRoute = destination != null
+    val showRoute = destinations.isNotEmpty() && !compact
     val showTasks = tasks.isNotEmpty()
-    val eventCount = (1 + (if (showTasks) 0 else 1) + (if (showRoute) 0 else 1) - if (compact) 1 else 0).coerceAtLeast(1)
+    val perPage = if (!compact && (!showTasks || !showRoute)) 2 else 1
     Pill(hazeState, Modifier.fillMaxWidth(), title = stringResource(R.string.welcome_events), trailing = {
         if (next != null && !next.allDay && next.start.isAfter(now)) {
             val minutes = Duration.between(now, next.start).toMinutes()
@@ -183,33 +184,63 @@ fun AgendaPill(
         when {
             !calendarConnected -> PillLine(EuriseIcons.calendar(), stringResource(R.string.today_connect_calendar), null, onConnectCalendar)
             upcoming.isEmpty() -> PillLine(EuriseIcons.calendar(), stringResource(R.string.today_free), null, onCalendar)
-            else -> upcoming.take(eventCount).forEach { e ->
-                val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
-                PillLine(
-                    EuriseIcons.calendar(), "$time  ${e.title}", e.location.takeIf { it.isNotBlank() }, onCalendar,
-                    tint = CalendarTint.nearest(e.color).colors().dot,
-                )
+            else -> SwipeSection(upcoming.take(9).chunked(perPage)) { page ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    page.forEach { e ->
+                        val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
+                        PillLine(
+                            EuriseIcons.calendar(), "$time  ${e.title}", e.location.takeIf { it.isNotBlank() }, onCalendar,
+                            tint = CalendarTint.nearest(e.color).colors().dot,
+                        )
+                    }
+                }
             }
         }
         if (showTasks) {
-            PillLabel(stringResource(R.string.welcome_tasks, tasks.size))
-            PillLine(
-                EuriseIcons.task(), tasks.first().title,
-                tasks.drop(1).take(2).joinToString(" · ") { it.title }.ifBlank { null }, onTasks,
-            )
+            Label(stringResource(R.string.welcome_tasks, tasks.size))
+            SwipeSection(tasks.take(9)) { t ->
+                PillLine(EuriseIcons.task(), t.title, t.notes.lineSequence().firstOrNull()?.takeIf { it.isNotBlank() }, onTasks)
+            }
         }
-        if (showRoute && !compact) {
-            PillLabel(stringResource(R.string.welcome_route, destination!!))
-            PillLine(
-                EuriseIcons.map(),
-                travel?.let { stringResource(R.string.welcome_route_minutes, it.minutes) } ?: stringResource(R.string.welcome_route_unknown),
-                next?.takeIf { !it.allDay && travel != null }?.let {
-                    stringResource(R.string.welcome_leave_by, it.start.minusMinutes((travel!!.minutes + 5).toLong()).format(TimeFormat))
-                },
-                { onRoute(destination) },
-                right = stringResource(R.string.welcome_route_open),
-            )
+        if (showRoute) {
+            Label(stringResource(R.string.welcome_places))
+            SwipeSection(destinations.take(9)) { e ->
+                val first = e == destinations.first()
+                val minutes = travel?.takeIf { first }?.minutes
+                PillLine(
+                    EuriseIcons.map(),
+                    e.location,
+                    if (minutes != null) {
+                        stringResource(R.string.welcome_route_minutes, minutes) + " · " +
+                            stringResource(R.string.welcome_leave_by, e.start.minusMinutes((minutes + 5).toLong()).format(TimeFormat))
+                    } else {
+                        e.start.format(TimeFormat) + "  " + e.title
+                    },
+                    { onRoute(e.location) },
+                    right = stringResource(R.string.welcome_route_open),
+                )
+            }
         }
+    }
+}
+
+/** Una sezione che mostra un elemento alla volta e si scorre di lato; a destra il contatore "2/5". */
+@Composable
+private fun <T> SwipeSection(items: List<T>, content: @Composable (T) -> Unit) {
+    if (items.size <= 1) {
+        items.firstOrNull()?.let { content(it) }
+        return
+    }
+    val pager = androidx.compose.foundation.pager.rememberPagerState { items.size }
+    Box {
+        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth().padding(end = 30.dp), pageSpacing = 12.dp) { page ->
+            content(items[page])
+        }
+        Text(
+            "${pager.currentPage + 1}/${items.size}",
+            fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 

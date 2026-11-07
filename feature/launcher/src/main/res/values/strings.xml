@@ -216,4 +216,6 @@
     <string name="pill_expand">Mostra</string>
     <string name="appearance_name">Come ti chiamo</string>
     <string name="appearance_name_hint">Il tuo nome, per il saluto</string>
+
+    <string name="welcome_places">Per arrivare a</string>
 </resources>
