@@ -60,20 +60,27 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Codice in `doc/Drawing.kt` (geometria e forme, con test) e `ui/DrawingCanvas.kt`.
 - Prossimi passi delle Note: note bloccate, foto e scansioni, note vocali, tema Notte da rivedere sul telefono.
 
-## Cloud (richiesto dal proprietario il 7 novembre) – prossimo lavoro
-- Note e tutto il resto della suite devono salvarsi anche sul cloud: Nextcloud, Murena, Infomaniak kDrive,
-  Proton Drive.
-- Nextcloud, Murena e kDrive usano WebDAV: un solo motore di sincronizzazione in `core` li copre tutti.
-  Formato su cloud: una cartella per nota (HTML, disegni, allegati), come nel documento di progetto.
-- Proton Drive: l'SDK ufficiale è in anteprima e Proton lo dichiara non pronto per app di terze parti in
-  produzione, senza login incluso (github.com/ProtonDriveApps/sdk, gennaio 2026). Da decidere con il proprietario.
-- Anteprime sulla tela, pagina "Cloud": account e cosa va dove, collegare un account, sincronizzazione,
-  nota cambiata in due posti. In attesa dell'approvazione del proprietario.
-- Idea del proprietario: taccuini "diario di viaggio" legati a Mappe e Galleria (il tipo di taccuino
-  `travel` è già previsto nel database).
+## Cloud – note sincronizzate (ramo `cloud`, da provare prima di unirlo a `main`)
+- Anteprime approvate: tela, pagina "Cloud".
+- `core/cloud`: account con password per le app cifrate dal Keystore (`CloudAccounts`), client WebDAV
+  (`WebDav`, OkHttp, con test), accesso dal browser per Murena e Nextcloud (`NextcloudLogin`, Login Flow v2),
+  regia e lavori in background (`CloudSync`, `SyncWorker` con WorkManager: ogni 30 minuti e 8 secondi dopo
+  la chiusura di una nota). I lavori si registrano in `EuriseApplication.onCreate`.
+- Note: cartella `Eurise/Note`, un file `<uid>.html` per nota (documento completo, apribile nel browser;
+  taccuino, fissata, date e cestino nei `<meta name="eurise:…">`). Scelto un file per nota invece di una
+  cartella per nota: un solo PROPFIND elenca tutto con gli etag; gli allegati andranno in `Eurise/Note/<uid>/`.
+- Sincronizzazione a tre vie (`NotesSyncJob`, `doc/NoteMerge.kt` con test): ciò che cambia da una parte sola
+  passa all'altra, i cambi in punti diversi si uniscono, la stessa parte cambiata in due modi apre
+  "Cambiata in due posti" nell'editor. Ogni PUT/DELETE usa If-Match o If-None-Match.
+- Database v3 (migrazione da v2): uid, etag, base dell'ultima sincronizzazione, conflitto, eliminazioni.
+- Schermate (`feature/cloud`): account con spazio usato, cosa va dove, collega (Murena, Nextcloud, kDrive,
+  WebDAV; Proton Drive "in attesa"), sincronizzazione con ultimi passaggi. Si apre da Note → Organizza → Cloud.
+- Prossimi passi del cloud: Attività via CalDAV (elenco "Attività" su Murena), copia delle impostazioni,
+  allegati delle note, note bloccate cifrate (formato Cryptomator), account di sistema Android.
+- Proton Drive: SDK in anteprima, non pronto per app di terze parti, senza login (gennaio 2026).
 
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
-- Prossimo passo: approvazione delle anteprime del cloud, poi il motore di sincronizzazione in `core`.
+- Prossimo passo: provare il cloud (APK dal ramo `cloud`) con Murena e kDrive, poi Attività via CalDAV.
