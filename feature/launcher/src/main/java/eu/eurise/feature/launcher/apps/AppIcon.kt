@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -45,6 +46,8 @@ import kotlinx.coroutines.withContext
 sealed interface IconImage {
     data class Mono(val bitmap: ImageBitmap) : IconImage
     data class Full(val bitmap: ImageBitmap) : IconImage
+    /** Simbolo della suite per le app di sistema che non hanno un simbolo monocromatico. */
+    data class Glyph(val vector: ImageVector) : IconImage
 }
 
 /**
@@ -58,23 +61,88 @@ object IconLoader {
         cache.get(entry.key)?.let { return@withContext it }
         val component = entry.component ?: return@withContext null
         val drawable = runCatching { context.packageManager.getActivityIcon(component) }.getOrNull() ?: return@withContext null
-        val image = render(drawable, px)
+        val image = officialMono(drawable, px)
+            ?: SystemGlyphs.find(entry)?.let { IconImage.Glyph(it) }
+            ?: silhouette(drawable, px)
+            ?: IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
         cache.put(entry.key, image)
         image
     }
 
-    private fun render(drawable: Drawable, px: Int): IconImage {
-        if (Build.VERSION.SDK_INT >= 33 && drawable is AdaptiveIconDrawable) {
-            val mono = drawable.monochrome
-            if (mono != null) {
-                // Il simbolo monocromatico sta al centro di un'area di 108 dp: se ne ritaglia la parte visibile.
-                val full = mono.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888)
-                val inset = full.width / 6
-                val cropped = Bitmap.createBitmap(full, inset, inset, full.width - 2 * inset, full.height - 2 * inset)
-                return IconImage.Mono(cropped.asImageBitmap())
-            }
-        }
-        return IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
+    /** Il simbolo monocromatico fornito dall'app (Android 13+). */
+    private fun officialMono(drawable: Drawable, px: Int): IconImage? {
+        if (Build.VERSION.SDK_INT < 33 || drawable !is AdaptiveIconDrawable) return null
+        val mono = drawable.monochrome ?: return null
+        return IconImage.Mono(cropCenter(mono.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888)).asImageBitmap())
+    }
+
+    /**
+     * Per le app senza simbolo monocromatico: se il primo piano dell'icona adattiva è un disegno su fondo
+     * trasparente (e non un riquadro pieno), se ne usa la sagoma, colorata come le altre.
+     */
+    private fun silhouette(drawable: Drawable, px: Int): IconImage? {
+        if (drawable !is AdaptiveIconDrawable) return null
+        val fg = drawable.foreground ?: return null
+        val bitmap = cropCenter(fg.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888))
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        val coverage = pixels.count { (it ushr 24) > 128 }.toFloat() / pixels.size
+        if (coverage < 0.04f || coverage > 0.42f) return null
+        return IconImage.Mono(bitmap.extractAlpha().asImageBitmap())
+    }
+
+    /** Le icone adattive stanno in un'area di 108 dp di cui si vedono i 72 centrali. */
+    private fun cropCenter(full: Bitmap): Bitmap {
+        val inset = full.width / 6
+        return Bitmap.createBitmap(full, inset, inset, full.width - 2 * inset, full.height - 2 * inset)
+    }
+}
+
+/** Simboli della suite per le app di sistema di /e/OS e Android, riconosciute per pacchetto o per nome. */
+private object SystemGlyphs {
+    private val byPackage: List<Pair<String, () -> ImageVector>> = listOf(
+        "com.android.dialer" to { EuriseIcons.phone(1.9f) }, "com.google.android.dialer" to { EuriseIcons.phone(1.9f) },
+        "org.fossify.phone" to { EuriseIcons.phone(1.9f) },
+        "foundation.e.message" to { EuriseIcons.message(1.9f) }, "com.android.messaging" to { EuriseIcons.message(1.9f) },
+        "com.google.android.apps.messaging" to { EuriseIcons.message(1.9f) }, "org.fossify.messages" to { EuriseIcons.message(1.9f) },
+        "com.android.contacts" to { EuriseIcons.person(1.9f) }, "org.fossify.contacts" to { EuriseIcons.person(1.9f) },
+        "foundation.e.mail" to { EuriseIcons.mail(1.9f) },
+        "foundation.e.browser" to { EuriseIcons.globe(1.9f) }, "org.lineageos.jelly" to { EuriseIcons.globe(1.9f) },
+        "foundation.e.camera" to { EuriseIcons.camera(1.9f) }, "org.lineageos.aperture" to { EuriseIcons.camera(1.9f) },
+        "com.android.camera" to { EuriseIcons.camera(1.9f) },
+        "foundation.e.gallery" to { EuriseIcons.image(1.9f) }, "org.lineageos.glimpse" to { EuriseIcons.image(1.9f) },
+        "com.android.gallery3d" to { EuriseIcons.image(1.9f) },
+        "com.android.settings" to { EuriseIcons.gear(1.9f) },
+        "com.android.deskclock" to { EuriseIcons.clock(1.9f) }, "org.fossify.clock" to { EuriseIcons.clock(1.9f) },
+        "com.android.calculator2" to { EuriseIcons.calculator(1.9f) }, "org.lineageos.calculator" to { EuriseIcons.calculator(1.9f) },
+        "org.lineageos.eleven" to { EuriseIcons.music(1.9f) }, "foundation.e.music" to { EuriseIcons.music(1.9f) },
+        "org.lineageos.recorder" to { EuriseIcons.mic(1.9f) },
+        "foundation.e.calendar" to { EuriseIcons.calendar(1.9f) }, "org.lineageos.etar" to { EuriseIcons.calendar(1.9f) },
+        "foundation.e.notes" to { EuriseIcons.note(1.9f) }, "foundation.e.tasks" to { EuriseIcons.task(1.9f) },
+        "foundation.e.advancedprivacy" to { EuriseIcons.shield(1.9f) }, "foundation.e.privacycentral" to { EuriseIcons.shield(1.9f) },
+        "foundation.e.apps" to { EuriseIcons.bag(1.9f) }, "org.fdroid" to { EuriseIcons.bag(1.9f) },
+        "com.android.documentsui" to { EuriseIcons.folder(1.9f) }, "foundation.e.drive" to { EuriseIcons.folder(1.9f) },
+        "app.organicmaps" to { EuriseIcons.map(1.9f) }, "app.comaps" to { EuriseIcons.map(1.9f) }, "foundation.e.maps" to { EuriseIcons.map(1.9f) },
+        "foundation.e.weather" to { EuriseIcons.sun(1.9f) },
+    )
+
+    /** Parole del nome dell'app, per le varianti di sistema con un pacchetto diverso. */
+    private val byLabel: List<Pair<String, () -> ImageVector>> = listOf(
+        "telefono" to { EuriseIcons.phone(1.9f) }, "phone" to { EuriseIcons.phone(1.9f) },
+        "messag" to { EuriseIcons.message(1.9f) }, "contatti" to { EuriseIcons.person(1.9f) }, "contacts" to { EuriseIcons.person(1.9f) },
+        "fotocamera" to { EuriseIcons.camera(1.9f) }, "camera" to { EuriseIcons.camera(1.9f) },
+        "galleria" to { EuriseIcons.image(1.9f) }, "gallery" to { EuriseIcons.image(1.9f) },
+        "impostazioni" to { EuriseIcons.gear(1.9f) }, "settings" to { EuriseIcons.gear(1.9f) },
+        "orologio" to { EuriseIcons.clock(1.9f) }, "calcolatrice" to { EuriseIcons.calculator(1.9f) },
+        "registratore" to { EuriseIcons.mic(1.9f) }, "browser" to { EuriseIcons.globe(1.9f) },
+        "meteo" to { EuriseIcons.sun(1.9f) }, "mappe" to { EuriseIcons.map(1.9f) }, "musica" to { EuriseIcons.music(1.9f) },
+        "file" to { EuriseIcons.folder(1.9f) }, "app lounge" to { EuriseIcons.bag(1.9f) },
+    )
+
+    fun find(entry: AppEntry): ImageVector? {
+        byPackage.firstOrNull { entry.packageName.startsWith(it.first) }?.let { return it.second() }
+        val label = entry.label.lowercase()
+        return byLabel.firstOrNull { label.contains(it.first) }?.second?.invoke()
     }
 }
 
@@ -104,6 +172,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
             when (val img = image) {
                 is IconImage.Mono -> Image(img.bitmap, contentDescription = null, colorFilter = ColorFilter.tint(tint), modifier = Modifier.size(size * 0.62f))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
+                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,

@@ -31,6 +31,8 @@ import java.time.LocalDate
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
     val favorites: List<AppEntry> = emptyList(),
+    /** Ultime app aperte dalla Scrivania (contate solo qui, sul telefono). */
+    val recents: List<AppEntry> = emptyList(),
     val today: LocalDate = LocalDate.now(),
     val eventsToday: List<CalendarEvent> = emptyList(),
     /** Appuntamenti dei prossimi sette giorni, per la scheda Calendario. */
@@ -58,6 +60,8 @@ class LauncherViewModel(
     private val today = LocalDate.now()
 
     private val favoriteKeys = MutableStateFlow(loadFavoriteKeys())
+    private val recentKeys = MutableStateFlow(prefs.getString(KEY_RECENTS, "").orEmpty().split('|').filter { it.isNotBlank() })
+    private val keys = combine(favoriteKeys, recentKeys) { f, r -> f to r }
     private val calendarPermission = MutableStateFlow(calendar.hasPermission())
 
     private val _weather = MutableStateFlow<List<DayForecast>?>(null)
@@ -69,11 +73,12 @@ class LauncherViewModel(
         if (granted) calendar.observeEvents(today, today.plusDays(6)) else flowOf(emptyList())
     }
 
-    val state: StateFlow<LauncherState> = combine(apps.observe(), favoriteKeys, local, events, calendarPermission) { list, favs, part, ev, granted ->
+    val state: StateFlow<LauncherState> = combine(apps.observe(), keys, local, events, calendarPermission) { list, (favs, recent), part, ev, granted ->
         val byKey = list.associateBy { it.key }
         LauncherState(
             apps = list,
             favorites = favs.mapNotNull { byKey[it] },
+            recents = recent.mapNotNull { byKey[it] },
             today = today,
             eventsToday = ev.filter { it.occursOn(today) }.sortedBy { it.start },
             upcoming = ev.sortedBy { it.start },
@@ -101,6 +106,13 @@ class LauncherViewModel(
         prefs.edit().putString(KEY_FAVORITES, next.joinToString("|")).apply()
     }
 
+    /** Ricorda l'app appena aperta per la fila "Recenti" della ricerca. */
+    fun recordLaunch(entry: AppEntry) {
+        val next = (listOf(entry.key) + recentKeys.value.filter { it != entry.key }).take(MAX_RECENTS)
+        recentKeys.value = next
+        prefs.edit().putString(KEY_RECENTS, next.joinToString("|")).apply()
+    }
+
     fun addTask(text: String) {
         if (text.isBlank()) return
         viewModelScope.launch { tasks.add(text.trim(), due = today) }
@@ -116,7 +128,7 @@ class LauncherViewModel(
         viewModelScope.launch { tasks.setDone(task.id, done) }
     }
 
-    /** Preferiti predefiniti: telefono e messaggi di sistema, Calendario e Note di Eurise. */
+    /** Preferiti predefiniti: telefono e messaggi di sistema, Note e Attività di Eurise. */
     private fun loadFavoriteKeys(): List<String> {
         prefs.getString(KEY_FAVORITES, null)?.let { saved -> return saved.split('|').filter { it.isNotBlank() } }
         val context = getApplication<Application>()
@@ -126,11 +138,14 @@ class LauncherViewModel(
         fun launcherKey(pkg: String?): String? = pkg?.let { p ->
             pm.getLaunchIntentForPackage(p)?.component?.let { "${it.packageName}/${it.className}" }
         }
-        return listOfNotNull(launcherKey(dialer), launcherKey(sms), "eurise:calendar", "eurise:notes")
+        // Il Calendario non serve tra i preferiti: si apre toccando la data.
+        return listOfNotNull(launcherKey(dialer), launcherKey(sms), "eurise:notes", "eurise:tasks")
     }
 
     private companion object {
         const val KEY_FAVORITES = "favorites"
         const val MAX_FAVORITES = 5
+        const val KEY_RECENTS = "recents"
+        const val MAX_RECENTS = 8
     }
 }

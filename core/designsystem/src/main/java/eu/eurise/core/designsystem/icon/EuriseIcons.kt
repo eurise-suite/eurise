@@ -79,6 +79,40 @@ object EuriseIcons {
 
     fun previous(stroke: Float = 2.2f) = icon("previous", stroke, "M18 6l-8 6 8 6zM6 6v12")
 
+    // Simboli delle app di sistema, per le icone a tema della Scrivania.
+    fun phone(stroke: Float = Stroke) = icon("phone", stroke,
+        "M6.6 3.5h2.6l1.5 4-2 1.3a11 11 0 0 0 6.5 6.5l1.3-2 4 1.5v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z")
+
+    fun message(stroke: Float = Stroke) = icon("message", stroke, "M4 5h16v11H9l-5 4z")
+
+    fun camera(stroke: Float = Stroke) = icon("camera", stroke, "M4 8h3.5L9 5.5h6L16.5 8H20v11H4z", circle(12f, 13f, 3.5f))
+
+    fun image(stroke: Float = Stroke) = icon("image", stroke, "M4 5h16v14H4z", "M4 16l5-5 4 4 2.5-2.5L20 15", circle(15.5f, 9f, 1.5f))
+
+    fun globe(stroke: Float = Stroke) = icon("globe", stroke, circle(12f, 12f, 9f), "M3 12h18", "M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18")
+
+    fun mail(stroke: Float = Stroke) = icon("mail", stroke, "M3.5 6h17v12h-17z", "M3.5 7l8.5 6 8.5-6")
+
+    fun gear(stroke: Float = Stroke) = icon("gear", stroke, circle(12f, 12f, 3f),
+        "M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1")
+
+    fun person(stroke: Float = Stroke) = icon("person", stroke, circle(12f, 8.5f, 3.5f), "M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5")
+
+    fun clock(stroke: Float = Stroke) = icon("clock", stroke, circle(12f, 12f, 9f), "M12 7v5l3 2")
+
+    fun calculator(stroke: Float = Stroke) = icon("calculator", stroke, "M6 3h12v18H6z", "M9 7h6",
+        "M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01")
+
+    fun music(stroke: Float = Stroke) = icon("music", stroke, "M9 18V6l10-2v12", circle(6.5f, 18f, 2.5f), circle(16.5f, 16f, 2.5f))
+
+    fun map(stroke: Float = Stroke) = icon("map", stroke, "M9 4l6 2 5-2v14l-5 2-6-2-5 2V6z", "M9 4v14M15 6v14")
+
+    fun shield(stroke: Float = Stroke) = icon("shield", stroke, "M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z")
+
+    fun bag(stroke: Float = Stroke) = icon("bag", stroke, "M5 8h14l-1 12H6z", "M9 8V6a3 3 0 0 1 6 0v2")
+
+    fun mic(stroke: Float = Stroke) = icon("mic", stroke, "M9 4a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0z", "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21")
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"
 

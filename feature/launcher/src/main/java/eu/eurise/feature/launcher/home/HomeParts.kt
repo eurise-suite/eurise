@@ -64,24 +64,36 @@ private val TimeFormat = DateTimeFormatter.ofPattern("HH:mm")
 private val DateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Italian)
 private val WeekdayShort = DateTimeFormatter.ofPattern("EEE", Italian)
 
-/** Orario grande in Plus Jakarta Sans medio (variante A approvata), con la data sotto. */
+/**
+ * Orario grande in Plus Jakarta Sans medio (variante A approvata), con la data sotto.
+ * L'orario apre l'orologio, la data il calendario.
+ */
 @Composable
-fun ClockBlock(now: LocalDateTime, modifier: Modifier = Modifier, large: Boolean = true) {
+fun ClockBlock(
+    now: LocalDateTime,
+    onClock: () -> Unit,
+    onDate: () -> Unit,
+    modifier: Modifier = Modifier,
+    large: Boolean = true,
+) {
     Column(modifier) {
         Text(
             now.format(TimeFormat),
             fontFamily = PlusJakartaSans,
             fontWeight = FontWeight.Medium,
-            fontSize = if (large) 84.sp else 64.sp,
-            lineHeight = if (large) 88.sp else 68.sp,
+            fontSize = if (large) 80.sp else 64.sp,
+            lineHeight = if (large) 82.sp else 66.sp,
             letterSpacing = (-2).sp,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClock),
         )
         Text(
             now.format(DateFormat).replaceFirstChar { it.titlecase(Italian) },
-            style = MaterialTheme.typography.titleMedium,
+            fontSize = 16.sp,
+            lineHeight = 20.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onDate).padding(vertical = 2.dp),
         )
     }
 }
@@ -97,7 +109,7 @@ fun skyIcon(sky: Sky) = when (sky) {
 
 /** Meteo in una riga semplice, senza pillola: oggi e i due giorni seguenti. */
 @Composable
-fun WeatherRow(forecast: List<DayForecast>?, canAsk: Boolean, onAsk: () -> Unit, modifier: Modifier = Modifier) {
+fun WeatherRow(forecast: List<DayForecast>?, canAsk: Boolean, onAsk: () -> Unit, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val color = MaterialTheme.colorScheme.onBackground
     if (forecast.isNullOrEmpty()) {
         if (canAsk) {
@@ -112,7 +124,11 @@ fun WeatherRow(forecast: List<DayForecast>?, canAsk: Boolean, onAsk: () -> Unit,
         }
         return
     }
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         forecast.take(3).forEachIndexed { i, day ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(skyIcon(day.sky), null, tint = color, modifier = Modifier.size(18.dp))
@@ -154,8 +170,8 @@ fun TodayCard(
             .fillMaxWidth()
             .glass(hazeState, shape, elevation = 8.dp, outline = false)
             .clickable(onClick = onOpen)
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Label(stringResource(R.string.today_next))
         val next = events.firstOrNull { it.allDay || it.end.isAfter(now) }
@@ -166,33 +182,34 @@ fun TodayCard(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onConnectCalendar),
             )
-            next == null -> Text(stringResource(R.string.today_free), color = muted, fontWeight = FontWeight.SemiBold)
+            next == null -> Text(stringResource(R.string.today_free), color = muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             else -> Row(verticalAlignment = Alignment.CenterVertically) {
                 val tint = CalendarTint.nearest(next.color).colors()
-                Box(Modifier.width(4.dp).height(40.dp).background(tint.dot, RoundedCornerShape(2.dp)))
-                Spacer(Modifier.width(12.dp))
+                Box(Modifier.width(3.dp).height(34.dp).background(tint.dot, RoundedCornerShape(2.dp)))
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(next.title, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(next.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, lineHeight = 19.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     val where = next.location.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
-                    Text(eventTime(next, stringResource(R.string.today_all_day)) + where, color = muted, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(eventTime(next, stringResource(R.string.today_all_day)) + where, color = muted, fontSize = 12.5.sp, lineHeight = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
+        Spacer(Modifier.height(4.dp))
         Label(stringResource(R.string.today_todo))
         if (tasks.isEmpty()) {
-            Text(stringResource(R.string.today_no_tasks), color = muted, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.today_no_tasks), color = muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         } else {
             tasks.take(3).forEach { task ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
-                            .size(22.dp)
+                            .size(20.dp)
                             .clip(CircleShape)
                             .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), CircleShape)
                             .clickable(role = Role.Checkbox) { onTaskDone(task) },
                     )
                     Spacer(Modifier.width(12.dp))
-                    Text(task.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(task.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (tasks.size > 3) Text(stringResource(R.string.today_more_tasks, tasks.size - 3), color = muted, fontSize = 13.sp)
@@ -202,7 +219,7 @@ fun TodayCard(
 
 @Composable
 fun Label(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Text(text.uppercase(Italian), color = color, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+    Text(text.uppercase(Italian), color = color, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
 }
 
 /**
@@ -290,7 +307,7 @@ fun CategoryBar(
 
 @Composable
 fun CategoryButton(category: Category, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Column(
         modifier
             .height(GlassDefaults.ItemHeight)
@@ -300,12 +317,12 @@ fun CategoryButton(category: Category, active: Boolean, onClick: () -> Unit, mod
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            category.icon(if (active) EuriseIcons.StrokeSelected else EuriseIcons.Stroke),
+            category.icon(if (active) 2.8f else 2.2f),
             contentDescription = category.label,
             tint = color,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(24.dp),
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(3.dp))
         Box(Modifier.width(14.dp).height(3.dp).background(if (active) color else Color.Transparent, RoundedCornerShape(2.dp)))
     }
 }

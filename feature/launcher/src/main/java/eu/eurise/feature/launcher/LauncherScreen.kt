@@ -1,6 +1,18 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.provider.AlarmClock
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import android.app.ActivityOptions
 import android.app.Application
 import android.app.role.RoleManager
@@ -101,8 +113,8 @@ import java.time.LocalDateTime
 private val BarCategories = Category.entries.toList()
 private val PageCategories = BarCategories.drop(1)
 
-/** Larghezza da cui si usa la disposizione per tablet. */
-private val TabletWidth = 840.dp
+/** Lato corto da cui il dispositivo è un tablet: un telefono in orizzontale resta un telefono. */
+private const val TabletSmallestWidth = 600
 
 /**
  * La Scrivania di Eurise: home con orario, meteo, Oggi e Preferiti; pagina Riepilogo; pagine delle categorie;
@@ -148,7 +160,19 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
     val actions = remember(context) {
         LauncherActions(
-            openApp = { context.launch(it) },
+            openApp = { viewModel.recordLaunch(it); context.launch(it) },
+            openClock = {
+                runCatching { context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
+            ownAppInfo = {
+                runCatching {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+            },
+            expandNotifications = { context.expandNotifications() },
             openEurise = { context.openEurise(it) },
             appInfo = { entry ->
                 runCatching {
@@ -160,7 +184,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             },
             openMessage = { context.openMessage(it) },
             grantNotifications = {
-                runCatching { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                context.openNotificationAccess()
             },
             connectCalendar = { calendarPermission.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)) },
             askLocation = { locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
@@ -170,7 +194,20 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
     val scene = sceneFor(now)
     EuriseTheme(darkTheme = scene.dark) {
+      // Testi più compatti: interlinea stretta su tutta la Scrivania.
+      ProvideTextStyle(LocalTextStyle.current.copy(lineHeight = 1.3.em)) {
         val hazeState = remember { HazeState() }
+        var weatherSheet by remember { mutableStateOf(false) }
+        val openWeather: () -> Unit = {
+            val app = state.apps.firstOrNull { a ->
+                a.euriseSection == null && (a.packageName.contains("weather", true) || a.label.contains("meteo", true) || a.label.contains("weather", true))
+            }
+            when {
+                app != null -> actions.openApp(app)
+                weather != null -> { weatherSheet = true }
+                else -> actions.askLocation()
+            }
+        }
         var category by remember { mutableStateOf(Category.Favorites) }
         var searching by remember { mutableStateOf(false) }
         val homePager = rememberPagerState { 2 }
@@ -187,8 +224,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != Category.Favorites) category = PageCategories[categoryPager.currentPage]
         }
-        BackHandler(enabled = searching || category != Category.Favorites || homePager.currentPage != 0) {
+        BackHandler(enabled = weatherSheet || searching || category != Category.Favorites || homePager.currentPage != 0) {
             when {
+                weatherSheet -> weatherSheet = false
                 searching -> searching = false
                 category != Category.Favorites -> category = Category.Favorites
                 else -> scope.launch { homePager.animateScrollToPage(0) }
@@ -218,17 +256,19 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))
 
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val tablet = maxWidth >= TabletWidth
+                val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val summary: @Composable (Modifier) -> Unit = { modifier ->
                     SummaryColumn(state, messages, nowPlaying, notificationsOn, setup, hazeState, actions, clearance, modifier)
                 }
 
-                if (category == Category.Favorites) {
+                if (searching) {
+                    // Durante la ricerca resta solo lo sfondo sfocato dietro al foglio.
+                } else if (category == Category.Favorites) {
                     if (tablet) {
                         TabletHome(
                             now = now, weather = weather, hasLocation = hasLocation, state = state,
                             hazeState = hazeState, actions = actions, onTaskDone = { viewModel.setTaskDone(it, true) },
-                            clearance = clearance, summary = summary,
+                            clearance = clearance, summary = summary, onWeather = openWeather,
                         )
                     } else {
                         HorizontalPager(homePager, Modifier.fillMaxSize()) { page ->
@@ -239,6 +279,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     isFavorite = viewModel::isFavorite, onToggleFavorite = viewModel::toggleFavorite,
                                     onTaskDone = { viewModel.setTaskDone(it, true) }, clearance = clearance,
                                     isHome = isHome,
+                                    onWeather = openWeather,
+                                    onSearch = { searching = true },
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -267,7 +309,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
-                if (tablet) {
+                if (searching) {
+                    // nessuna barra
+                } else if (tablet) {
                     TabletDock(
                         favorites = state.favorites, badges = badges, dark = scene.dark, selected = category,
                         onOpen = actions.openApp, onSelect = ::select, onSearch = { searching = true },
@@ -284,6 +328,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (searching) {
                 SearchOverlay(
                     apps = state.apps,
+                    recents = state.recents,
                     notes = state.notes,
                     tasks = state.openTasks,
                     dark = scene.dark,
@@ -295,13 +340,20 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onClose = { searching = false },
                 )
             }
+            if (weatherSheet && weather != null) {
+                WeatherSheet(weather!!, onClose = { weatherSheet = false })
+            }
         }
+      }
     }
 }
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
     val openApp: (AppEntry) -> Unit,
+    val openClock: () -> Unit,
+    val ownAppInfo: () -> Unit,
+    val expandNotifications: () -> Unit,
     val openEurise: (String) -> Unit,
     val appInfo: (AppEntry) -> Unit,
     val openMessage: (MessageItem) -> Unit,
@@ -326,10 +378,24 @@ private fun PhoneHome(
     onTaskDone: (eu.eurise.core.data.model.Task) -> Unit,
     clearance: Dp,
     isHome: Boolean,
+    onWeather: () -> Unit,
+    onSearch: () -> Unit,
 ) {
+    // Scorrere in su apre ricerca e app recenti; scorrere in giù apre le notifiche.
+    val threshold = with(LocalDensity.current) { 56.dp.toPx() }
     Column(
         Modifier
             .fillMaxSize()
+            .pointerInput(Unit) {
+                var total = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { total = 0f },
+                    onDragEnd = {
+                        if (total < -threshold) onSearch() else if (total > threshold) actions.expandNotifications()
+                    },
+                    onVerticalDrag = { _, dy -> total += dy },
+                )
+            }
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(horizontal = 20.dp),
     ) {
@@ -338,12 +404,12 @@ private fun PhoneHome(
             HomeBanner(hazeState, actions.becomeHome)
             Spacer(Modifier.height(12.dp))
         } else {
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(28.dp))
         }
-        ClockBlock(now)
-        Spacer(Modifier.height(10.dp))
-        WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation)
-        Spacer(Modifier.weight(1f))
+        ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
+        Spacer(Modifier.height(4.dp))
+        WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
+        Spacer(Modifier.height(16.dp))
         TodayCard(
             now = now,
             events = state.eventsToday,
@@ -354,7 +420,7 @@ private fun PhoneHome(
             onConnectCalendar = actions.connectCalendar,
             onTaskDone = onTaskDone,
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.weight(1f))
         Label(stringResource(R.string.favorites), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
         Spacer(Modifier.height(8.dp))
         if (state.favorites.isEmpty()) {
@@ -395,8 +461,11 @@ private fun SummaryColumn(
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     LazyColumn(
-        modifier.padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = insets.calculateTopPadding() + 24.dp, bottom = clearance + 8.dp),
+        modifier
+            .padding(horizontal = 16.dp)
+            .padding(top = insets.calculateTopPadding())
+            .clipToBounds(),
+        contentPadding = PaddingValues(top = 20.dp, bottom = clearance + 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -410,9 +479,9 @@ private fun SummaryColumn(
             )
         }
         item {
-            MessagesCard(messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.openMessage)
+            MessagesCard(messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.ownAppInfo, actions.openMessage)
         }
-        item { MusicCard(nowPlaying, notificationsOn, hazeState, actions.grantNotifications) }
+        item { MusicCard(nowPlaying, notificationsOn, hazeState, actions.grantNotifications, actions.ownAppInfo) }
         item { SetupCard(setup, hazeState) }
     }
 }
@@ -429,6 +498,7 @@ private fun TabletHome(
     onTaskDone: (eu.eurise.core.data.model.Task) -> Unit,
     clearance: Dp,
     summary: @Composable (Modifier) -> Unit,
+    onWeather: () -> Unit,
 ) {
     Row(
         Modifier
@@ -444,11 +514,11 @@ private fun TabletHome(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = clearance),
         ) {
-            Spacer(Modifier.height(48.dp))
-            ClockBlock(now)
-            Spacer(Modifier.height(10.dp))
-            WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation)
             Spacer(Modifier.height(32.dp))
+            ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
+            Spacer(Modifier.height(4.dp))
+            WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
+            Spacer(Modifier.height(16.dp))
             TodayCard(
                 now = now,
                 events = state.eventsToday,
@@ -581,5 +651,69 @@ private fun Context.openMessage(item: MessageItem) {
     } ?: false
     if (!sent) {
         packageManager.getLaunchIntentForPackage(item.packageName)?.let { runCatching { startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+    }
+}
+
+/** Apre l'accesso alle notifiche direttamente sulla voce di Eurise, dove Android lo permette. */
+private fun Context.openNotificationAccess() {
+    val component = android.content.ComponentName(this, eu.eurise.feature.launcher.notifications.EuriseNotificationListener::class.java)
+    val detail = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+            .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, component.flattenToString())
+    } else null
+    val general = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+    val ok = detail != null && runCatching { startActivity(detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+    if (!ok) runCatching { startActivity(general.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+/**
+ * Apre la tendina delle notifiche di sistema. Il Pannello Eurise la sostituirà nella seconda fase;
+ * l'API non è pubblica, quindi se il sistema la rifiuta non succede nulla.
+ */
+@SuppressLint("WrongConstant")
+private fun Context.expandNotifications() {
+    runCatching {
+        val service = getSystemService("statusbar")
+        Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(service)
+    }
+}
+
+/** Previsioni dei prossimi giorni, quando sul telefono non c'è un'app del meteo. */
+@Composable
+private fun WeatherSheet(days: List<eu.eurise.feature.launcher.weather.DayForecast>, onClose: () -> Unit) {
+    val format = java.time.format.DateTimeFormatter.ofPattern("EEEE d", java.util.Locale.ITALIAN)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.35f))
+            .clickable(onClick = onClose),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            Modifier
+                .padding(24.dp)
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(28.dp))
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Label(stringResource(R.string.weather_title))
+            days.forEach { d ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(
+                        eu.eurise.feature.launcher.home.skyIcon(d.sky), null,
+                        tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    androidx.compose.material3.Text(
+                        d.date.format(format).replaceFirstChar { it.titlecase(java.util.Locale.ITALIAN) },
+                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                    )
+                    androidx.compose.material3.Text("${d.max}°", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    androidx.compose.material3.Text("  ${d.min}°", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }

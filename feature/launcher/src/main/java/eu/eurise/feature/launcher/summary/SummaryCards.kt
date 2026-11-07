@@ -66,8 +66,8 @@ fun SummaryCard(
             .fillMaxWidth()
             .glass(hazeState, RoundedCornerShape(28.dp), elevation = 8.dp, outline = false)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Label(title)
         content()
@@ -169,11 +169,12 @@ fun MessagesCard(
     now: Long,
     hazeState: HazeState,
     onGrant: () -> Unit,
+    onAppInfo: () -> Unit,
     onOpen: (MessageItem) -> Unit,
 ) {
     SummaryCard(stringResource(R.string.card_messages), hazeState) {
         when {
-            !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant)
+            !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant, onAppInfo)
             messages.isEmpty() -> Text(stringResource(R.string.card_messages_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
             else -> messages.take(4).forEach { m ->
                 Row(
@@ -214,10 +215,10 @@ private fun ago(now: Long, at: Long): String {
 
 /** Musica: il brano in ascolto in qualsiasi app, con i comandi. Nessun logo: solo titolo, artista e app. */
 @Composable
-fun MusicCard(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, onGrant: () -> Unit) {
+fun MusicCard(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, onGrant: () -> Unit, onAppInfo: () -> Unit) {
     SummaryCard(stringResource(R.string.card_music), hazeState) {
         when {
-            !enabled -> GrantText(stringResource(R.string.card_music_grant), onGrant)
+            !enabled -> GrantText(stringResource(R.string.card_music_grant), onGrant, onAppInfo)
             playing == null -> Text(stringResource(R.string.card_music_idle), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
             else -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -255,11 +256,26 @@ private fun MediaButton(icon: androidx.compose.ui.graphics.vector.ImageVector, l
     }
 }
 
+/**
+ * Invito a concedere l'accesso alle notifiche. Da Android 13, per le app installate da file, Android blocca
+ * questo permesso finché non si sblocca "impostazioni con restrizioni" nelle informazioni dell'app.
+ */
 @Composable
-private fun GrantText(text: String, onGrant: () -> Unit) {
-    Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
-    TextButton(onClick = onGrant, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-        Text(stringResource(R.string.grant), fontWeight = FontWeight.Bold)
+private fun GrantText(text: String, onGrant: () -> Unit, onAppInfo: () -> Unit) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Text(text, color = muted, fontSize = 13.sp, lineHeight = 17.sp)
+    if (android.os.Build.VERSION.SDK_INT >= 33) {
+        Text(stringResource(R.string.grant_restricted), color = muted, fontSize = 12.sp, lineHeight = 16.sp)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        TextButton(onClick = onGrant, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+            Text(stringResource(R.string.grant), fontWeight = FontWeight.Bold)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            TextButton(onClick = onAppInfo, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                Text(stringResource(R.string.app_info), fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
@@ -273,7 +289,7 @@ fun SetupCard(steps: List<SetupStep>, hazeState: HazeState) {
     SummaryCard(stringResource(R.string.setup_title), hazeState) {
         steps.forEach { step ->
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = !step.done, onClick = step.onClick).padding(vertical = 6.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = !step.done, onClick = step.onClick).padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(

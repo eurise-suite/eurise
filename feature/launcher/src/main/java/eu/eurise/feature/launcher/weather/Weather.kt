@@ -28,13 +28,13 @@ class WeatherRepository(private val context: Context) {
     fun hasLocationPermission(): Boolean =
         context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
-    /** Oggi e i due giorni seguenti; null se manca la posizione o la rete. */
+    /** Oggi e i sei giorni seguenti; null se manca la posizione o la rete. */
     suspend fun forecast(): List<DayForecast>? = withContext(Dispatchers.IO) {
         cached()?.let { return@withContext it }
         val (lat, lon) = location() ?: return@withContext null
         val url = String.format(
             Locale.ROOT,
-            "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3",
+            "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7",
             lat, lon,
         )
         val body = runCatching {

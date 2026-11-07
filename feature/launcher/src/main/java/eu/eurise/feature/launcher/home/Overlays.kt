@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -133,6 +134,7 @@ class CaptureActions(
 @Composable
 fun SearchOverlay(
     apps: List<AppEntry>,
+    recents: List<AppEntry>,
     notes: List<Note>,
     tasks: List<Task>,
     dark: Boolean,
@@ -154,6 +156,7 @@ fun SearchOverlay(
     Column(
         Modifier
             .fillMaxSize()
+            .glass(hazeState, RectangleShape, elevation = 0.dp, outline = false)
             .background(scrimColor())
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .windowInsetsPadding(WindowInsets.ime)
@@ -191,7 +194,29 @@ fun SearchOverlay(
             }
         }
         Spacer(Modifier.height(14.dp))
-        LazyColumn(
+        if (q.isEmpty()) {
+            if (recents.isNotEmpty()) {
+                Label(stringResource(R.string.search_recent), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
+                Spacer(Modifier.height(10.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    items(recents.take(8), key = { it.key }) { app ->
+                        Column(
+                            Modifier.clip(RoundedCornerShape(16.dp)).clickable { onOpenApp(app) }.padding(vertical = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            AppIcon(app, 52.dp, dark)
+                            Spacer(Modifier.height(6.dp))
+                            Text(app.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onBackground)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.weight(1f))
+        } else LazyColumn(
             Modifier
                 .fillMaxWidth()
                 .weight(1f, fill = false)

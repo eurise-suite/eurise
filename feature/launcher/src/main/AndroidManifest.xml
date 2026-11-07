@@ -4,6 +4,8 @@
     <!-- Meteo da Open-Meteo con la posizione approssimata: chiesta solo toccando "Mostra il meteo". -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Scorrere in giù sulla Scrivania apre la tendina delle notifiche. -->
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
 
     <!-- Elenco delle app da mostrare nelle categorie (solo quelle con un'icona nel launcher). -->
     <queries>
