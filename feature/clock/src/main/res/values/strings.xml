@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clock_app_name">Orologio</string>
+    <string name="tab_alarms">Sveglie</string>
+    <string name="tab_timers">Timer</string>
+    <string name="tab_stopwatch">Cronometro</string>
+    <string name="tab_zones">Fusi</string>
+    <string name="action_new">Nuovo</string>
+    <string name="clock_save">Salva</string>
+    <string name="cancel">Annulla</string>
+    <string name="turn_on">Attiva</string>
+
+    <string name="ch_ring">Sveglie e timer che suonano</string>
+    <string name="ch_timers">Timer in corso</string>
+    <string name="ch_hints">Suggerimenti della sera</string>
+
+    <string name="alarms_none">Nessuna sveglia attiva.</string>
+    <string name="alarms_next">La prossima suona %1$s alle %2$s, tra %3$s.</string>
+    <string name="and">%1$s e %2$s</string>
+    <string name="day_today">oggi</string>
+    <string name="day_tomorrow">domani</string>
+    <string name="day_yesterday">ieri</string>
+    <plurals name="hours">
+        <item quantity="one">%d ora</item>
+        <item quantity="other">%d ore</item>
+    </plurals>
+    <plurals name="minutes">
+        <item quantity="one">%d minuto</item>
+        <item quantity="other">%d minuti</item>
+    </plurals>
+    <string name="alarm_default">Sveglia</string>
+    <string name="alarm_once">Una volta sola</string>
+    <string name="alarm_set_at">Sveglia alle %1$s</string>
+    <string name="alarm_skipped">Salta %1$s, solo questa volta</string>
+    <string name="alarm_unskip">Annulla</string>
+    <string name="alarm_silent_on">Tace il %1$s (%2$s)</string>
+    <string name="alarm_and_vacation"> e in ferie</string>
+    <string name="alarm_vacation_only">Tace in ferie</string>
+    <string name="reason_vacation">ferie</string>
+    <string name="reason_skipped">saltata</string>
+    <string name="bedtime_row">Ora di dormire · %1$s</string>
+    <string name="bedtime_sub">per %1$s di sonno prima delle %2$s</string>
+    <string name="bedtime_title_dialog">Quanto vuoi dormire?</string>
+    <string name="bedtime_reminder">Avvisami la sera</string>
+    <string name="bedtime_reminder_sub">Una notifica quando è ora di andare a letto</string>
+    <string name="sleep_hours">%1$d ore</string>
+    <string name="sleep_hours_half">%1$d ore e mezza</string>
+    <string name="use_calendar">Usa il calendario</string>
+    <string name="use_calendar_sub">Ferie e impegni presto, letti solo sul telefono · tocca per spegnere</string>
+
+    <string name="alarm_editor_title">Sveglia</string>
+    <string name="alarm_name">Nome</string>
+    <string name="alarm_delete">Elimina sveglia</string>
+    <string name="clock_section_calendar">Con il calendario</string>
+    <string name="section_wake">Risveglio</string>
+    <string name="opt_holidays">Tace nei giorni festivi</string>
+    <string name="opt_holidays_sub">prossimo: %1$s (%2$s)</string>
+    <string name="opt_vacation">Tace in ferie</string>
+    <string name="opt_vacation_sub">eventi «Ferie» o «Vacanza» nel calendario</string>
+    <string name="opt_earlier">Prima se c\'è un impegno presto</string>
+    <string name="opt_earlier_sub">la sera prima propone di anticipare, non lo fa da sola</string>
+    <string name="opt_sound">Suono</string>
+    <string name="sound_default">Suoneria predefinita della sveglia</string>
+    <string name="opt_ramp">Cresce piano</string>
+    <string name="opt_ramp_sub">dal sottovoce al pieno in un minuto</string>
+    <string name="opt_snooze">Rimanda</string>
+    <string name="opt_snooze_sub">%1$d min, al massimo %2$d volte</string>
+    <string name="snooze_never">Mai</string>
+    <string name="minutes_short">%1$d min</string>
+    <string name="opt_vibrate">Vibrazione</string>
+    <string name="opt_challenge">Per spegnerla, un piccolo calcolo</string>
+    <string name="opt_challenge_sub">una somma o una sottrazione, per svegliarsi davvero</string>
+    <string name="opt_routine">Routine del mattino</string>
+    <string name="opt_routine_sub">legge a voce l\'ora e il primo impegno, poi fa partire la musica</string>
+    <string name="calendar_privacy_title">Usare il calendario</string>
+    <string name="calendar_privacy_read">Cosa viene letto: i titoli e gli orari degli eventi del calendario sul telefono, per trovare le ferie e il primo impegno del giorno.</string>
+    <string name="calendar_privacy_where">Dove va: da nessuna parte. Si legge e si usa solo sul telefono.</string>
+    <string name="calendar_privacy_who">Chi lo vede: solo tu, nelle sveglie e nella proposta della sera.</string>
+    <string name="calendar_privacy_back">Come tornare indietro: «Usa il calendario» in fondo alle Sveglie, senza conferme.</string>
+
+    <string name="ring_snooze">Rimanda</string>
+    <string name="ring_snooze_left">Rimanda (ancora %1$d)</string>
+    <string name="ring_dismiss">Spegni</string>
+    <string name="ring_challenge">Quanto fa %1$s?</string>
+    <string name="routine_hello">Buongiorno, sono le %1$s.</string>
+    <string name="routine_first">Il primo impegno è alle %1$s: %2$s.</string>
+    <string name="routine_free">Oggi non hai impegni in calendario.</string>
+
+    <string name="bedtime_title">È ora di dormire</string>
+    <string name="bedtime_text">La sveglia suona alle %1$s</string>
+    <string name="earlier_title">Domani c\'è un impegno presto</string>
+    <string name="earlier_text">Alle %1$s «%2$s». Vuoi che la sveglia suoni alle %3$s?</string>
+    <string name="earlier_accept">Anticipa alle %1$s</string>
+    <string name="earlier_label">Anticipata · %1$s</string>
+
+    <string name="timer_default">Timer</string>
+    <string name="timers_running">%1$d in corso</string>
+    <string name="timer_rings_at">suona alle %1$s</string>
+    <string name="timer_paused">in pausa · %1$s</string>
+    <string name="timer_done">Tempo scaduto</string>
+    <string name="timer_plus1">+1 min</string>
+    <string name="timer_pause">Pausa</string>
+    <string name="timer_resume">Riprendi</string>
+    <string name="timer_stop">Ferma</string>
+    <string name="timer_new">Nuovo timer</string>
+    <string name="timer_minutes">Minuti</string>
+    <string name="timer_label">Nome (facoltativo)</string>
+    <string name="pomodoro">Pomodoro</string>
+    <string name="pomodoro_sub">%1$d minuti di lavoro, %2$d di pausa · %3$d giri</string>
+    <string name="pomodoro_start">Inizia</string>
+    <string name="pomodoro_quiet">Non disturbare durante il lavoro</string>
+    <string name="pomodoro_quiet_sub">serve l\'accesso a «Non disturbare», chiesto una volta</string>
+    <string name="pomodoro_work">%1$s · lavoro</string>
+    <string name="pomodoro_rest">%1$s · pausa</string>
+    <string name="pomodoro_break">Pausa: alzati un momento</string>
+    <string name="pomodoro_back_to_work">Si torna al lavoro</string>
+    <string name="quick_start">Avvio rapido</string>
+    <string name="quick_egg">Uovo · 7 min</string>
+    <string name="quick_egg_label">Uovo</string>
+    <string name="quick_pasta">Pasta · 10 min</string>
+    <string name="quick_pasta_label">Pasta</string>
+    <string name="quick_custom">Altro…</string>
+
+    <string name="sw_start">Avvia</string>
+    <string name="sw_resume">Riprendi</string>
+    <string name="sw_pause">Pausa</string>
+    <string name="sw_lap">Giro</string>
+    <string name="sw_reset">Azzera</string>
+    <string name="sw_lap_n">Giro %1$d</string>
+
+    <string name="zones_here">Qui sono le %1$s (%2$s).</string>
+    <string name="zones_add">Aggiungi una città</string>
+    <string name="zones_search">Cerca</string>
+    <string name="zone_same">stessa ora</string>
+    <string name="zone_diff_h">%1$s h</string>
+    <string name="zone_diff_hm">%1$s h %2$d min</string>
+</resources>

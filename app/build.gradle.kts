@@ -102,6 +102,7 @@ dependencies {
     implementation(project(":feature:tasks"))
     implementation(project(":feature:calendar"))
     implementation(project(":feature:launcher"))
+    implementation(project(":feature:clock"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

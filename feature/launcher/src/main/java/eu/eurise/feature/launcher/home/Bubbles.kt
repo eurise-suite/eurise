@@ -576,12 +576,8 @@ fun ClockPill(
             listOf(1, 5, 10, 25).forEach { min ->
                 ActionChip(stringResource(R.string.bubble_minutes, min)) {
                     val ok = runCatching {
-                        context.startActivity(
-                            Intent(AlarmClock.ACTION_SET_TIMER)
-                                .putExtra(AlarmClock.EXTRA_LENGTH, min * 60)
-                                .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                        )
+                        // Nell'Orologio di Eurise, che sta nella stessa app: nessuna scelta da fare.
+                        context.startActivity(ClockContract.timerIntent(context, min * 60))
                     }.isSuccess
                     if (ok) Toast.makeText(context, started.format(min), Toast.LENGTH_SHORT).show()
                 }

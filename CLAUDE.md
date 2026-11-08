@@ -29,10 +29,20 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
   (es. posizione arrotondata), mai identificativi del telefono.
 
+## Dati e backup (deciso l'8 novembre 2026)
+- Tre livelli: sul telefono (sempre), sincronizzazione con il servizio scelto, backup cifrato di tutta la suite.
+- Backup cifrato sul telefono prima di uscire, con frase segreta dell'utente e codice di recupero (senza, nessuno
+  può aprirlo, nemmeno noi). Frequenza: giornaliero, settimanale, mensile o a richiesta; con Wi-Fi e in carica.
+- Si tengono gli ultimi tre backup più uno mensile e uno trimestrale; il più vecchio si cancella solo dopo che il
+  nuovo è caricato e verificato. Le foto restano fuori (hanno la loro sincronizzazione).
+- Destinazioni con una valutazione di privacy (server proprio, Murena, kDrive, Proton, MEGA, poi i servizi USA con
+  avviso) e cartella locale o chiavetta. Ripristino dalla prima schermata del telefono nuovo.
+
 ## Struttura degli APK (decisa l'8 novembre 2026)
-- APK principale "Eurise": Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud. Ogni app ha la sua icona
+- APK principale "Eurise": Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud, Orologio (unito l'8 novembre:
+  troppo integrato per restare fuori). Ogni app ha la sua icona
   nel cassetto e si può spegnere; spenta, non carica nulla.
-- APK separati per Password, Galleria, Orologio, Tastiera, Mappe, Browser, Messaggi e Telefono. Parlano con il
+- APK separati per Password, Galleria, Tastiera, Mappe, Browser, Messaggi e Telefono. Parlano con il
   principale solo tra app firmate con la stessa chiave (permessi di firma), mai con canali aperti alle altre app.
 - Niente moduli dinamici del Play Store: non funzionano su F-Droid né con l'installazione diretta.
 
