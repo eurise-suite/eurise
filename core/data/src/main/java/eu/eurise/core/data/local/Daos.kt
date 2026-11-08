@@ -163,24 +163,42 @@ internal interface NotebookDao {
 @Dao
 internal interface TaskDao {
 
-    /** Da fare: prima quelle con scadenza (dalla più vicina), poi le altre in ordine di creazione. */
-    @Query("SELECT * FROM tasks WHERE done = 0 ORDER BY due_day IS NULL, due_day, created_at")
+    /** Da fare: prima quelle con scadenza (dalla più vicina), poi le altre in ordine di creazione. Senza i passi. */
+    @Query("SELECT * FROM tasks WHERE done = 0 AND parent_id IS NULL ORDER BY due_day IS NULL, due_day, due_minute IS NULL, due_minute, created_at")
     fun observeOpen(): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE done = 1 ORDER BY completed_at DESC")
+    @Query("SELECT * FROM tasks WHERE done = 1 AND parent_id IS NULL ORDER BY completed_at DESC")
     fun observeDone(): Flow<List<TaskEntity>>
 
+    /** Tutte le attività (non i passi), da fare e fatte: servono alla schermata Attività. */
+    @Query("SELECT * FROM tasks WHERE parent_id IS NULL ORDER BY done, due_day IS NULL, due_day, due_minute IS NULL, due_minute, priority = 0, priority, created_at")
+    fun observeAll(): Flow<List<TaskEntity>>
+
     /** Da fare con scadenza entro [day] incluso: quelle di oggi e quelle in ritardo. */
-    @Query("SELECT * FROM tasks WHERE done = 0 AND due_day IS NOT NULL AND due_day <= :day ORDER BY due_day, created_at")
+    @Query("SELECT * FROM tasks WHERE done = 0 AND parent_id IS NULL AND due_day IS NOT NULL AND due_day <= :day ORDER BY due_day, due_minute IS NULL, due_minute, created_at")
     fun observeDueBy(day: Long): Flow<List<TaskEntity>>
 
     /** Tutte le attività (fatte o no) con scadenza tra [from] e [to] inclusi: servono al Calendario. */
-    @Query("SELECT * FROM tasks WHERE due_day BETWEEN :from AND :to ORDER BY done, due_day, created_at")
+    @Query("SELECT * FROM tasks WHERE parent_id IS NULL AND due_day BETWEEN :from AND :to ORDER BY done, due_day, due_minute IS NULL, due_minute, created_at")
     fun observeDueBetween(from: Long, to: Long): Flow<List<TaskEntity>>
 
     /** Completate dopo [since] (millisecondi): servono a "Oggi" per mostrare quelle appena spuntate. */
-    @Query("SELECT * FROM tasks WHERE done = 1 AND completed_at >= :since ORDER BY completed_at DESC")
+    @Query("SELECT * FROM tasks WHERE done = 1 AND parent_id IS NULL AND completed_at >= :since ORDER BY completed_at DESC")
     fun observeCompletedSince(since: Long): Flow<List<TaskEntity>>
+
+    /** I passi di un'attività, nell'ordine in cui sono stati aggiunti. */
+    @Query("SELECT * FROM tasks WHERE parent_id = :parentId ORDER BY id")
+    fun observeSteps(parentId: Long): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE parent_id = :parentId ORDER BY id")
+    suspend fun steps(parentId: Long): List<TaskEntity>
+
+    @Query("SELECT parent_id, COUNT(*) AS total, SUM(done) AS done FROM tasks WHERE parent_id IS NOT NULL GROUP BY parent_id")
+    fun observeStepCounts(): Flow<List<StepCountRow>>
+
+    /** Da fare con un avviso e scadenza nei giorni da [from] a [to]: servono ai promemoria. */
+    @Query("SELECT * FROM tasks WHERE done = 0 AND remind_before IS NOT NULL AND due_day BETWEEN :from AND :to")
+    suspend fun withReminders(from: Long, to: Long): List<TaskEntity>
 
     @Query("SELECT * FROM tasks WHERE id IN (:ids)")
     suspend fun getAll(ids: List<Long>): List<TaskEntity>
@@ -194,12 +212,51 @@ internal interface TaskDao {
     @Query("UPDATE tasks SET done = :done, completed_at = :completedAt WHERE id = :id")
     suspend fun setDone(id: Long, done: Boolean, completedAt: Long?)
 
+    @Query("UPDATE tasks SET list_id = :listId WHERE id = :id OR parent_id = :id")
+    suspend fun moveToList(id: Long, listId: Long)
+
+    @Query("UPDATE tasks SET list_id = :to WHERE list_id = :from")
+    suspend fun moveAllToList(from: Long, to: Long)
+
     @Query("UPDATE tasks SET note_id = NULL WHERE note_id = :noteId")
     suspend fun detachNote(noteId: Long)
 
-    @Query("DELETE FROM tasks WHERE id = :id")
+    /** Elimina l'attività insieme ai suoi passi. */
+    @Query("DELETE FROM tasks WHERE id = :id OR parent_id = :id")
     suspend fun delete(id: Long)
 
-    @Query("DELETE FROM tasks WHERE done = 1")
-    suspend fun deleteCompleted()
+    @Query("DELETE FROM tasks WHERE parent_id IN (SELECT id FROM tasks WHERE done = 1 AND parent_id IS NULL)")
+    suspend fun deleteStepsOfCompleted()
+
+    @Query("DELETE FROM tasks WHERE done = 1 AND parent_id IS NULL")
+    suspend fun deleteCompletedTasks()
+
+}
+
+@Dao
+internal interface TaskListDao {
+
+    @Query(
+        "SELECT l.*, (SELECT COUNT(*) FROM tasks t WHERE t.list_id = l.id AND t.done = 0 AND t.parent_id IS NULL) AS open " +
+            "FROM task_lists l ORDER BY l.position, l.id"
+    )
+    fun observeWithCounts(): Flow<List<TaskListWithCount>>
+
+    @Query("SELECT * FROM task_lists ORDER BY position, id")
+    fun observe(): Flow<List<TaskListEntity>>
+
+    @Query("SELECT * FROM task_lists WHERE id = :id")
+    suspend fun get(id: Long): TaskListEntity?
+
+    @Query("SELECT COALESCE(MAX(position), 0) FROM task_lists WHERE kind IN ('main', 'user')")
+    suspend fun maxUserPosition(): Int
+
+    @Upsert
+    suspend fun upsert(list: TaskListEntity): Long
+
+    @Query("UPDATE task_lists SET sync = :sync WHERE id = :id")
+    suspend fun setSync(id: Long, sync: Boolean)
+
+    @Query("DELETE FROM task_lists WHERE id = :id AND kind = 'user'")
+    suspend fun delete(id: Long)
 }

@@ -8,20 +8,59 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class],
-    version = 3,
+    entities = [
+        NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class,
+        TaskListEntity::class,
+    ],
+    version = 4,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun taskDao(): TaskDao
+    abstract fun taskListDao(): TaskListDao
     abstract fun notebookDao(): NotebookDao
 
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) = insertDefaultTaskLists(db)
+                })
                 .build()
+    }
+}
+
+/**
+ * I tre elenchi di partenza, con id fissi: Attività (principale, sincronizzato quando c'è un cloud),
+ * Farmaci e Date importanti (automatici, di base solo sul telefono).
+ */
+internal fun insertDefaultTaskLists(db: SupportSQLiteDatabase) {
+    db.execSQL(
+        "INSERT OR IGNORE INTO task_lists (id, name, tint, kind, sync, position) VALUES " +
+            "(1, 'Attività', 'BluNotte', 'main', 1, 0), " +
+            "(2, 'Farmaci', 'Borgogna', 'medicines', 0, 100), " +
+            "(3, 'Date importanti', 'Prugna', 'dates', 0, 101)"
+    )
+}
+
+/** Versione 4: elenchi delle attività, ora, promemoria, ripetizione, importanza e passi. Nessun dato si perde. */
+internal val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN list_id INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN due_minute INTEGER")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN remind_before INTEGER")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN rrule TEXT")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN parent_id INTEGER")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_list_id ON tasks (list_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_parent_id ON tasks (parent_id)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS task_lists (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "name TEXT NOT NULL, tint TEXT NOT NULL, kind TEXT NOT NULL, sync INTEGER NOT NULL, position INTEGER NOT NULL)"
+        )
+        insertDefaultTaskLists(db)
     }
 }
 

@@ -11,6 +11,8 @@ import eu.eurise.core.data.local.NoteTagEntity
 import eu.eurise.core.data.local.NotebookDao
 import eu.eurise.core.data.local.NotebookEntity
 import eu.eurise.core.data.local.TaskDao
+import eu.eurise.core.data.local.TaskListDao
+import eu.eurise.core.data.local.TaskListEntity
 import eu.eurise.core.data.local.toEntity
 import eu.eurise.core.data.local.toModel
 import eu.eurise.core.data.model.Note
@@ -19,11 +21,22 @@ import eu.eurise.core.data.model.NoteSyncState
 import eu.eurise.core.data.model.Notebook
 import eu.eurise.core.data.model.NotebookSummary
 import eu.eurise.core.data.model.TagCount
+import eu.eurise.core.data.model.Recurrence
+import eu.eurise.core.data.model.StepProgress
 import eu.eurise.core.data.model.Task
+import eu.eurise.core.data.model.TaskList
+import eu.eurise.core.data.model.TaskListSummary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 /** Orologio sostituibile nei test. */
 fun interface Clock {
@@ -216,13 +229,54 @@ class NotebookRepository internal constructor(
     }
 }
 
+/**
+ * Preferenze delle Attività, condivise da tutte le schermate (anche dal Calendario).
+ * Di base le attività fatte restano in fondo agli elenchi e quelle con una scadenza compaiono nel Calendario.
+ */
+class TaskSettings internal constructor(context: Context) {
+    private val prefs = context.getSharedPreferences("eurise_tasks", Context.MODE_PRIVATE)
+    private val _showDone = MutableStateFlow(prefs.getBoolean(KEY_SHOW_DONE, true))
+    private val _inCalendar = MutableStateFlow(prefs.getBoolean(KEY_IN_CALENDAR, true))
+
+    val showDone: StateFlow<Boolean> = _showDone
+    val showInCalendar: StateFlow<Boolean> = _inCalendar
+
+    fun setShowDone(value: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_DONE, value).apply()
+        _showDone.value = value
+    }
+
+    fun setShowInCalendar(value: Boolean) {
+        prefs.edit().putBoolean(KEY_IN_CALENDAR, value).apply()
+        _inCalendar.value = value
+    }
+
+    private companion object {
+        const val KEY_SHOW_DONE = "show_done"
+        const val KEY_IN_CALENDAR = "in_calendar"
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class TaskRepository internal constructor(
     private val dao: TaskDao,
+    private val lists: TaskListDao,
     private val clock: Clock,
+    val settings: TaskSettings,
 ) {
+    /** Chiamata quando un'attività con un avviso cambia: l'app la usa per riprogrammare i promemoria. */
+    @Volatile var onRemindersChanged: (() -> Unit)? = null
+
+    private fun remindersChanged(vararg tasks: Task?) {
+        if (tasks.any { it?.remindBefore != null }) onRemindersChanged?.invoke()
+    }
+
     fun observeOpen(): Flow<List<Task>> = dao.observeOpen().map { list -> list.map { it.toModel() } }
 
     fun observeDone(): Flow<List<Task>> = dao.observeDone().map { list -> list.map { it.toModel() } }
+
+    /** Tutte le attività (senza i passi): prima quelle da fare, ordinate per scadenza. */
+    fun observeAll(): Flow<List<Task>> = dao.observeAll().map { list -> list.map { it.toModel() } }
 
     /** Da fare con scadenza oggi o già passata. */
     fun observeDueBy(day: LocalDate): Flow<List<Task>> =
@@ -232,8 +286,21 @@ class TaskRepository internal constructor(
     fun observeDueBetween(from: LocalDate, to: LocalDate): Flow<List<Task>> =
         dao.observeDueBetween(from.toEpochDay(), to.toEpochDay()).map { list -> list.map { it.toModel() } }
 
+    /** Come [observeDueBetween], ma vuoto se nelle Attività è spento "Attività anche nel Calendario". */
+    fun observeForCalendar(from: LocalDate, to: LocalDate): Flow<List<Task>> =
+        settings.showInCalendar.flatMapLatest { on -> if (on) observeDueBetween(from, to) else flowOf(emptyList()) }
+
     fun observeCompletedSince(epochMillis: Long): Flow<List<Task>> =
         dao.observeCompletedSince(epochMillis).map { list -> list.map { it.toModel() } }
+
+    fun observeSteps(parentId: Long): Flow<List<Task>> = dao.observeSteps(parentId).map { list -> list.map { it.toModel() } }
+
+    /** Avanzamento dei passi per ogni attività che ne ha. */
+    fun observeStepProgress(): Flow<Map<Long, StepProgress>> =
+        dao.observeStepCounts().map { rows -> rows.associate { it.parentId to StepProgress(it.done, it.total) } }
+
+    fun observeLists(): Flow<List<TaskListSummary>> =
+        lists.observeWithCounts().map { rows -> rows.map { TaskListSummary(it.list.toModel(), it.open) } }
 
     suspend fun get(id: Long): Task? = dao.get(id)?.toModel()
 
@@ -242,29 +309,101 @@ class TaskRepository internal constructor(
         if (ids.isEmpty()) emptyList() else dao.getAll(ids.toList()).map { it.toModel() }
 
     /** Crea un'attività e ne restituisce l'id. [noteId] la lega alla nota da cui nasce. */
-    suspend fun add(title: String, due: LocalDate? = null, notes: String = "", noteId: Long? = null): Long =
-        dao.upsert(
-            Task(0, title.trim(), notes, due, done = false, completedAt = null, createdAt = clock.now(), noteId = noteId)
-                .toEntity()
+    suspend fun add(
+        title: String,
+        due: LocalDate? = null,
+        notes: String = "",
+        noteId: Long? = null,
+        listId: Long = TaskList.MAIN,
+        time: LocalTime? = null,
+        remindBefore: Int? = null,
+        repeat: String? = null,
+        priority: Int = Task.PRIORITY_NONE,
+    ): Long {
+        val task = Task(
+            0, title.trim(), notes, due, done = false, completedAt = null, createdAt = clock.now(), noteId = noteId,
+            listId = listId, time = time, remindBefore = remindBefore, repeat = repeat, priority = priority,
         )
-
-    suspend fun update(task: Task) {
-        dao.upsert(task.copy(title = task.title.trim()).toEntity())
+        return dao.upsert(task.toEntity()).also { remindersChanged(task) }
     }
 
-    suspend fun setDone(id: Long, done: Boolean) =
-        dao.setDone(id, done, completedAt = if (done) clock.now() else null)
+    /** Aggiunge un passo all'attività [parentId], nello stesso elenco. */
+    suspend fun addStep(parentId: Long, title: String): Long {
+        val parent = dao.get(parentId) ?: return 0
+        return dao.upsert(
+            Task(0, title.trim(), "", null, false, null, clock.now(), listId = parent.listId, parentId = parentId).toEntity()
+        )
+    }
 
+    suspend fun update(task: Task) {
+        val before = dao.get(task.id)?.toModel()
+        dao.upsert(task.copy(title = task.title.trim()).toEntity())
+        if (task.parentId == null) dao.moveToList(task.id, task.listId)
+        remindersChanged(before, task)
+    }
+
+    /**
+     * Spunta o toglie la spunta. Un'attività che si ripete, spuntata, lascia il posto alla prossima volta
+     * (con i passi da rifare); quella fatta resta come storico, senza ripetizione.
+     */
+    suspend fun setDone(id: Long, done: Boolean) {
+        val before = dao.get(id)?.toModel()
+        val now = clock.now()
+        dao.setDone(id, done, completedAt = if (done) now else null)
+        val task = before ?: return
+        remindersChanged(task)
+        if (!done || task.done || task.parentId != null) return
+        val rule = Recurrence.parse(task.repeat) ?: return
+        val next = task.copy(
+            id = 0, done = false, completedAt = null, createdAt = now, noteId = null,
+            due = rule.next(task.due ?: LocalDate.now()),
+        )
+        val nextId = dao.upsert(next.toEntity())
+        dao.steps(id).forEach { step -> dao.upsert(step.copy(id = 0, done = false, completedAt = null, parentId = nextId)) }
+        dao.upsert(task.copy(done = true, completedAt = now, repeat = null).toEntity())
+        remindersChanged(next)
+    }
+
+    suspend fun moveToList(id: Long, listId: Long) = dao.moveToList(id, listId)
+
+    /** Elimina l'attività con i suoi passi. */
     suspend fun delete(id: Long) = dao.delete(id)
 
-    suspend fun deleteCompleted() = dao.deleteCompleted()
+    suspend fun deleteCompleted() {
+        dao.deleteStepsOfCompleted()
+        dao.deleteCompletedTasks()
+    }
+
+    /** Attività da fare con un avviso che cade tra [from] e [to]. */
+    suspend fun remindersBetween(from: LocalDateTime, to: LocalDateTime): List<Task> =
+        dao.withReminders(from.toLocalDate().toEpochDay(), to.toLocalDate().plusDays(1).toEpochDay())
+            .map { it.toModel() }
+            .filter { t -> t.reminderAt()?.let { !it.isBefore(from) && !it.isAfter(to) } == true }
+
+    /** Crea un elenco in fondo a quelli dell'utente e ne restituisce l'id. */
+    suspend fun addList(name: String, tint: String): Long =
+        lists.upsert(TaskListEntity(0, name.trim(), tint, TaskList.KIND_USER, sync = true, position = lists.maxUserPosition() + 1))
+
+    suspend fun updateList(list: TaskList) {
+        lists.upsert(list.copy(name = list.name.trim()).toEntity())
+    }
+
+    suspend fun setListSync(id: Long, sync: Boolean) = lists.setSync(id, sync)
+
+    /** Elimina un elenco dell'utente; le sue attività passano all'elenco principale. */
+    suspend fun deleteList(id: Long) {
+        val list = lists.get(id) ?: return
+        if (list.kind != TaskList.KIND_USER) return
+        dao.moveAllToList(id, TaskList.MAIN)
+        lists.delete(id)
+    }
 }
 
 /** Punto unico di accesso ai dati locali dell'app hub. */
 class EuriseData private constructor(context: Context, database: EuriseDatabase, clock: Clock) {
     val notes = NoteRepository(database.noteDao(), database.taskDao(), clock)
     val notebooks = NotebookRepository(database.notebookDao(), database.noteDao())
-    val tasks = TaskRepository(database.taskDao(), clock)
+    val tasks = TaskRepository(database.taskDao(), database.taskListDao(), clock, TaskSettings(context))
     val calendar = CalendarRepository(context)
     val dates = eu.eurise.core.data.dates.ImportantDatesRepository(context)
     val medicines = eu.eurise.core.data.meds.MedicinesRepository(context)

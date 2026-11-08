@@ -56,7 +56,7 @@ class CalendarViewModel(
             .flatMapLatest { q ->
                 val (from, to) = range(q.view, q.anchor)
                 val events = if (q.permission) calendar.observeEvents(from, to) else flowOf(emptyList())
-                combine(events, tasks.observeDueBetween(from, to)) { e, t ->
+                combine(events, tasks.observeForCalendar(from, to)) { e, t ->
                     CalendarState(q.view, q.anchor, today, q.permission, from, to, e, t, loaded = true)
                 }
             }

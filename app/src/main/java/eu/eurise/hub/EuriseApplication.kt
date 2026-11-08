@@ -14,5 +14,7 @@ class EuriseApplication : Application() {
         // I lavori di sincronizzazione vanno registrati prima che WorkManager ne avvii uno.
         CloudSync.register(NotesSyncJob(data.notes, data.notebooks))
         CloudSync.get(this).schedule()
+        // Quando cambia un avviso di un'attività si ricalcola la prossima sveglia dei promemoria.
+        data.tasks.onRemindersChanged = { eu.eurise.feature.calendar.reminders.Reminders.refresh(this) }
     }
 }

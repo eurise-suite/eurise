@@ -8,7 +8,9 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.NoteSyncState
 import eu.eurise.core.data.model.Notebook
 import eu.eurise.core.data.model.Task
+import eu.eurise.core.data.model.TaskList
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity(
     tableName = "notes",
@@ -57,8 +59,14 @@ internal data class NoteTagEntity(
     val tag: String,
 )
 
-/** La scadenza è salvata come giorno dall'epoca (`LocalDate.toEpochDay`), senza fuso orario. */
-@Entity(tableName = "tasks", indices = [Index("done"), Index("due_day"), Index("note_id")])
+/**
+ * La scadenza è salvata come giorno dall'epoca (`LocalDate.toEpochDay`), senza fuso orario, e l'ora come minuti
+ * dalla mezzanotte.
+ */
+@Entity(
+    tableName = "tasks",
+    indices = [Index("done"), Index("due_day"), Index("note_id"), Index("list_id"), Index("parent_id")],
+)
 internal data class TaskEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
@@ -68,7 +76,41 @@ internal data class TaskEntity(
     @ColumnInfo(name = "completed_at") val completedAt: Long?,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "note_id") val noteId: Long? = null,
+    @ColumnInfo(name = "list_id", defaultValue = "1") val listId: Long = TaskList.MAIN,
+    @ColumnInfo(name = "due_minute") val dueMinute: Int? = null,
+    @ColumnInfo(name = "remind_before") val remindBefore: Int? = null,
+    val rrule: String? = null,
+    @ColumnInfo(defaultValue = "0") val priority: Int = 0,
+    @ColumnInfo(name = "parent_id") val parentId: Long? = null,
 )
+
+/** Un elenco di attività (vedi [TaskList]). */
+@Entity(tableName = "task_lists")
+internal data class TaskListEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val tint: String,
+    val kind: String,
+    val sync: Boolean,
+    val position: Int,
+)
+
+/** Un elenco con il numero di attività ancora da fare (risultato di una query). */
+internal data class TaskListWithCount(
+    @androidx.room.Embedded val list: TaskListEntity,
+    val open: Int,
+)
+
+/** Avanzamento dei passi di un'attività (risultato di una query). */
+internal data class StepCountRow(
+    @ColumnInfo(name = "parent_id") val parentId: Long,
+    val total: Int,
+    val done: Int,
+)
+
+internal fun TaskListEntity.toModel() = TaskList(id, name, tint, kind, sync, position)
+
+internal fun TaskList.toEntity() = TaskListEntity(id, name, tint, kind, sync, position)
 
 internal fun NoteEntity.toModel() =
     Note(id, title, body, pinned, createdAt, updatedAt, content, notebookId, trashedAt, uid, conflict != null)
@@ -77,8 +119,22 @@ internal fun NoteEntity.toSyncModel() = NoteSyncState(toModel(), uid, remoteEtag
 
 internal fun NotebookEntity.toModel() = Notebook(id, name, tint, position, kind)
 
-internal fun TaskEntity.toModel() =
-    Task(id, title, notes, dueDay?.let(LocalDate::ofEpochDay), done, completedAt, createdAt, noteId)
+internal fun TaskEntity.toModel() = Task(
+    id, title, notes, dueDay?.let(LocalDate::ofEpochDay), done, completedAt, createdAt, noteId,
+    listId = listId,
+    time = dueMinute?.let { LocalTime.of(it / 60, it % 60) },
+    remindBefore = remindBefore,
+    repeat = rrule,
+    priority = priority,
+    parentId = parentId,
+)
 
-internal fun Task.toEntity() =
-    TaskEntity(id, title, notes, due?.toEpochDay(), done, completedAt, createdAt, noteId)
+internal fun Task.toEntity() = TaskEntity(
+    id, title, notes, due?.toEpochDay(), done, completedAt, createdAt, noteId,
+    listId = listId,
+    dueMinute = time?.let { it.hour * 60 + it.minute },
+    remindBefore = remindBefore,
+    rrule = repeat,
+    priority = priority,
+    parentId = parentId,
+)

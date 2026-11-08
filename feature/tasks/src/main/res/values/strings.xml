@@ -1,27 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tasks_title">Attività</string>
-    <string name="tasks_new">Nuova attività</string>
-    <string name="tasks_edit">Modifica attività</string>
-    <string name="tasks_filter_open">Da fare</string>
-    <string name="tasks_filter_open_count">Da fare · %1$d</string>
-    <string name="tasks_filter_done">Completate</string>
+    <string name="tasks_count_today">%1$d oggi</string>
+    <string name="tasks_search">Cerca nelle attività</string>
+    <string name="tasks_search_close">Chiudi la ricerca</string>
+    <string name="tasks_lists">Elenchi</string>
+
+    <string name="tasks_view_today">Oggi</string>
+    <string name="tasks_view_scheduled">Programmate</string>
+    <string name="tasks_view_important">Importanti</string>
+    <string name="tasks_view_all">Tutte</string>
+
+    <string name="tasks_section_overdue">In ritardo</string>
+    <string name="tasks_section_today">Oggi · %1$s</string>
+    <string name="tasks_section_tomorrow">Domani · %1$s</string>
+    <string name="tasks_section_later">Più avanti</string>
+    <string name="tasks_section_no_date">Senza data</string>
+    <string name="tasks_section_done">Fatte</string>
+    <string name="tasks_section_done_today">Fatte oggi</string>
+    <string name="tasks_section_results">Risultati</string>
+    <string name="tasks_section_important">Importanti da fare</string>
+
     <string name="tasks_empty_title">Niente da fare</string>
-    <string name="tasks_empty_message">Aggiungi un\'attività con il + in basso o dalla schermata Oggi.</string>
-    <string name="tasks_done_empty_title">Nessuna attività completata</string>
-    <string name="tasks_done_empty_message">Le attività spuntate compaiono qui.</string>
-    <string name="tasks_field_title">Cosa c\'è da fare</string>
+    <string name="tasks_empty_message">Tocca il + in basso e scrivi come parli: «Chiamare l\'idraulico domani alle 10».</string>
+    <string name="tasks_no_results">Nessuna attività trovata</string>
+
+    <string name="tasks_mark_done">Segna come fatta: %1$s</string>
+    <string name="tasks_mark_open">Segna come da fare: %1$s</string>
+    <string name="tasks_important">Importante</string>
+    <string name="tasks_steps_progress">%1$d di %2$d</string>
+    <string name="tasks_from_note">dalla nota</string>
+
+    <string name="repeat_daily">ogni giorno</string>
+    <string name="repeat_weekly">ogni settimana</string>
+    <string name="repeat_monthly">ogni mese</string>
+    <string name="repeat_yearly">ogni anno</string>
+    <string name="repeat_workdays">nei giorni feriali</string>
+    <string name="repeat_every_weekday">ogni %1$s</string>
+    <string name="repeat_every_n_days">ogni %1$d giorni</string>
+    <string name="repeat_every_n_weeks">ogni %1$d settimane</string>
+    <string name="repeat_every_n_months">ogni %1$d mesi</string>
+    <string name="repeat_every_n_years">ogni %1$d anni</string>
+
+    <!-- Scheda -->
+    <string name="tasks_done_button">Fine</string>
+    <string name="tasks_in_list">Elenco %1$s</string>
+    <string name="tasks_field_list">Elenco</string>
+    <string name="tasks_field_due">Scadenza</string>
+    <string name="tasks_field_time">Ora</string>
+    <string name="tasks_field_reminder">Promemoria</string>
+    <string name="tasks_field_repeat">Ripeti</string>
+    <string name="tasks_field_priority">Importanza</string>
     <string name="tasks_field_notes">Note</string>
-    <string name="tasks_due_none">Senza scadenza</string>
-    <string name="tasks_due_today">Oggi</string>
-    <string name="tasks_due_tomorrow">Domani</string>
-    <string name="tasks_due_pick">Scegli data</string>
-    <string name="tasks_save">Salva</string>
+    <string name="tasks_none">Nessuna</string>
+    <string name="tasks_all_day">In giornata</string>
+    <string name="tasks_never">Mai</string>
+    <string name="tasks_no_date">Senza data</string>
+    <string name="tasks_priority_none">No</string>
+    <string name="tasks_priority_medium">Media</string>
+    <string name="tasks_priority_high">Alta</string>
+    <string name="tasks_reminder_none">Nessuno</string>
+    <string name="tasks_reminder_at_time">All\'ora della scadenza</string>
+    <string name="tasks_reminder_morning">Alle 9 del giorno</string>
+    <string name="tasks_reminder_minutes">%1$d minuti prima</string>
+    <string name="tasks_reminder_hour">Un\'ora prima</string>
+    <string name="tasks_reminder_day_before">Il giorno prima</string>
+    <string name="tasks_steps">Passi</string>
+    <string name="tasks_steps_count">Passi · %1$d di %2$d</string>
+    <string name="tasks_step_add">Aggiungi un passo</string>
+    <string name="tasks_step_delete">Togli il passo %1$s</string>
+    <string name="tasks_open_note">Apri la nota</string>
     <string name="tasks_delete">Elimina</string>
+    <string name="tasks_delete_title">Eliminare l\'attività?</string>
+    <string name="tasks_delete_message">Si eliminano anche i suoi passi.</string>
     <string name="tasks_ok">OK</string>
     <string name="tasks_cancel">Annulla</string>
-    <string name="tasks_clear_completed">Elimina le completate</string>
-    <string name="tasks_clear_title">Eliminare le attività completate?</string>
-    <string name="tasks_clear_message">Le attività completate verranno eliminate dal telefono.</string>
+    <string name="tasks_save">Salva</string>
+
+    <string name="tasks_clear_completed">Elimina le fatte</string>
+    <string name="tasks_clear_title">Eliminare le attività fatte?</string>
+    <string name="tasks_clear_message">Le attività fatte e i loro passi verranno eliminati dal telefono.</string>
     <string name="tasks_clear_confirm">Elimina</string>
+
+    <!-- Aggiunta rapida -->
+    <string name="tasks_quick_hint">Scrivi come parli</string>
+    <string name="tasks_quick_placeholder">Pagare il bollo il 30 novembre alle 18 ogni anno !importante #casa</string>
+    <string name="tasks_quick_understood">Ho capito così · tocca per togliere</string>
+    <string name="tasks_quick_remove">Togli: %1$s</string>
+    <string name="tasks_quick_alert">avviso alle %1$s</string>
+    <string name="tasks_quick_details">Dettagli</string>
+    <string name="tasks_quick_add">Aggiungi</string>
+
+    <!-- Elenchi -->
+    <string name="tasks_lists_cloud">Si sincronizzano con il cloud</string>
+    <string name="tasks_lists_cloud_hint">La sincronizzazione delle attività con Murena arriva con il prossimo aggiornamento: per ora restano sul telefono.</string>
+    <string name="tasks_list_main_hint">elenco principale · qui vanno le nuove</string>
+    <string name="tasks_lists_automatic">Sul telefono · automatici</string>
+    <string name="tasks_lists_automatic_hint">Di base restano sul telefono. Accendendo la sincronizzazione un avviso spiega cosa cambia.</string>
+    <string name="tasks_list_medicines_hint">dal Calendario · %1$d da prendere</string>
+    <string name="tasks_list_dates_hint">regali, 10 giorni prima · %1$d</string>
+    <string name="tasks_sync">Sincronizza</string>
+    <string name="tasks_sync_list">Sincronizza %1$s con il cloud</string>
+    <string name="tasks_setting_show_done">Mostra le fatte in fondo</string>
+    <string name="tasks_setting_in_calendar">Attività anche nel Calendario</string>
+    <string name="tasks_list_new">Nuovo elenco</string>
+    <string name="tasks_list_edit">Modifica l\'elenco %1$s</string>
+    <string name="tasks_list_edit_title">Modifica l\'elenco</string>
+    <string name="tasks_list_name">Nome</string>
+    <string name="tasks_list_delete">Elimina l\'elenco</string>
+    <string name="tasks_list_delete_title">Eliminare «%1$s»?</string>
+    <string name="tasks_list_delete_message">Le sue attività non si perdono: passano all\'elenco Attività.</string>
+
+    <!-- Avviso prima di sincronizzare un elenco automatico -->
+    <string name="tasks_sync_warning_title">Sincronizzare %1$s con il cloud?</string>
+    <string name="tasks_sync_warning_meds">Nomi dei farmaci e orari dicono molto sulla tua salute. Sincronizzandoli:</string>
+    <string name="tasks_sync_warning_dates">Compleanni, anniversari e regali dicono molto sulle persone a cui tieni. Sincronizzandoli:</string>
+    <string name="tasks_sync_risk_server">vengono salvati sul server del servizio, che li custodisce ma può leggerli: non sono cifrati solo per te;</string>
+    <string name="tasks_sync_risk_account">chi entra nel tuo account, anche con una password rubata, li vede;</string>
+    <string name="tasks_sync_risk_apps">li vede ogni app collegata all\'account con CalDAV;</string>
+    <string name="tasks_sync_risk_copies">se poi spegni la sincronizzazione, una copia può restare nei salvataggi del servizio.</string>
+    <string name="tasks_sync_warning_gain">In cambio li ritrovi su un telefono nuovo e sul sito del servizio. Puoi spegnere quando vuoi.</string>
+    <string name="tasks_sync_keep_local">Lascia sul telefono</string>
+    <string name="tasks_sync_anyway">Sincronizza lo stesso</string>
 </resources>

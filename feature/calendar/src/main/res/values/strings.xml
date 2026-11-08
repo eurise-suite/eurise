@@ -70,6 +70,8 @@
     <string name="reminder_channel">Promemoria</string>
     <string name="reminder_med_title">È ora del farmaco</string>
     <string name="reminder_med_note">Farmaci · alle %1$s</string>
+    <string name="reminder_task_at">Da fare alle %1$s</string>
+    <string name="reminder_task_today">Da fare oggi</string>
     <string name="reminder_gift_note">Date importanti · promemoria regalo</string>
     <string name="reminder_dates_title">Date importanti</string>
     <string name="reminder_today">Oggi: %1$s</string>

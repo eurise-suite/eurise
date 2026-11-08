@@ -181,7 +181,11 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     TrashRoute(notes = data.notes, onBack = { navController.closeIfOn("notes/trash") })
                 }
                 composable(Section.Tasks.route) {
-                    TasksRoute(repository = data.tasks, newTaskRequests = newTaskRequests)
+                    TasksRoute(
+                        repository = data.tasks,
+                        newTaskRequests = newTaskRequests,
+                        onOpenNote = { navController.openNote(it) },
+                    )
                 }
                 composable(
                     route = NOTE_ROUTE,

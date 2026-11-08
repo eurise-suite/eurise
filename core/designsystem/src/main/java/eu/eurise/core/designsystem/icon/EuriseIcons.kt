@@ -100,6 +100,14 @@ object EuriseIcons {
 
     fun clock(stroke: Float = Stroke) = icon("clock", stroke, circle(12f, 12f, 9f), "M12 7v5l3 2")
 
+    fun flag(stroke: Float = Stroke) = icon("flag", stroke, "M5 21V4h11l-1.5 4L16 12H5")
+
+    fun repeat(stroke: Float = Stroke) = icon("repeat", stroke, "M17 3l3 3-3 3", "M4 11V9a3 3 0 0 1 3-3h13", "M7 21l-3-3 3-3", "M20 13v2a3 3 0 0 1-3 3H4")
+
+    fun bell(stroke: Float = Stroke) = icon("bell", stroke, "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z", "M10 20.5a2 2 0 0 0 4 0")
+
+    fun lists(stroke: Float = Stroke) = icon("lists", stroke, "M9 6h11M9 12h11M9 18h11", "M4.5 6h.01M4.5 12h.01M4.5 18h.01")
+
     fun calculator(stroke: Float = Stroke) = icon("calculator", stroke, "M6 3h12v18H6z", "M9 7h6",
         "M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01")
 

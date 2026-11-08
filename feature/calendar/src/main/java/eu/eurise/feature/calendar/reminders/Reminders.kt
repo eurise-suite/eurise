@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import eu.eurise.core.data.EuriseData
 import eu.eurise.core.data.dates.ImportantDate
+import eu.eurise.core.data.model.TaskList
 import eu.eurise.feature.calendar.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,11 +83,11 @@ object Reminders {
 
         // Crea le voci mancanti.
         wantedGifts.forEach { (key, value) ->
-            if (key !in map) map[key] = tasks.add(value.first, due = value.second, notes = context.getString(R.string.reminder_gift_note))
+            if (key !in map) map[key] = tasks.add(value.first, due = value.second, notes = context.getString(R.string.reminder_gift_note), listId = TaskList.DATES)
         }
         wantedDoses.forEach { (key, value) ->
             if (key !in map) {
-                map[key] = tasks.add(value.first, due = today, notes = value.second)
+                map[key] = tasks.add(value.first, due = today, notes = value.second, listId = TaskList.MEDICINES)
                 if (key !in seen) { notify(context, key.hashCode(), context.getString(R.string.reminder_med_title), value.first); seen += key }
             }
         }
@@ -107,9 +108,24 @@ object Reminders {
             if (stale) {
                 if (task != null && !task.done) tasks.delete(id)
                 iterator.remove()
+            } else if (task != null) {
+                // Voci nate prima degli elenchi automatici: si spostano nel loro elenco.
+                val list = if (key.startsWith("med:")) TaskList.MEDICINES else TaskList.DATES
+                if (task.listId != list) tasks.moveToList(id, list)
             }
         }
         saveMap(context, map)
+
+        // Avvisi delle attività: quelli arrivati nelle ultime 12 ore e non ancora mostrati.
+        tasks.remindersBetween(now.minusHours(12), now).forEach { task ->
+            val key = "task:${task.id}:${task.reminderAt()}"
+            if (key !in seen) {
+                val text = task.time?.let { context.getString(R.string.reminder_task_at, it.toString()) }
+                    ?: context.getString(R.string.reminder_task_today)
+                notify(context, key.hashCode(), task.title, text)
+                seen += key
+            }
+        }
 
         // Avvisi delle date importanti: il giorno prima e il giorno stesso.
         dates.filter { it.notify }.forEach { d ->
@@ -123,7 +139,7 @@ object Reminders {
                 seen += key
             }
         }
-        prefs(context).edit().putStringSet("notified", seen.filter { !it.contains("${today.minusDays(3)}") }.toSet()).apply()
+        prefs(context).edit().putStringSet("notified", seen.filter { !it.contains("${today.minusDays(3)}") }.takeLast(400).toSet()).apply()
     }
 
     private fun giftTitle(context: Context, d: ImportantDate): String = when (d.kind) {
@@ -142,8 +158,11 @@ object Reminders {
         return if (years != null) "$base ($years)" else base
     }
 
-    /** Prossima sveglia: il primo orario di un farmaco ancora da arrivare, o il controllo del mattino. */
-    fun schedule(context: Context) {
+    /**
+     * Prossima sveglia: il primo orario di un farmaco o di un avviso di un'attività ancora da arrivare,
+     * o il controllo del mattino.
+     */
+    suspend fun schedule(context: Context) {
         val data = EuriseData.create(context)
         val now = LocalDateTime.now()
         val candidates = mutableListOf<LocalDateTime>()
@@ -152,6 +171,7 @@ object Reminders {
             data.medicines.medicines.value.filter { it.dueOn(day) }.forEach { m -> m.times.forEach { candidates += day.atTime(it) } }
             candidates += day.atTime(LocalTime.of(8, 30))
         }
+        candidates += data.tasks.remindersBetween(now, now.plusDays(2)).mapNotNull { it.reminderAt() }
         val next = candidates.filter { it.isAfter(now) }.minOrNull() ?: return
         val at = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val am = context.getSystemService(AlarmManager::class.java) ?: return
