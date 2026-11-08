@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Calendari del telefono (su /e/OS anche quelli di Murena): chiesti solo aprendo il Calendario. -->
+    <!-- Permesso della suite: solo le app Eurise firmate con la stessa chiave possono usarlo (es. Orologio). -->
+    <permission android:name="eu.eurise.permission.SUITE" android:protectionLevel="signature" />
+    <uses-permission android:name="eu.eurise.permission.SUITE" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 

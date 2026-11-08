@@ -130,14 +130,26 @@ class SettingsStore(context: Context) {
         return migrateDaily(s.copy(rows = maxOf(2, s.rows), iconSize = minOf(48, s.iconSize)))
     }
 
+    /** Le sei bolle nuove arrivano sulla home, dopo quelle che ci sono già (una volta sola; si tolgono dal catalogo). */
+    private fun migrateBubbles(s: LauncherSettings): LauncherSettings {
+        if (prefs.getBoolean("bubbles_v1", false)) return s
+        val kinds = listOf("today_tasks", "next_event", "meds", "clock", "memo", "codes")
+            .mapNotNull { eu.eurise.feature.launcher.home.HomeKind.byId(it) }
+        val slots = s.homeSlots + kinds.filter { k -> s.homeSlots.none { it.kind == k } }
+            .map { eu.eurise.feature.launcher.home.HomeSlot(it, it.defaultWidth) }
+        prefs.edit().putBoolean("bubbles_v1", true)
+            .putString("home_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(slots)).apply()
+        return s.copy(homeSlots = slots)
+    }
+
     /** Oroscopo e Ricetta del giorno arrivano nella pagina a sinistra (una volta sola). */
     private fun migrateDaily(s: LauncherSettings): LauncherSettings {
-        if (prefs.getBoolean("daily_v1", false)) return s
+        if (prefs.getBoolean("daily_v1", false)) return migrateBubbles(s)
         val added = s.leftCards + listOf(CardKind.Horoscope, CardKind.Recipe)
             .filter { k -> s.leftCards.none { it.kind == k } && s.cards.none { it.kind == k } }
             .map { PlacedCard(it, it.defaultSize) }
         prefs.edit().putBoolean("daily_v1", true).putString("left_cards", added.encode()).apply()
-        return s.copy(leftCards = added)
+        return migrateBubbles(s.copy(leftCards = added))
     }
     val settings: StateFlow<LauncherSettings> = _settings.asStateFlow()
 

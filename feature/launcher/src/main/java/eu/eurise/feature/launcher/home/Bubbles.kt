@@ -35,7 +35,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -70,6 +69,7 @@ import eu.eurise.core.data.calendar.CalendarEvent
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.data.model.TaskList
+import eu.eurise.core.data.suite.ClockContract
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem
@@ -160,7 +160,7 @@ private fun BubbleRow(
 }
 
 @Composable
-private fun RowDivider() = HorizontalDivider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+private fun RowDivider() = PillDivider()
 
 /** Elenco di righe con la linea lieve tra l'una e l'altra; oltre [rows] righe scorre con la barra a destra. */
 @Composable
@@ -556,9 +556,18 @@ fun ClockPill(
                 now.toLocalDate().plusDays(1) -> stringResource(R.string.bubble_alarm_tomorrow)
                 else -> nextAlarm.format(DateTimeFormatter.ofPattern("EEEE d", Locale.ITALIAN))
             }
+            // "Salta" c'è quando la sveglia è di Eurise Orologio: con le altre app non si può saltare da fuori.
+            val ours = remember(nextAlarm) { ClockContract.nextAlarmIsOurs(context) }
+            val skipped = stringResource(R.string.bubble_alarm_skipped)
             BubbleRow(
                 EuriseIcons.clock(), stringResource(R.string.bubble_alarm_main, nextAlarm.format(TimeFormat)), day,
                 onClick = actions.openClock,
+                trailing = {
+                    if (ours) ActionChip(stringResource(R.string.bubble_alarm_skip)) {
+                        ClockContract.skipNext(context)
+                        Toast.makeText(context, skipped, Toast.LENGTH_SHORT).show()
+                    }
+                },
             )
             RowDivider()
         }

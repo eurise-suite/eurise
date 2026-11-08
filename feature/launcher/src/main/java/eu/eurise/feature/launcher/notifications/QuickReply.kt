@@ -159,7 +159,7 @@ fun QuickReplyDialog(message: MessageItem, onOpenChat: (MessageItem) -> Unit, on
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 message.markRead?.let { a ->
-                    Chip(EuriseIcons.read(2f), stringResource(R.string.mark_read), scheme.primary) { runCatching { a.intent.send() }; onClose() }
+                    Chip(EuriseIcons.read(2f), stringResource(R.string.comms_read), scheme.primary) { runCatching { a.intent.send() }; onClose() }
                 }
                 Chip(EuriseIcons.mask(1.8f), stringResource(R.string.comms_hide), scheme.onSurface) {
                     NotificationStore.hide(message)

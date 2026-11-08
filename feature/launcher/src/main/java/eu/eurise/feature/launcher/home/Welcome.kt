@@ -199,7 +199,8 @@ fun AgendaPill(
             upcoming.isEmpty() -> PillLine(EuriseIcons.calendar(), stringResource(R.string.today_free), null, onCalendar)
             else -> SwipeSection(upcoming.take(9).chunked(perPage)) { page ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    page.forEach { e ->
+                    page.forEachIndexed { i, e ->
+                        if (i > 0) PillDivider()
                         val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
                         PillLine(
                             EuriseIcons.calendar(), "$time  ${e.title}", e.location.takeIf { it.isNotBlank() }, onCalendar,
@@ -210,12 +211,14 @@ fun AgendaPill(
             }
         }
         if (showTasks) {
+            PillDivider()
             Label(stringResource(R.string.welcome_tasks, tasks.size))
             SwipeSection(tasks.take(9)) { t ->
                 PillLine(EuriseIcons.task(), t.title, t.notes.lineSequence().firstOrNull()?.takeIf { it.isNotBlank() }, onTasks)
             }
         }
         if (showRoute) {
+            PillDivider()
             Label(stringResource(R.string.welcome_places))
             SwipeSection(destinations.take(9)) { e ->
                 val first = e == destinations.first()
@@ -235,16 +238,6 @@ fun AgendaPill(
             }
         }
     }
-}
-
-/** Mostra [lines] righe e fa scorrere in verticale le altre. */
-@Composable
-private fun ScrollBox(lines: Int, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier.heightIn(max = (lines * 37).dp).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-        content = content,
-    )
 }
 
 /** Una sezione che mostra un elemento alla volta e si scorre di lato; a destra il contatore "2/5". */
@@ -321,13 +314,14 @@ fun WorkPill(
         when {
             !hasAccess -> PillLine(EuriseIcons.folder(), stringResource(R.string.welcome_work_grant), null, onGrant)
             files.isEmpty() -> Text(stringResource(R.string.welcome_work_empty), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> ScrollBox(2) { files.take(10).forEach { f ->
+            else -> ScrollWithBar(RowHeight * 2) { files.take(10).forEachIndexed { i, f ->
+                if (i > 0) PillDivider()
                 val icon = when {
                     f.mime.startsWith("audio/") -> EuriseIcons.mic()
                     f.mime == "application/pdf" -> EuriseIcons.note()
                     else -> EuriseIcons.folder()
                 }
-                PillLine(icon, f.name, f.folder, { onOpen(f) })
+                Box(Modifier.padding(vertical = 5.dp)) { PillLine(icon, f.name, f.folder, { onOpen(f) }) }
             } }
         }
     }

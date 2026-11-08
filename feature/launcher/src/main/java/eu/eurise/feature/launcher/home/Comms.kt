@@ -117,7 +117,7 @@ fun CommsBody(
         else -> ScrollWithBar(RowHeight * rows) {
             messages.take(NotificationStore.MaxMessages).forEachIndexed { i, m ->
                 // Linea appena percettibile tra un messaggio e l'altro.
-                if (i > 0) HorizontalDivider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                if (i > 0) PillDivider()
                 androidx.compose.runtime.key(m.key) {
                     CommsSwipeRow(m, onBubble) {
                         CommsRow(m) { if (m.hasBubble()) onBubble(m) else onOpen(m) }
@@ -127,6 +127,10 @@ fun CommsBody(
         }
     }
 }
+
+/** Linea appena percettibile tra una riga e l'altra di una bolla: la stessa in tutte le bolle. */
+@Composable
+internal fun PillDivider() = HorizontalDivider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
 /** Le notifiche con qualcosa da leggere o da fare si aprono in bolla; le altre (per esempio certe mail) nell'app. */
 private fun MessageItem.hasBubble() = reply != null || history.isNotEmpty() || markRead != null || text.isNotBlank()

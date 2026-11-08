@@ -117,6 +117,7 @@
     <string name="reply_open_chat">Apri chat</string>
     <string name="reply_sent">Risposta inviata</string>
     <string name="comms_open_bubble">Apri la conversazione</string>
+    <string name="comms_read">Letto</string>
     <string name="comms_hide">Nascondi</string>
     <string name="comms_hidden">Nascosto: nell\'app resta da leggere, nessuna spunta al mittente</string>
     <string name="reply_new_messages">%1$s · %2$d messaggi nuovi</string>
@@ -393,6 +394,8 @@
     <string name="bubble_alarm_main">Sveglia alle %1$s</string>
     <string name="bubble_alarm_today">oggi</string>
     <string name="bubble_alarm_tomorrow">domani</string>
+    <string name="bubble_alarm_skip">Salta</string>
+    <string name="bubble_alarm_skipped">Salto solo questa volta: la sveglia torna dalla prossima</string>
     <string name="bubble_timer">Timer</string>
     <string name="bubble_minutes">%1$d min</string>
     <string name="bubble_timer_started">Timer di %1$d min avviato</string>
