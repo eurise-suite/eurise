@@ -6,7 +6,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Documento di progetto: Claude Doc `81d73EgPHtgsSEd7YkavhU`.
 - Tela di design "Icone della suite": https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud, Attività,
-  Drive e Scanner, Orologio, Galleria, Password, Integrazioni).
+  Drive e Scanner, Orologio, Galleria, Password, Integrazioni, Privacy).
 - Repository: `eurise-suite/eurise`. Un ramo per lavoro (`launcher`, `note`, `disegno`, `cloud`…), unito in
   `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
@@ -144,6 +144,25 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Anteprime nuove sulla tela, pagina "Integrazioni": evento con la striscia "Collegati", collegare qualsiasi cosa,
   scheda Persona, un solo +. Da discutere.
 
+## Collegamenti tra tutto (ramo `collegamenti`, parte da `leggerezza`) – scritti, da provare sul telefono
+- Anteprime: tela, pagina "Integrazioni" (approvate l'8 novembre insieme alla regola della privacy chiara).
+- `core/data`: `LinkRef` (Note, Task, Event, Contact + chiave), tabella `links` (coppia ordinata, una riga per
+  legame), database v5 (`MIGRATION_4_5`), `LinkRepository` con i legami impliciti nota–attività.
+- `core/links` (modulo nuovo): `LinkResolver` (legge e cerca note, attività, eventi, contatti sul telefono; contatti
+  e calendario solo con permesso già dato, `Resolved.Unavailable` altrimenti; `Resolved.Gone` scollega da sé),
+  `LinkedSection` (sezione "Collegati") e `LinkPickerSheet` (ricerca in tutta la suite, scelta multipla).
+- Dove compare: scheda dell'attività, fondo delle note salvate, evento esistente. I moduli ricevono uno spazio
+  `linked` dall'app; l'app apre la cosa collegata sopra a quella di partenza (`openLinked` in `EuriseHub`).
+- Da provare: collegare una nota a un evento e a un'attività, aprire i collegati, togliere un collegamento,
+  cancellare un evento dal calendario e vedere sparire il collegamento.
+- Prossimi passi delle integrazioni: scheda Persona, un solo +, poi Tastiera, riunioni, viaggi, modalità.
+
+## Privacy (tela, pagina "Privacy") – anteprime da discutere
+- Panoramica (dove stanno i dati, servizi esterni con i dati che ricevono, interruttori), foglio "Cosa cambia
+  per la tua privacy" prima di accendere una funzione, registro degli accessi (solo sul telefono, 30 giorni).
+- Servizi esterni trovati nel codice: Open-Meteo (posizione a 2 decimali), OSRM e Nominatim (percorsi),
+  Yahoo (borsa), siti di notizie e ricette, oroscopi.info, video dei canali.
+
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
@@ -154,5 +173,5 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
 - Password (tela, pagina "Password", 8 novembre notte): cassaforte con il controllo delle password, voce con
   codice 2FA e passkey, registrazione su un sito con alias e password generata. Da discutere.
-- Prossimo passo: provare l'APK del ramo `leggerezza` (contiene Attività e sveglia nella home) e unirlo a `main`; discutere le anteprime di Drive, Orologio,
+- Prossimo passo: provare l'APK del ramo `collegamenti` (contiene Attività, sveglia nella home, leggerezza e collegamenti) e unirlo a `main`; discutere le anteprime di Drive, Orologio,
   Galleria e Password; poi la sincronizzazione CalDAV delle Attività con Murena.
