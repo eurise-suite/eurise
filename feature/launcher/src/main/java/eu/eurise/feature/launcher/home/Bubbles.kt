@@ -73,6 +73,7 @@ import eu.eurise.core.suite.ClockContract
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem
+import eu.eurise.feature.launcher.notifications.NotificationStore
 import eu.eurise.feature.launcher.route.Travel
 import java.time.Duration
 import java.time.Instant
@@ -107,6 +108,10 @@ class BubbleActions(
     val capture: (String) -> Unit,
     val openNote: (Note) -> Unit,
     val grantNotifications: () -> Unit,
+    /** Aggiunge un'attività per oggi, letta come nell'aggiunta rapida ("Richiamare Luca"). */
+    val addTask: (String) -> Unit = quickTask,
+    /** Richiama chi ha telefonato. */
+    val callBack: (MessageItem) -> Unit = {},
 )
 
 // ---------------------------------------------------------------- pezzi comuni
@@ -250,13 +255,22 @@ fun TodayTasksPill(
                     t.time?.let { add(stringResource(R.string.bubble_by, it.format(TimeFormat))) }
                     if (t.listId == TaskList.DATES) add(stringResource(R.string.bubble_dates))
                 }.joinToString(" · ")
-                BubbleRow(
-                    EuriseIcons.task(), t.title, sub,
-                    subColor = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = actions.openTasks,
-                    leading = { TaskCheck(t.title) { actions.setDone(t) } },
-                    trailing = { ActionChip(stringResource(R.string.bubble_tomorrow)) { actions.postpone(t) } },
-                )
+                val scheme = MaterialTheme.colorScheme
+                SwipeRow(
+                    Swipe(stringResource(R.string.bubble_done), EuriseIcons.check(2.4f), scheme.primary) { actions.setDone(t) },
+                    listOf(
+                        Swipe(stringResource(R.string.bubble_tomorrow), EuriseIcons.repeat(2f), scheme.primary) { actions.postpone(t) },
+                        Swipe(stringResource(R.string.bubble_open), EuriseIcons.task(2f), scheme.onSurfaceVariant) { actions.openTasks() },
+                    ),
+                ) {
+                    BubbleRow(
+                        EuriseIcons.task(), t.title, sub,
+                        subColor = if (overdue) scheme.error else scheme.onSurfaceVariant,
+                        onClick = actions.openTasks,
+                        leading = { TaskCheck(t.title) { actions.setDone(t) } },
+                        trailing = { ActionChip(stringResource(R.string.bubble_tomorrow)) { actions.postpone(t) } },
+                    )
+                }
             }
         }
     }
@@ -399,22 +413,28 @@ fun CodesPill(
                         val ago = ((nowMillis - r.item.postedAt) / 60_000).coerceAtLeast(0)
                         val left = (CodeLifeMinutes - ago).coerceAtLeast(1)
                         val copied = stringResource(R.string.bubble_code_copied)
-                        BubbleRow(
-                            EuriseIcons.key(), "${r.code.chunked(3).joinToString(" ")} · ${r.item.appLabel}",
-                            stringResource(R.string.bubble_code_sub, ago, left),
-                            trailing = {
-                                ActionChip(stringResource(R.string.bubble_copy), filled = true) {
-                                    copySecret(context, r.code)
-                                    Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                        )
+                        val copy = { copySecret(context, r.code); Toast.makeText(context, copied, Toast.LENGTH_SHORT).show() }
+                        SwipeRow(
+                            Swipe(stringResource(R.string.bubble_copy), EuriseIcons.key(2f), MaterialTheme.colorScheme.primary) { copy() },
+                            listOf(Swipe(stringResource(R.string.comms_hide), EuriseIcons.mask(1.8f), MaterialTheme.colorScheme.onSurfaceVariant) { NotificationStore.hide(r.item) }),
+                        ) {
+                            BubbleRow(
+                                EuriseIcons.key(), "${r.code.chunked(3).joinToString(" ")} · ${r.item.appLabel}",
+                                stringResource(R.string.bubble_code_sub, ago, left),
+                                trailing = { ActionChip(stringResource(R.string.bubble_copy), filled = true) { copy() } },
+                            )
+                        }
                     } else {
                         val m = r as MessageItem
-                        BubbleRow(
-                            EuriseIcons.parcel(), m.title, m.text.ifBlank { m.appLabel },
-                            trailing = { ActionChip(stringResource(R.string.bubble_track)) { m.contentIntent?.sendSafely() } },
-                        )
+                        SwipeRow(
+                            Swipe(stringResource(R.string.bubble_track), EuriseIcons.parcel(2f), MaterialTheme.colorScheme.primary) { m.contentIntent?.sendSafely() },
+                            listOf(Swipe(stringResource(R.string.comms_hide), EuriseIcons.mask(1.8f), MaterialTheme.colorScheme.onSurfaceVariant) { NotificationStore.hide(m) }),
+                        ) {
+                            BubbleRow(
+                                EuriseIcons.parcel(), m.title, m.text.ifBlank { m.appLabel },
+                                trailing = { ActionChip(stringResource(R.string.bubble_track)) { m.contentIntent?.sendSafely() } },
+                            )
+                        }
                     }
                 }
             }
@@ -503,6 +523,10 @@ fun MedsPill(
         if (doses.isEmpty()) EmptyLine(stringResource(R.string.bubble_meds_empty))
         else RowList(doses, if (compact) 2 else 3, { it.id }) { t ->
             val late = t.due?.isBefore(today) == true
+            SwipeRow(
+                Swipe(stringResource(R.string.bubble_meds_taken), EuriseIcons.check(2.4f), MaterialTheme.colorScheme.primary) { actions.setDone(t) },
+                listOf(Swipe(stringResource(R.string.bubble_open), EuriseIcons.medical(2f), MaterialTheme.colorScheme.onSurfaceVariant) { actions.openMedicines() }),
+            ) {
             BubbleRow(
                 EuriseIcons.medical(), t.title,
                 when {
@@ -515,6 +539,7 @@ fun MedsPill(
                 onClick = actions.openMedicines,
                 trailing = { ActionChip(stringResource(R.string.bubble_meds_taken), filled = true) { actions.setDone(t) } },
             )
+            }
         }
     }
 }
@@ -543,11 +568,18 @@ fun ClockPill(
     }) {
         running.forEachIndexed { i, m ->
             if (i > 0) RowDivider()
-            BubbleRow(
-                EuriseIcons.alarm(), m.title, m.text,
-                onClick = { m.contentIntent?.sendSafely() },
-                trailing = { m.actions.take(2).forEach { a -> ActionChip(a.title) { a.intent.sendSafely() } } },
-            )
+            // Verso destra il primo comando del timer (di solito +1 min), verso sinistra gli altri.
+            val scheme = MaterialTheme.colorScheme
+            SwipeRow(
+                m.actions.firstOrNull()?.let { a -> Swipe(a.title, EuriseIcons.plus(2f), scheme.primary) { a.intent.sendSafely() } },
+                m.actions.drop(1).map { a -> Swipe(a.title, EuriseIcons.close(2f), scheme.onSurfaceVariant) { a.intent.sendSafely() } },
+            ) {
+                BubbleRow(
+                    EuriseIcons.alarm(), m.title, m.text,
+                    onClick = { m.contentIntent?.sendSafely() },
+                    trailing = { m.actions.take(2).forEach { a -> ActionChip(a.title) { a.intent.sendSafely() } } },
+                )
+            }
         }
         if (running.isNotEmpty()) RowDivider()
         if (nextAlarm != null) {

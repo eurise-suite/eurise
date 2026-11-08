@@ -66,7 +66,12 @@ val LocalQuickReply = androidx.compose.runtime.compositionLocalOf<(MessageItem) 
  * lettura al mittente); "Apri chat" porta alla conversazione nell'app, come toccare la notifica.
  */
 @Composable
-fun QuickReplyDialog(message: MessageItem, onOpenChat: (MessageItem) -> Unit, onClose: () -> Unit) {
+fun QuickReplyDialog(
+    message: MessageItem,
+    onOpenChat: (MessageItem) -> Unit,
+    onClose: () -> Unit,
+    onTask: (String) -> Unit = {},
+) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     var text by remember { mutableStateOf("") }
@@ -105,7 +110,10 @@ fun QuickReplyDialog(message: MessageItem, onOpenChat: (MessageItem) -> Unit, on
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(CircleShape).background(scheme.primary), contentAlignment = Alignment.Center) {
-                    Icon(EuriseIcons.message(2f), null, tint = scheme.onPrimary, modifier = Modifier.size(18.dp))
+                    Icon(
+                        when (message.kind) { CommsKind.Call -> EuriseIcons.phone(2f); CommsKind.Email -> EuriseIcons.mail(2f); else -> EuriseIcons.message(2f) },
+                        null, tint = scheme.onPrimary, modifier = Modifier.size(18.dp),
+                    )
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
@@ -155,6 +163,53 @@ fun QuickReplyDialog(message: MessageItem, onOpenChat: (MessageItem) -> Unit, on
                             .clickable(role = Role.Button, onClickLabel = stringResource(R.string.reply)) { send() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(EuriseIcons.send(2f), stringResource(R.string.reply), tint = scheme.onPrimary, modifier = Modifier.size(18.dp)) }
+                }
+            }
+            val who = message.conversation.ifBlank { message.title }
+            if (message.voice) {
+                // Il vocale si ascolta qui solo se l'app lo mette nella notifica; altrimenti si apre la chat.
+                val onlyInApp = stringResource(R.string.comms_audio_in_app)
+                var playing by remember { mutableStateOf(false) }
+                val player = remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+                androidx.compose.runtime.DisposableEffect(Unit) { onDispose { player.value?.release() } }
+                Chip(EuriseIcons.play(2f), stringResource(if (message.audio != null) (if (playing) R.string.comms_audio_stop else R.string.comms_audio_play) else R.string.comms_audio_open), scheme.primary) {
+                    val uri = message.audio
+                    if (uri == null) { onOpenChat(message); return@Chip }
+                    if (playing) { player.value?.release(); player.value = null; playing = false; return@Chip }
+                    val p = runCatching {
+                        android.media.MediaPlayer().apply {
+                            setDataSource(context, uri); prepare(); start()
+                            setOnCompletionListener { playing = false }
+                        }
+                    }.getOrNull()
+                    if (p == null) { Toast.makeText(context, onlyInApp, Toast.LENGTH_SHORT).show(); onOpenChat(message) }
+                    else { player.value = p; playing = true }
+                }
+            }
+            if (message.kind == CommsKind.Call) {
+                val callTask = stringResource(R.string.comms_task_call, who)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Chip(EuriseIcons.phone(2f), stringResource(R.string.comms_call_back), scheme.primary) { CallBack.call(context, message); onClose() }
+                    Chip(EuriseIcons.message(2f), stringResource(R.string.comms_sms), scheme.primary) { CallBack.sms(context, message); onClose() }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Chip(EuriseIcons.task(2f), stringResource(R.string.comms_call_later), scheme.primary) {
+                        onTask(callTask)
+                        if (message.clearable) NotificationStore.dismiss(message.key) else NotificationStore.hide(message)
+                        onClose()
+                    }
+                    Chip(EuriseIcons.read(2f), stringResource(R.string.comms_seen), scheme.onSurface) {
+                        if (message.clearable) NotificationStore.dismiss(message.key) else NotificationStore.hide(message)
+                        onClose()
+                    }
+                }
+                return@Column
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val taskText = stringResource(if (message.kind == CommsKind.Email) R.string.comms_task_mail else R.string.comms_task_chat, who)
+                Chip(EuriseIcons.task(2f), stringResource(R.string.comms_todo), scheme.primary) { onTask(taskText); onClose() }
+                message.archive?.let { a ->
+                    Chip(EuriseIcons.folder(2f), stringResource(R.string.comms_archive), scheme.onSurface) { runCatching { a.intent.send() }; onClose() }
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

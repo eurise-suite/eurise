@@ -408,6 +408,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             },
             openNote = { actions.openEurise("note:${it.id}") },
             grantNotifications = actions.grantNotifications,
+            addTask = { text ->
+                viewModel.quickTask(text)
+                android.widget.Toast.makeText(context, taskSaved.format(text), android.widget.Toast.LENGTH_SHORT).show()
+            },
+            callBack = { m -> eu.eurise.feature.launcher.notifications.CallBack.call(context, m) },
         )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }
@@ -490,7 +495,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
-                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts) {
+                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     SummaryColumn(
                         state, messages, nowPlaying, notificationsOn, if (left) emptyList() else setup, hazeState, actions, clearance, modifier,
                         weather = weather,
@@ -554,7 +559,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                         notifications = allNotifications,
                                         readCodes = settings.readCodes,
                                         cardBody = { kind, modifier ->
-                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts) {
+                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                                             SummaryCardBody(
                                                 PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
                                                 hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
@@ -783,6 +788,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     message = m,
                     onOpenChat = { replyTo = null; panelOpen = false; actions.openMessage(it) },
                     onClose = { replyTo = null },
+                    onTask = bubbleActions.addTask,
                 )
             }
         }
@@ -964,6 +970,7 @@ private fun PhoneHome(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
+                androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides home.bubbles) {
                 eu.eurise.feature.launcher.home.HomeBoard(
                     slots = settings.homeSlots,
                     editing = home.editing,
@@ -1034,6 +1041,7 @@ private fun PhoneHome(
                             home.cardBody(kind, sized)
                         }
                     }
+                }
                 }
             }
             }

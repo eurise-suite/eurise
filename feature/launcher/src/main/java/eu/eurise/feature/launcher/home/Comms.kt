@@ -32,6 +32,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import eu.eurise.feature.launcher.notifications.CommsKind
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -70,6 +73,9 @@ internal val RowHeight = 47.dp
 class PeopleShortcuts(val onRecent: () -> Unit, val onStarred: () -> Unit)
 
 val LocalPeopleShortcuts = compositionLocalOf<PeopleShortcuts?> { null }
+
+/** Le azioni delle bolle (attività, richiamate…), fornite dalla Scrivania. */
+val LocalBubbleActions = compositionLocalOf<BubbleActions?> { null }
 
 /** I due tondi in alto nella bolla: contatti recenti e preferiti. */
 @Composable
@@ -119,8 +125,9 @@ fun CommsBody(
                 // Linea appena percettibile tra un messaggio e l'altro.
                 if (i > 0) PillDivider()
                 androidx.compose.runtime.key(m.key) {
-                    CommsSwipeRow(m, onBubble) {
-                        CommsRow(m) { if (m.hasBubble()) onBubble(m) else onOpen(m) }
+                    val (right, left) = commsSwipes(m, onBubble, LocalBubbleActions.current)
+                    SwipeRow(right, left) {
+                        CommsRow(m) { if (m.hasBubble() || m.kind == CommsKind.Call) onBubble(m) else onOpen(m) }
                     }
                 }
             }
@@ -142,8 +149,12 @@ private fun CommsRow(m: MessageItem, onClick: () -> Unit) {
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val call = m.packageName.contains("dialer") || m.packageName.contains("phone")
-        Icon(if (call) EuriseIcons.phone() else EuriseIcons.message(), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
+        val icon = when (m.kind) {
+            CommsKind.Call -> EuriseIcons.phone()
+            CommsKind.Email -> EuriseIcons.mail()
+            CommsKind.Chat -> if (m.voice) EuriseIcons.mic() else EuriseIcons.message()
+        }
+        Icon(icon, null, tint = scheme.primary, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
@@ -172,55 +183,51 @@ private fun CommsRow(m: MessageItem, onClick: () -> Unit) {
     }
 }
 
+/** Un'azione di scorrimento: verso destra la principale (scatta oltre la soglia), verso sinistra quelle che si scoprono. */
+class Swipe(val label: String, val icon: ImageVector, val color: Color, val run: () -> Unit)
+
 /**
- * Riga che si trascina di lato. Verso destra, oltre la soglia, apre la bolla della conversazione; verso sinistra
- * scopre il tondo Elimina (le notifiche che non si possono togliere vengono solo nascoste da Eurise).
+ * Riga che si trascina di lato, uguale in tutte le bolle. Verso destra, oltre la soglia, esegue [right] (il simbolo
+ * si accende man mano); verso sinistra scopre i tondi di [left]. Le stesse azioni sono offerte a TalkBack.
  */
 @Composable
-private fun CommsSwipeRow(m: MessageItem, onBubble: (MessageItem) -> Unit, content: @Composable () -> Unit) {
+internal fun SwipeRow(right: Swipe?, left: List<Swipe>, content: @Composable () -> Unit) {
+    if (right == null && left.isEmpty()) { content(); return }
     val density = LocalDensity.current
-    val deletePx = with(density) { 60.dp.toPx() }
+    val leftPx = with(density) { (left.size * 60).dp.toPx() }
     val openPx = with(density) { 72.dp.toPx() }
     val offset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val drag = rememberDraggableState { d -> scope.launch { offset.snapTo((offset.value + d).coerceIn(-deletePx, openPx * 1.25f)) } }
-    val scheme = MaterialTheme.colorScheme
-    val deleteLabel = stringResource(R.string.delete)
-    val openLabel = stringResource(R.string.comms_open_bubble)
-    val delete = {
-        if (m.clearable) NotificationStore.dismiss(m.key) else NotificationStore.hide(m)
-    }
+    val maxRight = if (right != null) openPx * 1.25f else 0f
+    val drag = rememberDraggableState { d -> scope.launch { offset.snapTo((offset.value + d).coerceIn(-leftPx, maxRight)) } }
     Box(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).semantics {
-            customActions = listOf(
-                CustomAccessibilityAction(openLabel) { onBubble(m); true },
-                CustomAccessibilityAction(deleteLabel) { delete(); true },
-            )
+            customActions = (listOfNotNull(right) + left).map { a -> CustomAccessibilityAction(a.label) { a.run(); true } }
         },
     ) {
         val x = offset.value
-        if (x > 1f) {
-            // Verso destra: il simbolo della chat si accende man mano che ci si avvicina alla soglia.
-            Row(Modifier.matchParentSize().padding(start = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    EuriseIcons.chat(2f), null, tint = scheme.primary,
-                    modifier = Modifier.size(20.dp).graphicsLayer { alpha = (x / openPx).coerceIn(0.25f, 1f) },
-                )
+        if (x > 1f && right != null) {
+            Row(Modifier.matchParentSize().padding(start = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                val alpha = (x / openPx).coerceIn(0.25f, 1f)
+                Icon(right.icon, null, tint = right.color, modifier = Modifier.size(20.dp).graphicsLayer { this.alpha = alpha })
+                Text(right.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = right.color, modifier = Modifier.graphicsLayer { this.alpha = alpha })
             }
         }
         if (x < -1f) {
             Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.width(60.dp).clickable(role = Role.Button, onClickLabel = deleteLabel) {
-                        scope.launch { offset.snapTo(0f) }
-                        delete()
-                    },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(scheme.error.copy(alpha = 0.14f)),
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(EuriseIcons.trash(2f), deleteLabel, tint = scheme.error, modifier = Modifier.size(17.dp)) }
+                left.forEach { a ->
+                    Column(
+                        Modifier.width(60.dp).clickable(role = Role.Button, onClickLabel = a.label) {
+                            scope.launch { offset.snapTo(0f) }
+                            a.run()
+                        },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(Modifier.size(32.dp).clip(CircleShape).background(a.color.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                            Icon(a.icon, a.label, tint = a.color, modifier = Modifier.size(16.dp))
+                        }
+                        Text(a.label, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
         }
@@ -231,16 +238,55 @@ private fun CommsSwipeRow(m: MessageItem, onBubble: (MessageItem) -> Unit, conte
                     drag, Orientation.Horizontal,
                     onDragStopped = { velocity ->
                         when {
-                            offset.value > openPx || velocity > 1400f -> {
-                                onBubble(m)
+                            right != null && (offset.value > openPx || velocity > 1400f) -> {
+                                right.run()
                                 offset.animateTo(0f)
                             }
-                            offset.value < -deletePx / 2 || velocity < -800f -> offset.animateTo(-deletePx)
+                            left.isNotEmpty() && (offset.value < -leftPx / 2 || velocity < -800f) -> offset.animateTo(-leftPx)
                             else -> offset.animateTo(0f)
                         }
                     },
                 ),
         ) { content() }
+    }
+}
+
+/**
+ * Gli scorrimenti di una comunicazione, secondo il tipo:
+ * - chiamata: verso destra Richiama; verso sinistra Vista e Richiamo (un promemoria tra le attività);
+ * - mail: verso destra Leggi (la bolla); verso sinistra Da fare, Archivia (se l'app lo offre) ed Elimina;
+ * - chat: verso destra la conversazione; verso sinistra Da fare ed Elimina.
+ */
+@Composable
+private fun commsSwipes(m: MessageItem, onBubble: (MessageItem) -> Unit, actions: BubbleActions?): Pair<Swipe?, List<Swipe>> {
+    val scheme = MaterialTheme.colorScheme
+    val who = m.conversation.ifBlank { m.title }
+    val remove = Swipe(stringResource(R.string.delete), EuriseIcons.trash(2f), scheme.error) {
+        if (m.clearable) NotificationStore.dismiss(m.key) else NotificationStore.hide(m)
+    }
+    return when (m.kind) {
+        CommsKind.Call -> {
+            val seen = Swipe(stringResource(R.string.comms_seen), EuriseIcons.read(2f), scheme.onSurfaceVariant) {
+                if (m.clearable) NotificationStore.dismiss(m.key) else NotificationStore.hide(m)
+            }
+            val callTask = stringResource(R.string.comms_task_call, who)
+            val later = Swipe(stringResource(R.string.comms_call_later), EuriseIcons.task(2f), scheme.primary) {
+                actions?.addTask?.invoke(callTask)
+                if (m.clearable) NotificationStore.dismiss(m.key) else NotificationStore.hide(m)
+            }
+            Swipe(stringResource(R.string.comms_call_back), EuriseIcons.phone(2f), scheme.primary) { actions?.callBack?.invoke(m) } to listOf(seen, later)
+        }
+        CommsKind.Email -> {
+            val mailTask = stringResource(R.string.comms_task_mail, who)
+            val todo = Swipe(stringResource(R.string.comms_todo), EuriseIcons.task(2f), scheme.primary) { actions?.addTask?.invoke(mailTask) }
+            val archive = m.archive?.let { a -> Swipe(stringResource(R.string.comms_archive), EuriseIcons.folder(2f), scheme.onSurfaceVariant) { runCatching { a.intent.send() } } }
+            Swipe(stringResource(R.string.comms_read_mail), EuriseIcons.mail(2f), scheme.primary) { onBubble(m) } to listOfNotNull(todo, archive, remove)
+        }
+        CommsKind.Chat -> {
+            val chatTask = stringResource(R.string.comms_task_chat, who)
+            val todo = Swipe(stringResource(R.string.comms_todo), EuriseIcons.task(2f), scheme.primary) { actions?.addTask?.invoke(chatTask) }
+            Swipe(stringResource(R.string.comms_open_bubble_short), EuriseIcons.chat(2f), scheme.primary) { onBubble(m) } to listOf(todo, remove)
+        }
     }
 }
 

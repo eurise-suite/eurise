@@ -40,12 +40,25 @@ data class MessageItem(
     val reply: ReplyAction? = null,
     /** "Segna come letto", se l'app lo offre. */
     val markRead: NotificationAction? = null,
+    /** Chiamata, mail o chat: decide gli scorrimenti e le azioni della bolla. */
+    val kind: CommsKind = CommsKind.Chat,
+    /** "Archivia" (di solito delle app di posta), se c'è. */
+    val archive: NotificationAction? = null,
+    /** "Richiama" della notifica di chiamata persa, se l'app lo offre. */
+    val callBack: NotificationAction? = null,
+    /** L'audio di un messaggio vocale, quando l'app lo mette nella notifica (poche lo fanno). */
+    val audio: android.net.Uri? = null,
+    /** Vero se l'ultimo messaggio è un vocale (anche quando l'audio non è nella notifica). */
+    val voice: Boolean = false,
 ) {
     /** Quanti messaggi rappresenta la notifica (almeno uno). */
     val count: Int get() = history.size.coerceAtLeast(1)
 }
 
 data class NotificationAction(val title: String, val intent: PendingIntent)
+
+/** Che tipo di comunicazione è. */
+enum class CommsKind { Chat, Email, Call }
 
 /** Azione di risposta: il testo scritto si consegna all'app attraverso il suo [input]. */
 data class ReplyAction(val title: String, val intent: PendingIntent, val input: android.app.RemoteInput) {
@@ -210,6 +223,13 @@ object NotificationStore {
                 )
         }
         val history = messageHistory(extras)
+        val titleOf = { a: Notification.Action -> a.title?.toString()?.lowercase().orEmpty() }
+        val archiveAction = all.firstOrNull { a -> a.remoteInputs.isNullOrEmpty() && ("archiv" in titleOf(a)) }
+        val callAction = all.firstOrNull { a ->
+            a.remoteInputs.isNullOrEmpty() && (Build.VERSION.SDK_INT >= 28 && a.semanticAction == Notification.Action.SEMANTIC_ACTION_CALL ||
+                listOf("richiam", "call back", "callback", "chiama").any { it in titleOf(a) })
+        }
+        val audio = lastAudio(extras)
         val cat = notification.category
         val isMsg = isMessage()
         return MessageItem(
@@ -239,8 +259,39 @@ object NotificationStore {
                 ReplyAction(a.title?.toString().orEmpty(), a.actionIntent, input)
             },
             markRead = readAction?.let { NotificationAction(it.title.toString(), it.actionIntent) },
+            kind = kindOf(),
+            archive = archiveAction?.let { NotificationAction(it.title.toString(), it.actionIntent) },
+            callBack = callAction?.let { NotificationAction(it.title.toString(), it.actionIntent) },
+            audio = audio,
+            voice = audio != null || VoiceText.containsMatchIn(
+                (extras.getCharSequence(Notification.EXTRA_TEXT) ?: "").toString() + " " + lastMessageText(extras),
+            ),
         )
     }
+
+    private fun StatusBarNotification.kindOf(): CommsKind {
+        val cat = notification.category
+        return when {
+            cat == Notification.CATEGORY_CALL || cat == Notification.CATEGORY_MISSED_CALL ||
+                listOf("dialer", ".phone", "telecom", "contacts").any { it in packageName } -> CommsKind.Call
+            cat == Notification.CATEGORY_EMAIL ||
+                listOf("mail", "k9", "thunderbird", "faircode.email", "tutanota", "tutao", "outlook", "com.google.android.gm").any { it in packageName } -> CommsKind.Email
+            else -> CommsKind.Chat
+        }
+    }
+
+    /** "Messaggio vocale", "🎤 0:12", "Voice message", "Audio"… */
+    private val VoiceText = Regex("""(?iu)(🎤|🎙|messaggio vocale|nota vocale|vocale \(|voice message|voice note|audio message|^audio\b)""")
+
+    /** L'audio dell'ultimo messaggio, se l'app lo allega alla notifica (campo "uri" con tipo audio). */
+    private fun lastAudio(extras: android.os.Bundle): android.net.Uri? = runCatching {
+        @Suppress("DEPRECATION")
+        val messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES) ?: return@runCatching null
+        messages.mapNotNull { it as? android.os.Bundle }.lastOrNull { it.getString("type")?.startsWith("audio/") == true }?.let {
+            @Suppress("DEPRECATION")
+            it.getParcelable<android.net.Uri>("uri")
+        }
+    }.getOrNull()
 
     private val ServiceCategories = setOf(
         Notification.CATEGORY_PROGRESS, Notification.CATEGORY_SERVICE, Notification.CATEGORY_STATUS,
