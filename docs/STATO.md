@@ -203,8 +203,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 ## Dove siamo (8 novembre, fine giornata)
 - `main` contiene: Attività, sveglia nella home, leggerezza, collegamenti.
 - Ramo `orologio` (da provare e poi unire a `main`): bolle (Ti hanno cercato unificata + sei bolle nuove),
-  Orologio dentro l'APK principale, backup cifrato. Ultimo APK di prova: eurise-debug-116 (versione ufficiale
-  2,7 MB).
+  Orologio dentro l'APK principale, backup cifrato, scorrimenti secondo il tipo di comunicazione (chiamata:
+  Richiama / Vista e Richiamo; mail: Leggi / Da fare, Archivia, Elimina; chat: conversazione / Da fare, Elimina),
+  vocali in bolla quando l'app allega l'audio, SwipeRow comune a tutte le bolle. Ultimo APK di prova:
+  eurise-debug-118 (versione ufficiale 2,7 MB).
 - Prossimi passi, in ordine: prova sul telefono del ramo `orologio` e unione a `main`; Galleria (APK separato),
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
