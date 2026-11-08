@@ -54,6 +54,15 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # Leggerezza: si pesa a ogni compilazione anche la versione ufficiale (ridotta, non firmata).
+      # L'APK di prova è già caricato: se questo passo fallisce, non blocca nulla.
+      - name: Pesa la versione ufficiale
+        continue-on-error: true
+        run: |
+          python3 .github/scripts/apk_size.py "APK di prova" app/build/outputs/apk/debug/*.apk
+          ./gradlew --no-daemon assembleRelease 2>&1 | tail -20
+          python3 .github/scripts/apk_size.py "Versione ufficiale" app/build/outputs/apk/release/*.apk
+
   release:
     name: APK firmato (solo per i tag v*)
     if: startsWith(github.ref, 'refs/tags/v')

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import eu.eurise.core.designsystem.R
 import eu.eurise.core.designsystem.format.dueLabel
 import eu.eurise.core.designsystem.format.editedAt
+import eu.eurise.core.designsystem.icon.EuriseIcons
 import java.time.LocalDate
 
 /**
@@ -115,7 +114,7 @@ fun NoteCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (pinned) {
                     Icon(
-                        Icons.Filled.PushPin,
+                        EuriseIcons.pin(),
                         contentDescription = stringResource(R.string.ds_pinned),
                         tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(14.dp),
