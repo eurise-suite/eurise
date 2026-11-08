@@ -191,8 +191,22 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Orologio) e resta per i futuri APK separati, con il permesso di firma (SUITE per le ufficiali, SUITE_DEBUG per le prove).
   Da fare: timer lanciati dalle ricette della Scrivania; meteo nella routine (oggi lo ha solo la Scrivania);
   sveglia calcolata sul tempo di viaggio; centro privacy che elenchi il calendario dell'Orologio.
-- Backup cifrato (deciso l'8 novembre, vedi CLAUDE.md "Dati e backup"): anteprime da fare nella pagina Cloud.
-- Prossimo passo: provare l'APK del ramo `orologio` (contiene `bolle`) e unirlo a `main`; poi Galleria,
-  Password e Drive/Scanner con le funzioni in più del documento (che contiene già Attività, sveglia, leggerezza e
-  collegamenti); scegliere le bolle nuove; poi scheda Persona e + unico; anteprime di Drive, Orologio, Galleria,
-  Password e Privacy; sincronizzazione CalDAV delle Attività con Murena.
+- Backup cifrato (ramo `orologio`, 8 novembre, regole in CLAUDE.md "Dati e backup"): motore in
+  `core/cloud/backup` (BackupCrypto AES-256-GCM con chiave dei dati chiusa da frase e codice di recupero,
+  PBKDF2 310.000 giri; Retention tre recenti + mensile + trimestrale; BackupArchive con database e impostazioni,
+  fuori cache, account cloud e chiavi; destinazioni WebDAV in Eurise/Backup o cartella del selettore; BackupWorker
+  giornaliero con Wi-Fi e in carica che rispetta la frequenza). Schermata `feature/cloud/BackupScreen.kt`
+  (Cloud → Backup cifrato; sezione "backup" dalla Scrivania; passo "Hai un backup?" nella scheda di avvio).
+  Il ripristino prepara i file e li applica al riavvio (`EuriseApplication`). Gli account cloud vanno ricollegati
+  dopo un ripristino. Da fare: comparire nel centro privacy; Proton e MEGA solo via selettore delle cartelle.
+
+## Dove siamo (8 novembre, fine giornata)
+- `main` contiene: Attività, sveglia nella home, leggerezza, collegamenti.
+- Ramo `orologio` (da provare e poi unire a `main`): bolle (Ti hanno cercato unificata + sei bolle nuove),
+  Orologio dentro l'APK principale, backup cifrato. Ultimo APK di prova: eurise-debug-116 (versione ufficiale
+  2,7 MB).
+- Prossimi passi, in ordine: prova sul telefono del ramo `orologio` e unione a `main`; Galleria (APK separato),
+  Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
+  (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
+  CalDAV delle Attività con Murena.
+
