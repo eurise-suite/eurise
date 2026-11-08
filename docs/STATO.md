@@ -233,6 +233,18 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   documento, sezione Password. Da decidere con il proprietario prima del codice: la "strada A" del documento
   (cassaforte in un file KeePass .kdbx su kDrive). Nella Galleria restano pulizia e cartella protetta; il caricamento
   su kDrive aspetta Drive.
+- Ramo `password` (da `main`, da provare): modulo `:password`, APK separato `eu.eurise.password`, artefatto
+  `eurise-password-debug-N`, Android 8+. Decisione del proprietario (9 novembre): file KeePass `.kdbx` sul telefono,
+  sincronizzato su Murena via WebDAV (`Eurise/Password/eurise.kdbx`), interruttore spento di base con spiegazione;
+  kDrive si aggiunge con Drive, perché il piano my kSuite+ non ha WebDAV e serve l'API con token. Sulla tela la
+  pillola dice ancora "kDrive". Fatto: formato KDBX 4 in `kdbx/` senza librerie (Argon2 d/id, BLAKE2b, ChaCha20;
+  test con i vettori RFC, con un file creato da pykeepass, e la compilazione fa riaprire a pykeepass il file scritto da
+  noi), campi sconosciuti conservati, cronologia, cestino, unione voce per voce con la versione perdente in cronologia,
+  apri/importa file, prendi da Murena, codici 2FA, generatore (frase o caratteri), controllo locale deboli/riusate,
+  blocco a mano e dopo 2 minuti fuori dall'app, schermo protetto da screenshot, appunti riservati e cancellati dopo
+  45 s. Mancano, in quest'ordine: sblocco con impronta, compilazione automatica di Android con antifrode sul dominio
+  e foglio PwdRegistra, alias, controllo violazioni (k-anonimato, con interruttore), passkey, Famiglia, riquadri tendina.
+  Il centro privacy dovrà elencare Murena per questa app.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
