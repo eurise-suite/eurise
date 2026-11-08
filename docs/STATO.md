@@ -6,7 +6,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Documento di progetto: Claude Doc `81d73EgPHtgsSEd7YkavhU`.
 - Tela di design "Icone della suite": https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud, Attività,
-  Drive e Scanner, Orologio, Galleria).
+  Drive e Scanner, Orologio, Galleria, Password).
 - Repository: `eurise-suite/eurise`. Un ramo per lavoro (`launcher`, `note`, `disegno`, `cloud`…), unito in
   `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
@@ -91,21 +91,29 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `user_info`, creato in Manager → token API), come fanno FolderSync e l'integrazione kDrive di Home Assistant.
   Da verificare che l'API risponda anche con my kSuite+ prima di costruire il client.
 
-## Attività (`feature/tasks`) – anteprime approvate, codice da scrivere
-- Tela, pagina "Attività": elenco Oggi (In ritardo, Oggi, Domani; viste Oggi, Programmate, Importanti ed elenchi),
-  scheda (elenco, scadenza con ora, promemoria, ripetizione, importanza, passi, note, collegamenti a nota e contatto),
-  aggiunta rapida "come si parla" con i pezzi riconosciuti togliibili, elenchi, avviso prima di sincronizzare.
-- Decisioni del proprietario (8 novembre):
-  - Importanza a tre livelli: No, Media, Alta (in CalDAV PRIORITY 0, 5, 1).
-  - Le attività con un orario compaiono anche nel Calendario: interruttore acceso di base.
-  - Farmaci e Date importanti diventano elenchi automatici, di base solo sul telefono; ognuno ha un interruttore
-    "Sincronizza" con il servizio scelto, e accenderlo apre un avviso sui rischi (server che può leggerli,
-    account rubato, altre app CalDAV, copie nei salvataggi del servizio) con "Lascia sul telefono" in evidenza.
-- Codice oggi: solo titolo, note, giorno di scadenza, fatta (database v3). Da fare nel ramo `attivita`:
-  database v4 (tabella degli elenchi con tinta, tipo e sincronizzazione; nelle attività elenco, ora, promemoria,
-  ripetizione RRULE, importanza, attività madre per i passi, uid ed etag), voci di `Reminders.kt` spostate negli
-  elenchi automatici, schermate nello stile delle Note (testata satinata, pillole, schede bianche), lettore della
-  frase con test, notifiche dei promemoria. Poi la sincronizzazione CalDAV (VTODO) con Murena.
+## Attività (`feature/tasks`) – scritte nel ramo `attivita`, da provare sul telefono
+- Tela, pagina "Attività" (anteprime approvate). Decisioni del proprietario (8 novembre): importanza a tre livelli
+  (No, Media, Alta = PRIORITY 0, 5, 1 di CalDAV); attività con un orario anche nel Calendario, interruttore acceso
+  di base; Farmaci e Date importanti come elenchi automatici, di base solo sul telefono, con interruttore
+  "Sincronizza" e avviso sui rischi ("Lascia sul telefono" in evidenza).
+- Fatto nel ramo `attivita` (compila con i test verdi; contiene anche `sveglia-home`):
+  - Database v4 (`MIGRATION_3_4`, nessun dato perso): tabella `task_lists` con tre elenchi a id fisso (1 Attività,
+    2 Farmaci, 3 Date importanti) creati anche sulle installazioni nuove; nelle attività `list_id`, `due_minute`,
+    `remind_before`, `rrule`, `priority`, `parent_id` (passi).
+  - `Recurrence` (RRULE: FREQ, INTERVAL, BYDAY, con test): spuntata un'attività che si ripete nasce la prossima,
+    con i passi da rifare; quella fatta resta come storico senza ripetizione.
+  - `TaskSettings`: "Mostra le fatte in fondo" e "Attività anche nel Calendario" (il Calendario usa
+    `observeForCalendar`).
+  - Schermate: elenco con viste Oggi (In ritardo, Oggi, Domani, poi "Più avanti · Fatte oggi"), Programmate,
+    Importanti, Tutte ed elenchi; ricerca; scheda con salvataggio automatico (elenco, scadenza, ora, avviso,
+    ripetizione, importanza, passi, note, nota d'origine); aggiunta rapida "come si parla" (`QuickAdd`, con test)
+    con i pezzi evidenziati e togliibili; elenchi con modifica, tinta, avviso di sincronizzazione e preferenze.
+  - Promemoria: le voci automatiche di `Reminders.kt` vanno negli elenchi Farmaci e Date importanti (anche quelle
+    già esistenti); gli avvisi delle attività usano la stessa sveglia dei farmaci; l'app riprogramma quando un avviso
+    cambia (`TaskRepository.onRemindersChanged`, impostato in `EuriseApplication`).
+- Da provare sul telefono: migrazione dei dati esistenti, aggiunta rapida, avvisi all'ora giusta, ripetizioni.
+- Poi: sincronizzazione CalDAV (VTODO) con Murena per gli elenchi con "Sincronizza" acceso; collegamento a un
+  contatto (previsto nell'anteprima, non ancora fatto).
 
 ## Anteprime nuove da discutere (8 novembre, nell'ordine del documento di progetto)
 - Drive e Scanner (pagina "Drive e Scanner"): un solo navigatore per telefono, Murena e kDrive con pillole per
@@ -142,7 +150,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
 - kDrive da sistemare (vedi Cloud).
 - Home: prossima sveglia sotto alba e tramonto (icona piccola e orario, terza riga della stessa colonna; con il
-  giorno davanti se manca più di un giorno). Ramo `sveglia-home`, da provare sul telefono e poi unire a `main`.
-  Legge la sveglia che l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
-- Prossimo passo: discutere le anteprime di Drive, Orologio e Galleria; poi il codice delle Attività (ramo
-  `attivita`) e la sincronizzazione CalDAV con Murena.
+  giorno davanti se manca più di un giorno). Ramo `sveglia-home`, già unito in `attivita`. Legge la sveglia che
+  l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
+- Password (tela, pagina "Password", 8 novembre notte): cassaforte con il controllo delle password, voce con
+  codice 2FA e passkey, registrazione su un sito con alias e password generata. Da discutere.
+- Prossimo passo: provare l'APK del ramo `attivita` e unirlo a `main`; discutere le anteprime di Drive, Orologio,
+  Galleria e Password; poi la sincronizzazione CalDAV delle Attività con Murena.
