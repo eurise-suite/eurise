@@ -407,6 +407,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 }
             },
             openNote = { actions.openEurise("note:${it.id}") },
+            openNotes = { actions.openEurise("notes") },
+            newNote = { actions.openEurise("new_note") },
             grantNotifications = actions.grantNotifications,
             addTask = { text ->
                 viewModel.quickTask(text)
@@ -598,6 +600,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         onMoveTo = { app, target ->
                             viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to target.id)) }
                         },
+                        orderOf = { settings.appOrder[it.id] },
+                        onReorder = { target, keys -> viewModel.updateSettings { it.copy(appOrder = it.appOrder + (target.id to keys)) } },
                         bottomClearance = clearance,
                         columns = settings.columns,
                         iconSize = settings.iconSize.dp,
@@ -752,7 +756,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             if (categoryEditor) {
                 CategoryEditor(
                     categories = barCategories,
-                    appCount = { c -> state.apps.count { categoryOf(it)?.id == c.id } },
+                    appCount = { c -> if (c.isAll) state.apps.size else state.apps.count { categoryOf(it)?.id == c.id } },
                     hazeState = hazeState,
                     onChange = { list -> viewModel.updateSettings { it.copy(categories = list) } },
                     onClose = { categoryEditor = false },

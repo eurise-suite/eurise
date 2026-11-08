@@ -107,6 +107,8 @@ class BubbleActions(
     val openClock: () -> Unit,
     val capture: (String) -> Unit,
     val openNote: (Note) -> Unit,
+    val openNotes: () -> Unit,
+    val newNote: () -> Unit,
     val grantNotifications: () -> Unit,
     /** Aggiunge un'attività per oggi, letta come nell'aggiunta rapida ("Richiamare Luca"). */
     val addTask: (String) -> Unit = quickTask,
@@ -640,7 +642,15 @@ fun QuickNotePill(
         }
     }
     val dictateLabel = stringResource(R.string.bubble_dictate)
-    Pill(hazeState, modifier, title = stringResource(R.string.bubble_memo_title)) {
+    Pill(
+        hazeState, modifier, title = stringResource(R.string.bubble_memo_title),
+        trailing = {
+            SmallRound(EuriseIcons.note(2f), stringResource(R.string.bubble_memo_open_notes), onClick = actions.openNotes)
+            Spacer(Modifier.width(5.dp))
+            SmallRound(EuriseIcons.plus(2f), stringResource(R.string.bubble_memo_new_note), onClick = actions.newNote)
+            Spacer(Modifier.width(2.dp))
+        },
+    ) {
         BubbleField(stringResource(R.string.bubble_memo_hint), actions.capture, text, { text = it }) {
             SmallRound(EuriseIcons.mic(2f), dictateLabel) {
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)

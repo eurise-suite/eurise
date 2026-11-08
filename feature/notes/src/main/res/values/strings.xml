@@ -24,6 +24,13 @@
     <string name="notes_pin">Fissa in alto</string>
     <string name="notes_unpin">Togli dall\'alto</string>
     <string name="notes_share">Condividi</string>
+    <string name="notes_select_text">Seleziona testo</string>
+    <string name="notes_copy_all">Copia tutto</string>
+    <string name="notes_selection_clear">Annulla la selezione</string>
+    <plurals name="notes_selected">
+        <item quantity="one">%1$d selezionata</item>
+        <item quantity="other">%1$d selezionate</item>
+    </plurals>
     <string name="notes_trash">Sposta nel cestino</string>
     <string name="notes_title_placeholder">Titolo</string>
     <string name="notes_body_placeholder">Scrivi qui… usa #parola per i tag</string>

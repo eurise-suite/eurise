@@ -41,9 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.HazeState
 import eu.eurise.core.designsystem.component.GlassDefaults
-import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.theme.EuriseThemeExtras
@@ -61,13 +59,20 @@ internal class ToolbarActions(
     val onDraw: () -> Unit,
 )
 
+/** Fondo pieno dei comandi sopra al testo: una superficie trasparente farebbe sovrapporre le scritte. */
+@Composable
+private fun Modifier.opaquePanel(shape: androidx.compose.ui.graphics.Shape): Modifier =
+    shadow(10.dp, shape)
+        .clip(shape)
+        .background(MaterialTheme.colorScheme.surface)
+        .border(1.dp, EuriseThemeExtras.colors.glassOutline, shape)
+
 /**
- * Barra di formattazione satinata in basso, come la barra delle sezioni: stile del paragrafo, grassetto,
+ * Barra di formattazione opaca in basso, come la barra delle sezioni: stile del paragrafo, grassetto,
  * corsivo, sottolineato, colori, elenco di controllo e Inserisci. Il pannello dei colori si apre sopra.
  */
 @Composable
 internal fun FormatToolbar(
-    hazeState: HazeState,
     active: Set<Mark>,
     kind: TextKind?,
     enabled: Boolean,
@@ -82,13 +87,13 @@ internal fun FormatToolbar(
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (colors && enabled) {
-            ColorPanel(hazeState, color, highlight, actions)
+            ColorPanel(color, highlight, actions)
         }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(GlassDefaults.PillHeight)
-                .glass(hazeState, RoundedCornerShape(50))
+                .opaquePanel(RoundedCornerShape(50))
                 .padding(GlassDefaults.Padding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -181,12 +186,12 @@ private fun ToolButton(
 
 /** Colori del testo ed evidenziatore: le otto tinte della suite, più "nessuno". */
 @Composable
-private fun ColorPanel(hazeState: HazeState, color: String?, highlight: String?, actions: ToolbarActions) {
+private fun ColorPanel(color: String?, highlight: String?, actions: ToolbarActions) {
     val ink = inkColors()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .glass(hazeState, RoundedCornerShape(24.dp))
+            .opaquePanel(RoundedCornerShape(24.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

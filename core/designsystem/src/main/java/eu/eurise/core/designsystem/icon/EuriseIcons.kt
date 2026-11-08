@@ -139,6 +139,10 @@ object EuriseIcons {
 
     fun home(stroke: Float = Stroke) = icon("home", stroke, "M4 11l8-6.5 8 6.5", "M6 9.5V20h12V9.5", "M10 20v-5h4v5")
 
+    fun euro(stroke: Float = Stroke) = icon("euro", stroke, "M18 6.8A6.5 6.5 0 0 0 7.5 12a6.5 6.5 0 0 0 10.5 5.2", "M4.5 10.2h9", "M4.5 13.8h8")
+    fun compass(stroke: Float = Stroke) = icon("compass", stroke, circle(12f, 12f, 9f), "M15.5 8.5l-2 5-5 2 2-5z")
+    fun spark(stroke: Float = Stroke) = icon("spark", stroke, "M11 5l1.9 5.1L18 12l-5.1 1.9L11 19l-1.9-5.1L4 12l5.1-1.9z", "M18.5 3.5v3", "M17 5h3")
+    fun browser(stroke: Float = Stroke) = icon("browser", stroke, "M3.5 5.5h17v13h-17z", "M3.5 9.5h17", "M6.5 7.5h.01", "M9.5 7.5h.01")
     fun work(stroke: Float = Stroke) = icon("work", stroke, "M4 8h16v11H4z", "M9 8V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2", "M4 13h16")
 
     fun cart(stroke: Float = Stroke) = icon("cart", stroke, "M3 4h2.5l2 11h10l2-8H7", circle(9.5f, 19f, 1.3f), circle(16.5f, 19f, 1.3f))

@@ -252,14 +252,25 @@ fun AppTile(
     onMoveTo: (BarCategory) -> Unit = {},
     /** Crea una cartella partendo da questa app; nullo per non mostrare la voce. */
     onCreateFolder: (() -> Unit)? = null,
+    /**
+     * Pressione lunga gestita da chi contiene l'icona (per il trascinamento): l'icona non la intercetta e apre
+     * il menu quando [menuRequest] diventa vero.
+     */
+    externalLongPress: Boolean = false,
+    menuRequest: Boolean = false,
+    onMenuClosed: () -> Unit = {},
 ) {
     var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(menuRequest) { if (menuRequest) { menu = true; onMenuClosed() } }
     Box(modifier) {
         Column(
             Modifier
                 .clip(RoundedCornerShape(16.dp))
-                .combinedClickable(onClick = onOpen, onLongClick = { menu = true })
+                .then(
+                    if (externalLongPress) Modifier.clickable(onClick = onOpen)
+                    else Modifier.combinedClickable(onClick = onOpen, onLongClick = { menu = true }),
+                )
                 .padding(vertical = 6.dp, horizontal = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

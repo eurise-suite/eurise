@@ -39,7 +39,7 @@ data class NotesListState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotesListViewModel(
     private val repository: NoteRepository,
-    notebooks: NotebookRepository,
+    private val notebooks: NotebookRepository,
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
@@ -72,5 +72,23 @@ class NotesListViewModel(
 
     fun setFilter(value: NotesFilter) {
         filter.value = value
+    }
+
+    /** Sposta nel cestino le note scelte: si recuperano da lì per 30 giorni. */
+    fun trash(ids: Set<Long>, done: () -> Unit) = batch(done) { ids.forEach { repository.trash(it) } }
+
+    fun moveToNotebook(ids: Set<Long>, notebookId: Long?, done: () -> Unit) =
+        batch(done) { ids.forEach { repository.setNotebook(it, notebookId) } }
+
+    fun moveToNewNotebook(ids: Set<Long>, name: String, tint: String, done: () -> Unit) = batch(done) {
+        val notebookId = notebooks.add(name, tint)
+        ids.forEach { repository.setNotebook(it, notebookId) }
+    }
+
+    fun setPinned(ids: Set<Long>, pinned: Boolean, done: () -> Unit) =
+        batch(done) { ids.forEach { repository.setPinned(it, pinned) } }
+
+    private fun batch(done: () -> Unit, work: suspend () -> Unit) {
+        viewModelScope.launch { work(); done() }
     }
 }

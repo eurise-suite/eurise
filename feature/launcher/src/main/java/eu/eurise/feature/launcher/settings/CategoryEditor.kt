@@ -27,9 +27,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -61,6 +63,7 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.CategoryIcons
+import eu.eurise.feature.launcher.apps.DefaultBarCategories
 import eu.eurise.feature.launcher.apps.MAX_CATEGORIES
 import eu.eurise.feature.launcher.apps.MIN_CATEGORIES
 import eu.eurise.feature.launcher.home.Label
@@ -69,7 +72,7 @@ import eu.eurise.feature.launcher.home.scrimColor
 private val RowHeight = 60.dp
 
 /**
- * Barra delle categorie: da 3 a 7. Si trascinano dalla maniglia per riordinarle, il meno le toglie
+ * Barra delle categorie: da 2 a 8. Si trascinano dalla maniglia per riordinarle, il meno le toglie
  * (Preferiti resta sempre), toccandone una si cambiano nome e simbolo, in fondo se ne aggiunge una nuova.
  */
 @Composable
@@ -81,7 +84,7 @@ fun CategoryEditor(
     onClose: () -> Unit,
 ) {
     var selectedId by remember { mutableStateOf<String?>(null) }
-    var newName by remember { mutableStateOf("") }
+    var confirmReset by remember { mutableStateOf(false) }
     val current by rememberUpdatedState(categories)
     val rowPx = with(LocalDensity.current) { RowHeight.toPx() }
 
@@ -256,6 +259,22 @@ fun CategoryEditor(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
             )
         }
+        Text(
+            stringResource(R.string.categories_reset), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { confirmReset = true }.padding(horizontal = 8.dp, vertical = 10.dp),
+        )
         Spacer(Modifier.height(24.dp))
+    }
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(stringResource(R.string.categories_reset_title)) },
+            text = { Text(stringResource(R.string.categories_reset_message)) },
+            confirmButton = {
+                TextButton(onClick = { confirmReset = false; selectedId = null; onChange(DefaultBarCategories) }) { Text(stringResource(R.string.categories_reset_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.categories_reset_cancel)) } },
+        )
     }
 }

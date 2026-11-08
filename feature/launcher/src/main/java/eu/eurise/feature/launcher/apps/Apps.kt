@@ -25,10 +25,14 @@ import kotlinx.coroutines.flow.map
  */
 enum class Category(val label: String, val icon: (Float) -> ImageVector, val tint: CalendarTint) {
     Favorites("Preferiti", { EuriseIcons.star(it) }, CalendarTint.Grafite),
+    All("Tutte", { EuriseIcons.grid(it) }, CalendarTint.Grafite),
+    Money("Soldi", { EuriseIcons.euro(it) }, CalendarTint.Ottone),
+    Tools("Strumenti", { EuriseIcons.compass(it) }, CalendarTint.Prugna),
+    Media("Media", { EuriseIcons.image(it) }, CalendarTint.Terracotta),
+    Work("Lavoro", { EuriseIcons.work(it) }, CalendarTint.BluNotte),
     Communication("Comunicazione", { EuriseIcons.chat(it) }, CalendarTint.Salvia),
-    Organization("Organizzazione", { EuriseIcons.calendar(it) }, CalendarTint.BluNotte),
-    PhotosFiles("Foto e file", { EuriseIcons.folder(it) }, CalendarTint.Ottone),
-    Tools("Strumenti", { EuriseIcons.tools(it) }, CalendarTint.Prugna),
+    Browser("Browser", { EuriseIcons.browser(it) }, CalendarTint.Petrolio),
+    Ai("AI", { EuriseIcons.spark(it) }, CalendarTint.Borgogna),
     Other("Altre app", { EuriseIcons.grid(it) }, CalendarTint.Grafite),
 }
 
@@ -72,12 +76,13 @@ class AppsRepository(private val context: Context) {
             .filter { it.activityInfo.packageName != own }
             .map { info ->
                 val pkg = info.activityInfo.packageName
+                val label = info.loadLabel(pm).toString()
                 AppEntry(
                     key = "$pkg/${info.activityInfo.name}",
-                    label = info.loadLabel(pm).toString(),
+                    label = label,
                     packageName = pkg,
                     component = ComponentName(pkg, info.activityInfo.name),
-                    category = categorize(pkg, info.activityInfo.applicationInfo),
+                    category = categorize(pkg, label, info.activityInfo.applicationInfo),
                 )
             }
         return (euriseSections(own) + installed).sortedBy { it.label.lowercase() }
@@ -85,58 +90,24 @@ class AppsRepository(private val context: Context) {
 
     /** Le sezioni dell'app Eurise compaiono come app a sé nelle loro categorie. */
     private fun euriseSections(own: String) = listOf(
-        AppEntry("eurise:today", "Oggi", own, null, Category.Organization, "today"),
-        AppEntry("eurise:calendar", "Calendario", own, null, Category.Organization, "calendar"),
-        AppEntry("eurise:notes", "Note", own, null, Category.Organization, "notes"),
-        AppEntry("eurise:tasks", "Attività", own, null, Category.Organization, "tasks"),
+        AppEntry("eurise:today", "Oggi", own, null, Category.Work, "today"),
+        AppEntry("eurise:calendar", "Calendario", own, null, Category.Work, "calendar"),
+        AppEntry("eurise:notes", "Note", own, null, Category.Work, "notes"),
+        AppEntry("eurise:tasks", "Attività", own, null, Category.Work, "tasks"),
     )
 
     /**
-     * Assegna una categoria: prima le app note per nome di pacchetto, poi la categoria che l'app dichiara
-     * ad Android. Quello che resta va in "Altre app".
+     * Assegna una categoria: prima le app riconosciute per pacchetto o per nome, poi la categoria che l'app
+     * dichiara ad Android. Quello che resta si trova solo in "Tutte", finché non lo si sposta.
      */
-    private fun categorize(pkg: String, app: ApplicationInfo): Category {
-        KNOWN.entries.firstOrNull { (prefix, _) -> pkg.startsWith(prefix) }?.let { return it.value }
-        return when (app.category) {
+    private fun categorize(pkg: String, label: String, app: ApplicationInfo): Category =
+        classifyApp(pkg, label) ?: when (app.category) {
             ApplicationInfo.CATEGORY_SOCIAL -> Category.Communication
-            ApplicationInfo.CATEGORY_PRODUCTIVITY -> Category.Organization
-            ApplicationInfo.CATEGORY_IMAGE, ApplicationInfo.CATEGORY_VIDEO -> Category.PhotosFiles
-            ApplicationInfo.CATEGORY_MAPS, ApplicationInfo.CATEGORY_NEWS -> Category.Tools
-            ApplicationInfo.CATEGORY_AUDIO, ApplicationInfo.CATEGORY_GAME -> Category.Other
+            ApplicationInfo.CATEGORY_PRODUCTIVITY -> Category.Work
+            ApplicationInfo.CATEGORY_IMAGE, ApplicationInfo.CATEGORY_VIDEO, ApplicationInfo.CATEGORY_AUDIO -> Category.Media
+            ApplicationInfo.CATEGORY_MAPS -> Category.Tools
             else -> Category.Other
         }
-    }
-
-    private companion object {
-        val KNOWN = linkedMapOf(
-            // Comunicazione
-            "com.android.dialer" to Category.Communication, "com.google.android.dialer" to Category.Communication,
-            "org.fossify.phone" to Category.Communication, "com.android.messaging" to Category.Communication,
-            "org.fossify.messages" to Category.Communication, "com.android.contacts" to Category.Communication,
-            "org.fossify.contacts" to Category.Communication, "foundation.e.mail" to Category.Communication,
-            "com.fsck.k9" to Category.Communication, "net.thunderbird" to Category.Communication,
-            "ch.protonmail" to Category.Communication, "com.infomaniak.mail" to Category.Communication,
-            "com.whatsapp" to Category.Communication, "org.telegram" to Category.Communication,
-            "org.thoughtcrime.securesms" to Category.Communication, "im.vector" to Category.Communication,
-            "io.element" to Category.Communication,
-            // Organizzazione
-            "foundation.e.calendar" to Category.Organization, "org.fossify.calendar" to Category.Organization,
-            "org.fossify.clock" to Category.Organization, "com.android.deskclock" to Category.Organization,
-            "foundation.e.notes" to Category.Organization, "foundation.e.tasks" to Category.Organization,
-            "org.tasks" to Category.Organization, "com.kunzisoft.keepass" to Category.Organization,
-            // Foto e file
-            "foundation.e.gallery" to Category.PhotosFiles, "org.fossify.gallery" to Category.PhotosFiles,
-            "com.android.camera" to Category.PhotosFiles, "foundation.e.camera" to Category.PhotosFiles,
-            "com.nextcloud" to Category.PhotosFiles, "com.infomaniak.drive" to Category.PhotosFiles,
-            "foundation.e.drive" to Category.PhotosFiles, "com.android.documentsui" to Category.PhotosFiles,
-            "org.fossify.filemanager" to Category.PhotosFiles,
-            // Strumenti
-            "foundation.e.browser" to Category.Tools, "org.mozilla" to Category.Tools, "app.organicmaps" to Category.Tools,
-            "app.comaps" to Category.Tools, "foundation.e.privacycentral" to Category.Tools,
-            "foundation.e.advancedprivacy" to Category.Tools, "com.android.settings" to Category.Tools,
-            "foundation.e.apps" to Category.Tools, "org.fdroid" to Category.Tools, "de.markusfisch.android.binaryeye" to Category.Tools,
-        )
-    }
 }
 
 /** Apre un'app o una sezione di Eurise. */

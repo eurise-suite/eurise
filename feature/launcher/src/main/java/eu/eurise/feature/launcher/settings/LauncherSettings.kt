@@ -6,7 +6,9 @@ import androidx.compose.ui.graphics.toArgb
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.DefaultBarCategories
+import eu.eurise.feature.launcher.apps.decodeAppOrder
 import eu.eurise.feature.launcher.apps.decodeCategories
+import eu.eurise.feature.launcher.apps.encodeAppOrder
 import eu.eurise.feature.launcher.apps.encodeCategories
 import eu.eurise.feature.launcher.folders.AppFolder
 import eu.eurise.feature.launcher.folders.decodeFolders
@@ -96,10 +98,12 @@ data class LauncherSettings(
     val leftCards: List<PlacedCard> = DefaultLeftCards,
     /** Le schede (bolle) della home, nell'ordine, con larghezza, altezza e legame. */
     val homeSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = eu.eurise.feature.launcher.home.DefaultHomeSlots,
-    /** Categorie della barra in basso, da 3 a 7, nell'ordine scelto. */
+    /** Categorie della barra in basso, da 2 a 8, nell'ordine scelto. */
     val categories: List<BarCategory> = DefaultBarCategories,
     /** App spostate a mano in un'altra categoria: chiave dell'app → id della categoria. */
     val categoryOverrides: Map<String, String> = emptyMap(),
+    /** Ordine delle app dentro ogni categoria, scelto trascinandole: id della categoria → chiavi delle app. */
+    val appOrder: Map<String, List<String>> = emptyMap(),
     /** Cartelle di app, sulla home o nelle categorie. */
     val folders: List<AppFolder> = emptyList(),
     /** Cosa fa cambiare lo sfondo. */
@@ -176,6 +180,7 @@ class SettingsStore(context: Context) {
             .putString("home_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.homeSlots))
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
+            .putString("app_order", next.appOrder.encodeAppOrder())
             .putString("folders", next.folders.encodeFolders())
             .putBoolean("wp_season", next.wallpaper.season)
             .putBoolean("wp_weather", next.wallpaper.weather)
@@ -203,6 +208,7 @@ class SettingsStore(context: Context) {
         categoryOverrides = prefs.getString("category_overrides", "").orEmpty().lines()
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
+        appOrder = decodeAppOrder(prefs.getString("app_order", null)),
         folders = decodeFolders(prefs.getString("folders", null)),
         wallpaper = eu.eurise.feature.launcher.home.WallpaperOptions(
             season = prefs.getBoolean("wp_season", true),

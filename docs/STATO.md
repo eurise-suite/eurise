@@ -207,6 +207,14 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Richiama / Vista e Richiamo; mail: Leggi / Da fare, Archivia, Elimina; chat: conversazione / Da fare, Elimina),
   vocali in bolla quando l'app allega l'audio, SwipeRow comune a tutte le bolle. Ultimo APK di prova:
   eurise-debug-118 (versione ufficiale 2,7 MB).
+- Sul ramo `orologio`, dopo la prova dell'APK 118 (note del proprietario "Note Eurise" e "Categorie Eurise"):
+  Note con testata e pillola opache, elenchi allineati e con spazio pari all'interlinea, modalità Seleziona (⋯ →
+  Seleziona testo, sola lettura, selezione su tutti i punti), selezione multipla nell'elenco (pressione lunga: fissa,
+  sposta, condividi, cestino), icona Note e + nella bolla Appunto al volo. Scrivania: otto categorie predefinite
+  (Tutte, Soldi, Strumenti, Media, Lavoro, Comunicazione, Browser, AI; riconoscimento in `apps/AppClassifier.kt`),
+  app trascinabili con la pressione lunga dentro la categoria e, tenendole sul bordo dello schermo, verso quella
+  accanto (ordine in `appOrder`); "Ripristina le categorie predefinite" nell'editor. Scritto senza anteprima sulla
+  tela su decisione del proprietario. Da provare sul telefono.
 - Prossimi passi, in ordine: prova sul telefono del ramo `orologio` e unione a `main`; Galleria (APK separato),
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

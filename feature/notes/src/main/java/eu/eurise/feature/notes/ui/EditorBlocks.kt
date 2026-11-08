@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +38,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -47,12 +51,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.notes.FocusRequest
 import eu.eurise.feature.notes.R
+import eu.eurise.feature.notes.doc.Block
+import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.TableBlock
 import eu.eurise.feature.notes.doc.TextBlock
@@ -91,14 +99,7 @@ internal fun TextBlockField(
     }
     val baseColor = MaterialTheme.colorScheme.onSurface
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    val style = when (block.kind) {
-        TextKind.Heading -> TextStyle(fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, color = baseColor)
-        TextKind.Subheading -> TextStyle(fontSize = 18.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold, color = baseColor)
-        TextKind.Check -> if (block.checked) {
-            TextStyle(fontSize = 16.sp, lineHeight = 24.sp, color = muted, textDecoration = TextDecoration.LineThrough)
-        } else TextStyle(fontSize = 16.sp, lineHeight = 24.sp, color = baseColor)
-        else -> TextStyle(fontSize = 16.sp, lineHeight = 25.sp, color = baseColor)
-    }
+    val style = blockStyle(block, baseColor, muted)
     val text = block.text.text
     val sel = selection ?: TextRange(text.length)
     // La parola che la tastiera sta componendo va restituita a ogni giro, o le tastiere con i suggerimenti
@@ -119,12 +120,7 @@ internal fun TextBlockField(
         modifier = Modifier.fillMaxWidth().padding(top = topPadding),
         verticalAlignment = Alignment.Top,
     ) {
-        when (block.kind) {
-            TextKind.Bullet -> Leading { Box(Modifier.size(6.dp).background(baseColor, CircleShape)) }
-            TextKind.Numbered -> Leading { Text("$number.", fontSize = 16.sp, color = baseColor, fontWeight = FontWeight.SemiBold) }
-            TextKind.Check -> CheckBox(block.checked) { actions.onToggleChecked(block.id) }
-            else -> Unit
-        }
+        ListMarker(block, number, style) { actions.onToggleChecked(block.id) }
         Column(Modifier.weight(1f)) {
             BasicTextField(
                 value = value,
@@ -147,8 +143,7 @@ internal fun TextBlockField(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = if (block.kind == TextKind.Check) 32.dp else 26.dp)
-                    .padding(vertical = if (block.kind == TextKind.Check) 4.dp else 1.dp)
+                    .then(if (block.kind == TextKind.Check) Modifier.heightIn(min = 32.dp).padding(vertical = 4.dp) else Modifier)
                     .focusRequester(requester)
                     .onFocusChanged { if (it.isFocused) actions.onFocus(block.id) },
                 decorationBox = { inner ->
@@ -180,9 +175,75 @@ internal fun TextBlockField(
     }
 }
 
+/** Ogni riga occupa tutta la sua altezza: così lo spazio tra due punti è uguale all'interlinea. */
+private val FullLine = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+
+private fun blockStyle(block: TextBlock, base: Color, muted: Color): TextStyle = when (block.kind) {
+    TextKind.Heading -> TextStyle(fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, color = base)
+    TextKind.Subheading -> TextStyle(fontSize = 18.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold, color = base)
+    TextKind.Check -> if (block.checked) {
+        TextStyle(fontSize = 16.sp, lineHeight = 24.sp, color = muted, textDecoration = TextDecoration.LineThrough)
+    } else TextStyle(fontSize = 16.sp, lineHeight = 24.sp, color = base)
+    else -> TextStyle(fontSize = 16.sp, lineHeight = 25.sp, color = base)
+}.copy(lineHeightStyle = FullLine)
+
+/** Il segno davanti a una voce d'elenco: alto come la prima riga del testo, così resta allineato. */
 @Composable
-private fun Leading(content: @Composable () -> Unit) {
-    Box(Modifier.width(26.dp).height(26.dp), contentAlignment = Alignment.CenterStart) { content() }
+private fun ListMarker(block: TextBlock, number: Int, style: TextStyle, onToggle: () -> Unit) {
+    val lineHeight = with(LocalDensity.current) { style.lineHeight.toDp() }
+    val leading = Modifier.width(26.dp).height(lineHeight)
+    when (block.kind) {
+        TextKind.Bullet -> Box(leading, contentAlignment = Alignment.CenterStart) {
+            Box(Modifier.size(6.dp).background(style.color, CircleShape))
+        }
+        TextKind.Numbered -> Box(leading, contentAlignment = Alignment.CenterStart) {
+            Text("$number.", style = style.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+        }
+        TextKind.Check -> CheckBox(block.checked, onToggle)
+        else -> Unit
+    }
+}
+
+/**
+ * La nota in sola lettura per la modalità Seleziona: un'unica selezione attraversa titolo, paragrafi e punti
+ * degli elenchi, cosa impossibile con un campo di testo per blocco.
+ */
+@Composable
+internal fun SelectableBlocks(title: String, blocks: List<Block>) {
+    val ink = inkColors()
+    val base = MaterialTheme.colorScheme.onSurface
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    SelectionContainer {
+        Column(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+            if (title.isNotBlank()) {
+                Text(
+                    title,
+                    style = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold, color = base),
+                    modifier = Modifier.padding(bottom = 14.dp),
+                )
+            }
+            var number = 0
+            blocks.forEach { block ->
+                number = if (block is TextBlock && block.kind == TextKind.Numbered) number + 1 else 0
+                when (block) {
+                    is TextBlock -> {
+                        val style = blockStyle(block, base, muted)
+                        val current = number
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                            DisableSelection { ListMarker(block, current, style) {} }
+                            Text(block.text.toAnnotated(ink), style = style, modifier = Modifier.weight(1f).padding(vertical = if (block.kind == TextKind.Check) 4.dp else 0.dp))
+                        }
+                    }
+                    is TableBlock -> Column(Modifier.padding(vertical = 6.dp)) {
+                        block.rows.forEach { row -> Text(row.joinToString("  ·  "), fontSize = 14.sp, color = base) }
+                    }
+                    is NoteLinkBlock -> Text(block.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 6.dp))
+                    is DividerBlock -> DividerView()
+                    is DrawingBlock -> DisableSelection { DrawingPreview(block, onOpen = {}, modifier = Modifier.padding(vertical = 8.dp)) }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -196,9 +257,10 @@ private fun CheckBox(checked: Boolean, onToggle: () -> Unit) {
             .clip(RoundedCornerShape(8.dp))
             .clickable(role = Role.Checkbox, onClick = onToggle)
             .semantics { contentDescription = label; stateDescription = state },
-        contentAlignment = Alignment.CenterStart,
+        contentAlignment = Alignment.TopStart,
     ) {
-        val box = Modifier.size(20.dp).clip(RoundedCornerShape(5.dp))
+        // A metà della prima riga: 4 dp di margine del testo più 2 per centrare i 20 dp sui 24 della riga.
+        val box = Modifier.padding(top = 6.dp).size(20.dp).clip(RoundedCornerShape(5.dp))
         if (checked) {
             Box(box.background(primary), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.check(3f), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))

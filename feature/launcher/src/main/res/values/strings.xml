@@ -236,7 +236,12 @@
     <string name="app_move_to">Sposta in…</string>
     <string name="categories_title">Barra delle categorie</string>
     <string name="categories_summary">%1$d categorie · riordina, aggiungi, cambia simboli</string>
-    <string name="categories_hint">Da 3 a 7 categorie. Trascina dalla maniglia per riordinarle; tocca una categoria per cambiarne nome e simbolo. Le app si spostano tenendole premute → Sposta in…</string>
+    <string name="categories_hint">Da 2 a 8 categorie. Trascina dalla maniglia per riordinarle; tocca una categoria per cambiarne nome e simbolo. Le app si spostano tenendole premute e trascinandole: sul bordo dello schermo passano alla categoria accanto.</string>
+    <string name="categories_reset">Ripristina le categorie predefinite</string>
+    <string name="categories_reset_title">Ripristinare le categorie?</string>
+    <string name="categories_reset_message">La barra torna alle otto categorie di partenza. Le categorie aggiunte da te si perdono; le app che ci avevi messo tornano dove Eurise le riconosce.</string>
+    <string name="categories_reset_ok">Ripristina</string>
+    <string name="categories_reset_cancel">Annulla</string>
     <string name="categories_reorder">Trascina per riordinare</string>
     <string name="categories_home">La home</string>
     <string name="categories_apps">%1$d app</string>
@@ -418,6 +423,8 @@
     <string name="bubble_timer_started">Timer di %1$d min avviato</string>
     <string name="bubble_memo_title">Appunto al volo</string>
     <string name="bubble_memo_desc">scrivi o detta: nota o attività</string>
+    <string name="bubble_memo_open_notes">Apri le note</string>
+    <string name="bubble_memo_new_note">Nuova nota</string>
     <string name="bubble_memo_hint">Scrivi o detta…</string>
     <string name="bubble_memo_last">ultima nota · %1$s fa</string>
     <string name="bubble_dictate">Detta</string>

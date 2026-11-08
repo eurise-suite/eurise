@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -57,9 +56,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -68,14 +69,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.data.NoteRepository
 import eu.eurise.core.data.NotebookRepository
 import eu.eurise.core.data.TaskRepository
 import eu.eurise.core.data.model.Note
-import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.notes.doc.DividerBlock
 import eu.eurise.feature.notes.doc.DrawingBlock
@@ -92,6 +90,7 @@ import eu.eurise.feature.notes.ui.InsertGrid
 import eu.eurise.feature.notes.ui.InsertOption
 import eu.eurise.feature.notes.ui.NoteLinkView
 import eu.eurise.feature.notes.ui.NotebookPickerSheet
+import eu.eurise.feature.notes.ui.SelectableBlocks
 import eu.eurise.feature.notes.ui.TableBlockView
 import eu.eurise.feature.notes.ui.TextBlockActions
 import eu.eurise.feature.notes.ui.TextBlockField
@@ -175,12 +174,14 @@ private fun NoteEditorScreen(
     notebookPicker: @Composable (onDismiss: () -> Unit) -> Unit,
     linkPicker: @Composable (onDismiss: () -> Unit) -> Unit,
 ) {
-    val haze = remember { HazeState() }
+    var selecting by rememberSaveable { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     var insertSheet by rememberSaveable { mutableStateOf(false) }
     var pickNotebook by rememberSaveable { mutableStateOf(false) }
     var pickLink by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val clipboard = LocalClipboardManager.current
+    BackHandler(enabled = selecting) { selecting = false }
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
@@ -200,12 +201,14 @@ private fun NoteEditorScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .hazeSource(haze)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp)
                 .padding(top = statusTop + 64.dp, bottom = 120.dp + navBottom),
         ) {
+            if (selecting) {
+                SelectableBlocks(state.title, state.blocks)
+            } else {
             BasicTextField(
                 value = state.title,
                 onValueChange = viewModel::onTitleChange,
@@ -261,6 +264,7 @@ private fun NoteEditorScreen(
                 }
                 if (block !is TextBlock) number = 0
             }
+            }
 
             val tags = state.tags
             if (tags.isNotEmpty()) {
@@ -294,11 +298,11 @@ private fun NoteEditorScreen(
             )
         }
 
-        // Testata satinata.
+        // Testata opaca: il testo che scorre non deve vedersi sotto i comandi.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .glass(haze, RoundedCornerShape(0.dp), elevation = 0.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -308,6 +312,11 @@ private fun NoteEditorScreen(
                 Text(notebookName ?: stringResource(R.string.notes_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.weight(1f))
+            if (selecting) {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(viewModel.shareText())) }) {
+                    Text(stringResource(R.string.notes_copy_all), fontWeight = FontWeight.SemiBold)
+                }
+            } else {
             IconButton(onClick = viewModel::undo, enabled = state.canUndo) {
                 Icon(EuriseIcons.undo(), contentDescription = stringResource(R.string.notes_undo), modifier = Modifier.size(20.dp))
             }
@@ -327,6 +336,11 @@ private fun NoteEditorScreen(
                         onClick = { menu = false; pickNotebook = true },
                     )
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.notes_select_text)) },
+                        leadingIcon = { Icon(EuriseIcons.note(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        onClick = { menu = false; focusManager.clearFocus(); selecting = true },
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.notes_share)) },
                         leadingIcon = { Icon(EuriseIcons.share(), contentDescription = null, modifier = Modifier.size(20.dp)) },
                         onClick = { menu = false; onShare() },
@@ -338,16 +352,16 @@ private fun NoteEditorScreen(
                     )
                 }
             }
+            }
             TextButton(
-                onClick = { focusManager.clearFocus(); onDone() },
+                onClick = { if (selecting) selecting = false else { focusManager.clearFocus(); onDone() } },
                 modifier = Modifier.padding(start = 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer).height(36.dp),
             ) { Text(stringResource(R.string.notes_done), fontWeight = FontWeight.SemiBold) }
         }
 
         // Barra di formattazione: segue la tastiera.
         val focused = state.focusedText
-        FormatToolbar(
-            hazeState = haze,
+        if (!selecting) FormatToolbar(
             active = state.activeMarks,
             kind = focused?.kind,
             enabled = focused != null,

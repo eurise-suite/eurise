@@ -1,7 +1,12 @@
 package eu.eurise.feature.notes
 
+import android.content.Intent
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +48,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -55,6 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.data.NoteRepository
 import eu.eurise.core.data.NotebookRepository
 import eu.eurise.core.data.model.Note
@@ -66,6 +74,7 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.NoteHtml
 import eu.eurise.feature.notes.ui.DrawingThumbnail
+import eu.eurise.feature.notes.ui.NotebookPickerSheet
 import eu.eurise.feature.notes.ui.inkColors
 import java.time.Instant
 import java.time.LocalDate
@@ -90,7 +99,9 @@ fun NotesListRoute(
     val viewModel = viewModel { NotesListViewModel(repository, notebooks) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.queryText.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LaunchedEffect(filterRequest) { filterRequest?.let { viewModel.setFilter(it.filter) } }
+    val synced = { CloudSync.get(context).requestSoon() }
     NotesListScreen(
         state = state,
         query = query,
@@ -98,6 +109,15 @@ fun NotesListRoute(
         onFilter = viewModel::setFilter,
         onOpenNote = { onOpenNote(it, (state.filter as? NotesFilter.Notebook)?.id) },
         onOrganize = onOrganize,
+        onTrash = { viewModel.trash(it, synced) },
+        onPin = { ids, pinned -> viewModel.setPinned(ids, pinned, synced) },
+        onMove = { ids, notebook -> viewModel.moveToNotebook(ids, notebook, synced) },
+        onMoveToNew = { ids, name, tint -> viewModel.moveToNewNotebook(ids, name, tint, synced) },
+        onShare = { chosen ->
+            val text = chosen.joinToString("\n\n") { note -> listOf(note.title, note.body).filter { it.isNotBlank() }.joinToString("\n") }
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+            context.startActivity(Intent.createChooser(send, null))
+        },
     )
 }
 
@@ -109,8 +129,21 @@ private fun NotesListScreen(
     onFilter: (NotesFilter) -> Unit,
     onOpenNote: (Long?) -> Unit,
     onOrganize: () -> Unit,
+    onTrash: (Set<Long>) -> Unit,
+    onPin: (Set<Long>, Boolean) -> Unit,
+    onMove: (Set<Long>, Long?) -> Unit,
+    onMoveToNew: (Set<Long>, String, String) -> Unit,
+    onShare: (List<Note>) -> Unit,
 ) {
     val haze = remember { HazeState() }
+    // Note scelte con la pressione lunga; finché ce n'è una, un tocco sceglie invece di aprire.
+    var selected by remember { mutableStateOf(emptySet<Long>()) }
+    var pickNotebook by remember { mutableStateOf(false) }
+    val visible = state.notes.orEmpty().map { it.id }.toSet()
+    if (selected.any { it !in visible } && state.notes != null) selected = selected intersect visible
+    BackHandler(enabled = selected.isNotEmpty()) { selected = emptySet() }
+    val toggle = { id: Long -> selected = if (id in selected) selected - id else selected + id }
+    val tap = { id: Long -> if (selected.isNotEmpty()) toggle(id) else onOpenNote(id) }
     var searching by rememberSaveable { mutableStateOf(false) }
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val books = state.notebooks.associateBy { it.notebook.id }
@@ -150,7 +183,7 @@ private fun NotesListScreen(
                                 listOf(0, 1).forEach { column ->
                                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                         pinned.filterIndexed { i, _ -> i % 2 == column }.forEach { note ->
-                                            PinnedCard(note, books[note.notebookId], onClick = { onOpenNote(note.id) })
+                                            PinnedCard(note, books[note.notebookId], note.id in selected, onClick = { tap(note.id) }, onLongClick = { toggle(note.id) })
                                         }
                                     }
                                 }
@@ -160,12 +193,12 @@ private fun NotesListScreen(
                     if (others.isNotEmpty()) {
                         if (pinned.isNotEmpty()) item(key = "h-recent") { SectionLabel(stringResource(R.string.notes_section_recent)) }
                         items(others, key = { it.id }) { note ->
-                            NoteRow(note, books[note.notebookId], today, onClick = { onOpenNote(note.id) }, modifier = Modifier.animateItem())
+                            NoteRow(note, books[note.notebookId], today, note.id in selected, onClick = { tap(note.id) }, onLongClick = { toggle(note.id) }, modifier = Modifier.animateItem())
                         }
                     }
                 }
                 else -> items(notes, key = { it.id }) { note ->
-                    NoteRow(note, books[note.notebookId], today, onClick = { onOpenNote(note.id) }, modifier = Modifier.animateItem())
+                    NoteRow(note, books[note.notebookId], today, note.id in selected, onClick = { tap(note.id) }, onLongClick = { toggle(note.id) }, modifier = Modifier.animateItem())
                 }
             }
         }
@@ -179,7 +212,34 @@ private fun NotesListScreen(
                 .padding(top = 8.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (searching) {
+            if (selected.isNotEmpty()) {
+                val chosen = notes.orEmpty().filter { it.id in selected }
+                val allPinned = chosen.isNotEmpty() && chosen.all { it.pinned }
+                val clear = { selected = emptySet() }
+                Row(Modifier.padding(start = 4.dp, end = 8.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = clear) {
+                        Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.notes_selection_clear), modifier = Modifier.size(20.dp))
+                    }
+                    Text(
+                        pluralStringResource(R.plurals.notes_selected, selected.size, selected.size),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { onPin(selected, !allPinned); clear() }) {
+                        Icon(EuriseIcons.pin(), contentDescription = stringResource(if (allPinned) R.string.notes_unpin else R.string.notes_pin), modifier = Modifier.size(21.dp))
+                    }
+                    IconButton(onClick = { pickNotebook = true }) {
+                        Icon(EuriseIcons.notebook(), contentDescription = stringResource(R.string.notes_notebook_choose), modifier = Modifier.size(21.dp))
+                    }
+                    IconButton(onClick = { onShare(chosen); clear() }) {
+                        Icon(EuriseIcons.share(), contentDescription = stringResource(R.string.notes_share), modifier = Modifier.size(21.dp))
+                    }
+                    IconButton(onClick = { onTrash(selected); clear() }) {
+                        Icon(EuriseIcons.trash(), contentDescription = stringResource(R.string.notes_trash), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(21.dp))
+                    }
+                }
+            } else if (searching) {
                 val focus = remember { FocusRequester() }
                 LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
                 Row(Modifier.padding(start = 16.dp, end = 4.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -221,6 +281,29 @@ private fun NotesListScreen(
             FilterChips(state.filter, state.notebooks, onFilter)
         }
     }
+
+    if (pickNotebook) {
+        val close = { pickNotebook = false; selected = emptySet() }
+        NotebookPickerSheet(
+            notebooks = state.notebooks,
+            selected = null,
+            onPick = { onMove(selected, it); close() },
+            onCreate = { name, tint -> onMoveToNew(selected, name, tint); close() },
+            onDismiss = { pickNotebook = false },
+        )
+    }
+}
+
+/** Fondo, bordo e gesti di una nota nell'elenco: pressione lunga per sceglierla. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Modifier.noteCard(shape: RoundedCornerShape, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit): Modifier {
+    val scheme = MaterialTheme.colorScheme
+    return clip(shape)
+        .background(if (selected) scheme.primaryContainer else scheme.surfaceContainerLow)
+        .then(if (selected) Modifier.border(2.dp, scheme.primary, shape) else Modifier)
+        .semantics { this.selected = selected }
+        .combinedClickable(onClick = onClick, onLongClick = onLongClick)
 }
 
 @Composable
@@ -263,14 +346,12 @@ private fun Note.snippet(): String {
 }
 
 @Composable
-private fun PinnedCard(note: Note, book: NotebookSummary?, onClick: () -> Unit) {
+private fun PinnedCard(note: Note, book: NotebookSummary?, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     val ink = inkColors()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .clickable(onClick = onClick)
+            .noteCard(RoundedCornerShape(20.dp), selected, onClick, onLongClick)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
@@ -314,16 +395,14 @@ private fun Progress(done: Int, total: Int) {
 }
 
 @Composable
-private fun NoteRow(note: Note, book: NotebookSummary?, today: LocalDate, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun NoteRow(note: Note, book: NotebookSummary?, today: LocalDate, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier = Modifier) {
     val ink = inkColors()
     Row(
         modifier = modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .heightIn(min = 64.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .clickable(onClick = onClick)
+            .noteCard(RoundedCornerShape(18.dp), selected, onClick, onLongClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
