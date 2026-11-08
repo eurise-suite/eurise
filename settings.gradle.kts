@@ -18,6 +18,7 @@ rootProject.name = "eurise"
 
 include(":app")
 include(":gallery")
+include(":password")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")

@@ -246,6 +246,10 @@ object EuriseIcons {
     fun eraser(stroke: Float = 2.1f) = icon("eraser", stroke, "M8 20l-4.5-4.5a2 2 0 0 1 0-2.8L13 3.2a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L12 20z", "M8 20h12M9 9l6 6")
     fun ruler(stroke: Float = 2.1f) = icon("ruler", stroke, "M3 16.5L16.5 3 21 7.5 7.5 21z", "M7 12.5l2 2M10 9.5l2 2M13 6.5l2 2")
 
+    fun copy(stroke: Float = 2.2f) = icon("copy", stroke, "M10.5 8h7A2.5 2.5 0 0 1 20 10.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 8 17.5v-7A2.5 2.5 0 0 1 10.5 8z", "M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8")
+    fun eye(stroke: Float = 2.2f) = icon("eye", stroke, "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z", circle(12f, 12f, 2.8f))
+    fun eyeOff(stroke: Float = 2.2f) = icon("eyeOff", stroke, "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z", "M4 4l16 16")
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"
 

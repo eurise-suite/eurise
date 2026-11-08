@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pwd_app_name">Password</string>
+    <string name="pwd_title">Password</string>
+    <string name="pwd_search">Cerca</string>
+    <string name="pwd_search_hint">Cerca tra le voci</string>
+    <string name="pwd_lock_now">Blocca subito</string>
+    <string name="pwd_add">Nuova voce</string>
+    <string name="pwd_tab_all">Tutte</string>
+    <string name="pwd_tab_otp">Codici 2FA</string>
+    <string name="pwd_tab_notes">Note sicure</string>
+    <string name="pwd_tab_fix">Da sistemare</string>
+    <string name="pwd_recent">Usate di recente</string>
+    <string name="pwd_all_entries">Tutte le voci</string>
+    <plurals name="pwd_fix_title">
+        <item quantity="one">%d password da sistemare</item>
+        <item quantity="other">%d password da sistemare</item>
+    </plurals>
+    <string name="pwd_fix_detail">%1$d deboli · %2$d usate in più voci</string>
+    <string name="pwd_empty_title">Nessuna voce</string>
+    <string name="pwd_empty_message">Tocca + per aggiungere la prima password.</string>
+    <string name="pwd_no_results">Nessun risultato</string>
+    <string name="pwd_no_results_message">Prova con un\'altra parola.</string>
+    <string name="pwd_untitled">Senza nome</string>
+    <string name="pwd_row_otp">%s · codice 2FA</string>
+    <string name="pwd_row_fix_weak">password debole · da cambiare</string>
+    <string name="pwd_row_fix_reused">usata in più voci · da cambiare</string>
+    <string name="pwd_row_note">nota sicura</string>
+
+    <string name="pwd_sync_off">File KeePass sul telefono</string>
+    <string name="pwd_sync_done">File KeePass su Murena · aggiornato</string>
+    <string name="pwd_sync_working">Sincronizzo con Murena…</string>
+    <string name="pwd_sync_network">Salvato qui · Murena non raggiungibile</string>
+    <string name="pwd_sync_rejected">Salvato qui · Murena rifiuta l\'accesso</string>
+    <string name="pwd_sync_other_password">Salvato qui · il file su Murena ha un\'altra frase</string>
+
+    <string name="pwd_setup_title">La tua cassaforte</string>
+    <string name="pwd_setup_message">Scegli una frase principale lunga, che ricorderai. È l\'unica chiave: senza, nessuno può aprire la cassaforte, nemmeno noi.</string>
+    <string name="pwd_master">Frase principale</string>
+    <string name="pwd_master_again">Ripeti la frase</string>
+    <string name="pwd_create">Crea la cassaforte</string>
+    <string name="pwd_mismatch">Le due frasi non coincidono.</string>
+    <string name="pwd_too_short">Usa almeno 10 caratteri.</string>
+    <string name="pwd_suggest">Suggeriscine una</string>
+    <string name="pwd_import">Apri un file KeePass (.kdbx)</string>
+    <string name="pwd_from_murena">Prendi la cassaforte da Murena</string>
+    <string name="pwd_import_message">Scrivi la frase principale del file scelto.</string>
+    <string name="pwd_open">Apri</string>
+    <string name="pwd_cancel">Annulla</string>
+    <string name="pwd_unlock_title">Cassaforte bloccata</string>
+    <string name="pwd_err_wrong">Frase errata.</string>
+    <string name="pwd_err_unsupported">Questo file non si può aprire: %s. Aprilo in KeePassXC e salvalo in formato KDBX 4 con AES o ChaCha20.</string>
+    <string name="pwd_err_corrupt">Il file sembra danneggiato.</string>
+    <string name="pwd_err_memory">Il telefono non ha abbastanza memoria per aprire questo file.</string>
+    <string name="pwd_err_generic">Operazione non riuscita.</string>
+    <string name="pwd_err_login">Accesso a Murena non riuscito.</string>
+    <string name="pwd_err_no_remote">Su Murena non c\'è ancora una cassaforte.</string>
+    <string name="pwd_working">Un momento…</string>
+    <string name="pwd_waiting_browser">Approva l\'accesso nel browser, poi torna qui.</string>
+
+    <string name="pwd_back">Password</string>
+    <string name="pwd_edit">Modifica</string>
+    <string name="pwd_only_here">%s · solo su questo indirizzo</string>
+    <string name="pwd_user">Utente</string>
+    <string name="pwd_password">Password</string>
+    <string name="pwd_password_strength">Password · %s</string>
+    <string name="pwd_copy_user">Copia l\'utente</string>
+    <string name="pwd_copy_password">Copia la password</string>
+    <string name="pwd_copy_code">Copia il codice</string>
+    <string name="pwd_show">Mostra la password</string>
+    <string name="pwd_hide">Nascondi la password</string>
+    <string name="pwd_hidden">Password nascosta</string>
+    <string name="pwd_otp_title">Codice di verifica (2FA)</string>
+    <string name="pwd_otp_invalid">Segreto 2FA non valido</string>
+    <string name="pwd_otp_remaining">Il codice cambia tra %d secondi</string>
+    <string name="pwd_notes">Note sicure</string>
+    <string name="pwd_changed">Cambiata il %s</string>
+    <plurals name="pwd_history">
+        <item quantity="zero">nessuna versione precedente</item>
+        <item quantity="one">la precedente resta nella cronologia</item>
+        <item quantity="other">le %d precedenti restano nella cronologia</item>
+    </plurals>
+    <string name="pwd_health_ok">Robusta e usata solo qui</string>
+    <string name="pwd_health_weak">Password debole</string>
+    <string name="pwd_health_reused">Usata anche in altre voci</string>
+    <string name="pwd_health_note">valutata sul telefono, senza inviare nulla</string>
+    <string name="pwd_delete">Sposta nel cestino</string>
+    <string name="pwd_delete_title">Spostare nel cestino?</string>
+    <string name="pwd_delete_message">La voce sparisce da qui e resta nel cestino del file, dove KeePassXC può recuperarla.</string>
+    <string name="pwd_copied">Copiato: si cancella tra 45 secondi</string>
+    <string name="pwd_copied_label">Eurise Password</string>
+
+    <string name="pwd_new">Nuova voce</string>
+    <string name="pwd_save">Salva</string>
+    <string name="pwd_f_title">Nome</string>
+    <string name="pwd_f_url">Indirizzo del sito</string>
+    <string name="pwd_f_otp">Segreto 2FA o indirizzo otpauth (facoltativo)</string>
+    <string name="pwd_generate">Genera un\'altra password</string>
+    <string name="pwd_gen_phrase">Frase</string>
+    <string name="pwd_gen_chars">Caratteri</string>
+    <string name="pwd_s_weak">debole</string>
+    <string name="pwd_s_fair">discreta</string>
+    <string name="pwd_s_strong">robusta</string>
+    <string name="pwd_s_very">molto robusta</string>
+
+    <string name="pwd_settings">Sincronizzazione</string>
+    <string name="pwd_sync_switch">Sincronizza con Murena</string>
+    <string name="pwd_sync_on_account">Attiva con %s</string>
+    <string name="pwd_sync_off_detail">Spenta: la cassaforte resta solo su questo telefono.</string>
+    <string name="pwd_sync_now">Sincronizza adesso</string>
+    <string name="pwd_sync_pc">Sul PC: sincronizza la cartella Eurise/Password di Murena e apri eurise.kdbx con KeePassXC.</string>
+    <string name="pwd_privacy_title">Cosa cambia per la tua privacy</string>
+    <string name="pwd_privacy_body">Cosa esce: solo il file della cassaforte, già cifrato con la tua frase principale.\n\nDove va: nella cartella Eurise/Password del tuo Murena.\n\nChi lo vede: Murena vede un file illeggibile, il suo nome e la sua dimensione. La frase non lascia mai il telefono.\n\nCome si torna indietro: spegni l\'interruttore. Il file già caricato resta su Murena finché non lo elimini.</string>
+    <string name="pwd_privacy_ok">Accendi</string>
+</resources>

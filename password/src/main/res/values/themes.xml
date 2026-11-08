@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EurisePassword" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/pwd_background</item>
+    </style>
+    <color name="pwd_background">#F4F4F1</color>
+    <color name="pwd_icon_background">#1F2A44</color>
+</resources>

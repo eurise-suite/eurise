@@ -61,6 +61,21 @@ jobs:
           path: gallery/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK di Password
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-password-debug-${{ github.run_number }}
+          path: password/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # TEMPORANEO: file di prova (dati finti) da aprire con un altro programma.
+      - name: Carica il file KeePass di prova
+        uses: actions/upload-artifact@v4
+        with:
+          name: kdbx-prova-${{ github.run_number }}
+          path: password/build/interop/*.kdbx
+          if-no-files-found: warn
+
       # Leggerezza: si pesa a ogni compilazione anche la versione ufficiale (ridotta, non firmata).
       # L'APK di prova è già caricato: se questo passo fallisce, non blocca nulla.
       - name: Pesa la versione ufficiale
