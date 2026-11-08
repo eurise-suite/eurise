@@ -222,6 +222,11 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   giorno, barra anni e mesi, filtri, Album, visore con zoom, preferite, selezione, cestino, Accadde oggi.
   Mancano: coda di caricamento e scelta telefono/cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
   posizione, cartella protetta, editor, pulizia, riconoscimento locale, permesso di firma con l'hub.
+- Sul ramo `galleria`, dalla prova del proprietario: Orologio anche tra le app della Scrivania (`eurise:clock`) e
+  apertura dall'orario dentro Eurise; `ScrubRail` comune (lettere in Tutte, mese e anno nella Galleria, si ingrandisce
+  sotto il dito con la data); pulsanti galleria e fotocamera accanto all'ora con scelta dell'app a pressione lunga;
+  bolle della home trascinabili; bolle nelle pagine laterali (`CardKind.bubbleId`, `HomeBubble`) e Calendario e
+  Comunicazioni tra le schede della home.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

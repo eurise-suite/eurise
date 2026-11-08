@@ -26,6 +26,8 @@ enum class CardKind(
     val icon: () -> ImageVector,
     val sizes: List<CardSize>,
     val defaultSize: CardSize,
+    /** Per le bolle della home messe in una pagina laterale: l'id del loro tipo (vedi HomeKind). */
+    val bubbleId: String? = null,
 ) {
     Calendar("calendar", R.string.card_calendar, R.string.card_calendar_desc, { EuriseIcons.calendar(1.9f) },
         CardSize.entries.toList(), CardSize.Large),
@@ -44,7 +46,18 @@ enum class CardKind(
     Horoscope("horoscope", R.string.card_horoscope, R.string.card_horoscope_desc, { EuriseIcons.zodiac(4, 1.9f) },
         CardSize.entries.toList(), CardSize.Wide),
     Recipe("recipe", R.string.card_recipe, R.string.card_recipe_desc, { EuriseIcons.spoon(1.9f) },
-        CardSize.entries.toList(), CardSize.Large);
+        CardSize.entries.toList(), CardSize.Large),
+    BubbleAgenda("b_agenda", R.string.welcome_events, R.string.home_agenda_desc, { EuriseIcons.calendar(1.9f) }, CardSize.entries.toList(), CardSize.Large, "agenda"),
+    BubbleComms("b_comms", R.string.welcome_comms, R.string.home_comms_desc, { EuriseIcons.chat(1.9f) }, CardSize.entries.toList(), CardSize.Large, "comms"),
+    BubbleHealth("b_health", R.string.welcome_health, R.string.home_health_desc, { EuriseIcons.heart(1.9f) }, CardSize.entries.toList(), CardSize.Large, "health"),
+    BubbleWork("b_work", R.string.welcome_work, R.string.home_work_desc, { EuriseIcons.folder(1.9f) }, CardSize.entries.toList(), CardSize.Large, "work"),
+    BubbleToday("b_today", R.string.bubble_today_name, R.string.bubble_today_desc, { EuriseIcons.task(1.9f) }, CardSize.entries.toList(), CardSize.Large, "today_tasks"),
+    BubbleNext("b_next", R.string.bubble_next_title, R.string.bubble_next_desc, { EuriseIcons.map(1.9f) }, CardSize.entries.toList(), CardSize.Large, "next_event"),
+    BubbleCodes("b_codes", R.string.bubble_codes_title, R.string.bubble_codes_desc, { EuriseIcons.key(1.9f) }, CardSize.entries.toList(), CardSize.Large, "codes"),
+    BubbleMeds("b_meds", R.string.bubble_meds_title, R.string.bubble_meds_desc, { EuriseIcons.medical(1.9f) }, CardSize.entries.toList(), CardSize.Large, "meds"),
+    BubbleClock("b_clock", R.string.bubble_clock_title, R.string.bubble_clock_desc, { EuriseIcons.alarm(1.9f) }, CardSize.entries.toList(), CardSize.Large, "clock"),
+    BubbleMemo("b_memo", R.string.bubble_memo_title, R.string.bubble_memo_desc, { EuriseIcons.pen(1.9f) }, CardSize.entries.toList(), CardSize.Large, "memo"),
+    BubbleVideos("b_videos", R.string.card_videos, R.string.card_videos_desc, { EuriseIcons.play2(1.9f) }, CardSize.entries.toList(), CardSize.Large, "videos");
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }

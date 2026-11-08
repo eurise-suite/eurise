@@ -92,6 +92,7 @@ class AppsRepository(private val context: Context) {
     private fun euriseSections(own: String) = listOf(
         AppEntry("eurise:today", "Oggi", own, null, Category.Work, "today"),
         AppEntry("eurise:calendar", "Calendario", own, null, Category.Work, "calendar"),
+        AppEntry("eurise:clock", "Orologio", own, null, Category.Tools, "clock"),
         AppEntry("eurise:notes", "Note", own, null, Category.Work, "notes"),
         AppEntry("eurise:tasks", "Attività", own, null, Category.Work, "tasks"),
     )
@@ -120,6 +121,26 @@ fun Context.launch(entry: AppEntry) {
     }
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
     runCatching { startActivity(intent) }
+}
+
+/** Prefisso del pacchetto della Galleria della suite (la versione di prova finisce in ".debug"). */
+private const val SUITE_GALLERY = "eu.eurise.gallery"
+
+/** La Galleria della suite, se è installata. */
+fun List<AppEntry>.suiteGallery(): AppEntry? = firstOrNull { it.packageName.startsWith(SUITE_GALLERY) }
+
+/** Le app capaci di mostrare le foto, per la scelta sul pulsante accanto all'ora. */
+fun Context.galleryChoices(apps: List<AppEntry>): List<AppEntry> {
+    val viewers = packageManager.queryIntentActivities(Intent(Intent.ACTION_VIEW).setType("image/*"), 0).map { it.activityInfo.packageName }
+    val galleries = packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_GALLERY), 0).map { it.activityInfo.packageName }
+    val known = (viewers + galleries).toSet()
+    return apps.filter { it.component != null && (it.packageName in known || it.packageName.startsWith(SUITE_GALLERY)) }.distinctBy { it.packageName }
+}
+
+/** Le app fotocamera, per la scelta sul pulsante accanto all'ora. */
+fun Context.cameraChoices(apps: List<AppEntry>): List<AppEntry> {
+    val known = packageManager.queryIntentActivities(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), 0).map { it.activityInfo.packageName }.toSet()
+    return apps.filter { it.component != null && it.packageName in known }.distinctBy { it.packageName }
 }
 
 /** Sezione da aprire nell'app hub: "today", "calendar", "notes", "tasks", "new_event", "new_note". */

@@ -104,6 +104,9 @@ data class LauncherSettings(
     val categoryOverrides: Map<String, String> = emptyMap(),
     /** Ordine delle app dentro ogni categoria, scelto trascinandole: id della categoria → chiavi delle app. */
     val appOrder: Map<String, List<String>> = emptyMap(),
+    /** App scelte per i pulsanti accanto all'ora (chiave dell'app); nulle per quelle predefinite. */
+    val quickGallery: String? = null,
+    val quickCamera: String? = null,
     /** Cartelle di app, sulla home o nelle categorie. */
     val folders: List<AppFolder> = emptyList(),
     /** Cosa fa cambiare lo sfondo. */
@@ -181,6 +184,8 @@ class SettingsStore(context: Context) {
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .putString("app_order", next.appOrder.encodeAppOrder())
+            .putString("quick_gallery", next.quickGallery)
+            .putString("quick_camera", next.quickCamera)
             .putString("folders", next.folders.encodeFolders())
             .putBoolean("wp_season", next.wallpaper.season)
             .putBoolean("wp_weather", next.wallpaper.weather)
@@ -209,6 +214,8 @@ class SettingsStore(context: Context) {
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
         appOrder = decodeAppOrder(prefs.getString("app_order", null)),
+        quickGallery = prefs.getString("quick_gallery", null),
+        quickCamera = prefs.getString("quick_camera", null),
         folders = decodeFolders(prefs.getString("folders", null)),
         wallpaper = eu.eurise.feature.launcher.home.WallpaperOptions(
             season = prefs.getBoolean("wp_season", true),

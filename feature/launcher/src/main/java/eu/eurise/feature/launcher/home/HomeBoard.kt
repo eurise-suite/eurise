@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,8 +36,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -83,7 +89,9 @@ enum class HomeKind(
     Horoscope("horoscope", R.string.card_horoscope, R.string.card_horoscope_desc, { EuriseIcons.zodiac(4, 1.9f) }, 1f, 170, CardKind.Horoscope),
     Recipe("recipe", R.string.card_recipe, R.string.card_recipe_desc, { EuriseIcons.spoon(1.9f) }, 1f, 220, CardKind.Recipe),
     News("news", R.string.card_news, R.string.card_news_desc, { EuriseIcons.news(1.9f) }, 1f, 240, CardKind.News),
-    Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) }, 1f, 170, CardKind.Stocks);
+    Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) }, 1f, 170, CardKind.Stocks),
+    Calendar("calendar_card", R.string.card_calendar, R.string.card_calendar_desc, { EuriseIcons.calendar(1.9f) }, 1f, 300, CardKind.Calendar),
+    Messages("messages_card", R.string.card_messages, R.string.card_messages_desc, { EuriseIcons.chat(1.9f) }, 1f, 240, CardKind.Messages);
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }
@@ -162,6 +170,29 @@ fun HomeBoard(
     val naturals = remember { mutableStateMapOf<HomeKind, Int>() }
     val density = LocalDensity.current
     val latest by rememberUpdatedState(slots)
+    val bounds = remember { mutableStateMapOf<HomeKind, Rect>() }
+    var dragging by remember { mutableStateOf<HomeKind?>(null) }
+    var dragStart by remember { mutableStateOf<Rect?>(null) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    val endDrag = {
+        val from = dragging
+        val start = dragStart
+        if (from != null && start != null) {
+            val center = start.center + dragOffset
+            val target = latest.map { it.kind }
+                .minByOrNull { kind -> (((if (kind == from) start else bounds[kind])?.center ?: Offset(Float.MAX_VALUE / 4, 0f)) - center).getDistanceSquared() }
+            if (target != null && target != from) {
+                val list = latest.toMutableList()
+                val to = list.indexOfFirst { it.kind == target }
+                val moved = list.removeAt(list.indexOfFirst { it.kind == from })
+                list.add(to, moved)
+                onChange(list)
+            }
+        }
+        dragging = null
+        dragStart = null
+        dragOffset = Offset.Zero
+    }
     // In modifica si lascia un margine per le maniglie, che sporgono dai bordi delle schede.
     Column(
         Modifier.padding(horizontal = if (editing) 12.dp else 0.dp, vertical = if (editing) 12.dp else 0.dp),
@@ -185,7 +216,20 @@ fun HomeBoard(
                                 slot.height > 0 -> Modifier.height(slot.height.dp)
                                 else -> Modifier
                             }
-                            Box(Modifier.weight(slot.width).zIndex(if (editing) 1f else 0f)) {
+                            val lifted = dragging == slot.kind
+                            Box(
+                                Modifier.weight(slot.width)
+                                    .onGloballyPositioned { if (dragging != slot.kind) bounds[slot.kind] = it.boundsInRoot() }
+                                    .zIndex(if (lifted) 2f else if (editing) 1f else 0f)
+                                    .graphicsLayer {
+                                        if (lifted) {
+                                            translationX = dragOffset.x
+                                            translationY = dragOffset.y
+                                            scaleX = 1.03f
+                                            scaleY = 1.03f
+                                        }
+                                    },
+                            ) {
                                 androidx.compose.runtime.CompositionLocalProvider(
                                     LocalPillMeasure provides { h -> if (naturals[slot.kind] != h) naturals[slot.kind] = h },
                                 ) {
@@ -215,6 +259,9 @@ fun HomeBoard(
                                             onChange(applyHeight(latest, slot.kind, dp))
                                         },
                                         onToggleLink = { onChange(toggleHomeLink(latest, row.map { latest.getOrNull(it)?.kind }, pos)) },
+                                        onDragStart = { dragging = slot.kind; dragStart = bounds[slot.kind]; dragOffset = Offset.Zero },
+                                        onDrag = { dragOffset += it },
+                                        onDragEnd = endDrag,
                                     )
                                 }
                             }
@@ -299,13 +346,27 @@ private fun androidx.compose.foundation.layout.BoxScope.EditFrame(
     currentHeightPx: () -> Float,
     onHeight: (Float) -> Unit,
     onToggleLink: () -> Unit,
+    onDragStart: () -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val latest by rememberUpdatedState(slot)
+    val dragStarted by rememberUpdatedState(onDragStart)
+    val dragged by rememberUpdatedState(onDrag)
+    val dragEnded by rememberUpdatedState(onDragEnd)
     Box(
         Modifier.matchParentSize()
             .border(2.dp, primary, RoundedCornerShape(22.dp))
-            .pointerInput(Unit) { detectTapGestures { } },
+            .pointerInput(Unit) { detectTapGestures { } }
+            .pointerInput(Unit) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { dragStarted() },
+                    onDrag = { change, amount -> change.consume(); dragged(amount) },
+                    onDragEnd = { dragEnded() },
+                    onDragCancel = { dragEnded() },
+                )
+            },
     )
     // Togli
     Box(

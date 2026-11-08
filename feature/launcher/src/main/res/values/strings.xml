@@ -81,7 +81,7 @@
     <string name="card_remove">Togli la scheda</string>
     <string name="card_link">Lega l’altezza alle schede accanto</string>
     <string name="card_unlink">Sciogli dalle schede accanto</string>
-    <string name="home_edit_hint">Tira le maniglie per cambiare larghezza e altezza. Le bolle affiancate restano alte uguali; tocca la catena per scioglierle.</string>
+    <string name="home_edit_hint">Tieni premuta una bolla e trascinala per spostarla. Tira le maniglie per cambiare larghezza e altezza. Le bolle affiancate restano alte uguali; tocca la catena per scioglierle.</string>
     <string name="home_cards_title">Schede della home</string>
     <string name="on_home">sulla home</string>
     <string name="home_add_card">+ Aggiungi scheda</string>
@@ -242,6 +242,8 @@
     <string name="categories_reset_message">La barra torna alle otto categorie di partenza. Le categorie aggiunte da te si perdono; le app che ci avevi messo tornano dove Eurise le riconosce.</string>
     <string name="categories_reset_ok">Ripristina</string>
     <string name="categories_reset_cancel">Annulla</string>
+    <string name="all_apps_letters">Vai a una lettera</string>
+    <string name="quick_choose">Apri con</string>
     <string name="categories_reorder">Trascina per riordinare</string>
     <string name="categories_home">La home</string>
     <string name="categories_apps">%1$d app</string>

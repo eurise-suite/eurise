@@ -10,10 +10,12 @@ import eu.eurise.feature.launcher.contacts.Person
 import eu.eurise.feature.launcher.files.RecentFile
 import eu.eurise.feature.launcher.notifications.MessageItem
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +50,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -81,12 +84,14 @@ import dev.chrisbanes.haze.HazeState
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.designsystem.component.GlassDefaults
+import eu.eurise.core.designsystem.component.ScrubRail
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
+import eu.eurise.feature.launcher.apps.alphabetIndex
 import eu.eurise.feature.launcher.apps.inUserOrder
 
 /** Un'app presa con la pressione lunga: [target] è la categoria su cui si trova ora, [order] le sue app. */
@@ -305,13 +310,15 @@ fun CategoryPages(
                         modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = bottomClearance),
                     )
                 }
+                val letters = remember(list) { if (category.isAll) alphabetIndex(list.map { it.label }) else emptyList() }
+                Box(Modifier.weight(1f, fill = false)) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columns),
                     state = gridState,
                     userScrollEnabled = drag == null,
-                    contentPadding = PaddingValues(bottom = bottomClearance),
+                    contentPadding = PaddingValues(end = if (letters.size > 1) 20.dp else 0.dp, bottom = bottomClearance),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f, fill = false).onGloballyPositioned { gridOrigins[page] = it.positionInRoot() },
+                    modifier = Modifier.onGloballyPositioned { gridOrigins[page] = it.positionInRoot() },
                 ) {
                     items(here, key = { it.key }) { folder ->
                         Box(contentAlignment = Alignment.Center) {
@@ -343,6 +350,20 @@ fun CategoryPages(
                             )
                         }
                     }
+                }
+                if (letters.size > 1 && drag == null) {
+                    val scope = rememberCoroutineScope()
+                    val letterAt = { f: Float -> letters[(f * letters.size).toInt().coerceIn(0, letters.lastIndex)] }
+                    Box(Modifier.matchParentSize().padding(bottom = bottomClearance), contentAlignment = Alignment.TopEnd) {
+                        ScrubRail(
+                            labels = letters.map { it.first.toString() },
+                            onScrub = { f -> scope.launch { gridState.scrollToItem(letterAt(f).second) } },
+                            bubble = { f -> letterAt(f).first.toString() },
+                            description = stringResource(R.string.all_apps_letters),
+                            modifier = Modifier.fillMaxHeight(),
+                        )
+                    }
+                }
                 }
             }
             }

@@ -71,6 +71,11 @@ class CategoriesTest {
     }
 
     @Test
+    fun alphabetTakesTheFirstAppOfEachLetter() {
+        assertEquals(listOf('A' to 0, 'E' to 2, '#' to 3), alphabetIndex(listOf("Aegis", "Amazon", "Èlite", "7zip")))
+    }
+
+    @Test
     fun appOrderSurvivesSaving() {
         val order = mapOf("work" to listOf("eurise:notes", "org.x/org.x.Main"), "media" to listOf("a"))
         assertEquals(order, decodeAppOrder(order.encodeAppOrder()))

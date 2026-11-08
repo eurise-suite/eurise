@@ -17,8 +17,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +33,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -65,14 +62,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -86,14 +80,15 @@ import eu.eurise.core.designsystem.component.EmptyState
 import eu.eurise.core.designsystem.component.EuriseDock
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.GlassDefaults
+import eu.eurise.core.designsystem.component.ScrubRail
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.gallery.GalleryViewModel
 import eu.eurise.gallery.R
 import eu.eurise.gallery.logic.DayGroup
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.Memory
-import eu.eurise.gallery.logic.RailMark
 import eu.eurise.gallery.logic.albums
+import eu.eurise.gallery.logic.groupAt
 import eu.eurise.gallery.logic.groupByDay
 import eu.eurise.gallery.logic.isToTidy
 import eu.eurise.gallery.logic.onThisDay
@@ -182,7 +177,7 @@ private fun GalleryApp(media: List<MediaItem>?, actions: MediaActions) {
     var section by rememberSaveable { mutableIntStateOf(0) }
     var filter by rememberSaveable { mutableStateOf(Filter.All) }
     var album by rememberSaveable { mutableStateOf<String?>(null) }
-    var viewer by remember { mutableStateOf<Pair<List<MediaItem>, Int>?>(null) }
+    var viewerId by remember { mutableStateOf<Long?>(null) }
     var memory by remember { mutableStateOf<Memory?>(null) }
     var selected by remember { mutableStateOf(emptySet<Long>()) }
     val all = media.orEmpty()
@@ -220,7 +215,7 @@ private fun GalleryApp(media: List<MediaItem>?, actions: MediaActions) {
                     onFilter = { filter = it },
                     onClearAlbum = { album = null },
                     onSelected = { selected = it },
-                    onOpen = { index -> viewer = visible to index },
+                    onOpen = { index -> viewerId = visible[index].id },
                     onMemory = { memory = it },
                     onCamera = { runCatching { context.startActivity(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) } },
                 )
@@ -241,7 +236,11 @@ private fun GalleryApp(media: List<MediaItem>?, actions: MediaActions) {
             )
         }
         memory?.let { m -> MemoryScreen(m, actions, onClose = { memory = null }) }
-        viewer?.let { (list, start) -> Viewer(list, start, actions, onClose = { viewer = null }) }
+        // Il visore legge l'elenco vivo: una foto eliminata sparisce e il cuore si aggiorna subito.
+        viewerId?.let { id ->
+            if (visible.isEmpty()) viewerId = null
+            else Viewer(visible, visible.indexOfFirst { it.id == id }.coerceAtLeast(0), actions, onClose = { viewerId = null })
+        }
     }
 }
 
@@ -290,7 +289,7 @@ private fun PhotosPage(
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             state = grid,
-            contentPadding = PaddingValues(start = 12.dp, end = if (marks.size > 1) 30.dp else 12.dp, top = headerDp + 8.dp, bottom = GlassDefaults.PillHeight + 56.dp),
+            contentPadding = PaddingValues(start = 12.dp, end = if (marks.size > 1) 42.dp else 12.dp, top = headerDp + 8.dp, bottom = GlassDefaults.PillHeight + 56.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp),
             modifier = Modifier.fillMaxSize(),
@@ -316,10 +315,18 @@ private fun PhotosPage(
             }
         }
         if (marks.size > 1) {
-            Rail(
-                marks,
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = headerDp + 8.dp, bottom = GlassDefaults.PillHeight + 56.dp).width(30.dp).fillMaxHeight(),
-            ) { mark -> scope.launch { grid.scrollToItem(starts[mark.groupIndex]) } }
+            val monthsDescription = stringResource(R.string.go_to_month)
+            ScrubRail(
+                labels = marks.map { "${Month.of(it.month).getDisplayName(TextStyle.SHORT, Locale.getDefault()).take(3)} ${it.year % 100}" },
+                onScrub = { f ->
+                    val index = groupAt(marks, groups.size, f)
+                    scope.launch { grid.scrollToItem(starts[index]) }
+                },
+                bubble = { f -> longDate(groups[groupAt(marks, groups.size, f)].date) },
+                description = monthsDescription,
+                width = 42.dp,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = headerDp + 8.dp, bottom = GlassDefaults.PillHeight + 56.dp).fillMaxHeight(),
+            )
         }
 
         // Testata opaca: titolo, fotocamera e filtri, oppure la barra della selezione.
@@ -395,33 +402,6 @@ private fun MemoryCard(memory: Memory, onClick: () -> Unit) {
             Text(
                 "${longDate(memory.date)} · ${pluralStringResource(R.plurals.items_count, memory.items.size, memory.items.size)}",
                 fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/** La barra di anni e mesi: un tocco o un trascinamento porta a quel periodo. */
-@Composable
-private fun Rail(marks: List<RailMark>, modifier: Modifier, onMark: (RailMark) -> Unit) {
-    var heightPx by remember { mutableIntStateOf(1) }
-    val at: (Float) -> RailMark = { y -> marks[((y / heightPx) * marks.size).toInt().coerceIn(0, marks.lastIndex)] }
-    val label = stringResource(R.string.go_to_month)
-    Column(
-        modifier
-            .semantics { contentDescription = label }
-            .onSizeChanged { heightPx = it.height.coerceAtLeast(1) }
-            .pointerInput(marks) { detectTapGestures { onMark(at(it.y)) } }
-            .pointerInput(marks) { detectDragGestures { change, _ -> change.consume(); onMark(at(change.position.y)) } },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        marks.forEach { m ->
-            Text(
-                if (m.isYear) m.label.toString() else Month.of(m.label).getDisplayName(TextStyle.SHORT, Locale.getDefault()).take(3),
-                fontSize = if (m.isYear) 10.5.sp else 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (m.isYear) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
             )
         }
     }

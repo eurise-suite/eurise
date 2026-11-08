@@ -139,3 +139,13 @@ fun decodeAppOrder(raw: String?): Map<String, List<String>> = raw.orEmpty().line
     val category = line.substringBefore('=', "")
     if (category.isEmpty()) null else category to line.substringAfter('=').split(',').filter { it.isNotEmpty() }
 }.toMap()
+
+/** Le lettere della barra di "Tutte": per ognuna, la posizione della prima app. Accenti ignorati, il resto va in "#". */
+fun alphabetIndex(labels: List<String>): List<Pair<Char, Int>> = labels.withIndex()
+    .map { (i, label) -> firstLetter(label) to i }
+    .distinctBy { it.first }
+
+private fun firstLetter(label: String): Char {
+    val plain = java.text.Normalizer.normalize(label.trim().take(1), java.text.Normalizer.Form.NFD).firstOrNull()?.uppercaseChar() ?: return '#'
+    return if (plain in 'A'..'Z') plain else '#'
+}

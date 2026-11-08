@@ -44,6 +44,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import android.app.ActivityOptions
@@ -116,6 +117,9 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
+import eu.eurise.feature.launcher.apps.cameraChoices
+import eu.eurise.feature.launcher.apps.galleryChoices
+import eu.eurise.feature.launcher.apps.suiteGallery
 import eu.eurise.feature.launcher.apps.LocalCategoryTint
 import eu.eurise.feature.launcher.apps.resolveCategory
 import eu.eurise.feature.launcher.settings.CategoryEditor
@@ -244,7 +248,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             },
             openClock = {
-                runCatching { context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                context.openEurise("clock")
             },
             ownAppInfo = {
                 runCatching {
@@ -496,10 +500,40 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 ),
             ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
+                val homeData = HomeBoardData(
+                                        editing = editingHome,
+                                        onEditing = { editingHome = it },
+                                        onChange = { slots -> viewModel.updateSettings { it.copy(homeSlots = slots) } },
+                                        onCatalog = { homeCatalog = true },
+                                        videos = videoList,
+                                        hasChannels = videoChannels.isNotEmpty(),
+                                        onOpenVideo = { viewModel.videos.open(it) },
+                                        onChannels = { channelsSheet = true },
+                                        onReply = { replyTo = it },
+                                        bubbles = bubbleActions,
+                                        notifications = allNotifications,
+                                        readCodes = settings.readCodes,
+                                        cardBody = { kind, modifier ->
+                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
+                                            SummaryCardBody(
+                                                PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
+                                                hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
+                                                DailyData(
+                                                    horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
+                                                    onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
+                                                ),
+                                                calendarMonth, monthEvents, monthTasks, viewModel::setCalendarMonth,
+                                            )
+                                            }
+                                        },
+                                    )
                 val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
+                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
+                    val sideAlarm = rememberNextAlarm()
                     SummaryColumn(
-                        state, messages, nowPlaying, notificationsOn, if (left) emptyList() else setup, hazeState, actions, clearance, modifier,
+                        bubble = { slot, mod -> HomeBubble(slot, mod, now, state, welcome, hazeState, false, actions, homeData, sideAlarm) },
+                        state = state, messages = messages, nowPlaying = nowPlaying, notificationsOn = notificationsOn, setup = if (left) emptyList() else setup, hazeState = hazeState, actions = actions, clearance = clearance, modifier = modifier,
                         weather = weather,
                         cards = if (left) settings.leftCards else settings.cards,
                         news = newsItems, quotes = quotes,
@@ -513,6 +547,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         editing = editingCards, onEditingChange = { editingCards = it },
                         onCardsChange = { cards -> viewModel.updateSettings { if (left) it.copy(leftCards = cards) else it.copy(cards = cards) } },
                     )
+                    }
                     }
                 }
                 val summary: @Composable (Modifier) -> Unit = { modifier -> board(false, modifier) }
@@ -543,37 +578,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     onAppearance = { appearance = true },
                                     settings = settings,
                                     onMoveFavorite = viewModel::moveFavorite,
+                                    onQuickApp = { gallery, key -> viewModel.updateSettings { if (gallery) it.copy(quickGallery = key) else it.copy(quickCamera = key) } },
                                     welcome = welcome,
                                     onOpenFolder = { openFolder = it.id },
                                     onCreateFolder = { app -> folderPicker = FolderRequest(null, eu.eurise.feature.launcher.folders.AppFolder.HOME, app.key) },
                                     skyLight = scene.skyLight,
-                                    home = HomeBoardData(
-                                        editing = editingHome,
-                                        onEditing = { editingHome = it },
-                                        onChange = { slots -> viewModel.updateSettings { it.copy(homeSlots = slots) } },
-                                        onCatalog = { homeCatalog = true },
-                                        videos = videoList,
-                                        hasChannels = videoChannels.isNotEmpty(),
-                                        onOpenVideo = { viewModel.videos.open(it) },
-                                        onChannels = { channelsSheet = true },
-                                        onReply = { replyTo = it },
-                                        bubbles = bubbleActions,
-                                        notifications = allNotifications,
-                                        readCodes = settings.readCodes,
-                                        cardBody = { kind, modifier ->
-                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
-                                            SummaryCardBody(
-                                                PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
-                                                hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
-                                                DailyData(
-                                                    horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
-                                                    onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
-                                                ),
-                                                calendarMonth, monthEvents, monthTasks, viewModel::setCalendarMonth,
-                                            )
-                                            }
-                                        },
-                                    ),
+                                    home = homeData,
                                 )
                             } else {
                                 summary(Modifier.fillMaxSize())
@@ -861,6 +871,86 @@ private class HomeBoardData(
     val readCodes: Boolean,
 )
 
+/** Il contenuto di una bolla: sulla home o, come scheda, in una pagina laterale. */
+@Composable
+private fun HomeBubble(
+    slot: eu.eurise.feature.launcher.home.HomeSlot,
+    mod: Modifier,
+    now: LocalDateTime,
+    state: LauncherState,
+    welcome: WelcomeData,
+    hazeState: HazeState,
+    compact: Boolean,
+    actions: LauncherActions,
+    home: HomeBoardData,
+    onQuickApp: (Boolean, String) -> Unit,
+    nextAlarm: LocalDateTime?,
+) {
+        when (slot.kind) {
+            eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
+                now = now,
+                events = state.eventsToday,
+                calendarConnected = state.calendarConnected,
+                tasks = state.tasksDue,
+                travel = welcome.travel,
+                destinations = welcome.destinations,
+                hazeState = hazeState,
+                compact = compact,
+                onCalendar = { actions.openEurise("calendar") },
+                onConnectCalendar = actions.connectCalendar,
+                onTasks = { actions.openEurise("tasks") },
+                onRoute = welcome.onRoute,
+                modifier = mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Comms -> CommsPill(
+                messages = welcome.messages,
+                enabled = welcome.notificationsOn,
+                hazeState = hazeState,
+                compact = compact,
+                onOpen = actions.openMessage,
+                onRecent = welcome.onRecent,
+                onStarred = welcome.onStarred,
+                onGrant = actions.grantNotifications,
+                onAppInfo = actions.ownAppInfo,
+                onHub = { actions.openEurise("today") },
+                onBubble = home.onReply,
+                modifier = mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Health ->
+                HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge, mod)
+            eu.eurise.feature.launcher.home.HomeKind.Work ->
+                WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
+            eu.eurise.feature.launcher.home.HomeKind.Music ->
+                MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
+            eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
+                state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.NextEvent -> eu.eurise.feature.launcher.home.NextEventPill(
+                state.upcoming, state.calendarConnected, welcome.travel, now, hazeState, home.bubbles, actions.connectCalendar, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Codes -> eu.eurise.feature.launcher.home.CodesPill(
+                home.notifications, welcome.notificationsOn, home.readCodes, now, compact, hazeState, home.bubbles, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Meds -> eu.eurise.feature.launcher.home.MedsPill(
+                state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Clock -> eu.eurise.feature.launcher.home.ClockPill(
+                home.notifications, nextAlarm, now, hazeState, home.bubbles, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Memo -> eu.eurise.feature.launcher.home.QuickNotePill(
+                state.notes.maxByOrNull { it.updatedAt }, hazeState, home.bubbles, mod,
+            )
+            eu.eurise.feature.launcher.home.HomeKind.Videos -> eu.eurise.feature.launcher.videos.VideosPill(
+                home.videos, home.hasChannels, hazeState, mod, home.onOpenVideo, home.onChannels,
+            )
+            else -> slot.kind.card?.let { kind ->
+                // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
+                val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
+                home.cardBody(kind, sized)
+            }
+        }
+}
+
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
 private class LauncherActions(
     val openApp: (AppEntry) -> Unit,
@@ -951,13 +1041,26 @@ private fun PhoneHome(
                 )
                 // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.image(2f), stringResource(R.string.quick_gallery)) {
-                        runCatching {
+                    QuickIcon(
+                        eu.eurise.core.designsystem.icon.EuriseIcons.image(2f), stringResource(R.string.quick_gallery), dark,
+                        chosen = settings.quickGallery,
+                        choices = { context.galleryChoices(state.apps) },
+                        onChoose = { key -> onQuickApp(true, key) },
+                    ) {
+                        val app = state.apps.firstOrNull { it.key == settings.quickGallery } ?: state.apps.suiteGallery()
+                        if (app != null) actions.openApp(app) else runCatching {
                             context.startActivity(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_GALLERY).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }
-                    QuickIcon(eu.eurise.core.designsystem.icon.EuriseIcons.camera(2f), stringResource(R.string.quick_camera)) {
-                        runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    QuickIcon(
+                        eu.eurise.core.designsystem.icon.EuriseIcons.camera(2f), stringResource(R.string.quick_camera), dark,
+                        chosen = settings.quickCamera,
+                        choices = { context.cameraChoices(state.apps) },
+                        onChoose = { key -> onQuickApp(false, key) },
+                    ) {
+                        val app = state.apps.firstOrNull { it.key == settings.quickCamera }
+                        if (app != null) actions.openApp(app)
+                        else runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                     }
                 }
             }
@@ -982,69 +1085,7 @@ private fun PhoneHome(
                     onChange = home.onChange,
                     onCatalog = home.onCatalog,
                 ) { slot, mod ->
-                    when (slot.kind) {
-                        eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
-                            now = now,
-                            events = state.eventsToday,
-                            calendarConnected = state.calendarConnected,
-                            tasks = state.tasksDue,
-                            travel = welcome.travel,
-                            destinations = welcome.destinations,
-                            hazeState = hazeState,
-                            compact = compact,
-                            onCalendar = { actions.openEurise("calendar") },
-                            onConnectCalendar = actions.connectCalendar,
-                            onTasks = { actions.openEurise("tasks") },
-                            onRoute = welcome.onRoute,
-                            modifier = mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Comms -> CommsPill(
-                            messages = welcome.messages,
-                            enabled = welcome.notificationsOn,
-                            hazeState = hazeState,
-                            compact = compact,
-                            onOpen = actions.openMessage,
-                            onRecent = welcome.onRecent,
-                            onStarred = welcome.onStarred,
-                            onGrant = actions.grantNotifications,
-                            onAppInfo = actions.ownAppInfo,
-                            onHub = { actions.openEurise("today") },
-                            onBubble = home.onReply,
-                            modifier = mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Health ->
-                            HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge, mod)
-                        eu.eurise.feature.launcher.home.HomeKind.Work ->
-                            WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
-                        eu.eurise.feature.launcher.home.HomeKind.Music ->
-                            MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
-                        eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
-                            state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.NextEvent -> eu.eurise.feature.launcher.home.NextEventPill(
-                            state.upcoming, state.calendarConnected, welcome.travel, now, hazeState, home.bubbles, actions.connectCalendar, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Codes -> eu.eurise.feature.launcher.home.CodesPill(
-                            home.notifications, welcome.notificationsOn, home.readCodes, now, compact, hazeState, home.bubbles, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Meds -> eu.eurise.feature.launcher.home.MedsPill(
-                            state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Clock -> eu.eurise.feature.launcher.home.ClockPill(
-                            home.notifications, nextAlarm, now, hazeState, home.bubbles, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Memo -> eu.eurise.feature.launcher.home.QuickNotePill(
-                            state.notes.maxByOrNull { it.updatedAt }, hazeState, home.bubbles, mod,
-                        )
-                        eu.eurise.feature.launcher.home.HomeKind.Videos -> eu.eurise.feature.launcher.videos.VideosPill(
-                            home.videos, home.hasChannels, hazeState, mod, home.onOpenVideo, home.onChannels,
-                        )
-                        else -> slot.kind.card?.let { kind ->
-                            // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
-                            val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
-                            home.cardBody(kind, sized)
-                        }
-                    }
+                    HomeBubble(slot, mod, now, state, welcome, hazeState, compact, actions, home, nextAlarm)
                 }
                 }
             }
@@ -1119,6 +1160,7 @@ private fun SummaryColumn(
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
     onCardsChange: (List<PlacedCard>) -> Unit,
+    bubble: @Composable (eu.eurise.feature.launcher.home.HomeSlot, Modifier) -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     SummaryBoard(
@@ -1132,7 +1174,9 @@ private fun SummaryColumn(
         modifier = modifier.padding(top = insets.calculateTopPadding()).clipToBounds(),
         footer = { if (setup.isNotEmpty()) SetupCard(setup, hazeState) },
     ) { card, cardModifier ->
-        SummaryCardBody(
+        val bubbleKind = card.kind.bubbleId?.let { eu.eurise.feature.launcher.home.HomeKind.byId(it) }
+        if (bubbleKind != null) bubble(eu.eurise.feature.launcher.home.HomeSlot(bubbleKind, 1f), cardModifier)
+        else SummaryCardBody(
             card, cardModifier, state, messages, nowPlaying, notificationsOn, hazeState, actions, weather, news, quotes,
             onNewsSources, onSymbols, daily, calendarMonth, monthEvents, monthTasks, onCalendarMonth,
         )
@@ -1205,6 +1249,8 @@ private fun SummaryCardBody(
                 daily.recipes, hazeState, card.size, cardModifier,
                 onSources = daily.onRecipeSources, onOpen = { actions.openLink(it.link) },
             )
+            // Le bolle messe nelle pagine laterali passano da HomeBubble.
+            else -> Unit
         }
 }
 
@@ -1333,12 +1379,37 @@ private fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
 private const val HomePage = 1
 
 /** Piccola icona toccabile accanto all'orario, grande come i simboli del meteo. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun QuickIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+private fun QuickIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    dark: Boolean,
+    chosen: String?,
+    choices: () -> List<AppEntry>,
+    onChoose: (String) -> Unit,
+    onClick: () -> Unit,
+) {
+    var options by remember { mutableStateOf<List<AppEntry>?>(null) }
     Box(
-        Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = label, onClick = onClick),
+        Modifier.size(36.dp).clip(CircleShape).combinedClickable(onClickLabel = label, onClick = onClick, onLongClick = { options = choices() }),
         contentAlignment = Alignment.Center,
-    ) { androidx.compose.material3.Icon(icon, label, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(18.dp)) }
+    ) {
+        androidx.compose.material3.Icon(icon, label, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(18.dp))
+        androidx.compose.material3.DropdownMenu(expanded = options != null, onDismissRequest = { options = null }) {
+            androidx.compose.material3.Text(
+                stringResource(R.string.quick_choose), fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+            options.orEmpty().forEach { app ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { androidx.compose.material3.Text(app.label, fontWeight = if (app.key == chosen) FontWeight.Bold else FontWeight.Normal) },
+                    leadingIcon = { eu.eurise.feature.launcher.apps.AppIcon(app, 30.dp, dark) },
+                    onClick = { options = null; onChoose(app.key) },
+                )
+            }
+        }
+    }
 }
 
 /** Tre puntini sopra la barra: Notizie, Home e Riepilogo. */

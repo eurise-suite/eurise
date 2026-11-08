@@ -1,7 +1,6 @@
 package eu.eurise.gallery.logic
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -18,18 +17,27 @@ class TimelineTest {
     }
 
     @Test
-    fun railShowsYearAtTheFirstMonthOfOlderYears() {
-        val groups = groupByDay(listOf(item(1, "2026-11-08"), item(2, "2026-02-01"), item(3, "2025-12-24")), ZoneOffset.UTC)
-        assertEquals(listOf(RailMark(11, false, 0), RailMark(2, false, 1), RailMark(2025, true, 2)), railMarks(groups))
+    fun railHasOneMarkPerMonthWithItsYear() {
+        val groups = groupByDay(listOf(item(1, "2026-11-08"), item(2, "2026-11-01"), item(3, "2025-12-24")), ZoneOffset.UTC)
+        assertEquals(listOf(RailMark(2026, 11, 0), RailMark(2025, 12, 2)), railMarks(groups))
     }
 
     @Test
-    fun longRailKeepsEveryYearWithinTheLimit() {
+    fun longRailStaysWithinTheLimitAndKeepsTheNewestMonth() {
         val dates = (0 until 48).map { LocalDate.of(2026, 12, 1).minusMonths(it.toLong()).toString() }
         val marks = railMarks(groupByDay(dates.mapIndexed { i, d -> item(i.toLong(), d) }, ZoneOffset.UTC), max = 10)
-        assertTrue(marks.size <= 10)
-        assertEquals(listOf(2025, 2024, 2023), marks.filter { it.isYear }.map { it.label })
+        assertEquals(10, marks.size)
+        assertEquals(RailMark(2026, 12, 0), marks.first())
         assertEquals(marks.sortedBy { it.groupIndex }, marks)
+    }
+
+    @Test
+    fun fingerOnALabelIsInThatMonthAndBetweenLabelsInBetween() {
+        val marks = listOf(RailMark(2026, 11, 0), RailMark(2026, 10, 10))
+        assertEquals(0, groupAt(marks, 20, 0.25f))
+        assertEquals(10, groupAt(marks, 20, 0.75f))
+        assertEquals(5, groupAt(marks, 20, 0.5f))
+        assertEquals(19, groupAt(marks, 20, 1f))
     }
 
     @Test
