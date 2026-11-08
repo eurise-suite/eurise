@@ -78,12 +78,16 @@ private val When = DateTimeFormatter.ofPattern("EEEE d MMMM, HH:mm", Locale.ITAL
 
 /** Riga di stato del backup, per la pagina Cloud. */
 @Composable
-internal fun backupStatus(s: BackupState): String = when {
-    !s.configured -> stringResource(R.string.backup_off)
-    s.running -> stringResource(R.string.backup_running)
-    s.lastError != null -> stringResource(R.string.backup_error, s.lastError)
-    s.lastAt != null -> stringResource(R.string.backup_last, whenText(s.lastAt))
-    else -> stringResource(R.string.backup_never)
+internal fun backupStatus(s: BackupState): String {
+    val error = s.lastError
+    val last = s.lastAt
+    return when {
+        !s.configured -> stringResource(R.string.backup_off)
+        s.running -> stringResource(R.string.backup_running)
+        error != null -> stringResource(R.string.backup_error, error)
+        last != null -> stringResource(R.string.backup_last, whenText(last))
+        else -> stringResource(R.string.backup_never)
+    }
 }
 
 @Composable
