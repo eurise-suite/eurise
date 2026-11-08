@@ -178,7 +178,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   verso destra (o tocco) la conversazione in grande con Rispondi, Segna come letto, Nascondi (maschera: sparisce da
   Eurise, nell'app resta da leggere, nessuna spunta) ed Elimina; verso sinistra Elimina. Regola: in ogni bolla si fa
   tutto lì, l'app si apre solo a richiesta. Proposte sulla tela (pagina "Bolle della home"): Da fare oggi, Prossimo
-  impegno, Codici e consegne, Farmaci, Timer e sveglie, Appunto al volo.
+  impegno, Codici e consegne, Farmaci, Timer e sveglie, Appunto al volo: approvate e fatte (`home/Bubbles.kt`, si
+  aggiungono dal catalogo delle schede della home). Codici e consegne è spenta di base, con spiegazione all'accensione.
+  Il lettore QuickAdd è passato in `core/data`. APK di prova 109, versione ufficiale 2,6 MB.
 - Prossimo passo: provare l'APK del ramo `bolle` e unirlo a `main` (che contiene già Attività, sveglia, leggerezza e
   collegamenti); scegliere le bolle nuove; poi scheda Persona e + unico; anteprime di Drive, Orologio, Galleria,
   Password e Privacy; sincronizzazione CalDAV delle Attività con Murena.
