@@ -69,7 +69,7 @@ import eu.eurise.core.data.calendar.CalendarEvent
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.data.model.TaskList
-import eu.eurise.core.data.suite.ClockContract
+import eu.eurise.core.suite.ClockContract
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem

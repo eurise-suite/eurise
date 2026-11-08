@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Sveglie e timer all'ora esatta: permesso concesso alle app sveglia (Android 13+), prima si chiedeva. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Facoltativi, chiesti solo quando si accende la funzione: ferie e impegni dal calendario, silenzio nel Pomodoro. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+    <!-- Permesso di firma della suite: solo le app Eurise con la stessa chiave (per esempio la Scrivania). -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <uses-permission android:name="${suitePermission}" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EuriseClock">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Le richieste standard di sveglie e timer (anche i timer rapidi della Scrivania). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SET_ALARM" />
+                <action android:name="android.intent.action.SET_TIMER" />
+                <action android:name="android.intent.action.SHOW_ALARMS" />
+                <action android:name="android.intent.action.SHOW_TIMERS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".system.RingActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity="eu.eurise.clock.ring" />
+
+        <service
+            android:name=".system.RingService"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted" />
+
+        <receiver android:name=".system.ClockReceiver" android:exported="false" />
+
+        <receiver android:name=".system.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Solo le app della suite possono chiedere di saltare la prossima sveglia. -->
+        <receiver
+            android:name=".system.SuiteReceiver"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.clock.action.SKIP_NEXT_ALARM" />
+                <action android:name="eu.eurise.clock.action.UNDO_SKIP_ALARM" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

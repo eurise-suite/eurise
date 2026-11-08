@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EuriseClock" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/clock_background</item>
+    </style>
+    <color name="clock_background">#14171C</color>
+</resources>

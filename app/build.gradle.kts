@@ -23,6 +23,8 @@ android {
         versionName = "0.1.0"
         // Solo le lingue della suite: le librerie portano traduzioni in decine di lingue che nessuno vedrebbe.
         resourceConfigurations += listOf("it", "en")
+        // Permesso di firma della suite (vedi core/suite ClockContract): uno per le ufficiali, uno per le prove.
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
     }
 
     signingConfigs {
@@ -48,6 +50,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
         }
         release {
             isMinifyEnabled = true
