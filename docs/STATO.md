@@ -173,5 +173,12 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
 - Password (tela, pagina "Password", 8 novembre notte): cassaforte con il controllo delle password, voce con
   codice 2FA e passkey, registrazione su un sito con alias e password generata. Da discutere.
-- Prossimo passo: provare l'APK del ramo `collegamenti` (contiene Attività, sveglia nella home, leggerezza e collegamenti) e unirlo a `main`; discutere le anteprime di Drive, Orologio,
-  Galleria e Password; poi la sincronizzazione CalDAV delle Attività con Murena.
+- Bolle della home (ramo `bolle`, 8 novembre): "Ti hanno cercato" e la scheda Comunicazioni sono una bolla sola
+  (`home/Comms.kt`): linea lievissima tra le righe, fino a 20 comunicazioni, striscia a destra con barra di scorrimento;
+  verso destra (o tocco) la conversazione in grande con Rispondi, Segna come letto, Nascondi (maschera: sparisce da
+  Eurise, nell'app resta da leggere, nessuna spunta) ed Elimina; verso sinistra Elimina. Regola: in ogni bolla si fa
+  tutto lì, l'app si apre solo a richiesta. Proposte sulla tela (pagina "Bolle della home"): Da fare oggi, Prossimo
+  impegno, Codici e consegne, Farmaci, Timer e sveglie, Appunto al volo.
+- Prossimo passo: provare l'APK del ramo `bolle` e unirlo a `main` (che contiene già Attività, sveglia, leggerezza e
+  collegamenti); scegliere le bolle nuove; poi scheda Persona e + unico; anteprime di Drive, Orologio, Galleria,
+  Password e Privacy; sincronizzazione CalDAV delle Attività con Murena.
