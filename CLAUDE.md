@@ -12,6 +12,30 @@
 - KDoc sulle parti non ovvie, niente commenti ridondanti. Testi dell'interfaccia in `strings.xml`.
 - Nessuna libreria Google proprietaria (Play Services, Firebase, ML Kit): compatibilità F-Droid.
 - Si compila solo su GitHub Actions (l'ambiente di Claude non raggiunge i repository Maven di Google).
+- Il documento di progetto e la sezione "Integrazioni tra le app" decidono l'ordine delle integrazioni.
+
+## Struttura degli APK (decisa l'8 novembre 2026)
+- APK principale "Eurise": Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud. Ogni app ha la sua icona
+  nel cassetto e si può spegnere; spenta, non carica nulla.
+- APK separati per Password, Galleria, Orologio, Tastiera, Mappe, Browser, Messaggi e Telefono. Parlano con il
+  principale solo tra app firmate con la stessa chiave (permessi di firma), mai con canali aperti alle altre app.
+- Niente moduli dinamici del Play Store: non funzionano su F-Droid né con l'installazione diretta.
+
+## Leggerezza (regola fissa, decisa l'8 novembre 2026)
+- Peso: la versione ufficiale dell'APK principale pesava 2,5 MB l'8 novembre; tetto 6 MB a suite completa.
+  La compilazione la pesa a ogni giro (riepilogo e avviso; avvertimento oltre il tetto). Un ramo che la fa
+  crescere di più di 300 KB lo spiega nel messaggio del commit.
+- Librerie: nessuna nuova senza un motivo scritto nel commit; mai una libreria intera per una funzione piccola.
+  Icone solo da `EuriseIcons` (niente material-icons). Pezzi grafici comuni in `core/designsystem`, mai copiati.
+- Contenuti pesanti (modelli AI, mappe, voci, sfondi grandi) si scaricano a richiesta, mai dentro l'APK.
+- Avvio: in `Application.onCreate` solo registrazioni leggere; niente disco o rete sul thread principale; i dati
+  si caricano quando la schermata li chiede. Il database si apre una volta sola (`EuriseData.create`).
+- Memoria: liste lunghe in `LazyColumn` con chiavi stabili; immagini ridotte alla dimensione mostrata; flussi
+  condivisi con `SharingStarted.WhileSubscribed(5_000)` e letti con `collectAsStateWithLifecycle`.
+- Batteria: lavori in background con WorkManager e vincoli (rete, carica); niente servizi sempre attivi;
+  analisi pesanti solo con il telefono in carica.
+- Database: indici sulle colonne filtrate; conteggi con query, non leggendo tutto; migrazioni senza perdita di dati.
+- Qualità: la logica che si può provare senza telefono (lettori, calcoli, formati) ha i suoi test.
 
 ## Stile (deciso il 7 novembre 2026)
 - Tema chiaro Perla, tema scuro Notte (blu-grafite, accento azzurro).

@@ -16,3 +16,4 @@ captures/
 # aggiornino una sull'altra. La chiave delle versioni ufficiali resta fuori (segreti di GitHub).
 !app/debug-key/eurise-debug.keystore
 keystore.properties
+__pycache__/

@@ -1,4 +1,4 @@
-# Eurise – stato dei lavori (8 novembre 2026)
+# Eurise – stato dei lavori (8 novembre 2026, sera)
 
 Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima questo file e `CLAUDE.md`.
 
@@ -124,6 +124,17 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   "servizi di rete non liberi" (NonFreeNet): da verificare prima della pubblicazione.
 - Da decidere: quale delle tre si scrive per prima; se Drive, Orologio e Galleria entrano nell'app hub come
   sezioni o restano app separate (il documento prevede fork di Fossify per Orologio e Galleria).
+
+## Decisioni dell'8 novembre (documento di progetto, sezioni in fondo)
+- Struttura degli APK: via di mezzo (vedi CLAUDE.md). Integrazioni tra le app approvate tutte, in quest'ordine:
+  collegamenti tra tutto, scheda Persona, un solo +, Tastiera come ponte, riunioni, viaggi, modalità, cestino e
+  trasferimento unici. Funzioni in più per ogni app approvate (tabella nel documento).
+- Leggerezza come regola fissa (CLAUDE.md). Ramo `leggerezza` (parte da `attivita`): via material-icons-extended e
+  gli strumenti di anteprima, risorse solo in italiano e inglese, pezzi grafici comuni in `core/designsystem`
+  (`FilterPill`, `SectionLabel`, `CardDivider`, `CalendarTint.named`, `tone()`). Risultato: APK di prova da circa
+  21 a 13,6 MB; versione ufficiale 2,5 MB. La compilazione pesa entrambi a ogni giro (tetto 6 MB).
+- Anteprime nuove sulla tela, pagina "Integrazioni": evento con la striscia "Collegati", collegare qualsiasi cosa,
+  scheda Persona, un solo +. Da discutere.
 
 ## Punti aperti
 - Tablet: da provare sul Volla quando arriva (pagina "Scrivania tablet" sulla tela).

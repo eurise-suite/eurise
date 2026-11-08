@@ -1,7 +1,7 @@
 """Peso di un APK diviso per parti: codice, librerie native, risorse, altro.
 
-Uso: python3 apk_size.py <nome> <file.apk>
-Scrive una tabella nel riepilogo della compilazione e una riga di avviso.
+Uso: python3 apk_size.py <nome> <file.apk> [tetto in MB]
+Scrive una tabella nel riepilogo della compilazione e una riga di avviso; oltre il tetto, un avvertimento.
 """
 import collections
 import os
@@ -23,6 +23,7 @@ def part(name: str) -> str:
 
 def main() -> None:
     label, path = sys.argv[1], sys.argv[2]
+    budget = float(sys.argv[3]) if len(sys.argv) > 3 else None
     size = os.path.getsize(path)
     parts = collections.Counter()
     biggest = []
@@ -42,6 +43,8 @@ def main() -> None:
             out.write("\n".join(lines) + "\n\n")
     print("\n".join(lines))
     print(f"::notice title=Peso::{label}: {size / 1048576:.1f} MB")
+    if budget is not None and size / 1048576 > budget:
+        print(f"::warning title=Troppo pesante::{label} supera il tetto di {budget:g} MB (vedi CLAUDE.md, Leggerezza)")
 
 
 if __name__ == "__main__":
