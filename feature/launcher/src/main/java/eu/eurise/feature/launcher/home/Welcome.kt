@@ -32,12 +32,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -267,7 +267,10 @@ private fun <T> SwipeSection(items: List<T>, content: @Composable (T) -> Unit) {
     }
 }
 
-/** Seconda pillola: chi ti ha cercato, con i pulsanti per i contatti recenti e preferiti. */
+/**
+ * Seconda pillola: chi ti ha cercato. È la stessa bolla della scheda del Riepilogo: stesse righe, stessi gesti
+ * (vedi [CommsBody]) e gli stessi tondi per i contatti recenti e preferiti.
+ */
 @Composable
 fun CommsPill(
     messages: List<MessageItem>,
@@ -278,38 +281,18 @@ fun CommsPill(
     onRecent: () -> Unit,
     onStarred: () -> Unit,
     onGrant: () -> Unit,
+    onAppInfo: () -> Unit,
     onHub: () -> Unit,
-    onReply: (MessageItem) -> Unit = {},
+    onBubble: (MessageItem) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
-    Pill(hazeState, modifier, title = stringResource(R.string.welcome_comms), trailing = {
-        SmallRound(EuriseIcons.clock(2f), stringResource(R.string.people_recent), onRecent)
-        Spacer(Modifier.width(6.dp))
-        SmallRound(EuriseIcons.star(2f), stringResource(R.string.people_starred), onStarred)
-        Spacer(Modifier.width(2.dp))
-    }) {
-        when {
-            !enabled -> PillLine(EuriseIcons.chat(), stringResource(R.string.setup_notifications), stringResource(R.string.grant), onGrant)
-            messages.isEmpty() -> PillLine(EuriseIcons.chat(), stringResource(R.string.card_messages_empty), null, onHub)
-            // Si vedono le prime due o tre; le altre (fino a dodici) scorrendo dentro la pillola.
-            // Scorrendo una riga verso sinistra compaiono Rispondi, Segna come letto ed Elimina.
-            else -> ScrollBox(if (compact) 2 else 3) { messages.take(12).forEach { m ->
-                eu.eurise.feature.launcher.notifications.SwipeActionsRow(eu.eurise.feature.launcher.notifications.messageActions(m, onReply)) {
-                    PillLine(
-                        if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
-                        "${m.title} · ${m.appLabel}",
-                        m.text.ifBlank { stringResource(R.string.message_no_preview) },
-                        { onOpen(m) },
-                        right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault()).format(TimeFormat),
-                    )
-                }
-            } }
-        }
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_comms), trailing = { CommsButtons(onRecent, onStarred) }) {
+        CommsBody(messages, enabled, if (compact) 2 else 3, onOpen, onBubble, onGrant, onAppInfo, onHub)
     }
 }
 
 @Composable
-private fun SmallRound(icon: ImageVector, label: String, onClick: () -> Unit) {
+internal fun SmallRound(icon: ImageVector, label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(26.dp)

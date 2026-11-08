@@ -340,6 +340,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var folderPicker by remember { mutableStateOf<FolderRequest?>(null) }
         // Fonti di oroscopo o ricette in modifica: "horoscope" o "recipes".
         var dailySheet by remember { mutableStateOf<String?>(null) }
+        val peopleShortcuts = remember { eu.eurise.feature.launcher.home.PeopleShortcuts({ peopleSheet = "recent" }, { peopleSheet = "starred" }) }
         val welcome = WelcomeData(
             travel = travel,
             destination = destination,
@@ -461,7 +462,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
                 val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
-                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }) {
+                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts) {
                     SummaryColumn(
                         state, messages, nowPlaying, notificationsOn, if (left) emptyList() else setup, hazeState, actions, clearance, modifier,
                         weather = weather,
@@ -522,7 +523,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                         onChannels = { channelsSheet = true },
                                         onReply = { replyTo = it },
                                         cardBody = { kind, modifier ->
-                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }) {
+                                            androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts) {
                                             SummaryCardBody(
                                                 PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
                                                 hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
@@ -960,8 +961,9 @@ private fun PhoneHome(
                             onRecent = welcome.onRecent,
                             onStarred = welcome.onStarred,
                             onGrant = actions.grantNotifications,
+                            onAppInfo = actions.ownAppInfo,
                             onHub = { actions.openEurise("today") },
-                            onReply = home.onReply,
+                            onBubble = home.onReply,
                             modifier = mod,
                         )
                         eu.eurise.feature.launcher.home.HomeKind.Health ->
@@ -1112,8 +1114,8 @@ private fun SummaryCardBody(
                 onOpenTasks = { actions.openEurise("tasks") },
             )
             CardKind.Messages -> MessagesCard(
-                messages, notificationsOn, System.currentTimeMillis(), hazeState, actions.grantNotifications, actions.ownAppInfo,
-                actions.openMessage, size = card.size, modifier = cardModifier,
+                messages, notificationsOn, hazeState, actions.grantNotifications, actions.ownAppInfo,
+                actions.openMessage, onHub = { actions.openEurise("today") }, size = card.size, modifier = cardModifier,
             )
             CardKind.Music -> MusicCard(nowPlaying, notificationsOn, hazeState, actions.grantNotifications, actions.ownAppInfo, card.size, cardModifier)
             CardKind.Weather -> WeatherCard(weather, hazeState, actions.askLocation, card.size, cardModifier)

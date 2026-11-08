@@ -182,6 +182,13 @@ object EuriseIcons {
 
     fun read(stroke: Float = Stroke) = icon("read", stroke, "M3.5 12.5l4 4 8-9", "M12.5 16.5l1 0 8-9")
 
+    /** Maschera: letto di nascosto, senza far sapere al mittente che lo si è letto. */
+    fun mask(stroke: Float = Stroke) = icon(
+        "mask", stroke,
+        "M2.5 9.5c0-1.6 1.4-2.7 3.2-2.7 2.4 0 4.2 1.4 6.3 1.4s3.9-1.4 6.3-1.4c1.8 0 3.2 1.1 3.2 2.7 0 3.7-2.3 6.7-5.1 6.7-1.9 0-3-1.7-4.4-1.7s-2.5 1.7-4.4 1.7c-2.8 0-5.1-3-5.1-6.7z",
+        "M6.5 11.2l2.6.4", "M17.5 11.2l-2.6.4",
+    )
+
     fun send(stroke: Float = Stroke) = icon("send", stroke, "M4 12L20 4l-4 16-4-7z", "M12 13l8-9")
 
     fun play2(stroke: Float = Stroke) = icon("play2", stroke, "M8 5.5v13l10.5-6.5z")

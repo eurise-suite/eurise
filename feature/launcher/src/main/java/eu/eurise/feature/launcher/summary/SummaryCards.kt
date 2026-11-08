@@ -7,10 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import eu.eurise.core.data.model.Task
 import java.time.YearMonth
 import androidx.compose.foundation.clickable
@@ -34,6 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +80,7 @@ fun SummaryCard(
     onClick: (() -> Unit)? = null,
     action: String? = null,
     onAction: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -98,6 +99,11 @@ fun SummaryCard(
                     action, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onAction).padding(horizontal = 4.dp, vertical = 2.dp),
                 )
+            }
+        } else if (trailing != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { Label(title) }
+                trailing()
             }
         } else {
             Label(title)
@@ -351,39 +357,28 @@ private fun MiniMonth(today: LocalDate, busy: Set<LocalDate>, modifier: Modifier
     }
 }
 
-/** Comunicazioni: messaggi, mail e chiamate dalle notifiche di qualsiasi app. */
+/** "Ti hanno cercato" tra le schede: la stessa bolla della home, con più righe nelle schede alte. */
 @Composable
 fun MessagesCard(
     messages: List<MessageItem>,
     enabled: Boolean,
-    now: Long,
     hazeState: HazeState,
     onGrant: () -> Unit,
     onAppInfo: () -> Unit,
     onOpen: (MessageItem) -> Unit,
+    onHub: () -> Unit,
     size: CardSize = CardSize.Large,
     modifier: Modifier = Modifier,
-    onReply: (MessageItem) -> Unit = eu.eurise.feature.launcher.notifications.LocalQuickReply.current,
+    onBubble: (MessageItem) -> Unit = eu.eurise.feature.launcher.notifications.LocalQuickReply.current,
 ) {
-    val max = 15
-    SummaryCard(stringResource(R.string.card_messages), hazeState, modifier) {
-        when {
-            !enabled -> GrantText(stringResource(R.string.card_messages_grant), onGrant, onAppInfo)
-            messages.isEmpty() -> Text(stringResource(R.string.card_messages_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.5.sp)
-            // Righe identiche a quelle della bolla "Ti hanno cercato", con le stesse azioni a scorrimento.
-            else -> messages.take(max).forEach { m ->
-                eu.eurise.feature.launcher.notifications.SwipeActionsRow(eu.eurise.feature.launcher.notifications.messageActions(m, onReply)) {
-                    eu.eurise.feature.launcher.home.PillLine(
-                        if (m.packageName.contains("dialer") || m.packageName.contains("phone")) EuriseIcons.phone() else EuriseIcons.message(),
-                        "${m.title} · ${m.appLabel}",
-                        m.text.ifBlank { stringResource(R.string.message_no_preview) },
-                        { onOpen(m) },
-                        right = java.time.Instant.ofEpochMilli(m.postedAt).atZone(java.time.ZoneId.systemDefault())
-                            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")),
-                    )
-                }
-            }
-        }
+    val people = eu.eurise.feature.launcher.home.LocalPeopleShortcuts.current
+    SummaryCard(
+        stringResource(R.string.welcome_comms), hazeState, modifier,
+        trailing = people?.let { p -> { eu.eurise.feature.launcher.home.CommsButtons(p.onRecent, p.onStarred) } },
+    ) {
+        eu.eurise.feature.launcher.home.CommsBody(
+            messages, enabled, rows = if (size.tall) 6 else 3, onOpen, onBubble, onGrant, onAppInfo, onHub,
+        )
     }
 }
 

@@ -72,6 +72,9 @@ data class NowPlaying(
  * Si riempie solo se l'utente concede l'accesso alle notifiche; nulla lascia il telefono.
  */
 object NotificationStore {
+    /** Quante comunicazioni tiene la bolla "Ti hanno cercato" (le altre restano nel Pannello). */
+    const val MaxMessages = 20
+
     private val _counts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val counts: StateFlow<Map<String, Int>> = _counts.asStateFlow()
 
@@ -89,6 +92,21 @@ object NotificationStore {
         service?.get()?.let { runCatching { it.cancelNotification(key) } }
     }
 
+    /** Notifiche nascoste in Eurise: chiave → istante della notifica nascosta. Un messaggio nuovo la fa ricomparire. */
+    private val hidden = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /**
+     * Nasconde [m] dalle bolle e dal Pannello senza segnarlo come letto: nell'app di messaggi resta da leggere,
+     * quindi al mittente non arriva la conferma di lettura. Resta nella tendina di sistema.
+     */
+    fun hide(m: MessageItem) {
+        hidden[m.key] = m.postedAt
+        _messages.value = _messages.value.filterNot { it.key == m.key }
+        _all.value = _all.value.filterNot { it.key == m.key }
+    }
+
+    private fun StatusBarNotification.isHidden() = hidden[key] == postTime
+
     private val _nowPlaying = MutableStateFlow<NowPlaying?>(null)
     val nowPlaying: StateFlow<NowPlaying?> = _nowPlaying.asStateFlow()
 
@@ -101,13 +119,15 @@ object NotificationStore {
         // Il riepilogo di un gruppo si scarta solo se il gruppo ha anche le notifiche singole: alcune app
         // (per esempio Proton Mail) a volte lasciano solo il riepilogo.
         val groupsWithChildren = raw.filter { !it.notification.isGroupSummary() }.mapNotNull { it.groupKey }.toSet()
-        val visible = raw.filter { !it.notification.isGroupSummary() || it.groupKey !in groupsWithChildren }
+        val shown = raw.filter { !it.notification.isGroupSummary() || it.groupKey !in groupsWithChildren }
+        hidden.keys.retainAll(shown.map { it.key }.toSet())
+        val visible = shown.filterNot { it.isHidden() }
         _all.value = visible
             .filter { it.notification.extras.getCharSequence(Notification.EXTRA_TITLE) != null || it.isMessage() }
             .sortedByDescending { it.postTime }
             .take(80)
             .map { it.toMessage(service) }
-        val active = visible.filter { it.isClearable }
+        val active = shown.filter { it.isClearable }
         _counts.value = active.groupingBy { it.packageName }.eachCount()
         // Le comunicazioni si prendono da tutte le notifiche visibili: alcune app (WhatsApp tra queste)
         // marcano certe notifiche come non cancellabili o le raggruppano in modo diverso dalle altre.
@@ -115,7 +135,7 @@ object NotificationStore {
             .filter { it.isMessage() }
             .distinctBy { it.key }
             .sortedByDescending { it.postTime }
-            .take(8)
+            .take(MaxMessages)
             .map { it.toMessage(service) }
         updateMedia(service)
     }

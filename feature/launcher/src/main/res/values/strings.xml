@@ -116,6 +116,9 @@
     <string name="reply_hint">Scrivi una risposta</string>
     <string name="reply_open_chat">Apri chat</string>
     <string name="reply_sent">Risposta inviata</string>
+    <string name="comms_open_bubble">Apri la conversazione</string>
+    <string name="comms_hide">Nascondi</string>
+    <string name="comms_hidden">Nascosto: nell\'app resta da leggere, nessuna spunta al mittente</string>
     <string name="reply_new_messages">%1$s · %2$d messaggi nuovi</string>
     <string name="state_on">Acceso</string>
     <string name="state_off">Spento</string>
