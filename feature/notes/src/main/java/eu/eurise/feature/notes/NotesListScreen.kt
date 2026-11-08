@@ -72,6 +72,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import eu.eurise.core.designsystem.component.FilterPill
+import eu.eurise.core.designsystem.component.SectionLabel
 
 /**
  * Elenco delle note con taccuini, ricerca e note fissate in alto.
@@ -228,58 +230,20 @@ private fun FilterChips(filter: NotesFilter, notebooks: List<NotebookSummary>, o
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item(key = "all") { Chip(stringResource(R.string.notes_filter_all), null, filter == NotesFilter.All) { onFilter(NotesFilter.All) } }
+        item(key = "all") { FilterPill(stringResource(R.string.notes_filter_all), null, filter == NotesFilter.All) { onFilter(NotesFilter.All) } }
         if (filter == NotesFilter.Pinned) {
-            item(key = "pinned") { Chip(stringResource(R.string.notes_section_pinned), null, true, closable = true) { onFilter(NotesFilter.All) } }
+            item(key = "pinned") { FilterPill(stringResource(R.string.notes_section_pinned), null, true, closable = true) { onFilter(NotesFilter.All) } }
         }
         if (filter is NotesFilter.Tag) {
-            item(key = "tag") { Chip("#${filter.tag}", null, true, closable = true) { onFilter(NotesFilter.All) } }
+            item(key = "tag") { FilterPill("#${filter.tag}", null, true, closable = true) { onFilter(NotesFilter.All) } }
         }
         items(notebooks, key = { it.notebook.id }) { s ->
             val selected = filter == NotesFilter.Notebook(s.notebook.id)
-            Chip(s.notebook.name, ink.dot(s.notebook.tint), selected) {
+            FilterPill(s.notebook.name, ink.dot(s.notebook.tint), selected) {
                 onFilter(if (selected) NotesFilter.All else NotesFilter.Notebook(s.notebook.id))
             }
         }
     }
-}
-
-@Composable
-private fun Chip(label: String, dot: Color?, selected: Boolean, closable: Boolean = false, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(CircleShape)
-            .background(if (selected) scheme.primary else scheme.surfaceContainerLow)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .semantics { this.selected = selected }
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        if (dot != null) Box(Modifier.size(8.dp).clip(CircleShape).background(if (selected) scheme.onPrimary else dot))
-        Text(
-            label,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (selected) scheme.onPrimary else scheme.onSurface,
-            maxLines = 1,
-        )
-        if (closable) Icon(EuriseIcons.close(), contentDescription = null, tint = scheme.onPrimary, modifier = Modifier.size(14.dp))
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text.uppercase(Locale.getDefault()),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 0.9.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 20.dp, top = 4.dp),
-    )
 }
 
 /** Avanzamento degli elenchi di controllo di una nota, letto dall'HTML: (fatte, totali). */

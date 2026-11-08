@@ -37,7 +37,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +79,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
+import eu.eurise.core.designsystem.component.CardDivider
+import eu.eurise.core.designsystem.component.SectionLabel
 
 /** Anticipi dell'avviso proposti, in minuti: all'ora della scadenza, 5, 15, 30 minuti, un'ora, un giorno. */
 private val REMINDER_CHOICES = listOf(0, 5, 15, 30, 60, 1440)
@@ -228,19 +229,19 @@ internal fun TaskDetailScreen(
                             }
                         }
                     }
-                    Divider()
+                    CardDivider()
                     val due = draft.due
                     FieldRow(
                         EuriseIcons.calendar(), stringResource(R.string.tasks_field_due),
                         due?.let { dueLabel(it, today).text } ?: stringResource(R.string.tasks_none),
                     ) { pickingDate = true }
-                    Divider()
+                    CardDivider()
                     val time = draft.time
                     FieldRow(
                         EuriseIcons.clock(), stringResource(R.string.tasks_field_time),
                         time?.format(TimeFormat) ?: stringResource(R.string.tasks_all_day),
                     ) { pickingTime = true }
-                    Divider()
+                    CardDivider()
                     var reminderMenu by remember { mutableStateOf(false) }
                     Box {
                         FieldRow(
@@ -259,7 +260,7 @@ internal fun TaskDetailScreen(
                             }
                         }
                     }
-                    Divider()
+                    CardDivider()
                     var repeatMenu by remember { mutableStateOf(false) }
                     Box {
                         FieldRow(
@@ -278,7 +279,7 @@ internal fun TaskDetailScreen(
                             }
                         }
                     }
-                    Divider()
+                    CardDivider()
                     PriorityRow(draft.priority) { draft = draft.copy(priority = it) }
                 }
 
@@ -291,7 +292,7 @@ internal fun TaskDetailScreen(
                 )
                 Card {
                     steps.forEachIndexed { i, step ->
-                        if (i > 0) Divider()
+                        if (i > 0) CardDivider()
                         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             CheckCircle(
                                 step.done, tintColor(list?.tint),
@@ -310,7 +311,7 @@ internal fun TaskDetailScreen(
                             }
                         }
                     }
-                    if (steps.isNotEmpty()) Divider()
+                    if (steps.isNotEmpty()) CardDivider()
                     var newStep by remember { mutableStateOf("") }
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
@@ -430,8 +431,6 @@ internal fun TaskDetailScreen(
     }
 }
 
-@Composable
-private fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
 
 /** Riga di un campo: simbolo, nome a sinistra, valore a destra; si tocca per cambiarlo. */
 @Composable

@@ -16,15 +16,11 @@ import eu.eurise.core.designsystem.theme.LocalEuriseColors
 import eu.eurise.feature.notes.doc.Mark
 import eu.eurise.feature.notes.doc.RichText
 
-/** La tinta della suite con questo nome; Grafite se il nome non è noto. */
-internal fun tintOf(name: String?): CalendarTint =
-    CalendarTint.entries.firstOrNull { it.name == name } ?: CalendarTint.Grafite
-
 /** Colori per il testo colorato e per l'evidenziatore, nel tema attuale. */
 internal data class InkColors(val dark: Boolean) {
-    fun text(tint: String): Color = tintOf(tint).let { if (dark) it.dark else it.light }
+    fun text(tint: String): Color = CalendarTint.named(tint).let { if (dark) it.dark else it.light }
 
-    fun highlight(tint: String): Color = tintOf(tint).let {
+    fun highlight(tint: String): Color = CalendarTint.named(tint).let {
         if (dark) lerp(Color(0xFF14171C), it.dark, 0.38f) else lerp(Color.White, it.light, 0.24f)
     }
 

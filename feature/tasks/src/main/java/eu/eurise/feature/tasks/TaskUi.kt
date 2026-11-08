@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,18 +47,15 @@ import eu.eurise.core.designsystem.theme.LocalEuriseColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import eu.eurise.core.designsystem.component.CardDivider
+import eu.eurise.core.designsystem.theme.tone
 
 internal val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-/** La tinta della suite con questo nome; Grafite se il nome non è noto. */
-internal fun tintOf(name: String?): CalendarTint =
-    CalendarTint.entries.firstOrNull { it.name == name } ?: CalendarTint.Grafite
-
-/** Colore di una tinta nel tema attuale (più luminoso con il tema Notte). */
+/** Colore della tinta con questo nome nel tema attuale. */
 @Composable
 @ReadOnlyComposable
-internal fun tintColor(name: String?): Color =
-    tintOf(name).let { if (LocalEuriseColors.current.isDark) it.dark else it.light }
+internal fun tintColor(name: String?): Color = CalendarTint.named(name).tone()
 
 /** Colore dell'importanza alta, con il suo fondo tenue. */
 @Composable
@@ -134,7 +130,7 @@ internal fun TaskItem(
 ) {
     val scheme = MaterialTheme.colorScheme
     Column {
-        if (divider) HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+        if (divider) CardDivider()
         Row(
             Modifier
                 .fillMaxWidth()
@@ -211,42 +207,4 @@ internal fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(start = 12.dp),
     ) { content() }
-}
-
-@Composable
-internal fun SectionLabel(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant, modifier: Modifier = Modifier) {
-    Text(
-        text.uppercase(Locale.getDefault()),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 0.9.sp,
-        color = color,
-        modifier = modifier.padding(start = 20.dp, top = 6.dp, end = 20.dp),
-    )
-}
-
-/** Pillola delle viste e degli elenchi, come quelle dei taccuini nelle Note. */
-@Composable
-internal fun Chip(label: String, dot: Color?, selected: Boolean, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(CircleShape)
-            .background(if (selected) scheme.primary else scheme.surfaceContainerLow)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .semantics { this.selected = selected }
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        if (dot != null) Box(Modifier.size(8.dp).clip(CircleShape).background(if (selected) scheme.onPrimary else dot))
-        Text(
-            label,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (selected) scheme.onPrimary else scheme.onSurface,
-            maxLines = 1,
-        )
-    }
 }

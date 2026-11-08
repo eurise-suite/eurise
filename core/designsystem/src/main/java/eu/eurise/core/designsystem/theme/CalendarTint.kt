@@ -23,6 +23,9 @@ enum class CalendarTint(val light: Color, val dark: Color) {
     Grafite(Color(0xFF55585E), Color(0xFFA9AEB7));
 
     companion object {
+        /** La tinta con questo nome (come la salvano note, taccuini ed elenchi); Grafite se non è nota. */
+        fun named(name: String?): CalendarTint = entries.firstOrNull { it.name == name } ?: Grafite
+
         // Tonalità di riferimento (gradi) con cui confrontare i colori dei calendari di Murena.
         private val hues = mapOf(
             BluNotte to 215f, Petrolio to 185f, Salvia to 130f, Ottone to 40f,
@@ -52,6 +55,11 @@ enum class CalendarTint(val light: Color, val dark: Color) {
         }
     }
 }
+
+/** Il tono della tinta nel tema attuale: quello chiaro col tema Perla, quello luminoso col tema Notte. */
+@Composable
+@ReadOnlyComposable
+fun CalendarTint.tone(): Color = if (LocalEuriseColors.current.isDark) dark else light
 
 /** Colori di un blocco evento per la tinta e il tema attuali. */
 data class TintColors(val dot: Color, val fill: Color, val content: Color, val outline: Color)

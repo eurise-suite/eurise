@@ -64,6 +64,8 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import eu.eurise.core.designsystem.component.FilterPill
+import eu.eurise.core.designsystem.component.SectionLabel
 
 /**
  * Le Attività: elenco con viste ed elenchi, scheda di un'attività, elenchi e aggiunta rapida.
@@ -326,13 +328,13 @@ private fun TasksScreen(
                 }
             }
             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item(key = "today") { Chip(stringResource(R.string.tasks_view_today), null, state.filter == TasksFilter.Today) { onFilter(TasksFilter.Today) } }
-                item(key = "scheduled") { Chip(stringResource(R.string.tasks_view_scheduled), null, state.filter == TasksFilter.Scheduled) { onFilter(TasksFilter.Scheduled) } }
-                item(key = "important") { Chip(stringResource(R.string.tasks_view_important), null, state.filter == TasksFilter.Important) { onFilter(TasksFilter.Important) } }
-                item(key = "all") { Chip(stringResource(R.string.tasks_view_all), null, state.filter == TasksFilter.All) { onFilter(TasksFilter.All) } }
+                item(key = "today") { FilterPill(stringResource(R.string.tasks_view_today), null, state.filter == TasksFilter.Today) { onFilter(TasksFilter.Today) } }
+                item(key = "scheduled") { FilterPill(stringResource(R.string.tasks_view_scheduled), null, state.filter == TasksFilter.Scheduled) { onFilter(TasksFilter.Scheduled) } }
+                item(key = "important") { FilterPill(stringResource(R.string.tasks_view_important), null, state.filter == TasksFilter.Important) { onFilter(TasksFilter.Important) } }
+                item(key = "all") { FilterPill(stringResource(R.string.tasks_view_all), null, state.filter == TasksFilter.All) { onFilter(TasksFilter.All) } }
                 items(state.lists, key = { "l${it.list.id}" }) { s ->
                     val selected = state.filter == TasksFilter.OfList(s.list.id)
-                    Chip(s.list.name, tintColor(s.list.tint), selected) {
+                    FilterPill(s.list.name, tintColor(s.list.tint), selected) {
                         onFilter(if (selected) TasksFilter.All else TasksFilter.OfList(s.list.id))
                     }
                 }

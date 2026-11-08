@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -49,6 +48,8 @@ import eu.eurise.core.data.model.TaskList
 import eu.eurise.core.designsystem.component.LocalDockClearance
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
+import eu.eurise.core.designsystem.component.CardDivider
+import eu.eurise.core.designsystem.component.SectionLabel
 
 /**
  * Gli elenchi delle attività: quelli che vanno nel cloud, quelli automatici (Farmaci e Date importanti, di base
@@ -106,7 +107,7 @@ internal fun ListsScreen(
             SectionLabel(stringResource(R.string.tasks_lists_cloud))
             Card {
                 cloud.forEachIndexed { i, s ->
-                    if (i > 0) Divider()
+                    if (i > 0) CardDivider()
                     ListRow(
                         list = s.list,
                         count = s.open,
@@ -125,7 +126,7 @@ internal fun ListsScreen(
             SectionLabel(stringResource(R.string.tasks_lists_automatic), modifier = Modifier.padding(top = 6.dp))
             Card {
                 automatic.forEachIndexed { i, s ->
-                    if (i > 0) Divider()
+                    if (i > 0) CardDivider()
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable { onOpenList(s.list.id) }.padding(start = 4.dp, end = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -160,7 +161,7 @@ internal fun ListsScreen(
 
             Card(Modifier.padding(top = 6.dp)) {
                 SwitchRow(stringResource(R.string.tasks_setting_show_done), state.showDone, viewModel::setShowDone)
-                Divider()
+                CardDivider()
                 SwitchRow(stringResource(R.string.tasks_setting_in_calendar), state.inCalendar, viewModel::setShowInCalendar)
             }
         }
@@ -186,8 +187,6 @@ internal fun ListsScreen(
     }
 }
 
-@Composable
-private fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
 
 @Composable
 private fun ListRow(list: TaskList, count: Int, subtitle: String?, onClick: () -> Unit, onEdit: () -> Unit) {
