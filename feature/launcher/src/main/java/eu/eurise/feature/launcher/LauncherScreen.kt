@@ -883,7 +883,6 @@ private fun HomeBubble(
     compact: Boolean,
     actions: LauncherActions,
     home: HomeBoardData,
-    onQuickApp: (Boolean, String) -> Unit,
     nextAlarm: LocalDateTime?,
 ) {
         when (slot.kind) {
@@ -992,6 +991,7 @@ private fun PhoneHome(
     onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit,
     onCreateFolder: (AppEntry) -> Unit,
     home: HomeBoardData,
+    onQuickApp: (Boolean, String) -> Unit,
     skyLight: Boolean,
 ) {
     // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
