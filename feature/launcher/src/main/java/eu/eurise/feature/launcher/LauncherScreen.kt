@@ -161,7 +161,7 @@ private const val TabletSmallestWidth = 600
 fun LauncherRoute(data: EuriseData, homePresses: Int) {
     val context = LocalContext.current
     val app = context.applicationContext as Application
-    val viewModel = viewModel { LauncherViewModel(app, data.notes, data.tasks, data.calendar) }
+    val viewModel = viewModel { LauncherViewModel(app, data.notes, data.tasks, data.calendar, data.links) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val weather by viewModel.weather.collectAsStateWithLifecycle()
     val badges by NotificationStore.counts.collectAsState()
@@ -383,6 +383,32 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             },
         )
+        val noteSaved = stringResource(R.string.bubble_saved_note)
+        val taskSaved = stringResource(R.string.bubble_saved_task)
+        val bubbleActions = eu.eurise.feature.launcher.home.BubbleActions(
+            setDone = { viewModel.setTaskDone(it, true) },
+            postpone = viewModel::postponeTask,
+            quickTask = viewModel::quickTask,
+            openTasks = { actions.openEurise("tasks") },
+            openMedicines = { actions.openEurise("medicines") },
+            openDay = { actions.openEurise("day:$it") },
+            navigate = welcome.onRoute,
+            meetingNote = { e -> viewModel.meetingNote(e) { id -> actions.openEurise("note:$id") } },
+            openLink = actions.openLink,
+            setReadCodes = { on -> viewModel.updateSettings { it.copy(readCodes = on) } },
+            openClock = actions.openClock,
+            capture = { text ->
+                viewModel.capture(text) { c ->
+                    val msg = when (c) {
+                        is LauncherViewModel.Captured.AsNote -> noteSaved
+                        is LauncherViewModel.Captured.AsTask -> taskSaved.format(c.title)
+                    }
+                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },
+            openNote = { actions.openEurise("note:${it.id}") },
+            grantNotifications = actions.grantNotifications,
+        )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }
         var newsSheet by remember { mutableStateOf(false) }
@@ -522,6 +548,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                         onOpenVideo = { viewModel.videos.open(it) },
                                         onChannels = { channelsSheet = true },
                                         onReply = { replyTo = it },
+                                        bubbles = bubbleActions,
+                                        notifications = allNotifications,
+                                        readCodes = settings.readCodes,
                                         cardBody = { kind, modifier ->
                                             androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts) {
                                             SummaryCardBody(
@@ -815,6 +844,9 @@ private class HomeBoardData(
     val onChannels: () -> Unit,
     val onReply: (MessageItem) -> Unit,
     val cardBody: @Composable (CardKind, Modifier) -> Unit,
+    val bubbles: eu.eurise.feature.launcher.home.BubbleActions,
+    val notifications: List<MessageItem>,
+    val readCodes: Boolean,
 )
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */
@@ -862,6 +894,7 @@ private fun PhoneHome(
 ) {
     // Con più righe di preferiti, o su schermi bassi, le pillole mostrano una riga in meno.
     val compact = settings.rows >= 3 || (settings.rows == 2 && LocalConfiguration.current.screenHeightDp < 820)
+    val nextAlarm = rememberNextAlarm()
     // Sullo sfondo libero: in su ricerca e recenti, in giù il Pannello Eurise, pressione lunga Griglia e icone.
     val threshold = with(LocalDensity.current) { 56.dp.toPx() }
     Box(Modifier.fillMaxSize()) {
@@ -902,7 +935,7 @@ private fun PhoneHome(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ClockBlock(
                     now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f),
-                    beside = { SunTimesColumn(welcome.sun, alarm = rememberNextAlarm(), now = now) },
+                    beside = { SunTimesColumn(welcome.sun, alarm = nextAlarm, now = now) },
                 )
                 // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -972,6 +1005,24 @@ private fun PhoneHome(
                             WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
                         eu.eurise.feature.launcher.home.HomeKind.Music ->
                             MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
+                        eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
+                            state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.NextEvent -> eu.eurise.feature.launcher.home.NextEventPill(
+                            state.upcoming, state.calendarConnected, welcome.travel, now, hazeState, home.bubbles, actions.connectCalendar, mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Codes -> eu.eurise.feature.launcher.home.CodesPill(
+                            home.notifications, welcome.notificationsOn, home.readCodes, now, compact, hazeState, home.bubbles, mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Meds -> eu.eurise.feature.launcher.home.MedsPill(
+                            state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Clock -> eu.eurise.feature.launcher.home.ClockPill(
+                            home.notifications, nextAlarm, now, hazeState, home.bubbles, mod,
+                        )
+                        eu.eurise.feature.launcher.home.HomeKind.Memo -> eu.eurise.feature.launcher.home.QuickNotePill(
+                            state.notes.maxByOrNull { it.updatedAt }, hazeState, home.bubbles, mod,
+                        )
                         eu.eurise.feature.launcher.home.HomeKind.Videos -> eu.eurise.feature.launcher.videos.VideosPill(
                             home.videos, home.hasChannels, hazeState, mod, home.onOpenVideo, home.onChannels,
                         )

@@ -182,6 +182,12 @@ object EuriseIcons {
 
     fun read(stroke: Float = Stroke) = icon("read", stroke, "M3.5 12.5l4 4 8-9", "M12.5 16.5l1 0 8-9")
 
+    /** Chiave: codici di accesso. */
+    fun key(stroke: Float = Stroke) = icon("key", stroke, "M14.5 9.5a4 4 0 1 0-3.4 3.9L13 15.5h2v2h2v2h3v-3l-5.6-5.6", "M8.5 8.5h.01")
+
+    /** Pacco: consegne in arrivo. */
+    fun parcel(stroke: Float = Stroke) = icon("parcel", stroke, "M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z", "M3.5 7.5 12 12l8.5-4.5", "M12 12v9")
+
     /** Maschera: letto di nascosto, senza far sapere al mittente che lo si è letto. */
     fun mask(stroke: Float = Stroke) = icon(
         "mask", stroke,

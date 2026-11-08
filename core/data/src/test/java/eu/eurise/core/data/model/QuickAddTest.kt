@@ -1,6 +1,5 @@
-package eu.eurise.feature.tasks
+package eu.eurise.core.data.model
 
-import eu.eurise.core.data.model.Task
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -64,7 +64,7 @@ import kotlin.math.roundToInt
 private val TimeFormat = DateTimeFormatter.ofPattern("HH:mm")
 
 /** Altezza di una riga di comunicazione, linea compresa: serve a decidere quante righe si vedono. */
-private val RowHeight = 47.dp
+internal val RowHeight = 47.dp
 
 /** Scorciatoie verso i contatti recenti e preferiti, offerte dalla Scrivania a ogni bolla delle comunicazioni. */
 class PeopleShortcuts(val onRecent: () -> Unit, val onStarred: () -> Unit)
@@ -245,7 +245,7 @@ private fun CommsSwipeRow(m: MessageItem, onBubble: (MessageItem) -> Unit, conte
  * toccare le righe, e ci disegna una barra sottile quando c'è altro da vedere.
  */
 @Composable
-private fun ScrollWithBar(maxHeight: Dp, content: @Composable ColumnScope.() -> Unit) {
+internal fun ScrollWithBar(maxHeight: Dp, content: @Composable ColumnScope.() -> Unit) {
     val state = rememberScrollState()
     val bar = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
     Box(

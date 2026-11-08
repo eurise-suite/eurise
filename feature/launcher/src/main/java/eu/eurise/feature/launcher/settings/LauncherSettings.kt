@@ -106,6 +106,8 @@ data class LauncherSettings(
     val wallpaper: eu.eurise.feature.launcher.home.WallpaperOptions = eu.eurise.feature.launcher.home.WallpaperOptions(),
     /** Tema: 0 segue lo sfondo, 1 sempre chiaro, 2 sempre scuro. */
     val themeMode: Int = 0,
+    /** Bolla Codici e consegne: legge i testi delle notifiche per trovarli (spenta finché l'utente non la accende). */
+    val readCodes: Boolean = false,
 ) {
     val maxFavorites: Int get() = columns * rows
 
@@ -169,6 +171,7 @@ class SettingsStore(context: Context) {
             .putBoolean("wp_moment", next.wallpaper.moment)
             .putString("wp_fixed", next.wallpaper.fixed)
             .putInt("theme_mode", next.themeMode)
+            .putBoolean("read_codes", next.readCodes)
             .apply()
     }
 
@@ -197,6 +200,7 @@ class SettingsStore(context: Context) {
             fixed = prefs.getString("wp_fixed", null),
         ),
         themeMode = prefs.getInt("theme_mode", 0),
+        readCodes = prefs.getBoolean("read_codes", false),
     )
 }
 

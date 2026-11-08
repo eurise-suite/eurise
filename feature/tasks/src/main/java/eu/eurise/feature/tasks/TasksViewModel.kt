@@ -1,5 +1,6 @@
 package eu.eurise.feature.tasks
 
+import eu.eurise.core.data.model.QuickAdd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.eurise.core.data.TaskRepository

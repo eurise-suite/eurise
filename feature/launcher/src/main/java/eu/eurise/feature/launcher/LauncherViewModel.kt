@@ -73,6 +73,7 @@ class LauncherViewModel(
     private val notes: NoteRepository,
     private val tasks: TaskRepository,
     private val calendar: CalendarRepository,
+    private val links: eu.eurise.core.data.LinkRepository? = null,
 ) : AndroidViewModel(application) {
 
     private val apps = AppsRepository(application)
@@ -318,6 +319,59 @@ class LauncherViewModel(
 
     fun setTaskDone(task: Task, done: Boolean) {
         viewModelScope.launch { tasks.setDone(task.id, done) }
+    }
+
+    /** Sposta a domani un'attività di oggi (o già scaduta). */
+    fun postponeTask(task: Task) {
+        viewModelScope.launch { tasks.update(task.copy(due = LocalDate.now().plusDays(1))) }
+    }
+
+    /** Ciò che è nato da un appunto al volo, per dirlo all'utente. */
+    sealed interface Captured {
+        data class AsTask(val title: String, val due: LocalDate?, val time: java.time.LocalTime?) : Captured
+        data class AsNote(val id: Long) : Captured
+    }
+
+    /**
+     * Aggiunta "come si parla" dalla bolla Da fare oggi: senza giorno, l'attività è per oggi.
+     */
+    fun quickTask(text: String) {
+        val r = eu.eurise.core.data.model.QuickAdd.parse(text.trim(), java.time.LocalDateTime.now())
+        if (r.title.isBlank()) return
+        viewModelScope.launch {
+            tasks.add(r.title, due = r.due ?: LocalDate.now(), time = r.time, repeat = r.repeat, priority = r.priority,
+                remindBefore = if (r.time != null) 0 else null)
+        }
+    }
+
+    /**
+     * Appunto al volo: se la riga dice quando ("domani alle 10", "ogni lunedì") diventa un'attività, altrimenti
+     * una nota. [then] riceve che cosa è nato.
+     */
+    fun capture(text: String, then: (Captured) -> Unit) {
+        val clean = text.trim()
+        if (clean.isEmpty()) return
+        val r = eu.eurise.core.data.model.QuickAdd.parse(clean, java.time.LocalDateTime.now())
+        viewModelScope.launch {
+            if (r.title.isNotBlank() && (r.due != null || r.time != null || r.repeat != null)) {
+                tasks.add(r.title, due = r.due ?: LocalDate.now(), time = r.time, repeat = r.repeat, priority = r.priority,
+                    remindBefore = if (r.time != null) 0 else null)
+                then(Captured.AsTask(r.title, r.due ?: LocalDate.now(), r.time))
+            } else {
+                val id = notes.save(null, clean.substringBefore('\n').trim(), clean.substringAfter('\n', "").trim())
+                then(Captured.AsNote(id))
+            }
+        }
+    }
+
+    /** Nota della riunione: nasce col titolo dell'appuntamento, collegata a lui; [then] riceve l'id della nota. */
+    fun meetingNote(event: CalendarEvent, then: (Long) -> Unit) {
+        viewModelScope.launch {
+            val day = event.start.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.util.Locale.ITALIAN))
+            val id = notes.save(null, "${event.title} · $day", "")
+            links?.link(eu.eurise.core.data.model.LinkRef.note(id), eu.eurise.core.data.model.LinkRef.event(event.eventId))
+            then(id)
+        }
     }
 
     /** Preferiti predefiniti: telefono e messaggi di sistema, Note e Attività di Eurise. */

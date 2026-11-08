@@ -1,7 +1,5 @@
-package eu.eurise.feature.tasks
+package eu.eurise.core.data.model
 
-import eu.eurise.core.data.model.Recurrence
-import eu.eurise.core.data.model.Task
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -13,7 +11,7 @@ import java.time.temporal.TemporalAdjusters
  * Riconosce giorno, ora, ripetizione, importanza ed elenco; il resto diventa il titolo. Ogni pezzo riconosciuto
  * ricorda dove stava nel testo, così l'aggiunta rapida lo può evidenziare e togliere.
  */
-internal object QuickAdd {
+object QuickAdd {
 
     enum class Kind { Date, Time, Repeat, Priority, List }
 
