@@ -50,6 +50,7 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.core.designsystem.component.GroupCard
 
 /**
  * Gli elenchi delle attività: quelli che vanno nel cloud, quelli automatici (Farmaci e Date importanti, di base
@@ -105,7 +106,7 @@ internal fun ListsScreen(
             )
 
             SectionLabel(stringResource(R.string.tasks_lists_cloud))
-            Card {
+            GroupCard {
                 cloud.forEachIndexed { i, s ->
                     if (i > 0) CardDivider()
                     ListRow(
@@ -124,7 +125,7 @@ internal fun ListsScreen(
             )
 
             SectionLabel(stringResource(R.string.tasks_lists_automatic), modifier = Modifier.padding(top = 6.dp))
-            Card {
+            GroupCard {
                 automatic.forEachIndexed { i, s ->
                     if (i > 0) CardDivider()
                     Row(
@@ -159,7 +160,7 @@ internal fun ListsScreen(
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
 
-            Card(Modifier.padding(top = 6.dp)) {
+            GroupCard(Modifier.padding(top = 6.dp)) {
                 SwitchRow(stringResource(R.string.tasks_setting_show_done), state.showDone, viewModel::setShowDone)
                 CardDivider()
                 SwitchRow(stringResource(R.string.tasks_setting_in_calendar), state.inCalendar, viewModel::setShowInCalendar)

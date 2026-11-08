@@ -92,6 +92,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
     implementation(project(":core:cloud"))
+    implementation(project(":core:links"))
     implementation(project(":feature:cloud"))
     implementation(project(":feature:today"))
     implementation(project(":feature:notes"))

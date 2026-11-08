@@ -10,21 +10,22 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class,
-        TaskListEntity::class,
+        TaskListEntity::class, LinkEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun taskDao(): TaskDao
     abstract fun taskListDao(): TaskListDao
+    abstract fun linkDao(): LinkDao
     abstract fun notebookDao(): NotebookDao
 
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) = insertDefaultTaskLists(db)
                 })
@@ -95,5 +96,15 @@ internal val MIGRATION_2_3 = object : Migration(2, 3) {
         db.execSQL("ALTER TABLE notes ADD COLUMN conflict_etag TEXT")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_notes_uid ON notes (uid)")
         db.execSQL("CREATE TABLE IF NOT EXISTS note_tombstones (uid TEXT NOT NULL, etag TEXT, PRIMARY KEY(uid))")
+    }
+}
+
+/** Versione 5: collegamenti tra le cose della suite. */
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS links (a TEXT NOT NULL, b TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(a, b))"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_links_b ON links (b)")
     }
 }

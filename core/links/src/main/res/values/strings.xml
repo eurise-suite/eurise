@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="links_title">Collegati</string>
+    <string name="links_title_count">Collegati · %1$d</string>
+    <string name="links_add">Collega</string>
+    <string name="links_empty">Collega note, attività, eventi o persone</string>
+    <string name="links_remove">Scollega %1$s</string>
+    <string name="links_kind_note">Nota</string>
+    <string name="links_kind_note_trashed">Nota nel cestino</string>
+    <string name="links_kind_task">Attività</string>
+    <string name="links_kind_task_done">Attività fatta</string>
+    <string name="links_kind_event">Evento</string>
+    <string name="links_kind_contact">Persona</string>
+    <string name="links_untitled">Senza titolo</string>
+    <string name="links_unavailable">%1$d collegati non visibili: manca il permesso</string>
+
+    <string name="links_picker_title">Collega a «%1$s»</string>
+    <string name="links_picker_search">Cerca in tutta la suite</string>
+    <string name="links_picker_hint">Scrivi almeno due lettere</string>
+    <string name="links_picker_none">Nessun risultato per «%1$s»</string>
+    <string name="links_picker_all">Tutto</string>
+    <string name="links_picker_notes">Note</string>
+    <string name="links_picker_tasks">Attività</string>
+    <string name="links_picker_events">Eventi</string>
+    <string name="links_picker_people">Persone</string>
+    <string name="links_picker_confirm">Collega %1$d</string>
+    <string name="links_picker_private">I collegamenti restano sul telefono.</string>
+    <string name="links_select">Seleziona %1$s</string>
+</resources>

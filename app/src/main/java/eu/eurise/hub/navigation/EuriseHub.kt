@@ -49,6 +49,9 @@ import eu.eurise.feature.notes.TrashRoute
 import eu.eurise.feature.tasks.TasksRoute
 import eu.eurise.feature.today.TodayRoute
 import eu.eurise.hub.R
+import eu.eurise.core.data.model.LinkRef
+import eu.eurise.core.links.LinkItem
+import eu.eurise.core.links.LinkedSection
 
 /** Le sezioni dell'hub nella barra in basso (al massimo quattro, come da design system). */
 private enum class Section(val route: String, @StringRes val label: Int, val icon: (Float) -> ImageVector, @StringRes val action: Int?) {
@@ -90,6 +93,24 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     var newTaskRequests by rememberSaveable { mutableIntStateOf(0) }
     var notesFilter by remember { androidx.compose.runtime.mutableStateOf<NotesFilterRequest?>(null) }
     var calendarDay by remember { androidx.compose.runtime.mutableStateOf<java.time.LocalDate?>(null) }
+    var taskToOpen by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
+
+    // Una cosa collegata si apre sopra a quella da cui si parte: tornando indietro si ritrova dov'era.
+    val openLinked: (LinkItem) -> Unit = { item ->
+        val id = item.ref.key.toLongOrNull()
+        when (item.ref.kind) {
+            LinkRef.Kind.Note -> id?.let { navController.openNote(it) }
+            LinkRef.Kind.Task -> id?.let {
+                taskToOpen = it
+                if (current != Section.Tasks) navController.navigate(Section.Tasks.route)
+            }
+            LinkRef.Kind.Event -> id?.let { navController.openEvent(it, item.beginMillis, null) }
+            LinkRef.Kind.Contact -> Unit
+        }
+    }
+    val linked: @Composable (LinkRef, String) -> Unit = { ref, title ->
+        LinkedSection(from = ref, title = title, data = data, onOpen = openLinked)
+    }
 
     fun goTo(section: Section) = navController.navigate(section.route) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -185,6 +206,9 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         repository = data.tasks,
                         newTaskRequests = newTaskRequests,
                         onOpenNote = { navController.openNote(it) },
+                        openTaskId = taskToOpen,
+                        onTaskOpened = { taskToOpen = null },
+                        linked = { id, title -> linked(LinkRef.task(id), title) },
                     )
                 }
                 composable(
@@ -205,6 +229,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                             navController.closeIfOn(NOTE_ROUTE)
                             navController.openNote(target)
                         },
+                        linked = { id, title -> linked(LinkRef.note(id), title) },
                     )
                 }
                 composable(
@@ -222,6 +247,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         beginMillis = args?.getLong("begin")?.takeIf { it != NO_ID },
                         startMillis = args?.getLong("start")?.takeIf { it != NO_ID },
                         onClose = { navController.closeIfOn(EVENT_ROUTE) },
+                        linked = { id, title -> linked(LinkRef.event(id), title) },
                     )
                 }
             }

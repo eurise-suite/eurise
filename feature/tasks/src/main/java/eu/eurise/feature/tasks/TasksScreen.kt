@@ -66,6 +66,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.core.designsystem.component.GroupCard
 
 /**
  * Le Attività: elenco con viste ed elenchi, scheda di un'attività, elenchi e aggiunta rapida.
@@ -75,7 +76,14 @@ import eu.eurise.core.designsystem.component.SectionLabel
  * @param onOpenNote apre la nota da cui è nata un'attività.
  */
 @Composable
-fun TasksRoute(repository: TaskRepository, newTaskRequests: Int = 0, onOpenNote: (Long) -> Unit = {}) {
+fun TasksRoute(
+    repository: TaskRepository,
+    newTaskRequests: Int = 0,
+    onOpenNote: (Long) -> Unit = {},
+    openTaskId: Long? = null,
+    onTaskOpened: () -> Unit = {},
+    linked: @Composable (taskId: Long, title: String) -> Unit = { _, _ -> },
+) {
     val viewModel = viewModel { TasksViewModel(repository) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -90,6 +98,14 @@ fun TasksRoute(repository: TaskRepository, newTaskRequests: Int = 0, onOpenNote:
         }
     }
 
+    // Un'attività aperta da un collegamento in un'altra app: si apre la sua scheda.
+    LaunchedEffect(openTaskId) {
+        if (openTaskId != null) {
+            detailId = openTaskId
+            onTaskOpened()
+        }
+    }
+
     val openId = detailId
     when {
         openId != null -> {
@@ -101,6 +117,7 @@ fun TasksRoute(repository: TaskRepository, newTaskRequests: Int = 0, onOpenNote:
                 viewModel = viewModel,
                 onClose = { detailId = null },
                 onOpenNote = onOpenNote,
+                linked = linked,
             )
         }
         showLists -> {
@@ -366,7 +383,7 @@ private fun LazyListScope.taskCard(
     onOpen: (Task) -> Unit,
 ) {
     item(key = "c-${section.key}") {
-        Card(Modifier.animateItem()) {
+        GroupCard(Modifier.animateItem()) {
             section.tasks.forEachIndexed { i, task ->
                 TaskItem(
                     task = task,

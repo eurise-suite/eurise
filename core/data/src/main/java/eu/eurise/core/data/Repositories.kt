@@ -10,6 +10,8 @@ import eu.eurise.core.data.local.toSyncModel
 import eu.eurise.core.data.local.NoteTagEntity
 import eu.eurise.core.data.local.NotebookDao
 import eu.eurise.core.data.local.NotebookEntity
+import eu.eurise.core.data.local.LinkDao
+import eu.eurise.core.data.local.LinkEntity
 import eu.eurise.core.data.local.TaskDao
 import eu.eurise.core.data.local.TaskListDao
 import eu.eurise.core.data.local.TaskListEntity
@@ -21,6 +23,8 @@ import eu.eurise.core.data.model.NoteSyncState
 import eu.eurise.core.data.model.Notebook
 import eu.eurise.core.data.model.NotebookSummary
 import eu.eurise.core.data.model.TagCount
+import eu.eurise.core.data.model.Link
+import eu.eurise.core.data.model.LinkRef
 import eu.eurise.core.data.model.Recurrence
 import eu.eurise.core.data.model.StepProgress
 import eu.eurise.core.data.model.Task
@@ -56,6 +60,7 @@ private val TAG_REGEX = Regex("""(?<![\p{L}\p{N}&/])#([\p{L}\p{N}][\p{L}\p{N}_-]
 class NoteRepository internal constructor(
     private val dao: NoteDao,
     private val tasks: TaskDao,
+    private val links: LinkDao,
     private val clock: Clock,
 ) {
     /** Note attive, filtrate per testo, taccuino o tag (tutti facoltativi). */
@@ -132,6 +137,7 @@ class NoteRepository internal constructor(
     suspend fun delete(id: Long) {
         dao.get(id)?.let { note -> if (note.uid != null && note.remoteEtag != null) dao.addTombstone(NoteTombstoneEntity(note.uid, note.remoteEtag)) }
         tasks.detachNote(id)
+        links.deleteAll(LinkRef.note(id).toString())
         dao.clearTags(id)
         dao.delete(id)
     }
@@ -261,6 +267,7 @@ class TaskSettings internal constructor(context: Context) {
 class TaskRepository internal constructor(
     private val dao: TaskDao,
     private val lists: TaskListDao,
+    private val links: LinkDao,
     private val clock: Clock,
     val settings: TaskSettings,
 ) {
@@ -303,6 +310,10 @@ class TaskRepository internal constructor(
         lists.observeWithCounts().map { rows -> rows.map { TaskListSummary(it.list.toModel(), it.open) } }
 
     suspend fun get(id: Long): Task? = dao.get(id)?.toModel()
+
+    /** Attività il cui titolo contiene [text] (per collegarle). */
+    suspend fun search(text: String, limit: Int = 8): List<Task> =
+        if (text.isBlank()) emptyList() else dao.search(text.trim(), limit).map { it.toModel() }
 
     /** Le attività con questi id che esistono ancora. */
     suspend fun getAll(ids: Collection<Long>): List<Task> =
@@ -367,7 +378,10 @@ class TaskRepository internal constructor(
     suspend fun moveToList(id: Long, listId: Long) = dao.moveToList(id, listId)
 
     /** Elimina l'attività con i suoi passi. */
-    suspend fun delete(id: Long) = dao.delete(id)
+    suspend fun delete(id: Long) {
+        links.deleteAll(LinkRef.task(id).toString())
+        dao.delete(id)
+    }
 
     suspend fun deleteCompleted() {
         dao.deleteStepsOfCompleted()
@@ -399,11 +413,57 @@ class TaskRepository internal constructor(
     }
 }
 
+/**
+ * Collegamenti tra le cose della suite (note, attività, eventi, contatti). Restano solo sul telefono.
+ * Oltre a quelli scelti a mano include quelli che nascono da sé: le attività create dalle voci di una nota.
+ */
+class LinkRepository internal constructor(
+    private val dao: LinkDao,
+    private val tasks: TaskDao,
+    private val clock: Clock,
+) {
+    /** I collegamenti di [ref], prima quelli impliciti, poi i più recenti. */
+    fun observe(ref: LinkRef): Flow<List<Link>> {
+        val key = ref.toString()
+        val chosen = dao.observe(key).map { rows ->
+            rows.mapNotNull { row -> LinkRef.parse(if (row.a == key) row.b else row.a)?.let { Link(it, removable = true, createdAt = row.createdAt) } }
+        }
+        val id = ref.key.toLongOrNull()
+        val implicit: Flow<List<Link>> = when {
+            id == null -> flowOf(emptyList())
+            ref.kind == LinkRef.Kind.Note -> tasks.observeByNote(id).map { list ->
+                list.map { Link(LinkRef.task(it.id), removable = false, createdAt = it.createdAt) }
+            }
+            ref.kind == LinkRef.Kind.Task -> tasks.observeNoteId(id).map { noteId ->
+                listOfNotNull(noteId?.let { Link(LinkRef.note(it), removable = false, createdAt = 0) })
+            }
+            else -> flowOf(emptyList())
+        }
+        return combine(implicit, chosen) { i, c -> (i + c).distinctBy { it.other } }
+    }
+
+    /** Collega due cose; se sono già collegate non cambia nulla. */
+    suspend fun link(x: LinkRef, y: LinkRef) {
+        if (x == y) return
+        val (a, b) = if (x < y) x to y else y to x
+        dao.insert(LinkEntity(a.toString(), b.toString(), clock.now()))
+    }
+
+    suspend fun unlink(x: LinkRef, y: LinkRef) {
+        val (a, b) = if (x < y) x to y else y to x
+        dao.delete(a.toString(), b.toString())
+    }
+
+    /** Toglie tutti i collegamenti di una cosa che non esiste più (per esempio un evento cancellato altrove). */
+    suspend fun forget(ref: LinkRef) = dao.deleteAll(ref.toString())
+}
+
 /** Punto unico di accesso ai dati locali dell'app hub. */
 class EuriseData private constructor(context: Context, database: EuriseDatabase, clock: Clock) {
-    val notes = NoteRepository(database.noteDao(), database.taskDao(), clock)
+    val notes = NoteRepository(database.noteDao(), database.taskDao(), database.linkDao(), clock)
     val notebooks = NotebookRepository(database.notebookDao(), database.noteDao())
-    val tasks = TaskRepository(database.taskDao(), database.taskListDao(), clock, TaskSettings(context))
+    val tasks = TaskRepository(database.taskDao(), database.taskListDao(), database.linkDao(), clock, TaskSettings(context))
+    val links = LinkRepository(database.linkDao(), database.taskDao(), clock)
     val calendar = CalendarRepository(context)
     val dates = eu.eurise.core.data.dates.ImportantDatesRepository(context)
     val medicines = eu.eurise.core.data.meds.MedicinesRepository(context)

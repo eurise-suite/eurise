@@ -196,15 +196,3 @@ internal fun ImportantBadge() {
     }
 }
 
-/** Scheda bianca arrotondata che raccoglie righe. */
-@Composable
-internal fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Column(
-        modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(start = 12.dp),
-    ) { content() }
-}

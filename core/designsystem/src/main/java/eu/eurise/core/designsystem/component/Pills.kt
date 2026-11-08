@@ -4,11 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +26,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -74,3 +79,31 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = Mat
 /** Linea sottile tra le righe di una scheda bianca. */
 @Composable
 fun CardDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
+
+/**
+ * Scheda bianca arrotondata che raccoglie righe (attività, campi, collegamenti), staccata dai bordi dello schermo.
+ * Il contenuto parte a 12 dp dal bordo sinistro della scheda, lasciando spazio alle caselle da 44 dp.
+ */
+@Composable
+fun GroupCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Column(
+        modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(start = 12.dp),
+    ) { content() }
+}
+
+/**
+ * Allarga il contenuto di [horizontal] per lato oltre il margine del contenitore: serve a mettere schede e
+ * sezioni comuni (che hanno i propri margini) dentro schermate con margini più larghi, come l'editor delle note.
+ */
+fun Modifier.bleed(horizontal: Dp): Modifier = layout { measurable, constraints ->
+    val extra = (horizontal * 2).roundToPx()
+    val wide = if (constraints.hasBoundedWidth) constraints.copy(minWidth = constraints.maxWidth + extra, maxWidth = constraints.maxWidth + extra) else constraints
+    val placeable = measurable.measure(wide)
+    val width = if (constraints.hasBoundedWidth) constraints.maxWidth else placeable.width
+    layout(width, placeable.height) { placeable.place(-extra / 2, 0) }
+}

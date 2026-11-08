@@ -14,6 +14,21 @@
 - Si compila solo su GitHub Actions (l'ambiente di Claude non raggiunge i repository Maven di Google).
 - Il documento di progetto e la sezione "Integrazioni tra le app" decidono l'ordine delle integrazioni.
 
+## Caratteristiche distintive (8 novembre 2026)
+Ogni scelta si misura su queste: schermata iniziale molto informativa; tastiera eccellente; privacy e codice
+aperto; leggerezza; funzionalità; integrazione tra le app; rapidità nel flusso di lavoro e anche nello staccare;
+ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integrazione sia la leggerezza.
+
+## Privacy sempre chiara (regola fissa, 8 novembre 2026)
+- Massima funzionalità con massima privacy: di base tutto resta sul telefono; ciò che esce lo sceglie l'utente.
+- L'utente sa sempre a che livello di privacy si trova: il centro privacy mostra dove sta ogni dato, quali
+  servizi esterni vengono contattati e con quali dati, quali permessi sono attivi.
+- Ogni funzione che cambia la privacy (dati che escono, permessi, analisi di contenuti) si accende e si spegne
+  con un interruttore; accenderla mostra prima una spiegazione breve: cosa viene letto, dove va, chi lo vede,
+  come si torna indietro. Spegnerla non chiede conferme.
+- Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
+  (es. posizione arrotondata), mai identificativi del telefono.
+
 ## Struttura degli APK (decisa l'8 novembre 2026)
 - APK principale "Eurise": Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud. Ogni app ha la sua icona
   nel cassetto e si può spegnere; spenta, non carica nulla.

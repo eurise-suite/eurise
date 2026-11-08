@@ -115,6 +115,9 @@ class NoteEditorViewModel(
 ) : ViewModel() {
 
     private var id: Long? = noteId
+
+    /** Id della nota nel database; nullo finché una nota nuova non è stata salvata. */
+    val currentId: Long? get() = id
     private var nextId = 0L
     private val newId = { ++nextId }
     private var serial = 0L

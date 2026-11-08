@@ -70,6 +70,52 @@ class CalendarRepository internal constructor(context: Context) {
             )?.use { c -> if (c.moveToFirst()) c.toEvent(zone) else null }
         }
 
+    /**
+     * L'occorrenza di [eventId] da mostrare in un collegamento: la prossima se l'evento si ripete, altrimenti
+     * l'unica. Null se l'evento non esiste più o manca il permesso.
+     */
+    suspend fun getForLink(eventId: Long, zone: ZoneId = ZoneId.systemDefault()): CalendarEvent? = withContext(Dispatchers.IO) {
+        if (!hasPermission()) return@withContext null
+        runCatching {
+            val now = System.currentTimeMillis()
+            // Prima la prossima occorrenza (in un anno), poi l'ultima passata (negli ultimi cinque anni).
+            nearestOccurrence(eventId, now, now + YEAR_MILLIS, "ASC", zone)
+                ?: nearestOccurrence(eventId, now - 5 * YEAR_MILLIS, now, "DESC", zone)
+        }.getOrNull()
+    }
+
+    /** Eventi il cui titolo contiene [query], da un anno fa a un anno avanti: prima i prossimi, poi i passati. */
+    suspend fun search(query: String, limit: Int = 8, zone: ZoneId = ZoneId.systemDefault()): List<CalendarEvent> =
+        withContext(Dispatchers.IO) {
+            val text = query.trim()
+            if (!hasPermission() || text.length < 2) return@withContext emptyList()
+            val now = System.currentTimeMillis()
+            val like = "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            val found = runCatching {
+                resolver.query(
+                    instancesUri(now - YEAR_MILLIS, now + YEAR_MILLIS),
+                    INSTANCE_PROJECTION,
+                    "${Instances.VISIBLE} = 1 AND ${Instances.TITLE} LIKE ? ESCAPE '\\'",
+                    arrayOf(like),
+                    "${Instances.BEGIN} ASC",
+                )?.use { c -> buildList { while (c.moveToNext()) add(c.toEvent(zone)) } }
+            }.getOrNull().orEmpty()
+            // Una riga per evento: la prossima occorrenza, o l'ultima se sono tutte passate.
+            val (next, past) = found.partition { it.beginMillis >= now }
+            (next.distinctBy { it.eventId } + past.reversed().distinctBy { it.eventId })
+                .distinctBy { it.eventId }
+                .take(limit)
+        }
+
+    private fun nearestOccurrence(eventId: Long, from: Long, to: Long, order: String, zone: ZoneId): CalendarEvent? =
+        resolver.query(
+            instancesUri(from, to),
+            INSTANCE_PROJECTION,
+            "${Instances.EVENT_ID} = ?",
+            arrayOf(eventId.toString()),
+            "${Instances.BEGIN} $order",
+        )?.use { c -> if (c.moveToFirst()) c.toEvent(zone) else null }
+
     /** Crea o aggiorna un evento; restituisce il suo id, oppure null se il sistema ha rifiutato. */
     suspend fun save(draft: EventDraft, zone: ZoneId = ZoneId.systemDefault()): Long? = withContext(Dispatchers.IO) {
         val values = ContentValues().apply {
@@ -209,6 +255,7 @@ class CalendarRepository internal constructor(context: Context) {
     internal companion object {
         const val LOCAL_ACCOUNT = "Eurise"
         const val DAY_MILLIS = 86_400_000L
+        const val YEAR_MILLIS = 366 * DAY_MILLIS
 
         val INSTANCE_PROJECTION = arrayOf(
             Instances.EVENT_ID, Instances.CALENDAR_ID, Instances.TITLE, Instances.EVENT_LOCATION,

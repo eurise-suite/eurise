@@ -200,6 +200,17 @@ internal interface TaskDao {
     @Query("SELECT * FROM tasks WHERE done = 0 AND remind_before IS NOT NULL AND due_day BETWEEN :from AND :to")
     suspend fun withReminders(from: Long, to: Long): List<TaskEntity>
 
+    /** Attività (non passi) il cui titolo contiene [text]: prima quelle da fare, poi le più recenti. */
+    @Query("SELECT * FROM tasks WHERE parent_id IS NULL AND title LIKE '%' || :text || '%' ORDER BY done, created_at DESC LIMIT :limit")
+    suspend fun search(text: String, limit: Int): List<TaskEntity>
+
+    /** Le attività nate dalle voci di una nota (collegamenti impliciti). */
+    @Query("SELECT * FROM tasks WHERE note_id = :noteId AND parent_id IS NULL ORDER BY created_at")
+    fun observeByNote(noteId: Long): Flow<List<TaskEntity>>
+
+    @Query("SELECT note_id FROM tasks WHERE id = :id")
+    fun observeNoteId(id: Long): Flow<Long?>
+
     @Query("SELECT * FROM tasks WHERE id IN (:ids)")
     suspend fun getAll(ids: List<Long>): List<TaskEntity>
 
@@ -259,4 +270,25 @@ internal interface TaskListDao {
 
     @Query("DELETE FROM task_lists WHERE id = :id AND kind = 'user'")
     suspend fun delete(id: Long)
+}
+
+@Dao
+internal interface LinkDao {
+
+    /** Tutti i collegamenti in cui compare [ref] (forma testuale di un LinkRef), da una parte o dall'altra. */
+    @Query("SELECT * FROM links WHERE a = :ref OR b = :ref ORDER BY created_at DESC")
+    fun observe(ref: String): Flow<List<LinkEntity>>
+
+    @Query("SELECT COUNT(*) FROM links WHERE a = :ref OR b = :ref")
+    suspend fun count(ref: String): Int
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(link: LinkEntity)
+
+    @Query("DELETE FROM links WHERE a = :a AND b = :b")
+    suspend fun delete(a: String, b: String)
+
+    /** Toglie ogni collegamento di una cosa eliminata. */
+    @Query("DELETE FROM links WHERE a = :ref OR b = :ref")
+    suspend fun deleteAll(ref: String)
 }

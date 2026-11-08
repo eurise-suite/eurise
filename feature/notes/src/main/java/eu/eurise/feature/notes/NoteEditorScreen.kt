@@ -101,6 +101,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import eu.eurise.core.designsystem.component.bleed
 
 /**
  * Editor di una nota; [noteId] nullo crea una nota nuova (nel taccuino [notebookId], se c'è).
@@ -115,6 +116,7 @@ fun NoteEditorRoute(
     notebookId: Long?,
     onClose: () -> Unit,
     onOpenNote: (Long) -> Unit,
+    linked: @Composable (noteId: Long, title: String) -> Unit = { _, _ -> },
 ) {
     val viewModel = viewModel { NoteEditorViewModel(notes, notebooks, tasks, noteId, notebookId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -136,6 +138,7 @@ fun NoteEditorRoute(
         },
         onOpenNote = { target -> viewModel.close { CloudSync.get(context).requestSoon(); onOpenNote(target) } },
         onConflictResolved = { CloudSync.get(context).requestSoon() },
+        linked = { viewModel.currentId?.let { id -> linked(id, state.title) } },
         notebookPicker = { onDismiss ->
             NotebookPickerSheet(
                 notebooks = books,
@@ -168,6 +171,7 @@ private fun NoteEditorScreen(
     onShare: () -> Unit,
     onOpenNote: (Long) -> Unit,
     onConflictResolved: () -> Unit,
+    linked: @Composable () -> Unit,
     notebookPicker: @Composable (onDismiss: () -> Unit) -> Unit,
     linkPicker: @Composable (onDismiss: () -> Unit) -> Unit,
 ) {
@@ -276,6 +280,10 @@ private fun NoteEditorScreen(
                         }
                     }
                 }
+            }
+            // Collegati: solo per le note già salvate (una nota nuova nasce al primo testo).
+            if (state.saved) {
+                Box(Modifier.bleed(22.dp).padding(top = 22.dp)) { linked() }
             }
             // Toccando sotto l'ultimo blocco si torna a scrivere in fondo.
             Box(

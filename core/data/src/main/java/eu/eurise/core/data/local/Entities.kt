@@ -84,6 +84,17 @@ internal data class TaskEntity(
     @ColumnInfo(name = "parent_id") val parentId: Long? = null,
 )
 
+/**
+ * Un collegamento tra due cose della suite, salvato una volta sola: [a] è sempre il riferimento minore
+ * (vedi [eu.eurise.core.data.model.LinkRef]), così "nota–evento" ed "evento–nota" sono la stessa riga.
+ */
+@Entity(tableName = "links", primaryKeys = ["a", "b"], indices = [Index("b")])
+internal data class LinkEntity(
+    val a: String,
+    val b: String,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+)
+
 /** Un elenco di attività (vedi [TaskList]). */
 @Entity(tableName = "task_lists")
 internal data class TaskListEntity(

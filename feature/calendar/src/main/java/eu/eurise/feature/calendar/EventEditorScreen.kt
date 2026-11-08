@@ -81,6 +81,7 @@ fun EventEditorRoute(
     beginMillis: Long?,
     startMillis: Long?,
     onClose: () -> Unit,
+    linked: @Composable (eventId: Long, title: String) -> Unit = { _, _ -> },
 ) {
     val viewModel = viewModel { EventEditorViewModel(repository, eventId, beginMillis, startMillis) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -101,6 +102,7 @@ fun EventEditorRoute(
         onSave = { viewModel.save(onClose) },
         onDelete = { viewModel.delete(onClose) },
         onClose = onClose,
+        linked = { if (eventId != null) linked(eventId, state.title) },
     )
 }
 
@@ -123,6 +125,7 @@ internal fun EventEditorScreen(
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onClose: () -> Unit,
+    linked: @Composable () -> Unit = {},
 ) {
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -238,6 +241,8 @@ internal fun EventEditorScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).heightIn(min = 48.dp),
                 )
             }
+
+            if (!state.isNew) linked()
 
             Text(
                 stringResource(

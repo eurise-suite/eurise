@@ -47,6 +47,8 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +83,7 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.core.designsystem.component.GroupCard
 
 /** Anticipi dell'avviso proposti, in minuti: all'ora della scadenza, 5, 15, 30 minuti, un'ora, un giorno. */
 private val REMINDER_CHOICES = listOf(0, 5, 15, 30, 60, 1440)
@@ -103,6 +106,7 @@ internal fun TaskDetailScreen(
     viewModel: TasksViewModel,
     onClose: () -> Unit,
     onOpenNote: (Long) -> Unit,
+    linked: @Composable (taskId: Long, title: String) -> Unit,
 ) {
     val loaded by produceState<Task?>(null, taskId) { value = repository.get(taskId) }
     val original = loaded
@@ -117,14 +121,23 @@ internal fun TaskDetailScreen(
     val list = lists.firstOrNull { it.id == draft.listId }
     val scheme = MaterialTheme.colorScheme
 
+    // Se la scheda esce dallo schermo (per esempio aprendo una cosa collegata) le ultime modifiche si salvano;
+    // non dopo un'eliminazione, né se sono già state salvate.
+    val saved = remember(original.id) { SavedMark(original) }
+    val latest by rememberUpdatedState(draft)
     LaunchedEffect(draft) {
-        if (draft != original) {
+        if (draft != saved.task) {
             delay(400)
             viewModel.update(draft)
+            saved.task = draft
         }
     }
+    DisposableEffect(original.id) {
+        onDispose { if (!saved.deleted && latest != saved.task) viewModel.update(latest) }
+    }
     val close = {
-        if (draft != original) viewModel.update(draft)
+        if (draft != saved.task) viewModel.update(draft)
+        saved.task = draft
         onClose()
     }
     BackHandler(onBack = close)
@@ -214,7 +227,7 @@ internal fun TaskDetailScreen(
                     }
                 }
 
-                Card {
+                GroupCard {
                     // Elenco.
                     var listMenu by remember { mutableStateOf(false) }
                     Box {
@@ -290,7 +303,7 @@ internal fun TaskDetailScreen(
                     else stringResource(R.string.tasks_steps_count, doneSteps, steps.size),
                     modifier = Modifier.padding(top = 2.dp),
                 )
-                Card {
+                GroupCard {
                     steps.forEachIndexed { i, step ->
                         if (i > 0) CardDivider()
                         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -337,7 +350,7 @@ internal fun TaskDetailScreen(
                 }
 
                 // Note e nota d'origine.
-                Card {
+                GroupCard {
                     Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp, end = 14.dp)) {
                         if (draft.notes.isEmpty()) Text(stringResource(R.string.tasks_field_notes), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                         BasicTextField(
@@ -366,6 +379,8 @@ internal fun TaskDetailScreen(
                         }
                     }
                 }
+
+                linked(taskId, draft.title)
             }
         }
     }
@@ -422,6 +437,7 @@ internal fun TaskDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
+                    saved.deleted = true
                     viewModel.delete(original)
                     onClose()
                 }) { Text(stringResource(R.string.tasks_delete), color = MaterialTheme.colorScheme.error) }
@@ -510,3 +526,8 @@ private fun reminderLabel(minutes: Int?, hasTime: Boolean): String = when (minut
     else -> stringResource(R.string.tasks_reminder_minutes, minutes)
 }
 
+
+/** Cosa è già stato salvato della scheda aperta, per non riscriverla all'uscita. */
+private class SavedMark(var task: Task) {
+    var deleted = false
+}
