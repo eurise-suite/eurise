@@ -6,7 +6,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Documento di progetto: Claude Doc `81d73EgPHtgsSEd7YkavhU`.
 - Tela di design "Icone della suite": https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   (pagine: App e launcher, Icone, Calendario, Scrivania (launcher), Scrivania tablet, Note, Cloud, Attività,
-  Drive e Scanner, Orologio, Galleria, Password).
+  Drive e Scanner, Orologio, Galleria, Password, Integrazioni).
 - Repository: `eurise-suite/eurise`. Un ramo per lavoro (`launcher`, `note`, `disegno`, `cloud`…), unito in
   `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
@@ -91,7 +91,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `user_info`, creato in Manager → token API), come fanno FolderSync e l'integrazione kDrive di Home Assistant.
   Da verificare che l'API risponda anche con my kSuite+ prima di costruire il client.
 
-## Attività (`feature/tasks`) – scritte nel ramo `attivita`, da provare sul telefono
+## Attività (`feature/tasks`) – scritte nei rami `attivita` e `leggerezza`, da provare sul telefono
 - Tela, pagina "Attività" (anteprime approvate). Decisioni del proprietario (8 novembre): importanza a tre livelli
   (No, Media, Alta = PRIORITY 0, 5, 1 di CalDAV); attività con un orario anche nel Calendario, interruttore acceso
   di base; Farmaci e Date importanti come elenchi automatici, di base solo sul telefono, con interruttore
@@ -154,5 +154,5 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
 - Password (tela, pagina "Password", 8 novembre notte): cassaforte con il controllo delle password, voce con
   codice 2FA e passkey, registrazione su un sito con alias e password generata. Da discutere.
-- Prossimo passo: provare l'APK del ramo `attivita` e unirlo a `main`; discutere le anteprime di Drive, Orologio,
+- Prossimo passo: provare l'APK del ramo `leggerezza` (contiene Attività e sveglia nella home) e unirlo a `main`; discutere le anteprime di Drive, Orologio,
   Galleria e Password; poi la sincronizzazione CalDAV delle Attività con Murena.
