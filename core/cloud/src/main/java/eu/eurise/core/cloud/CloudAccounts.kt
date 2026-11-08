@@ -111,8 +111,8 @@ class CloudAccounts private constructor(context: Context) {
     }
 }
 
-/** Cifratura AES-GCM con una chiave del Keystore di Android. */
-private object Secrets {
+/** Cifratura AES-GCM con una chiave del Keystore di Android: per segreti da leggere senza impronta (account, chiavi API). */
+object Secrets {
     private const val ALIAS = "eurise-cloud"
 
     private fun key(): SecretKey {

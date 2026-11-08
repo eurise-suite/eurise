@@ -9,6 +9,34 @@ enum class Strength { Weak, Fair, Strong, VeryStrong }
 /** Una voce che conviene sistemare, e perché. */
 data class HealthIssue(val uuid: String, val weak: Boolean, val reused: Boolean)
 
+/** Controlli sulle carte, senza rete. */
+object Cards {
+    /** Controllo di Luhn: scopre gli errori di battitura del numero. */
+    fun valid(number: String): Boolean {
+        val digits = number.filter { it.isDigit() }
+        if (digits.length !in 12..19 || digits.length != number.count { !it.isWhitespace() && it != '-' }) return false
+        val sum = digits.reversed().mapIndexed { i, c ->
+            val d = c - '0'
+            if (i % 2 == 1) (d * 2).let { if (it > 9) it - 9 else it } else d
+        }.sum()
+        return sum % 10 == 0
+    }
+
+    fun lastFour(number: String): String = number.filter { it.isDigit() }.takeLast(4)
+
+    /** Mesi da [today] alla fine del mese di scadenza "MM/AA" (0 è il mese in corso, negativo se scaduta); null se illeggibile. */
+    fun monthsLeft(expiry: String, today: java.time.LocalDate): Int? {
+        val parts = expiry.trim().split('/', '-')
+        if (parts.size != 2) return null
+        val month = parts[0].trim().toIntOrNull()?.takeIf { it in 1..12 } ?: return null
+        val raw = parts[1].trim().toIntOrNull() ?: return null
+        val year = if (raw < 100) 2000 + raw else raw
+        return (year - today.year) * 12 + month - today.monthValue
+    }
+
+    fun expiringSoon(expiry: String, today: java.time.LocalDate): Boolean = monthsLeft(expiry, today)?.let { it <= 1 } ?: false
+}
+
 /** Generatore di password e frasi, sempre con il generatore casuale crittografico. */
 object Generator {
     private val random = SecureRandom()

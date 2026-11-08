@@ -3,6 +3,7 @@
 
     <!-- Internet serve solo alla sincronizzazione del file cifrato, che si accende con un interruttore. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:allowBackup="false"
@@ -20,5 +21,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".autofill.FillActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.EurisePassword.Sheet"
+            android:windowSoftInputMode="adjustResize" />
+        <service
+            android:name=".autofill.EuriseAutofillService"
+            android:exported="true"
+            android:label="@string/pwd_app_name"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data android:name="android.autofill" android:resource="@xml/autofill_service" />
+        </service>
     </application>
 </manifest>

@@ -22,7 +22,12 @@ data class VaultEntry(
     val lastUsed: Long,
     val usageCount: Int,
     val historyCount: Int,
+    val card: CardData? = null,
+    val apps: List<String> = emptyList(),
 )
+
+/** I dati di una carta: stanno in campi aggiuntivi della voce, che KeePassXC mostra come attributi. */
+data class CardData(val number: String, val holder: String, val expiry: String, val cvv: String, val type: String)
 
 /** I campi che si modificano dalla scheda. */
 data class EntryDraft(
@@ -32,6 +37,7 @@ data class EntryDraft(
     val url: String,
     val notes: String,
     val otp: String?,
+    val card: CardData? = null,
 )
 
 /** Esito di un'unione: [localChanged] se è cambiato qualcosa qui, [remoteBehind] se qui c'è qualcosa che là manca. */
@@ -71,6 +77,16 @@ class Vault(val document: Document) {
         setString(element, "URL", draft.url, false)
         setString(element, "Notes", draft.notes, false)
         if (draft.otp.isNullOrBlank()) removeString(element, "otp") else setString(element, "otp", draft.otp, true)
+        val card = draft.card
+        if (card == null) {
+            CARD_FIELDS.forEach { removeString(element, it) }
+        } else {
+            setString(element, F_NUMBER, card.number, true)
+            setString(element, F_HOLDER, card.holder, false)
+            setString(element, F_EXPIRY, card.expiry, false)
+            setString(element, F_CVV, card.cvv, true)
+            setString(element, F_TYPE, card.type, false)
+        }
         setTime(element, "LastModificationTime", now)
         return element.child("UUID")!!.textContent
     }
@@ -82,6 +98,16 @@ class Vault(val document: Document) {
         entry.parentNode.removeChild(entry)
         bin.appendChild(entry)
         setTime(entry, "LocationChanged", now)
+        setTime(entry, "LastModificationTime", now)
+    }
+
+    /** Collega la voce a un'app installata: da quel momento le si propone in quell'app. */
+    fun linkApp(uuid: String, packageName: String, now: Long = System.currentTimeMillis()) {
+        val entry = findEntry(uuid) ?: return
+        val used = entry.children("String").mapNotNull { it.child("Key")?.textContent }.filter { it.startsWith(F_APP) }
+        val values = entry.children("String").filter { it.child("Key")?.textContent?.startsWith(F_APP) == true }.map { it.child("Value")?.textContent }
+        if (packageName in values) return
+        setString(entry, if (used.isEmpty()) F_APP else "$F_APP${used.size + 1}", packageName, false)
         setTime(entry, "LastModificationTime", now)
     }
 
@@ -175,6 +201,11 @@ class Vault(val document: Document) {
             lastUsed = timeOf(e, "LastAccessTime"),
             usageCount = e.child("Times")?.child("UsageCount")?.textContent?.trim()?.toIntOrNull() ?: 0,
             historyCount = e.child("History")?.children("Entry")?.size ?: 0,
+            card = strings[F_NUMBER]?.takeIf { it.isNotBlank() }?.let {
+                CardData(it, strings[F_HOLDER].orEmpty(), strings[F_EXPIRY].orEmpty(), strings[F_CVV].orEmpty(), strings[F_TYPE].orEmpty())
+            },
+            apps = strings.filterKeys { it.startsWith(F_APP) }.values.filter { it.isNotBlank() } +
+                listOfNotNull(strings["URL"]?.takeIf { it.startsWith(APP_SCHEME) }?.removePrefix(APP_SCHEME)),
         )
     }
 
@@ -305,6 +336,14 @@ class Vault(val document: Document) {
 
     companion object {
         private const val MAX_HISTORY = 10
+        private const val F_NUMBER = "Numero carta"
+        private const val F_HOLDER = "Intestatario"
+        private const val F_EXPIRY = "Scadenza"
+        private const val F_CVV = "CVV"
+        private const val F_TYPE = "Tipo carta"
+        private val CARD_FIELDS = listOf(F_NUMBER, F_HOLDER, F_EXPIRY, F_CVV, F_TYPE)
+        private const val F_APP = "AndroidApp"
+        const val APP_SCHEME = "androidapp://"
         /** Secondi tra l'anno 1 e il 1970: KDBX 4 conta le date dall'anno 1. */
         private const val EPOCH_OFFSET = 62135596800L
         private val random = SecureRandom()

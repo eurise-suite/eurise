@@ -48,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,22 +94,26 @@ import eu.eurise.password.data.SyncState
 import eu.eurise.password.data.VaultState
 import eu.eurise.password.kdbx.EntryDraft
 import eu.eurise.password.kdbx.VaultEntry
+import eu.eurise.password.kdbx.CardData
+import eu.eurise.password.data.AliasProvider
+import eu.eurise.password.logic.Cards
 import eu.eurise.password.logic.Generator
 import eu.eurise.password.logic.HealthIssue
 import eu.eurise.password.logic.Strength
 import eu.eurise.password.logic.Totp
 import kotlinx.coroutines.delay
 import java.text.DateFormat
+import java.time.LocalDate
 import java.util.Date
 
 private sealed interface Screen {
     data object List : Screen
     data class Detail(val uuid: String) : Screen
-    data class Edit(val uuid: String?) : Screen
+    data class Edit(val uuid: String?, val card: Boolean = false) : Screen
     data object Sync : Screen
 }
 
-private enum class Tab(val label: Int) { All(R.string.pwd_tab_all), Otp(R.string.pwd_tab_otp), Notes(R.string.pwd_tab_notes), Fix(R.string.pwd_tab_fix) }
+private enum class Tab(val label: Int) { All(R.string.pwd_tab_all), Otp(R.string.pwd_tab_otp), Cards(R.string.pwd_tab_cards), Notes(R.string.pwd_tab_notes), Fix(R.string.pwd_tab_fix) }
 
 @Composable
 fun PasswordRoute(vm: PasswordViewModel = viewModel()) {
@@ -227,16 +232,26 @@ private fun SetupScreen(vm: PasswordViewModel) {
     }
 }
 
+/** Con [compact] sta dentro il foglio di compilazione invece di occupare lo schermo. */
 @Composable
-private fun UnlockScreen(vm: PasswordViewModel) {
+internal fun UnlockScreen(vm: PasswordViewModel, compact: Boolean = false) {
+    val context = LocalContext.current
     val busy by vm.busy.collectAsStateWithLifecycle()
+    val bioOn by vm.bioOn.collectAsStateWithLifecycle()
     var password by remember { mutableStateOf("") }
-    CenteredForm {
-        KeyMark()
-        Text(stringResource(R.string.pwd_unlock_title), fontSize = 26.sp, fontWeight = FontWeight.Bold)
+    LaunchedEffect(Unit) { if (bioOn) vm.unlockWithBio(context) }
+    val form: @Composable () -> Unit = {
+        if (!compact) KeyMark()
+        Text(stringResource(R.string.pwd_unlock_title), fontSize = if (compact) 18.sp else 26.sp, fontWeight = FontWeight.Bold)
         SecretField(password, stringResource(R.string.pwd_master), { password = it; vm.clearError() })
         StatusLines(vm)
         Button(onClick = { vm.unlock(password) }, enabled = !busy && password.isNotEmpty(), modifier = Modifier.fillMaxWidth().height(50.dp)) { Text(stringResource(R.string.pwd_open)) }
+        if (bioOn) TextButton(onClick = { vm.unlockWithBio(context) }) { Text(stringResource(R.string.pwd_bio_use)) }
+    }
+    if (compact) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) { form() }
+    } else {
+        CenteredForm(form)
     }
 }
 
@@ -253,13 +268,14 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
     }
     BackHandler(enabled = screen != Screen.List, onBack = back)
     when (val s = screen) {
-        Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { screen = Screen.Edit(null) }, onSync = { screen = Screen.Sync })
+        Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { card -> screen = Screen.Edit(null, card) }, onSync = { screen = Screen.Sync })
         is Screen.Detail -> {
             val entry = entries.firstOrNull { it.uuid == s.uuid }
             if (entry == null) LaunchedEffect(Unit) { screen = Screen.List }
+            else if (entry.card != null) CardDetail(vm, entry, back, onEdit = { screen = Screen.Edit(s.uuid, true) })
             else EntryDetail(vm, entry, entries, back, onEdit = { screen = Screen.Edit(s.uuid) })
         }
-        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, back) { draft ->
+        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, back) { draft ->
             vm.save(draft, s.uuid)
             back()
         }
@@ -296,7 +312,7 @@ private sealed interface Row2 {
 }
 
 @Composable
-private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: (String) -> Unit, onAdd: () -> Unit, onSync: () -> Unit) {
+private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: (String) -> Unit, onAdd: (Boolean) -> Unit, onSync: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val haze = remember { HazeState() }
     var tab by remember { mutableStateOf(Tab.All) }
@@ -306,15 +322,20 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
     val now = rememberNow()
 
     val issues = remember(entries) { Generator.health(entries.map { it.uuid to it.password }).associateBy { it.uuid } }
+    val expiring = remember(entries) {
+        val today = LocalDate.now()
+        entries.filter { e -> e.card?.let { Cards.expiringSoon(it.expiry, today) } == true }.mapTo(HashSet()) { it.uuid }
+    }
     val sorted = remember(entries) { entries.sortedBy { it.title.lowercase() } }
-    val rows = remember(sorted, issues, tab, query) {
+    val rows = remember(sorted, issues, expiring, tab, query) {
         val q = query.trim().lowercase()
         val visible = sorted.filter { e ->
             val inTab = when (tab) {
                 Tab.All -> true
                 Tab.Otp -> e.otp != null
-                Tab.Notes -> e.password.isEmpty() && e.notes.isNotBlank()
-                Tab.Fix -> e.uuid in issues
+                Tab.Cards -> e.card != null
+                Tab.Notes -> e.card == null && e.password.isEmpty() && e.notes.isNotBlank()
+                Tab.Fix -> e.uuid in issues || e.uuid in expiring
             }
             inTab && (q.isEmpty() || e.title.lowercase().contains(q) || e.username.lowercase().contains(q) || e.url.lowercase().contains(q))
         }
@@ -338,8 +359,8 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
             contentPadding = PaddingValues(top = topInset + 122.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            if (issues.isNotEmpty() && tab == Tab.All && query.isBlank()) {
-                item(key = "banner") { FixBanner(issues.values) { tab = Tab.Fix } }
+            if ((issues.isNotEmpty() || expiring.isNotEmpty()) && tab == Tab.All && query.isBlank()) {
+                item(key = "banner") { FixBanner(issues.values, expiring.size) { tab = Tab.Fix } }
             }
             if (rows.none { it is Row2.Item }) {
                 item(key = "empty") {
@@ -371,7 +392,7 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
                 }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Tab.entries.filter { it != Tab.Fix || issues.isNotEmpty() || tab == Tab.Fix }.forEach { t ->
+                Tab.entries.filter { it != Tab.Fix || issues.isNotEmpty() || expiring.isNotEmpty() || tab == Tab.Fix }.forEach { t ->
                     FilterPill(stringResource(t.label), dot = null, selected = tab == t) { tab = t }
                 }
             }
@@ -387,7 +408,7 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
                 Icon(EuriseIcons.cloud(), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
                 Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Box(Modifier.size(52.dp).glass(haze, CircleShape).clickable(onClick = onAdd), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(52.dp).glass(haze, CircleShape).clickable(onClick = { onAdd(tab == Tab.Cards) }), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.pwd_add), tint = scheme.primary)
             }
         }
@@ -412,7 +433,7 @@ private fun syncLabel(sync: SyncState): Pair<String, Color> {
 }
 
 @Composable
-private fun FixBanner(issues: Collection<HealthIssue>, onClick: () -> Unit) {
+private fun FixBanner(issues: Collection<HealthIssue>, expiring: Int, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.errorContainer).clickable(onClick = onClick).padding(14.dp),
@@ -423,8 +444,9 @@ private fun FixBanner(issues: Collection<HealthIssue>, onClick: () -> Unit) {
             Icon(EuriseIcons.shield(), contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(pluralStringResource(R.plurals.pwd_fix_title, issues.size, issues.size), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = scheme.onErrorContainer)
-            Text(stringResource(R.string.pwd_fix_detail, issues.count { it.weak }, issues.count { it.reused }), fontSize = 12.5.sp, color = scheme.onErrorContainer)
+            Text(pluralStringResource(R.plurals.pwd_fix_title, issues.size + expiring, issues.size + expiring), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = scheme.onErrorContainer)
+            if (issues.isNotEmpty()) Text(stringResource(R.string.pwd_fix_detail, issues.count { it.weak }, issues.count { it.reused }), fontSize = 12.5.sp, color = scheme.onErrorContainer)
+            if (expiring > 0) Text(stringResource(R.string.pwd_fix_cards, expiring), fontSize = 12.5.sp, color = scheme.onErrorContainer)
         }
         Icon(EuriseIcons.chevronRight(), contentDescription = null, tint = scheme.onErrorContainer, modifier = Modifier.size(18.dp))
     }
@@ -459,6 +481,7 @@ private fun EntryRow(entry: VaultEntry, issue: HealthIssue?, now: Long, index: I
                 val (detail, alert) = when {
                     issue?.weak == true -> stringResource(R.string.pwd_row_fix_weak) to true
                     issue?.reused == true -> stringResource(R.string.pwd_row_fix_reused) to true
+                    entry.card != null -> stringResource(R.string.pwd_card_row, Cards.lastFour(entry.card.number)) to false
                     totp != null -> stringResource(R.string.pwd_row_otp, entry.username) to false
                     entry.password.isEmpty() && entry.notes.isNotBlank() -> stringResource(R.string.pwd_row_note) to false
                     else -> entry.username to false
@@ -494,7 +517,7 @@ private fun PillAction(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RoundIcon(icon: ImageVector, description: String, filled: Boolean = false, onClick: () -> Unit) {
+internal fun RoundIcon(icon: ImageVector, description: String, filled: Boolean = false, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier.size(44.dp).clip(CircleShape).background(if (filled) scheme.primaryContainer else Color.Transparent).clickable(onClick = onClick).semantics { contentDescription = description },
@@ -520,7 +543,7 @@ private fun FieldRow(label: String, value: String, hidden: Boolean = false, end:
 }
 
 @Composable
-private fun strengthName(s: Strength) = stringResource(
+internal fun strengthName(s: Strength) = stringResource(
     when (s) {
         Strength.Weak -> R.string.pwd_s_weak
         Strength.Fair -> R.string.pwd_s_fair
@@ -647,7 +670,7 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
 // --- Modifica ---
 
 @Composable
-private fun EntryEdit(entry: VaultEntry?, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
+private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var title by remember { mutableStateOf(entry?.title.orEmpty()) }
     var user by remember { mutableStateOf(entry?.username.orEmpty()) }
@@ -656,18 +679,41 @@ private fun EntryEdit(entry: VaultEntry?, onBack: () -> Unit, onSave: (EntryDraf
     var url by remember { mutableStateOf(entry?.url.orEmpty()) }
     var otp by remember { mutableStateOf(entry?.otp.orEmpty()) }
     var notes by remember { mutableStateOf(entry?.notes.orEmpty()) }
+    var isCard by remember { mutableStateOf(startAsCard || entry?.card != null) }
+    var number by remember { mutableStateOf(entry?.card?.number.orEmpty()) }
+    var holder by remember { mutableStateOf(entry?.card?.holder.orEmpty()) }
+    var expiry by remember { mutableStateOf(entry?.card?.expiry.orEmpty()) }
+    var cvv by remember { mutableStateOf(entry?.card?.cvv.orEmpty()) }
+    var type by remember { mutableStateOf(entry?.card?.type.orEmpty()) }
     val otpValid = otp.isBlank() || Totp.parse(otp) != null
     val strength = remember(password) { Generator.strength(password) }
 
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         BackHeader(stringResource(R.string.pwd_back), onBack) {
             PillAction(stringResource(R.string.pwd_save)) {
-                if (otpValid) onSave(EntryDraft(title.trim(), user.trim(), password, url.trim(), notes, otp.trim().ifEmpty { null }))
+                when {
+                    isCard -> if (number.isNotBlank()) onSave(EntryDraft(title.trim(), "", "", "", notes, null, CardData(number.trim(), holder.trim(), expiry.trim(), cvv.trim(), type.trim())))
+                    otpValid -> onSave(EntryDraft(title.trim(), user.trim(), password, url.trim(), notes, otp.trim().ifEmpty { null }))
+                }
             }
         }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(if (entry == null) stringResource(R.string.pwd_new) else entry.title, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            if (entry == null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterPill(stringResource(R.string.pwd_card_kind_login), dot = null, selected = !isCard) { isCard = false }
+                    FilterPill(stringResource(R.string.pwd_card_kind_card), dot = null, selected = isCard) { isCard = true }
+                }
+            }
             OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.pwd_f_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            if (isCard) {
+                OutlinedTextField(number, { number = it }, label = { Text(stringResource(R.string.pwd_card_number)) }, singleLine = true, isError = number.isNotBlank() && !Cards.valid(number), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                if (number.isNotBlank() && !Cards.valid(number)) Text(stringResource(R.string.pwd_card_invalid), fontSize = 12.sp, color = scheme.error)
+                OutlinedTextField(holder, { holder = it }, label = { Text(stringResource(R.string.pwd_card_holder)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(expiry, { expiry = it }, label = { Text(stringResource(R.string.pwd_card_expiry)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                SecretField(cvv, stringResource(R.string.pwd_card_cvv), { cvv = it })
+                OutlinedTextField(type, { type = it }, label = { Text(stringResource(R.string.pwd_card_type)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            } else {
             OutlinedTextField(user, { user = it }, label = { Text(stringResource(R.string.pwd_user)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
             SecretField(password, stringResource(R.string.pwd_password), { password = it }, visibleByDefault = entry == null)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -679,6 +725,7 @@ private fun EntryEdit(entry: VaultEntry?, onBack: () -> Unit, onSave: (EntryDraf
             }
             OutlinedTextField(url, { url = it }, label = { Text(stringResource(R.string.pwd_f_url)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
             OutlinedTextField(otp, { otp = it }, label = { Text(stringResource(R.string.pwd_f_otp)) }, singleLine = true, isError = !otpValid, modifier = Modifier.fillMaxWidth())
+            }
             OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.pwd_notes)) }, minLines = 3, modifier = Modifier.fillMaxWidth())
         }
     }
@@ -699,6 +746,28 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         BackHeader(stringResource(R.string.pwd_back), onBack)
         Text(stringResource(R.string.pwd_settings), fontSize = 26.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp))
+        val bioOn by vm.bioOn.collectAsStateWithLifecycle()
+        GroupCard {
+            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.pwd_bio_switch), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(if (vm.bio.available) R.string.pwd_bio_detail else R.string.pwd_bio_unavailable), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                }
+                Switch(checked = bioOn, enabled = vm.bio.available, onCheckedChange = { if (it) vm.enableBio(context) else vm.disableBio() })
+            }
+            CardDivider()
+            val autofill = remember(lifecycleTick(), context) { context.getSystemService(android.view.autofill.AutofillManager::class.java)?.hasEnabledAutofillServices() == true }
+            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.pwd_section_fill), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(if (autofill) R.string.pwd_fill_active else R.string.pwd_fill_inactive), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                }
+                if (!autofill) PillAction(stringResource(R.string.pwd_fill_enable)) {
+                    context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE, Uri.parse("package:" + context.packageName)))
+                }
+            }
+        }
+        SectionLabel(stringResource(R.string.pwd_section_sync))
         GroupCard {
             Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -720,6 +789,8 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
             StatusLines(vm)
             Text(stringResource(R.string.pwd_sync_pc), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant)
         }
+        AliasSettings(vm)
+        Spacer(Modifier.height(24.dp))
     }
     if (explain) {
         AlertDialog(
@@ -728,6 +799,165 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
             text = { Text(stringResource(R.string.pwd_privacy_body)) },
             confirmButton = { TextButton(onClick = { explain = false; vm.enableSync { openUrl(context, it) } }) { Text(stringResource(R.string.pwd_privacy_ok)) } },
             dismissButton = { TextButton(onClick = { explain = false }) { Text(stringResource(R.string.pwd_cancel)) } },
+        )
+    }
+}
+
+/** Cambia ogni volta che l'app torna in primo piano: per rileggere le scelte fatte nelle impostazioni di Android. */
+@Composable
+private fun lifecycleTick(): Int {
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var tick by remember { mutableIntStateOf(0) }
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event -> if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) tick++ }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    return tick
+}
+
+@Composable
+private fun AliasSettings(vm: PasswordViewModel) {
+    val scheme = MaterialTheme.colorScheme
+    val selected by vm.alias.collectAsStateWithLifecycle()
+    var pending by remember { mutableStateOf<AliasProvider?>(null) }
+    var secret by remember(selected) { mutableStateOf(if (selected == AliasProvider.Fixed) vm.aliases.fixedAddress.orEmpty() else "") }
+    var message by remember { mutableStateOf<String?>(null) }
+    var linked by remember(selected) { mutableStateOf(vm.aliases.connected(selected)) }
+
+    val options = listOf(
+        Triple(AliasProvider.SimpleLogin, R.string.pwd_alias_sl, R.string.pwd_alias_sl_d),
+        Triple(AliasProvider.Addy, R.string.pwd_alias_addy, R.string.pwd_alias_addy_d),
+        Triple(AliasProvider.Fixed, R.string.pwd_alias_fixed, R.string.pwd_alias_fixed_d),
+        Triple(AliasProvider.None, R.string.pwd_alias_none, R.string.pwd_alias_none_d),
+    )
+    SectionLabel(stringResource(R.string.pwd_alias_title))
+    Text(stringResource(R.string.pwd_alias_intro), fontSize = 13.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
+    GroupCard {
+        options.forEachIndexed { i, (provider, title, detail) ->
+            if (i > 0) CardDivider()
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable {
+                    message = null
+                    // I servizi esterni passano dalla spiegazione; tornare a Nessuno o all'indirizzo fisso non fa uscire nulla.
+                    if (provider == AliasProvider.SimpleLogin || provider == AliasProvider.Addy) pending = provider else vm.selectAlias(provider)
+                }.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                androidx.compose.material3.RadioButton(selected = selected == provider, onClick = null)
+                Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(stringResource(title), fontSize = 15.sp, fontWeight = if (selected == provider) FontWeight.Bold else FontWeight.SemiBold)
+                    Text(stringResource(detail), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+    if (selected != AliasProvider.None) {
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val label = stringResource(
+                when (selected) {
+                    AliasProvider.SimpleLogin -> R.string.pwd_alias_key_sl
+                    AliasProvider.Addy -> R.string.pwd_alias_key_addy
+                    else -> R.string.pwd_alias_address
+                },
+            )
+            if (selected == AliasProvider.Fixed) OutlinedTextField(secret, { secret = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            else SecretField(secret, label, { secret = it })
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    message ?: if (linked) stringResource(R.string.pwd_alias_connected) else "",
+                    fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (message != null) scheme.error else scheme.secondary,
+                    modifier = Modifier.weight(1f),
+                )
+                PillAction(stringResource(R.string.pwd_alias_connect)) {
+                    if (secret.isNotBlank()) vm.connectAlias(selected, secret) { error -> message = error; linked = error == null }
+                }
+            }
+        }
+    }
+    pending?.let { provider ->
+        AlertDialog(
+            onDismissRequest = { pending = null },
+            title = { Text(stringResource(R.string.pwd_privacy_title)) },
+            text = { Text(stringResource(R.string.pwd_alias_privacy)) },
+            confirmButton = { TextButton(onClick = { pending = null; vm.selectAlias(provider) }) { Text(stringResource(R.string.pwd_privacy_ok)) } },
+            dismissButton = { TextButton(onClick = { pending = null }) { Text(stringResource(R.string.pwd_cancel)) } },
+        )
+    }
+}
+
+// --- Carta ---
+
+@Composable
+private fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> Unit, onEdit: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val card = entry.card ?: return
+    var showNumber by remember(entry.uuid) { mutableStateOf(false) }
+    var showCvv by remember(entry.uuid) { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf(false) }
+    val masked = "•••• •••• •••• " + Cards.lastFour(card.number)
+    val months = remember(card.expiry) { Cards.monthsLeft(card.expiry, LocalDate.now()) }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        BackHeader(stringResource(R.string.pwd_tab_cards), onBack) { PillAction(stringResource(R.string.pwd_edit), onEdit) }
+        Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(196.dp).clip(RoundedCornerShape(20.dp)).background(scheme.primary).padding(20.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(entry.title.ifBlank { stringResource(R.string.pwd_untitled) }, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text(card.type.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.tertiaryContainer)
+            }
+            Spacer(Modifier.height(16.dp))
+            Box(Modifier.size(40.dp, 29.dp).clip(RoundedCornerShape(7.dp)).background(scheme.tertiaryContainer))
+            Spacer(Modifier.weight(1f))
+            Text(masked, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp, color = scheme.onPrimary)
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(card.holder.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = scheme.onPrimary, maxLines = 1)
+                Text(card.expiry, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = scheme.onPrimary)
+            }
+        }
+        GroupCard {
+            FieldRow(stringResource(R.string.pwd_card_number), if (showNumber) card.number else masked) {
+                RoundIcon(if (showNumber) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show)) { showNumber = !showNumber }
+                RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy)) { vm.copy(card.number.filter { it.isDigit() }) }
+            }
+            if (card.cvv.isNotEmpty()) {
+                CardDivider()
+                FieldRow(stringResource(R.string.pwd_card_cvv), if (showCvv) card.cvv else "•••") {
+                    RoundIcon(if (showCvv) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show_cvv)) { showCvv = !showCvv }
+                    RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy_cvv)) { vm.copy(card.cvv) }
+                }
+            }
+        }
+        GroupCard {
+            InfoRow(EuriseIcons.shield(), stringResource(R.string.pwd_card_fill), stringResource(R.string.pwd_card_fill_detail))
+            if (months != null) {
+                CardDivider()
+                InfoRow(
+                    EuriseIcons.clock(),
+                    if (months < 0) stringResource(R.string.pwd_card_expired) else pluralStringResource(R.plurals.pwd_card_months, months, months),
+                    stringResource(R.string.pwd_card_months_detail),
+                )
+            }
+        }
+        if (entry.notes.isNotBlank()) {
+            Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.pwd_notes), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+                Text(entry.notes, fontSize = 14.sp, lineHeight = 21.sp)
+            }
+        }
+        TextButton(onClick = { confirm = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text(stringResource(R.string.pwd_delete), color = scheme.error)
+        }
+    }
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.pwd_delete_title)) },
+            text = { Text(stringResource(R.string.pwd_delete_message)) },
+            confirmButton = { TextButton(onClick = { confirm = false; vm.delete(entry.uuid); onBack() }) { Text(stringResource(R.string.pwd_delete)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.pwd_cancel)) } },
         )
     }
 }

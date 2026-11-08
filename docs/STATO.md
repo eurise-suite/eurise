@@ -242,8 +242,12 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   noi), campi sconosciuti conservati, cronologia, cestino, unione voce per voce con la versione perdente in cronologia,
   apri/importa file, prendi da Murena, codici 2FA, generatore (frase o caratteri), controllo locale deboli/riusate,
   blocco a mano e dopo 2 minuti fuori dall'app, schermo protetto da screenshot, appunti riservati e cancellati dopo
-  45 s. Mancano, in quest'ordine: sblocco con impronta, compilazione automatica di Android con antifrode sul dominio
-  e foglio PwdRegistra, alias, controllo violazioni (k-anonimato, con interruttore), passkey, Famiglia, riquadri tendina.
+  45 s. Secondo pezzo (9 novembre, tele approvate tutte dal proprietario): impronta con API di sistema (Android 9+),
+  carte (PwdCarta, campi aggiuntivi della voce), `autofill/` con antifrode sul dominio (`Matching`), foglio PwdRegistra,
+  alias (PwdAlias) con SimpleLogin (la via per Proton: Proton Pass non risulta avere API pubbliche), addy.io e indirizzo
+  fisso (Murena ha un solo alias, senza API). kMail non ancora: parametri API da verificare e il piano my kSuite+ ha 2 alias.
+  Mancano: salvataggio su richiesta di Android (SaveInfo), scansione QR dei 2FA, controllo violazioni (k-anonimato,
+  con interruttore), passkey, Famiglia, riquadri tendina. Poi Drive e Scanner (tele approvate).
   Il centro privacy dovrà elencare Murena per questa app.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni

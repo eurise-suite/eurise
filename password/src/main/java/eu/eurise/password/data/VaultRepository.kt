@@ -58,6 +58,40 @@ class VaultRepository private constructor(context: Context) {
     val syncAccountName: String? get() = accounts.get(prefs.getString(KEY_ACCOUNT, null))?.name
     val syncEnabled: Boolean get() = prefs.getBoolean(KEY_ENABLED, false) && syncAccountName != null
 
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val lockTask = Runnable { lock() }
+    private var leftAt = 0L
+
+    /** Una schermata dell'app è in primo piano. Se si è stati via troppo, il timer può aver ritardato: si blocca ora. */
+    fun enter() {
+        mainHandler.removeCallbacks(lockTask)
+        expireIfDue()
+        leftAt = 0L
+    }
+
+    /** Si esce dall'app: fra due minuti la cassaforte si blocca, anche se è stata aperta dal foglio di compilazione. */
+    fun leave() {
+        leftAt = android.os.SystemClock.elapsedRealtime()
+        mainHandler.removeCallbacks(lockTask)
+        mainHandler.postDelayed(lockTask, AUTO_LOCK_MS)
+    }
+
+    fun expireIfDue() {
+        if (leftAt != 0L && android.os.SystemClock.elapsedRealtime() - leftAt >= AUTO_LOCK_MS) lock()
+    }
+
+    /** Copia della chiave, per chiuderla con l'impronta; null se la cassaforte è bloccata. */
+    fun currentKey(): ByteArray? = compositeKey?.copyOf()
+
+    /** Apertura con la chiave recuperata tramite impronta. */
+    suspend fun unlockWithKey(key: ByteArray) = withContext(Dispatchers.Default) {
+        mutex.withLock {
+            val bytes = withContext(Dispatchers.IO) { file.readBytes() }
+            attach(Kdbx.read(bytes, key), key)
+        }
+        syncNow()
+    }
+
     suspend fun load() = mutex.withLock {
         if (opened != null) return@withLock
         _state.value = withContext(Dispatchers.IO) { if (file.exists()) VaultState.Locked else VaultState.Empty }
@@ -110,6 +144,11 @@ class VaultRepository private constructor(context: Context) {
 
     suspend fun deleteEntry(uuid: String) {
         edit { it.delete(uuid) }
+        syncNow()
+    }
+
+    suspend fun linkApp(uuid: String, packageName: String) {
+        edit { it.linkApp(uuid, packageName) }
         syncNow()
     }
 
@@ -269,6 +308,7 @@ class VaultRepository private constructor(context: Context) {
     }
 
     companion object {
+        private const val AUTO_LOCK_MS = 2 * 60_000L
         private const val KEY_ENABLED = "enabled"
         private const val KEY_ACCOUNT = "account"
         private const val KEY_ETAG = "etag"

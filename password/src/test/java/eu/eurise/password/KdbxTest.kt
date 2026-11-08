@@ -143,4 +143,62 @@ class KdbxTest {
         val issues = Generator.health(listOf("a" to "stessa-Password-lunga-9", "b" to "stessa-Password-lunga-9", "c" to "", "d" to "x"))
         assertEquals(setOf("a", "b", "d"), issues.map { it.uuid }.toSet())
     }
+
+    @Test fun cardSurvivesTheFile() {
+        val file = Kdbx.create(key, "Eurise")
+        val card = eu.eurise.password.kdbx.CardData("4111 1111 1111 1111", "M R", "09/29", "123", "Debito")
+        val id = vault(file).save(EntryDraft("Conto", "", "", "", "", null, card), null)
+        val back = vault(Kdbx.read(Kdbx.write(file), key)).entries().single { it.uuid == id }
+        assertEquals(card, back.card)
+    }
+
+    @Test fun cardChecks() {
+        val c = eu.eurise.password.logic.Cards
+        assertTrue(c.valid("4111 1111 1111 1111"))
+        assertFalse(c.valid("4111 1111 1111 1112"))
+        assertEquals("1111", c.lastFour("4111 1111 1111 1111"))
+        val today = java.time.LocalDate.of(2026, 11, 9)
+        assertEquals(2, c.monthsLeft("01/27", today))
+        assertTrue(c.expiringSoon("12/26", today))
+        assertFalse(c.expiringSoon("01/27", today))
+    }
+
+    @Test fun appLinkIsKept() {
+        val file = Kdbx.create(key, "Eurise")
+        val v = vault(file)
+        val id = v.save(draft, null)
+        v.linkApp(id, "it.esempio.app")
+        v.linkApp(id, "it.esempio.app")
+        assertEquals(listOf("it.esempio.app"), vault(Kdbx.read(Kdbx.write(file), key)).entries().single().apps)
+    }
+
+    @Test fun domainCheckRefusesLookAlikes() {
+        val d = eu.eurise.password.autofill.Matching
+        assertTrue(d.domainMatches("https://murena.io/login", "murena.io"))
+        assertTrue(d.domainMatches("https://www.murena.io", "login.murena.io"))
+        assertTrue(d.domainMatches("murena.io", "www.murena.io"))
+        assertFalse(d.domainMatches("https://murena.io", "murena.io.truffa.com"))
+        assertFalse(d.domainMatches("https://murena.io", "falsomurena.io"))
+        assertFalse(d.domainMatches("https://login.murena.io", "murena.io"))
+        assertFalse(d.domainMatches("", "murena.io"))
+    }
+
+    @Test fun formFieldsAreRecognised() {
+        val f = eu.eurise.password.autofill.Matching
+        val k = eu.eurise.password.autofill.FieldKind.entries.associateBy { it.name }
+        assertEquals(k["Password"], f.classify(listOf("password"), emptyMap(), null, 0))
+        assertEquals(k["NewPassword"], f.classify(emptyList(), mapOf("autocomplete" to "new-password", "type" to "password"), null, 0))
+        assertEquals(k["Password"], f.classify(emptyList(), emptyMap(), "edit", 0x81))
+        assertEquals(k["CardNumber"], f.classify(emptyList(), mapOf("autocomplete" to "cc-number"), null, 0))
+        assertEquals(k["CardCvc"], f.classify(emptyList(), mapOf("name" to "cvv"), null, 0))
+        assertEquals(k["Username"], f.classify(emptyList(), mapOf("type" to "email"), null, 0))
+        assertEquals(null, f.classify(emptyList(), mapOf("name" to "cerca"), null, 1))
+    }
+
+    @Test fun usernameIsTheFieldBeforeThePassword() {
+        val f = eu.eurise.password.autofill.Matching
+        val kinds = f.fillUsername(listOf(null, null, eu.eurise.password.autofill.FieldKind.Password))
+        assertEquals(eu.eurise.password.autofill.FieldKind.Username, kinds[1])
+        assertEquals(null, kinds[0])
+    }
 }

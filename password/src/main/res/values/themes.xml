@@ -3,6 +3,11 @@
     <style name="Theme.EurisePassword" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/pwd_background</item>
     </style>
+    <style name="Theme.EurisePassword.Sheet" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+    </style>
     <color name="pwd_background">#F4F4F1</color>
     <color name="pwd_icon_background">#1F2A44</color>
 </resources>

@@ -11,7 +11,12 @@ import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import eu.eurise.password.data.AliasCheck
+import eu.eurise.password.data.AliasProvider
+import eu.eurise.password.data.AliasStore
+import eu.eurise.password.data.BiometricVault
 import eu.eurise.password.data.VaultRepository
+import eu.eurise.password.data.askBiometric
 import eu.eurise.password.kdbx.EntryDraft
 import eu.eurise.password.kdbx.KdbxException
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +40,60 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     val waitingBrowser = _waitingBrowser.asStateFlow()
     private var clearClip: Job? = null
 
+    val bio = BiometricVault(app)
+    private val _bioOn = MutableStateFlow(bio.enabled)
+    val bioOn = _bioOn.asStateFlow()
+    val aliases = AliasStore(app)
+    private val _alias = MutableStateFlow(aliases.provider)
+    val alias = _alias.asStateFlow()
+
     init { viewModelScope.launch { repo.load() } }
+
+    /** Accende lo sblocco con l'impronta: chiude la chiave corrente nel chip di sicurezza, dopo la conferma del dito. */
+    fun enableBio(activity: android.content.Context) {
+        val cipher = runCatching { bio.encryptCipher() }.getOrNull() ?: run { _error.value = text(R.string.pwd_bio_unavailable); return }
+        askBiometric(activity, text(R.string.pwd_bio_enable_title), text(R.string.pwd_cancel), cipher) { done ->
+            val key = repo.currentKey() ?: return@askBiometric
+            bio.store(done, key)
+            key.fill(0)
+            _bioOn.value = true
+        }
+    }
+
+    fun disableBio() { bio.disable(); _bioOn.value = false }
+
+    fun unlockWithBio(activity: android.content.Context) {
+        val cipher = bio.decryptCipher()
+        if (cipher == null) {
+            disableBio()
+            _error.value = text(R.string.pwd_bio_reset)
+            return
+        }
+        askBiometric(activity, text(R.string.pwd_bio_title), text(R.string.pwd_cancel), cipher) { done ->
+            val key = runCatching { bio.read(done) }.getOrNull() ?: return@askBiometric
+            work { repo.unlockWithKey(key) }
+        }
+    }
+
+    /** Conferma con il dito prima di usare una carta già disponibile; senza impronta attiva basta il tocco sulla carta. */
+    fun confirmBio(activity: android.content.Context, then: () -> Unit) {
+        val cipher = if (bio.enabled) bio.decryptCipher() else null
+        if (cipher == null) { then(); return }
+        askBiometric(activity, text(R.string.pwd_card_fill), text(R.string.pwd_cancel), cipher) { then() }
+    }
+
+    fun selectAlias(provider: AliasProvider) { aliases.provider = provider; _alias.value = provider }
+
+    /** Verifica e salva la chiave del servizio; [done] riceve l'eventuale messaggio d'errore. */
+    fun connectAlias(provider: AliasProvider, secret: String, done: (String?) -> Unit) = viewModelScope.launch {
+        when (aliases.connect(provider, secret)) {
+            AliasCheck.Ok -> { selectAlias(provider); done(null) }
+            AliasCheck.Rejected -> done(text(R.string.pwd_alias_bad_key))
+            AliasCheck.Offline -> done(text(R.string.pwd_alias_offline))
+        }
+    }
+
+    fun linkApp(uuid: String, packageName: String) = viewModelScope.launch { repo.linkApp(uuid, packageName) }
 
     fun clearError() { _error.value = null }
 
