@@ -115,6 +115,13 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   sveglia smart, ora di dormire; modifica della sveglia; timer multipli, Pomodoro, avvio rapido.
 - Galleria (pagina "Galleria"): foto per giorno con barra di anni e mesi, coda di caricamento solo Wi-Fi,
   Accadde oggi con "Mettile in un diario di viaggio", eliminazione a tre scelte (di base "Solo dal telefono").
+- Servizi aggiuntivi (richiesta del proprietario, che non li usa ma "ad altri potrebbero interessare"): Google Drive,
+  OneDrive, Dropbox e MEGA nel gruppo "Altri servizi" di Cloud → Collega (tela, pagina Cloud). Nelle pillole di
+  Drive compaiono solo i servizi collegati. Note tecniche: Google Drive API v3, Microsoft Graph, Dropbox API v2 con
+  accesso OAuth dal browser (niente librerie Google proprietarie, vedi CLAUDE.md); per MEGA l'SDK ufficiale
+  (C++, licenza BSD) o la sua API, da valutare. Le prime tre richiedono di registrare l'app presso ciascun
+  servizio (identificativo dell'app): lo fa il proprietario. Su F-Droid potrebbero far comparire l'avviso
+  "servizi di rete non liberi" (NonFreeNet): da verificare prima della pubblicazione.
 - Da decidere: quale delle tre si scrive per prima; se Drive, Orologio e Galleria entrano nell'app hub come
   sezioni o restano app separate (il documento prevede fork di Fossify per Orologio e Galleria).
 
@@ -123,5 +130,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Oroscopo: nuova fonte per segno (oroscopi.info); da confermare sul telefono che il testo compaia.
 - Fonti non ancora verificate sul telefono: Borsa (Yahoo), alcuni feed di notizie e ricette, video dei canali.
 - kDrive da sistemare (vedi Cloud).
+- Home: prossima sveglia sotto alba e tramonto (icona piccola e orario, terza riga della stessa colonna; con il
+  giorno davanti se manca più di un giorno). Ramo `sveglia-home`, da provare sul telefono e poi unire a `main`.
+  Legge la sveglia che l'app Orologio comunica al sistema (`AlarmManager.nextAlarmClock`).
 - Prossimo passo: discutere le anteprime di Drive, Orologio e Galleria; poi il codice delle Attività (ramo
   `attivita`) e la sincronizzazione CalDAV con Murena.
