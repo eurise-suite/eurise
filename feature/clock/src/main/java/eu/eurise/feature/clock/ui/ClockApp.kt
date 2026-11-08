@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -24,13 +27,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -41,9 +47,14 @@ import dev.chrisbanes.haze.hazeSource
 import eu.eurise.feature.clock.R
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EuriseDock
+import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.GlassDefaults
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.feature.clock.system.Notifications
+import eu.eurise.feature.clock.system.Scheduler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /** L'app: quattro sezioni nella barra satinata, con il + che crea nella sezione aperta. */
 @Composable
@@ -74,6 +85,43 @@ fun ClockApp(tab: Int, onTab: (Int) -> Unit) {
             actionLabel = stringResource(R.string.action_new),
             onAction = if (tab == 2) null else ({ adding = true }),
         )
+    }
+}
+
+/**
+ * L'Orologio come sezione dell'app Eurise: la barra in basso è già quella dell'app, quindi le quattro parti si
+ * scelgono con le pillole in alto e il + arriva da fuori con [addRequests].
+ */
+@Composable
+fun ClockSection(tab: Int, onTab: (Int) -> Unit, addRequests: Int) {
+    val context = LocalContext.current
+    var adding by remember { mutableStateOf(false) }
+    var handled by rememberSaveable { mutableIntStateOf(addRequests) }
+    LaunchedEffect(addRequests) { if (addRequests != handled) { handled = addRequests; adding = true } }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            Notifications.channels(context)
+            Scheduler.rescheduleAll(context)
+        }
+    }
+    val labels = listOf(R.string.tab_alarms, R.string.tab_timers, R.string.tab_stopwatch, R.string.tab_zones)
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars)) {
+        LazyRow(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            itemsIndexed(labels) { i, label ->
+                FilterPill(stringResource(label), null, tab == i) { onTab(i); adding = false }
+            }
+        }
+        Box(Modifier.weight(1f).consumeWindowInsets(WindowInsets.statusBars)) {
+            when (tab) {
+                0 -> AlarmsScreen(adding, onAdded = { adding = false })
+                1 -> TimersScreen(adding, onAdded = { adding = false })
+                2 -> StopwatchScreen()
+                else -> ZonesScreen(adding, onAdded = { adding = false })
+            }
+        }
     }
 }
 

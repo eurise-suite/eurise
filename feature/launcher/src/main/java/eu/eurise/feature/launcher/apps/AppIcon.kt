@@ -110,7 +110,7 @@ private object SystemGlyphs {
         "foundation.e.browser" to { EuriseIcons.globe(1.9f) }, "org.lineageos.jelly" to { EuriseIcons.globe(1.9f) },
         "foundation.e.camera" to { EuriseIcons.camera(1.9f) }, "org.lineageos.aperture" to { EuriseIcons.camera(1.9f) },
         "com.android.camera" to { EuriseIcons.camera(1.9f) },
-        "foundation.e.gallery" to { EuriseIcons.image(1.9f) }, "org.lineageos.glimpse" to { EuriseIcons.image(1.9f) },
+        "eu.eurise.gallery" to { EuriseIcons.image(1.9f) }, "foundation.e.gallery" to { EuriseIcons.image(1.9f) }, "org.lineageos.glimpse" to { EuriseIcons.image(1.9f) },
         "com.android.gallery3d" to { EuriseIcons.image(1.9f) },
         "com.android.settings" to { EuriseIcons.gear(1.9f) },
         "com.android.deskclock" to { EuriseIcons.clock(1.9f) }, "org.fossify.clock" to { EuriseIcons.clock(1.9f) },

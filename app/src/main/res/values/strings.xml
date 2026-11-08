@@ -4,6 +4,8 @@
     <string name="launcher_label">Eurise Scrivania</string>
     <string name="section_today">Oggi</string>
     <string name="section_calendar">Calendario</string>
+    <string name="section_clock">Orologio</string>
+    <string name="action_new_clock">Nuovo</string>
     <string name="section_notes">Note</string>
     <string name="section_tasks">Attività</string>
     <string name="action_new_event">Nuovo appuntamento</string>

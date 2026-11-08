@@ -215,7 +215,14 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   app trascinabili con la pressione lunga dentro la categoria e, tenendole sul bordo dello schermo, verso quella
   accanto (ordine in `appOrder`); "Ripristina le categorie predefinite" nell'editor. Scritto senza anteprima sulla
   tela su decisione del proprietario. Da provare sul telefono.
-- Prossimi passi, in ordine: prova sul telefono del ramo `orologio` e unione a `main`; Galleria (APK separato),
+- `orologio` unito a `main` (1e36de4) su indicazione del proprietario. Ramo `galleria` (parte da `main`): Orologio come
+  sezione dell'app tra Calendario e Note (`ClockSection`, pillole in alto al posto della barra propria); primo pezzo
+  della Galleria, modulo `:gallery`, APK separato `eu.eurise.gallery`, artefatto `eurise-galleria-debug-N`, Android 11+
+  (cestino di sistema), scritta in Compose senza Fossify e senza librerie per le immagini, senza Internet: foto per
+  giorno, barra anni e mesi, filtri, Album, visore con zoom, preferite, selezione, cestino, Accadde oggi.
+  Mancano: coda di caricamento e scelta telefono/cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
+  posizione, cartella protetta, editor, pulizia, riconoscimento locale, permesso di firma con l'hub.
+- Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
   CalDAV delle Attività con Murena.

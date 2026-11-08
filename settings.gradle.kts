@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 rootProject.name = "eurise"
 
 include(":app")
+include(":gallery")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")

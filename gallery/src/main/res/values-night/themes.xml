@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EuriseGallery" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/gallery_background</item>
+    </style>
+    <color name="gallery_background">#14171C</color>
+</resources>

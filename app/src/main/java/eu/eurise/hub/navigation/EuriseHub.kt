@@ -57,6 +57,7 @@ import eu.eurise.core.links.LinkedSection
 private enum class Section(val route: String, @StringRes val label: Int, val icon: (Float) -> ImageVector, @StringRes val action: Int?) {
     Today("today", R.string.section_today, { EuriseIcons.today(it) }, null),
     Calendar("calendar", R.string.section_calendar, { EuriseIcons.calendar(it) }, R.string.action_new_event),
+    Clock("clock", R.string.section_clock, { EuriseIcons.clock(it) }, R.string.action_new_clock),
     Notes("notes", R.string.section_notes, { EuriseIcons.note(it) }, R.string.action_new_note),
     Tasks("tasks", R.string.section_tasks, { EuriseIcons.task(it) }, R.string.action_new_task),
 }
@@ -91,6 +92,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     val current = Section.entries.firstOrNull { s -> destination?.hierarchy?.any { it.route == s.route } == true }
     val hazeState = remember { HazeState() }
     var newTaskRequests by rememberSaveable { mutableIntStateOf(0) }
+    var clockTab by rememberSaveable { mutableIntStateOf(0) }
+    var clockAddRequests by rememberSaveable { mutableIntStateOf(0) }
     var notesFilter by remember { androidx.compose.runtime.mutableStateOf<NotesFilterRequest?>(null) }
     var calendarDay by remember { androidx.compose.runtime.mutableStateOf<java.time.LocalDate?>(null) }
     var taskToOpen by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
@@ -130,6 +133,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 goTo(Section.Calendar)
             }
             section == "backup" -> navController.navigate("cloud/backup")
+            section == "clock" -> goTo(Section.Clock)
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
@@ -174,6 +178,9 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 }
                 composable("dates") { eu.eurise.feature.calendar.reminders.ImportantDatesRoute(onBack = { navController.popBackStack() }) }
                 composable("medicines") { eu.eurise.feature.calendar.reminders.MedicinesRoute(onBack = { navController.popBackStack() }) }
+                composable(Section.Clock.route) {
+                    eu.eurise.feature.clock.ui.ClockSection(clockTab, onTab = { clockTab = it }, addRequests = clockAddRequests)
+                }
                 composable(Section.Notes.route) {
                     NotesListRoute(
                         repository = data.notes,
@@ -263,10 +270,11 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 selected = current.ordinal,
                 onSelect = { goTo(Section.entries[it]) },
                 hazeState = hazeState,
-                actionLabel = current.action?.let { stringResource(it) },
+                actionLabel = current.action?.takeUnless { current == Section.Clock && clockTab == 2 }?.let { stringResource(it) },
                 onAction = when (current) {
                     Section.Today -> null
                     Section.Calendar -> ({ navController.openEvent(null, null, null) })
+                    Section.Clock -> if (clockTab == 2) null else ({ clockAddRequests++ })
                     Section.Notes -> ({ navController.openNote(null) })
                     Section.Tasks -> ({ newTaskRequests++ })
                 },

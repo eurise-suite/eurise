@@ -54,6 +54,13 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK della Galleria
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-galleria-debug-${{ github.run_number }}
+          path: gallery/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
       # Leggerezza: si pesa a ogni compilazione anche la versione ufficiale (ridotta, non firmata).
       # L'APK di prova è già caricato: se questo passo fallisce, non blocca nulla.
       - name: Pesa la versione ufficiale

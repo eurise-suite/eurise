@@ -21,7 +21,7 @@ private val PACKAGES: List<Pair<Category, List<String>>> = listOf(
         "com.android.settings", "foundation.e.apps", "org.fdroid", "de.markusfisch.android.binaryeye", "net.mullvad", "org.torproject.android",
     ),
     Category.Media to listOf(
-        "foundation.e.gallery", "org.fossify.gallery", "org.lineageos.glimpse", "com.android.gallery3d", "com.android.camera", "foundation.e.camera",
+        "eu.eurise.gallery", "foundation.e.gallery", "org.fossify.gallery", "org.lineageos.glimpse", "com.android.gallery3d", "com.android.camera", "foundation.e.camera",
         "org.lineageos.aperture", "org.lineageos.eleven", "foundation.e.music", "com.spotify", "com.google.android.youtube", "org.videolan.vlc",
         "org.schabi.newpipe", "com.netflix",
     ),

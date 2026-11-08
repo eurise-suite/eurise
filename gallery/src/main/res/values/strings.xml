@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gallery_app_name">Galleria</string>
+    <string name="tab_photos">Foto</string>
+    <string name="tab_albums">Album</string>
+    <string name="filter_all">Tutte</string>
+    <string name="filter_favorites">Preferite</string>
+    <string name="filter_videos">Video</string>
+    <string name="filter_tidy">Da riordinare</string>
+    <string name="today">Oggi</string>
+    <string name="yesterday">Ieri</string>
+    <string name="select">Seleziona</string>
+    <string name="open_camera">Apri la fotocamera</string>
+    <string name="close">Chiudi</string>
+    <string name="share">Condividi</string>
+    <string name="delete">Sposta nel cestino</string>
+    <string name="favorite">Preferita</string>
+    <string name="play">Riproduci il video</string>
+    <string name="go_to_month">Vai a un mese</string>
+    <string name="empty_title">Nessuna foto qui</string>
+    <string name="empty_message">Le foto e i video del telefono compaiono qui.</string>
+    <string name="permission_title">Le tue foto restano qui</string>
+    <string name="permission_message">La Galleria legge foto e video solo per mostrarteli. Non ha accesso a Internet: niente esce dal telefono. Puoi togliere il permesso quando vuoi dalle impostazioni di Android.</string>
+    <string name="permission_allow">Mostra le foto</string>
+    <string name="memory_title">Accadde oggi</string>
+    <string name="memory_card">Accadde oggi · %1$s</string>
+    <plurals name="memory_years">
+        <item quantity="one">%1$d anno fa</item>
+        <item quantity="other">%1$d anni fa</item>
+    </plurals>
+    <plurals name="items_count">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d foto</item>
+    </plurals>
+    <plurals name="selected_count">
+        <item quantity="one">%1$d selezionata</item>
+        <item quantity="other">%1$d selezionate</item>
+    </plurals>
+</resources>
