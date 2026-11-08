@@ -333,10 +333,11 @@ private fun PhotosPage(
         Column(
             Modifier
                 .fillMaxWidth()
+                // Prima dei margini: la griglia deve partire sotto tutta la testata, barra di stato compresa.
+                .onSizeChanged { headerPx = it.height }
                 .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(top = 8.dp, bottom = 12.dp)
-                .onSizeChanged { headerPx = it.height },
+                .padding(top = 8.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (selected.isNotEmpty()) {

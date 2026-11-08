@@ -227,6 +227,12 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   sotto il dito con la data); pulsanti galleria e fotocamera accanto all'ora con scelta dell'app a pressione lunga;
   bolle della home trascinabili; bolle nelle pagine laterali (`CardKind.bubbleId`, `HomeBubble`) e Calendario e
   Comunicazioni tra le schede della home.
+- Galleria provata dal proprietario sull'APK 124: corretti i ricordi nascosti dalla testata e l'etichetta "Calendario"
+  tagliata nella barra a cinque voci. `galleria` unito a `main`.
+- Prossimo: Password (APK separato, ramo `password` da `main`). Riferimenti: tela PwdCassaforte, PwdVoce, PwdRegistra;
+  documento, sezione Password. Da decidere con il proprietario prima del codice: la "strada A" del documento
+  (cassaforte in un file KeePass .kdbx su kDrive). Nella Galleria restano pulizia e cartella protetta; il caricamento
+  su kDrive aspetta Drive.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

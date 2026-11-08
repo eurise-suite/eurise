@@ -123,10 +123,11 @@ fun EuriseDock(
                 val active = index == selected
                 val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 Column(
+                    // Con cinque voci la parola in grassetto non entra: la voce attiva si prende un po' di spazio in più.
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(if (active && items.size >= 5) 1.25f else 1f)
                         .height(GlassDefaults.ItemHeight)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(14.dp))
                         .selectable(selected = active, role = Role.Tab, onClick = { onSelect(index) }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -143,6 +144,7 @@ fun EuriseDock(
                         fontSize = 10.5.sp,
                         fontWeight = if (active) FontWeight.ExtraBold else FontWeight.SemiBold,
                         maxLines = 1,
+                        softWrap = false,
                     )
                 }
             }
