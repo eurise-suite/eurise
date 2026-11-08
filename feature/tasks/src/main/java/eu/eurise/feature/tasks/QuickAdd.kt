@@ -51,7 +51,7 @@ internal object QuickAdd {
     private val MONTH_NAMES = MONTHS.joinToString("|")
 
     private val REPEAT = Regex(
-        "$OPTS$B(?:ogni\\s+(?:(\\d+)\\s+)?(giorni?|settimane?|mesi?|anni?|$DAY_NAMES)|tutti\\s+i\\s+giorni|" +
+        "$OPTS$B(?:ogni\\s+(?:(\\d+)\\s+)?(giorn[oi]|settiman[ae]|mes[ei]|ann[oi]|$DAY_NAMES)|tutti\\s+i\\s+giorni|" +
             "nei\\s+giorni\\s+feriali|dal\\s+luned[iì]\\s+al\\s+venerd[iì])$E"
     )
     private val PRIORITY = Regex("$OPTS(?<![\\p{L}\\p{N}])!(importante|alta|urgente|media)$E")
@@ -63,7 +63,7 @@ internal object QuickAdd {
             "|(?:(?:il|lo|la)\\s+)?($DAY_NAMES)(?:\\s+prossim[oa])?" +
             "|(?:il\\s+|l')?(\\d{1,2})\\s+($MONTH_NAMES)(?:\\s+(\\d{4}))?" +
             "|(?:il\\s+|l')?(\\d{1,2})/(\\d{1,2})(?:/(\\d{2,4}))?" +
-            "|tra\\s+(\\d+|una?)\\s+(giorni?|settimane?)" +
+            "|tra\\s+(\\d+|una?)\\s+(giorn[oi]|settiman[ae])" +
             ")$E"
     )
 
