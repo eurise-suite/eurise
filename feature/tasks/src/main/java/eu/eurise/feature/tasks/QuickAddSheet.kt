@@ -163,7 +163,7 @@ internal fun QuickAddSheet(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Icon(EuriseIcons.bell(), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                            Text(stringResource(R.string.tasks_quick_alert, parsed.time.format(TimeFormat)), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant)
+                            Text(stringResource(R.string.tasks_quick_alert, parsed.time!!.format(TimeFormat)), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant)
                         }
                     }
                 }
