@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -589,17 +591,38 @@ private fun HealthValue(icon: ImageVector, value: String, label: String) {
     }
 }
 
-/** Alba e tramonto accanto all'orario. */
+/**
+ * Alba e tramonto accanto all'orario e, sotto, la prossima sveglia quando ce n'è una attiva:
+ * tre righe uguali nella stessa colonna, centrata rispetto all'orario.
+ */
 @Composable
-fun SunTimesColumn(sun: Pair<java.time.LocalTime, java.time.LocalTime>?) {
-    if (sun == null) return
+fun SunTimesColumn(
+    sun: Pair<java.time.LocalTime, java.time.LocalTime>?,
+    alarm: LocalDateTime? = null,
+    now: LocalDateTime = LocalDateTime.now(),
+) {
+    if (sun == null && alarm == null) return
     val color = MaterialTheme.colorScheme.onBackground
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        listOf("↑ " + sun.first.format(TimeFormat), "↓ " + sun.second.format(TimeFormat)).forEachIndexed { i, text ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(EuriseIcons.sun(2f), null, tint = color.copy(alpha = if (i == 0) 1f else 0.7f), modifier = Modifier.size(13.dp))
+        sun?.let {
+            listOf("↑ " + it.first.format(TimeFormat), "↓ " + it.second.format(TimeFormat)).forEachIndexed { i, text ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(EuriseIcons.sun(2f), null, tint = color.copy(alpha = if (i == 0) 1f else 0.7f), modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = color)
+                }
+            }
+        }
+        alarm?.let {
+            val label = alarmLabel(it, now)
+            val description = stringResource(R.string.home_next_alarm, label)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
+            ) {
+                Icon(EuriseIcons.alarm(2f), null, tint = color, modifier = Modifier.size(13.dp))
                 Spacer(Modifier.width(4.dp))
-                Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = color)
+                Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = color)
             }
         }
     }

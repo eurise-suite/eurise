@@ -281,6 +281,7 @@
     <string name="welcome_scan">Scansiona un documento</string>
 
     <string name="quick_camera">Fotocamera</string>
+    <string name="home_next_alarm">Sveglia alle %1$s</string>
     <string name="quick_gallery">Galleria</string>
 
     <string name="search_web">Cerca sul web</string>
