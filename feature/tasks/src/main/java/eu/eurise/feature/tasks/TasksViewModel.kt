@@ -67,7 +67,7 @@ class TasksViewModel(private val repository: TaskRepository) : ViewModel() {
     }
 
     /** Aggiunge l'attività letta dall'aggiunta rapida; [then] riceve l'id (per aprirne la scheda). */
-    fun add(parsed: QuickAdd.Result, fallbackList: Long, then: (Long) -> Unit = {}) {
+    internal fun add(parsed: QuickAdd.Result, fallbackList: Long, then: (Long) -> Unit = {}) {
         if (parsed.title.isBlank()) return
         val listId = state.value.lists.firstOrNull { it.list.name == parsed.listName }?.list?.id ?: fallbackList
         viewModelScope.launch {
