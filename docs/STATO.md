@@ -181,6 +181,16 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   impegno, Codici e consegne, Farmaci, Timer e sveglie, Appunto al volo: approvate e fatte (`home/Bubbles.kt`, si
   aggiungono dal catalogo delle schede della home). Codici e consegne è spenta di base, con spiegazione all'accensione.
   Il lettore QuickAdd è passato in `core/data`. APK di prova 109, versione ufficiale 2,6 MB.
-- Prossimo passo: provare l'APK del ramo `bolle` e unirlo a `main` (che contiene già Attività, sveglia, leggerezza e
+- Eurise Orologio (ramo `orologio`, nato da `bolle`, 8 novembre): primo APK separato, modulo `apps/clock`
+  (eu.eurise.clock), senza database (preferenze JSON) e senza librerie nuove; versione ufficiale 1,3 MB.
+  Sveglie con festivi italiani, ferie e "prima se c'è un impegno presto" dal calendario (spiegazione all'accensione,
+  "Usa il calendario" si spegne senza conferme), suono che cresce, rimanda, piccolo calcolo, routine del mattino a
+  voce, ora di dormire con avviso, Salta. Timer multipli, Pomodoro con Non disturbare, avvio rapido, cronometro,
+  fusi. Risponde a SET_ALARM/SET_TIMER. `core/suite` contiene ClockContract e il permesso di firma della suite
+  (SUITE per le ufficiali, SUITE_DEBUG per le prove). La CI carica `eurise-orologio-debug-N`.
+  Da fare: timer lanciati dalle ricette della Scrivania; meteo nella routine (oggi lo ha solo la Scrivania);
+  sveglia calcolata sul tempo di viaggio; centro privacy che elenchi il calendario dell'Orologio.
+- Prossimo passo: provare gli APK del ramo `orologio` (contiene `bolle`) e unirlo a `main`; poi Galleria,
+  Password e Drive/Scanner con le funzioni in più del documento (che contiene già Attività, sveglia, leggerezza e
   collegamenti); scegliere le bolle nuove; poi scheda Persona e + unico; anteprime di Drive, Orologio, Galleria,
   Password e Privacy; sincronizzazione CalDAV delle Attività con Murena.
