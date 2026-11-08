@@ -129,6 +129,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 calendarDay = runCatching { java.time.LocalDate.parse(section.removePrefix("day:")) }.getOrNull()
                 goTo(Section.Calendar)
             }
+            section == "backup" -> navController.navigate("cloud/backup")
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
@@ -196,7 +197,10 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     )
                 }
                 composable("cloud") {
-                    CloudRoute(onBack = { navController.closeIfOn("cloud") })
+                    CloudRoute(onBack = { navController.closeIfOn("cloud") }, onBackup = { navController.navigate("cloud/backup") })
+                }
+                composable("cloud/backup") {
+                    eu.eurise.feature.cloud.BackupRoute(onBack = { navController.closeIfOn("cloud/backup") })
                 }
                 composable("notes/trash") {
                     TrashRoute(notes = data.notes, onBack = { navController.closeIfOn("notes/trash") })

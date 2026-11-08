@@ -81,7 +81,7 @@ private enum class Form { Nextcloud, KDrive, WebDav }
 
 /** Account cloud, cosa va dove e sincronizzazione, come nelle anteprime della pagina "Cloud". */
 @Composable
-fun CloudRoute(onBack: () -> Unit) {
+fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
     val context = LocalContext.current
     val viewModel = viewModel { CloudViewModel(CloudSync.get(context.applicationContext)) }
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
@@ -118,6 +118,18 @@ fun CloudRoute(onBack: () -> Unit) {
             }
             accounts.forEach { account ->
                 item(account.id) { AccountCard(account, ui.quotas[account.id]) { viewModel.remove(account.id) } }
+            }
+            item("backup") {
+                // Terzo livello dei dati: il backup cifrato di tutta la suite, anche senza account collegati.
+                val backup by remember { eu.eurise.core.cloud.backup.BackupManager.get(context) }.state.collectAsStateWithLifecycle()
+                Group {
+                    WhereRow(
+                        stringResource(R.string.backup_title),
+                        backupStatus(backup),
+                        "",
+                        onClick = onBackup,
+                    )
+                }
             }
             if (accounts.isNotEmpty()) {
                 item("h-where") { Label(stringResource(R.string.cloud_where)) }
@@ -308,7 +320,7 @@ fun CloudRoute(onBack: () -> Unit) {
 }
 
 @Composable
-private fun kindLabel(kind: CloudKind): String = stringResource(
+internal fun kindLabel(kind: CloudKind): String = stringResource(
     when (kind) {
         CloudKind.Murena -> R.string.cloud_murena
         CloudKind.Nextcloud -> R.string.cloud_nextcloud
@@ -334,13 +346,13 @@ private fun statusLine(lastSync: Long?, error: String?, running: Boolean): Strin
 }
 
 @Composable
-private fun tintInk(name: String): Color {
+internal fun tintInk(name: String): Color {
     val t = CalendarTint.entries.first { it.name == name }
     return if (LocalEuriseColors.current.isDark) t.dark else t.light
 }
 
 @Composable
-private fun tintFill(name: String): Color = tintInk(name).copy(alpha = 0.16f)
+internal fun tintFill(name: String): Color = tintInk(name).copy(alpha = 0.16f)
 
 @Composable
 private fun AccountCard(account: CloudAccount, quota: DavQuota?, onRemove: () -> Unit) {
@@ -583,7 +595,7 @@ private fun ConnectingDialog(state: Connecting, onCancel: () -> Unit) {
 // Pezzi comuni
 
 @Composable
-private fun Screen(backLabel: String, title: String, onBack: () -> Unit, content: LazyListScope.() -> Unit) {
+internal fun Screen(backLabel: String, title: String, onBack: () -> Unit, content: LazyListScope.() -> Unit) {
     LazyColumn(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars),
         contentPadding = PaddingValues(bottom = 32.dp),
@@ -604,7 +616,7 @@ private fun Screen(backLabel: String, title: String, onBack: () -> Unit, content
 }
 
 @Composable
-private fun Group(padded: Boolean = true, content: @Composable () -> Unit) {
+internal fun Group(padded: Boolean = true, content: @Composable () -> Unit) {
     Column(
         Modifier
             .then(if (padded) Modifier.padding(horizontal = 16.dp) else Modifier)
@@ -615,10 +627,10 @@ private fun Group(padded: Boolean = true, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.background)
+internal fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.background)
 
 @Composable
-private fun Label(text: String) {
+internal fun Label(text: String) {
     Text(
         text.uppercase(Locale.getDefault()),
         fontSize = 11.sp,
@@ -630,7 +642,7 @@ private fun Label(text: String) {
 }
 
 @Composable
-private fun WhereRow(title: String, hint: String, value: String, onClick: (() -> Unit)? = null) {
+internal fun WhereRow(title: String, hint: String, value: String, onClick: (() -> Unit)? = null) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -653,7 +665,7 @@ private fun WhereRow(title: String, hint: String, value: String, onClick: (() ->
 }
 
 @Composable
-private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: ((Boolean) -> Unit)?) {
+internal fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: ((Boolean) -> Unit)?) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

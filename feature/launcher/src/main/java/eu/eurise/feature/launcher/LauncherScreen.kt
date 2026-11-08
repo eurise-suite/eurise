@@ -467,6 +467,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             SetupStep(stringResource(R.string.setup_notifications), notificationsOn, actions.grantNotifications),
             SetupStep(stringResource(R.string.setup_location), hasLocation, actions.askLocation),
             SetupStep(stringResource(R.string.setup_calendar), state.calendarConnected, actions.connectCalendar),
+            // Telefono nuovo: si offre il ripristino finché non c'è ancora nessun dato.
+            SetupStep(stringResource(R.string.setup_restore), state.notes.isNotEmpty() || state.openTasks.isNotEmpty()) { actions.openEurise("backup") },
         )
         val capture = CaptureActions(
             onTask = viewModel::addTask,

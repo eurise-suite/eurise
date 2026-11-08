@@ -6,6 +6,12 @@
 - Il documento di progetto e la tela "Icone della suite" (pagina Calendario, fila "Dopo") sono il riferimento.
 - La chiave di firma delle versioni ufficiali non si chiede e non si tocca: la custodisce solo il proprietario.
 
+## Conversazioni lunghe (regola, 8 novembre 2026)
+- Quando la chat con il proprietario diventa lunga (molti lavori, contesto riassunto più volte), avvisarlo alla
+  consegna dell'APK e consigliare una chat nuova, con le istruzioni pronte da incollare: leggere CLAUDE.md e
+  docs/STATO.md, il ramo su cui si lavora, l'ultimo APK, i lavori in corso e il prossimo passo.
+- Prima di consigliare la chat nuova, aggiornare docs/STATO.md perché contenga tutto ciò che serve a ripartire.
+
 ## Codice
 - Kotlin + Jetpack Compose (Material 3), MVVM, un modulo per funzione (`feature/*`), servizi comuni in `core/*`.
 - I moduli `feature` dipendono solo da `core`, mai tra loro; la navigazione passa dal modulo `app`.
@@ -33,8 +39,9 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Tre livelli: sul telefono (sempre), sincronizzazione con il servizio scelto, backup cifrato di tutta la suite.
 - Backup cifrato sul telefono prima di uscire, con frase segreta dell'utente e codice di recupero (senza, nessuno
   può aprirlo, nemmeno noi). Frequenza: giornaliero, settimanale, mensile o a richiesta; con Wi-Fi e in carica.
-- Si tengono gli ultimi tre backup più uno mensile e uno trimestrale; il più vecchio si cancella solo dopo che il
-  nuovo è caricato e verificato. Le foto restano fuori (hanno la loro sincronizzazione).
+- Si tengono i tre backup più recenti più uno mensile e uno trimestrale. Il nuovo backup prende il posto del più
+  vecchio dei tre recenti (che diventa il mensile o il trimestrale quando tocca), e solo dopo che il nuovo è
+  caricato e verificato. Le foto restano fuori (hanno la loro sincronizzazione).
 - Destinazioni con una valutazione di privacy (server proprio, Murena, kDrive, Proton, MEGA, poi i servizi USA con
   avviso) e cartella locale o chiavetta. Ripristino dalla prima schermata del telefono nuovo.
 

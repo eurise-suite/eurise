@@ -98,6 +98,30 @@ class WebDav(
         return etag ?: stat(path)?.etag
     }
 
+    /** Scrive un file binario (per esempio un backup cifrato). */
+    suspend fun putBytes(path: String, bytes: ByteArray, contentType: String = "application/octet-stream") {
+        val req = request(url(path)).put(bytes.toRequestBody(contentType.toMediaType())).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
+    }
+
+    /** Legge un file binario; null se non esiste. */
+    suspend fun getBytes(path: String): ByteArray? {
+        val req = request(url(path)).get().build()
+        return call(req) { res ->
+            when {
+                res.code == 404 -> null
+                res.isSuccessful -> res.body?.bytes()
+                else -> throw DavException(res.code, "GET $path: ${res.code}")
+            }
+        }
+    }
+
+    /** Sposta o rinomina un file sul server, sostituendo quello che c'è già al nuovo posto. */
+    suspend fun move(from: String, to: String) {
+        val req = request(url(from)).header("Destination", url(to).toString()).header("Overwrite", "T").method("MOVE", null).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "MOVE $from: ${res.code}") }
+    }
+
     /** Informazioni su un solo file; null se non esiste. */
     suspend fun stat(path: String): DavEntry? {
         val req = request(url(path)).header("Depth", "0").method("PROPFIND", PROPFIND_BODY.toRequestBody(XML)).build()

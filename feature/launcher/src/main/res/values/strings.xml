@@ -57,6 +57,7 @@
     <string name="setup_title">Prepara la Scrivania</string>
     <string name="setup_home_action">Imposta</string>
     <string name="setup_home">Usa Eurise come schermata iniziale</string>
+    <string name="setup_restore">Hai un backup di Eurise? Ritrova i tuoi dati</string>
     <string name="setup_notifications">Numeri sulle icone e messaggi</string>
     <string name="setup_location">Meteo della tua zona</string>
     <string name="setup_calendar">Appuntamenti nella Scrivania</string>
