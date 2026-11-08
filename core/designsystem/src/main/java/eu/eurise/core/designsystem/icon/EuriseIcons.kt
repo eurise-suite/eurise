@@ -100,6 +100,8 @@ object EuriseIcons {
 
     fun clock(stroke: Float = Stroke) = icon("clock", stroke, circle(12f, 12f, 9f), "M12 7v5l3 2")
 
+    fun alarm(stroke: Float = Stroke) = icon("alarm", stroke, circle(12f, 13f, 7.5f), "M12 9.5V13l2 1.5", "M4 5l3-2M20 5l-3-2")
+
     fun calculator(stroke: Float = Stroke) = icon("calculator", stroke, "M6 3h12v18H6z", "M9 7h6",
         "M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01")
 

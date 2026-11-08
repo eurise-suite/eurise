@@ -5,6 +5,7 @@ import eu.eurise.feature.launcher.home.HealthPill
 import eu.eurise.feature.launcher.home.openOnSwipe
 import eu.eurise.feature.launcher.home.PersonalDays
 import eu.eurise.feature.launcher.home.SunTimesColumn
+import eu.eurise.feature.launcher.home.rememberNextAlarm
 import eu.eurise.feature.launcher.folders.AppPicker
 import eu.eurise.feature.launcher.folders.FolderOverlay
 import eu.eurise.feature.launcher.folders.FolderTile
@@ -900,7 +901,7 @@ private fun PhoneHome(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ClockBlock(
                     now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f),
-                    beside = { SunTimesColumn(welcome.sun) },
+                    beside = { SunTimesColumn(welcome.sun, alarm = rememberNextAlarm(), now = now) },
                 )
                 // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
