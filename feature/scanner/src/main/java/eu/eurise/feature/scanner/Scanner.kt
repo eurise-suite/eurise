@@ -317,7 +317,7 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
 @Composable
 private fun QrDialog(text: String, onClose: () -> Unit) {
     val context = LocalContext.current
-    val isOtp = text.startsWith("otpauth://", ignoreCase = true)
+    val isOtp = text.startsWith("otpauth://", ignoreCase = true) || text.startsWith("otpauth-migration://", ignoreCase = true)
     val canOpen = isOtp || text.startsWith("https://", ignoreCase = true) || text.startsWith("http://", ignoreCase = true)
     AlertDialog(
         onDismissRequest = onClose,
