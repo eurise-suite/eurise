@@ -316,3 +316,18 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 ## Nextcloud alla pari di Murena (9 novembre, ramo `galleria-completa`, da provare su un Nextcloud vero)
 - Il proprietario usa Murena; altri utenti potranno usare Nextcloud. Password chiede dove sta la cassaforte (`CloudChoiceDialog`); testi generici; `NextcloudLogin.Result.davUser` prende l'identificativo dal server (su molti Nextcloud differisce dal nome di accesso).
 - Calendario e Contatti passano dal sistema: su Nextcloud servono DAVx⁵ o simili. Certificati autofirmati non gestiti.
+
+## Office: decisione del 9 novembre (dopo le integrazioni)
+- Un solo APK Eurise Office, motore LibreOffice core partendo da Collabora Office per Android (MPL 2.0), due interfacce sullo stesso documento:
+  telefono = interfaccia nostra per le modifiche al volo (barra che cambia con la selezione, barra delle formule, revisioni, commenti, PDF) più
+  "Tutte le opzioni" che apre l'interfaccia completa; tablet Volla (12,6", 2560×1600, Helio G99, 12 GB, tastiera) = interfaccia completa con
+  tastiera e mouse, documenti affiancati, sezioni satinate della suite. Nextcloud Office/Euro-Office (AGPL, gira dal server) solo come
+  "Apri nell'editor del cloud" da File.
+- Primo passo: prototipo che compila solo il motore su GitHub Actions e misura spazio, tempo e peso. Se non ci sta: computer di compilazione
+  o parti già compilate, da decidere con il proprietario. Poi anteprime telefono e tablet.
+
+## Tastiera come ponte: anteprime (9 novembre, tela, pagina Integrazioni, seconda fila) – da discutere
+- TastBarra (barra di Eurise sopra i tasti: Disponibilità, File, Persona, Codici), TastDisponibilita (orari liberi scelti e scritti nel testo,
+  "forse" nel Calendario), TastFile (link con scadenza o allegato; il link lo crea File, la tastiera non ha Internet), TastCodici (codice 2FA
+  proposto solo se il sito coincide, cassaforte aperta con l'impronta). Base prevista: fork di HeliBoard (GPLv3), APK separato, dialogo con
+  l'APK principale e con Password solo con permesso di firma.
