@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-path name="phone" path="." />
+    <cache-path name="cache" path="drive/" />
+    <files-path name="offline" path="drive-offline/" />
+</paths>

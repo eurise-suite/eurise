@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_close">Chiudi</string>
+    <string name="scan_flash">Flash</string>
+    <string name="scan_shutter">Scatta</string>
+    <string name="scan_done">Fine</string>
+    <string name="scan_mode_doc">Documento</string>
+    <string name="scan_mode_bw">Bianco e nero</string>
+    <string name="scan_mode_photo">Foto</string>
+    <string name="scan_status_search">Inquadra il documento</string>
+    <string name="scan_status_found">Documento trovato</string>
+    <string name="scan_status_hold">Fermo così · scatto automatico</string>
+    <string name="scan_status_saving">Elaboro la pagina…</string>
+    <string name="scan_pages">Pagine scansionate: %d</string>
+    <string name="scan_permission_title">Serve la fotocamera</string>
+    <string name="scan_permission_body">Cosa viene letto: quello che inquadri, solo mentre lo Scanner è aperto.\n\nDove va: le pagine restano sul telefono. Escono solo se scegli di salvarle su un cloud.\n\nChi lo vede: solo tu.\n\nCome si torna indietro: togli il permesso dalle impostazioni di Android.</string>
+    <string name="scan_permission_grant">Consenti</string>
+    <string name="scan_cancel">Annulla</string>
+    <string name="scan_save">Salva PDF</string>
+    <string name="scan_review_title">%d pagine</string>
+    <string name="scan_review_hint">Tocca una pagina per toglierla.</string>
+    <string name="scan_add_page">Aggiungi una pagina</string>
+    <string name="scan_remove">Pagina %d, tocca per togliere</string>
+    <string name="scan_name">Nome</string>
+    <string name="scan_where">Dove</string>
+    <string name="scan_phone">Telefono</string>
+    <string name="scan_saved_phone">Salvato in Documenti/Eurise/Scansioni</string>
+    <string name="scan_saved_cloud">Salvato in Eurise/Scansioni su %s</string>
+    <string name="scan_failed">Salvataggio non riuscito.</string>
+    <string name="scan_local_note">Le pagine vengono elaborate sul telefono: nessuna immagine esce per essere analizzata.</string>
+    <string name="scan_default_name">Scansione</string>
+</resources>

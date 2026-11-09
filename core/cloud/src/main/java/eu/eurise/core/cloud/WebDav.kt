@@ -8,6 +8,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.w3c.dom.Element
@@ -114,6 +115,28 @@ class WebDav(
                 else -> throw DavException(res.code, "GET $path: ${res.code}")
             }
         }
+    }
+
+    /** Scarica su disco senza tenere il file in memoria, per i file grandi; falso se sul server non c'è. */
+    suspend fun download(path: String, target: java.io.File): Boolean {
+        val req = request(url(path)).get().build()
+        return call(req) { res ->
+            when {
+                res.code == 404 -> false
+                res.isSuccessful -> {
+                    target.parentFile?.mkdirs()
+                    res.body?.byteStream()?.use { input -> target.outputStream().use { input.copyTo(it) } }
+                    true
+                }
+                else -> throw DavException(res.code, "GET $path: ${res.code}")
+            }
+        }
+    }
+
+    /** Carica un file da disco senza tenerlo in memoria. */
+    suspend fun upload(path: String, source: java.io.File) {
+        val req = request(url(path)).put(source.asRequestBody("application/octet-stream".toMediaType())).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
     }
 
     /** Sposta o rinomina un file sul server, sostituendo quello che c'è già al nuovo posto. */

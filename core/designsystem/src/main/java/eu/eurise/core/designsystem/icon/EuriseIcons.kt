@@ -183,6 +183,10 @@ object EuriseIcons {
     fun reply(stroke: Float = Stroke) = icon("reply", stroke, "M10 7l-5.5 5 5.5 5", "M5 12h8.5a6 6 0 0 1 6 6v1")
 
     fun trash(stroke: Float = Stroke) = icon("trash", stroke, "M4.5 7h15", "M9.5 7V4.5h5V7", "M6.5 7l1 13h9l1-13")
+    fun scan(stroke: Float = Stroke) = icon("scan", stroke, "M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M7 12h10")
+    fun download(stroke: Float = Stroke) = icon("download", stroke, "M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14")
+    fun sort(stroke: Float = Stroke) = icon("sort", stroke, "M4 7h16M7 12h10M10 17h4")
+    fun flash(stroke: Float = Stroke) = icon("flash", stroke, "M13 3 5 13.5h6L10 21l8-10.5h-6z")
 
     fun read(stroke: Float = Stroke) = icon("read", stroke, "M3.5 12.5l4 4 8-9", "M12.5 16.5l1 0 8-9")
 

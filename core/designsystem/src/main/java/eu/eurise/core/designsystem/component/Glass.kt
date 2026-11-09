@@ -100,6 +100,7 @@ fun EuriseDock(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    actionIcon: ImageVector? = null,
 ) {
     Row(
         modifier = modifier
@@ -158,7 +159,7 @@ fun EuriseDock(
                     .semantics { if (actionLabel != null) contentDescription = actionLabel },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(EuriseIcons.plus(), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                Icon(actionIcon ?: EuriseIcons.plus(), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
         }
     }
