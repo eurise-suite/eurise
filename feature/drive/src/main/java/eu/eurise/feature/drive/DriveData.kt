@@ -16,10 +16,13 @@ import java.io.File
 import java.util.UUID
 
 /** Dove sta un file: [account] nullo vuol dire il telefono; con [vaultRoot] è una cartella cifrata di quell'account. */
-data class Place(val account: String?, val label: String, val vaultRoot: String? = null)
+data class Place(val account: String?, val label: String, val vaultRoot: String? = null, val tree: String? = null) {
+    /** Una cartella esposta da un'altra app e scelta dal selettore di Android. */
+    val isTree: Boolean get() = tree != null
+}
 
 data class DriveItem(val place: Place, val path: String, val name: String, val folder: Boolean, val size: Long?, val modified: Long?) {
-    val key get() = (place.account ?: "phone") + ":" + place.vaultRoot.orEmpty() + ":" + path
+    val key get() = (place.account ?: "phone") + ":" + place.vaultRoot.orEmpty() + place.tree.orEmpty() + ":" + path
     val extension get() = name.substringAfterLast('.', "").lowercase()
 }
 
@@ -41,6 +44,41 @@ class DriveData(private val context: Context) {
     val places: List<Place> get() = accounts.accounts.value.map { Place(it.id, it.name) }
 
     private fun dav(place: Place): WebDav = accounts.dav(place.account) ?: throw java.io.IOException("account mancante")
+
+    // --- Cartelle di altre app (kDrive, Proton Drive…) ---
+
+    private val trees = HashMap<String, TreeFs>()
+
+    private fun tree(place: Place): TreeFs? = place.tree?.let { t -> synchronized(trees) { trees.getOrPut(t) { TreeFs(context, android.net.Uri.parse(t)) } } }
+
+    val treePlaces: List<Place>
+        get() {
+            val array = JSONArray(prefs.getString(KEY_TREES, "[]"))
+            return (0 until array.length()).map { array.getJSONObject(it) }.map { Place(TREE_ACCOUNT, it.getString("label"), tree = it.getString("uri")) }
+        }
+
+    private fun storeTrees(list: List<Place>) {
+        prefs.edit().putString(KEY_TREES, JSONArray(list.map { JSONObject().put("label", it.label).put("uri", it.tree) }).toString()).apply()
+    }
+
+    /** Ricorda la cartella scelta, con il permesso che resta anche dopo il riavvio; il nome è quello dell'app che la espone. */
+    fun addTree(uri: android.net.Uri): Place {
+        context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        val pm = context.packageManager
+        val app = runCatching { pm.resolveContentProvider(uri.authority.orEmpty(), 0)?.loadLabel(pm)?.toString() }.getOrNull()
+        val folder = android.provider.DocumentsContract.getTreeDocumentId(uri).substringAfterLast('/').substringAfterLast(':')
+        val label = listOfNotNull(app, folder.takeIf { app == null || (it.isNotEmpty() && it.length < 24) }).joinToString(" · ").ifEmpty { "Cartella" }
+        val place = Place(TREE_ACCOUNT, label, tree = uri.toString())
+        storeTrees(treePlaces.filterNot { it.tree == place.tree } + place)
+        return place
+    }
+
+    fun removeTree(place: Place) {
+        runCatching {
+            context.contentResolver.releasePersistableUriPermission(android.net.Uri.parse(place.tree), android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        storeTrees(treePlaces.filterNot { it.tree == place.tree })
+    }
 
     // --- Cartelle cifrate ---
 
@@ -111,10 +149,14 @@ class DriveData(private val context: Context) {
 
     /** Copia nella cartella cifrata un file scelto dalla persona. */
     internal suspend fun addToVault(folder: Folder, uri: android.net.Uri) = withContext(Dispatchers.IO) {
-        val fs = fs(folder.place) ?: throw java.io.IOException()
         val name = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
             if (c.moveToFirst()) c.getString(0) else null
         } ?: uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+        tree(folder.place)?.let { other ->
+            other.write(join(folder.path, name), uri)
+            return@withContext
+        }
+        val fs = fs(folder.place) ?: throw java.io.IOException()
         val plain = File.createTempFile("add", null, vaultPlain)
         try {
             context.contentResolver.openInputStream(uri)?.use { input -> plain.outputStream().use { input.copyTo(it) } } ?: throw java.io.IOException()
@@ -125,6 +167,9 @@ class DriveData(private val context: Context) {
     }
 
     suspend fun list(place: Place, path: String): List<DriveItem> = withContext(Dispatchers.IO) {
+        tree(place)?.let { t ->
+            return@withContext t.list(path).map { DriveItem(place, join(path, it.name), it.name, it.folder, it.size, it.modified) }
+        }
         fs(place)?.let { fs ->
             return@withContext fs.list(path).map { DriveItem(place, join(path, it.name), it.name, it.folder, it.size, null) }
         }
@@ -139,14 +184,18 @@ class DriveData(private val context: Context) {
 
     suspend fun mkdir(place: Place, path: String) = withContext(Dispatchers.IO) {
         val vault = fs(place)
-        if (vault != null) vault.mkdir(path)
+        val other = tree(place)
+        if (other != null) other.mkdir(path)
+        else if (vault != null) vault.mkdir(path)
         else if (place.account == null) { if (!File(root, path).mkdirs()) throw java.io.IOException() } else dav(place).mkdirs(path)
     }
 
     suspend fun rename(item: DriveItem, newName: String) = withContext(Dispatchers.IO) {
         val parent = item.path.substringBeforeLast('/', "")
         val vault = fs(item.place)
-        if (vault != null) vault.move(item.path, join(parent, newName), item.folder)
+        val other = tree(item.place)
+        if (other != null) other.rename(item.path, newName)
+        else if (vault != null) vault.move(item.path, join(parent, newName), item.folder)
         else if (item.place.account == null) {
             if (!File(root, item.path).renameTo(File(root, join(parent, newName)))) throw java.io.IOException()
         } else {
@@ -156,6 +205,11 @@ class DriveData(private val context: Context) {
 
     /** Il file su disco, scaricandolo se serve; una copia offline ha la precedenza quando manca la rete. */
     suspend fun localCopy(item: DriveItem): File = withContext(Dispatchers.IO) {
+        tree(item.place)?.let { other ->
+            val copy = File(File(cacheDir, Integer.toHexString(item.key.hashCode())), item.name)
+            other.read(item.path, copy)
+            return@withContext copy
+        }
         fs(item.place)?.let { vault ->
             val plain = File(File(vaultPlain, Integer.toHexString(item.key.hashCode())), item.name)
             vault.read(item.path, plain)
@@ -177,7 +231,9 @@ class DriveData(private val context: Context) {
     suspend fun move(item: DriveItem, folder: String) = withContext(Dispatchers.IO) {
         val target = join(folder, item.name)
         val vault = fs(item.place)
-        if (vault != null) vault.move(item.path, target, item.folder)
+        val other = tree(item.place)
+        if (other != null) other.move(item.path, folder)
+        else if (vault != null) vault.move(item.path, target, item.folder)
         else if (item.place.account == null) {
             val destination = File(root, target)
             if (destination.exists() || !File(root, item.path).renameTo(destination)) throw java.io.IOException()
@@ -240,7 +296,7 @@ class DriveData(private val context: Context) {
     }
 
     fun remember(item: DriveItem) {
-        if (item.place.vaultRoot != null) return // i nomi dentro una cartella cifrata non si annotano in chiaro
+        if (item.place.isTree || item.place.vaultRoot != null) return // i nomi dentro una cartella cifrata non si annotano in chiaro
         val entry = JSONObject().put("key", item.key).put("account", item.place.account).put("label", item.place.label)
             .put("path", item.path).put("name", item.name).put("at", System.currentTimeMillis())
         val others = recents().filter { it.key != item.key }.take(MAX_RECENT - 1).map {
@@ -261,6 +317,10 @@ class DriveData(private val context: Context) {
     /** Telefono: nel cestino di Eurise per 30 giorni. Cloud: lo gestisce il servizio. */
     suspend fun delete(item: DriveItem) = withContext(Dispatchers.IO) {
         forget(item)
+        tree(item.place)?.let { other ->
+            other.delete(item.path)
+            return@withContext
+        }
         fs(item.place)?.let { vault ->
             vault.delete(item.path, item.folder)
             return@withContext
@@ -329,6 +389,8 @@ class DriveData(private val context: Context) {
         private const val KEY_RECENT = "recent"
         private const val KEY_TRASH = "trash"
         private const val KEY_VAULTS = "vaults"
+        private const val KEY_TREES = "trees"
+        private const val TREE_ACCOUNT = "tree"
         private const val MAX_RECENT = 12
         private const val TRASH_DAYS = 30
 

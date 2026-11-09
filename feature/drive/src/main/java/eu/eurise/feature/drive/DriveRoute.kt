@@ -158,6 +158,13 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
     DisposableEffect(Unit) { onDispose { data.lockAll() } }
     val legacy = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { access = hasAccess(context) }
 
+    val pickTree = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runCatching { data.addTree(uri) }
+                .onSuccess { scope = it; folder = Folder(it, ""); refresh++ }
+                .onFailure { Toast.makeText(context, R.string.drive_tree_failed, Toast.LENGTH_LONG).show() }
+        }
+    }
     val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         addingTo?.let { target ->
             coroutines.launch {
@@ -227,6 +234,8 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                     onNewVault = { newVaultIn = it },
                     onAddFiles = { addingTo = it; pickFiles.launch(arrayOf("*/*")) },
                     onLock = { p -> data.lock(p); scope = null; folder = null; refresh++ },
+                    onAddTree = { pickTree.launch(null) },
+                    onRemoveTree = { p -> data.removeTree(p); scope = null; folder = null; refresh++ },
                 )
                 Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
                 Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
@@ -357,6 +366,7 @@ private fun FilesTab(
     onAccess: () -> Unit, onCloud: () -> Unit, onCreate: (Folder, String) -> Unit,
     sync: FolderSync, onManageSync: (SyncPair) -> Unit,
     onUnlock: (Place) -> Unit, onNewVault: (Folder) -> Unit, onAddFiles: (Folder) -> Unit, onLock: (Place) -> Unit,
+    onAddTree: () -> Unit, onRemoveTree: (Place) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
@@ -366,6 +376,7 @@ private fun FilesTab(
     var creating by remember { mutableStateOf(false) }
     val places = remember(refresh) { data.places }
     val vaults = remember(refresh) { data.vaultPlaces }
+    val trees = remember(refresh) { data.treePlaces }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(Modifier.fillMaxSize()) {
@@ -393,6 +404,9 @@ private fun FilesTab(
                         if (folder.place.vaultRoot != null) {
                             IconButton(onClick = { onAddFiles(folder) }) { Icon(EuriseIcons.upload(), contentDescription = stringResource(R.string.drive_vault_add)) }
                             IconButton(onClick = { onLock(folder.place) }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.drive_vault_lock)) }
+                        } else if (folder.place.isTree) {
+                            IconButton(onClick = { onAddFiles(folder) }) { Icon(EuriseIcons.upload(), contentDescription = stringResource(R.string.drive_vault_add)) }
+                            if (folder.path.isEmpty()) IconButton(onClick = { onRemoveTree(folder.place) }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.drive_tree_remove)) }
                         } else if (folder.place.account != null) {
                             IconButton(onClick = { onNewVault(folder) }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.drive_vault_new)) }
                         }
@@ -412,6 +426,8 @@ private fun FilesTab(
                 FilterPill(stringResource(R.string.drive_all), dot = null, selected = scope == null) { onScope(null) }
                 FilterPill(stringResource(R.string.drive_phone), dot = scheme.onSurfaceVariant, selected = scope == data.phone) { onScope(data.phone) }
                 places.forEach { p -> FilterPill(p.label, dot = scheme.primary, selected = scope == p) { onScope(p) } }
+                trees.forEach { p -> FilterPill(p.label, dot = scheme.secondary, selected = scope == p) { onScope(p) } }
+                FilterPill(stringResource(R.string.drive_tree_add), dot = null, selected = false) { onAddTree() }
                 vaults.forEach { p -> FilterPill(stringResource(R.string.drive_vault_pill, p.label), dot = scheme.tertiary, selected = scope == p) { if (data.isOpen(p)) onScope(p) else onUnlock(p) } }
             }
         }
@@ -636,7 +652,7 @@ private fun FolderList(
         return
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace)) {
-        if (folder.place.account != null && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
+        if (folder.place.account != null && !folder.place.isTree && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
             Row(
                 Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow)
                     .clickable { onUnlock(data.vaultPlace(folder.place, folder.path)) }.padding(14.dp),
@@ -750,7 +766,7 @@ private fun ItemSheet(
                     if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
                 }
             }
-            if (!item.folder && item.place.account != null && item.place.vaultRoot == null) {
+            if (!item.folder && item.place.account != null && item.place.vaultRoot == null && !item.place.isTree) {
                 Row(Modifier.clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.drive_offline_switch), fontSize = 15.sp)

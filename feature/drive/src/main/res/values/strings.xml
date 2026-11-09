@@ -112,4 +112,7 @@
     <string name="drive_vault_unsupported">Questa cartella usa una versione di Cryptomator non supportata</string>
     <string name="drive_vault_add">Aggiungi file</string>
     <string name="drive_vault_lock">Chiudi la cartella cifrata</string>
+    <string name="drive_tree_add">+ Aggiungi</string>
+    <string name="drive_tree_remove">Scollega questa cartella</string>
+    <string name="drive_tree_failed">Questa app non permette di tenere la cartella collegata</string>
 </resources>
