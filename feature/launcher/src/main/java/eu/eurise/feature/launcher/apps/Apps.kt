@@ -129,6 +129,21 @@ private const val SUITE_GALLERY = "eu.eurise.gallery"
 /** La Galleria della suite, se è installata. */
 fun List<AppEntry>.suiteGallery(): AppEntry? = firstOrNull { it.packageName.startsWith(SUITE_GALLERY) }
 
+/** La prima app che apre i PDF. */
+fun Context.pdfApp(apps: List<AppEntry>): AppEntry? {
+    val known = packageManager.queryIntentActivities(Intent(Intent.ACTION_VIEW).setType("application/pdf"), 0).map { it.activityInfo.packageName }.toSet()
+    return apps.firstOrNull { it.component != null && it.packageName in known }
+}
+
+private val OfficeApps = listOf("org.libreoffice", "com.collabora", "com.microsoft.office", "cn.wps", "com.onlyoffice", "com.google.android.apps.docs.editors")
+private val DriveApps = listOf("com.infomaniak.drive", "foundation.e.drive", "com.nextcloud", "me.proton.android.drive", "com.google.android.apps.docs", "com.dropbox")
+
+fun officeApp(apps: List<AppEntry>): AppEntry? =
+    OfficeApps.firstNotNullOfOrNull { prefix -> apps.firstOrNull { it.packageName.startsWith(prefix) && !it.packageName.contains("outlook") } }
+
+fun driveApp(apps: List<AppEntry>): AppEntry? =
+    DriveApps.firstNotNullOfOrNull { prefix -> apps.firstOrNull { it.packageName == prefix || it.packageName.startsWith("$prefix.") && !it.packageName.contains("editors") } }
+
 /** Le app capaci di mostrare le foto, per la scelta sul pulsante accanto all'ora. */
 fun Context.galleryChoices(apps: List<AppEntry>): List<AppEntry> {
     val viewers = packageManager.queryIntentActivities(Intent(Intent.ACTION_VIEW).setType("image/*"), 0).map { it.activityInfo.packageName }

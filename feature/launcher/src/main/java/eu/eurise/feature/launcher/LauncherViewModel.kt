@@ -206,6 +206,22 @@ class LauncherViewModel(
         viewModelScope.launch { _travel.value = routes.travelTo(destination) }
     }
 
+    private val _travels = MutableStateFlow<Map<String, Travel>>(emptyMap())
+    val travels: StateFlow<Map<String, Travel>> = _travels
+    private var travelsJob: kotlinx.coroutines.Job? = null
+
+    /** Tempo per arrivare a ciascun luogo di oggi (appuntamenti e cose da fare), al massimo otto. */
+    fun refreshTravels(places: List<String>) {
+        travelsJob?.cancel()
+        travelsJob = viewModelScope.launch {
+            val found = mutableMapOf<String, Travel>()
+            places.distinct().take(8).forEach { place ->
+                routes.travelTo(place)?.let { found[place] = it; _travels.value = found.toMap() }
+            }
+            _travels.value = found.toMap()
+        }
+    }
+
     val videos = eu.eurise.feature.launcher.videos.VideosRepository(application)
     private val _videoList = MutableStateFlow<List<eu.eurise.feature.launcher.videos.Video>?>(null)
     val videoList: StateFlow<List<eu.eurise.feature.launcher.videos.Video>?> = _videoList

@@ -48,6 +48,37 @@ object BubbleText {
     fun isPec(packageName: String): Boolean =
         packageName.lowercase().split('.', '_').any { it == "pec" || it == "legalmail" || it == "pecmail" }
 
+    private val PlaceBracket = Regex("""#\\[([^\\]]+)]""")
+    private val PlaceWord = Regex("""#([\\p{L}\\p{N}_-]+)""")
+
+    /** Il luogo scritto in una cosa da fare: #[Via Roma 12], oppure #Stazione (i trattini valgono come spazi). */
+    fun taskPlace(text: String): String? =
+        PlaceBracket.find(text)?.groupValues?.get(1)?.trim()
+            ?: PlaceWord.find(text)?.groupValues?.get(1)?.replace('_', ' ')?.replace('-', ' ')
+
+    /** Il testo senza il #luogo, per mostrarlo. */
+    fun withoutPlace(text: String): String =
+        text.replace(PlaceBracket, "").replace(PlaceWord, "").replace(Regex(" {2,}"), " ").trim()
+
+    private val PhoneText = Regex("""(?<![\\d+])(\\+?[03]\\d[\\d .-]{6,}\\d)""")
+    private val EmailText = Regex("""[\\w.+-]+@[\\w-]+\\.[\\w.-]+""")
+    private val WithName = Regex("""(?i)\\bcon\\s+(\\p{Lu}\\p{L}+(?:\\s+\\p{Lu}\\p{L}+)?)""")
+
+    /** Un numero di telefono in un testo: da 9 a 13 cifre, che inizia come un numero italiano o internazionale. */
+    fun phoneIn(text: String): String? = PhoneText.findAll(text).map { it.value.filterNot { c -> c == ' ' || c == '.' || c == '-' } }
+        .firstOrNull { n -> n.count(Char::isDigit) in 9..13 }
+
+    fun emailIn(text: String): String? = EmailText.find(text)?.value?.trimEnd('.')
+
+    /** Il nome dopo "con": "Pranzo con Anna Rossi" dà "Anna Rossi". */
+    fun personIn(title: String): String? = WithName.find(title)?.groupValues?.get(1)
+
+    /** Il numero nel formato di wa.me: solo cifre, con il prefisso italiano se manca. */
+    fun whatsappNumber(phone: String): String {
+        val digits = phone.filter(Char::isDigit).removePrefix("00")
+        return if (!phone.startsWith("+") && !phone.startsWith("00") && digits.length == 10 && digits.startsWith("3")) "39$digits" else digits
+    }
+
     fun isClock(packageName: String): Boolean =
         "deskclock" in packageName || packageName.endsWith(".clock") || ".clock." in packageName || "alarmclock" in packageName
 }

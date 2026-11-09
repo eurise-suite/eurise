@@ -1,6 +1,8 @@
 package eu.eurise.feature.launcher.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.SideEffect
@@ -114,6 +116,8 @@ fun Pill(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var collapsed by rememberSaveable(title) { mutableStateOf(false) }
+    var widthPx by remember { mutableIntStateOf(0) }
+    val bubbleWidth = with(LocalDensity.current) { if (widthPx > 0) widthPx.toDp() else 400.dp }
     val report = LocalPillMeasure.current
     // Fuori il vetro (che può essere più alto, per allinearsi alle bolle accanto), dentro il titolo fisso e il
     // contenuto, che scorre con la barra se non entra e riferisce comunque la sua altezza naturale.
@@ -125,8 +129,9 @@ fun Pill(
         SideEffect { report(natural) }
     }
     Column(modifier.glass(hazeState, RoundedCornerShape(22.dp), elevation = 8.dp, outline = false)) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalBubbleWidth provides bubbleWidth) {
     TitleAboveContent(
-        Modifier.padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
+        Modifier.onSizeChanged { widthPx = it.width }.padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
     ) {
         // Titolo più vicino al contenuto: la riga del titolo è bassa quanto basta per la freccia.
         Row(Modifier.fillMaxWidth().onSizeChanged { titleHeight = it.height }, verticalAlignment = Alignment.CenterVertically) {
@@ -168,6 +173,7 @@ fun Pill(
                 }
             }
         }
+    }
     }
     }
 }
@@ -221,105 +227,6 @@ internal fun PillLine(icon: ImageVector, main: String, sub: String?, onClick: ()
 }
 
 /**
- * Prima pillola: appuntamenti, cose da fare e luoghi dove andare. Ogni sezione mostra il primo elemento e
- * si scorre di lato per vedere fino a otto successivi; toccando si apre l'app relativa. Se mancano le cose
- * da fare o i luoghi, gli appuntamenti si mostrano a due a due.
- */
-@Composable
-fun AgendaPill(
-    now: LocalDateTime,
-    events: List<CalendarEvent>,
-    calendarConnected: Boolean,
-    tasks: List<Task>,
-    travel: Travel?,
-    destinations: List<CalendarEvent>,
-    hazeState: HazeState,
-    compact: Boolean,
-    onCalendar: () -> Unit,
-    onConnectCalendar: () -> Unit,
-    onTasks: () -> Unit,
-    onRoute: (String) -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-) {
-    val upcoming = events.filter { it.allDay || it.end.isAfter(now) }
-    val next = upcoming.firstOrNull { !it.allDay } ?: upcoming.firstOrNull()
-    val showRoute = destinations.isNotEmpty() && !compact
-    val showTasks = tasks.isNotEmpty()
-    val perPage = if (!compact && (!showTasks || !showRoute)) 2 else 1
-    Pill(hazeState, modifier, title = stringResource(R.string.welcome_events), trailing = {
-        if (next != null && !next.allDay && next.start.isAfter(now)) {
-            val minutes = Duration.between(now, next.start).toMinutes()
-            val text = if (minutes < 60) stringResource(R.string.welcome_in_min, minutes) else stringResource(R.string.welcome_at, next.start.format(TimeFormat))
-            Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        }
-    }) {
-        when {
-            !calendarConnected -> PillLine(EuriseIcons.calendar(), stringResource(R.string.today_connect_calendar), null, onConnectCalendar)
-            upcoming.isEmpty() -> PillLine(EuriseIcons.calendar(), stringResource(R.string.today_free), null, onCalendar)
-            else -> SwipeSection(upcoming.take(9).chunked(perPage)) { page ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    page.forEachIndexed { i, e ->
-                        if (i > 0) PillDivider()
-                        val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
-                        PillLine(
-                            EuriseIcons.calendar(), "$time  ${e.title}", e.location.takeIf { it.isNotBlank() }, onCalendar,
-                            tint = CalendarTint.nearest(e.color).colors().dot,
-                        )
-                    }
-                }
-            }
-        }
-        if (showTasks) {
-            PillDivider()
-            Label(stringResource(R.string.welcome_tasks, tasks.size))
-            SwipeSection(tasks.take(9)) { t ->
-                PillLine(EuriseIcons.task(), t.title, t.notes.lineSequence().firstOrNull()?.takeIf { it.isNotBlank() }, onTasks)
-            }
-        }
-        if (showRoute) {
-            PillDivider()
-            Label(stringResource(R.string.welcome_places))
-            SwipeSection(destinations.take(9)) { e ->
-                val first = e == destinations.first()
-                val minutes = travel?.takeIf { first }?.minutes
-                PillLine(
-                    EuriseIcons.map(),
-                    e.location,
-                    if (minutes != null) {
-                        stringResource(R.string.welcome_route_minutes, minutes) + " · " +
-                            stringResource(R.string.welcome_leave_by, e.start.minusMinutes((minutes + 5).toLong()).format(TimeFormat))
-                    } else {
-                        e.start.format(TimeFormat) + "  " + e.title
-                    },
-                    { onRoute(e.location) },
-                    right = stringResource(R.string.welcome_route_open),
-                )
-            }
-        }
-    }
-}
-
-/** Una sezione che mostra un elemento alla volta e si scorre di lato; a destra il contatore "2/5". */
-@Composable
-private fun <T> SwipeSection(items: List<T>, content: @Composable (T) -> Unit) {
-    if (items.size <= 1) {
-        items.firstOrNull()?.let { content(it) }
-        return
-    }
-    val pager = androidx.compose.foundation.pager.rememberPagerState { items.size }
-    Box {
-        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth().padding(end = 30.dp), pageSpacing = 12.dp) { page ->
-            content(items[page])
-        }
-        Text(
-            "${pager.currentPage + 1}/${items.size}",
-            fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
-    }
-}
-
-/**
  * Seconda pillola: chi ti ha cercato. È la stessa bolla della scheda del Riepilogo: stesse righe, stessi gesti
  * (vedi [CommsBody]) e gli stessi tondi per i contatti recenti e preferiti.
  */
@@ -355,7 +262,13 @@ internal fun SmallRound(icon: ImageVector, label: String, onClick: () -> Unit) {
     ) { Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp)) }
 }
 
+/** Una scorciatoia in cima a Documenti. */
+class DocShortcut(val icon: ImageVector, val label: String, val onClick: () -> Unit)
+
+private val DocIconsBeside = 310.dp
+
 /** Terza pillola, a sinistra: gli ultimi lavori sul telefono. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WorkPill(
     files: List<RecentFile>,
@@ -364,12 +277,19 @@ fun WorkPill(
     modifier: Modifier,
     onOpen: (RecentFile) -> Unit,
     onGrant: () -> Unit,
-    onScan: () -> Unit,
+    shortcuts: List<DocShortcut>,
 ) {
+    val icons: @Composable () -> Unit = {
+        shortcuts.forEach { s ->
+            SmallRound(s.icon, s.label, s.onClick)
+            Spacer(Modifier.width(4.dp))
+        }
+    }
     Pill(hazeState, modifier, title = stringResource(R.string.welcome_work), trailing = {
-        SmallRound(EuriseIcons.camera(2f), stringResource(R.string.welcome_scan), onScan)
-        Spacer(Modifier.width(2.dp))
+        if (LocalBubbleWidth.current >= DocIconsBeside) icons()
     }) {
+        // Nelle bolle strette le icone non entrano accanto al titolo: stanno in una riga sotto, e vanno a capo.
+        if (LocalBubbleWidth.current < DocIconsBeside) FlowRow(verticalArrangement = Arrangement.spacedBy(4.dp)) { icons() }
         when {
             !hasAccess -> PillLine(EuriseIcons.folder(), stringResource(R.string.welcome_work_grant), null, onGrant)
             files.isEmpty() -> Text(stringResource(R.string.welcome_work_empty), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -401,8 +321,11 @@ fun MusicHalf(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, modi
             )
             else -> {
                 Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPlayer), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AlbumArt(playing, 40.dp)
-                    Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    AlbumArt(playing, if (LocalBubbleWidth.current >= 240.dp) 52.dp else 40.dp)
+                    Column {
+                        Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        if (playing.artist.isNotBlank()) Text(playing.artist, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
                 val controls = playing.controller.transportControls
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

@@ -119,6 +119,9 @@ import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.cameraChoices
+import eu.eurise.feature.launcher.apps.driveApp
+import eu.eurise.feature.launcher.apps.officeApp
+import eu.eurise.feature.launcher.apps.pdfApp
 import eu.eurise.feature.launcher.apps.galleryChoices
 import eu.eurise.feature.launcher.apps.suiteGallery
 import eu.eurise.feature.launcher.apps.LocalCategoryTint
@@ -235,6 +238,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         .filter { !it.allDay && it.end.isAfter(now) && it.location.isNotBlank() }
     val destination = destinations.firstOrNull()?.location
     LaunchedEffect(destination, hasLocation) { viewModel.refreshTravel(destination) }
+    // Luoghi di oggi: appuntamenti con indirizzo e cose da fare con un #luogo.
+    val travelPlaces = destinations.map { it.location } + state.tasksDue.mapNotNull {
+        eu.eurise.feature.launcher.home.BubbleText.taskPlace(it.title) ?: eu.eurise.feature.launcher.home.BubbleText.taskPlace(it.notes)
+    }
+    LaunchedEffect(travelPlaces, hasLocation) { viewModel.refreshTravels(travelPlaces) }
+    val travels by viewModel.travels.collectAsState()
     val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { viewModel.refresh() }
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         hasLocation = it
@@ -335,6 +344,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var editingCards by remember { mutableStateOf(false) }
         var editingHome by remember { mutableStateOf(false) }
         var homeCatalog by remember { mutableStateOf(false) }
+        var sideCatalog by remember { mutableStateOf<Boolean?>(null) }
+        BackHandler(enabled = sideCatalog != null) { sideCatalog = null }
         var channelsSheet by remember { mutableStateOf(false) }
         var replyTo by remember { mutableStateOf<MessageItem?>(null) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
@@ -351,6 +362,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             travel = travel,
             destination = destination,
             destinations = destinations,
+            travels = travels,
             messages = messages,
             notificationsOn = notificationsOn,
             nowPlaying = nowPlaying,
@@ -533,22 +545,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     val sideAlarm = rememberNextAlarm()
-                    SummaryColumn(
-                        bubble = { slot, mod -> HomeBubble(slot, mod, now, state, welcome, hazeState, false, actions, homeData, sideAlarm) },
-                        state = state, messages = messages, nowPlaying = nowPlaying, notificationsOn = notificationsOn, setup = if (left) emptyList() else setup, hazeState = hazeState, actions = actions, clearance = clearance, modifier = modifier,
-                        weather = weather,
-                        cards = if (left) settings.leftCards else settings.cards,
-                        news = newsItems, quotes = quotes,
-                        onNewsSources = { newsSheet = true }, onSymbols = { stocksSheet = true },
-                        daily = DailyData(
-                            horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
-                            onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
-                        ),
-                        calendarMonth = calendarMonth, monthEvents = monthEvents, monthTasks = monthTasks,
-                        onCalendarMonth = viewModel::setCalendarMonth,
-                        editing = editingCards, onEditingChange = { editingCards = it },
-                        onCardsChange = { cards -> viewModel.updateSettings { if (left) it.copy(leftCards = cards) else it.copy(cards = cards) } },
-                    )
+                    SidePage(
+                        slots = if (left) settings.leftSlots else settings.rightSlots,
+                        editing = editingCards,
+                        onEditingChange = { editingCards = it },
+                        onChange = { slots -> viewModel.updateSettings { if (left) it.copy(leftSlots = slots) else it.copy(rightSlots = slots) } },
+                        onCatalog = { sideCatalog = left },
+                        setup = if (left) emptyList() else setup,
+                        hazeState = hazeState,
+                        clearance = clearance,
+                        modifier = modifier,
+                    ) { slot, mod -> HomeBubble(slot, mod, now, state, welcome, hazeState, false, actions, homeData, sideAlarm) }
                     }
                     }
                 }
@@ -774,6 +781,21 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onClose = { categoryEditor = false },
                 )
             }
+            sideCatalog?.let { left ->
+                val slots = if (left) settings.leftSlots else settings.rightSlots
+                val save = { next: List<eu.eurise.feature.launcher.home.HomeSlot> ->
+                    viewModel.updateSettings { if (left) it.copy(leftSlots = next) else it.copy(rightSlots = next) }
+                }
+                eu.eurise.feature.launcher.home.HomeCatalog(
+                    slots = slots,
+                    onAdd = { kind ->
+                        save(slots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth))
+                        if (kind == eu.eurise.feature.launcher.home.HomeKind.Videos) viewModel.refreshVideos()
+                    },
+                    onRemove = { kind -> save(slots.filterNot { s -> s.kind == kind }) },
+                    onClose = { sideCatalog = null },
+                )
+            }
             if (homeCatalog) {
                 eu.eurise.feature.launcher.home.HomeCatalog(
                     slots = settings.homeSlots,
@@ -837,6 +859,7 @@ private class WelcomeData(
     val travel: eu.eurise.feature.launcher.route.Travel?,
     val destination: String?,
     val destinations: List<eu.eurise.core.data.calendar.CalendarEvent>,
+    val travels: Map<String, eu.eurise.feature.launcher.route.Travel>,
     val messages: List<MessageItem>,
     val notificationsOn: Boolean,
     val nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,
@@ -895,14 +918,13 @@ private fun HomeBubble(
                 events = state.eventsToday,
                 calendarConnected = state.calendarConnected,
                 tasks = state.tasksDue,
-                travel = welcome.travel,
-                destinations = welcome.destinations,
-                hazeState = hazeState,
+                today = state.today,
                 compact = compact,
-                onCalendar = { actions.openEurise("calendar") },
+                travels = welcome.travels,
+                hazeState = hazeState,
+                actions = home.bubbles,
                 onConnectCalendar = actions.connectCalendar,
-                onTasks = { actions.openEurise("tasks") },
-                onRoute = welcome.onRoute,
+                onCalendar = { actions.openEurise("calendar") },
                 modifier = mod,
             )
             eu.eurise.feature.launcher.home.HomeKind.Comms -> CommsPill(
@@ -922,14 +944,14 @@ private fun HomeBubble(
             eu.eurise.feature.launcher.home.HomeKind.Health ->
                 HealthPill(welcome.healthState, welcome.healthToday, hazeState, welcome.onHealthGrant, welcome.onGadgetbridge, mod)
             eu.eurise.feature.launcher.home.HomeKind.Work ->
-                WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, welcome.onScan)
+                WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, documentShortcuts(state.apps, welcome, actions))
             eu.eurise.feature.launcher.home.HomeKind.Music ->
                 MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
             eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
-                state.tasksDue, state.today, compact, hazeState, home.bubbles, mod,
+                state.tasksDue, state.today, compact, welcome.travels, hazeState, home.bubbles, mod,
             )
             eu.eurise.feature.launcher.home.HomeKind.NextEvent -> eu.eurise.feature.launcher.home.NextEventPill(
-                state.upcoming, state.calendarConnected, welcome.travel, now, hazeState, home.bubbles, actions.connectCalendar, mod,
+                state.upcoming, state.calendarConnected, welcome.travels, now, hazeState, home.bubbles, actions.connectCalendar, mod,
             )
             eu.eurise.feature.launcher.home.HomeKind.Codes -> eu.eurise.feature.launcher.home.CodesPill(
                 home.notifications, welcome.notificationsOn, home.readCodes, now, compact, hazeState, home.bubbles, mod,
@@ -1142,50 +1164,58 @@ private fun PhoneHome(
     }
 }
 
+/** Una pagina laterale: le stesse bolle della home, con gli stessi gesti di modifica. */
 @Composable
-private fun SummaryColumn(
-    state: LauncherState,
-    messages: List<MessageItem>,
-    nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,
-    notificationsOn: Boolean,
-    setup: List<SetupStep>,
-    hazeState: HazeState,
-    actions: LauncherActions,
-    clearance: Dp,
-    modifier: Modifier,
-    weather: List<eu.eurise.feature.launcher.weather.DayForecast>?,
-    cards: List<PlacedCard>,
-    news: List<eu.eurise.feature.launcher.news.NewsItem>?,
-    quotes: List<eu.eurise.feature.launcher.markets.Quote>?,
-    onNewsSources: () -> Unit,
-    onSymbols: () -> Unit,
-    daily: DailyData,
-    calendarMonth: java.time.YearMonth,
-    monthEvents: List<eu.eurise.core.data.calendar.CalendarEvent>,
-    monthTasks: List<eu.eurise.core.data.model.Task>,
-    onCalendarMonth: (java.time.YearMonth) -> Unit,
+private fun SidePage(
+    slots: List<eu.eurise.feature.launcher.home.HomeSlot>,
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
-    onCardsChange: (List<PlacedCard>) -> Unit,
-    bubble: @Composable (eu.eurise.feature.launcher.home.HomeSlot, Modifier) -> Unit,
+    onChange: (List<eu.eurise.feature.launcher.home.HomeSlot>) -> Unit,
+    onCatalog: () -> Unit,
+    setup: List<SetupStep>,
+    hazeState: HazeState,
+    clearance: Dp,
+    modifier: Modifier,
+    content: @Composable (eu.eurise.feature.launcher.home.HomeSlot, Modifier) -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
-    SummaryBoard(
-        cards = cards,
-        editing = editing,
-        onEditingChange = onEditingChange,
-        onChange = onCardsChange,
-        hazeState = hazeState,
-        topPadding = 20.dp,
-        bottomPadding = if (editing) insets.calculateBottomPadding() + 16.dp else clearance + 8.dp,
-        modifier = modifier.padding(top = insets.calculateTopPadding()).clipToBounds(),
-        footer = { if (setup.isNotEmpty()) SetupCard(setup, hazeState) },
-    ) { card, cardModifier ->
-        val bubbleKind = card.kind.bubbleId?.let { eu.eurise.feature.launcher.home.HomeKind.byId(it) }
-        if (bubbleKind != null) bubble(eu.eurise.feature.launcher.home.HomeSlot(bubbleKind, 1f), cardModifier)
-        else SummaryCardBody(
-            card, cardModifier, state, messages, nowPlaying, notificationsOn, hazeState, actions, weather, news, quotes,
-            onNewsSources, onSymbols, daily, calendarMonth, monthEvents, monthTasks, onCalendarMonth,
+    Column(
+        modifier
+            .padding(top = insets.calculateTopPadding())
+            .clipToBounds()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(top = 20.dp, bottom = if (editing) insets.calculateBottomPadding() + 16.dp else clearance + 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        eu.eurise.feature.launcher.home.HomeBoard(slots, editing, onEditingChange, onChange, onCatalog, content)
+        if (!editing && setup.isNotEmpty()) SetupCard(setup, hazeState)
+    }
+}
+
+/** Le scorciatoie di Documenti, da sinistra: fotocamera, note, PDF, Office, Drive, scanner. Quelle senza app non compaiono. */
+@Composable
+private fun documentShortcuts(apps: List<AppEntry>, welcome: WelcomeData, actions: LauncherActions): List<eu.eurise.feature.launcher.home.DocShortcut> {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val camera = stringResource(R.string.quick_camera)
+    val notes = stringResource(R.string.doc_notes)
+    val pdf = stringResource(R.string.doc_pdf)
+    val office = stringResource(R.string.doc_office)
+    val drive = stringResource(R.string.doc_drive)
+    val scanner = stringResource(R.string.welcome_scan)
+    val icons = eu.eurise.core.designsystem.icon.EuriseIcons
+    return remember(apps, welcome.onScan) {
+        val shortcut = { icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, run: () -> Unit -> eu.eurise.feature.launcher.home.DocShortcut(icon, label, run) }
+        val launch = { entry: AppEntry -> { actions.openApp(entry) } }
+        listOfNotNull(
+            shortcut(icons.camera(2f), camera) {
+                runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            },
+            shortcut(icons.note(2f), notes) { actions.openEurise("notes") },
+            context.pdfApp(apps)?.let { shortcut(icons.pdf(2f), pdf, launch(it)) },
+            officeApp(apps)?.let { shortcut(icons.office(2f), office, launch(it)) },
+            driveApp(apps)?.let { shortcut(icons.cloud(2f), drive, launch(it)) },
+            shortcut(icons.scanner(2f), scanner, welcome.onScan),
         )
     }
 }

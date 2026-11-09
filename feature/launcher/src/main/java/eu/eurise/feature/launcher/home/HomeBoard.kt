@@ -148,6 +148,19 @@ fun homeRows(slots: List<HomeSlot>): List<List<Int>> {
     return rows
 }
 
+/** Vero se la bolla ha un'altezza scelta: allora scorre tutta insieme e gli elenchi interni non hanno una barra propria. */
+val LocalBubbleFixedHeight = compositionLocalOf { false }
+
+/** La larghezza della bolla: sotto certe misure (per esempio in formato quadrato) i comandi vanno a capo. */
+val LocalBubbleWidth = compositionLocalOf { 400.dp }
+
+/** Dalle schede della vecchia griglia delle pagine laterali alle bolle, con la stessa misura. */
+fun eu.eurise.feature.launcher.summary.PlacedCard.toHomeSlot(): HomeSlot? {
+    val target = kind.bubbleId?.let { HomeKind.byId(it) }
+        ?: if (kind == CardKind.Music) HomeKind.Music else HomeKind.entries.firstOrNull { it.card == kind }
+    return target?.let { HomeSlot(it, (cols / 24f).coerceIn(MinWidth, 1f), rows * 8, free) }
+}
+
 /** Le bolle riferiscono qui la loro altezza naturale, per allineare quelle affiancate. */
 val LocalPillMeasure = compositionLocalOf<((Int) -> Unit)?> { null }
 
@@ -232,6 +245,7 @@ fun HomeBoard(
                             ) {
                                 androidx.compose.runtime.CompositionLocalProvider(
                                     LocalPillMeasure provides { h -> if (naturals[slot.kind] != h) naturals[slot.kind] = h },
+                                    LocalBubbleFixedHeight provides (slot.height > 0 || (index in linked && chosen != null)),
                                 ) {
                                     content(
                                         slot,

@@ -239,6 +239,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Il sollevamento usa il sensore a basso consumo, se il telefono lo espone. Salute e Meteo non ancora tra le bolle.
 - Lessico: gli elementi della home si chiamano **bolle** (non pillole). Ogni bolla scorre con la barra a destra se il
   contenuto non entra (`Pill`, titolo fisso); con la tastiera aperta i preferiti sotto le bolle si nascondono.
+- Ramo `bolle`: tutte le pagine della Scrivania usano lo stesso modello (`HomeBoard`, `HomeSlot`; `rightSlots`, `leftSlots`,
+  convertite una volta dalle vecchie schede). I prossimi impegni e I tuoi appuntamenti con azioni per evento (`EventEntry`),
+  tempo per ogni luogo (`refreshTravels`, anche #luogo nelle attività). Musica unica, Lavoro diventa Documenti.
+  `SummaryBoard` e `CardCatalog` non sono più usati: da togliere.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

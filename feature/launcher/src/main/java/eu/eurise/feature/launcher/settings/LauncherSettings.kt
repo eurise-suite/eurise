@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.toArgb
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.DefaultBarCategories
+import eu.eurise.feature.launcher.home.toHomeSlot
 import eu.eurise.feature.launcher.apps.decodeAppOrder
 import eu.eurise.feature.launcher.apps.decodeCategories
 import eu.eurise.feature.launcher.apps.encodeAppOrder
@@ -105,6 +106,9 @@ data class LauncherSettings(
     /** Ordine delle app dentro ogni categoria, scelto trascinandole: id della categoria → chiavi delle app. */
     val appOrder: Map<String, List<String>> = emptyMap(),
     /** App scelte per i pulsanti accanto all'ora (chiave dell'app); nulle per quelle predefinite. */
+    /** Le bolle delle pagine a destra e a sinistra della home: stesso modello della home. */
+    val rightSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
+    val leftSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
     val quickGallery: String? = null,
     val quickCamera: String? = null,
     /** Cartelle di app, sulla home o nelle categorie. */
@@ -184,6 +188,8 @@ class SettingsStore(context: Context) {
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .putString("app_order", next.appOrder.encodeAppOrder())
+            .putString("right_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.rightSlots))
+            .putString("left_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.leftSlots))
             .putString("quick_gallery", next.quickGallery)
             .putString("quick_camera", next.quickCamera)
             .putString("folders", next.folders.encodeFolders())
@@ -196,6 +202,11 @@ class SettingsStore(context: Context) {
             .putBoolean("read_codes", next.readCodes)
             .apply()
     }
+
+    /** Le pagine laterali usano ora le bolle della home: la prima volta si convertono le schede già disposte. */
+    private fun sideSlots(key: String, cards: List<PlacedCard>): List<eu.eurise.feature.launcher.home.HomeSlot> =
+        if (prefs.contains(key)) eu.eurise.feature.launcher.home.decodeHome(prefs.getString(key, ""))
+        else cards.mapNotNull { it.toHomeSlot() }
 
     private fun load() = LauncherSettings(
         columns = prefs.getInt("grid_columns", 5),
@@ -214,6 +225,8 @@ class SettingsStore(context: Context) {
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
         appOrder = decodeAppOrder(prefs.getString("app_order", null)),
+        rightSlots = sideSlots("right_slots", decodeCards(prefs.getString("cards", null))),
+        leftSlots = sideSlots("left_slots", decodeCards(prefs.getString("left_cards", null), DefaultLeftCards)),
         quickGallery = prefs.getString("quick_gallery", null),
         quickCamera = prefs.getString("quick_camera", null),
         folders = decodeFolders(prefs.getString("folders", null)),
