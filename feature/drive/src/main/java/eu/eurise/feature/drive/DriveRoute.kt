@@ -629,6 +629,7 @@ private class PdfSource(file: File) : AutoCloseable {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
