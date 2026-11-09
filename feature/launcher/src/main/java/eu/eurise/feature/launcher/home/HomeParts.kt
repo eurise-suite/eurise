@@ -413,6 +413,19 @@ fun CategoryButton(category: BarCategory, active: Boolean, onClick: () -> Unit, 
     }
 }
 
+/** Il + unico della Scrivania: tondo satinato accanto alla barra. */
+@Composable
+fun PlusCircle(hazeState: HazeState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.quick_add)
+    Box(
+        modifier
+            .size(GlassDefaults.PillHeight)
+            .glass(hazeState, CircleShape, outline = false)
+            .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(EuriseIcons.plus(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp)) }
+}
+
 @Composable
 fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier = Modifier, web: Boolean = false) {
     val label = stringResource(if (web) R.string.search_web else R.string.search)

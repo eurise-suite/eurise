@@ -306,3 +306,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
   CalDAV delle Attività con Murena; in fondo Famiglia di Password.
 
+## Integrazioni: scheda Persona e un solo + (ramo `galleria-completa`, 9 novembre, da provare sul telefono)
+- Sulla tela, pagina Integrazioni, esistono anteprime solo per Collegamenti, Persona e un solo +. Tastiera, riunioni, viaggi, modalità e cestino unico NON hanno ancora anteprime: per CLAUDE.md prima si disegnano.
+- Scheda Persona: modulo `feature/people` (`PersonRoute`, `PersonSource`), rotta `person/{key}`, richiesta `person:<chiave>` dalla Scrivania. Si apre dai collegamenti e dai contatti della Scrivania. Chiama, Messaggio, Email, Invita (apre il + con la persona già citata), compleanno (Date importanti, poi Rubrica), prossimi impegni con lei (invitata per email), Collegati.
+  Non ancora: foto insieme (servono riconoscimento dei volti e permesso di firma con la Galleria), ultimo messaggio, file condivisi (File non è collegabile).
+- Un solo +: `core/links/QuickCaptureSheet`, lettore `core/data/model/Capture` (con test). Tondo + accanto alla barra della Scrivania (telefono) e + in Oggi; gli altri + restano contestuali. "@Anna" collega ciò che nasce al contatto.
+  Differenze dall'anteprima, volute: la persona viene collegata ma non aggiunta agli invitati (su un calendario sincronizzato partirebbe un invito vero); niente microfono finché non c'è la Tastiera di Eurise (la dettatura di sistema manderebbe la voce a un servizio non elencato nel centro privacy).

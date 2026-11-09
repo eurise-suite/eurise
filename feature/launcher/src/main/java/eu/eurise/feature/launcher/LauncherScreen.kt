@@ -350,6 +350,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var replyTo by remember { mutableStateOf<MessageItem?>(null) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
+        var quickCapture by remember { mutableStateOf(false) }
         var searchPerson by remember { mutableStateOf<eu.eurise.feature.launcher.contacts.Person?>(null) }
         var signPicker by remember { mutableStateOf(false) }
         // Cartella aperta (id) e scelta delle app per crearne una o aggiungerne.
@@ -649,11 +650,22 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
                     )
                 } else {
-                    CategoryBar(
-                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
-                        hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
-                    )
+                    Row(barModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CategoryBar(
+                            categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
+                            hazeState = hazeState, modifier = Modifier.weight(1f), onEdit = { categoryEditor = true },
+                        )
+                        eu.eurise.feature.launcher.home.PlusCircle(hazeState, onClick = { quickCapture = true })
+                    }
                 }
+            }
+
+            if (quickCapture) {
+                eu.eurise.core.links.QuickCaptureSheet(
+                    data = data,
+                    onDismiss = { quickCapture = false },
+                    onScan = { quickCapture = false; actions.openEurise("scanner") },
+                )
             }
 
             if (searching) {
@@ -777,7 +789,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     },
                     loadActions = { viewModel.contacts.actions(it) },
                     onAction = { peopleSheet = null; searching = false; viewModel.contacts.start(it) },
-                    onOpenContact = { peopleSheet = null; viewModel.contacts.openContact(it) },
+                    onOpenContact = { person ->
+                        peopleSheet = null
+                        scope.launch {
+                            val key = viewModel.contacts.lookupKey(person)
+                            if (key != null) actions.openEurise("person:$key") else viewModel.contacts.openContact(person)
+                        }
+                    },
                     onClose = { peopleSheet = null },
                 )
             }

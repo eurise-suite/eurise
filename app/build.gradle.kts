@@ -106,6 +106,7 @@ dependencies {
     implementation(project(":feature:drive"))
     implementation(project(":feature:scanner"))
     implementation(project(":feature:privacy"))
+    implementation(project(":feature:people"))
     implementation(project(":core:suite"))
 
     implementation(libs.androidx.core.ktx)

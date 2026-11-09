@@ -55,7 +55,7 @@ import eu.eurise.core.links.LinkedSection
 
 /** Le sezioni dell'hub nella barra in basso (al massimo quattro, come da design system). */
 private enum class Section(val route: String, @StringRes val label: Int, val icon: (Float) -> ImageVector, @StringRes val action: Int?) {
-    Today("today", R.string.section_today, { EuriseIcons.today(it) }, null),
+    Today("today", R.string.section_today, { EuriseIcons.today(it) }, R.string.action_quick_add),
     Calendar("calendar", R.string.section_calendar, { EuriseIcons.calendar(it) }, R.string.action_new_event),
     Clock("clock", R.string.section_clock, { EuriseIcons.clock(it) }, R.string.action_new_clock),
     Notes("notes", R.string.section_notes, { EuriseIcons.note(it) }, R.string.action_new_note),
@@ -67,6 +67,7 @@ data class HubRequest(val section: String, val id: Int)
 
 private const val NOTE_ROUTE = "note?id={id}&nb={nb}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
+private const val PERSON_ROUTE = "person/{key}"
 private const val NO_ID = -1L
 
 private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
@@ -74,6 +75,9 @@ private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
 
 private fun NavHostController.openEvent(id: Long?, begin: Long?, start: Long?) =
     navigate("event?id=${id ?: NO_ID}&begin=${begin ?: NO_ID}&start=${start ?: NO_ID}")
+
+private fun NavHostController.openPerson(lookupKey: String) =
+    navigate("person/${android.net.Uri.encode(lookupKey)}")
 
 /** Torna indietro solo se la schermata in cima è ancora [route]: evita doppi ritorni con tocchi ripetuti. */
 private fun NavHostController.closeIfOn(route: String) {
@@ -97,6 +101,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
     var notesFilter by remember { androidx.compose.runtime.mutableStateOf<NotesFilterRequest?>(null) }
     var calendarDay by remember { androidx.compose.runtime.mutableStateOf<java.time.LocalDate?>(null) }
     var taskToOpen by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
+    var capture by remember { androidx.compose.runtime.mutableStateOf<eu.eurise.core.links.CaptureStart?>(null) }
 
     // Una cosa collegata si apre sopra a quella da cui si parte: tornando indietro si ritrova dov'era.
     val openLinked: (LinkItem) -> Unit = { item ->
@@ -108,7 +113,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 if (current != Section.Tasks) navController.navigate(Section.Tasks.route)
             }
             LinkRef.Kind.Event -> id?.let { navController.openEvent(it, item.beginMillis, null) }
-            LinkRef.Kind.Contact -> Unit
+            LinkRef.Kind.Contact -> navController.openPerson(item.ref.key)
         }
     }
     val linked: @Composable (LinkRef, String) -> Unit = { ref, title ->
@@ -142,6 +147,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "new_event" -> navController.openEvent(null, null, null)
             section == "new_note" -> navController.openNote(null)
             section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
+            section.startsWith("person:") -> navController.openPerson(section.removePrefix("person:"))
             section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
         }
     }
@@ -208,6 +214,15 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 }
                 composable("privacy") {
                     eu.eurise.feature.privacy.PrivacyRoute(onBack = { navController.closeIfOn("privacy") })
+                }
+                composable(PERSON_ROUTE, arguments = listOf(navArgument("key") { type = NavType.StringType })) { entry ->
+                    eu.eurise.feature.people.PersonRoute(
+                        lookupKey = entry.arguments?.getString("key").orEmpty(),
+                        data = data,
+                        onBack = { navController.closeIfOn(PERSON_ROUTE) },
+                        onOpen = openLinked,
+                        onInvite = { name, contact -> capture = eu.eurise.core.links.CaptureStart.invite(name, contact) },
+                    )
                 }
                 composable("drive") {
                     eu.eurise.feature.drive.DriveRoute(
@@ -288,13 +303,22 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 hazeState = hazeState,
                 actionLabel = current.action?.takeUnless { current == Section.Clock && clockTab == 2 }?.let { stringResource(it) },
                 onAction = when (current) {
-                    Section.Today -> null
+                    Section.Today -> ({ capture = eu.eurise.core.links.CaptureStart() })
                     Section.Calendar -> ({ navController.openEvent(null, null, null) })
                     Section.Clock -> if (clockTab == 2) null else ({ clockAddRequests++ })
                     Section.Notes -> ({ navController.openNote(null) })
                     Section.Tasks -> ({ newTaskRequests++ })
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+
+        capture?.let { start ->
+            eu.eurise.core.links.QuickCaptureSheet(
+                data = data,
+                start = start,
+                onDismiss = { capture = null },
+                onScan = { capture = null; navController.navigate("scanner") { launchSingleTop = true } },
             )
         }
     }

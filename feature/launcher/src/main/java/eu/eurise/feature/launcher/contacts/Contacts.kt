@@ -162,6 +162,17 @@ class ContactsRepository(private val context: Context) {
         runCatching { context.startActivity(action.intent) }
     }
 
+    /** Chiave stabile del contatto, per aprirne la scheda Persona. */
+    suspend fun lookupKey(person: Person): String? = withContext(Dispatchers.IO) {
+        val id = person.contactId ?: return@withContext null
+        runCatching {
+            context.contentResolver.query(
+                ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id),
+                arrayOf(ContactsContract.Contacts.LOOKUP_KEY), null, null, null,
+            )?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull()
+    }
+
     fun openContact(person: Person) {
         val id = person.contactId ?: return
         runCatching {

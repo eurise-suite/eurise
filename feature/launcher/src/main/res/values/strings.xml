@@ -502,4 +502,5 @@
     <string name="bubble_no_voice">Nessun riconoscimento vocale installato sul telefono</string>
     <string name="bubble_saved_note">Salvato come nota</string>
     <string name="bubble_saved_task">Aggiunto alle attività: %1$s</string>
+    <string name="quick_add">Aggiungi</string>
 </resources>

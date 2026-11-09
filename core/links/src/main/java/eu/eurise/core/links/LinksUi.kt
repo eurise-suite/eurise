@@ -79,7 +79,7 @@ private val TimeFormat = DateTimeFormatter.ofPattern("H:mm")
  * più il pulsante per collegarne altre. I collegamenti a cose che non esistono più si tolgono da soli.
  *
  * @param title titolo di [from], mostrato nel foglio per collegare.
- * @param onOpen apre una cosa collegata; i contatti si aprono già qui, nella scheda di sistema.
+ * @param onOpen apre una cosa collegata, contatti compresi (nella scheda Persona).
  */
 @Composable
 fun LinkedSection(
@@ -133,9 +133,7 @@ fun LinkedSection(
                     if (i > 0) CardDivider()
                     LinkRow(
                         item = item,
-                        onClick = {
-                            if (item.ref.kind == LinkRef.Kind.Contact) resolver.openContact(item.ref.key) else onOpen(item)
-                        },
+                        onClick = { onOpen(item) },
                         onRemove = if (link.removable) ({ scope.launch { data.links.unlink(from, item.ref) } }) else null,
                     )
                 }
@@ -163,7 +161,7 @@ fun LinkedSection(
 }
 
 @Composable
-private fun LinkRow(item: LinkItem, onClick: () -> Unit, onRemove: (() -> Unit)?) {
+fun LinkRow(item: LinkItem, onClick: () -> Unit, onRemove: (() -> Unit)? = null) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable(onClick = onClick).padding(end = 4.dp),

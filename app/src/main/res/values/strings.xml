@@ -11,4 +11,5 @@
     <string name="action_new_event">Nuovo appuntamento</string>
     <string name="action_new_note">Nuova nota</string>
     <string name="action_new_task">Nuova attività</string>
+    <string name="action_quick_add">Aggiungi</string>
 </resources>

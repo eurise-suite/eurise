@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_back">Indietro</string>
+    <string name="person_call">Chiama</string>
+    <string name="person_message">Messaggio</string>
+    <string name="person_email">Email</string>
+    <string name="person_invite">Invita</string>
+    <string name="person_birthday">Compie gli anni il %1$s</string>
+    <string name="person_upcoming">Prossimi impegni insieme</string>
+    <string name="person_open_contacts">Apri in Rubrica</string>
+    <string name="person_missing">Contatto non trovato</string>
+    <string name="person_no_permission">Per mostrare questa scheda serve il permesso Contatti</string>
+    <string name="person_grant">Permetti</string>
+</resources>
