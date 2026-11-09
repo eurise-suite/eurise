@@ -44,19 +44,17 @@ private suspend fun loadThumb(context: Context, item: MediaItem): ImageBitmap? =
 
 private suspend fun loadFull(context: Context, item: MediaItem): ImageBitmap? = withContext(Dispatchers.IO) {
     runCatching {
-        if (item.cloudOnly) {
-            if (item.isVideo) BitmapFactory.decodeFile(GalleryStore.get(context).thumbFile(-item.id).path)
-            else ImageDecoder.decodeBitmap(ImageDecoder.createSource(cloudFile(context, item)!!)) { decoder, info, _ ->
+        val bitmap: android.graphics.Bitmap = when {
+            item.cloudOnly && item.isVideo -> BitmapFactory.decodeFile(GalleryStore.get(context).thumbFile(-item.id).path)
+            item.cloudOnly -> ImageDecoder.decodeBitmap(ImageDecoder.createSource(cloudFile(context, item)!!)) { decoder, info, _ ->
                 decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / FULL_PX))
             }
-        } else if (item.isVideo) {
-            context.contentResolver.loadThumbnail(Uri.parse(item.uri), Size(FULL_PX, FULL_PX), null)
-        } else {
-            val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))
-            ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+            item.isVideo -> context.contentResolver.loadThumbnail(Uri.parse(item.uri), Size(FULL_PX, FULL_PX), null)
+            else -> ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))) { decoder, info, _ ->
                 decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / FULL_PX))
             }
-        }.asImageBitmap()
+        }
+        bitmap.asImageBitmap()
     }.getOrNull()
 }
 
