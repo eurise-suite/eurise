@@ -239,7 +239,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Il sollevamento usa il sensore a basso consumo, se il telefono lo espone. Salute e Meteo non ancora tra le bolle.
 - Lessico: gli elementi della home si chiamano **bolle** (non pillole). Ogni bolla scorre con la barra a destra se il
   contenuto non entra (`Pill`, titolo fisso); con la tastiera aperta i preferiti sotto le bolle si nascondono.
-- Ramo `password` (da `main`, da provare): modulo `:password`, APK separato `eu.eurise.password`, artefatto
+- Password (unita a `main` il 9 novembre, passkey provate sul telefono su webauthn.io): modulo `:password`, APK separato `eu.eurise.password`, artefatto
   `eurise-password-debug-N`, Android 8+. Decisione del proprietario (9 novembre): file KeePass `.kdbx` sul telefono,
   sincronizzato su Murena via WebDAV (`Eurise/Password/eurise.kdbx`), interruttore spento di base con spiegazione;
   kDrive si aggiunge con Drive, perché il piano my kSuite+ non ha WebDAV e serve l'API con token. Sulla tela la
@@ -258,7 +258,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Controllo violazioni (Have I Been Pwned, interruttore spento di base), salvataggio dei login digitati, riquadri Blocca e
   Genera. Mancano: kMail tra gli alias, Famiglia. Passkey in `passkey/` (Android 14+, formato KPEX di KeePassXC, browser approvati dalla persona): la catena e' stata provata sul telefono con KeePassDX su webauthn.io il 9 novembre. Poi Drive e Scanner (tele approvate).
   Il centro privacy dovrà elencare Murena per questa app.
-- Ramo `documenti` (da `main`): File e Scanner dentro l'APK principale (decisione del 9 novembre, come Orologio: stessa
+- File, Scanner e PDF (uniti a `main` il 9 novembre): File e Scanner dentro l'APK principale (decisione del 9 novembre, come Orologio: stessa
   integrazione, peso piccolo; icone `eurise:drive` e `eurise:scanner`, senza voce nella barra). Moduli `feature/drive`
   (telefono + account WebDAV, Recenti, Offline, Cestino telefono 30 giorni, lettore PDF di sistema con zoom) e
   `feature/scanner` (CameraX, bordi e scatto automatico in `EdgeDetector`, raddrizzamento, filtri, PDF su telefono o
@@ -266,8 +266,12 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   ricerca da Android 15. Office resta APK separato. Mancano: lettura del testo (OCR, serve scelta sul peso), quindi nome
   automatico, scadenze e ricerca nei PDF; cartelle cifrate; kDrive via API. Cartelle allineate in `FolderSync` (decisioni in `SyncPlanner`,
   con freno se sparisce troppo; automatico ogni 6 ore solo in Wi-Fi). Peso della versione ufficiale: da 2,7 a 3,5 MB, quasi tutto CameraX. MANAGE_EXTERNAL_STORAGE va rivisto se un giorno si pubblica su Play.
-- Prossimi passi, in ordine: resto della Galleria,
-  Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
+- Ultimo APK: 161 da `main` (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
+  `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
+- Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
+  posizione, cartella protetta, editor, pulizia); residui di Password (Famiglia, alias kMail) e di File (cartelle cifrate, kDrive via API);
+  lettura del testo per Scanner e PDF come APK aggiuntivo (motore nativo troppo pesante per il principale); Browser su GeckoView con
+  prototipo minimo per passkey e compilazione, Matrix per ultima; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
   CalDAV delle Attività con Murena.
 
