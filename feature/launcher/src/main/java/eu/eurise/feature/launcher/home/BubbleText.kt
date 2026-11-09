@@ -44,6 +44,10 @@ object BubbleText {
     fun meetingLink(text: String): String? = MeetingLink.find(text)?.value?.trimEnd('.', ',', ')', ';')
 
     /** App dell'orologio di sistema e delle più diffuse alternative libere. */
+    /** App di posta certificata: Aruba, Legalmail e le altre che hanno "pec" come parola del nome del pacchetto. */
+    fun isPec(packageName: String): Boolean =
+        packageName.lowercase().split('.', '_').any { it == "pec" || it == "legalmail" || it == "pecmail" }
+
     fun isClock(packageName: String): Boolean =
         "deskclock" in packageName || packageName.endsWith(".clock") || ".clock." in packageName || "alarmclock" in packageName
 }

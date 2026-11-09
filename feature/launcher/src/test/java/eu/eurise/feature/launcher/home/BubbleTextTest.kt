@@ -46,4 +46,11 @@ class BubbleTextTest {
         assertTrue(BubbleText.isClock("org.fossify.clock"))
         assertFalse(BubbleText.isClock("com.whatsapp"))
     }
+
+    @org.junit.Test
+    fun pecAppsAreRecognised() {
+        org.junit.Assert.assertTrue(BubbleText.isPec("it.aruba.pec.mobile"))
+        org.junit.Assert.assertTrue(BubbleText.isPec("it.infocert.mobile.legalmail"))
+        org.junit.Assert.assertFalse(BubbleText.isPec("com.example.spectrum"))
+    }
 }

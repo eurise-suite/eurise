@@ -197,7 +197,7 @@ object NotificationStore {
         ) return true
         if (notification.extras.containsKey(Notification.EXTRA_MESSAGES)) return true
         if (notification.extras.getString(Notification.EXTRA_TEMPLATE)?.endsWith("MessagingStyle") == true) return true
-        return CommunicationPackages.any { packageName.startsWith(it) }
+        return CommunicationPackages.any { packageName.startsWith(it) } || eu.eurise.feature.launcher.home.BubbleText.isPec(packageName)
     }
 
     private val CommunicationPackages = listOf(
@@ -275,7 +275,8 @@ object NotificationStore {
             cat == Notification.CATEGORY_CALL || cat == Notification.CATEGORY_MISSED_CALL ||
                 listOf("dialer", ".phone", "telecom", "contacts").any { it in packageName } -> CommsKind.Call
             cat == Notification.CATEGORY_EMAIL ||
-                listOf("mail", "k9", "thunderbird", "faircode.email", "tutanota", "tutao", "outlook", "com.google.android.gm").any { it in packageName } -> CommsKind.Email
+                listOf("mail", "k9", "thunderbird", "faircode.email", "tutanota", "tutao", "outlook", "com.google.android.gm").any { it in packageName } ||
+                eu.eurise.feature.launcher.home.BubbleText.isPec(packageName) -> CommsKind.Email
             else -> CommsKind.Chat
         }
     }
