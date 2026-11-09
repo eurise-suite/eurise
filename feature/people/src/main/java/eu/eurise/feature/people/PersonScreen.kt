@@ -142,7 +142,7 @@ fun PersonRoute(
                 }
                 if (upcoming.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SectionLabel(stringResource(R.string.person_upcoming), Modifier.padding(horizontal = 20.dp))
+                        SectionLabel(stringResource(R.string.person_upcoming))
                         GroupCard {
                             upcoming.forEachIndexed { i, item ->
                                 if (i > 0) CardDivider()
