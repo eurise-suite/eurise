@@ -276,8 +276,11 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   il cloud scelto e Nominatim per questa app.
 - Attenzione: il 9 novembre `main` (6a16e07) NON conteneva i sei commit del ramo `bolle` (lente, ricerca universale, Musica, bolle): stavano solo in `integrazione`.
   Per questo l'APK 165, nato da `main`, risultava più vecchio. `galleria-completa` ora include `integrazione`; prima di un ramo nuovo controllare che `main` abbia tutto.
-- Residui ancora da fare: Password (Famiglia, alias kMail), File (cartelle cifrate, kDrive via API).
-- Ultimo APK: 161 da `main` (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
+- Cartelle cifrate di File (ramo `galleria-completa`, APK 169, da provare): formato Cryptomator 8 in `core/cloud/crypto/Cryptomator.kt` (senza librerie, vettori RFC nei test, la compilazione
+  fa aprire una cartella a pycryptomator), `feature/drive/VaultFs.kt`, solo su account cloud; si creano col lucchetto in una cartella cloud, si richiudono uscendo da File. Controllata solo la lettura da parte di un altro
+  programma: quella di una cartella creata da Cryptomator non ha ancora un test. Alias kMail in Password (`AliasStore`, token + numero del servizio + casella): endpoint presi da fonti non ufficiali, mai provati; servono diritti di amministratore.
+- Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive via API: prima verificare con un token che l'API risponda con my kSuite+).
+- Ultimo APK: 169 dal ramo `galleria-completa`, che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
 - Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
   posizione, cartella protetta, editor, pulizia); residui di Password (Famiglia, alias kMail) e di File (cartelle cifrate, kDrive via API);
