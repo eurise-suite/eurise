@@ -18,7 +18,7 @@
     <string name="scan_cancel">Annulla</string>
     <string name="scan_save">Salva PDF</string>
     <string name="scan_review_title">%d pagine</string>
-    <string name="scan_review_hint">Tocca una pagina per toglierla.</string>
+    <string name="scan_review_hint">Tocca una pagina per ritagliarla o toglierla.</string>
     <string name="scan_add_page">Aggiungi una pagina</string>
     <string name="scan_remove">Pagina %d, tocca per togliere</string>
     <string name="scan_name">Nome</string>
@@ -29,4 +29,17 @@
     <string name="scan_failed">Salvataggio non riuscito.</string>
     <string name="scan_local_note">Le pagine vengono elaborate sul telefono: nessuna immagine esce per essere analizzata.</string>
     <string name="scan_default_name">Scansione</string>
+    <string name="scan_mode_qr">QR</string>
+    <string name="scan_status_qr">Inquadra il codice QR</string>
+    <string name="scan_qr_found">Codice trovato</string>
+    <string name="scan_qr_open">Apri</string>
+    <string name="scan_qr_copy">Copia</string>
+    <string name="scan_qr_close">Chiudi</string>
+    <string name="scan_qr_no_app">Nessuna app sa aprirlo.</string>
+    <string name="scan_qr_2fa">Codice 2FA: si apre in Password, dove controlli e salvi.</string>
+    <string name="scan_page_title">Pagina %d</string>
+    <string name="scan_crop">Ritaglia</string>
+    <string name="scan_remove_page">Togli</string>
+    <string name="scan_crop_hint">Trascina gli angoli sui bordi del foglio.</string>
+    <string name="scan_crop_done">Applica</string>
 </resources>

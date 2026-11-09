@@ -19,7 +19,7 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-enum class ScanMode { Document, BlackWhite, Photo }
+enum class ScanMode { Document, BlackWhite, Photo, Qr }
 
 /** Raddrizza, migliora e mette le pagine in PDF, usando solo la grafica di sistema. */
 object PageProcessor {
@@ -45,7 +45,7 @@ object PageProcessor {
     }
 
     fun applyMode(page: Bitmap, mode: ScanMode): Bitmap = when (mode) {
-        ScanMode.Photo -> page
+        ScanMode.Photo, ScanMode.Qr -> page
         ScanMode.Document -> enhance(page)
         ScanMode.BlackWhite -> blackWhite(page)
     }

@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.horizontalScroll
@@ -75,7 +76,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -94,6 +97,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.cloud.DavException
+import eu.eurise.core.cloud.DavShare
+import eu.eurise.core.cloud.DavVersion
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EmptyState
@@ -110,7 +115,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
-private enum class Tab { Files, Offline, Trash }
+private enum class Tab { Files, Offline, Shared, Trash }
 
 /** Una cartella aperta, oppure null quando si è sulla panoramica. */
 private data class Folder(val place: Place, val path: String)
@@ -198,6 +203,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                     onCreate = { f, name -> action { data.mkdir(f.place, DriveData.join(f.path, name)) } },
                 )
                 Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
+                Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
                 Tab.Trash -> TrashTab(data, refresh, onRestore = { action { data.restore(it) } }, onDelete = { action { data.deleteForever(it) } })
             }
         }
@@ -207,7 +213,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                 Text(stringResource(R.string.drive_downloading), fontSize = 14.sp)
             }
         }
-        val titles = listOf(R.string.drive_title to { s: Float -> EuriseIcons.folder(s) }, R.string.drive_offline to { s: Float -> EuriseIcons.download(s) }, R.string.drive_trash to { s: Float -> EuriseIcons.trash(s) })
+        val titles = listOf(R.string.drive_title to { s: Float -> EuriseIcons.folder(s) }, R.string.drive_offline to { s: Float -> EuriseIcons.download(s) }, R.string.drive_shared to { s: Float -> EuriseIcons.link(s) }, R.string.drive_trash to { s: Float -> EuriseIcons.trash(s) })
         EuriseDock(
             items = titles.map { (label, icon) -> DockItem(stringResource(label), icon) },
             selected = tab.ordinal,
@@ -232,6 +238,9 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
             onRename = { name -> selected = null; action { data.rename(item, name) } },
             onDelete = { selected = null; action { data.delete(item) } },
             onOffline = { on -> action { data.setOffline(item, on) } },
+            onMove = { to -> selected = null; action { data.move(item, to) } },
+            onFail = ::fail,
+            onRefresh = { refresh++ },
         )
     }
     if (askAccess) {
@@ -551,7 +560,12 @@ private fun SheetAction(icon: ImageVector, label: String, modifier: Modifier, on
 private fun ItemSheet(
     data: DriveData, item: DriveItem, onClose: () -> Unit, onOpen: () -> Unit, onShare: () -> Unit,
     onRename: (String) -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
+    onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit,
 ) {
+    var linking by remember { mutableStateOf(false) }
+    var moving by remember { mutableStateOf(false) }
+    var showVersions by remember { mutableStateOf(false) }
+    val cloudExtras = remember(item) { data.supportsLinks(item.place) }
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     var renaming by remember { mutableStateOf(false) }
@@ -575,6 +589,13 @@ private fun ItemSheet(
                 SheetAction(EuriseIcons.pencil(), stringResource(R.string.drive_rename), Modifier.weight(1f)) { renaming = true }
                 SheetAction(EuriseIcons.trash(), stringResource(R.string.drive_delete), Modifier.weight(1f)) { deleting = true }
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SheetAction(EuriseIcons.folder(), stringResource(R.string.drive_move), Modifier.weight(1f)) { moving = true }
+                if (cloudExtras) {
+                    SheetAction(EuriseIcons.link(), stringResource(R.string.drive_link), Modifier.weight(1f)) { linking = true }
+                    if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
+                }
+            }
             if (!item.folder && item.place.account != null) {
                 Row(Modifier.clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -586,6 +607,9 @@ private fun ItemSheet(
             }
         }
     }
+    if (linking) LinkDialog(data, item, onClose = { linking = false; onRefresh() }, onFail = onFail)
+    if (moving) MoveDialog(data, item, onClose = { moving = false }, onMove = onMove)
+    if (showVersions) VersionsDialog(data, item, onClose = { showVersions = false; onRefresh() }, onFail = onFail)
     if (renaming) NameDialog(stringResource(R.string.drive_rename), item.name, stringResource(R.string.drive_save), { renaming = false }, onRename)
     if (deleting) {
         AlertDialog(
@@ -595,6 +619,132 @@ private fun ItemSheet(
             confirmButton = { TextButton(onClick = { deleting = false; onDelete() }) { Text(stringResource(R.string.drive_delete)) } },
             dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.drive_cancel)) } },
         )
+    }
+}
+
+private fun copyText(context: Context, text: String) {
+    val clip = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    clip.setPrimaryClip(android.content.ClipData.newPlainText("Link", text))
+    Toast.makeText(context, R.string.drive_link_copied, Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+private fun LinkDialog(data: DriveData, item: DriveItem, onClose: () -> Unit, onFail: (Exception) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var password by remember { mutableStateOf("") }
+    var days by remember { mutableStateOf<Int?>(30) }
+    var working by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.drive_link_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.drive_link_privacy), fontSize = 13.sp)
+                OutlinedTextField(password, { password = it }, singleLine = true, label = { Text(stringResource(R.string.drive_link_password)) })
+                Text(stringResource(R.string.drive_link_expiry), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterPill(stringResource(R.string.drive_link_days, 7), dot = null, selected = days == 7) { days = 7 }
+                    FilterPill(stringResource(R.string.drive_link_days, 30), dot = null, selected = days == 30) { days = 30 }
+                    FilterPill(stringResource(R.string.drive_link_never), dot = null, selected = days == null) { days = null }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !working, onClick = {
+                working = true
+                scope.launch {
+                    try {
+                        val expires = days?.let { java.time.LocalDate.now().plusDays(it.toLong()).toString() }
+                        copyText(context, data.createLink(item, password.ifBlank { null }, expires))
+                        onClose()
+                    } catch (e: Exception) {
+                        onFail(e)
+                    } finally {
+                        working = false
+                    }
+                }
+            }) { Text(stringResource(R.string.drive_link_create)) }
+        },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
+}
+
+@Composable
+private fun MoveDialog(data: DriveData, item: DriveItem, onClose: () -> Unit, onMove: (String) -> Unit) {
+    var path by remember { mutableStateOf(item.path.substringBeforeLast('/', "")) }
+    val folders by produceState<List<DriveItem>>(emptyList(), path) {
+        value = runCatching { data.list(item.place, path).filter { it.folder && it.path != item.path }.sortedBy { it.name.lowercase() } }.getOrDefault(emptyList())
+    }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text("/" + path) },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                if (path.isNotEmpty()) item(key = "up") { FolderRow(stringResource(R.string.drive_move_up), item.place.label) { path = path.substringBeforeLast('/', "") } }
+                items(folders, key = { it.key }) { f -> FolderRow(f.name, f.place.label) { path = f.path } }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onClose(); onMove(path) }) { Text(stringResource(R.string.drive_move_here)) } },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
+}
+
+@Composable
+private fun VersionsDialog(data: DriveData, item: DriveItem, onClose: () -> Unit, onFail: (Exception) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val versions by produceState<List<DavVersion>?>(null) {
+        value = try { data.versions(item) } catch (e: Exception) { onFail(e); emptyList() }
+    }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.drive_versions)) },
+        text = {
+            val list = versions
+            when {
+                list == null -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                list.isEmpty() -> Text(stringResource(R.string.drive_versions_none))
+                else -> LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                    items(list, key = { it.href }) { v ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(v.modified, fontSize = 13.sp)
+                                v.size?.let { Text(Formatter.formatShortFileSize(context, it), fontSize = 12.sp) }
+                            }
+                            TextButton(onClick = {
+                                scope.launch {
+                                    try { data.restoreVersion(item, v); onClose() } catch (e: Exception) { onFail(e) }
+                                }
+                            }) { Text(stringResource(R.string.drive_versions_restore)) }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
+}
+
+@Composable
+private fun SharedTab(data: DriveData, refresh: Int, onRevoke: (Place, DavShare) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val links by produceState(emptyList<Pair<Place, DavShare>>(), refresh) { value = data.links() }
+    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(top = 12.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item(key = "t") { Text(stringResource(R.string.drive_shared), fontSize = 30.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp)) }
+        if (links.isEmpty()) item(key = "e") { EmptyState(EuriseIcons.link(), stringResource(R.string.drive_empty_shared), stringResource(R.string.drive_empty_shared_msg)) }
+        items(links, key = { it.second.id }) { (place, share) ->
+            Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp)) {
+                Text(share.path.substringAfterLast('/'), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val detail = listOfNotNull(place.label, share.expires?.let { stringResource(R.string.drive_link_until, it.take(10)) }).joinToString(" · ")
+                Text(detail, fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                Row {
+                    TextButton(onClick = { copyText(context, share.url) }) { Text(stringResource(R.string.drive_copy)) }
+                    TextButton(onClick = { onRevoke(place, share) }) { Text(stringResource(R.string.drive_link_revoke), color = scheme.error) }
+                }
+            }
+        }
     }
 }
 
@@ -622,10 +772,149 @@ private class PdfSource(file: File) : AutoCloseable {
         }
     }
 
+    /** Pagine in cui compare [query] e quante volte. Il motore di sistema legge il testo solo da Android 15. */
+    @androidx.annotation.RequiresApi(35)
+    suspend fun search(query: String): List<Pair<Int, Int>> = mutex.withLock {
+        withContext(Dispatchers.Default) {
+            (0 until pageCount).mapNotNull { i ->
+                val hits = renderer.openPage(i).use { it.searchText(query).size }
+                if (hits > 0) i to hits else null
+            }
+        }
+    }
+
+    /** Ricrea il PDF pagina per pagina come immagini, disegnando sopra i tratti. */
+    suspend fun exportWithInk(ink: Map<Int, List<List<Offset>>>, target: File, density: Float) = mutex.withLock {
+        withContext(Dispatchers.Default) {
+            val document = android.graphics.pdf.PdfDocument()
+            try {
+                for (i in 0 until pageCount) {
+                    renderer.openPage(i).use { source ->
+                        val out = document.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(source.width, source.height, i + 1).create())
+                        val width = source.width * 2
+                        val height = source.height * 2
+                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
+                            it.eraseColor(android.graphics.Color.WHITE)
+                            source.render(it, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+                        }
+                        out.canvas.drawBitmap(bitmap, null, android.graphics.Rect(0, 0, source.width, source.height), android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+                        bitmap.recycle()
+                        val paint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.rgb(20, 32, 90)
+                            style = android.graphics.Paint.Style.STROKE
+                            strokeWidth = 1.6f
+                            strokeCap = android.graphics.Paint.Cap.ROUND
+                            strokeJoin = android.graphics.Paint.Join.ROUND
+                            isAntiAlias = true
+                        }
+                        ink[i].orEmpty().forEach { stroke ->
+                            val path = android.graphics.Path()
+                            stroke.forEachIndexed { n, p ->
+                                val x = p.x * source.width
+                                val y = p.y * source.height
+                                if (n == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                            }
+                            out.canvas.drawPath(path, paint)
+                        }
+                        document.finishPage(out)
+                    }
+                }
+                target.outputStream().use { document.writeTo(it) }
+            } finally {
+                document.close()
+            }
+        }
+    }
+
     override fun close() {
         closed = true
         renderer.close()
         descriptor.close()
+    }
+}
+
+private fun savePdfCopy(context: Context, file: File, name: String): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val values = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/Eurise/Firmati")
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(android.provider.MediaStore.Files.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return false
+        resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: return false
+        return true
+    }
+    @Suppress("DEPRECATION")
+    val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Eurise/Firmati").apply { mkdirs() }
+    file.copyTo(File(folder, name), overwrite = false)
+    return true
+}
+
+/** Si disegna con il dito su una pagina alla volta; il salvataggio crea una copia e l'originale resta intatto. */
+@Composable
+private fun PdfAnnotator(source: PdfSource, start: Int, file: File, title: String, onClose: () -> Unit) {
+    val context = LocalContext.current
+    val scheme = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current.density
+    var page by remember { mutableIntStateOf(start) }
+    val ink = remember { androidx.compose.runtime.mutableStateMapOf<Int, List<List<Offset>>>() }
+    var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    var saving by remember { mutableStateOf(false) }
+    BackHandler(onBack = onClose)
+    Column(Modifier.fillMaxSize().background(scheme.surfaceVariant).statusBarsPadding().navigationBarsPadding()) {
+        Row(Modifier.fillMaxWidth().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onClose) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.drive_cancel)) }
+            Text(stringResource(R.string.drive_pdf_page, page + 1, source.pageCount), fontSize = 14.sp, modifier = Modifier.weight(1f))
+            IconButton(onClick = { ink[page] = ink[page].orEmpty().dropLast(1) }) { Icon(EuriseIcons.undo(), contentDescription = stringResource(R.string.drive_pdf_undo)) }
+            TextButton(enabled = !saving, onClick = {
+                saving = true
+                scope.launch {
+                    val ok = runCatching {
+                        val out = File(context.cacheDir, "drive/firmato.pdf").apply { parentFile?.mkdirs() }
+                        source.exportWithInk(ink.toMap(), out, density)
+                        withContext(Dispatchers.IO) { savePdfCopy(context, out, title.removeSuffix(".pdf") + " firmato.pdf") }
+                    }.getOrDefault(false)
+                    saving = false
+                    Toast.makeText(context, if (ok) R.string.drive_pdf_saved else R.string.drive_error, Toast.LENGTH_LONG).show()
+                    if (ok) onClose()
+                }
+            }) { Text(stringResource(R.string.drive_pdf_save)) }
+        }
+        Text(stringResource(R.string.drive_pdf_save_note), fontSize = 12.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
+            val pixels = with(LocalDensity.current) { maxWidth.toPx().toInt() }
+            val bitmap by produceState<Bitmap?>(null, page) { value = runCatching { source.render(page, pixels) }.getOrNull() }
+            Box(Modifier.aspectRatio(source.ratios[page], matchHeightConstraintsFirst = maxWidth / maxHeight > source.ratios[page]).background(Color.White)) {
+                bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize()) }
+                androidx.compose.foundation.Canvas(
+                    Modifier.fillMaxSize().pointerInput(page) {
+                        detectDragGestures(
+                            onDragStart = { current = listOf(Offset(it.x / size.width, it.y / size.height)) },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                current = current + Offset(change.position.x / size.width, change.position.y / size.height)
+                            },
+                            onDragEnd = {
+                                ink[page] = ink[page].orEmpty() + listOf(current)
+                                current = emptyList()
+                            },
+                        )
+                    },
+                ) {
+                    (ink[page].orEmpty() + listOf(current)).filter { it.size > 1 }.forEach { stroke ->
+                        val path = androidx.compose.ui.graphics.Path()
+                        stroke.forEachIndexed { n, p -> if (n == 0) path.moveTo(p.x * size.width, p.y * size.height) else path.lineTo(p.x * size.width, p.y * size.height) }
+                        drawPath(path, Color(0xFF14205A), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextButton(enabled = page > 0, onClick = { page-- }) { Text(stringResource(R.string.drive_pdf_prev)) }
+            TextButton(enabled = page < source.pageCount - 1, onClick = { page++ }) { Text(stringResource(R.string.drive_pdf_next)) }
+        }
     }
 }
 
@@ -637,20 +926,57 @@ private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
     DisposableEffect(source) { onDispose { source?.close() } }
     var scale by remember { mutableFloatStateOf(1f) }
     val transform = rememberTransformableState { zoom, _, _ -> scale = (scale * zoom).coerceIn(1f, 4f) }
+    val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    var annotating by remember { mutableStateOf(false) }
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<Pair<Int, Int>>?>(null) }
+    val canSearch = Build.VERSION.SDK_INT >= 35
+
+    if (annotating && source != null) {
+        PdfAnnotator(source, list.firstVisibleItemIndex.coerceAtMost(source.pageCount - 1), file, title) { annotating = false }
+        return
+    }
 
     Column(Modifier.fillMaxSize().background(scheme.surfaceVariant)) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(EuriseIcons.chevronLeft(), contentDescription = stringResource(R.string.drive_back), tint = scheme.primary) }
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (source != null) {
+                if (canSearch) IconButton(onClick = { searching = !searching; results = null }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_pdf_search)) }
+                IconButton(onClick = { annotating = true }) { Icon(EuriseIcons.pen(), contentDescription = stringResource(R.string.drive_pdf_annotate)) }
+            }
         }
         if (source == null) {
             Text(stringResource(R.string.drive_pdf_error), modifier = Modifier.padding(24.dp))
             return
         }
+        if (searching && canSearch) {
+            Column(Modifier.padding(horizontal = 12.dp)) {
+                OutlinedTextField(
+                    query, { query = it }, singleLine = true, placeholder = { Text(stringResource(R.string.drive_pdf_search_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = { if (query.isNotBlank() && Build.VERSION.SDK_INT >= 35) scope.launch { results = runCatching { source.search(query.trim()) }.getOrDefault(emptyList()) } }) {
+                            Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_pdf_search))
+                        }
+                    },
+                )
+                results?.let { found ->
+                    if (found.isEmpty()) Text(stringResource(R.string.drive_pdf_no_results), fontSize = 13.sp, modifier = Modifier.padding(8.dp))
+                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        found.forEach { (index, hits) ->
+                            FilterPill(stringResource(R.string.drive_pdf_result, index + 1, hits), dot = null, selected = false) { scope.launch { list.scrollToItem(index) } }
+                        }
+                    }
+                }
+            }
+        }
         BoxWithConstraints(Modifier.fillMaxSize().transformable(transform, canPan = { false }).horizontalScroll(rememberScrollState())) {
             val width = maxWidth * scale
             val pixels = with(LocalDensity.current) { maxWidth.toPx().toInt() }
-            LazyColumn(Modifier.width(width).fillMaxSize(), contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(Modifier.width(width).fillMaxSize(), state = list, contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(source.ratios, key = { i, _ -> i }) { i, ratio ->
                     // Risoluzione fissata a 2× schermo: abbastanza per lo zoom, senza riempire la memoria.
                     val bitmap by produceState<Bitmap?>(null, source, i) { value = runCatching { source.render(i, pixels * 2) }.getOrNull() }

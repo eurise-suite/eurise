@@ -26,6 +26,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,6 +68,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
@@ -92,6 +94,9 @@ import java.time.LocalDate
 import java.util.UUID
 import java.util.concurrent.Executors
 
+/** Da cosa è nata una pagina: serve a rifare il ritaglio senza perdere qualità. */
+private class Origin(val upright: File, val mode: ScanMode, val quad: Quad?)
+
 private const val ANALYSIS_WIDTH = 120
 private const val STILL_NEEDED = 12
 private const val STILL_LIMIT = 0.025f
@@ -107,6 +112,7 @@ fun ScannerRoute(onClose: () -> Unit) {
         if (!ok) onClose()
     }
     val pages = remember { mutableStateListOf<File>() }
+    val origins = remember { HashMap<File, Origin>() }
     var reviewing by remember { mutableStateOf(false) }
     val dir = remember { File(context.cacheDir, "scan").apply { deleteRecursively(); mkdirs() } }
     DisposableEffect(Unit) { onDispose { dir.deleteRecursively() } }
@@ -114,8 +120,8 @@ fun ScannerRoute(onClose: () -> Unit) {
     BackHandler(enabled = reviewing) { reviewing = false }
     Box(Modifier.fillMaxSize().background(if (reviewing) MaterialTheme.colorScheme.background else Color(0xFF14171C))) {
         when {
-            reviewing -> Review(pages, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
-            granted -> Camera(pages, dir, onClose) { if (pages.isNotEmpty()) reviewing = true }
+            reviewing -> Review(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
+            granted -> Camera(pages, origins, dir, onClose) { if (pages.isNotEmpty()) reviewing = true }
         }
     }
     if (explain) {
@@ -150,7 +156,7 @@ private fun lumaOf(image: ImageProxy): Triple<IntArray, Int, Int> {
 }
 
 @Composable
-private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onDone: () -> Unit) {
+private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onClose: () -> Unit, onDone: () -> Unit) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
@@ -160,6 +166,9 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
     var busy by remember { mutableStateOf(false) }
     var torch by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
+    val modeNow = remember { java.util.concurrent.atomic.AtomicReference(ScanMode.Document) }
+    var qr by remember { mutableStateOf<String?>(null) }
+    val qrShown = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     val capture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -177,8 +186,11 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
         capture.takePicture(ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 scope.launch {
-                    val file = withContext(Dispatchers.Default) { process(image, corners, chosen, dir) }
-                    if (file != null) pages += file
+                    val done = withContext(Dispatchers.Default) { process(image, corners, chosen, dir) }
+                    if (done != null) {
+                        pages += done.first
+                        origins[done.first] = done.second
+                    }
                     still = 0
                     // Dopo uno scatto si aspetta che il foglio cambi: niente doppioni dello stesso.
                     busy = false
@@ -188,9 +200,14 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
         })
     }
 
+    LaunchedEffect(mode) {
+        modeNow.set(mode)
+        if (mode == ScanMode.Qr) { quad = null; still = 0 }
+    }
     val owed = still >= STILL_NEEDED
     LaunchedEffect(owed) { if (owed && !busy) shoot() }
 
+    qr?.let { text -> QrDialog(text) { qr = null; qrShown.set(false) } }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
@@ -206,6 +223,14 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
                                 val analysis = ImageAnalysis.Builder().setResolutionSelector(selector)
                                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                                 analysis.setAnalyzer(analyzer) { image ->
+                                    if (modeNow.get() == ScanMode.Qr) {
+                                        val text = if (qrShown.get()) null else decodeQr(image)
+                                        image.close()
+                                        if (text != null && qrShown.compareAndSet(false, true)) {
+                                            ContextCompat.getMainExecutor(ctx).execute { qr = text }
+                                        }
+                                        return@setAnalyzer
+                                    }
                                     val (luma, w, h) = lumaOf(image)
                                     image.close()
                                     val found = EdgeDetector.find(luma, w, h)
@@ -241,6 +266,7 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
             Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 DarkRound(EuriseIcons.close(), stringResource(R.string.scan_close), onClose)
                 val status = when {
+                    mode == ScanMode.Qr -> R.string.scan_status_qr
                     busy -> R.string.scan_status_saving
                     still > 3 -> R.string.scan_status_hold
                     quad != null -> R.string.scan_status_found
@@ -258,7 +284,7 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
         }
         Column(Modifier.fillMaxWidth().background(Color(0xC714171C)).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
-                listOf(ScanMode.Document to R.string.scan_mode_doc, ScanMode.BlackWhite to R.string.scan_mode_bw, ScanMode.Photo to R.string.scan_mode_photo).forEach { (m, label) ->
+                listOf(ScanMode.Document to R.string.scan_mode_doc, ScanMode.BlackWhite to R.string.scan_mode_bw, ScanMode.Photo to R.string.scan_mode_photo, ScanMode.Qr to R.string.scan_mode_qr).forEach { (m, label) ->
                     val active = m == mode
                     Box(Modifier.height(34.dp).clip(CircleShape).background(if (active) Color.White else Color.Transparent).clickable { mode = m }.padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                         Text(stringResource(label), fontSize = 13.5.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold, color = if (active) Color(0xFF1E1D1B) else Color(0xFFECE9E3))
@@ -276,7 +302,7 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
                     }
                 }
                 val shutter = stringResource(R.string.scan_shutter)
-                Box(Modifier.size(76.dp).clip(CircleShape).border(4.dp, Color.White, CircleShape).clickable(enabled = !busy) { shoot() }.padding(8.dp).semantics { contentDescription = shutter }) {
+                Box(Modifier.size(76.dp).clip(CircleShape).border(4.dp, Color.White, CircleShape).clickable(enabled = !busy && mode != ScanMode.Qr) { shoot() }.padding(8.dp).semantics { contentDescription = shutter }) {
                     Box(Modifier.fillMaxSize().clip(CircleShape).background(Color.White))
                 }
                 Box(Modifier.height(44.dp).clip(CircleShape).background(if (pages.isEmpty()) Color(0x55A9C1F2) else Color(0xFFA9C1F2)).clickable(enabled = pages.isNotEmpty(), onClick = onDone).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
@@ -287,6 +313,58 @@ private fun Camera(pages: MutableList<File>, dir: File, onClose: () -> Unit, onD
     }
 }
 
+/** La schermata non apre mai da sola ciò che legge: un QR può portare ovunque, quindi prima si vede il contenuto. */
+@Composable
+private fun QrDialog(text: String, onClose: () -> Unit) {
+    val context = LocalContext.current
+    val isOtp = text.startsWith("otpauth://", ignoreCase = true)
+    val canOpen = isOtp || text.startsWith("https://", ignoreCase = true) || text.startsWith("http://", ignoreCase = true)
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.scan_qr_found)) },
+        // Il segreto di un codice 2FA non va mostrato sullo schermo.
+        text = { Text(if (isOtp) stringResource(R.string.scan_qr_2fa) else text) },
+        confirmButton = {
+            if (canOpen) TextButton(onClick = {
+                try {
+                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(text)))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    Toast.makeText(context, R.string.scan_qr_no_app, Toast.LENGTH_SHORT).show()
+                }
+                onClose()
+            }) { Text(stringResource(R.string.scan_qr_open)) }
+        },
+        dismissButton = {
+            Row {
+                if (!isOtp) TextButton(onClick = {
+                    val clip = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clip.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
+                    onClose()
+                }) { Text(stringResource(R.string.scan_qr_copy)) }
+                TextButton(onClick = onClose) { Text(stringResource(R.string.scan_qr_close)) }
+            }
+        },
+    )
+}
+
+private fun decodeQr(image: ImageProxy): String? {
+    val plane = image.planes[0]
+    val buffer = plane.buffer
+    val w = image.width
+    val h = image.height
+    val data = ByteArray(w * h)
+    for (y in 0 until h) {
+        buffer.position(y * plane.rowStride)
+        buffer.get(data, y * w, minOf(w, buffer.remaining()))
+    }
+    val source = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false)
+    return try {
+        com.google.zxing.qrcode.QRCodeReader().decode(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
+    } catch (e: com.google.zxing.ReaderException) {
+        null
+    }
+}
+
 @Composable
 private fun DarkRound(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Box(Modifier.size(44.dp).clip(CircleShape).background(Color(0x8C14171C)).clickable(onClick = onClick).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
@@ -294,19 +372,73 @@ private fun DarkRound(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     }
 }
 
-private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): File? = try {
+private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): Pair<File, Origin>? = try {
     val buffer = image.planes[0].buffer
     val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
     val rotation = image.imageInfo.rotationDegrees
     image.close()
     val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     val upright = if (rotation != 0) Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation.toFloat()) }, true) else decoded
-    val page = PageProcessor.applyMode(PageProcessor.straighten(upright, quad), mode)
-    File(dir, UUID.randomUUID().toString() + ".jpg").also { f -> f.outputStream().use { page.compress(Bitmap.CompressFormat.JPEG, 88, it) } }
+    val original = File(dir, UUID.randomUUID().toString() + ".orig").also { f -> f.outputStream().use { upright.compress(Bitmap.CompressFormat.JPEG, 92, it) } }
+    val origin = Origin(original, mode, quad)
+    render(upright, origin, dir) to origin
 } catch (e: RuntimeException) {
     null
 } catch (e: OutOfMemoryError) {
     null
+}
+
+private fun render(upright: Bitmap, origin: Origin, dir: File): File {
+    val page = PageProcessor.applyMode(PageProcessor.straighten(upright, origin.quad), origin.mode)
+    return File(dir, UUID.randomUUID().toString() + ".jpg").also { f -> f.outputStream().use { page.compress(Bitmap.CompressFormat.JPEG, 88, it) } }
+}
+
+/** Trascinando si sposta l'angolo più vicino al dito. */
+@Composable
+private fun CropEditor(origin: Origin, onCancel: () -> Unit, onDone: (Quad) -> Unit) {
+    val bitmap by produceState<Bitmap?>(null, origin) {
+        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(origin.upright.path, BitmapFactory.Options().apply { inSampleSize = 2 }) }
+    }
+    val start = origin.quad ?: Quad(Pt(0.05f, 0.05f), Pt(0.95f, 0.05f), Pt(0.95f, 0.95f), Pt(0.05f, 0.95f))
+    var corners by remember { mutableStateOf(start.points) }
+    BackHandler(onBack = onCancel)
+    Column(Modifier.fillMaxSize().background(Color(0xFF14171C)).statusBarsPadding().navigationBarsPadding()) {
+        Text(stringResource(R.string.scan_crop_hint), color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(16.dp))
+        Box(Modifier.weight(1f).fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+            bitmap?.let { b ->
+                Box(Modifier.aspectRatio(b.width.toFloat() / b.height)) {
+                    Image(b.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
+                    Canvas(
+                        Modifier.fillMaxSize().pointerInput(Unit) {
+                            var active = 0
+                            detectDragGestures(
+                                onDragStart = { at ->
+                                    active = corners.indices.minBy { i -> kotlin.math.hypot(corners[i].x * size.width - at.x, corners[i].y * size.height - at.y) }
+                                },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    val p = Pt((change.position.x / size.width).coerceIn(0f, 1f), (change.position.y / size.height).coerceIn(0f, 1f))
+                                    corners = corners.toMutableList().also { it[active] = p }
+                                },
+                            )
+                        },
+                    ) {
+                        val path = Path().apply {
+                            corners.forEachIndexed { i, p -> if (i == 0) moveTo(p.x * size.width, p.y * size.height) else lineTo(p.x * size.width, p.y * size.height) }
+                            close()
+                        }
+                        drawPath(path, Color(0x2EA9C1F2))
+                        drawPath(path, Color(0xFFA9C1F2), style = Stroke(width = 3.dp.toPx()))
+                        corners.forEach { p -> drawCircle(Color.White, 11.dp.toPx(), Offset(p.x * size.width, p.y * size.height)) }
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextButton(onClick = onCancel) { Text(stringResource(R.string.scan_cancel), color = Color.White) }
+            Button(onClick = { onDone(Quad(corners[0], corners[1], corners[2], corners[3])) }) { Text(stringResource(R.string.scan_crop_done)) }
+        }
+    }
 }
 
 @Composable
@@ -318,7 +450,7 @@ private fun Thumb(file: File, modifier: Modifier) {
 }
 
 @Composable
-private fun Review(pages: MutableList<File>, dir: File, onAdd: () -> Unit, onCancel: () -> Unit, onSaved: () -> Unit) {
+private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onAdd: () -> Unit, onCancel: () -> Unit, onSaved: () -> Unit) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
@@ -327,6 +459,29 @@ private fun Review(pages: MutableList<File>, dir: File, onAdd: () -> Unit, onCan
     var name by remember { mutableStateOf("${LocalDate.now()}_$fallback") }
     var where by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    var menuFor by remember { mutableStateOf<File?>(null) }
+    var cropping by remember { mutableStateOf<File?>(null) }
+
+    cropping?.let { file ->
+        val origin = origins[file]
+        if (origin == null) { cropping = null; return@let }
+        CropEditor(origin, onCancel = { cropping = null }) { quad ->
+            cropping = null
+            scope.launch {
+                val updated = Origin(origin.upright, origin.mode, quad)
+                val fresh = withContext(Dispatchers.Default) {
+                    runCatching { BitmapFactory.decodeFile(origin.upright.path)?.let { render(it, updated, dir) } }.getOrNull()
+                }
+                val index = pages.indexOf(file)
+                if (fresh != null && index >= 0) {
+                    origins.remove(file)
+                    origins[fresh] = updated
+                    pages[index] = fresh
+                }
+            }
+        }
+        return
+    }
 
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -345,7 +500,7 @@ private fun Review(pages: MutableList<File>, dir: File, onAdd: () -> Unit, onCan
         Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
             pages.toList().forEachIndexed { i, file ->
                 val label = stringResource(R.string.scan_remove, i + 1)
-                Box(Modifier.size(92.dp, 124.dp).clickable { pages.remove(file); if (pages.isEmpty()) onAdd() }.semantics { contentDescription = label }) {
+                Box(Modifier.size(92.dp, 124.dp).clickable { menuFor = file }.semantics { contentDescription = label }) {
                     Thumb(file, Modifier.fillMaxSize())
                 }
             }
@@ -365,6 +520,21 @@ private fun Review(pages: MutableList<File>, dir: File, onAdd: () -> Unit, onCan
         }
         Text(stringResource(R.string.scan_local_note), fontSize = 12.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
         Spacer(Modifier.height(16.dp))
+    }
+    menuFor?.let { file ->
+        AlertDialog(
+            onDismissRequest = { menuFor = null },
+            title = { Text(stringResource(R.string.scan_page_title, pages.indexOf(file) + 1)) },
+            confirmButton = { TextButton(onClick = { menuFor = null; cropping = file }) { Text(stringResource(R.string.scan_crop)) } },
+            dismissButton = {
+                TextButton(onClick = {
+                    menuFor = null
+                    pages.remove(file)
+                    origins.remove(file)
+                    if (pages.isEmpty()) onAdd()
+                }) { Text(stringResource(R.string.scan_remove_page)) }
+            },
+        )
     }
 }
 

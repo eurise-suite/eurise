@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Environment
 import android.os.StatFs
 import eu.eurise.core.cloud.CloudAccounts
+import eu.eurise.core.cloud.DavShare
+import eu.eurise.core.cloud.DavVersion
 import eu.eurise.core.cloud.WebDav
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,6 +77,31 @@ class DriveData(private val context: Context) {
         }
         target
     }
+
+    /** Sposta nella cartella [folder] dello stesso luogo. */
+    suspend fun move(item: DriveItem, folder: String) = withContext(Dispatchers.IO) {
+        val target = join(folder, item.name)
+        if (item.place.account == null) {
+            val destination = File(root, target)
+            if (destination.exists() || !File(root, item.path).renameTo(destination)) throw java.io.IOException()
+        } else {
+            dav(item.place).move(item.path, target)
+        }
+    }
+
+    fun supportsLinks(place: Place): Boolean = place.account != null && accounts.dav(place.account)?.isNextcloud == true
+
+    suspend fun createLink(item: DriveItem, password: String?, expires: String?): String = dav(item.place).createLink(item.path, password, expires)
+
+    suspend fun versions(item: DriveItem): List<DavVersion> = dav(item.place).versions(item.path)
+
+    suspend fun restoreVersion(item: DriveItem, version: DavVersion) = dav(item.place).restoreVersion(version)
+
+    suspend fun links(): List<Pair<Place, DavShare>> = places.filter(::supportsLinks).flatMap { place ->
+        runCatching { dav(place).links() }.getOrDefault(emptyList()).map { place to it }
+    }
+
+    suspend fun removeLink(place: Place, share: DavShare) = dav(place).removeLink(share.id)
 
     // --- Offline ---
 
