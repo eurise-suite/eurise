@@ -17,7 +17,18 @@ class PasswordActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        readOtp(intent)
         setContent { EuriseTheme { PasswordRoute() } }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        readOtp(intent)
+    }
+
+    private fun readOtp(intent: android.content.Intent?) {
+        val uri = intent?.takeIf { it.action == android.content.Intent.ACTION_VIEW }?.dataString ?: return
+        repo.pendingOtp.value = uri
     }
 
     override fun onStart() {

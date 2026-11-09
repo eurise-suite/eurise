@@ -13,12 +13,19 @@
         android:theme="@style/Theme.EurisePassword">
         <activity
             android:name=".PasswordActivity"
+            android:launchMode="singleTop"
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Codici 2FA da un QR: la voce si apre precompilata e si salva solo se la persona conferma. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="otpauth" />
             </intent-filter>
         </activity>
         <activity

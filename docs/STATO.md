@@ -249,7 +249,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Importazione (`logic/Importer`, senza anteprima su richiesta del proprietario): Proton Pass ZIP/JSON non cifrato, Proton
   Authenticator, Aegis, 2FAS, testo otpauth; le passkey non si trasferiscono.
   Controllo violazioni (Have I Been Pwned, interruttore spento di base), salvataggio dei login digitati, riquadri Blocca e
-  Genera. Mancano: kMail tra gli alias, scansione QR dei 2FA (con Scanner), passkey, Famiglia. Poi Drive e Scanner (tele approvate).
+  Genera. Mancano: kMail tra gli alias, passkey, Famiglia. Poi Drive e Scanner (tele approvate).
   Il centro privacy dovrà elencare Murena per questa app.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni

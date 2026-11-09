@@ -69,6 +69,9 @@ class VaultRepository private constructor(context: Context) {
     /** Passa dal servizio di compilazione al foglio di salvataggio senza uscire dalla memoria dell'app. */
     @Volatile var pendingLogin: PendingLogin? = null
 
+    /** Un otpauth:// arrivato da un lettore di QR, in attesa che la cassaforte sia aperta. */
+    val pendingOtp = MutableStateFlow<String?>(null)
+
     /** Una schermata dell'app è in primo piano. Se si è stati via troppo, il timer può aver ritardato: si blocca ora. */
     fun enter() {
         mainHandler.removeCallbacks(lockTask)

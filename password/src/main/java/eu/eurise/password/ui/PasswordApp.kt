@@ -99,6 +99,8 @@ import eu.eurise.password.kdbx.VaultEntry
 import eu.eurise.password.kdbx.CardData
 import eu.eurise.password.data.AliasProvider
 import eu.eurise.password.logic.Cards
+import eu.eurise.password.logic.ImportOutcome
+import eu.eurise.password.logic.Importer
 import eu.eurise.password.logic.Generator
 import eu.eurise.password.logic.HealthIssue
 import eu.eurise.password.logic.Strength
@@ -111,7 +113,7 @@ import java.util.Date
 private sealed interface Screen {
     data object List : Screen
     data class Detail(val uuid: String) : Screen
-    data class Edit(val uuid: String?, val card: Boolean = false) : Screen
+    data class Edit(val uuid: String?, val card: Boolean = false, val prefill: EntryDraft? = null) : Screen
     data object Sync : Screen
 }
 
@@ -269,6 +271,13 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
         }
     }
     LaunchedEffect(Unit) { vm.checkBreachesIfDue() }
+    val pendingOtp by vm.repo.pendingOtp.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingOtp) {
+        val uri = pendingOtp ?: return@LaunchedEffect
+        vm.repo.pendingOtp.value = null
+        val draft = (Importer.parse(uri) as? ImportOutcome.Ready)?.items?.firstOrNull()?.draft ?: return@LaunchedEffect
+        screen = Screen.Edit(null, prefill = draft)
+    }
     BackHandler(enabled = screen != Screen.List, onBack = back)
     when (val s = screen) {
         Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { card -> screen = Screen.Edit(null, card) }, onSync = { screen = Screen.Sync })
@@ -278,7 +287,7 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
             else if (entry.card != null) CardDetail(vm, entry, back, onEdit = { screen = Screen.Edit(s.uuid, true) })
             else EntryDetail(vm, entry, entries, back, onEdit = { screen = Screen.Edit(s.uuid) })
         }
-        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, back) { draft ->
+        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, s.prefill, back) { draft ->
             vm.save(draft, s.uuid)
             back()
         }
@@ -695,14 +704,14 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
 // --- Modifica ---
 
 @Composable
-private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
+private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDraft?, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    var title by remember { mutableStateOf(entry?.title.orEmpty()) }
-    var user by remember { mutableStateOf(entry?.username.orEmpty()) }
+    var title by remember { mutableStateOf(entry?.title ?: prefill?.title.orEmpty()) }
+    var user by remember { mutableStateOf(entry?.username ?: prefill?.username.orEmpty()) }
     var phrase by remember { mutableStateOf(true) }
-    var password by remember { mutableStateOf(entry?.password ?: Generator.passphrase()) }
+    var password by remember { mutableStateOf(entry?.password ?: if (prefill != null) "" else Generator.passphrase()) }
     var url by remember { mutableStateOf(entry?.url.orEmpty()) }
-    var otp by remember { mutableStateOf(entry?.otp.orEmpty()) }
+    var otp by remember { mutableStateOf(entry?.otp ?: prefill?.otp.orEmpty()) }
     var notes by remember { mutableStateOf(entry?.notes.orEmpty()) }
     var isCard by remember { mutableStateOf(startAsCard || entry?.card != null) }
     var number by remember { mutableStateOf(entry?.card?.number.orEmpty()) }
