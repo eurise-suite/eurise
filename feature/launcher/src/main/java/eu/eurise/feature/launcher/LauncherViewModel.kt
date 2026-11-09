@@ -222,6 +222,8 @@ class LauncherViewModel(
         }
     }
 
+    suspend fun searchEvents(query: String) = calendar.search(query)
+
     val videos = eu.eurise.feature.launcher.videos.VideosRepository(application)
     private val _videoList = MutableStateFlow<List<eu.eurise.feature.launcher.videos.Video>?>(null)
     val videoList: StateFlow<List<eu.eurise.feature.launcher.videos.Video>?> = _videoList

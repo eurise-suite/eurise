@@ -125,6 +125,10 @@ object NotificationStore {
     private val _nowPlaying = MutableStateFlow<NowPlaying?>(null)
     val nowPlaying: StateFlow<NowPlaying?> = _nowPlaying.asStateFlow()
 
+    /** Tutti i lettori con un brano, in ordine fisso: la bolla Musica passa dall'uno all'altro scorrendo. */
+    private val _players = MutableStateFlow<List<NowPlaying>>(emptyList())
+    val players: StateFlow<List<NowPlaying>> = _players.asStateFlow()
+
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
@@ -158,8 +162,8 @@ object NotificationStore {
     internal fun updateMedia(context: Context) {
         val msm = context.getSystemService(MediaSessionManager::class.java) ?: return
         val component = ComponentName(context, EuriseNotificationListener::class.java)
-        val controller = runCatching { msm.getActiveSessions(component) }.getOrNull()?.firstOrNull()
-        _nowPlaying.value = controller?.let { c ->
+        val sessions = runCatching { msm.getActiveSessions(component) }.getOrNull().orEmpty()
+        val all = sessions.mapNotNull { c ->
             val meta = c.metadata
             val title = meta?.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
             if (title.isBlank()) null else NowPlaying(
@@ -171,23 +175,26 @@ object NotificationStore {
                 art = artFor(title, meta),
             )
         }
+        _nowPlaying.value = all.firstOrNull()
+        _players.value = all.distinctBy { it.controller.packageName }.sortedBy { it.appLabel.lowercase() }
     }
 
-    private var artKey: String? = null
-    private var artCache: android.graphics.Bitmap? = null
+    /** Copertine già ridotte: una per brano, per le ultime otto. */
+    private val artCache = object : LinkedHashMap<String, android.graphics.Bitmap?>(8, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, android.graphics.Bitmap?>) = size > 8
+    }
 
     /** La copertina si riduce una volta per brano: le notifiche del lettore arrivano di continuo. */
     private fun artFor(title: String, meta: MediaMetadata?): android.graphics.Bitmap? {
         val key = "$title|${meta?.getString(MediaMetadata.METADATA_KEY_ARTIST)}|${meta?.getString(MediaMetadata.METADATA_KEY_ALBUM)}"
-        if (key == artKey && artCache != null) return artCache
+        artCache[key]?.let { return it }
         val source = listOf(MediaMetadata.METADATA_KEY_ALBUM_ART, MediaMetadata.METADATA_KEY_ART, MediaMetadata.METADATA_KEY_DISPLAY_ICON)
             .firstNotNullOfOrNull { meta?.getBitmap(it) }
         val scaled = source?.let { b ->
             val factor = minOf(1f, 256f / maxOf(b.width, b.height))
             runCatching { android.graphics.Bitmap.createScaledBitmap(b, (b.width * factor).toInt().coerceAtLeast(1), (b.height * factor).toInt().coerceAtLeast(1), true) }.getOrNull()
         }
-        artKey = key
-        artCache = scaled
+        artCache[key] = scaled
         return scaled
     }
 

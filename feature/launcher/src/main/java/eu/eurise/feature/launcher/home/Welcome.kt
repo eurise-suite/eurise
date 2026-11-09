@@ -306,37 +306,55 @@ fun WorkPill(
     }
 }
 
-/** Terza pillola, a destra: un po' di musica, con i comandi del lettore. */
+/** Musica: con più lettori aperti si passa dall'uno all'altro scorrendo di lato. */
 @Composable
-fun MusicHalf(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, modifier: Modifier, onOpenPlayer: () -> Unit, onGrant: () -> Unit) {
+fun MusicHalf(players: List<NowPlaying>, enabled: Boolean, hazeState: HazeState, modifier: Modifier, onOpenPlayer: () -> Unit, onGrant: () -> Unit) {
     Pill(hazeState, modifier, title = stringResource(R.string.welcome_music)) {
         when {
             !enabled -> Text(
                 stringResource(R.string.grant), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onGrant),
             )
-            playing == null -> Text(
+            players.isEmpty() -> Text(
                 stringResource(R.string.welcome_music_start), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpenPlayer),
             )
+            players.size == 1 -> PlayerPage(players.first(), false, onOpenPlayer)
             else -> {
-                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPlayer), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AlbumArt(playing, if (LocalBubbleWidth.current >= 240.dp) 52.dp else 40.dp)
-                    Column {
-                        Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        if (playing.artist.isNotBlank()) Text(playing.artist, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val start = players.indexOfFirst { it.playing }.coerceAtLeast(0)
+                val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = start) { players.size }
+                androidx.compose.foundation.pager.HorizontalPager(
+                    pager, Modifier.fillMaxWidth(), pageSpacing = 12.dp, key = { players[it].controller.packageName },
+                ) { page -> PlayerPage(players[page], true, onOpenPlayer) }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)) {
+                    players.indices.forEach { i ->
+                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = if (i == pager.currentPage) 0.8f else 0.25f)))
                     }
                 }
-                val controls = playing.controller.transportControls
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    MiniButton(EuriseIcons.previous(), stringResource(R.string.music_previous), false) { controls.skipToPrevious() }
-                    MiniButton(
-                        if (playing.playing) EuriseIcons.pause() else EuriseIcons.play(),
-                        stringResource(if (playing.playing) R.string.music_pause else R.string.music_play), true,
-                    ) { if (playing.playing) controls.pause() else controls.play() }
-                    MiniButton(EuriseIcons.next(), stringResource(R.string.music_next), false) { controls.skipToNext() }
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun PlayerPage(playing: NowPlaying, showSource: Boolean, onOpenPlayer: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPlayer), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AlbumArt(playing, if (LocalBubbleWidth.current >= 240.dp) 52.dp else 40.dp)
+            Column {
+                if (showSource) Text(playing.appLabel, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+                Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (playing.artist.isNotBlank()) Text(playing.artist, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        val controls = playing.controller.transportControls
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            MiniButton(EuriseIcons.previous(), stringResource(R.string.music_previous), false) { controls.skipToPrevious() }
+            MiniButton(
+                if (playing.playing) EuriseIcons.pause() else EuriseIcons.play(),
+                stringResource(if (playing.playing) R.string.music_pause else R.string.music_play), true,
+            ) { if (playing.playing) controls.pause() else controls.play() }
+            MiniButton(EuriseIcons.next(), stringResource(R.string.music_next), false) { controls.skipToNext() }
         }
     }
 }

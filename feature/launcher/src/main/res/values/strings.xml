@@ -305,6 +305,14 @@
     <string name="doc_pdf">Lettore PDF</string>
     <string name="doc_office">Office</string>
     <string name="doc_drive">Drive</string>
+    <string name="appearance_pull_panel">Scorrendo in giù: Pannello Eurise</string>
+    <string name="appearance_swipe_search">Scorrendo in su: ricerca universale</string>
+    <string name="search_events">Calendario</string>
+    <string name="search_tasks_short">Cose da fare</string>
+    <string name="search_add_ai">Aggiungi una AI web</string>
+    <string name="search_ai_name">Nome</string>
+    <string name="search_ai_url">Indirizzo</string>
+    <string name="search_ai_hint">Scrivi %s nell\'indirizzo dove va la domanda, se il sito lo permette; altrimenti la domanda viene copiata e la incolli tu. Tieni premuta l\'icona per toglierla.</string>
     <string name="categories_reorder">Trascina per riordinare</string>
     <string name="categories_home">La home</string>
     <string name="categories_apps">%1$d app</string>

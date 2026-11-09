@@ -510,7 +510,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             BoxWithConstraints(
                 Modifier.fillMaxSize().then(
                     if (searching || panelOpen || editingCards || editingHome || categoryEditor || appearance || replyTo != null) Modifier
-                    else Modifier.openOnSwipe(onUp = { searching = true }, onDown = { panelOpen = true }),
+                    else Modifier.openOnSwipe(
+                        onUp = { if (settings.swipeSearch) searching = true },
+                        onDown = { if (settings.pullPanel) panelOpen = true else actions.expandNotifications() },
+                    ),
                 ),
             ) {
                 val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TabletSmallestWidth
@@ -647,7 +650,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     )
                 } else {
                     CategoryBar(
-                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { context.openWebSearch() },
+                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
                         hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
                     )
                 }
@@ -673,6 +676,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     conversations = messages,
                     searchContacts = { viewModel.contacts.search(it) },
                     searchFiles = { viewModel.files.search(it) },
+                    searchEvents = { viewModel.searchEvents(it) },
+                    contactActions = { viewModel.contacts.actions(it) },
+                    onContactAction = { viewModel.contacts.start(it) },
+                    onOpenEvent = { searching = false; actions.openEurise("day:${it.start.toLocalDate()}") },
+                    aiWebApps = settings.aiWebApps,
+                    onAiWebApps = { list -> viewModel.updateSettings { it.copy(aiWebApps = list) } },
                     onOpenContact = { searchPerson = it; peopleSheet = "search" },
                     onOpenMessage = { searching = false; actions.openMessage(it) },
                     onOpenFile = { searching = false; viewModel.files.open(it) },
@@ -912,6 +921,7 @@ private fun HomeBubble(
     home: HomeBoardData,
     nextAlarm: LocalDateTime?,
 ) {
+        val players by NotificationStore.players.collectAsState()
         when (slot.kind) {
             eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
                 now = now,
@@ -946,7 +956,7 @@ private fun HomeBubble(
             eu.eurise.feature.launcher.home.HomeKind.Work ->
                 WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, documentShortcuts(state.apps, welcome, actions))
             eu.eurise.feature.launcher.home.HomeKind.Music ->
-                MusicHalf(welcome.nowPlaying, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
+                MusicHalf(players, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
             eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
                 state.tasksDue, state.today, compact, welcome.travels, hazeState, home.bubbles, mod,
             )

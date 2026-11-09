@@ -243,6 +243,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   convertite una volta dalle vecchie schede). I prossimi impegni e I tuoi appuntamenti con azioni per evento (`EventEntry`),
   tempo per ogni luogo (`refreshTravels`, anche #luogo nelle attività). Musica unica, Lavoro diventa Documenti.
   `SummaryBoard` e `CardCatalog` non sono più usati: da togliere.
+- Sempre su `bolle`: Musica con più lettori (`NotificationStore.players`), barra unica con lente e browser jolly, Pannello e
+  ricerca a scorrimento spenti di base (Griglia e icone), ricerca universale con contatti, browser, AI, Note, Attività, Calendario.
+  L'icona Drive nella ricerca si aggiunge quando il ramo `documenti` è in `main`.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
