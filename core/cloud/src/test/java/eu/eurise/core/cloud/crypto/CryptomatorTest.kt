@@ -83,6 +83,7 @@ class CryptomatorTest {
         base.resolve(Cryptomator.MASTERKEY_FILE).writeText(made.masterkey)
         val root = base.resolve(v.dirPath("")).apply { mkdirs() }
         root.resolve(v.encryptName("ciao.txt", "")).writeBytes(seal(v, "ciao da Eurise".toByteArray()))
+        root.resolve(v.encryptName("nota.md", "")).writeBytes(seal(v, "nome con riempimento".toByteArray()))
         val long = "a".repeat(200) + ".txt"
         val folder = root.resolve(v.shortened(v.encryptName(long, ""))).apply { mkdirs() }
         folder.resolve("name.c9s").writeText(v.encryptName(long, ""))

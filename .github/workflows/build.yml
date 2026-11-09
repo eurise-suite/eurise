@@ -97,6 +97,7 @@ jobs:
               v.decryptFile(path, out)
               return out.getvalue()
           assert read('/ciao.txt') == 'ciao da Eurise'.encode()
+          assert read('/nota.md') == 'nome con riempimento'.encode()
           assert read('/' + 'a' * 200 + '.txt') == 'nome lungo'.encode()
           assert read('/sotto/dati.bin') == bytes(i % 251 for i in range(70000))
           print('Aperta da pycryptomator')

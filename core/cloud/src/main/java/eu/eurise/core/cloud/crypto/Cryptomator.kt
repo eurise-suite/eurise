@@ -33,6 +33,9 @@ object Cryptomator {
     private const val VERSION = 999
     private val random = SecureRandom()
     private val url = Base64.getUrlEncoder().withoutPadding()
+
+    /** I nomi dei file, a differenza del JWT, tengono il riempimento "=": senza, Cryptomator non li troverebbe. */
+    private val nameEncoder = Base64.getUrlEncoder()
     private val urlDecoder = Base64.getUrlDecoder()
     private val std = Base64.getEncoder()
     private val stdDecoder = Base64.getDecoder()
@@ -99,7 +102,7 @@ object Cryptomator {
         }
 
         fun encryptName(name: String, dirId: String): String =
-            url.encodeToString(sivEncrypt(enc, mac, nfc(name).toByteArray(), dirId.toByteArray())) + ".c9r"
+            nameEncoder.encodeToString(sivEncrypt(enc, mac, nfc(name).toByteArray(), dirId.toByteArray())) + ".c9r"
 
         fun decryptName(stored: String, dirId: String): String {
             val data = try {
@@ -112,7 +115,7 @@ object Cryptomator {
 
         /** Il nome da usare sul server per un nome cifrato troppo lungo. */
         fun shortened(encrypted: String): String =
-            url.encodeToString(MessageDigest.getInstance("SHA-1").digest(encrypted.toByteArray())) + ".c9s"
+            nameEncoder.encodeToString(MessageDigest.getInstance("SHA-1").digest(encrypted.toByteArray())) + ".c9s"
 
         fun encrypt(input: InputStream, output: OutputStream) {
             val headerNonce = bytes(12)
