@@ -338,3 +338,6 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   senza Internet); FlorisBoard è ancora beta senza suggerimenti. Punto debole: scrittura scorrendo (HeliBoard la ha solo con la libreria chiusa
   di Google, esclusa da CLAUDE.md): da costruire libera. Funzioni in più proposte (frase → attività, calcoli, arrivo alle…, lingua per
   conversazione, appunti protetti, comandi /, abbreviazioni, nomi della Rubrica, tablet) in attesa di scelta.
+- 10 novembre: pulsante degli strumenti a destra (opzione a sinistra per i mancini); tutte e nove le funzioni in più approvate; base HeliBoard
+  approvata. FUTO Keyboard esclusa come base: licenza FUTO Source First (solo uso non commerciale, niente sublicenze) incompatibile con GPLv3;
+  utile solo il suo dataset di swipe in inglese (MIT) per il riconoscitore libero dello scorrimento.
