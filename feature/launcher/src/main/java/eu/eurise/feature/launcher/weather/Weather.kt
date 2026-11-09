@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.weather
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -31,7 +33,9 @@ class WeatherRepository(private val context: Context) {
     /** Oggi e i sei giorni seguenti; null se manca la posizione o la rete. */
     suspend fun forecast(): List<DayForecast>? = withContext(Dispatchers.IO) {
         cached()?.let { return@withContext it }
+        if (!PrivacyCenter.allowed(PrivacyService.Weather)) return@withContext null
         val (lat, lon) = location() ?: return@withContext null
+        PrivacyCenter.log(PrivacyService.Weather)
         val url = String.format(
             Locale.ROOT,
             "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7",

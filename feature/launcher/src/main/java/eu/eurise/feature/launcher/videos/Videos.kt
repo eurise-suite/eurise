@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.videos
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -117,6 +119,8 @@ class VideosRepository(private val context: Context) {
     }
 
     private fun read(channelId: String): List<Video> {
+        if (!PrivacyCenter.allowed(PrivacyService.Videos)) return emptyList()
+        PrivacyCenter.log(PrivacyService.Videos)
         val c = (URL("https://www.youtube.com/feeds/videos.xml?channel_id=$channelId").openConnection() as HttpURLConnection).apply {
             connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("User-Agent", "Eurise/1.0 (lettore RSS)")

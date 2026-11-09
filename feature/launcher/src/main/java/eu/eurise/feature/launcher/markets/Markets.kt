@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.markets
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -63,6 +65,8 @@ class MarketsRepository(context: Context) {
     }
 
     private fun fetch(symbol: String): Quote {
+        if (!PrivacyCenter.allowed(PrivacyService.Markets)) throw java.io.IOException("spento nel centro privacy")
+        PrivacyCenter.log(PrivacyService.Markets)
         val url = "https://query1.finance.yahoo.com/v8/finance/chart/${URLEncoder.encode(symbol, "UTF-8")}?range=1d&interval=1d"
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 8_000

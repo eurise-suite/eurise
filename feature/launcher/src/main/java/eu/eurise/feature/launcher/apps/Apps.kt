@@ -95,6 +95,7 @@ class AppsRepository(private val context: Context) {
         AppEntry("eurise:clock", "Orologio", own, null, Category.Tools, "clock"),
         AppEntry("eurise:drive", "File", own, null, Category.Tools, "drive"),
         AppEntry("eurise:scanner", "Scanner", own, null, Category.Tools, "scanner"),
+        AppEntry("eurise:privacy", "Privacy", own, null, Category.Tools, "privacy"),
         AppEntry("eurise:notes", "Note", own, null, Category.Work, "notes"),
         AppEntry("eurise:tasks", "Attività", own, null, Category.Work, "tasks"),
     )

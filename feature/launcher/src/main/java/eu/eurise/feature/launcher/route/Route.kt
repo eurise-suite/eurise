@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.route
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -26,10 +28,12 @@ class RouteRepository(private val context: Context) {
     private val cache = HashMap<String, Pair<Long, Travel?>>()
 
     suspend fun travelTo(address: String): Travel? = withContext(Dispatchers.IO) {
+        if (!PrivacyCenter.allowed(PrivacyService.Routes)) return@withContext null
         val key = address.trim().lowercase()
         cache[key]?.let { (at, value) -> if (System.currentTimeMillis() - at < 30 * 60_000) return@withContext value }
         val result = runCatching {
             val from = location() ?: return@runCatching null
+            PrivacyCenter.log(PrivacyService.Routes)
             val to = geocode(address) ?: return@runCatching null
             val url = String.format(
                 Locale.ROOT,

@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.news
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import android.content.Context
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +139,8 @@ class NewsRepository(context: Context) {
     }
 
     private fun read(feed: Feed): List<NewsItem> {
+        if (!PrivacyCenter.allowed(PrivacyService.News)) return emptyList()
+        PrivacyCenter.log(PrivacyService.News)
         val connection = (URL(feed.url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 8_000
             readTimeout = 8_000

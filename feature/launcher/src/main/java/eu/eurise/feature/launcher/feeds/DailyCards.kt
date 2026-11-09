@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.feeds
 
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
@@ -123,6 +125,8 @@ class DailyRepository(private val context: Context) {
      * non si lascia leggere, usa il testo del feed.
      */
     suspend fun horoscopeFor(sign: Sign, name: String, force: Boolean = false): FeedEntry? = withContext(Dispatchers.IO) {
+        if (!PrivacyCenter.allowed(PrivacyService.Horoscope)) return@withContext null
+        PrivacyCenter.log(PrivacyService.Horoscope)
         if (force) pageCache.clear()
         val names = Sign.entries.map { context.getString(it.label) }
         val all = horoscope.entries(force)
@@ -171,8 +175,11 @@ class DailyRepository(private val context: Context) {
     }
 
     /** Una ricetta per sito, la più recente di ciascuno. */
-    suspend fun recipesOfDay(force: Boolean = false): List<FeedEntry> =
-        recipes.entries(force).groupBy { it.source }.mapNotNull { it.value.firstOrNull() }.take(3)
+    suspend fun recipesOfDay(force: Boolean = false): List<FeedEntry> {
+        if (!PrivacyCenter.allowed(PrivacyService.News)) return emptyList()
+        PrivacyCenter.log(PrivacyService.News)
+        return recipes.entries(force).groupBy { it.source }.mapNotNull { it.value.firstOrNull() }.take(3)
+    }
 }
 
 @Composable

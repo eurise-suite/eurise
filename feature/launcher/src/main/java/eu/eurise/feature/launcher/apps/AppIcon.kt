@@ -213,6 +213,7 @@ private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
     "clock" -> EuriseIcons.clock(1.9f)
     "drive" -> EuriseIcons.folder(1.9f)
     "scanner" -> EuriseIcons.scan(1.9f)
+    "privacy" -> EuriseIcons.shield(1.9f)
     "today" -> EuriseIcons.today(1.9f)
     else -> entry.category.icon(1.9f)
 }

@@ -11,6 +11,7 @@ class EuriseApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        eu.eurise.core.suite.PrivacyCenter.init(this)
         // Un ripristino in attesa prende il suo posto prima che si apra il database (di solito non c'è nulla da fare).
         eu.eurise.core.cloud.backup.BackupArchive.applyPending(this)
         // I lavori di sincronizzazione vanno registrati prima che WorkManager ne avvii uno.

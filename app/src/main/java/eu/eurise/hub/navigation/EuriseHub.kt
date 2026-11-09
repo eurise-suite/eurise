@@ -136,6 +136,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "clock" -> goTo(Section.Clock)
             section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
+            section == "privacy" -> navController.navigate("privacy") { launchSingleTop = true }
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
@@ -204,6 +205,9 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onTrash = { navController.navigate("notes/trash") },
                         onCloud = { navController.navigate("cloud") },
                     )
+                }
+                composable("privacy") {
+                    eu.eurise.feature.privacy.PrivacyRoute(onBack = { navController.closeIfOn("privacy") })
                 }
                 composable("drive") {
                     eu.eurise.feature.drive.DriveRoute(

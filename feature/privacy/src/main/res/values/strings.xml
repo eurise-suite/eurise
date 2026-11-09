@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pv_title">Privacy</string>
+    <string name="pv_back">Indietro</string>
+    <string name="pv_head">Quasi tutto resta sul telefono</string>
+    <string name="pv_head_none">Niente esce dal telefono</string>
+    <string name="pv_head_sync">Le note vanno su %1$s. </string>
+    <plurals name="pv_head_services">
+        <item quantity="one">%1$d servizio esterno acceso, con richieste anonime.</item>
+        <item quantity="other">%1$d servizi esterni accesi, con richieste anonime.</item>
+    </plurals>
+    <string name="pv_where">Dove stanno i tuoi dati</string>
+    <string name="pv_phone">Solo telefono</string>
+    <string name="pv_phone_and">Telefono e %1$s</string>
+    <string name="pv_system">Account del telefono</string>
+    <string name="pv_data_notes">Note</string>
+    <string name="pv_data_tasks">Attività</string>
+    <string name="pv_data_calendar">Calendario e contatti</string>
+    <string name="pv_data_medicines">Farmaci e Date importanti</string>
+    <string name="pv_data_links">Collegamenti tra le cose</string>
+    <string name="pv_services">Servizi esterni contattati</string>
+    <string name="pv_other_apps">Altre app della suite</string>
+    <string name="pv_gallery">Galleria</string>
+    <string name="pv_gallery_d">Il cloud scelto se accendi il caricamento; OpenStreetMap, con posizione arrotondata a 10 km, se accendi i nomi dei luoghi. Si gestisce nell\'app.</string>
+    <string name="pv_password">Password</string>
+    <string name="pv_password_d">Murena per il file cifrato, se lo accendi; Have I Been Pwned con un frammento cifrato, se accendi il controllo; il servizio di alias scelto. Si gestisce nell\'app.</string>
+    <string name="pv_log">Registro degli accessi</string>
+    <string name="pv_log_d">cosa ha inviato la suite, e quando</string>
+    <string name="pv_log_intro">Cosa ha letto o inviato la suite. Resta solo sul telefono e si cancella dopo 30 giorni.</string>
+    <string name="pv_log_empty">Ancora nessun contatto registrato.</string>
+    <string name="pv_log_count">%1$s · %2$d richieste</string>
+    <string name="pv_permissions">Permessi attivi</string>
+    <string name="pv_manage">Gestisci</string>
+    <string name="pv_on_title">Cosa cambia per la tua privacy</string>
+    <string name="pv_on_read">Cosa viene letto</string>
+    <string name="pv_on_where">Dove va</string>
+    <string name="pv_on_who">Chi lo vede</string>
+    <string name="pv_on_who_d">chi gestisce il servizio, che vede anche l\'indirizzo di rete del telefono</string>
+    <string name="pv_on_back">Per tornare indietro</string>
+    <string name="pv_on_back_d">spegni qui: le richieste si fermano subito</string>
+    <string name="pv_on_ok">Accendi</string>
+    <string name="pv_on_no">Non ora</string>
+
+    <string name="pv_s_weather">Meteo · Open-Meteo</string>
+    <string name="pv_s_weather_d">riceve la posizione arrotondata a circa 1 km</string>
+    <string name="pv_s_news">Notizie e ricette · siti scelti</string>
+    <string name="pv_s_news_d">scaricano i titoli, non sanno chi sei</string>
+    <string name="pv_s_markets">Borsa · Yahoo</string>
+    <string name="pv_s_markets_d">riceve i titoli che segui</string>
+    <string name="pv_s_horoscope">Oroscopo · siti scelti</string>
+    <string name="pv_s_horoscope_d">scaricano l\'oroscopo del giorno</string>
+    <string name="pv_s_videos">Video · YouTube</string>
+    <string name="pv_s_videos_d">riceve i canali che segui</string>
+    <string name="pv_s_routes">Percorsi · OpenStreetMap</string>
+    <string name="pv_s_routes_d">riceve partenza e arrivo, solo per il tempo di viaggio degli impegni</string>
+
+    <string name="pv_p_calendar">Calendario</string>
+    <string name="pv_p_calendar_d">per mostrare e salvare gli eventi</string>
+    <string name="pv_p_contacts">Contatti</string>
+    <string name="pv_p_contacts_d">per la ricerca e i collegamenti</string>
+    <string name="pv_p_location">Posizione approssimata</string>
+    <string name="pv_p_location_d">per il meteo, l\'alba e i percorsi</string>
+    <string name="pv_p_calls">Registro chiamate</string>
+    <string name="pv_p_calls_d">per Ti hanno cercato</string>
+    <string name="pv_p_camera">Fotocamera</string>
+    <string name="pv_p_camera_d">per lo Scanner</string>
+    <string name="pv_p_files">Tutti i file</string>
+    <string name="pv_p_files_d">per File e le cartelle allineate</string>
+</resources>
