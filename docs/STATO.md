@@ -280,12 +280,13 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   fa aprire una cartella a pycryptomator), `feature/drive/VaultFs.kt`, solo su account cloud; si creano col lucchetto in una cartella cloud, si richiudono uscendo da File. Controllata solo la lettura da parte di un altro
   programma: quella di una cartella creata da Cryptomator non ha ancora un test. Alias kMail in Password (`AliasStore`, token + numero del servizio + casella): endpoint presi da fonti non ufficiali, mai provati; servono diritti di amministratore.
 - Regola dei due tocchi (CLAUDE.md): alias kMail tolto dalla schermata (il codice in `AliasStore` resta) finché non c'è l'accesso dal browser; SimpleLogin e addy.io, che chiedono una chiave, sono da rivedere.
-  kDrive: si aspetta che il proprietario verifichi in Infomaniak → Applicazioni se esistono il tipo per telefono e i permessi su kDrive. Famiglia: rimandata dal proprietario (9 novembre) alla fine della road map; anteprime PwdFamiglia* già sulla tela, non approvate.
-- Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive via API: prima verificare con un token che l'API risponda con my kSuite+).
+  kDrive: provato il 9 novembre con un'applicazione "Cellulare" registrata dal proprietario (ID a9bba3c7-42e3-4fae-89ad-0efc0111426b, redirect eurise://kdrive): login OAuth2 con PKCE senza chiave segreta riuscito, ma Infomaniak concede solo
+  "profile email phone"; lo scope "drive" dà invalid_scope e l'API risponde 403 all_scopes ("require this specific scope: drive"). kDrive tolto da Cloud → Collega (modulo e codice di prova; il ramo di codice WebDAV resta) finché Infomaniak non abilita lo scope. Da riprendere solo se il supporto risponde. Famiglia: rimandata dal proprietario (9 novembre) alla fine della road map; anteprime PwdFamiglia* già sulla tela, non approvate.
+- Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive: bloccato, vedi sopra).
 - Ultimo APK: 169 dal ramo `galleria-completa`, che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
 - Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
-  posizione, cartella protetta, editor, pulizia); kDrive via API (in attesa della verifica su Infomaniak);
+  posizione, cartella protetta, editor, pulizia); kDrive (bloccato, in attesa di Infomaniak);
   lettura del testo per Scanner e PDF come APK aggiuntivo (motore nativo troppo pesante per il principale); Browser su GeckoView con
   prototipo minimo per passkey e compilazione, Matrix per ultima; poi le integrazioni
 - Ramo `bolle`: tutte le pagine della Scrivania usano lo stesso modello (`HomeBoard`, `HomeSlot`; `rightSlots`, `leftSlots`,
