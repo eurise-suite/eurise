@@ -66,6 +66,9 @@ data class Scene(
     /** Sopra le scene scure il testo è chiaro, a meno che l'utente non abbia scelto il tema. */
     val dark: Boolean get() = forceDark ?: (moon || sky.first().luma() < 0.3f)
 
+    /** Il tema scuro arriva solo con lo sfondo di notte: sopra quello di sera resta il tema chiaro. */
+    val themeDark: Boolean get() = forceDark ?: (moment == Moment.Night)
+
     /**
      * Il cielo in alto (dove stanno saluto, orario e meteo) è ancora abbastanza chiaro per un testo scuro,
      * anche quando il resto della Scrivania è già in tema scuro (per esempio al tramonto).
