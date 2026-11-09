@@ -314,4 +314,33 @@ class KdbxTest {
         v.save(draft.copy(notes = "altra"), id)
         assertEquals(pk, vault(Kdbx.read(Kdbx.write(file), key)).entries().single().passkey)
     }
+
+    @Test fun browserCsv() {
+        val chrome = ready("name,url,username,password,note\nMurena,https://murena.io/,io,\"a,b\"\"c\",ciao\n")
+        assertEquals("a,b\"c", chrome.items.single().draft.password)
+        assertEquals("Murena", chrome.items.single().draft.title)
+        val firefox = ready("url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged\nhttps://www.sito.it,io,segreta,,,{x},1,2,3\n")
+        assertEquals("sito.it", firefox.items.single().draft.title)
+    }
+
+    @Test fun bitwardenJson() {
+        val r = ready("""{"encrypted":false,"items":[{"type":1,"name":"S","notes":null,"login":{"username":"u","password":"p","totp":"GEZD","uris":[{"uri":"https://s.it"}]}},{"type":3,"name":"C","card":{"cardholderName":"M","number":"4111111111111111","expMonth":"3","expYear":"2028","code":"123","brand":"Visa"}}]}""")
+        assertEquals("https://s.it", r.items[0].draft.url)
+        assertEquals("03/28", r.items[1].draft.card!!.expiry)
+    }
+
+    @Test fun googleAuthenticatorQr() {
+        val inner = byteArrayOf(0x0A, 10) + "Hello!".toByteArray() + byteArrayOf(0xDE.toByte(), 0xAD.toByte(), 0xBE.toByte(), 0xEF.toByte()) +
+            byteArrayOf(0x12, 2) + "io".toByteArray() + byteArrayOf(0x1A, 4) + "Sito".toByteArray() + byteArrayOf(0x20, 1, 0x28, 1, 0x30, 2)
+        val data = byteArrayOf(0x0A, inner.size.toByte()) + inner
+        val uri = "otpauth-migration://offline?data=" + java.util.Base64.getEncoder().encodeToString(data).replace("+", "%2B").replace("/", "%2F").replace("=", "%3D")
+        val d = ready(uri).items.single().draft
+        assertEquals("Sito", d.title)
+        assertEquals("io", d.username)
+        assertTrue(d.otp!!.contains("secret=JBSWY3DPEHPK3PXP"))
+    }
+
+    @Test fun keepassFileIsRecognised() {
+        assertTrue(eu.eurise.password.logic.Importer.read(fixture.inputStream()) is eu.eurise.password.logic.ImportOutcome.Keepass)
+    }
 }

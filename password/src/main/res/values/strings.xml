@@ -193,8 +193,8 @@
     <string name="pwd_reg_own">Usa la mia email di sempre</string>
 
     <string name="pwd_import_title">Importa</string>
-    <string name="pwd_import_help">Proton Pass: dal computer, Impostazioni → Esporta → ZIP non cifrato, poi porta il file sul telefono. App di codici (Proton Authenticator, Aegis, 2FAS): esporta senza password.</string>
-    <string name="pwd_import_action">Importa da Proton Pass o da un\'app di codici</string>
+    <string name="pwd_import_help">Esporta senza cifratura dall\'altra app, poi apri qui il file o condividilo con Password: si riconosce da solo. Proton Pass (ZIP dal computer), Bitwarden, CSV di Chrome, Firefox, Edge o altri gestori, file KeePass, Proton Authenticator, Aegis, 2FAS. Google Authenticator: inquadra il QR di esportazione con lo Scanner.</string>
+    <string name="pwd_import_action">Importa da un altro servizio</string>
     <string name="pwd_import_found">Trovato nel file</string>
     <string name="pwd_import_counts">Accessi e alias: %1$d\nCarte: %2$d\nNote: %3$d\nCodici 2FA: %4$d</string>
     <string name="pwd_import_passkeys">%d passkey non si possono trasferire: restano in Proton Pass finché non le ricrei sui siti.</string>
@@ -202,11 +202,11 @@
     <string name="pwd_import_confirm">Importa</string>
     <string name="pwd_import_ok">Ho capito</string>
     <string name="pwd_import_done">Importazione finita</string>
-    <string name="pwd_import_done_body">Aggiunte: %1$d\nCodici 2FA uniti a un accesso: %2$d\nGià presenti: %3$d\n\nOra elimina il file esportato: contiene tutto in chiaro.</string>
+    <string name="pwd_import_done_body">Aggiunte: %1$d\nCodici 2FA uniti a un accesso: %2$d\nGià presenti: %3$d\n\nIl file esportato contiene tutto in chiaro: conviene eliminarlo.</string>
     <string name="pwd_import_encrypted_title">Il file è cifrato</string>
     <string name="pwd_import_encrypted">Eurise non può leggerlo. Esportalo di nuovo senza cifratura, importalo subito e poi eliminalo.</string>
     <string name="pwd_import_unknown_title">File non riconosciuto</string>
-    <string name="pwd_import_unknown">Serve uno ZIP o un JSON di Proton Pass, oppure un\'esportazione di Proton Authenticator, Aegis o 2FAS.</string>
+    <string name="pwd_import_unknown">Serve un file esportato da un gestore di password, un browser o un\'app di codici: CSV, JSON, ZIP o KeePass.</string>
 
     <string name="pwd_tile_lock">Blocca password</string>
     <string name="pwd_tile_generate">Genera password</string>
@@ -242,4 +242,7 @@
     <string name="pwd_passkey_trust_ok">È il mio browser</string>
     <string name="pwd_passkey_wrong_site">La richiesta non arriva da %s: per sicurezza è stata bloccata.</string>
     <string name="pwd_passkey_only_es256">Questo sito chiede un tipo di chiave che Eurise non gestisce.</string>
+    <string name="pwd_import_keepass">Frase del file KeePass</string>
+    <string name="pwd_import_delete">Elimina il file</string>
+    <string name="pwd_import_keep">Lascialo</string>
 </resources>

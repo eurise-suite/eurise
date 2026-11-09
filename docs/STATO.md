@@ -247,7 +247,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   alias (PwdAlias) con SimpleLogin (la via per Proton: Proton Pass non risulta avere API pubbliche), addy.io e indirizzo
   fisso (Murena ha un solo alias, senza API). kMail non ancora: parametri API da verificare e il piano my kSuite+ ha 2 alias.
   Importazione (`logic/Importer`, senza anteprima su richiesta del proprietario): Proton Pass ZIP/JSON non cifrato, Proton
-  Authenticator, Aegis, 2FAS, testo otpauth; le passkey non si trasferiscono.
+  Authenticator, Aegis, 2FAS, Bitwarden, CSV (browser e altri), KeePass, QR di Google Authenticator; apertura e condivisione
+  dei file verso Password; le passkey si trasferiscono solo da KeePass.
   Controllo violazioni (Have I Been Pwned, interruttore spento di base), salvataggio dei login digitati, riquadri Blocca e
   Genera. Mancano: kMail tra gli alias, Famiglia. Passkey in `passkey/` (Android 14+, formato KPEX di KeePassXC, browser approvati dalla persona): la catena e' stata provata sul telefono con KeePassDX su webauthn.io il 9 novembre. Poi Drive e Scanner (tele approvate).
   Il centro privacy dovrà elencare Murena per questa app.

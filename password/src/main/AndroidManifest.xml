@@ -26,6 +26,20 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="otpauth" />
+                <data android:scheme="otpauth-migration" />
+            </intent-filter>
+            <!-- Importazione: si apre un file esportato o lo si condivide con Password, senza cercarlo a mano. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="text/comma-separated-values" />
+                <data android:mimeType="application/csv" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-keepass2" />
+                <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
         <activity

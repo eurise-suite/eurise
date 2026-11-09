@@ -20,6 +20,9 @@ import eu.eurise.password.data.askBiometric
 import eu.eurise.password.kdbx.EntryDraft
 import eu.eurise.password.kdbx.ImportCounts
 import eu.eurise.password.kdbx.KdbxException
+import eu.eurise.password.kdbx.Kdbx
+import eu.eurise.password.logic.ImportItem
+import eu.eurise.password.logic.ImportKind
 import eu.eurise.password.logic.ImportOutcome
 import eu.eurise.password.logic.Importer
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +36,7 @@ sealed interface ImportStage {
     data class Preview(val ready: ImportOutcome.Ready) : ImportStage
     data class Done(val counts: ImportCounts) : ImportStage
     data object Encrypted : ImportStage
+    class Keepass(val bytes: ByteArray, val failed: Boolean = false) : ImportStage
     data object Unreadable : ImportStage
 }
 
@@ -106,6 +110,7 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Legge il file e mostra cosa contiene; nella cassaforte non entra nulla finché non si conferma. */
     fun readImport(uri: Uri) {
+        importedFile = uri
         viewModelScope.launch {
             val outcome = withContext(Dispatchers.IO) {
                 try {
@@ -121,6 +126,7 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
             _importing.value = when (outcome) {
                 is ImportOutcome.Ready -> if (outcome.items.isEmpty()) ImportStage.Unreadable else ImportStage.Preview(outcome)
                 ImportOutcome.Encrypted -> ImportStage.Encrypted
+                is ImportOutcome.Keepass -> ImportStage.Keepass(outcome.bytes)
                 ImportOutcome.Unknown -> ImportStage.Unreadable
             }
         }
@@ -135,6 +141,42 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeImport() { _importing.value = null }
+
+    private var importedFile: Uri? = null
+
+    /** Un QR con un solo codice apre la voce da controllare; quelli di Google Authenticator ne hanno molti. */
+    fun showImport(ready: ImportOutcome.Ready) { importedFile = null; _importing.value = ImportStage.Preview(ready) }
+
+    /** Toglie il file esportato, che contiene tutto in chiaro; falso se l'app da cui viene non lo permette. */
+    fun deleteImportedFile(): Boolean {
+        val uri = importedFile ?: return false
+        importedFile = null
+        return runCatching { android.provider.DocumentsContract.deleteDocument(getApplication<Application>().contentResolver, uri) }.getOrDefault(false)
+    }
+
+    val canDeleteImportedFile: Boolean get() = importedFile?.let { android.provider.DocumentsContract.isDocumentUri(getApplication(), it) } == true
+
+    /** Legge un altro file KeePass con la sua frase e prepara le voci, password e passkey comprese. */
+    fun readKeepass(bytes: ByteArray, password: String) {
+        viewModelScope.launch {
+            _importing.value = try {
+                val entries = withContext(Dispatchers.Default) { Vault(Kdbx.read(bytes, Kdbx.compositeKey(password)).document).entries() }
+                ImportStage.Preview(ImportOutcome.Ready(entries.map { e ->
+                    val kind = when {
+                        e.card != null -> ImportKind.Card
+                        e.password.isEmpty() && e.otp != null -> ImportKind.Code
+                        e.password.isEmpty() && e.passkey == null -> ImportKind.Note
+                        else -> ImportKind.Login
+                    }
+                    ImportItem(kind, EntryDraft(e.title, e.username, e.password, e.url, e.notes, e.otp, e.card, e.passkey))
+                }, 0, 0))
+            } catch (e: KdbxException) {
+                ImportStage.Keepass(bytes, failed = true)
+            } catch (e: OutOfMemoryError) {
+                ImportStage.Unreadable
+            }
+        }
+    }
 
     val breach = BreachStore(app)
     private val _breachOn = MutableStateFlow(breach.enabled)

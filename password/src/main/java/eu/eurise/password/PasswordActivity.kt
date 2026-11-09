@@ -27,8 +27,16 @@ class PasswordActivity : ComponentActivity() {
     }
 
     private fun readOtp(intent: android.content.Intent?) {
-        val uri = intent?.takeIf { it.action == android.content.Intent.ACTION_VIEW }?.dataString ?: return
-        repo.pendingOtp.value = uri
+        when (intent?.action) {
+            android.content.Intent.ACTION_VIEW -> {
+                val data = intent.data ?: return
+                if (data.scheme == "content" || data.scheme == "file") repo.pendingImport.value = data else repo.pendingOtp.value = data.toString()
+            }
+            android.content.Intent.ACTION_SEND -> {
+                @Suppress("DEPRECATION")
+                repo.pendingImport.value = intent.getParcelableExtra<android.net.Uri>(android.content.Intent.EXTRA_STREAM) ?: return
+            }
+        }
     }
 
     override fun onStart() {
