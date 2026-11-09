@@ -268,6 +268,7 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
             else -> Screen.List
         }
     }
+    LaunchedEffect(Unit) { vm.checkBreachesIfDue() }
     BackHandler(enabled = screen != Screen.List, onBack = back)
     when (val s = screen) {
         Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { card -> screen = Screen.Edit(null, card) }, onSync = { screen = Screen.Sync })
@@ -323,7 +324,13 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
     val sync by vm.sync.collectAsStateWithLifecycle()
     val now = rememberNow()
 
-    val issues = remember(entries) { Generator.health(entries.map { it.uuid to it.password }).associateBy { it.uuid } }
+    val breaches by vm.breaches.collectAsStateWithLifecycle()
+    val issues = remember(entries, breaches) {
+        val base = Generator.health(entries.map { it.uuid to it.password }).associateBy { it.uuid }
+        base + entries.filter { breaches[it.uuid] == it.modified }.associate { e ->
+            e.uuid to (base[e.uuid]?.copy(breached = true) ?: HealthIssue(e.uuid, weak = false, reused = false, breached = true))
+        }
+    }
     val expiring = remember(entries) {
         val today = LocalDate.now()
         entries.filter { e -> e.card?.let { Cards.expiringSoon(it.expiry, today) } == true }.mapTo(HashSet()) { it.uuid }
@@ -452,7 +459,9 @@ private fun FixBanner(issues: Collection<HealthIssue>, expiring: Int, onClick: (
         }
         Column(Modifier.weight(1f)) {
             Text(pluralStringResource(R.plurals.pwd_fix_title, issues.size + expiring, issues.size + expiring), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = scheme.onErrorContainer)
-            if (issues.isNotEmpty()) Text(stringResource(R.string.pwd_fix_detail, issues.count { it.weak }, issues.count { it.reused }), fontSize = 12.5.sp, color = scheme.onErrorContainer)
+            val breachedCount = issues.count { it.breached }
+            if (breachedCount > 0) Text(stringResource(R.string.pwd_fix_breached, breachedCount), fontSize = 12.5.sp, color = scheme.onErrorContainer)
+            if (issues.any { it.weak || it.reused }) Text(stringResource(R.string.pwd_fix_detail, issues.count { it.weak }, issues.count { it.reused }), fontSize = 12.5.sp, color = scheme.onErrorContainer)
             if (expiring > 0) Text(stringResource(R.string.pwd_fix_cards, expiring), fontSize = 12.5.sp, color = scheme.onErrorContainer)
         }
         Icon(EuriseIcons.chevronRight(), contentDescription = null, tint = scheme.onErrorContainer, modifier = Modifier.size(18.dp))
@@ -486,6 +495,7 @@ private fun EntryRow(entry: VaultEntry, issue: HealthIssue?, now: Long, index: I
             Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                 Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 val (detail, alert) = when {
+                    issue?.breached == true -> stringResource(R.string.pwd_row_fix_breached) to true
                     issue?.weak == true -> stringResource(R.string.pwd_row_fix_weak) to true
                     issue?.reused == true -> stringResource(R.string.pwd_row_fix_reused) to true
                     entry.card != null -> stringResource(R.string.pwd_card_row, Cards.lastFour(entry.card.number)) to false
@@ -646,6 +656,14 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
                 }
                 InfoRow(EuriseIcons.shield(), stringResource(text), stringResource(R.string.pwd_health_note))
                 CardDivider()
+                val breaches by vm.breaches.collectAsStateWithLifecycle()
+                val breachOn by vm.breachOn.collectAsStateWithLifecycle()
+                val last by vm.breachLast.collectAsStateWithLifecycle()
+                if (breachOn && last > 0) {
+                    if (breaches[entry.uuid] == entry.modified) InfoRow(EuriseIcons.shield(), stringResource(R.string.pwd_breach_found), stringResource(R.string.pwd_breach_found_detail))
+                    else InfoRow(EuriseIcons.shield(), stringResource(R.string.pwd_breach_clean), stringResource(R.string.pwd_breach_clean_detail, DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(last))))
+                    CardDivider()
+                }
             }
             InfoRow(
                 EuriseIcons.clock(),
@@ -761,6 +779,30 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
                     Text(stringResource(if (vm.bio.available) R.string.pwd_bio_detail else R.string.pwd_bio_unavailable), fontSize = 12.sp, color = scheme.onSurfaceVariant)
                 }
                 Switch(checked = bioOn, enabled = vm.bio.available, onCheckedChange = { if (it) vm.enableBio(context) else vm.disableBio() })
+            }
+            CardDivider()
+            val breachOn by vm.breachOn.collectAsStateWithLifecycle()
+            val breachLast by vm.breachLast.collectAsStateWithLifecycle()
+            val breachFailed by vm.breachFailed.collectAsStateWithLifecycle()
+            var explainBreach by remember { mutableStateOf(false) }
+            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.pwd_breach_switch), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    val lastText = if (breachLast > 0) DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(breachLast)) else stringResource(R.string.pwd_breach_never)
+                    Text(if (breachOn) stringResource(R.string.pwd_breach_on, lastText) else stringResource(R.string.pwd_breach_off), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                    if (breachOn && breachFailed) Text(stringResource(R.string.pwd_breach_failed), fontSize = 12.sp, color = scheme.error)
+                }
+                if (breachOn) RoundIcon(EuriseIcons.refresh(), stringResource(R.string.pwd_breach_now)) { vm.checkBreaches() }
+                Switch(checked = breachOn, onCheckedChange = { if (it) explainBreach = true else vm.setBreach(false) })
+            }
+            if (explainBreach) {
+                AlertDialog(
+                    onDismissRequest = { explainBreach = false },
+                    title = { Text(stringResource(R.string.pwd_privacy_title)) },
+                    text = { Text(stringResource(R.string.pwd_breach_privacy)) },
+                    confirmButton = { TextButton(onClick = { explainBreach = false; vm.setBreach(true) }) { Text(stringResource(R.string.pwd_privacy_ok)) } },
+                    dismissButton = { TextButton(onClick = { explainBreach = false }) { Text(stringResource(R.string.pwd_cancel)) } },
+                )
             }
             CardDivider()
             val autofill = remember(lifecycleTick(), context) { context.getSystemService(android.view.autofill.AutofillManager::class.java)?.hasEnabledAutofillServices() == true }

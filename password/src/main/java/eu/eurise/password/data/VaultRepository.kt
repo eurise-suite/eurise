@@ -27,6 +27,9 @@ sealed interface VaultState {
     data class Open(val entries: List<VaultEntry>) : VaultState
 }
 
+/** Un accesso appena digitato che Android propone di salvare. */
+class PendingLogin(val username: String, val password: String, val webDomain: String?, val packageName: String)
+
 sealed interface SyncState {
     data object Off : SyncState
     data object Working : SyncState
@@ -62,6 +65,9 @@ class VaultRepository private constructor(context: Context) {
     private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val lockTask = Runnable { lock() }
     private var leftAt = 0L
+
+    /** Passa dal servizio di compilazione al foglio di salvataggio senza uscire dalla memoria dell'app. */
+    @Volatile var pendingLogin: PendingLogin? = null
 
     /** Una schermata dell'app è in primo piano. Se si è stati via troppo, il timer può aver ritardato: si blocca ora. */
     fun enter() {

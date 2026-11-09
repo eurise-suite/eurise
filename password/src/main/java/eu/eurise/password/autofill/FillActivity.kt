@@ -59,6 +59,7 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.password.PasswordViewModel
 import eu.eurise.password.R
 import eu.eurise.password.data.AliasProvider
+import eu.eurise.password.data.PendingLogin
 import eu.eurise.password.data.VaultRepository
 import eu.eurise.password.data.VaultState
 import eu.eurise.password.kdbx.EntryDraft
@@ -78,6 +79,13 @@ class FillActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (intent.getBooleanExtra(EXTRA_SAVE, false)) {
+            val pending = repo.pendingLogin
+            repo.pendingLogin = null
+            if (pending == null) { finish(); return }
+            setContent { EuriseTheme { SaveSheet(pending, onClose = ::finish) } }
+            return
+        }
         val form = readForm()
         if (form == null) { finish(); return }
         setContent { EuriseTheme { FillSheet(form, onCancel = ::finish, onDone = ::finishWith) } }
@@ -101,6 +109,7 @@ class FillActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_SAVE = "save"
         const val EXTRA_IDS = "ids"
         const val EXTRA_KINDS = "kinds"
         const val EXTRA_DOMAIN = "domain"
@@ -126,6 +135,44 @@ private fun FillSheet(form: Form, onCancel: () -> Unit, onDone: (Dataset?) -> Un
                 VaultState.Empty -> Text(stringResource(R.string.pwd_fill_no_vault), modifier = Modifier.padding(20.dp))
                 VaultState.Locked -> UnlockScreen(vm, compact = true)
                 is VaultState.Open -> OpenSheet(form, s.entries, vm, onDone)
+            }
+        }
+    }
+}
+
+/** Android propone di salvare un accesso appena digitato: voce nuova, o nuova password per quella che c'era. */
+@Composable
+private fun SaveSheet(pending: PendingLogin, onClose: () -> Unit, vm: PasswordViewModel = viewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    val scheme = MaterialTheme.colorScheme
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)).clickable(onClick = onClose), contentAlignment = Alignment.BottomCenter) {
+        Column(
+            Modifier.fillMaxWidth().imePadding().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(scheme.background)
+                .clickable(enabled = false) {}.navigationBarsPadding().padding(top = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            when (val s = state) {
+                VaultState.Loading -> Unit
+                VaultState.Empty -> Text(stringResource(R.string.pwd_fill_no_vault), modifier = Modifier.padding(20.dp))
+                VaultState.Locked -> UnlockScreen(vm, compact = true)
+                is VaultState.Open -> {
+                    val target = pending.webDomain ?: pending.packageName
+                    val mine = s.entries.filter { e ->
+                        e.card == null && e.username.equals(pending.username, ignoreCase = true) &&
+                            if (pending.webDomain != null) Matching.domainMatches(e.url, pending.webDomain) else pending.packageName in e.apps
+                    }
+                    val existing = mine.singleOrNull()
+                    if (mine.any { it.password == pending.password }) {
+                        LaunchedEffect(Unit) { onClose() }
+                    } else {
+                        SheetTitle(if (existing != null) stringResource(R.string.pwd_save_update, existing.title) else stringResource(R.string.pwd_save_title, target))
+                        if (pending.username.isNotEmpty()) Text(pending.username, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 20.dp))
+                        Column(Modifier.padding(horizontal = 16.dp)) {
+                            Button(onClick = { vm.saveLogin(pending, existing); onClose() }, modifier = Modifier.fillMaxWidth().height(50.dp)) { Text(stringResource(R.string.pwd_save_confirm)) }
+                            TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.pwd_save_skip)) }
+                        }
+                    }
+                }
             }
         }
     }

@@ -1,13 +1,7 @@
 package eu.eurise.password
 
 import android.app.Application
-import android.content.ClipData
-import android.content.ClipDescription
-import android.content.ClipboardManager
-import android.content.Context
 import android.net.Uri
-import android.os.Build
-import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +9,13 @@ import eu.eurise.password.data.AliasCheck
 import eu.eurise.password.data.AliasProvider
 import eu.eurise.password.data.AliasStore
 import eu.eurise.password.data.BiometricVault
+import eu.eurise.password.data.BreachStore
+import eu.eurise.password.data.PendingLogin
+import eu.eurise.password.data.SecureClipboard
 import eu.eurise.password.data.VaultRepository
+import eu.eurise.password.data.VaultState
+import eu.eurise.password.kdbx.Vault
+import eu.eurise.password.kdbx.VaultEntry
 import eu.eurise.password.data.askBiometric
 import eu.eurise.password.kdbx.EntryDraft
 import eu.eurise.password.kdbx.ImportCounts
@@ -23,8 +23,6 @@ import eu.eurise.password.kdbx.KdbxException
 import eu.eurise.password.logic.ImportOutcome
 import eu.eurise.password.logic.Importer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -49,7 +47,6 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     val error = _error.asStateFlow()
     private val _waitingBrowser = MutableStateFlow(false)
     val waitingBrowser = _waitingBrowser.asStateFlow()
-    private var clearClip: Job? = null
 
     val bio = BiometricVault(app)
     private val _bioOn = MutableStateFlow(bio.enabled)
@@ -139,6 +136,46 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
 
     fun closeImport() { _importing.value = null }
 
+    val breach = BreachStore(app)
+    private val _breachOn = MutableStateFlow(breach.enabled)
+    val breachOn = _breachOn.asStateFlow()
+    private val _breaches = MutableStateFlow(breach.results())
+    val breaches = _breaches.asStateFlow()
+    private val _breachLast = MutableStateFlow(breach.lastCheck)
+    val breachLast = _breachLast.asStateFlow()
+    private val _breachFailed = MutableStateFlow(false)
+    val breachFailed = _breachFailed.asStateFlow()
+
+    fun setBreach(on: Boolean) {
+        breach.enabled = on
+        _breachOn.value = on
+        _breaches.value = breach.results()
+        _breachLast.value = breach.lastCheck
+        if (on) checkBreaches()
+    }
+
+    fun checkBreaches() {
+        val open = repo.state.value as? VaultState.Open ?: return
+        viewModelScope.launch {
+            val ok = breach.check(open.entries)
+            _breachFailed.value = !ok
+            _breaches.value = breach.results()
+            _breachLast.value = breach.lastCheck
+        }
+    }
+
+    fun checkBreachesIfDue() { if (breach.due) checkBreaches() }
+
+    /** Dati in attesa dal servizio di compilazione: stanno solo in memoria, mai nell'Intent. */
+    fun saveLogin(pending: PendingLogin, existing: VaultEntry?) = viewModelScope.launch {
+        if (existing != null) {
+            repo.saveEntry(EntryDraft(existing.title, existing.username, pending.password, existing.url, existing.notes, existing.otp), existing.uuid)
+        } else {
+            val url = pending.webDomain?.let { "https://$it" } ?: (Vault.APP_SCHEME + pending.packageName)
+            repo.saveEntry(EntryDraft(pending.webDomain ?: pending.packageName, pending.username, pending.password, url, "", null), null)
+        }
+    }
+
     fun linkApp(uuid: String, packageName: String) = viewModelScope.launch { repo.linkApp(uuid, packageName) }
 
     fun clearError() { _error.value = null }
@@ -217,23 +254,9 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Copia marcando il testo come riservato (la tastiera non lo mostra) e lo cancella dopo 45 secondi. */
     fun copy(value: String) {
         val app = getApplication<Application>()
-        val clipboard = app.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(text(R.string.pwd_copied_label), value)
-        clip.description.extras = PersistableBundle().apply { putBoolean(EXTRA_IS_SENSITIVE, true) }
-        clipboard.setPrimaryClip(clip)
+        SecureClipboard.copy(app, text(R.string.pwd_copied_label), value)
         Toast.makeText(app, R.string.pwd_copied, Toast.LENGTH_SHORT).show()
-        clearClip?.cancel()
-        clearClip = viewModelScope.launch {
-            delay(45_000)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) clipboard.clearPrimaryClip()
-            else clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
-        }
     }
-
 }
-
-/** Il valore di ClipDescription.EXTRA_IS_SENSITIVE, che nel kit esiste solo da Android 13. */
-private const val EXTRA_IS_SENSITIVE = "android.content.extra.IS_SENSITIVE"

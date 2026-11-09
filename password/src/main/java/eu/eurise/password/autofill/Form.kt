@@ -12,7 +12,19 @@ import eu.eurise.password.kdbx.CardData
 import eu.eurise.password.kdbx.VaultEntry
 
 /** I campi riconosciuti in una schermata e chi la mostra. */
-class Form(val ids: ArrayList<AutofillId>, val kinds: List<FieldKind>, val webDomain: String?, val packageName: String) {
+class Form(
+    val ids: ArrayList<AutofillId>,
+    val kinds: List<FieldKind>,
+    val webDomain: String?,
+    val packageName: String,
+    private val values: List<String?> = emptyList(),
+) {
+    /** Il testo digitato nel primo campo di quel tipo: serve al salvataggio. */
+    fun typed(vararg wanted: FieldKind): String? =
+        kinds.indices.firstOrNull { kinds[it] in wanted && !values.getOrNull(it).isNullOrEmpty() }?.let { values[it] }
+
+    fun idsOf(vararg wanted: FieldKind): Array<AutofillId> = ids.filterIndexed { i, _ -> kinds[i] in wanted }.toTypedArray()
+
     val hasLogin get() = kinds.any { it == FieldKind.Password || it == FieldKind.NewPassword || it == FieldKind.Username }
     val hasPassword get() = kinds.any { it == FieldKind.Password || it == FieldKind.NewPassword }
     val isSignUp get() = kinds.any { it == FieldKind.NewPassword }
@@ -71,6 +83,7 @@ class Form(val ids: ArrayList<AutofillId>, val kinds: List<FieldKind>, val webDo
         fun parse(structure: AssistStructure): Form? {
             val ids = ArrayList<AutofillId>()
             val found = ArrayList<FieldKind?>()
+            val typed = ArrayList<String?>()
             var domain: String? = null
             fun visit(node: AssistStructure.ViewNode) {
                 node.webDomain?.takeIf { it.isNotBlank() }?.let { if (domain == null) domain = it }
@@ -79,6 +92,7 @@ class Form(val ids: ArrayList<AutofillId>, val kinds: List<FieldKind>, val webDo
                     val html = node.htmlInfo?.takeIf { it.tag.equals("input", ignoreCase = true) }
                         ?.attributes?.associate { it.first.lowercase() to it.second.orEmpty() }.orEmpty()
                     ids += id
+                    typed += node.autofillValue?.takeIf { it.isText }?.textValue?.toString()
                     found += Matching.classify(node.autofillHints?.toList().orEmpty(), html, node.idEntry, node.inputType)
                 }
                 for (i in 0 until node.childCount) visit(node.getChildAt(i))
@@ -88,7 +102,7 @@ class Form(val ids: ArrayList<AutofillId>, val kinds: List<FieldKind>, val webDo
             val keep = kinds.indices.filter { kinds[it] != null }
             if (keep.isEmpty()) return null
             val pkg = structure.activityComponent.packageName
-            return Form(ArrayList(keep.map { ids[it] }), keep.map { kinds[it]!! }, domain, pkg)
+            return Form(ArrayList(keep.map { ids[it] }), keep.map { kinds[it]!! }, domain, pkg, keep.map { typed[it] })
         }
     }
 }

@@ -207,4 +207,24 @@
     <string name="pwd_import_encrypted">Eurise non può leggerlo. Esportalo di nuovo senza cifratura, importalo subito e poi eliminalo.</string>
     <string name="pwd_import_unknown_title">File non riconosciuto</string>
     <string name="pwd_import_unknown">Serve uno ZIP o un JSON di Proton Pass, oppure un\'esportazione di Proton Authenticator, Aegis o 2FAS.</string>
+
+    <string name="pwd_tile_lock">Blocca password</string>
+    <string name="pwd_tile_generate">Genera password</string>
+    <string name="pwd_fix_breached">%d comparse in una violazione</string>
+    <string name="pwd_row_fix_breached">comparsa in una violazione · da cambiare</string>
+    <string name="pwd_breach_found">Comparsa in una violazione</string>
+    <string name="pwd_breach_found_detail">cambiala qui e sul sito</string>
+    <string name="pwd_breach_clean">Mai comparsa in una violazione</string>
+    <string name="pwd_breach_clean_detail">controllata il %s, inviando solo un frammento dell\'impronta</string>
+    <string name="pwd_breach_switch">Controllo delle password violate</string>
+    <string name="pwd_breach_off">Spento: nessun dato esce per questo controllo.</string>
+    <string name="pwd_breach_on">Una volta a settimana. Ultimo controllo: %s</string>
+    <string name="pwd_breach_never">mai</string>
+    <string name="pwd_breach_now">Controlla adesso</string>
+    <string name="pwd_breach_failed">Controllo non riuscito: servizio non raggiungibile.</string>
+    <string name="pwd_breach_privacy">Cosa esce: per ogni password, i primi 5 caratteri della sua impronta SHA-1. Mai la password e nemmeno l\'impronta intera.\n\nDove va: al servizio pubblico Have I Been Pwned.\n\nChi lo vede: il servizio riceve quel frammento e il tuo indirizzo di rete, e risponde con centinaia di impronte simili: il confronto si fa sul telefono.\n\nCome si torna indietro: spegni l\'interruttore. I risultati vengono cancellati.</string>
+    <string name="pwd_save_title">Salvare l\'accesso a %s?</string>
+    <string name="pwd_save_update">Aggiorna la password di %s?</string>
+    <string name="pwd_save_confirm">Salva in Password</string>
+    <string name="pwd_save_skip">Non ora</string>
 </resources>

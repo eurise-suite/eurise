@@ -265,4 +265,13 @@ class KdbxTest {
         assertNotNull(v.entries().single { it.title == "Infomaniak" }.otp)
         assertEquals(5, vault(Kdbx.read(Kdbx.write(file), key)).entries().size)
     }
+
+    @Test fun breachCheckUsesOnlyTheHash() {
+        val b = eu.eurise.password.logic.Breach
+        val hash = b.sha1("password")
+        assertEquals("5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8", hash)
+        assertTrue(b.found(hash, "AAAA:1\r\n1E4C9B93F3F0682250B6CF8331B7EE68FD8:42\r\n"))
+        assertFalse(b.found(hash, "1E4C9B93F3F0682250B6CF8331B7EE68FD8:0"))
+        assertFalse(b.found(hash, "AAAA:3"))
+    }
 }

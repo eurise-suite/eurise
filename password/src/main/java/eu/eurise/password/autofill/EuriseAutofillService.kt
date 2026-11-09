@@ -10,8 +10,10 @@ import android.service.autofill.FillCallback
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
 import android.service.autofill.SaveCallback
+import android.service.autofill.SaveInfo
 import android.service.autofill.SaveRequest
 import eu.eurise.password.R
+import eu.eurise.password.data.PendingLogin
 import eu.eurise.password.data.VaultRepository
 import eu.eurise.password.data.VaultState
 
@@ -42,10 +44,28 @@ class EuriseAutofillService : AutofillService() {
             response.addDataset(opener(form, label))
             count++
         }
+        val passwords = form.idsOf(FieldKind.Password, FieldKind.NewPassword)
+        if (passwords.isNotEmpty() && !form.hasCard) {
+            response.setSaveInfo(
+                SaveInfo.Builder(SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME, passwords)
+                    .setOptionalIds(form.idsOf(FieldKind.Username))
+                    .build(),
+            )
+        }
         callback.onSuccess(if (count > 0) response.build() else null)
     }
 
-    override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) = callback.onSuccess()
+    override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
+        val structure = request.fillContexts.lastOrNull()?.structure
+        val form = structure?.let(Form::parse)
+        val password = form?.typed(FieldKind.NewPassword, FieldKind.Password)
+        if (form == null || password == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return callback.onSuccess()
+        VaultRepository.get(this).pendingLogin =
+            PendingLogin(form.typed(FieldKind.Username).orEmpty(), password, form.webDomain, form.packageName)
+        val intent = Intent(this, FillActivity::class.java).putExtra(FillActivity.EXTRA_SAVE, true)
+        val flags = PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        callback.onSuccess(PendingIntent.getActivity(this, nextRequest++, intent, flags).intentSender)
+    }
 
     /** Riga che apre il foglio: i valori arrivano solo dopo, come risultato dell'autenticazione. */
     @Suppress("DEPRECATION")

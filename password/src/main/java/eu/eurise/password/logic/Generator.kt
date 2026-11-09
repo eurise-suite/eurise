@@ -7,7 +7,7 @@ import kotlin.math.ln
 enum class Strength { Weak, Fair, Strong, VeryStrong }
 
 /** Una voce che conviene sistemare, e perché. */
-data class HealthIssue(val uuid: String, val weak: Boolean, val reused: Boolean)
+data class HealthIssue(val uuid: String, val weak: Boolean, val reused: Boolean, val breached: Boolean = false)
 
 /** Controlli sulle carte, senza rete. */
 object Cards {
