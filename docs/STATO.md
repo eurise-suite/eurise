@@ -266,6 +266,15 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   ricerca da Android 15. Office resta APK separato. Mancano: lettura del testo (OCR, serve scelta sul peso), quindi nome
   automatico, scadenze e ricerca nei PDF; cartelle cifrate; kDrive via API. Cartelle allineate in `FolderSync` (decisioni in `SyncPlanner`,
   con freno se sparisce troppo; automatico ogni 6 ore solo in Wi-Fi). Peso della versione ufficiale: da 2,7 a 3,5 MB, quasi tutto CameraX. MANAGE_EXTERNAL_STORAGE va rivisto se un giorno si pubblica su Play.
+- Resto della Galleria (ramo `galleria-completa`, 9 novembre, APK 165, da provare sul telefono e poi unire a `main`): dock Foto, Album, Luoghi, Cerca
+  con fotocamera a lato. `data/GalleryStore` (SQLite di sistema: caricate, posizioni, nomi, diari), `UploadWorker` (Eurise/Foto/AAAA/MM, solo Wi-Fi di base,
+  cartelle scelte, spento di base con spiegazione), eliminazione a tre scelte, foto "solo cloud" con miniatura locale, Luoghi (caselle da circa 10 km, elenco senza
+  mappa, nomi da Nominatim con interruttore spento), Cerca locale (date, tipo, cartella, luogo), diari, condivisione senza posizione (`data/Files.kt`), cartella
+  protetta (`SecureFolder`, `logic/SecureStream`; dati persi se si disinstalla senza tenerli), editor su copia, pulizia. Solo GalFoto, GalElimina e GalAccadde avevano
+  un'anteprima: Luoghi, Cerca, diario, cartella protetta, editor e pulizia sono nello stile della suite, senza tela. Account: Murena e Nextcloud, collegati dentro la
+  Galleria; kDrive arriva con l'API. Mancano: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario. Il centro privacy dovrà elencare
+  il cloud scelto e Nominatim per questa app.
+- Residui ancora da fare: Password (Famiglia, alias kMail), File (cartelle cifrate, kDrive via API).
 - Ultimo APK: 161 da `main` (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
 - Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
