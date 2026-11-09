@@ -67,7 +67,7 @@ object Vtodo {
         return out.toString()
     }
 
-    private fun escape(text: String) = text.replace("\\", "\\\\").replace("\n", "\\n").replace(",", "\\,").replace(";", "\;")
+    private fun escape(text: String) = text.replace("\\", "\\\\").replace("\n", "\\n").replace(",", "\\,").replace(";", "\\;")
 
     /** Le righe proprie del VTODO, senza quelle dei promemoria annidati. */
     private fun ownLines(lines: List<String>): List<String> {
