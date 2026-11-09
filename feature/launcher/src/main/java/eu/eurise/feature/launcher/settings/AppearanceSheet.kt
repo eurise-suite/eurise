@@ -121,6 +121,15 @@ fun AppearanceSheet(
                     valueRange = LauncherSettings.IconSizes.first.toFloat()..LauncherSettings.IconSizes.last.toFloat(),
                 )
             }
+            listOf(
+                Triple(R.string.appearance_pull_panel, settings.pullPanel) { v: Boolean -> onChange { it.copy(pullPanel = v) } },
+                Triple(R.string.appearance_swipe_search, settings.swipeSearch) { v: Boolean -> onChange { it.copy(swipeSearch = v) } },
+            ).forEach { (label, on, set) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(label), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Switch(checked = on, onCheckedChange = set)
+                }
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.appearance_labels), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })

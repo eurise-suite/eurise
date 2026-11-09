@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.toArgb
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.DefaultBarCategories
+import eu.eurise.feature.launcher.home.toHomeSlot
 import eu.eurise.feature.launcher.apps.decodeAppOrder
 import eu.eurise.feature.launcher.apps.decodeCategories
 import eu.eurise.feature.launcher.apps.encodeAppOrder
@@ -105,6 +106,15 @@ data class LauncherSettings(
     /** Ordine delle app dentro ogni categoria, scelto trascinandole: id della categoria → chiavi delle app. */
     val appOrder: Map<String, List<String>> = emptyMap(),
     /** App scelte per i pulsanti accanto all'ora (chiave dell'app); nulle per quelle predefinite. */
+    /** Le bolle delle pagine a destra e a sinistra della home: stesso modello della home. */
+    val rightSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
+    val leftSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
+    /** Scorrere in giù apre il Pannello Eurise; spento non succede nulla e resta la tendina di sistema, dal bordo in alto. */
+    val pullPanel: Boolean = false,
+    /** Scorrere in su apre la ricerca universale (c'è sempre la lente nella barra). */
+    val swipeSearch: Boolean = false,
+    /** Web app di AI aggiunte dall'utente: nome e indirizzo, con %s al posto della domanda se il sito lo consente. */
+    val aiWebApps: List<Pair<String, String>> = emptyList(),
     val quickGallery: String? = null,
     val quickCamera: String? = null,
     /** Cartelle di app, sulla home o nelle categorie. */
@@ -184,6 +194,11 @@ class SettingsStore(context: Context) {
             .putString("bar_categories", next.categories.encodeCategories())
             .putString("category_overrides", next.categoryOverrides.entries.joinToString("\n") { "${it.key}=${it.value}" })
             .putString("app_order", next.appOrder.encodeAppOrder())
+            .putString("right_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.rightSlots))
+            .putString("left_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.leftSlots))
+            .putBoolean("pull_panel", next.pullPanel)
+            .putBoolean("swipe_search", next.swipeSearch)
+            .putString("ai_web_apps", next.aiWebApps.joinToString("\n") { "${it.first}\t${it.second}" })
             .putString("quick_gallery", next.quickGallery)
             .putString("quick_camera", next.quickCamera)
             .putString("folders", next.folders.encodeFolders())
@@ -196,6 +211,11 @@ class SettingsStore(context: Context) {
             .putBoolean("read_codes", next.readCodes)
             .apply()
     }
+
+    /** Le pagine laterali usano ora le bolle della home: la prima volta si convertono le schede già disposte. */
+    private fun sideSlots(key: String, cards: List<PlacedCard>): List<eu.eurise.feature.launcher.home.HomeSlot> =
+        if (prefs.contains(key)) eu.eurise.feature.launcher.home.decodeHome(prefs.getString(key, ""))
+        else cards.mapNotNull { it.toHomeSlot() }
 
     private fun load() = LauncherSettings(
         columns = prefs.getInt("grid_columns", 5),
@@ -214,6 +234,13 @@ class SettingsStore(context: Context) {
             .mapNotNull { line -> line.substringBeforeLast('=', "").takeIf { it.isNotEmpty() }?.let { it to line.substringAfterLast('=') } }
             .toMap(),
         appOrder = decodeAppOrder(prefs.getString("app_order", null)),
+        rightSlots = sideSlots("right_slots", decodeCards(prefs.getString("cards", null))),
+        leftSlots = sideSlots("left_slots", decodeCards(prefs.getString("left_cards", null), DefaultLeftCards)),
+        pullPanel = prefs.getBoolean("pull_panel", false),
+        swipeSearch = prefs.getBoolean("swipe_search", false),
+        aiWebApps = prefs.getString("ai_web_apps", "").orEmpty().lines().mapNotNull { l ->
+            l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1] }
+        },
         quickGallery = prefs.getString("quick_gallery", null),
         quickCamera = prefs.getString("quick_camera", null),
         folders = decodeFolders(prefs.getString("folders", null)),

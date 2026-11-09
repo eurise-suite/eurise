@@ -2,6 +2,7 @@ package eu.eurise.feature.launcher.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
@@ -91,6 +92,7 @@ import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
+import eu.eurise.feature.launcher.apps.launch
 import eu.eurise.feature.launcher.apps.alphabetIndex
 import eu.eurise.feature.launcher.apps.inUserOrder
 
@@ -383,6 +385,155 @@ fun CategoryPages(
     }
 }
 
+private val SearchRound = 36.dp
+
+/** Un contatto trovato, con le icone per raggiungerlo: chiamata, SMS, ogni app di chat, email. */
+@Composable
+private fun PersonResult(
+    person: Person,
+    actions: List<eu.eurise.feature.launcher.contacts.ContactAction>,
+    onOpen: () -> Unit,
+    onAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit,
+) {
+    val shown = listOfNotNull(
+        actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call },
+        actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms },
+    ) + actions.filter { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat }.distinctBy { it.label } +
+        listOfNotNull(actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Email })
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable(onClick = onOpen).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            eu.eurise.feature.launcher.home.Avatar(person, 36)
+            Spacer(Modifier.width(10.dp))
+            Text(person.name, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            shown.forEach { a ->
+                RoundTarget(a.label, onClick = { onAction(a) }) {
+                    when (a.kind) {
+                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call -> Icon(EuriseIcons.phone(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms -> Icon(EuriseIcons.message(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Email -> Icon(EuriseIcons.mail(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+                        // Le app di chat si distinguono dall'iniziale: W, T, S…
+                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat -> Text(a.label.take(1), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun RoundTarget(label: String, selected: Boolean = false, onLongClick: (() -> Unit)? = null, onClick: () -> Unit, content: @Composable () -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+    Box(
+        Modifier.size(SearchRound).clip(CircleShape).background(primary.copy(alpha = if (selected) 0.32f else 0.14f))
+            .combinedClickable(onClickLabel = label, onClick = onClick, onLongClick = onLongClick),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+/** Dove cercare ciò che si è scritto: due browser, fino a tre AI, e nelle Note, Attività e Calendario della suite. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun SearchTargets(
+    q: String,
+    apps: List<AppEntry>,
+    dark: Boolean,
+    aiWeb: List<Pair<String, String>>,
+    onAiWeb: (List<Pair<String, String>>) -> Unit,
+    scope: String?,
+    onScope: (String) -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val browsers = remember(apps) { apps.filter { it.category == eu.eurise.feature.launcher.apps.Category.Browser && it.component != null }.distinctBy { it.packageName }.take(2) }
+    val aiApps = remember(apps) { apps.filter { it.category == eu.eurise.feature.launcher.apps.Category.Ai && it.component != null }.distinctBy { it.packageName }.take(3) }
+    val webShown = aiWeb.take((3 - aiApps.size).coerceAtLeast(0))
+    var adding by remember { mutableStateOf(false) }
+    androidx.compose.foundation.layout.FlowRow(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        browsers.forEach { app ->
+            RoundTarget(app.label, onClick = { context.searchInBrowser(app.packageName, q) }) { AppIcon(app, 28.dp, dark) }
+        }
+        aiApps.forEach { app ->
+            RoundTarget(app.label, onClick = { context.askAiApp(app, q) }) { AppIcon(app, 28.dp, dark) }
+        }
+        webShown.forEach { web ->
+            RoundTarget(web.first, onLongClick = { onAiWeb(aiWeb - web) }, onClick = { context.askAiWeb(web.second, q) }) {
+                Text(web.first.take(1).uppercase(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        if (aiApps.size + webShown.size < 3) {
+            val label = stringResource(R.string.search_add_ai)
+            RoundTarget(label, onClick = { adding = true }) { Icon(EuriseIcons.plus(2f), label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+        }
+        listOf(
+            Triple("notes", R.string.search_notes, EuriseIcons.note(2f)),
+            Triple("tasks", R.string.search_tasks_short, EuriseIcons.task(2f)),
+            Triple("calendar", R.string.search_events, EuriseIcons.calendar(2f)),
+        ).forEach { (id, title, icon) ->
+            val label = stringResource(title)
+            RoundTarget(label, selected = scope == id, onClick = { onScope(id) }) {
+                Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+            }
+        }
+    }
+    if (adding) AddAiDialog(onDismiss = { adding = false }, onAdd = { name, url -> onAiWeb(aiWeb + (name to url)); adding = false })
+}
+
+@Composable
+private fun AddAiDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf("https://") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_add_ai)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.OutlinedTextField(name, { name = it }, singleLine = true, label = { Text(stringResource(R.string.search_ai_name)) })
+                androidx.compose.material3.OutlinedTextField(url, { url = it }, singleLine = true, label = { Text(stringResource(R.string.search_ai_url)) })
+                Text(stringResource(R.string.search_ai_hint), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(enabled = name.isNotBlank() && url.length > 8, onClick = { onAdd(name.trim(), url.trim()) }) { Text(stringResource(R.string.videos_add)) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.categories_reset_cancel)) } },
+    )
+}
+
+private fun android.content.Context.searchInBrowser(pkg: String, q: String) {
+    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH).setPackage(pkg)
+        .putExtra(android.app.SearchManager.QUERY, q).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (runCatching { startActivity(search) }.isFailure) {
+        val page = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://duckduckgo.com/?q=" + android.net.Uri.encode(q)))
+            .setPackage(pkg).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(page) }
+    }
+}
+
+/** Passa la domanda all'app di AI; se non accetta testo, apre l'app con la domanda già copiata. */
+private fun android.content.Context.askAiApp(app: AppEntry, q: String) {
+    val share = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").setPackage(app.packageName)
+        .putExtra(android.content.Intent.EXTRA_TEXT, q).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (runCatching { startActivity(share) }.isFailure) {
+        copyQuery(q)
+        launch(app)
+    }
+}
+
+private fun android.content.Context.askAiWeb(url: String, q: String) {
+    val target = if ("%s" in url) url.replace("%s", android.net.Uri.encode(q)) else url.also { copyQuery(q) }
+    runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(target)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+private fun android.content.Context.copyQuery(q: String) {
+    getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(android.content.ClipData.newPlainText("Eurise", q))
+}
+
 /** Azioni della ricerca: oltre a trovare, si può scrivere e salvare subito. */
 class CaptureActions(
     val onTask: (String) -> Unit,
@@ -417,8 +568,18 @@ fun SearchOverlay(
     onOpenContact: (Person) -> Unit = {},
     onOpenMessage: (MessageItem) -> Unit = {},
     onOpenFile: (RecentFile) -> Unit = {},
+    searchEvents: suspend (String) -> List<eu.eurise.core.data.calendar.CalendarEvent> = { emptyList() },
+    contactActions: suspend (Person) -> List<eu.eurise.feature.launcher.contacts.ContactAction> = { emptyList() },
+    onContactAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit = {},
+    onOpenEvent: (eu.eurise.core.data.calendar.CalendarEvent) -> Unit = {},
+    aiWebApps: List<Pair<String, String>> = emptyList(),
+    onAiWebApps: (List<Pair<String, String>>) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    // Note, Attività o Calendario: mostra solo quei risultati; null li mostra tutti.
+    var scope by rememberSaveable { mutableStateOf<String?>(null) }
+    var foundEvents by remember { mutableStateOf<List<eu.eurise.core.data.calendar.CalendarEvent>>(emptyList()) }
+    var peopleActions by remember { mutableStateOf<Map<Person, List<eu.eurise.feature.launcher.contacts.ContactAction>>>(emptyMap()) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val q = query.trim()
@@ -431,9 +592,11 @@ fun SearchOverlay(
     var foundPeople by remember { mutableStateOf<List<Person>>(emptyList()) }
     var foundFiles by remember { mutableStateOf<List<RecentFile>>(emptyList()) }
     LaunchedEffect(q) {
-        if (q.isEmpty()) { foundPeople = emptyList(); foundFiles = emptyList(); return@LaunchedEffect }
+        if (q.isEmpty()) { foundPeople = emptyList(); foundFiles = emptyList(); foundEvents = emptyList(); peopleActions = emptyMap(); return@LaunchedEffect }
         kotlinx.coroutines.delay(150)
-        foundPeople = runCatching { searchContacts(q) }.getOrDefault(emptyList())
+        foundPeople = runCatching { searchContacts(q) }.getOrDefault(emptyList()).take(3)
+        peopleActions = foundPeople.associateWith { runCatching { contactActions(it) }.getOrDefault(emptyList()) }
+        foundEvents = runCatching { searchEvents(q) }.getOrDefault(emptyList()).take(5)
         foundFiles = runCatching { searchFiles(q) }.getOrDefault(emptyList())
     }
 
@@ -508,33 +671,20 @@ fun SearchOverlay(
             contentPadding = PaddingValues(vertical = 10.dp),
         ) {
             // Ordine: contatti, poi aggiungi/salva/nuovo, app, conversazioni, note e attività, documenti.
-            if (foundPeople.isNotEmpty()) {
-                item {
-                    androidx.compose.foundation.lazy.LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                    ) {
-                        items(foundPeople.size) { i ->
-                            val person = foundPeople[i]
-                            Column(
-                                Modifier.width(64.dp).clip(RoundedCornerShape(14.dp)).clickable { onOpenContact(person) }.padding(vertical = 4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                eu.eurise.feature.launcher.home.Avatar(person, 48)
-                                Spacer(Modifier.height(4.dp))
-                                Text(person.name, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
-                    }
+            foundPeople.forEach { person ->
+                item(key = "p${person.contactId}${person.name}") {
+                    PersonResult(person, peopleActions[person].orEmpty(), { onOpenContact(person) }, onContactAction)
                 }
             }
-            if (q.isNotEmpty()) {
+            item(key = "where") {
+                SearchTargets(q, apps, dark, aiWebApps, onAiWebApps, scope, { scope = if (scope == it) null else it })
+            }
+            if (q.isNotEmpty() && scope == null) {
                 item { CaptureRow(EuriseIcons.task(), stringResource(R.string.capture_task), q) { capture.onTask(q); onClose() } }
                 item { CaptureRow(EuriseIcons.note(), stringResource(R.string.capture_note), q) { capture.onNote(q); onClose() } }
                 item { CaptureRow(EuriseIcons.calendar(), stringResource(R.string.capture_event), q) { capture.onEvent(q); onClose() } }
             }
-            if (foundApps.isNotEmpty()) {
+            if (foundApps.isNotEmpty() && scope == null) {
                 item { SectionLabel(stringResource(R.string.search_apps)) }
                 foundApps.forEach { app ->
                     item(key = app.key) {
@@ -546,7 +696,7 @@ fun SearchOverlay(
                     }
                 }
             }
-            if (foundChats.isNotEmpty()) {
+            if (foundChats.isNotEmpty() && scope == null) {
                 item { SectionLabel(stringResource(R.string.search_chats)) }
                 foundChats.forEach { m ->
                     item(key = "m${m.key}") {
@@ -561,7 +711,22 @@ fun SearchOverlay(
                     }
                 }
             }
-            if (foundNotes.isNotEmpty()) {
+            if (foundEvents.isNotEmpty() && (scope == null || scope == "calendar")) {
+                item { SectionLabel(stringResource(R.string.search_events)) }
+                foundEvents.forEach { e ->
+                    item(key = "e${e.eventId}${e.beginMillis}") {
+                        ResultRow(onClick = { onOpenEvent(e) }) {
+                            Icon(EuriseIcons.calendar(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(e.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(e.start.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy · H:mm", java.util.Locale.getDefault())), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+            if (foundNotes.isNotEmpty() && (scope == null || scope == "notes")) {
                 item { SectionLabel(stringResource(R.string.search_notes)) }
                 foundNotes.forEach { note ->
                     item(key = "n${note.id}") {
@@ -578,7 +743,7 @@ fun SearchOverlay(
                     }
                 }
             }
-            if (foundTasks.isNotEmpty()) {
+            if (foundTasks.isNotEmpty() && (scope == null || scope == "tasks")) {
                 item { SectionLabel(stringResource(R.string.search_tasks)) }
                 foundTasks.forEach { task ->
                     item(key = "t${task.id}") {
@@ -590,7 +755,7 @@ fun SearchOverlay(
                     }
                 }
             }
-            if (foundFiles.isNotEmpty()) {
+            if (foundFiles.isNotEmpty() && scope == null) {
                 item { SectionLabel(stringResource(R.string.search_files)) }
                 foundFiles.forEach { file ->
                     item(key = "f${file.uri}") {

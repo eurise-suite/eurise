@@ -12,6 +12,7 @@ enum class AodBubble(val id: String, @StringRes val title: Int) {
     NextEvent("next_event", R.string.bubble_next_title),
     Today("today", R.string.bubble_today_name),
     Clock("clock", R.string.bubble_clock_title),
+    Calendar("calendar", R.string.card_calendar),
     Comms("comms", R.string.welcome_comms),
     Music("music", R.string.welcome_music),
     Meds("meds", R.string.bubble_meds_title);
@@ -55,6 +56,10 @@ fun shouldShowAod(config: AodConfig, trigger: AodTrigger, minute: Int, battery: 
         AodMode.Charging -> charging
     }
 }
+
+/** Le caselle di un mese, da lunedì: null per i giorni vuoti prima del primo del mese. */
+fun monthCells(month: java.time.YearMonth): List<java.time.LocalDate?> =
+    List(month.atDay(1).dayOfWeek.value - 1) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
 
 /** Le bolle sullo schermo: nella versione sempre accesa solo la prima, per consumare meno. */
 fun visibleBubbles(config: AodConfig, charging: Boolean): List<AodBubble> =
