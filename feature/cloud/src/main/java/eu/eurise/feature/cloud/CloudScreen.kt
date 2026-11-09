@@ -94,6 +94,7 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
     var connectSheet by rememberSaveable { mutableStateOf(false) }
     var form by rememberSaveable { mutableStateOf<Form?>(null) }
     var pickNotes by rememberSaveable { mutableStateOf(false) }
+    var askTasks by rememberSaveable { mutableStateOf(false) }
 
     BackHandler { if (page == Page.Sync) page = Page.Accounts else onBack() }
 
@@ -143,7 +144,11 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
                             onClick = { pickNotes = true },
                         )
                         Divider()
-                        WhereRow(stringResource(R.string.cloud_where_tasks), stringResource(R.string.cloud_where_tasks_hint), stringResource(R.string.cloud_soon))
+                        WhereRow(
+                            stringResource(R.string.cloud_where_tasks),
+                            stringResource(R.string.cloud_where_tasks_hint),
+                            notesAccount?.takeIf { settings.tasksEnabled }?.let { kindLabel(it.kind) } ?: stringResource(R.string.cloud_only_phone),
+                        )
                         Divider()
                         WhereRow(stringResource(R.string.cloud_where_calendar), stringResource(R.string.cloud_where_calendar_hint), stringResource(R.string.cloud_system))
                         Divider()
@@ -234,7 +239,13 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
                         viewModel::setNotesEnabled,
                     )
                     Divider()
-                    SwitchRow(stringResource(R.string.cloud_app_tasks), stringResource(R.string.cloud_app_tasks_hint), false, null)
+                    SwitchRow(
+                        stringResource(R.string.cloud_app_tasks),
+                        accounts.firstOrNull { it.id == settings.notesAccount }?.let { stringResource(R.string.cloud_app_tasks_on, kindLabel(it.kind)) }
+                            ?: stringResource(R.string.cloud_app_tasks_hint),
+                        settings.tasksEnabled,
+                        if (accounts.any { it.id == settings.notesAccount }) { on -> if (on) askTasks = true else viewModel.setTasksEnabled(false) } else null,
+                    )
                 }
             }
             item("h-how") { Label(stringResource(R.string.cloud_how)) }
@@ -263,6 +274,15 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
         }
     }
 
+    if (askTasks) {
+        AlertDialog(
+            onDismissRequest = { askTasks = false },
+            title = { Text(stringResource(R.string.cloud_tasks_explain_title)) },
+            text = { Text(stringResource(R.string.cloud_tasks_explain)) },
+            confirmButton = { TextButton(onClick = { askTasks = false; viewModel.setTasksEnabled(true) }) { Text(stringResource(R.string.cloud_tasks_explain_ok)) } },
+            dismissButton = { TextButton(onClick = { askTasks = false }) { Text(stringResource(R.string.cloud_tasks_explain_no)) } },
+        )
+    }
     if (connectSheet) {
         ConnectSheet(
             onPick = { kind ->

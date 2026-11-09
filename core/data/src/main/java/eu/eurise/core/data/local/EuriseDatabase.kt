@@ -10,9 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class,
-        TaskListEntity::class, LinkEntity::class,
+        TaskListEntity::class, LinkEntity::class, TaskTombstoneEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
@@ -25,7 +25,7 @@ internal abstract class EuriseDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) = insertDefaultTaskLists(db)
                 })
@@ -96,6 +96,17 @@ internal val MIGRATION_2_3 = object : Migration(2, 3) {
         db.execSQL("ALTER TABLE notes ADD COLUMN conflict_etag TEXT")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_notes_uid ON notes (uid)")
         db.execSQL("CREATE TABLE IF NOT EXISTS note_tombstones (uid TEXT NOT NULL, etag TEXT, PRIMARY KEY(uid))")
+    }
+}
+
+/** Versione 6: identità sul server delle attività e attività da togliere dal server. Nessun dato si perde. */
+internal val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN uid TEXT")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN remote_etag TEXT")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN sync_base TEXT")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tasks_uid ON tasks (uid)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS task_tombstones (uid TEXT NOT NULL, etag TEXT, list_id INTEGER NOT NULL, PRIMARY KEY(uid))")
     }
 }
 

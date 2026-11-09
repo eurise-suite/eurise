@@ -65,7 +65,7 @@ internal data class NoteTagEntity(
  */
 @Entity(
     tableName = "tasks",
-    indices = [Index("done"), Index("due_day"), Index("note_id"), Index("list_id"), Index("parent_id")],
+    indices = [Index("done"), Index("due_day"), Index("note_id"), Index("list_id"), Index("parent_id"), Index(value = ["uid"], unique = true)],
 )
 internal data class TaskEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -82,6 +82,17 @@ internal data class TaskEntity(
     val rrule: String? = null,
     @ColumnInfo(defaultValue = "0") val priority: Int = 0,
     @ColumnInfo(name = "parent_id") val parentId: Long? = null,
+    val uid: String? = null,
+    @ColumnInfo(name = "remote_etag") val remoteEtag: String? = null,
+    @ColumnInfo(name = "sync_base") val syncBase: String? = null,
+)
+
+/** Attività tolta dal telefono o spostata di elenco: da togliere anche dal server alla prossima sincronizzazione. */
+@Entity(tableName = "task_tombstones")
+internal data class TaskTombstoneEntity(
+    @PrimaryKey val uid: String,
+    val etag: String?,
+    @ColumnInfo(name = "list_id") val listId: Long,
 )
 
 /**
@@ -138,6 +149,9 @@ internal fun TaskEntity.toModel() = Task(
     repeat = rrule,
     priority = priority,
     parentId = parentId,
+    uid = uid,
+    remoteEtag = remoteEtag,
+    syncBase = syncBase,
 )
 
 internal fun Task.toEntity() = TaskEntity(
@@ -148,4 +162,7 @@ internal fun Task.toEntity() = TaskEntity(
     rrule = repeat,
     priority = priority,
     parentId = parentId,
+    uid = uid,
+    remoteEtag = remoteEtag,
+    syncBase = syncBase,
 )

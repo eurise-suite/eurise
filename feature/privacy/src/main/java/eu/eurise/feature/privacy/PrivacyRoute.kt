@@ -166,7 +166,7 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 val phone = stringResource(R.string.pv_phone)
                 listOf(
                     R.string.pv_data_notes to (notesPlace?.let { stringResource(R.string.pv_phone_and, it) } ?: phone),
-                    R.string.pv_data_tasks to phone,
+                    R.string.pv_data_tasks to (notesPlace?.takeIf { settings.tasksEnabled }?.let { stringResource(R.string.pv_phone_and, it) } ?: phone),
                     R.string.pv_data_calendar to stringResource(R.string.pv_system),
                     R.string.pv_data_medicines to phone,
                     R.string.pv_data_links to phone,

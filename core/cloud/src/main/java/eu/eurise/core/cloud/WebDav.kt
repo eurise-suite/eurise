@@ -33,6 +33,9 @@ data class DavShare(val id: String, val path: String, val url: String, val expir
 /** Una versione precedente di un file; [modified] è la data nel formato del server. */
 data class DavVersion(val href: String, val modified: String, val size: Long?)
 
+/** Un calendario del server; [todo] se accetta le attività. */
+data class DavCalendar(val slug: String, val name: String, val todo: Boolean)
+
 /** Spazio usato e libero, in byte, quando il server lo dice. */
 data class DavQuota(val used: Long?, val available: Long?)
 
@@ -43,7 +46,7 @@ data class DavQuota(val used: Long?, val available: Long?)
 class WebDav(
     baseUrl: String,
     private val user: String,
-    password: String,
+    private val password: String,
     private val client: OkHttpClient = sharedClient,
 ) {
     private val base: HttpUrl = baseUrl.toHttpUrl()
@@ -169,6 +172,34 @@ class WebDav(
         }
         val req = request(url(path)).put(body).build()
         call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
+    }
+
+    /** Lo stesso account sulla cartella dei calendari (CalDAV); null fuori da Nextcloud e Murena. */
+    fun calendars(): WebDav? = if (isNextcloud) WebDav(base.toString().replace("/remote.php/dav/files/", "/remote.php/dav/calendars/"), user, password, client) else null
+
+    /** I calendari dell'account, da chiamare su [calendars]. */
+    suspend fun listCalendars(): List<DavCalendar> {
+        val req = request(url("", folder = true)).header("Depth", "1").method("PROPFIND", CALENDARS_BODY.toRequestBody(XML)).build()
+        return call(req) { res ->
+            if (res.code != 207) throw DavException(res.code, "PROPFIND calendari: ${res.code}")
+            val responses = parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(DAV_NS, "response")
+            (0 until responses.length).mapNotNull { i ->
+                val r = responses.item(i) as Element
+                if (r.getElementsByTagNameNS(CALDAV_NS, "calendar").length == 0) return@mapNotNull null
+                val slug = r.child("href")?.textContent?.trim()?.trimEnd('/')?.substringAfterLast('/')?.let { URLDecoder.decode(it, "UTF-8") } ?: return@mapNotNull null
+                val comps = r.getElementsByTagNameNS(CALDAV_NS, "comp")
+                val todo = (0 until comps.length).any { (comps.item(it) as Element).getAttribute("name").equals("VTODO", true) }
+                DavCalendar(slug, r.child("displayname")?.textContent?.trim().orEmpty(), todo)
+            }
+        }
+    }
+
+    /** Crea un calendario di sole attività, da chiamare su [calendars]. */
+    suspend fun mkCalendar(slug: String, name: String) {
+        val safe = name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        val body = """<?xml version="1.0" encoding="utf-8"?><c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>$safe</d:displayname><c:supported-calendar-component-set><c:comp name="VTODO"/></c:supported-calendar-component-set></d:prop></d:set></c:mkcalendar>"""
+        val req = request(url(slug, folder = true)).method("MKCALENDAR", body.toRequestBody(XML)).build()
+        call(req) { res -> if (!res.isSuccessful && res.code != 405) throw DavException(res.code, "MKCALENDAR $slug: ${res.code}") }
     }
 
     /** Vero sui server Nextcloud, Murena compreso: solo loro hanno link, versioni e condivisioni. */
@@ -315,6 +346,9 @@ class WebDav(
     companion object {
         const val USER_AGENT = "Eurise (Android)"
         private const val DAV_NS = "DAV:"
+        private const val CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
+        private const val CALENDARS_BODY =
+            """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:resourcetype/><d:displayname/><c:supported-calendar-component-set/></d:prop></d:propfind>"""
         private const val OC_NS = "http://owncloud.org/ns"
         private const val FILEID_BODY =
             """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop><oc:fileid/></d:prop></d:propfind>"""

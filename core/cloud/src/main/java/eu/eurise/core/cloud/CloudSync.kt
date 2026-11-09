@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit
 data class CloudPrefs(
     val notesAccount: String? = null,
     val notesEnabled: Boolean = true,
+    /** Attività sullo stesso account delle note; spente finché la persona non le accende. */
+    val tasksEnabled: Boolean = false,
     val wifiOnly: Boolean = false,
     val lastSync: Long? = null,
     val lastError: String? = null,
@@ -63,6 +65,7 @@ class CloudSync private constructor(private val context: Context) {
         prefs.edit()
             .putString("notesAccount", next.notesAccount)
             .putBoolean("notesEnabled", next.notesEnabled)
+            .putBoolean("tasksEnabled", next.tasksEnabled)
             .putBoolean("wifiOnly", next.wifiOnly)
             .apply()
         schedule()
@@ -108,7 +111,7 @@ class CloudSync private constructor(private val context: Context) {
 
     private fun anythingToSync(): Boolean {
         val p = _prefs.value
-        return p.notesEnabled && accounts.get(p.notesAccount) != null
+        return (p.notesEnabled || p.tasksEnabled) && accounts.get(p.notesAccount) != null
     }
 
     private fun constraints() = Constraints.Builder()
@@ -140,6 +143,7 @@ class CloudSync private constructor(private val context: Context) {
     private fun loadPrefs() = CloudPrefs(
         notesAccount = prefs.getString("notesAccount", null),
         notesEnabled = prefs.getBoolean("notesEnabled", true),
+        tasksEnabled = prefs.getBoolean("tasksEnabled", false),
         wifiOnly = prefs.getBoolean("wifiOnly", false),
         lastSync = prefs.getLong("lastSync", 0L).takeIf { it > 0 },
         lastError = prefs.getString("lastError", null),

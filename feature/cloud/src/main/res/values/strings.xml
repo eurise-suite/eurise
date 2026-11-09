@@ -73,7 +73,12 @@
     <string name="cloud_app_notes">Note</string>
     <string name="cloud_app_notes_hint">%1$s · Eurise/Note · testo e disegni</string>
     <string name="cloud_app_tasks">Attività</string>
-    <string name="cloud_app_tasks_hint">arriva con la prossima versione</string>
+    <string name="cloud_app_tasks_hint">scegli prima dove vanno le note</string>
+    <string name="cloud_app_tasks_on">elenchi con Sincronizza acceso, su %1$s</string>
+    <string name="cloud_tasks_explain_title">Cosa cambia per la tua privacy</string>
+    <string name="cloud_tasks_explain">Cosa viene letto: titolo, note, scadenza e importanza delle attività negli elenchi con Sincronizza acceso. Farmaci e Date importanti restano sul telefono, se non li accendi tu.\n\nDove va: sul tuo account, nell\'elenco che porta lo stesso nome.\n\nChi lo vede: il tuo account e chi gestisce il servizio.\n\nCome si torna indietro: spegni qui; quanto è già sul cloud resta lì.</string>
+    <string name="cloud_tasks_explain_ok">Accendi</string>
+    <string name="cloud_tasks_explain_no">Non ora</string>
     <string name="cloud_how">Come</string>
     <string name="cloud_wifi">Solo con Wi-Fi</string>
     <string name="cloud_wifi_hint">niente traffico sulla rete mobile</string>

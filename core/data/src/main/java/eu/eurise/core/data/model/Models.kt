@@ -97,6 +97,11 @@ data class Task(
     val repeat: String? = null,
     val priority: Int = PRIORITY_NONE,
     val parentId: Long? = null,
+    /** Identità sul server (nome del file); nulla finché non si sincronizza. */
+    val uid: String? = null,
+    val remoteEtag: String? = null,
+    /** L'attività com'era all'ultima sincronizzazione. */
+    val syncBase: String? = null,
 ) {
     val important: Boolean get() = priority in 1..4
     val medium: Boolean get() = priority == PRIORITY_MEDIUM

@@ -159,6 +159,8 @@ class CloudViewModel(private val cloud: CloudSync) : ViewModel() {
 
     fun setNotesEnabled(on: Boolean) = cloud.update { it.copy(notesEnabled = on) }.also { if (on) syncNow() }
 
+    fun setTasksEnabled(on: Boolean) = cloud.update { it.copy(tasksEnabled = on) }.also { if (on) syncNow() }
+
     fun setWifiOnly(on: Boolean) = cloud.update { it.copy(wifiOnly = on) }
 
     fun syncNow() {

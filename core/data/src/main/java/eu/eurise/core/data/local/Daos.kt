@@ -236,6 +236,30 @@ internal interface TaskDao {
     @Query("DELETE FROM tasks WHERE id = :id OR parent_id = :id")
     suspend fun delete(id: Long)
 
+    @Query("SELECT * FROM tasks WHERE list_id = :listId")
+    suspend fun inList(listId: Long): List<TaskEntity>
+
+    @Query("SELECT * FROM tasks WHERE done = 1 AND parent_id IS NULL OR parent_id IN (SELECT id FROM tasks WHERE done = 1 AND parent_id IS NULL)")
+    suspend fun completedWithSteps(): List<TaskEntity>
+
+    @Query("UPDATE tasks SET uid = NULL, remote_etag = NULL, sync_base = NULL WHERE id IN (:ids)")
+    suspend fun clearSync(ids: List<Long>)
+
+    @Query("UPDATE tasks SET uid = :uid, remote_etag = :etag, sync_base = :base WHERE id = :id")
+    suspend fun markSynced(id: Long, uid: String, etag: String?, base: String)
+
+    @Query("UPDATE tasks SET parent_id = :parent WHERE id = :id")
+    suspend fun setParent(id: Long, parent: Long)
+
+    @Query("SELECT * FROM task_tombstones")
+    suspend fun tombstones(): List<TaskTombstoneEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTombstone(tombstone: TaskTombstoneEntity)
+
+    @Query("DELETE FROM task_tombstones WHERE uid = :uid")
+    suspend fun removeTombstone(uid: String)
+
     @Query("DELETE FROM tasks WHERE parent_id IN (SELECT id FROM tasks WHERE done = 1 AND parent_id IS NULL)")
     suspend fun deleteStepsOfCompleted()
 
@@ -255,6 +279,9 @@ internal interface TaskListDao {
 
     @Query("SELECT * FROM task_lists ORDER BY position, id")
     fun observe(): Flow<List<TaskListEntity>>
+
+    @Query("SELECT * FROM task_lists ORDER BY position, id")
+    suspend fun all(): List<TaskListEntity>
 
     @Query("SELECT * FROM task_lists WHERE id = :id")
     suspend fun get(id: Long): TaskListEntity?

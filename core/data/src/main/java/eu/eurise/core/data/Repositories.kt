@@ -11,6 +11,8 @@ import eu.eurise.core.data.local.NoteTagEntity
 import eu.eurise.core.data.local.NotebookDao
 import eu.eurise.core.data.local.NotebookEntity
 import eu.eurise.core.data.local.LinkDao
+import eu.eurise.core.data.local.TaskEntity
+import eu.eurise.core.data.local.TaskTombstoneEntity
 import eu.eurise.core.data.local.LinkEntity
 import eu.eurise.core.data.local.TaskDao
 import eu.eurise.core.data.local.TaskListDao
@@ -264,6 +266,9 @@ class TaskSettings internal constructor(context: Context) {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
+/** Attività da togliere dal server. */
+data class TaskTombstone(val uid: String, val etag: String?, val listId: Long)
+
 class TaskRepository internal constructor(
     private val dao: TaskDao,
     private val lists: TaskListDao,
@@ -273,6 +278,33 @@ class TaskRepository internal constructor(
 ) {
     /** Chiamata quando un'attività con un avviso cambia: l'app la usa per riprogrammare i promemoria. */
     @Volatile var onRemindersChanged: (() -> Unit)? = null
+
+    /** Chiamata dopo ogni modifica fatta dalla persona: l'app la usa per chiedere una sincronizzazione. */
+    @Volatile var onChanged: (() -> Unit)? = null
+
+    /** Le righe di [rows] già sul server ne usciranno al prossimo giro: restano sul telefono senza legami col server. */
+    private suspend fun detach(rows: List<TaskEntity>) {
+        val synced = rows.filter { it.uid != null }
+        synced.forEach { dao.addTombstone(TaskTombstoneEntity(it.uid!!, it.remoteEtag, it.listId)) }
+        if (synced.isNotEmpty()) dao.clearSync(synced.map { it.id })
+    }
+
+    private suspend fun withSteps(id: Long): List<TaskEntity> = listOfNotNull(dao.get(id)) + dao.steps(id)
+
+    // Sincronizzazione
+
+    suspend fun listsToSync(): List<TaskList> = lists.all().filter { it.sync }.map { it.toModel() }
+    suspend fun forSync(listId: Long): List<Task> = dao.inList(listId).map { it.toModel() }
+    suspend fun tombstones(): List<TaskTombstone> = dao.tombstones().map { TaskTombstone(it.uid, it.etag, it.listId) }
+    suspend fun removeTombstone(uid: String) = dao.removeTombstone(uid)
+    suspend fun markSynced(id: Long, uid: String, etag: String?, base: String) = dao.markSynced(id, uid, etag, base)
+    suspend fun deleteSynced(id: Long) = dao.delete(id).also { onRemindersChanged?.invoke() }
+    suspend fun applySynced(task: Task, uid: String, etag: String?, base: String) {
+        dao.upsert(task.copy(uid = uid, remoteEtag = etag, syncBase = base).toEntity())
+        onRemindersChanged?.invoke()
+    }
+    suspend fun insertSynced(task: Task): Long = dao.upsert(task.toEntity())
+    suspend fun setParent(id: Long, parent: Long) = dao.setParent(id, parent)
 
     private fun remindersChanged(vararg tasks: Task?) {
         if (tasks.any { it?.remindBefore != null }) onRemindersChanged?.invoke()
@@ -335,7 +367,7 @@ class TaskRepository internal constructor(
             0, title.trim(), notes, due, done = false, completedAt = null, createdAt = clock.now(), noteId = noteId,
             listId = listId, time = time, remindBefore = remindBefore, repeat = repeat, priority = priority,
         )
-        return dao.upsert(task.toEntity()).also { remindersChanged(task) }
+        return dao.upsert(task.toEntity()).also { remindersChanged(task); onChanged?.invoke() }
     }
 
     /** Aggiunge un passo all'attività [parentId], nello stesso elenco. */
@@ -343,14 +375,18 @@ class TaskRepository internal constructor(
         val parent = dao.get(parentId) ?: return 0
         return dao.upsert(
             Task(0, title.trim(), "", null, false, null, clock.now(), listId = parent.listId, parentId = parentId).toEntity()
-        )
+        ).also { onChanged?.invoke() }
     }
 
     suspend fun update(task: Task) {
         val before = dao.get(task.id)?.toModel()
         dao.upsert(task.copy(title = task.title.trim()).toEntity())
-        if (task.parentId == null) dao.moveToList(task.id, task.listId)
+        if (task.parentId == null) {
+            if (before != null && before.listId != task.listId) detach(withSteps(task.id).map { it.copy(listId = before.listId) })
+            dao.moveToList(task.id, task.listId)
+        }
         remindersChanged(before, task)
+        onChanged?.invoke()
     }
 
     /**
@@ -363,29 +399,38 @@ class TaskRepository internal constructor(
         dao.setDone(id, done, completedAt = if (done) now else null)
         val task = before ?: return
         remindersChanged(task)
+        onChanged?.invoke()
         if (!done || task.done || task.parentId != null) return
         val rule = Recurrence.parse(task.repeat) ?: return
         val next = task.copy(
             id = 0, done = false, completedAt = null, createdAt = now, noteId = null,
-            due = rule.next(task.due ?: LocalDate.now()),
+            due = rule.next(task.due ?: LocalDate.now()), uid = null, remoteEtag = null, syncBase = null,
         )
         val nextId = dao.upsert(next.toEntity())
-        dao.steps(id).forEach { step -> dao.upsert(step.copy(id = 0, done = false, completedAt = null, parentId = nextId)) }
+        dao.steps(id).forEach { step -> dao.upsert(step.copy(id = 0, done = false, completedAt = null, parentId = nextId, uid = null, remoteEtag = null, syncBase = null)) }
         dao.upsert(task.copy(done = true, completedAt = now, repeat = null).toEntity())
         remindersChanged(next)
     }
 
-    suspend fun moveToList(id: Long, listId: Long) = dao.moveToList(id, listId)
+    suspend fun moveToList(id: Long, listId: Long) {
+        detach(withSteps(id))
+        dao.moveToList(id, listId)
+        onChanged?.invoke()
+    }
 
     /** Elimina l'attività con i suoi passi. */
     suspend fun delete(id: Long) {
         links.deleteAll(LinkRef.task(id).toString())
+        detach(withSteps(id))
         dao.delete(id)
+        onChanged?.invoke()
     }
 
     suspend fun deleteCompleted() {
+        detach(dao.completedWithSteps())
         dao.deleteStepsOfCompleted()
         dao.deleteCompletedTasks()
+        onChanged?.invoke()
     }
 
     /** Attività da fare con un avviso che cade tra [from] e [to]. */
@@ -408,6 +453,7 @@ class TaskRepository internal constructor(
     suspend fun deleteList(id: Long) {
         val list = lists.get(id) ?: return
         if (list.kind != TaskList.KIND_USER) return
+        detach(dao.inList(id))
         dao.moveAllToList(id, TaskList.MAIN)
         lists.delete(id)
     }

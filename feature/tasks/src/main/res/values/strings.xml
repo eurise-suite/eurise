@@ -122,4 +122,5 @@
     <string name="tasks_sync_warning_gain">In cambio li ritrovi su un telefono nuovo e sul sito del servizio. Puoi spegnere quando vuoi.</string>
     <string name="tasks_sync_keep_local">Lascia sul telefono</string>
     <string name="tasks_sync_anyway">Sincronizza lo stesso</string>
+    <string name="tasks_sync_done">Attività: %1$d inviate, %2$d ricevute</string>
 </resources>
