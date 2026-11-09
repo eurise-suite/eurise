@@ -48,8 +48,8 @@ object BubbleText {
     fun isPec(packageName: String): Boolean =
         packageName.lowercase().split('.', '_').any { it == "pec" || it == "legalmail" || it == "pecmail" }
 
-    private val PlaceBracket = Regex("""#\\[([^\\]]+)]""")
-    private val PlaceWord = Regex("""#([\\p{L}\\p{N}_-]+)""")
+    private val PlaceBracket = Regex("""#\[([^\]]+)]""")
+    private val PlaceWord = Regex("""#([\p{L}\p{N}_-]+)""")
 
     /** Il luogo scritto in una cosa da fare: #[Via Roma 12], oppure #Stazione (i trattini valgono come spazi). */
     fun taskPlace(text: String): String? =
@@ -60,9 +60,9 @@ object BubbleText {
     fun withoutPlace(text: String): String =
         text.replace(PlaceBracket, "").replace(PlaceWord, "").replace(Regex(" {2,}"), " ").trim()
 
-    private val PhoneText = Regex("""(?<![\\d+])(\\+?[03]\\d[\\d .-]{6,}\\d)""")
-    private val EmailText = Regex("""[\\w.+-]+@[\\w-]+\\.[\\w.-]+""")
-    private val WithName = Regex("""(?i)\\bcon\\s+(\\p{Lu}\\p{L}+(?:\\s+\\p{Lu}\\p{L}+)?)""")
+    private val PhoneText = Regex("""(?<![\d+])(\+?[03]\d[\d .-]{6,}\d)""")
+    private val EmailText = Regex("""[\w.+-]+@[\w-]+\.[\w.-]+""")
+    private val WithName = Regex("""(?i)\bcon\s+(\p{Lu}\p{L}+(?:\s+\p{Lu}\p{L}+)?)""")
 
     /** Un numero di telefono in un testo: da 9 a 13 cifre, che inizia come un numero italiano o internazionale. */
     fun phoneIn(text: String): String? = PhoneText.findAll(text).map { it.value.filterNot { c -> c == ' ' || c == '.' || c == '-' } }
