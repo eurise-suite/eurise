@@ -27,6 +27,15 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".AodActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:noHistory="false"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true" />
+        <activity
             android:name=".LauncherActivity"
             android:exported="true"
             android:label="@string/launcher_label"

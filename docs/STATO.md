@@ -233,6 +233,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   documento, sezione Password. Da decidere con il proprietario prima del codice: la "strada A" del documento
   (cassaforte in un file KeePass .kdbx su kDrive). Nella Galleria restano pulizia e cartella protetta; il caricamento
   su kDrive aspetta Drive.
+- Ramo `aod` da `main`: display a riposo (tela, pagina "Display sempre attivo"; `feature/launcher/.../aod`, Activity in
+  `app`). Eccezione concordata con il proprietario alla regola sui servizi: `AodService` esiste solo se la funzione è
+  accesa. Limite di Android: un'app non può spegnere lo schermo, a tempo scaduto diventa nero e lo spegne il sistema.
+  Il sollevamento usa il sensore a basso consumo, se il telefono lo espone. Salute e Meteo non ancora tra le bolle.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

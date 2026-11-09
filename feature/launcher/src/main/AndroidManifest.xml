@@ -24,6 +24,14 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
+    <!-- Display a riposo: solo se l'utente lo accende. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- Elenco delle app da mostrare nelle categorie (solo quelle con un'icona nel launcher). -->
     <queries>
         <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
@@ -67,6 +75,15 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
             </intent-filter>
         </activity-alias>
+        <service
+            android:name=".aod.AodService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="always-on display chosen by the user" />
+        </service>
+        <receiver android:name=".aod.AodBootReceiver" android:exported="false">
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+        </receiver>
         <!-- Numeri sulle icone, Comunicazioni e Musica: attivo solo se l'utente concede l'accesso. -->
         <service
             android:name=".notifications.EuriseNotificationListener"

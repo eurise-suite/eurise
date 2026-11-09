@@ -335,7 +335,10 @@ class EuriseNotificationListener : NotificationListenerService() {
         NotificationStore.setConnected(false)
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) = NotificationStore.update(this)
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        NotificationStore.update(this)
+        if (sbn != null) eu.eurise.feature.launcher.aod.AodController.onNotification(this, sbn)
+    }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = NotificationStore.update(this)
 }

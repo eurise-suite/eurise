@@ -59,6 +59,7 @@ fun AppearanceSheet(
     onChange: ((LauncherSettings) -> LauncherSettings) -> Unit,
     onClose: () -> Unit,
     onEditCategories: () -> Unit,
+    onAod: () -> Unit,
 ) {
     Box(
         Modifier
@@ -158,6 +159,16 @@ fun AppearanceSheet(
                         stringResource(R.string.categories_summary, settings.categories.size),
                         fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onAod).padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.aod_title), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.aod_summary), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

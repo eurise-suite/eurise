@@ -330,6 +330,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var searching by remember { mutableStateOf(false) }
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
+        var aodSettings by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
         var editingHome by remember { mutableStateOf(false) }
         var homeCatalog by remember { mutableStateOf(false) }
@@ -794,8 +795,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 AppearanceSheet(
                     settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false },
                     onEditCategories = { appearance = false; categoryEditor = true },
+                    onAod = { appearance = false; aodSettings = true },
                 )
             }
+            if (aodSettings) eu.eurise.feature.launcher.aod.AodSettingsScreen(onClose = { aodSettings = false })
             // Risposta rapida: sopra a tutto, dal Pannello o dalla bolla "Ti hanno cercato".
             replyTo?.let { m ->
                 eu.eurise.feature.launcher.notifications.QuickReplyDialog(
