@@ -239,7 +239,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `feature/scanner` (CameraX, bordi e scatto automatico in `EdgeDetector`, raddrizzamento, filtri, PDF su telefono o
   cloud), QR e ritaglio; link con password e scadenza, Condivisi, versioni e sposta (Nextcloud); PDF: firma e annota su copia,
   ricerca da Android 15. Office resta APK separato. Mancano: lettura del testo (OCR, serve scelta sul peso), quindi nome
-  automatico, scadenze e ricerca nei PDF; cartelle cifrate e sincronizzate; kDrive via API. Peso della versione ufficiale: da 2,7 a 3,5 MB, quasi tutto CameraX. MANAGE_EXTERNAL_STORAGE va rivisto se un giorno si pubblica su Play.
+  automatico, scadenze e ricerca nei PDF; cartelle cifrate; kDrive via API. Cartelle allineate in `FolderSync` (decisioni in `SyncPlanner`,
+  con freno se sparisce troppo; automatico ogni 6 ore solo in Wi-Fi). Peso della versione ufficiale: da 2,7 a 3,5 MB, quasi tutto CameraX. MANAGE_EXTERNAL_STORAGE va rivisto se un giorno si pubblica su Play.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

@@ -145,6 +145,9 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     val coroutines = rememberCoroutineScope()
     val haze = remember { HazeState() }
+    val sync = remember { FolderSync(context.applicationContext, data) }
+    var pickSync by remember { mutableStateOf<DriveItem?>(null) }
+    var manageSync by remember { mutableStateOf<SyncPair?>(null) }
     val legacy = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { access = hasAccess(context) }
 
     fun fail(e: Exception) {
@@ -201,6 +204,8 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                     onAccess = { askAccess = true },
                     onCloud = onCloud,
                     onCreate = { f, name -> action { data.mkdir(f.place, DriveData.join(f.path, name)) } },
+                    sync = sync,
+                    onManageSync = { manageSync = it },
                 )
                 Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
                 Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
@@ -226,6 +231,22 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
         )
     }
 
+    pickSync?.let { item ->
+        SyncStartDialog(data, item, onClose = { pickSync = null }) { place ->
+            pickSync = null
+            action { sync.add(item.path, place); FolderSync.schedule(context.applicationContext) }
+        }
+    }
+    manageSync?.let { pair ->
+        SyncManageDialog(pair, onClose = { manageSync = null }, onNow = { force ->
+            manageSync = null
+            action { sync.run(pair.id, force) }
+        }, onStop = {
+            manageSync = null
+            sync.remove(pair.id)
+            refresh++
+        })
+    }
     selected?.let { item ->
         ItemSheet(
             data, item,
@@ -241,6 +262,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
             onMove = { to -> selected = null; action { data.move(item, to) } },
             onFail = ::fail,
             onRefresh = { refresh++ },
+            onSync = { selected = null; pickSync = item },
         )
     }
     if (askAccess) {
@@ -289,6 +311,7 @@ private fun FilesTab(
     data: DriveData, access: Boolean, scope: Place?, folder: Folder?, refresh: Int, haze: HazeState,
     onScope: (Place?) -> Unit, onFolder: (Folder?) -> Unit, onOpen: (DriveItem) -> Unit, onMore: (DriveItem) -> Unit,
     onAccess: () -> Unit, onCloud: () -> Unit, onCreate: (Folder, String) -> Unit,
+    sync: FolderSync, onManageSync: (SyncPair) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
@@ -300,7 +323,7 @@ private fun FilesTab(
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(Modifier.fillMaxSize()) {
-        if (folder == null) Overview(data, access, places, refresh, top, onOpen, onFolder, onAccess, onCloud)
+        if (folder == null) Overview(data, access, places, refresh, top, onOpen, onFolder, onAccess, onCloud, sync, onManageSync)
         else if (folder.place.account == null && !access) {
             Column(Modifier.fillMaxSize().padding(top = top + 130.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 EmptyState(EuriseIcons.folder(), stringResource(R.string.drive_phone), stringResource(R.string.drive_access_title))
@@ -367,6 +390,7 @@ private val bottomSpace = 110.dp
 private fun Overview(
     data: DriveData, access: Boolean, places: List<Place>, refresh: Int, top: androidx.compose.ui.unit.Dp,
     onOpen: (DriveItem) -> Unit, onFolder: (Folder?) -> Unit, onAccess: () -> Unit, onCloud: () -> Unit,
+    sync: FolderSync, onManageSync: (SyncPair) -> Unit,
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
@@ -394,6 +418,18 @@ private fun Overview(
                 places.forEach { p ->
                     CardDivider()
                     FolderRow(p.label, stringResource(R.string.drive_title)) { onFolder(Folder(p, "")) }
+                }
+            }
+        }
+        val pairs = sync.pairs()
+        if (pairs.isNotEmpty()) {
+            item(key = "l-s") { SectionLabel(stringResource(R.string.drive_sync_section)) }
+            item(key = "syncs") {
+                Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
+                    pairs.forEachIndexed { i, pair ->
+                        if (i > 0) CardDivider()
+                        FolderRow(pair.local.substringAfterLast('/'), stringResource(R.string.drive_sync_pair, pair.label) + " · " + syncStatus(pair)) { onManageSync(pair) }
+                    }
                 }
             }
         }
@@ -560,7 +596,7 @@ private fun SheetAction(icon: ImageVector, label: String, modifier: Modifier, on
 private fun ItemSheet(
     data: DriveData, item: DriveItem, onClose: () -> Unit, onOpen: () -> Unit, onShare: () -> Unit,
     onRename: (String) -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
-    onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit,
+    onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit, onSync: () -> Unit,
 ) {
     var linking by remember { mutableStateOf(false) }
     var moving by remember { mutableStateOf(false) }
@@ -591,6 +627,9 @@ private fun ItemSheet(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SheetAction(EuriseIcons.folder(), stringResource(R.string.drive_move), Modifier.weight(1f)) { moving = true }
+                if (item.folder && item.place.account == null && data.places.isNotEmpty()) {
+                    SheetAction(EuriseIcons.refresh(), stringResource(R.string.drive_sync_action), Modifier.weight(1f), onSync)
+                }
                 if (cloudExtras) {
                     SheetAction(EuriseIcons.link(), stringResource(R.string.drive_link), Modifier.weight(1f)) { linking = true }
                     if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
@@ -620,6 +659,52 @@ private fun ItemSheet(
             dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.drive_cancel)) } },
         )
     }
+}
+
+@Composable
+private fun syncStatus(pair: SyncPair): String = when (pair.state) {
+    SyncResult.Never -> stringResource(R.string.drive_sync_never)
+    SyncResult.Ok -> stringResource(R.string.drive_sync_done, java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(java.util.Date(pair.at)))
+    SyncResult.Failed -> stringResource(R.string.drive_sync_failed)
+    SyncResult.Guarded -> stringResource(R.string.drive_sync_guard)
+}
+
+@Composable
+private fun SyncStartDialog(data: DriveData, item: DriveItem, onClose: () -> Unit, onStart: (Place) -> Unit) {
+    var place by remember { mutableStateOf(data.places.firstOrNull()) }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.drive_sync_pick)) },
+        text = {
+            Column(Modifier.verticalScrollCompat(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    data.places.forEach { p -> FilterPill(p.label, dot = null, selected = p == place) { place = p } }
+                }
+                Text(stringResource(R.string.drive_sync_privacy), fontSize = 13.sp, lineHeight = 19.sp)
+            }
+        },
+        confirmButton = { TextButton(enabled = place != null, onClick = { place?.let(onStart) }) { Text(stringResource(R.string.drive_sync_start)) } },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
+}
+
+@Composable
+private fun Modifier.verticalScrollCompat(): Modifier = androidx.compose.foundation.verticalScroll(rememberScrollState())
+
+@Composable
+private fun SyncManageDialog(pair: SyncPair, onClose: () -> Unit, onNow: (Boolean) -> Unit, onStop: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(pair.local.substringAfterLast('/')) },
+        text = { Text(syncStatus(pair) + "\n\n" + stringResource(R.string.drive_sync_stop_note)) },
+        confirmButton = {
+            Row {
+                if (pair.state == SyncResult.Guarded) TextButton(onClick = { onNow(true) }) { Text(stringResource(R.string.drive_sync_force)) }
+                else TextButton(onClick = { onNow(false) }) { Text(stringResource(R.string.drive_sync_now)) }
+            }
+        },
+        dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.drive_sync_stop)) } },
+    )
 }
 
 private fun copyText(context: Context, text: String) {
