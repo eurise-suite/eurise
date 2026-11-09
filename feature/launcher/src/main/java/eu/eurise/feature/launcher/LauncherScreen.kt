@@ -1221,7 +1221,7 @@ private fun documentShortcuts(apps: List<AppEntry>, welcome: WelcomeData, action
             shortcut(icons.camera(2f), camera) {
                 runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             },
-            shortcut(icons.note(2f), notes) { actions.openEurise("notes") },
+            shortcut(icons.pen(2f), notes) { actions.openEurise("notes") },
             context.pdfApp(apps)?.let { shortcut(icons.pdf(2f), pdf, launch(it)) },
             officeApp(apps)?.let { shortcut(icons.office(2f), office, launch(it)) },
             driveApp(apps)?.let { shortcut(icons.cloud(2f), drive, launch(it)) },
