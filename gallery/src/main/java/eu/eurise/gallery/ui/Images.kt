@@ -1,6 +1,7 @@
 package eu.eurise.gallery.ui
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.LruCache
@@ -17,6 +18,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import eu.eurise.gallery.data.GalleryStore
+import eu.eurise.gallery.data.cloudFile
 import eu.eurise.gallery.logic.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,14 +36,20 @@ private val thumbs = object : LruCache<String, android.graphics.Bitmap>(32 * 102
 private suspend fun loadThumb(context: Context, item: MediaItem): ImageBitmap? = withContext(Dispatchers.IO) {
     val cached = thumbs.get(item.uri)
     val bitmap = cached ?: runCatching {
-        context.contentResolver.loadThumbnail(Uri.parse(item.uri), Size(THUMB_PX, THUMB_PX), null)
+        if (item.cloudOnly) BitmapFactory.decodeFile(GalleryStore.get(context).thumbFile(-item.id).path)
+        else context.contentResolver.loadThumbnail(Uri.parse(item.uri), Size(THUMB_PX, THUMB_PX), null)
     }.getOrNull()?.also { thumbs.put(item.uri, it) }
     bitmap?.asImageBitmap()
 }
 
 private suspend fun loadFull(context: Context, item: MediaItem): ImageBitmap? = withContext(Dispatchers.IO) {
     runCatching {
-        if (item.isVideo) {
+        if (item.cloudOnly) {
+            if (item.isVideo) BitmapFactory.decodeFile(GalleryStore.get(context).thumbFile(-item.id).path)
+            else ImageDecoder.decodeBitmap(ImageDecoder.createSource(cloudFile(context, item)!!)) { decoder, info, _ ->
+                decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / FULL_PX))
+            }
+        } else if (item.isVideo) {
             context.contentResolver.loadThumbnail(Uri.parse(item.uri), Size(FULL_PX, FULL_PX), null)
         } else {
             val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))

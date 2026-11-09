@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
@@ -67,19 +68,23 @@ private val Dark = Color(0xFF14171C)
 /** Una foto a schermo intero: due dita o doppio tocco ingrandiscono; a ingrandimento normale si scorre alla vicina. */
 @Composable
 private fun ZoomableMedia(item: MediaItem, onPlay: () -> Unit, modifier: Modifier = Modifier) {
-    val image = rememberFull(item)
-    var scale by remember(item.uri) { mutableFloatStateOf(1f) }
-    var offset by remember(item.uri) { mutableStateOf(Offset.Zero) }
+    ZoomableBitmap(rememberFull(item), item.isVideo, item.uri, onPlay, modifier)
+}
+
+@Composable
+internal fun ZoomableBitmap(image: ImageBitmap?, isVideo: Boolean, key: String, onPlay: () -> Unit, modifier: Modifier = Modifier) {
+    var scale by remember(key) { mutableFloatStateOf(1f) }
+    var offset by remember(key) { mutableStateOf(Offset.Zero) }
     Box(
         modifier
             .fillMaxSize()
-            .pointerInput(item.uri) {
+            .pointerInput(key) {
                 detectTapGestures(onDoubleTap = {
                     scale = if (scale > 1f) 1f else 2.5f
                     offset = Offset.Zero
                 })
             }
-            .pointerInput(item.uri) {
+            .pointerInput(key) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
                     do {
@@ -104,7 +109,7 @@ private fun ZoomableMedia(item: MediaItem, onPlay: () -> Unit, modifier: Modifie
                 },
             )
         }
-        if (item.isVideo) {
+        if (isVideo) {
             Box(
                 Modifier.size(64.dp).clip(CircleShape).background(Dark.copy(alpha = 0.55f)).clickable(onClick = onPlay),
                 contentAlignment = Alignment.Center,
@@ -136,15 +141,16 @@ internal fun Viewer(list: List<MediaItem>, start: Int, actions: MediaActions, on
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            RoundAction(EuriseIcons.heart(if (current.favorite) 3f else 2.2f), stringResource(R.string.favorite)) { actions.setFavorite(current, !current.favorite) }
+            if (!current.cloudOnly) RoundAction(EuriseIcons.heart(if (current.favorite) 3f else 2.2f), stringResource(R.string.favorite)) { actions.setFavorite(current, !current.favorite) }
             RoundAction(EuriseIcons.share(), stringResource(R.string.share)) { actions.share(listOf(current)) }
+            if (!current.cloudOnly && !current.isVideo) RoundAction(EuriseIcons.pencil(), stringResource(R.string.edit)) { actions.edit(current) }
             RoundAction(EuriseIcons.trash(), stringResource(R.string.delete)) { actions.trash(listOf(current)) }
         }
     }
 }
 
 @Composable
-private fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+internal fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         colors = IconButtonDefaults.iconButtonColors(containerColor = Dark.copy(alpha = 0.45f), contentColor = Color.White),
@@ -197,10 +203,20 @@ internal fun MemoryScreen(memory: Memory, actions: MediaActions, onClose: () -> 
                     )
                 }
             }
-            Box(
-                Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(24.dp)).background(Color.White).clickable { actions.share(items) },
-                contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.share), color = Color(0xFF1E1D1B), fontSize = 15.sp, fontWeight = FontWeight.Bold) }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(24.dp)).background(Color.White).clickable { actions.diary(items) },
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(EuriseIcons.book(), null, tint = Color(0xFF1E1D1B), modifier = Modifier.size(18.dp))
+                    Text(stringResource(R.string.memory_to_diary), color = Color(0xFF1E1D1B), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+                Box(
+                    Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(24.dp)).background(Color.White.copy(alpha = 0.16f)).clickable { actions.shareClean(items) },
+                    contentAlignment = Alignment.Center,
+                ) { Text(stringResource(R.string.share_clean_button), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
+            }
         }
     }
 }

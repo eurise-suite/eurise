@@ -30,7 +30,10 @@ class MediaRepository(context: Context) {
         resolver.registerContentObserver(videos, true, observer)
         trySend(Unit)
         awaitClose { resolver.unregisterContentObserver(observer) }
-    }.conflate().map { query(images, false) + query(videos, true) }.flowOn(Dispatchers.IO)
+    }.conflate().map { all() }.flowOn(Dispatchers.IO)
+
+    /** Fotografia del momento, per chi lavora in background. Da chiamare fuori dal thread principale. */
+    fun all(): List<MediaItem> = query(images, false) + query(videos, true)
 
     private fun query(table: Uri, isVideo: Boolean): List<MediaItem> {
         val columns = buildList {
@@ -39,6 +42,8 @@ class MediaRepository(context: Context) {
             add(MediaStore.MediaColumns.DATE_ADDED)
             add(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
             add(MediaStore.MediaColumns.IS_FAVORITE)
+            add(MediaStore.MediaColumns.DISPLAY_NAME)
+            add(MediaStore.MediaColumns.SIZE)
             if (isVideo) add(MediaStore.MediaColumns.DURATION)
         }.toTypedArray()
         val out = ArrayList<MediaItem>()
@@ -51,9 +56,11 @@ class MediaRepository(context: Context) {
                     uri = ContentUris.withAppendedId(table, id).toString(),
                     isVideo = isVideo,
                     takenAt = taken,
-                    durationMs = if (isVideo) c.getLong(5) else 0,
+                    durationMs = if (isVideo) c.getLong(7) else 0,
                     bucket = c.getString(3).orEmpty(),
                     favorite = c.getInt(4) == 1,
+                    name = c.getString(5).orEmpty(),
+                    size = c.getLong(6),
                 )
             }
         }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="share" path="share/" />
+    <cache-path name="cloud" path="cloud-view/" />
+    <cache-path name="secure" path="secure-play/" />
+</paths>

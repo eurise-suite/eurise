@@ -158,6 +158,19 @@ class WebDav(
         call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
     }
 
+    /** Carica da un flusso (una foto del telefono) senza copie su disco; [open] può essere chiamato più volte. */
+    suspend fun uploadStream(path: String, size: Long, open: () -> java.io.InputStream) {
+        val body = object : okhttp3.RequestBody() {
+            override fun contentType() = "application/octet-stream".toMediaType()
+            override fun contentLength() = size
+            override fun writeTo(sink: okio.BufferedSink) {
+                open().use { it.copyTo(sink.outputStream()) }
+            }
+        }
+        val req = request(url(path)).put(body).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
+    }
+
     /** Vero sui server Nextcloud, Murena compreso: solo loro hanno link, versioni e condivisioni. */
     val isNextcloud: Boolean get() = "/remote.php/dav/files/" in base.encodedPath
 

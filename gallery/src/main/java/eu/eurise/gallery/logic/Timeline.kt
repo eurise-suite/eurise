@@ -13,6 +13,12 @@ data class MediaItem(
     val durationMs: Long,
     val bucket: String,
     val favorite: Boolean,
+    val name: String = "",
+    val size: Long = 0,
+    /** Percorso sul cloud, se la foto è stata caricata. */
+    val remote: String? = null,
+    /** Vero se la foto ormai sta solo sul cloud: allora [id] è negativo e non c'è in MediaStore. */
+    val cloudOnly: Boolean = false,
 )
 
 /** Le foto di un giorno, dalla più recente. */
