@@ -6,6 +6,7 @@ import eu.eurise.core.cloud.CloudKind
 import eu.eurise.core.cloud.DavException
 import eu.eurise.core.cloud.NextcloudLogin
 import eu.eurise.password.kdbx.EntryDraft
+import eu.eurise.password.kdbx.ImportCounts
 import eu.eurise.password.kdbx.Kdbx
 import eu.eurise.password.kdbx.KdbxFile
 import eu.eurise.password.kdbx.Vault
@@ -145,6 +146,12 @@ class VaultRepository private constructor(context: Context) {
     suspend fun deleteEntry(uuid: String) {
         edit { it.delete(uuid) }
         syncNow()
+    }
+
+    suspend fun importItems(drafts: List<EntryDraft>): ImportCounts? {
+        val counts = edit { it.importAll(drafts) }
+        syncNow()
+        return counts
     }
 
     suspend fun linkApp(uuid: String, packageName: String) {

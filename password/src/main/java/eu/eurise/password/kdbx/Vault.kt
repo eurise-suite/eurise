@@ -43,6 +43,9 @@ data class EntryDraft(
 /** Esito di un'unione: [localChanged] se è cambiato qualcosa qui, [remoteBehind] se qui c'è qualcosa che là manca. */
 data class MergeResult(val localChanged: Boolean, val remoteBehind: Boolean)
 
+/** Com'è andata un'importazione. [attached]: codici 2FA aggiunti a un accesso che c'era già. */
+data class ImportCounts(val added: Int, val attached: Int, val duplicates: Int)
+
 /** Le voci dentro il documento di un file KeePass: legge e scrive solo i campi che conosce, il resto non si tocca. */
 class Vault(val document: Document) {
     private val root: Element = document.documentElement.child("Root") ?: error("Root mancante")
@@ -90,6 +93,50 @@ class Vault(val document: Document) {
         setTime(element, "LastModificationTime", now)
         return element.child("UUID")!!.textContent
     }
+
+    /**
+     * Aggiunge molte voci senza creare doppioni, così importare due volte lo stesso file non cambia nulla. Un codice 2FA
+     * va sull'accesso dello stesso servizio solo se quell'accesso è uno solo: nel dubbio resta una voce a sé.
+     */
+    fun importAll(drafts: List<EntryDraft>, now: Long = System.currentTimeMillis()): ImportCounts {
+        var added = 0
+        var attached = 0
+        var duplicates = 0
+        val known = entries().toMutableList()
+        for (d in drafts) {
+            val same = known.any { e ->
+                when {
+                    d.card != null -> e.card?.number?.filter { it.isDigit() } == d.card.number.filter { it.isDigit() }
+                    d.password.isEmpty() && d.otp != null -> e.otp == d.otp
+                    else -> e.title == d.title && e.username == d.username && e.password == d.password && e.notes == d.notes
+                }
+            }
+            if (same) { duplicates++; continue }
+            val isCode = d.card == null && d.password.isEmpty() && d.otp != null
+            val target = if (isCode) known.filter { e -> canTakeCode(e, d) }.singleOrNull() else null
+            if (target != null) {
+                save(EntryDraft(target.title, target.username, target.password, target.url, target.notes, d.otp), target.uuid, now)
+                known[known.indexOf(target)] = target.copy(otp = d.otp)
+                attached++
+            } else {
+                save(d, null, now)
+                known += VaultEntry("", d.title, d.username, d.password, d.url, d.notes, d.otp, now, now, 0, 0, 0, d.card)
+                added++
+            }
+        }
+        return ImportCounts(added, attached, duplicates)
+    }
+
+    private fun canTakeCode(e: VaultEntry, code: EntryDraft): Boolean {
+        if (e.otp != null || e.card != null || e.password.isEmpty()) return false
+        val name = serviceName(code.title)
+        if (name.isEmpty() || (name != serviceName(e.title) && name != serviceName(e.url.substringAfter("://")))) return false
+        return code.username.isEmpty() || e.username.isEmpty() || code.username.equals(e.username, ignoreCase = true)
+    }
+
+    /** "Murena", "murena.io" e "www.murena.io/login" sono lo stesso servizio. */
+    private fun serviceName(text: String): String =
+        text.trim().lowercase().removePrefix("www.").substringBefore('/').substringBefore('.').filter { it.isLetterOrDigit() }
 
     /** Sposta la voce nel cestino della cassaforte, come fa KeePassXC: da lì si può ancora recuperare. */
     fun delete(uuid: String, now: Long = System.currentTimeMillis()) {

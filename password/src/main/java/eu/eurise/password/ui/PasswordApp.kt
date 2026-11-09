@@ -87,7 +87,9 @@ import eu.eurise.core.designsystem.component.GroupCard
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.password.ImportStage
 import eu.eurise.password.PasswordViewModel
+import eu.eurise.password.logic.ImportKind
 import eu.eurise.password.R
 import eu.eurise.password.data.SyncProblem
 import eu.eurise.password.data.SyncState
@@ -364,7 +366,12 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
             }
             if (rows.none { it is Row2.Item }) {
                 item(key = "empty") {
-                    if (entries.isEmpty()) EmptyState(EuriseIcons.key(), stringResource(R.string.pwd_empty_title), stringResource(R.string.pwd_empty_message))
+                    if (entries.isEmpty()) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                            EmptyState(EuriseIcons.key(), stringResource(R.string.pwd_empty_title), stringResource(R.string.pwd_empty_message))
+                            ImportButton(vm)
+                        }
+                    }
                     else EmptyState(EuriseIcons.search(), stringResource(R.string.pwd_no_results), stringResource(R.string.pwd_no_results_message))
                 }
             }
@@ -789,6 +796,11 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
             StatusLines(vm)
             Text(stringResource(R.string.pwd_sync_pc), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant)
         }
+        SectionLabel(stringResource(R.string.pwd_import_title))
+        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.pwd_import_help), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant)
+            ImportButton(vm)
+        }
         AliasSettings(vm)
         Spacer(Modifier.height(24.dp))
     }
@@ -960,4 +972,46 @@ private fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> U
             dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.pwd_cancel)) } },
         )
     }
+}
+
+/** Un solo pulsante: il tipo di file si riconosce da solo, e prima di importare si vede che cosa contiene. */
+@Composable
+private fun ImportButton(vm: PasswordViewModel) {
+    val stage by vm.importing.collectAsStateWithLifecycle()
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::readImport) }
+    TextButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.pwd_import_action)) }
+
+    val dismiss = vm::closeImport
+    when (val s = stage) {
+        null -> Unit
+        is ImportStage.Preview -> {
+            fun count(kind: ImportKind) = s.ready.items.count { it.kind == kind }
+            AlertDialog(
+                onDismissRequest = dismiss,
+                title = { Text(stringResource(R.string.pwd_import_found)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.pwd_import_counts, count(ImportKind.Login), count(ImportKind.Card), count(ImportKind.Note), count(ImportKind.Code)))
+                        if (s.ready.passkeys > 0) Text(stringResource(R.string.pwd_import_passkeys, s.ready.passkeys))
+                        if (s.ready.skipped > 0) Text(stringResource(R.string.pwd_import_skipped, s.ready.skipped))
+                    }
+                },
+                confirmButton = { TextButton(onClick = { vm.confirmImport(s.ready) }) { Text(stringResource(R.string.pwd_import_confirm)) } },
+                dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(R.string.pwd_cancel)) } },
+            )
+        }
+        is ImportStage.Done -> InfoDialog(R.string.pwd_import_done, stringResource(R.string.pwd_import_done_body, s.counts.added, s.counts.attached, s.counts.duplicates), dismiss)
+        ImportStage.Encrypted -> InfoDialog(R.string.pwd_import_encrypted_title, stringResource(R.string.pwd_import_encrypted), dismiss)
+        ImportStage.Unreadable -> InfoDialog(R.string.pwd_import_unknown_title, stringResource(R.string.pwd_import_unknown), dismiss)
+    }
+}
+
+@Composable
+private fun InfoDialog(title: Int, body: String, onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(title)) },
+        text = { Text(body) },
+        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.pwd_import_ok)) } },
+    )
 }

@@ -18,7 +18,10 @@ import eu.eurise.password.data.BiometricVault
 import eu.eurise.password.data.VaultRepository
 import eu.eurise.password.data.askBiometric
 import eu.eurise.password.kdbx.EntryDraft
+import eu.eurise.password.kdbx.ImportCounts
 import eu.eurise.password.kdbx.KdbxException
+import eu.eurise.password.logic.ImportOutcome
+import eu.eurise.password.logic.Importer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,6 +29,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** Le tappe dell'importazione mostrate come finestre. */
+sealed interface ImportStage {
+    data class Preview(val ready: ImportOutcome.Ready) : ImportStage
+    data class Done(val counts: ImportCounts) : ImportStage
+    data object Encrypted : ImportStage
+    data object Unreadable : ImportStage
+}
 
 class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     val repo = VaultRepository.get(app)
@@ -92,6 +103,41 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
             AliasCheck.Offline -> done(text(R.string.pwd_alias_offline))
         }
     }
+
+    private val _importing = MutableStateFlow<ImportStage?>(null)
+    val importing = _importing.asStateFlow()
+
+    /** Legge il file e mostra cosa contiene; nella cassaforte non entra nulla finché non si conferma. */
+    fun readImport(uri: Uri) {
+        viewModelScope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                try {
+                    getApplication<Application>().contentResolver.openInputStream(uri)?.use { Importer.read(it) } ?: ImportOutcome.Unknown
+                } catch (e: java.io.IOException) {
+                    ImportOutcome.Unknown
+                } catch (e: RuntimeException) {
+                    ImportOutcome.Unknown
+                } catch (e: OutOfMemoryError) {
+                    ImportOutcome.Unknown
+                }
+            }
+            _importing.value = when (outcome) {
+                is ImportOutcome.Ready -> if (outcome.items.isEmpty()) ImportStage.Unreadable else ImportStage.Preview(outcome)
+                ImportOutcome.Encrypted -> ImportStage.Encrypted
+                ImportOutcome.Unknown -> ImportStage.Unreadable
+            }
+        }
+    }
+
+    fun confirmImport(ready: ImportOutcome.Ready) {
+        _importing.value = null
+        work {
+            val counts = repo.importItems(ready.items.map { it.draft })
+            if (counts != null) _importing.value = ImportStage.Done(counts)
+        }
+    }
+
+    fun closeImport() { _importing.value = null }
 
     fun linkApp(uuid: String, packageName: String) = viewModelScope.launch { repo.linkApp(uuid, packageName) }
 

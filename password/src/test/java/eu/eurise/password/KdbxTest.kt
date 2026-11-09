@@ -201,4 +201,68 @@ class KdbxTest {
         assertEquals(eu.eurise.password.autofill.FieldKind.Username, kinds[1])
         assertEquals(null, kinds[0])
     }
+
+    private val passJson = """{"version":"1.2","userId":"u","vaults":{"s1":{"name":"V","items":[
+      {"itemId":"a","state":1,"aliasEmail":null,"data":{"type":"login","metadata":{"name":"Murena","note":"n"},"extraFields":[{"fieldName":"PIN","type":"hidden","data":{"content":"77"}}],"content":{"itemEmail":"io@x.it","itemUsername":"","password":"segreta-lunga","urls":["https://murena.io/","https://altro.it/"],"totpUri":"otpauth://totp/M?secret=GEZDGNBV","passkeys":[{"k":1}]}}},
+      {"itemId":"b","state":2,"data":{"type":"login","metadata":{"name":"Cestinata"},"content":{"password":"x"}}},
+      {"itemId":"c","state":1,"data":{"type":"creditCard","metadata":{"name":"Conto","note":""},"extraFields":[],"content":{"cardholderName":"M R","number":"4111111111111111","verificationNumber":"123","expirationDate":"2028-03","pin":"9"}}},
+      {"itemId":"d","state":1,"data":{"type":"note","metadata":{"name":"Appunto","note":"testo"},"content":{}}},
+      {"itemId":"e","state":1,"aliasEmail":"a.b@passmail.net","data":{"type":"alias","metadata":{"name":"Negozio","note":""},"content":{}}},
+      {"itemId":"f","state":1,"data":{"type":"wifi","metadata":{"name":"Casa"},"content":{}}}
+    ]}}}"""
+
+    private fun ready(text: String) = eu.eurise.password.logic.Importer.parse(text) as eu.eurise.password.logic.ImportOutcome.Ready
+
+    @Test fun protonPassExport() {
+        val r = ready(passJson)
+        assertEquals(1, r.skipped)
+        assertEquals(1, r.passkeys)
+        assertEquals(listOf("Murena", "Conto", "Appunto", "Negozio"), r.items.map { it.draft.title })
+        val login = r.items[0].draft
+        assertEquals("io@x.it", login.username)
+        assertEquals("https://murena.io/", login.url)
+        assertTrue(login.notes.contains("PIN: 77") && login.notes.contains("https://altro.it/"))
+        assertEquals("03/28", r.items[1].draft.card!!.expiry)
+        assertEquals("a.b@passmail.net", r.items[3].draft.username)
+    }
+
+    @Test fun protonPassInsideZip() {
+        val out = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(out).use { z -> z.putNextEntry(java.util.zip.ZipEntry("Proton Pass/data.json")); z.write(passJson.toByteArray()); z.closeEntry() }
+        val r = eu.eurise.password.logic.Importer.read(out.toByteArray().inputStream()) as eu.eurise.password.logic.ImportOutcome.Ready
+        assertEquals(4, r.items.size)
+    }
+
+    @Test fun encryptedZipIsExplained() {
+        val out = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(out).use { z -> z.putNextEntry(java.util.zip.ZipEntry("Proton Pass/data.pgp")); z.write(1); z.closeEntry() }
+        assertEquals(eu.eurise.password.logic.ImportOutcome.Encrypted, eu.eurise.password.logic.Importer.read(out.toByteArray().inputStream()))
+    }
+
+    @Test fun authenticatorFormats() {
+        val aegis = ready("""{"version":1,"db":{"entries":[{"type":"totp","name":"io","issuer":"Murena","info":{"secret":"GEZD","algo":"SHA256","digits":6,"period":30}},{"type":"hotp","name":"x","info":{}}]}}""")
+        assertEquals("Murena", aegis.items.single().draft.title)
+        assertEquals(1, aegis.skipped)
+        assertTrue(aegis.items.single().draft.otp!!.contains("algorithm=SHA256"))
+        val proton = ready("""{"version":1,"entries":[{"id":"1","content":{"uri":"otpauth://totp/Murena%3Aio%40x.it?secret=GEZD&issuer=Murena","name":"Murena"},"note":""}]}""")
+        assertEquals("Murena", proton.items.single().draft.title)
+        assertEquals("io@x.it", proton.items.single().draft.username)
+        val fas = ready("""{"services":[{"name":"Sito","secret":"GEZD","otp":{"account":"io","digits":6,"period":30,"algorithm":"SHA1","tokenType":"TOTP"}}]}""")
+        assertEquals("io", fas.items.single().draft.username)
+        assertEquals(1, ready("otpauth://totp/A:b?secret=GEZD\n").items.size)
+    }
+
+    @Test fun importTwiceAddsNothingAndCodesJoinTheirLogin() {
+        val file = Kdbx.create(key, "Eurise")
+        val v = vault(file)
+        val drafts = ready(passJson).items.map { it.draft }
+        assertEquals(eu.eurise.password.kdbx.ImportCounts(4, 0, 0), v.importAll(drafts))
+        assertEquals(eu.eurise.password.kdbx.ImportCounts(0, 0, 4), v.importAll(drafts))
+        v.save(EntryDraft("Infomaniak", "io", "password-molto-lunga", "https://infomaniak.com", "", null), null)
+        val code = ready("otpauth://totp/Infomaniak:io?secret=GEZDGNBV&issuer=Infomaniak").items.map { it.draft }
+        assertEquals(eu.eurise.password.kdbx.ImportCounts(0, 1, 0), v.importAll(code))
+        assertEquals(eu.eurise.password.kdbx.ImportCounts(0, 0, 1), v.importAll(code))
+        assertNotNull(v.entries().single { it.title == "Infomaniak" }.otp)
+        assertEquals(5, vault(Kdbx.read(Kdbx.write(file), key)).entries().size)
+    }
 }
