@@ -293,6 +293,7 @@
     <string name="aod_alarm_tomorrow">Sveglia domani alle %1$s</string>
     <string name="aod_dose_at">Da prendere alle %1$s</string>
     <string name="aod_dose_due">Dose da prendere</string>
+    <string name="music_cover">Copertina del brano</string>
     <string name="categories_reorder">Trascina per riordinare</string>
     <string name="categories_home">La home</string>
     <string name="categories_apps">%1$d app</string>

@@ -78,6 +78,8 @@ data class NowPlaying(
     val appLabel: String,
     val playing: Boolean,
     val controller: MediaController,
+    /** Copertina del brano, ridotta; nulla se il lettore non la fornisce. */
+    val art: android.graphics.Bitmap? = null,
 )
 
 /**
@@ -166,8 +168,27 @@ object NotificationStore {
                 appLabel = labelOf(context, c.packageName),
                 playing = c.playbackState?.state == PlaybackState.STATE_PLAYING,
                 controller = c,
+                art = artFor(title, meta),
             )
         }
+    }
+
+    private var artKey: String? = null
+    private var artCache: android.graphics.Bitmap? = null
+
+    /** La copertina si riduce una volta per brano: le notifiche del lettore arrivano di continuo. */
+    private fun artFor(title: String, meta: MediaMetadata?): android.graphics.Bitmap? {
+        val key = "$title|${meta?.getString(MediaMetadata.METADATA_KEY_ARTIST)}|${meta?.getString(MediaMetadata.METADATA_KEY_ALBUM)}"
+        if (key == artKey && artCache != null) return artCache
+        val source = listOf(MediaMetadata.METADATA_KEY_ALBUM_ART, MediaMetadata.METADATA_KEY_ART, MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+            .firstNotNullOfOrNull { meta?.getBitmap(it) }
+        val scaled = source?.let { b ->
+            val factor = minOf(1f, 256f / maxOf(b.width, b.height))
+            runCatching { android.graphics.Bitmap.createScaledBitmap(b, (b.width * factor).toInt().coerceAtLeast(1), (b.height * factor).toInt().coerceAtLeast(1), true) }.getOrNull()
+        }
+        artKey = key
+        artCache = scaled
+        return scaled
     }
 
     internal fun setConnected(value: Boolean) {

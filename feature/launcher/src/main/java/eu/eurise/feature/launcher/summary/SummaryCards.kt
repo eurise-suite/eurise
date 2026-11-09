@@ -418,12 +418,15 @@ fun MusicCard(
 fun MusicBody(playing: NowPlaying, compact: Boolean) {
     val controls = playing.controller.transportControls
     val info: @Composable () -> Unit = {
-        Column {
-            Text(playing.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOf(playing.artist, playing.appLabel).filter { it.isNotBlank() }.joinToString(" · "),
-                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            eu.eurise.feature.launcher.home.AlbumArt(playing, 48.dp)
+            Column {
+                Text(playing.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    listOf(playing.artist, playing.appLabel).filter { it.isNotBlank() }.joinToString(" · "),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
     val buttons: @Composable () -> Unit = {

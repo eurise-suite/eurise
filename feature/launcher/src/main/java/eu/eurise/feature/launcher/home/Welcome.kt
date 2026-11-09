@@ -9,6 +9,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -396,8 +397,10 @@ fun MusicHalf(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, modi
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpenPlayer),
             )
             else -> {
-                Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.clickable(onClick = onOpenPlayer))
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPlayer), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AlbumArt(playing, 40.dp)
+                    Text(playing.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
                 val controls = playing.controller.transportControls
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     MiniButton(EuriseIcons.previous(), stringResource(R.string.music_previous), false) { controls.skipToPrevious() }
@@ -408,6 +411,21 @@ fun MusicHalf(playing: NowPlaying?, enabled: Boolean, hazeState: HazeState, modi
                     MiniButton(EuriseIcons.next(), stringResource(R.string.music_next), false) { controls.skipToNext() }
                 }
             }
+        }
+    }
+}
+
+/** La copertina del brano; se il lettore non la fornisce, una nota. */
+@Composable
+internal fun AlbumArt(playing: NowPlaying, size: androidx.compose.ui.unit.Dp) {
+    val shape = RoundedCornerShape(10.dp)
+    val art = playing.art
+    val image = remember(art) { art?.asImageBitmap() }
+    Box(Modifier.size(size).clip(shape).background(MaterialTheme.colorScheme.surfaceContainer), contentAlignment = Alignment.Center) {
+        if (image != null) {
+            androidx.compose.foundation.Image(image, stringResource(R.string.music_cover), contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.matchParentSize())
+        } else {
+            Icon(EuriseIcons.music(2f), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(size * 0.45f))
         }
     }
 }
