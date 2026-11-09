@@ -118,7 +118,24 @@ object NotificationStore {
         _all.value = _all.value.filterNot { it.key == m.key }
     }
 
-    private fun StatusBarNotification.isHidden() = hidden[key] == postTime
+    /** Chiave → istante della risposta: dopo aver risposto molte app ripubblicano la notifica con il testo inviato. */
+    private val replied = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** Si è risposto da Eurise: la conversazione è trattata, quindi sparisce da bolle, Pannello e tendina. */
+    fun answered(m: MessageItem) {
+        replied[m.key] = System.currentTimeMillis()
+        hide(m)
+        dismiss(m.key)
+        // La ripubblicazione dell'app arriva un attimo dopo: si toglie anche quella.
+        mainHandler.postDelayed({ dismiss(m.key) }, 1_500)
+        mainHandler.postDelayed({ dismiss(m.key) }, 4_000)
+    }
+
+    private fun StatusBarNotification.isHidden() =
+        hidden[key] == postTime || replied[key]?.let { postTime - it in 0..REPLY_ECHO_MS } == true
+
+    private const val REPLY_ECHO_MS = 8_000L
 
     private val _nowPlaying = MutableStateFlow<NowPlaying?>(null)
     val nowPlaying: StateFlow<NowPlaying?> = _nowPlaying.asStateFlow()

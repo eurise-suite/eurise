@@ -83,6 +83,7 @@ fun QuickReplyDialog(
         if (text.isBlank()) return
         if (reply.send(context, text.trim())) {
             Toast.makeText(context, sentLabel, Toast.LENGTH_SHORT).show()
+            NotificationStore.answered(message)
             onClose()
         }
     }
