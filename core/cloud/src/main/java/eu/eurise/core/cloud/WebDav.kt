@@ -8,6 +8,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.w3c.dom.Element
@@ -25,6 +26,12 @@ data class DavEntry(
 
 /** Risposta inattesa dal server; [code] è lo stato HTTP (401 password errata, 412 cambiato nel frattempo…). */
 class DavException(val code: Int, message: String) : Exception(message)
+
+/** Un link pubblico; [path] è relativo alla cartella principale dell'utente. */
+data class DavShare(val id: String, val path: String, val url: String, val expires: String?)
+
+/** Una versione precedente di un file; [modified] è la data nel formato del server. */
+data class DavVersion(val href: String, val modified: String, val size: Long?)
 
 /** Spazio usato e libero, in byte, quando il server lo dice. */
 data class DavQuota(val used: Long?, val available: Long?)
@@ -129,6 +136,95 @@ class WebDav(
         }
     }
 
+    /** Scarica su disco senza tenere il file in memoria, per i file grandi; falso se sul server non c'è. */
+    suspend fun download(path: String, target: java.io.File): Boolean {
+        val req = request(url(path)).get().build()
+        return call(req) { res ->
+            when {
+                res.code == 404 -> false
+                res.isSuccessful -> {
+                    target.parentFile?.mkdirs()
+                    res.body?.byteStream()?.use { input -> target.outputStream().use { input.copyTo(it) } }
+                    true
+                }
+                else -> throw DavException(res.code, "GET $path: ${res.code}")
+            }
+        }
+    }
+
+    /** Carica un file da disco senza tenerlo in memoria. */
+    suspend fun upload(path: String, source: java.io.File) {
+        val req = request(url(path)).put(source.asRequestBody("application/octet-stream".toMediaType())).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
+    }
+
+    /** Vero sui server Nextcloud, Murena compreso: solo loro hanno link, versioni e condivisioni. */
+    val isNextcloud: Boolean get() = "/remote.php/dav/files/" in base.encodedPath
+
+    private val serverRoot: String get() = base.toString().substringBefore("/remote.php/")
+    private val sharesUrl: String get() = "$serverRoot/ocs/v2.php/apps/files_sharing/api/v1/shares"
+    private val davUser: String get() = base.encodedPath.substringAfter("/remote.php/dav/files/").trim('/')
+
+    /** Crea un link pubblico, facoltativamente con password e scadenza (AAAA-MM-GG), e ne restituisce l'indirizzo. */
+    suspend fun createLink(path: String, password: String?, expires: String?): String {
+        val form = okhttp3.FormBody.Builder().add("path", "/" + path.trim('/')).add("shareType", "3")
+        password?.let { form.add("password", it) }
+        expires?.let { form.add("expireDate", it) }
+        val req = request("$sharesUrl?format=json".toHttpUrl()).header("OCS-APIRequest", "true").post(form.build()).build()
+        return call(req) { res ->
+            if (!res.isSuccessful) throw DavException(res.code, "share: ${res.code}")
+            org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONObject("data").getString("url")
+        }
+    }
+
+    /** I link pubblici creati da questo account. */
+    suspend fun links(): List<DavShare> {
+        val req = request("$sharesUrl?format=json".toHttpUrl()).header("OCS-APIRequest", "true").get().build()
+        return call(req) { res ->
+            if (!res.isSuccessful) throw DavException(res.code, "shares: ${res.code}")
+            val data = org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONArray("data")
+            (0 until data.length()).map { data.getJSONObject(it) }.filter { it.optInt("share_type") == 3 }.map {
+                DavShare(it.getString("id"), it.optString("path").trimStart('/'), it.optString("url"), it.optString("expiration").takeUnless { e -> e.isBlank() || e == "null" })
+            }
+        }
+    }
+
+    suspend fun removeLink(id: String) {
+        val req = request("$sharesUrl/$id?format=json".toHttpUrl()).header("OCS-APIRequest", "true").delete().build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "unshare: ${res.code}") }
+    }
+
+    /** Le versioni precedenti di un file, dalla più recente. */
+    suspend fun versions(path: String): List<DavVersion> {
+        val idReq = request(url(path)).header("Depth", "0").method("PROPFIND", FILEID_BODY.toRequestBody(XML)).build()
+        val fileId = call(idReq) { res ->
+            if (res.code != 207) throw DavException(res.code, "fileid: ${res.code}")
+            parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(OC_NS, "fileid").item(0)?.textContent?.trim()
+        } ?: return emptyList()
+        val listUrl = "$serverRoot/remote.php/dav/versions/$davUser/versions/$fileId/".toHttpUrl()
+        val req = request(listUrl).header("Depth", "1").method("PROPFIND", PROPFIND_BODY.toRequestBody(XML)).build()
+        return call(req) { res ->
+            if (res.code == 404) return@call emptyList()
+            if (res.code != 207) throw DavException(res.code, "versions: ${res.code}")
+            val doc = parseXml(res.body?.string().orEmpty())
+            val responses = doc.getElementsByTagNameNS(DAV_NS, "response")
+            (0 until responses.length).mapNotNull { i ->
+                val r = responses.item(i) as Element
+                val href = r.child("href")?.textContent?.trim() ?: return@mapNotNull null
+                if (samePath(href, listUrl.encodedPath)) return@mapNotNull null
+                DavVersion(href, r.child("getlastmodified")?.textContent?.trim().orEmpty(), r.child("getcontentlength")?.textContent?.trim()?.toLongOrNull())
+            }
+        }
+    }
+
+    /** Riporta il file alla versione scelta; Nextcloud conserva quella attuale tra le versioni. */
+    suspend fun restoreVersion(version: DavVersion) {
+        val target = "$serverRoot/remote.php/dav/versions/$davUser/restore/target"
+        val from = serverRoot.toHttpUrl().newBuilder().encodedPath(version.href).build()
+        val req = request(from).header("Destination", target).method("MOVE", null).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "restore: ${res.code}") }
+    }
+
     /** Sposta o rinomina un file sul server, sostituendo quello che c'è già al nuovo posto. */
     suspend fun move(from: String, to: String) {
         val req = request(url(from)).header("Destination", url(to).toString()).header("Overwrite", "T").method("MOVE", null).build()
@@ -206,6 +302,9 @@ class WebDav(
     companion object {
         const val USER_AGENT = "Eurise (Android)"
         private const val DAV_NS = "DAV:"
+        private const val OC_NS = "http://owncloud.org/ns"
+        private const val FILEID_BODY =
+            """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop><oc:fileid/></d:prop></d:propfind>"""
         private val XML = "application/xml; charset=utf-8".toMediaType()
         private const val PROPFIND_BODY =
             """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/><d:getetag/><d:getcontentlength/><d:getlastmodified/></d:prop></d:propfind>"""

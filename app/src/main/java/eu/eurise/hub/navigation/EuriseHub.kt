@@ -134,6 +134,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             }
             section == "backup" -> navController.navigate("cloud/backup")
             section == "clock" -> goTo(Section.Clock)
+            section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
+            section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
@@ -202,6 +204,16 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onTrash = { navController.navigate("notes/trash") },
                         onCloud = { navController.navigate("cloud") },
                     )
+                }
+                composable("drive") {
+                    eu.eurise.feature.drive.DriveRoute(
+                        onBack = { navController.closeIfOn("drive") },
+                        onScan = { navController.navigate("scanner") },
+                        onCloud = { navController.navigate("cloud") },
+                    )
+                }
+                composable("scanner") {
+                    eu.eurise.feature.scanner.ScannerRoute(onClose = { navController.closeIfOn("scanner") })
                 }
                 composable("cloud") {
                     CloudRoute(onBack = { navController.closeIfOn("cloud") }, onBackup = { navController.navigate("cloud/backup") })

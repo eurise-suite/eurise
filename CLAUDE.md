@@ -47,7 +47,7 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 
 ## Struttura degli APK (decisa l'8 novembre 2026)
 - APK principale "Eurise": Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud, Orologio (unito l'8 novembre:
-  troppo integrato per restare fuori). Ogni app ha la sua icona
+  troppo integrato per restare fuori), File, Scanner e lettore PDF (9 novembre). Office resta un APK separato. Ogni app ha la sua icona
   nel cassetto e si può spegnere; spenta, non carica nulla.
 - APK separati per Password, Galleria, Tastiera, Mappe, Browser, Messaggi e Telefono. Parlano con il
   principale solo tra app firmate con la stessa chiave (permessi di firma), mai con canali aperti alle altre app.

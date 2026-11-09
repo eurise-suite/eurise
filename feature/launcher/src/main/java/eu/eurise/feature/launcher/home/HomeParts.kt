@@ -23,6 +23,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -404,8 +410,38 @@ fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier 
             .clickable(role = Role.Button, onClickLabel = label, onClick = onSearch),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(if (web) EuriseIcons.globe() else EuriseIcons.search(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+        if (web) Icon(EuriseIcons.globe(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+        else HeartbeatSearchIcon(label)
     }
+}
+
+/** La lente batte come un cuore (due battiti e una pausa) e nel momento più grande prende il colore d'accento. */
+@Composable
+private fun HeartbeatSearchIcon(label: String) {
+    val beat by rememberInfiniteTransition(label = "battito").animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = 1600
+                0f at 0
+                1f at 140
+                0.15f at 280
+                0.7f at 400
+                0f at 600
+            },
+        ),
+        label = "battito",
+    )
+    Icon(
+        EuriseIcons.search(), label,
+        tint = lerp(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.primary, beat),
+        modifier = Modifier.size(22.dp).graphicsLayer {
+            val scale = 1f + 0.22f * beat
+            scaleX = scale
+            scaleY = scale
+        },
+    )
 }
 
 /** Apre la ricerca sul web con il browser predefinito; se il browser non la gestisce, apre il browser. */

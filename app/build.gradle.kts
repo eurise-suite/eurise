@@ -103,6 +103,8 @@ dependencies {
     implementation(project(":feature:calendar"))
     implementation(project(":feature:launcher"))
     implementation(project(":feature:clock"))
+    implementation(project(":feature:drive"))
+    implementation(project(":feature:scanner"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -258,6 +258,14 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Controllo violazioni (Have I Been Pwned, interruttore spento di base), salvataggio dei login digitati, riquadri Blocca e
   Genera. Mancano: kMail tra gli alias, Famiglia. Passkey in `passkey/` (Android 14+, formato KPEX di KeePassXC, browser approvati dalla persona): la catena e' stata provata sul telefono con KeePassDX su webauthn.io il 9 novembre. Poi Drive e Scanner (tele approvate).
   Il centro privacy dovrà elencare Murena per questa app.
+- Ramo `documenti` (da `main`): File e Scanner dentro l'APK principale (decisione del 9 novembre, come Orologio: stessa
+  integrazione, peso piccolo; icone `eurise:drive` e `eurise:scanner`, senza voce nella barra). Moduli `feature/drive`
+  (telefono + account WebDAV, Recenti, Offline, Cestino telefono 30 giorni, lettore PDF di sistema con zoom) e
+  `feature/scanner` (CameraX, bordi e scatto automatico in `EdgeDetector`, raddrizzamento, filtri, PDF su telefono o
+  cloud), QR e ritaglio; link con password e scadenza, Condivisi, versioni e sposta (Nextcloud); PDF: firma e annota su copia,
+  ricerca da Android 15. Office resta APK separato. Mancano: lettura del testo (OCR, serve scelta sul peso), quindi nome
+  automatico, scadenze e ricerca nei PDF; cartelle cifrate; kDrive via API. Cartelle allineate in `FolderSync` (decisioni in `SyncPlanner`,
+  con freno se sparisce troppo; automatico ogni 6 ore solo in Wi-Fi). Peso della versione ufficiale: da 2,7 a 3,5 MB, quasi tutto CameraX. MANAGE_EXTERNAL_STORAGE va rivisto se un giorno si pubblica su Play.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

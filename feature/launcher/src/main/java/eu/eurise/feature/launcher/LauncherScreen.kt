@@ -158,7 +158,7 @@ private const val TabletSmallestWidth = 600
 
 /**
  * La Scrivania di Eurise: home con orario, meteo, Oggi e Preferiti; pagina Riepilogo; pagine delle categorie;
- * ricerca e cattura. I colori seguono lo sfondo: tema Notte sopra le scene di sera e di notte.
+ * ricerca e cattura. I colori seguono lo sfondo: tema Notte solo sopra la scena di notte.
  *
  * @param homePresses aumenta ogni volta che si preme il tasto Home mentre la Scrivania è già aperta.
  */
@@ -285,16 +285,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
         .let { s -> when (settings.themeMode) { 1 -> s.copy(forceDark = false); 2 -> s.copy(forceDark = true); else -> s } }
-    EuriseTheme(darkTheme = scene.dark) {
+    EuriseTheme(darkTheme = scene.themeDark) {
       // Di notte l'accento si abbassa e si intona allo sfondo: meno acceso, più scuro.
-      val accent = settings.accent.color(scene.dark).let { if (scene.dark) nightAccent(it) else it }
+      val accent = settings.accent.color(scene.themeDark).let { if (scene.themeDark) nightAccent(it) else it }
       val onAccent = if (0.2126f * accent.red + 0.7152f * accent.green + 0.0722f * accent.blue > 0.55f) Color(0xFF14171C) else Color.White
       MaterialTheme(
           colorScheme = MaterialTheme.colorScheme.copy(
               primary = accent,
               onPrimary = onAccent,
               // Binari di cursori e interruttori spenti: grigi neutri, non la salvia del tema.
-              secondaryContainer = if (scene.dark) Color(0xFF2E343E) else Color(0xFFE2E2DC),
+              secondaryContainer = if (scene.themeDark) Color(0xFF2E343E) else Color(0xFFE2E2DC),
               onSecondaryContainer = MaterialTheme.colorScheme.onSurface,
           ),
       ) {
@@ -521,7 +521,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                                 PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
                                                 hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
                                                 DailyData(
-                                                    horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
+                                                    horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.themeDark, recipes = recipes,
                                                     onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
                                                 ),
                                                 calendarMonth, monthEvents, monthTasks, viewModel::setCalendarMonth,
@@ -541,7 +541,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         news = newsItems, quotes = quotes,
                         onNewsSources = { newsSheet = true }, onSymbols = { stocksSheet = true },
                         daily = DailyData(
-                            horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.dark, recipes = recipes,
+                            horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.themeDark, recipes = recipes,
                             onSign = { signPicker = true }, onHoroscopeSources = { dailySheet = "horoscope" }, onRecipeSources = { dailySheet = "recipes" },
                         ),
                         calendarMonth = calendarMonth, monthEvents = monthEvents, monthTasks = monthTasks,
@@ -570,7 +570,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                             } else if (page == HomePage) {
                                 PhoneHome(
                                     now = now, weather = weather, hasLocation = hasLocation, state = state, badges = badges,
-                                    dark = scene.dark, hazeState = hazeState, actions = actions,
+                                    dark = scene.themeDark, hazeState = hazeState, actions = actions,
                                     isFavorite = viewModel::isFavorite, onToggleFavorite = viewModel::toggleFavorite,
                                     onTaskDone = { viewModel.setTaskDone(it, true) }, clearance = clearance,
                                     isHome = isHome,
@@ -603,7 +603,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         folders = settings.folders,
                         onOpenFolder = { openFolder = it.id },
                         onCreateFolder = { app, cat -> folderPicker = FolderRequest(null, cat.id, app.key) },
-                        dark = scene.dark,
+                        dark = scene.themeDark,
                         badges = badges,
                         isFavorite = viewModel::isFavorite,
                         onOpen = actions.openApp,
@@ -633,7 +633,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     // nessuna barra
                 } else if (tablet) {
                     TabletDock(
-                        favorites = state.favorites.take(settings.columns), badges = badges, dark = scene.dark,
+                        favorites = state.favorites.take(settings.columns), badges = badges, dark = scene.themeDark,
                         categories = barCategories, selected = category,
                         onOpen = actions.openApp, onSelect = ::select, onSearch = { searching = true }, onEdit = { categoryEditor = true },
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
@@ -656,7 +656,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     recents = state.recents,
                     notes = state.notes,
                     tasks = state.openTasks,
-                    dark = scene.dark,
+                    dark = scene.themeDark,
                     hazeState = hazeState,
                     capture = capture,
                     onOpenApp = { searching = false; actions.openApp(it) },
@@ -699,7 +699,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 FolderOverlay(
                     folder = folder,
                     apps = folder.keys.mapNotNull { byKey[it] },
-                    dark = scene.dark,
+                    dark = scene.themeDark,
                     iconSize = settings.iconSize.dp,
                     badges = badges,
                     onOpenApp = { openFolder = null; actions.openApp(it) },
@@ -715,7 +715,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     title = stringResource(if (existing != null) R.string.folder_add_apps else R.string.folder_create),
                     apps = state.apps,
                     preselected = existing?.keys?.toSet() ?: setOfNotNull(req.startKey),
-                    dark = scene.dark,
+                    dark = scene.themeDark,
                     onDone = { chosen ->
                         folderPicker = null
                         if (existing != null) viewModel.setFolderApps(existing, chosen.map { it.key })
@@ -725,7 +725,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 )
             }
             if (signPicker) {
-                SignPicker(sign, scene.dark, onPick = { picked ->
+                SignPicker(sign, scene.themeDark, onPick = { picked ->
                     signPicker = false
                     viewModel.setSign(picked, context.getString(picked.label))
                 }, onClose = { signPicker = false })
@@ -794,7 +794,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             }
             if (appearance) {
                 AppearanceSheet(
-                    settings, scene.dark, onChange = viewModel::updateSettings, onClose = { appearance = false },
+                    settings, scene.themeDark, onChange = viewModel::updateSettings, onClose = { appearance = false },
                     onEditCategories = { appearance = false; categoryEditor = true },
                     onAod = { appearance = false; aodSettings = true },
                 )
