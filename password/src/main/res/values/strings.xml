@@ -28,11 +28,11 @@
     <string name="pwd_row_note">nota sicura</string>
 
     <string name="pwd_sync_off">File KeePass sul telefono</string>
-    <string name="pwd_sync_done">File KeePass su Murena · aggiornato</string>
-    <string name="pwd_sync_working">Sincronizzo con Murena…</string>
-    <string name="pwd_sync_network">Salvato qui · Murena non raggiungibile</string>
-    <string name="pwd_sync_rejected">Salvato qui · Murena rifiuta l\'accesso</string>
-    <string name="pwd_sync_other_password">Salvato qui · il file su Murena ha un\'altra frase</string>
+    <string name="pwd_sync_done">File KeePass sul cloud · aggiornato</string>
+    <string name="pwd_sync_working">Sincronizzo con il cloud…</string>
+    <string name="pwd_sync_network">Salvato qui · cloud non raggiungibile</string>
+    <string name="pwd_sync_rejected">Salvato qui · il cloud rifiuta l\'accesso</string>
+    <string name="pwd_sync_other_password">Salvato qui · il file sul cloud ha un\'altra frase</string>
 
     <string name="pwd_setup_title">La tua cassaforte</string>
     <string name="pwd_setup_message">Scegli una frase principale lunga, che ricorderai. È l\'unica chiave: senza, nessuno può aprire la cassaforte, nemmeno noi.</string>
@@ -43,7 +43,7 @@
     <string name="pwd_too_short">Usa almeno 10 caratteri.</string>
     <string name="pwd_suggest">Suggeriscine una</string>
     <string name="pwd_import">Apri un file KeePass (.kdbx)</string>
-    <string name="pwd_from_murena">Prendi la cassaforte da Murena</string>
+    <string name="pwd_from_murena">Prendi la cassaforte dal cloud</string>
     <string name="pwd_import_message">Scrivi la frase principale del file scelto.</string>
     <string name="pwd_open">Apri</string>
     <string name="pwd_cancel">Annulla</string>
@@ -53,8 +53,8 @@
     <string name="pwd_err_corrupt">Il file sembra danneggiato.</string>
     <string name="pwd_err_memory">Il telefono non ha abbastanza memoria per aprire questo file.</string>
     <string name="pwd_err_generic">Operazione non riuscita.</string>
-    <string name="pwd_err_login">Accesso a Murena non riuscito.</string>
-    <string name="pwd_err_no_remote">Su Murena non c\'è ancora una cassaforte.</string>
+    <string name="pwd_err_login">Accesso al cloud non riuscito.</string>
+    <string name="pwd_err_no_remote">Sul cloud non c\'è ancora una cassaforte.</string>
     <string name="pwd_working">Un momento…</string>
     <string name="pwd_waiting_browser">Approva l\'accesso nel browser, poi torna qui.</string>
 
@@ -104,13 +104,13 @@
     <string name="pwd_s_very">molto robusta</string>
 
     <string name="pwd_settings">Impostazioni</string>
-    <string name="pwd_sync_switch">Sincronizza con Murena</string>
+    <string name="pwd_sync_switch">Sincronizza con il cloud</string>
     <string name="pwd_sync_on_account">Attiva con %s</string>
     <string name="pwd_sync_off_detail">Spenta: la cassaforte resta solo su questo telefono.</string>
     <string name="pwd_sync_now">Sincronizza adesso</string>
-    <string name="pwd_sync_pc">Sul PC: sincronizza la cartella Eurise/Password di Murena e apri eurise.kdbx con KeePassXC.</string>
+    <string name="pwd_sync_pc">Sul PC: sincronizza la cartella Eurise/Password del tuo cloud e apri eurise.kdbx con KeePassXC.</string>
     <string name="pwd_privacy_title">Cosa cambia per la tua privacy</string>
-    <string name="pwd_privacy_body">Cosa esce: solo il file della cassaforte, già cifrato con la tua frase principale.\n\nDove va: nella cartella Eurise/Password del tuo Murena.\n\nChi lo vede: Murena vede un file illeggibile, il suo nome e la sua dimensione. La frase non lascia mai il telefono.\n\nCome si torna indietro: spegni l\'interruttore. Il file già caricato resta su Murena finché non lo elimini.</string>
+    <string name="pwd_privacy_body">Cosa esce: solo il file della cassaforte, già cifrato con la tua frase principale.\n\nDove va: nella cartella Eurise/Password del tuo cloud.\n\nChi lo vede: chi gestisce il server vede un file illeggibile, il suo nome e la sua dimensione. La frase non lascia mai il telefono.\n\nCome si torna indietro: spegni l\'interruttore. Il file già caricato resta sul cloud finché non lo elimini.</string>
     <string name="pwd_privacy_ok">Accendi</string>
 
     <string name="pwd_tab_cards">Carte</string>
@@ -250,4 +250,9 @@
     <string name="pwd_import_keepass">Frase del file KeePass</string>
     <string name="pwd_import_delete">Elimina il file</string>
     <string name="pwd_import_keep">Lascialo</string>
+    <string name="pwd_cloud_title">Dove sta la cassaforte?</string>
+    <string name="pwd_cloud_murena">Murena</string>
+    <string name="pwd_cloud_or">Oppure un Nextcloud, tuo o di un fornitore:</string>
+    <string name="pwd_cloud_server">Indirizzo, per esempio cloud.esempio.it</string>
+    <string name="pwd_cloud_nextcloud">Collega Nextcloud</string>
 </resources>

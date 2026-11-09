@@ -78,7 +78,7 @@ class CloudViewModel(private val cloud: CloudSync) : ViewModel() {
                 fail(Reason.Timeout)
                 return@launch
             }
-            val dav = CloudAccounts.nextcloudDav(result.server, result.loginName)
+            val dav = CloudAccounts.nextcloudDav(result.server, result.davUser)
             val name = if (kind == CloudKind.Murena && '@' !in result.loginName) "${result.loginName}@murena.io" else result.loginName
             added(cloud.accounts.add(kind, name, result.loginName, dav, result.appPassword))
         }

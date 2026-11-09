@@ -21,7 +21,7 @@
     <string name="drive_back">Indietro</string>
     <string name="drive_empty">Cartella vuota</string>
     <string name="drive_empty_msg">Qui non c\'è ancora nulla.</string>
-    <string name="drive_no_cloud">Collega Murena o un altro servizio per vederlo qui.</string>
+    <string name="drive_no_cloud">Collega Murena, Nextcloud o un altro servizio per vederlo qui.</string>
     <string name="drive_connect">Collega un servizio</string>
     <string name="drive_empty_offline">Nessun file offline</string>
     <string name="drive_empty_offline_msg">Apri un file del cloud e accendi Disponibile senza rete.</string>

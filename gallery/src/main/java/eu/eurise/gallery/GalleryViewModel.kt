@@ -119,7 +119,7 @@ class GalleryViewModel(private val app: Application) : AndroidViewModel(app) {
         val start = login.start(server)
         withContext(Dispatchers.Main) { open(start.loginUrl) }
         val result = login.await(start) ?: return false
-        val id = CloudAccounts.get(app).add(kind, result.loginName, result.loginName, CloudAccounts.nextcloudDav(result.server, result.loginName), result.appPassword)
+        val id = CloudAccounts.get(app).add(kind, result.loginName, result.loginName, CloudAccounts.nextcloudDav(result.server, result.davUser), result.appPassword)
         store.update { it.copy(accountId = id) }
         true
     }.getOrDefault(false)

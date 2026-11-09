@@ -23,7 +23,7 @@
     <string name="pv_gallery">Galleria</string>
     <string name="pv_gallery_d">Il cloud scelto se accendi il caricamento; OpenStreetMap, con posizione arrotondata a 10 km, se accendi i nomi dei luoghi. Si gestisce nell\'app.</string>
     <string name="pv_password">Password</string>
-    <string name="pv_password_d">Murena per il file cifrato, se lo accendi; Have I Been Pwned con un frammento cifrato, se accendi il controllo; il servizio di alias scelto. Si gestisce nell\'app.</string>
+    <string name="pv_password_d">Il tuo cloud (Murena o Nextcloud) per il file cifrato, se lo accendi; Have I Been Pwned con un frammento cifrato, se accendi il controllo; il servizio di alias scelto. Si gestisce nell\'app.</string>
     <string name="pv_log">Registro degli accessi</string>
     <string name="pv_log_d">cosa ha inviato la suite, e quando</string>
     <string name="pv_log_intro">Cosa ha letto o inviato la suite. Resta solo sul telefono e si cancella dopo 30 giorni.</string>

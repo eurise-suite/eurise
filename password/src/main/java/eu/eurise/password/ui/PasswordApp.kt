@@ -200,6 +200,7 @@ private fun SetupScreen(vm: PasswordViewModel) {
     var second by remember { mutableStateOf("") }
     var local by remember { mutableStateOf<Int?>(null) }
     var picked by remember { mutableStateOf<Uri?>(null) }
+    var choosingCloud by remember { mutableStateOf(false) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { picked = it; first = ""; vm.clearError() }
 
     CenteredForm {
@@ -231,9 +232,34 @@ private fun SetupScreen(vm: PasswordViewModel) {
                 modifier = Modifier.fillMaxWidth().height(50.dp),
             ) { Text(stringResource(R.string.pwd_create)) }
             TextButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.pwd_import)) }
-            TextButton(onClick = { vm.fetchFromMurena { openUrl(context, it) } }) { Text(stringResource(R.string.pwd_from_murena)) }
+            TextButton(onClick = { choosingCloud = true }) { Text(stringResource(R.string.pwd_from_murena)) }
         }
     }
+    if (choosingCloud) {
+        CloudChoiceDialog(onDismiss = { choosingCloud = false }) { server ->
+            choosingCloud = false
+            vm.fetchFromCloud(server) { openUrl(context, it) }
+        }
+    }
+}
+
+/** Dove sta la cassaforte: Murena con un tocco, oppure un Nextcloud indicandone l'indirizzo. [onChoice] riceve null per Murena. */
+@Composable
+private fun CloudChoiceDialog(onDismiss: () -> Unit, onChoice: (String?) -> Unit) {
+    var server by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.pwd_cloud_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { onChoice(null) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.pwd_cloud_murena)) }
+                Text(stringResource(R.string.pwd_cloud_or), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(server, { server = it }, singleLine = true, label = { Text(stringResource(R.string.pwd_cloud_server)) }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = { TextButton(enabled = server.isNotBlank(), onClick = { onChoice(server) }) { Text(stringResource(R.string.pwd_cloud_nextcloud)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.pwd_cancel)) } },
+    )
 }
 
 /** Con [compact] sta dentro il foglio di compilazione invece di occupare lo schermo. */
@@ -784,6 +810,7 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val sync by vm.sync.collectAsStateWithLifecycle()
+    var choosingCloud by remember { mutableStateOf(false) }
     val waiting by vm.waitingBrowser.collectAsStateWithLifecycle()
     val on = sync !is SyncState.Off
     var explain by remember { mutableStateOf(false) }
@@ -872,9 +899,20 @@ private fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
             onDismissRequest = { explain = false },
             title = { Text(stringResource(R.string.pwd_privacy_title)) },
             text = { Text(stringResource(R.string.pwd_privacy_body)) },
-            confirmButton = { TextButton(onClick = { explain = false; vm.enableSync { openUrl(context, it) } }) { Text(stringResource(R.string.pwd_privacy_ok)) } },
+            confirmButton = {
+                TextButton(onClick = {
+                    explain = false
+                    if (vm.hasSyncAccount) vm.enableSync(null) { openUrl(context, it) } else choosingCloud = true
+                }) { Text(stringResource(R.string.pwd_privacy_ok)) }
+            },
             dismissButton = { TextButton(onClick = { explain = false }) { Text(stringResource(R.string.pwd_cancel)) } },
         )
+    }
+    if (choosingCloud) {
+        CloudChoiceDialog(onDismiss = { choosingCloud = false }) { server ->
+            choosingCloud = false
+            vm.enableSync(server) { openUrl(context, it) }
+        }
     }
 }
 

@@ -93,7 +93,7 @@
 
     <!-- Elenchi -->
     <string name="tasks_lists_cloud">Si sincronizzano con il cloud</string>
-    <string name="tasks_lists_cloud_hint">La sincronizzazione delle attività con Murena arriva con il prossimo aggiornamento: per ora restano sul telefono.</string>
+    <string name="tasks_lists_cloud_hint">La sincronizzazione delle attività con Murena o Nextcloud si accende in Cloud; se è spenta restano sul telefono.</string>
     <string name="tasks_list_main_hint">elenco principale · qui vanno le nuove</string>
     <string name="tasks_lists_automatic">Sul telefono · automatici</string>
     <string name="tasks_lists_automatic_hint">Di base restano sul telefono. Accendendo la sincronizzazione un avviso spiega cosa cambia.</string>

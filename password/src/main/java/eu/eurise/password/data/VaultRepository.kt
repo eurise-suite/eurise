@@ -189,16 +189,17 @@ class VaultRepository private constructor(context: Context) {
 
     // --- Sincronizzazione ---
 
-    suspend fun startMurenaLogin(): NextcloudLogin.Start = NextcloudLogin().start(NextcloudLogin.MURENA_SERVER)
+    /** Avvia l'accesso su Murena ([server] nullo) o sul Nextcloud indicato. */
+    suspend fun startCloudLogin(server: String?): NextcloudLogin.Start = NextcloudLogin().start(server ?: NextcloudLogin.MURENA_SERVER)
 
     /** Aspetta l'approvazione nel browser e registra l'account; falso se il tempo scade. */
-    suspend fun finishMurenaLogin(start: NextcloudLogin.Start): Boolean {
+    suspend fun finishCloudLogin(start: NextcloudLogin.Start, server: String?): Boolean {
         val result = NextcloudLogin().await(start) ?: return false
         val id = accounts.add(
-            kind = CloudKind.Murena,
+            kind = if (server == null) CloudKind.Murena else CloudKind.Nextcloud,
             name = result.loginName,
             user = result.loginName,
-            davUrl = CloudAccounts.nextcloudDav(result.server, result.loginName),
+            davUrl = CloudAccounts.nextcloudDav(result.server, result.davUser),
             password = result.appPassword,
         )
         prefs.edit().putString(KEY_ACCOUNT, id).remove(KEY_ETAG).putBoolean(KEY_DIRTY, true).apply()

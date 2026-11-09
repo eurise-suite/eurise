@@ -312,3 +312,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Non ancora: foto insieme (servono riconoscimento dei volti e permesso di firma con la Galleria), ultimo messaggio, file condivisi (File non è collegabile).
 - Un solo +: `core/links/QuickCaptureSheet`, lettore `core/data/model/Capture` (con test). Tondo + accanto alla barra della Scrivania (telefono) e + in Oggi; gli altri + restano contestuali. "@Anna" collega ciò che nasce al contatto.
   Differenze dall'anteprima, volute: la persona viene collegata ma non aggiunta agli invitati (su un calendario sincronizzato partirebbe un invito vero); niente microfono finché non c'è la Tastiera di Eurise (la dettatura di sistema manderebbe la voce a un servizio non elencato nel centro privacy).
+
+## Nextcloud alla pari di Murena (9 novembre, ramo `galleria-completa`, da provare su un Nextcloud vero)
+- Il proprietario usa Murena; altri utenti potranno usare Nextcloud. Password chiede dove sta la cassaforte (`CloudChoiceDialog`); testi generici; `NextcloudLogin.Result.davUser` prende l'identificativo dal server (su molti Nextcloud differisce dal nome di accesso).
+- Calendario e Contatti passano dal sistema: su Nextcloud servono DAVx⁵ o simili. Certificati autofirmati non gestiti.

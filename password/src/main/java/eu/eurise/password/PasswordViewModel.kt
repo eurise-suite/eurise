@@ -266,31 +266,38 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     fun syncNow() = viewModelScope.launch { repo.syncNow() }
     fun disableSync() = repo.disableSync()
 
-    /** Accende la sincronizzazione; se manca l'account apre prima l'accesso a Murena nel browser. */
-    fun enableSync(openBrowser: (String) -> Unit) {
-        if (repo.syncAccountName != null) {
+    /** Vero se c'è già un account su cui sincronizzare: allora non serve chiedere dove. */
+    val hasSyncAccount: Boolean get() = repo.syncAccountName != null
+
+    /** Accende la sincronizzazione; se manca l'account apre prima l'accesso nel browser ([server] nullo = Murena). */
+    fun enableSync(server: String?, openBrowser: (String) -> Unit) {
+        if (hasSyncAccount) {
             viewModelScope.launch { repo.enableSync() }
             return
         }
-        login(openBrowser) { repo.enableSync() }
+        login(server, openBrowser) { repo.enableSync() }
     }
 
-    /** Telefono nuovo: accesso a Murena e download del file già presente. */
-    fun fetchFromMurena(openBrowser: (String) -> Unit) = login(openBrowser) {
+    /** Telefono nuovo: accesso al cloud e download del file già presente. */
+    fun fetchFromCloud(server: String?, openBrowser: (String) -> Unit) = login(server, openBrowser) {
         if (!repo.adoptRemote()) _error.value = text(R.string.pwd_err_no_remote)
     }
 
-    private fun login(openBrowser: (String) -> Unit, then: suspend () -> Unit) = viewModelScope.launch {
+    private fun login(server: String?, openBrowser: (String) -> Unit, then: suspend () -> Unit) = viewModelScope.launch {
         _error.value = null
         _waitingBrowser.value = true
         try {
-            val start = repo.startMurenaLogin()
+            val start = repo.startCloudLogin(server)
             openBrowser(start.loginUrl)
-            if (repo.finishMurenaLogin(start)) then() else _error.value = text(R.string.pwd_err_login)
+            if (repo.finishCloudLogin(start, server)) then() else _error.value = text(R.string.pwd_err_login)
         } catch (e: java.io.IOException) {
             _error.value = text(R.string.pwd_err_login)
         } catch (e: eu.eurise.core.cloud.DavException) {
             _error.value = text(R.string.pwd_err_login)
+        } catch (e: IllegalArgumentException) {
+            _error.value = text(R.string.pwd_err_login) // indirizzo scritto male
+        } catch (e: org.json.JSONException) {
+            _error.value = text(R.string.pwd_err_login) // all'indirizzo non risponde un Nextcloud
         } finally {
             _waitingBrowser.value = false
         }

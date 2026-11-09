@@ -3,6 +3,7 @@ package eu.eurise.core.cloud
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import okhttp3.Credentials
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -20,8 +21,11 @@ class NextcloudLogin(private val client: OkHttpClient = WebDav.sharedClient) {
     /** Pagina da aprire nel browser e dati per chiedere l'esito. */
     data class Start(val loginUrl: String, val pollUrl: String, val token: String)
 
-    /** Esito dell'accesso: indirizzo del server, nome utente e password per le app. */
-    data class Result(val server: String, val loginName: String, val appPassword: String)
+    /**
+     * Esito dell'accesso: indirizzo del server, nome con cui si entra e password per le app.
+     * [davUser] è l'identificativo usato negli indirizzi WebDAV: su molti server (email, LDAP) è diverso da [loginName].
+     */
+    data class Result(val server: String, val loginName: String, val appPassword: String, val davUser: String = loginName)
 
     /** Avvia l'accesso su [server] (per esempio "murena.io" o "https://cloud.esempio.it"). */
     suspend fun start(server: String): Start = withContext(Dispatchers.IO) {
@@ -55,10 +59,24 @@ class NextcloudLogin(private val client: OkHttpClient = WebDav.sharedClient) {
             client.newCall(req).execute().use { res ->
                 if (res.code != 200) return@use null
                 val json = JSONObject(res.body?.string().orEmpty())
-                Result(json.getString("server"), json.getString("loginName"), json.getString("appPassword"))
+                val result = Result(json.getString("server"), json.getString("loginName"), json.getString("appPassword"))
+                result.copy(davUser = userId(result) ?: result.loginName)
             }
         }.getOrNull()
     }
+
+    /** Chiede al server l'identificativo dell'utente; null se non risponde, e allora vale il nome di accesso. */
+    private fun userId(result: Result): String? = runCatching {
+        val req = Request.Builder().url(result.server.trimEnd('/') + "/ocs/v2.php/cloud/user?format=json")
+            .header("User-Agent", WebDav.USER_AGENT)
+            .header("OCS-APIRequest", "true")
+            .header("Authorization", Credentials.basic(result.loginName, result.appPassword))
+            .build()
+        client.newCall(req).execute().use { res ->
+            if (!res.isSuccessful) return@use null
+            JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONObject("data").getString("id").takeIf { it.isNotBlank() }
+        }
+    }.getOrNull()
 
     companion object {
         const val MURENA_SERVER = "https://murena.io"
