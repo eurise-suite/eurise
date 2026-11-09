@@ -339,13 +339,18 @@ fun NextEventPill(
                     }
                 }.joinToString(" · ")
                 val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
-                BubbleRow(
-                    if (e.location.isNotBlank()) EuriseIcons.map() else EuriseIcons.calendar(),
-                    "$time  ${e.title}", sub, onClick = { actions.openDay(e.start.toLocalDate()) },
-                )
                 val link = BubbleText.meetingLink(e.location + " " + e.description)
                 val lateText = stringResource(R.string.bubble_late_sms, e.title)
+                // Nome e azioni stanno nella stessa fila: le azioni scendono sotto solo se il nome non lascia spazio.
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        Modifier.align(Alignment.CenterVertically).clickable { actions.openDay(e.start.toLocalDate()) }.padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(if (e.location.isNotBlank()) EuriseIcons.map() else EuriseIcons.calendar(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(9.dp))
+                        Text("$time  ${e.title}", fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                     if (e.location.isNotBlank() && link == null) ActionChip(stringResource(R.string.bubble_navigate), filled = true) { actions.navigate(e.location) }
                     if (link != null) ActionChip(stringResource(R.string.bubble_join), filled = true) { actions.openLink(link) }
                     if (!e.allDay) ActionChip(stringResource(R.string.bubble_late)) {
@@ -356,6 +361,9 @@ fun NextEventPill(
                         }
                     }
                     ActionChip(stringResource(R.string.bubble_meeting_note)) { actions.meetingNote(e) }
+                }
+                if (sub.isNotBlank()) {
+                    Text(sub, fontSize = 11.5.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 25.dp))
                 }
             }
         }
