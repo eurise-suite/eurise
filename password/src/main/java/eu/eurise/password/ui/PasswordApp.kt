@@ -689,7 +689,7 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
             InfoRow(
                 EuriseIcons.clock(),
                 stringResource(R.string.pwd_changed, DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(entry.modified))),
-                pluralStringResource(R.plurals.pwd_history, entry.historyCount, entry.historyCount),
+                if (entry.historyCount == 0) stringResource(R.string.pwd_history_none) else pluralStringResource(R.plurals.pwd_history, entry.historyCount, entry.historyCount),
             )
         }
         if (entry.notes.isNotBlank()) {

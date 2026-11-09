@@ -76,10 +76,10 @@
     <string name="pwd_notes">Note sicure</string>
     <string name="pwd_changed">Cambiata il %s</string>
     <plurals name="pwd_history">
-        <item quantity="zero">nessuna versione precedente</item>
         <item quantity="one">la precedente resta nella cronologia</item>
         <item quantity="other">le %d precedenti restano nella cronologia</item>
     </plurals>
+    <string name="pwd_history_none">nessuna versione precedente</string>
     <string name="pwd_health_ok">Robusta e usata solo qui</string>
     <string name="pwd_health_weak">Password debole</string>
     <string name="pwd_health_reused">Usata anche in altre voci</string>
