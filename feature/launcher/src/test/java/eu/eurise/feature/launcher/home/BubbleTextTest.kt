@@ -53,4 +53,23 @@ class BubbleTextTest {
         org.junit.Assert.assertTrue(BubbleText.isPec("it.infocert.mobile.legalmail"))
         org.junit.Assert.assertFalse(BubbleText.isPec("com.example.spectrum"))
     }
+
+    @org.junit.Test
+    fun taskPlacesAreReadAndHidden() {
+        org.junit.Assert.assertEquals("Via Roma 12", BubbleText.taskPlace("Ritirare pacco #[Via Roma 12]"))
+        org.junit.Assert.assertEquals("Piazza Duomo", BubbleText.taskPlace("Ritirare pacco #Piazza-Duomo"))
+        org.junit.Assert.assertEquals("Ritirare pacco", BubbleText.withoutPlace("Ritirare pacco #[Via Roma 12]"))
+        org.junit.Assert.assertNull(BubbleText.taskPlace("Ritirare pacco"))
+    }
+
+    @org.junit.Test
+    fun contactsAreFoundInEventText() {
+        org.junit.Assert.assertEquals("3331234567", BubbleText.phoneIn("Chiamare 333 123 4567 prima"))
+        org.junit.Assert.assertEquals("+390612345678", BubbleText.phoneIn("Tel +39 06 12345678"))
+        org.junit.Assert.assertNull(BubbleText.phoneIn("Via Roma 12 20100"))
+        org.junit.Assert.assertEquals("anna@example.it", BubbleText.emailIn("Scrivere a anna@example.it."))
+        org.junit.Assert.assertEquals("Anna Rossi", BubbleText.personIn("Pranzo con Anna Rossi"))
+        org.junit.Assert.assertEquals("393331234567", BubbleText.whatsappNumber("3331234567"))
+        org.junit.Assert.assertEquals("390612345678", BubbleText.whatsappNumber("+390612345678"))
+    }
 }

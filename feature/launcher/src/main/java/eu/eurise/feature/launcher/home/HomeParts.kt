@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -348,8 +349,8 @@ fun AppTile(
 }
 
 /**
- * Barra in basso: pillola di vetro con le categorie e cerchio di ricerca staccato. La categoria attiva
- * prende il colore d'accento, il tratto più marcato e una lineetta sotto.
+ * Barra in basso: un'unica pillola di vetro con le categorie, il browser come voce jolly se resta posto e, in fondo,
+ * la lente della ricerca universale. La categoria attiva prende il colore d'accento e una lineetta sotto.
  */
 @Composable
 fun CategoryBar(
@@ -357,22 +358,34 @@ fun CategoryBar(
     selected: String,
     onSelect: (BarCategory) -> Unit,
     onSearch: () -> Unit,
+    onBrowser: () -> Unit,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
     onEdit: () -> Unit = {},
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Row(
-            Modifier
-                .weight(1f)
-                .height(GlassDefaults.PillHeight)
-                .glass(hazeState, RoundedCornerShape(50), outline = false)
-                .padding(GlassDefaults.Padding),
-        ) {
-            categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
+    Row(
+        modifier
+            .height(GlassDefaults.PillHeight)
+            .glass(hazeState, RoundedCornerShape(50), outline = false)
+            .padding(GlassDefaults.Padding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
+        if (categories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) {
+            val label = stringResource(R.string.search_web)
+            Box(
+                Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onBrowser),
+                contentAlignment = Alignment.Center,
+            ) { Icon(EuriseIcons.globe(2.2f), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) }
         }
-        // Sul telefono la ricerca delle app si apre scorrendo in su: il cerchio cerca sul web.
-        SearchCircle(hazeState, onSearch, web = true)
+        val search = stringResource(R.string.search)
+        Box(
+            Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(CircleShape)
+                .clickable(role = Role.Button, onClickLabel = search, onClick = onSearch),
+            contentAlignment = Alignment.Center,
+        ) {
+            HeartbeatSearchIcon(search, EuriseIcons.search(2.2f), 24.dp)
+        }
     }
 }
 
@@ -411,13 +424,13 @@ fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier 
         contentAlignment = Alignment.Center,
     ) {
         if (web) Icon(EuriseIcons.globe(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-        else HeartbeatSearchIcon(label)
+        else HeartbeatSearchIcon(label, EuriseIcons.search(), 22.dp)
     }
 }
 
 /** La lente batte come un cuore (due battiti e una pausa) e nel momento più grande prende il colore d'accento. */
 @Composable
-private fun HeartbeatSearchIcon(label: String) {
+private fun HeartbeatSearchIcon(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, size: androidx.compose.ui.unit.Dp) {
     val beat by rememberInfiniteTransition(label = "battito").animateFloat(
         initialValue = 0f,
         targetValue = 0f,
@@ -434,9 +447,9 @@ private fun HeartbeatSearchIcon(label: String) {
         label = "battito",
     )
     Icon(
-        EuriseIcons.search(), label,
+        icon, label,
         tint = lerp(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.primary, beat),
-        modifier = Modifier.size(22.dp).graphicsLayer {
+        modifier = Modifier.size(size).graphicsLayer {
             val scale = 1f + 0.22f * beat
             scaleX = scale
             scaleY = scale

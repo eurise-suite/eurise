@@ -75,6 +75,9 @@ import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NotificationStore
 import eu.eurise.feature.launcher.route.Travel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.produceState
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -147,21 +150,25 @@ private fun BubbleRow(
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(
-        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (leading != null) leading() else Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(9.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(main, fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!sub.isNullOrBlank()) {
-                Text(sub, fontSize = 11.5.sp, lineHeight = 14.sp, color = subColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    // Nelle bolle strette i comandi scendono sotto al testo, che così resta leggibile.
+    val stacked = LocalBubbleWidth.current < 240.dp
+    Column(Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 6.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (leading != null) leading() else Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(main, fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = if (stacked) 2 else 1, overflow = TextOverflow.Ellipsis)
+                if (!sub.isNullOrBlank()) {
+                    Text(sub, fontSize = 11.5.sp, lineHeight = 14.sp, color = subColor, maxLines = if (stacked) 2 else 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            if (trailing != null && !stacked) {
+                Spacer(Modifier.width(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) { trailing() }
             }
         }
-        if (trailing != null) {
-            Spacer(Modifier.width(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) { trailing() }
+        if (trailing != null && stacked) {
+            Row(Modifier.padding(start = 25.dp, top = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) { trailing() }
         }
     }
 }
@@ -171,14 +178,14 @@ private fun RowDivider() = PillDivider()
 
 /** Elenco di righe con la linea lieve tra l'una e l'altra; oltre [rows] righe scorre con la barra a destra. */
 @Composable
-private fun <T> RowList(items: List<T>, rows: Int, key: (T) -> Any, row: @Composable (T) -> Unit) {
+private fun <T> RowList(items: List<T>, rows: Int, key: (T) -> Any, independent: Boolean = false, row: @Composable (T) -> Unit) {
     val body: @Composable () -> Unit = {
         items.forEachIndexed { i, item ->
             if (i > 0) RowDivider()
             androidx.compose.runtime.key(key(item)) { row(item) }
         }
     }
-    if (items.size > rows) ScrollWithBar(RowHeight * rows) { body() } else Column { body() }
+    if (items.size > rows) ScrollWithBar(RowHeight * rows, independent) { body() } else Column { body() }
 }
 
 @Composable
@@ -235,45 +242,74 @@ fun TodayTasksPill(
     tasks: List<Task>,
     today: LocalDate,
     compact: Boolean,
+    travels: Map<String, Travel>,
     hazeState: HazeState,
     actions: BubbleActions,
     modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val list = tasks.filter { it.listId != TaskList.MEDICINES && it.parentId == null }
     var adding by rememberSaveable { mutableStateOf(false) }
-    var text by rememberSaveable { mutableStateOf("") }
     Pill(
         hazeState, modifier, title = stringResource(R.string.bubble_today_title, list.size),
         trailing = { SmallRound(EuriseIcons.plus(2f), stringResource(R.string.bubble_add)) { adding = !adding }; Spacer(Modifier.width(2.dp)) },
     ) {
-        if (adding) BubbleField(stringResource(R.string.bubble_today_hint), actions.quickTask, text, { text = it })
-        if (list.isEmpty()) {
-            if (!adding) BubbleRow(EuriseIcons.task(), stringResource(R.string.bubble_today_empty), null, onClick = { adding = true })
-        } else {
-            RowList(list, if (compact) 2 else 3, { it.id }) { t ->
-                val overdue = t.due?.isBefore(today) == true
-                val sub = buildList {
-                    if (overdue) add(stringResource(R.string.bubble_overdue))
-                    t.time?.let { add(stringResource(R.string.bubble_by, it.format(TimeFormat))) }
-                    if (t.listId == TaskList.DATES) add(stringResource(R.string.bubble_dates))
-                }.joinToString(" · ")
-                val scheme = MaterialTheme.colorScheme
-                SwipeRow(
-                    Swipe(stringResource(R.string.bubble_done), EuriseIcons.check(2.4f), scheme.primary) { actions.setDone(t) },
-                    listOf(
-                        Swipe(stringResource(R.string.bubble_tomorrow), EuriseIcons.repeat(2f), scheme.primary) { actions.postpone(t) },
-                        Swipe(stringResource(R.string.bubble_open), EuriseIcons.task(2f), scheme.onSurfaceVariant) { actions.openTasks() },
-                    ),
-                ) {
-                    BubbleRow(
-                        EuriseIcons.task(), t.title, sub,
-                        subColor = if (overdue) scheme.error else scheme.onSurfaceVariant,
-                        onClick = actions.openTasks,
-                        leading = { TaskCheck(t.title) { actions.setDone(t) } },
-                        trailing = { ActionChip(stringResource(R.string.bubble_tomorrow)) { actions.postpone(t) } },
-                    )
-                }
+        TaskSection(list, today, if (compact) 2 else 3, travels, adding, { adding = true }, actions, independent = false)
+    }
+}
+
+/**
+ * Le cose da fare, con gli stessi comandi ovunque compaiano. Un #luogo nel testo diventa la meta del navigatore e
+ * sotto al titolo si legge quanto ci vuole.
+ */
+@Composable
+private fun TaskSection(
+    list: List<Task>,
+    today: LocalDate,
+    rows: Int,
+    travels: Map<String, Travel>,
+    adding: Boolean,
+    onAdd: () -> Unit,
+    actions: BubbleActions,
+    independent: Boolean,
+) {
+    var text by rememberSaveable { mutableStateOf("") }
+    if (adding) BubbleField(stringResource(R.string.bubble_today_hint), actions.quickTask, text, { text = it })
+    if (list.isEmpty()) {
+        if (!adding) BubbleRow(EuriseIcons.task(), stringResource(R.string.bubble_today_empty), null, onClick = onAdd)
+        return
+    }
+    RowList(list, rows, { it.id }, independent) { t ->
+        val overdue = t.due?.isBefore(today) == true
+        val place = BubbleText.taskPlace(t.title) ?: BubbleText.taskPlace(t.notes)
+        val minutes = place?.let { travels[it]?.minutes }
+        val sub = buildList {
+            if (overdue) add(stringResource(R.string.bubble_overdue))
+            t.time?.let { add(stringResource(R.string.bubble_by, it.format(TimeFormat))) }
+            if (t.listId == TaskList.DATES) add(stringResource(R.string.bubble_dates))
+            if (minutes != null) {
+                add(stringResource(R.string.welcome_route_minutes, minutes))
+                t.time?.let { add(stringResource(R.string.welcome_leave_at, it.minusMinutes((minutes + 5).toLong()).format(TimeFormat))) }
             }
+        }.joinToString(" · ")
+        val scheme = MaterialTheme.colorScheme
+        val title = BubbleText.withoutPlace(t.title).ifBlank { t.title }
+        SwipeRow(
+            Swipe(stringResource(R.string.bubble_done), EuriseIcons.check(2.4f), scheme.primary) { actions.setDone(t) },
+            listOf(
+                Swipe(stringResource(R.string.bubble_tomorrow), EuriseIcons.repeat(2f), scheme.primary) { actions.postpone(t) },
+                Swipe(stringResource(R.string.bubble_open), EuriseIcons.task(2f), scheme.onSurfaceVariant) { actions.openTasks() },
+            ),
+        ) {
+            BubbleRow(
+                EuriseIcons.task(), title, sub,
+                subColor = if (overdue) scheme.error else scheme.onSurfaceVariant,
+                onClick = actions.openTasks,
+                leading = { TaskCheck(title) { actions.setDone(t) } },
+                trailing = {
+                    if (place != null) SmallRound(EuriseIcons.map(2f), stringResource(R.string.bubble_navigate)) { actions.navigate(place) }
+                    ActionChip(stringResource(R.string.bubble_tomorrow)) { actions.postpone(t) }
+                },
+            )
         }
     }
 }
@@ -296,77 +332,197 @@ private fun TaskCheck(title: String, onDone: () -> Unit) {
 fun nextEvent(events: List<CalendarEvent>, now: LocalDateTime): CalendarEvent? =
     events.firstOrNull { !it.allDay && it.end.isAfter(now) } ?: events.firstOrNull { it.allDay && it.occursOn(now.toLocalDate()) }
 
+/** Chi contattare per un appuntamento: dal testo dell'evento o, se è "con Anna", dalla rubrica. */
+private data class EventContact(val phone: String?, val email: String?)
+
+@Composable
+private fun rememberEventContact(e: CalendarEvent): EventContact {
+    val context = LocalContext.current
+    val written = remember(e.eventId, e.beginMillis) {
+        val text = e.title + " " + e.description
+        EventContact(BubbleText.phoneIn(text), BubbleText.emailIn(text))
+    }
+    val contact by produceState(written, e.eventId, e.beginMillis) {
+        val person = BubbleText.personIn(e.title)
+        if ((written.phone == null || written.email == null) && person != null &&
+            context.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            value = withContext(Dispatchers.IO) { runCatching { lookUp(context, person, written) }.getOrDefault(written) }
+        }
+    }
+    return contact
+}
+
+private fun lookUp(context: android.content.Context, person: String, known: EventContact): EventContact {
+    fun first(base: Uri, column: String): String? = context.contentResolver
+        .query(Uri.withAppendedPath(base, Uri.encode(person)), arrayOf(column), null, null, null)
+        ?.use { if (it.moveToFirst()) it.getString(0) else null }
+    return EventContact(
+        known.phone ?: first(android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_FILTER_URI, android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER),
+        known.email ?: first(android.provider.ContactsContract.CommonDataKinds.Email.CONTENT_FILTER_URI, android.provider.ContactsContract.CommonDataKinds.Email.ADDRESS),
+    )
+}
+
+/** Un'icona di azione su un appuntamento, abbastanza grande da toccarla con sicurezza. */
+@Composable
+private fun EventAction(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+            .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+}
+
 /**
- * Prossimo impegno: quando, dove, quanto ci vuole e i gesti che servono prima di arrivare: Naviga, Avvisa che tardo
- * (un SMS già scritto), Collegati (il link della videochiamata trovato nell'appuntamento), Appunti (una nota legata).
+ * Un appuntamento con tutto ciò che serve: ora, luogo, quanto ci vuole e quando partire, poi le azioni. Telefono,
+ * SMS, WhatsApp ed email compaiono solo se Eurise trova come contattare la persona.
  */
 @OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: BubbleActions) {
+    val context = LocalContext.current
+    val contact = rememberEventContact(e)
+    val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
+    val minutes = travels[e.location]?.minutes?.takeIf { e.location.isNotBlank() && !e.allDay }
+    val open = { intent: Intent -> runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }; Unit }
+    val sms = { body: String? ->
+        val send = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + contact.phone.orEmpty()))
+        open(if (body != null) send.putExtra("sms_body", body) else send)
+    }
+    val whatsapp = remember(context) { context.packageManager.getLaunchIntentForPackage("com.whatsapp") != null }
+    val lateText = stringResource(R.string.bubble_late_sms, e.title)
+    val confirmText = stringResource(R.string.bubble_confirm_sms, e.title, time)
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        // Il nome e le azioni stanno nella stessa fila: le azioni scendono sotto solo se il nome non lascia spazio.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "$time  ${e.title}", fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.CenterVertically).clickable { actions.openDay(e.start.toLocalDate()) },
+            )
+            if (!e.allDay) EventAction(EuriseIcons.clock(2f), stringResource(R.string.bubble_late)) { sms(lateText) }
+            EventAction(EuriseIcons.check(2.4f), stringResource(R.string.bubble_confirm)) { sms(confirmText) }
+            EventAction(EuriseIcons.note(2f), stringResource(R.string.bubble_meeting_note)) { actions.meetingNote(e) }
+            contact.phone?.let { phone ->
+                EventAction(EuriseIcons.phone(2f), stringResource(R.string.bubble_call)) { open(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))) }
+                EventAction(EuriseIcons.message(2f), stringResource(R.string.bubble_sms)) { sms(null) }
+                if (whatsapp) EventAction(EuriseIcons.chat(2f), stringResource(R.string.bubble_whatsapp)) {
+                    open(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + BubbleText.whatsappNumber(phone))).setPackage("com.whatsapp"))
+                }
+            }
+            contact.email?.let { mail ->
+                EventAction(EuriseIcons.mail(2f), stringResource(R.string.bubble_email)) { open(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$mail"))) }
+            }
+            BubbleText.meetingLink(e.location + " " + e.description)?.let { link ->
+                EventAction(EuriseIcons.link(2f), stringResource(R.string.bubble_join)) { actions.openLink(link) }
+            }
+            EventAction(EuriseIcons.map(2f), stringResource(R.string.bubble_navigate)) {
+                if (e.location.isNotBlank()) actions.navigate(e.location) else open(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0")))
+            }
+        }
+        Column(Modifier.fillMaxWidth().clickable { actions.openDay(e.start.toLocalDate()) }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (e.location.isNotBlank()) Text(e.location, fontSize = 11.5.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (minutes != null) {
+                Text(
+                    stringResource(R.string.welcome_route_minutes, minutes) + " · " +
+                        stringResource(R.string.welcome_leave_at, e.start.minusMinutes((minutes + 5).toLong()).format(TimeFormat)),
+                    fontSize = 11.5.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, maxLines = 2,
+                )
+            }
+        }
+    }
+}
+
+/** Gli appuntamenti uno sotto l'altro, in un'area che scorre per conto suo con la barra a destra. */
+@Composable
+private fun EventList(events: List<CalendarEvent>, travels: Map<String, Travel>, actions: BubbleActions, independent: Boolean) {
+    val height = if (LocalBubbleWidth.current < 240.dp) 190.dp else 132.dp
+    val body: @Composable () -> Unit = {
+        events.forEachIndexed { i, e ->
+            if (i > 0) RowDivider()
+            androidx.compose.runtime.key(e.eventId, e.beginMillis) { EventEntry(e, travels, actions) }
+        }
+    }
+    if (events.size > 1) ScrollWithBar(height, independent) { body() } else Column { body() }
+}
+
+/** Il tempo che manca al primo impegno, accanto al titolo della bolla. */
+@Composable
+private fun untilLabel(e: CalendarEvent?, now: LocalDateTime): String? {
+    if (e == null || e.allDay) return null
+    val minutes = Duration.between(now, e.start).toMinutes()
+    return when {
+        minutes <= 0 -> stringResource(R.string.bubble_now)
+        minutes < 60 -> stringResource(R.string.welcome_in_min, minutes)
+        e.start.toLocalDate() == now.toLocalDate() -> stringResource(R.string.welcome_at, e.start.format(TimeFormat))
+        else -> e.start.format(DayTimeFormat)
+    }
+}
+
+/** I prossimi impegni: tutti quelli di oggi ancora da venire, uno sotto l'altro; se oggi non c'è nulla, il prossimo. */
 @Composable
 fun NextEventPill(
     events: List<CalendarEvent>,
     calendarConnected: Boolean,
-    travel: Travel?,
+    travels: Map<String, Travel>,
     now: LocalDateTime,
     hazeState: HazeState,
     actions: BubbleActions,
     onConnect: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
-    val context = LocalContext.current
-    val e = nextEvent(events, now)
+    val today = events.filter { it.occursOn(now.toLocalDate()) && (it.allDay || it.end.isAfter(now)) }.sortedBy { it.allDay.not() }
+    val list = today.ifEmpty { listOfNotNull(nextEvent(events, now)) }
+    val first = list.firstOrNull { !it.allDay }
     Pill(hazeState, modifier, title = stringResource(R.string.bubble_next_title), trailing = {
-        if (e != null && !e.allDay) {
-            val minutes = Duration.between(now, e.start).toMinutes()
-            val label = when {
-                minutes <= 0 -> stringResource(R.string.bubble_now)
-                minutes < 60 -> stringResource(R.string.welcome_in_min, minutes)
-                e.start.toLocalDate() == now.toLocalDate() -> stringResource(R.string.welcome_at, e.start.format(TimeFormat))
-                else -> e.start.format(DayTimeFormat)
-            }
-            Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        }
+        untilLabel(first, now)?.let { Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
     }) {
         when {
             !calendarConnected -> BubbleRow(EuriseIcons.calendar(), stringResource(R.string.today_connect_calendar), null, onClick = onConnect)
-            e == null -> EmptyLine(stringResource(R.string.bubble_next_empty))
-            else -> {
-                val minutes = travel?.takeIf { it.destination == e.location }?.minutes
-                val sub = buildList {
-                    if (e.location.isNotBlank()) add(e.location)
-                    if (minutes != null && !e.allDay) {
-                        add(stringResource(R.string.welcome_route_minutes, minutes))
-                        add(stringResource(R.string.welcome_leave_by, e.start.minusMinutes((minutes + 5).toLong()).format(TimeFormat)))
-                    }
-                }.joinToString(" · ")
-                val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
-                val link = BubbleText.meetingLink(e.location + " " + e.description)
-                val lateText = stringResource(R.string.bubble_late_sms, e.title)
-                // Nome e azioni stanno nella stessa fila: le azioni scendono sotto solo se il nome non lascia spazio.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        Modifier.align(Alignment.CenterVertically).clickable { actions.openDay(e.start.toLocalDate()) }.padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(if (e.location.isNotBlank()) EuriseIcons.map() else EuriseIcons.calendar(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(9.dp))
-                        Text("$time  ${e.title}", fontSize = 13.5.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    if (e.location.isNotBlank() && link == null) ActionChip(stringResource(R.string.bubble_navigate), filled = true) { actions.navigate(e.location) }
-                    if (link != null) ActionChip(stringResource(R.string.bubble_join), filled = true) { actions.openLink(link) }
-                    if (!e.allDay) ActionChip(stringResource(R.string.bubble_late)) {
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")).putExtra("sms_body", lateText).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            )
-                        }
-                    }
-                    ActionChip(stringResource(R.string.bubble_meeting_note)) { actions.meetingNote(e) }
-                }
-                if (sub.isNotBlank()) {
-                    Text(sub, fontSize = 11.5.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 25.dp))
-                }
-            }
+            list.isEmpty() -> EmptyLine(stringResource(R.string.bubble_next_empty))
+            else -> EventList(list, travels, actions, independent = false)
         }
+    }
+}
+
+/**
+ * I tuoi appuntamenti: quelli di oggi, con tutte le azioni, e sotto una linea le cose da fare. Le due parti
+ * scorrono indipendenti l'una dall'altra.
+ */
+@Composable
+fun AgendaPill(
+    now: LocalDateTime,
+    events: List<CalendarEvent>,
+    calendarConnected: Boolean,
+    tasks: List<Task>,
+    today: LocalDate,
+    compact: Boolean,
+    travels: Map<String, Travel>,
+    hazeState: HazeState,
+    actions: BubbleActions,
+    onConnectCalendar: () -> Unit,
+    onCalendar: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+) {
+    val upcoming = events.filter { it.allDay || it.end.isAfter(now) }
+    val list = tasks.filter { it.listId != TaskList.MEDICINES && it.parentId == null }
+    var adding by rememberSaveable { mutableStateOf(false) }
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_events), trailing = {
+        untilLabel(upcoming.firstOrNull { !it.allDay && it.start.isAfter(now) }, now)?.let {
+            Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        }
+    }) {
+        when {
+            !calendarConnected -> BubbleRow(EuriseIcons.calendar(), stringResource(R.string.today_connect_calendar), null, onClick = onConnectCalendar)
+            upcoming.isEmpty() -> BubbleRow(EuriseIcons.calendar(), stringResource(R.string.today_free), null, onClick = onCalendar)
+            else -> EventList(upcoming, travels, actions, independent = true)
+        }
+        RowDivider()
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { Label(stringResource(R.string.welcome_tasks, list.size)) }
+            SmallRound(EuriseIcons.plus(2f), stringResource(R.string.bubble_add)) { adding = !adding }
+            Spacer(Modifier.width(2.dp))
+        }
+        TaskSection(list, today, if (compact) 2 else 3, travels, adding, { adding = true }, actions, independent = true)
     }
 }
 

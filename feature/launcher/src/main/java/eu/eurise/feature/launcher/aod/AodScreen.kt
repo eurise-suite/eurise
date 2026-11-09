@@ -174,6 +174,7 @@ fun AodScreen(
                         }
                         AodBubble.Music -> playing?.takeIf { it.playing }?.let { IconLine(EuriseIcons.music(2.2f), Azzurro, it.title) }
                         AodBubble.Meds -> doseText(tasks, now)?.let { IconLine(EuriseIcons.medical(2.2f), Borgogna, it) }
+                        AodBubble.Calendar -> MonthGrid(data, today, reduced)
                         AodBubble.Comms -> Unit
                     }
                 }
@@ -194,6 +195,52 @@ fun AodScreen(
                     Box(Modifier.size(1.dp))
                 }
                 if (!reduced) BatteryLabel()
+            }
+        }
+    }
+}
+
+/** Il mese in corso: oggi evidenziato e un punto nei giorni con impegni, senza mostrare quali. */
+@Composable
+private fun MonthGrid(data: EuriseData, today: LocalDate, reduced: Boolean) {
+    val month = remember(today) { java.time.YearMonth.from(today) }
+    val flow = remember(month) {
+        if (data.calendar.hasPermission()) data.calendar.observeEvents(month.atDay(1), month.atEndOfMonth()) else flowOf(emptyList())
+    }
+    val events by flow.collectAsState(initial = emptyList())
+    val busy = remember(events) { month.atDay(1).datesUntil(month.atEndOfMonth().plusDays(1)).toList().filter { d -> events.any { it.occursOn(d) } }.toSet() }
+    val text = if (reduced) Dim else Bright
+    val locale = Locale.getDefault()
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            today.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale)).replaceFirstChar { it.titlecase(locale) },
+            color = Soft, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Row(Modifier.fillMaxWidth()) {
+            java.time.DayOfWeek.entries.forEach { d ->
+                Text(
+                    d.getDisplayName(java.time.format.TextStyle.NARROW, locale), color = Dim, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        monthCells(month).chunked(7).forEach { week ->
+            Row(Modifier.fillMaxWidth()) {
+                week.forEach { day ->
+                    Box(Modifier.weight(1f).height(30.dp), contentAlignment = Alignment.Center) {
+                        if (day != null) {
+                            val isToday = day == today
+                            Box(
+                                Modifier.size(24.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (isToday) Azzurro else Color.Transparent),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(day.dayOfMonth.toString(), color = if (isToday) Color.Black else text, fontSize = 12.5.sp, fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium)
+                            }
+                            if (day in busy && !isToday) Box(Modifier.align(Alignment.BottomCenter).size(3.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Azzurro))
+                        }
+                    }
+                }
+                repeat(7 - week.size) { Box(Modifier.weight(1f)) }
             }
         }
     }

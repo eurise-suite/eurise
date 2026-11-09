@@ -295,7 +295,12 @@ private fun commsSwipes(m: MessageItem, onBubble: (MessageItem) -> Unit, actions
  * toccare le righe, e ci disegna una barra sottile quando c'è altro da vedere.
  */
 @Composable
-internal fun ScrollWithBar(maxHeight: Dp, content: @Composable ColumnScope.() -> Unit) {
+internal fun ScrollWithBar(maxHeight: Dp, independent: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    // In una bolla di altezza scelta scorre già tutta la bolla: una seconda barra confonderebbe.
+    if (!independent && LocalBubbleFixedHeight.current) {
+        Column(content = content)
+        return
+    }
     val state = rememberScrollState()
     val bar = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
     Box(

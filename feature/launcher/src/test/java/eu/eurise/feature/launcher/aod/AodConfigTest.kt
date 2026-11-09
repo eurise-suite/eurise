@@ -31,6 +31,14 @@ class AodConfigTest {
     }
 
     @Test
+    fun monthStartsOnItsWeekday() {
+        // Novembre 2026 inizia di domenica: sei caselle vuote prima dell'1.
+        val cells = monthCells(java.time.YearMonth.of(2026, 11))
+        assertEquals(36, cells.size)
+        assertEquals(1, cells[6]?.dayOfMonth)
+    }
+
+    @Test
     fun nightCrossesMidnight() {
         assertTrue(isNight(23 * 60 + 30, 23 * 60, 7 * 60))
         assertTrue(isNight(3 * 60, 23 * 60, 7 * 60))
