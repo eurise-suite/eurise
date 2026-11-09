@@ -331,3 +331,10 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   "forse" nel Calendario), TastFile (link con scadenza o allegato; il link lo crea File, la tastiera non ha Internet), TastCodici (codice 2FA
   proposto solo se il sito coincide, cassaforte aperta con l'impronta). Base prevista: fork di HeliBoard (GPLv3), APK separato, dialogo con
   l'APK principale e con Password solo con permesso di firma.
+- 10 novembre, decisioni del proprietario sulla Tastiera: Disponibilità con calendario del mese (frecce per i mesi dopo), giorno scelto → orari liberi
+  scorrevoli a destra e sinistra; fila dei numeri accesa di base (si può nascondere); simboli della pressione lunga in piccolo sui tasti; emoji e
+  simboli; suggerimenti e strumenti (traduci, voce, penna, appunti, cursore, una mano, impostazioni) uniti in una fila con opzione per separarli;
+  obiettivo: tutte le funzioni di Gboard, tastiera Apple e Samsung, tutto sul telefono. Base consigliata: HeliBoard (GPLv3, 4.2 di ottobre 2026,
+  senza Internet); FlorisBoard è ancora beta senza suggerimenti. Punto debole: scrittura scorrendo (HeliBoard la ha solo con la libreria chiusa
+  di Google, esclusa da CLAUDE.md): da costruire libera. Funzioni in più proposte (frase → attività, calcoli, arrivo alle…, lingua per
+  conversazione, appunti protetti, comandi /, abbreviazioni, nomi della Rubrica, tablet) in attesa di scelta.
