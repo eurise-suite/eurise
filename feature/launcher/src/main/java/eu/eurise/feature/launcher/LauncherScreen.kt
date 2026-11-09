@@ -62,6 +62,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -1073,7 +1074,9 @@ private fun PhoneHome(
             }
             }
             Spacer(Modifier.height(12.dp))
-            // Le pillole prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro. I preferiti
+            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+            val imeOpen = androidx.compose.foundation.layout.WindowInsets.isImeVisible
+            // Le bolle prendono lo spazio libero sopra i preferiti; se non basta, scorrono loro. I preferiti
             // restano ancorati in basso anche quando una pillola si riduce.
             Box(Modifier.weight(1f).fillMaxWidth()) {
             Column(
@@ -1094,13 +1097,14 @@ private fun PhoneHome(
             }
             }
             Spacer(Modifier.height(6.dp))
-            if (state.favorites.isEmpty()) {
+            if (state.favorites.isEmpty() && !imeOpen) {
                 androidx.compose.material3.Text(
                     stringResource(R.string.favorites_empty),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 )
-            } else {
-                // Griglia dei preferiti: colonne e righe scelte in Griglia e icone.
+            } else if (!imeOpen) {
+                // Griglia dei preferiti: colonne e righe scelte in Griglia e icone. Con la tastiera aperta si
+                // toglie, per non restare appoggiata sopra i tasti e lasciare spazio alla bolla in cui si scrive.
                 val shown = state.favorites.take(settings.maxFavorites)
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     shown.chunked(settings.columns).forEach { row ->

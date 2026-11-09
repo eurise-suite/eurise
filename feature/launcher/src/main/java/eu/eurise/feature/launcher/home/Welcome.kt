@@ -1,7 +1,16 @@
 package eu.eurise.feature.launcher.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -103,17 +112,21 @@ fun Pill(
 ) {
     var collapsed by rememberSaveable(title) { mutableStateOf(false) }
     val report = LocalPillMeasure.current
-    // Fuori il vetro (che può essere più alto, per allinearsi alle bolle accanto), dentro il contenuto,
-    // che riferisce la sua altezza naturale.
+    // Fuori il vetro (che può essere più alto, per allinearsi alle bolle accanto), dentro il titolo fisso e il
+    // contenuto, che scorre con la barra se non entra e riferisce comunque la sua altezza naturale.
+    val verticalPadding = with(LocalDensity.current) { (20.dp).roundToPx() }
+    var titleHeight by remember { mutableIntStateOf(0) }
+    var contentHeight by remember { mutableIntStateOf(0) }
+    if (report != null) {
+        val natural = verticalPadding + titleHeight + if (collapsed) 0 else contentHeight
+        SideEffect { report(natural) }
+    }
     Column(modifier.glass(hazeState, RoundedCornerShape(22.dp), elevation = 8.dp, outline = false)) {
-    Column(
-        Modifier
-            .then(if (report != null) Modifier.onSizeChanged { report(it.height) } else Modifier)
-            .padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
-        verticalArrangement = Arrangement.spacedBy(1.dp),
+    TitleAboveContent(
+        Modifier.padding(start = 14.dp, end = 8.dp, top = 9.dp, bottom = if (collapsed) 9.dp else 11.dp),
     ) {
         // Titolo più vicino al contenuto: la riga del titolo è bassa quanto basta per la freccia.
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().onSizeChanged { titleHeight = it.height }, verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { Label(title) }
             if (!collapsed) trailing?.invoke()
             val label = stringResource(if (collapsed) R.string.pill_expand else R.string.pill_collapse)
@@ -128,8 +141,48 @@ fun Pill(
                 )
             }
         }
-        if (!collapsed) Column(Modifier.padding(end = 6.dp), verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
+        if (!collapsed) {
+            val scroll = rememberScrollState()
+            val bar = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
+            Box(
+                Modifier.padding(top = 1.dp).fillMaxWidth().drawWithContent {
+                    drawContent()
+                    val max = scroll.maxValue
+                    if (max in 1 until Int.MAX_VALUE) {
+                        val h = size.height
+                        val thumb = (h * h / (h + max)).coerceAtLeast(18.dp.toPx())
+                        val w = 3.dp.toPx()
+                        drawRoundRect(bar, Offset(size.width - w, (h - thumb) * scroll.value / max), Size(w, thumb), CornerRadius(w / 2))
+                    }
+                },
+            ) {
+                Column(Modifier.fillMaxWidth().verticalScroll(scroll)) {
+                    Column(
+                        Modifier.fillMaxWidth().onSizeChanged { contentHeight = it.height }.padding(end = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        content = content,
+                    )
+                }
+            }
+        }
     }
+    }
+}
+
+/** Il titolo prende l'altezza che gli serve; il contenuto quella che resta nella bolla, senza mai spingerlo fuori. */
+@Composable
+private fun TitleAboveContent(modifier: Modifier, content: @Composable () -> Unit) {
+    Layout(content, modifier) { measurables, constraints ->
+        val loose = constraints.copy(minHeight = 0)
+        val title = measurables[0].measure(loose)
+        val rest = measurables.getOrNull(1)?.measure(
+            if (constraints.hasBoundedHeight) loose.copy(maxHeight = (constraints.maxHeight - title.height).coerceAtLeast(0)) else loose,
+        )
+        val width = constraints.constrainWidth(maxOf(title.width, rest?.width ?: 0))
+        layout(width, constraints.constrainHeight(title.height + (rest?.height ?: 0))) {
+            title.placeRelative(0, 0)
+            rest?.placeRelative(0, title.height)
+        }
     }
 }
 

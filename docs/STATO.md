@@ -237,6 +237,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `app`). Eccezione concordata con il proprietario alla regola sui servizi: `AodService` esiste solo se la funzione è
   accesa. Limite di Android: un'app non può spegnere lo schermo, a tempo scaduto diventa nero e lo spegne il sistema.
   Il sollevamento usa il sensore a basso consumo, se il telefono lo espone. Salute e Meteo non ancora tra le bolle.
+- Lessico: gli elementi della home si chiamano **bolle** (non pillole). Ogni bolla scorre con la barra a destra se il
+  contenuto non entra (`Pill`, titolo fisso); con la tastiera aperta i preferiti sotto le bolle si nascondono.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione

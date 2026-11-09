@@ -413,7 +413,7 @@
     <string name="health_sleep">sonno</string>
     <string name="health_kcal">kcal</string>
     <string name="health_privacy_title">Eurise e i dati di salute</string>
-    <string name="health_privacy_text">Eurise legge da Health Connect passi, battiti, sonno e calorie solo per mostrarli nella pillola Salute della Scrivania. Non li scrive, non li salva altrove e non li invia a nessuno: restano sul telefono.</string>
+    <string name="health_privacy_text">Eurise legge da Health Connect passi, battiti, sonno e calorie solo per mostrarli nella bolla Salute della Scrivania. Non li scrive, non li salva altrove e non li invia a nessuno: restano sul telefono.</string>
 
     <!-- Bolle nuove della home -->
     <string name="bubble_add">Aggiungi</string>
