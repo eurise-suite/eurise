@@ -897,12 +897,15 @@ private fun AliasSettings(vm: PasswordViewModel) {
     val selected by vm.alias.collectAsStateWithLifecycle()
     var pending by remember { mutableStateOf<AliasProvider?>(null) }
     var secret by remember(selected) { mutableStateOf(if (selected == AliasProvider.Fixed) vm.aliases.fixedAddress.orEmpty() else "") }
+    var kmailHosting by remember { mutableStateOf("") }
+    var kmailBox by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     var linked by remember(selected) { mutableStateOf(vm.aliases.connected(selected)) }
 
     val options = listOf(
         Triple(AliasProvider.SimpleLogin, R.string.pwd_alias_sl, R.string.pwd_alias_sl_d),
         Triple(AliasProvider.Addy, R.string.pwd_alias_addy, R.string.pwd_alias_addy_d),
+        Triple(AliasProvider.KMail, R.string.pwd_alias_kmail, R.string.pwd_alias_kmail_d),
         Triple(AliasProvider.Fixed, R.string.pwd_alias_fixed, R.string.pwd_alias_fixed_d),
         Triple(AliasProvider.None, R.string.pwd_alias_none, R.string.pwd_alias_none_d),
     )
@@ -915,7 +918,7 @@ private fun AliasSettings(vm: PasswordViewModel) {
                 Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable {
                     message = null
                     // I servizi esterni passano dalla spiegazione; tornare a Nessuno o all'indirizzo fisso non fa uscire nulla.
-                    if (provider == AliasProvider.SimpleLogin || provider == AliasProvider.Addy) pending = provider else vm.selectAlias(provider)
+                    if (provider == AliasProvider.SimpleLogin || provider == AliasProvider.Addy || provider == AliasProvider.KMail) pending = provider else vm.selectAlias(provider)
                 }.padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -934,11 +937,16 @@ private fun AliasSettings(vm: PasswordViewModel) {
                 when (selected) {
                     AliasProvider.SimpleLogin -> R.string.pwd_alias_key_sl
                     AliasProvider.Addy -> R.string.pwd_alias_key_addy
+                    AliasProvider.KMail -> R.string.pwd_alias_key_kmail
                     else -> R.string.pwd_alias_address
                 },
             )
             if (selected == AliasProvider.Fixed) OutlinedTextField(secret, { secret = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             else SecretField(secret, label, { secret = it })
+            if (selected == AliasProvider.KMail) {
+                OutlinedTextField(kmailHosting, { kmailHosting = it }, label = { Text(stringResource(R.string.pwd_alias_kmail_hosting)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(kmailBox, { kmailBox = it }, label = { Text(stringResource(R.string.pwd_alias_kmail_box)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     message ?: if (linked) stringResource(R.string.pwd_alias_connected) else "",
@@ -947,7 +955,8 @@ private fun AliasSettings(vm: PasswordViewModel) {
                     modifier = Modifier.weight(1f),
                 )
                 PillAction(stringResource(R.string.pwd_alias_connect)) {
-                    if (secret.isNotBlank()) vm.connectAlias(selected, secret) { error -> message = error; linked = error == null }
+                    val value = if (selected == AliasProvider.KMail) "${secret.trim()}\n${kmailHosting.trim()}\n${kmailBox.trim()}" else secret
+                    if (secret.isNotBlank()) vm.connectAlias(selected, value) { error -> message = error; linked = error == null }
                 }
             }
         }

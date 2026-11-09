@@ -101,4 +101,15 @@
     <string name="drive_sync_pick">Allinea con quale servizio?</string>
     <string name="drive_sync_privacy">Cosa esce: tutti i file di questa cartella, non cifrati.\n\nDove va: nella cartella Sincronizzati del servizio che scegli.\n\nChi lo vede: il servizio e chi ha accesso al tuo account.\n\nCome si torna indietro: smetti di allineare e, se vuoi, elimina la copia dal cloud. Un file cancellato da una parte va nel cestino anche dall\'altra. L\'allineamento automatico avviene solo in Wi-Fi.</string>
     <string name="drive_sync_start">Allinea</string>
+    <string name="drive_vault_new">Nuova cartella cifrata</string>
+    <string name="drive_vault_open">Apri %1$s</string>
+    <string name="drive_vault_pill">Cifrata · %1$s</string>
+    <string name="drive_vault_found">Cartella cifrata: tocca per aprirla</string>
+    <string name="drive_vault_password">Frase segreta</string>
+    <string name="drive_vault_again">Ripeti la frase</string>
+    <string name="drive_vault_warning">Almeno 8 caratteri. Se la dimentichi nessuno può recuperare i file, nemmeno noi. Si apre anche con Cryptomator sul computer.</string>
+    <string name="drive_vault_wrong">Frase sbagliata</string>
+    <string name="drive_vault_unsupported">Questa cartella usa una versione di Cryptomator non supportata</string>
+    <string name="drive_vault_add">Aggiungi file</string>
+    <string name="drive_vault_lock">Chiudi la cartella cifrata</string>
 </resources>

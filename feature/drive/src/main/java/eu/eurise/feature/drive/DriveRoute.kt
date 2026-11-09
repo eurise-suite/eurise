@@ -87,6 +87,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,6 +105,7 @@ import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EmptyState
 import eu.eurise.core.designsystem.component.EuriseDock
+import eu.eurise.core.cloud.crypto.Cryptomator
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.glass
@@ -149,7 +151,21 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
     val sync = remember { FolderSync(context.applicationContext, data) }
     var pickSync by remember { mutableStateOf<DriveItem?>(null) }
     var manageSync by remember { mutableStateOf<SyncPair?>(null) }
+    var unlocking by remember { mutableStateOf<Place?>(null) }
+    var newVaultIn by remember { mutableStateOf<Folder?>(null) }
+    var addingTo by remember { mutableStateOf<Folder?>(null) }
+    // Uscendo da File le cartelle si richiudono e le copie in chiaro spariscono.
+    DisposableEffect(Unit) { onDispose { data.lockAll() } }
     val legacy = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { access = hasAccess(context) }
+
+    val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        addingTo?.let { target ->
+            coroutines.launch {
+                loading = true
+                try { uris.forEach { data.addToVault(target, it) }; refresh++ } catch (e: Exception) { Toast.makeText(context, R.string.drive_error_network, Toast.LENGTH_SHORT).show() } finally { loading = false }
+            }
+        }
+    }
 
     fun fail(e: Exception) {
         val text = when {
@@ -207,6 +223,10 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                     onCreate = { f, name -> action { data.mkdir(f.place, DriveData.join(f.path, name)) } },
                     sync = sync,
                     onManageSync = { manageSync = it },
+                    onUnlock = { unlocking = it },
+                    onNewVault = { newVaultIn = it },
+                    onAddFiles = { addingTo = it; pickFiles.launch(arrayOf("*/*")) },
+                    onLock = { p -> data.lock(p); scope = null; folder = null; refresh++ },
                 )
                 Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
                 Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
@@ -232,6 +252,29 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
         )
     }
 
+    unlocking?.let { place ->
+        VaultDialog(
+            title = stringResource(R.string.drive_vault_open, place.label),
+            create = false,
+            onClose = { unlocking = null },
+            onSubmit = { password -> data.unlock(place, password) },
+            onDone = { unlocking = null; scope = place; folder = Folder(place, ""); refresh++ },
+        )
+    }
+    newVaultIn?.let { parent ->
+        var created by remember { mutableStateOf<Place?>(null) }
+        VaultDialog(
+            title = stringResource(R.string.drive_vault_new),
+            create = true,
+            onClose = { newVaultIn = null },
+            onCreate = { name, password -> created = data.createVault(parent, name, password) },
+            onDone = {
+                newVaultIn = null
+                created?.let { scope = it; folder = Folder(it, "") }
+                refresh++
+            },
+        )
+    }
     pickSync?.let { item ->
         SyncStartDialog(data, item, onClose = { pickSync = null }) { place ->
             pickSync = null
@@ -313,6 +356,7 @@ private fun FilesTab(
     onScope: (Place?) -> Unit, onFolder: (Folder?) -> Unit, onOpen: (DriveItem) -> Unit, onMore: (DriveItem) -> Unit,
     onAccess: () -> Unit, onCloud: () -> Unit, onCreate: (Folder, String) -> Unit,
     sync: FolderSync, onManageSync: (SyncPair) -> Unit,
+    onUnlock: (Place) -> Unit, onNewVault: (Folder) -> Unit, onAddFiles: (Folder) -> Unit, onLock: (Place) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
@@ -321,6 +365,7 @@ private fun FilesTab(
     var menu by remember { mutableStateOf(false) }
     var creating by remember { mutableStateOf(false) }
     val places = remember(refresh) { data.places }
+    val vaults = remember(refresh) { data.vaultPlaces }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(Modifier.fillMaxSize()) {
@@ -330,7 +375,7 @@ private fun FilesTab(
                 EmptyState(EuriseIcons.folder(), stringResource(R.string.drive_phone), stringResource(R.string.drive_access_title))
                 TextButton(onClick = onAccess) { Text(stringResource(R.string.drive_access_grant)) }
             }
-        } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore)
+        } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock)
 
         Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (searching) {
@@ -345,6 +390,12 @@ private fun FilesTab(
                     }
                     Text(folder?.path?.substringAfterLast('/')?.ifEmpty { null } ?: stringResource(R.string.drive_title), fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     if (folder != null) {
+                        if (folder.place.vaultRoot != null) {
+                            IconButton(onClick = { onAddFiles(folder) }) { Icon(EuriseIcons.upload(), contentDescription = stringResource(R.string.drive_vault_add)) }
+                            IconButton(onClick = { onLock(folder.place) }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.drive_vault_lock)) }
+                        } else if (folder.place.account != null) {
+                            IconButton(onClick = { onNewVault(folder) }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.drive_vault_new)) }
+                        }
                         IconButton(onClick = { creating = true }) { Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.drive_new_folder)) }
                         IconButton(onClick = { searching = true }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_search)) }
                         Box {
@@ -361,6 +412,7 @@ private fun FilesTab(
                 FilterPill(stringResource(R.string.drive_all), dot = null, selected = scope == null) { onScope(null) }
                 FilterPill(stringResource(R.string.drive_phone), dot = scheme.onSurfaceVariant, selected = scope == data.phone) { onScope(data.phone) }
                 places.forEach { p -> FilterPill(p.label, dot = scheme.primary, selected = scope == p) { onScope(p) } }
+                vaults.forEach { p -> FilterPill(stringResource(R.string.drive_vault_pill, p.label), dot = scheme.tertiary, selected = scope == p) { if (data.isOpen(p)) onScope(p) else onUnlock(p) } }
             }
         }
     }
@@ -370,6 +422,57 @@ private fun FilesTab(
             onCreate(folder, name)
         }
     }
+}
+
+/** Frase di una cartella cifrata, da scegliere o da inserire. La derivazione della chiave richiede qualche secondo. */
+@Composable
+private fun VaultDialog(
+    title: String, create: Boolean, onClose: () -> Unit, onDone: () -> Unit,
+    onSubmit: suspend (String) -> Unit = {}, onCreate: suspend (String, String) -> Unit = { _, _ -> },
+) {
+    val scope = rememberCoroutineScope()
+    var name by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var again by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<Int?>(null) }
+    val valid = if (create) name.isNotBlank() && '/' !in name && password.length >= 8 && password == again else password.isNotEmpty()
+    AlertDialog(
+        onDismissRequest = { if (!busy) onClose() },
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (create) {
+                    OutlinedTextField(name, { name = it }, singleLine = true, label = { Text(stringResource(R.string.drive_name)) })
+                    Text(stringResource(R.string.drive_vault_warning), fontSize = 13.sp)
+                }
+                OutlinedTextField(password, { password = it; error = null }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_password)) }, visualTransformation = PasswordVisualTransformation())
+                if (create) OutlinedTextField(again, { again = it }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_again)) }, visualTransformation = PasswordVisualTransformation())
+                error?.let { Text(stringResource(it), fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
+                if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = valid && !busy, onClick = {
+                busy = true
+                scope.launch {
+                    try {
+                        if (create) onCreate(name.trim(), password) else onSubmit(password)
+                        onDone()
+                    } catch (e: Cryptomator.WrongPassword) {
+                        error = R.string.drive_vault_wrong
+                    } catch (e: Cryptomator.Unsupported) {
+                        error = R.string.drive_vault_unsupported
+                    } catch (e: Exception) {
+                        error = R.string.drive_error_network
+                    } finally {
+                        busy = false
+                    }
+                }
+            }) { Text(stringResource(if (create) R.string.drive_create else R.string.drive_open)) }
+        },
+        dismissButton = { TextButton(enabled = !busy, onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
 }
 
 @Composable
@@ -516,7 +619,7 @@ private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?)
 @Composable
 private fun FolderList(
     data: DriveData, folder: Folder, refresh: Int, query: String, sort: Sort, top: androidx.compose.ui.unit.Dp,
-    onFolder: (Folder?) -> Unit, onOpen: (DriveItem) -> Unit, onMore: (DriveItem) -> Unit,
+    onFolder: (Folder?) -> Unit, onOpen: (DriveItem) -> Unit, onMore: (DriveItem) -> Unit, onUnlock: (Place) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var failed by remember(folder) { mutableStateOf(false) }
@@ -533,6 +636,17 @@ private fun FolderList(
         return
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace)) {
+        if (folder.place.account != null && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
+            Row(
+                Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow)
+                    .clickable { onUnlock(data.vaultPlace(folder.place, folder.path)) }.padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(EuriseIcons.lock(), contentDescription = null, tint = scheme.primary, modifier = Modifier.size(22.dp))
+                Text(stringResource(R.string.drive_vault_found), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
         if (shown.isEmpty()) item(key = "e") {
             EmptyState(EuriseIcons.folder(), stringResource(if (failed) R.string.drive_error_network else R.string.drive_empty), stringResource(R.string.drive_empty_msg))
         }
@@ -636,7 +750,7 @@ private fun ItemSheet(
                     if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
                 }
             }
-            if (!item.folder && item.place.account != null) {
+            if (!item.folder && item.place.account != null && item.place.vaultRoot == null) {
                 Row(Modifier.clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.drive_offline_switch), fontSize = 15.sp)

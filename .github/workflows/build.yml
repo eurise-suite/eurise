@@ -83,6 +83,25 @@ jobs:
           print('Aperto da pykeepass:', db.version, db.kdf_algorithm, db.encryption_algorithm)
           PY
 
+      # La cartella cifrata scritta dai test (dati finti) deve aprirsi con un altro programma.
+      - name: Verifica la cartella cifrata con un altro programma
+        run: |
+          pip install --quiet pycryptomator==1.15
+          python3 - <<'PY'
+          import io
+          from pycryptomator.cryptomator import Vault
+          v = Vault('core/cloud/build/interop-vault', password='prova-eurise')
+          def read(path):
+              out = io.BytesIO()
+              out.close = lambda: None
+              v.decryptFile(path, out)
+              return out.getvalue()
+          assert read('/ciao.txt') == 'ciao da Eurise'.encode()
+          assert read('/' + 'a' * 200 + '.txt') == 'nome lungo'.encode()
+          assert read('/sotto/dati.bin') == bytes(i % 251 for i in range(70000))
+          print('Aperta da pycryptomator')
+          PY
+
       # Leggerezza: si pesa a ogni compilazione anche la versione ufficiale (ridotta, non firmata).
       # L'APK di prova è già caricato: se questo passo fallisce, non blocca nulla.
       - name: Pesa la versione ufficiale
