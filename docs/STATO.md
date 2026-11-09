@@ -279,6 +279,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Cartelle cifrate di File (ramo `galleria-completa`, APK 169, da provare): formato Cryptomator 8 in `core/cloud/crypto/Cryptomator.kt` (senza librerie, vettori RFC nei test, la compilazione
   fa aprire una cartella a pycryptomator), `feature/drive/VaultFs.kt`, solo su account cloud; si creano col lucchetto in una cartella cloud, si richiudono uscendo da File. Controllata solo la lettura da parte di un altro
   programma: quella di una cartella creata da Cryptomator non ha ancora un test. Alias kMail in Password (`AliasStore`, token + numero del servizio + casella): endpoint presi da fonti non ufficiali, mai provati; servono diritti di amministratore.
+- Regola dei due tocchi (CLAUDE.md): alias kMail tolto dalla schermata (il codice in `AliasStore` resta) finché non c'è l'accesso dal browser; SimpleLogin e addy.io, che chiedono una chiave, sono da rivedere.
+  kDrive: si aspetta che il proprietario verifichi in Infomaniak → Applicazioni se esistono il tipo per telefono e i permessi su kDrive. Famiglia: anteprime PwdFamiglia* sulla tela, da approvare.
 - Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive via API: prima verificare con un token che l'API risponda con my kSuite+).
 - Ultimo APK: 169 dal ramo `galleria-completa`, che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.

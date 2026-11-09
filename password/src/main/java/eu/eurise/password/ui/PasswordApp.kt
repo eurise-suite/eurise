@@ -905,7 +905,6 @@ private fun AliasSettings(vm: PasswordViewModel) {
     val options = listOf(
         Triple(AliasProvider.SimpleLogin, R.string.pwd_alias_sl, R.string.pwd_alias_sl_d),
         Triple(AliasProvider.Addy, R.string.pwd_alias_addy, R.string.pwd_alias_addy_d),
-        Triple(AliasProvider.KMail, R.string.pwd_alias_kmail, R.string.pwd_alias_kmail_d),
         Triple(AliasProvider.Fixed, R.string.pwd_alias_fixed, R.string.pwd_alias_fixed_d),
         Triple(AliasProvider.None, R.string.pwd_alias_none, R.string.pwd_alias_none_d),
     )

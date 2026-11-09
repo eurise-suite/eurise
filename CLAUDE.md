@@ -35,6 +35,11 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
   (es. posizione arrotondata), mai identificativi del telefono.
 
+## Collegamenti in due tocchi (regola fissa, 9 novembre 2026)
+- Collegare un servizio deve costare due tocchi: "Collega", accesso nel browser, approva. All'utente non si chiedono mai
+  token API, chiavi, numeri di servizio o indirizzi tecnici. Registrare l'app presso un servizio è un passo una tantum del proprietario.
+- Un servizio che non permette questo percorso non entra nell'interfaccia, anche se il codice è pronto.
+
 ## Dati e backup (deciso l'8 novembre 2026)
 - Tre livelli: sul telefono (sempre), sincronizzazione con il servizio scelto, backup cifrato di tutta la suite.
 - Backup cifrato sul telefono prima di uscire, con frase segreta dell'utente e codice di recupero (senza, nessuno
