@@ -281,7 +281,7 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
         AlertDialog(
             onDismissRequest = { probe = null },
             title = { Text(stringResource(R.string.cloud_kdrive_test)) },
-            text = { Text(stringResource(R.string.cloud_kdrive_test_result, p.authError ?: "ok", "${p.tokenCode ?: "-"} ${p.tokenError.orEmpty()}", "${p.driveCode ?: "-"}", "${p.drives ?: "-"}")) },
+            text = { Text(stringResource(R.string.cloud_kdrive_test_result, p.authError ?: "ok", "${p.tokenCode ?: "-"} ${p.tokenError.orEmpty()}", "${p.driveCode ?: "-"} ${p.driveError.orEmpty()}", "${p.drives ?: "-"}", p.granted ?: "-", "${p.profileCode ?: "-"}")) },
             confirmButton = { TextButton(onClick = { probe = null }) { Text(stringResource(R.string.cloud_kdrive_test_close)) } },
         )
     }

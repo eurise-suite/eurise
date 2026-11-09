@@ -178,6 +178,6 @@
     <string name="cloud_kdrive_test_b">kDrive dal browser · prova 2</string>
     <string name="cloud_kdrive_test_hint">Solo per la verifica: non salva nulla</string>
     <string name="cloud_kdrive_test_wait">Approva nel browser, poi torna qui…</string>
-    <string name="cloud_kdrive_test_result">Accesso: %1$s\nToken: %2$s\nkDrive: %3$s\nTrovati: %4$s</string>
+    <string name="cloud_kdrive_test_result">Accesso: %1$s\nToken: %2$s\nkDrive: %3$s\nTrovati: %4$s\nPermessi: %5$s\nProfilo: %6$s</string>
     <string name="cloud_kdrive_test_close">Chiudi</string>
 </resources>

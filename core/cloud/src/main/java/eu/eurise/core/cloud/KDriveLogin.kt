@@ -25,7 +25,7 @@ object KDriveLogin {
     private const val DRIVES = "https://api.infomaniak.com/2/drive/init?with=drives"
 
     /** Esito della verifica: i codici HTTP e al più il codice d'errore del server, mai il token. */
-    data class Probe(val authError: String? = null, val tokenCode: Int? = null, val tokenError: String? = null, val driveCode: Int? = null, val drives: Int? = null)
+    data class Probe(val authError: String? = null, val tokenCode: Int? = null, val tokenError: String? = null, val driveCode: Int? = null, val drives: Int? = null, val granted: String? = null, val driveError: String? = null, val profileCode: Int? = null)
 
     private class Pending(val verifier: String, val state: String, val result: CompletableDeferred<String>)
 
@@ -48,7 +48,7 @@ object KDriveLogin {
             .appendQueryParameter("code_challenge_method", "S256")
             .appendQueryParameter("code_challenge", challenge)
             .appendQueryParameter("state", state)
-            .apply { if (withScope) appendQueryParameter("scope", "drive user_info") }
+            .apply { if (withScope) appendQueryParameter("scope", "drive") }
             .build().toString()
     }
 
@@ -79,9 +79,13 @@ object KDriveLogin {
         val token = json?.optString("access_token").orEmpty()
         if (token.isEmpty()) return Probe(tokenCode = status, tokenError = json?.optString("error")?.ifEmpty { null })
         val drives = Request.Builder().url(DRIVES).header("Authorization", "Bearer $token").header("User-Agent", WebDav.USER_AGENT).build()
+        val granted = json?.optString("scope")?.ifEmpty { null }
+        val profile = Request.Builder().url("https://api.infomaniak.com/1/profile").header("Authorization", "Bearer $token").header("User-Agent", WebDav.USER_AGENT).build()
+        val profileCode = WebDav.sharedClient.newCall(profile).execute().use { it.code }
         return WebDav.sharedClient.newCall(drives).execute().use { res ->
-            val data = runCatching { JSONObject(res.body?.string().orEmpty()).optJSONObject("data") }.getOrNull()
-            Probe(tokenCode = status, driveCode = res.code, drives = data?.optJSONArray("drives")?.length())
+            val answer = runCatching { JSONObject(res.body?.string().orEmpty()) }.getOrNull()
+            val error = answer?.optJSONObject("error")?.let { e -> listOf(e.optString("code"), e.optString("description")).filter(String::isNotEmpty).joinToString(" · ") }
+            Probe(tokenCode = status, driveCode = res.code, drives = answer?.optJSONObject("data")?.optJSONArray("drives")?.length(), granted = granted, driveError = error, profileCode = profileCode)
         }
     }
 }
