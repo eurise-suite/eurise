@@ -11,6 +11,8 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Typeface
 import android.media.ExifInterface
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -23,8 +25,10 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import eu.eurise.core.cloud.CloudAccounts
-import eu.eurise.gallery.logic.Adjust
-import eu.eurise.gallery.logic.Crop
+import eu.eurise.gallery.logic.EditState
+import eu.eurise.gallery.logic.InkStroke
+import eu.eurise.gallery.logic.TextMark
+import eu.eurise.gallery.logic.straightenScale
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.adjustMatrix
 import eu.eurise.gallery.logic.cropPixels
@@ -143,24 +147,57 @@ private fun stripVideo(file: File): File {
     return out
 }
 
+/** Disegna scritte e tratti su una tela di [w] per [h]: la stessa funzione serve l'anteprima e il salvataggio. */
+fun drawMarks(canvas: Canvas, w: Float, h: Float, texts: List<TextMark>, strokes: List<InkStroke>) {
+    val side = minOf(w, h)
+    val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+    for (s in strokes) {
+        ink.color = s.color
+        ink.strokeWidth = s.width * side
+        val path = Path()
+        s.points.forEachIndexed { i, (x, y) -> if (i == 0) path.moveTo(x * w, y * h) else path.lineTo(x * w, y * h) }
+        if (s.points.size == 1) path.lineTo(s.points[0].first * w + 0.1f, s.points[0].second * h)
+        canvas.drawPath(path, ink)
+    }
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    for (t in texts) {
+        paint.color = t.color
+        paint.textSize = t.size * side
+        paint.setShadowLayer(paint.textSize * 0.08f, 0f, paint.textSize * 0.03f, 0x66000000)
+        canvas.drawText(t.text, t.x * w, t.y * h - (paint.ascent() + paint.descent()) / 2, paint)
+    }
+}
+
 /** Salva una copia modificata nel telefono, con la data dell'originale. La copia non porta con sé la posizione. */
-fun saveEdited(context: Context, item: MediaItem, quarterTurns: Int, crop: Crop, adjust: Adjust): Boolean {
+fun saveEdited(context: Context, item: MediaItem, state: EditState): Boolean {
     val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))
-    var bitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+    val decoded = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
         decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / 8192))
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
     }
-    if (quarterTurns % 4 != 0) {
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(quarterTurns * 90f) }, true)
+    var bitmap = geometry(decoded, state.flip, state.turns)
+    val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(out)
+    val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { if (!state.adjust.isNeutral) colorFilter = ColorMatrixColorFilter(ColorMatrix(adjustMatrix(state.adjust))) }
+    val w = bitmap.width.toFloat()
+    val h = bitmap.height.toFloat()
+    if (state.straighten != 0f) {
+        val scale = straightenScale(state.straighten, w, h)
+        canvas.save()
+        canvas.translate(w / 2, h / 2)
+        canvas.rotate(state.straighten)
+        canvas.scale(scale, scale)
+        canvas.translate(-w / 2, -h / 2)
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+        canvas.restore()
+    } else {
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
     }
-    if (!crop.isFull) {
-        val (x, y, w, h) = cropPixels(crop, bitmap.width, bitmap.height)
-        bitmap = Bitmap.createBitmap(bitmap, x, y, w, h)
-    }
-    if (!adjust.isNeutral) {
-        val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-        Canvas(out).drawBitmap(bitmap, 0f, 0f, Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix(adjustMatrix(adjust))) })
-        bitmap = out
+    drawMarks(canvas, w, h, state.texts, state.strokes)
+    bitmap = out
+    if (!state.crop.isFull) {
+        val (x, y, cw, ch) = cropPixels(state.crop, bitmap.width, bitmap.height)
+        bitmap = Bitmap.createBitmap(bitmap, x, y, cw, ch)
     }
     val base = item.name.substringBeforeLast('.').ifEmpty { "foto" }
     val values = ContentValues().apply {
@@ -176,6 +213,16 @@ fun saveEdited(context: Context, item: MediaItem, quarterTurns: Int, crop: Crop,
     if (!ok) { resolver.delete(uri, null, null); return false }
     resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
     return true
+}
+
+/** Specchio e quarti di giro, nell'ordine usato da [EditState]. */
+fun geometry(source: Bitmap, flip: Boolean, turns: Int): Bitmap {
+    if (!flip && turns % 4 == 0) return source
+    val matrix = Matrix().apply {
+        if (flip) postScale(-1f, 1f)
+        postRotate(turns * 90f)
+    }
+    return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
 }
 
 /** Decodifica ridotta per l'anteprima dell'editor. */

@@ -107,6 +107,45 @@ class GalleryLogicTest {
         assertArrayEquals(floatArrayOf(1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f), adjustMatrix(Adjust()), 0.001f)
     }
 
+    @Test
+    fun marksFollowRotationAndFlip() {
+        val state = EditState(texts = listOf(TextMark(1, "a", 0.25f, 0.1f, 0.05f, 0)), crop = Crop(0.2f, 0.2f, 0.8f, 0.8f))
+        val turned = state.rotated()
+        assertEquals(0.9f, turned.texts[0].x, 0.001f)
+        assertEquals(0.25f, turned.texts[0].y, 0.001f)
+        assertEquals(Crop(), turned.crop)
+        assertEquals(0.75f, state.flipped().texts[0].x, 0.001f)
+        // Quattro giri tornano al punto di partenza.
+        val back = state.rotated().rotated().rotated().rotated()
+        assertEquals(0, back.turns)
+        assertEquals(0.25f, back.texts[0].x, 0.001f)
+    }
+
+    @Test
+    fun flipAfterRotationInvertsTheTurns() {
+        val state = EditState().rotated().flipped()
+        assertEquals(3, state.turns)
+        assertTrue(state.flip)
+        assertEquals(1, state.flipped().turns)
+    }
+
+    @Test
+    fun straightenCoversTheCorners() {
+        assertEquals(1f, straightenScale(0f, 4f, 3f), 0.001f)
+        assertTrue(straightenScale(10f, 4f, 3f) > 1f)
+    }
+
+    @Test
+    fun ratioCropFitsAndKeepsTheFormatWhileDragging() {
+        val square = ratioCrop(0.75f)
+        assertEquals(0.75f, square.right - square.left, 0.001f)
+        assertEquals(1f, square.bottom - square.top, 0.001f)
+        val start = Crop(0.2f, 0.2f, 0.6f, 0.6f)
+        val dragged = dragCropRatio(start, 3, -0.1f, 0f, 1f)
+        assertEquals(0.3f, dragged.right - dragged.left, 0.001f)
+        assertEquals(0.3f, dragged.bottom - dragged.top, 0.001f)
+    }
+
     private val key = ByteArray(32) { it.toByte() }
 
     private fun sealed(plain: ByteArray, label: String = "a") =
