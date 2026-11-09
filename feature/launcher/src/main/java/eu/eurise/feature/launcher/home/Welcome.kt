@@ -172,6 +172,8 @@ fun Pill(
     }
 }
 
+private const val UNBOUNDED_BUBBLE_PX = 65_000
+
 /** Il titolo prende l'altezza che gli serve; il contenuto quella che resta nella bolla, senza mai spingerlo fuori. */
 @Composable
 private fun TitleAboveContent(modifier: Modifier, content: @Composable () -> Unit) {
@@ -179,7 +181,8 @@ private fun TitleAboveContent(modifier: Modifier, content: @Composable () -> Uni
         val loose = constraints.copy(minHeight = 0)
         val title = measurables[0].measure(loose)
         val rest = measurables.getOrNull(1)?.measure(
-            if (constraints.hasBoundedHeight) loose.copy(maxHeight = (constraints.maxHeight - title.height).coerceAtLeast(0)) else loose,
+            // Dentro la home, che scorre, l'altezza è illimitata: un'area scorrevole va misurata con un limite o l'app si chiude.
+            loose.copy(maxHeight = if (constraints.hasBoundedHeight) (constraints.maxHeight - title.height).coerceAtLeast(0) else UNBOUNDED_BUBBLE_PX),
         )
         val width = constraints.constrainWidth(maxOf(title.width, rest?.width ?: 0))
         layout(width, constraints.constrainHeight(title.height + (rest?.height ?: 0))) {
