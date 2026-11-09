@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -308,8 +309,26 @@ fun WorkPill(
 
 /** Musica: con più lettori aperti si passa dall'uno all'altro scorrendo di lato. */
 @Composable
-fun MusicHalf(players: List<NowPlaying>, enabled: Boolean, hazeState: HazeState, modifier: Modifier, onOpenPlayer: () -> Unit, onGrant: () -> Unit) {
-    Pill(hazeState, modifier, title = stringResource(R.string.welcome_music)) {
+fun MusicHalf(
+    players: List<NowPlaying>,
+    enabled: Boolean,
+    hazeState: HazeState,
+    modifier: Modifier,
+    onOpenPlayer: () -> Unit,
+    onGrant: () -> Unit,
+    services: List<eu.eurise.feature.launcher.apps.AppEntry> = emptyList(),
+    onOpenService: (eu.eurise.feature.launcher.apps.AppEntry) -> Unit = {},
+) {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Pill(hazeState, modifier, title = stringResource(R.string.welcome_music), trailing = {
+        services.forEach { app ->
+            Box(
+                Modifier.size(28.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = app.label) { onOpenService(app) },
+                contentAlignment = Alignment.Center,
+            ) { eu.eurise.feature.launcher.apps.AppIcon(app, 24.dp, dark) }
+            Spacer(Modifier.width(3.dp))
+        }
+    }) {
         when {
             !enabled -> Text(
                 stringResource(R.string.grant), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,

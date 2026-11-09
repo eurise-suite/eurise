@@ -129,6 +129,16 @@ private const val SUITE_GALLERY = "eu.eurise.gallery"
 /** La Galleria della suite, se è installata. */
 fun List<AppEntry>.suiteGallery(): AppEntry? = firstOrNull { it.packageName.startsWith(SUITE_GALLERY) }
 
+/** Servizi di ascolto, nell'ordine in cui compaiono nella bolla Musica. */
+private val MusicServices = listOf(
+    "com.spotify.music", "com.google.android.apps.youtube.music", "com.apple.android.music", "deezer.android.app", "com.amazon.mp3",
+    "com.aspiro.tidal", "com.qobuz.music", "com.soundcloud.android", "com.github.libretube", "org.polymorphicshade.tubular", "org.schabi.newpipe",
+)
+
+/** I primi tre servizi di ascolto installati. */
+fun musicServices(apps: List<AppEntry>): List<AppEntry> =
+    MusicServices.mapNotNull { pkg -> apps.firstOrNull { it.component != null && it.packageName.startsWith(pkg) } }.take(3)
+
 /** La prima app che apre i PDF. */
 fun Context.pdfApp(apps: List<AppEntry>): AppEntry? {
     val known = packageManager.queryIntentActivities(Intent(Intent.ACTION_VIEW).setType("application/pdf"), 0).map { it.activityInfo.packageName }.toSet()

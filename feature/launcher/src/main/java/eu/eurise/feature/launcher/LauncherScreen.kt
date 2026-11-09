@@ -956,7 +956,7 @@ private fun HomeBubble(
             eu.eurise.feature.launcher.home.HomeKind.Work ->
                 WorkPill(welcome.files, welcome.filesAccess, hazeState, mod, welcome.onOpenFile, welcome.onFilesGrant, documentShortcuts(state.apps, welcome, actions))
             eu.eurise.feature.launcher.home.HomeKind.Music ->
-                MusicHalf(players, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications)
+                MusicHalf(players, welcome.notificationsOn, hazeState, mod, welcome.onPlayer, actions.grantNotifications, remember(state.apps) { eu.eurise.feature.launcher.apps.musicServices(state.apps) }, actions.openApp)
             eu.eurise.feature.launcher.home.HomeKind.TodayTasks -> eu.eurise.feature.launcher.home.TodayTasksPill(
                 state.tasksDue, state.today, compact, welcome.travels, hazeState, home.bubbles, mod,
             )
