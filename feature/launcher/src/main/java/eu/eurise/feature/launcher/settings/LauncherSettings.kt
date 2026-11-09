@@ -109,7 +109,7 @@ data class LauncherSettings(
     /** Le bolle delle pagine a destra e a sinistra della home: stesso modello della home. */
     val rightSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
     val leftSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = emptyList(),
-    /** Scorrere in giù apre il Pannello Eurise; spento, si apre la tendina di sistema. */
+    /** Scorrere in giù apre il Pannello Eurise; spento non succede nulla e resta la tendina di sistema, dal bordo in alto. */
     val pullPanel: Boolean = false,
     /** Scorrere in su apre la ricerca universale (c'è sempre la lente nella barra). */
     val swipeSearch: Boolean = false,

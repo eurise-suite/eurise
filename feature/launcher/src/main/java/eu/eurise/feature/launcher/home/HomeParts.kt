@@ -30,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -372,11 +374,26 @@ fun CategoryBar(
             ) { Icon(EuriseIcons.globe(2.2f), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) }
         }
         val search = stringResource(R.string.search)
+        // Uguale alle altre voci, ma pulsa piano per farsi notare.
+        val pulse by androidx.compose.animation.core.rememberInfiniteTransition(label = "lente").animateFloat(
+            initialValue = 1f,
+            targetValue = 1.2f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                androidx.compose.animation.core.tween(900),
+                androidx.compose.animation.core.RepeatMode.Reverse,
+            ),
+            label = "lente",
+        )
         Box(
-            Modifier.padding(start = 4.dp).size(GlassDefaults.ItemHeight).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+            Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(CircleShape)
                 .clickable(role = Role.Button, onClickLabel = search, onClick = onSearch),
             contentAlignment = Alignment.Center,
-        ) { Icon(EuriseIcons.search(2.6f), search, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp)) }
+        ) {
+            Icon(
+                EuriseIcons.search(2.2f), search, tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp).graphicsLayer { scaleX = pulse; scaleY = pulse },
+            )
+        }
     }
 }
 

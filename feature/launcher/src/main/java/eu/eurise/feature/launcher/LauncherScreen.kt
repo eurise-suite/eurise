@@ -512,7 +512,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     if (searching || panelOpen || editingCards || editingHome || categoryEditor || appearance || replyTo != null) Modifier
                     else Modifier.openOnSwipe(
                         onUp = { if (settings.swipeSearch) searching = true },
-                        onDown = { if (settings.pullPanel) panelOpen = true else actions.expandNotifications() },
+                        onDown = { if (settings.pullPanel) panelOpen = true },
                     ),
                 ),
             ) {
