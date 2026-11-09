@@ -67,7 +67,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.eurise.core.cloud.CloudAccount
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import eu.eurise.core.cloud.CloudKind
+import eu.eurise.core.cloud.KDriveLogin
 import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.cloud.DavQuota
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -94,6 +97,9 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
     var connectSheet by rememberSaveable { mutableStateOf(false) }
     var form by rememberSaveable { mutableStateOf<Form?>(null) }
     var pickNotes by rememberSaveable { mutableStateOf(false) }
+    var probing by remember { mutableStateOf(false) }
+    var probe by remember { mutableStateOf<KDriveLogin.Probe?>(null) }
+    val probeScope = rememberCoroutineScope()
 
     BackHandler { if (page == Page.Sync) page = Page.Accounts else onBack() }
 
@@ -263,8 +269,34 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
         }
     }
 
+    if (probing) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.cloud_kdrive_test)) },
+            text = { Text(stringResource(R.string.cloud_kdrive_test_wait)) },
+            confirmButton = {},
+        )
+    }
+    probe?.let { p ->
+        AlertDialog(
+            onDismissRequest = { probe = null },
+            title = { Text(stringResource(R.string.cloud_kdrive_test)) },
+            text = { Text(stringResource(R.string.cloud_kdrive_test_result, p.authError ?: "ok", "${p.tokenCode ?: "-"} ${p.tokenError.orEmpty()}", "${p.driveCode ?: "-"}", "${p.drives ?: "-"}")) },
+            confirmButton = { TextButton(onClick = { probe = null }) { Text(stringResource(R.string.cloud_kdrive_test_close)) } },
+        )
+    }
     if (connectSheet) {
         ConnectSheet(
+            onProbe = { withScope ->
+                connectSheet = false
+                probing = true
+                val url = KDriveLogin.begin(withScope)
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                probeScope.launch {
+                    probe = KDriveLogin.probe()
+                    probing = false
+                }
+            },
             onPick = { kind ->
                 connectSheet = false
                 when (kind) {
@@ -428,7 +460,7 @@ private fun AccountCard(account: CloudAccount, quota: DavQuota?, onRemove: () ->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ConnectSheet(onPick: (CloudKind) -> Unit, onDismiss: () -> Unit) {
+private fun ConnectSheet(onProbe: (Boolean) -> Unit, onPick: (CloudKind) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.padding(horizontal = 4.dp)) {
@@ -441,6 +473,10 @@ private fun ConnectSheet(onPick: (CloudKind) -> Unit, onDismiss: () -> Unit) {
                 ProviderRow("N", "Salvia", stringResource(R.string.cloud_nextcloud), stringResource(R.string.cloud_nextcloud_hint)) { onPick(CloudKind.Nextcloud) }
                 Divider()
                 ProviderRow("k", "Ottone", stringResource(R.string.cloud_kdrive), stringResource(R.string.cloud_kdrive_hint)) { onPick(CloudKind.KDrive) }
+                Divider()
+                ProviderRow("1", "Ottone", stringResource(R.string.cloud_kdrive_test_a), stringResource(R.string.cloud_kdrive_test_hint)) { onProbe(true) }
+                Divider()
+                ProviderRow("2", "Ottone", stringResource(R.string.cloud_kdrive_test_b), stringResource(R.string.cloud_kdrive_test_hint)) { onProbe(false) }
                 Divider()
                 ProviderRow("W", "Grafite", stringResource(R.string.cloud_webdav), stringResource(R.string.cloud_webdav_hint)) { onPick(CloudKind.WebDav) }
             }

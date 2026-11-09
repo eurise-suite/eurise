@@ -173,4 +173,11 @@
     <string name="ratings_mega">● Buona · MEGA (Nuova Zelanda), con cifratura propria.</string>
     <string name="ratings_us">● Con avviso · Google Drive, OneDrive, Dropbox (USA): soggetti alle leggi americane, raccolgono molti dati di contorno (quando, quanto, da dove).</string>
     <string name="ratings_local">● Massima · Cartella o chiavetta: resta con te, ma tienila lontana dal telefono.</string>
+    <string name="cloud_kdrive_test">Prova kDrive</string>
+    <string name="cloud_kdrive_test_a">kDrive dal browser · prova 1</string>
+    <string name="cloud_kdrive_test_b">kDrive dal browser · prova 2</string>
+    <string name="cloud_kdrive_test_hint">Solo per la verifica: non salva nulla</string>
+    <string name="cloud_kdrive_test_wait">Approva nel browser, poi torna qui…</string>
+    <string name="cloud_kdrive_test_result">Accesso: %1$s\nToken: %2$s\nkDrive: %3$s\nTrovati: %4$s</string>
+    <string name="cloud_kdrive_test_close">Chiudi</string>
 </resources>
