@@ -274,6 +274,8 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   un'anteprima: Luoghi, Cerca, diario, cartella protetta, editor e pulizia sono nello stile della suite, senza tela. Account: Murena e Nextcloud, collegati dentro la
   Galleria; kDrive arriva con l'API. Mancano: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario. Il centro privacy dovrà elencare
   il cloud scelto e Nominatim per questa app.
+- Attenzione: il 9 novembre `main` (6a16e07) NON conteneva i sei commit del ramo `bolle` (lente, ricerca universale, Musica, bolle): stavano solo in `integrazione`.
+  Per questo l'APK 165, nato da `main`, risultava più vecchio. `galleria-completa` ora include `integrazione`; prima di un ramo nuovo controllare che `main` abbia tutto.
 - Residui ancora da fare: Password (Famiglia, alias kMail), File (cartelle cifrate, kDrive via API).
 - Ultimo APK: 161 da `main` (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
