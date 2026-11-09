@@ -104,6 +104,19 @@ class WebDav(
         call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
     }
 
+    /**
+     * Scrive un file binario solo se sul server è ancora quello di [ifMatch] (o, con [onlyIfNew], solo se non
+     * esiste), e restituisce il nuovo etag. Se nel frattempo è cambiato: [DavException] con codice 412.
+     */
+    suspend fun putBytesIf(path: String, bytes: ByteArray, ifMatch: String? = null, onlyIfNew: Boolean = false): String? {
+        val req = request(url(path)).apply {
+            ifMatch?.let { header("If-Match", it) }
+            if (onlyIfNew) header("If-None-Match", "*")
+        }.put(bytes.toRequestBody("application/octet-stream".toMediaType())).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "PUT $path: ${res.code}") }
+        return stat(path)?.etag
+    }
+
     /** Legge un file binario; null se non esiste. */
     suspend fun getBytes(path: String): ByteArray? {
         val req = request(url(path)).get().build()

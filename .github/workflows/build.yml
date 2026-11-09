@@ -61,6 +61,26 @@ jobs:
           path: gallery/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK di Password
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-password-debug-${{ github.run_number }}
+          path: password/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Il file scritto dai test (dati finti) deve aprirsi con un programma che non è il nostro.
+      - name: Verifica il file KeePass con un altro programma
+        run: |
+          pip install --quiet pykeepass==4.2.0
+          python3 - <<'PY'
+          from pykeepass import PyKeePass
+          db = PyKeePass('password/build/interop/eurise.kdbx', password='prova-eurise')
+          entry = db.entries[0]
+          assert (entry.title, entry.username, entry.password, entry.url, entry.notes) == ('Sito', 'io', 'S3greta&<x>', 'https://sito.it', 'nota')
+          assert entry.otp.startswith('otpauth://')
+          print('Aperto da pykeepass:', db.version, db.kdf_algorithm, db.encryption_algorithm)
+          PY
+
       # Leggerezza: si pesa a ogni compilazione anche la versione ufficiale (ridotta, non firmata).
       # L'APK di prova è già caricato: se questo passo fallisce, non blocca nulla.
       - name: Pesa la versione ufficiale

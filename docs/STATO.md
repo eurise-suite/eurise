@@ -239,6 +239,25 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   Il sollevamento usa il sensore a basso consumo, se il telefono lo espone. Salute e Meteo non ancora tra le bolle.
 - Lessico: gli elementi della home si chiamano **bolle** (non pillole). Ogni bolla scorre con la barra a destra se il
   contenuto non entra (`Pill`, titolo fisso); con la tastiera aperta i preferiti sotto le bolle si nascondono.
+- Ramo `password` (da `main`, da provare): modulo `:password`, APK separato `eu.eurise.password`, artefatto
+  `eurise-password-debug-N`, Android 8+. Decisione del proprietario (9 novembre): file KeePass `.kdbx` sul telefono,
+  sincronizzato su Murena via WebDAV (`Eurise/Password/eurise.kdbx`), interruttore spento di base con spiegazione;
+  kDrive si aggiunge con Drive, perché il piano my kSuite+ non ha WebDAV e serve l'API con token. Sulla tela la
+  pillola dice ancora "kDrive". Fatto: formato KDBX 4 in `kdbx/` senza librerie (Argon2 d/id, BLAKE2b, ChaCha20;
+  test con i vettori RFC, con un file creato da pykeepass, e la compilazione fa riaprire a pykeepass il file scritto da
+  noi), campi sconosciuti conservati, cronologia, cestino, unione voce per voce con la versione perdente in cronologia,
+  apri/importa file, prendi da Murena, codici 2FA, generatore (frase o caratteri), controllo locale deboli/riusate,
+  blocco a mano e dopo 2 minuti fuori dall'app, schermo protetto da screenshot, appunti riservati e cancellati dopo
+  45 s. Secondo pezzo (9 novembre, tele approvate tutte dal proprietario): impronta con API di sistema (Android 9+),
+  carte (PwdCarta, campi aggiuntivi della voce), `autofill/` con antifrode sul dominio (`Matching`), foglio PwdRegistra,
+  alias (PwdAlias) con SimpleLogin (la via per Proton: Proton Pass non risulta avere API pubbliche), addy.io e indirizzo
+  fisso (Murena ha un solo alias, senza API). kMail non ancora: parametri API da verificare e il piano my kSuite+ ha 2 alias.
+  Importazione (`logic/Importer`, senza anteprima su richiesta del proprietario): Proton Pass ZIP/JSON non cifrato, Proton
+  Authenticator, Aegis, 2FAS, Bitwarden, CSV (browser e altri), KeePass, QR di Google Authenticator; apertura e condivisione
+  dei file verso Password; le passkey si trasferiscono solo da KeePass.
+  Controllo violazioni (Have I Been Pwned, interruttore spento di base), salvataggio dei login digitati, riquadri Blocca e
+  Genera. Mancano: kMail tra gli alias, Famiglia. Passkey in `passkey/` (Android 14+, formato KPEX di KeePassXC, browser approvati dalla persona): la catena e' stata provata sul telefono con KeePassDX su webauthn.io il 9 novembre. Poi Drive e Scanner (tele approvate).
+  Il centro privacy dovrà elencare Murena per questa app.
 - Prossimi passi, in ordine: resto della Galleria,
   Password (APK separato), Drive e Scanner, con le funzioni in più del documento di progetto; poi le integrazioni
   (scheda Persona, + unico, Tastiera, riunioni, viaggi, modalità, cestino unico); centro privacy; sincronizzazione
