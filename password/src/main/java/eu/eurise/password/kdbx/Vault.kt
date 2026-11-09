@@ -24,7 +24,11 @@ data class VaultEntry(
     val historyCount: Int,
     val card: CardData? = null,
     val apps: List<String> = emptyList(),
+    val passkey: PasskeyData? = null,
 )
+
+/** Una passkey, nei campi usati anche da KeePassXC e KeePassDX: il file resta apribile con quei programmi. */
+data class PasskeyData(val credentialId: String, val privateKeyPem: String, val rpId: String, val username: String, val userHandle: String)
 
 /** I dati di una carta: stanno in campi aggiuntivi della voce, che KeePassXC mostra come attributi. */
 data class CardData(val number: String, val holder: String, val expiry: String, val cvv: String, val type: String)
@@ -38,6 +42,8 @@ data class EntryDraft(
     val notes: String,
     val otp: String?,
     val card: CardData? = null,
+    /** Nullo vuol dire "non toccarla": modificare una voce dalla scheda non deve perdere la sua passkey. */
+    val passkey: PasskeyData? = null,
 )
 
 /** Esito di un'unione: [localChanged] se è cambiato qualcosa qui, [remoteBehind] se qui c'è qualcosa che là manca. */
@@ -89,6 +95,13 @@ class Vault(val document: Document) {
             setString(element, F_EXPIRY, card.expiry, false)
             setString(element, F_CVV, card.cvv, true)
             setString(element, F_TYPE, card.type, false)
+        }
+        draft.passkey?.let { key ->
+            setString(element, F_PK_ID, key.credentialId, true)
+            setString(element, F_PK_KEY, key.privateKeyPem, true)
+            setString(element, F_PK_RP, key.rpId, true)
+            setString(element, F_PK_USER, key.username, true)
+            setString(element, F_PK_HANDLE, key.userHandle, true)
         }
         setTime(element, "LastModificationTime", now)
         return element.child("UUID")!!.textContent
@@ -251,6 +264,9 @@ class Vault(val document: Document) {
             card = strings[F_NUMBER]?.takeIf { it.isNotBlank() }?.let {
                 CardData(it, strings[F_HOLDER].orEmpty(), strings[F_EXPIRY].orEmpty(), strings[F_CVV].orEmpty(), strings[F_TYPE].orEmpty())
             },
+            passkey = strings[F_PK_KEY]?.takeIf { it.isNotBlank() }?.let {
+                PasskeyData(strings[F_PK_ID].orEmpty(), it, strings[F_PK_RP].orEmpty(), strings[F_PK_USER].orEmpty(), strings[F_PK_HANDLE].orEmpty())
+            },
             apps = strings.filterKeys { it.startsWith(F_APP) }.values.filter { it.isNotBlank() } +
                 listOfNotNull(strings["URL"]?.takeIf { it.startsWith(APP_SCHEME) }?.removePrefix(APP_SCHEME)),
         )
@@ -390,6 +406,11 @@ class Vault(val document: Document) {
         private const val F_TYPE = "Tipo carta"
         private val CARD_FIELDS = listOf(F_NUMBER, F_HOLDER, F_EXPIRY, F_CVV, F_TYPE)
         private const val F_APP = "AndroidApp"
+        private const val F_PK_ID = "KPEX_PASSKEY_CREDENTIAL_ID"
+        private const val F_PK_KEY = "KPEX_PASSKEY_PRIVATE_KEY_PEM"
+        private const val F_PK_RP = "KPEX_PASSKEY_RELYING_PARTY"
+        private const val F_PK_USER = "KPEX_PASSKEY_USERNAME"
+        private const val F_PK_HANDLE = "KPEX_PASSKEY_USER_HANDLE"
         const val APP_SCHEME = "androidapp://"
         /** Secondi tra l'anno 1 e il 1970: KDBX 4 conta le date dall'anno 1. */
         private const val EPOCH_OFFSET = 62135596800L

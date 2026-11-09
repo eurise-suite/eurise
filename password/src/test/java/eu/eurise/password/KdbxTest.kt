@@ -274,4 +274,44 @@ class KdbxTest {
         assertFalse(b.found(hash, "1E4C9B93F3F0682250B6CF8331B7EE68FD8:0"))
         assertFalse(b.found(hash, "AAAA:3"))
     }
+
+    @Test fun passkeySignatureVerifies() {
+        val w = eu.eurise.password.passkey.WebAuthn
+        val key = w.newPasskey("webauthn.io", "io", "aGFuZGxl")
+        val clientHash = ByteArray(32) { 7 }
+        val auth = w.assertionAuthData("webauthn.io")
+        assertEquals(37, auth.size)
+        val signature = w.sign(key.privateKeyPem, auth + clientHash)
+        val public = w.publicKeyOf(key.privateKeyPem)
+        val ok = java.security.Signature.getInstance("SHA256withECDSA").run { initVerify(public); update(auth + clientHash); verify(signature) }
+        assertTrue(ok)
+    }
+
+    @Test fun attestationLayout() {
+        val w = eu.eurise.password.passkey.WebAuthn
+        val key = w.newPasskey("webauthn.io", "io", "aGFuZGxl")
+        val id = java.util.Base64.getUrlDecoder().decode(key.credentialId)
+        val auth = w.attestationAuthData("webauthn.io", id, w.publicKeyOf(key.privateKeyPem))
+        assertEquals(0x5D.toByte(), auth[32])
+        assertEquals(37 + 16 + 2 + id.size + 77, auth.size)
+        val object_ = w.attestationObject(auth)
+        assertEquals(0xA3.toByte(), object_[0])
+    }
+
+    @Test fun rpMustMatchTheOrigin() {
+        val w = eu.eurise.password.passkey.WebAuthn
+        assertTrue(w.rpAllowed("webauthn.io", "https://webauthn.io"))
+        assertTrue(w.rpAllowed("murena.io", "https://login.murena.io"))
+        assertFalse(w.rpAllowed("murena.io", "https://murena.io.truffa.com"))
+        assertFalse(w.rpAllowed("murena.io", "http://murena.io"))
+    }
+
+    @Test fun passkeyIsKeptWhenTheEntryIsEdited() {
+        val file = Kdbx.create(key, "Eurise")
+        val v = vault(file)
+        val pk = eu.eurise.password.kdbx.PasskeyData("aWQ", "PEM", "sito.it", "io", "aA")
+        val id = v.save(draft.copy(passkey = pk), null)
+        v.save(draft.copy(notes = "altra"), id)
+        assertEquals(pk, vault(Kdbx.read(Kdbx.write(file), key)).entries().single().passkey)
+    }
 }

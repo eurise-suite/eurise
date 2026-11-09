@@ -53,5 +53,23 @@
             android:label="@string/pwd_tile_generate" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
+        <activity
+            android:name=".passkey.PasskeyActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.EurisePassword.Sheet"
+            android:windowSoftInputMode="adjustResize" />
+        <service
+            android:name=".passkey.EuriseCredentialService"
+            android:enabled="@bool/pwd_passkeys_supported"
+            android:exported="true"
+            android:label="@string/pwd_app_name"
+            android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.credentials.CredentialProviderService" />
+            </intent-filter>
+            <meta-data android:name="android.credentials.provider" android:resource="@xml/credentials_provider" />
+        </service>
     </application>
 </manifest>

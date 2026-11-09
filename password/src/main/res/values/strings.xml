@@ -227,4 +227,19 @@
     <string name="pwd_save_update">Aggiorna la password di %s?</string>
     <string name="pwd_save_confirm">Salva in Password</string>
     <string name="pwd_save_skip">Non ora</string>
+
+    <string name="pwd_passkey_title">Passkey</string>
+    <string name="pwd_passkey_detail">salvata qui · accesso senza password su %s</string>
+    <string name="pwd_passkey_create">Creare una passkey per %s?</string>
+    <string name="pwd_passkey_confirm">Crea la passkey</string>
+    <string name="pwd_passkey_use">Accedi a %s</string>
+    <string name="pwd_passkey_continue">Continua</string>
+    <string name="pwd_passkey_cancel">Annulla</string>
+    <string name="pwd_passkey_unlock">Apri Eurise Password</string>
+    <string name="pwd_passkey_new_entry">Nuova voce in Eurise Password</string>
+    <string name="pwd_passkey_trust_title">Fidarsi di questa app?</string>
+    <string name="pwd_passkey_trust_body">%s chiede di usare le passkey per conto dei siti web. Accetta solo se è un browser che hai installato tu: potrà chiedere l\'accesso a qualunque sito, sempre con la tua conferma.</string>
+    <string name="pwd_passkey_trust_ok">È il mio browser</string>
+    <string name="pwd_passkey_wrong_site">La richiesta non arriva da %s: per sicurezza è stata bloccata.</string>
+    <string name="pwd_passkey_only_es256">Questo sito chiede un tipo di chiave che Eurise non gestisce.</string>
 </resources>

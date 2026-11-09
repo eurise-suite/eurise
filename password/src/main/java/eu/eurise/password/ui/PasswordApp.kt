@@ -674,6 +674,10 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
                     CardDivider()
                 }
             }
+            entry.passkey?.let { key ->
+                InfoRow(EuriseIcons.key(), stringResource(R.string.pwd_passkey_title), stringResource(R.string.pwd_passkey_detail, key.rpId))
+                CardDivider()
+            }
             InfoRow(
                 EuriseIcons.clock(),
                 stringResource(R.string.pwd_changed, DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(entry.modified))),
