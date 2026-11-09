@@ -83,7 +83,7 @@ class DriveData(private val context: Context) {
     }
 
     /** Crea una cartella cifrata vuota e la lascia aperta. */
-    suspend fun createVault(parent: Folder, name: String, password: String): Place = withContext(Dispatchers.Default) {
+    internal suspend fun createVault(parent: Folder, name: String, password: String): Place = withContext(Dispatchers.Default) {
         val dav = dav(parent.place)
         val root = join(parent.path, name)
         if (dav.stat(root) != null) throw java.nio.file.FileAlreadyExistsException(root)
@@ -110,7 +110,7 @@ class DriveData(private val context: Context) {
     }
 
     /** Copia nella cartella cifrata un file scelto dalla persona. */
-    suspend fun addToVault(folder: Folder, uri: android.net.Uri) = withContext(Dispatchers.IO) {
+    internal suspend fun addToVault(folder: Folder, uri: android.net.Uri) = withContext(Dispatchers.IO) {
         val fs = fs(folder.place) ?: throw java.io.IOException()
         val name = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
             if (c.moveToFirst()) c.getString(0) else null

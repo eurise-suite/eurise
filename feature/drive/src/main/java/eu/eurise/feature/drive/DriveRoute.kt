@@ -121,7 +121,7 @@ import java.util.Locale
 private enum class Tab { Files, Offline, Shared, Trash }
 
 /** Una cartella aperta, oppure null quando si è sulla panoramica. */
-private data class Folder(val place: Place, val path: String)
+internal data class Folder(val place: Place, val path: String)
 
 private fun hasAccess(context: Context): Boolean =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager()
