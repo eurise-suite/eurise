@@ -292,6 +292,7 @@
     <string name="pwd_card_read_ok">Va bene</string>
     <string name="pwd_card_nfc_title">Avvicina la carta</string>
     <string name="pwd_card_nfc_hold">Appoggia la carta al retro del telefono e tienila ferma un paio di secondi.</string>
+    <string name="pwd_card_nfc_step">Lettura fermata a: %1$s</string>
     <string name="pwd_card_nfc_retry">Non sono riuscito a leggerla: riprova tenendola ferma, al centro del retro.</string>
     <string name="pwd_card_nfc_off">L\'NFC è spento. Accendilo nelle impostazioni, poi torna qui.</string>
     <string name="pwd_card_nfc_settings">Apri le impostazioni NFC</string>

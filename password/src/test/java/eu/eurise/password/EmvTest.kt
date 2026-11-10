@@ -54,4 +54,18 @@ class EmvTest {
         assertNull(Emv.card(listOf(bytes("70 0A 5A 08 4111111111111112"))))
         assertEquals("00B2010C00", Emv.hex(Emv.readRecord(1, 1)))
     }
+
+    @Test fun halfAnswersAreFollowed() {
+        val select = Emv.select(bytes("A0000000031010"))
+        assertEquals("00C0000020", Emv.hex(Emv.followUp(select, bytes("6120"))!!))
+        assertEquals("00B2010C1C", Emv.hex(Emv.followUp(Emv.readRecord(1, 1), bytes("6C1C"))!!))
+        assertNull(Emv.followUp(select, bytes("6A82")))
+        assertNull(Emv.followUp(select, bytes("9000")))
+        assertEquals("6985", Emv.status(bytes("6985")))
+    }
+
+    @Test fun knownAidsIncludePagoBancomat() {
+        assertEquals("A0000001410001", Emv.hex(Emv.KNOWN_AIDS.first()))
+        assertEquals(10, Emv.KNOWN_AIDS.map { Emv.hex(it) }.toSet().size)
+    }
 }

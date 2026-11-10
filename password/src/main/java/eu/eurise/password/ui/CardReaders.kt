@@ -105,11 +105,15 @@ private fun ReadButton(icon: ImageVector, label: String, modifier: Modifier, onC
 @Composable
 private fun NfcSheet(activity: Activity, onClose: () -> Unit, onCard: (String, String, String) -> Unit) {
     var failed by remember { mutableStateOf(false) }
+    var failedStep by remember { mutableStateOf("") }
     val enabled = remember { CardNfc.enabled(activity) }
     DisposableEffect(activity) {
-        if (enabled) CardNfc.start(activity) { card ->
+        if (enabled) CardNfc.start(activity) { outcome ->
             activity.runOnUiThread {
-                if (card != null) onCard(card.number, card.expiry, card.holder) else failed = true
+                when (outcome) {
+                    is CardNfc.Outcome.Read -> onCard(outcome.card.number, outcome.card.expiry, outcome.card.holder)
+                    is CardNfc.Outcome.Failed -> { failed = true; failedStep = outcome.step }
+                }
             }
         }
         onDispose { CardNfc.stop(activity) }
@@ -128,6 +132,10 @@ private fun NfcSheet(activity: Activity, onClose: () -> Unit, onCard: (String, S
                         CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp)
                     }
                     Text(stringResource(if (failed) R.string.pwd_card_nfc_retry else R.string.pwd_card_nfc_hold), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                }
+                // Dove si è fermata la lettura (nessun dato della carta): serve a capire le carte che non si leggono.
+                if (failed && failedStep.isNotEmpty()) {
+                    Text(stringResource(R.string.pwd_card_nfc_step, failedStep), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

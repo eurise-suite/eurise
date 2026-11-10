@@ -166,6 +166,33 @@ object Emv {
         return Card(n.chunked(4).joinToString(" "), expiry.orEmpty(), holder)
     }
 
+    /**
+     * Applicazioni di pagamento note, provate una per una se la carta non risponde all'elenco (PPSE) o se nessuna
+     * di quelle elencate ha dato il numero: PagoBANCOMAT, Visa, V Pay, Visa Electron, Mastercard, Maestro,
+     * American Express, CB, Discover/Diners, JCB.
+     */
+    val KNOWN_AIDS: List<ByteArray> = listOf(
+        "A0000001410001", "A0000000031010", "A0000000032020", "A0000000032010", "A0000000041010",
+        "A0000000043060", "A00000002501", "A0000000421010", "A0000001523010", "A0000000651010",
+    ).map { h -> ByteArray(h.length / 2) { i -> h.substring(2 * i, 2 * i + 2).toInt(16).toByte() } }
+
+    /**
+     * Il comando da mandare dopo una risposta "a metà": 61 xx (ci sono altri xx byte, si chiedono con GET RESPONSE)
+     * o 6C xx (lunghezza attesa sbagliata, si ripete il comando chiedendo xx byte). Null se non serve altro.
+     */
+    fun followUp(command: ByteArray, response: ByteArray): ByteArray? {
+        if (response.size != 2) return null
+        val sw1 = response[0].toInt() and 0xFF
+        return when (sw1) {
+            0x61 -> byteArrayOf(0x00, 0xC0.toByte(), 0x00, 0x00, response[1])
+            0x6C -> if (command.size >= 5) command.copyOf().also { it[it.size - 1] = response[1] } else null
+            else -> null
+        }
+    }
+
+    /** Le ultime due cifre della risposta (es. "6985"), per capire dove una lettura si è fermata. */
+    fun status(response: ByteArray): String = if (response.size >= 2) hex(response.copyOfRange(response.size - 2, response.size)) else "?"
+
     /** Vero se la risposta finisce con 90 00 (tutto bene). */
     fun ok(response: ByteArray): Boolean = response.size >= 2 && response[response.size - 2] == 0x90.toByte() && response.last() == 0x00.toByte()
 

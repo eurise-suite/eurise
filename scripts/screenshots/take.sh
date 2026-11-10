@@ -16,6 +16,7 @@ adb wait-for-device
 # Ora e luogo fissi: le 9:30 di oggi a Roma, così l'agenda mostra la giornata che comincia.
 adb shell settings put global auto_time 0 || true
 adb shell settings put global auto_time_zone 0 || true
+adb shell settings put system time_12_24 24 || true
 settime() {
   local stamp; stamp="$(TZ=Europe/Rome date +%m%d"$1"%Y.00)"
   adb shell date "$stamp" >/dev/null 2>&1 || adb shell su 0 date "$stamp" >/dev/null 2>&1 || true
