@@ -22,7 +22,7 @@ concurrency:
 env:
   CORE_REPO: https://github.com/LibreOffice/core
   CORE_BRANCH: distro/collabora/co-25.04
-  CORE_COMMIT: 3847fbcfe35a234544cf163ed9e004a3d197337c
+  CORE_COMMIT: e588bf8da9ddb55823b88f5d2461d3935e9ed3fb
   JOB_MINUTES: 355
 
 jobs:
