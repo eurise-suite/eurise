@@ -288,7 +288,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Attività su Murena (ramo `galleria-completa`): `feature/tasks/TasksSyncJob` e `core/data/model/Vtodo` (con test), database v6 (`MIGRATION_5_6`: uid, etag, base, `task_tombstones`). Interruttore in Cloud, spento di base, sullo stesso account delle note; un elenco con Sincronizza = un calendario VTODO (cerca lo stesso nome, altrimenti crea `eurise-<id>`). Unione campo per campo, a parità vince il telefono; campi sconosciuti e promemoria del server conservati, gli avvisi di Eurise restano sul telefono. Da provare sul telefono.
 - Cloud, regola di fondo (9 novembre): Eurise fa da hub. Murena/Nextcloud è il canale di sincronizzazione piena (note, attività, foto, backup); kDrive, Proton e simili entrano solo come cartelle dalle loro app (selettore di Android), per documenti, backup e al più copia foto in un verso, mai togliendo foto dal telefono su quella base. Prossimo: integrazioni (scheda Persona, un solo +, Tastiera, riunioni, viaggi, modalità, cestino unico), poi lettura del testo, Browser; Famiglia in fondo. `galleria-completa` va unito a `main` dopo la prova del proprietario.
 - Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive: bloccato, vedi sopra).
-- Ultimo APK: 186 dal ramo `tastiera` (anteprime della terza fila Integrazioni pronte il 10 novembre) (contiene `galleria-completa`; prima 181 da `galleria-completa`), che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
+- Ultimo APK: vedi la sezione "10 novembre, notte" in fondo (ramo `tastiera`) (contiene `galleria-completa`; prima 181 da `galleria-completa`), che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
 - Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
   posizione, cartella protetta, editor, pulizia); kDrive (bloccato, in attesa di Infomaniak);
@@ -431,3 +431,29 @@ Richiesta del proprietario prima di allontanarsi. Tela, pagina nuova "Calcolatri
   nativo) va in un'app a parte "Eurise Leggi" scaricata a richiesta, come previsto; candidati liberi da provare con un prototipo che
   misuri peso e qualità in italiano: Tesseract (Apache 2.0, tramite Tesseract4Android) o un modello leggero via ONNX Runtime (MIT).
   Interruttore con spiegazione (analisi dei contenuti), tutto sul telefono.
+
+## 10 novembre, notte: approvazioni e lavoro fatto (ramo `tastiera`)
+Il proprietario ha approvato: riunioni, viaggi, modalità, cestino unico (tavole Int*), calcolatrice nella Tastiera e calcolatrice,
+lettura dei documenti; "mi fido del resto" (lettore QR compreso). Proverà direttamente l'APK e poi si lima.
+- Fatto e compilato:
+  - Tastiera: comando "Calcola" (quinto nella barra, `CalcPanel` in `keyboard/.../Panels.kt`), percentuali da ufficio anche nei
+    calcoli scritti nel testo (`keyboard/.../Calc.kt`), tasto microfono sulla fila in basso.
+  - Calcolatrice: `feature/calculator` (APK principale, icona "Calcolatrice" tra gli Strumenti, rotta `calculator`): Calcolo con
+    nastro (etichette, Salva in Note, Copia), funzioni e gradi/radianti; Professionale (fattura dal compenso o dal netto,
+    forfettario con bollo, scorporo, sconto e ricarico, rata, giorni lavorativi); Unità; Grafico (fino a 3 funzioni, zoom con le
+    dita, zeri ed estremi). Motore `core/data/calc` (Calc, Invoice, Finance) con test.
+  - Lettore QR: icona "Lettore QR" (rotta `qr`, Scanner che parte in QR); `QrContent` con test; fogli per tipo in `QrScreens.kt`;
+    Da una foto, Crea un QR (testo o Wi-Fi, condivisione PNG), Letti prima (30, mai i 2FA); dal vivo anche Data Matrix, EAN, Code 128.
+- Da fare, nell'ordine (tutto già approvato, si scrive direttamente):
+  1. Riunioni (IntRiunione): "Apri la nota della riunione" dall'evento e dall'avviso d'inizio; presenti, ordine del giorno,
+     appunti; alla chiusura le righe con @persona e data diventano attività collegate all'evento (lettore `Capture` già esistente).
+  2. Modalità (IntModalita): Lavoro, Casa, Viaggio, Notte nel Pannello; ognuna cambia categoria iniziale della Scrivania, notifiche
+     lasciate passare, calendari ed elenchi visibili, suoneria; accensione per orario (salta festivi e ferie) o durante gli eventi
+     di un calendario. Niente luogo.
+  3. Cestino unico (IntCestino): Note, Attività, File (cestino 30 giorni del telefono), Foto (cestino di sistema, Android 11+),
+     eventi; ripristino con i collegamenti; "Passa a un telefono nuovo" porta al backup cifrato. Password e Galleria: permesso di firma.
+  4. Viaggi (IntViaggio): da un biglietto PDF in File o condiviso verso Eurise; voli nel Calendario, sveglia e fuso nell'Orologio,
+     cartella File › Viaggi, diario nella Galleria, mappa offline spenta di base, modalità Viaggio nelle date.
+  5. Lettura dei documenti (DocLeggi, DocMotore): app a parte "Eurise Leggi" scaricata a richiesta. Primo passo: prototipo che
+     compili il motore su GitHub Actions e ne misuri peso e qualità in italiano (Tesseract via Tesseract4Android, Apache 2.0);
+     poi nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile. Interruttore con spiegazione, tutto sul telefono.
