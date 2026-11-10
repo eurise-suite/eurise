@@ -75,6 +75,11 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   tutto il tondo). `BrandMark` passa a `sferap` sotto i 40 px, `BrandIcona` sotto i 72 px; nell'icona il
   simbolo occupa il 90% del tondo.
 
+## Nona prova (10 novembre): tavola `BrandGlobo`, animata
+- Polare invariata («perfetta»). Stelle intorno a metà strada tra settima e ottava prova: 44 stelle più piccole,
+  sfera raccolta a circa 4/5 del tondo; versione piccola con 16 stelle. Varianti `globo` e `globop`
+  (cambio automatico come per `sfera`). La tavola confronta prima, ottava e via di mezzo nelle icone.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
