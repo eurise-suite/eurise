@@ -627,3 +627,17 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
 - Scrittura a mano: nessun modello libero pronto per l'alfabeto latino. OnlineHTR (MIT) è solo codice; i pesi disponibili sono
   addestrati su IAM-OnDB (solo ricerca, non commerciale) e ML Kit è escluso. Serve addestrare un modello nostro su dati liberi
   (anche sintetici): lavoro lungo, che richiede GPU fuori da GitHub Actions. Proposta: rimandare, da decidere col proprietario.
+
+## 11 novembre, notte: punto 6, Messaggi, Telefono e Mappe – anteprime da approvare (tela, pagina «Mappe, Messaggi e Telefono»)
+- Tavole: MsgElenco (Persone / Codici e consegne / Avvisi, codice in alto da copiare che si cancella), MsgConversazione (data capita
+  sul telefono → Crea l'evento, risposta pronta, Da fare; barra con Disponibilità, posizione, invio programmato), TelRecenti (da
+  richiamare con la modalità in cui sono arrivate, disturbatori riconosciuti sul telefono, preferiti), TelChiamata (impegni e Da
+  fare con la persona, nota della chiamata in Note con @persona), MapPercorso (percorso offline legato all'impegno, «parti entro»,
+  manda l'arrivo), MapCerca (dove devi andare da Calendario, Viaggi e Rubrica; mappe sul telefono proposte dai viaggi).
+- Basi proposte (da approvare): Messaggi = fork di Fossify Messages (GPL-3.0, SMS/MMS, senza Internet); Telefono = fork di Fossify
+  Phone (GPL-3.0); Mappe = fork di CoMaps (Apache 2.0, comunitario, F-Droid; NON Organic Maps: dall'agosto 2025 i suoi dati delle
+  mappe hanno una licenza non libera). Come per HeliBoard: interfaccia rifatta nello stile della suite, dialogo con l'APK principale
+  solo con permesso di firma. Eurise è GPLv3: compatibile con tutte e tre.
+- Prossimo, nell'ordine del proprietario: approvazione del punto 6; punto 5 Office (prototipo che compila il motore LibreOffice/
+  Collabora su GitHub Actions e misura spazio, tempo e peso: lavoro lungo, va in un lavoro a parte); punto 3 Browser.
+- Decisioni aperte: motore della traduzione (in Leggi o APK a parte), scrittura a mano (rimandare?), basi del punto 6.
