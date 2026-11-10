@@ -489,5 +489,8 @@ Voce, Galleria, cartelle cifrate, centro privacy, Attività su Murena); le corre
   quel gruppo e solo con EURISE_READ=1, così non tocca le altre compilazioni). Lavoro "Prototipo Eurise Leggi": APK
   `eurise-leggi-debug-N`, peso nel riepilogo, e misura della qualità in italiano (`.github/scripts/ocr_quality.py`: documenti di
   prova rovinati come scansioni e foto, modelli fast e best, caratteri e parole giusti, importi/scadenze/codici ritrovati).
-  DECISIONE DEL PROPRIETARIO dopo i numeri: tenere Tesseract (F-Droid vorrà compilarlo dai sorgenti, non dall'AAR di JitPack) o
-  provare un modello ONNX. Poi: nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile.
+  Risultati (APK 198, Tesseract 5.5): APK ridotto 7,6 MB (motore nativo arm64), italiano fast 2,6 MB a richiesta; sulle prove
+  99,5–99,9 % di caratteri giusti, importi/scadenze/codici 11 su 11 anche da foto difficile.
+  DECISO (10 novembre): il motore è Tesseract; ONNX non si prova (porterebbe solo peso, non qualità). Prossimi passi: compilare
+  Tesseract e Leptonica dai sorgenti dentro il progetto (third_party, come whisper.cpp) al posto dell'AAR di JitPack, per F-Droid;
+  poi nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile, lettura dei biglietti scansionati per i Viaggi.
