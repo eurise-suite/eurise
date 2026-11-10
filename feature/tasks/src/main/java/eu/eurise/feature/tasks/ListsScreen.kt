@@ -294,6 +294,7 @@ private fun ListEditor(list: TaskList?, onSave: (String, String) -> Unit, onDele
                                 .semantics { this.selected = selected; contentDescription = t.name },
                         )
                     }
+                    eu.eurise.core.designsystem.component.OwnColorSwatch(tint, onPick = { tint = it })
                 }
                 if (onDelete != null) {
                     TextButton(onClick = { confirmDelete = true }) {

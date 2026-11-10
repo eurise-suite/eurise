@@ -6,4 +6,15 @@
     <string name="ds_overdue">In ritardo · %1$s</string>
     <string name="ds_untitled_note">Nota senza titolo</string>
     <string name="ds_pinned">Fissata</string>
+    <string name="ds_color_title">Scegli il colore</string>
+    <string name="ds_color_own">Il tuo</string>
+    <string name="ds_color_done">Fatto</string>
+    <string name="ds_color_suite">Della suite</string>
+    <string name="ds_color_recent">Usati di recente</string>
+    <string name="ds_color_brightness">Luminosità</string>
+    <string name="ds_color_wheel">Ruota dei colori: tocca o trascina per scegliere tinta e intensità</string>
+    <string name="ds_color_readable">Leggibile su Perla e su Notte</string>
+    <string name="ds_color_dark_weak">Leggibile su Perla, poco sul tema scuro Notte</string>
+    <string name="ds_color_light_weak">Leggibile su Notte, poco sul tema chiaro Perla</string>
+    <string name="ds_color_weak">Poco leggibile su entrambi i temi: scegline uno più deciso</string>
 </resources>

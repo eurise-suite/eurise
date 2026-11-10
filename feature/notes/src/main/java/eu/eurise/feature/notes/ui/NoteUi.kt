@@ -13,15 +13,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.theme.LocalEuriseColors
+import eu.eurise.core.designsystem.theme.tintTones
 import eu.eurise.feature.notes.doc.Mark
 import eu.eurise.feature.notes.doc.RichText
 
 /** Colori per il testo colorato e per l'evidenziatore, nel tema attuale. */
 internal data class InkColors(val dark: Boolean) {
-    fun text(tint: String): Color = CalendarTint.named(tint).let { if (dark) it.dark else it.light }
+    fun text(tint: String): Color = tintTones(tint).let { if (dark) it.second else it.first }
 
-    fun highlight(tint: String): Color = CalendarTint.named(tint).let {
-        if (dark) lerp(Color(0xFF14171C), it.dark, 0.38f) else lerp(Color.White, it.light, 0.24f)
+    fun highlight(tint: String): Color = tintTones(tint).let {
+        if (dark) lerp(Color(0xFF14171C), it.second, 0.38f) else lerp(Color.White, it.first, 0.24f)
     }
 
     /** Pallino della tinta (taccuini, scelta del colore). */

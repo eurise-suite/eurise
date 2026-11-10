@@ -149,6 +149,7 @@ internal fun NotebookDialog(
                             )
                         }
                     }
+                    eu.eurise.core.designsystem.component.OwnColorSwatch(tint, onPick = { tint = it }, size = 24.dp)
                 }
             }
         },
