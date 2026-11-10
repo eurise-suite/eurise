@@ -57,11 +57,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.googlecode.tesseract.android.TessBaseAPI
 import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.core.suite.CardContract
 import eu.eurise.core.suite.CardFields
 import eu.eurise.core.suite.CardText
+import eu.eurise.read.ocr.Ocr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -183,15 +183,14 @@ private fun CameraReader(onCard: (CardFields) -> Unit) {
     val owner = LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
     val tess = remember {
-        TessBaseAPI().apply {
-            init(TessModel.dir(context).absolutePath, "ita")
-            pageSegMode = TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
-            setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ'.-")
+        Ocr.open(TessModel.dataDir(context))?.apply {
+            pageSeg = Ocr.PageSeg.SPARSE_TEXT
+            allowOnly("0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ'.-")
         }
     }
     DisposableEffect(Unit) {
         onDispose {
-            executor.execute { tess.recycle() }
+            executor.execute { tess?.close() }
             executor.shutdown()
         }
     }
@@ -211,7 +210,7 @@ private fun CameraReader(onCard: (CardFields) -> Unit) {
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                     .build()
                 analysis.setAnalyzer(executor) { image ->
-                    val card = runCatching { read(tess, image, view.width, view.height) }.getOrNull()
+                    val card = tess?.let { runCatching { read(it, image, view.width, view.height) }.getOrNull() }
                     image.close()
                     if (card != null) {
                         if (card.number == last) view.post { onCard(card) }
@@ -228,7 +227,7 @@ private fun CameraReader(onCard: (CardFields) -> Unit) {
     )
 }
 
-private fun read(tess: TessBaseAPI, image: ImageProxy, viewW: Int, viewH: Int): CardFields? {
+private fun read(tess: Ocr, image: ImageProxy, viewW: Int, viewH: Int): CardFields? {
     val frame = image.toBitmap()
     val rotation = image.imageInfo.rotationDegrees
     val upright = if (rotation == 0) frame else Bitmap.createBitmap(frame, 0, 0, frame.width, frame.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
@@ -248,8 +247,7 @@ private fun read(tess: TessBaseAPI, image: ImageProxy, viewW: Int, viewH: Int): 
     val left = (cx - w / 2).toInt().coerceIn(0, (iw - w).toInt())
     val top = (cy - h / 2).toInt().coerceIn(0, (ih - h).toInt())
     val crop = Bitmap.createBitmap(upright, left, top, w.toInt(), h.toInt())
-    tess.setImage(crop)
-    val text = tess.utF8Text.orEmpty()
+    val text = tess.read(crop)
     tess.clear()
     return CardText.parse(text)
 }

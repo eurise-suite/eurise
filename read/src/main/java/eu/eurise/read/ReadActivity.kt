@@ -1,6 +1,5 @@
 package eu.eurise.read
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -35,8 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.googlecode.tesseract.android.TessBaseAPI
 import eu.eurise.core.designsystem.theme.EuriseTheme
+import eu.eurise.read.ocr.Ocr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -61,7 +60,7 @@ class ReadActivity : ComponentActivity() {
 private fun ReadScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val dataDir = remember { TessModel.dir(context) }
+    val dataDir = remember { TessModel.dataDir(context) }
     val model = remember { TessModel.file(context) }
     var hasModel by remember { mutableStateOf(model.exists()) }
     var askDownload by remember { mutableStateOf(false) }
@@ -77,15 +76,11 @@ private fun ReadScreen() {
                     val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                         ?: error("immagine")
                     val start = System.currentTimeMillis()
-                    val api = TessBaseAPI()
-                    try {
-                        check(api.init(dataDir.absolutePath, "ita")) { "init" }
-                        api.setImage(bitmap.copy(Bitmap.Config.ARGB_8888, false))
-                        val out = api.utF8Text.orEmpty()
+                    val ocr = Ocr.open(dataDir) ?: error("modello")
+                    ocr.use {
+                        val out = it.read(bitmap)
                         val ms = System.currentTimeMillis() - start
-                        out to context.getString(R.string.read_stats, ms / 1000.0, api.meanConfidence(), bitmap.width, bitmap.height)
-                    } finally {
-                        api.recycle()
+                        out to context.getString(R.string.read_stats, ms / 1000.0, it.confidence(), bitmap.width, bitmap.height)
                     }
                 }.getOrElse { "" to context.getString(R.string.read_failed, it.message.orEmpty()) }
             }

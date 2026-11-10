@@ -97,11 +97,14 @@ def spoil(img, scale, angle, blur, noise, jpeg, seed):
 
 
 def ocr(img, tessdata):
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
-        img.save(f.name)
+    """Legge con il motore di Eurise Leggi compilato per il computer (EURISE_OCR), altrimenti con tesseract di sistema."""
+    engine = os.environ.get("EURISE_OCR")
+    with tempfile.NamedTemporaryFile(suffix=".ppm" if engine else ".png", delete=False) as f:
+        img.convert("RGB").save(f.name) if engine else img.save(f.name)
+        cmd = [engine, tessdata, "ita", f.name, "6"] if engine else \
+            ["tesseract", f.name, "stdout", "-l", "ita", "--tessdata-dir", tessdata, "--psm", "6"]
         start = time.time()
-        res = subprocess.run(["tesseract", f.name, "stdout", "-l", "ita", "--tessdata-dir", tessdata, "--psm", "6"],
-                             capture_output=True, text=True)
+        res = subprocess.run(cmd, capture_output=True, text=True)
         return res.stdout, time.time() - start
 
 
@@ -144,7 +147,8 @@ def main():
             rows.append((model, cond, 100 * (1 - sum(cers) / len(cers)), 100 * sum(words) / len(words), found, total, secs / len(DOCS)))
     sizes = {m: os.path.getsize(os.path.join(p, "ita.traineddata")) / 1048576 for m, p in models.items()}
     lines = [
-        "### Eurise Leggi: qualità di Tesseract in italiano",
+        "### Eurise Leggi: qualità di Tesseract in italiano"
+        + (" (motore compilato dai sorgenti di third_party)" if os.environ.get("EURISE_OCR") else " (tesseract di sistema)"),
         "",
         f"Modello italiano: fast {sizes['fast']:.1f} MB, best {sizes['best']:.1f} MB (si scarica a richiesta, fuori dall'APK).",
         "",

@@ -9,8 +9,9 @@ import java.net.URL
 internal object TessModel {
     private const val URL_ITA = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/ita.traineddata"
 
-    fun dir(context: Context) = File(context.filesDir, "tesseract")
-    fun file(context: Context) = File(dir(context), "tessdata/ita.traineddata")
+    /** Cartella dei modelli, da dare a [eu.eurise.read.ocr.Ocr.open]. */
+    fun dataDir(context: Context) = File(context.filesDir, "tesseract/tessdata")
+    fun file(context: Context) = File(dataDir(context), "ita.traineddata")
     fun ready(context: Context) = file(context).exists()
 
     /** Scarica la lingua; nulla del telefono viene inviato. */

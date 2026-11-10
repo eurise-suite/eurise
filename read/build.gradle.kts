@@ -5,24 +5,35 @@ plugins {
 }
 
 /**
- * Eurise Leggi, PROTOTIPO: lettura del testo (OCR) delle scansioni sul telefono con Tesseract (Apache 2.0) tramite
- * Tesseract4Android (Apache 2.0). Serve a misurare peso e qualità in italiano prima di decidere il motore.
- * Si compila solo nel suo lavoro (EURISE_READ=1), così non tocca le altre compilazioni. La lingua italiana
- * (tessdata_fast, pochi MB) si scarica a richiesta, mai dentro l'APK.
+ * Eurise Leggi: lettura del testo (OCR) sul telefono con Tesseract 5.5.1 (Apache 2.0) e Leptonica 1.85 (BSD), compilati
+ * dai sorgenti di `third_party/` (ponte JNI in `src/main/cpp/`, classe `ocr.Ocr`): niente librerie già compilate,
+ * come chiede F-Droid. Si compila nel suo lavoro (EURISE_READ=1). La lingua italiana (tessdata_fast, 2,6 MB) si
+ * scarica a richiesta, mai dentro l'APK.
  */
 android {
     namespace = "eu.eurise.read"
     compileSdk = 35
+    ndkVersion = "28.0.13004108"
 
     defaultConfig {
         applicationId = "eu.eurise.read"
         minSdk = 26
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
-        versionName = "0.0.1-prototipo"
+        versionName = "0.1.0"
         resourceConfigurations += listOf("it", "en")
         ndk { abiFilters += listOf("arm64-v8a") }
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
+        externalNativeBuild {
+            cmake {
+                // Tesseract è lento senza ottimizzazioni: anche le prove si compilano ottimizzate.
+                arguments += listOf("-DCMAKE_BUILD_TYPE=Release", "-DANDROID_STL=c++_static")
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake { path = file("src/main/cpp/CMakeLists.txt") }
     }
 
     signingConfigs {
@@ -72,6 +83,4 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
-    // Motivo: è il prototipo che deve misurarla. Libreria intera giustificata solo se il prototipo convince.
-    implementation("cz.adaptech.tesseract4android:tesseract4android:4.7.0")
 }

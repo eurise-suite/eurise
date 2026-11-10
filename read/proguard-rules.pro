@@ -1,3 +1,1 @@
-# Tesseract4Android chiama i metodi Java per nome dal codice nativo.
--keep class com.googlecode.tesseract.android.** { *; }
--keep class com.googlecode.leptonica.android.** { *; }
+# I metodi nativi di eu.eurise.read.ocr.Ocr mantengono il nome grazie alle regole di base di Android.
