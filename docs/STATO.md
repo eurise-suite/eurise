@@ -366,3 +366,25 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   (salta festivi e ferie) o durante gli eventi di un calendario. Niente accensione per luogo, per non leggere la posizione.
 - IntCestino: un cestino per Note, Attività, File, Foto ed eventi, 30 giorni, i collegamenti tornano con ciò che si ripristina; in fondo
   "Passa a un telefono nuovo" (backup cifrato o QR tra i due telefoni). Foto e Password dagli APK separati: serve il permesso di firma.
+
+## In fondo alla road map: computer (10 novembre) – si parte solo con l'ok esplicito del proprietario
+Priorità invariata: /e/OS e Android prima di tutto. Quanto segue viene dopo tutto il resto, Famiglia di Password compresa.
+- Piattaforme: Linux desktop (Ubuntu, Fedora…), poi forse macOS e Windows. App: Office, lettore PDF, Note, Attività, Calendario,
+  Browser e altre. Struttura proposta: Kotlin Multiplatform per la logica comune, Compose Multiplatform per l'interfaccia desktop
+  (JVM: lo stesso codice gira su Linux, macOS e Windows; cambiano solo pacchetto e firma). Pacchetto Flatpak su Linux.
+  Decisione da scrivere in CLAUDE.md prima di toccare la struttura (è difficile da cambiare dopo).
+- Già da ora, a costo zero: la logica pura (formati, unioni, cifratura, WebDAV/CalDAV) resta senza `android.*`, così passerà
+  ai moduli comuni senza riscritture.
+- Cloud sul computer: i file arrivano già dal client Nextcloud/Murena. Note e Attività invece parlano direttamente WebDAV/CalDAV
+  con la nostra unione a tre vie (scrivere nella cartella sincronizzata creerebbe copie in conflitto). Accesso dal browser in
+  due tocchi anche lì. Cartelle cifrate aperte dalla nostra app (formato Cryptomator).
+- Ordine: 1 moduli comuni multipiattaforma (telefono invariato); 2 Note e Attività; 3 Calendario; 4 lettore PDF (PDFium o
+  poppler); 5 Office (LibreOfficeKit con la nostra interfaccia, "Tutte le opzioni" = interfaccia di Collabora); 6 Browser.
+- Browser sul computer (idea del proprietario): Firefox così com'è, aggiornato da Mozilla, con la nostra interfaccia ed
+  estensioni disattivabili per l'integrazione (password e passkey dalla cassaforte, invia a Note/Attività, collegamenti),
+  in dialogo con l'app Eurise via native messaging. Limite: un'estensione cambia colori, barra laterale, nuova scheda,
+  pulsanti e menu, non l'intera finestra. Da valutare se la stessa estensione serve anche su Firefox per Android al posto
+  del browser GeckoView.
+- Office online: la collaborazione in tempo reale passa da Collabora Online (Nextcloud Office) sul server dell'utente; le
+  nostre app aprono quelle sessioni. Gli strumenti collaborativi nostri (chi modifica, commenti con @persona → attività,
+  revisioni, collegamenti) funzionano ovunque. Un nostro server Office è sconsigliato (costi, privacy, manutenzione).
