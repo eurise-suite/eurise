@@ -122,10 +122,18 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_file, R.drawable.eurise_ic_folder) { open(FilePanel(this)) },
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
             Command(R.string.eurise_codes, R.drawable.eurise_ic_key) { open(CodesPanel(this)) },
+            Command(R.string.eurise_calc, R.drawable.eurise_ic_calc) { open(CalcPanel(this)) },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
             val active = panel?.title == label
             val b = context.pill(if (compact) "" else text, p, on = active, icon = icon) { if (active) close() else action() }
+            // Cinque comandi: testo più piccolo e meno margine, così "Disponibilità" ci sta anche sui telefoni stretti.
+            b.setPadding(context.dp(6), 0, context.dp(6), 0)
+            (b.getChildAt(b.childCount - 1) as? android.widget.TextView)?.apply {
+                textSize = 11.5f
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+            (b.getChildAt(0) as? android.widget.ImageView)?.layoutParams?.let { (it as LinearLayout.LayoutParams).marginEnd = if (compact) 0 else context.dp(4) }
             b.contentDescription = text
             buttons.addView(b.lp(0, context.dp(40), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(5) })
         }

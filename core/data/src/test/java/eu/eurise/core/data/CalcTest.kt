@@ -2,6 +2,7 @@ package eu.eurise.core.data
 
 import eu.eurise.core.data.calc.Calc
 import eu.eurise.core.data.calc.Invoice
+import eu.eurise.core.data.calc.Finance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -79,5 +80,32 @@ class CalcTest {
         val odd = Invoice.fromNetto(BigDecimal("1500"))
         // Gli arrotondamenti possono rendere irraggiungibile il centesimo esatto: al più un centesimo di scarto.
         org.junit.Assert.assertTrue((odd.netto - BigDecimal("1500")).abs() <= BigDecimal("0.01"))
+    }
+}
+
+class FinanceTest {
+    @Test fun everydayMoney() {
+        val (imp, iva) = Finance.scorporo(BigDecimal("1220"), BigDecimal("22"))
+        assertEquals(BigDecimal("1000.00"), imp)
+        assertEquals(BigDecimal("220.00"), iva)
+        assertEquals(BigDecimal("80.00"), Finance.sconto(BigDecimal("100"), BigDecimal("20")))
+        val (prezzo, margine) = Finance.ricarico(BigDecimal("100"), BigDecimal("25"))
+        assertEquals(BigDecimal("125.00"), prezzo)
+        assertEquals(BigDecimal("20.00"), margine)
+        val (rata, interessi) = Finance.rata(BigDecimal("10000"), BigDecimal("0"), 10)
+        assertEquals(BigDecimal("1000.00"), rata)
+        assertEquals(BigDecimal("0.00"), interessi)
+        assertEquals(BigDecimal("856.07"), Finance.rata(BigDecimal("10000"), BigDecimal("5"), 12).first)
+    }
+
+    @Test fun workingDays() {
+        val (all, work) = Finance.giorni(java.time.LocalDate.of(2026, 11, 6), java.time.LocalDate.of(2026, 11, 13))
+        assertEquals(7L, all)
+        assertEquals(5L, work)
+    }
+
+    @Test fun graphVariable() {
+        assertEquals(4.0, Calc.evaluate("x² − 3x + 4", x = 3.0), 1e-9)
+        assertEquals(2.0, Calc.evaluate("2x", x = 1.0), 1e-9)
     }
 }

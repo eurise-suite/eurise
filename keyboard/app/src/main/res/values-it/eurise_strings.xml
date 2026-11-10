@@ -55,4 +55,9 @@
     <string name="eurise_abbreviations_summary">Una per riga: ind=Via Roma 1, Torino</string>
     <string name="eurise_glide">Scrittura scorrendo (Eurise)</string>
     <string name="eurise_glide_summary">Riconoscitore libero di Eurise, senza librerie esterne</string>
+    <string name="eurise_calc">Calcola</string>
+    <string name="eurise_calc_write">Scrivi %1$s</string>
+    <string name="eurise_calc_keys">ABC</string>
+    <string name="eurise_calc_hint">Tieni premuto «Scrivi» per mettere anche il calcolo</string>
+    <string name="eurise_calc_delete">Cancella</string>
 </resources>

@@ -55,4 +55,9 @@
     <string name="eurise_abbreviations_summary">One per line: addr=1 Main Street</string>
     <string name="eurise_glide">Glide typing (Eurise)</string>
     <string name="eurise_glide_summary">Eurise free recognizer, no external libraries</string>
+    <string name="eurise_calc">Calc</string>
+    <string name="eurise_calc_write">Write %1$s</string>
+    <string name="eurise_calc_keys">ABC</string>
+    <string name="eurise_calc_hint">Hold "Write" to insert the calculation too</string>
+    <string name="eurise_calc_delete">Delete</string>
 </resources>

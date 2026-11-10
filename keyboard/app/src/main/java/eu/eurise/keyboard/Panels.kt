@@ -312,3 +312,112 @@ class CodesPanel(bar: EuriseBar) : Panel(bar, R.string.eurise_codes) {
         }
     }
 }
+
+/**
+ * Calcola: una piccola calcolatrice al posto dei tasti. Il risultato compare mentre si scrive; «Scrivi» lo mette nel
+ * testo (tenuto premuto, anche il calcolo). IVA aggiunge il 22% e la percentuale funziona come da ufficio.
+ */
+class CalcPanel(bar: EuriseBar) : Panel(bar, R.string.eurise_calc) {
+    private var expr = ""
+    private var last: String? = null
+    private lateinit var exprView: TextView
+    private lateinit var resultView: TextView
+    private lateinit var writeLabel: TextView
+
+    private fun result(): String? =
+        expr.takeIf { it.isNotEmpty() }?.let { Calc.eval(it.replace('−', '-')) }?.let { Calc.format(it) }
+
+    private fun refresh() {
+        exprView.text = expr.replace('*', '×').replace('/', '÷').ifEmpty { "0" }
+        val r = result()
+        resultView.text = r?.let { "= $it" } ?: ""
+        writeLabel.text = context.getString(R.string.eurise_calc_write, r ?: "")
+        exprView.contentDescription = exprView.text
+    }
+
+    private fun press(key: String) {
+        when (key) {
+            "C" -> { if (expr.isNotEmpty()) last = expr; expr = "" }
+            "⌫" -> expr = expr.dropLast(1)
+            "( )" -> {
+                val open = expr.count { it == '(' } - expr.count { it == ')' }
+                expr += if (open > 0 && (expr.lastOrNull()?.let { it.isDigit() || it == ')' || it == '%' } == true)) ")" else "("
+            }
+            "IVA" -> expr += "+22%"
+            "=" -> result()?.let { last = expr; expr = it.replace(".", "") }
+            else -> expr += key
+        }
+        refresh()
+    }
+
+    private fun key(text: String, function: Boolean = false, onLong: (() -> Unit)? = null, onClick: () -> Unit) = TextView(context).apply {
+        this.text = text
+        gravity = Gravity.CENTER
+        textSize = if (text.length > 3) 13.5f else 18f
+        if (function || text.length > 1) typeface = Typeface.DEFAULT_BOLD
+        setTextColor(p.text)
+        background = rounded(if (function) p.faint else p.surface, context.dp(9).toFloat(), p.faint)
+        isClickable = true
+        contentDescription = if (text == "⌫") context.getString(R.string.eurise_calc_delete) else text
+        setOnClickListener { onClick() }
+        if (onLong != null) setOnLongClickListener { onLong(); true }
+    }
+
+    override fun view(): View {
+        val root = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(context.dp(6), context.dp(2), context.dp(6), context.dp(4))
+        }
+        val display = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.END
+            background = rounded(p.surface, context.dp(14).toFloat())
+            setPadding(context.dp(14), context.dp(6), context.dp(14), context.dp(6))
+        }
+        exprView = context.label("0", p, 16f).apply { gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.START }
+        resultView = context.label("", p, 24f, bold = true).apply { gravity = Gravity.END; maxLines = 1 }
+        display.addView(exprView.lp())
+        display.addView(resultView.lp())
+        root.addView(display.lp())
+
+        writeLabel = TextView(context)
+        val rows = listOf(
+            listOf("C", "( )", "%", "/", "⌫"),
+            listOf("7", "8", "9", "*", "IVA"),
+            listOf("4", "5", "6", "−", "="),
+            listOf("1", "2", "3", "+", "ABC"),
+            listOf(",", "0", "000", "WRITE"),
+        )
+        rows.forEach { row ->
+            val line = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+            row.forEachIndexed { i, k ->
+                val view = when (k) {
+                    "ABC" -> key(context.getString(R.string.eurise_calc_keys), function = true) { bar.close() }
+                    "WRITE" -> writeLabel.apply {
+                        gravity = Gravity.CENTER
+                        textSize = 14f
+                        typeface = Typeface.DEFAULT_BOLD
+                        setTextColor(p.onAccent)
+                        background = rounded(p.accent, context.dp(9).toFloat(), p.faint)
+                        isClickable = true
+                        setOnClickListener { result()?.let { bar.insert(it); bar.close() } }
+                        setOnLongClickListener {
+                            result()?.let { bar.insert(expr.replace('*', '×').replace('/', '÷') + " = " + it); bar.close() }
+                            true
+                        }
+                    }
+                    else -> {
+                        val shown = when (k) { "*" -> "×"; "/" -> "÷"; else -> k }
+                        key(shown, function = k !in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "000")) { press(k) }
+                    }
+                }
+                val weight = if (k == "WRITE") 2f else 1f
+                line.addView(view, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight).apply { if (i > 0) marginStart = context.dp(5) })
+            }
+            root.addView(line, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = context.dp(5) })
+        }
+        root.addView(context.label(context.getString(R.string.eurise_calc_hint), p, 11f, muted = true).apply { gravity = Gravity.CENTER }.lp(top = context.dp(3)))
+        refresh()
+        return root
+    }
+}

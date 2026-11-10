@@ -39,11 +39,15 @@ object Calc {
             require(i == s.length)
             return v
         }
+        /** "a + b%" aggiunge il b% di a e "a − b%" lo toglie, come sulle calcolatrici da ufficio. */
         fun sum(): BigDecimal {
             var v = product()
             while (i < s.length && s[i] in "+-") {
                 val op = s[i++]
-                val r = product()
+                val start = i
+                var r = product()
+                val piece = s.substring(start, i)
+                if (piece.endsWith("%") && piece.none { it in "*/x×÷:" }) r = v.multiply(r, MC)
                 v = if (op == '+') v.add(r, MC) else v.subtract(r, MC)
             }
             return v

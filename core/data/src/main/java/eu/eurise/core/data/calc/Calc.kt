@@ -19,8 +19,8 @@ object Calc {
     class CalcException(message: String) : Exception(message)
 
     /** Valuta [text]; [degrees] decide come leggere gli angoli di sin, cos e tan. */
-    fun evaluate(text: String, degrees: Boolean = true): Double {
-        val parser = Parser(tokenize(text), degrees)
+    fun evaluate(text: String, degrees: Boolean = true, x: Double? = null): Double {
+        val parser = Parser(tokenize(text, x), degrees)
         val value = parser.expression()
         if (!parser.done) throw CalcException("Espressione incompleta")
         if (value.isNaN() || value.isInfinite()) throw CalcException("Risultato non definito")
@@ -55,7 +55,8 @@ object Calc {
         data class Name(val name: String) : Token
     }
 
-    private fun tokenize(text: String): List<Token> {
+    /** Con [x] la lettera x è la variabile del grafico; senza, x è il segno di moltiplicazione. */
+    private fun tokenize(text: String, x: Double? = null): List<Token> {
         val out = ArrayList<Token>()
         var i = 0
         val s = text.trim()
@@ -63,6 +64,7 @@ object Calc {
             val c = s[i]
             when {
                 c.isWhitespace() -> i++
+                x != null && (c == 'x' || c == 'X') -> { out += Token.Num(x); i++ }
                 c.isDigit() || ((c == ',' || c == '.') && i + 1 < s.length && s[i + 1].isDigit()) -> {
                     val start = i
                     while (i < s.length && (s[i].isDigit() || s[i] == '.' || s[i] == ',')) i++

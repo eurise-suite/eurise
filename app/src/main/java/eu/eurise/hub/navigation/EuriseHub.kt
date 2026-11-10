@@ -33,6 +33,7 @@ import androidx.navigation.navArgument
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.data.EuriseData
+import kotlinx.coroutines.launch
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EuriseDock
 import eu.eurise.core.designsystem.component.GlassDefaults
@@ -141,6 +142,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "clock" -> goTo(Section.Clock)
             section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
+            section == "calculator" -> navController.navigate("calculator") { launchSingleTop = true }
             section == "privacy" -> navController.navigate("privacy") { launchSingleTop = true }
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
@@ -229,6 +231,13 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onBack = { navController.closeIfOn("drive") },
                         onScan = { navController.navigate("scanner") },
                         onCloud = { navController.navigate("cloud") },
+                    )
+                }
+                composable("calculator") {
+                    val scope = androidx.compose.runtime.rememberCoroutineScope()
+                    eu.eurise.feature.calculator.CalculatorRoute(
+                        onBack = { navController.closeIfOn("calculator") },
+                        onSaveNote = { title, body -> scope.launch { data.notes.save(null, title, body) } },
                     )
                 }
                 composable("scanner") {

@@ -105,6 +105,7 @@ dependencies {
     implementation(project(":feature:clock"))
     implementation(project(":feature:drive"))
     implementation(project(":feature:scanner"))
+    implementation(project(":feature:calculator"))
     implementation(project(":feature:privacy"))
     implementation(project(":feature:people"))
     implementation(project(":core:suite"))
