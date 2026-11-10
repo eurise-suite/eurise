@@ -588,3 +588,27 @@ Fatto dopo l'unione (da provare sul telefono):
 - Password, NFC: controllo di presenza diradato, risposte 61xx/6Cxx seguite, applicazioni note provate (PagoBANCOMAT per prima);
   se non legge, il foglio dice il passo («Lettura fermata a: …», es. «avvio 6985»). Se non basta, chiedere al proprietario quel testo.
 - Notifiche della Galleria con la stella (`ic_stat_eurise`).
+
+## 11 novembre, notte: Eurise Leggi completa (ramo `brand`, APK 223–224) – da provare sul telefono
+Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittura a mano, 6 Mappe/Messaggi/Telefono, 5 Office,
+3 Browser, poi il resto. Per i punti nuovi valgono anteprime o prototipo prima del codice.
+- Motore (APK 223): Tesseract 5.5.1 e Leptonica 1.85.0 dai sorgenti in `third_party/` (copie ridotte, vedi i loro EURISE.md), CMake
+  proprio in `read/src/main/cpp` (senza motore legacy, grafica di debug e librerie d'immagine), ponte JNI `eurise_ocr`, classe
+  `eu.eurise.read.ocr.Ocr`. Tolti Tesseract4Android e JitPack. Versione ridotta 3,6 MB (prima 7,6). La compilazione misura la
+  qualità con lo stesso motore compilato per il computer (`host_test.cpp`, EURISE_OCR in `ocr_quality.py`): fast 99,5–99,9 %.
+- Collegamento (APK 224): `core/suite/ReadContract` (servizio `ReadService` di Leggi, permesso della suite, Messenger);
+  `core/data/docs/ReadClient` + `ReadPagesProvider` (pagine passate con permesso temporaneo per file, cancellate subito; `<queries>`
+  per i pacchetti di Leggi). Leggi risponde con testo, parole e riquadri (TSV) e misure dell'immagine. Inglese a scelta in Leggi.
+- Logica pura con test (`core/data/docs`, DocsTest): `DocReader` (tipo e cartella, chi lo manda, mese, nome «2026-11 Bolletta
+  luce Enel», scadenza vicino a «entro/scadenza», importo vicino a «totale da pagare», IBAN con controllo, codice avviso pagoPA),
+  `OcrWords`, `SearchablePdf` (JPEG + testo invisibile in Helvetica WinAnsi, riletto da PdfText nei test; provato anche con
+  qpdf e pdftotext).
+- Scanner (tavole DocLeggi e DocMotore): scheda Testo nella revisione; spiegazione prima di accendere (`DocReading`, spenta di
+  base, «Leggi ogni scansione da sola»); nome proposto se non toccato; Da fare con scadenza, importo, IBAN e codice; copia; lettura
+  ad alta voce con la sintesi del telefono; PDF cercabile in Documenti/<cartella proposta> (es. Casa/Bollette) o Eurise/<cartella>
+  sul cloud. Differenza dalla tavola: le lingue si scelgono in Leggi, non nel foglio.
+- File: «Aggiungi il testo (PDF cercabile)» sui PDF di sole immagini (copia «… (con testo).pdf» accanto, `Searchable.kt`).
+- Viaggi: biglietti PDF scansionati letti da Leggi se la lettura è accesa. Centro privacy: voce «Lettura dei documenti», si spegne lì.
+- Da provare: scansione di una bolletta (proposte e PDF cercabile), «Aggiungi il testo» su un PDF scansionato, biglietto
+  scansionato in Viaggi. Leggi va installata (`eurise-leggi-debug-N`) e va scaricato l'italiano dall'app Leggi.
+- Restano: il pulsante «Installa» apre lo store (market://), che non ha ancora Leggi; ricerca di File nel testo dei PDF.
