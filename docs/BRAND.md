@@ -37,6 +37,11 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
 - `BrandMark` e `BrandIcona` hanno le varianti nuove (corona, stella, salita); le tavole della prima prova
   restano con il selettore vecchio finché non si sceglie.
 
+## Terza prova (10 novembre): tavola `BrandStelleMare`, animata
+- G «La e stellata» (metà alta della e = corona), G2 «La e sul mare» (barra a onda), H «Corona sul mare»,
+  I «Tondo marino» (corona in alto, onda al centro, il mare chiude il cerchio: consigliata per le icone tonde).
+- Varianti aggiunte a `BrandMark`/`BrandIcona`: estelle, emare, mare, tondo.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
