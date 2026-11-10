@@ -33,6 +33,32 @@ class EdgeDetectorTest {
         assertNull(EdgeDetector.find(IntArray(w * h) { 200 }, w, h))
     }
 
+    @Test fun findsAWhiteSheetOnALightTable() {
+        // Foglio bianco su un tavolo chiaro: il vecchio metodo per zone non lo vedeva.
+        val img = IntArray(w * h) { i -> val x = i % w; val y = i / w; if (x in 18..101 && y in 22..137) 240 else 196 }
+        val q = HoughQuad.find(img, w, h)
+        assertNotNull(q)
+        assertEquals(18f / w, q!!.tl.x, 0.03f)
+        assertEquals(22f / h, q.tl.y, 0.03f)
+        assertEquals(102f / w, q.br.x, 0.03f)
+        assertEquals(138f / h, q.br.y, 0.03f)
+    }
+
+    @Test fun findsARotatedSheetFromEdges() {
+        // Foglio ruotato di circa 8 gradi su fondo medio.
+        val c = kotlin.math.cos(Math.toRadians(8.0)); val s = kotlin.math.sin(Math.toRadians(8.0))
+        val img = IntArray(w * h) { i ->
+            val x = i % w - w / 2.0; val y = i / w - h / 2.0
+            val u = x * c + y * s; val v = -x * s + y * c
+            if (kotlin.math.abs(u) < 38 && kotlin.math.abs(v) < 55) 235 else 120
+        }
+        val q = HoughQuad.find(img, w, h)
+        assertNotNull(q)
+        // Il lato in alto scende verso destra come il foglio.
+        assertTrue(q!!.tr.y > q.tl.y)
+        assertTrue(EdgeDetector.area(q) in 0.32f..0.48f)
+    }
+
     @Test fun stableFramesAreClose() {
         val a = Quad(Pt(0f, 0f), Pt(1f, 0f), Pt(1f, 1f), Pt(0f, 1f))
         assertEquals(0f, a.distance(a), 0.0001f)

@@ -97,7 +97,8 @@ import java.util.concurrent.Executors
 /** Da cosa è nata una pagina: serve a rifare il ritaglio senza perdere qualità. */
 private class Origin(val upright: File, val mode: ScanMode, val quad: Quad?)
 
-private const val ANALYSIS_WIDTH = 120
+// Abbastanza per i bordi del foglio (rette di Hough), pochi millisecondi per fotogramma.
+private const val ANALYSIS_WIDTH = 200
 private const val STILL_NEEDED = 12
 private const val STILL_LIMIT = 0.025f
 
@@ -230,7 +231,17 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                                 val provider = future.get()
                                 val selector = ResolutionSelector.Builder().setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY).build()
                                 val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = view.surfaceProvider }
-                                val analysis = ImageAnalysis.Builder().setResolutionSelector(selector)
+                                // Analisi a 1280×960 circa: i codici piccoli o lontani hanno bisogno di pixel (prima erano
+                                // fotogrammi da anteprima ridotta). I bordi del foglio si calcolano comunque su 200 colonne.
+                                val analysisSelector = ResolutionSelector.Builder()
+                                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                                    .setResolutionStrategy(
+                                        androidx.camera.core.resolutionselector.ResolutionStrategy(
+                                            android.util.Size(1280, 960),
+                                            androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
+                                        ),
+                                    ).build()
+                                val analysis = ImageAnalysis.Builder().setResolutionSelector(analysisSelector)
                                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                                 analysis.setAnalyzer(analyzer) { image ->
                                     if (modeNow.get() == ScanMode.Qr) {
@@ -339,18 +350,21 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
 }
 
 /** QR, Data Matrix, i codici delle carte d'imbarco (PDF417, Aztec) e i codici a barre più comuni (EAN, Code 128). */
+private val LiveFormats = listOf(
+    com.google.zxing.BarcodeFormat.QR_CODE, com.google.zxing.BarcodeFormat.DATA_MATRIX,
+    com.google.zxing.BarcodeFormat.PDF_417, com.google.zxing.BarcodeFormat.AZTEC,
+    com.google.zxing.BarcodeFormat.EAN_13, com.google.zxing.BarcodeFormat.EAN_8, com.google.zxing.BarcodeFormat.CODE_128,
+    com.google.zxing.BarcodeFormat.UPC_A, com.google.zxing.BarcodeFormat.CODE_39, com.google.zxing.BarcodeFormat.ITF,
+)
 private val LiveReader = com.google.zxing.MultiFormatReader().apply {
-    setHints(
-        mapOf(
-            com.google.zxing.DecodeHintType.POSSIBLE_FORMATS to listOf(
-                com.google.zxing.BarcodeFormat.QR_CODE, com.google.zxing.BarcodeFormat.DATA_MATRIX,
-                com.google.zxing.BarcodeFormat.PDF_417, com.google.zxing.BarcodeFormat.AZTEC,
-                com.google.zxing.BarcodeFormat.EAN_13, com.google.zxing.BarcodeFormat.EAN_8, com.google.zxing.BarcodeFormat.CODE_128,
-            ),
-        ),
-    )
+    setHints(mapOf(com.google.zxing.DecodeHintType.POSSIBLE_FORMATS to LiveFormats, com.google.zxing.DecodeHintType.TRY_HARDER to true))
 }
+private var liveFrame = 0
 
+/**
+ * Un fotogramma per volta: il centro (dove si punta, più veloce), poi l'immagine intera; ogni tanto anche i colori
+ * invertiti (codici chiari su fondo scuro). Il lettore si azzera dopo ogni tentativo, come chiede ZXing.
+ */
 private fun decodeQr(image: ImageProxy): String? {
     val plane = image.planes[0]
     val buffer = plane.buffer
@@ -361,12 +375,25 @@ private fun decodeQr(image: ImageProxy): String? {
         buffer.position(y * plane.rowStride)
         buffer.get(data, y * w, minOf(w, buffer.remaining()))
     }
-    val source = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false)
-    return try {
-        LiveReader.decodeWithState(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
-    } catch (e: com.google.zxing.ReaderException) {
-        null
+    val full = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false)
+    val cw = (w * 0.7).toInt()
+    val ch = (h * 0.7).toInt()
+    val center = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, (w - cw) / 2, (h - ch) / 2, cw, ch, false)
+    val attempts = buildList<com.google.zxing.LuminanceSource> {
+        add(center)
+        add(full)
+        if (liveFrame++ % 3 == 0) add(full.invert())
     }
+    for (source in attempts) {
+        try {
+            return LiveReader.decodeWithState(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
+        } catch (e: com.google.zxing.ReaderException) {
+            // si prova la variante successiva
+        } finally {
+            LiveReader.reset()
+        }
+    }
+    return null
 }
 
 @Composable

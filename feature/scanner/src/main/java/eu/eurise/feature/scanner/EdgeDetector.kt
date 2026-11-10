@@ -15,16 +15,21 @@ data class Quad(val tl: Pt, val tr: Pt, val br: Pt, val bl: Pt) {
 }
 
 /**
- * Trova un foglio chiaro su un fondo più scuro, senza librerie: soglia automatica (Otsu) sulla luminosità ridotta,
- * zona chiara più grande, angoli dagli estremi di x+y e x−y. Funziona per fogli su tavoli; su fondi chiari non trova
- * nulla e resta lo scatto manuale.
+ * Trova il foglio nell'inquadratura, senza librerie. Prima dai bordi: gradiente (Sobel), rette con la trasformata di
+ * Hough, la coppia di rette quasi orizzontali e quella quasi verticali che formano il quadrilatero più grande e meglio
+ * sostenuto dai bordi; funziona anche su fondi chiari e con il foglio tagliato da ombre. Se i bordi non bastano, la
+ * zona chiara più grande (soglia di Otsu), che va bene per fogli su tavoli scuri.
  */
 object EdgeDetector {
-    private const val MIN_AREA = 0.20f
-    private const val MAX_AREA = 0.97f
+    private const val MIN_AREA = 0.15f
+    private const val MAX_AREA = 0.985f
 
     /** [luma]: una riga dopo l'altra, [width]×[height] valori da 0 a 255. */
-    fun find(luma: IntArray, width: Int, height: Int): Quad? {
+    fun find(luma: IntArray, width: Int, height: Int): Quad? =
+        HoughQuad.find(luma, width, height) ?: findRegion(luma, width, height)
+
+    /** Il metodo per zone: il foglio è la zona chiara più grande. */
+    internal fun findRegion(luma: IntArray, width: Int, height: Int): Quad? {
         val threshold = otsu(luma)
         val seen = BooleanArray(width * height)
         val stack = IntArray(width * height)
