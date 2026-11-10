@@ -54,6 +54,13 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   a sinistra e sotto, cerchio aperto a destra.
 - N «La stella e quattro compagne», N2 con tre compagne. Varianti `eintuita`, `compagne`, `tre`.
 
+## Sesta prova (10 novembre): tavola `BrandProve6`, animata
+- M2 «La e, più piena»: stelle più tonde, orizzonte a quattro trattini spessi, riflessi a punti grandi quanto la
+  stella specchiata (l'ultimo più piccolo, la e resta aperta). Variante `e2`.
+- N3 «La stella polare»: grande al centro e cinque compagne a spirale, sempre più piccole allontanandosi.
+  Idea del proprietario: ogni stella è un principio, la grande è la stella polare. Da decidere quale principio
+  è la polare e l'ordine delle compagne. Variante `nucleo`. N4 con sei compagne: `nucleo6`.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
