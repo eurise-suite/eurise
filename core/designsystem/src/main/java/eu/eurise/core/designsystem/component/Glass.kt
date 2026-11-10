@@ -67,21 +67,31 @@ val LocalDockClearance = compositionLocalOf { 0.dp }
  * @param outline filo sottile attorno al vetro; la Scrivania usa il vetro piatto, senza filo.
  */
 @Composable
-fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp, outline: Boolean = true): Modifier {
+fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp, outline: Boolean = true, solid: Boolean = false): Modifier {
     val extra = EuriseThemeExtras.colors
+    // "solid": i pulsanti che devono staccarsi dal fondo. Col tema chiaro in pieno giorno il vetro al 62% si confonde
+    // con il fondo perlaceo: qui diventa quasi pieno, con bordo e ombra leggera.
+    val strong = solid && !extra.isDark
+    val tint = if (strong) Color.White.copy(alpha = 0.94f) else extra.glass
     val style = HazeStyle(
         backgroundColor = MaterialTheme.colorScheme.background,
-        tints = listOf(HazeTint(extra.glass)),
+        tints = listOf(HazeTint(tint)),
         blurRadius = 22.dp,
         noiseFactor = 0f,
-        fallbackTint = HazeTint(extra.glass.copy(alpha = 0.94f)),
+        fallbackTint = HazeTint(tint.copy(alpha = 0.96f)),
     )
-    val shadowColor = if (extra.isDark) Color.Black.copy(alpha = 0.5f) else Color(0xFF1E1D1B).copy(alpha = 0.18f)
+    val shadowColor = if (extra.isDark) Color.Black.copy(alpha = 0.5f) else Color(0xFF1E1D1B).copy(alpha = if (strong) 0.28f else 0.18f)
     return this
-        .shadow(elevation, shape, ambientColor = shadowColor, spotColor = shadowColor)
+        .shadow(if (strong) maxOf(elevation, 3.dp) else elevation, shape, ambientColor = shadowColor, spotColor = shadowColor)
         .clip(shape)
         .hazeEffect(state = state, style = style)
-        .then(if (outline) Modifier.border(1.dp, extra.glassOutline, shape) else Modifier)
+        .then(
+            when {
+                strong -> Modifier.border(1.dp, Color(0xFF1E1D1B).copy(alpha = 0.12f), shape)
+                outline -> Modifier.border(1.dp, extra.glassOutline, shape)
+                else -> Modifier
+            },
+        )
 }
 
 @Immutable

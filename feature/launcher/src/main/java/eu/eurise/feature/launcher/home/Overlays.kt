@@ -582,7 +582,7 @@ private fun QuickRow(q: String, hazeState: HazeState, onQuick: (QuickAction, Str
         Modifier
             .padding(horizontal = GlassDefaults.SideMargin)
             .fillMaxWidth()
-            .glass(hazeState, RoundedCornerShape(22.dp), outline = false)
+            .glass(hazeState, RoundedCornerShape(22.dp), outline = false, solid = true)
             .padding(4.dp),
     ) {
         listOf(
@@ -687,7 +687,7 @@ private fun StripCard(onClick: () -> Unit, hazeState: HazeState, strong: Boolean
         Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .glass(hazeState, RoundedCornerShape(18.dp), elevation = if (strong) 4.dp else 0.dp, outline = false)
+            .glass(hazeState, RoundedCornerShape(18.dp), elevation = if (strong) 4.dp else 0.dp, outline = false, solid = true)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -699,7 +699,7 @@ private fun ResultGroup(title: String, hazeState: HazeState, rows: @Composable (
     Column {
         Box(Modifier.padding(start = 4.dp, bottom = 6.dp)) { Label(title) }
         Column(
-            Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(20.dp), elevation = 4.dp, outline = false).padding(vertical = 4.dp),
+            Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(20.dp), elevation = 4.dp, outline = false, solid = true).padding(vertical = 4.dp),
         ) { rows() }
     }
 }
