@@ -199,6 +199,10 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 TwoLines(stringResource(R.string.pv_gallery), stringResource(R.string.pv_gallery_d))
                 Line()
                 TwoLines(stringResource(R.string.pv_password), stringResource(R.string.pv_password_d))
+                Line()
+                TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d))
+                Line()
+                TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d))
             }
         }
         item(key = "log") {

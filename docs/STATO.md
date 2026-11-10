@@ -341,3 +341,17 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - 10 novembre: pulsante degli strumenti a destra (opzione a sinistra per i mancini); tutte e nove le funzioni in più approvate; base HeliBoard
   approvata. FUTO Keyboard esclusa come base: licenza FUTO Source First (solo uso non commerciale, niente sublicenze) incompatibile con GPLv3;
   utile solo il suo dataset di swipe in inglese (MIT) per il riconoscitore libero dello scorrimento.
+
+## Tastiera, Voce (ramo `tastiera`, notte tra 10 e 11 novembre, da provare sul telefono)
+- Ramo `tastiera` nato da `galleria-completa`. Eurise Tastiera in `keyboard/` (HeliBoard 4.2, vedi `keyboard/EURISE.md`), APK
+  `eurise-tastiera-debug-N` (lavoro a parte nella compilazione). Eurise Voce in `voice/` (whisper.cpp in `third_party/`), APK
+  `eurise-voce-debug-N`.
+- Fatto: punto 1 (base, temi Perla/Notte, numeri e simboli, strumenti a destra, barra di Eurise con Disponibilità/File/Persona/
+  Codici), punto 2 (le nove funzioni: /comandi, calcoli, @contatti, abbreviazioni, "Crea attività" via app Eurise, cose
+  copiate, "arrivo alle", lingua per app, nomi della Rubrica, tablet con sola barra), punto 3 (scrittura scorrendo libera:
+  `GlideDecoder`, prova su tracce simulate con percentuale nel riepilogo), punto 4 (dettatura con Whisper in Eurise Voce).
+- Non fatti: traduzione (Bergamot, compilazione nativa molto pesante: va prima un prototipo come per l'Office) e scrittura a
+  mano (manca un modello libero pronto). File come link dal cloud: serve un canale con File dell'app Eurise.
+- Limiti noti: "Arrivo alle" usa l'ora dell'evento, non il tempo di viaggio; la lingua si ricorda per app, non per
+  conversazione (la tastiera non sa con chi si scrive); i codici 2FA compaiono solo se la voce di Password è collegata
+  all'app e la cassaforte è aperta.

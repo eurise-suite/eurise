@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter
  */
 class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
 
-    private lateinit var ime: LatinIME
+    internal lateinit var ime: LatinIME
     private lateinit var keyboardArea: View
     internal val bridge = Bridge(context)
     private val handler = Handler(Looper.getMainLooper())
@@ -47,8 +47,6 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     private val buttons = LinearLayout(context)
     private val panelHost = FrameLayout(context)
     private var panel: Panel? = null
-    private var lastClipAt = 0L
-    private var lastClipText: String? = null
 
     init {
         orientation = VERTICAL
@@ -73,13 +71,19 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         this.ime = ime
         keyboardArea = inputView.findViewById(R.id.keyboard_view_wrapper)
         refreshLook()
-        androidx.core.content.ContextCompat.registerReceiver(
-            context.applicationContext, dictationReceiver, android.content.IntentFilter(ACTION_DICTATION),
-            bridge.suitePermission(), null, androidx.core.content.ContextCompat.RECEIVER_EXPORTED,
-        )
-        (context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.addPrimaryClipChangedListener {
-            lastClipAt = System.currentTimeMillis()
-            lastClipText = null // si legge solo quando la tastiera è visibile, mai in sottofondo
+        current = java.lang.ref.WeakReference(this)
+        // Ricevitore e ascolto degli appunti si registrano una volta sola per processo: la vista della tastiera
+        // si ricrea spesso (tema, lingua) e una barra vecchia non deve inserire testo.
+        if (!registered) {
+            registered = true
+            val app = context.applicationContext
+            androidx.core.content.ContextCompat.registerReceiver(
+                app, DictationReceiver(), android.content.IntentFilter(ACTION_DICTATION),
+                bridge.suitePermission(), null, androidx.core.content.ContextCompat.RECEIVER_EXPORTED,
+            )
+            (app.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.addPrimaryClipChangedListener {
+                lastClipAt = System.currentTimeMillis() // il contenuto si legge solo quando la tastiera è visibile
+            }
         }
     }
 
@@ -182,16 +186,17 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     // --- Dettatura (Eurise Voce) ---
 
-    private var pendingDictation: String? = null
-
-    /** Il testo dettato torna da Eurise Voce (solo app con la stessa firma possono mandarlo). */
-    private val dictationReceiver = object : android.content.BroadcastReceiver() {
+    /** Il testo dettato torna da Eurise Voce (solo app con la stessa firma possono mandarlo) e va alla barra attuale. */
+    private class DictationReceiver : android.content.BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
             val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() } ?: return
-            if (::ime.isInitialized && ime.isInputViewShown && ime.currentInputConnection != null) insertDictation(text)
+            val bar = current?.get()
+            if (bar != null && bar.ready && bar.ime.isInputViewShown && bar.ime.currentInputConnection != null) bar.insertDictation(text)
             else pendingDictation = text
         }
     }
+
+    private val ready get() = ::ime.isInitialized
 
     private fun insertDictation(text: String) {
         val before = before(1)
@@ -294,7 +299,6 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         val clip = runCatching { cm.primaryClip }.getOrNull() ?: return null
         if (android.os.Build.VERSION.SDK_INT >= 33 && clip.description.extras?.getBoolean("android.content.extra.IS_SENSITIVE") == true) return null
         val value = clip.getItemAt(0)?.text?.toString()?.trim() ?: return null
-        lastClipText = value
         return when (Detect.kindOf(value)) {
             Detect.Kind.Iban -> Chip("${context.getString(R.string.eurise_copied_iban)} · ${context.getString(R.string.eurise_save_note)}") {
                 if (bridge.sendNote("IBAN\n$value")) toast(R.string.eurise_note_sent) else toast(R.string.eurise_hub_missing); lastClipAt = 0; showChips(emptyList())
@@ -326,5 +330,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         const val SEPARATE_TOOLS = "eurise_separate_tools"
         const val ABBREVIATIONS = "eurise_abbreviations"
         const val ACTION_DICTATION = "eu.eurise.action.DICTATION_RESULT"
+        private var current: java.lang.ref.WeakReference<EuriseBar>? = null
+        private var registered = false
+        @Volatile private var pendingDictation: String? = null
+        @Volatile private var lastClipAt = 0L
     }
 }
