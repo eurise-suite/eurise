@@ -505,3 +505,30 @@ Dopo l'approvazione del brand, prima delle app desktop. Per GNOME (Ubuntu, Fedor
 - Limite: le app libadwaita di GNOME prendono accento, caratteri e chiaro/scuro ma non forme proprie; niente CSS forzato
   (si rompe a ogni aggiornamento). Schermata di accesso fuori.
 - Metodo: anteprime sulla tela, pagina "Linux" (scrivania Ubuntu con pannello, dock, File e sfondo; stessa cosa per KDE).
+
+## 11 novembre: prova del proprietario sul telefono (APK 198) e correzioni (ramo `tastiera`)
+Giudizio: Voce riconosce molto bene (anche la punteggiatura) ma è lenta col pacchetto più pesante; Lettore QR non funzionava;
+scanner pessimo nel trovare e ritagliare le pagine. Deciso: Tesseract per Eurise Leggi (vedi sopra).
+Fatto (APK 199–200):
+- Tastiera: lo spazio dichiarato alle app ora conta la barra di Eurise (prima le app restavano coperte, anche fuori dalla ricerca);
+  fascia di sistema con freccia e mondo tolta dove Android lo permette (`euriseHideImeNavBar`, dal 15; da verificare sul Murena);
+  barra: Calcola, Codici, File, Persona, Disponibilità, Browser con icona sopra l'etichetta; Browser cerca subito il testo scritto o
+  selezionato, pressione lunga = browser installati o assistenti sul web (`WebSearch.kt`, `BrowserPanel`); nome "Eurise Tastiera"
+  anche nelle versioni di prova, "based on HeliBoard" in Informazioni. Manca: icona propria della Tastiera (è ancora quella di HeliBoard).
+- Tema chiaro: `glass(solid = true)` per i pulsanti (bianco quasi pieno, bordo, ombra) nella ricerca; velo di fondo grigio caldo.
+- Bolle: appuntamenti con Sposta (giorno e ora) ed Elimina (cestino unico), pulsantini a 26 dp come in "Ti hanno cercato", nota della
+  riunione → schermata riunioni; bolla Calendario di nuovo col mese (`PlacedCard` alta 30); riga sotto alba e tramonto con sveglia,
+  conto alla rovescia o cronometro (`core/suite/ClockStatus`, scritto da `ClockStore`) o "No sveglia", menù Sveglia/Cronometro/Conto
+  alla rovescia (sezioni `clock:0/1/2`); dopo la risposta da Eurise la conversazione si segna letta e l'eco non torna per 30 s.
+- Scanner: foglio dai bordi (`HoughQuad`, test), analisi più fine; codici con fotogrammi 1280×960, modalità accurata, centro + intero
+  + invertito. DA RIPROVARE sul telefono: se non basta ancora, prossimo passo raffinare gli angoli sul fotogramma dello scatto.
+Da fare, in quest'ordine (anteprime sulla tela prima del codice dove indicato):
+1. Galleria: lettore video integrato (Media3 ExoPlayer, motivo da scrivere nel commit) — editor foto più evoluto (anteprima: ritaglio
+   con proporzioni, raddrizza, luce/contrasto/saturazione/calore, filtri, testo e disegno) — in ogni scelta di colore anche "il tuo"
+   (selettore con ruota/HEX, componente comune in `core/designsystem`, usato in tutta la suite).
+2. Coerenza delle icone: un solo stile (quello di EuriseIcons) per condividi, altro, indietro ecc. in tutte le app e negli APK separati
+   (Galleria, Password, Tastiera, Voce); censire le icone fuori stile.
+3. Password: leggere le carte (fotocamera con Tesseract di Eurise Leggi per numero, scadenza, intestatario; NFC per numero e scadenza
+   delle carte contactless) e riempire i campi prima di salvare. Il resto di Password quando il proprietario inizia a usarla.
+4. Voce più veloce: misurare (thread, modello quantizzato q5/q8 del pacchetto pesante, dettatura a pezzi mentre si parla).
+5. Widget di altre app dentro le bolle (AppWidgetHost; anteprima prima: aggiunta dal menù delle bolle, aspetto integrato).
