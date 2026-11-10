@@ -3,6 +3,10 @@
 
     <!-- Internet serve solo a scaricare la lingua italiana, una volta, dopo la spiegazione. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- La fotocamera serve solo a leggere una carta per Eurise Password; i fotogrammi non si salvano. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
     <application
         android:allowBackup="false"
@@ -15,6 +19,19 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Lettura di una carta per Eurise Password: solo app Eurise con la stessa firma. -->
+        <activity
+            android:name=".ScanCardActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EuriseRead">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SCAN_CARD" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>

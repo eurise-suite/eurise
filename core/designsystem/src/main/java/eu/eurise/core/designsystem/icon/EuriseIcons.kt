@@ -250,6 +250,7 @@ object EuriseIcons {
     fun filters(stroke: Float = Stroke) = icon("filters", stroke, circle(9f, 10f, 5f), circle(15f, 10f, 5f), circle(12f, 15f, 5f))
     fun text(stroke: Float = Stroke) = icon("text", stroke, "M5 6V4.5h14V6M12 4.5v15M9 19.5h6")
     fun flip(stroke: Float = Stroke) = icon("flip", stroke, "M12 3v18", "M8 7L3 12l5 5zM16 7l5 5-5 5z")
+    fun contactless(stroke: Float = Stroke) = icon("contactless", stroke, "M7 9a4.5 4.5 0 0 1 0 6", "M10.5 6.5a8 8 0 0 1 0 11", "M14 4a11.5 11.5 0 0 1 0 16", "M17.5 2.5a14 14 0 0 1 0 19")
     fun pip(stroke: Float = Stroke) = icon("pip", stroke, "M3.5 5.5h17v13h-17z", "M12 12h6v4.5h-6z")
     fun scissors(stroke: Float = Stroke) = icon("scissors", stroke, circle(6f, 7f, 2.5f), circle(6f, 17f, 2.5f), "M8 8.5L20 16M8 15.5L20 8")
     fun volume(stroke: Float = Stroke) = icon("volume", stroke, "M4 9.5h3.5L12 5.5v13l-4.5-4H4z", "M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11")

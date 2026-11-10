@@ -750,6 +750,18 @@ private fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vaul
 
 // --- Modifica ---
 
+/** Il circuito dalla prima cifra, come titolo proposto quando la carta si legge (si può cambiare). */
+private fun cardBrand(number: String): String {
+    val d = number.filter { it.isDigit() }
+    return when {
+        d.startsWith("4") -> "Visa"
+        (d.take(2).toIntOrNull() ?: 0) in 51..55 || (d.take(4).toIntOrNull() ?: 0) in 2221..2720 -> "Mastercard"
+        d.startsWith("34") || d.startsWith("37") -> "American Express"
+        d.startsWith("5") || d.startsWith("6") -> "Maestro"
+        else -> ""
+    }
+}
+
 @Composable
 private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDraft?, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
     val scheme = MaterialTheme.colorScheme
@@ -788,6 +800,12 @@ private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDr
             }
             OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.pwd_f_title)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             if (isCard) {
+                CardReaders { n, e, h ->
+                    if (n.isNotBlank()) number = n
+                    if (e.isNotBlank()) expiry = e
+                    if (h.isNotBlank()) holder = h
+                    if (title.isBlank() && n.isNotBlank()) title = cardBrand(n)
+                }
                 OutlinedTextField(number, { number = it }, label = { Text(stringResource(R.string.pwd_card_number)) }, singleLine = true, isError = number.isNotBlank() && !Cards.valid(number), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 if (number.isNotBlank() && !Cards.valid(number)) Text(stringResource(R.string.pwd_card_invalid), fontSize = 12.sp, color = scheme.error)
                 OutlinedTextField(holder, { holder = it }, label = { Text(stringResource(R.string.pwd_card_holder)) }, singleLine = true, modifier = Modifier.fillMaxWidth())

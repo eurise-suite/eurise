@@ -285,4 +285,15 @@
     <string name="pwd_fill_no_profile">Nessun profilo: aggiungilo in Password, I miei dati.</string>
     <string name="pwd_fill_profile_count">Compila %1$d campi</string>
     <string name="pwd_fill_profile_note">Il modulo riceve solo i campi che chiede. Prima serve l\'impronta o il PIN.</string>
+    <string name="pwd_card_read_camera">Fotocamera</string>
+    <string name="pwd_card_read_nfc">Avvicina la carta</string>
+    <string name="pwd_card_read_missing_title">Serve Eurise Leggi</string>
+    <string name="pwd_card_read_missing">La carta si legge con la fotocamera grazie a Eurise Leggi, che legge il testo sul telefono e non salva nulla. Installala, poi riprova. Intanto puoi avvicinare la carta, se è contactless.</string>
+    <string name="pwd_card_read_ok">Va bene</string>
+    <string name="pwd_card_nfc_title">Avvicina la carta</string>
+    <string name="pwd_card_nfc_hold">Appoggia la carta al retro del telefono e tienila ferma un paio di secondi.</string>
+    <string name="pwd_card_nfc_retry">Non sono riuscito a leggerla: riprova tenendola ferma, al centro del retro.</string>
+    <string name="pwd_card_nfc_off">L\'NFC è spento. Accendilo nelle impostazioni, poi torna qui.</string>
+    <string name="pwd_card_nfc_settings">Apri le impostazioni NFC</string>
+    <string name="pwd_card_nfc_privacy">Si leggono solo numero e scadenza (a volte l\'intestatario), come fa un POS prima di incassare: nessun pagamento, nulla esce dal telefono. Il codice CVV non sta nel chip: si scrive a mano.</string>
 </resources>
