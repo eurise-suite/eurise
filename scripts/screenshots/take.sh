@@ -16,9 +16,13 @@ adb wait-for-device
 # Ora e luogo fissi: le 9:30 di oggi a Roma, così l'agenda mostra la giornata che comincia.
 adb shell settings put global auto_time 0 || true
 adb shell settings put global auto_time_zone 0 || true
-STAMP="$(TZ=Europe/Rome date +%m%d0930%Y.00)"
-adb shell date "$STAMP" >/dev/null 2>&1 || adb shell su 0 date "$STAMP" >/dev/null 2>&1 || true
-echo "Ora del telefono: $(adb shell date)"
+settime() {
+  local stamp; stamp="$(TZ=Europe/Rome date +%m%d"$1"%Y.00)"
+  adb shell date "$stamp" >/dev/null 2>&1 || adb shell su 0 date "$stamp" >/dev/null 2>&1 || true
+  adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm "$1" >/dev/null 2>&1 || true
+  echo "Ora del telefono: $(adb shell date)"
+}
+settime 0930
 adb emu geo fix 12.4964 41.9028 || true
 
 # Barra di stato pulita (modalità dimostrativa di Android).
@@ -51,8 +55,11 @@ for theme in perla notte; do
   if [ "$theme" = notte ]; then adb shell cmd uimode night yes; else adb shell cmd uimode night no; fi
   adb shell am force-stop "$PKG"
   echo "Tema $theme"
+  # La Scrivania segue l'ora e il cielo, non il tema del sistema: di sera per la versione Notte.
+  if [ "$theme" = notte ]; then settime 2100; else settime 0930; fi
   adb shell am start -n "$PKG/eu.eurise.hub.LauncherActivity" >/dev/null; sleep 6
   adb shell input keyevent KEYCODE_HOME; shot 1-scrivania "$theme" 6
+  settime 0930
   section today;      shot 2-oggi "$theme" 6
   section calendar;   shot 3-calendario "$theme"
   section tasks;      shot 4-attivita "$theme"
