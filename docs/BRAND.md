@@ -61,6 +61,12 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   Idea del proprietario: ogni stella è un principio, la grande è la stella polare. Da decidere quale principio
   è la polare e l'ordine delle compagne. Variante `nucleo`. N4 con sei compagne: `nucleo6`.
 
+## Settima prova (10 novembre): tavola `BrandCielo`, animata
+- Dalla N4, su indicazione del proprietario: stella polare al centro più grande e 27 stelle (una per Stato
+  dell'Unione) disposte a spirale, sempre più piccole allontanandosi: «il cielo del futuro europeo».
+  Variante `cielo`. Sotto i 36 px le stelle lontane spariscono e resta la polare con le più vicine.
+- Da verificare con il consulente: oro su blu richiama l'emblema UE (ma stelle a quattro punte, in spirale).
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
