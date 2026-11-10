@@ -58,7 +58,7 @@ for theme in perla notte; do
   # La Scrivania segue l'ora e il cielo, non il tema del sistema: di sera per la versione Notte.
   if [ "$theme" = notte ]; then settime 2100; else settime 0930; fi
   adb shell am start -n "$PKG/eu.eurise.hub.LauncherActivity" >/dev/null; sleep 6
-  adb shell input keyevent KEYCODE_HOME; shot 1-scrivania "$theme" 6
+  adb shell input keyevent KEYCODE_HOME; sleep 8; adb shell input keyevent KEYCODE_HOME; shot 1-scrivania "$theme" 8
   settime 0930
   section today;      shot 2-oggi "$theme" 6
   section calendar;   shot 3-calendario "$theme"
