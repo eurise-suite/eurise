@@ -612,3 +612,18 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
 - Da provare: scansione di una bolletta (proposte e PDF cercabile), «Aggiungi il testo» su un PDF scansionato, biglietto
   scansionato in Viaggi. Leggi va installata (`eurise-leggi-debug-N`) e va scaricato l'italiano dall'app Leggi.
 - Restano: il pulsante «Installa» apre lo store (market://), che non ha ancora Leggi; ricerca di File nel testo dei PDF.
+
+## 11 novembre, notte: punto 4, prototipo della traduzione (ramo `brand`, APK 226) e scrittura a mano
+- Motore: slimt (MIT, copia di Offline Translator, F-Droid) con ruy e SentencePiece (Apache 2.0), dai sorgenti in `third_party/`
+  (circa 4,5 MB di sorgenti, vedi i loro EURISE.md). Modulo `translate/` (EURISE_TRANSLATE=1, lavoro «Prototipo Eurise Traduci»),
+  `engine.hpp` comune a JNI e prova sul computer; modelli di Firefox (MPL 2.0) dall'elenco pubblico di Mozilla su Google Cloud
+  Storage (`Models.kt`, scelta: rilascio migliore, base-memory), decompressi nei file dell'app.
+- Misure (CI): APK ridotto **2,2 MB**; modelli 25 MB per direzione; chrF su 12 frasi di prova it→en 82,8, en→it 78,5 (buono;
+  errori tipici: «quote» → «citazione», «imprevisto» → «unforeseen one»). Velocità sul computer di compilazione non indicativa
+  (ruy senza AVX): va misurata sul telefono con l'app di prova `eurise-traduci-debug-N`. ruy è senza cpuinfo (niente dotprod).
+- Da decidere con il proprietario: dove sta il motore (la Tastiera non ha Internet). Proposta: dentro Eurise Leggi (ha già
+  Internet solo per i modelli, servizio con permesso di firma, OCR per tradurre foto e documenti), +2 MB; in alternativa APK a
+  parte «Eurise Traduci». Poi: pannello Traduci nella Tastiera, centro privacy (Google Cloud Storage tra i servizi), più lingue.
+- Scrittura a mano: nessun modello libero pronto per l'alfabeto latino. OnlineHTR (MIT) è solo codice; i pesi disponibili sono
+  addestrati su IAM-OnDB (solo ricerca, non commerciale) e ML Kit è escluso. Serve addestrare un modello nostro su dati liberi
+  (anche sintetici): lavoro lungo, che richiede GPU fuori da GitHub Actions. Proposta: rimandare, da decidere col proprietario.
