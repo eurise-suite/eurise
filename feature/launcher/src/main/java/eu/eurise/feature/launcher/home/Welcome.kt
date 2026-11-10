@@ -53,7 +53,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.produceState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -622,8 +621,14 @@ fun SunTimesColumn(
 ) {
     val color = MaterialTheme.colorScheme.onBackground
     val context = LocalContext.current
-    LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.core.suite.ClockStatus.load(context) } }
-    val clock by eu.eurise.core.suite.ClockStatus.state.collectAsStateWithLifecycle()
+    // Stato dell'Orologio: letto una volta fuori dal thread principale, poi aggiornato a ogni cambiamento.
+    val clock by produceState(eu.eurise.core.suite.ClockStatus.Status()) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.core.suite.ClockStatus.read(context) }
+        val prefs = eu.eurise.core.suite.ClockStatus.prefs(context)
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> value = eu.eurise.core.suite.ClockStatus.read(context) }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        awaitDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     // Timer e cronometro cambiano ogni secondo: solo allora si ridisegna più spesso.
     val ticking = (clock.timerEndsAt?.let { it > System.currentTimeMillis() } == true) || clock.stopwatchStart != null
     val millis by produceState(System.currentTimeMillis(), ticking) {

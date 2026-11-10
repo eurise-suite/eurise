@@ -1,13 +1,12 @@
 package eu.eurise.core.suite
 
 import android.content.Context
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import android.content.SharedPreferences
 
 /**
  * Che cosa sta facendo l'Orologio, per la home: un conto alla rovescia che corre, il cronometro acceso. Lo scrive
- * l'Orologio quando cambia qualcosa; la home lo legge senza dipendere dal modulo dell'Orologio.
+ * l'Orologio quando cambia qualcosa; la home lo legge (e ascolta i cambiamenti) senza dipendere dal suo modulo.
+ * Niente dipendenze: preferenze del telefono e un ascoltatore.
  */
 object ClockStatus {
     data class Status(
@@ -19,26 +18,20 @@ object ClockStatus {
         val stopwatchAccumulated: Long = 0,
     )
 
-    private val _state = MutableStateFlow(Status())
-    val state: StateFlow<Status> = _state.asStateFlow()
-    @Volatile private var loaded = false
+    const val PREFS = "clock_status"
 
-    private fun prefs(context: Context) = context.applicationContext.getSharedPreferences("clock_status", Context.MODE_PRIVATE)
+    fun prefs(context: Context): SharedPreferences = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    /** Da chiamare fuori dal thread principale prima di leggere [state] la prima volta. */
-    fun load(context: Context) {
-        if (loaded) return
-        loaded = true
+    /** Da leggere fuori dal thread principale la prima volta (apre il file delle preferenze). */
+    fun read(context: Context): Status {
         val p = prefs(context)
-        _state.value = Status(
+        return Status(
             p.getLong("timer_end", -1).takeIf { it > 0 }, p.getString("timer_label", "").orEmpty(),
             p.getLong("sw_start", -1).takeIf { it >= 0 }, p.getLong("sw_acc", 0),
         )
     }
 
     fun publish(context: Context, status: Status) {
-        loaded = true
-        _state.value = status
         prefs(context).edit()
             .putLong("timer_end", status.timerEndsAt ?: -1).putString("timer_label", status.timerLabel)
             .putLong("sw_start", status.stopwatchStart ?: -1).putLong("sw_acc", status.stopwatchAccumulated)
