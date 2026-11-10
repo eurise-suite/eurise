@@ -3,6 +3,20 @@
 Nota di passaggio per chi riprende il lavoro sul marchio. Questo file è separato da `docs/STATO.md`
 per non toccare i file su cui lavora la chat del ramo `tastiera`.
 
+## Nel codice (10 novembre 2026, ramo `brand`)
+Scelte del proprietario: famiglia «Firma di stella», avvio «Blu notte sempre», frase «Libere, leggere, tue.».
+- Icone adattive vettoriali con livello monocromatico (icone a tema di Android 13+):
+  app principale = stella polare (versione piccola, 16 stelle, `@color/eurise_brand_gold` in `values/brand_colors.xml`);
+  Password, Galleria, Voce, Tastiera = simbolo nella tinta della categoria + stellina d'oro in basso. Fondo #1F2A44.
+- Tastiera: via le 10 PNG di HeliBoard; fondo blu notte; per Android 5–7 icona vettoriale in `mipmap-anydpi`.
+- Avvio Android 12+: `windowSplashScreenBackground` blu notte nei temi (anche in values-night) di app, Password, Galleria.
+  Voce è una finestra trasparente e resta com'è.
+- `core/designsystem/res/drawable/ic_stat_eurise.xml`: icona bianca per le notifiche. DA COLLEGARE nel codice (fuori dal
+  ramo brand): `Reminders.kt` usa icone di sistema; `UploadWorker` della Galleria usa il primo piano dell'icona.
+- Sorgenti del marchio in `docs/brand/*.svg`; F-Droid in `fastlane/metadata/android/{it-IT,en-US}` (titolo, descrizioni,
+  icona 512, immagine 1024×500). Mancano le schermate del telefono (vanno catturate dall'app vera) e i metadati degli APK separati.
+- Mappe, Browser, Messaggi, Telefono, Office: icone già disegnate sulla tela, da fare quando nasceranno gli APK.
+
 ## Decisione (10 novembre 2026, sera)
 - **Simbolo approvato: la stella polare** (variante `polare` / `polarep` di `BrandMark`, tavola `BrandPolare`).
   Polare al centro con raggi sottili, 44 stelle (Stati d'Europa, conteggio ONU) disposte a sfera, più piccole

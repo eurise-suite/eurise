@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Tema della finestra prima che Compose disegni: stesso fondo Perla, niente lampo bianco. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Tema della finestra prima che Compose disegni: stesso fondo Perla, niente lampo bianco.
+         Avvio (Android 12+): blu notte sempre, con la stella polare dell'icona al centro. -->
     <style name="Theme.Eurise" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/eurise_background</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/eurise_icon_background</item>
     </style>
 
     <!-- Scrivania: fondo neutro finché non si disegna la scena; niente anteprima nei recenti. -->

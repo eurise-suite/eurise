@@ -1,0 +1,11 @@
+Eurise riunisce le app di ogni giorno in una sola, leggera: la Scrivania al posto del launcher, Oggi, Calendario, Attività, Note, Contatti, Orologio, File, Scanner e lettore PDF.
+
+<b>Tutto resta sul telefono.</b> Nessun tracker, nessuna statistica. Quello che esce lo decidi tu, con un interruttore e due righe che spiegano cosa viene letto, dove va e come si torna indietro. Il Centro privacy mostra dove sta ogni dato.
+
+<b>Le app parlano tra loro.</b> Un evento conosce la nota della riunione, le persone e i file che lo riguardano. Una frase scritta al volo diventa evento, attività o nota.
+
+<b>Europa.</b> Si collega a cloud europei come Murena, kDrive o il tuo Nextcloud, in due tocchi: niente chiavi né indirizzi tecnici.
+
+<b>Leggera.</b> L'app pesa pochi megabyte; i contenuti pesanti si scaricano solo se servono.
+
+Codice aperto, GPLv3. Le altre app della suite (Password, Galleria, Tastiera, Voce) sono APK separati e parlano con Eurise solo se firmate con la stessa chiave.

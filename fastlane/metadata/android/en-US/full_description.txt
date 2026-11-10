@@ -1,0 +1,11 @@
+Eurise brings your everyday apps together in one light app: a home screen (launcher), Today, Calendar, Tasks, Notes, Contacts, Clock, Files, Scanner and PDF reader.
+
+<b>Everything stays on your phone.</b> No trackers, no analytics. You decide what leaves the device, with a switch and two lines that say what is read, where it goes and how to undo it. The Privacy center shows where every piece of data lives.
+
+<b>The apps talk to each other.</b> An event knows the meeting note, the people and the files that belong to it. A quick sentence becomes an event, a task or a note.
+
+<b>Europe.</b> Connects to European clouds such as Murena, kDrive or your own Nextcloud in two taps: no keys, no technical addresses.
+
+<b>Light.</b> The app weighs a few megabytes; heavy content is downloaded only when needed.
+
+Open source, GPLv3. The other apps of the suite (Password, Gallery, Keyboard, Voice) are separate APKs and talk to Eurise only when signed with the same key.

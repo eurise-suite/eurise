@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colori del marchio Eurise (approvati il 10 novembre 2026): blu notte e oro d'alba. -->
+<resources>
+    <color name="eurise_brand_gold">#D2B06A</color>
+</resources>
