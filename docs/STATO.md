@@ -494,3 +494,14 @@ Voce, Galleria, cartelle cifrate, centro privacy, Attività su Murena); le corre
   DECISO (10 novembre): il motore è Tesseract; ONNX non si prova (porterebbe solo peso, non qualità). Prossimi passi: compilare
   Tesseract e Leptonica dai sorgenti dentro il progetto (third_party, come whisper.cpp) al posto dell'AAR di JitPack, per F-Droid;
   poi nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile, lettura dei biglietti scansionati per i Viaggi.
+
+## Aspetto Eurise per Linux (10 novembre, deciso dal proprietario) – ultimo passo della chat del brand
+Dopo l'approvazione del brand, prima delle app desktop. Per GNOME (Ubuntu, Fedora) e KDE (Kubuntu e altri).
+- GNOME: estensione "Aspetto Eurise" (extensions.gnome.org, un clic) che accesa applica e spenta ripristina: tema di icone Eurise
+  (anche per Firefox, LibreOffice, Thunderbird…), sfondi che cambiano con l'ora (cieli della Scrivania, Perla e Notte), accento,
+  chiaro/scuro, Plus Jakarta Sans, dock di Ubuntu flottante e satinato, tema del pannello. Da verificare che la revisione accetti
+  un'estensione che porta il tema di icone; in alternativa pacchetti .deb e .rpm.
+- KDE: tema globale (icone, colori, stile del pannello e delle finestre, sfondi) installabile dalle impostazioni con un clic.
+- Limite: le app libadwaita di GNOME prendono accento, caratteri e chiaro/scuro ma non forme proprie; niente CSS forzato
+  (si rompe a ogni aggiornamento). Schermata di accesso fuori.
+- Metodo: anteprime sulla tela, pagina "Linux" (scrivania Ubuntu con pannello, dock, File e sfondo; stessa cosa per KDE).
