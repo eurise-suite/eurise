@@ -20,7 +20,11 @@
         android:label="@string/gallery_app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.EuriseGallery">
-        <activity android:name=".GalleryActivity" android:exported="true">
+        <activity
+            android:name=".GalleryActivity"
+            android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

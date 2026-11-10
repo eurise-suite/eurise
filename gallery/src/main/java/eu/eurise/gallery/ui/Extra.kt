@@ -459,6 +459,7 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
     val scope = rememberCoroutineScope()
     val pager = rememberPagerState(initialPage = start.coerceAtLeast(0)) { list.size }
     var confirmDelete by remember { mutableStateOf(false) }
+    var playing by remember { mutableStateOf<SecureItem?>(null) }
     val failedText = stringResource(R.string.action_failed)
     Box(Modifier.fillMaxSize().background(Color(0xFF14171C))) {
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { list[it].id }) { page ->
@@ -466,13 +467,7 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
             val image by produceState<ImageBitmap?>(null, item.id) {
                 value = withContext(Dispatchers.IO) { if (item.isVideo) vm.secure.thumbnail(item)?.asImageBitmap() else vm.secure.image(item)?.asImageBitmap() }
             }
-            ZoomableBitmap(image, item.isVideo, item.id, onPlay = {
-                scope.launch {
-                    val file = withContext(Dispatchers.IO) { vm.secure.videoFile(item) } ?: return@launch
-                    val open = Intent(Intent.ACTION_VIEW).setDataAndType(context.fileUri(file), item.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    runCatching { context.startActivity(open) }
-                }
-            })
+            ZoomableBitmap(image, item.isVideo, item.id, onPlay = { playing = item })
         }
         val current = list.getOrNull(pager.currentPage) ?: return@Box
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp)) { RoundAction(EuriseIcons.close(), stringResource(R.string.close), onClose) }
@@ -494,6 +489,10 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
                 },
                 dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
             )
+        }
+        // Video della cartella protetta: si guardano qui, senza passare da altre app.
+        playing?.let { video ->
+            VideoScreen(item = null, title = video.name, load = { withContext(Dispatchers.IO) { vm.secure.videoFile(video) }?.let(android.net.Uri::fromFile) }, actions = null, onClose = { playing = null })
         }
     }
 }

@@ -212,4 +212,25 @@
         <item quantity="one">%1$d selezionata</item>
         <item quantity="other">%1$d selezionate</item>
     </plurals>
+    <string name="more">Altro</string>
+    <string name="video_failed">Questo video non si può riprodurre qui. Prova «Apri con un\'altra app» dal menu.</string>
+    <string name="video_back10">Indietro di 10 secondi</string>
+    <string name="video_forward10">Avanti di 10 secondi</string>
+    <string name="video_pause">Pausa</string>
+    <string name="video_speed">Velocità</string>
+    <string name="video_mute">Togli l\'audio</string>
+    <string name="video_unmute">Rimetti l\'audio</string>
+    <string name="video_loop">Ripeti</string>
+    <string name="video_frame">Fotogramma come foto</string>
+    <string name="video_frame_done">Fotogramma salvato in Immagini › Eurise</string>
+    <string name="video_cut">Taglia</string>
+    <string name="video_cut_hint">Tieni da %1$s a %2$s · trascina le maniglie. L\'originale resta com\'è.</string>
+    <string name="video_cut_save">Salva copia</string>
+    <string name="video_cut_working">Taglio in corso…</string>
+    <string name="video_cut_done">Copia salvata in Film › Eurise</string>
+    <string name="video_cut_failed">Questo video non si può tagliare senza ricodificarlo</string>
+    <string name="video_pip">Finestra sopra le altre app</string>
+    <string name="video_open_other">Apri con un\'altra app</string>
+    <string name="video_volume">Volume %1$d %%</string>
+    <string name="video_brightness">Luminosità %1$d %%</string>
 </resources>
