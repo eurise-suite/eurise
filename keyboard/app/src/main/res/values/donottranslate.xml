@@ -72,6 +72,6 @@
 
     <string name="english_ime_name" translatable="false">Eurise Tastiera</string>
     <!-- App slogan-->
-    <string name="app_slogan" translatable="false">100% FOSS keyboard, based on AOSP.</string>
+    <string name="app_slogan" translatable="false">Tastiera libera della suite Eurise, based on HeliBoard (GPL-3.0).</string>
 
 </resources>

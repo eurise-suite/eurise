@@ -804,11 +804,29 @@ public class LatinIME extends InputMethodService implements
         mStatsUtilsManager.onStartInputView();
         euriseRestoreLanguage(editorInfo);
         if (mEuriseBar != null) mEuriseBar.onStartInput();
+        euriseHideImeNavBar();
         if (mSettings.getCurrent().mGestureInputEnabled && !helium314.keyboard.latin.utils.JniUtils.sHaveGestureLib)
             eu.eurise.keyboard.EuriseGlide.INSTANCE.prepare(this, mRichImm.getCurrentSubtypeLocale());
     }
 
     // --- Eurise ---------------------------------------------------------------------------------
+
+    /**
+     * Toglie la fascia di sistema sotto i tasti con la freccia "abbassa" e il mondo "cambia tastiera" (navigazione a
+     * gesti): la tastiera scende e recupera quello spazio. Dove il sistema non lo permette, non cambia nulla.
+     * Abbassare resta col gesto indietro; cambiare tastiera con la pressione lunga sulla barra spaziatrice.
+     */
+    private void euriseHideImeNavBar() {
+        if (android.os.Build.VERSION.SDK_INT < 35) return;
+        try {
+            final android.view.Window window = getWindow().getWindow();
+            if (window == null) return;
+            final android.view.WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) controller.hide(android.view.WindowInsets.Type.captionBar());
+        } catch (Throwable ignored) {
+            // Sistemi che non lo prevedono: resta la fascia.
+        }
+    }
 
     /** La barra di Eurise sopra i tasti (null se la vista non l'ha). */
     private eu.eurise.keyboard.EuriseBar mEuriseBar;
@@ -1282,7 +1300,9 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         final int stripHeight = mKeyboardSwitcher.isShowingStripContainer() ? mKeyboardSwitcher.getStripContainer().getHeight() : 0;
-        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight;
+        // Eurise: anche la barra di Eurise (e i suoi pannelli) occupa schermo; senza contarla le app restano coperte.
+        final int euriseHeight = mEuriseBar != null && mEuriseBar.isShown() ? mEuriseBar.getHeight() : 0;
+        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight - euriseHeight;
         if (Settings.getValues().mIsFloatingKeyboard)
             visibleTopY = getResources().getDisplayMetrics().heightPixels;
 

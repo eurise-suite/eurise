@@ -115,31 +115,61 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         }
     }
 
+    /**
+     * I sei comandi: Calcola, Codici, File, Persona, Disponibilità, Browser. Icona sopra l'etichetta, così ci stanno
+     * tutti anche sui telefoni stretti; con le proposte presenti restano solo le icone. Browser: tocco = cerca subito,
+     * pressione lunga = scegli il browser o l'assistente.
+     */
     private fun buildButtons(compact: Boolean) {
         buttons.removeAllViews()
         listOf(
-            Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
+            Command(R.string.eurise_calc, R.drawable.eurise_ic_calc) { open(CalcPanel(this)) },
+            Command(R.string.eurise_codes, R.drawable.eurise_ic_key) { open(CodesPanel(this)) },
             Command(R.string.eurise_file, R.drawable.eurise_ic_folder) { open(FilePanel(this)) },
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
-            Command(R.string.eurise_codes, R.drawable.eurise_ic_key) { open(CodesPanel(this)) },
-            Command(R.string.eurise_calc, R.drawable.eurise_ic_calc) { open(CalcPanel(this)) },
+            Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
+            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { searchWeb(WebSearch.chosen(context)) },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
             val active = panel?.title == label
-            val b = context.pill(if (compact) "" else text, p, on = active, icon = icon) { if (active) close() else action() }
-            // Cinque comandi: testo più piccolo e meno margine, così "Disponibilità" ci sta anche sui telefoni stretti.
-            b.setPadding(context.dp(6), 0, context.dp(6), 0)
-            (b.getChildAt(b.childCount - 1) as? android.widget.TextView)?.apply {
-                textSize = 11.5f
-                ellipsize = android.text.TextUtils.TruncateAt.END
-            }
-            (b.getChildAt(0) as? android.widget.ImageView)?.layoutParams?.let { (it as LinearLayout.LayoutParams).marginEnd = if (compact) 0 else context.dp(4) }
-            b.contentDescription = text
-            buttons.addView(b.lp(0, context.dp(40), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(5) })
+            val b = command(if (compact) "" else text, icon, active) { if (active) close() else action() }
+            if (label == R.string.eurise_browser) b.setOnLongClickListener { open(BrowserPanel(this)); true }
+            buttons.addView(b.lp(0, context.dp(if (compact) 40 else 46), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(4) })
         }
     }
 
-    // --- Pannelli ---
+    /** Un comando: icona e, sotto, l'etichetta piccola. */
+    private fun command(label: String, icon: Int, on: Boolean, onClick: () -> Unit) = LinearLayout(context).apply {
+        orientation = VERTICAL
+        gravity = Gravity.CENTER
+        background = rounded(if (on) p.accent else p.surface, context.dp(12).toFloat(), p.faint)
+        isClickable = true
+        contentDescription = label
+        setOnClickListener { onClick() }
+        addView(android.widget.ImageView(context).apply {
+            setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, icon)?.mutate()?.apply { setTint(if (on) p.onAccent else p.accent) })
+            layoutParams = LayoutParams(context.dp(18), context.dp(18))
+        })
+        if (label.isNotEmpty()) addView(android.widget.TextView(context).apply {
+            text = label
+            textSize = 10f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(if (on) p.onAccent else p.text)
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            gravity = Gravity.CENTER
+            setPadding(context.dp(2), context.dp(2), context.dp(2), 0)
+        })
+    }
+
+    /** Cerca sul web ciò che è selezionato o scritto nel campo (l'ultima riga), con [target] o il browser predefinito. */
+    internal fun searchWeb(target: WebSearch.Target?) {
+        val ic = ime.currentInputConnection
+        val selected = ic?.getSelectedText(0)?.toString().orEmpty()
+        val query = selected.ifBlank { before(300).substringAfterLast('\n') }
+        close()
+        WebSearch.run(context, target, query)
+    }
 
     internal fun open(next: Panel) {
         panel?.onClose()

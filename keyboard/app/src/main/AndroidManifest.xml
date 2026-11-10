@@ -155,6 +155,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         <package android:name="eu.eurise.password.debug" />
         <package android:name="eu.eurise.voice" />
         <package android:name="eu.eurise.voice.debug" />
+        <!-- Eurise: i browser installati, per il comando Browser della barra. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
         <!-- To detect other IMEs -->
         <intent>
             <!-- changed to * as it's supposed to help with finding other keyboard apps, see https://github.com/HeliBorg/HeliBoard/issues/1340 -->

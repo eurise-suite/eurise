@@ -60,4 +60,9 @@
     <string name="eurise_calc_keys">ABC</string>
     <string name="eurise_calc_hint">Hold "Write" to insert the calculation too</string>
     <string name="eurise_calc_delete">Delete</string>
+    <string name="eurise_browser">Browser</string>
+    <string name="eurise_browser_choose">Where to search</string>
+    <string name="eurise_browser_browsers">Browsers</string>
+    <string name="eurise_browser_ai">Web assistants</string>
+    <string name="eurise_browser_note">The keyboard never goes online: it opens the browser with what you typed. Your choice is kept; tap Browser to search right away.</string>
 </resources>
