@@ -3,6 +3,14 @@
 Nota di passaggio per chi riprende il lavoro sul marchio. Questo file è separato da `docs/STATO.md`
 per non toccare i file su cui lavora la chat del ramo `tastiera`.
 
+## Decisione (10 novembre 2026, sera)
+- **Simbolo approvato: la stella polare** (variante `polare` / `polarep` di `BrandMark`, tavola `BrandPolare`).
+  Polare al centro con raggi sottili, 44 stelle (Stati d'Europa, conteggio ONU) disposte a sfera, più piccole
+  allontanandosi; nessuna tocca la polare. Sotto i 40 px (simbolo) o 72 px (icona) si usa la versione con 16 stelle.
+  Colori approvati: blu notte #1F2A44 e oro #D2B06A (ottone #85672B sui fondi chiari).
+- Portato su tutte le tavole: logotipo, famiglia, Android, avvio, F-Droid, sito. La firma degli APK separati è ora
+  una stellina d'oro (non più il sole). Restano da approvare: famiglia, schermata di avvio, frase, nome e dominio.
+
 ## Stato (10 novembre 2026)
 - Anteprime sulla tela "Icone della suite", pagina nuova **Brand** (https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo).
   Nessuna è ancora approvata: il codice non è stato toccato.
