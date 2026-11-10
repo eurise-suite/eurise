@@ -80,6 +80,12 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   sfera raccolta a circa 4/5 del tondo; versione piccola con 16 stelle. Varianti `globo` e `globop`
   (cambio automatico come per `sfera`). La tavola confronta prima, ottava e via di mezzo nelle icone.
 
+## Decima prova (10 novembre): tavola `BrandPolare`, animata
+- Polare della stessa grandezza ma con raggi sottili (punto di controllo delle curve al 10% del raggio invece del 28%:
+  niente più «rombo»). Copertura dell'area come la nona. Regola: nessuna stellina tocca la polare; distanza minima
+  pari a quella delle due stelline che nella nona stavano in alto a destra (circa 1 unità su 48 dal bordo della
+  polare e un raggio libero di circa 0,68 R attorno al centro). Varianti `polare` (44 stelle) e `polarep` (16).
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
