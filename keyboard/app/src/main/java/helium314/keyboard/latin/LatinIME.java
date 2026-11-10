@@ -772,6 +772,8 @@ public class LatinIME extends InputMethodService implements
     public void setInputView(final View view) {
         super.setInputView(view);
         mInputView = view;
+        mEuriseBar = view.findViewById(R.id.eurise_bar);
+        if (mEuriseBar != null) mEuriseBar.attach(this, view);
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
         updateSuggestionStripView(view);
@@ -800,6 +802,60 @@ public class LatinIME extends InputMethodService implements
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInputView(editorInfo, restarting);
         mStatsUtilsManager.onStartInputView();
+        euriseRestoreLanguage(editorInfo);
+        if (mEuriseBar != null) mEuriseBar.onStartInput();
+        if (mSettings.getCurrent().mGestureInputEnabled && !helium314.keyboard.latin.utils.JniUtils.sHaveGestureLib)
+            eu.eurise.keyboard.EuriseGlide.INSTANCE.prepare(this, mRichImm.getCurrentSubtypeLocale());
+    }
+
+    // --- Eurise ---------------------------------------------------------------------------------
+
+    /** La barra di Eurise sopra i tasti (null se la vista non l'ha). */
+    private eu.eurise.keyboard.EuriseBar mEuriseBar;
+
+    /** Sostituisce i [before] caratteri prima del cursore con [text] (0 = inserisce soltanto). */
+    public void euriseReplace(final int before, final String text) {
+        final android.view.inputmethod.InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
+        mInputLogic.finishInput();
+        ic.beginBatchEdit();
+        ic.finishComposingText();
+        if (before > 0) ic.deleteSurroundingText(before, 0);
+        if (!text.isEmpty()) ic.commitText(text, 1);
+        ic.endBatchEdit();
+    }
+
+    /** Allega un file se il campo accetta quel tipo di contenuto; falso altrimenti (la barra apre allora Condividi). */
+    public boolean euriseCommitFile(final java.io.File file, final String mime) {
+        final EditorInfo ei = getCurrentInputEditorInfo();
+        final android.view.inputmethod.InputConnection ic = getCurrentInputConnection();
+        if (ei == null || ic == null) return false;
+        boolean accepted = false;
+        for (final String m : androidx.core.view.inputmethod.EditorInfoCompat.getContentMimeTypes(ei)) {
+            if (android.content.ClipDescription.compareMimeTypes(mime, m)) { accepted = true; break; }
+        }
+        if (!accepted) return false;
+        final android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".eurise.files", file);
+        final androidx.core.view.inputmethod.InputContentInfoCompat info =
+                new androidx.core.view.inputmethod.InputContentInfoCompat(uri, new android.content.ClipDescription(file.getName(), new String[] { mime }), null);
+        return androidx.core.view.inputmethod.InputConnectionCompat.commitContent(ic, ei, info,
+                androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION, null);
+    }
+
+    /** Lingua ricordata per ogni app: si riprende quella usata l'ultima volta in quell'app. */
+    private void euriseRestoreLanguage(final EditorInfo editorInfo) {
+        if (editorInfo == null || editorInfo.packageName == null) return;
+        final String saved = KtxKt.prefs(this).getString("eurise_lang_" + editorInfo.packageName, null);
+        if (saved == null) return;
+        final InputMethodSubtype current = mRichImm.getCurrentSubtype().getRawSubtype();
+        if (saved.equals(euriseKey(current))) return;
+        for (final InputMethodSubtype s : mRichImm.getEnabledInputMethodSubtypes(mRichImm.getInputMethodInfoOfThisIme(), true)) {
+            if (saved.equals(euriseKey(s))) { switchToSubtype(s); return; }
+        }
+    }
+
+    private static String euriseKey(final InputMethodSubtype s) {
+        return s.getLocale() + "|" + s.getExtraValue();
     }
 
     @Override
@@ -807,6 +863,7 @@ public class LatinIME extends InputMethodService implements
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();
+        if (mEuriseBar != null) mEuriseBar.onFinishInput();
         mGestureConsumer = GestureConsumer.NULL_GESTURE_CONSUMER;
         BackgroundGatheringCache.saveOrClear(this);
     }
@@ -836,6 +893,9 @@ public class LatinIME extends InputMethodService implements
             Log.d(TAG, "switching to subtype " + SettingsSubtype.Companion.toSettingsSubtype(subtype));
         mSubtypeState.onSubtypeChanged(oldSubtype, subtype);
         StatsUtils.onSubtypeChanged(oldSubtype, subtype);
+        final EditorInfo euriseEditor = getCurrentInputEditorInfo();
+        if (euriseEditor != null && euriseEditor.packageName != null)
+            KtxKt.prefs(this).edit().putString("eurise_lang_" + euriseEditor.packageName, euriseKey(subtype)).apply();
         mRichImm.onSubtypeChanged(subtype);
         mInputLogic.onSubtypeChanged(SubtypeLocaleUtils.getCombiningRulesExtraValue(subtype),
                 mSettings.getCurrent());
@@ -1074,6 +1134,7 @@ public class LatinIME extends InputMethodService implements
                                   final int composingSpanStart, final int composingSpanEnd) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd,
                 composingSpanStart, composingSpanEnd);
+        if (mEuriseBar != null) mEuriseBar.onTextChanged();
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "onUpdateSelection: oss=" + oldSelStart + ", ose=" + oldSelEnd
                     + ", nss=" + newSelStart + ", nse=" + newSelEnd

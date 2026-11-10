@@ -65,7 +65,11 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_PINK = "pink"
         const val THEME_SAND = "sand"
         const val THEME_VIOLETTE = "violette"
+        // Eurise: Perla (chiaro) e Notte (blu-grafite con accento azzurro), come il resto della suite.
+        const val THEME_PERLA = "perla"
+        const val THEME_NOTTE = "notte"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
+            if (!isNight) THEME_PERLA else null, THEME_NOTTE,
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
@@ -148,6 +152,30 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
             return when (themeName) {
+                THEME_PERLA -> DefaultColors(
+                    themeStyle,
+                    hasBorders,
+                    "#1F2A44".toColorInt(), // accento
+                    "#E4E6E9".toColorInt(), // fondo
+                    "#FFFFFF".toColorInt(), // tasti
+                    "#C9CCD2".toColorInt(), // tasti funzione
+                    "#FFFFFF".toColorInt(), // spazio
+                    "#1E1D1B".toColorInt(), // testo
+                    "#8A8B85".toColorInt(), // simboli in piccolo
+                    keyboardBackground = backgroundImage
+                )
+                THEME_NOTTE -> DefaultColors(
+                    themeStyle,
+                    hasBorders,
+                    "#8FB8FF".toColorInt(),
+                    "#151B26".toColorInt(),
+                    "#263042".toColorInt(),
+                    "#1C2433".toColorInt(),
+                    "#263042".toColorInt(),
+                    "#E6EAF2".toColorInt(),
+                    "#8C97AA".toColorInt(),
+                    keyboardBackground = backgroundImage
+                )
                 THEME_DYNAMIC -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
                     else getThemeColors(THEME_LIGHT, themeStyle, context, prefs, isNight)

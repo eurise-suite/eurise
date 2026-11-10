@@ -39,6 +39,7 @@ public final class JniUtils {
         };
     }
 
+    private static final boolean EURISE_LOAD_PROPRIETARY = false;
     public static boolean sHaveGestureLib = false;
     static {
         // hardcoded default path, may not work on all phones
@@ -63,7 +64,8 @@ public final class JniUtils {
         } catch (Exception e) {
             userSuppliedLibrary = null;
         }
-        if (!BuildConfig.BUILD_TYPE.equals("nouserlib") && userSuppliedLibrary != null) {
+        // Eurise: niente librerie chiuse di Google, né fornite dall'utente né di sistema (regola della suite).
+        if (EURISE_LOAD_PROPRIETARY && !BuildConfig.BUILD_TYPE.equals("nouserlib") && userSuppliedLibrary != null) {
             String wantedChecksum = expectedDefaultChecksum();
             try {
                 if (app != null) {
@@ -91,7 +93,7 @@ public final class JniUtils {
             }
         }
 
-        if (!sHaveGestureLib) {
+        if (EURISE_LOAD_PROPRIETARY && !sHaveGestureLib) {
             // try loading google library, will fail unless the library is in system and this is a system app
             try {
                 System.loadLibrary(JNI_LIB_NAME_GOOGLE);

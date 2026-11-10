@@ -32,6 +32,7 @@ import helium314.keyboard.settings.preferences.ListPreference
 import helium314.keyboard.settings.preferences.Preference
 import helium314.keyboard.settings.preferences.ReorderSwitchPreference
 import helium314.keyboard.settings.preferences.SwitchPreference
+import helium314.keyboard.settings.preferences.TextInputPreference
 import helium314.keyboard.latin.utils.previewDark
 
 @Composable
@@ -46,6 +47,10 @@ fun ToolbarScreen(
     val clipboardToolbarVisible = toolbarMode != ToolbarMode.HIDDEN
         || !prefs.getBoolean(Settings.PREF_TOOLBAR_HIDING_GLOBAL, Defaults.PREF_TOOLBAR_HIDING_GLOBAL)
     val items = listOf(
+        Settings.PREF_EURISE_BAR,
+        Settings.PREF_TOOLBAR_KEY_LEFT,
+        eu.eurise.keyboard.EuriseBar.SEPARATE_TOOLS,
+        eu.eurise.keyboard.EuriseBar.ABBREVIATIONS,
         Settings.PREF_TOOLBAR_MODE,
         if (toolbarMode == ToolbarMode.HIDDEN) Settings.PREF_TOOLBAR_HIDING_GLOBAL else null,
         if (toolbarMode != ToolbarMode.HIDDEN) Settings.PREF_TOOLBAR_SWIPE_DOWN_TO_HIDE else null,
@@ -73,6 +78,19 @@ fun ToolbarScreen(
 }
 
 fun createToolbarSettings(context: Context) = listOf(
+    // Eurise: barra con i quattro comandi, lato del tasto degli strumenti, fila separata, abbreviazioni.
+    Setting(context, Settings.PREF_EURISE_BAR, R.string.eurise_bar_setting, R.string.eurise_bar_setting_summary) {
+        SwitchPreference(it, Defaults.PREF_EURISE_BAR) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
+    },
+    Setting(context, Settings.PREF_TOOLBAR_KEY_LEFT, R.string.eurise_key_left, R.string.eurise_key_left_summary) {
+        SwitchPreference(it, Defaults.PREF_TOOLBAR_KEY_LEFT) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
+    },
+    Setting(context, eu.eurise.keyboard.EuriseBar.SEPARATE_TOOLS, R.string.eurise_separate, R.string.eurise_separate_summary) {
+        SwitchPreference(it, false) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
+    },
+    Setting(context, eu.eurise.keyboard.EuriseBar.ABBREVIATIONS, R.string.eurise_abbreviations, R.string.eurise_abbreviations_summary) {
+        TextInputPreference(it, "")
+    },
     Setting(context, Settings.PREF_TOOLBAR_MODE, R.string.toolbar_mode) { setting ->
         val ctx = LocalContext.current
         val items =

@@ -12,4 +12,6 @@
     <string name="action_new_note">Nuova nota</string>
     <string name="action_new_task">Nuova attività</string>
     <string name="action_quick_add">Aggiungi</string>
+    <string name="keyboard_task_created">Attività creata: %1$s</string>
+    <string name="keyboard_note_created">Nota creata</string>
 </resources>

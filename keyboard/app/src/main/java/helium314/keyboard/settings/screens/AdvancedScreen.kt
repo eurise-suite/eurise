@@ -89,7 +89,7 @@ fun AdvancedSettingsScreen(
         Settings.PREF_EMOJI_MAX_SDK,
         Settings.PREF_URL_DETECTION,
         Settings.PREF_ENABLE_HARDWARE_KEYBOARD,
-        if (BuildConfig.BUILD_TYPE != "nouserlib") SettingsWithoutKey.LOAD_GESTURE_LIB else null
+        null // Eurise: nessuna libreria chiusa da caricare (regola della suite)
     )
     SearchSettingsScreen(
         onClickBack = onClickBack,

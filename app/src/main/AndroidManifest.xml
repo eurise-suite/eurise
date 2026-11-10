@@ -57,5 +57,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Eurise Tastiera: attività e note create dalla tastiera. Solo app Eurise con la stessa firma. -->
+        <receiver
+            android:name=".KeyboardBridgeReceiver"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.KEYBOARD_TASK" />
+                <action android:name="eu.eurise.action.KEYBOARD_NOTE" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

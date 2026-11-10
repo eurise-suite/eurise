@@ -220,6 +220,8 @@
     <string name="user_dict_word_already_present">La parola si trova già nel dizionario utente %s.</string>
     <string name="style_name_Rounded" tools:keep="@string/style_name_Rounded">Arrotondato</string>
     <string name="theme_name_black" tools:keep="@string/theme_name_black">Nero</string>
+    <string name="theme_name_perla" tools:keep="@string/theme_name_perla">Perla</string>
+    <string name="theme_name_notte" tools:keep="@string/theme_name_notte">Notte</string>
     <string name="theme_name_chocolate" tools:keep="@string/theme_name_chocolate">Cioccolato</string>
     <string name="remove_dictionary_message">Vuoi davvero rimuovere il dizionario \"%s\"?</string>
     <string name="theme_name_cloudy" tools:keep="@string/theme_name_cloudy">Nuvola</string>

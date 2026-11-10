@@ -4,6 +4,8 @@
     <!-- Internet serve solo alla sincronizzazione del file cifrato, che si accende con un interruttore. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Permesso della suite: solo le app Eurise firmate con la stessa chiave (Eurise Tastiera) leggono i codici 2FA. -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
     <application
         android:allowBackup="false"
@@ -11,6 +13,11 @@
         android:label="@string/pwd_app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.EurisePassword">
+        <provider
+            android:name=".keyboard.CodesProvider"
+            android:authorities="${applicationId}.codes"
+            android:exported="true"
+            android:readPermission="${suitePermission}" />
         <activity
             android:name=".PasswordActivity"
             android:launchMode="singleTop"

@@ -13,6 +13,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Eurise: orari liberi e proposte "forse" nel Calendario, chiesti solo toccando Disponibilità. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Permesso della suite: parla solo con le app Eurise firmate con la stessa chiave (attività, note, codici 2FA). -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <uses-permission android:name="${suitePermission}" />
 
     <application android:label="@string/english_ime_name"
             android:name="helium314.keyboard.latin.App"
@@ -129,9 +135,24 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/gesture_data_path"/>
         </provider>
+        <activity android:name="eu.eurise.keyboard.EurisePermissionActivity"
+            android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:exported="false" />
+        <activity android:name="eu.eurise.keyboard.EuriseFilePickActivity"
+            android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:exported="false" />
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.eurise.files"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/eurise_pick_paths" />
+        </provider>
     </application>
 
     <queries>
+        <!-- Le altre app di Eurise: attività e note (Eurise), codici 2FA (Password). -->
+        <package android:name="eu.eurise.hub" />
+        <package android:name="eu.eurise.hub.debug" />
+        <package android:name="eu.eurise.password" />
+        <package android:name="eu.eurise.password.debug" />
         <!-- To detect other IMEs -->
         <intent>
             <!-- changed to * as it's supposed to help with finding other keyboard apps, see https://github.com/HeliBorg/HeliBoard/issues/1340 -->

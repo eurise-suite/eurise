@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Testi di Eurise Tastiera (le parti aggiunte a HeliBoard). -->
+<resources>
+    <string name="eurise_availability">Disponibilità</string>
+    <string name="eurise_file">File</string>
+    <string name="eurise_person">Persona</string>
+    <string name="eurise_codes">Codici</string>
+    <string name="eurise_bar_description">Comandi di Eurise</string>
+    <string name="eurise_close">Chiudi</string>
+    <string name="eurise_prev_month">Mese precedente</string>
+    <string name="eurise_next_month">Mese successivo</string>
+    <string name="eurise_free_on">%1$s · libero</string>
+    <string name="eurise_busy_on">%1$s · nessun orario libero</string>
+    <string name="eurise_minutes_30">30 min</string>
+    <string name="eurise_hour_1">1 ora</string>
+    <string name="eurise_hours_2">2 ore</string>
+    <string name="eurise_tentative">Tienili come «forse» nel Calendario</string>
+    <string name="eurise_tentative_title">Forse · proposto</string>
+    <string name="eurise_insert">Inserisci</string>
+    <string name="eurise_pick_day">Tocca un giorno, poi gli orari: puoi sceglierne in più giorni.</string>
+    <string name="eurise_chosen">%1$d orari scelti</string>
+    <string name="eurise_calendar_private">Letto sul telefono: esce solo il testo che invii, non i tuoi impegni.</string>
+    <string name="eurise_need_calendar">Per vedere gli orari liberi la tastiera deve leggere il Calendario del telefono. Non va su Internet: nulla esce.</string>
+    <string name="eurise_need_contacts">Per inserire un contatto la tastiera deve leggere la Rubrica del telefono. Non va su Internet: nulla esce.</string>
+    <string name="eurise_allow">Permetti</string>
+    <string name="eurise_starred">Preferiti</string>
+    <string name="eurise_all_contacts">Tutti</string>
+    <string name="eurise_no_contacts">Nessun contatto</string>
+    <string name="eurise_file_pick">Scegli un file</string>
+    <string name="eurise_file_hint">Dal telefono o da un cloud (Murena, Nextcloud, kDrive, Proton…). Se l\'app accetta il file lo allega qui, altrimenti si apre Condividi. Il link dal cloud di Eurise arriva con il collegamento a File.</string>
+    <string name="eurise_file_private">La tastiera non va su Internet: il file passa solo all\'app in cui scrivi.</string>
+    <string name="eurise_codes_locked">La cassaforte di Password è chiusa.</string>
+    <string name="eurise_codes_open_password">Apri Password</string>
+    <string name="eurise_codes_none">Nessun codice per quest\'app. In Password collega la voce a questa app per vederlo qui.</string>
+    <string name="eurise_codes_missing">Per i codici serve Eurise Password.</string>
+    <string name="eurise_codes_private">Solo il codice del momento, e solo per la voce collegata a quest\'app. Le password non escono da Password.</string>
+    <string name="eurise_create_task">Crea attività</string>
+    <string name="eurise_task_sent">Attività mandata a Eurise</string>
+    <string name="eurise_hub_missing">Serve l\'app Eurise per creare attività e note.</string>
+    <string name="eurise_save_note">Salva in Note</string>
+    <string name="eurise_save_contact">Salva nel contatto</string>
+    <string name="eurise_copied_iban">IBAN copiato</string>
+    <string name="eurise_copied_phone">Numero copiato</string>
+    <string name="eurise_copied_email">Email copiata</string>
+    <string name="eurise_note_sent">Nota mandata a Eurise</string>
+    <string name="eurise_arrive">alle %1$s · %2$s</string>
+    <string name="eurise_settings_title">Eurise</string>
+    <string name="eurise_bar_setting">Barra di Eurise</string>
+    <string name="eurise_bar_setting_summary">Disponibilità, File, Persona e Codici sopra i tasti</string>
+    <string name="eurise_key_left">Tasto degli strumenti a sinistra</string>
+    <string name="eurise_key_left_summary">Per chi scrive con la mano sinistra</string>
+    <string name="eurise_separate">Strumenti in una fila a parte</string>
+    <string name="eurise_separate_summary">Suggerimenti e strumenti su due file separate</string>
+    <string name="eurise_abbreviations">Abbreviazioni</string>
+    <string name="eurise_abbreviations_summary">Una per riga: ind=Via Roma 1, Torino</string>
+    <string name="eurise_glide">Scrittura scorrendo (Eurise)</string>
+    <string name="eurise_glide_summary">Riconoscitore libero di Eurise, senza librerie esterne</string>
+</resources>

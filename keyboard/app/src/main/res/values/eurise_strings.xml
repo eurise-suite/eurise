@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Testi di Eurise Tastiera (le parti aggiunte a HeliBoard). -->
+<resources>
+    <string name="eurise_availability">Availability</string>
+    <string name="eurise_file">File</string>
+    <string name="eurise_person">Person</string>
+    <string name="eurise_codes">Codes</string>
+    <string name="eurise_bar_description">Eurise commands</string>
+    <string name="eurise_close">Close</string>
+    <string name="eurise_prev_month">Previous month</string>
+    <string name="eurise_next_month">Next month</string>
+    <string name="eurise_free_on">%1$s · free</string>
+    <string name="eurise_busy_on">%1$s · no free time</string>
+    <string name="eurise_minutes_30">30 min</string>
+    <string name="eurise_hour_1">1 hour</string>
+    <string name="eurise_hours_2">2 hours</string>
+    <string name="eurise_tentative">Keep them as “maybe” in the Calendar</string>
+    <string name="eurise_tentative_title">Maybe · proposed</string>
+    <string name="eurise_insert">Insert</string>
+    <string name="eurise_pick_day">Tap a day, then the times: you can pick them on several days.</string>
+    <string name="eurise_chosen">%1$d times chosen</string>
+    <string name="eurise_calendar_private">Read on the phone: only the text you send leaves, not your events.</string>
+    <string name="eurise_need_calendar">To show free times the keyboard needs to read the phone Calendar. It has no Internet access: nothing leaves.</string>
+    <string name="eurise_need_contacts">To insert a contact the keyboard needs to read the phone Contacts. It has no Internet access: nothing leaves.</string>
+    <string name="eurise_allow">Allow</string>
+    <string name="eurise_starred">Favourites</string>
+    <string name="eurise_all_contacts">All</string>
+    <string name="eurise_no_contacts">No contacts</string>
+    <string name="eurise_file_pick">Choose a file</string>
+    <string name="eurise_file_hint">From the phone or a cloud (Murena, Nextcloud, kDrive, Proton…). If the app accepts the file it is attached here, otherwise Share opens. Cloud links from Eurise come with the File connection.</string>
+    <string name="eurise_file_private">The keyboard has no Internet access: the file only goes to the app you are typing in.</string>
+    <string name="eurise_codes_locked">The Password vault is locked.</string>
+    <string name="eurise_codes_open_password">Open Password</string>
+    <string name="eurise_codes_none">No code for this app. In Password, link the entry to this app to see it here.</string>
+    <string name="eurise_codes_missing">Codes need Eurise Password.</string>
+    <string name="eurise_codes_private">Only the current code, and only for the entry linked to this app. Passwords never leave Password.</string>
+    <string name="eurise_create_task">Create task</string>
+    <string name="eurise_task_sent">Task sent to Eurise</string>
+    <string name="eurise_hub_missing">The Eurise app is needed to create tasks and notes.</string>
+    <string name="eurise_save_note">Save to Notes</string>
+    <string name="eurise_save_contact">Save to contact</string>
+    <string name="eurise_copied_iban">IBAN copied</string>
+    <string name="eurise_copied_phone">Number copied</string>
+    <string name="eurise_copied_email">Email copied</string>
+    <string name="eurise_note_sent">Note sent to Eurise</string>
+    <string name="eurise_arrive">at %1$s · %2$s</string>
+    <string name="eurise_settings_title">Eurise</string>
+    <string name="eurise_bar_setting">Eurise bar</string>
+    <string name="eurise_bar_setting_summary">Availability, File, Person and Codes above the keys</string>
+    <string name="eurise_key_left">Tools key on the left</string>
+    <string name="eurise_key_left_summary">For left-handed typing</string>
+    <string name="eurise_separate">Tools on a separate row</string>
+    <string name="eurise_separate_summary">Suggestions and tools on two rows</string>
+    <string name="eurise_abbreviations">Abbreviations</string>
+    <string name="eurise_abbreviations_summary">One per line: addr=1 Main Street</string>
+    <string name="eurise_glide">Glide typing (Eurise)</string>
+    <string name="eurise_glide_summary">Eurise free recognizer, no external libraries</string>
+</resources>

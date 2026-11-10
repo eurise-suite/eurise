@@ -740,6 +740,8 @@ New dictionary:
     <!-- Theme name for brown theme -->
     <string name="theme_name_brown" tools:keep="@string/theme_name_brown">Brown</string>
     <!-- Theme name for chocolate theme -->
+    <string name="theme_name_perla" tools:keep="@string/theme_name_perla">Pearl</string>
+    <string name="theme_name_notte" tools:keep="@string/theme_name_notte">Night</string>
     <string name="theme_name_chocolate" tools:keep="@string/theme_name_chocolate">Chocolate</string>
     <!-- Theme name for cloudy theme -->
     <string name="theme_name_cloudy" tools:keep="@string/theme_name_cloudy">Cloudy</string>

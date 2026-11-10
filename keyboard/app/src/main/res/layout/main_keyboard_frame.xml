@@ -16,6 +16,12 @@
         android:id="@+id/strip_container"
         layout="@layout/strip_container" />
 
+    <!-- Eurise: barra con Disponibilità, File, Persona e Codici; i suoi pannelli si aprono al posto dei tasti. -->
+    <eu.eurise.keyboard.EuriseBar
+        android:id="@+id/eurise_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <!-- To ensure that key preview popup is correctly placed when the current system locale is
          one of RTL locales, layoutDirection="ltr" is needed in the SDK version 17+. -->
     <helium314.keyboard.latin.KeyboardWrapperView

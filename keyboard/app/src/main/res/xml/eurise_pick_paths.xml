@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File scelti da "File" nella barra di Eurise: copie temporanee nella cache della tastiera. -->
+<paths>
+    <cache-path name="eurise_pick" path="eurise_pick" />
+</paths>

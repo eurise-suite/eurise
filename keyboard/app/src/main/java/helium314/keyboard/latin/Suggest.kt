@@ -273,7 +273,10 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
         settingsValuesForSuggestion: SettingsValuesForSuggestion,
         inputStyle: Int, isCorrectionEnabled: Boolean, sequenceNumber: Int
     ): SuggestedWords {
-        val suggestionResults = mDictionaryFacilitator.getSuggestionResults(
+        // Eurise: senza la libreria chiusa di Google la traccia la legge il riconoscitore libero di Eurise.
+        val suggestionResults = if (!helium314.keyboard.latin.utils.JniUtils.sHaveGestureLib)
+            eu.eurise.keyboard.EuriseGlide.suggest(wordComposer.composedDataSnapshot, keyboard, mDictionaryFacilitator.mainLocale)
+        else mDictionaryFacilitator.getSuggestionResults(
             wordComposer.composedDataSnapshot, ngramContext, keyboard,
             settingsValuesForSuggestion, SESSION_ID_GESTURE, inputStyle
         )

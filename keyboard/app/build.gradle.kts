@@ -16,6 +16,7 @@ android {
         targetSdk = 37
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -59,12 +60,15 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
         }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
             isMinifyEnabled = false
             isJniDebuggable = false
         }
         create("debugNoMinify") { // for faster builds in IDE
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
             isDebuggable = true
             isMinifyEnabled = false
             isJniDebuggable = false
