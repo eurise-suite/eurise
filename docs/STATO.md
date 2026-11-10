@@ -412,3 +412,22 @@ Priorità invariata: /e/OS e Android prima di tutto. Quanto segue viene dopo tut
   `data/SensitiveGate.kt` chiede impronta o PIN per vedere, copiare o compilare dati riservati e carte, valido 2 minuti, chiuso dal
   blocco; compilazione dei moduli di dati in `autofill` (`Matching.byProfileWords`, test in KdbxTest). Android 8 senza richiesta PIN.
 - Tastiera: tasto microfono sulla fila in basso accanto alla virgola (solo lettere), apre la dettatura di Eurise Voce.
+
+## Calcolatrice, lettore QR, lettura dei documenti (10 novembre, sera) – anteprime da approvare
+Richiesta del proprietario prima di allontanarsi. Tela, pagina nuova "Calcolatrice, QR e documenti" e pagina Integrazioni (TastCalcolatrice).
+- Tastiera: quinto pulsante "Calcola" nella barra di Eurise (Disponibilità, File, Persona, Codici, Calcola), con icona sopra l'etichetta
+  per farli stare tutti; il pannello sostituisce i tasti: tastierino con %, IVA, €↔, "Scrivi 1.525" (tenuto premuto scrive anche il calcolo).
+- Calcolatrice (CalcPrincipale, CalcPro, CalcGrafico): nastro dei calcoli con etichette e "Salva in Note", risultato mentre si scrive,
+  funzioni scientifiche; Professionale: fattura con cassa, IVA, ritenuta, forfettario con bollo, anche dal netto, più scorporo IVA,
+  sconto e ricarico, rata, giorni tra date; Unità; Grafico con funzioni, zeri, minimo e intersezioni. Da decidere: sezione dell'APK
+  principale (come Orologio) o app a parte; proposta: sezione dell'APK principale, `feature/calculator`.
+- Motore già scritto e provato (core/data/calc): `Calc` (numeri all'italiana, percentuali da ufficio, funzioni, gradi/radianti,
+  formato) e `Invoice` (prospetto e calcolo inverso dal netto), test in `CalcTest`. Il grafico richiederà la variabile x.
+- Lettore QR (QrLettore, QrRisultato): oggi è una modalità dello Scanner con una finestra semplice. Proposta: lettore a sé con torcia,
+  "Da una foto", "Crea un QR", "Letti prima"; risultati capiti per tipo: pagoPA (importo, codice avviso, ente; la scadenza non è nel
+  codice, la sceglie la persona → Da fare), link con dominio in evidenza, Wi-Fi, contatti, eventi, IBAN, 2FA verso Password.
+- Lettura dei documenti (DocLeggi, DocMotore), letta come "lettura del testo" (OCR) delle scansioni e dei PDF: nome proposto, cartella,
+  scadenze e importi → Da fare, PDF cercabile, lettura ad alta voce. DECISIONE DEL PROPRIETARIO prima del codice: il motore (pesante,
+  nativo) va in un'app a parte "Eurise Leggi" scaricata a richiesta, come previsto; candidati liberi da provare con un prototipo che
+  misuri peso e qualità in italiano: Tesseract (Apache 2.0, tramite Tesseract4Android) o un modello leggero via ONNX Runtime (MIT).
+  Interruttore con spiegazione (analisi dei contenuti), tutto sul telefono.
