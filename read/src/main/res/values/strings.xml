@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="read_app_name">Eurise Leggi (prova)</string>
+    <string name="read_title">Leggi il testo di un documento</string>
+    <string name="read_intro">Prototipo: scegli la foto o la scansione di un documento in italiano. Il testo si legge sul telefono; sotto trovi tempo e fiducia media, per confrontare.</string>
+    <string name="read_pick">Scegli un\'immagine</string>
+    <string name="read_download">Scarica l\'italiano</string>
+    <string name="read_remove">Togli l\'italiano</string>
+    <string name="read_reading">Leggo…</string>
+    <string name="read_downloading">Scarico la lingua italiana…</string>
+    <string name="read_download_failed">Scaricamento non riuscito. Riprova con la rete.</string>
+    <string name="read_stats">%1$.1f s · fiducia media %2$d · immagine %3$d×%4$d</string>
+    <string name="read_failed">Lettura non riuscita: %1$s</string>
+    <string name="read_download_title">Scaricare l\'italiano?</string>
+    <string name="read_download_text">Per leggere serve la lingua italiana di Tesseract (circa 3 MB), presa una volta da GitHub (tesseract-ocr/tessdata_fast). Dal telefono non parte nulla: né documenti né identificativi. Si toglie quando vuoi.</string>
+    <string name="read_download_ok">Scarica</string>
+    <string name="read_cancel">Annulla</string>
+</resources>

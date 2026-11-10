@@ -11,6 +11,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Solo per il prototipo di Eurise Leggi, e solo per la libreria di Tesseract.
+        if (System.getenv("EURISE_READ") == "1") {
+            maven("https://jitpack.io") { content { includeGroup("cz.adaptech.tesseract4android") } }
+        }
     }
 }
 
@@ -20,6 +24,8 @@ include(":app")
 include(":gallery")
 include(":password")
 include(":voice")
+// Prototipo di Eurise Leggi: si compila solo nel suo lavoro, per non toccare le altre compilazioni.
+if (System.getenv("EURISE_READ") == "1") include(":read")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")

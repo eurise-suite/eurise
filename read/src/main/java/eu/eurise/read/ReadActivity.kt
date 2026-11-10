@@ -1,0 +1,159 @@
+package eu.eurise.read
+
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.googlecode.tesseract.android.TessBaseAPI
+import eu.eurise.core.designsystem.theme.EuriseTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+
+/**
+ * Prototipo di Eurise Leggi: si sceglie un'immagine (scansione, foto di un documento), si legge il testo in italiano
+ * sul telefono e si vedono tempo e fiducia media. Serve a misurare, non è ancora l'app.
+ */
+class ReadActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        setContent { EuriseTheme { Surface(Modifier.fillMaxSize()) { ReadScreen() } } }
+    }
+}
+
+private const val MODEL_URL = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/ita.traineddata"
+
+@Composable
+private fun ReadScreen() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dataDir = remember { File(context.filesDir, "tesseract") }
+    val model = remember { File(dataDir, "tessdata/ita.traineddata") }
+    var hasModel by remember { mutableStateOf(model.exists()) }
+    var askDownload by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf<String?>(null) }
+    var result by remember { mutableStateOf("") }
+    var stats by remember { mutableStateOf("") }
+
+    fun read(uri: Uri) {
+        busy = context.getString(R.string.read_reading)
+        scope.launch {
+            val (text, line) = withContext(Dispatchers.Default) {
+                runCatching {
+                    val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+                        ?: error("immagine")
+                    val start = System.currentTimeMillis()
+                    val api = TessBaseAPI()
+                    try {
+                        check(api.init(dataDir.absolutePath, "ita")) { "init" }
+                        api.setImage(bitmap.copy(Bitmap.Config.ARGB_8888, false))
+                        val out = api.utF8Text.orEmpty()
+                        val ms = System.currentTimeMillis() - start
+                        out to context.getString(R.string.read_stats, ms / 1000.0, api.meanConfidence(), bitmap.width, bitmap.height)
+                    } finally {
+                        api.recycle()
+                    }
+                }.getOrElse { "" to context.getString(R.string.read_failed, it.message.orEmpty()) }
+            }
+            result = text
+            stats = line
+            busy = null
+        }
+    }
+
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let(::read) }
+
+    Column(
+        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(stringResource(R.string.read_title), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.read_intro), style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (hasModel) Button(onClick = { pick.launch("image/*") }, enabled = busy == null) { Text(stringResource(R.string.read_pick)) }
+            else Button(onClick = { askDownload = true }, enabled = busy == null) { Text(stringResource(R.string.read_download)) }
+            if (hasModel) OutlinedButton(onClick = { model.delete(); hasModel = false }) { Text(stringResource(R.string.read_remove)) }
+        }
+        busy?.let { Text(it) }
+        if (stats.isNotEmpty()) Text(stats, style = MaterialTheme.typography.labelLarge)
+        if (result.isNotEmpty()) SelectionContainer { Text(result, style = MaterialTheme.typography.bodyMedium) }
+    }
+
+    if (askDownload) {
+        AlertDialog(
+            onDismissRequest = { askDownload = false },
+            title = { Text(stringResource(R.string.read_download_title)) },
+            text = { Text(stringResource(R.string.read_download_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    askDownload = false
+                    busy = context.getString(R.string.read_downloading)
+                    scope.launch {
+                        val ok = withContext(Dispatchers.IO) { runCatching { download(model) }.isSuccess }
+                        hasModel = ok && model.exists()
+                        busy = if (ok) null else context.getString(R.string.read_download_failed)
+                    }
+                }) { Text(stringResource(R.string.read_download_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { askDownload = false }) { Text(stringResource(R.string.read_cancel)) } },
+        )
+    }
+}
+
+/** Scarica la lingua italiana di Tesseract (tessdata_fast); nulla del telefono viene inviato. */
+private fun download(target: File) {
+    target.parentFile?.mkdirs()
+    var url = URL(MODEL_URL)
+    repeat(5) {
+        val c = url.openConnection() as HttpURLConnection
+        c.instanceFollowRedirects = false
+        c.connectTimeout = 15_000
+        c.readTimeout = 30_000
+        when (c.responseCode) {
+            in 300..399 -> { url = URL(url, c.getHeaderField("Location")); c.disconnect() }
+            200 -> {
+                val tmp = File(target.parentFile, target.name + ".part")
+                c.inputStream.use { input -> tmp.outputStream().use { input.copyTo(it) } }
+                check(tmp.renameTo(target))
+                return
+            }
+            else -> error("HTTP ${c.responseCode}")
+        }
+    }
+    error("troppi rinvii")
+}

@@ -457,3 +457,37 @@ lettura dei documenti; "mi fido del resto" (lettore QR compreso). Proverà diret
   5. Lettura dei documenti (DocLeggi, DocMotore): app a parte "Eurise Leggi" scaricata a richiesta. Primo passo: prototipo che
      compili il motore su GitHub Actions e ne misuri peso e qualità in italiano (Tesseract via Tesseract4Android, Apache 2.0);
      poi nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile. Interruttore con spiegazione, tutto sul telefono.
+
+## 11 novembre, notte: riunioni, modalità, cestino unico, viaggi, prototipo Leggi (ramo `tastiera`)
+Il proprietario prova sul telefono quanto in attesa (ricerca universale, I miei dati, web app, calcolatrice, lettore QR, Tastiera,
+Voce, Galleria, cartelle cifrate, centro privacy, Attività su Murena); le correzioni arrivano dalla sua prova. Intanto, nell'ordine:
+- Riunioni (APK 194–195): `feature/notes/meeting` (MeetingScreen, MeetingViewModel, MeetingDoc con test). "Nota della riunione"
+  nell'evento (non per quelli di tutto il giorno) e avviso un minuto prima dell'inizio per gli eventi con altre persone invitate
+  (`Reminders`, canale "Inizio delle riunioni"). Presenti dagli invitati (`CalendarRepository.attendees`, `isMeeting`), ordine del
+  giorno anche dagli elenchi della descrizione, appunti. "Chiudi la riunione": le righe con @persona e data (`core/data/meetings/
+  MeetingActions`, test) diventano attività collegate a nota ed evento; si può richiamare per le azioni nuove. Riassunto solo a
+  richiesta (condividi). La nota è normale (si apre anche in Note), nasce alla prima modifica; `MeetingStore` lega occorrenza e nota.
+- Modalità (APK 195): `core/data/modes` (ModeRules puro con test, Modes con salvataggio e sveglia `ModeReceiver`). Nel Pannello una
+  fila Lavoro/Casa/Viaggio/Notte: tocco = a mano fino al prossimo cambio (ritocco = automatico), pressione lunga o "Imposta" =
+  `ModesSheet`. Ognuna: categoria di partenza della Scrivania (anche il tasto Home ci porta), notifiche (Non disturbare, con
+  spiegazione prima di chiedere l'accesso; nel centro privacy compare tra i permessi), suoneria, calendari ed elenchi visibili
+  (filtrati in Calendario e Attività). Accensione per orario (festivi italiani e giorni con evento "Ferie"/"Vacanze" saltabili) o
+  durante gli eventi di un calendario; mai luogo. Uscendo tornano suoneria e filtro di prima. Di base tutto spento.
+- Cestino unico (APK 196): database 7 (tabella `trash`, migrazione 6→7), `core/data/trash/TrashRepository`. Attività (con passi) ed
+  eventi tolti vengono copiati con i collegamenti e tornano (id nuovi) ricollegati; note col loro cestino; file col cestino di File;
+  foto dal cestino di Android 11+ (ripristino con conferma di sistema; servono i permessi foto, altrimenti avviso). Si apre da
+  File › Cestino e dal cestino di Note (rotta `trash`). Filtri, Svuota con conferma, "Passa a un telefono nuovo" → backup cifrato.
+  Mancano: Password e Galleria (serve il permesso di firma), eventi ricorrenti (non si cancellano da Eurise).
+- Viaggi (APK 197): `core/data/trips` (PdfText: testo dei PDF senza librerie, con test; Bcbp: carte d'imbarco IATA; Tickets: voli e
+  treni dal testo; Airports: ~150 aeroporti con fuso). `feature/calendar/trips` (TripScreen, TripViewModel: codici PDF417/Aztec letti
+  dalle pagine con PdfRenderer + ZXing). Si apre condividendo un PDF verso Eurise, da File (azione "Viaggio" sui PDF) o dal Lettore QR
+  (carta d'imbarco; il lettore ora legge anche PDF417 e Aztec). Ognuna togliibile: Calendario (orari del luogo convertiti nel fuso
+  del telefono), sveglia in una data (Alarm.date, `ClockContract.trip`), fuso della destinazione nell'Orologio, PDF in Documenti ›
+  Viaggi, modalità Viaggio nelle date (`Modes.addTrip`). Diario nella Galleria e mappa offline mostrati spenti (arrivano con i loro
+  APK). Limiti: le scansioni (immagini) non si leggono finché non c'è Eurise Leggi; treni riconosciuti con regole semplici.
+- Lettura dei documenti, primo passo (prototipo): modulo `read/` (Eurise Leggi, prova) con Tesseract4Android 4.7.0 (JitPack, solo per
+  quel gruppo e solo con EURISE_READ=1, così non tocca le altre compilazioni). Lavoro "Prototipo Eurise Leggi": APK
+  `eurise-leggi-debug-N`, peso nel riepilogo, e misura della qualità in italiano (`.github/scripts/ocr_quality.py`: documenti di
+  prova rovinati come scansioni e foto, modelli fast e best, caratteri e parole giusti, importi/scadenze/codici ritrovati).
+  DECISIONE DEL PROPRIETARIO dopo i numeri: tenere Tesseract (F-Droid vorrà compilarlo dai sorgenti, non dall'AAR di JitPack) o
+  provare un modello ONNX. Poi: nome proposto, cartella, scadenze e importi → Da fare, PDF cercabile.

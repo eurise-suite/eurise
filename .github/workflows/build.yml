@@ -167,6 +167,53 @@ jobs:
           path: keyboard/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+  # Prototipo di Eurise Leggi (lettura del testo delle scansioni): peso dell'APK e qualità in italiano.
+  # Lavoro a parte e facoltativo: se fallisce, gli altri APK restano buoni.
+  read:
+    name: Prototipo Eurise Leggi
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    env:
+      EURISE_READ: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compila il prototipo
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon :read:assembleDebug :read:assembleRelease 2>&1 | tee build.log | tail -30
+
+      - name: Carica l'APK di Leggi
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-leggi-debug-${{ github.run_number }}
+          path: read/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Pesa il prototipo
+        run: |
+          python3 .github/scripts/apk_size.py "Eurise Leggi, prova" read/build/outputs/apk/debug/*.apk
+          python3 .github/scripts/apk_size.py "Eurise Leggi, versione ridotta" read/build/outputs/apk/release/*.apk
+
+      - name: Misura la qualità in italiano
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr fonts-dejavu-core > /dev/null
+          tesseract --version | head -1
+          mkdir -p fast best
+          curl -sSL -o fast/ita.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/ita.traineddata
+          curl -sSL -o best/ita.traineddata https://github.com/tesseract-ocr/tessdata_best/raw/main/ita.traineddata
+          pip install --quiet pillow
+          python3 .github/scripts/ocr_quality.py fast best
+
   release:
     name: APK firmato (solo per i tag v*)
     if: startsWith(github.ref, 'refs/tags/v')
