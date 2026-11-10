@@ -12,6 +12,10 @@ set(RUY ${THIRD}/ruy)
 set(SPM ${THIRD}/sentencepiece)
 set(GEN ${CMAKE_CURRENT_BINARY_DIR}/gen)
 set(OPT -O2 -w -ffunction-sections -fdata-sections -fvisibility=hidden -fvisibility-inlines-hidden)
+if(NOT ANDROID)
+  # Sul computer (GCC e libstdc++) alcuni file non includono <cstdint> da soli; con l'NDK arriva già.
+  list(APPEND OPT -include cstdint)
+endif()
 
 # ruy (moltiplicazione di matrici a 8 bit) ---------------------------------------------------------------------
 file(GLOB RUY_SRC ${RUY}/ruy/*.cc)
