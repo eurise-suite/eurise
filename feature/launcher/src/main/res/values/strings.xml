@@ -567,4 +567,13 @@
     <string name="home_clock_alarm">Sveglia</string>
     <string name="home_clock_stopwatch">Cronometro</string>
     <string name="home_clock_timer">Conto alla rovescia</string>
+    <string name="home_widget">Widget</string>
+    <string name="home_widget_desc">Il widget di un\'altra app, dentro una bolla</string>
+    <string name="home_widget_tab_bubbles">Bolle di Eurise</string>
+    <string name="home_widget_tab_apps">Widget delle app</string>
+    <string name="home_widget_loading">Cerco i widget delle app…</string>
+    <string name="home_widget_none">Nessuna app installata offre widget.</string>
+    <string name="home_widget_privacy">Il widget lo disegna la sua app: Eurise lo mostra e basta, non legge cosa contiene. Android chiede una volta il permesso.</string>
+    <string name="home_widget_open">Apri l\'app</string>
+    <string name="home_widget_gone">L\'app di questo widget non c\'è più: toglilo tenendo premuta la bolla.</string>
 </resources>

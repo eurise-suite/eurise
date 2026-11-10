@@ -839,12 +839,25 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onClose = { categoryEditor = false },
                 )
             }
+            // Un solo «aggiungi widget» fuori dai fogli: il foglio si chiude mentre Android chiede il permesso.
+            var widgetPage by remember { mutableStateOf(0) }
+            val addWidget = eu.eurise.feature.launcher.home.rememberWidgetAdder { id ->
+                val w = eu.eurise.feature.launcher.home.HomeSlot(eu.eurise.feature.launcher.home.HomeKind.AppWidget, 1f, widget = id)
+                viewModel.updateSettings {
+                    when (widgetPage) {
+                        1 -> it.copy(leftSlots = it.leftSlots + w)
+                        2 -> it.copy(rightSlots = it.rightSlots + w)
+                        else -> it.copy(homeSlots = it.homeSlots + w)
+                    }
+                }
+            }
             sideCatalog?.let { left ->
                 val slots = if (left) settings.leftSlots else settings.rightSlots
                 val save = { next: List<eu.eurise.feature.launcher.home.HomeSlot> ->
                     viewModel.updateSettings { if (left) it.copy(leftSlots = next) else it.copy(rightSlots = next) }
                 }
                 eu.eurise.feature.launcher.home.HomeCatalog(
+                    onWidget = { info -> sideCatalog = null; widgetPage = if (left) 1 else 2; addWidget(info) },
                     slots = slots,
                     onAdd = { kind ->
                         save(slots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth))
@@ -856,6 +869,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             }
             if (homeCatalog) {
                 eu.eurise.feature.launcher.home.HomeCatalog(
+                    onWidget = { info -> homeCatalog = false; widgetPage = 0; addWidget(info) },
                     slots = settings.homeSlots,
                     onAdd = { kind ->
                         viewModel.updateSettings { it.copy(homeSlots = it.homeSlots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth)) }
@@ -1027,6 +1041,13 @@ private fun HomeBubble(
             eu.eurise.feature.launcher.home.HomeKind.Videos -> eu.eurise.feature.launcher.videos.VideosPill(
                 home.videos, home.hasChannels, hazeState, mod, home.onOpenVideo, home.onChannels,
             )
+            eu.eurise.feature.launcher.home.HomeKind.AppWidget -> {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.dp)
+                eu.eurise.feature.launcher.home.WidgetBubble(slot.widget, hazeState, sized) { pkg ->
+                    context.packageManager.getLaunchIntentForPackage(pkg)?.let { runCatching { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+                }
+            }
             else -> slot.kind.card?.let { kind ->
                 // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
                 val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
