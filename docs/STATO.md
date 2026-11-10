@@ -400,3 +400,15 @@ Priorità invariata: /e/OS e Android prima di tutto. Quanto segue viene dopo tut
   pagina Password, fila "I miei dati" (PwdDati, PwdDatiCompila). Password oggi compila solo accessi e carte: i dati personali e
   professionali (P.IVA, CF, PEC, codice univoco, IBAN, sede, documenti) sono da scrivere, dentro la cassaforte .kdbx, con
   impronta o PIN per vederli, copiarli o compilarli. Più profili (Personale, Studio).
+- Ricerca universale con una mano (APK 189, tavole RicBasso/RicAppuntamento/RicDocumenti approvate con due modifiche): barra in basso,
+  contatti (punteggio dalle interazioni, `ContactsRepository.ranked`) e app in file laterali indipendenti, due voci intere e la terza
+  accennata, primo risultato a destra ("Ricerca per mancini" in Aspetto lo porta a sinistra); sopra, Calendario, Note, Attività e
+  conversazioni. Fila Nota/Da fare/Evento/Documenti/Web sopra la tastiera: fogli rapidi in `core/links/QuickSheets.kt` (evento con
+  mese e orari liberi, `core/data/calendar/FreeSlots` con test), `files/DocumentsSheet.kt` (telefono + Murena/Nextcloud con
+  `WebDav.search`), Web con il browser predefinito. Invio apre il primo contatto o la prima app. Tolti il + della barra e i bersagli
+  browser/AI della vecchia ricerca. Le cartelle di kDrive/Proton aggiunte in File non sono cercate dal foglio Documenti.
+- Password, I miei dati (APK 189, tavole PwdDati con "Altri dati" e PwdDatiCompila): profili come voci KeePass con il segno
+  `Eurise-Profilo` e un campo per dato (persona, attività, indirizzo, più i campi aggiunti con titolo e valore), `logic/Profiles.kt`;
+  `data/SensitiveGate.kt` chiede impronta o PIN per vedere, copiare o compilare dati riservati e carte, valido 2 minuti, chiuso dal
+  blocco; compilazione dei moduli di dati in `autofill` (`Matching.byProfileWords`, test in KdbxTest). Android 8 senza richiesta PIN.
+- Tastiera: tasto microfono sulla fila in basso accanto alla virgola (solo lettere), apre la dettatura di Eurise Voce.
