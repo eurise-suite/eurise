@@ -115,6 +115,7 @@ import eu.eurise.core.data.EuriseData
 import eu.eurise.core.designsystem.component.GlassDefaults
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.theme.EuriseTheme
+import eu.eurise.feature.launcher.home.tellKeyboardTheme
 import eu.eurise.feature.launcher.apps.AppEntry
 import eu.eurise.feature.launcher.apps.AppIcon
 import eu.eurise.feature.launcher.apps.BarCategory
@@ -299,6 +300,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
         .let { s -> when (settings.themeMode) { 1 -> s.copy(forceDark = false); 2 -> s.copy(forceDark = true); else -> s } }
+    // La tastiera di Eurise segue le bolle: scure qui, scura anche lei.
+    androidx.compose.runtime.LaunchedEffect(scene.themeDark) { context.tellKeyboardTheme(scene.themeDark) }
     EuriseTheme(darkTheme = scene.themeDark) {
       // Di notte l'accento si abbassa e si intona allo sfondo: meno acceso, più scuro.
       val accent = settings.accent.color(scene.themeDark).let { if (scene.themeDark) nightAccent(it) else it }

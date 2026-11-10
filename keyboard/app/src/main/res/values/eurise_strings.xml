@@ -51,6 +51,8 @@
     <string name="eurise_key_left_summary">For left-handed typing</string>
     <string name="eurise_bar_on_top">Eurise bar above suggestions</string>
     <string name="eurise_bar_on_top_summary">Off: suggestions on top and the bar right above the keys</string>
+    <string name="eurise_follow_home">Light and dark like the Desk</string>
+    <string name="eurise_follow_home_summary">When the Eurise Desk bubbles are dark, the keyboard is dark too</string>
     <string name="eurise_separate">Tools on a separate row</string>
     <string name="eurise_separate_summary">Suggestions and tools on two rows</string>
     <string name="eurise_abbreviations">Abbreviations</string>

@@ -88,7 +88,8 @@ object Defaults {
     @JvmField
     val PREF_SPLIT_SPACER_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
-    val PREF_KEYBOARD_HEIGHT_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    // Eurise: tasti più alti in verticale (prova dell'11 novembre: con il 100% si prendeva spesso il tasto accanto).
+    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(1.12f, DEFAULT_SIZE_SCALE, 1.12f, DEFAULT_SIZE_SCALE)
     @JvmField
     val PREF_BOTTOM_ROW_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField

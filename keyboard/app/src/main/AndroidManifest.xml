@@ -145,6 +145,15 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:exported="false">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/eurise_pick_paths" />
         </provider>
+        <!-- Eurise: la Scrivania dice se le sue bolle sono scure. Solo app Eurise con la stessa firma. -->
+        <receiver
+            android:name="eu.eurise.keyboard.HomeThemeReceiver"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.HOME_THEME" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <queries>

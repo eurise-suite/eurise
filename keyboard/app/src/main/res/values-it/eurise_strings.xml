@@ -51,6 +51,8 @@
     <string name="eurise_key_left_summary">Per chi scrive con la mano sinistra</string>
     <string name="eurise_bar_on_top">Barra di Eurise sopra i suggerimenti</string>
     <string name="eurise_bar_on_top_summary">Spenta: i suggerimenti stanno in alto e la barra subito sopra i tasti</string>
+    <string name="eurise_follow_home">Chiaro e scuro come la Scrivania</string>
+    <string name="eurise_follow_home_summary">Se le bolle della Scrivania di Eurise sono scure, anche la tastiera è scura</string>
     <string name="eurise_separate">Strumenti in una fila a parte</string>
     <string name="eurise_separate_summary">Suggerimenti e strumenti su due file separate</string>
     <string name="eurise_abbreviations">Abbreviazioni</string>

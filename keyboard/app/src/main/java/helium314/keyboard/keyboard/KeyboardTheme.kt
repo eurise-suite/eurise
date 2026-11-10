@@ -137,8 +137,11 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         @JvmStatic
         fun getColorsForCurrentTheme(context: Context): Colors {
             val prefs = context.prefs()
+            val dayNight = prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT)
+            // Eurise: in automatico la tastiera segue le bolle della Scrivania (vedi HomeTheme), se Eurise l'ha detto.
             val isNight = SettingsActivity.forceNight
-                ?: (ResourceUtils.isNight(context.resources) && prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT))
+                ?: (if (dayNight) eu.eurise.keyboard.HomeTheme.dark(prefs) else null)
+                ?: (ResourceUtils.isNight(context.resources) && dayNight)
             val themeName = SettingsActivity.forceTheme ?: if (isNight)
                 prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT)
             else
