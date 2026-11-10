@@ -227,6 +227,19 @@ class DriveData(private val context: Context) {
         target
     }
 
+    /** Scrive [file] con il nome [name] nella stessa cartella di [item] (telefono, cloud, cartella cifrata o di un'altra app). */
+    suspend fun writeBeside(item: DriveItem, name: String, file: File) = withContext(Dispatchers.IO) {
+        val path = join(item.path.substringBeforeLast('/', ""), name)
+        val vault = fs(item.place)
+        val other = tree(item.place)
+        when {
+            other != null -> other.write(path, android.net.Uri.fromFile(file))
+            vault != null -> vault.write(path, file)
+            item.place.account == null -> file.copyTo(File(root, path), overwrite = false)
+            else -> dav(item.place).upload(path, file)
+        }
+    }
+
     /** Sposta nella cartella [folder] dello stesso luogo. */
     suspend fun move(item: DriveItem, folder: String) = withContext(Dispatchers.IO) {
         val target = join(folder, item.name)

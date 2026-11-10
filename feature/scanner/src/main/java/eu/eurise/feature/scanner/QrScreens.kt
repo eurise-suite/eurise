@@ -88,7 +88,7 @@ internal class QrHistory(context: Context) {
     fun clear() = prefs.edit().remove("history").apply()
 }
 
-private fun Context.copy(text: String) {
+internal fun Context.copy(text: String) {
     getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("QR", text))
     Toast.makeText(this, R.string.qr_copied, Toast.LENGTH_SHORT).show()
 }
@@ -121,7 +121,7 @@ internal fun qrSummary(c: QrContent): Pair<ImageVector, String> = when (c) {
 }
 
 @Composable
-private fun Field(label: String, value: String, copy: Boolean = true) {
+internal fun Field(label: String, value: String, copy: Boolean = true) {
     val context = LocalContext.current
     Row(Modifier.fillMaxWidth().heightIn(min = 54.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
@@ -136,17 +136,17 @@ private fun Field(label: String, value: String, copy: Boolean = true) {
 }
 
 @Composable
-private fun Group(content: @Composable () -> Unit) {
+internal fun Group(content: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)) { content() }
 }
 
 @Composable
-private fun Primary(label: String, onClick: () -> Unit) {
+internal fun Primary(label: String, onClick: () -> Unit) {
     Button(onClick = onClick, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(18.dp)) { Text(label, fontWeight = FontWeight.Bold) }
 }
 
 @Composable
-private fun Secondary(label: String, onClick: () -> Unit) {
+internal fun Secondary(label: String, onClick: () -> Unit) {
     Box(
         Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,

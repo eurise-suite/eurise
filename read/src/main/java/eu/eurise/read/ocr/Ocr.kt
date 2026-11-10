@@ -27,10 +27,13 @@ class Ocr private constructor(private var handle: Long) : Closeable {
     /** Legge il testo di [bitmap] (convertita in ARGB_8888 se serve). */
     fun read(bitmap: Bitmap): String {
         val argb = if (bitmap.config == Bitmap.Config.ARGB_8888) bitmap else bitmap.copy(Bitmap.Config.ARGB_8888, false)
-        val text = nativeRead(live(), argb) ?: error("immagine non leggibile")
+        val text = nativeRead(live(), argb)?.toString(Charsets.UTF_8) ?: error("immagine non leggibile")
         if (argb !== bitmap) argb.recycle()
         return text
     }
+
+    /** Le parole dell'ultima lettura con i riquadri (TSV di Tesseract), da leggere con `OcrWords.fromTsv`. */
+    fun words(): String = nativeTsv(live()).toString(Charsets.UTF_8)
 
     /** Fiducia media dell'ultima lettura, da 0 a 100. */
     fun confidence(): Int = nativeConfidence(live())
@@ -58,7 +61,8 @@ class Ocr private constructor(private var handle: Long) : Closeable {
         @JvmStatic private external fun nativeClose(handle: Long)
         @JvmStatic private external fun nativeSetVariable(handle: Long, name: String, value: String): Boolean
         @JvmStatic private external fun nativeSetPageSegMode(handle: Long, mode: Int)
-        @JvmStatic private external fun nativeRead(handle: Long, bitmap: Bitmap): String?
+        @JvmStatic private external fun nativeRead(handle: Long, bitmap: Bitmap): ByteArray?
+        @JvmStatic private external fun nativeTsv(handle: Long): ByteArray
         @JvmStatic private external fun nativeConfidence(handle: Long): Int
         @JvmStatic private external fun nativeClear(handle: Long)
     }

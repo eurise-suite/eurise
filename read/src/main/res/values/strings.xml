@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="read_app_name">Eurise Leggi (prova)</string>
+    <string name="read_app_name">Eurise Leggi</string>
     <string name="read_title">Leggi il testo di un documento</string>
-    <string name="read_intro">Prototipo: scegli la foto o la scansione di un documento in italiano. Il testo si legge sul telefono; sotto trovi tempo e fiducia media, per confrontare.</string>
+    <string name="read_intro">Eurise Leggi legge sul telefono il testo delle scansioni per l\'app Eurise (Scanner, File, Viaggi), quando lo chiedi. Qui scegli le lingue e puoi provare la lettura su un\'immagine.</string>
     <string name="read_pick">Scegli un\'immagine</string>
     <string name="read_download">Scarica l\'italiano</string>
     <string name="read_remove">Togli l\'italiano</string>
@@ -22,4 +22,6 @@
     <string name="card_no_holder">intestatario non letto</string>
     <string name="card_use">Usa questi dati</string>
     <string name="card_privacy">Si legge sul telefono e non si salva nulla: i dati vanno solo a Eurise Password. Il codice CVV si scrive a mano.</string>
+    <string name="read_add_english">Aggiungi l\'inglese (4 MB)</string>
+    <string name="read_remove_english">Togli l\'inglese</string>
 </resources>

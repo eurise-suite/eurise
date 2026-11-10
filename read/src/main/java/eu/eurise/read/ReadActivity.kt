@@ -62,7 +62,9 @@ private fun ReadScreen() {
     val scope = rememberCoroutineScope()
     val dataDir = remember { TessModel.dataDir(context) }
     val model = remember { TessModel.file(context) }
+    val english = remember { TessModel.file(context, "eng") }
     var hasModel by remember { mutableStateOf(model.exists()) }
+    var hasEnglish by remember { mutableStateOf(english.exists()) }
     var askDownload by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf("") }
@@ -76,7 +78,7 @@ private fun ReadScreen() {
                     val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                         ?: error("immagine")
                     val start = System.currentTimeMillis()
-                    val ocr = Ocr.open(dataDir) ?: error("modello")
+                    val ocr = Ocr.open(dataDir, TessModel.languages(context) ?: "ita") ?: error("modello")
                     ocr.use {
                         val out = it.read(bitmap)
                         val ms = System.currentTimeMillis() - start
@@ -102,6 +104,17 @@ private fun ReadScreen() {
             if (hasModel) Button(onClick = { pick.launch("image/*") }, enabled = busy == null) { Text(stringResource(R.string.read_pick)) }
             else Button(onClick = { askDownload = true }, enabled = busy == null) { Text(stringResource(R.string.read_download)) }
             if (hasModel) OutlinedButton(onClick = { model.delete(); hasModel = false }) { Text(stringResource(R.string.read_remove)) }
+        }
+        if (hasModel) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (hasEnglish) OutlinedButton(onClick = { english.delete(); hasEnglish = false }, enabled = busy == null) { Text(stringResource(R.string.read_remove_english)) }
+            else OutlinedButton(onClick = {
+                busy = context.getString(R.string.read_downloading)
+                scope.launch {
+                    val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(english) }.isSuccess }
+                    hasEnglish = ok && english.exists()
+                    busy = if (ok) null else context.getString(R.string.read_download_failed)
+                }
+            }, enabled = busy == null) { Text(stringResource(R.string.read_add_english)) }
         }
         busy?.let { Text(it) }
         if (stats.isNotEmpty()) Text(stats, style = MaterialTheme.typography.labelLarge)

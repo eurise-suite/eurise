@@ -10,6 +10,8 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
+import eu.eurise.core.data.docs.ReadPage
+import eu.eurise.core.data.docs.SearchablePdf
 import android.graphics.pdf.PdfDocument
 import android.os.Build
 import android.os.Environment
@@ -115,13 +117,26 @@ object PageProcessor {
         }
     }
 
-    /** Mette il PDF in Documenti/Eurise/Scansioni, dove lo trovano anche le altre app. */
-    fun saveToPhone(context: Context, pdf: File, name: String): Boolean {
+    /**
+     * PDF cercabile: le pagine come sono (JPEG) con il testo letto da Eurise Leggi sopra, invisibile. False se una
+     * pagina non si può usare (allora si ripiega sul PDF di sole immagini).
+     */
+    fun writeSearchablePdf(pages: List<File>, read: List<ReadPage>, target: File, title: String): Boolean {
+        if (pages.size != read.size) return false
+        val built = pages.mapIndexed { i, file ->
+            SearchablePdf.pageFromJpeg(file.readBytes(), read[i].words, read[i].width) ?: return false
+        }
+        target.outputStream().buffered().use { SearchablePdf.write(built, it, title) }
+        return true
+    }
+
+    /** Mette il PDF in Documenti/[folder] (di base Documenti/Eurise/Scansioni), dove lo trovano anche le altre app. */
+    fun saveToPhone(context: Context, pdf: File, name: String, folder: String = "Eurise/Scansioni"): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, name)
                 put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/Eurise/Scansioni")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/" + folder)
             }
             val resolver = context.contentResolver
             val uri = resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return false
@@ -129,8 +144,8 @@ object PageProcessor {
             return true
         }
         @Suppress("DEPRECATION")
-        val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Eurise/Scansioni").apply { mkdirs() }
-        pdf.copyTo(File(folder, name), overwrite = false)
+        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), folder).apply { mkdirs() }
+        pdf.copyTo(File(dir, name), overwrite = false)
         return true
     }
 }

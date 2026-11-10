@@ -3,6 +3,7 @@
 #include <android/bitmap.h>
 #include <tesseract/baseapi.h>
 #include <allheaders.h>
+#include <cstring>
 #include <string>
 
 namespace {
@@ -12,6 +13,13 @@ std::string str(JNIEnv *env, jstring s) {
   const char *c = env->GetStringUTFChars(s, nullptr);
   std::string out(c);
   env->ReleaseStringUTFChars(s, c);
+  return out;
+}
+/** Testo UTF-8 come byte: NewStringUTF vuole l'UTF-8 "modificato" di Java e si rompe con i caratteri fuori dal piano base. */
+jbyteArray bytes(JNIEnv *env, const char *text) {
+  const jsize n = text != nullptr ? static_cast<jsize>(strlen(text)) : 0;
+  jbyteArray out = env->NewByteArray(n);
+  if (out != nullptr && n > 0) env->SetByteArrayRegion(out, 0, n, reinterpret_cast<const jbyte *>(text));
   return out;
 }
 }  // namespace
@@ -49,7 +57,7 @@ JNIEXPORT void JNICALL Java_eu_eurise_read_ocr_Ocr_nativeSetPageSegMode(JNIEnv *
 }
 
 /** Legge una Bitmap ARGB_8888 (in memoria R, G, B, A) e restituisce il testo, o null se l'immagine non va. */
-JNIEXPORT jstring JNICALL Java_eu_eurise_read_ocr_Ocr_nativeRead(JNIEnv *env, jclass, jlong handle, jobject bitmap) {
+JNIEXPORT jbyteArray JNICALL Java_eu_eurise_read_ocr_Ocr_nativeRead(JNIEnv *env, jclass, jlong handle, jobject bitmap) {
   AndroidBitmapInfo info;
   if (AndroidBitmap_getInfo(env, bitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS) return nullptr;
   if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) return nullptr;
@@ -60,8 +68,16 @@ JNIEXPORT jstring JNICALL Java_eu_eurise_read_ocr_Ocr_nativeRead(JNIEnv *env, jc
                  static_cast<int>(info.height), 4, static_cast<int>(info.stride));
   AndroidBitmap_unlockPixels(env, bitmap);  // SetImage copia i pixel
   char *text = tess->GetUTF8Text();
-  jstring out = env->NewStringUTF(text != nullptr ? text : "");
+  jbyteArray out = bytes(env, text);
   delete[] text;
+  return out;
+}
+
+/** Le parole dell'ultima lettura con i loro riquadri, nel formato TSV di Tesseract. */
+JNIEXPORT jbyteArray JNICALL Java_eu_eurise_read_ocr_Ocr_nativeTsv(JNIEnv *env, jclass, jlong handle) {
+  char *tsv = api(handle)->GetTSVText(0);
+  jbyteArray out = bytes(env, tsv);
+  delete[] tsv;
   return out;
 }
 

@@ -134,4 +134,12 @@
     <string name="bin_empty_text">Note, attività, eventi e file nel cestino spariscono per sempre. Le foto restano nel cestino di Android finché non le togli una per una.</string>
     <string name="bin_cancel">Annulla</string>
     <string name="drive_trip">Viaggio</string>
+    <string name="drive_text_action">Aggiungi il testo (PDF cercabile)</string>
+    <string name="drive_text_off">Prima accendi la lettura dei documenti dallo Scanner (Salva → Leggere il testo?).</string>
+    <string name="drive_text_reading">Leggo le pagine sul telefono…</string>
+    <string name="drive_text_done">Creato «%1$s» accanto all\'originale.</string>
+    <string name="drive_text_already">Questo PDF ha già il testo: si può già cercare.</string>
+    <string name="drive_text_missing">Manca Eurise Leggi: installala e riprova.</string>
+    <string name="drive_text_no_model">Apri Eurise Leggi e scarica l\'italiano, poi riprova.</string>
+    <string name="drive_text_failed">Lettura non riuscita.</string>
 </resources>

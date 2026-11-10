@@ -16,6 +16,8 @@ import eu.eurise.core.data.calendar.DeviceCalendar
 import eu.eurise.core.data.calendar.EventDraft
 import eu.eurise.core.data.modes.Modes
 import eu.eurise.core.data.trips.Leg
+import eu.eurise.core.data.docs.DocReading
+import eu.eurise.core.data.docs.ReadClient
 import eu.eurise.core.data.trips.PdfText
 import eu.eurise.core.data.trips.Tickets
 import eu.eurise.core.suite.ClockContract
@@ -78,7 +80,16 @@ class TripViewModel(private val app: Context, private val source: TripSource) : 
                         is TripSource.Barcode -> Tickets.read(listOf(source.raw), "", LocalDate.now())
                         is TripSource.Pdf -> {
                             val bytes = app.contentResolver.openInputStream(source.uri)?.use { it.readBytes() } ?: ByteArray(0)
-                            Tickets.read(barcodes(bytes), PdfText.extract(bytes), LocalDate.now())
+                            val text = PdfText.extract(bytes)
+                            // Biglietto scansionato (solo immagini): se la lettura dei documenti è accesa, lo legge Eurise Leggi.
+                            val ocr = text.isBlank() && DocReading.enabled(app)
+                            val (codes, images) = scanPages(bytes, keepImages = ocr)
+                            val scanned = if (images.isEmpty()) "" else {
+                                val r = ReadClient.read(app, images)
+                                images.forEach { it.delete() }
+                                (r as? ReadClient.Result.Pages)?.pages?.joinToString("\n\n") { it.text }.orEmpty()
+                            }
+                            Tickets.read(codes, text.ifBlank { scanned }, LocalDate.now())
                         }
                     }
                 }.getOrNull()
@@ -214,9 +225,11 @@ class TripViewModel(private val app: Context, private val source: TripSource) : 
     }
 
     /** I codici a barre delle prime pagine (carte d'imbarco: PDF417 o Aztec), letti sul telefono. */
-    private fun barcodes(bytes: ByteArray): List<String> {
+    /** I codici a barre delle prime pagine e, con [keepImages], le pagine come JPEG da leggere (da cancellare dopo). */
+    private fun scanPages(bytes: ByteArray, keepImages: Boolean): Pair<List<String>, List<File>> {
         val file = File(app.cacheDir, "trip-ticket.pdf").apply { writeBytes(bytes) }
         val out = mutableListOf<String>()
+        val images = mutableListOf<File>()
         runCatching {
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 PdfRenderer(fd).use { renderer ->
@@ -227,6 +240,7 @@ class TripViewModel(private val app: Context, private val source: TripSource) : 
                             bmp.eraseColor(android.graphics.Color.WHITE)
                             page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
                             decode(bmp)?.let { out += it }
+                            if (keepImages) images += File(app.cacheDir, "trip-page-$i.jpg").also { f -> f.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) } }
                             bmp.recycle()
                         }
                     }
@@ -234,7 +248,7 @@ class TripViewModel(private val app: Context, private val source: TripSource) : 
             }
         }
         file.delete()
-        return out
+        return out to images
     }
 
     private fun decode(bmp: Bitmap): String? {

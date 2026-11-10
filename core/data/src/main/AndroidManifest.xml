@@ -4,7 +4,19 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
+    <!-- Eurise Leggi, per leggere il testo delle scansioni (Android 11+ nasconde le altre app se non si dichiarano). -->
+    <queries>
+        <package android:name="eu.eurise.read" />
+        <package android:name="eu.eurise.read.debug" />
+    </queries>
+
     <application>
+        <!-- Pagine da leggere, passate a Eurise Leggi con un permesso temporaneo su ogni file. -->
+        <provider
+            android:name=".docs.ReadPagesProvider"
+            android:authorities="${applicationId}.readpages"
+            android:exported="false"
+            android:grantUriPermissions="true" />
         <!-- Modalità: controllo a ogni possibile cambio e dopo il riavvio. -->
         <receiver
             android:name=".modes.ModeReceiver"

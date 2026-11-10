@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:cloud"))
     implementation(project(":core:suite"))
+    implementation(project(":core:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

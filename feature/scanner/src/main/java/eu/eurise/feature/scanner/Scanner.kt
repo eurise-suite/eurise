@@ -86,6 +86,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import eu.eurise.core.cloud.CloudAccounts
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.data.docs.DocReader
+import eu.eurise.core.data.docs.DocReading
+import eu.eurise.core.data.docs.ReadClient
+import eu.eurise.core.data.docs.ReadPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -528,8 +532,29 @@ private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     val accounts = remember { CloudAccounts.get(context).accounts.value }
     val fallback = stringResource(R.string.scan_default_name)
     var name by remember { mutableStateOf("${LocalDate.now()}_$fallback") }
+    var nameTouched by remember { mutableStateOf(false) }
     var where by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    var docRead by remember { mutableStateOf<DocRead>(if (DocReading.enabled(context)) DocRead.Idle else DocRead.Off) }
+    var askReading by remember { mutableStateOf(false) }
+    val pageKey = pages.toList()
+
+    fun readText() {
+        docRead = DocRead.Reading
+        val snapshot = pages.toList()
+        scope.launch {
+            docRead = when (val r = ReadClient.read(context, snapshot)) {
+                is ReadClient.Result.Pages -> DocRead.Done(r.pages, DocReader.analyze(r.pages.joinToString("\n\n") { it.text }))
+                else -> DocRead.Problem(r)
+            }
+            (docRead as? DocRead.Done)?.facts?.fileName?.let { if (!nameTouched) name = it }
+        }
+    }
+    // Con «Leggi ogni scansione da sola» la lettura riparte quando cambiano le pagine.
+    LaunchedEffect(pageKey) {
+        if (pageKey.isNotEmpty() && DocReading.enabled(context) && DocReading.auto(context)) readText()
+        else if (docRead is DocRead.Done) docRead = DocRead.Idle
+    }
     var menuFor by remember { mutableStateOf<File?>(null) }
     var cropping by remember { mutableStateOf<File?>(null) }
 
@@ -561,7 +586,8 @@ private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
             Button(enabled = !saving && pages.isNotEmpty() && name.isNotBlank(), onClick = {
                 saving = true
                 scope.launch {
-                    val message = save(context, pages, dir, name.trim(), where, accounts.firstOrNull { it.id == where }?.name)
+                    val done = (docRead as? DocRead.Done)?.takeIf { it.pages.size == pages.size }
+                    val message = save(context, pages, done?.pages, done?.facts?.folder, dir, name.trim(), where, accounts.firstOrNull { it.id == where }?.name)
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                     saving = false
                     if (message != context.getString(R.string.scan_failed)) onSaved()
@@ -582,15 +608,20 @@ private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
         }
         Text(stringResource(R.string.scan_review_hint), fontSize = 12.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
         Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(name, { name = it }, singleLine = true, label = { Text(stringResource(R.string.scan_name)) }, suffix = { Text(".pdf") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(name, { name = it; nameTouched = true }, singleLine = true, label = { Text(stringResource(R.string.scan_name)) }, suffix = { Text(".pdf") }, modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.scan_where), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()).heightIn(min = 36.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterPill(stringResource(R.string.scan_phone), dot = null, selected = where == null) { where = null }
                 accounts.forEach { a -> FilterPill(a.name, dot = null, selected = where == a.id) { where = a.id } }
             }
         }
+        DocTextPart(docRead, onRead = ::readText, onTurnOn = { askReading = true })
         Text(stringResource(R.string.scan_local_note), fontSize = 12.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
         Spacer(Modifier.height(16.dp))
+    }
+    if (askReading) DocReadingSheet(onClose = { askReading = false }) {
+        askReading = false
+        if (DocReading.auto(context)) readText() else docRead = DocRead.Idle
     }
     menuFor?.let { file ->
         AlertDialog(
@@ -609,18 +640,28 @@ private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     }
 }
 
-private suspend fun save(context: Context, pages: List<File>, dir: File, base: String, accountId: String?, accountName: String?): String = withContext(Dispatchers.IO) {
+/**
+ * Salva il PDF: con il testo letto è cercabile (immagini e testo invisibile, [SearchablePdf]) e va nella cartella proposta
+ * (es. Documenti/Casa/Bollette), altrimenti è fatto di sole immagini e va in Documenti/Eurise/Scansioni.
+ */
+private suspend fun save(
+    context: Context, pages: List<File>, read: List<ReadPage>?, folder: String?, dir: File, base: String, accountId: String?, accountName: String?,
+): String = withContext(Dispatchers.IO) {
     val safe = base.replace('/', '-').removeSuffix(".pdf") + ".pdf"
     val pdf = File(dir, "out.pdf")
+    val place = folder ?: "Eurise/Scansioni"
     try {
-        PageProcessor.writePdf(pages, pdf)
+        val searchable = read != null && PageProcessor.writeSearchablePdf(pages, read, pdf, base)
+        if (!searchable) PageProcessor.writePdf(pages, pdf)
+        val phonePlace = if (searchable) place else "Eurise/Scansioni"
+        val cloudPlace = if (searchable && folder != null) "Eurise/$folder" else "Eurise/Scansioni"
         if (accountId == null) {
-            if (PageProcessor.saveToPhone(context, pdf, safe)) context.getString(R.string.scan_saved_phone) else context.getString(R.string.scan_failed)
+            if (PageProcessor.saveToPhone(context, pdf, safe, phonePlace)) context.getString(R.string.scan_saved_phone_in, phonePlace) else context.getString(R.string.scan_failed)
         } else {
             val dav = CloudAccounts.get(context).dav(accountId) ?: return@withContext context.getString(R.string.scan_failed)
-            dav.mkdirs("Eurise/Scansioni")
-            dav.upload("Eurise/Scansioni/$safe", pdf)
-            context.getString(R.string.scan_saved_cloud, accountName.orEmpty())
+            dav.mkdirs(cloudPlace)
+            dav.upload("$cloudPlace/$safe", pdf)
+            context.getString(R.string.scan_saved_cloud_in, cloudPlace, accountName.orEmpty())
         }
     } catch (e: java.io.IOException) {
         context.getString(R.string.scan_failed)

@@ -26,7 +26,8 @@ int main(int argc, char **argv) {
   if (api.Init(argv[1], argv[2], tesseract::OEM_LSTM_ONLY) != 0) { std::cerr << "init fallito\n"; return 1; }
   if (argc == 5) api.SetPageSegMode(static_cast<tesseract::PageSegMode>(std::atoi(argv[4])));
   api.SetImage(rgba.data(), w, h, 4, w * 4);
-  char *text = api.GetUTF8Text();
+  // Con EURISE_TSV=1 scrive le parole con i riquadri (formato TSV di Tesseract), come le riceve l'app.
+  char *text = std::getenv("EURISE_TSV") != nullptr ? api.GetTSVText(0) : api.GetUTF8Text();
   std::cout << text;
   std::cerr << "fiducia " << api.MeanTextConf() << "\n";
   delete[] text;

@@ -93,6 +93,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import eu.eurise.core.data.docs.DocReading
+import eu.eurise.core.data.docs.ReadClient
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -319,6 +321,30 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
                             .putExtra("eu.eurise.extra.SECTION", "trip:file:" + android.net.Uri.encode(file.absolutePath))
                             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         context.startActivity(intent)
+                    } catch (e: Exception) { fail(e) }
+                }
+            },
+            onSearchable = {
+                selected = null
+                if (!DocReading.enabled(context)) {
+                    Toast.makeText(context, R.string.drive_text_off, Toast.LENGTH_LONG).show()
+                } else coroutines.launch {
+                    Toast.makeText(context, R.string.drive_text_reading, Toast.LENGTH_SHORT).show()
+                    try {
+                        val message = when (val o = Searchable.make(context, data, item)) {
+                            is Searchable.Outcome.Done -> context.getString(R.string.drive_text_done, o.name)
+                            Searchable.Outcome.AlreadyText -> context.getString(R.string.drive_text_already)
+                            is Searchable.Outcome.NotRead -> context.getString(
+                                when (o.result) {
+                                    ReadClient.Result.NotInstalled -> R.string.drive_text_missing
+                                    ReadClient.Result.NoModel -> R.string.drive_text_no_model
+                                    else -> R.string.drive_text_failed
+                                },
+                            )
+                            Searchable.Outcome.Failed -> context.getString(R.string.drive_text_failed)
+                        }
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        refresh++
                     } catch (e: Exception) { fail(e) }
                 }
             },
@@ -717,7 +743,7 @@ private fun SheetAction(icon: ImageVector, label: String, modifier: Modifier, on
 @Composable
 private fun ItemSheet(
     data: DriveData, item: DriveItem, onClose: () -> Unit, onOpen: () -> Unit, onShare: () -> Unit,
-    onRename: (String) -> Unit, onTrip: () -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
+    onRename: (String) -> Unit, onTrip: () -> Unit, onSearchable: () -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
     onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit, onSync: () -> Unit,
 ) {
     var linking by remember { mutableStateOf(false) }
@@ -758,6 +784,10 @@ private fun ItemSheet(
                     SheetAction(EuriseIcons.link(), stringResource(R.string.drive_link), Modifier.weight(1f)) { linking = true }
                     if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
                 }
+            }
+            // Un PDF fatto di sole immagini: copia cercabile accanto, letta sul telefono da Eurise Leggi.
+            if (item.extension == "pdf") Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SheetAction(EuriseIcons.text(), stringResource(R.string.drive_text_action), Modifier.weight(1f), onSearchable)
             }
             if (!item.folder && item.place.account != null && item.place.vaultRoot == null && !item.place.isTree) {
                 Row(Modifier.clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {

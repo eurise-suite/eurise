@@ -34,5 +34,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Lettura delle pagine per l'app Eurise: solo app Eurise con la stessa firma. -->
+        <service
+            android:name=".ReadService"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.READ_TEXT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

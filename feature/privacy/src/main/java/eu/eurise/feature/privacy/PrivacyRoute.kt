@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.eurise.core.cloud.CloudAccounts
 import eu.eurise.core.cloud.CloudKind
 import eu.eurise.core.cloud.CloudSync
+import eu.eurise.core.data.docs.DocReading
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.suite.PrivacyCenter
@@ -206,6 +207,14 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d))
                 Line()
                 TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d))
+                Line()
+                // Lettura dei documenti: analisi dei contenuti, tutta sul telefono. Si accende dallo Scanner (con la
+                // spiegazione), si spegne anche da qui senza conferme.
+                var reading by remember { mutableStateOf(DocReading.enabled(context)) }
+                Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TwoLines(stringResource(R.string.pv_read), stringResource(if (reading) R.string.pv_read_on else R.string.pv_read_off), Modifier.weight(1f).padding(end = 8.dp))
+                    Switch(reading, enabled = reading, onCheckedChange = { if (!it) { reading = false; DocReading.set(context, enabled = false) } })
+                }
             }
         }
         item(key = "log") {
