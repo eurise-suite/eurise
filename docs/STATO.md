@@ -509,7 +509,7 @@ Dopo l'approvazione del brand, prima delle app desktop. Per GNOME (Ubuntu, Fedor
 ## 11 novembre: prova del proprietario sul telefono (APK 198) e correzioni (ramo `tastiera`)
 Giudizio: Voce riconosce molto bene (anche la punteggiatura) ma è lenta col pacchetto più pesante; Lettore QR non funzionava;
 scanner pessimo nel trovare e ritagliare le pagine. Deciso: Tesseract per Eurise Leggi (vedi sopra).
-Fatto (APK 199–200):
+Fatto (APK 203, compilazione verde con i test):
 - Tastiera: lo spazio dichiarato alle app ora conta la barra di Eurise (prima le app restavano coperte, anche fuori dalla ricerca);
   fascia di sistema con freccia e mondo tolta dove Android lo permette (`euriseHideImeNavBar`, dal 15; da verificare sul Murena);
   barra: Calcola, Codici, File, Persona, Disponibilità, Browser con icona sopra l'etichetta; Browser cerca subito il testo scritto o
