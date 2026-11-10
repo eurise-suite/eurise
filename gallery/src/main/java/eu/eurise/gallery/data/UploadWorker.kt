@@ -44,7 +44,7 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         val manager = applicationContext.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(NotificationChannel(CHANNEL, applicationContext.getString(R.string.upload_channel), NotificationManager.IMPORTANCE_MIN))
         val notification = Notification.Builder(applicationContext, CHANNEL)
-            .setSmallIcon(R.drawable.ic_gallery_foreground)
+            .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
             .setContentTitle(applicationContext.getString(R.string.upload_running))
             .setOngoing(true)
             .build()

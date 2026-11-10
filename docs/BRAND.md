@@ -11,8 +11,11 @@ Scelte del proprietario: famiglia «Firma di stella», avvio «Blu notte sempre�
 - Tastiera: via le 10 PNG di HeliBoard; fondo blu notte; per Android 5–7 icona vettoriale in `mipmap-anydpi`.
 - Avvio Android 12+: `windowSplashScreenBackground` blu notte nei temi (anche in values-night) di app, Password, Galleria.
   Voce è una finestra trasparente e resta com'è.
-- `core/designsystem/res/drawable/ic_stat_eurise.xml`: icona bianca per le notifiche. DA COLLEGARE nel codice (fuori dal
-  ramo brand): `Reminders.kt` usa icone di sistema; `UploadWorker` della Galleria usa il primo piano dell'icona.
+- `core/designsystem/res/drawable/ic_stat_eurise.xml`: icona bianca per le notifiche. Collegata (11 novembre) alla
+  notifica di caricamento della Galleria (`UploadWorker`, prima usava il primo piano dell'icona adattiva, minuscolo).
+  Nell'APK principale il ramo `tastiera` ha già dato a ogni notifica un'icona di funzione (`ic_stat_note`, `ic_stat_bell`
+  in Calendario, `ic_stat_clock`, `ic_aod_status`): restano quelle, la stella vale per gli APK separati e le notifiche generiche.
+- Unione: nessun file toccato da entrambi i rami `brand` e `tastiera` (controllato l'11 novembre sulla base comune 7c1766f).
 - Sorgenti del marchio in `docs/brand/*.svg`; F-Droid in `fastlane/metadata/android/{it-IT,en-US}` (titolo, descrizioni,
   icona 512, immagine 1024×500). Mancano le schermate del telefono (vanno catturate dall'app vera) e i metadati degli APK separati.
 - Mappe, Browser, Messaggi, Telefono, Office: icone già disegnate sulla tela, da fare quando nasceranno gli APK.
