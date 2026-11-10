@@ -242,6 +242,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     private data class Chip(val label: String, val icon: Int? = null, val action: () -> Unit)
 
+    /** Comandi subito (aprono un pannello); le altre proposte si calcolano fuori dal thread principale (Rubrica, Calendario). */
     private fun computeChips() {
         val text = before()
         Detect.command(text)?.let { (cmd, raw) ->
@@ -254,6 +255,14 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             }
             return
         }
+        val abbreviations = prefs.getString(ABBREVIATIONS, "").orEmpty()
+        chipWorker.execute {
+            val found = buildChips(text, abbreviations)
+            post { if (panel == null && before() == text) showChips(found) }
+        }
+    }
+
+    private fun buildChips(text: String, abbreviationsPref: String): List<Chip> {
         val found = mutableListOf<Chip>()
         Calc.find(text)?.let { (raw, result) ->
             val keep = if (raw.trimEnd().endsWith("=")) raw.trimEnd() + " " else ""
@@ -268,7 +277,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             }
         }
         Detect.lastWord(text)?.let { word ->
-            Detect.parseAbbreviations(prefs.getString(ABBREVIATIONS, "").orEmpty())[word.lowercase()]?.let { full ->
+            Detect.parseAbbreviations(abbreviationsPref)[word.lowercase()]?.let { full ->
                 found += Chip("→ $full") { replaceBefore(word.length, full) }
             }
         }
@@ -289,7 +298,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             }
         }
         clipChip()?.let { found += it }
-        showChips(found.take(4))
+        return found.take(4)
     }
 
     /** Una cosa copiata da poco (IBAN, numero, email): si propone di salvarla. Gli appunti si leggono solo qui. */
@@ -334,5 +343,6 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         private var registered = false
         @Volatile private var pendingDictation: String? = null
         @Volatile private var lastClipAt = 0L
+        private val chipWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
     }
 }
