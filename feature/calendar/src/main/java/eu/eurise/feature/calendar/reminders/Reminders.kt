@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import eu.eurise.core.data.EuriseData
+import eu.eurise.core.data.calendar.isMeeting
 import eu.eurise.core.data.dates.ImportantDate
 import eu.eurise.core.data.model.TaskList
 import eu.eurise.feature.calendar.R
@@ -33,6 +34,10 @@ import java.time.temporal.ChronoUnit
 object Reminders {
     private const val CHANNEL = "eurise_reminders"
     private const val GIFT_DAYS = 10L
+    private const val MEETING_CHANNEL = "eurise_meetings"
+    /** L'avviso arriva un minuto prima dell'inizio e vale fino a dieci minuti dopo (telefono in pausa, riavvio). */
+    private const val MEETING_EARLY = 60_000L
+    private const val MEETING_LATE = 10 * 60_000L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Da chiamare all'apertura dell'app e della Scrivania, e quando cambiano date o farmaci. */
@@ -139,6 +144,15 @@ object Reminders {
                 seen += key
             }
         }
+        // Inizio delle riunioni: l'avviso apre la nota della riunione (solo eventi con altre persone invitate).
+        val nowMillis = System.currentTimeMillis()
+        data.calendar.startingBetween(nowMillis - MEETING_LATE, nowMillis + MEETING_EARLY).forEach { e ->
+            val key = "meet:${e.eventId}:${e.beginMillis}"
+            if (key !in seen && data.calendar.attendees(e.eventId).isMeeting()) {
+                notifyMeeting(context, key.hashCode(), e.title, e.eventId, e.beginMillis)
+                seen += key
+            }
+        }
         prefs(context).edit().putStringSet("notified", seen.filter { !it.contains("${today.minusDays(3)}") }.takeLast(400).toSet()).apply()
     }
 
@@ -172,6 +186,10 @@ object Reminders {
             candidates += day.atTime(LocalTime.of(8, 30))
         }
         candidates += data.tasks.remindersBetween(now, now.plusDays(2)).mapNotNull { it.reminderAt() }
+        val nowMillis = System.currentTimeMillis()
+        data.calendar.startingBetween(nowMillis + MEETING_EARLY + 1, nowMillis + 2 * 86_400_000L)
+            .firstOrNull { data.calendar.attendees(it.eventId).isMeeting() }
+            ?.let { candidates += it.start.minusSeconds(MEETING_EARLY / 1000) }
         val next = candidates.filter { it.isAfter(now) }.minOrNull() ?: return
         val at = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val am = context.getSystemService(AlarmManager::class.java) ?: return
@@ -184,6 +202,30 @@ object Reminders {
             if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
             else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
         }
+    }
+
+    /** Avviso d'inizio di una riunione, con il pulsante che apre la nota. */
+    private fun notifyMeeting(context: Context, id: Int, title: String, eventId: Long, beginMillis: Long) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) return
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        if (Build.VERSION.SDK_INT >= 26) {
+            nm.createNotificationChannel(NotificationChannel(MEETING_CHANNEL, context.getString(R.string.meeting_channel), NotificationManager.IMPORTANCE_HIGH))
+        }
+        val intent = Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity")
+            .putExtra("eu.eurise.extra.SECTION", "meeting:$eventId:$beginMillis")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val open = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val notification = NotificationCompat.Builder(context, MEETING_CHANNEL)
+            .setSmallIcon(android.R.drawable.ic_menu_edit)
+            .setContentTitle(context.getString(R.string.meeting_starting, title))
+            .setContentText(context.getString(R.string.meeting_starting_text))
+            .setContentIntent(open)
+            .addAction(0, context.getString(R.string.meeting_open), open)
+            .setAutoCancel(true)
+            .build()
+        runCatching { NotificationManagerCompat.from(context).notify(id, notification) }
     }
 
     private fun notify(context: Context, id: Int, title: String, text: String) {

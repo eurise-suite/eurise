@@ -69,6 +69,7 @@ data class HubRequest(val section: String, val id: Int)
 private const val NOTE_ROUTE = "note?id={id}&nb={nb}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
 private const val PERSON_ROUTE = "person/{key}"
+private const val MEETING_ROUTE = "meeting/{id}/{begin}"
 private const val NO_ID = -1L
 
 private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
@@ -76,6 +77,9 @@ private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
 
 private fun NavHostController.openEvent(id: Long?, begin: Long?, start: Long?) =
     navigate("event?id=${id ?: NO_ID}&begin=${begin ?: NO_ID}&start=${start ?: NO_ID}")
+
+private fun NavHostController.openMeeting(eventId: Long, beginMillis: Long) =
+    navigate("meeting/$eventId/$beginMillis") { launchSingleTop = true }
 
 private fun NavHostController.openPerson(lookupKey: String) =
     navigate("person/${android.net.Uri.encode(lookupKey)}")
@@ -152,6 +156,10 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
             section.startsWith("person:") -> navController.openPerson(section.removePrefix("person:"))
             section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
+            section.startsWith("meeting:") -> {
+                val parts = section.removePrefix("meeting:").split(':').mapNotNull { it.toLongOrNull() }
+                if (parts.size == 2) navController.openMeeting(parts[0], parts[1])
+            }
         }
     }
 
@@ -303,6 +311,22 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         startMillis = args?.getLong("start")?.takeIf { it != NO_ID },
                         onClose = { navController.closeIfOn(EVENT_ROUTE) },
                         linked = { id, title -> linked(LinkRef.event(id), title) },
+                        onMeeting = { id, begin -> navController.openMeeting(id, begin) },
+                    )
+                }
+                composable(
+                    route = MEETING_ROUTE,
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.LongType },
+                        navArgument("begin") { type = NavType.LongType },
+                    ),
+                ) { entry ->
+                    eu.eurise.feature.notes.meeting.MeetingRoute(
+                        data = data,
+                        eventId = entry.arguments?.getLong("id") ?: NO_ID,
+                        beginMillis = entry.arguments?.getLong("begin") ?: NO_ID,
+                        onClose = { navController.closeIfOn(MEETING_ROUTE) },
+                        onOpenNote = { id -> navController.openNote(id) },
                     )
                 }
             }

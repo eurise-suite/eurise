@@ -82,6 +82,7 @@ fun EventEditorRoute(
     startMillis: Long?,
     onClose: () -> Unit,
     linked: @Composable (eventId: Long, title: String) -> Unit = { _, _ -> },
+    onMeeting: ((eventId: Long, beginMillis: Long) -> Unit)? = null,
 ) {
     val viewModel = viewModel { EventEditorViewModel(repository, eventId, beginMillis, startMillis) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -103,6 +104,7 @@ fun EventEditorRoute(
         onDelete = { viewModel.delete(onClose) },
         onClose = onClose,
         linked = { if (eventId != null) linked(eventId, state.title) },
+        onMeeting = if (eventId != null && beginMillis != null && onMeeting != null) ({ onMeeting(eventId, beginMillis) }) else null,
     )
 }
 
@@ -126,6 +128,7 @@ internal fun EventEditorScreen(
     onDelete: () -> Unit,
     onClose: () -> Unit,
     linked: @Composable () -> Unit = {},
+    onMeeting: (() -> Unit)? = null,
 ) {
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -240,6 +243,13 @@ internal fun EventEditorScreen(
                     singleLine = false,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).heightIn(min = 48.dp),
                 )
+            }
+
+            if (!state.isNew && !state.allDay && onMeeting != null) {
+                OutlinedButton(onClick = onMeeting, modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
+                    Icon(EuriseIcons.note(), contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(R.string.cal_meeting_note), modifier = Modifier.padding(start = 8.dp))
+                }
             }
 
             if (!state.isNew) linked()

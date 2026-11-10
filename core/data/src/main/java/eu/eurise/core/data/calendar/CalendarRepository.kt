@@ -116,6 +116,47 @@ class CalendarRepository internal constructor(context: Context) {
             "${Instances.BEGIN} $order",
         )?.use { c -> if (c.moveToFirst()) c.toEvent(zone) else null }
 
+    /**
+     * I partecipanti di [eventId] come li salva il calendario (invitati e organizzatore). [Attendee.self] segna
+     * chi usa il telefono: il suo indirizzo è il nome dell'account del calendario.
+     */
+    suspend fun attendees(eventId: Long): List<Attendee> = withContext(Dispatchers.IO) {
+        if (!hasPermission()) return@withContext emptyList()
+        runCatching {
+            val owner = resolver.query(
+                ContentUris.withAppendedId(Events.CONTENT_URI, eventId), arrayOf(Events.OWNER_ACCOUNT, Events.ORGANIZER), null, null, null,
+            )?.use { c -> if (c.moveToFirst()) listOfNotNull(c.getString(0), c.getString(1)).map { it.lowercase() } else emptyList() }.orEmpty()
+            resolver.query(
+                CalendarContract.Attendees.CONTENT_URI,
+                arrayOf(CalendarContract.Attendees.ATTENDEE_NAME, CalendarContract.Attendees.ATTENDEE_EMAIL, CalendarContract.Attendees.ATTENDEE_RELATIONSHIP),
+                "${CalendarContract.Attendees.EVENT_ID} = ?",
+                arrayOf(eventId.toString()),
+                null,
+            )?.use { c ->
+                buildList {
+                    while (c.moveToNext()) {
+                        val email = c.getString(1).orEmpty()
+                        val organizer = c.getInt(2) == CalendarContract.Attendees.RELATIONSHIP_ORGANIZER
+                        add(Attendee(c.getString(0).orEmpty().ifBlank { email.substringBefore('@') }, email, organizer, owner.firstOrNull() == email.lowercase()))
+                    }
+                }
+            }.orEmpty().filter { it.name.isNotBlank() }.distinctBy { it.email.lowercase().ifBlank { it.name } }
+        }.getOrNull().orEmpty()
+    }
+
+    /** Eventi con un orario (non di tutto il giorno) che iniziano tra [fromMillis] e [toMillis]. */
+    suspend fun startingBetween(fromMillis: Long, toMillis: Long, zone: ZoneId = ZoneId.systemDefault()): List<CalendarEvent> =
+        withContext(Dispatchers.IO) {
+            if (!hasPermission()) return@withContext emptyList()
+            runCatching {
+                resolver.query(
+                    instancesUri(fromMillis, toMillis), INSTANCE_PROJECTION,
+                    "${Instances.VISIBLE} = 1 AND ${Instances.ALL_DAY} = 0 AND ${Instances.BEGIN} >= ? AND ${Instances.BEGIN} <= ?",
+                    arrayOf(fromMillis.toString(), toMillis.toString()), "${Instances.BEGIN} ASC",
+                )?.use { c -> buildList { while (c.moveToNext()) add(c.toEvent(zone)) } }
+            }.getOrNull().orEmpty()
+        }
+
     /** Crea o aggiorna un evento; restituisce il suo id, oppure null se il sistema ha rifiutato. */
     suspend fun save(draft: EventDraft, zone: ZoneId = ZoneId.systemDefault()): Long? = withContext(Dispatchers.IO) {
         val values = ContentValues().apply {

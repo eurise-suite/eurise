@@ -130,4 +130,9 @@
     <string name="meds_add_time">+ Orario</string>
     <string name="meds_days">Giorni</string>
     <string name="meds_until_label">Fino al (facoltativo)</string>
+    <string name="cal_meeting_note">Nota della riunione</string>
+    <string name="meeting_channel">Inizio delle riunioni</string>
+    <string name="meeting_starting">La riunione inizia: %1$s</string>
+    <string name="meeting_starting_text">Tocca per aprire la nota con presenti, ordine del giorno e appunti.</string>
+    <string name="meeting_open">Apri la nota della riunione</string>
 </resources>

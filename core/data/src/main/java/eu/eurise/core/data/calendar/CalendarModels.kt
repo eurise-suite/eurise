@@ -66,3 +66,13 @@ data class EventDraft(
     /** Per gli eventi di tutto il giorno: la mezzanotte dopo l'ultimo giorno. */
     val end: LocalDateTime,
 )
+
+/** Un partecipante di un evento. [self] è chi usa il telefono. */
+data class Attendee(val name: String, val email: String, val organizer: Boolean, val self: Boolean)
+
+/** Una riunione: un evento con almeno un'altra persona invitata oltre a chi usa il telefono. */
+fun List<Attendee>.isMeeting(): Boolean {
+    val others = filterNot { it.self }
+    // Un solo organizzatore senza invitati è un evento personale anche se il telefono non lo riconosce come "sé".
+    return others.any { !it.organizer } || (size >= 2 && others.isNotEmpty())
+}

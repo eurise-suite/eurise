@@ -152,4 +152,35 @@
     <string name="notes_tint_prugna">Prugna</string>
     <string name="notes_tint_terracotta">Terracotta</string>
     <string name="notes_tint_grafite">Grafite</string>
+
+    <!-- Riunioni -->
+    <string name="meeting_label">Riunione</string>
+    <string name="meeting_people">Presenti</string>
+    <string name="meeting_absent">Assenti</string>
+    <string name="meeting_agenda">Ordine del giorno</string>
+    <string name="meeting_notes">Appunti</string>
+    <string name="meeting_actions">Da fare</string>
+    <string name="meeting_close_screen">Chiudi</string>
+    <string name="meeting_share">Condividi il riassunto</string>
+    <string name="meeting_more">Altro</string>
+    <string name="meeting_open_note">Apri come nota</string>
+    <string name="meeting_missing">L\'evento non esiste più, oppure manca il permesso del calendario.</string>
+    <string name="meeting_people_empty">Nessun invitato nell\'evento: aggiungi chi c\'è.</string>
+    <string name="meeting_add_person">Aggiungi una persona</string>
+    <string name="meeting_remove_person">Togli dalla riunione</string>
+    <string name="meeting_add_item">Aggiungi un punto</string>
+    <string name="meeting_remove_item">Togli il punto</string>
+    <string name="meeting_notes_hint">Scrivi gli appunti. Una riga con @persona e una data, per esempio «@Anna manda il preventivo entro venerdì», diventa un\'attività alla chiusura.</string>
+    <plurals name="meeting_pending">
+        <item quantity="one">%d azione pronta: diventerà un\'attività alla chiusura</item>
+        <item quantity="other">%d azioni pronte: diventeranno attività alla chiusura</item>
+    </plurals>
+    <string name="meeting_end">Chiudi la riunione</string>
+    <string name="meeting_add_actions">Crea le attività nuove</string>
+    <string name="meeting_end_title">Chiudi la riunione</string>
+    <string name="meeting_end_message">Queste righe diventano attività collegate all\'evento e alla nota. Togli la spunta a quelle che non servono.</string>
+    <string name="meeting_end_none">Negli appunti non ci sono righe con @persona e una data: la nota resta così com\'è.</string>
+    <string name="meeting_end_confirm">Crea le attività</string>
+    <string name="meeting_end_confirm_empty">Chiudi</string>
+    <string name="meeting_task_note">Dalla riunione «%1$s»</string>
 </resources>
