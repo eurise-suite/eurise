@@ -1,0 +1,179 @@
+name: Prototipo del motore di Office
+
+# Punto 5 della road map: compila il motore LibreOffice di Collabora per Android (arm64) e misura tempo, spazio e peso.
+# Vedi office/engine/EURISE.md. Lavoro lungo: parte a mano (Actions → Prototipo del motore di Office → Run workflow)
+# o quando cambiano i suoi file. Se il tempo di GitHub (6 ore) non basta, la ccache si salva e il giro dopo riparte da lì.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/office-engine.yml"
+      - ".github/scripts/office_size.py"
+      - "office/engine/**"
+
+permissions:
+  contents: read
+
+# Un giro alla volta e senza annullare quello in corso: annullarlo butterebbe ore di compilazione.
+concurrency:
+  group: office-engine
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: https://github.com/LibreOffice/core
+  CORE_BRANCH: distro/collabora/co-25.04
+  CORE_COMMIT: 3847fbcfe35a234544cf163ed9e004a3d197337c
+  JOB_MINUTES: 355
+
+jobs:
+  motore:
+    name: Motore LibreOffice (Collabora, arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fa spazio sul disco
+        run: |
+          echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+          t0=$(date +%s)
+          df -h / /mnt || true
+          # Strumenti preinstallati che qui non servono (l'SDK di Android resta).
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /usr/local/share/powershell \
+            /usr/local/share/chromium /opt/microsoft /opt/google /usr/local/julia* /opt/az || true
+          sudo docker image prune -a -f >/dev/null 2>&1 || true
+          # Si lavora sul disco con più spazio libero.
+          root_free=$(df --output=avail -B1 / | tail -1)
+          mnt_free=$(df --output=avail -B1 /mnt 2>/dev/null | tail -1 || echo 0)
+          if [ "${mnt_free:-0}" -gt "$root_free" ]; then WORK=/mnt/lo; else WORK=$HOME/lo; fi
+          sudo mkdir -p "$WORK" && sudo chown "$USER" "$WORK"
+          echo "WORK=$WORK" >> "$GITHUB_ENV"
+          echo "CCACHE_DIR=$WORK/ccache" >> "$GITHUB_ENV"
+          echo "LO_TARBALLS=$WORK/tarballs" >> "$GITHUB_ENV"
+          mkdir -p "$WORK/tarballs" "$WORK/ccache"
+          df -h / /mnt || true
+          echo "spazio $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Installa gli strumenti di compilazione
+        run: |
+          t0=$(date +%s)
+          sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get build-dep -y -qq libreoffice >/dev/null
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ccache nasm gperf >/dev/null
+          ccache -M 6G
+          echo "strumenti $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Riprende gli archivi esterni
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.WORK }}/tarballs
+          key: office-tarballs-${{ env.CORE_COMMIT }}
+          restore-keys: office-tarballs-
+
+      - name: Riprende la ccache
+        id: ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.WORK }}/ccache
+          key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
+          restore-keys: |
+            office-ccache-${{ env.CORE_COMMIT }}-
+            office-ccache-
+
+      - name: Scarica i sorgenti del core
+        run: |
+          t0=$(date +%s)
+          git init -q "$WORK/core"
+          cd "$WORK/core"
+          git remote add origin "$CORE_REPO"
+          git fetch -q --depth 1 origin "$CORE_COMMIT"
+          git checkout -q FETCH_HEAD
+          git log -1 --format='%H %ci %s'
+          echo "sorgenti $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Configura
+        run: |
+          t0=$(date +%s)
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          NDK=$(ls -d "$SDK"/ndk/2[7-9].* 2>/dev/null | sort -V | tail -1)
+          if [ -z "$NDK" ]; then
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358" >/dev/null
+            NDK="$SDK/ndk/28.2.13676358"
+          fi
+          echo "NDK: $NDK"
+          sed -e "s|@NDK@|$NDK|" -e "s|@SDK@|$SDK|" -e "s|@JDK@|$JAVA_HOME_17_X64|" -e "s|@TARBALLS@|$LO_TARBALLS|" \
+            office/engine/autogen.input.in | grep -v '^#' > "$WORK/core/autogen.input"
+          cat "$WORK/core/autogen.input"
+          cd "$WORK/core"
+          set -o pipefail
+          ./autogen.sh 2>&1 | tail -40 || { tail -80 config.log; exit 1; }
+          echo "configurazione $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Compila (finché c'è tempo)
+        run: |
+          t0=$(date +%s)
+          cd "$WORK/core"
+          budget=$(( JOB_MINUTES * 60 - (t0 - JOB_START) - 30 * 60 ))
+          echo "Tempo a disposizione per make: $(( budget / 60 )) min"
+          # Ogni 10 minuti una riga di avanzamento nel registro.
+          ( while sleep 600; do
+              echo "$(date +%H:%M) – oggetti: $(find workdir -name '*.o' 2>/dev/null | wc -l) – $(tail -1 make.log 2>/dev/null | cut -c1-150)"
+            done ) &
+          progress=$!
+          status=0
+          timeout -s INT -k 120 "$budget" make > make.log 2>&1 || status=$?
+          kill "$progress" || true
+          echo "MAKE_STATUS=$status" >> "$GITHUB_ENV"
+          echo "make $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+          echo "make ha risposto $status"
+          tail -40 make.log
+          ccache -s || true
+
+      - name: Errori di compilazione
+        if: env.MAKE_STATUS != '0' && env.MAKE_STATUS != '124'
+        run: |
+          grep -E "error:|Error [0-9]|\*\*\*" "$WORK/core/make.log" | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+
+      - name: Salva la ccache
+        if: always() && env.MAKE_STATUS != ''
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.WORK }}/ccache
+          key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
+
+      - name: Salva gli archivi esterni
+        if: always() && env.MAKE_STATUS != ''
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.WORK }}/tarballs
+          key: office-tarballs-${{ env.CORE_COMMIT }}
+
+      - name: Misura
+        if: always() && env.MAKE_STATUS != ''
+        run: |
+          python3 .github/scripts/office_size.py "$WORK/core" "$RUNNER_TEMP/tempi.txt" "$MAKE_STATUS" "$WORK/misure" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          gzip -c "$WORK/core/make.log" > "$WORK/misure/make.log.gz"
+
+      - name: Carica il motore e le misure
+        if: always() && env.MAKE_STATUS != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-office-motore-${{ github.run_number }}
+          path: ${{ env.WORK }}/misure/
+          retention-days: 14
+
+      - name: Esito
+        if: always() && env.MAKE_STATUS != ''
+        run: |
+          case "$MAKE_STATUS" in
+            0) echo "Compilazione finita." ;;
+            124) echo "::warning::Tempo scaduto: la ccache è salvata, rilanciare il lavoro per finire." ;;
+            *) echo "::error::La compilazione si è fermata con un errore (vedi sopra)."; exit 1 ;;
+          esac

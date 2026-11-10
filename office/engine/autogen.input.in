@@ -1,0 +1,14 @@
+# Motore di Eurise Office (prototipo): LibreOffice core dal ramo di Collabora, telefono arm64.
+# La configurazione di base è quella dell'app Collabora Office per Android (distro-configs/CPAndroid*.conf).
+# Il lavoro «Prototipo del motore di Office» sostituisce i segnaposto @...@ prima di autogen.sh.
+--with-distro=CPAndroidAarch64
+--with-android-ndk=@NDK@
+--with-android-sdk=@SDK@
+--with-jdk-home=@JDK@
+--with-external-tar=@TARBALLS@
+# Differenze dalla configurazione di Collabora, per il prototipo:
+# - solo inglese (l'italiano chiede il sottomodulo translations: arriva al passo dopo e pesa poco);
+# - niente dizionari dentro il motore: per la regola della leggerezza si scaricano a richiesta.
+--with-lang=en-US
+--without-myspell-dicts
+--disable-sal-log

@@ -641,3 +641,19 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
 - Prossimo, nell'ordine del proprietario: approvazione del punto 6; punto 5 Office (prototipo che compila il motore LibreOffice/
   Collabora su GitHub Actions e misura spazio, tempo e peso: lavoro lungo, va in un lavoro a parte); punto 3 Browser.
 - Decisioni aperte: motore della traduzione (in Leggi o APK a parte), scrittura a mano (rimandare?), basi del punto 6.
+
+## 11 novembre: punto 5, prototipo del motore di Office (ramo `brand`, lavoro «Prototipo del motore di Office»)
+- Lavoro a parte `.github/workflows/office-engine.yml` (non tocca gli APK): parte a mano o quando cambiano i suoi file; un giro
+  alla volta, mai annullato. Sorgenti: `LibreOffice/core` su GitHub, ramo `distro/collabora/co-25.04`, commit fissato
+  (`CORE_COMMIT`), scaricato senza storia. NDK 27–29 (il ramo rifiuta i più vecchi), JDK 17, dipendenze con `apt build-dep libreoffice`.
+- Configurazione `office/engine/autogen.input.in`: `CPAndroidAarch64` (quella dell'app Collabora Office), solo arm64, solo
+  inglese e senza dizionari (vedi `office/engine/EURISE.md`). Risultato atteso: `android/jniLibs/arm64-v8a/liblo-native-code.so`.
+- Tempo: GitHub dà al massimo 6 ore per lavoro. make ha il tempo che resta meno 30 minuti; poi si salvano ccache (6 GB al massimo)
+  e archivi esterni nella cache di Actions e il giro dopo riparte da lì. Se il riepilogo dice «tempo scaduto», rilanciare.
+- Misure (`.github/scripts/office_size.py`, nel riepilogo del lavoro e in `misure.json`): tempo per fase, spazio su disco
+  (sorgenti, workdir, instdir, archivi, ccache, libero), libreria com'è e compressa, assets scelti come in
+  `android/lib/build.gradle` di Collabora (tipi UNO, testi, configurazione, filtri, interfaccia, lingue, caratteri a parte),
+  stima dell'APK con e senza caratteri. Artefatto `eurise-office-motore-N`: libreria, assets, misure, registro di make.
+- Fuori dal prototipo: interfaccia web di Collabora (`browser` di online, per «Tutte le opzioni»), parte `online` per Android,
+  italiano. Dopo la misura: decidere con il proprietario (se non ci sta: computer di compilazione o parti già compilate), poi
+  anteprime telefono e tablet.
