@@ -165,7 +165,15 @@ private fun WidgetChoice(info: AppWidgetProviderInfo, modifier: Modifier, onClic
     val density = LocalDensity.current.density
     val preview by produceState<android.graphics.Bitmap?>(null, info) {
         value = withContext(Dispatchers.IO) {
-            runCatching { (info.loadPreviewImage(context, 0) ?: info.loadIcon(context, 0))?.toBitmap(maxWidth = 360, maxHeight = 240) }.getOrNull()
+            runCatching {
+                (info.loadPreviewImage(context, 0) ?: info.loadIcon(context, 0))?.let { d ->
+                    // Anteprima ridotta (al massimo 360 × 240), con le sue proporzioni.
+                    val w = d.intrinsicWidth.coerceAtLeast(1)
+                    val h = d.intrinsicHeight.coerceAtLeast(1)
+                    val k = minOf(360f / w, 240f / h, 1f)
+                    d.toBitmap((w * k).toInt().coerceAtLeast(1), (h * k).toInt().coerceAtLeast(1))
+                }
+            }.getOrNull()
         }
     }
     val cells = "${((info.minWidth / density + 30) / 70).toInt().coerceAtLeast(1)} × ${((info.minHeight / density + 30) / 70).toInt().coerceAtLeast(1)}"
