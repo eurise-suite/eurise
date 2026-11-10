@@ -555,4 +555,16 @@
     <string name="modes_policy_text">Per scegliere quali notifiche passano, Eurise deve poter accendere e spegnere «Non disturbare». Non legge le notifiche e non manda nulla fuori dal telefono: cambia solo il filtro, all\'inizio e alla fine della modalità. Si toglie quando vuoi dalle impostazioni di Android.</string>
     <string name="modes_policy_open">Apri le impostazioni</string>
     <string name="modes_policy_later">Non ora</string>
+    <string name="bubble_move">Sposta</string>
+    <string name="bubble_delete_event">Elimina</string>
+    <string name="bubble_move_next">Avanti</string>
+    <string name="bubble_move_ok">Sposta</string>
+    <string name="bubble_move_cancel">Annulla</string>
+    <string name="bubble_event_trashed">Appuntamento nel cestino (30 giorni)</string>
+    <string name="bubble_event_moved">Appuntamento spostato</string>
+    <string name="bubble_event_failed">Il calendario non ha accettato la modifica</string>
+    <string name="home_no_alarm">No sveglia</string>
+    <string name="home_clock_alarm">Sveglia</string>
+    <string name="home_clock_stopwatch">Cronometro</string>
+    <string name="home_clock_timer">Conto alla rovescia</string>
 </resources>

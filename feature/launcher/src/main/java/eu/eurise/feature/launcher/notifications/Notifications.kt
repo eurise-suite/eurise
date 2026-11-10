@@ -127,17 +127,30 @@ object NotificationStore {
     /** Si è risposto da Eurise: la conversazione è trattata, quindi sparisce da bolle, Pannello e tendina. */
     fun answered(m: MessageItem) {
         replied[m.key] = System.currentTimeMillis()
+        repliedConversations[m.packageName + "|" + m.conversation] = System.currentTimeMillis()
         hide(m)
+        // Come chi risponde dall'app: la conversazione diventa letta, così l'app stessa toglie la notifica.
+        mainHandler.postDelayed({ m.markRead?.let { runCatching { it.intent.send() } } }, 800)
         dismiss(m.key)
         // La ripubblicazione dell'app arriva un attimo dopo: si toglie anche quella.
         mainHandler.postDelayed({ dismiss(m.key) }, 1_500)
         mainHandler.postDelayed({ dismiss(m.key) }, 4_000)
     }
 
-    private fun StatusBarNotification.isHidden() =
-        hidden[key] == postTime || replied[key]?.let { postTime - it in 0..REPLY_ECHO_MS } == true
+    /** Conversazioni a cui si è appena risposto: alcune app ripubblicano con una chiave nuova. */
+    private val repliedConversations = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
-    private const val REPLY_ECHO_MS = 8_000L
+    private fun StatusBarNotification.isHidden(): Boolean {
+        if (hidden[key] == postTime) return true
+        if (replied[key]?.let { postTime - it in 0..REPLY_ECHO_MS } == true) return true
+        // La stessa conversazione ripubblicata subito dopo la risposta (il testo inviato), con un'altra chiave.
+        val title = notification.extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)
+            ?: notification.extras.getCharSequence(Notification.EXTRA_TITLE)
+        return repliedConversations[packageName + "|" + title]?.let { postTime - it in 0..REPLY_ECHO_MS } == true
+    }
+
+    /** Quanto a lungo l'eco della propria risposta non riporta la notifica in bolla. Un messaggio nuovo dopo sì. */
+    private const val REPLY_ECHO_MS = 30_000L
 
     private val _nowPlaying = MutableStateFlow<NowPlaying?>(null)
     val nowPlaying: StateFlow<NowPlaying?> = _nowPlaying.asStateFlow()

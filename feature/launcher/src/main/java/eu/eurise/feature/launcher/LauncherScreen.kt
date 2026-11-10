@@ -410,6 +410,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         )
         val noteSaved = stringResource(R.string.bubble_saved_note)
         val taskSaved = stringResource(R.string.bubble_saved_task)
+        val eventTrashed = stringResource(R.string.bubble_event_trashed)
+        val eventMoved = stringResource(R.string.bubble_event_moved)
+        val eventFailed = stringResource(R.string.bubble_event_failed)
         val bubbleActions = eu.eurise.feature.launcher.home.BubbleActions(
             setDone = { viewModel.setTaskDone(it, true) },
             postpone = viewModel::postponeTask,
@@ -418,7 +421,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             openMedicines = { actions.openEurise("medicines") },
             openDay = { actions.openEurise("day:$it") },
             navigate = welcome.onRoute,
-            meetingNote = { e -> viewModel.meetingNote(e) { id -> actions.openEurise("note:$id") } },
+            // La nota della riunione dell'occorrenza (presenti, ordine del giorno, appunti, azioni).
+            meetingNote = { e -> actions.openEurise("meeting:${e.eventId}:${e.beginMillis}") },
             openLink = actions.openLink,
             setReadCodes = { on -> viewModel.updateSettings { it.copy(readCodes = on) } },
             openClock = actions.openClock,
@@ -440,6 +444,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                 android.widget.Toast.makeText(context, taskSaved.format(text), android.widget.Toast.LENGTH_SHORT).show()
             },
             callBack = { m -> eu.eurise.feature.launcher.notifications.CallBack.call(context, m) },
+            deleteEvent = { e ->
+                viewModel.deleteEvent(e) { ok ->
+                    android.widget.Toast.makeText(context, if (ok) eventTrashed else eventFailed, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },
+            moveEvent = { e, start ->
+                viewModel.moveEvent(e, start) { ok ->
+                    android.widget.Toast.makeText(context, if (ok) eventMoved else eventFailed, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },
         )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }
@@ -547,7 +561,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                         cardBody = { kind, modifier ->
                                             androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                                             SummaryCardBody(
-                                                PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, 22), modifier, state, messages, nowPlaying, notificationsOn,
+                                                // Il Calendario in bolla è sempre grande: mese da toccare più gli impegni.
+                                                PlacedCard(kind, eu.eurise.feature.launcher.summary.GRID_COLS, if (kind == CardKind.Calendar) 30 else 22), modifier, state, messages, nowPlaying, notificationsOn,
                                                 hazeState, actions, weather, newsItems, quotes, { newsSheet = true }, { stocksSheet = true },
                                                 DailyData(
                                                     horoscope = horoscope, horoscopeLoaded = horoscopeLoaded, sign = sign, dark = scene.themeDark, recipes = recipes,
@@ -1107,7 +1122,7 @@ private fun PhoneHome(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ClockBlock(
                     now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") }, large = false, modifier = Modifier.weight(1f),
-                    beside = { SunTimesColumn(welcome.sun, alarm = nextAlarm, now = now) },
+                    beside = { SunTimesColumn(welcome.sun, alarm = nextAlarm, now = now, onClock = { tab -> actions.openEurise("clock:$tab") }) },
                 )
                 // Accanto all'orario: galleria sopra, fotocamera sotto.
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

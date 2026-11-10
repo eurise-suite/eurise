@@ -117,6 +117,10 @@ class BubbleActions(
     val addTask: (String) -> Unit = quickTask,
     /** Richiama chi ha telefonato. */
     val callBack: (MessageItem) -> Unit = {},
+    /** Mette un appuntamento nel cestino unico. */
+    val deleteEvent: (CalendarEvent) -> Unit = {},
+    /** Sposta un appuntamento a un nuovo inizio, con la stessa durata. */
+    val moveEvent: (CalendarEvent, LocalDateTime) -> Unit = { _, _ -> },
 )
 
 // ---------------------------------------------------------------- pezzi comuni
@@ -367,10 +371,11 @@ private fun lookUp(context: android.content.Context, person: String, known: Even
 @Composable
 private fun EventAction(icon: ImageVector, label: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+        // Stessa misura dei pulsantini accanto ai titoli ("Ti hanno cercato").
+        Modifier.size(26.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
             .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+    ) { Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp)) }
 }
 
 /**
@@ -392,6 +397,7 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
     val whatsapp = remember(context) { context.packageManager.getLaunchIntentForPackage("com.whatsapp") != null }
     val lateText = stringResource(R.string.bubble_late_sms, e.title)
     val confirmText = stringResource(R.string.bubble_confirm_sms, e.title, time)
+    var moving by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
         // Il nome e le azioni stanno nella stessa fila: le azioni scendono sotto solo se il nome non lascia spazio.
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -418,7 +424,13 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
             EventAction(EuriseIcons.map(2f), stringResource(R.string.bubble_navigate)) {
                 if (e.location.isNotBlank()) actions.navigate(e.location) else open(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0")))
             }
+            // Sposta ed elimina solo dove si può scrivere; gli eventi ripetuti si cambiano dal Calendario.
+            if (e.writable && !e.recurring) {
+                EventAction(EuriseIcons.calendar(2f), stringResource(R.string.bubble_move)) { moving = true }
+                EventAction(EuriseIcons.trash(2f), stringResource(R.string.bubble_delete_event)) { actions.deleteEvent(e) }
+            }
         }
+        if (moving) MoveEventDialog(e, onDismiss = { moving = false }) { start -> moving = false; actions.moveEvent(e, start) }
         Column(Modifier.fillMaxWidth().clickable { actions.openDay(e.start.toLocalDate()) }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (e.location.isNotBlank()) Text(e.location, fontSize = 11.5.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (minutes != null) {
@@ -429,6 +441,45 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
                 )
             }
         }
+    }
+}
+
+/** Sposta un appuntamento: prima il giorno, poi l'ora (per quelli di tutto il giorno basta il giorno). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun MoveEventDialog(e: CalendarEvent, onDismiss: () -> Unit, onMove: (LocalDateTime) -> Unit) {
+    var day by remember { mutableStateOf<LocalDate?>(null) }
+    val picked = day
+    if (picked == null) {
+        val state = androidx.compose.material3.rememberDatePickerState(
+            initialSelectedDateMillis = e.start.toLocalDate().atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        androidx.compose.material3.DatePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val d = state.selectedDateMillis?.let { java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneOffset.UTC).toLocalDate() }
+                    when {
+                        d == null -> onDismiss()
+                        e.allDay -> onMove(d.atStartOfDay())
+                        else -> day = d
+                    }
+                }) { Text(stringResource(if (e.allDay) R.string.bubble_move_ok else R.string.bubble_move_next)) }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.bubble_move_cancel)) } },
+        ) { androidx.compose.material3.DatePicker(state) }
+    } else {
+        val time = androidx.compose.material3.rememberTimePickerState(e.start.hour, e.start.minute, is24Hour = true)
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { onMove(picked.atTime(time.hour, time.minute)) }) {
+                    Text(stringResource(R.string.bubble_move_ok))
+                }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.bubble_move_cancel)) } },
+            text = { androidx.compose.material3.TimePicker(time) },
+        )
     }
 }
 

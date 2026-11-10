@@ -392,6 +392,32 @@ class LauncherViewModel(
         }
     }
 
+    /** Mette l'evento nel cestino unico (torna per 30 giorni con i suoi collegamenti). */
+    fun deleteEvent(event: CalendarEvent, then: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val ok = runCatching {
+                eu.eurise.core.data.EuriseData.create(getApplication()).trash.trashEvent(event.eventId, event.beginMillis)
+            }.getOrDefault(false)
+            then(ok)
+        }
+    }
+
+    /** Sposta l'evento a [start] tenendo la durata. */
+    fun moveEvent(event: CalendarEvent, start: java.time.LocalDateTime, then: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val length = java.time.Duration.between(event.start, event.end)
+            val ok = runCatching {
+                eu.eurise.core.data.EuriseData.create(getApplication()).calendar.save(
+                    eu.eurise.core.data.calendar.EventDraft(
+                        event.eventId, event.calendarId, event.title, event.location, event.description, event.allDay,
+                        start, start.plus(length),
+                    ),
+                ) != null
+            }.getOrDefault(false)
+            then(ok)
+        }
+    }
+
     /** Preferiti predefiniti: telefono e messaggi di sistema, Note e Attività di Eurise. */
     private fun loadFavoriteKeys(): List<String> {
         prefs.getString(KEY_FAVORITES, null)?.let { saved -> return saved.split('|').filter { it.isNotBlank() } }

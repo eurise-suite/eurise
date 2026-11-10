@@ -50,6 +50,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -605,17 +610,26 @@ private fun HealthValue(icon: ImageVector, value: String, label: String) {
 }
 
 /**
- * Alba e tramonto accanto all'orario e, sotto, la prossima sveglia quando ce n'è una attiva:
- * tre righe uguali nella stessa colonna, centrata rispetto all'orario.
+ * Alba e tramonto accanto all'orario e, sotto, la riga della sveglia: il conto alla rovescia che corre, il cronometro
+ * acceso, la prossima sveglia oppure "No sveglia". Toccandola si sceglie tra sveglia, cronometro e conto alla rovescia.
  */
 @Composable
 fun SunTimesColumn(
     sun: Pair<java.time.LocalTime, java.time.LocalTime>?,
     alarm: LocalDateTime? = null,
     now: LocalDateTime = LocalDateTime.now(),
+    onClock: ((tab: Int) -> Unit)? = null,
 ) {
-    if (sun == null && alarm == null) return
     val color = MaterialTheme.colorScheme.onBackground
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.core.suite.ClockStatus.load(context) } }
+    val clock by eu.eurise.core.suite.ClockStatus.state.collectAsStateWithLifecycle()
+    // Timer e cronometro cambiano ogni secondo: solo allora si ridisegna più spesso.
+    val ticking = (clock.timerEndsAt?.let { it > System.currentTimeMillis() } == true) || clock.stopwatchStart != null
+    val millis by produceState(System.currentTimeMillis(), ticking) {
+        while (ticking) { value = System.currentTimeMillis(); kotlinx.coroutines.delay(1_000) }
+    }
+    var menu by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         sun?.let {
             listOf("↑ " + it.first.format(TimeFormat), "↓ " + it.second.format(TimeFormat)).forEachIndexed { i, text ->
@@ -626,17 +640,42 @@ fun SunTimesColumn(
                 }
             }
         }
-        alarm?.let {
-            val label = alarmLabel(it, now)
-            val description = stringResource(R.string.home_next_alarm, label)
+        val timerLeft = clock.timerEndsAt?.let { it - millis }?.takeIf { it > 0 }
+        val stopwatch = clock.stopwatchStart?.let { clock.stopwatchAccumulated + (millis - it) }
+            ?: clock.stopwatchAccumulated.takeIf { it > 0 }
+        val label = when {
+            timerLeft != null -> "⏳ " + duration(timerLeft)
+            stopwatch != null -> "⏱ " + duration(stopwatch)
+            alarm != null -> alarmLabel(alarm, now)
+            else -> stringResource(R.string.home_no_alarm)
+        }
+        val description = if (alarm != null && timerLeft == null && stopwatch == null) stringResource(R.string.home_next_alarm, label) else label
+        Box {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = description },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .then(if (onClock != null) Modifier.clickable { menu = true } else Modifier)
+                    .semantics(mergeDescendants = true) { contentDescription = description },
             ) {
                 Icon(EuriseIcons.alarm(2f), null, tint = color, modifier = Modifier.size(13.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = color)
             }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                listOf(R.string.home_clock_alarm to 0, R.string.home_clock_stopwatch to 2, R.string.home_clock_timer to 1).forEach { (text, tab) ->
+                    DropdownMenuItem(text = { Text(stringResource(text)) }, onClick = { menu = false; onClock?.invoke(tab) })
+                }
+            }
         }
     }
+}
+
+/** 1:05:09 o 4:07. */
+private fun duration(ms: Long): String {
+    val total = ms / 1000
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    val sec = total % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec)
 }

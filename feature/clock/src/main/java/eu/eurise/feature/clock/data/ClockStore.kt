@@ -30,6 +30,7 @@ data class ClockSettings(
  * Un solo oggetto per processo, così schermate, ricevitori e servizio vedono gli stessi dati.
  */
 class ClockStore private constructor(context: Context) {
+    private val appContext = context.applicationContext
     private val prefs = context.getSharedPreferences("clock", Context.MODE_PRIVATE)
 
     private val _alarms = MutableStateFlow(loadAlarms())
@@ -73,6 +74,17 @@ class ClockStore private constructor(context: Context) {
     private fun setTimers(list: List<ClockTimer>) {
         _timers.value = list
         prefs.edit().putString("timers", JSONArray(list.map { it.toJson() }).toString()).apply()
+        publishStatus()
+    }
+
+    /** Per la home: il conto alla rovescia più vicino e il cronometro (ClockStatus, in core/suite). */
+    private fun publishStatus() {
+        val next = _timers.value.filter { it.running }.minByOrNull { it.endsAt!! }
+        val s = _settings.value
+        eu.eurise.core.suite.ClockStatus.publish(
+            appContext,
+            eu.eurise.core.suite.ClockStatus.Status(next?.endsAt, next?.label.orEmpty(), s.stopwatchStart, s.stopwatchAccumulated),
+        )
     }
 
     fun updateSettings(transform: (ClockSettings) -> ClockSettings) {
@@ -84,6 +96,7 @@ class ClockStore private constructor(context: Context) {
             .putLong("sw_start", s.stopwatchStart ?: -1).putLong("sw_acc", s.stopwatchAccumulated)
             .putString("laps", s.laps.joinToString(","))
             .apply()
+        publishStatus()
     }
 
     private fun loadAlarms(): List<Alarm> = runCatching {

@@ -145,6 +145,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             }
             section == "backup" -> navController.navigate("cloud/backup")
             section == "clock" -> goTo(Section.Clock)
+            // Dalla riga della sveglia nella home: 0 sveglie, 1 conto alla rovescia, 2 cronometro.
+            section.startsWith("clock:") -> { section.removePrefix("clock:").toIntOrNull()?.let { clockTab = it }; goTo(Section.Clock) }
             section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
             section == "trash" -> navController.navigate("trash") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
