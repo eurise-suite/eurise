@@ -103,7 +103,7 @@ private const val STILL_LIMIT = 0.025f
 
 /** Scanner: inquadra, riconosce i bordi e scatta da solo quando il foglio è fermo, poi salva un PDF. */
 @Composable
-fun ScannerRoute(onClose: () -> Unit) {
+fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false) {
     val context = LocalContext.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var explain by remember { mutableStateOf(!granted) }
@@ -121,7 +121,7 @@ fun ScannerRoute(onClose: () -> Unit) {
     Box(Modifier.fillMaxSize().background(if (reviewing) MaterialTheme.colorScheme.background else Color(0xFF14171C))) {
         when {
             reviewing -> Review(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
-            granted -> Camera(pages, origins, dir, onClose) { if (pages.isNotEmpty()) reviewing = true }
+            granted -> Camera(pages, origins, dir, onClose, startQr) { if (pages.isNotEmpty()) reviewing = true }
         }
     }
     if (explain) {
@@ -156,19 +156,27 @@ private fun lumaOf(image: ImageProxy): Triple<IntArray, Int, Int> {
 }
 
 @Composable
-private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onClose: () -> Unit, onDone: () -> Unit) {
+private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onClose: () -> Unit, startQr: Boolean, onDone: () -> Unit) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    var mode by remember { mutableStateOf(ScanMode.Document) }
+    var mode by remember { mutableStateOf(if (startQr) ScanMode.Qr else ScanMode.Document) }
     var quad by remember { mutableStateOf<Quad?>(null) }
     var still by remember { mutableStateOf(0) }
     var busy by remember { mutableStateOf(false) }
     var torch by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
-    val modeNow = remember { java.util.concurrent.atomic.AtomicReference(ScanMode.Document) }
+    val modeNow = remember { java.util.concurrent.atomic.AtomicReference(if (startQr) ScanMode.Qr else ScanMode.Document) }
     var qr by remember { mutableStateOf<String?>(null) }
     val qrShown = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    var qrHistory by remember { mutableStateOf(false) }
+    var qrCreate by remember { mutableStateOf(false) }
+    val pickPhoto = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) scope.launch {
+            val text = withContext(Dispatchers.Default) { decodeFromImage(context, uri) }
+            if (text != null) { qrShown.set(true); qr = text } else Toast.makeText(context, R.string.qr_none_in_photo, Toast.LENGTH_SHORT).show()
+        }
+    }
     val capture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -207,7 +215,9 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     val owed = still >= STILL_NEEDED
     LaunchedEffect(owed) { if (owed && !busy) shoot() }
 
-    qr?.let { text -> QrDialog(text) { qr = null; qrShown.set(false) } }
+    qr?.let { text -> QrSheet(text) { qr = null; qrShown.set(false) } }
+    if (qrHistory) QrHistorySheet(onOpen = { qrHistory = false; qrShown.set(true); qr = it }, onClose = { qrHistory = false })
+    if (qrCreate) QrCreateSheet(onClose = { qrCreate = false })
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
@@ -291,7 +301,22 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            if (mode == ScanMode.Qr) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Triple(R.string.qr_from_photo, EuriseIcons.image()) { pickPhoto.launch("image/*") },
+                    Triple(R.string.qr_create, EuriseIcons.plus()) { qrCreate = true },
+                    Triple(R.string.qr_history, EuriseIcons.clock()) { qrHistory = true },
+                ).forEach { (label, icon, action) ->
+                    Column(
+                        Modifier.weight(1f).height(64.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x33FFFFFF)).clickable(onClick = action),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Text(stringResource(label), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 val desc = stringResource(R.string.scan_pages, pages.size)
                 Box(Modifier.size(56.dp).clickable(onClick = onDone).semantics { contentDescription = desc }) {
                     pages.lastOrNull()?.let { Thumb(it, Modifier.fillMaxSize().padding(6.dp)) }
@@ -313,37 +338,15 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     }
 }
 
-/** La schermata non apre mai da sola ciò che legge: un QR può portare ovunque, quindi prima si vede il contenuto. */
-@Composable
-private fun QrDialog(text: String, onClose: () -> Unit) {
-    val context = LocalContext.current
-    val isOtp = text.startsWith("otpauth://", ignoreCase = true) || text.startsWith("otpauth-migration://", ignoreCase = true)
-    val canOpen = isOtp || text.startsWith("https://", ignoreCase = true) || text.startsWith("http://", ignoreCase = true)
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text(stringResource(R.string.scan_qr_found)) },
-        // Il segreto di un codice 2FA non va mostrato sullo schermo.
-        text = { Text(if (isOtp) stringResource(R.string.scan_qr_2fa) else text) },
-        confirmButton = {
-            if (canOpen) TextButton(onClick = {
-                try {
-                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(text)))
-                } catch (e: android.content.ActivityNotFoundException) {
-                    Toast.makeText(context, R.string.scan_qr_no_app, Toast.LENGTH_SHORT).show()
-                }
-                onClose()
-            }) { Text(stringResource(R.string.scan_qr_open)) }
-        },
-        dismissButton = {
-            Row {
-                if (!isOtp) TextButton(onClick = {
-                    val clip = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clip.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
-                    onClose()
-                }) { Text(stringResource(R.string.scan_qr_copy)) }
-                TextButton(onClick = onClose) { Text(stringResource(R.string.scan_qr_close)) }
-            }
-        },
+/** QR, Data Matrix e i codici a barre più comuni (EAN, Code 128). */
+private val LiveReader = com.google.zxing.MultiFormatReader().apply {
+    setHints(
+        mapOf(
+            com.google.zxing.DecodeHintType.POSSIBLE_FORMATS to listOf(
+                com.google.zxing.BarcodeFormat.QR_CODE, com.google.zxing.BarcodeFormat.DATA_MATRIX,
+                com.google.zxing.BarcodeFormat.EAN_13, com.google.zxing.BarcodeFormat.EAN_8, com.google.zxing.BarcodeFormat.CODE_128,
+            ),
+        ),
     )
 }
 
@@ -359,7 +362,7 @@ private fun decodeQr(image: ImageProxy): String? {
     }
     val source = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false)
     return try {
-        com.google.zxing.qrcode.QRCodeReader().decode(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
+        LiveReader.decodeWithState(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
     } catch (e: com.google.zxing.ReaderException) {
         null
     }

@@ -143,6 +143,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
             section == "calculator" -> navController.navigate("calculator") { launchSingleTop = true }
+            section == "qr" -> navController.navigate("qr") { launchSingleTop = true }
             section == "privacy" -> navController.navigate("privacy") { launchSingleTop = true }
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
@@ -239,6 +240,9 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onBack = { navController.closeIfOn("calculator") },
                         onSaveNote = { title, body -> scope.launch { data.notes.save(null, title, body) } },
                     )
+                }
+                composable("qr") {
+                    eu.eurise.feature.scanner.ScannerRoute(onClose = { navController.closeIfOn("qr") }, startQr = true)
                 }
                 composable("scanner") {
                     eu.eurise.feature.scanner.ScannerRoute(onClose = { navController.closeIfOn("scanner") })
