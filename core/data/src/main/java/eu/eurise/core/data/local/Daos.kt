@@ -318,4 +318,25 @@ internal interface LinkDao {
     /** Toglie ogni collegamento di una cosa eliminata. */
     @Query("DELETE FROM links WHERE a = :ref OR b = :ref")
     suspend fun deleteAll(ref: String)
+
+    @Query("SELECT * FROM links WHERE a = :ref OR b = :ref")
+    suspend fun all(ref: String): List<LinkEntity>
+}
+
+@Dao
+internal interface TrashDao {
+    @Query("SELECT * FROM trash ORDER BY deleted_at DESC")
+    fun observe(): Flow<List<TrashEntity>>
+
+    @Query("SELECT * FROM trash WHERE id = :id")
+    suspend fun get(id: Long): TrashEntity?
+
+    @Insert
+    suspend fun insert(entry: TrashEntity): Long
+
+    @Query("DELETE FROM trash WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("SELECT id FROM trash WHERE deleted_at < :limit")
+    suspend fun before(limit: Long): List<Long>
 }

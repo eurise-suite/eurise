@@ -128,7 +128,7 @@ private fun hasAccess(context: Context): Boolean =
     else ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
 
 @Composable
-fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
+fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNewPhone: () -> Unit = onCloud, startInTrash: Boolean = false) {
     val context = LocalContext.current
     val data = remember { DriveData(context.applicationContext) }
     val owner = LocalLifecycleOwner.current
@@ -138,7 +138,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
         owner.lifecycle.addObserver(observer)
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
-    var tab by remember { mutableStateOf(Tab.Files) }
+    var tab by remember { mutableStateOf(if (startInTrash) Tab.Trash else Tab.Files) }
     var scope by remember { mutableStateOf<Place?>(null) }
     var folder by remember { mutableStateOf<Folder?>(null) }
     var selected by remember { mutableStateOf<DriveItem?>(null) }
@@ -239,7 +239,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit) {
                 )
                 Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
                 Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
-                Tab.Trash -> TrashTab(data, refresh, onRestore = { action { data.restore(it) } }, onDelete = { action { data.deleteForever(it) } })
+                Tab.Trash -> AllTrash(data, refresh, onRestoreFile = { action { data.restore(it) } }, onDeleteFile = { action { data.deleteForever(it) } }, onNewPhone = onNewPhone, bottomSpace = bottomSpace)
             }
         }
         if (loading) {
@@ -687,27 +687,6 @@ private fun OfflineTab(data: DriveData, refresh: Int, onOpen: (DriveItem) -> Uni
         items(items, key = { it.key }) { item ->
             Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
                 ItemRow(item, onClick = { onOpen(item) }, onMore = { onMore(item) })
-            }
-        }
-    }
-}
-
-@Composable
-private fun TrashTab(data: DriveData, refresh: Int, onRestore: (TrashItem) -> Unit, onDelete: (TrashItem) -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    val context = LocalContext.current
-    val items by produceState(emptyList<TrashItem>(), refresh) { value = data.trash() }
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(top = 12.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        item(key = "t") { Text(stringResource(R.string.drive_trash), fontSize = 30.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp)) }
-        if (items.isEmpty()) item(key = "e") { EmptyState(EuriseIcons.trash(), stringResource(R.string.drive_empty_trash), stringResource(R.string.drive_empty_trash_msg)) }
-        items(items, key = { it.id }) { item ->
-            Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp)) {
-                Text(item.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(Formatter.formatShortFileSize(context, item.size), fontSize = 12.sp, color = scheme.onSurfaceVariant)
-                Row {
-                    TextButton(onClick = { onRestore(item) }) { Text(stringResource(R.string.drive_restore)) }
-                    TextButton(onClick = { onDelete(item) }) { Text(stringResource(R.string.drive_delete_forever), color = scheme.error) }
-                }
             }
         }
     }

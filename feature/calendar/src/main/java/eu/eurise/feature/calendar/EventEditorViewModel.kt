@@ -50,9 +50,10 @@ data class EventEditorState(
 class EventEditorViewModel(
     private val repository: CalendarRepository,
     private val eventId: Long?,
-    beginMillis: Long?,
+    private val beginMillis: Long?,
     suggestedStart: Long?,
     private val zone: ZoneId = ZoneId.systemDefault(),
+    private val trash: eu.eurise.core.data.trash.TrashRepository? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EventEditorState(isNew = eventId == null))
@@ -148,7 +149,11 @@ class EventEditorViewModel(
         val id = eventId ?: return
         if (_state.value.readOnly) return
         viewModelScope.launch {
-            if (repository.delete(id)) onDeleted() else _state.update { it.copy(error = EditorError.Save) }
+            // Nel cestino unico, se c'è: l'evento torna con i suoi collegamenti per 30 giorni.
+            val bin = trash
+            val begin = beginMillis
+            val ok = if (bin != null && begin != null) bin.trashEvent(id, begin) else repository.delete(id)
+            if (ok) onDeleted() else _state.update { it.copy(error = EditorError.Save) }
         }
     }
 }

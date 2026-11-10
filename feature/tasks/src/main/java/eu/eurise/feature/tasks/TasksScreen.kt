@@ -85,7 +85,8 @@ fun TasksRoute(
     onTaskOpened: () -> Unit = {},
     linked: @Composable (taskId: Long, title: String) -> Unit = { _, _ -> },
 ) {
-    val viewModel = viewModel { TasksViewModel(repository) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val viewModel = viewModel { TasksViewModel(repository, eu.eurise.core.data.EuriseData.create(context).trash) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showLists by rememberSaveable { mutableStateOf(false) }

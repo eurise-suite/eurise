@@ -166,3 +166,17 @@ internal fun Task.toEntity() = TaskEntity(
     remoteEtag = remoteEtag,
     syncBase = syncBase,
 )
+
+/**
+ * Una cosa nel cestino unico che non ha un cestino suo (attività ed eventi): [payload] è la sua copia (JSON) con i
+ * collegamenti, per rimetterla com'era. Le note hanno già il loro cestino nella tabella delle note.
+ */
+@Entity(tableName = "trash", indices = [Index("deleted_at")])
+internal data class TrashEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val kind: String,
+    val title: String,
+    val detail: String,
+    @ColumnInfo(name = "deleted_at") val deletedAt: Long,
+    val payload: String,
+)

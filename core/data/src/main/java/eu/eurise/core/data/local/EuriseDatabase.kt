@@ -10,9 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class,
-        TaskListEntity::class, LinkEntity::class, TaskTombstoneEntity::class,
+        TaskListEntity::class, LinkEntity::class, TaskTombstoneEntity::class, TrashEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
@@ -21,11 +21,12 @@ internal abstract class EuriseDatabase : RoomDatabase() {
     abstract fun taskListDao(): TaskListDao
     abstract fun linkDao(): LinkDao
     abstract fun notebookDao(): NotebookDao
+    abstract fun trashDao(): TrashDao
 
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) = insertDefaultTaskLists(db)
                 })
@@ -117,5 +118,16 @@ internal val MIGRATION_4_5 = object : Migration(4, 5) {
             "CREATE TABLE IF NOT EXISTS links (a TEXT NOT NULL, b TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(a, b))"
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS index_links_b ON links (b)")
+    }
+}
+
+/** Versione 7: cestino unico per attività ed eventi. Nessun dato si perde. */
+internal val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS trash (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, " +
+                "detail TEXT NOT NULL, deleted_at INTEGER NOT NULL, payload TEXT NOT NULL)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_trash_deleted_at ON trash (deleted_at)")
     }
 }

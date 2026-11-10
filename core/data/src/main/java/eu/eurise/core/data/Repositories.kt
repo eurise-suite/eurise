@@ -418,6 +418,25 @@ class TaskRepository internal constructor(
         onChanged?.invoke()
     }
 
+    /** I passi di un'attività. */
+    suspend fun stepsOf(id: Long): List<Task> = dao.steps(id).map { it.toModel() }
+
+    /**
+     * Rimette un'attività tolta (dal cestino unico) come nuova: senza legami col server, così alla prossima
+     * sincronizzazione ci torna. Se il suo elenco o la sua nota non ci sono più, va nell'elenco principale e senza nota.
+     */
+    suspend fun restoreFromTrash(task: Task): Long {
+        val listId = if (lists.get(task.listId) != null) task.listId else TaskList.MAIN
+        val noteId = task.noteId?.takeIf { noteExists?.invoke(it) == true }
+        val id = dao.upsert(task.copy(id = 0, listId = listId, noteId = noteId, uid = null, remoteEtag = null, syncBase = null).toEntity())
+        remindersChanged(task)
+        onChanged?.invoke()
+        return id
+    }
+
+    /** Impostato da [EuriseData]: dice se una nota esiste ancora (per non legare attività a note sparite). */
+    internal var noteExists: (suspend (Long) -> Boolean)? = null
+
     /** Elimina l'attività con i suoi passi. */
     suspend fun delete(id: Long) {
         links.deleteAll(LinkRef.task(id).toString())
@@ -511,6 +530,11 @@ class EuriseData private constructor(context: Context, database: EuriseDatabase,
     val tasks = TaskRepository(database.taskDao(), database.taskListDao(), database.linkDao(), clock, TaskSettings(context))
     val links = LinkRepository(database.linkDao(), database.taskDao(), clock)
     val calendar = CalendarRepository(context)
+    val trash = eu.eurise.core.data.trash.TrashRepository(database.trashDao(), database.linkDao(), notes, tasks, calendar, clock)
+
+    init {
+        tasks.noteExists = { id -> notes.get(id) != null }
+    }
     val dates = eu.eurise.core.data.dates.ImportantDatesRepository(context)
     val medicines = eu.eurise.core.data.meds.MedicinesRepository(context)
 

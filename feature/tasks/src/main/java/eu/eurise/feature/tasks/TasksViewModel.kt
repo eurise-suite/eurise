@@ -39,7 +39,10 @@ data class TasksState(
 
 private data class Inputs(val filter: TasksFilter, val query: String, val tasks: List<Task>, val hidden: Set<Long> = emptySet())
 
-class TasksViewModel(private val repository: TaskRepository) : ViewModel() {
+class TasksViewModel(
+    private val repository: TaskRepository,
+    private val trash: eu.eurise.core.data.trash.TrashRepository? = null,
+) : ViewModel() {
 
     private val filter = MutableStateFlow<TasksFilter>(TasksFilter.Today)
     private val query = MutableStateFlow("")
@@ -99,8 +102,12 @@ class TasksViewModel(private val repository: TaskRepository) : ViewModel() {
         viewModelScope.launch { repository.update(task) }
     }
 
+    /** Un'attività va nel cestino unico (30 giorni, torna con i collegamenti); un passo si toglie e basta. */
     fun delete(task: Task) {
-        viewModelScope.launch { repository.delete(task.id) }
+        viewModelScope.launch {
+            val bin = trash
+            if (task.parentId == null && bin != null) bin.trashTask(task.id) else repository.delete(task.id)
+        }
     }
 
     fun addStep(parentId: Long, title: String) {

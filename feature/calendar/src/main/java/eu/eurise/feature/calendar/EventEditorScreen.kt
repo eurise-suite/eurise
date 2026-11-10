@@ -84,7 +84,10 @@ fun EventEditorRoute(
     linked: @Composable (eventId: Long, title: String) -> Unit = { _, _ -> },
     onMeeting: ((eventId: Long, beginMillis: Long) -> Unit)? = null,
 ) {
-    val viewModel = viewModel { EventEditorViewModel(repository, eventId, beginMillis, startMillis) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val viewModel = viewModel {
+        EventEditorViewModel(repository, eventId, beginMillis, startMillis, trash = eu.eurise.core.data.EuriseData.create(context).trash)
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val localName = stringResource(R.string.cal_local_name)
     BackHandler(onBack = onClose)

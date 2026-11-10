@@ -115,4 +115,22 @@
     <string name="drive_tree_add">+ Aggiungi</string>
     <string name="drive_tree_remove">Scollega questa cartella</string>
     <string name="drive_tree_failed">Questa app non permette di tenere la cartella collegata</string>
+    <!-- Cestino unico -->
+    <string name="bin_all">Tutto</string>
+    <string name="bin_notes">Note</string>
+    <string name="bin_tasks">Attività</string>
+    <string name="bin_events">Eventi</string>
+    <string name="bin_files">File</string>
+    <string name="bin_photos">Foto</string>
+    <string name="bin_hint">Note, attività, eventi, file e foto restano qui 30 giorni e tornano con i loro collegamenti.</string>
+    <string name="bin_empty">Svuota</string>
+    <string name="bin_empty_msg">Quello che togli da Note, Attività, Calendario, File e Galleria resta qui 30 giorni.</string>
+    <string name="bin_untitled">Senza titolo</string>
+    <string name="bin_days_left">resta %1$d giorni</string>
+    <string name="bin_photos_gallery">Le foto tolte si vedono qui dopo aver dato a Eurise l\'accesso alle foto; intanto sono nel cestino della Galleria.</string>
+    <string name="bin_new_phone">Passa a un telefono nuovo</string>
+    <string name="bin_new_phone_msg">Backup cifrato di tutta la suite, da ripristinare dalla prima schermata del telefono nuovo.</string>
+    <string name="bin_empty_title">Svuotare il cestino?</string>
+    <string name="bin_empty_text">Note, attività, eventi e file nel cestino spariscono per sempre. Le foto restano nel cestino di Android finché non le togli una per una.</string>
+    <string name="bin_cancel">Annulla</string>
 </resources>

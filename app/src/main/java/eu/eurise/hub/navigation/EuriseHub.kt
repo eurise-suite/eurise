@@ -145,6 +145,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "backup" -> navController.navigate("cloud/backup")
             section == "clock" -> goTo(Section.Clock)
             section == "drive" -> navController.navigate("drive") { launchSingleTop = true }
+            section == "trash" -> navController.navigate("trash") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
             section == "calculator" -> navController.navigate("calculator") { launchSingleTop = true }
             section == "qr" -> navController.navigate("qr") { launchSingleTop = true }
@@ -219,7 +220,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                             notesFilter = NotesFilterRequest(filter, (notesFilter?.serial ?: 0) + 1)
                             navController.closeIfOn("notes/organize")
                         },
-                        onTrash = { navController.navigate("notes/trash") },
+                        onTrash = { navController.navigate("trash") },
                         onCloud = { navController.navigate("cloud") },
                     )
                 }
@@ -240,6 +241,17 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onBack = { navController.closeIfOn("drive") },
                         onScan = { navController.navigate("scanner") },
                         onCloud = { navController.navigate("cloud") },
+                        onNewPhone = { navController.navigate("cloud/backup") },
+                    )
+                }
+                // Il cestino unico: note, attività, eventi, file e foto (File › Cestino).
+                composable("trash") {
+                    eu.eurise.feature.drive.DriveRoute(
+                        onBack = { navController.closeIfOn("trash") },
+                        onScan = { navController.navigate("scanner") },
+                        onCloud = { navController.navigate("cloud") },
+                        onNewPhone = { navController.navigate("cloud/backup") },
+                        startInTrash = true,
                     )
                 }
                 composable("calculator") {
