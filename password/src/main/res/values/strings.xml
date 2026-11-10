@@ -255,4 +255,34 @@
     <string name="pwd_cloud_or">Oppure un Nextcloud, tuo o di un fornitore:</string>
     <string name="pwd_cloud_server">Indirizzo, per esempio cloud.esempio.it</string>
     <string name="pwd_cloud_nextcloud">Collega Nextcloud</string>
+    <string name="pwd_tab_mydata">I miei dati</string>
+    <string name="pwd_profile_person">Persona</string>
+    <string name="pwd_profile_work">Attività professionale</string>
+    <string name="pwd_profile_address">Indirizzo</string>
+    <string name="pwd_profile_custom">Altri dati · aggiunti da te</string>
+    <string name="pwd_profile_custom_note">I dati aggiunti da te restano coperti e si vedono o si copiano dopo l\'impronta o il PIN.</string>
+    <string name="pwd_profile_add_field">Aggiungi un dato</string>
+    <string name="pwd_profile_field_title">Titolo</string>
+    <string name="pwd_profile_field_value">Valore</string>
+    <string name="pwd_profile_remove">Togli questo dato</string>
+    <string name="pwd_profile_name">Nome del profilo (Personale, Studio…)</string>
+    <string name="pwd_profile_default">Personale</string>
+    <string name="pwd_profile_new">Nuovo profilo</string>
+    <string name="pwd_profile_open_until">Aperti · si chiudono tra %1$d s</string>
+    <string name="pwd_profile_closed">Chiusi</string>
+    <string name="pwd_profile_locked">I miei dati si aprono con l\'impronta o il PIN del telefono, anche a cassaforte aperta.</string>
+    <string name="pwd_profile_unlock">Apri con impronta o PIN</string>
+    <string name="pwd_profile_empty">Ancora nessun dato: tocca Modifica.</string>
+    <string name="pwd_profile_copy">Copia %1$s</string>
+    <plurals name="pwd_profile_row">
+        <item quantity="one">I miei dati · %d dato</item>
+        <item quantity="other">I miei dati · %d dati</item>
+    </plurals>
+    <string name="pwd_sensitive_title">Dati riservati</string>
+    <string name="pwd_sensitive_subtitle">Conferma con l\'impronta o il PIN del telefono</string>
+    <string name="pwd_fill_profile">I miei dati · Eurise Password</string>
+    <string name="pwd_fill_choose_profile">Con quali dati compilare?</string>
+    <string name="pwd_fill_no_profile">Nessun profilo: aggiungilo in Password, I miei dati.</string>
+    <string name="pwd_fill_profile_count">Compila %1$d campi</string>
+    <string name="pwd_fill_profile_note">Il modulo riceve solo i campi che chiede. Prima serve l\'impronta o il PIN.</string>
 </resources>

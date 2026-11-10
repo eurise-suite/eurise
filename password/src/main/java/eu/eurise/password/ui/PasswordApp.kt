@@ -115,9 +115,10 @@ private sealed interface Screen {
     data class Detail(val uuid: String) : Screen
     data class Edit(val uuid: String?, val card: Boolean = false, val prefill: EntryDraft? = null) : Screen
     data object Sync : Screen
+    data class ProfileEdit(val uuid: String?) : Screen
 }
 
-private enum class Tab(val label: Int) { All(R.string.pwd_tab_all), Otp(R.string.pwd_tab_otp), Cards(R.string.pwd_tab_cards), Notes(R.string.pwd_tab_notes), Fix(R.string.pwd_tab_fix) }
+private enum class Tab(val label: Int) { All(R.string.pwd_tab_all), Otp(R.string.pwd_tab_otp), Cards(R.string.pwd_tab_cards), MyData(R.string.pwd_tab_mydata), Notes(R.string.pwd_tab_notes), Fix(R.string.pwd_tab_fix) }
 
 @Composable
 fun PasswordRoute(vm: PasswordViewModel = viewModel()) {
@@ -293,6 +294,7 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
     val back: () -> Unit = {
         screen = when (val s = screen) {
             is Screen.Edit -> s.uuid?.let { Screen.Detail(it) } ?: Screen.List
+            is Screen.ProfileEdit -> s.uuid?.let { Screen.Detail(it) } ?: Screen.List
             else -> Screen.List
         }
     }
@@ -314,11 +316,12 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
     ImportDialogs(vm)
     BackHandler(enabled = screen != Screen.List, onBack = back)
     when (val s = screen) {
-        Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { card -> screen = Screen.Edit(null, card) }, onSync = { screen = Screen.Sync })
+        Screen.List -> VaultList(vm, entries, onOpen = { vm.markUsed(it); screen = Screen.Detail(it) }, onAdd = { t -> screen = if (t == Tab.MyData) Screen.ProfileEdit(null) else Screen.Edit(null, t == Tab.Cards) }, onSync = { screen = Screen.Sync })
         is Screen.Detail -> {
             val entry = entries.firstOrNull { it.uuid == s.uuid }
             if (entry == null) LaunchedEffect(Unit) { screen = Screen.List }
             else if (entry.card != null) CardDetail(vm, entry, back, onEdit = { screen = Screen.Edit(s.uuid, true) })
+            else if (entry.profile != null) ProfileDetail(vm, entry, back, onEdit = { screen = Screen.ProfileEdit(s.uuid) })
             else EntryDetail(vm, entry, entries, back, onEdit = { screen = Screen.Edit(s.uuid) })
         }
         is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, s.prefill, back) { draft ->
@@ -326,6 +329,10 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
             back()
         }
         Screen.Sync -> SyncScreen(vm, back)
+        is Screen.ProfileEdit -> ProfileEdit(entries.firstOrNull { it.uuid == s.uuid }, back) { draft ->
+            vm.save(draft, s.uuid)
+            back()
+        }
     }
 }
 
@@ -358,7 +365,7 @@ private sealed interface Row2 {
 }
 
 @Composable
-private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: (String) -> Unit, onAdd: (Boolean) -> Unit, onSync: () -> Unit) {
+private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: (String) -> Unit, onAdd: (Tab) -> Unit, onSync: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val haze = remember { HazeState() }
     var tab by remember { mutableStateOf(Tab.All) }
@@ -386,6 +393,7 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
                 Tab.All -> true
                 Tab.Otp -> e.otp != null
                 Tab.Cards -> e.card != null
+                Tab.MyData -> e.profile != null
                 Tab.Notes -> e.card == null && e.password.isEmpty() && e.notes.isNotBlank()
                 Tab.Fix -> e.uuid in issues || e.uuid in expiring
             }
@@ -465,7 +473,7 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
                 Icon(EuriseIcons.cloud(), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
                 Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Box(Modifier.size(52.dp).glass(haze, CircleShape).clickable(onClick = { onAdd(tab == Tab.Cards) }), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(52.dp).glass(haze, CircleShape).clickable(onClick = { onAdd(tab) }), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.pwd_add), tint = scheme.primary)
             }
         }
@@ -542,6 +550,7 @@ private fun EntryRow(entry: VaultEntry, issue: HealthIssue?, now: Long, index: I
                     issue?.weak == true -> stringResource(R.string.pwd_row_fix_weak) to true
                     issue?.reused == true -> stringResource(R.string.pwd_row_fix_reused) to true
                     entry.card != null -> stringResource(R.string.pwd_card_row, Cards.lastFour(entry.card.number)) to false
+                    entry.profile != null -> pluralStringResource(R.plurals.pwd_profile_row, entry.profile.count { it.second.isNotBlank() }, entry.profile.count { it.second.isNotBlank() }) to false
                     totp != null -> stringResource(R.string.pwd_row_otp, entry.username) to false
                     entry.password.isEmpty() && entry.notes.isNotBlank() -> stringResource(R.string.pwd_row_note) to false
                     else -> entry.username to false
@@ -1015,6 +1024,7 @@ private fun AliasSettings(vm: PasswordViewModel) {
 private fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> Unit, onEdit: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val card = entry.card ?: return
+    val context = LocalContext.current
     var showNumber by remember(entry.uuid) { mutableStateOf(false) }
     var showCvv by remember(entry.uuid) { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
@@ -1040,14 +1050,14 @@ private fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> U
         }
         GroupCard {
             FieldRow(stringResource(R.string.pwd_card_number), if (showNumber) card.number else masked) {
-                RoundIcon(if (showNumber) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show)) { showNumber = !showNumber }
-                RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy)) { vm.copy(card.number.filter { it.isDigit() }) }
+                RoundIcon(if (showNumber) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show)) { if (showNumber) showNumber = false else vm.confirmSensitive(context) { showNumber = true } }
+                RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy)) { vm.confirmSensitive(context) { vm.copy(card.number.filter { it.isDigit() }) } }
             }
             if (card.cvv.isNotEmpty()) {
                 CardDivider()
                 FieldRow(stringResource(R.string.pwd_card_cvv), if (showCvv) card.cvv else "•••") {
-                    RoundIcon(if (showCvv) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show_cvv)) { showCvv = !showCvv }
-                    RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy_cvv)) { vm.copy(card.cvv) }
+                    RoundIcon(if (showCvv) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(R.string.pwd_card_show_cvv)) { if (showCvv) showCvv = false else vm.confirmSensitive(context) { showCvv = true } }
+                    RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_card_copy_cvv)) { vm.confirmSensitive(context) { vm.copy(card.cvv) } }
                 }
             }
         }
@@ -1151,4 +1161,160 @@ private fun InfoDialog(title: Int, body: String, onClose: () -> Unit) {
         text = { Text(body) },
         confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.pwd_import_ok)) } },
     )
+}
+
+// --- I miei dati ---
+
+@Composable
+private fun profileSectionName(section: eu.eurise.password.logic.Profiles.Section) = stringResource(
+    when (section) {
+        eu.eurise.password.logic.Profiles.Section.Person -> R.string.pwd_profile_person
+        eu.eurise.password.logic.Profiles.Section.Work -> R.string.pwd_profile_work
+        eu.eurise.password.logic.Profiles.Section.Address -> R.string.pwd_profile_address
+    },
+)
+
+/**
+ * Un profilo dei miei dati. I valori compaiono solo dopo l'impronta o il PIN e restano aperti per 2 minuti; i dati
+ * riservati (codice fiscale, IBAN, documento e quelli aggiunti da te) restano coperti finché non si toccano.
+ */
+@Composable
+private fun ProfileDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> Unit, onEdit: () -> Unit) {
+    val context = LocalContext.current
+    val scheme = MaterialTheme.colorScheme
+    val profiles = eu.eurise.password.logic.Profiles
+    val gate = eu.eurise.password.data.SensitiveGate
+    val fields = entry.profile.orEmpty()
+    var open by remember { mutableStateOf(gate.isOpen()) }
+    var left by remember { mutableIntStateOf(gate.remainingSeconds()) }
+    var revealed by remember(entry.uuid) { mutableStateOf(emptySet<String>()) }
+    LaunchedEffect(open) {
+        while (open) {
+            left = gate.remainingSeconds()
+            if (left == 0) { open = false; revealed = emptySet() }
+            delay(1_000)
+        }
+    }
+    LaunchedEffect(Unit) { if (!open) vm.confirmSensitive(context) { open = true } }
+    val title = entry.title.ifBlank { stringResource(R.string.pwd_profile_default) }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        BackHeader(stringResource(R.string.pwd_tab_mydata), onBack) { if (open) PillAction(stringResource(R.string.pwd_edit), onEdit) }
+        Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Avatar(title, 52, 16, 22)
+            Column {
+                Text(title, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (open) stringResource(R.string.pwd_profile_open_until, left) else stringResource(R.string.pwd_profile_closed),
+                    fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = if (open) scheme.secondary else scheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (!open) {
+            Column(
+                Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(EuriseIcons.lock(), contentDescription = null, tint = scheme.primary, modifier = Modifier.size(28.dp))
+                Text(stringResource(R.string.pwd_profile_locked), fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Button(onClick = { vm.confirmSensitive(context) { open = true } }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Text(stringResource(R.string.pwd_profile_unlock), fontWeight = FontWeight.Bold)
+                }
+            }
+        } else {
+            if (fields.none { it.second.isNotBlank() }) {
+                Text(stringResource(R.string.pwd_profile_empty), fontSize = 14.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
+            }
+            val toggle: (String) -> Unit = { key -> revealed = if (key in revealed) revealed - key else revealed + key }
+            val copy: (String) -> Unit = { value -> vm.confirmSensitive(context) { vm.copy(value) } }
+            val values = fields.toMap()
+            eu.eurise.password.logic.Profiles.Section.entries.forEach { section ->
+                val list = profiles.known.filter { it.section == section }.mapNotNull { k -> values[k.key]?.takeIf { it.isNotBlank() }?.let { k.key to it } }
+                if (list.isNotEmpty()) {
+                    SectionLabel(profileSectionName(section), Modifier.padding(top = 4.dp))
+                    ProfileRows(list, revealed, toggle, copy)
+                }
+            }
+            val custom = profiles.custom(fields).filter { it.second.isNotBlank() }
+            if (custom.isNotEmpty()) {
+                SectionLabel(stringResource(R.string.pwd_profile_custom), Modifier.padding(top = 4.dp))
+                ProfileRows(custom, revealed, toggle, copy)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileRows(list: List<Pair<String, String>>, revealed: Set<String>, onToggle: (String) -> Unit, onCopy: (String) -> Unit) {
+    GroupCard {
+        list.forEachIndexed { i, (key, value) ->
+            if (i > 0) CardDivider()
+            val sensitive = eu.eurise.password.logic.Profiles.isSensitive(key)
+            val shown = !sensitive || key in revealed
+            FieldRow(key, value, hidden = !shown) {
+                if (sensitive) {
+                    RoundIcon(if (shown) EuriseIcons.eyeOff() else EuriseIcons.eye(), stringResource(if (shown) R.string.pwd_hide else R.string.pwd_show)) { onToggle(key) }
+                }
+                RoundIcon(EuriseIcons.copy(), stringResource(R.string.pwd_profile_copy, key)) { onCopy(value) }
+            }
+        }
+    }
+}
+
+/** Modifica di un profilo: i campi noti divisi per sezione e, in fondo, i dati aggiunti da te con titolo e valore. */
+@Composable
+private fun ProfileEdit(entry: VaultEntry?, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
+    val profiles = eu.eurise.password.logic.Profiles
+    val start = entry?.profile.orEmpty()
+    val defaultName = stringResource(R.string.pwd_profile_default)
+    var name by remember { mutableStateOf(entry?.title.orEmpty()) }
+    val values = remember { androidx.compose.runtime.mutableStateMapOf<String, String>().apply { putAll(start.filter { profiles.isKnown(it.first) }) } }
+    val custom = remember { androidx.compose.runtime.mutableStateListOf<Pair<String, String>>().apply { addAll(profiles.custom(start)) } }
+
+    fun save() {
+        val known = profiles.known.mapNotNull { k -> values[k.key]?.trim()?.takeIf { it.isNotEmpty() }?.let { k.key to it } }
+        val extra = custom.map { it.first.trim() to it.second.trim() }
+            .filter { it.first.isNotEmpty() && it.second.isNotEmpty() && !profiles.isKnown(it.first) }
+            .distinctBy { it.first }
+        onSave(EntryDraft(name.trim().ifEmpty { defaultName }, "", "", "", "", null, profile = known + extra))
+    }
+
+    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        BackHeader(stringResource(R.string.pwd_back), onBack) { PillAction(stringResource(R.string.pwd_save), ::save) }
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(if (entry == null) stringResource(R.string.pwd_profile_new) else entry.title, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.pwd_profile_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            eu.eurise.password.logic.Profiles.Section.entries.forEach { section ->
+                SectionLabel(profileSectionName(section), Modifier.padding(top = 6.dp))
+                profiles.known.filter { it.section == section }.forEach { k ->
+                    val type = when (k.key) {
+                        eu.eurise.password.logic.Profiles.PHONE -> KeyboardType.Phone
+                        eu.eurise.password.logic.Profiles.EMAIL, eu.eurise.password.logic.Profiles.PEC -> KeyboardType.Email
+                        eu.eurise.password.logic.Profiles.POSTAL_CODE -> KeyboardType.Number
+                        else -> KeyboardType.Text
+                    }
+                    OutlinedTextField(
+                        values[k.key].orEmpty(), { values[k.key] = it },
+                        label = { Text(k.key) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = type),
+                    )
+                }
+            }
+            SectionLabel(stringResource(R.string.pwd_profile_custom), Modifier.padding(top = 6.dp))
+            custom.forEachIndexed { i, (title, value) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(title, { custom[i] = it to custom[i].second }, label = { Text(stringResource(R.string.pwd_profile_field_title)) }, singleLine = true, modifier = Modifier.weight(0.42f))
+                    OutlinedTextField(value, { custom[i] = custom[i].first to it }, label = { Text(stringResource(R.string.pwd_profile_field_value)) }, singleLine = true, modifier = Modifier.weight(0.58f))
+                    IconButton(onClick = { custom.removeAt(i) }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.pwd_profile_remove)) }
+                }
+            }
+            TextButton(onClick = { custom.add("" to "") }) {
+                Icon(EuriseIcons.plus(), contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.pwd_profile_add_field), fontWeight = FontWeight.Bold)
+            }
+            Text(stringResource(R.string.pwd_profile_custom_note), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }

@@ -195,6 +195,36 @@ class KdbxTest {
         assertEquals(null, f.classify(emptyList(), mapOf("name" to "cerca"), null, 1))
     }
 
+    @Test fun profileFieldsAreRecognised() {
+        val f = eu.eurise.password.autofill.Matching
+        val k = eu.eurise.password.autofill.FieldKind.entries.associateBy { it.name }
+        assertEquals(k["VatNumber"], f.classify(emptyList(), mapOf("name" to "partita_iva"), null, 1))
+        assertEquals(k["TaxCode"], f.classify(emptyList(), mapOf("id" to "codiceFiscale"), null, 1))
+        assertEquals(k["Pec"], f.classify(emptyList(), mapOf("placeholder" to "Indirizzo PEC"), null, 1))
+        assertEquals(k["SdiCode"], f.classify(emptyList(), mapOf("name" to "codice_destinatario"), null, 1))
+        assertEquals(k["FamilyName"], f.classify(emptyList(), mapOf("name" to "cognome"), null, 1))
+        assertEquals(k["GivenName"], f.classify(emptyList(), mapOf("name" to "nome"), null, 1))
+        assertEquals(k["FullName"], f.classify(emptyList(), mapOf("label" to "Nome e cognome"), null, 1))
+        assertEquals(k["PostalCode"], f.classify(emptyList(), mapOf("autocomplete" to "postal-code"), null, 1))
+        assertEquals(k["Street"], f.classify(emptyList(), mapOf("name" to "indirizzo"), null, 1))
+        assertEquals(k["Username"], f.classify(emptyList(), mapOf("name" to "nome_utente"), null, 1))
+    }
+
+    @Test fun profileIsSavedAsKeePassFields() {
+        val file = Kdbx.create(key, "Eurise")
+        val v = vault(file)
+        val fields = listOf("Partita IVA" to "IT01234567890", "PEC" to "studio@pec.it", "Matricola cassa" to "123456")
+        val id = v.save(EntryDraft("Studio", "", "", "", "", null, profile = fields), null)
+        val back = vault(Kdbx.read(Kdbx.write(file), key)).entries().single()
+        assertEquals(fields, back.profile)
+        val p = eu.eurise.password.logic.Profiles
+        assertEquals("IT01234567890", p.valueFor(eu.eurise.password.autofill.FieldKind.VatNumber, back.profile!!))
+        assertEquals(listOf("Matricola cassa" to "123456"), p.custom(back.profile!!))
+        v.save(EntryDraft("Studio", "", "", "", "", null, profile = listOf("PEC" to "nuova@pec.it")), id)
+        assertEquals(listOf("PEC" to "nuova@pec.it"), v.entries().single().profile)
+        assertEquals(null, vault(file).entries().single().card)
+    }
+
     @Test fun usernameIsTheFieldBeforeThePassword() {
         val f = eu.eurise.password.autofill.Matching
         val kinds = f.fillUsername(listOf(null, null, eu.eurise.password.autofill.FieldKind.Password))

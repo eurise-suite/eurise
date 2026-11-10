@@ -39,8 +39,14 @@ class EuriseAutofillService : AutofillService() {
                 form.loginDataset(this, e.username, e.password, label)?.let { response.addDataset(it); count++ }
             }
         }
-        if (form.hasLogin || form.hasCard) {
-            val label = getString(if (form.hasCard && !form.hasLogin) R.string.pwd_fill_card else R.string.pwd_fill_open)
+        if (form.hasLogin || form.hasCard || form.hasProfile) {
+            val label = getString(
+                when {
+                    form.hasCard && !form.hasLogin -> R.string.pwd_fill_card
+                    form.hasProfile && !form.hasLogin -> R.string.pwd_fill_profile
+                    else -> R.string.pwd_fill_open
+                },
+            )
             response.addDataset(opener(form, label))
             count++
         }

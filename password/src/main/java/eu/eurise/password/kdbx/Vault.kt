@@ -25,6 +25,8 @@ data class VaultEntry(
     val card: CardData? = null,
     val apps: List<String> = emptyList(),
     val passkey: PasskeyData? = null,
+    /** I miei dati: i campi del profilo (nome del campo, valore) nell'ordine del file; null se la voce non è un profilo. */
+    val profile: List<Pair<String, String>>? = null,
 )
 
 /** Una passkey, nei campi usati anche da KeePassXC e KeePassDX: il file resta apribile con quei programmi. */
@@ -44,6 +46,8 @@ data class EntryDraft(
     val card: CardData? = null,
     /** Nullo vuol dire "non toccarla": modificare una voce dalla scheda non deve perdere la sua passkey. */
     val passkey: PasskeyData? = null,
+    /** I campi del profilo dei miei dati; nullo vuol dire "non è un profilo" (o "non toccarlo"). */
+    val profile: List<Pair<String, String>>? = null,
 )
 
 /** Esito di un'unione: [localChanged] se è cambiato qualcosa qui, [remoteBehind] se qui c'è qualcosa che là manca. */
@@ -102,6 +106,16 @@ class Vault(val document: Document) {
             setString(element, F_PK_RP, key.rpId, true)
             setString(element, F_PK_USER, key.username, true)
             setString(element, F_PK_HANDLE, key.userHandle, true)
+        }
+        draft.profile?.let { fields ->
+            setString(element, F_PROFILE, "1", false)
+            val keep = fields.map { it.first }.toSet()
+            element.children("String").map { it.child("Key")?.textContent.orEmpty() }
+                .filter { it !in STANDARD && it !in keep && !it.startsWith(F_APP) }
+                .forEach { removeString(element, it) }
+            fields.forEach { (key, value) ->
+                setString(element, key, value, eu.eurise.password.logic.Profiles.isSensitive(key))
+            }
         }
         setTime(element, "LastModificationTime", now)
         return element.child("UUID")!!.textContent
@@ -267,6 +281,12 @@ class Vault(val document: Document) {
             passkey = strings[F_PK_KEY]?.takeIf { it.isNotBlank() }?.let {
                 PasskeyData(strings[F_PK_ID].orEmpty(), it, strings[F_PK_RP].orEmpty(), strings[F_PK_USER].orEmpty(), strings[F_PK_HANDLE].orEmpty())
             },
+            profile = if (strings[F_PROFILE] == "1") {
+                e.children("String").mapNotNull { str ->
+                    val key = str.child("Key")?.textContent.orEmpty()
+                    if (key in STANDARD || key.startsWith(F_APP)) null else key to str.child("Value")?.textContent.orEmpty()
+                }
+            } else null,
             apps = strings.filterKeys { it.startsWith(F_APP) }.values.filter { it.isNotBlank() } +
                 listOfNotNull(strings["URL"]?.takeIf { it.startsWith(APP_SCHEME) }?.removePrefix(APP_SCHEME)),
         )
@@ -412,6 +432,12 @@ class Vault(val document: Document) {
         private const val F_PK_USER = "KPEX_PASSKEY_USERNAME"
         private const val F_PK_HANDLE = "KPEX_PASSKEY_USER_HANDLE"
         const val APP_SCHEME = "androidapp://"
+        private const val F_PROFILE = "Eurise-Profilo"
+        /** I campi che non sono dati del profilo: quelli di KeePass, delle carte, delle passkey e i segni di Eurise. */
+        private val STANDARD = setOf(
+            "Title", "UserName", "Password", "URL", "Notes", "otp", "TimeOtp-Secret-Base32", "TOTP Seed", "TOTP Settings", F_PROFILE,
+            F_NUMBER, F_HOLDER, F_EXPIRY, F_CVV, F_TYPE, F_PK_ID, F_PK_KEY, F_PK_RP, F_PK_USER, F_PK_HANDLE,
+        )
         /** Secondi tra l'anno 1 e il 1970: KDBX 4 conta le date dall'anno 1. */
         private const val EPOCH_OFFSET = 62135596800L
         private val random = SecureRandom()

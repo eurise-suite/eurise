@@ -141,6 +141,7 @@ class VaultRepository private constructor(context: Context) {
     }
 
     fun lock() {
+        SensitiveGate.close()
         opened = null
         vault = null
         compositeKey?.fill(0)

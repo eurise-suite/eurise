@@ -25,7 +25,11 @@ class Form(
 
     fun idsOf(vararg wanted: FieldKind): Array<AutofillId> = ids.filterIndexed { i, _ -> kinds[i] in wanted }.toTypedArray()
 
-    val hasLogin get() = kinds.any { it == FieldKind.Password || it == FieldKind.NewPassword || it == FieldKind.Username }
+    /** Un modulo di dati (fattura, iscrizione): almeno due campi dei miei dati, oppure uno senza password. */
+    val hasProfile get() = kinds.count { it.isProfile } >= 2 || (kinds.any { it.isProfile } && !hasPassword)
+
+    /** Un'email da sola, in un modulo di dati, è un campo del profilo e non un accesso. */
+    val hasLogin get() = hasPassword || (kinds.any { it == FieldKind.Username } && !hasProfile)
     val hasPassword get() = kinds.any { it == FieldKind.Password || it == FieldKind.NewPassword }
     val isSignUp get() = kinds.any { it == FieldKind.NewPassword }
     val hasCard get() = kinds.any { it == FieldKind.CardNumber }
@@ -60,6 +64,16 @@ class Form(
         }
     }
 
+    /** I dati del profilo nei campi riconosciuti; l'email va nel campo utente solo se il modulo non chiede una password. */
+    fun profileDataset(context: Context, fields: List<Pair<String, String>>, label: String): Dataset? =
+        build(presentation(context, label)) { kind ->
+            when {
+                kind == FieldKind.Username && !hasPassword -> eu.eurise.password.logic.Profiles.valueFor(kind, fields)
+                kind.isProfile -> eu.eurise.password.logic.Profiles.valueFor(kind, fields)
+                else -> null
+            }
+        }
+
     @Suppress("DEPRECATION")
     private fun build(view: RemoteViews, value: (FieldKind) -> String?): Dataset? {
         val builder = Dataset.Builder(view)
@@ -90,7 +104,8 @@ class Form(
                 val id = node.autofillId
                 if (id != null && node.autofillType == View.AUTOFILL_TYPE_TEXT && node.visibility == View.VISIBLE) {
                     val html = node.htmlInfo?.takeIf { it.tag.equals("input", ignoreCase = true) }
-                        ?.attributes?.associate { it.first.lowercase() to it.second.orEmpty() }.orEmpty()
+                        ?.attributes?.associate { it.first.lowercase() to it.second.orEmpty() }.orEmpty() +
+                        listOfNotNull(node.hint?.takeIf { it.isNotBlank() }?.let { "label" to it })
                     ids += id
                     typed += node.autofillValue?.takeIf { it.isText }?.textValue?.toString()
                     found += Matching.classify(node.autofillHints?.toList().orEmpty(), html, node.idEntry, node.inputType)

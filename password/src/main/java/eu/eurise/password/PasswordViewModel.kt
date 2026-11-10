@@ -94,6 +94,15 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
         askBiometric(activity, text(R.string.pwd_card_fill), text(R.string.pwd_cancel), cipher) { then() }
     }
 
+    /** Dati riservati (i miei dati, carte): impronta o PIN, poi [then]. Per 2 minuti non si richiede. */
+    fun confirmSensitive(context: android.content.Context, then: () -> Unit) {
+        if (eu.eurise.password.data.SensitiveGate.isOpen()) { then(); return }
+        eu.eurise.password.data.askDeviceAuth(context, text(R.string.pwd_sensitive_title), text(R.string.pwd_sensitive_subtitle)) {
+            eu.eurise.password.data.SensitiveGate.open()
+            then()
+        }
+    }
+
     fun selectAlias(provider: AliasProvider) { aliases.provider = provider; _alias.value = provider }
 
     /** Verifica e salva la chiave del servizio; [done] riceve l'eventuale messaggio d'errore. */

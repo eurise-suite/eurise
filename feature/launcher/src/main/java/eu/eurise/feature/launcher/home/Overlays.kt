@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -618,14 +619,14 @@ private fun QuickRow(q: String, hazeState: HazeState, onQuick: (QuickAction, Str
 @Composable
 private fun <T> ResultStrip(
     title: String,
-    items: List<T>,
+    entries: List<T>,
     key: (T) -> Any,
     leftHanded: Boolean,
     hazeState: HazeState,
     content: @Composable (T) -> Unit,
 ) {
     val state = androidx.compose.foundation.lazy.rememberLazyListState()
-    LaunchedEffect(items.firstOrNull()?.let(key)) { state.scrollToItem(0) }
+    LaunchedEffect(entries.firstOrNull()?.let(key)) { state.scrollToItem(0) }
     Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
         Box(Modifier.fillMaxWidth().padding(horizontal = GlassDefaults.SideMargin + 4.dp), contentAlignment = if (leftHanded) Alignment.CenterStart else Alignment.CenterEnd) {
             Label(title)
@@ -642,7 +643,7 @@ private fun <T> ResultStrip(
                 contentPadding = PaddingValues(horizontal = side),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                androidx.compose.foundation.lazy.items(items, key = key) { item ->
+                items(entries, key = key) { item ->
                     Box(Modifier.width(cardWidth)) { content(item) }
                 }
             }

@@ -184,6 +184,7 @@ private fun OpenSheet(form: Form, entries: List<VaultEntry>, vm: PasswordViewMod
     var register by remember { mutableStateOf(form.isSignUp && matches.isEmpty() && !form.hasCard) }
     when {
         form.hasCard && !form.hasLogin -> CardPicker(form, entries.filter { it.card != null }, vm, onDone)
+        form.hasProfile && !form.hasLogin -> ProfilePicker(form, entries.filter { it.profile != null }, vm, onDone)
         register -> RegisterSheet(form, vm, onDone)
         else -> LoginPicker(form, entries, matches, vm, onDone) { register = true }
     }
@@ -239,10 +240,35 @@ private fun CardPicker(form: Form, cards: List<VaultEntry>, vm: PasswordViewMode
                 if (i > 0) CardDivider()
                 val card = e.card!!
                 PickRow(e.title, stringResource(R.string.pwd_card_row, Cards.lastFour(card.number))) {
-                    vm.confirmBio(context) { onDone(form.cardDataset(context, card, e.title)) }
+                    vm.confirmSensitive(context) { onDone(form.cardDataset(context, card, e.title)) }
                 }
             }
         }
+    }
+}
+
+/** Modulo di dati (fattura, iscrizione): si sceglie il profilo, poi impronta o PIN, e i campi si compilano. */
+@Composable
+private fun ProfilePicker(form: Form, profiles: List<VaultEntry>, vm: PasswordViewModel, onDone: (Dataset?) -> Unit) {
+    val context = LocalContext.current
+    SheetTitle(stringResource(R.string.pwd_fill_choose_profile))
+    if (profiles.isEmpty()) {
+        Text(stringResource(R.string.pwd_fill_no_profile), modifier = Modifier.padding(horizontal = 20.dp))
+    } else {
+        GroupCard {
+            profiles.sortedByDescending { eu.eurise.password.logic.Profiles.fillCount(form.kinds, it.profile!!) }.forEachIndexed { i, e ->
+                if (i > 0) CardDivider()
+                val fields = e.profile!!
+                val count = eu.eurise.password.logic.Profiles.fillCount(form.kinds, fields)
+                PickRow(e.title, stringResource(R.string.pwd_fill_profile_count, count)) {
+                    vm.confirmSensitive(context) {
+                        vm.markUsed(e.uuid)
+                        onDone(form.profileDataset(context, fields, e.title))
+                    }
+                }
+            }
+        }
+        Text(stringResource(R.string.pwd_fill_profile_note), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
     }
 }
 
