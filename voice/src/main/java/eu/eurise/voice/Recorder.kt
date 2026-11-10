@@ -15,15 +15,27 @@ class Recorder(private val maxSeconds: Int = 90) {
     @Volatile var level = 0f
         private set
 
-    /** Registra finché non si chiama [stop] (dal thread che chiama questa funzione, bloccante). */
+    @Volatile private var buffer = FloatArray(0)
+    @Volatile var size = 0
+        private set
+
+    /** I campioni già registrati tra [from] e [to] (si può chiamare mentre si registra). */
+    fun slice(from: Int, to: Int): FloatArray = buffer.copyOfRange(from.coerceIn(0, size), to.coerceIn(0, size))
+
+    /**
+     * Registra finché non si chiama [stop] (dal thread che chiama questa funzione, bloccante). [onCut] riceve, mentre si
+     * parla, le posizioni delle pause dove conviene tagliare (vedi [Chunker]).
+     */
     @SuppressLint("MissingPermission")
-    fun record(): FloatArray {
+    fun record(onCut: ((Int) -> Unit)? = null): FloatArray {
         val rate = SAMPLE_RATE
         val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val record = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate))
         val chunk = ShortArray(rate / 10)
         val out = FloatArray(rate * maxSeconds)
-        var size = 0
+        buffer = out
+        size = 0
+        val chunker = Chunker()
         running = true
         try {
             record.startRecording()
@@ -37,6 +49,7 @@ class Recorder(private val maxSeconds: Int = 90) {
                     peak = maxOf(peak, abs(chunk[i].toInt()))
                 }
                 level = peak / 32768f
+                onCut?.let { cb -> chunker.feed(Chunker.rms(chunk, n), size)?.let(cb) }
             }
         } finally {
             running = false

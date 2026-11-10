@@ -58,6 +58,9 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.withContext
 
 /**
@@ -71,6 +74,7 @@ class DictateActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val language = intent.getStringExtra(EXTRA_LANGUAGE)?.takeIf { it.length in 2..3 } ?: "auto"
+        Speed.load(this)
         setContent { EuriseTheme { DictateSheet(language, fromKeyboard, ::deliver, ::finish) } }
     }
 
@@ -116,22 +120,62 @@ private fun DictateSheet(language: String, fromKeyboard: Boolean, onDeliver: (St
     var seconds by remember { mutableIntStateOf(0) }
     val scheme = MaterialTheme.colorScheme
 
+    var live by remember { mutableStateOf("") }
+    var speed by remember { mutableStateOf<String?>(null) }
+
+    /**
+     * Si parla: il modello si carica mentre si parla (non dopo), e ogni pausa lunga fa trascrivere il pezzo appena
+     * detto. Fermata la registrazione resta solo l'ultimo pezzo: l'attesa è molto più breve.
+     */
     fun listen() {
+        val model = Model.installed(context) ?: run { phase = Phase.NoModel; return }
         phase = Phase.Listening
         seconds = 0
-        scope.launch {
-            val audio = withContext(Dispatchers.IO) { recorder.record() }
-            if (audio.size < Recorder.SAMPLE_RATE / 2) { phase = Phase.Ready; return@launch }
-            phase = Phase.Working
-            val model = Model.installed(context) ?: run { phase = Phase.NoModel; return@launch }
-            val text = withContext(Dispatchers.Default) {
-                runCatching { Whisper.load(model.file(context))?.use { it.transcribe(audio, language) } }.getOrNull()
+        live = ""
+        val worker = java.util.concurrent.Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        val engine = scope.async(worker) { runCatching { Whisper.load(model.file(context)) }.getOrNull() }
+        val pieces = mutableListOf<String>()
+        val jobs = mutableListOf<kotlinx.coroutines.Job>()
+        var done = 0
+        fun piece(from: Int, to: Int) {
+            jobs += scope.launch(worker) {
+                val whisper = engine.await() ?: return@launch
+                val text = runCatching { whisper.transcribe(recorder.slice(from, to), language, prompt = pieces.joinToString(" ").takeLast(220)) }.getOrNull()
+                if (!text.isNullOrBlank()) { pieces += text; live = pieces.joinToString(" ") }
             }
+        }
+        scope.launch {
+            val audio = withContext(Dispatchers.IO) { recorder.record { cut -> val from = done; done = cut; piece(from, cut) } }
+            if (audio.size < Recorder.SAMPLE_RATE / 2 && pieces.isEmpty()) {
+                phase = Phase.Ready; engine.await()?.close(); worker.close(); return@launch
+            }
+            phase = Phase.Working
+            if (audio.size - done > Recorder.SAMPLE_RATE / 3) piece(done, audio.size)
+            jobs.joinAll()
+            val whisper = engine.await()
+            withContext(worker) { whisper?.close() }
+            worker.close()
+            val text = pieces.joinToString(" ").trim()
             phase = when {
-                text == null -> Phase.Failed(R.string.voice_failed)
+                whisper == null -> Phase.Failed(R.string.voice_failed)
                 text.isBlank() -> Phase.Failed(R.string.voice_nothing)
                 else -> Phase.Done(text)
             }
+        }
+    }
+
+    /** Misura una volta quanti thread vanno più veloci su questo telefono. */
+    fun measure() {
+        val model = Model.installed(context) ?: return
+        speed = context.getString(R.string.voice_speed_working)
+        scope.launch {
+            val times = withContext(Dispatchers.Default) {
+                runCatching { Whisper.load(model.file(context))?.use { Speed.measure(context, it) } }.getOrNull()
+            }
+            speed = times?.takeIf { it.isNotEmpty() }?.let { list ->
+                val best = list.minBy { it.second }.first
+                context.getString(R.string.voice_speed_result, list.joinToString(" · ") { (n, ms) -> "$n: %.1f s".format(ms / 1000.0) }, best)
+            } ?: context.getString(R.string.voice_failed)
         }
     }
 
@@ -174,6 +218,7 @@ private fun DictateSheet(language: String, fromKeyboard: Boolean, onDeliver: (St
                 Phase.Ready, Phase.Listening -> {
                     val listening = p == Phase.Listening
                     Text(stringResource(if (listening) R.string.voice_listening else R.string.voice_tap), fontSize = 15.sp)
+                    if (listening && live.isNotEmpty()) Text(live, fontSize = 14.sp, color = scheme.onSurfaceVariant, maxLines = 4)
                     val label = stringResource(if (listening) R.string.voice_stop else R.string.voice_start)
                     Box(Modifier.align(Alignment.CenterHorizontally).size(84.dp).scale(1f + level * 0.6f).clip(CircleShape)
                         .background(if (listening) scheme.primary else scheme.surfaceContainerLow)
@@ -182,9 +227,12 @@ private fun DictateSheet(language: String, fromKeyboard: Boolean, onDeliver: (St
                         Icon(EuriseIcons.mic(), null, tint = if (listening) scheme.onPrimary else scheme.primary, modifier = Modifier.size(34.dp))
                     }
                 }
-                Phase.Working -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CircularProgressIndicator(Modifier.size(24.dp))
-                    Text(stringResource(R.string.voice_working))
+                Phase.Working -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (live.isNotEmpty()) Text(live, fontSize = 14.sp, color = scheme.onSurfaceVariant, maxLines = 4)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CircularProgressIndicator(Modifier.size(24.dp))
+                        Text(stringResource(R.string.voice_working))
+                    }
                 }
                 is Phase.Done -> {
                     var text by remember(p) { mutableStateOf(p.text) }
@@ -202,8 +250,12 @@ private fun DictateSheet(language: String, fromKeyboard: Boolean, onDeliver: (St
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(EuriseIcons.lock(), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
-                Text(stringResource(R.string.voice_private), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+                Text(stringResource(R.string.voice_private), fontSize = 11.5.sp, color = scheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                if (phase == Phase.Ready && !fromKeyboard) TextButton(onClick = ::measure, enabled = speed != context.getString(R.string.voice_speed_working)) {
+                    Text(stringResource(R.string.voice_speed), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
+            speed?.let { Text(it, fontSize = 12.sp, color = scheme.onSurfaceVariant) }
         }
     }
 
