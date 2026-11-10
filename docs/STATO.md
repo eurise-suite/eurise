@@ -388,3 +388,15 @@ Priorità invariata: /e/OS e Android prima di tutto. Quanto segue viene dopo tut
 - Office online: la collaborazione in tempo reale passa da Collabora Online (Nextcloud Office) sul server dell'utente; le
   nostre app aprono quelle sessioni. Gli strumenti collaborativi nostri (chi modifica, commenti con @persona → attività,
   revisioni, collegamenti) funzionano ovunque. Un nostro server Office è sconsigliato (costi, privacy, manutenzione).
+
+## 10 novembre, dopo la prova: home, web app, ricerca, I miei dati (ramo `tastiera`)
+- Fatto (APK 187): tolto il + accanto alla barra della home (la cattura passa dalla ricerca universale); la lente è di nuovo in fondo
+  a destra nella barra e "respira": 2,4 s per verso, da 0,8 a 1,3 volte, colore d'accento pieno al massimo (`BreathingSearchIcon`).
+- Web app (APK 187): i browser installano le PWA come scorciatoie fissate; Eurise non riceveva la richiesta e sparivano. Ora
+  `apps/PinShortcutActivity` accetta `CONFIRM_PIN_SHORTCUT`, `apps/WebApps` le elenca (FLAG_MATCH_PINNED, solo da launcher
+  predefinito), le apre, ne mostra l'icona e le toglie ("Togli la web app" nel menu). Categoria dal nome, altrimenti Browser.
+  Quelle installate prima vanno reinstallate dal browser: la richiesta allora non è stata accettata da nessuno.
+- Anteprime da approvare: pagina Scrivania, fila "Ricerca universale con una mano" (RicBasso, RicAppuntamento, RicDocumenti);
+  pagina Password, fila "I miei dati" (PwdDati, PwdDatiCompila). Password oggi compila solo accessi e carte: i dati personali e
+  professionali (P.IVA, CF, PEC, codice univoco, IBAN, sede, documenti) sono da scrivere, dentro la cassaforte .kdbx, con
+  impronta o PIN per vederli, copiarli o compilarli. Più profili (Personale, Studio).
