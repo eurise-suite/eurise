@@ -114,8 +114,10 @@ fun EuriseTheme(
             colorScheme = colorScheme,
             typography = EuriseTypography,
             shapes = EuriseShapes,
-            content = content,
-        )
+        ) {
+            // I testi senza colore esplicito seguono il tema: senza questo restano neri anche in Notte.
+            CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides colorScheme.onBackground, content = content)
+        }
     }
 }
 
