@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo nelle versioni di prova: dati di esempio per le schermate di F-Droid (vedi scripts/screenshots).
+     Il permesso DUMP lo ha solo la shell di adb: nessuna app può chiamarlo. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver
+            android:name=".DemoDataReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="eu.eurise.debug.DEMO_DATA" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

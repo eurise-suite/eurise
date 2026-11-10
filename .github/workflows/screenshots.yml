@@ -1,0 +1,61 @@
+name: Schermate per F-Droid
+
+# Telefono simulato con dati di esempio: scatta le schermate in Perla e in Notte.
+# Parte a mano (Actions → Schermate per F-Droid) o quando cambiano i file che le producono.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/screenshots.yml"
+      - "scripts/screenshots/**"
+      - "app/src/debug/**"
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schermate:
+    name: Schermate
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compila l'APK di prova
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleDebug
+
+      # L'emulatore ha bisogno della virtualizzazione (KVM) della macchina di GitHub.
+      - name: Abilita KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Scatta le schermate
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -change-locale it-IT -timezone Europe/Rome
+          script: bash scripts/screenshots/take.sh "$(ls app/build/outputs/apk/debug/*.apk | head -1)" build/screenshots
+
+      - name: Carica le schermate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-schermate-${{ github.run_number }}
+          path: build/screenshots
+          if-no-files-found: warn
