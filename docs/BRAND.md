@@ -28,6 +28,15 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
 - Componenti riusabili sulla tela: `BrandMark` (simbolo, varianti alba/cerchio/e) e `BrandIcona`
   (icona di un'app, famiglia, forma, monocromatico).
 
+## Seconda prova del simbolo (10 novembre, dopo la discussione)
+- Il proprietario scarta la «e» (troppo vicina al simbolo di /e/OS, con cui si spera in una collaborazione) e il
+  sole (dice poco). Colori approvati. Chiede una stella o una corona di stelle che nasce, anche con logo animato.
+- Tavole `BrandStelle` (D Stella che nasce, E Corona che sorge consigliata, F Stelle che salgono; stelle a quattro
+  punte, mai dodici a cinque punte in cerchio, per restare lontani dall'emblema UE) e `BrandStelleVive`
+  (logo animato: orizzonte, stelle che salgono, lampo, cielo dorato, nome; si ferma con «Riduci animazioni»).
+- `BrandMark` e `BrandIcona` hanno le varianti nuove (corona, stella, salita); le tavole della prima prova
+  restano con il selettore vecchio finché non si sceglie.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
