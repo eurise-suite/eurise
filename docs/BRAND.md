@@ -67,6 +67,14 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   Variante `cielo`. Sotto i 36 px le stelle lontane spariscono e resta la polare con le più vicine.
 - Da verificare con il consulente: oro su blu richiama l'emblema UE (ma stelle a quattro punte, in spirale).
 
+## Ottava prova (10 novembre): tavola `BrandSfera`, animata — direzione buona secondo il proprietario
+- Polare più grande al centro; 44 stelle (Stati d'Europa secondo l'ONU, dell'Unione e non: apertura a tutti,
+  augurio di un'Europa unita) disposte come su una sfera vista di fronte (spirale di Fibonacci proiettata):
+  grandi davanti, piccole e fitte al bordo. Alternativa: 46 del Consiglio d'Europa.
+- Due disegni: `sfera` (completa) e `sferap` (piccola: polare più grande, 21 stelle più grosse che coprono quasi
+  tutto il tondo). `BrandMark` passa a `sferap` sotto i 40 px, `BrandIcona` sotto i 72 px; nell'icona il
+  simbolo occupa il 90% del tondo.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
