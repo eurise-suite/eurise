@@ -42,6 +42,13 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
   I «Tondo marino» (corona in alto, onda al centro, il mare chiude il cerchio: consigliata per le icone tonde).
 - Varianti aggiunte a `BrandMark`/`BrandIcona`: estelle, emare, mare, tondo.
 
+## Quarta prova (10 novembre): tavola `BrandRiflesso`, animata
+- Il proprietario non è convinto del tratto crema: vuole il mare intuito, non disegnato, con le stelle che si specchiano.
+- J «Riflesso» (consigliata: solo oro, corona sopra e riflessi spezzati sotto, il cerchio nasce da solo),
+  K «Scia di luce» (la luce della stella centrale si allunga sull'acqua), L «Riflesso e filo d'orizzonte».
+- Varianti `riflesso`, `scia`, `filo` in `BrandMark`/`BrandIcona`. Dentro gli SVG si usa l'attributo `display`
+  al posto di `sc-if` (anche in `BrandStelleVive` e `BrandStelleMare`).
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
