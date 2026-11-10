@@ -48,6 +48,7 @@ fun ToolbarScreen(
         || !prefs.getBoolean(Settings.PREF_TOOLBAR_HIDING_GLOBAL, Defaults.PREF_TOOLBAR_HIDING_GLOBAL)
     val items = listOf(
         Settings.PREF_EURISE_BAR,
+        eu.eurise.keyboard.EuriseBar.BAR_ON_TOP,
         Settings.PREF_TOOLBAR_KEY_LEFT,
         eu.eurise.keyboard.EuriseBar.SEPARATE_TOOLS,
         eu.eurise.keyboard.EuriseBar.ABBREVIATIONS,
@@ -81,6 +82,9 @@ fun createToolbarSettings(context: Context) = listOf(
     // Eurise: barra con i quattro comandi, lato del tasto degli strumenti, fila separata, abbreviazioni.
     Setting(context, Settings.PREF_EURISE_BAR, R.string.eurise_bar_setting, R.string.eurise_bar_setting_summary) {
         SwitchPreference(it, Defaults.PREF_EURISE_BAR) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
+    },
+    Setting(context, eu.eurise.keyboard.EuriseBar.BAR_ON_TOP, R.string.eurise_bar_on_top, R.string.eurise_bar_on_top_summary) {
+        SwitchPreference(it, true) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },
     Setting(context, Settings.PREF_TOOLBAR_KEY_LEFT, R.string.eurise_key_left, R.string.eurise_key_left_summary) {
         SwitchPreference(it, Defaults.PREF_TOOLBAR_KEY_LEFT) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }

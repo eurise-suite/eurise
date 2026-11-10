@@ -49,7 +49,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -change-locale it-IT -timezone Europe/Rome
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -timezone Europe/Rome
           script: bash scripts/screenshots/take.sh "$(ls app/build/outputs/apk/debug/*.apk | head -1)" build/screenshots
 
       - name: Carica le schermate

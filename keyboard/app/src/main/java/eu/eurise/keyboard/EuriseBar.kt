@@ -62,7 +62,6 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         toolsRow.orientation = HORIZONTAL
         addView(toolsRow.lp(h = context.dp(40)))
         addView(commandsRow.lp())
-        addView(panelHost.lp())
         panelHost.isVisible = false
     }
 
@@ -70,6 +69,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     fun attach(ime: LatinIME, inputView: View) {
         this.ime = ime
         keyboardArea = inputView.findViewById(R.id.keyboard_view_wrapper)
+        arrange()
         refreshLook()
         current = java.lang.ref.WeakReference(this)
         // Ricevitore e ascolto degli appunti si registrano una volta sola per processo: la vista della tastiera
@@ -85,6 +85,24 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
                 lastClipAt = System.currentTimeMillis() // il contenuto si legge solo quando la tastiera è visibile
             }
         }
+    }
+
+    /**
+     * Ordine delle file: di base la barra di Eurise sta sopra e i suggerimenti subito sopra i tasti
+     * ([BAR_ON_TOP] spento: il contrario). I pannelli si mettono sempre al posto dei tasti, qualunque sia l'ordine.
+     */
+    private fun arrange() {
+        val frame = parent as? ViewGroup
+        if (frame == null) {
+            if (panelHost.parent == null) addView(panelHost.lp())
+            return
+        }
+        (panelHost.parent as? ViewGroup)?.removeView(panelHost)
+        frame.addView(panelHost, frame.indexOfChild(keyboardArea), LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        val strip = frame.findViewById<View>(R.id.strip_container)?.takeIf { it.parent === frame } ?: return
+        frame.removeView(this)
+        val at = frame.indexOfChild(strip)
+        frame.addView(this, if (prefs.getBoolean(BAR_ON_TOP, true)) at else at + 1)
     }
 
     private val prefs get() = context.prefs()
@@ -389,6 +407,8 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     companion object {
         const val SEPARATE_TOOLS = "eurise_separate_tools"
+        /** Barra di Eurise sopra i suggerimenti (di base sì). */
+        const val BAR_ON_TOP = "eurise_bar_on_top"
         const val ABBREVIATIONS = "eurise_abbreviations"
         const val ACTION_DICTATION = "eu.eurise.action.DICTATION_RESULT"
         private var current: java.lang.ref.WeakReference<EuriseBar>? = null
