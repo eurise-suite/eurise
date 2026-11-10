@@ -49,6 +49,11 @@ per non toccare i file su cui lavora la chat del ramo `tastiera`.
 - Varianti `riflesso`, `scia`, `filo` in `BrandMark`/`BrandIcona`. Dentro gli SVG si usa l'attributo `display`
   al posto di `sc-if` (anche in `BrandStelleVive` e `BrandStelleMare`).
 
+## Quinta prova (10 novembre): tavola `BrandProve5`, animata
+- M «La e che si intuisce»: mezza corona in alto, orizzonte a tratti singoli (barra della e), riflessi singoli
+  a sinistra e sotto, cerchio aperto a destra.
+- N «La stella e quattro compagne», N2 con tre compagne. Varianti `eintuita`, `compagne`, `tre`.
+
 ## Verifica del nome (ricerche web del 10 novembre, non una ricerca di anteriorità)
 - Euria (Infomaniak, assistente IA): vicinanza alta, stesso settore. EURISE Network (rete europea di software
   per la ricerca): stesso nome, non commerciale. eyrise (Merck, vetri): suono vicino in inglese. Eurise
