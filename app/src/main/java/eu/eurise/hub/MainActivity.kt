@@ -42,6 +42,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handle(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEND && intent.type == "application/pdf") {
+            @Suppress("DEPRECATION")
+            val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM) ?: return
+            request = HubRequest("trip:uri:" + android.net.Uri.encode(uri.toString()), ++requestCount)
+            return
+        }
         val section = intent?.getStringExtra(EXTRA_SECTION) ?: return
         request = HubRequest(section, ++requestCount)
     }

@@ -53,8 +53,13 @@ data class ModeConfig(
 /** Una scelta fatta a mano nel Pannello: vale fino a [until]; [mode] nullo vuol dire "nessuna modalità". */
 data class ManualChoice(val mode: Mode?, val until: LocalDateTime)
 
-/** Un intervallo in cui un calendario ha un evento in corso. */
-data class Busy(val calendarId: Long, val start: LocalDateTime, val end: LocalDateTime)
+/** Un intervallo in cui un calendario ha un evento in corso ([TRIP]: un viaggio preparato da un biglietto). */
+data class Busy(val calendarId: Long, val start: LocalDateTime, val end: LocalDateTime) {
+    companion object {
+        /** Finto calendario dei viaggi: accende sempre la modalità Viaggio. */
+        const val TRIP = -2L
+    }
+}
 
 /** Regole pure, senza Android: si provano senza telefono. */
 object ModeRules {
@@ -73,7 +78,8 @@ object ModeRules {
 
     fun automatic(now: LocalDateTime, configs: List<ModeConfig>, busy: List<Busy>, isDayOff: (LocalDate) -> Boolean): Mode? =
         configs.sortedBy { it.mode.ordinal }.firstOrNull { c ->
-            (c.calendarTrigger != null && busy.any { it.calendarId == c.calendarTrigger && !now.isBefore(it.start) && now.isBefore(it.end) }) ||
+            (c.mode == Mode.Travel && busy.any { it.calendarId == Busy.TRIP && !now.isBefore(it.start) && now.isBefore(it.end) }) ||
+                (c.calendarTrigger != null && busy.any { it.calendarId == c.calendarTrigger && !now.isBefore(it.start) && now.isBefore(it.end) }) ||
                 inSchedule(now, c.schedule, isDayOff)
         }?.mode
 
@@ -108,7 +114,7 @@ object ModeRules {
             }
             day = day.plusDays(1)
         }
-        val triggers = configs.mapNotNull { it.calendarTrigger }.toSet()
+        val triggers = configs.mapNotNull { it.calendarTrigger }.toSet() + Busy.TRIP
         busy.filter { it.calendarId in triggers }.forEach { out += it.start; out += it.end }
         return out.filter { it.isAfter(now) && !it.isAfter(limit) }.minOrNull()
     }

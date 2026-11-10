@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Eurise</string>
     <string name="launcher_label">Eurise Scrivania</string>
+    <string name="share_trip">Prepara il viaggio</string>
     <string name="section_today">Oggi</string>
     <string name="section_calendar">Calendario</string>
     <string name="section_clock">Orologio</string>

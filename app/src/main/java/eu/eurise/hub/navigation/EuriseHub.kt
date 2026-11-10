@@ -70,6 +70,7 @@ private const val NOTE_ROUTE = "note?id={id}&nb={nb}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
 private const val PERSON_ROUTE = "person/{key}"
 private const val MEETING_ROUTE = "meeting/{id}/{begin}"
+private const val TRIP_ROUTE = "trip/{kind}/{value}"
 private const val NO_ID = -1L
 
 private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
@@ -157,6 +158,12 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
             section.startsWith("person:") -> navController.openPerson(section.removePrefix("person:"))
             section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
+            // "trip:uri:<content uri>", "trip:file:<percorso>", "trip:raw:<testo della carta d'imbarco>" (già codificati).
+            section.startsWith("trip:") -> {
+                val kind = section.removePrefix("trip:").substringBefore(':')
+                val value = section.removePrefix("trip:$kind:")
+                if (kind.isNotEmpty() && value.isNotEmpty()) navController.navigate("trip/$kind/$value")
+            }
             section.startsWith("meeting:") -> {
                 val parts = section.removePrefix("meeting:").split(':').mapNotNull { it.toLongOrNull() }
                 if (parts.size == 2) navController.openMeeting(parts[0], parts[1])
@@ -325,6 +332,16 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         linked = { id, title -> linked(LinkRef.event(id), title) },
                         onMeeting = { id, begin -> navController.openMeeting(id, begin) },
                     )
+                }
+                composable(TRIP_ROUTE) { entry ->
+                    val kind = entry.arguments?.getString("kind").orEmpty()
+                    val value = entry.arguments?.getString("value").orEmpty()
+                    val source = when (kind) {
+                        "raw" -> eu.eurise.feature.calendar.trips.TripSource.Barcode(value)
+                        "file" -> java.io.File(value).let { eu.eurise.feature.calendar.trips.TripSource.Pdf(android.net.Uri.fromFile(it), it.name) }
+                        else -> android.net.Uri.parse(value).let { eu.eurise.feature.calendar.trips.TripSource.Pdf(it, it.lastPathSegment.orEmpty().substringAfterLast('/')) }
+                    }
+                    eu.eurise.feature.calendar.trips.TripRoute(source, onClose = { navController.closeIfOn(TRIP_ROUTE) })
                 }
                 composable(
                     route = MEETING_ROUTE,

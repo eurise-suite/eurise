@@ -15,6 +15,7 @@ object Schedule {
      */
     fun next(alarm: Alarm, now: LocalDateTime, vacation: (LocalDate) -> Boolean = { false }): LocalDateTime? {
         if (!alarm.enabled) return null
+        alarm.date?.let { d -> return d.atTime(alarm.time).takeIf { it.isAfter(now) } }
         var day = now.toLocalDate()
         repeat(370) {
             val at = day.atTime(alarm.time)

@@ -182,7 +182,7 @@ private fun AlarmCard(a: Alarm, now: LocalDateTime, vacation: Set<LocalDate>, on
                 }
                 Switch(checked = a.enabled, onCheckedChange = onToggle)
             }
-            DaysLine(a.days, a.enabled)
+            DaysLine(a.days, a.enabled, a.date)
             val note = when {
                 !a.enabled -> null
                 a.skipped != null -> stringResource(R.string.alarm_skipped, a.skipped.format(DayFormat))
@@ -208,8 +208,12 @@ private fun AlarmCard(a: Alarm, now: LocalDateTime, vacation: Set<LocalDate>, on
 
 /** Le iniziali dei giorni, accese quelle in cui suona. */
 @Composable
-private fun DaysLine(days: Set<DayOfWeek>, enabled: Boolean) {
+private fun DaysLine(days: Set<DayOfWeek>, enabled: Boolean, date: java.time.LocalDate? = null) {
     val scheme = MaterialTheme.colorScheme
+    if (date != null) {
+        Text(date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+        return
+    }
     if (days.isEmpty()) {
         Text(stringResource(R.string.alarm_once), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
         return

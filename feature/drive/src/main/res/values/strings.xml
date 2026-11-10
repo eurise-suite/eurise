@@ -133,4 +133,5 @@
     <string name="bin_empty_title">Svuotare il cestino?</string>
     <string name="bin_empty_text">Note, attività, eventi e file nel cestino spariscono per sempre. Le foto restano nel cestino di Android finché non le togli una per una.</string>
     <string name="bin_cancel">Annulla</string>
+    <string name="drive_trip">Viaggio</string>
 </resources>

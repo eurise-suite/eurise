@@ -291,6 +291,20 @@ internal fun QrSheet(text: String, onClose: () -> Unit) {
                     Primary(stringResource(R.string.qr_otp_open)) { context.start(Intent(Intent.ACTION_VIEW, Uri.parse(content.raw))); onClose() }
                 }
                 is QrContent.Text -> {
+                    val boarding = remember(content.raw) { eu.eurise.core.data.trips.Bcbp.parse(content.raw, java.time.LocalDate.now()) }
+                    if (boarding != null) {
+                        // Carta d'imbarco: si prepara il viaggio (calendario, sveglia, fuso, modalità Viaggio).
+                        val leg = boarding.legs.first()
+                        Group { Field(stringResource(R.string.qr_boarding_title), "${leg.number} · ${leg.from} → ${leg.to}") }
+                        Primary(stringResource(R.string.qr_boarding_trip)) {
+                            val intent = Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity")
+                                .putExtra("eu.eurise.extra.SECTION", "trip:raw:" + Uri.encode(content.raw))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            context.start(intent)
+                            onClose()
+                        }
+                        return@Column
+                    }
                     Text(content.raw, fontSize = 15.sp)
                     Primary(stringResource(R.string.qr_text_note)) {
                         scope.launch {

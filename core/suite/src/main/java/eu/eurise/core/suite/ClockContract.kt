@@ -15,6 +15,11 @@ import android.content.Intent
 object ClockContract {
     const val ACTION_SKIP_NEXT = "eu.eurise.clock.action.SKIP_NEXT_ALARM"
     const val ACTION_UNDO_SKIP = "eu.eurise.clock.action.UNDO_SKIP_ALARM"
+    const val ACTION_TRIP = "eu.eurise.clock.action.TRIP"
+    const val EXTRA_DATE = "date"
+    const val EXTRA_TIME = "time"
+    const val EXTRA_LABEL = "label"
+    const val EXTRA_ZONE = "zone"
 
     /** Vero se la prossima sveglia del telefono l'ha messa l'Orologio di Eurise (e quindi si può saltare da qui). */
     fun nextAlarmIsOurs(context: Context): Boolean = runCatching {
@@ -26,6 +31,17 @@ object ClockContract {
 
     /** Chiede all'Orologio di rimettere la sveglia appena saltata. */
     fun undoSkip(context: Context) = send(context, ACTION_UNDO_SKIP)
+
+    /**
+     * Un viaggio: una sveglia che suona una volta sola il giorno [date] alle [time] (se non nulla) e il fuso [zone]
+     * tra gli orologi del mondo (se non nullo e diverso da quello del telefono).
+     */
+    fun trip(context: Context, date: java.time.LocalDate?, time: java.time.LocalTime?, label: String, zone: String?) {
+        val intent = Intent(ACTION_TRIP).setPackage(context.packageName).putExtra(EXTRA_LABEL, label)
+        if (date != null && time != null) intent.putExtra(EXTRA_DATE, date.toString()).putExtra(EXTRA_TIME, time.toString())
+        if (zone != null) intent.putExtra(EXTRA_ZONE, zone)
+        runCatching { context.sendBroadcast(intent) }
+    }
 
     private fun send(context: Context, action: String) {
         runCatching { context.sendBroadcast(Intent(action).setPackage(context.packageName)) }

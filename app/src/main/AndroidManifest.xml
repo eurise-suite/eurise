@@ -25,6 +25,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Un biglietto in PDF condiviso verso Eurise: si prepara il viaggio (letto sul telefono). -->
+            <intent-filter android:label="@string/share_trip">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".AodActivity"

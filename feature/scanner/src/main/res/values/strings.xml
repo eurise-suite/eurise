@@ -104,4 +104,6 @@
     <string name="qr_share">Condividi l\'immagine</string>
     <string name="qr_from_photo">Da una foto</string>
     <string name="qr_none_in_photo">Nessun codice trovato nella foto</string>
+    <string name="qr_boarding_title">Carta d\'imbarco</string>
+    <string name="qr_boarding_trip">Prepara il viaggio</string>
 </resources>

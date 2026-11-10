@@ -135,4 +135,36 @@
     <string name="meeting_starting">La riunione inizia: %1$s</string>
     <string name="meeting_starting_text">Tocca per aprire la nota con presenti, ordine del giorno e appunti.</string>
     <string name="meeting_open">Apri la nota della riunione</string>
+    <!-- Viaggi -->
+    <string name="trip_title">Prepara il viaggio</string>
+    <string name="trip_reading">Leggo il biglietto sul telefono…</string>
+    <string name="trip_read_ok">Ecco cosa ho letto dal biglietto: controlla e correggi prima di creare.</string>
+    <string name="trip_not_read">Non sono riuscito a leggere il biglietto (forse è una scansione): scrivi tu volo o treno, giorno e orari.</string>
+    <string name="trip_name">Nome del viaggio</string>
+    <string name="trip_booking">Prenotazione %1$s</string>
+    <string name="trip_leg">Tratto %1$d</string>
+    <string name="trip_remove">Togli</string>
+    <string name="trip_number">Volo o treno</string>
+    <string name="trip_from">Da</string>
+    <string name="trip_to">A</string>
+    <string name="trip_pick_day">Scegli il giorno</string>
+    <string name="trip_departs">Parte %1$s</string>
+    <string name="trip_arrives">Arriva %1$s</string>
+    <string name="trip_seat">Posto %1$s</string>
+    <string name="trip_local_times">Orari del luogo: nel Calendario diventano quelli del tuo fuso.</string>
+    <string name="trip_add_leg">Aggiungi un tratto (per esempio il ritorno)</string>
+    <string name="trip_prepare">Che cosa preparo</string>
+    <string name="trip_to_calendar">Voli e treni nel Calendario</string>
+    <string name="trip_alarm">Sveglia alle %1$s il giorno della partenza</string>
+    <string name="trip_zone">Ora di %1$s nell\'Orologio</string>
+    <string name="trip_folder">Biglietto in File › Viaggi</string>
+    <string name="trip_mode">Modalità Viaggio nelle date</string>
+    <string name="trip_gallery">Diario nella Galleria (arriva con la prossima Galleria)</string>
+    <string name="trip_map">Mappa offline (arriva con Mappe, scarica da Internet)</string>
+    <string name="trip_privacy">Il biglietto si legge sul telefono e nulla va su Internet.</string>
+    <string name="trip_create">Prepara</string>
+    <string name="trip_done">Viaggio pronto</string>
+    <string name="trip_done_text">Trovi i tratti nel Calendario, la sveglia e il fuso nell\'Orologio e il biglietto in File › Viaggi. La modalità Viaggio si accenderà da sola.</string>
+    <string name="trip_close">Chiudi</string>
+    <string name="trip_ok">OK</string>
 </resources>

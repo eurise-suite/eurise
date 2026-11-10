@@ -338,12 +338,13 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     }
 }
 
-/** QR, Data Matrix e i codici a barre più comuni (EAN, Code 128). */
+/** QR, Data Matrix, i codici delle carte d'imbarco (PDF417, Aztec) e i codici a barre più comuni (EAN, Code 128). */
 private val LiveReader = com.google.zxing.MultiFormatReader().apply {
     setHints(
         mapOf(
             com.google.zxing.DecodeHintType.POSSIBLE_FORMATS to listOf(
                 com.google.zxing.BarcodeFormat.QR_CODE, com.google.zxing.BarcodeFormat.DATA_MATRIX,
+                com.google.zxing.BarcodeFormat.PDF_417, com.google.zxing.BarcodeFormat.AZTEC,
                 com.google.zxing.BarcodeFormat.EAN_13, com.google.zxing.BarcodeFormat.EAN_8, com.google.zxing.BarcodeFormat.CODE_128,
             ),
         ),

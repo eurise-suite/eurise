@@ -38,6 +38,13 @@ class ModeRulesTest {
         assertEquals(Mode.Work, ModeRules.resolve(at(2026, 11, 10, 10), configs, null, listOf(trip.copy(calendarId = 6)), holidays))
     }
 
+    @Test fun `un viaggio preparato da un biglietto accende il viaggio`() {
+        val trip = Busy(Busy.TRIP, at(2026, 11, 20, 4, 35), at(2026, 11, 23, 22, 0))
+        val noTrigger = configs.map { if (it.mode == Mode.Travel) it.copy(calendarTrigger = null) else it }
+        assertEquals(Mode.Travel, ModeRules.resolve(at(2026, 11, 20, 10), noTrigger, null, listOf(trip), holidays))
+        assertEquals(at(2026, 11, 23, 22, 0), ModeRules.nextChange(at(2026, 11, 23, 20), noTrigger, null, listOf(trip)))
+    }
+
     @Test fun `la scelta a mano vale fino alla scadenza`() {
         val manual = ManualChoice(Mode.Home, at(2026, 11, 10, 12))
         assertEquals(Mode.Home, ModeRules.resolve(at(2026, 11, 10, 10), configs, manual, emptyList(), holidays))

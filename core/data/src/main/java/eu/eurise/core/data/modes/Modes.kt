@@ -93,6 +93,24 @@ object Modes {
         }
     }
 
+    /** Un viaggio preparato da un biglietto: la modalità Viaggio si accende da sola dall'inizio alla fine. */
+    fun addTrip(context: Context, start: LocalDateTime, end: LocalDateTime) {
+        val app = context.applicationContext
+        scope.launch {
+            lock.withLock {
+                val p = prefs(app)
+                val trips = loadTrips(p).filter { it.end.isAfter(LocalDateTime.now().minusDays(1)) } + Busy(Busy.TRIP, start, end)
+                p.edit().putString("trips", trips.joinToString("\n") { "${it.start}|${it.end}" }).apply()
+            }
+            runCatching { update(app) }
+        }
+    }
+
+    private fun loadTrips(p: android.content.SharedPreferences): List<Busy> =
+        p.getString("trips", "").orEmpty().lines().mapNotNull { line ->
+            runCatching { line.split('|').let { Busy(Busy.TRIP, LocalDateTime.parse(it[0]), LocalDateTime.parse(it[1])) } }.getOrNull()
+        }
+
     private suspend fun update(context: Context) = lock.withLock {
         val p = prefs(context)
         val configs = loadConfigs(p)
@@ -104,7 +122,7 @@ object Modes {
             }.getOrNull()
         }?.takeIf { now.isBefore(it.until) }
         if (manual == null) p.edit().remove("manual").apply()
-        val busy = busy(context, configs, now)
+        val busy = busy(context, configs, now) + loadTrips(p)
         val daysOff = daysOff(context, now.toLocalDate())
         val active = ModeRules.resolve(now, configs, manual, busy) { d -> ItalianHolidays.isHoliday(d) || d in daysOff }
         val next = ModeRules.nextChange(now, configs, manual, busy)

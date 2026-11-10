@@ -310,6 +310,18 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
                 coroutines.launch { try { share(context, data.localCopy(item)) } catch (e: Exception) { fail(e) } }
             },
             onRename = { name -> selected = null; action { data.rename(item, name) } },
+            onTrip = {
+                selected = null
+                coroutines.launch {
+                    try {
+                        val file = data.localCopy(item)
+                        val intent = android.content.Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity")
+                            .putExtra("eu.eurise.extra.SECTION", "trip:file:" + android.net.Uri.encode(file.absolutePath))
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        context.startActivity(intent)
+                    } catch (e: Exception) { fail(e) }
+                }
+            },
             onDelete = { selected = null; action { data.delete(item) } },
             onOffline = { on -> action { data.setOffline(item, on) } },
             onMove = { to -> selected = null; action { data.move(item, to) } },
@@ -705,7 +717,7 @@ private fun SheetAction(icon: ImageVector, label: String, modifier: Modifier, on
 @Composable
 private fun ItemSheet(
     data: DriveData, item: DriveItem, onClose: () -> Unit, onOpen: () -> Unit, onShare: () -> Unit,
-    onRename: (String) -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
+    onRename: (String) -> Unit, onTrip: () -> Unit, onDelete: () -> Unit, onOffline: (Boolean) -> Unit,
     onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit, onSync: () -> Unit,
 ) {
     var linking by remember { mutableStateOf(false) }
@@ -737,6 +749,8 @@ private fun ItemSheet(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SheetAction(EuriseIcons.folder(), stringResource(R.string.drive_move), Modifier.weight(1f)) { moving = true }
+                // Un biglietto in PDF: voli e treni nel Calendario, sveglia e fuso, cartella, modalità Viaggio.
+                if (item.extension == "pdf") SheetAction(EuriseIcons.plane(), stringResource(R.string.drive_trip), Modifier.weight(1f), onTrip)
                 if (item.folder && item.place.account == null && data.places.isNotEmpty()) {
                     SheetAction(EuriseIcons.refresh(), stringResource(R.string.drive_sync_action), Modifier.weight(1f), onSync)
                 }

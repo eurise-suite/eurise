@@ -141,6 +141,17 @@ class SuiteReceiver : BroadcastReceiver() {
                 val alarm: Alarm = store.alarm(prefs.getInt("last_skipped", -1)) ?: return
                 store.saveAlarm(alarm.copy(skipped = null))
             }
+            eu.eurise.core.suite.ClockContract.ACTION_TRIP -> {
+                val c = eu.eurise.core.suite.ClockContract
+                val date = intent.getStringExtra(c.EXTRA_DATE)?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+                val time = intent.getStringExtra(c.EXTRA_TIME)?.let { runCatching { java.time.LocalTime.parse(it) }.getOrNull() }
+                if (date != null && time != null) {
+                    store.saveAlarm(Alarm(store.nextId(), time, intent.getStringExtra(c.EXTRA_LABEL).orEmpty(), date = date))
+                }
+                intent.getStringExtra(c.EXTRA_ZONE)?.takeIf { z ->
+                    runCatching { java.time.ZoneId.of(z).rules != java.time.ZoneId.systemDefault().rules }.getOrDefault(false)
+                }?.let { zone -> store.updateSettings { st -> if (zone in st.zones) st else st.copy(zones = st.zones + zone) } }
+            }
         }
         Scheduler.rescheduleAll(context)
     }
