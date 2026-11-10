@@ -15,10 +15,17 @@ Scelte del proprietario: famiglia «Firma di stella», avvio «Blu notte sempre�
   notifica di caricamento della Galleria (`UploadWorker`, prima usava il primo piano dell'icona adattiva, minuscolo).
   Nell'APK principale il ramo `tastiera` ha già dato a ogni notifica un'icona di funzione (`ic_stat_note`, `ic_stat_bell`
   in Calendario, `ic_stat_clock`, `ic_aod_status`): restano quelle, la stella vale per gli APK separati e le notifiche generiche.
-- Unione: nessun file toccato da entrambi i rami `brand` e `tastiera` (controllato l'11 novembre sulla base comune 7c1766f).
+- Unione (11 novembre, su richiesta del proprietario): `tastiera` unito in `brand` senza conflitti; tutti gli altri rami erano
+  già contenuti. Da qui si lavora su `brand`, che contiene tutto.
 - Sorgenti del marchio in `docs/brand/*.svg`; F-Droid in `fastlane/metadata/android/{it-IT,en-US}` (titolo, descrizioni,
-  icona 512, immagine 1024×500). Mancano le schermate del telefono (vanno catturate dall'app vera) e i metadati degli APK separati.
-- Mappe, Browser, Messaggi, Telefono, Office: icone già disegnate sulla tela, da fare quando nasceranno gli APK.
+  icona 512, immagine 1024×500, schermate). Mancano i metadati degli APK separati.
+- Schermate (11 novembre): flusso `.github/workflows/screenshots.yml` (a mano da Actions o quando cambiano
+  `scripts/screenshots/**`, `app/src/debug/**` o il flusso). Telefono simulato Pixel 6, Android 14, ore 9:30 a Roma (21:00 per la
+  Scrivania in Notte), dati inventati da `app/src/debug/.../DemoDataReceiver.kt` (solo versione di prova, chiamabile solo da adb).
+  Le 14 immagini (7 schermate × Perla/Notte) finiscono nel ramo `schermate` (sovrascritto a ogni giro: l'archivio di Actions non
+  si scarica dall'ambiente di Claude); le scelte si copiano a mano in `phoneScreenshots`. L'app è solo in italiano: le stesse
+  immagini anche in en-US.
+- Mappe, Browser, Messaggi, Telefono, Office: icone adattive pronte in `docs/brand/android/` (vedi il README lì).
 
 ## Decisione (10 novembre 2026, sera)
 - **Simbolo approvato: la stella polare** (variante `polare` / `polarep` di `BrandMark`, tavola `BrandPolare`).

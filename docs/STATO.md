@@ -573,3 +573,18 @@ Tutto scritto senza aspettare conferme (richiesta del proprietario); anteprime s
   widget nella stessa pagina). Manca: il widget non segue l'altezza scelta per la bolla (usa la sua altezza minima).
 Prossimo: prova del proprietario di tutto questo; poi Eurise Leggi oltre il prototipo (Tesseract dai sorgenti in
 third_party), Password quando il proprietario comincia a usarla.
+
+## 11 novembre: tutto sul ramo `brand` (chat del brand)
+Il proprietario ha chiesto di unire tutti i rami qui: `tastiera` è unito in `brand` (nessun conflitto), gli altri rami erano già
+contenuti. **Si lavora su `brand`.** Brand: vedi `docs/BRAND.md`.
+Fatto dopo l'unione (da provare sul telefono):
+- Tastiera: la barra di Eurise sta sopra e i suggerimenti subito sopra i tasti; impostazione «Barra di Eurise sopra i suggerimenti»
+  (Barra degli strumenti) per l'ordine di prima; i pannelli si aprono sempre al posto dei tasti (`EuriseBar.arrange`).
+- Tastiera: altezza al 112% in verticale di base (tasti presi per sbaglio). Chi l'aveva già cambiata a mano tiene la sua.
+- Tastiera: chiaro/scuro come le bolle della Scrivania (`HomeTheme`, broadcast `eu.eurise.action.HOME_THEME` con permesso di firma,
+  mandato da `tellKeyboardTheme` quando cambia `scene.themeDark`); impostazione «Chiaro e scuro come la Scrivania» in Aspetto,
+  vale con il giorno/notte automatico acceso. Icona propria della Tastiera: arriva con l'unione (stella polare).
+- Tema Notte: `EuriseTheme` dà ai testi il colore del tema (prima titoli e righe senza colore restavano neri sul fondo scuro).
+- Password, NFC: controllo di presenza diradato, risposte 61xx/6Cxx seguite, applicazioni note provate (PagoBANCOMAT per prima);
+  se non legge, il foglio dice il passo («Lettura fermata a: …», es. «avvio 6985»). Se non basta, chiedere al proprietario quel testo.
+- Notifiche della Galleria con la stella (`ic_stat_eurise`).
