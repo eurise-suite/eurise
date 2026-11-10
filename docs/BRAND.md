@@ -3,7 +3,7 @@
 Nota di passaggio per chi riprende il lavoro sul marchio. Questo file è separato da `docs/STATO.md`
 per non toccare i file su cui lavora la chat del ramo `tastiera`.
 
-## Nel codice (10 novembre 2026, ramo `brand`)
+## Nel codice (10 novembre 2026, ramo `brand`, APK 206 verde)
 Scelte del proprietario: famiglia «Firma di stella», avvio «Blu notte sempre», frase «Libere, leggere, tue.».
 - Icone adattive vettoriali con livello monocromatico (icone a tema di Android 13+):
   app principale = stella polare (versione piccola, 16 stelle, `@color/eurise_brand_gold` in `values/brand_colors.xml`);
