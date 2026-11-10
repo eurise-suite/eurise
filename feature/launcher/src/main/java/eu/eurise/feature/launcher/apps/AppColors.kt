@@ -31,7 +31,8 @@ object AppColors {
     /** Tinta media pesata per saturazione, con un istogramma di 36 settori per non mescolare colori lontani. */
     private fun dominantHue(context: Context, entry: AppEntry): Triple<Float, Float, Float>? {
         val pm = context.packageManager
-        val drawable = runCatching { entry.component?.let { pm.getActivityIcon(it) } }.getOrNull()
+        val drawable = entry.shortcut?.let { WebApps.icon(context, it) }
+            ?: runCatching { entry.component?.let { pm.getActivityIcon(it) } }.getOrNull()
             ?: pm.getApplicationIcon(entry.packageName)
         val size = 48
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)

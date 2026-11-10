@@ -502,5 +502,6 @@
     <string name="bubble_no_voice">Nessun riconoscimento vocale installato sul telefono</string>
     <string name="bubble_saved_note">Salvato come nota</string>
     <string name="bubble_saved_task">Aggiunto alle attività: %1$s</string>
-    <string name="quick_add">Aggiungi</string>
+    <string name="webapp_added">«%1$s» è tra le tue app, in %2$s</string>
+    <string name="webapp_remove">Togli la web app</string>
 </resources>

@@ -340,7 +340,7 @@ fun CategoryPages(
                                 // Durante una presa il rilascio non deve aprire l'app.
                                 onOpen = { if (drag == null) onOpen(app) },
                                 onToggleFavorite = { onToggleFavorite(app) },
-                                onInfo = if (app.component != null) ({ onInfo(app) }) else null,
+                                onInfo = if (app.component != null || app.shortcut != null) ({ onInfo(app) }) else null,
                                 moveTargets = categories.filter { it.id != category.id && it.holdsApps },
                                 onMoveTo = { onMoveTo(app, it) },
                                 iconSize = iconSize,

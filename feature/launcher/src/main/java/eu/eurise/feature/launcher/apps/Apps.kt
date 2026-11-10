@@ -45,6 +45,8 @@ data class AppEntry(
     val category: Category,
     /** Per le sezioni di Eurise: la sezione da aprire nell'app hub. */
     val euriseSection: String? = null,
+    /** Per le web app installate da un browser (vedi [WebApps]). */
+    val shortcut: WebShortcut? = null,
 )
 
 /** Elenco delle app installate, aggiornato quando se ne installa o rimuove una. */
@@ -65,8 +67,12 @@ class AppsRepository(private val context: Context) {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        val stopWatching = WebApps.watch(context) { trySend(Unit) }
         trySend(Unit)
-        awaitClose { context.unregisterReceiver(receiver) }
+        awaitClose {
+            context.unregisterReceiver(receiver)
+            stopWatching()
+        }
     }.conflate().map { load() }.flowOn(Dispatchers.IO)
 
     private fun load(): List<AppEntry> {
@@ -85,7 +91,7 @@ class AppsRepository(private val context: Context) {
                     category = categorize(pkg, label, info.activityInfo.applicationInfo),
                 )
             }
-        return (euriseSections(own) + installed).sortedBy { it.label.lowercase() }
+        return (euriseSections(own) + installed + WebApps.load(context)).sortedBy { it.label.lowercase() }
     }
 
     /** Le sezioni dell'app Eurise compaiono come app a sé nelle loro categorie. */
@@ -118,6 +124,7 @@ class AppsRepository(private val context: Context) {
 fun Context.launch(entry: AppEntry) {
     val intent = when {
         entry.euriseSection != null -> return openEurise(entry.euriseSection)
+        entry.shortcut != null -> return WebApps.launch(this, entry.shortcut)
         entry.component != null ->
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setComponent(entry.component)
         else -> return

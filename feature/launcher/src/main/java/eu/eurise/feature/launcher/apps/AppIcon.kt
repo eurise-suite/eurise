@@ -59,10 +59,13 @@ object IconLoader {
 
     suspend fun load(context: Context, entry: AppEntry, px: Int): IconImage? = withContext(Dispatchers.IO) {
         cache.get(entry.key)?.let { return@withContext it }
-        val component = entry.component ?: return@withContext null
-        val drawable = runCatching { context.packageManager.getActivityIcon(component) }.getOrNull() ?: return@withContext null
+        val drawable = when {
+            entry.shortcut != null -> WebApps.icon(context, entry.shortcut)
+            entry.component != null -> runCatching { context.packageManager.getActivityIcon(entry.component) }.getOrNull()
+            else -> null
+        } ?: return@withContext null
         val image = officialMono(drawable, px)
-            ?: SystemGlyphs.find(entry)?.let { IconImage.Glyph(it) }
+            ?: SystemGlyphs.find(entry)?.takeIf { entry.shortcut == null }?.let { IconImage.Glyph(it) }
             ?: silhouette(drawable, px)
             ?: IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
         cache.put(entry.key, image)

@@ -271,11 +271,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             expandNotifications = { context.expandNotifications() },
             openEurise = { context.openEurise(it) },
             appInfo = { entry ->
-                runCatching {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${entry.packageName}"))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
+                val web = entry.shortcut
+                if (web != null) {
+                    eu.eurise.feature.launcher.apps.WebApps.remove(context, web)
+                } else {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${entry.packageName}"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    }
                 }
             },
             openMessage = { context.openMessage(it) },
@@ -350,7 +355,6 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var replyTo by remember { mutableStateOf<MessageItem?>(null) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
-        var quickCapture by remember { mutableStateOf(false) }
         var searchPerson by remember { mutableStateOf<eu.eurise.feature.launcher.contacts.Person?>(null) }
         var signPicker by remember { mutableStateOf(false) }
         // Cartella aperta (id) e scelta delle app per crearne una o aggiungerne.
@@ -650,22 +654,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
                     )
                 } else {
-                    Row(barModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CategoryBar(
-                            categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
-                            hazeState = hazeState, modifier = Modifier.weight(1f), onEdit = { categoryEditor = true },
-                        )
-                        eu.eurise.feature.launcher.home.PlusCircle(hazeState, onClick = { quickCapture = true })
-                    }
+                    CategoryBar(
+                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
+                        hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
+                    )
                 }
-            }
-
-            if (quickCapture) {
-                eu.eurise.core.links.QuickCaptureSheet(
-                    data = data,
-                    onDismiss = { quickCapture = false },
-                    onScan = { quickCapture = false; actions.openEurise("scanner") },
-                )
             }
 
             if (searching) {

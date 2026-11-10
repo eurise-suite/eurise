@@ -25,7 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -339,7 +341,7 @@ fun AppTile(
             }
             if (onInfo != null) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.app_info)) },
+                    text = { Text(stringResource(if (entry.shortcut != null) R.string.webapp_remove else R.string.app_info)) },
                     leadingIcon = { Icon(EuriseIcons.tools(), null) },
                     onClick = { menu = false; onInfo() },
                 )
@@ -384,7 +386,7 @@ fun CategoryBar(
                 .clickable(role = Role.Button, onClickLabel = search, onClick = onSearch),
             contentAlignment = Alignment.Center,
         ) {
-            HeartbeatSearchIcon(search, EuriseIcons.search(2.2f), 24.dp)
+            BreathingSearchIcon(search, EuriseIcons.search(2.2f), 24.dp)
         }
     }
 }
@@ -413,19 +415,6 @@ fun CategoryButton(category: BarCategory, active: Boolean, onClick: () -> Unit, 
     }
 }
 
-/** Il + unico della Scrivania: tondo satinato accanto alla barra. */
-@Composable
-fun PlusCircle(hazeState: HazeState, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val label = stringResource(R.string.quick_add)
-    Box(
-        modifier
-            .size(GlassDefaults.PillHeight)
-            .glass(hazeState, CircleShape, outline = false)
-            .clickable(role = Role.Button, onClickLabel = label, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { Icon(EuriseIcons.plus(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp)) }
-}
-
 @Composable
 fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier = Modifier, web: Boolean = false) {
     val label = stringResource(if (web) R.string.search_web else R.string.search)
@@ -437,33 +426,30 @@ fun SearchCircle(hazeState: HazeState, onSearch: () -> Unit, modifier: Modifier 
         contentAlignment = Alignment.Center,
     ) {
         if (web) Icon(EuriseIcons.globe(), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-        else HeartbeatSearchIcon(label, EuriseIcons.search(), 22.dp)
+        else BreathingSearchIcon(label, EuriseIcons.search(), 22.dp)
     }
 }
 
-/** La lente batte come un cuore (due battiti e una pausa) e nel momento più grande prende il colore d'accento. */
+/**
+ * La lente respira: cresce e cala lentamente (2,4 s per verso), da più piccola a più grande del normale,
+ * e al massimo prende in pieno il colore d'accento. Un'onda sola e morbida, non un battito.
+ */
 @Composable
-private fun HeartbeatSearchIcon(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, size: androidx.compose.ui.unit.Dp) {
-    val beat by rememberInfiniteTransition(label = "battito").animateFloat(
+private fun BreathingSearchIcon(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, size: androidx.compose.ui.unit.Dp) {
+    val breath by rememberInfiniteTransition(label = "respiro").animateFloat(
         initialValue = 0f,
-        targetValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            keyframes {
-                durationMillis = 1600
-                0f at 0
-                1f at 140
-                0.15f at 280
-                0.7f at 400
-                0f at 600
-            },
+            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
         ),
-        label = "battito",
+        label = "respiro",
     )
     Icon(
         icon, label,
-        tint = lerp(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.primary, beat),
+        tint = lerp(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.primary, breath),
         modifier = Modifier.size(size).graphicsLayer {
-            val scale = 1f + 0.22f * beat
+            val scale = 0.8f + 0.5f * breath
             scaleX = scale
             scaleY = scale
         },
