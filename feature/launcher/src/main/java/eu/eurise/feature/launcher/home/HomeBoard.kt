@@ -91,7 +91,9 @@ enum class HomeKind(
     News("news", R.string.card_news, R.string.card_news_desc, { EuriseIcons.news(1.9f) }, 1f, 240, CardKind.News),
     Stocks("stocks", R.string.card_stocks, R.string.card_stocks_desc, { EuriseIcons.chart(1.9f) }, 1f, 170, CardKind.Stocks),
     Calendar("calendar_card", R.string.card_calendar, R.string.card_calendar_desc, { EuriseIcons.calendar(1.9f) }, 1f, 300, CardKind.Calendar),
-    Messages("messages_card", R.string.card_messages, R.string.card_messages_desc, { EuriseIcons.chat(1.9f) }, 1f, 240, CardKind.Messages);
+    Messages("messages_card", R.string.card_messages, R.string.card_messages_desc, { EuriseIcons.chat(1.9f) }, 1f, 240, CardKind.Messages),
+    /** Il widget di un'altra app (anteprime WidAggiungi, WidBolla): se ne possono mettere più d'uno, ognuno col suo numero. */
+    AppWidget("widget", R.string.home_widget, R.string.home_widget_desc, { EuriseIcons.grid(1.9f) }, 1f, 180);
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }
@@ -102,7 +104,10 @@ enum class HomeKind(
  * Una scheda sulla home: larghezza come frazione della riga (da 0,3 a 1), altezza in dp (0 = quanto il
  * contenuto). Le schede affiancate restano alte uguali finché l'utente non le scioglie ([free]).
  */
-data class HomeSlot(val kind: HomeKind, val width: Float, val height: Int = kind.defaultHeight, val free: Boolean = false)
+data class HomeSlot(val kind: HomeKind, val width: Float, val height: Int = kind.defaultHeight, val free: Boolean = false, val widget: Int = 0) {
+    /** Chi è la bolla: il tipo, o per i widget il loro numero (ce ne possono essere più d'uno). */
+    val key: String get() = if (kind == HomeKind.AppWidget) "widget#$widget" else kind.id
+}
 
 val DefaultHomeSlots = listOf(
     HomeSlot(HomeKind.Agenda, 1f),
@@ -115,20 +120,22 @@ val DefaultHomeSlots = listOf(
 fun encodeHomeSlots(slots: List<HomeSlot>): String = slots.encodeHome()
 
 fun List<HomeSlot>.encodeHome(): String =
-    joinToString("|") { "${it.kind.id}:${"%.3f".format(java.util.Locale.ROOT, it.width)}:${it.height}:${if (it.free) 1 else 0}" }
+    joinToString("|") { "${it.key}:${"%.3f".format(java.util.Locale.ROOT, it.width)}:${it.height}:${if (it.free) 1 else 0}" }
 
 fun decodeHome(raw: String?): List<HomeSlot> {
     if (raw.isNullOrBlank()) return if (raw == null) DefaultHomeSlots else emptyList()
     return raw.split('|').mapNotNull { part ->
         val b = part.split(':')
-        val kind = HomeKind.byId(b[0]) ?: return@mapNotNull null
+        val widget = b[0].takeIf { it.startsWith("widget#") }?.removePrefix("widget#")?.toIntOrNull() ?: 0
+        val kind = if (widget != 0) HomeKind.AppWidget else HomeKind.byId(b[0])?.takeIf { it != HomeKind.AppWidget } ?: return@mapNotNull null
         HomeSlot(
             kind,
             (b.getOrNull(1)?.toFloatOrNull() ?: kind.defaultWidth).coerceIn(MinWidth, 1f),
             b.getOrNull(2)?.toIntOrNull() ?: kind.defaultHeight,
             b.getOrNull(3) == "1",
+            widget,
         )
-    }.distinctBy { it.kind }
+    }.distinctBy { it.key }
 }
 
 private const val MinWidth = 0.3f
@@ -180,11 +187,12 @@ fun HomeBoard(
     onCatalog: () -> Unit,
     content: @Composable (HomeSlot, Modifier) -> Unit,
 ) {
-    val naturals = remember { mutableStateMapOf<HomeKind, Int>() }
+    val naturals = remember { mutableStateMapOf<String, Int>() }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val density = LocalDensity.current
     val latest by rememberUpdatedState(slots)
-    val bounds = remember { mutableStateMapOf<HomeKind, Rect>() }
-    var dragging by remember { mutableStateOf<HomeKind?>(null) }
+    val bounds = remember { mutableStateMapOf<String, Rect>() }
+    var dragging by remember { mutableStateOf<String?>(null) }
     var dragStart by remember { mutableStateOf<Rect?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     val endDrag = {
@@ -192,12 +200,12 @@ fun HomeBoard(
         val start = dragStart
         if (from != null && start != null) {
             val center = start.center + dragOffset
-            val target = latest.map { it.kind }
-                .minByOrNull { kind -> (((if (kind == from) start else bounds[kind])?.center ?: Offset(Float.MAX_VALUE / 4, 0f)) - center).getDistanceSquared() }
+            val target = latest.map { it.key }
+                .minByOrNull { key -> (((if (key == from) start else bounds[key])?.center ?: Offset(Float.MAX_VALUE / 4, 0f)) - center).getDistanceSquared() }
             if (target != null && target != from) {
                 val list = latest.toMutableList()
-                val to = list.indexOfFirst { it.kind == target }
-                val moved = list.removeAt(list.indexOfFirst { it.kind == from })
+                val to = list.indexOfFirst { it.key == target }
+                val moved = list.removeAt(list.indexOfFirst { it.key == from })
                 list.add(to, moved)
                 onChange(list)
             }
@@ -219,7 +227,7 @@ fun HomeBoard(
                     // Altezza comune delle schede legate: quella scelta dall'utente o la più alta delle naturali.
                     val linked = if (row.size > 1) row.filter { !slots[it].free } else emptyList()
                     val chosen = linked.map { slots[it].height }.filter { it > 0 }.maxOrNull()
-                    val natural = linked.mapNotNull { naturals[slots[it].kind] }.maxOrNull()?.let { with(density) { it.toDp() } }
+                    val natural = linked.mapNotNull { naturals[slots[it].key] }.maxOrNull()?.let { with(density) { it.toDp() } }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.Top) {
                         row.forEachIndexed { pos, index ->
                             val slot = slots[index]
@@ -229,10 +237,10 @@ fun HomeBoard(
                                 slot.height > 0 -> Modifier.height(slot.height.dp)
                                 else -> Modifier
                             }
-                            val lifted = dragging == slot.kind
+                            val lifted = dragging == slot.key
                             Box(
                                 Modifier.weight(slot.width)
-                                    .onGloballyPositioned { if (dragging != slot.kind) bounds[slot.kind] = it.boundsInRoot() }
+                                    .onGloballyPositioned { if (dragging != slot.key) bounds[slot.key] = it.boundsInRoot() }
                                     .zIndex(if (lifted) 2f else if (editing) 1f else 0f)
                                     .graphicsLayer {
                                         if (lifted) {
@@ -244,7 +252,7 @@ fun HomeBoard(
                                     },
                             ) {
                                 androidx.compose.runtime.CompositionLocalProvider(
-                                    LocalPillMeasure provides { h -> if (naturals[slot.kind] != h) naturals[slot.kind] = h },
+                                    LocalPillMeasure provides { h -> if (naturals[slot.key] != h) naturals[slot.key] = h },
                                     LocalBubbleFixedHeight provides (slot.height > 0 || (index in linked && chosen != null)),
                                 ) {
                                     content(
@@ -259,21 +267,25 @@ fun HomeBoard(
                                         linkedLeft = pos > 0,
                                         isLinked = pos > 0 && !slot.free && !slots[row[pos - 1]].free,
                                         rowPx = rowPx,
-                                        onRemove = { onChange(latest.filterNot { it.kind == slot.kind }) },
-                                        onWidth = { w -> onChange(latest.map { if (it.kind == slot.kind) it.copy(width = w.coerceIn(MinWidth, 1f)) else it }) },
+                                        onRemove = {
+                                            // Un widget tolto libera il suo numero presso Android.
+                                            if (slot.kind == HomeKind.AppWidget) AppWidgets.delete(context, slot.widget)
+                                            onChange(latest.filterNot { it.key == slot.key })
+                                        },
+                                        onWidth = { w -> onChange(latest.map { if (it.key == slot.key) it.copy(width = w.coerceIn(MinWidth, 1f)) else it }) },
                                         currentHeightPx = {
-                                            val s = latest.firstOrNull { it.kind == slot.kind }
+                                            val s = latest.firstOrNull { it.key == slot.key }
                                             when {
                                                 s != null && s.height > 0 -> with(density) { s.height.dp.toPx() }
-                                                else -> (naturals[slot.kind] ?: 200).toFloat()
+                                                else -> (naturals[slot.key] ?: 200).toFloat()
                                             }
                                         },
                                         onHeight = { px ->
                                             val dp = with(density) { px.toDp().value.toInt() }.coerceIn(MinHeight, 900)
-                                            onChange(applyHeight(latest, slot.kind, dp))
+                                            onChange(applyHeight(latest, slot.key, dp))
                                         },
-                                        onToggleLink = { onChange(toggleHomeLink(latest, row.map { latest.getOrNull(it)?.kind }, pos)) },
-                                        onDragStart = { dragging = slot.kind; dragStart = bounds[slot.kind]; dragOffset = Offset.Zero },
+                                        onToggleLink = { onChange(toggleHomeLink(latest, row.map { latest.getOrNull(it)?.key }, pos)) },
+                                        onDragStart = { dragging = slot.key; dragStart = bounds[slot.key]; dragOffset = Offset.Zero },
                                         onDrag = { dragOffset += it },
                                         onDragEnd = endDrag,
                                     )
@@ -290,8 +302,8 @@ fun HomeBoard(
 }
 
 /** Nuova altezza per una scheda; se è legata, la prendono anche le legate della stessa riga. */
-private fun applyHeight(slots: List<HomeSlot>, kind: HomeKind, dp: Int): List<HomeSlot> {
-    val index = slots.indexOfFirst { it.kind == kind }
+private fun applyHeight(slots: List<HomeSlot>, key: String, dp: Int): List<HomeSlot> {
+    val index = slots.indexOfFirst { it.key == key }
     val row = homeRows(slots).firstOrNull { index in it }.orEmpty()
     val target = slots[index]
     return slots.mapIndexed { i, s ->
@@ -304,15 +316,15 @@ private fun applyHeight(slots: List<HomeSlot>, kind: HomeKind, dp: Int): List<Ho
 }
 
 /** La catena tra una scheda e quella alla sua sinistra: se sono legate si sciolgono, altrimenti si legano. */
-private fun toggleHomeLink(slots: List<HomeSlot>, rowKinds: List<HomeKind?>, pos: Int): List<HomeSlot> {
-    val a = rowKinds.getOrNull(pos - 1) ?: return slots
-    val b = rowKinds.getOrNull(pos) ?: return slots
-    val sa = slots.first { it.kind == a }
-    val sb = slots.first { it.kind == b }
+private fun toggleHomeLink(slots: List<HomeSlot>, rowKeys: List<String?>, pos: Int): List<HomeSlot> {
+    val a = rowKeys.getOrNull(pos - 1) ?: return slots
+    val b = rowKeys.getOrNull(pos) ?: return slots
+    val sa = slots.first { it.key == a }
+    val sb = slots.first { it.key == b }
     val linked = !sa.free && !sb.free
     val common = maxOf(sa.height, sb.height)
     return slots.map {
-        when (it.kind) {
+        when (it.key) {
             a, b -> if (linked) it.copy(free = true) else it.copy(free = false, height = common)
             else -> it
         }
@@ -435,12 +447,32 @@ private fun Handle(modifier: Modifier, onStart: () -> Unit, onDrag: (Float, Floa
     ) { Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onPrimary)) }
 }
 
-/** Catalogo delle schede della home: quelle presenti (si tolgono) e quelle da aggiungere. */
+/**
+ * Catalogo delle schede della home: quelle presenti (si tolgono) e quelle da aggiungere; con [onWidget] anche la
+ * scheda "Widget delle app" (anteprima WidAggiungi), con i widget delle app installate raggruppati per app.
+ */
 @Composable
-fun HomeCatalog(slots: List<HomeSlot>, onAdd: (HomeKind) -> Unit, onRemove: (HomeKind) -> Unit, onClose: () -> Unit) {
+fun HomeCatalog(
+    slots: List<HomeSlot>,
+    onAdd: (HomeKind) -> Unit,
+    onRemove: (HomeKind) -> Unit,
+    onClose: () -> Unit,
+    onWidget: ((android.appwidget.AppWidgetProviderInfo) -> Unit)? = null,
+) {
     val present = slots.map { it.kind }.toSet()
+    var widgets by remember { mutableStateOf(false) }
     BottomSheet(stringResource(R.string.home_cards_title), onClose) {
-        HomeKind.entries.forEach { kind ->
+        if (onWidget != null) item(key = "tabs") {
+            Row(Modifier.padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                eu.eurise.core.designsystem.component.FilterPill(stringResource(R.string.home_widget_tab_bubbles), null, !widgets) { widgets = false }
+                eu.eurise.core.designsystem.component.FilterPill(stringResource(R.string.home_widget_tab_apps), null, widgets) { widgets = true }
+            }
+        }
+        if (widgets && onWidget != null) {
+            widgetCatalog(onWidget)
+            return@BottomSheet
+        }
+        HomeKind.entries.filter { it != HomeKind.AppWidget }.forEach { kind ->
             item(key = kind.id) {
                 val on = kind in present
                 Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {

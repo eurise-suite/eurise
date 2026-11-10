@@ -28,7 +28,9 @@ class KeyboardIconsSet private constructor() {
             else -> keyboardIconsMaterial
         }
         val overrideIds = customIconIds(context, prefs)
-        val ids = if (overrideIds.isEmpty()) defaultIds else defaultIds + overrideIds
+        // Eurise: con lo stile Material (quello di base) i tasti prendono le icone della suite; Holo e Arrotondato restano.
+        val base = if (iconStyle == KeyboardTheme.STYLE_HOLO || iconStyle == KeyboardTheme.STYLE_ROUNDED) defaultIds else defaultIds + euriseIcons
+        val ids = if (overrideIds.isEmpty()) base else base + overrideIds
         if (!needsReload && ids == iconIds) return
         iconIds = ids
         iconsByName.clear()
@@ -97,6 +99,39 @@ class KeyboardIconsSet private constructor() {
         )
 
         // todo: incognito and force incognito should not be the same? or not the same as toolbar key?
+        /** Le icone di Eurise per tasti e barra, nello stesso disegno di EuriseIcons. */
+        private val euriseIcons by lazy { hashMapOf(
+            NAME_SHIFT_KEY to R.drawable.eurise_key_shift,
+            NAME_SHIFT_KEY_SHIFTED to R.drawable.eurise_key_shifted,
+            NAME_SHIFT_KEY_LOCKED to R.drawable.eurise_key_shift_lock,
+            NAME_DELETE_KEY to R.drawable.eurise_key_delete,
+            NAME_ENTER_KEY to R.drawable.eurise_key_enter,
+            NAME_GO_KEY to R.drawable.eurise_key_go,
+            NAME_SEARCH_KEY to R.drawable.eurise_key_search,
+            NAME_SEND_KEY to R.drawable.eurise_key_send,
+            NAME_DONE_KEY to R.drawable.eurise_key_done,
+            NAME_NEXT_KEY to R.drawable.eurise_key_next,
+            NAME_PREVIOUS_KEY to R.drawable.eurise_key_previous,
+            NAME_LANGUAGE_SWITCH_KEY to R.drawable.eurise_key_language,
+            NAME_SWITCH_ONEHANDED_KEY to R.drawable.eurise_key_previous,
+            NAME_TOOLBAR_KEY to R.drawable.eurise_key_next,
+            NAME_BIN to R.drawable.eurise_key_bin,
+            ToolbarKey.VOICE.name.lowercase(Locale.US) to R.drawable.eurise_key_mic,
+            ToolbarKey.CLIPBOARD.name.lowercase(Locale.US) to R.drawable.eurise_key_clipboard,
+            ToolbarKey.NUMPAD.name.lowercase(Locale.US) to R.drawable.eurise_key_numpad,
+            ToolbarKey.UNDO.name.lowercase(Locale.US) to R.drawable.eurise_key_undo,
+            ToolbarKey.REDO.name.lowercase(Locale.US) to R.drawable.eurise_key_redo,
+            ToolbarKey.SETTINGS.name.lowercase(Locale.US) to R.drawable.eurise_key_settings,
+            ToolbarKey.SELECT_ALL.name.lowercase(Locale.US) to R.drawable.eurise_key_select_all,
+            ToolbarKey.COPY.name.lowercase(Locale.US) to R.drawable.eurise_key_copy,
+            ToolbarKey.CUT.name.lowercase(Locale.US) to R.drawable.eurise_key_cut,
+            ToolbarKey.PASTE.name.lowercase(Locale.US) to R.drawable.eurise_key_paste,
+            ToolbarKey.INCOGNITO.name.lowercase(Locale.US) to R.drawable.eurise_key_incognito,
+            ToolbarKey.CLEAR_CLIPBOARD.name.lowercase(Locale.US) to R.drawable.eurise_key_bin,
+            ToolbarKey.CLOSE_HISTORY.name.lowercase(Locale.US) to R.drawable.eurise_ic_close,
+            ToolbarKey.EMOJI.name.lowercase(Locale.US) to R.drawable.eurise_key_emoji,
+        ) }
+
         private val keyboardIconsHolo by lazy { hashMapOf(
             NAME_SHIFT_KEY to                   R.drawable.sym_keyboard_shift_holo,
             NAME_SHIFT_KEY_SHIFTED to           R.drawable.sym_keyboard_shifted_holo,

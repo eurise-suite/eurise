@@ -68,6 +68,7 @@
     <string name="calc_u_data">Dati</string>
     <string name="calc_u_time">Tempo</string>
     <string name="calc_add_function">+ Aggiungi una funzione</string>
+    <string name="calc_remove_function">Togli la funzione</string>
     <string name="calc_notable">Punti notevoli</string>
     <string name="calc_zeros">Zeri di %1$s</string>
     <string name="calc_extreme">Minimo o massimo</string>

@@ -245,6 +245,17 @@ object EuriseIcons {
     fun heading(stroke: Float = 2.2f) = icon("heading", stroke, "M6 5v14M18 5v14M6 12h12")
     fun redo(stroke: Float = 2.2f) = icon("redo", stroke, "M15 14l5-5-5-5", "M20 9H9.5a5.5 5.5 0 0 0 0 11H13")
 
+    fun crop(stroke: Float = Stroke) = icon("crop", stroke, "M6 3v13a2 2 0 0 0 2 2h13", "M3 6h13a2 2 0 0 1 2 2v13")
+    fun sliders(stroke: Float = Stroke) = icon("sliders", stroke, "M4 7h10M18 7h2M4 17h4M12 17h8", circle(16f, 7f, 2f), circle(10f, 17f, 2f))
+    fun filters(stroke: Float = Stroke) = icon("filters", stroke, circle(9f, 10f, 5f), circle(15f, 10f, 5f), circle(12f, 15f, 5f))
+    fun text(stroke: Float = Stroke) = icon("text", stroke, "M5 6V4.5h14V6M12 4.5v15M9 19.5h6")
+    fun flip(stroke: Float = Stroke) = icon("flip", stroke, "M12 3v18", "M8 7L3 12l5 5zM16 7l5 5-5 5z")
+    fun contactless(stroke: Float = Stroke) = icon("contactless", stroke, "M7 9a4.5 4.5 0 0 1 0 6", "M10.5 6.5a8 8 0 0 1 0 11", "M14 4a11.5 11.5 0 0 1 0 16", "M17.5 2.5a14 14 0 0 1 0 19")
+    fun pip(stroke: Float = Stroke) = icon("pip", stroke, "M3.5 5.5h17v13h-17z", "M12 12h6v4.5h-6z")
+    fun scissors(stroke: Float = Stroke) = icon("scissors", stroke, circle(6f, 7f, 2.5f), circle(6f, 17f, 2.5f), "M8 8.5L20 16M8 15.5L20 8")
+    fun volume(stroke: Float = Stroke) = icon("volume", stroke, "M4 9.5h3.5L12 5.5v13l-4.5-4H4z", "M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11")
+    fun volumeOff(stroke: Float = Stroke) = icon("volumeOff", stroke, "M4 9.5h3.5L12 5.5v13l-4.5-4H4z", "M16 9.5l5 5M21 9.5l-5 5")
+
     /** Apri fuori (in un'altra app): freccia che esce dal riquadro. */
     fun external(stroke: Float = Stroke) = icon("external", stroke, "M14 4h6v6", "M20 4l-9 9", "M19 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-11A1.5 1.5 0 0 1 6.5 6H10")
     fun refresh(stroke: Float = Stroke) = icon("refresh", stroke, "M20 12a8 8 0 1 1-2.3-5.6", "M20 4v4h-4")

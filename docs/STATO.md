@@ -532,3 +532,44 @@ Da fare, in quest'ordine (anteprime sulla tela prima del codice dove indicato):
    delle carte contactless) e riempire i campi prima di salvare. Il resto di Password quando il proprietario inizia a usarla.
 4. Voce più veloce: misurare (thread, modello quantizzato q5/q8 del pacchetto pesante, dettatura a pezzi mentre si parla).
 5. Widget di altre app dentro le bolle (AppWidgetHost; anteprima prima: aggiunta dal menù delle bolle, aspetto integrato).
+
+## 11 novembre, sera: Tastiera AI, Galleria, icone, carte, Voce, QR e scanner, widget (ramo `tastiera`, APK 204–210)
+Tutto scritto senza aspettare conferme (richiesta del proprietario); anteprime sulla tela prima del codice dove serviva.
+- Tastiera (APK 204/207): tasto **AI** nella barra, di base senza collegamento; si collega Le Chat, Claude, ChatGPT,
+  Perplexity o Duck.ai (segnata «app» se installata), pressione lunga = cambia o togli. **Browser e AI si aprono in un
+  riquadro** sopra l'app in cui si scrive (`app/.../web/WebPopupActivity`, permesso di firma, WebView di sistema): la
+  Tastiera resta senza Internet. Nel riquadro «Apri nel browser» / «Apri nell'app» porta fuori la ricerca. Browser:
+  motore del riquadro (DuckDuckGo di base, Startpage, Qwant, Ecosia, Google) e browser per uscire. Senza l'app Eurise si
+  apre direttamente il browser o l'app. Manca: indirizzo libero per un assistente non in elenco.
+- Galleria (anteprime sulla tela, pagina Galleria, seconda fila: GalVideo, GalRitaglio, GalRegola, GalTesto, ColoreTuo):
+  - Lettore video integrato (`ui/VideoPlayer.kt`, Media3 ExoPlayer 1.5.1 solo motore): doppio tocco ±10 s, luminosità e
+    volume scorrendo, due dita per riempire, barra con miniature, velocità, audio, ripeti, fotogramma come foto, Taglia
+    (copia senza ricodifica, `data/VideoTools.kt`), finestra sopra le altre app (anche uscendo con Home). Anche i video
+    della cartella protetta (senza fotogrammi né altre app).
+  - Editor: fondo scuro, ghiera Raddrizza ±30°, griglia dei terzi, proporzioni; Ombre/Alte luci (curva `toneLut`),
+    Vignetta, Automatico (istogramma); filtri con miniature e intensità (`Look`); scritte in 4 stili, modificabili;
+    pennarello, evidenziatore, gomma; Ripeti; occhio tenuto premuto = originale.
+  - «Il tuo colore»: `core/designsystem` `ColorRow`, `ColorPickerSheet`, `OwnColorSwatch`, `ColorMath` (test). Le tinte
+    salvate per nome accettano un HEX (`tintTones`/`tintTone`): attivo in Note (testo, evidenziatore, disegno, taccuini) ed
+    elenchi di Attività. Mancano: calendari (prendono il colore dal provider), colori della Scrivania.
+- Coerenza delle icone (censimento): Galleria, Password, Voce e moduli dell'APK principale usavano già solo EuriseIcons.
+  Fuori stile trovati e sistemati: tasti e barra della Tastiera (HeliBoard; ora `eurise_key_*` con lo stile Material di
+  base, `KeyboardIconsSet.euriseIcons`), notifiche del Calendario (icone di Android → `ic_stat_bell`, `ic_stat_note`), «✕»
+  testuale nella Calcolatrice. Restano fuori stile: le schermate di impostazione della Tastiera (HeliBoard) e la sua icona.
+- Password: «Avvicina la carta» (NFC, `data/CardNfc.kt`, logica EMV `logic/Emv.kt` con test: numero, scadenza, a volte
+  intestatario; niente pagamenti) e «Fotocamera» (apre Eurise Leggi, `read/.../ScanCardActivity.kt`: CameraX + Tesseract,
+  sagoma della carta, numero valido due volte; `core/suite` `CardContract` e `CardText` con test). Per la fotocamera va
+  installata Eurise Leggi (artefatto `eurise-leggi-debug-N`). CVV sempre a mano.
+- Voce (APK 209): modello caricato mentre si parla; dettatura a pezzi nelle pause (`Chunker`, test) con testo che compare
+  mentre si parla; contesto audio ridotto alla durata del pezzo; flash attention; pezzo precedente come contesto; thread
+  4 di base sugli 8 core, «Misura la velocità» (dall'icona di Voce) prova 2/4/6 e tiene il migliore. DA PROVARE: tempi
+  e qualità col pacchetto pesante; se la qualità cala, togliere il contesto ridotto (`Whisper.transcribe(fullContext)`).
+  Non fatto: modello q8 (più grande, forse più veloce: da misurare se serve ancora).
+- Lettore QR: zoom 1,8× e fuoco al centro ogni 3 s; codici a barre dritti (fotogramma girato). Scanner: bordi ricercati
+  sulla foto scattata. DA RIPROVARE sul telefono.
+- Widget delle app nelle bolle (anteprime WidAggiungi, WidBolla sulla pagina Bolle): catalogo con scheda «Widget delle
+  app» (per app, anteprima e misura), permesso di Android, schermata di impostazione del widget; bolla con titolo dell'app
+  e «Apri»; si toglie come le altre (libera il numero). `home/AppWidgets.kt`; `HomeSlot.widget` e `HomeSlot.key` (più
+  widget nella stessa pagina). Manca: il widget non segue l'altezza scelta per la bolla (usa la sua altezza minima).
+Prossimo: prova del proprietario di tutto questo; poi Eurise Leggi oltre il prototipo (Tesseract dai sorgenti in
+third_party), Password quando il proprietario comincia a usarla.

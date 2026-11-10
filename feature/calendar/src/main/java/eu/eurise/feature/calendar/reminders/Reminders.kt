@@ -218,7 +218,7 @@ object Reminders {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val open = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = NotificationCompat.Builder(context, MEETING_CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_menu_edit)
+            .setSmallIcon(eu.eurise.feature.calendar.R.drawable.ic_stat_note)
             .setContentTitle(context.getString(R.string.meeting_starting, title))
             .setContentText(context.getString(R.string.meeting_starting_text))
             .setContentIntent(open)
@@ -240,7 +240,7 @@ object Reminders {
             PendingIntent.getActivity(context, id, it, PendingIntent.FLAG_IMMUTABLE)
         }
         val notification = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(eu.eurise.feature.calendar.R.drawable.ic_stat_bell)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(open)

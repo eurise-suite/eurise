@@ -55,7 +55,7 @@ internal val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm"
 /** Colore della tinta con questo nome nel tema attuale. */
 @Composable
 @ReadOnlyComposable
-internal fun tintColor(name: String?): Color = CalendarTint.named(name).tone()
+internal fun tintColor(name: String?): Color = eu.eurise.core.designsystem.theme.tintTone(name)
 
 /** Colore dell'importanza alta, con il suo fondo tenue. */
 @Composable

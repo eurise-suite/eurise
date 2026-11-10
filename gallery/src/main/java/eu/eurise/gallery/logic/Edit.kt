@@ -2,10 +2,78 @@ package eu.eurise.gallery.logic
 
 import kotlin.math.roundToInt
 
-/** Luce, contrasto, saturazione e calore, da -1 a 1 (0 lascia com'è). */
-data class Adjust(val light: Float = 0f, val contrast: Float = 0f, val saturation: Float = 0f, val warmth: Float = 0f) {
-    val isNeutral: Boolean get() = light == 0f && contrast == 0f && saturation == 0f && warmth == 0f
+/**
+ * Luce, contrasto, saturazione, calore, ombre, alte luci e vignetta, da -1 a 1 (0 lascia com'è).
+ * Le prime quattro sono una matrice di colore; ombre e alte luci una curva ([toneLut]); la vignetta un velo ai bordi.
+ */
+data class Adjust(
+    val light: Float = 0f,
+    val contrast: Float = 0f,
+    val saturation: Float = 0f,
+    val warmth: Float = 0f,
+    val shadows: Float = 0f,
+    val highlights: Float = 0f,
+    val vignette: Float = 0f,
+) {
+    val isNeutral: Boolean get() = matrixNeutral && hasCurve.not() && vignette == 0f
+    val matrixNeutral: Boolean get() = light == 0f && contrast == 0f && saturation == 0f && warmth == 0f
+    val hasCurve: Boolean get() = shadows != 0f || highlights != 0f
+
+    operator fun plus(o: Adjust) = Adjust(
+        (light + o.light).coerceIn(-1f, 1f), (contrast + o.contrast).coerceIn(-1f, 1f), (saturation + o.saturation).coerceIn(-1f, 1f),
+        (warmth + o.warmth).coerceIn(-1f, 1f), (shadows + o.shadows).coerceIn(-1f, 1f), (highlights + o.highlights).coerceIn(-1f, 1f),
+        (vignette + o.vignette).coerceIn(-1f, 1f),
+    )
+
+    operator fun times(k: Float) = Adjust(light * k, contrast * k, saturation * k, warmth * k, shadows * k, highlights * k, vignette * k)
 }
+
+/** I filtri: ognuno è un insieme di regolazioni, dosato con l'intensità. */
+enum class Look(val adjust: Adjust) {
+    None(Adjust()),
+    Lisbona(Adjust(light = 0.05f, saturation = 0.3f, warmth = 0.45f, contrast = 0.1f, vignette = 0.25f)),
+    Perla(Adjust(light = 0.12f, contrast = -0.15f, saturation = -0.3f, shadows = 0.3f)),
+    Notte(Adjust(light = -0.15f, contrast = 0.2f, warmth = -0.5f, saturation = -0.1f, vignette = 0.35f)),
+    Vivace(Adjust(saturation = 0.45f, contrast = 0.2f)),
+    Caldo(Adjust(warmth = 0.6f, saturation = 0.1f)),
+    Freddo(Adjust(warmth = -0.6f)),
+    Pellicola(Adjust(contrast = -0.1f, saturation = -0.15f, warmth = 0.2f, shadows = 0.35f, highlights = -0.3f, vignette = 0.2f)),
+    BiancoNero(Adjust(saturation = -1f, contrast = 0.15f)),
+}
+
+/**
+ * La curva di ombre e alte luci: per ogni valore 0..255 il nuovo valore. Le ombre agiscono sui toni scuri, le alte
+ * luci su quelli chiari; il peso resta basso agli estremi, così il nero e il bianco non si spostano e la curva sale sempre.
+ */
+fun toneLut(shadows: Float, highlights: Float): IntArray = IntArray(256) { v ->
+    val x = v / 255f
+    val ws = 4f * x * (1 - x) * (1 - x)
+    val wh = 4f * x * x * (1 - x)
+    ((x + 0.22f * shadows * ws + 0.22f * highlights * wh).coerceIn(0f, 1f) * 255f + 0.5f).toInt()
+}
+
+/**
+ * "Automatico": luce e contrasto proposti dall'istogramma della luminosità (256 valori). Una foto scura si schiarisce,
+ * una slavata prende contrasto; una foto già equilibrata resta quasi com'è.
+ */
+fun autoAdjust(histogram: IntArray): Adjust {
+    val total = histogram.sum().takeIf { it > 0 } ?: return Adjust()
+    var mean = 0.0
+    histogram.forEachIndexed { i, n -> mean += i.toDouble() * n }
+    mean /= total * 255.0
+    fun percentile(p: Double): Int {
+        var acc = 0L
+        histogram.forEachIndexed { i, n -> acc += n; if (acc >= total * p) return i }
+        return 255
+    }
+    val spread = (percentile(0.98) - percentile(0.02)) / 255f
+    val light = ((0.48 - mean) * 1.3).toFloat().coerceIn(-0.45f, 0.45f)
+    val contrast = ((0.82f - spread) * 1.1f).coerceIn(-0.2f, 0.5f)
+    val shadows = if (mean < 0.35) 0.3f else 0f
+    return Adjust(light = light.round2(), contrast = contrast.round2(), shadows = shadows)
+}
+
+private fun Float.round2() = (this * 100).roundToInt() / 100f
 
 /** Matrice di colore 4×5 di Android e Compose, con gli scostamenti in 0..255. */
 fun adjustMatrix(a: Adjust): FloatArray {
@@ -52,11 +120,21 @@ fun dragCrop(crop: Crop, corner: Int, dx: Float, dy: Float, min: Float = 0.08f):
     }
 }
 
+/** Come appare una scritta: normale, marcata, su un fondo arrotondato o con il contorno. */
+enum class MarkStyle { Plain, Bold, Box, Outline }
+
 /** Una scritta: centro in frazioni dell'immagine, grandezza in frazioni del lato corto, così regge le rotazioni. */
-data class TextMark(val id: Long, val text: String, val x: Float, val y: Float, val size: Float, val color: Int)
+data class TextMark(val id: Long, val text: String, val x: Float, val y: Float, val size: Float, val color: Int, val style: MarkStyle = MarkStyle.Bold)
+
+/** La punta del tratto: penna, pennarello (più morbido e largo), evidenziatore (trasparente, a punta piatta). */
+enum class Nib { Pen, Marker, Highlighter }
 
 /** Un tratto a mano libera, con le stesse misure di [TextMark]. */
-data class InkStroke(val points: List<Pair<Float, Float>>, val width: Float, val color: Int)
+data class InkStroke(val points: List<Pair<Float, Float>>, val width: Float, val color: Int, val nib: Nib = Nib.Pen)
+
+/** La gomma: toglie i tratti che passano entro [radius] (frazioni dell'immagine) dal punto toccato. */
+fun erase(strokes: List<InkStroke>, x: Float, y: Float, radius: Float): List<InkStroke> =
+    strokes.filterNot { s -> s.points.any { (px, py) -> (px - x) * (px - x) + (py - y) * (py - y) < radius * radius } }
 
 /** Tutto ciò che si è fatto a una foto; l'originale non si tocca mai. */
 data class EditState(
@@ -67,7 +145,12 @@ data class EditState(
     val adjust: Adjust = Adjust(),
     val texts: List<TextMark> = emptyList(),
     val strokes: List<InkStroke> = emptyList(),
-)
+    val look: Look = Look.None,
+    val lookStrength: Float = 1f,
+) {
+    /** Le regolazioni a mano più il filtro dosato: quello che si applica davvero. */
+    val effective: Adjust get() = if (look == Look.None) adjust else adjust + look.adjust * lookStrength
+}
 
 private fun EditState.mapPoints(map: (Float, Float) -> Pair<Float, Float>) = copy(
     crop = Crop(),

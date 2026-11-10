@@ -178,9 +178,10 @@ internal fun GraphScreen(tape: Tape) {
                         modifier = Modifier.weight(1f).padding(start = 8.dp, top = 4.dp, bottom = 4.dp),
                         isError = text.isNotBlank() && fs[i](center.x.toDouble()) == null && fs[i](center.x + 0.37) == null,
                     )
-                    if (functions.size > 1) Text(
-                        "✕", fontSize = 16.sp, color = scheme.onSurfaceVariant,
-                        modifier = Modifier.clip(CircleShape).clickable { functions.removeAt(i) }.padding(10.dp),
+                    if (functions.size > 1) androidx.compose.material3.Icon(
+                        eu.eurise.core.designsystem.icon.EuriseIcons.close(), androidx.compose.ui.res.stringResource(R.string.calc_remove_function),
+                        tint = scheme.onSurfaceVariant,
+                        modifier = Modifier.clip(CircleShape).clickable { functions.removeAt(i) }.padding(12.dp).size(16.dp),
                     )
                 }
             }

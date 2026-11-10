@@ -24,4 +24,7 @@
     <string name="voice_failed">La trascrizione non è riuscita.</string>
     <string name="voice_nothing">Non ho sentito parole.</string>
     <string name="voice_private">La voce si trascrive sul telefono e non si salva da nessuna parte.</string>
+    <string name="voice_speed">Misura la velocità</string>
+    <string name="voice_speed_working">Misuro… (mezzo minuto)</string>
+    <string name="voice_speed_result">Thread %1$s → uso %2$d</string>
 </resources>

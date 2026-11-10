@@ -216,6 +216,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
     var diaryFor by remember { mutableStateOf<List<MediaItem>?>(null) }
     var openDiary by remember { mutableStateOf<Long?>(null) }
     var editing by remember { mutableStateOf<MediaItem?>(null) }
+    var playing by remember { mutableStateOf<String?>(null) }
     var cloudOpen by remember { mutableStateOf(false) }
     var cleanupOpen by remember { mutableStateOf(false) }
     var secureOpen by remember { mutableStateOf(false) }
@@ -269,13 +270,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
         shareClean = { send(it, true) },
         trash = { deleteFor = it },
         setFavorite = ops.favorite,
-        play = { item ->
-            scope.launch {
-                val uri = if (item.cloudOnly) withContext(Dispatchers.IO) { cloudFile(context, item) }?.let(context::fileUri) else Uri.parse(item.uri)
-                val open = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "video/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                try { context.startActivity(open) } catch (_: ActivityNotFoundException) { }
-            }
-        },
+        play = { playing = it.uri },
         edit = { editing = it },
         diary = { diaryFor = it },
     )
@@ -350,6 +345,18 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
             SecureScreen(vm, ops, secureMove, cloudLabel, onMoved = { secureMove = null; selected = emptySet() }, onClose = { secureOpen = false; secureMove = null })
         }
         editing?.let { item -> EditorScreen(item, onClose = { editing = null }) }
+        // Il lettore legge l'elenco vivo: cuore aggiornato subito, e se il video si elimina si chiude.
+        playing?.let { key ->
+            val item = byUri[key]
+            if (item == null) playing = null
+            else VideoScreen(
+                item = item,
+                title = longDate(Instant.ofEpochMilli(item.takenAt).atZone(ZoneId.systemDefault()).toLocalDate()),
+                load = { if (item.cloudOnly) withContext(Dispatchers.IO) { cloudFile(context, item) }?.let(context::fileUri) else Uri.parse(item.uri) },
+                actions = actions,
+                onClose = { playing = null },
+            )
+        }
     }
 
     shareFor?.let { list ->

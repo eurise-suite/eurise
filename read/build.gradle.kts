@@ -22,6 +22,7 @@ android {
         versionName = "0.0.1-prototipo"
         resourceConfigurations += listOf("it", "en")
         ndk { abiFilters += listOf("arm64-v8a") }
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
     }
 
     signingConfigs {
@@ -37,6 +38,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
         }
         release {
             isMinifyEnabled = true
@@ -59,6 +61,11 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    implementation(project(":core:suite"))
+    // Fotocamera per leggere le carte (le stesse librerie dello Scanner dell'APK principale).
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

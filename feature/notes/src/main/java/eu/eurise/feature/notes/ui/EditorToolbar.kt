@@ -242,6 +242,9 @@ private fun SwatchRow(selected: String?, swatch: (String) -> androidx.compose.ui
                 )
             }
         }
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            eu.eurise.core.designsystem.component.OwnColorSwatch(selected, onPick = { onPick(it) }, size = 22.dp, ring = primary)
+        }
     }
 }
 

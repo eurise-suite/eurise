@@ -4,6 +4,10 @@
     <!-- Internet serve solo alla sincronizzazione del file cifrato, che si accende con un interruttore. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Lettura delle carte contactless avvicinandole: solo numero e scadenza, sul telefono. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-permission android:name="${suitePermission}" />
     <!-- Permesso della suite: solo le app Eurise firmate con la stessa chiave (Eurise Tastiera) leggono i codici 2FA. -->
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
@@ -93,4 +97,9 @@
             <meta-data android:name="android.credentials.provider" android:resource="@xml/credentials_provider" />
         </service>
     </application>
+    <queries>
+        <!-- Eurise Leggi: legge le carte con la fotocamera, solo tra app con la stessa firma. -->
+        <package android:name="eu.eurise.read" />
+        <package android:name="eu.eurise.read.debug" />
+    </queries>
 </manifest>

@@ -56,14 +56,13 @@ class ReadActivity : ComponentActivity() {
     }
 }
 
-private const val MODEL_URL = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/ita.traineddata"
 
 @Composable
 private fun ReadScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val dataDir = remember { File(context.filesDir, "tesseract") }
-    val model = remember { File(dataDir, "tessdata/ita.traineddata") }
+    val dataDir = remember { TessModel.dir(context) }
+    val model = remember { TessModel.file(context) }
     var hasModel by remember { mutableStateOf(model.exists()) }
     var askDownload by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf<String?>(null) }
@@ -124,7 +123,7 @@ private fun ReadScreen() {
                     askDownload = false
                     busy = context.getString(R.string.read_downloading)
                     scope.launch {
-                        val ok = withContext(Dispatchers.IO) { runCatching { download(model) }.isSuccess }
+                        val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(model) }.isSuccess }
                         hasModel = ok && model.exists()
                         busy = if (ok) null else context.getString(R.string.read_download_failed)
                     }
@@ -135,25 +134,3 @@ private fun ReadScreen() {
     }
 }
 
-/** Scarica la lingua italiana di Tesseract (tessdata_fast); nulla del telefono viene inviato. */
-private fun download(target: File) {
-    target.parentFile?.mkdirs()
-    var url = URL(MODEL_URL)
-    repeat(5) {
-        val c = url.openConnection() as HttpURLConnection
-        c.instanceFollowRedirects = false
-        c.connectTimeout = 15_000
-        c.readTimeout = 30_000
-        when (c.responseCode) {
-            in 300..399 -> { url = URL(url, c.getHeaderField("Location")); c.disconnect() }
-            200 -> {
-                val tmp = File(target.parentFile, target.name + ".part")
-                c.inputStream.use { input -> tmp.outputStream().use { input.copyTo(it) } }
-                check(tmp.renameTo(target))
-                return
-            }
-            else -> error("HTTP ${c.responseCode}")
-        }
-    }
-    error("troppi rinvii")
-}

@@ -56,6 +56,28 @@ enum class CalendarTint(val light: Color, val dark: Color) {
     }
 }
 
+/** Vero se la tinta è un colore scelto con «Il tuo», salvato come HEX ("#3FA39A") al posto del nome. */
+fun isOwnTint(name: String?): Boolean = name?.startsWith("#") == true
+
+/**
+ * Toni per il tema chiaro e per quello scuro di una tinta salvata per nome ("Salvia") o come HEX. Un colore proprio
+ * troppo chiaro si scurisce un po' su Perla, uno troppo scuro si schiarisce su Notte, così resta leggibile.
+ */
+fun tintTones(name: String?): Pair<Color, Color> {
+    val own = name?.takeIf(::isOwnTint)?.let(eu.eurise.core.designsystem.color.ColorMath::parseHex)
+        ?: return CalendarTint.named(name).let { it.light to it.dark }
+    val c = Color(own)
+    val math = eu.eurise.core.designsystem.color.ColorMath
+    val light = if (math.contrast(own, 0xFFF4F4F1.toInt()) < 3.0) lerp(c, Color.Black, 0.35f) else c
+    val dark = if (math.contrast(own, 0xFF14171C.toInt()) < 3.0) lerp(c, Color.White, 0.45f) else c
+    return light to dark
+}
+
+/** Il tono di una tinta (per nome o HEX) nel tema attuale. */
+@Composable
+@ReadOnlyComposable
+fun tintTone(name: String?): Color = tintTones(name).let { if (LocalEuriseColors.current.isDark) it.second else it.first }
+
 /** Il tono della tinta nel tema attuale: quello chiaro col tema Perla, quello luminoso col tema Notte. */
 @Composable
 @ReadOnlyComposable

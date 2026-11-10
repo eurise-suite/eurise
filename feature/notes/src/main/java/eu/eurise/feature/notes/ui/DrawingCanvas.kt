@@ -412,6 +412,9 @@ internal fun DrawingEditor(
                 CalendarTint.entries.forEach { t ->
                     InkChoice(tintLabel(t), colors.tints.text(t.name), tint == t.name) { tint = t.name; if (tool == EditorTool.Eraser) tool = EditorTool.Pen }
                 }
+                Box(Modifier.size(width = 28.dp, height = 44.dp), contentAlignment = Alignment.Center) {
+                    eu.eurise.core.designsystem.component.OwnColorSwatch(tint, onPick = { tint = it; if (tool == EditorTool.Eraser) tool = EditorTool.Pen }, size = 21.dp, ring = MaterialTheme.colorScheme.primary)
+                }
                 Box(Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
                 val sizeLabel = stringResource(R.string.notes_drawing_size)
                 Row(

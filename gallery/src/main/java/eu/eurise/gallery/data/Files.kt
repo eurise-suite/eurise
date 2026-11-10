@@ -28,6 +28,9 @@ import eu.eurise.core.cloud.CloudAccounts
 import eu.eurise.gallery.logic.EditState
 import eu.eurise.gallery.logic.InkStroke
 import eu.eurise.gallery.logic.TextMark
+import eu.eurise.gallery.logic.MarkStyle
+import eu.eurise.gallery.logic.Nib
+import eu.eurise.gallery.logic.toneLut
 import eu.eurise.gallery.logic.straightenScale
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.adjustMatrix
@@ -150,22 +153,106 @@ private fun stripVideo(file: File): File {
 /** Disegna scritte e tratti su una tela di [w] per [h]: la stessa funzione serve l'anteprima e il salvataggio. */
 fun drawMarks(canvas: Canvas, w: Float, h: Float, texts: List<TextMark>, strokes: List<InkStroke>) {
     val side = minOf(w, h)
-    val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+    val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND }
     for (s in strokes) {
         ink.color = s.color
-        ink.strokeWidth = s.width * side
+        when (s.nib) {
+            Nib.Pen -> { ink.strokeWidth = s.width * side; ink.strokeCap = Paint.Cap.ROUND; ink.alpha = 255 }
+            Nib.Marker -> { ink.strokeWidth = s.width * side * 1.8f; ink.strokeCap = Paint.Cap.ROUND; ink.alpha = 235 }
+            // L'evidenziatore lascia vedere sotto e ha la punta piatta.
+            Nib.Highlighter -> { ink.strokeWidth = s.width * side * 3f; ink.strokeCap = Paint.Cap.SQUARE; ink.alpha = 110 }
+        }
         val path = Path()
         s.points.forEachIndexed { i, (x, y) -> if (i == 0) path.moveTo(x * w, y * h) else path.lineTo(x * w, y * h) }
         if (s.points.size == 1) path.lineTo(s.points[0].first * w + 0.1f, s.points[0].second * h)
         canvas.drawPath(path, ink)
     }
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    val box = Paint(Paint.ANTI_ALIAS_FLAG)
     for (t in texts) {
-        paint.color = t.color
         paint.textSize = t.size * side
-        paint.setShadowLayer(paint.textSize * 0.08f, 0f, paint.textSize * 0.03f, 0x66000000)
-        canvas.drawText(t.text, t.x * w, t.y * h - (paint.ascent() + paint.descent()) / 2, paint)
+        paint.typeface = if (t.style == MarkStyle.Plain) Typeface.DEFAULT else Typeface.DEFAULT_BOLD
+        val baseline = t.y * h - (paint.ascent() + paint.descent()) / 2
+        when (t.style) {
+            MarkStyle.Box -> {
+                // Fondo arrotondato nel colore scelto, testo bianco o nero secondo quale si legge meglio.
+                val width = paint.measureText(t.text)
+                val pad = paint.textSize * 0.32f
+                box.color = t.color
+                canvas.drawRoundRect(t.x * w - width / 2 - pad, t.y * h - paint.textSize * 0.62f, t.x * w + width / 2 + pad, t.y * h + paint.textSize * 0.62f, pad, pad, box)
+                paint.clearShadowLayer()
+                paint.style = Paint.Style.FILL
+                paint.color = if (luma(t.color) > 0.6f) 0xFF14171C.toInt() else 0xFFFFFFFF.toInt()
+                canvas.drawText(t.text, t.x * w, baseline, paint)
+            }
+            MarkStyle.Outline -> {
+                paint.clearShadowLayer()
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = paint.textSize * 0.09f
+                paint.strokeJoin = Paint.Join.ROUND
+                paint.color = if (luma(t.color) > 0.6f) 0xFF14171C.toInt() else 0xFFFFFFFF.toInt()
+                canvas.drawText(t.text, t.x * w, baseline, paint)
+                paint.style = Paint.Style.FILL
+                paint.color = t.color
+                canvas.drawText(t.text, t.x * w, baseline, paint)
+            }
+            else -> {
+                paint.style = Paint.Style.FILL
+                paint.color = t.color
+                paint.setShadowLayer(paint.textSize * 0.08f, 0f, paint.textSize * 0.03f, 0x66000000)
+                canvas.drawText(t.text, t.x * w, baseline, paint)
+            }
+        }
     }
+}
+
+private fun luma(c: Int) = (0.299f * ((c shr 16) and 0xFF) + 0.587f * ((c shr 8) and 0xFF) + 0.114f * (c and 0xFF)) / 255f
+
+/** L'istogramma della luminosità (un pixel ogni quattro basta) per "Automatico". */
+fun histogram(bitmap: Bitmap): IntArray {
+    val out = IntArray(256)
+    val w = bitmap.width
+    val line = IntArray(w)
+    for (y in 0 until bitmap.height step 2) {
+        bitmap.getPixels(line, 0, w, 0, y, w, 1)
+        for (x in 0 until w step 2) {
+            val c = line[x]
+            out[((299 * ((c shr 16) and 0xFF) + 587 * ((c shr 8) and 0xFF) + 114 * (c and 0xFF)) / 1000).coerceIn(0, 255)]++
+        }
+    }
+    return out
+}
+
+/** Ombre e alte luci: la curva applicata a ogni pixel, a strisce per non chiedere troppa memoria. */
+fun applyCurve(bitmap: Bitmap, lut: IntArray) {
+    val w = bitmap.width
+    val rows = maxOf(1, 262_144 / w)
+    val line = IntArray(w * rows)
+    var y = 0
+    while (y < bitmap.height) {
+        val n = minOf(rows, bitmap.height - y)
+        bitmap.getPixels(line, 0, w, 0, y, w, n)
+        for (i in 0 until w * n) {
+            val c = line[i]
+            line[i] = (c and -0x1000000) or (lut[(c shr 16) and 0xFF] shl 16) or (lut[(c shr 8) and 0xFF] shl 8) or lut[c and 0xFF]
+        }
+        bitmap.setPixels(line, 0, w, 0, y, w, n)
+        y += n
+    }
+}
+
+/** La vignetta: bordi scuriti (valori positivi) o schiariti (negativi) attorno al riquadro tenuto. */
+fun drawVignette(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float, amount: Float) {
+    if (amount == 0f) return
+    val cx = (left + right) / 2
+    val cy = (top + bottom) / 2
+    val radius = kotlin.math.hypot(right - left, bottom - top) / 2
+    val edge = if (amount > 0) android.graphics.Color.argb((amount * 200).toInt().coerceIn(0, 255), 0, 0, 0)
+    else android.graphics.Color.argb((-amount * 170).toInt().coerceIn(0, 255), 255, 255, 255)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        shader = android.graphics.RadialGradient(cx, cy, radius, intArrayOf(0, 0, edge), floatArrayOf(0f, 0.55f, 1f), android.graphics.Shader.TileMode.CLAMP)
+    }
+    canvas.drawRect(left, top, right, bottom, paint)
 }
 
 /** Salva una copia modificata nel telefono, con la data dell'originale. La copia non porta con sé la posizione. */
@@ -178,7 +265,8 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Boolean {
     var bitmap = geometry(decoded, state.flip, state.turns)
     val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(out)
-    val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { if (!state.adjust.isNeutral) colorFilter = ColorMatrixColorFilter(ColorMatrix(adjustMatrix(state.adjust))) }
+    val adjust = state.effective
+    val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { if (!adjust.matrixNeutral) colorFilter = ColorMatrixColorFilter(ColorMatrix(adjustMatrix(adjust))) }
     val w = bitmap.width.toFloat()
     val h = bitmap.height.toFloat()
     if (state.straighten != 0f) {
@@ -193,6 +281,8 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Boolean {
     } else {
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
     }
+    if (adjust.hasCurve) applyCurve(out, toneLut(adjust.shadows, adjust.highlights))
+    drawVignette(canvas, state.crop.left * w, state.crop.top * h, state.crop.right * w, state.crop.bottom * h, adjust.vignette)
     drawMarks(canvas, w, h, state.texts, state.strokes)
     bitmap = out
     if (!state.crop.isFull) {

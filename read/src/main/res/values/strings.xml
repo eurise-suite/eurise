@@ -15,4 +15,11 @@
     <string name="read_download_text">Per leggere serve la lingua italiana di Tesseract (circa 3 MB), presa una volta da GitHub (tesseract-ocr/tessdata_fast). Dal telefono non parte nulla: né documenti né identificativi. Si toglie quando vuoi.</string>
     <string name="read_download_ok">Scarica</string>
     <string name="read_cancel">Annulla</string>
+    <string name="card_title">Inquadra la carta</string>
+    <string name="card_hint">Il lato con il numero dentro la sagoma, con buona luce e senza riflessi.</string>
+    <string name="card_need_camera">Per leggere la carta serve la fotocamera. Permettila e riprova.</string>
+    <string name="card_searching">Cerco il numero…</string>
+    <string name="card_no_holder">intestatario non letto</string>
+    <string name="card_use">Usa questi dati</string>
+    <string name="card_privacy">Si legge sul telefono e non si salva nulla: i dati vanno solo a Eurise Password. Il codice CVV si scrive a mano.</string>
 </resources>

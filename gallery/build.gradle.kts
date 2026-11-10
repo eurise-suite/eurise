@@ -75,6 +75,8 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
+    // Lettore video integrato (motivo nel commit): solo il motore, l'interfaccia è di Eurise.
+    implementation(libs.androidx.media3.exoplayer)
 
     testImplementation(libs.junit)
 }

@@ -186,6 +186,18 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     }
     val analyzer = remember { Executors.newSingleThreadExecutor() }
     DisposableEffect(Unit) { onDispose { analyzer.shutdown() } }
+    // Per i codici un po' di zoom (si può stare più lontani, dove la messa a fuoco funziona) e fuoco al centro, ogni
+    // pochi secondi: molti telefoni non mettono a fuoco da vicino e i codici piccoli restano sfocati.
+    LaunchedEffect(mode, camera) {
+        val cam = camera ?: return@LaunchedEffect
+        val max = cam.cameraInfo.zoomState.value?.maxZoomRatio ?: 1f
+        cam.cameraControl.setZoomRatio(if (mode == ScanMode.Qr) minOf(1.8f, max) else 1f)
+        while (mode == ScanMode.Qr) {
+            val point = androidx.camera.core.SurfaceOrientedMeteringPointFactory(1f, 1f).createPoint(0.5f, 0.5f)
+            runCatching { cam.cameraControl.startFocusAndMetering(androidx.camera.core.FocusMeteringAction.Builder(point).setAutoCancelDuration(2, java.util.concurrent.TimeUnit.SECONDS).build()) }
+            kotlinx.coroutines.delay(3000)
+        }
+    }
 
     fun shoot() {
         if (busy) return
@@ -379,10 +391,14 @@ private fun decodeQr(image: ImageProxy): String? {
     val cw = (w * 0.7).toInt()
     val ch = (h * 0.7).toInt()
     val center = com.google.zxing.PlanarYUVLuminanceSource(data, w, h, (w - cw) / 2, (h - ch) / 2, cw, ch, false)
+    val turn = liveFrame++ % 3
     val attempts = buildList<com.google.zxing.LuminanceSource> {
         add(center)
         add(full)
-        if (liveFrame++ % 3 == 0) add(full.invert())
+        // Il sensore è in orizzontale: un codice a barre tenuto dritto sullo schermo arriva girato, e ZXing non gira da
+        // solo queste immagini. Una volta su tre si prova il centro girato; un'altra i colori invertiti.
+        if (turn == 1) add(rotated(data, w, h, cw, ch))
+        if (turn == 2) add(full.invert())
     }
     for (source in attempts) {
         try {
@@ -396,11 +412,35 @@ private fun decodeQr(image: ImageProxy): String? {
     return null
 }
 
+/** Il centro del fotogramma girato di 90°, per i codici a barre a una dimensione. */
+private fun rotated(data: ByteArray, w: Int, h: Int, cw: Int, ch: Int): com.google.zxing.LuminanceSource {
+    val left = (w - cw) / 2
+    val top = (h - ch) / 2
+    val out = ByteArray(cw * ch)
+    for (y in 0 until ch) for (x in 0 until cw) out[x * ch + (ch - 1 - y)] = data[(top + y) * w + left + x]
+    return com.google.zxing.PlanarYUVLuminanceSource(out, ch, cw, 0, 0, ch, cw, false)
+}
+
 @Composable
 private fun DarkRound(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Box(Modifier.size(44.dp).clip(CircleShape).background(Color(0x8C14171C)).clickable(onClick = onClick).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
     }
+}
+
+/**
+ * I bordi si ricercano sulla foto appena scattata: quelli dell'anteprima arrivano da un fotogramma di poco prima, e
+ * basta che la mano si muova per tagliare male. Si tiene quella della foto se è credibile (non molto più piccola).
+ */
+private fun refine(upright: Bitmap, live: Quad?): Quad? {
+    val w = ANALYSIS_WIDTH
+    val h = (upright.height.toLong() * w / upright.width).toInt().coerceAtLeast(1)
+    val small = Bitmap.createScaledBitmap(upright, w, h, true)
+    val pixels = IntArray(w * h).also { small.getPixels(it, 0, w, 0, 0, w, h) }
+    val luma = IntArray(w * h) { i -> val c = pixels[i]; (299 * ((c shr 16) and 0xFF) + 587 * ((c shr 8) and 0xFF) + 114 * (c and 0xFF)) / 1000 }
+    val fresh = EdgeDetector.find(luma, w, h) ?: return live
+    if (live == null) return fresh
+    return if (EdgeDetector.area(fresh) >= EdgeDetector.area(live) * 0.6f) fresh else live
 }
 
 private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): Pair<File, Origin>? = try {
@@ -411,7 +451,7 @@ private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): 
     val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     val upright = if (rotation != 0) Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation.toFloat()) }, true) else decoded
     val original = File(dir, UUID.randomUUID().toString() + ".orig").also { f -> f.outputStream().use { upright.compress(Bitmap.CompressFormat.JPEG, 92, it) } }
-    val origin = Origin(original, mode, quad)
+    val origin = Origin(original, mode, refine(upright, quad))
     render(upright, origin, dir) to origin
 } catch (e: RuntimeException) {
     null
