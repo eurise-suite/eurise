@@ -245,6 +245,8 @@ object EuriseIcons {
     fun heading(stroke: Float = 2.2f) = icon("heading", stroke, "M6 5v14M18 5v14M6 12h12")
     fun redo(stroke: Float = 2.2f) = icon("redo", stroke, "M15 14l5-5-5-5", "M20 9H9.5a5.5 5.5 0 0 0 0 11H13")
 
+    /** Apri fuori (in un'altra app): freccia che esce dal riquadro. */
+    fun external(stroke: Float = Stroke) = icon("external", stroke, "M14 4h6v6", "M20 4l-9 9", "M19 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-11A1.5 1.5 0 0 1 6.5 6H10")
     fun refresh(stroke: Float = Stroke) = icon("refresh", stroke, "M20 12a8 8 0 1 1-2.3-5.6", "M20 4v4h-4")
 
     // Strumenti di disegno

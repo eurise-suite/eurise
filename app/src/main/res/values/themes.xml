@@ -11,6 +11,15 @@
         <item name="android:windowShowWallpaper">false</item>
     </style>
 
+    <!-- Riquadro di ricerca della Tastiera: trasparente, l'app sotto resta visibile. -->
+    <style name="Theme.Eurise.Popup" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.InputMethod</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <color name="eurise_launcher_background">#9FA6B6</color>
     <color name="eurise_background">#F4F4F1</color>
     <color name="eurise_icon_background">#1F2A44</color>

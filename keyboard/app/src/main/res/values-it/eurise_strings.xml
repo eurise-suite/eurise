@@ -63,6 +63,13 @@
     <string name="eurise_browser">Browser</string>
     <string name="eurise_browser_choose">Dove cercare</string>
     <string name="eurise_browser_browsers">Browser</string>
-    <string name="eurise_browser_ai">Assistenti sul web</string>
-    <string name="eurise_browser_note">La tastiera non va su Internet: apre il browser con ciò che hai scritto. La scelta resta; tocco su Browser cerca subito.</string>
+    <string name="eurise_browser_note">La tastiera non va su Internet: Eurise apre la ricerca in un riquadro sopra l\'app in cui sei. Al motore va solo ciò che cerchi.</string>
+    <string name="eurise_browser_engine">Motore nel riquadro</string>
+    <string name="eurise_browser_default">Browser predefinito</string>
+    <string name="eurise_ai">AI</string>
+    <string name="eurise_ai_choose">Collega un assistente</string>
+    <string name="eurise_ai_hint">Di base non c\'è nessun collegamento. Scegli quello che preferisci: si apre in un riquadro sopra l\'app in cui sei; da lì puoi passare alla sua app.</string>
+    <string name="eurise_ai_app">app</string>
+    <string name="eurise_ai_remove">Togli il collegamento</string>
+    <string name="eurise_ai_note">La tastiera non va su Internet: all\'assistente scelto va solo ciò che chiedi, e solo quando tocchi AI.</string>
 </resources>

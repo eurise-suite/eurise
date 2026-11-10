@@ -116,9 +116,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     }
 
     /**
-     * I sei comandi: Calcola, Codici, File, Persona, Disponibilità, Browser. Icona sopra l'etichetta, così ci stanno
-     * tutti anche sui telefoni stretti; con le proposte presenti restano solo le icone. Browser: tocco = cerca subito,
-     * pressione lunga = scegli il browser o l'assistente.
+     * I sette comandi: Calcola, Codici, File, Persona, Disponibilità, Browser, AI. Icona sopra l'etichetta, così ci
+     * stanno tutti anche sui telefoni stretti; con le proposte presenti restano solo le icone. Browser e AI: tocco =
+     * cerca subito nel riquadro sopra l'app, pressione lunga = scegli motore, browser o assistente.
      */
     private fun buildButtons(compact: Boolean) {
         buttons.removeAllViews()
@@ -128,12 +128,14 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_file, R.drawable.eurise_ic_folder) { open(FilePanel(this)) },
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
             Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
-            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { searchWeb(WebSearch.chosen(context)) },
+            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { searchWeb() },
+            Command(R.string.eurise_ai, R.drawable.eurise_ic_spark) { askAi() },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
             val active = panel?.title == label
             val b = command(if (compact) "" else text, icon, active) { if (active) close() else action() }
             if (label == R.string.eurise_browser) b.setOnLongClickListener { open(BrowserPanel(this)); true }
+            if (label == R.string.eurise_ai) b.setOnLongClickListener { open(AiPanel(this)); true }
             buttons.addView(b.lp(0, context.dp(if (compact) 40 else 46), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(4) })
         }
     }
@@ -162,13 +164,25 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         })
     }
 
-    /** Cerca sul web ciò che è selezionato o scritto nel campo (l'ultima riga), con [target] o il browser predefinito. */
-    internal fun searchWeb(target: WebSearch.Target?) {
-        val ic = ime.currentInputConnection
-        val selected = ic?.getSelectedText(0)?.toString().orEmpty()
-        val query = selected.ifBlank { before(300).substringAfterLast('\n') }
+    /** Ciò che è selezionato o, se niente, l'ultima riga scritta nel campo: la domanda per Browser e AI. */
+    private fun query(): String {
+        val selected = ime.currentInputConnection?.getSelectedText(0)?.toString().orEmpty()
+        return selected.ifBlank { before(300).substringAfterLast('\n') }
+    }
+
+    /** Cerca sul web nel riquadro, con il motore scelto. */
+    internal fun searchWeb() {
+        val q = query()
         close()
-        WebSearch.run(context, target, query)
+        WebSearch.search(context, bridge.hubPackage, q)
+    }
+
+    /** Chiede all'assistente collegato; senza collegamento apre la scelta (di base non ce n'è nessuno). */
+    internal fun askAi() {
+        val assistant = WebSearch.assistant(context) ?: return open(AiPanel(this))
+        val q = query()
+        close()
+        WebSearch.ask(context, bridge.hubPackage, assistant, q)
     }
 
     internal fun open(next: Panel) {

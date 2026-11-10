@@ -63,6 +63,13 @@
     <string name="eurise_browser">Browser</string>
     <string name="eurise_browser_choose">Where to search</string>
     <string name="eurise_browser_browsers">Browsers</string>
-    <string name="eurise_browser_ai">Web assistants</string>
-    <string name="eurise_browser_note">The keyboard never goes online: it opens the browser with what you typed. Your choice is kept; tap Browser to search right away.</string>
+    <string name="eurise_browser_note">The keyboard never goes online: Eurise opens the search in a window above the app you are in. Only what you search goes to the engine.</string>
+    <string name="eurise_browser_engine">Search engine in the window</string>
+    <string name="eurise_browser_default">Default browser</string>
+    <string name="eurise_ai">AI</string>
+    <string name="eurise_ai_choose">Link an assistant</string>
+    <string name="eurise_ai_hint">No assistant is linked by default. Pick the one you prefer: it opens in a window above the app you are in; from there you can move to its app.</string>
+    <string name="eurise_ai_app">app</string>
+    <string name="eurise_ai_remove">Remove the link</string>
+    <string name="eurise_ai_note">The keyboard never goes online: only what you ask goes to the assistant you chose, and only when you tap AI.</string>
 </resources>

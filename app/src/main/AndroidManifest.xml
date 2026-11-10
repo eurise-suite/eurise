@@ -6,6 +6,7 @@
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
     <uses-permission android:name="${suitePermission}" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
@@ -63,6 +64,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Eurise Tastiera: riquadro di ricerca (Browser, AI) sopra l'app in cui si scrive. Solo app Eurise con la stessa firma. -->
+        <activity
+            android:name=".web.WebPopupActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.web"
+            android:theme="@style/Theme.Eurise.Popup"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
         <!-- Eurise Tastiera: attività e note create dalla tastiera. Solo app Eurise con la stessa firma. -->
         <receiver
             android:name=".KeyboardBridgeReceiver"

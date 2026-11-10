@@ -23,7 +23,7 @@
     <string name="pv_gallery">Galleria</string>
     <string name="pv_gallery_d">Il cloud scelto se accendi il caricamento; OpenStreetMap, con posizione arrotondata a 10 km, se accendi i nomi dei luoghi. Si gestisce nell\'app.</string>
     <string name="pv_keyboard">Tastiera</string>
-    <string name="pv_keyboard_d">Nessun servizio esterno: la tastiera non ha accesso a Internet. Legge Calendario e Rubrica solo se lo permetti, e solo sul telefono.</string>
+    <string name="pv_keyboard_d">La tastiera non ha accesso a Internet. Legge Calendario e Rubrica solo se lo permetti, e solo sul telefono. I tasti Browser e AI aprono un riquadro di Eurise con il sito che hai scelto tu (di base DuckDuckGo; nessun assistente): gli arriva solo ciò che cerchi, quando lo tocchi.</string>
     <string name="pv_voice">Voce</string>
     <string name="pv_voice_d">Hugging Face, solo per scaricare il modello scelto (vede l\'indirizzo di rete). La voce si trascrive sul telefono e non esce.</string>
     <string name="pv_password">Password</string>
