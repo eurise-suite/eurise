@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tr_app_name">Eurise Traduci (prova)</string>
+    <string name="tr_title">Traduci sul telefono</string>
+    <string name="tr_intro">Prototipo: traduzione italiano ↔ inglese con i modelli di Firefox, tutta sul telefono. Sotto trovi i tempi, per decidere il motore della Tastiera.</string>
+    <string name="tr_it_en">Italiano → inglese</string>
+    <string name="tr_en_it">Inglese → italiano</string>
+    <string name="tr_download">Scarica questa direzione</string>
+    <string name="tr_input">Testo da tradurre</string>
+    <string name="tr_translate">Traduci</string>
+    <string name="tr_remove">Togli (%1$.0f MB)</string>
+    <string name="tr_working">Traduco…</string>
+    <string name="tr_stats">Caricamento %1$.1f s · traduzione %2$d ms · %3$d parole · %4$.0f parole al secondo</string>
+    <string name="tr_failed">Non riuscito: %1$s</string>
+    <string name="tr_download_title">Scaricare il modello?</string>
+    <string name="tr_download_text">Il modello di questa direzione (circa 20–40 MB) arriva dall\'elenco pubblico dei modelli di traduzione di Firefox (Mozilla), ospitato su Google Cloud Storage. Dal telefono parte solo la richiesta dei file: né testi né identificativi. Si toglie quando vuoi.</string>
+    <string name="tr_download_ok">Scarica</string>
+    <string name="tr_cancel">Annulla</string>
+    <string name="tr_downloading">Scarico il modello…</string>
+    <string name="tr_download_failed">Scaricamento non riuscito. Riprova con la rete.</string>
+</resources>
