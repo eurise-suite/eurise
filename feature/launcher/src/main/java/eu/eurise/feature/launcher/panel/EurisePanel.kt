@@ -11,6 +11,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.HazeState
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -75,6 +77,9 @@ import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NotificationStore
 import eu.eurise.feature.launcher.notifications.NowPlaying
 import eu.eurise.feature.launcher.summary.MusicBody
+import eu.eurise.feature.launcher.settings.ModeOrder
+import eu.eurise.feature.launcher.settings.icon
+import eu.eurise.feature.launcher.settings.label
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -99,6 +104,7 @@ fun EurisePanel(
     onSystemShade: () -> Unit,
     onClose: () -> Unit,
     onReply: (MessageItem) -> Unit = {},
+    onModeSettings: (eu.eurise.core.data.modes.Mode) -> Unit = {},
 ) {
     val context = LocalContext.current
     val insets = WindowInsets.safeDrawing.asPaddingValues()
@@ -145,6 +151,7 @@ fun EurisePanel(
                 }
             }
             item { QuickTiles(context, refresh, hazeState, onSystemShade) { refresh++ } }
+            item { ModesRow(hazeState, onModeSettings) }
             item { LevelSliders(context, refresh, hazeState) }
             item {
                 Text(
@@ -668,6 +675,54 @@ private fun ServiceSummary(items: List<MessageItem>, hazeState: HazeState, onOpe
                 Text(n.appLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
                 Text(listOf(n.title, n.text).filter { it.isNotBlank() }.joinToString(" · "), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * Le quattro modalità: un tocco accende quella scelta fino al prossimo cambio automatico (toccata di nuovo, torna
+ * all'automatico); una pressione lunga apre le sue impostazioni.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ModesRow(hazeState: HazeState, onSettings: (eu.eurise.core.data.modes.Mode) -> Unit) {
+    val context = LocalContext.current
+    val state by eu.eurise.core.data.modes.Modes.state.collectAsStateWithLifecycle()
+    Column(
+        Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(24.dp), elevation = 6.dp, outline = false).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val active = state.active
+            val title = if (active == null) stringResource(R.string.modes_off)
+            else stringResource(active.label()) +
+                (state.until?.let { " · " + stringResource(R.string.modes_until, it.toLocalTime().format(TimeFormat)) } ?: "") +
+                (if (state.manual) "" else " · " + stringResource(R.string.modes_auto))
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(
+                stringResource(R.string.modes_settings), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { onSettings(active ?: eu.eurise.core.data.modes.Mode.Work) }.padding(4.dp),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ModeOrder.forEach { m ->
+                val on = state.active == m
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                        .background(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
+                        .combinedClickable(
+                            onClick = { eu.eurise.core.data.modes.Modes.choose(context, if (on) null else m) },
+                            onLongClick = { onSettings(m) },
+                        )
+                        .padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val tint = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
+                    Icon(m.icon(), null, tint = tint, modifier = Modifier.size(20.dp))
+                    Text(stringResource(m.label()), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = tint)
+                }
             }
         }
     }

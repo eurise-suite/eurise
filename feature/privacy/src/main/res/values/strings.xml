@@ -70,4 +70,6 @@
     <string name="pv_p_camera_d">per lo Scanner</string>
     <string name="pv_p_files">Tutti i file</string>
     <string name="pv_p_files_d">per File e le cartelle allineate</string>
+    <string name="pv_p_dnd">Non disturbare</string>
+    <string name="pv_p_dnd_d">Le modalità e la sveglia accendono e spengono «Non disturbare». Le notifiche non vengono lette.</string>
 </resources>

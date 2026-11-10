@@ -345,6 +345,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var searching by remember { mutableStateOf(false) }
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
+        var modesSheet by remember { mutableStateOf<eu.eurise.core.data.modes.Mode?>(null) }
         var aodSettings by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
         var editingHome by remember { mutableStateOf(false) }
@@ -447,10 +448,21 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         val categoryPager = rememberPagerState { pageCategories.size }
         val scope = rememberCoroutineScope()
 
+        // La modalità accesa può scegliere la categoria da cui parte la Scrivania.
+        val modeState by eu.eurise.core.data.modes.Modes.state.collectAsStateWithLifecycle()
+        val modeCategory = modeState.config?.homeCategory?.takeIf { id -> pageCategories.any { it.id == id } }
+        LaunchedEffect(modeState.active) {
+            if (modeCategory != null) {
+                category = modeCategory
+                categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == modeCategory }.coerceAtLeast(0))
+            }
+        }
         LaunchedEffect(homePresses) {
             if (homePresses > 0) {
                 if (category == HomePageId && !searching) homePager.animateScrollToPage(HomePage)
-                category = HomePageId
+                // Con una modalità che sceglie la categoria, il tasto Home porta lì; premuto di nuovo, alla home.
+                category = if (modeCategory != null && category != modeCategory) modeCategory else HomePageId
+                if (category == modeCategory) categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == modeCategory }.coerceAtLeast(0))
                 categoryEditor = false
                 searching = false
                 panelOpen = false
@@ -462,8 +474,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         LaunchedEffect(categoryPager.currentPage) {
             if (category != HomePageId) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != HomePageId || homePager.currentPage != HomePage) {
+        BackHandler(enabled = modesSheet != null || replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != HomePageId || homePager.currentPage != HomePage) {
             when {
+                modesSheet != null -> modesSheet = null
                 replyTo != null -> replyTo = null
                 homeCatalog -> homeCatalog = false
                 channelsSheet -> { channelsSheet = false; viewModel.refreshVideos(force = true) }
@@ -713,7 +726,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onSystemShade = { panelOpen = false; actions.expandNotifications() },
                     onClose = { panelOpen = false },
                     onReply = { replyTo = it },
+                    onModeSettings = { modesSheet = it },
                 )
+            }
+            modesSheet?.let { m ->
+                eu.eurise.feature.launcher.settings.ModesSheet(settings.categories, start = m, onClose = { modesSheet = null })
             }
             if (newsSheet) {
                 NewsSourcesSheet(viewModel.news, onClose = { newsSheet = false; viewModel.refreshNews(force = true) })

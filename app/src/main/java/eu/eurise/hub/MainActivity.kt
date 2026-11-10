@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Voci automatiche (farmaci, regali) e prossimi avvisi.
         eu.eurise.feature.calendar.reminders.Reminders.refresh(this)
+        eu.eurise.core.data.modes.Modes.refresh(this)
     }
 
     override fun onNewIntent(intent: Intent) {

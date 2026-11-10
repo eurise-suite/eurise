@@ -4,6 +4,7 @@ import eu.eurise.core.data.model.QuickAdd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.eurise.core.data.TaskRepository
+import eu.eurise.core.data.modes.Modes
 import eu.eurise.core.data.model.StepProgress
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.data.model.TaskList
@@ -36,7 +37,7 @@ data class TasksState(
     val inCalendar: Boolean = true,
 )
 
-private data class Inputs(val filter: TasksFilter, val query: String, val tasks: List<Task>)
+private data class Inputs(val filter: TasksFilter, val query: String, val tasks: List<Task>, val hidden: Set<Long> = emptySet())
 
 class TasksViewModel(private val repository: TaskRepository) : ViewModel() {
 
@@ -46,13 +47,17 @@ class TasksViewModel(private val repository: TaskRepository) : ViewModel() {
 
     val state: StateFlow<TasksState> =
         combine(
-            combine(filter, query, repository.observeAll()) { f, q, t -> Inputs(f, q, t) },
+            combine(filter, query, repository.observeAll(), Modes.state) { f, q, t, m ->
+                // Gli elenchi nascosti dalla modalità accesa spariscono, tranne quello aperto di proposito.
+                val hidden = m.hiddenLists - ((f as? TasksFilter.OfList)?.id ?: -1L)
+                Inputs(f, q, if (hidden.isEmpty()) t else t.filter { it.listId !in hidden }, hidden)
+            },
             repository.observeLists(),
             repository.observeStepProgress(),
             settings.showDone,
             settings.showInCalendar,
         ) { i, lists, steps, showDone, inCalendar ->
-            TasksState(i.filter, i.query, i.tasks, lists, steps, showDone, inCalendar)
+            TasksState(i.filter, i.query, i.tasks, lists.filter { it.list.id !in i.hidden }, steps, showDone, inCalendar)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksState())
 
     fun setFilter(value: TasksFilter) {

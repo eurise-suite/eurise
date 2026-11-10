@@ -6,6 +6,7 @@ import eu.eurise.core.data.TaskRepository
 import eu.eurise.core.data.calendar.CalendarEvent
 import eu.eurise.core.data.calendar.CalendarRepository
 import eu.eurise.core.data.model.Task
+import eu.eurise.core.data.modes.Modes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,8 +57,11 @@ class CalendarViewModel(
             .flatMapLatest { q ->
                 val (from, to) = range(q.view, q.anchor)
                 val events = if (q.permission) calendar.observeEvents(from, to) else flowOf(emptyList())
-                combine(events, tasks.observeForCalendar(from, to)) { e, t ->
-                    CalendarState(q.view, q.anchor, today, q.permission, from, to, e, t, loaded = true)
+                combine(events, tasks.observeForCalendar(from, to), Modes.state) { e, t, m ->
+                    // La modalità accesa può nascondere calendari ed elenchi.
+                    val shown = if (m.hiddenCalendars.isEmpty()) e else e.filter { it.calendarId !in m.hiddenCalendars }
+                    val shownTasks = if (m.hiddenLists.isEmpty()) t else t.filter { it.listId !in m.hiddenLists }
+                    CalendarState(q.view, q.anchor, today, q.permission, from, to, shown, shownTasks, loaded = true)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarState(today = today, anchor = today))

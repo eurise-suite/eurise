@@ -29,6 +29,7 @@ class LauncherActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         eu.eurise.feature.calendar.reminders.Reminders.refresh(this)
+        eu.eurise.core.data.modes.Modes.refresh(this)
     }
 
     override fun onNewIntent(intent: Intent) {
