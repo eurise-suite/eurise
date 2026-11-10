@@ -50,4 +50,16 @@
     <string name="capture_why_event_no_day">Senza un giorno, l\'evento va alla prossima ora di oggi.</string>
     <string name="capture_why_event_all_day">Senza un orario, sarà per tutto il giorno.</string>
     <string name="capture_why_people">Collegato a %1$s: lo ritrovi nella sua scheda.</string>
+    <string name="quick_close">Chiudi</string>
+    <string name="quick_note_body">Scrivi qui il testo della nota</string>
+    <string name="quick_today">Oggi</string>
+    <string name="quick_tomorrow">Domani</string>
+    <string name="quick_no_date">Senza data</string>
+    <string name="quick_free_on">%1$s · libero</string>
+    <string name="quick_calendar_permission">Collega il calendario per vedere gli orari liberi</string>
+    <string name="quick_no_free">Nessun orario libero tra le 8 e le 20 per questa durata</string>
+    <string name="quick_busy">Occupato: %1$s</string>
+    <string name="quick_save_event_at">Salva %1$s · %2$s</string>
+    <string name="quick_month_before">Mese prima</string>
+    <string name="quick_month_after">Mese dopo</string>
 </resources>

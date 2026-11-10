@@ -113,6 +113,8 @@ data class LauncherSettings(
     val pullPanel: Boolean = false,
     /** Scorrere in su apre la ricerca universale (c'è sempre la lente nella barra). */
     val swipeSearch: Boolean = false,
+    /** Ricerca per mancini: contatti e app partono da sinistra invece che da destra. */
+    val leftHanded: Boolean = false,
     /** Web app di AI aggiunte dall'utente: nome e indirizzo, con %s al posto della domanda se il sito lo consente. */
     val aiWebApps: List<Pair<String, String>> = emptyList(),
     val quickGallery: String? = null,
@@ -198,6 +200,7 @@ class SettingsStore(context: Context) {
             .putString("left_slots", eu.eurise.feature.launcher.home.encodeHomeSlots(next.leftSlots))
             .putBoolean("pull_panel", next.pullPanel)
             .putBoolean("swipe_search", next.swipeSearch)
+            .putBoolean("left_handed", next.leftHanded)
             .putString("ai_web_apps", next.aiWebApps.joinToString("\n") { "${it.first}\t${it.second}" })
             .putString("quick_gallery", next.quickGallery)
             .putString("quick_camera", next.quickCamera)
@@ -238,6 +241,7 @@ class SettingsStore(context: Context) {
         leftSlots = sideSlots("left_slots", decodeCards(prefs.getString("left_cards", null), DefaultLeftCards)),
         pullPanel = prefs.getBoolean("pull_panel", false),
         swipeSearch = prefs.getBoolean("swipe_search", false),
+        leftHanded = prefs.getBoolean("left_handed", false),
         aiWebApps = prefs.getString("ai_web_apps", "").orEmpty().lines().mapNotNull { l ->
             l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1] }
         },

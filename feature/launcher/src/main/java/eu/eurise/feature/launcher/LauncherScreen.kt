@@ -130,7 +130,7 @@ import eu.eurise.feature.launcher.settings.CategoryEditor
 import eu.eurise.feature.launcher.apps.launch
 import eu.eurise.feature.launcher.apps.openEurise
 import eu.eurise.feature.launcher.home.AppTile
-import eu.eurise.feature.launcher.home.CaptureActions
+import eu.eurise.feature.launcher.home.searchWeb
 import eu.eurise.feature.launcher.home.CategoryBar
 import eu.eurise.feature.launcher.home.CategoryButton
 import eu.eurise.feature.launcher.home.CategoryPages
@@ -355,6 +355,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         var replyTo by remember { mutableStateOf<MessageItem?>(null) }
         // Elenco dei contatti aperto dalla pillola Comunicazioni: "recent" o "starred".
         var peopleSheet by remember { mutableStateOf<String?>(null) }
+        var quick by remember { mutableStateOf<Pair<eu.eurise.feature.launcher.home.QuickAction, String>?>(null) }
         var searchPerson by remember { mutableStateOf<eu.eurise.feature.launcher.contacts.Person?>(null) }
         var signPicker by remember { mutableStateOf(false) }
         // Cartella aperta (id) e scelta delle app per crearne una o aggiungerne.
@@ -499,11 +500,6 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             SetupStep(stringResource(R.string.setup_calendar), state.calendarConnected, actions.connectCalendar),
             // Telefono nuovo: si offre il ripristino finché non c'è ancora nessun dato.
             SetupStep(stringResource(R.string.setup_restore), state.notes.isNotEmpty() || state.openTasks.isNotEmpty()) { actions.openEurise("backup") },
-        )
-        val capture = CaptureActions(
-            onTask = viewModel::addTask,
-            onNote = viewModel::addNote,
-            onEvent = { actions.openEurise("new_event") },
         )
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val clearance = GlassDefaults.PillHeight + GlassDefaults.BottomMargin * 2 + navBottom
@@ -663,34 +659,44 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
             if (searching) {
                 SearchOverlay(
-                    columns = settings.columns,
-                    iconSize = settings.iconSize.dp,
-                    isFavorite = viewModel::isFavorite,
-                    onToggleFavorite = viewModel::toggleFavorite,
                     apps = state.apps,
                     recents = state.recents,
                     notes = state.notes,
                     tasks = state.openTasks,
                     dark = scene.themeDark,
                     hazeState = hazeState,
-                    capture = capture,
+                    leftHanded = settings.leftHanded,
                     onOpenApp = { searching = false; actions.openApp(it) },
                     onOpenNote = { searching = false; actions.openEurise("note:${it.id}") },
                     onOpenTask = { searching = false; actions.openEurise("tasks") },
                     onClose = { searching = false },
                     conversations = messages,
-                    searchContacts = { viewModel.contacts.search(it) },
-                    searchFiles = { viewModel.files.search(it) },
+                    rankContacts = { viewModel.contacts.ranked(it) },
                     searchEvents = { viewModel.searchEvents(it) },
-                    contactActions = { viewModel.contacts.actions(it) },
-                    onContactAction = { viewModel.contacts.start(it) },
                     onOpenEvent = { searching = false; actions.openEurise("day:${it.start.toLocalDate()}") },
-                    aiWebApps = settings.aiWebApps,
-                    onAiWebApps = { list -> viewModel.updateSettings { it.copy(aiWebApps = list) } },
-                    onOpenContact = { searchPerson = it; peopleSheet = "search" },
+                    onOpenContact = { viewModel.contacts.rememberOpened(it); searchPerson = it; peopleSheet = "search" },
                     onOpenMessage = { searching = false; actions.openMessage(it) },
-                    onOpenFile = { searching = false; viewModel.files.open(it) },
+                    onQuick = { action, q ->
+                        if (action == eu.eurise.feature.launcher.home.QuickAction.Web) {
+                            searching = false
+                            context.searchWeb(q)
+                        } else {
+                            quick = action to q
+                        }
+                    },
                 )
+            }
+            quick?.let { (action, q) ->
+                val done = { quick = null }
+                when (action) {
+                    eu.eurise.feature.launcher.home.QuickAction.Note -> eu.eurise.core.links.QuickNoteSheet(data, q, done)
+                    eu.eurise.feature.launcher.home.QuickAction.Task -> eu.eurise.core.links.QuickTaskSheet(data, q, done)
+                    eu.eurise.feature.launcher.home.QuickAction.Event -> eu.eurise.core.links.QuickEventSheet(data, q, done)
+                    eu.eurise.feature.launcher.home.QuickAction.Documents -> eu.eurise.feature.launcher.files.DocumentsSheet(
+                        query = q, files = viewModel.files, onOpenDrive = { searching = false; actions.openEurise("drive") }, onDismiss = done,
+                    )
+                    eu.eurise.feature.launcher.home.QuickAction.Web -> Unit
+                }
             }
             if (weatherSheet && weather != null) {
                 WeatherSheet(weather!!, onClose = { weatherSheet = false })

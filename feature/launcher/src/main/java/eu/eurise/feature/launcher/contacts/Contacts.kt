@@ -111,6 +111,60 @@ class ContactsRepository(private val context: Context) {
         }.getOrNull().orEmpty()
     }
 
+    /** Ricorda che il contatto è stato aperto dalla ricerca: conta come un'interazione. */
+    fun rememberOpened(person: Person) = remember(person.name, "Eurise", System.currentTimeMillis())
+
+    /**
+     * I contatti per la ricerca universale, prima quelli con cui si parla di più: chiamate, chat e aperture dalla
+     * ricerca, ognuna pesata dalla sua età (dopo un mese conta la metà). Android non tiene più il conto dei contatti
+     * (TIMES_CONTACTED è spento da Android 10), quindi il punteggio si calcola qui, sul telefono.
+     * Con [query] vuota restituisce le persone più sentite.
+     */
+    suspend fun ranked(query: String, limit: Int = 15): List<Person> = withContext(Dispatchers.IO) {
+        val scores = interactionScores()
+        val q = query.trim()
+        if (q.isEmpty()) {
+            return@withContext scores.entries.sortedByDescending { it.value }.take(limit).map { (name, _) ->
+                val match = if (hasContacts()) findContactIgnoringCase(name) else null
+                Person(match?.third ?: name, match?.first, match?.second)
+            }
+        }
+        val found = search(q, 40)
+        found.sortedWith(
+            compareByDescending<Person> { scores[it.name.lowercase()] ?: 0.0 }
+                .thenByDescending { it.name.split(' ').any { w -> w.startsWith(q, ignoreCase = true) } },
+        ).take(limit)
+    }
+
+    private fun interactionScores(): Map<String, Double> {
+        val now = System.currentTimeMillis()
+        val halfLife = 30L * 24 * 3600 * 1000
+        fun weight(at: Long) = Math.pow(0.5, (now - at).coerceAtLeast(0).toDouble() / halfLife)
+        val scores = HashMap<String, Double>()
+        if (hasCallLog()) runCatching {
+            context.contentResolver.query(
+                CallLog.Calls.CONTENT_URI, arrayOf(CallLog.Calls.CACHED_NAME, CallLog.Calls.DATE),
+                "${CallLog.Calls.CACHED_NAME} IS NOT NULL", null, "${CallLog.Calls.DATE} DESC",
+            )?.use { c ->
+                var n = 0
+                while (c.moveToNext() && n++ < 300) {
+                    val name = c.getString(0)?.trim()?.lowercase().orEmpty()
+                    if (name.isNotEmpty()) scores.merge(name, weight(c.getLong(1)), Double::plus)
+                }
+            }
+        }
+        history().forEach { (name, _, at) -> scores.merge(name.trim().lowercase(), weight(at), Double::plus) }
+        return scores
+    }
+
+    private fun findContactIgnoringCase(name: String): Triple<Long, Uri?, String>? = runCatching {
+        context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI,
+            arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.PHOTO_THUMBNAIL_URI, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?", arrayOf(name), null,
+        )?.use { c -> if (c.moveToFirst()) Triple(c.getLong(0), c.getString(1)?.let(Uri::parse), c.getString(2).orEmpty()) else null }
+    }.getOrNull()
+
     private fun findContact(name: String): Pair<Long, Uri?>? = runCatching {
         context.contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI,

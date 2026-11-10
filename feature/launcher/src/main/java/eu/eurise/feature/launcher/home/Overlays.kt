@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import eu.eurise.feature.launcher.contacts.Person
-import eu.eurise.feature.launcher.files.RecentFile
 import eu.eurise.feature.launcher.notifications.MessageItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -385,219 +385,63 @@ fun CategoryPages(
     }
 }
 
-private val SearchRound = 36.dp
-
-/** Un contatto trovato, con le icone per raggiungerlo: chiamata, SMS, ogni app di chat, email. */
-@Composable
-private fun PersonResult(
-    person: Person,
-    actions: List<eu.eurise.feature.launcher.contacts.ContactAction>,
-    onOpen: () -> Unit,
-    onAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit,
-) {
-    val shown = listOfNotNull(
-        actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call },
-        actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms },
-    ) + actions.filter { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat }.distinctBy { it.label } +
-        listOfNotNull(actions.firstOrNull { it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Email })
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Row(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable(onClick = onOpen).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            eu.eurise.feature.launcher.home.Avatar(person, 36)
-            Spacer(Modifier.width(10.dp))
-            Text(person.name, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            shown.forEach { a ->
-                RoundTarget(a.label, onClick = { onAction(a) }) {
-                    when (a.kind) {
-                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call -> Icon(EuriseIcons.phone(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
-                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms -> Icon(EuriseIcons.message(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
-                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Email -> Icon(EuriseIcons.mail(2f), a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
-                        // Le app di chat si distinguono dall'iniziale: W, T, S…
-                        eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat -> Text(a.label.take(1), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-private fun RoundTarget(label: String, selected: Boolean = false, onLongClick: (() -> Unit)? = null, onClick: () -> Unit, content: @Composable () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    Box(
-        Modifier.size(SearchRound).clip(CircleShape).background(primary.copy(alpha = if (selected) 0.32f else 0.14f))
-            .combinedClickable(onClickLabel = label, onClick = onClick, onLongClick = onLongClick),
-        contentAlignment = Alignment.Center,
-    ) { content() }
-}
-
-/** Dove cercare ciò che si è scritto: due browser, fino a tre AI, e nelle Note, Attività e Calendario della suite. */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun SearchTargets(
-    q: String,
-    apps: List<AppEntry>,
-    dark: Boolean,
-    aiWeb: List<Pair<String, String>>,
-    onAiWeb: (List<Pair<String, String>>) -> Unit,
-    scope: String?,
-    onScope: (String) -> Unit,
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val browsers = remember(apps) { apps.filter { it.category == eu.eurise.feature.launcher.apps.Category.Browser && it.component != null }.distinctBy { it.packageName }.take(2) }
-    val aiApps = remember(apps) { apps.filter { it.category == eu.eurise.feature.launcher.apps.Category.Ai && it.component != null }.distinctBy { it.packageName }.take(3) }
-    val webShown = aiWeb.take((3 - aiApps.size).coerceAtLeast(0))
-    var adding by remember { mutableStateOf(false) }
-    androidx.compose.foundation.layout.FlowRow(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        browsers.forEach { app ->
-            RoundTarget(app.label, onClick = { context.searchInBrowser(app.packageName, q) }) { AppIcon(app, 28.dp, dark) }
-        }
-        aiApps.forEach { app ->
-            RoundTarget(app.label, onClick = { context.askAiApp(app, q) }) { AppIcon(app, 28.dp, dark) }
-        }
-        webShown.forEach { web ->
-            RoundTarget(web.first, onLongClick = { onAiWeb(aiWeb - web) }, onClick = { context.askAiWeb(web.second, q) }) {
-                Text(web.first.take(1).uppercase(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-        if (aiApps.size + webShown.size < 3) {
-            val label = stringResource(R.string.search_add_ai)
-            RoundTarget(label, onClick = { adding = true }) { Icon(EuriseIcons.plus(2f), label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
-        }
-        listOf(
-            Triple("notes", R.string.search_notes, EuriseIcons.note(2f)),
-            Triple("tasks", R.string.search_tasks_short, EuriseIcons.task(2f)),
-            Triple("calendar", R.string.search_events, EuriseIcons.calendar(2f)),
-        ).forEach { (id, title, icon) ->
-            val label = stringResource(title)
-            RoundTarget(label, selected = scope == id, onClick = { onScope(id) }) {
-                Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
-            }
-        }
-    }
-    if (adding) AddAiDialog(onDismiss = { adding = false }, onAdd = { name, url -> onAiWeb(aiWeb + (name to url)); adding = false })
-}
-
-@Composable
-private fun AddAiDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("https://") }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.search_add_ai)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.material3.OutlinedTextField(name, { name = it }, singleLine = true, label = { Text(stringResource(R.string.search_ai_name)) })
-                androidx.compose.material3.OutlinedTextField(url, { url = it }, singleLine = true, label = { Text(stringResource(R.string.search_ai_url)) })
-                Text(stringResource(R.string.search_ai_hint), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-        confirmButton = {
-            androidx.compose.material3.TextButton(enabled = name.isNotBlank() && url.length > 8, onClick = { onAdd(name.trim(), url.trim()) }) { Text(stringResource(R.string.videos_add)) }
-        },
-        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.categories_reset_cancel)) } },
-    )
-}
-
-private fun android.content.Context.searchInBrowser(pkg: String, q: String) {
-    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH).setPackage(pkg)
-        .putExtra(android.app.SearchManager.QUERY, q).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    if (runCatching { startActivity(search) }.isFailure) {
-        val page = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://duckduckgo.com/?q=" + android.net.Uri.encode(q)))
-            .setPackage(pkg).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-        runCatching { startActivity(page) }
-    }
-}
-
-/** Passa la domanda all'app di AI; se non accetta testo, apre l'app con la domanda già copiata. */
-private fun android.content.Context.askAiApp(app: AppEntry, q: String) {
-    val share = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").setPackage(app.packageName)
-        .putExtra(android.content.Intent.EXTRA_TEXT, q).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    if (runCatching { startActivity(share) }.isFailure) {
-        copyQuery(q)
-        launch(app)
-    }
-}
-
-private fun android.content.Context.askAiWeb(url: String, q: String) {
-    val target = if ("%s" in url) url.replace("%s", android.net.Uri.encode(q)) else url.also { copyQuery(q) }
-    runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(target)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
-}
-
-private fun android.content.Context.copyQuery(q: String) {
-    getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(android.content.ClipData.newPlainText("Eurise", q))
-}
-
-/** Azioni della ricerca: oltre a trovare, si può scrivere e salvare subito. */
-class CaptureActions(
-    val onTask: (String) -> Unit,
-    val onNote: (String) -> Unit,
-    val onEvent: (String) -> Unit,
-)
+/** Le azioni della fila sopra la tastiera: ognuna apre un foglio con ciò che si è scritto già dentro. */
+enum class QuickAction { Note, Task, Event, Documents, Web }
 
 /**
- * Ricerca e cattura: un campo solo per trovare app, note e cose da fare, o per salvare ciò che si è
- * scritto come attività, nota o appuntamento.
+ * Ricerca universale con una mano. La barra sta in basso, vicino al pollice, e tutto si legge dal basso in su:
+ * subito sopra la barra i contatti (prima i più sentiti), poi le app, poi quello che c'è in Calendario, Note,
+ * Attività e conversazioni. Contatti e app scorrono di lato, ognuno per conto suo: due si leggono per intero e il
+ * terzo si intravede. Il primo risultato sta a destra (a sinistra con l'opzione per mancini).
+ * Sopra la tastiera la fila Nota, Da fare, Evento, Documenti e Web porta ciò che si è scritto in un foglio rapido.
+ * Invio apre il primo contatto, o la prima app se non ci sono contatti.
  */
 @Composable
 fun SearchOverlay(
-    columns: Int,
-    iconSize: androidx.compose.ui.unit.Dp,
-    isFavorite: (AppEntry) -> Boolean,
-    onToggleFavorite: (AppEntry) -> Unit,
     apps: List<AppEntry>,
     recents: List<AppEntry>,
     notes: List<Note>,
     tasks: List<Task>,
     dark: Boolean,
     hazeState: HazeState,
-    capture: CaptureActions,
+    leftHanded: Boolean,
     onOpenApp: (AppEntry) -> Unit,
     onOpenNote: (Note) -> Unit,
     onOpenTask: (Task) -> Unit,
     onClose: () -> Unit,
     conversations: List<MessageItem> = emptyList(),
-    searchContacts: suspend (String) -> List<Person> = { emptyList() },
-    searchFiles: suspend (String) -> List<RecentFile> = { emptyList() },
+    rankContacts: suspend (String) -> List<Person> = { emptyList() },
     onOpenContact: (Person) -> Unit = {},
     onOpenMessage: (MessageItem) -> Unit = {},
-    onOpenFile: (RecentFile) -> Unit = {},
     searchEvents: suspend (String) -> List<eu.eurise.core.data.calendar.CalendarEvent> = { emptyList() },
-    contactActions: suspend (Person) -> List<eu.eurise.feature.launcher.contacts.ContactAction> = { emptyList() },
-    onContactAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit = {},
     onOpenEvent: (eu.eurise.core.data.calendar.CalendarEvent) -> Unit = {},
-    aiWebApps: List<Pair<String, String>> = emptyList(),
-    onAiWebApps: (List<Pair<String, String>>) -> Unit = {},
+    onQuick: (QuickAction, String) -> Unit = { _, _ -> },
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    // Note, Attività o Calendario: mostra solo quei risultati; null li mostra tutti.
-    var scope by rememberSaveable { mutableStateOf<String?>(null) }
-    var foundEvents by remember { mutableStateOf<List<eu.eurise.core.data.calendar.CalendarEvent>>(emptyList()) }
-    var peopleActions by remember { mutableStateOf<Map<Person, List<eu.eurise.feature.launcher.contacts.ContactAction>>>(emptyMap()) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val q = query.trim()
-    val foundApps = if (q.isEmpty()) emptyList() else apps.filter { it.label.contains(q, ignoreCase = true) }.take(8)
+    val recentKeys = remember(recents) { recents.map { it.key } }
+    val foundApps = if (q.isEmpty()) recents.take(12) else apps.filter { it.label.contains(q, ignoreCase = true) }
+        .sortedWith(
+            compareByDescending<AppEntry> { a -> a.label.split(' ').any { it.startsWith(q, ignoreCase = true) } }
+                .thenBy { a -> recentKeys.indexOf(a.key).let { if (it < 0) Int.MAX_VALUE else it } }
+                .thenBy { it.label.lowercase() },
+        ).take(20)
     val foundNotes = if (q.isEmpty()) emptyList() else notes.filter { it.title.contains(q, true) || it.body.contains(q, true) }.take(5)
     val foundTasks = if (q.isEmpty()) emptyList() else tasks.filter { it.title.contains(q, true) }.take(5)
     val foundChats = if (q.isEmpty()) emptyList() else conversations
         .filter { it.title.contains(q, true) || it.text.contains(q, true) || it.appLabel.contains(q, true) }
         .distinctBy { it.packageName + it.title }.take(5)
-    var foundPeople by remember { mutableStateOf<List<Person>>(emptyList()) }
-    var foundFiles by remember { mutableStateOf<List<RecentFile>>(emptyList()) }
+    var people by remember { mutableStateOf<List<Person>>(emptyList()) }
+    var events by remember { mutableStateOf<List<eu.eurise.core.data.calendar.CalendarEvent>>(emptyList()) }
     LaunchedEffect(q) {
-        if (q.isEmpty()) { foundPeople = emptyList(); foundFiles = emptyList(); foundEvents = emptyList(); peopleActions = emptyMap(); return@LaunchedEffect }
-        kotlinx.coroutines.delay(150)
-        foundPeople = runCatching { searchContacts(q) }.getOrDefault(emptyList()).take(3)
-        peopleActions = foundPeople.associateWith { runCatching { contactActions(it) }.getOrDefault(emptyList()) }
-        foundEvents = runCatching { searchEvents(q) }.getOrDefault(emptyList()).take(5)
-        foundFiles = runCatching { searchFiles(q) }.getOrDefault(emptyList())
+        if (q.isNotEmpty()) delay(120)
+        people = runCatching { rankContacts(q) }.getOrDefault(emptyList())
+        events = if (q.isEmpty()) emptyList() else runCatching { searchEvents(q) }.getOrDefault(emptyList()).take(5)
+    }
+    fun openFirst() {
+        people.firstOrNull()?.let(onOpenContact) ?: foundApps.firstOrNull()?.let(onOpenApp)
     }
 
     Column(
@@ -607,131 +451,34 @@ fun SearchOverlay(
             .background(scrimColor())
             .closeOnSwipe(up = false, onClose = onClose)
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .windowInsetsPadding(WindowInsets.ime)
-            .padding(horizontal = GlassDefaults.SideMargin),
+            .windowInsetsPadding(WindowInsets.ime),
     ) {
-        Spacer(Modifier.height(16.dp))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(GlassDefaults.PillHeight + 4.dp)
-                .glass(hazeState, RoundedCornerShape(50), outline = false)
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        // Dal basso in su: Calendario, Note, Attività, conversazioni.
+        LazyColumn(
+            Modifier.fillMaxWidth().weight(1f).padding(horizontal = GlassDefaults.SideMargin),
+            reverseLayout = true,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp),
         ) {
-            Icon(EuriseIcons.search(), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(12.dp))
-            Box(Modifier.weight(1f)) {
-                if (query.isEmpty()) Text(stringResource(R.string.search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                    keyboardActions = KeyboardActions(onGo = { foundApps.firstOrNull()?.let(onOpenApp) }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
-                )
-            }
-            Box(
-                Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.close), onClick = onClose),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(EuriseIcons.plus(), stringResource(R.string.close), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp).rotate(45f))
-            }
-        }
-        Spacer(Modifier.height(14.dp))
-        if (q.isEmpty()) {
-            if (recents.isNotEmpty()) {
-                Label(stringResource(R.string.search_recent), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
-                Spacer(Modifier.height(10.dp))
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    items(recents.take(columns * 2), key = { it.key }) { app ->
-                        Box(contentAlignment = Alignment.Center) {
-                            AppTile(
-                                entry = app, dark = dark, badge = 0, favorite = isFavorite(app),
-                                onOpen = { onOpenApp(app) }, onToggleFavorite = { onToggleFavorite(app) }, onInfo = null,
-                                iconSize = iconSize,
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.weight(1f))
-        } else LazyColumn(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false)
-                .glass(hazeState, RoundedCornerShape(28.dp), elevation = 8.dp, outline = false),
-            contentPadding = PaddingValues(vertical = 10.dp),
-        ) {
-            // Ordine: contatti, poi aggiungi/salva/nuovo, app, conversazioni, note e attività, documenti.
-            foundPeople.forEach { person ->
-                item(key = "p${person.contactId}${person.name}") {
-                    PersonResult(person, peopleActions[person].orEmpty(), { onOpenContact(person) }, onContactAction)
-                }
-            }
-            item(key = "where") {
-                SearchTargets(q, apps, dark, aiWebApps, onAiWebApps, scope, { scope = if (scope == it) null else it })
-            }
-            if (q.isNotEmpty() && scope == null) {
-                item { CaptureRow(EuriseIcons.task(), stringResource(R.string.capture_task), q) { capture.onTask(q); onClose() } }
-                item { CaptureRow(EuriseIcons.note(), stringResource(R.string.capture_note), q) { capture.onNote(q); onClose() } }
-                item { CaptureRow(EuriseIcons.calendar(), stringResource(R.string.capture_event), q) { capture.onEvent(q); onClose() } }
-            }
-            if (foundApps.isNotEmpty() && scope == null) {
-                item { SectionLabel(stringResource(R.string.search_apps)) }
-                foundApps.forEach { app ->
-                    item(key = app.key) {
-                        ResultRow(onClick = { onOpenApp(app) }) {
-                            AppIcon(app, 36.dp, dark)
-                            Spacer(Modifier.width(12.dp))
-                            Text(app.label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                        }
-                    }
-                }
-            }
-            if (foundChats.isNotEmpty() && scope == null) {
-                item { SectionLabel(stringResource(R.string.search_chats)) }
-                foundChats.forEach { m ->
-                    item(key = "m${m.key}") {
-                        ResultRow(onClick = { onOpenMessage(m) }) {
-                            Icon(EuriseIcons.chat(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(m.title + " · " + m.appLabel, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(m.text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
-                    }
-                }
-            }
-            if (foundEvents.isNotEmpty() && (scope == null || scope == "calendar")) {
-                item { SectionLabel(stringResource(R.string.search_events)) }
-                foundEvents.forEach { e ->
-                    item(key = "e${e.eventId}${e.beginMillis}") {
+            if (events.isNotEmpty()) item(key = "events") {
+                ResultGroup(stringResource(R.string.search_events), hazeState) {
+                    events.forEach { e ->
                         ResultRow(onClick = { onOpenEvent(e) }) {
-                            Icon(EuriseIcons.calendar(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Box(Modifier.size(width = 5.dp, height = 30.dp).clip(RoundedCornerShape(3.dp)).background(androidx.compose.ui.graphics.Color(e.color)))
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(e.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(e.start.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy · H:mm", java.util.Locale.getDefault())), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1)
+                                Text(e.start.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM · H:mm", java.util.Locale.getDefault())), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1)
                             }
                         }
                     }
                 }
             }
-            if (foundNotes.isNotEmpty() && (scope == null || scope == "notes")) {
-                item { SectionLabel(stringResource(R.string.search_notes)) }
-                foundNotes.forEach { note ->
-                    item(key = "n${note.id}") {
+            if (foundNotes.isNotEmpty()) item(key = "notes") {
+                ResultGroup(stringResource(R.string.search_notes), hazeState) {
+                    foundNotes.forEach { note ->
                         ResultRow(onClick = { onOpenNote(note) }) {
-                            Icon(EuriseIcons.note(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Icon(EuriseIcons.note(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(note.title.ifBlank { note.body.lineSequence().firstOrNull().orEmpty() }, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -743,59 +490,234 @@ fun SearchOverlay(
                     }
                 }
             }
-            if (foundTasks.isNotEmpty() && (scope == null || scope == "tasks")) {
-                item { SectionLabel(stringResource(R.string.search_tasks)) }
-                foundTasks.forEach { task ->
-                    item(key = "t${task.id}") {
+            if (foundTasks.isNotEmpty()) item(key = "tasks") {
+                ResultGroup(stringResource(R.string.search_tasks), hazeState) {
+                    foundTasks.forEach { task ->
                         ResultRow(onClick = { onOpenTask(task) }) {
-                            Icon(EuriseIcons.task(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Icon(EuriseIcons.task(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
                             Text(task.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
             }
-            if (foundFiles.isNotEmpty() && scope == null) {
-                item { SectionLabel(stringResource(R.string.search_files)) }
-                foundFiles.forEach { file ->
-                    item(key = "f${file.uri}") {
-                        ResultRow(onClick = { onOpenFile(file) }) {
-                            Icon(EuriseIcons.folder(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            if (foundChats.isNotEmpty()) item(key = "chats") {
+                ResultGroup(stringResource(R.string.search_chats), hazeState) {
+                    foundChats.forEach { m ->
+                        ResultRow(onClick = { onOpenMessage(m) }) {
+                            Icon(EuriseIcons.chat(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(file.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(file.folder, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(m.title + " · " + m.appLabel, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(m.text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+
+        if (foundApps.isNotEmpty()) {
+            ResultStrip(stringResource(if (q.isEmpty()) R.string.search_recent else R.string.search_apps), foundApps, { it.key }, leftHanded, hazeState) { app ->
+                StripCard(onClick = { onOpenApp(app) }, hazeState = hazeState) {
+                    AppIcon(app, 36.dp, dark)
+                    Spacer(Modifier.width(8.dp))
+                    Text(app.label, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
+                }
+            }
+        }
+        if (people.isNotEmpty()) {
+            ResultStrip(stringResource(R.string.search_people), people, { "${it.contactId}${it.name}" }, leftHanded, hazeState) { person ->
+                StripCard(onClick = { onOpenContact(person) }, hazeState = hazeState, strong = true) {
+                    Avatar(person, 36)
+                    Spacer(Modifier.width(8.dp))
+                    Text(person.name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Row(
+            Modifier
+                .padding(horizontal = GlassDefaults.SideMargin)
+                .fillMaxWidth()
+                .height(GlassDefaults.PillHeight + 4.dp)
+                .glass(hazeState, RoundedCornerShape(50), outline = false)
+                .padding(start = 18.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.search(), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            Box(Modifier.weight(1f)) {
+                if (query.isEmpty()) Text(stringResource(R.string.search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
+                BasicTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp, fontWeight = FontWeight.Medium),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                    keyboardActions = KeyboardActions(onGo = { openFirst() }),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                )
+            }
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.close), onClick = onClose),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(EuriseIcons.close(), stringResource(R.string.close), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        QuickRow(q, hazeState, onQuick)
+        Spacer(Modifier.height(6.dp))
+    }
+}
+
+/** La fila sopra la tastiera: Nota, Da fare, Evento, Documenti, Web. Documenti e Web servono solo con qualcosa scritto. */
+@Composable
+private fun QuickRow(q: String, hazeState: HazeState, onQuick: (QuickAction, String) -> Unit) {
+    Row(
+        Modifier
+            .padding(horizontal = GlassDefaults.SideMargin)
+            .fillMaxWidth()
+            .glass(hazeState, RoundedCornerShape(22.dp), outline = false)
+            .padding(4.dp),
+    ) {
+        listOf(
+            Triple(QuickAction.Note, R.string.quick_note, EuriseIcons.note(2f)),
+            Triple(QuickAction.Task, R.string.quick_task, EuriseIcons.task(2f)),
+            Triple(QuickAction.Event, R.string.quick_event, EuriseIcons.calendar(2f)),
+            Triple(QuickAction.Documents, R.string.quick_documents, EuriseIcons.folder(2f)),
+            Triple(QuickAction.Web, R.string.quick_web, EuriseIcons.globe(2f)),
+        ).forEach { (action, label, icon) ->
+            val enabled = q.isNotEmpty() || action == QuickAction.Note || action == QuickAction.Task || action == QuickAction.Event
+            val text = stringResource(label)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .alpha(if (enabled) 1f else 0.4f)
+                    .clickable(enabled = enabled, onClickLabel = text) { onQuick(action, q) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.height(3.dp))
+                Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+            }
+        }
+    }
+}
+
+/**
+ * Una fila di risultati che scorre di lato per conto suo: due voci si leggono per intero e la terza si intravede.
+ * Per i destrimani la prima voce sta a destra e le altre si scoprono scorrendo da sinistra verso destra.
+ */
+@Composable
+private fun <T> ResultStrip(
+    title: String,
+    items: List<T>,
+    key: (T) -> Any,
+    leftHanded: Boolean,
+    hazeState: HazeState,
+    content: @Composable (T) -> Unit,
+) {
+    val state = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(items.firstOrNull()?.let(key)) { state.scrollToItem(0) }
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = GlassDefaults.SideMargin + 4.dp), contentAlignment = if (leftHanded) Alignment.CenterStart else Alignment.CenterEnd) {
+            Label(title)
+        }
+        Spacer(Modifier.height(6.dp))
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val side = GlassDefaults.SideMargin
+            val gap = 8.dp
+            val cardWidth = (maxWidth - side * 2 - gap * 2) / 2.3f
+            androidx.compose.foundation.lazy.LazyRow(
+                state = state,
+                reverseLayout = !leftHanded,
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                contentPadding = PaddingValues(horizontal = side),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                androidx.compose.foundation.lazy.items(items, key = key) { item ->
+                    Box(Modifier.width(cardWidth)) { content(item) }
+                }
+            }
+        }
+        StripScrollbar(state, leftHanded)
+    }
+}
+
+/** Barra di scorrimento sottile sotto una fila: quanto se ne vede e dove si è. */
+@Composable
+private fun StripScrollbar(state: androidx.compose.foundation.lazy.LazyListState, leftHanded: Boolean) {
+    val info = state.layoutInfo
+    val total = info.totalItemsCount
+    val visible = info.visibleItemsInfo.size
+    if (total <= 0 || visible >= total) {
+        Spacer(Modifier.height(9.dp))
+        return
+    }
+    val fraction = visible.toFloat() / total
+    val position = state.firstVisibleItemIndex.toFloat() / total
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        Modifier.fillMaxWidth().padding(horizontal = GlassDefaults.SideMargin + 4.dp, vertical = 3.dp).height(3.dp)
+            .clip(RoundedCornerShape(2.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+    ) {
+        val offset = maxWidth * position
+        Box(
+            Modifier
+                .align(if (leftHanded) Alignment.CenterStart else Alignment.CenterEnd)
+                .offset(x = if (leftHanded) offset else -offset)
+                .width(maxWidth * fraction)
+                .height(3.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)),
+        )
     }
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp)) { Label(text) }
-}
-
-@Composable
-private fun ResultRow(onClick: () -> Unit, content: @Composable () -> Unit) {
+private fun StripCard(onClick: () -> Unit, hazeState: HazeState, strong: Boolean = false, content: @Composable () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 8.dp),
+        Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .glass(hazeState, RoundedCornerShape(18.dp), elevation = if (strong) 4.dp else 0.dp, outline = false)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) { content() }
 }
 
 @Composable
-private fun CaptureRow(icon: ImageVector, action: String, text: String, onClick: () -> Unit) {
-    ResultRow(onClick) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(action, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
-            Text("«$text»", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+private fun ResultGroup(title: String, hazeState: HazeState, rows: @Composable () -> Unit) {
+    Column {
+        Box(Modifier.padding(start = 4.dp, bottom = 6.dp)) { Label(title) }
+        Column(
+            Modifier.fillMaxWidth().glass(hazeState, RoundedCornerShape(20.dp), elevation = 4.dp, outline = false).padding(vertical = 4.dp),
+        ) { rows() }
+    }
+}
+
+@Composable
+private fun ResultRow(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) { content() }
+}
+
+/** Apre la ricerca sul web con il browser predefinito e il suo motore, con ciò che si è scritto. */
+fun android.content.Context.searchWeb(q: String) {
+    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH)
+        .putExtra(android.app.SearchManager.QUERY, q).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (runCatching { startActivity(search) }.isFailure) {
+        val page = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://duckduckgo.com/?q=" + android.net.Uri.encode(q)))
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(page) }
     }
 }

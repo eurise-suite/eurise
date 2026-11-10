@@ -209,6 +209,30 @@ class WebDav(
     private val sharesUrl: String get() = "$serverRoot/ocs/v2.php/apps/files_sharing/api/v1/shares"
     private val davUser: String get() = base.encodedPath.substringAfter("/remote.php/dav/files/").trim('/')
 
+    /**
+     * File il cui nome contiene [term], in tutte le cartelle, i più recenti prima (ricerca WebDAV di Nextcloud).
+     * Restituisce il percorso relativo alla cartella principale e la voce. Fuori da Nextcloud: lista vuota.
+     */
+    suspend fun search(term: String, limit: Int = 20): List<Pair<String, DavEntry>> {
+        if (!isNextcloud || term.isBlank()) return emptyList()
+        val literal = term.trim().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("%", "")
+        val body = """<?xml version="1.0" encoding="UTF-8"?><d:searchrequest xmlns:d="DAV:"><d:basicsearch>""" +
+            """<d:select><d:prop><d:displayname/><d:getetag/><d:getcontentlength/><d:resourcetype/></d:prop></d:select>""" +
+            """<d:from><d:scope><d:href>/files/$davUser</d:href><d:depth>infinity</d:depth></d:scope></d:from>""" +
+            """<d:where><d:like><d:prop><d:displayname/></d:prop><d:literal>%$literal%</d:literal></d:like></d:where>""" +
+            """<d:orderby><d:order><d:prop><d:getlastmodified/></d:prop><d:descending/></d:order></d:orderby>""" +
+            """<d:limit><d:nresults>$limit</d:nresults></d:limit></d:basicsearch></d:searchrequest>"""
+        val req = Request.Builder().url("$serverRoot/remote.php/dav/").header("Authorization", auth).header("User-Agent", USER_AGENT)
+            .method("SEARCH", body.toRequestBody("text/xml; charset=utf-8".toMediaType())).build()
+        val root = base.encodedPath
+        return call(req) { res ->
+            if (res.code != 207) throw DavException(res.code, "SEARCH: ${res.code}")
+            parse(res.body?.string().orEmpty())
+                .filter { !it.second.folder && it.first.startsWith(root) }
+                .map { (path, entry) -> URLDecoder.decode(path.removePrefix(root).replace("+", "%2B"), "UTF-8") to entry }
+        }
+    }
+
     /** Crea un link pubblico, facoltativamente con password e scadenza (AAAA-MM-GG), e ne restituisce l'indirizzo. */
     suspend fun createLink(path: String, password: String?, expires: String?): String {
         val form = okhttp3.FormBody.Builder().add("path", "/" + path.trim('/')).add("shareType", "3")

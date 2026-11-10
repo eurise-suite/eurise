@@ -504,4 +504,19 @@
     <string name="bubble_saved_task">Aggiunto alle attività: %1$s</string>
     <string name="webapp_added">«%1$s» è tra le tue app, in %2$s</string>
     <string name="webapp_remove">Togli la web app</string>
+    <string name="search_people">Contatti</string>
+    <string name="quick_note">Nota</string>
+    <string name="quick_task">Da fare</string>
+    <string name="quick_event">Evento</string>
+    <string name="quick_documents">Documenti</string>
+    <string name="quick_web">Web</string>
+    <string name="appearance_left_handed">Ricerca per mancini (risultati da sinistra)</string>
+    <string name="docs_phone">Telefono</string>
+    <string name="docs_open_failed">Non è stato possibile aprire il documento</string>
+    <string name="docs_searching">Cerco sul telefono e nel cloud…</string>
+    <string name="docs_count">%1$d documenti · cercati per nome</string>
+    <string name="docs_everywhere">Ovunque</string>
+    <string name="docs_allow_phone">Consenti di cercare anche tra i file del telefono</string>
+    <string name="docs_none">Nessun documento con questo nome</string>
+    <string name="docs_open_drive">Apri File</string>
 </resources>
