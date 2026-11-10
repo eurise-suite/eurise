@@ -657,3 +657,21 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
 - Fuori dal prototipo: interfaccia web di Collabora (`browser` di online, per «Tutte le opzioni»), parte `online` per Android,
   italiano. Dopo la misura: decidere con il proprietario (se non ci sta: computer di compilazione o parti già compilate), poi
   anteprime telefono e tablet.
+
+## 11 novembre: decisioni del proprietario (traduzione, scrittura a mano, punto 6)
+- Traduzione: **il motore va dentro Eurise Leggi** (+2 MB circa). Leggi scarica i modelli e risponde alla Tastiera e alle altre
+  app con il suo servizio a permesso di firma. Da fare: spostare `translate/` in Leggi, pannello Traduci nella Tastiera, voce nel
+  centro privacy (Google Cloud Storage di Mozilla per i modelli), più lingue.
+- Scrittura a mano: **rimandata** (nessun modello libero per l'alfabeto latino; addestrarlo chiede GPU).
+- Punto 6, anteprime e basi **approvate** (Messaggi = Fossify Messages, Telefono = Fossify Phone, Mappe = CoMaps), con queste aggiunte:
+  - Messaggi: azioni proposte dal contenuto, anche nelle email. Appuntamento scritto e confermato dall'altro → inserimento diretto
+    nel Calendario. Numero di telefono → Aggiungi in rubrica, Chiama, SMS, WhatsApp, Telegram, chat nostra (quando ci sarà), email.
+    Altra lingua → Traduci. Cosa da fare → Da fare. Appunto → Note. E così via secondo il contenuto.
+  - Telefono: va bene così.
+  - Mappe: arricchirla il più possibile per competere con Waze e Google Maps: velocità attuale, lettura dei segnali stradali
+    (limiti), mappa molto chiara, integrazione con la suite, notizie sul traffico se si trovano fonti, meteo sul percorso.
+  - **App nuova Meteo** nello stile della suite: previsioni, allerte, vento, temperature, pollini, alba e tramonto, brevi articoli
+    di aggiornamento. Nella bolla degli appuntamenti (che diventerà «I tuoi impegni») una frase breve: «Oggi il tempo è buono e la
+    strada scorrevole, dovresti arrivare in tempo», oppure «Allerta meteo arancione: presta attenzione e anticipa la partenza».
+  - Da fare prima del codice: anteprime per Mappe arricchita, Meteo e la frase nella bolla; ricerca delle fonti libere (traffico,
+    allerte, pollini) da mostrare nel centro privacy.
