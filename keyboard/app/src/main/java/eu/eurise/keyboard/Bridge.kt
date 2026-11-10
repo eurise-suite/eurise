@@ -27,6 +27,7 @@ class Bridge(context: Context) {
     private val debug = BuildConfig.BUILD_TYPE != "release" && BuildConfig.BUILD_TYPE != "nouserlib"
     val hubPackage = if (debug) "eu.eurise.hub.debug" else "eu.eurise.hub"
     val passwordPackage = if (debug) "eu.eurise.password.debug" else "eu.eurise.password"
+    val voicePackage = if (debug) "eu.eurise.voice.debug" else "eu.eurise.voice"
 
     fun granted(permission: String) = app.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     fun canReadCalendar() = granted(Manifest.permission.READ_CALENDAR)
@@ -171,7 +172,7 @@ class Bridge(context: Context) {
         return true
     }
 
-    private fun suitePermission() = if (debug) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
+    fun suitePermission() = if (debug) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
 
     fun installed(pkg: String) = runCatching { app.packageManager.getPackageInfo(pkg, 0); true }.getOrDefault(false)
 

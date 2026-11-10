@@ -73,6 +73,10 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         this.ime = ime
         keyboardArea = inputView.findViewById(R.id.keyboard_view_wrapper)
         refreshLook()
+        androidx.core.content.ContextCompat.registerReceiver(
+            context.applicationContext, dictationReceiver, android.content.IntentFilter(ACTION_DICTATION),
+            bridge.suitePermission(), null, androidx.core.content.ContextCompat.RECEIVER_EXPORTED,
+        )
         (context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.addPrimaryClipChangedListener {
             lastClipAt = System.currentTimeMillis()
             lastClipText = null // si legge solo quando la tastiera è visibile, mai in sottofondo
@@ -176,6 +180,34 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         }
     }
 
+    // --- Dettatura (Eurise Voce) ---
+
+    private var pendingDictation: String? = null
+
+    /** Il testo dettato torna da Eurise Voce (solo app con la stessa firma possono mandarlo). */
+    private val dictationReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context, intent: Intent) {
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() } ?: return
+            if (::ime.isInitialized && ime.isInputViewShown && ime.currentInputConnection != null) insertDictation(text)
+            else pendingDictation = text
+        }
+    }
+
+    private fun insertDictation(text: String) {
+        val before = before(1)
+        insert(if (before.isNotEmpty() && !before.last().isWhitespace()) " $text" else text)
+    }
+
+    /** Il tasto della voce apre la dettatura di Eurise Voce; falso se non è installata (resta quella di sistema). */
+    fun startDictation(): Boolean {
+        if (!::ime.isInitialized || !bridge.installed(bridge.voicePackage)) return false
+        val intent = Intent().setClassName(bridge.voicePackage, "eu.eurise.voice.DictateActivity")
+            .putExtra("reply_to", context.packageName)
+            .putExtra("language", ime.euriseLanguage())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return runCatching { context.startActivity(intent) }.isSuccess
+    }
+
     // --- Ciclo di vita ---
 
     /** Nuovo campo di testo: si chiude il pannello e si allega l'eventuale file appena scelto. */
@@ -184,6 +216,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         if (panel != null && panel !is CodesPanel) close()
         refreshLook()
         attachPicked()
+        pendingDictation?.let { pendingDictation = null; handler.postDelayed({ insertDictation(it) }, 150) }
         handler.postDelayed({ onTextChanged() }, 120)
     }
 
@@ -292,5 +325,6 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     companion object {
         const val SEPARATE_TOOLS = "eurise_separate_tools"
         const val ABBREVIATIONS = "eurise_abbreviations"
+        const val ACTION_DICTATION = "eu.eurise.action.DICTATION_RESULT"
     }
 }

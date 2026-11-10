@@ -854,6 +854,11 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    /** Lingua della tastiera in uso ("it", "en"…), per la dettatura. */
+    public String euriseLanguage() {
+        return mRichImm.getCurrentSubtypeLocale().getLanguage();
+    }
+
     private static String euriseKey(final InputMethodSubtype s) {
         return s.getLocale() + "|" + s.getExtraValue();
     }
@@ -1490,7 +1495,8 @@ public class LatinIME extends InputMethodService implements
     // completely replace #onCodeInput.
     public void onEvent(@NonNull final Event event) {
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
-            mRichImm.switchToShortcutIme(this);
+            // Eurise: prima la dettatura di Eurise Voce (sul telefono); se non c'è, quella scelta nel sistema.
+            if (mEuriseBar == null || !mEuriseBar.startDictation()) mRichImm.switchToShortcutIme(this);
         }
         final InputTransaction completeInputTransaction =
                 mInputLogic.onCodeInput(mSettings.getCurrent(), event,

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Il microfono si chiede alla prima dettatura. Internet serve solo a scaricare il modello scelto. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permesso della suite: solo le app Eurise firmate con la stessa chiave aprono la dettatura per sé. -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <uses-permission android:name="${suitePermission}" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_voice"
+        android:label="@string/voice_app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EuriseVoice">
+        <activity
+            android:name=".DictateActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

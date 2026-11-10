@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_app_name">Eurise Voce</string>
+    <string name="voice_title">Detta</string>
+    <string name="voice_need_model">Per dettare serve un modello di Whisper sul telefono. Si scarica una volta; poi la voce non esce mai dal telefono.</string>
+    <string name="voice_model_base">Veloce</string>
+    <string name="voice_model_base_d">%1$d MB · va bene per messaggi brevi</string>
+    <string name="voice_model_small">Preciso</string>
+    <string name="voice_model_small_d">%1$d MB · più preciso, più lento</string>
+    <string name="voice_download_title">Scaricare il modello %1$s?</string>
+    <string name="voice_download_body">Cosa esce: solo la richiesta del file (%1$d MB) al sito %2$s, che vede l\'indirizzo di rete del telefono. Nessun audio e nessun testo.\n\nDove va: nella memoria di Eurise Voce.\n\nCome si torna indietro: si cancella da questa schermata o disinstallando Eurise Voce.</string>
+    <string name="voice_download">Scarica</string>
+    <string name="voice_cancel">Annulla</string>
+    <string name="voice_downloading">Scarico il modello… %1$d%%</string>
+    <string name="voice_download_failed">Download non riuscito. Riprova con una connessione stabile.</string>
+    <string name="voice_tap">Tocca e parla</string>
+    <string name="voice_listening">Ti ascolto… tocca per finire</string>
+    <string name="voice_start">Comincia a dettare</string>
+    <string name="voice_stop">Finisci di dettare</string>
+    <string name="voice_working">Trascrivo sul telefono…</string>
+    <string name="voice_insert">Inserisci</string>
+    <string name="voice_copy">Copia</string>
+    <string name="voice_again">Di nuovo</string>
+    <string name="voice_failed">La trascrizione non è riuscita.</string>
+    <string name="voice_nothing">Non ho sentito parole.</string>
+    <string name="voice_private">La voce si trascrive sul telefono e non si salva da nessuna parte.</string>
+</resources>

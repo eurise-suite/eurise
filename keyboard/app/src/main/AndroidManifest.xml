@@ -153,6 +153,8 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         <package android:name="eu.eurise.hub.debug" />
         <package android:name="eu.eurise.password" />
         <package android:name="eu.eurise.password.debug" />
+        <package android:name="eu.eurise.voice" />
+        <package android:name="eu.eurise.voice.debug" />
         <!-- To detect other IMEs -->
         <intent>
             <!-- changed to * as it's supposed to help with finding other keyboard apps, see https://github.com/HeliBorg/HeliBoard/issues/1340 -->

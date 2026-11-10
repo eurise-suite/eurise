@@ -17,7 +17,7 @@ import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.settings.Settings
 
 /** Colori della barra presi dal tema della tastiera (Perla, Notte o quello scelto), così tutto resta coerente. */
-internal class Palette {
+class Palette {
     private val colors = Settings.getValues().mColors
     val background = colors.get(ColorType.MAIN_BACKGROUND)
     val surface = colors.get(ColorType.KEY_BACKGROUND)
