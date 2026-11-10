@@ -288,7 +288,7 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Attività su Murena (ramo `galleria-completa`): `feature/tasks/TasksSyncJob` e `core/data/model/Vtodo` (con test), database v6 (`MIGRATION_5_6`: uid, etag, base, `task_tombstones`). Interruttore in Cloud, spento di base, sullo stesso account delle note; un elenco con Sincronizza = un calendario VTODO (cerca lo stesso nome, altrimenti crea `eurise-<id>`). Unione campo per campo, a parità vince il telefono; campi sconosciuti e promemoria del server conservati, gli avvisi di Eurise restano sul telefono. Da provare sul telefono.
 - Cloud, regola di fondo (9 novembre): Eurise fa da hub. Murena/Nextcloud è il canale di sincronizzazione piena (note, attività, foto, backup); kDrive, Proton e simili entrano solo come cartelle dalle loro app (selettore di Android), per documenti, backup e al più copia foto in un verso, mai togliendo foto dal telefono su quella base. Prossimo: integrazioni (scheda Persona, un solo +, Tastiera, riunioni, viaggi, modalità, cestino unico), poi lettura del testo, Browser; Famiglia in fondo. `galleria-completa` va unito a `main` dopo la prova del proprietario.
 - Residui ancora da fare: Password (Famiglia: "cassaforte condivisa separata" nel documento, nessuna anteprima), File (kDrive: bloccato, vedi sopra).
-- Ultimo APK: 186 dal ramo `tastiera` (contiene `galleria-completa`; prima 181 da `galleria-completa`), che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
+- Ultimo APK: 186 dal ramo `tastiera` (anteprime della terza fila Integrazioni pronte il 10 novembre) (contiene `galleria-completa`; prima 181 da `galleria-completa`), che contiene anche `integrazione`; su `main` 161 (`eurise-debug-N`, `eurise-password-debug-N`, `eurise-galleria-debug-N`). Compilare da una base aggiornata di
   `main`: un ramo vecchio dà un APK a cui mancano i lavori recenti.
 - Prossimi passi, in ordine: resto della Galleria (caricamento su cloud, Luoghi, Cerca, diario di viaggio, condivisione senza
   posizione, cartella protetta, editor, pulizia); kDrive (bloccato, in attesa di Infomaniak);
@@ -355,3 +355,14 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 - Limiti noti: "Arrivo alle" usa l'ora dell'evento, non il tempo di viaggio; la lingua si ricorda per app, non per
   conversazione (la tastiera non sa con chi si scrive); i codici 2FA compaiono solo se la voce di Password è collegata
   all'app e la cassaforte è aperta.
+
+## Riunioni, viaggi, modalità, cestino unico: anteprime (10 novembre, tela, pagina Integrazioni, terza fila) – da discutere
+- IntRiunione: nota dell'evento aperta all'inizio (dall'avviso), presenti da toccare, ordine del giorno spuntabile, appunti in cui
+  le righe con @persona e data diventano attività collegate all'evento alla chiusura; "Condividi il riassunto" solo a richiesta.
+- IntViaggio: da un biglietto (PDF in File o condiviso verso Eurise, letto sul telefono) si preparano, ognuna togliibile: voli nel
+  Calendario, sveglia e fuso nell'Orologio, cartella in File › Viaggi, diario nella Galleria, mappa offline (spenta di base, unica cosa
+  che va su Internet, arriva con Mappe), modalità Viaggio nelle date. Dalle email solo quando ci sarà Mail.
+- IntModalita: Lavoro, Casa, Viaggio, Notte; ognuna cambia Scrivania, notifiche, calendari ed elenchi, suoni; accensione per orario
+  (salta festivi e ferie) o durante gli eventi di un calendario. Niente accensione per luogo, per non leggere la posizione.
+- IntCestino: un cestino per Note, Attività, File, Foto ed eventi, 30 giorni, i collegamenti tornano con ciò che si ripristina; in fondo
+  "Passa a un telefono nuovo" (backup cifrato o QR tra i due telefoni). Foto e Password dagli APK separati: serve il permesso di firma.
