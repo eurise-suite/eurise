@@ -5,9 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
 import eu.eurise.core.data.docs.ReadPage
@@ -52,51 +49,17 @@ object PageProcessor {
         ScanMode.BlackWhite -> blackWhite(page)
     }
 
-    private fun enhance(page: Bitmap): Bitmap {
-        val out = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-        val contrast = 1.35f
-        val shift = -18f
-        val matrix = ColorMatrix(floatArrayOf(
-            contrast, 0f, 0f, 0f, shift,
-            0f, contrast, 0f, 0f, shift,
-            0f, 0f, contrast, 0f, shift,
-            0f, 0f, 0f, 1f, 0f,
-        ))
-        Canvas(out).drawBitmap(page, 0f, 0f, Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) })
-        return out
-    }
+    /** Carta bianca e neutra, ombre tolte, testo nero, colori veri tenuti (DocumentFilter, provato senza telefono). */
+    private fun enhance(page: Bitmap): Bitmap = filtered(page, DocumentFilter::document)
 
-    /** Soglia locale: ogni punto si confronta con la media dei vicini, così le ombre sul foglio non diventano macchie nere. */
-    private fun blackWhite(page: Bitmap): Bitmap {
+    private fun blackWhite(page: Bitmap): Bitmap = filtered(page, DocumentFilter::blackWhite)
+
+    private fun filtered(page: Bitmap, filter: (IntArray, Int, Int) -> IntArray): Bitmap {
         val w = page.width
         val h = page.height
         val pixels = IntArray(w * h)
         page.getPixels(pixels, 0, w, 0, 0, w, h)
-        val sum = LongArray((w + 1) * (h + 1))
-        val gray = IntArray(w * h)
-        for (y in 0 until h) {
-            var row = 0L
-            for (x in 0 until w) {
-                val c = pixels[y * w + x]
-                val v = (Color.red(c) * 299 + Color.green(c) * 587 + Color.blue(c) * 114) / 1000
-                gray[y * w + x] = v
-                row += v
-                sum[(y + 1) * (w + 1) + x + 1] = sum[y * (w + 1) + x + 1] + row
-            }
-        }
-        val radius = max(w, h) / 40 + 1
-        for (y in 0 until h) {
-            val top = (y - radius).coerceAtLeast(0)
-            val bottom = (y + radius).coerceAtMost(h - 1) + 1
-            for (x in 0 until w) {
-                val left = (x - radius).coerceAtLeast(0)
-                val right = (x + radius).coerceAtMost(w - 1) + 1
-                val count = (right - left) * (bottom - top)
-                val total = sum[bottom * (w + 1) + right] - sum[top * (w + 1) + right] - sum[bottom * (w + 1) + left] + sum[top * (w + 1) + left]
-                pixels[y * w + x] = if (gray[y * w + x] * count < total * 88 / 100) Color.BLACK else Color.WHITE
-            }
-        }
-        return Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888)
+        return Bitmap.createBitmap(filter(pixels, w, h), w, h, Bitmap.Config.ARGB_8888)
     }
 
     /** Una pagina per immagine, larga come un A4 (595 punti). */
