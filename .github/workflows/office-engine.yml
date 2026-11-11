@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/office-engine.yml"
       - ".github/scripts/office_size.py"
+      - ".github/scripts/office_variants.py"
       - "office/engine/**"
 
 permissions:
@@ -130,6 +131,13 @@ jobs:
           echo "make ha risposto $status"
           tail -40 make.log
           ccache -s || true
+
+      - name: Misura le varianti del motore
+        if: env.MAKE_STATUS == '0'
+        run: |
+          python3 .github/scripts/office_variants.py "$WORK/core" "$WORK/varianti" | tee -a "$GITHUB_STEP_SUMMARY"
+          # Il motore completo torna com'era per le misure e l'artefatto.
+          make -C "$WORK/core/android/source" link-so > /dev/null 2>&1 || true
 
       - name: Errori di compilazione
         if: env.MAKE_STATUS != '0' && env.MAKE_STATUS != '124'
