@@ -101,6 +101,7 @@ public class KeyDetector {
                 primaryKey = key;
             }
         }
-        return primaryKey;
+        // Eurise: la parte bassa dei tasti sopra la barra spaziatrice conta come spazio (TouchFix).
+        return eu.eurise.keyboard.TouchFix.INSTANCE.adjust(mKeyboard, primaryKey, touchX, touchY);
     }
 }

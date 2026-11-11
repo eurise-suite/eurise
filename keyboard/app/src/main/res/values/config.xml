@@ -9,7 +9,8 @@
 <resources>
     <bool name="config_fullscreen_mode_allowed">false</bool>
 
-    <dimen name="config_key_hysteresis_distance">8.0dp</dimen>
+    <!-- Eurise: 16dp (era 8): un pollice che rotola alzandosi non cambia più il tasto in quello accanto. -->
+    <dimen name="config_key_hysteresis_distance">16.0dp</dimen>
 
     <!-- Amount of width reduction in one-handed mode -->
     <fraction name="config_one_handed_mode_width">86%</fraction>

@@ -1170,3 +1170,24 @@ codice del Ponte dal computer al telefono come deciso; esiti di Office app e Map
 **Prossimo passo**: approvazione delle tavole nuove (ScanPagine, ScanPagina, ScanRitaglio, FileSalvaIn, FileApriDa,
 OffPdf, OffPdfPagine, OffPdfCondividi); prova del Ponte dal computer al telefono sul telefono vero; esempi di errori di
 battitura dal proprietario per la tastiera; prova di Mappe giro 7 sul telefono; esito di Office app (giro con la Suite in coda dietro quello che salva la ccache).
+
+## 11 novembre, sera: tavole approvate, tastiera (ramo `brand`)
+- **Approvate dal proprietario** tutte le tavole dello scanner (ScanPagine, ScanPagina, ScanRitaglio), FileSalvaIn,
+  FileApriDa e l'app PDF di Office (OffPdf, OffPdfPagine, OffPdfCondividi), con «Perfetta» e il PDF da modificare in Office
+  (il lettore dell'APK principale resta per leggere). Codice da scrivere.
+- **Tastiera, errori del proprietario**: «b e n molto spesso al posto della barra spaziatrice, e invece di una lettera esce
+  quella accanto». Fatto:
+  - `config_key_hysteresis_distance` 8 → **16 dp**: con la selezione trascinando il dito (attiva sui telefoni) un pollice
+    che rotola alzandosi cambiava il tasto in quello accanto.
+  - **`TouchFix`** (`keyboard/.../TouchFix.kt`, agganci in `KeyDetector.detectHitKey` e `LatinIME.onEvent`): la parte bassa
+    (di base il 20 %) dei tasti sopra la barra spaziatrice conta come spazio; la quota si regola da sola (lettera della
+    fascia → cancella → spazio: +2,5 %; spazio della zona → cancella → lettera: −2,5 %; tra 8 % e 38 %), salvata solo
+    sulla tastiera.
+  - La proposta degli appunti esce dalla barra di Eurise (schiacciava Calcola e gli altri): resta quella di HeliBoard
+    nella fila dei suggerimenti.
+- **Tavole nuove da approvare** (pagina Integrazioni): **TastRighe** (sopra la barra di Eurise con sette comandi sempre
+  interi — Disponibilità diventa «Libero», Browser e AI si uniscono in «Cerca» con la scelta classica/AI nel pannello —
+  e «Altro» per gli strumenti di HeliBoard: appunti, emoji, una mano, impostazioni; sotto, sopra i tasti, una proposta
+  «Incolla · …» sola e le parole), **TastPassword** (nei campi password la stessa fila mostra «Compila · account» di
+  Eurise Password e «Altro account»; niente parole, niente appunti, la tastiera non impara). Dopo l'approvazione: togliere
+  la barra degli strumenti di HeliBoard dalla fila dei suggerimenti (sovrapposizioni segnalate dal proprietario).

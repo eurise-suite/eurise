@@ -374,11 +374,15 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
                 showChips(emptyList())
             }
         }
-        clipChip()?.let { found += it }
+        // Gli appunti stanno solo nella fila dei suggerimenti sopra i tasti (tavola TastRighe): qui schiacciavano i comandi.
         return found.take(4)
     }
 
-    /** Una cosa copiata da poco (IBAN, numero, email): si propone di salvarla. Gli appunti si leggono solo qui. */
+    /**
+     * Una cosa copiata da poco (IBAN, numero, email): si propone di salvarla. Fuori dalla barra dall'11 novembre; tornerà
+     * come azione «Salva» dentro la proposta degli appunti della fila dei suggerimenti (tavola TastRighe).
+     */
+    @Suppress("unused")
     private fun clipChip(): Chip? {
         if (System.currentTimeMillis() - lastClipAt > 120_000) return null
         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return null

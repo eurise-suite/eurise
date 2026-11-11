@@ -772,6 +772,7 @@ public class LatinIME extends InputMethodService implements
     public void setInputView(final View view) {
         super.setInputView(view);
         mInputView = view;
+        eu.eurise.keyboard.TouchFix.INSTANCE.init(this);
         mEuriseBar = view.findViewById(R.id.eurise_bar);
         if (mEuriseBar != null) mEuriseBar.attach(this, view);
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
@@ -1514,6 +1515,8 @@ public class LatinIME extends InputMethodService implements
     // This method is public for testability of LatinIME, but also in the future it should
     // completely replace #onCodeInput.
     public void onEvent(@NonNull final Event event) {
+        // Eurise: impara dalle correzioni «lettera → cancella → spazio» (TouchFix).
+        eu.eurise.keyboard.TouchFix.INSTANCE.committed(event.getKeyCode() != Event.NOT_A_KEY_CODE ? event.getKeyCode() : event.getCodePoint());
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             // Eurise: prima la dettatura di Eurise Voce (sul telefono); se non c'è, quella scelta nel sistema.
             if (mEuriseBar == null || !mEuriseBar.startDictation()) mRichImm.switchToShortcutIme(this);
