@@ -971,3 +971,29 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
 - **Poi, nell'ordine**: codice di quanto approvato (bolla «Ti hanno cercato», segnalazioni OpenStreetMap e stile di Mappe
   con Android Auto, riduzione del peso di Mappe, Eurise Office). Road map (regola di spesa): servizio nostro per
   segnalazioni in tempo reale, prezzi e voti come partner di Booking/Tripadvisor.
+
+## 11 novembre, primo pomeriggio: editor da altre app, icone sulla tela, peso di Mappe, sistemi (ramo `brand`)
+- **Tela, pagina «Icone»**: ora contiene tutte le tavole delle icone attuali, spostate da Brand e Scrivania (BrandIconeApp,
+  BrandFamiglia, BrandAndroid, ScrIcone, componente BrandIcona) più la tavola nuova **IconeColori** (tema «Eurise a colori»
+  com'è nel codice: le dodici tinte, giorno, sera, confronto con il tema Eurise). Le icone vecchie restano in fondo
+  («Prima del brand»).
+- **Galleria, corretto**: «Modifica» da un'altra app (ACTION_EDIT) e «Condividi › Modifica con Eurise» (ACTION_SEND con
+  image/*) aprono il nostro editor (`EditActivity`, solo l'editor, in un compito a sé); l'originale resta, la copia va in
+  Pictures/Eurise e torna a chi l'ha chiesta. `saveEdited` restituisce la copia. Da provare sul telefono.
+- **Mappe, peso** (giro 5 del lavoro «Prototipo di Eurise Mappe»): `maps/eurise_slim.py` dopo `configure.sh` toglie simboli
+  mdpi/hdpi/xxxhdpi (restano xhdpi, 6plus, xxhdpi; `eurise_patch.py` aggiorna la tabella di `VisualParams`), i caratteri delle
+  scritture rare (il motore usa i Noto del sistema) e i nomi dei paesi in lingue non europee (si ripiega sull'inglese).
+  Stima: da 57 a circa 40 MB. Da controllare: misure del giro e, sul telefono, simboli e scritte della mappa.
+  I sorgenti di CoMaps si leggono anche dal mirror GitHub `comaps/comaps` (Codeberg non è raggiungibile dall'ambiente di Claude).
+- **Sistemi (regola fissa nuova in CLAUDE.md)**: Browser e Office per /e/OS, Android e Linux con Ubuntu e Fedora come
+  riferimento, struttura nucleo/interfaccia/guscio per arrivare ad altri sistemi. Proposta in `docs/PIATTAFORME.md`
+  (**da approvare**): Browser su Gecko ovunque (GeckoView su Android; Firefox com'è su Linux con l'estensione Eurise
+  comune e il native messaging), Office con l'interfaccia web di Collabora personalizzata Eurise (nastro, Suite, ricerca)
+  uguale su tutti i sistemi, Flatpak su Flathub e prove automatiche in contenitori Ubuntu e Fedora.
+- **Mappe, ancora da fare** (dopo la prova del prototipo sul telefono): stile della suite, cartello colorato per tipo di
+  strada con i metri in tempo reale, «Vedi su Booking / Tripadvisor», segnalazioni OSM (tavola MapSegnala da approvare),
+  Android Auto nello stile nuovo, caratteri rari scaricabili a richiesta se servono.
+
+**Prossimo passo**: approvazioni (tavole Office, seconda fila del Browser, MapSegnala, BolRispondi/BolAllega, TastCerca;
+Gecko per il Browser e interfaccia web per Office); prove sul telefono (editor da altre app, Mappe alleggerita, scanner,
+QR, Eurise AI); poi Office (interfaccia web Eurise) e Browser (estensione comune, app GeckoView), con Linux nello stesso lavoro.

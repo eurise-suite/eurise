@@ -58,6 +58,13 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
   principale solo tra app firmate con la stessa chiave (permessi di firma), mai con canali aperti alle altre app.
 - Niente moduli dinamici del Play Store: non funzionano su F-Droid né con l'installazione diretta.
 
+## Sistemi (regola fissa, 11 novembre 2026)
+- Prima /e/OS e Android; le app pensate anche per il computer (per ora Browser e Office) nascono per Linux nello stesso
+  lavoro, con **Ubuntu e Fedora come riferimento**: si provano sull'ultima Ubuntu LTS, l'ultima Ubuntu e l'ultima Fedora
+  (GNOME, poi KDE); pacchetto Flatpak su Flathub.
+- Struttura per arrivare ad altri sistemi mobili e desktop: nucleo comune senza API di un solo sistema, interfaccia
+  condivisa dove si può, un guscio sottile per sistema. Dettagli in `docs/PIATTAFORME.md`.
+
 ## Leggerezza (regola fissa, decisa l'8 novembre 2026)
 - Peso: la versione ufficiale dell'APK principale pesava 2,5 MB l'8 novembre; tetto 6 MB a suite completa.
   La compilazione la pesa a ogni giro (riepilogo e avviso; avvertimento oltre il tetto). Un ramo che la fa
