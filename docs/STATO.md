@@ -1121,7 +1121,7 @@ cercato» e password dal telefono, cloud fuori casa, voce nel centro privacy.
   - **Salva in… / Apri da…** con Eurise File (`feature/drive`, esiste già: navigatore unico telefono, Murena,
     Nextcloud, kDrive, WebDAV): riquadro comune per Scanner, Office, Galleria, download del Browser; si sceglie la
     cartella locale o cloud e si salva. Il proprietario lo considera ormai centrale.
-- **Mappe**: l'APK in `apk-prova` è il giro 6 (solo alleggerito): niente ancora di nostro. Stile della suite, cartello
+- **Ultimo APK: 281** (in `apk-prova`). **Mappe**: l'APK in `apk-prova` è il giro 6 (solo alleggerito): niente ancora di nostro. Stile della suite, cartello
   della strada, «Vedi su…», segnalazioni (giro 7) da completare.
 
 **Prossimo passo**: esito della compilazione di questo giro; tavole Editor scanner, PDF di Office e «Salva in…»;
