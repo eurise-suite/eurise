@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <ctime>
 #include <functional>
@@ -137,16 +138,33 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
     e.cached.assign(tokens.begin(), tokens.begin() + keep);
     std::vector<llama_token> rest(tokens.begin() + keep, tokens.end());
 
-    llama_sampler *chain = llama_sampler_chain_init(llama_sampler_chain_default_params());
+    // Con la grammatica non si filtra tutto il vocabolario (oltre 100.000 token) a ogni passo: si sceglie il token più
+    // probabile e si chiede alla grammatica solo di lui; solo se lo rifiuta si filtra tutto e si sceglie di nuovo
+    // (come «grammar_first = false» negli strumenti di llama.cpp). Stesso risultato, molto meno lavoro.
+    llama_sampler *g = nullptr;
     if (grammar) {
-        llama_sampler *g = llama_sampler_init_grammar(e.vocab, grammar, "root");
-        if (!g) {
-            llama_sampler_free(chain);
-            return false;
-        }
-        llama_sampler_chain_add(chain, g);
+        g = llama_sampler_init_grammar(e.vocab, grammar, "root");
+        if (!g) return false;
     }
-    llama_sampler_chain_add(chain, llama_sampler_init_greedy());
+    const int n_vocab = llama_vocab_n_tokens(e.vocab);
+    std::vector<llama_token_data> all;
+    auto pick = [&]() -> llama_token {
+        const float *logits = llama_get_logits_ith(e.ctx, -1);
+        llama_token best = 0;
+        for (int i = 1; i < n_vocab; i++) if (logits[i] > logits[best]) best = i;
+        if (!g) return best;
+        llama_token_data one = {best, logits[best], 0.0f};
+        llama_token_data_array single = {&one, 1, -1, false};
+        llama_sampler_apply(g, &single);
+        if (single.data[0].logit != -INFINITY) return best;
+        all.resize(n_vocab);
+        for (int i = 0; i < n_vocab; i++) all[i] = {i, logits[i], 0.0f};
+        llama_token_data_array full = {all.data(), (size_t) n_vocab, -1, false};
+        llama_sampler_apply(g, &full);
+        size_t at = 0;
+        for (size_t i = 1; i < full.size; i++) if (full.data[i].logit > full.data[at].logit) at = i;
+        return full.data[at].id;
+    };
 
     double t = now_ms();
     const bool ok = decode_all(e, rest);
@@ -155,7 +173,7 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
     if (!ok) {
         llama_memory_clear(mem, true);
         e.cached.clear();
-        llama_sampler_free(chain);
+        if (g) llama_sampler_free(g);
         return false;
     }
     e.cached.insert(e.cached.end(), rest.begin(), rest.end());
@@ -163,8 +181,9 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
     t = now_ms();
     char piece[256];
     for (int i = 0; i < max_tokens; i++) {
-        llama_token tok = llama_sampler_sample(chain, e.ctx, -1);
+        llama_token tok = pick();
         if (llama_vocab_is_eog(e.vocab, tok)) break;
+        if (g) llama_sampler_accept(g, tok);
         const int n = llama_token_to_piece(e.vocab, tok, piece, sizeof(piece), 0, false);
         st.n_gen++;
         if (n > 0) {
@@ -176,7 +195,7 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
         e.cached.push_back(tok);
     }
     st.ms_gen = now_ms() - t;
-    llama_sampler_free(chain);
+    if (g) llama_sampler_free(g);
     return true;
 }
 
@@ -207,16 +226,67 @@ inline Stats bench(Engine &e, int n_prompt, int n_gen) {
 
 // ---- Cattura rapida -------------------------------------------------------------------------------------------
 
-/** La risposta della cattura: sempre questo oggetto, con i campi in quest'ordine. */
+/**
+ * La risposta della cattura in una riga sola, i sette campi separati da «|» e vuoti quando mancano:
+ * `evento|Dentista con Marco|2026-11-12|15:00||Marco|portare i referti`. Senza nomi dei campi né «null» il modello
+ * scrive circa un terzo dei token del JSON (sul telefono ogni token scritto costa un passo intero); il JSON lo
+ * ricompone [capture_json], sempre uguale a quello di prima per chi lo legge.
+ */
 inline const char *CAPTURE_GRAMMAR = R"(
-root  ::= "{\"tipo\": " tipo ", \"titolo\": " str ", \"data\": " (data | "null") ", \"ora\": " (ora | "null") ", \"luogo\": " (str | "null") ", \"persone\": " lista ", \"note\": " (str | "null") "}"
-tipo  ::= "\"evento\"" | "\"da_fare\"" | "\"promemoria\"" | "\"nota\""
-str   ::= "\"" char{1,80} "\""
-char  ::= [^"\\\x7F\x00-\x1F] | "\\" ["\\/bfnrt]
-data  ::= "\"" [0-9] [0-9] [0-9] [0-9] "-" [0-1] [0-9] "-" [0-3] [0-9] "\""
-ora   ::= "\"" [0-2] [0-9] ":" [0-5] [0-9] "\""
-lista ::= "[" ( str ( ", " str ){0,5} )? "]"
+root    ::= tipo "|" testo "|" data? "|" ora? "|" testo? "|" persone? "|" testo?
+tipo    ::= "evento" | "da_fare" | "promemoria" | "nota"
+testo   ::= c{1,80}
+c       ::= [^|\x7F\x00-\x1F]
+data    ::= [0-9] [0-9] [0-9] [0-9] "-" [0-1] [0-9] "-" [0-3] [0-9]
+ora     ::= [0-2] [0-9] ":" [0-5] [0-9]
+persone ::= nome ("," " "? nome){0,5}
+nome    ::= n{1,40}
+n       ::= [^|,\x7F\x00-\x1F]
 )";
+
+inline std::string json_str(const std::string &v) {
+    std::string out = "\"";
+    for (unsigned char ch : v) {
+        if (ch == '"' || ch == '\\') { out += '\\'; out += (char) ch; }
+        else if (ch < 0x20) out += ' ';
+        else out += (char) ch;
+    }
+    return out + "\"";
+}
+
+inline std::string trimmed(const std::string &v) {
+    size_t a = 0, b = v.size();
+    while (a < b && std::isspace((unsigned char) v[a])) a++;
+    while (b > a && std::isspace((unsigned char) v[b - 1])) b--;
+    return v.substr(a, b - a);
+}
+
+/** Dalla riga compatta al JSON della cattura (campi in quest'ordine, «null» per quelli vuoti). */
+inline std::string capture_json(const std::string &line) {
+    std::vector<std::string> f;
+    size_t start = 0;
+    for (size_t i = 0; i <= line.size(); i++) {
+        if (i == line.size() || line[i] == '|') { f.push_back(trimmed(line.substr(start, i - start))); start = i + 1; }
+    }
+    f.resize(7);
+    // Se il modello scrive comunque «null» o «-», vale come campo vuoto.
+    auto none = [](const std::string &v) { return v.empty() || v == "null" || v == "-" || v == "nessuno" || v == "nessuna"; };
+    auto opt = [&](const std::string &v) { return none(v) ? std::string("null") : json_str(v); };
+    std::string people = "[";
+    size_t p = 0;
+    bool first = true;
+    const std::string &list = f[5];
+    while (p <= list.size() && !list.empty()) {
+        size_t q = list.find(',', p);
+        if (q == std::string::npos) q = list.size();
+        std::string name = trimmed(list.substr(p, q - p));
+        if (!none(name)) { people += (first ? "" : ", ") + json_str(name); first = false; }
+        p = q + 1;
+    }
+    people += "]";
+    return "{\"tipo\": " + json_str(f[0].empty() ? "nota" : f[0]) + ", \"titolo\": " + json_str(f[1]) + ", \"data\": " + opt(f[2]) +
+           ", \"ora\": " + opt(f[3]) + ", \"luogo\": " + opt(f[4]) + ", \"persone\": " + people + ", \"note\": " + opt(f[6]) + "}";
+}
 
 inline std::string iso(const std::tm &d) {
     char b[40];
@@ -258,7 +328,10 @@ inline std::string capture_system(int y, int m, int d) {
         "- ora: HH:MM in 24 ore oppure null. «Mattina», «pomeriggio» o «sera» senza un'ora: null.\n"
         "- luogo: il posto o l'indirizzo, oppure null.\n"
         "- persone: solo i nomi propri delle persone citate (non mestieri o gruppi), anche vuoto.\n"
-        "- note: altri dettagli utili, oppure null.\n"
+        "- note: altri dettagli utili, oppure null. Una parte del giorno senza ora («mattina», «sera») va nelle note.\n"
+        "Rispondi con una riga sola, i campi in quest'ordine separati da |, vuoti quando mancano (niente «null»), le "
+        "persone separate da virgole: tipo|titolo|data|ora|luogo|persone|note\n"
+        "Esempio: «domani alle 15 dentista con Marco, portare i referti» → evento|Dentista con Marco|<data di domani>|15:00||Marco|portare i referti\n"
         "Oggi è " + spoken(base) + " (" + iso(base) + ").\n";
     for (int i = 1; i <= 14; i++) {
         std::tm t = base;
@@ -304,9 +377,12 @@ inline void fix_capture(std::string &out, const std::string &sentence, int y, in
 }
 
 inline bool capture(Engine &e, const std::string &sentence, int y, int m, int d, std::string &out, Stats &st) {
-    const bool ok = generate(e, chat_prompt(e, capture_system(y, m, d), sentence), CAPTURE_GRAMMAR, 160, out, st);
-    if (ok) fix_capture(out, sentence, y, m, d);
-    return ok;
+    std::string line;
+    const bool ok = generate(e, chat_prompt(e, capture_system(y, m, d), sentence), CAPTURE_GRAMMAR, 110, line, st);
+    if (!ok) return false;
+    out = capture_json(line);
+    fix_capture(out, sentence, y, m, d);
+    return true;
 }
 
 inline bool ask(Engine &e, const std::string &question, int max_tokens, std::string &out, Stats &st,

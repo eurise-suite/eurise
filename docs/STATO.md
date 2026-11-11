@@ -1223,3 +1223,9 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **File e Scanner con un'icona propria tra le app di Android** (segnalato: «mi manca proprio l'app File»; finora erano
   solo nel cassetto della Scrivania): activity-alias `.FileApp` e `.ScannerApp` → `SectionShortcutActivity`, che apre
   l'app Eurise sulla sezione; icone adattive `ic_file`/`ic_scanner` sul fondo della suite con la stellina d'oro.
+- **Eurise AI, prima misura del proprietario** (Fairphone 6, SM7635, 4 thread, Q4_K_M): lettura 41,9 token/s, scrittura
+  7,4 token/s; **10 frasi su 10 con tipo e date giusti** (sbavature: «idraulico» tra le persone, «mattina» persa); **14,2 s
+  a frase**, quasi tutti di scrittura (circa 80 token di JSON). Fatto: la risposta è una **riga compatta**
+  `tipo|titolo|data|ora|luogo|persone|note` (vuoti senza «null», circa un terzo dei token), ricomposta in JSON uguale a
+  prima (`capture_json`, provata qui); la **grammatica controlla prima solo il token scelto** e filtra tutto il
+  vocabolario solo se lo rifiuta; la parte del giorno senza ora va nelle note. Da rimisurare (CI e telefono).
