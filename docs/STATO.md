@@ -957,6 +957,14 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
 - **Tema icone «Eurise a colori»** (Griglia e icone, accanto a Eurise e Sistema): stessi simboli su un tondo chiaro nella
   tinta dell'app portata alle tinte della suite, simbolo nella stessa tinta più profonda; di sera il tondo perde luce ma
   resta colorato. Il tema scuro resta quello di base. Da vedere sul telefono (manca la tavola: farla se va ritoccato).
+- **Eurise AI, giro 4 (APK 259)**: **10/10 frasi giuste, 34/34 campi** con i controlli fissi; APK ridotto 6,0 MB senza
+  Internet. Velocità vera da misurare sul telefono («Misura completa» nell'app, poi incollare il testo in chat).
+- **Ultimo APK: 259** (tutti gli artefatti `*-debug-259`, compreso `eurise-ai-debug-259`). Gli artefatti non si scaricano
+  dall'ambiente di Claude (memoria di GitHub su Azure bloccata): il proprietario li prende dalla pagina della compilazione.
+- **Aggregatore email** (richiesta del proprietario): per /e/OS, Android e Linux, pensato per allargarsi ad altre
+  piattaforme. Proposta: prima le tavole (elenco unico di più account, proposte dal contenuto come in Messaggi, collegamenti
+  alla suite), poi il prototipo dopo Office; base da verificare: Thunderbird per Android (ex K-9 Mail, Apache 2.0, F-Droid)
+  e la parte comune scritta in modo da girare anche su Linux.
 - **Ancora da approvare sulla tela**: OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer, TastCerca; MapSegnala; BolRispondi, BolAllega;
   seconda fila del Browser (motore del browser e motore di ricerca da scegliere).
 - **Da provare sul telefono**: scanner nuovo, lettore QR, Eurise AI.
