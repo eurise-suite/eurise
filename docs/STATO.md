@@ -1004,3 +1004,20 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
 **Prossimo passo**: approvazioni (tavole Office, seconda fila del Browser, MapSegnala, BolRispondi/BolAllega, TastCerca;
 Gecko per il Browser e interfaccia web per Office); prove sul telefono (editor da altre app, Mappe alleggerita, scanner,
 QR, Eurise AI); poi Office (interfaccia web Eurise) e Browser (estensione comune, app GeckoView), con Linux nello stesso lavoro.
+
+## 11 novembre, pomeriggio: approvazioni, simboli delle segnalazioni, telefono e computer (ramo `brand`)
+- **Approvato dal proprietario**: MapSegnala, con un simbolo nei colori della suite per ogni segnalazione (fatto sulla tela:
+  Lavori ottone, Strada chiusa borgogna, Ostacolo fisso terracotta, Autovelox fisso blu notte, Limite sbagliato prugna,
+  Altro errore grafite; le segnalazioni inviate restano sulla mappa con lo stesso simbolo finché OSM non le accoglie).
+  **Gecko per il Browser** e **interfaccia web di Collabora per Office** su tutti i sistemi (docs/PIATTAFORME.md).
+- **Richieste del proprietario per il Browser**: sincronizzazione semplice, segnalibri e password importabili dagli altri
+  browser, estensioni nostre anche sul computer (compilazione delle password), predisposizione per le app Eurise del
+  computer (email, note, calendario, appuntamenti, cose da fare, Oggi, dettatura), comunicazione rapida e continua tra
+  telefono e computer: «il flusso di lavoro non deve interrompersi». Risposta: **Ponte Eurise** (PIATTAFORME.md) e tavole
+  nuove sulla tela, pagina Browser: BrwSincro rifatta semplice, terza fila BrwImporta, Ponte, PcFirefox (Ubuntu) —
+  **da approvare**.
+- **Ancora da approvare**: tavole Office (OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer), seconda e terza fila
+  del Browser, TastCerca, BolRispondi, BolAllega.
+
+**Prossimo passo**: codice delle segnalazioni OSM in Mappe (base CoMaps, editor OSM già dentro); dopo le approvazioni,
+Office (interfaccia web Eurise) e il nucleo del Ponte; prove sul telefono dell'APK 263.

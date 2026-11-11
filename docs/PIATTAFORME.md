@@ -30,7 +30,7 @@ Ogni app che deve girare su più sistemi è divisa in tre strati.
   un documento, chiusura) a ogni giro, come oggi si pesano gli APK.
 - **Aspetto**: estensione GNOME e tema KDE «Aspetto Eurise» già decisi; le nostre app seguono Perla/Notte da sole.
 
-## Browser: Gecko su tutti i sistemi (da approvare)
+## Browser: Gecko su tutti i sistemi (approvato l'11 novembre)
 La richiesta di Linux decide la questione rimasta aperta (GeckoView o WebView): **Gecko**, il motore di Firefox, ovunque.
 WebView esiste solo su Android e non ha estensioni; Gecko c'è su Android (GeckoView) e sul computer (Firefox).
 
@@ -53,7 +53,7 @@ WebView esiste solo su Android e non ha estensioni; Gecko c'è su Android (Gecko
   diventerebbe una Safari Web Extension (stesso standard, con differenze da adattare).
 - **Ancora da scegliere**: motore di ricerca predefinito (proposta Brave Search) e seconda fila delle tavole.
 
-## Office: LibreOfficeKit con l'interfaccia web di Collabora (da approvare)
+## Office: LibreOfficeKit con l'interfaccia web di Collabora (approvato l'11 novembre)
 Il motore è già scelto (LibreOffice, ramo co-25.04 di Collabora; su Android scaricato a richiesta, circa 66 MB). Per
 più sistemi la strada è quella che Collabora stessa ha preso nel 2025: **un'interfaccia sola in HTML/JS** (quella di
 Collabora Online, MPL 2.0) sopra il motore locale, la stessa su Android, Linux, Windows e macOS. Collabora Office per il
@@ -73,10 +73,45 @@ computer è già su Flathub (`com.collaboraoffice.Office`) e come snap: Ubuntu e
 - **Altri sistemi**: Windows e macOS hanno già un guscio Collabora da cui partire; iOS ha l'app Collabora Office (stessa
   architettura).
 
+## Telefono e computer: il Ponte Eurise (richiesta del proprietario, 11 novembre; tavole da approvare)
+Il lavoro non si deve interrompere passando dal telefono al computer. Un collegamento solo, nel nucleo comune
+(`core/ponte`, Kotlin Multiplatform), usato da tutte le app Eurise sui due lati. Tavole: Ponte, BrwSincro (rifatta),
+BrwImporta, PcFirefox (pagina «Browser» della tela, terza fila).
+
+- **Collegare**: il computer mostra un codice QR, il telefono lo inquadra (lettore QR della suite). Si scambiano le chiavi;
+  nessun account, nessun server nostro. Più computer per telefono.
+- **Come passa**: sulla stessa rete diretto tra i due (scoperta mDNS, TLS con le chiavi scambiate, istantaneo); fuori casa
+  dal cloud dell'utente (Murena, Nextcloud…): messaggi cifrati sul telefono in una cartella WebDAV, in pochi secondi.
+  Costo zero. Un ripetitore nostro per i casi difficili è road map (regola di spesa). KDE Connect / GSConnect fanno già una
+  parte di questo su Ubuntu e Fedora: ne riprendiamo le idee (protocollo aperto), non la dipendenza, perché servono messaggi
+  della suite.
+- **Cosa passa** (un interruttore ciascuno, con le tacche di privacy): schede e documenti aperti («Continua qui» sui due
+  lati), appunti, dettatura (si parla al telefono, il testo va dove si scrive sul computer), «Ti hanno cercato» con
+  risposta, password e passkey (il computer chiede, il telefono approva con l'impronta), file e foto. Note, Calendario,
+  Attività, Email e Oggi usano gli stessi dati sincronizzati (WebDAV/CalDAV con la nostra unione a tre vie) e il Ponte
+  per gli avvisi immediati.
+- **Sul computer**: un'app «Eurise» sola (Compose Desktop, Flatpak) che tiene il Ponte, fa da host del native messaging per
+  l'estensione di Firefox e dell'interfaccia di Office, e accoglierà le app desktop (Note, Calendario, Attività, Email,
+  Oggi, Dettatura) quando arrivano. Avvio con la sessione, nessun servizio pesante.
+
+### Browser: le richieste del proprietario
+- **Sincronizzazione semplice**: un interruttore per cosa (schede, segnalibri e siti fissati, password e passkey via Eurise
+  Password, cronologia spenta di base), cifrata, attraverso il Ponte e il cloud dell'utente. Firefox Sync resta come «altra
+  strada» per chi lo vuole (due tacche).
+- **Importazione**: sul computer l'app Eurise legge, con il permesso dell'utente, i profili di Chrome, Chromium, Brave,
+  Edge, Vivaldi, Opera (segnalibri JSON; password cifrate con il portachiavi del sistema) e Firefox (places.sqlite;
+  logins.json con key4.db, se non c'è una password principale); sul telefono da file (HTML dei segnalibri, CSV delle
+  password di Chrome, Firefox, Bitwarden, Proton Pass, 1Password). Password sempre in Eurise Password; doppioni uniti;
+  il CSV si cancella alla fine. Le passkey non sono esportabili da nessun browser: si ricreano al primo accesso.
+- **Estensioni nostre anche sul computer**: compilazione di password, passkey, codici 2FA e «I miei dati» in Firefox,
+  con approvazione dal telefono; In Note, Da fare, Traduci, data → Calendario come sul telefono.
+
 ## Ordine proposto
-1. Approvazione: tavole Office e seconda fila del Browser; Gecko per il Browser; interfaccia web di Collabora per Office.
+1. Approvate le due scelte (Gecko, interfaccia web di Collabora). Da approvare: tavole Office, seconda e terza fila del
+   Browser (sincronizzazione, importazione, Ponte, Firefox con Eurise).
 2. Office: interfaccia web Eurise (nastro, Suite, ricerca) provata prima nel browser del computer con il motore di
    Collabora, poi nel guscio Android (motore a richiesta) e nel Flatpak per Linux.
-3. Browser: estensione Eurise (comune), poi app Android su GeckoView, poi profilo ed estensione per Firefox su Ubuntu e
-   Fedora con l'app Eurise del computer (native messaging).
-4. Lavori di Actions: Flatpak e prove su Ubuntu e Fedora per entrambe.
+3. Ponte: nucleo comune (abbinamento, rete locale, cloud), poi app Eurise per il computer con il native messaging.
+4. Browser: estensione Eurise (comune), app Android su GeckoView con sincronizzazione e importazione, poi Firefox su
+   Ubuntu e Fedora con l'estensione e il Ponte (password dal telefono).
+5. Lavori di Actions: Flatpak e prove su Ubuntu e Fedora.
