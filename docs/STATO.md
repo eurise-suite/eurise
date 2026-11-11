@@ -676,7 +676,7 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
   - Da fare prima del codice: anteprime per Mappe arricchita, Meteo e la frase nella bolla; ricerca delle fonti libere (traffico,
     allerte, pollini) da mostrare nel centro privacy.
 
-## 11–12 novembre, notte: Mappe e Meteo approvate, traduzione in Leggi, Telefono, Rubrica e Messaggi (ramo `brand`, APK 233+)
+## 11–12 novembre, notte: Mappe e Meteo approvate, traduzione in Leggi, Telefono, Rubrica e Messaggi (ramo `brand`, APK 237)
 **Anteprime approvate dal proprietario** (tela, pagina «Mappe, Messaggi e Telefono», seconda fila): MapGuida (velocità attuale,
 cartello letto, meteo e traffico sul percorso, frase d'arrivo), MapEsplora (nomi delle vie, «Monza (MB)» con bandiera e «IT»,
 orizzonte che segue meteo e ora, si spegne in Livelli), MapAttivita (benzinai col prezzo, negozi, punti di interesse,
@@ -731,3 +731,10 @@ Rubrica dall'icona e «Aggiungi in rubrica» da Messaggi; pannello Traduci nella
 Tastiera), MMS di gruppo in uscita non provati, doppia SIM (si usa la SIM predefinita per gli SMS), le stesse proposte nelle
 email (non c'è ancora l'app Mail), ricerca nel testo di tutti i messaggi (ora: nomi e ultimo testo). Mappe e Meteo: anteprime
 approvate, codice da fare (base CoMaps).
+
+**Office (punto 5)**: giro 2 del lavoro «Prototipo del motore di Office» partito alle 23:37 UTC dell'11 novembre (commit
+del core `e588bf8`, ramo co-25.04 di LibreOffice/core). Configurazione passata in 1 minuto; disco con 111 GB liberi. Se
+il riepilogo dice «tempo scaduto», rilanciare il lavoro (riparte dalla ccache). Le misure vanno nel riepilogo del giro.
+**Prossimo passo**: prova sul telefono di Telefono, Rubrica, Messaggi e Traduci (APK 237: eurise-telefono, eurise-messaggi,
+eurise-tastiera, eurise-leggi, eurise-debug); misure di Office e decisione; poi Mappe (base CoMaps) e Meteo dalle anteprime
+approvate, punto 3 Browser.
