@@ -91,6 +91,7 @@ import eu.eurise.gallery.PlaceData
 import eu.eurise.gallery.R
 import eu.eurise.gallery.data.cloudFile
 import eu.eurise.gallery.data.fileUri
+import eu.eurise.gallery.data.mimeOf
 import eu.eurise.gallery.data.shareItems
 import eu.eurise.gallery.logic.UploadRule
 import eu.eurise.gallery.logic.dayPlace
@@ -265,6 +266,30 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
         }
     }
 
+    val saveMissing = stringResource(R.string.save_in_missing)
+    val fromLabel = stringResource(R.string.gallery_app_name)
+
+    /** «Salva in…» di Eurise File: una copia dell'originale passa all'app Eurise, che la mette dove si sceglie. */
+    fun saveIn(item: MediaItem) {
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val dir = java.io.File(context.cacheDir, "share/salva").apply { deleteRecursively(); mkdirs() }
+                    val name = item.name.ifEmpty { if (item.isVideo) "video.mp4" else "foto.jpg" }
+                    val file = java.io.File(dir, name)
+                    if (item.cloudOnly) (cloudFile(context, item) ?: throw java.io.IOException("cloud")).copyTo(file, overwrite = true)
+                    else context.contentResolver.openInputStream(android.net.Uri.parse(item.uri))?.use { input -> file.outputStream().use { input.copyTo(it) } }
+                        ?: throw java.io.IOException("foto")
+                    eu.eurise.core.suite.FilesContract.saveIn(
+                        eu.eurise.gallery.BuildConfig.HUB_PACKAGE, context.fileUri(file), mimeOf(name, item.isVideo), name, "gallery", fromLabel,
+                    )
+                }
+            }.onSuccess { intent ->
+                runCatching { context.startActivity(intent) }.onFailure { Toast.makeText(context, saveMissing, Toast.LENGTH_LONG).show() }
+            }.onFailure { Toast.makeText(context, sendFailed, Toast.LENGTH_LONG).show() }
+        }
+    }
+
     val actions = MediaActions(
         share = { shareFor = it },
         shareClean = { send(it, true) },
@@ -360,7 +385,11 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
     }
 
     shareFor?.let { list ->
-        ShareSheet(onClose = { shareFor = null }, onChoose = { clean -> shareFor = null; send(list, clean) })
+        ShareSheet(
+            onClose = { shareFor = null },
+            onChoose = { clean -> shareFor = null; send(list, clean) },
+            onSaveIn = list.singleOrNull()?.let { item -> { shareFor = null; saveIn(item) } },
+        )
     }
     deleteFor?.let { list ->
         DeleteSheet(

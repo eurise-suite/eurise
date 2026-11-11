@@ -4,6 +4,13 @@
 
     <!-- Internet serve solo se la persona accende il caricamento sul cloud o i nomi dei luoghi. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- «Salva in…» di Eurise File: solo app Eurise con la stessa firma. -->
+    <uses-permission android:name="${suitePermission}" />
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <queries>
+        <package android:name="eu.eurise.hub" />
+        <package android:name="eu.eurise.hub.debug" />
+    </queries>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

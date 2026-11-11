@@ -1216,3 +1216,7 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Office, app PDF** (tavole approvate): schede Annota e Pagine con un PDF, «Prima di condividere» con copia fatta dal
   guscio e passata a Condividi o a «Salva in…» (dettagli in `office/app/EURISE.md`). Il giro di Office è lungo: l'APK
   arriva in `apk-prova` (`eurise-office-debug.apk`) quando finisce.
+- **«Salva in…» nelle altre app** (`core/suite/FilesContract`, attività `FilesActivity` dell'app Eurise):
+  **Galleria** (terza voce del foglio Condividi per una foto o un video: copia dell'originale, permesso della suite e
+  `HUB_PACKAGE` nella build), **Browser** (download finito: avviso in basso «Scaricato … · Salva in…» per 12 s;
+  `SaveProvider` per la copia), **Office** (copia PDF di «Prima di condividere»). Manca: «Apri da…» in Office.

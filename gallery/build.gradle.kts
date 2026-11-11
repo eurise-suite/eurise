@@ -21,6 +21,9 @@ android {
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
         resourceConfigurations += listOf("it", "en")
+        // «Salva in…» di Eurise File: solo tra app della suite con la stessa firma.
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
+        buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
     }
 
     signingConfigs {
@@ -44,6 +47,8 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
+            buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub.debug\"")
         }
         release {
             isMinifyEnabled = true
@@ -58,7 +63,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -68,6 +73,7 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:cloud"))
+    implementation(project(":core:suite"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

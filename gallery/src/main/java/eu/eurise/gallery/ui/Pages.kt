@@ -317,7 +317,7 @@ internal fun SearchPage(all: List<MediaItem>, places: PlaceData, onOpen: (List<M
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ShareSheet(onClose: () -> Unit, onChoose: (Boolean) -> Unit) {
+internal fun ShareSheet(onClose: () -> Unit, onChoose: (Boolean) -> Unit, onSaveIn: (() -> Unit)? = null) {
     ModalBottomSheet(onDismissRequest = onClose) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.share_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp))
@@ -325,6 +325,10 @@ internal fun ShareSheet(onClose: () -> Unit, onChoose: (Boolean) -> Unit) {
                 ToolRow(EuriseIcons.shield(), stringResource(R.string.share_clean), stringResource(R.string.share_clean_hint)) { onChoose(true) }
                 CardDivider()
                 ToolRow(EuriseIcons.share(), stringResource(R.string.share_original), stringResource(R.string.share_original_hint)) { onChoose(false) }
+                if (onSaveIn != null) {
+                    CardDivider()
+                    ToolRow(EuriseIcons.folder(), stringResource(R.string.save_in), stringResource(R.string.save_in_hint)) { onSaveIn() }
+                }
             }
         }
     }

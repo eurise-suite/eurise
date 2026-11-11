@@ -257,4 +257,7 @@
     <string name="look_perla">Perla</string>
     <string name="look_notte">Notte</string>
     <string name="look_film">Pellicola</string>
+    <string name="save_in">Salva in…</string>
+    <string name="save_in_hint">In una cartella del telefono o del tuo cloud, con Eurise File</string>
+    <string name="save_in_missing">Serve l\'app Eurise per «Salva in…»</string>
 </resources>
