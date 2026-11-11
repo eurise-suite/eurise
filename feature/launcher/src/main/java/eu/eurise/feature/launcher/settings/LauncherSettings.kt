@@ -101,7 +101,7 @@ data class LauncherSettings(
     val leftCards: List<PlacedCard> = DefaultLeftCards,
     /** Le schede (bolle) della home, nell'ordine, con larghezza, altezza e legame. */
     val homeSlots: List<eu.eurise.feature.launcher.home.HomeSlot> = eu.eurise.feature.launcher.home.DefaultHomeSlots,
-    /** Categorie della barra in basso, da 2 a 8, nell'ordine scelto. */
+    /** Categorie della barra in basso, da 2 a 9, nell'ordine scelto. */
     val categories: List<BarCategory> = DefaultBarCategories,
     /** App spostate a mano in un'altra categoria: chiave dell'app → id della categoria. */
     val categoryOverrides: Map<String, String> = emptyMap(),

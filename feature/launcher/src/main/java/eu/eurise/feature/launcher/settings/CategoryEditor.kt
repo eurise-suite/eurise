@@ -72,7 +72,7 @@ import eu.eurise.feature.launcher.home.scrimColor
 private val RowHeight = 60.dp
 
 /**
- * Barra delle categorie: da 2 a 8. Si trascinano dalla maniglia per riordinarle, il meno le toglie
+ * Barra delle categorie: da 2 a 9. Si trascinano dalla maniglia per riordinarle, il meno le toglie
  * (Preferiti resta sempre), toccandone una si cambiano nome e simbolo, in fondo se ne aggiunge una nuova.
  */
 @Composable

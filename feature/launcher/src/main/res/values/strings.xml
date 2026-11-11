@@ -245,7 +245,7 @@
     <string name="app_move_to">Sposta in…</string>
     <string name="categories_title">Barra delle categorie</string>
     <string name="categories_summary">%1$d categorie · riordina, aggiungi, cambia simboli</string>
-    <string name="categories_hint">Da 2 a 8 categorie. Trascina dalla maniglia per riordinarle; tocca una categoria per cambiarne nome e simbolo. Le app si spostano tenendole premute e trascinandole: sul bordo dello schermo passano alla categoria accanto.</string>
+    <string name="categories_hint">Da 2 a 9 categorie. Trascina dalla maniglia per riordinarle; tocca una categoria per cambiarne nome e simbolo. Per spostare più app in una categoria: tienine premuta una, «Seleziona», tocca le altre e «Sposta in…».</string>
     <string name="categories_reset">Ripristina le categorie predefinite</string>
     <string name="categories_reset_title">Ripristinare le categorie?</string>
     <string name="categories_reset_message">La barra torna alle otto categorie di partenza. Le categorie aggiunte da te si perdono; le app che ci avevi messo tornano dove Eurise le riconosce.</string>

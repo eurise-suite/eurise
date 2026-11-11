@@ -59,7 +59,8 @@ data class BarCategory(val id: String, val label: String, val icon: String) {
 const val FAVORITES = "favorites"
 const val ALL_APPS = "all"
 const val MIN_CATEGORIES = 2
-const val MAX_CATEGORIES = 8
+/** Nella barra: fino a 9 categorie più la lente (la voce jolly del browser compare solo se resta posto). */
+const val MAX_CATEGORIES = 9
 
 private val BuiltInIds = linkedMapOf(
     Category.Favorites to FAVORITES,
