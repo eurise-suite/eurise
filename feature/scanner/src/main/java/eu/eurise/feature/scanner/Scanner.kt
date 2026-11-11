@@ -673,3 +673,12 @@ private fun ConfirmPage(page: File, count: Int, onRedo: () -> Unit, onAnother: (
         }
     }
 }
+
+/** La miniatura dell'ultima pagina accanto al pulsante di scatto. */
+@Composable
+private fun Thumb(file: File, modifier: Modifier) {
+    val bitmap by produceState<Bitmap?>(null, file) {
+        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = 8 }) }
+    }
+    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = modifier.clip(RoundedCornerShape(4.dp))) }
+}
