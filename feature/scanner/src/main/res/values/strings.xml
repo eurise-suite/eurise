@@ -191,7 +191,7 @@
     <string name="ed_fixed">Già sistemato</string>
     <string name="ed_fixed_edges">Pag. %d: bordi trovati e raddrizzata</string>
     <string name="ed_fixed_shadows">Ombre e colore della luce tolti</string>
-    <string name="ed_blurry">Pag. %d un po' mossa: il testo piccolo si legge male</string>
+    <string name="ed_blurry">Pag. %d un po\' mossa: il testo piccolo si legge male</string>
     <string name="ed_undo">Annulla</string>
     <string name="ed_redo_shot">Rifai</string>
     <string name="ed_select_hint">Tocca per scegliere · tieni premuto per spostare o togliere</string>
