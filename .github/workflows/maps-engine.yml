@@ -41,10 +41,12 @@ jobs:
       - name: Installa gli strumenti
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ninja-build ccache python3-venv python3-pip optipng \
-            libfreetype-dev libharfbuzz-dev zlib1g-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev libqt6svg6-dev >/dev/null
+          # Come in docs/INSTALL.md di CoMaps: configure.sh compila gli strumenti per stili e simboli (Qt, glfw con X11).
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ninja-build ccache python3-venv python3-pip optipng jq curl \
+            python-is-python3 libicu-dev libfreetype-dev libharfbuzz-dev zlib1g-dev qt6-base-dev qt6-declarative-dev \
+            qt6-positioning-dev qt6-svg-dev libqt6svg6-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev >/dev/null
           pip install "protobuf<3.21" --break-system-packages -q
-          ccache -M 3G
+          mkdir -p "$HOME/.ccache" && ccache -M 3G
           echo "CCACHE_DIR=$HOME/.ccache" >> "$GITHUB_ENV"
 
       - name: Scarica CoMaps (commit fissato, sottomoduli senza storia)
