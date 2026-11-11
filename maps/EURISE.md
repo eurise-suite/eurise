@@ -14,7 +14,8 @@ Non Organic Maps: dall'agosto 2025 i suoi dati delle mappe hanno una licenza non
 
 ## Peso (giro 5, 11 novembre)
 Giro 3: APK arm64 di 57 MB (simboli 11,7, mappe del mondo e file 11,5, caratteri 10,1, codice e risorse 10,1, nomi dei
-paesi 6,7, libreria 6,0). `maps/eurise_slim.py`, dopo `configure.sh`, toglie: simboli mdpi, hdpi e xxxhdpi (restano
+paesi 6,7, libreria 6,0). `maps/eurise_slim.py`, dopo `configure.sh`, esclude dall'APK (con `ignoreAssetsPattern`; i file restano su disco perché
+Gradle rigenera i simboli che mancano): simboli mdpi, hdpi e xxxhdpi (restano
 xhdpi, 6plus, xxhdpi; `eurise_patch.py` aggiorna la tabella di `VisualParams`), i caratteri delle scritture rare (CJK,
 tibetano, birmano, khmer, code2000: il motore usa i Noto del sistema e salta i file che mancano), i nomi dei paesi nelle
 lingue non europee (per quelle il motore usa l'inglese). Stima: circa 17 MB in meno. Dopo: caratteri rari scaricabili a

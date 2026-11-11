@@ -11,9 +11,10 @@ Uso: python3 maps/eurise_slim.py <cartella di comaps>   (dopo ./configure.sh, ch
    un domani si potranno scaricare a richiesta; se un file manca lo salta.
 3. Nomi dei paesi e delle regioni: restano le lingue europee e poche altre; per le lingue assenti il motore usa
    l'inglese (GetTextByIdFactory).
-Ogni passo stampa quanto toglie. Se un percorso atteso non c'è, lo script si ferma: CoMaps è cambiato.
+I file restano su disco (la configurazione di Gradle rigenera i simboli che mancano): lo script li esclude dall'APK
+aggiungendo i loro nomi a `ignoreAssetsPattern` in android/app/build.gradle.kts. Ogni passo stampa quanto toglie.
+Se un percorso atteso non c'è, lo script si ferma: CoMaps è cambiato.
 """
-import shutil
 import sys
 from pathlib import Path
 
@@ -31,12 +32,15 @@ def mb(n: int) -> str:
     return f"{n / 1048576:.1f} MB"
 
 
+patterns: list[str] = []
+
+
 def drop(paths, what: str) -> None:
     total = 0
     for p in paths:
         total += size(p)
-        shutil.rmtree(p) if p.is_dir() else p.unlink()
-    print(f"eurise_slim: {what}: tolti {mb(total)} ({len(paths)} voci)")
+        patterns.append(("<dir>" if p.is_dir() else "<file>") + p.name)
+    print(f"eurise_slim: {what}: fuori dall'APK {mb(total)} ({len(paths)} voci)")
 
 
 def need(p: Path) -> Path:
@@ -66,4 +70,13 @@ keep_langs = {
 gone = [d for d in strings.iterdir() if d.name.removesuffix(".json").split("-")[0].split("_")[0] not in keep_langs]
 need(strings / "en.json" / "localize.json")
 drop(gone, "nomi dei paesi in lingue non europee")
-print("eurise_slim: restano simboli " + mb(size(symbols)) + ", caratteri " + mb(size(fonts)) + ", nomi dei paesi " + mb(size(strings)))
+
+# I modelli valgono per nome in tutti gli assets: le cartelle <lingua>.json escono anche da sound-strings (testi della
+# guida vocale), coerente con la scelta delle lingue; mdpi, hdpi e xxxhdpi esistono solo sotto symbols.
+gradle = root / "android" / "app" / "build.gradle.kts"
+g = gradle.read_text()
+anchor = 'ignoreAssetsPattern = "!.svn:!.git:!.DS_Store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~'
+if anchor not in g:
+    sys.exit(f"eurise_slim: non trovo ignoreAssetsPattern in {gradle}")
+gradle.write_text(g.replace(anchor, anchor + ":" + ":".join(patterns)))
+print(f"eurise_slim: {len(patterns)} esclusioni in ignoreAssetsPattern")
