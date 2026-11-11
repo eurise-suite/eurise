@@ -35,6 +35,8 @@ jobs:
           echo "id=$id" >> "$GITHUB_OUTPUT"
           mappe=$(gh api "repos/${{ github.repository }}/actions/workflows/maps-engine.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
           echo "mappe=$mappe" >> "$GITHUB_OUTPUT"
+          office=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          echo "office=$office" >> "$GITHUB_OUTPUT"
           echo "num=$num" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v4
@@ -50,12 +52,23 @@ jobs:
           github-token: ${{ github.token }}
           path: artefatti/mappe
 
+      # Eurise Office per Android (lavoro a parte, molto lungo): l'ultimo riuscito, fuori da artefatti/ per non
+      # confondere il suo APK con quelli della suite.
+      - uses: actions/download-artifact@v4
+        if: steps.giro.outputs.office != ''
+        with:
+          run-id: ${{ steps.giro.outputs.office }}
+          github-token: ${{ github.token }}
+          path: office
+
       - name: Pubblica nella pre-release apk-prova
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir apk
           find artefatti -name '*.apk' -exec cp {} apk/ \;
+          office=$(find office -name '*.apk' 2>/dev/null | head -1)
+          if [ -n "$office" ]; then cp "$office" apk/eurise-office-debug.apk; fi
           # Il Ponte per il computer (Linux): la cartella del programma in un archivio (serve Java 17).
           ponte=$(find artefatti -maxdepth 1 -type d -name 'eurise-ponte-linux-*' | head -1)
           if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi
