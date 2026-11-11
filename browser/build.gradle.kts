@@ -75,7 +75,8 @@ android {
         compose = true
         buildConfig = true
     }
-    packaging { jniLibs { useLegacyPackaging = false } }
+    // Librerie compresse nell'APK: GeckoView (libxul 138 MB) scende a circa un terzo da scaricare; Android le estrae all'installazione.
+    packaging { jniLibs { useLegacyPackaging = true } }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
