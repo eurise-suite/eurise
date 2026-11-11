@@ -41,17 +41,17 @@ class BrowserSettings(context: Context) {
     var translateOk by mutableStateOf(prefs.getBoolean("translate_ok", false)); private set
     var dnsExplained by mutableStateOf(prefs.getBoolean("dns_ok", false)); private set
 
-    fun setStrict(on: Boolean) { strictProtection = on; prefs.edit().putBoolean("strict", on).apply() }
-    fun setHttpsOnly(on: Boolean) { httpsOnly = on; prefs.edit().putBoolean("https_only", on).apply() }
-    fun setDns(id: String) { dns = id; prefs.edit().putString("dns", id).putBoolean("dns_ok", true).apply(); dnsExplained = true }
-    fun setAi(id: String) { ai = id; prefs.edit().putString("ai", id).apply() }
-    fun setRestoreTabs(on: Boolean) { restoreTabs = on; prefs.edit().putBoolean("restore_tabs", on).apply() }
-    fun setCloseAfter(days: Int) { closeAfterDays = days; prefs.edit().putInt("close_after", days).apply() }
-    fun setTextScale(v: Float) { textScale = v.coerceIn(0.8f, 2f); prefs.edit().putFloat("text_scale", textScale).apply() }
-    fun setDarkPages(on: Boolean) { darkPages = on; prefs.edit().putBoolean("dark_pages", on).apply() }
-    fun setSwipeTabs(on: Boolean) { swipeTabs = on; prefs.edit().putBoolean("swipe_tabs", on).apply() }
-    fun setAskWhereToSave(on: Boolean) { askWhereToSave = on; prefs.edit().putBoolean("ask_save", on).apply() }
-    fun setBarAction(id: String) { barAction = id; prefs.edit().putString("bar_action", id).apply() }
+    @JvmName("changeStrict") fun setStrict(on: Boolean) { strictProtection = on; prefs.edit().putBoolean("strict", on).apply() }
+    @JvmName("changeHttpsOnly") fun setHttpsOnly(on: Boolean) { httpsOnly = on; prefs.edit().putBoolean("https_only", on).apply() }
+    @JvmName("changeDns") fun setDns(id: String) { dns = id; prefs.edit().putString("dns", id).putBoolean("dns_ok", true).apply(); dnsExplained = true }
+    @JvmName("changeAi") fun setAi(id: String) { ai = id; prefs.edit().putString("ai", id).apply() }
+    @JvmName("changeRestoreTabs") fun setRestoreTabs(on: Boolean) { restoreTabs = on; prefs.edit().putBoolean("restore_tabs", on).apply() }
+    @JvmName("changeCloseAfter") fun setCloseAfter(days: Int) { closeAfterDays = days; prefs.edit().putInt("close_after", days).apply() }
+    @JvmName("changeTextScale") fun setTextScale(v: Float) { textScale = v.coerceIn(0.8f, 2f); prefs.edit().putFloat("text_scale", textScale).apply() }
+    @JvmName("changeDarkPages") fun setDarkPages(on: Boolean) { darkPages = on; prefs.edit().putBoolean("dark_pages", on).apply() }
+    @JvmName("changeSwipeTabs") fun setSwipeTabs(on: Boolean) { swipeTabs = on; prefs.edit().putBoolean("swipe_tabs", on).apply() }
+    @JvmName("changeAskWhereToSave") fun setAskWhereToSave(on: Boolean) { askWhereToSave = on; prefs.edit().putBoolean("ask_save", on).apply() }
+    @JvmName("changeBarAction") fun setBarAction(id: String) { barAction = id; prefs.edit().putString("bar_action", id).apply() }
     fun acceptTranslate() { translateOk = true; prefs.edit().putBoolean("translate_ok", true).apply() }
 
     val dnsService get() = DNS.firstOrNull { it.id == dns }

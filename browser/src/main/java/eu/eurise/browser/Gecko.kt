@@ -232,7 +232,7 @@ class Tab(
     }
 
     /** «Sito PC»: chiede la versione per il computer (o torna a quella per il telefono) e ricarica. */
-    fun setDesktop(on: Boolean) {
+    @JvmName("changeDesktop") fun setDesktop(on: Boolean) {
         desktop = on
         session.settings.setUserAgentMode(if (on) GeckoSessionSettings.USER_AGENT_MODE_DESKTOP else GeckoSessionSettings.USER_AGENT_MODE_MOBILE)
         session.settings.setViewportMode(if (on) GeckoSessionSettings.VIEWPORT_MODE_DESKTOP else GeckoSessionSettings.VIEWPORT_MODE_MOBILE)

@@ -24,6 +24,7 @@ include(":password")
 include(":voice")
 include(":phone")
 include(":messages")
+include(":mail")
 // Eurise Leggi (motore nativo, compilazione lunga): si compila solo nel suo lavoro, per non allungare le altre.
 if (System.getenv("EURISE_READ") == "1") include(":read")
 // Eurise AI (llama.cpp dai sorgenti, compilazione lunga): solo nel suo lavoro, come Leggi.

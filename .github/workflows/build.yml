@@ -89,6 +89,13 @@ jobs:
           path: messages/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK di Email
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-email-debug-${{ github.run_number }}
+          path: mail/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
       - name: Carica l'APK di Password
         uses: actions/upload-artifact@v4
         with:

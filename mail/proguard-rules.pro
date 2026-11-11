@@ -1,0 +1,11 @@
+# Jakarta Mail per Android: i provider (imap, smtp) si caricano per nome.
+-keep class com.sun.mail.** { *; }
+-keep class javax.mail.** { *; }
+-keep class javax.activation.** { *; }
+-keep class com.sun.activation.** { *; }
+-keep class myjava.awt.datatransfer.** { *; }
+-dontwarn java.awt.**
+-dontwarn javax.security.**
+-dontwarn com.sun.mail.**
+-dontwarn javax.activation.**
+-dontwarn org.apache.harmony.**

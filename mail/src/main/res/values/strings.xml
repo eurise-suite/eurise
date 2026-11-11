@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ml_app_name">Email</string>
+    <string name="ml_title">Email</string>
+    <string name="ml_refresh">Aggiorna</string>
+    <string name="ml_accounts">Caselle</string>
+    <string name="ml_search">Cerca in tutte le caselle</string>
+    <string name="ml_people">Persone</string>
+    <string name="ml_alerts">Avvisi</string>
+    <string name="ml_newsletters">Newsletter</string>
+    <string name="ml_loading">Arriva la posta…</string>
+    <string name="ml_empty">Niente qui.</string>
+    <string name="ml_no_subject">(senza oggetto)</string>
+    <string name="ml_inbox_note">Tutte le caselle in una, con il colore di ognuna. Avvisi e newsletter si separano sul telefono; le immagini che spiano l\'apertura sono bloccate.</string>
+    <string name="ml_write">Scrivi</string>
+    <string name="ml_refresh_failed">Non riesco a scaricare la posta di: %1$s</string>
+    <string name="ml_open_failed">Messaggio non aperto: controlla la rete</string>
+    <string name="ml_channel">Posta nuova</string>
+    <string name="ml_new_many">%1$d messaggi nuovi</string>
+    <string name="ml_new_last">Ultimo: %1$s · %2$s</string>
+
+    <string name="ml_back">Indietro</string>
+    <string name="ml_archive">Archivia</string>
+    <string name="ml_delete">Elimina</string>
+    <string name="ml_archived">Archiviato</string>
+    <string name="ml_trashed">Nel cestino</string>
+    <string name="ml_move_failed">Non riuscito: la casella non ha la cartella giusta</string>
+    <string name="ml_to_line">a %1$s</string>
+    <string name="ml_images_blocked">%1$d immagini remote bloccate: potrebbero dire al mittente che hai aperto</string>
+    <string name="ml_show">Mostra</string>
+    <string name="ml_attachment_failed">Allegato non aperto</string>
+    <string name="ml_reply">Rispondi</string>
+
+    <string name="ml_cancel">Annulla</string>
+    <string name="ml_send">Invia</string>
+    <string name="ml_sent">Inviata</string>
+    <string name="ml_send_failed">Non inviata: controlla l\'indirizzo e la rete</string>
+    <string name="ml_no_account">Collega prima una casella</string>
+    <string name="ml_from_line">Da %1$s</string>
+    <string name="ml_to">A</string>
+    <string name="ml_cc">Cc</string>
+    <string name="ml_subject">Oggetto</string>
+    <string name="ml_body">Scrivi qui…</string>
+
+    <string name="ml_accounts_intro">«Collega», accedi, approva. Server e porte li trova Eurise.</string>
+    <string name="ml_remove">Togli</string>
+    <string name="ml_add">Aggiungi</string>
+    <string name="ml_add_eu">Murena, Posteo, mailbox.org, Libero…</string>
+    <string name="ml_add_eu_sub">Europa · valutazione privacy alta</string>
+    <string name="ml_add_domain">La casella del tuo dominio</string>
+    <string name="ml_add_domain_sub">Scrivi solo l\'indirizzo email</string>
+    <string name="ml_link">Collega</string>
+    <string name="ml_oauth_later">Gmail, Outlook e iCloud arrivano con l\'accesso dal loro sito, quando Eurise sarà registrata presso di loro: prima dell\'accesso ti diremo cosa vedono. Proton e Tuta non aprono la posta ad altre app sul telefono.</string>
+    <string name="ml_privacy">Privacy</string>
+    <string name="ml_block_title">Blocca chi spia l\'apertura</string>
+    <string name="ml_block_sub">Immagini remote solo quando tocchi «Mostra»</string>
+    <string name="ml_privacy_note">La posta resta tra il telefono e la tua casella. La password è cifrata con una chiave che non lascia il telefono. Per trovare i server di un dominio nuovo, Eurise chiede le impostazioni pubbliche di Thunderbird (Mozilla): ricevono solo il dominio, mai l\'indirizzo.</string>
+
+    <string name="ml_link_title">Collega una casella</string>
+    <string name="ml_link_email">Indirizzo email</string>
+    <string name="ml_link_password">Password</string>
+    <string name="ml_link_name">Il tuo nome (per chi riceve)</string>
+    <string name="ml_link_known">%1$s · %2$s: server già noti</string>
+    <string name="ml_link_find">Eurise trova da sé i server della casella</string>
+    <string name="ml_link_go">Collega</string>
+    <string name="ml_link_working">Collego…</string>
+    <string name="ml_err_address">Controlla l\'indirizzo email</string>
+    <string name="ml_err_oauth">Gmail, Outlook, iCloud e Yahoo chiedono l\'accesso dal loro sito: arriva presto</string>
+    <string name="ml_err_closed">Proton e Tuta non aprono la posta ad altre app sul telefono</string>
+    <string name="ml_err_exists">Questa casella è già collegata</string>
+    <string name="ml_err_password">Password non accettata dal server</string>
+    <string name="ml_err_servers">Non trovo i server di questa casella: controlla la rete o l\'indirizzo</string>
+</resources>
