@@ -33,7 +33,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon assembleDebug testDebugUnitTest 2>&1 | tee build.log
+          ./gradlew --no-daemon assembleDebug testDebugUnitTest :core:ponte:test :desktop:ponte:installDist 2>&1 | tee build.log
 
       # Gli errori di compilazione diventano annotazioni, leggibili anche senza scaricare il registro.
       - name: Riassunto degli errori
@@ -52,6 +52,13 @@ jobs:
         with:
           name: eurise-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Carica il Ponte per il computer (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-ponte-linux-${{ github.run_number }}
+          path: desktop/ponte/build/install/eurise-ponte/
           if-no-files-found: error
 
       - name: Carica l'APK della Galleria

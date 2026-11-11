@@ -37,6 +37,8 @@ include(":core:links")
 include(":core:suite")
 include(":core:contacts")
 include(":core:ponte")
+// Eurise per il computer (Linux): per ora il Ponte da riga di comando.
+include(":desktop:ponte")
 include(":feature:clock")
 include(":feature:today")
 include(":feature:notes")

@@ -107,3 +107,18 @@ class PonteTest {
         assertFalse(path.contains(".."))
     }
 }
+
+class HandshakeTest {
+    @Test
+    fun pairingNeedsTheSecretFromTheQr() {
+        val phone = Identity.generate()
+        val secret = Pairing.newSecret()
+        val open = Opening.pair("tel-1", "Fairphone", phone.publicBytes, secret)
+        val back = Opening.decode(open.encode()) as Opening.Pair
+        assertEquals(open, back)
+        assertTrue(back.verify(secret))
+        assertFalse(back.verify(Pairing.newSecret()))
+        assertEquals(Opening.Hi("tel-1"), Opening.decode(Opening.Hi("tel-1").encode()))
+        assertNull(Opening.decode("{\"t\":\"boh\"}".toByteArray()))
+    }
+}
