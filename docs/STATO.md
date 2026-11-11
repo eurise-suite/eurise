@@ -1250,3 +1250,21 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Eurise Voce «pacchetto non valido»** all'installazione da Telegram: l'APK 390 è integro (zip, firma v2 come gli altri,
   librerie allineate a 16 KB, manifest normale). Ipotesi: un'Eurise Voce già installata in modo diverso; consigliato
   disinstallarla e riprovare, o scaricarla dalla pagina della pre-release.
+
+## 11 novembre, notte fonda: giro 305 consegnato, tavole nuove
+- **APK 305** (pre-release `apk-prova`, Compila APK run 43110243048): bolla «Ti hanno cercato» con la fila delle app
+  (WhatsApp, WhatsApp Business, Telegram, Telefono, Email, SMS predefinito, Eurise Messaggi quando c'è; solo le
+  installate) sopra le righe con le icone dirette. Consegnati tutti in chat. Office nel 305 è ancora la build vecchia.
+- **Office «Apri da…»** (commit fa563c6, `office/app/eurise_patch.py`): il pulsante Apri della schermata iniziale apre
+  Eurise File (`OPEN_FROM`), altrimenti il selettore di sistema; Uri con lettura e scrittura, `takePersistableUriPermission`
+  protetto. In attesa della build Office (run 43110242966, coda lunga). FilesActivity ora concede anche la scrittura.
+- **File (file manager)**: non è un APK a parte, è dentro `Eurise.apk` con la sua icona «File» nel cassetto (anche Scanner).
+- **Tavole nuove da approvare** (tela "Icone della suite"):
+  - pagina **Chat ed Email**: ChatElenco, ChatConversazione, ChatAllega, ChatGruppo, ChatChiamata, ChatAccesso (Matrix,
+    funzioni di WhatsApp/Telegram, nessun ponte che legga i messaggi), MailPosta, MailLettura, MailScrivi, MailCaselle.
+  - pagina **Browser**, fila «Browser completo»: BrwMenu, BrwImpostazioni, BrwImportaPwd, BrwStrumenti, BrwSessioni.
+    Il proprietario: browser troppo scarno (manca il menu Impostazioni e l'importazione delle password), usa Vivaldi,
+    vuole di meglio. Dopo l'approvazione: codice in `browser/` (oggi ~1.150 righe: Gecko, schede, segnalibri, import HTML).
+- Lezione: non spingere durante una compilazione: ogni push annulla quella in corso (concurrency).
+- Prossimi passi: approvazione tavole → codice Browser completo, poi Chat (Matrix SDK leggero) ed Email; Mappe stile suite
+  (tavola prima); misura AI dopo il formato corto; Voce: verificare l'installazione sul telefono.
