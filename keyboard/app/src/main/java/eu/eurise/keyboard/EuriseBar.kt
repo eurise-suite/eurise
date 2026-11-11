@@ -134,7 +134,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     }
 
     /**
-     * I sette comandi: Calcola, Codici, File, Persona, Disponibilità, Browser, AI. Icona sopra l'etichetta, così ci
+     * Gli otto comandi: Calcola, Codici, File, Persona, Disponibilità, Traduci, Browser, AI. Icona sopra l'etichetta, così ci
      * stanno tutti anche sui telefoni stretti; con le proposte presenti restano solo le icone. Browser e AI: tocco =
      * cerca subito nel riquadro sopra l'app, pressione lunga = scegli motore, browser o assistente.
      */
@@ -146,6 +146,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_file, R.drawable.eurise_ic_folder) { open(FilePanel(this)) },
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
             Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
+            Command(R.string.eurise_translate, R.drawable.eurise_ic_translate) { open(TranslatePanel(this)) },
             Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { searchWeb() },
             Command(R.string.eurise_ai, R.drawable.eurise_ic_spark) { askAi() },
         ).forEachIndexed { i, (label, icon, action) ->

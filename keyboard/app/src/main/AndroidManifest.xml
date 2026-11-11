@@ -164,6 +164,9 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         <package android:name="eu.eurise.password.debug" />
         <package android:name="eu.eurise.voice" />
         <package android:name="eu.eurise.voice.debug" />
+        <!-- Eurise Leggi: traduzione sul telefono (servizio con il permesso della suite). -->
+        <package android:name="eu.eurise.read" />
+        <package android:name="eu.eurise.read.debug" />
         <!-- Eurise: le app degli assistenti, per «Apri nell'app» del tasto AI. -->
         <package android:name="com.anthropic.claude" />
         <package android:name="com.openai.chatgpt" />

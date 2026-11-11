@@ -76,4 +76,14 @@
     <string name="eurise_ai_app">app</string>
     <string name="eurise_ai_remove">Remove the link</string>
     <string name="eurise_ai_note">The keyboard never goes online: only what you ask goes to the assistant you chose, and only when you tap AI.</string>
+    <string name="eurise_translate">Translate</string>
+    <string name="eurise_translate_empty">Select text or write it before the cursor.</string>
+    <string name="eurise_translate_go">Translate on the phone</string>
+    <string name="eurise_translate_working">Translating…</string>
+    <string name="eurise_translate_replace">Replace</string>
+    <string name="eurise_translate_add">Add below</string>
+    <string name="eurise_translate_swap">Swap languages</string>
+    <string name="eurise_translate_missing">Language missing: download it in Eurise Read.</string>
+    <string name="eurise_translate_no_app">Translating needs Eurise Read.</string>
+    <string name="eurise_translate_failed">Translation failed.</string>
 </resources>

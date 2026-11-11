@@ -76,4 +76,14 @@
     <string name="eurise_ai_app">app</string>
     <string name="eurise_ai_remove">Togli il collegamento</string>
     <string name="eurise_ai_note">La tastiera non va su Internet: all\'assistente scelto va solo ciò che chiedi, e solo quando tocchi AI.</string>
+    <string name="eurise_translate">Traduci</string>
+    <string name="eurise_translate_empty">Seleziona un testo o scrivilo prima del cursore.</string>
+    <string name="eurise_translate_go">Traduci sul telefono</string>
+    <string name="eurise_translate_working">Traduco…</string>
+    <string name="eurise_translate_replace">Sostituisci</string>
+    <string name="eurise_translate_add">Aggiungi sotto</string>
+    <string name="eurise_translate_swap">Scambia le lingue</string>
+    <string name="eurise_translate_missing">Manca la lingua: scaricala in Eurise Leggi.</string>
+    <string name="eurise_translate_no_app">Per tradurre serve Eurise Leggi.</string>
+    <string name="eurise_translate_failed">Traduzione non riuscita.</string>
 </resources>
