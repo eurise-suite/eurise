@@ -123,6 +123,10 @@ class BubbleActions(
     val moveEvent: (CalendarEvent, LocalDateTime) -> Unit = { _, _ -> },
     /** Apre Eurise Meteo (dalla frase sotto il primo impegno). */
     val openWeather: () -> Unit = {},
+    /** I modi di raggiungere una persona per nome (Rubrica): le icone dirette di «Ti hanno cercato». */
+    val contactActions: suspend (String) -> List<eu.eurise.feature.launcher.contacts.ContactAction> = { emptyList() },
+    /** Chiama, scrive un SMS, apre la chat o l'email scelta. */
+    val startAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit = {},
 )
 
 // ---------------------------------------------------------------- pezzi comuni

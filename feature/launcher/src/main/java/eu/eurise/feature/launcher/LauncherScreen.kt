@@ -463,6 +463,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                 }
             },
             openWeather = openWeather,
+            contactActions = { viewModel.contacts.actionsForName(it) },
+            startAction = { viewModel.contacts.start(it) },
         )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }

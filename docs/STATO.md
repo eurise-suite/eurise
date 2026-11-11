@@ -1244,3 +1244,9 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Da capire con il proprietario**: Eurise Voce «non parte» (APK 390 corretto: serve sapere cosa succede, se si chiude
   o non si apre); bolle «non vedo gli aggiornamenti» (le righe nuove compaiono solo con farmaci o ricorrenze di oggi; le
   icone dirette di «Ti hanno cercato» solo con l'accesso alle notifiche).
+- **«Ti hanno cercato», icone dirette nelle righe** (il proprietario le cercava lì: nel giro 281 erano solo nel foglio
+  delle persone): accanto a ogni riga fino a tre icone (prima la chat da cui ha scritto, poi chiamata, SMS, email), solo
+  per chi è in Rubrica (`ContactsRepository.actionsForName`, `BubbleActions.contactActions/startAction`, `DirectIcon`).
+- **Eurise Voce «pacchetto non valido»** all'installazione da Telegram: l'APK 390 è integro (zip, firma v2 come gli altri,
+  librerie allineate a 16 KB, manifest normale). Ipotesi: un'Eurise Voce già installata in modo diverso; consigliato
+  disinstallarla e riprovare, o scaricarla dalla pagina della pre-release.

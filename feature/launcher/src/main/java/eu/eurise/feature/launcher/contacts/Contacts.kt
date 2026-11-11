@@ -191,6 +191,13 @@ class ContactsRepository(private val context: Context) {
      * I modi per raggiungere un contatto: numeri, email e le chat che le app (WhatsApp, Telegram, Signal…)
      * hanno collegato alla sua scheda in Rubrica.
      */
+    /** I modi di raggiungere chi si chiama [name] (il titolo di una notifica), se è in Rubrica; vuoto altrimenti. */
+    suspend fun actionsForName(name: String): List<ContactAction> = withContext(Dispatchers.IO) {
+        if (!hasContacts() || name.isBlank()) return@withContext emptyList()
+        val found = findContactIgnoringCase(name.trim()) ?: return@withContext emptyList()
+        actions(Person(found.third, found.first, found.second))
+    }
+
     suspend fun actions(person: Person): List<ContactAction> = withContext(Dispatchers.IO) {
         val id = person.contactId ?: return@withContext emptyList()
         val out = mutableListOf<ContactAction>()
