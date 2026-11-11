@@ -819,3 +819,46 @@ estensioni; il blocco dei tracciatori lo facciamo noi con gli elenchi).
 
 **Prossimo passo**: approvazione delle tavole del Browser e scelta del motore; esito del prototipo di Mappe (peso e prova
 sul telefono); conferma di Office a richiesta; segnalazioni del proprietario dall'uso quotidiano.
+
+## 11 novembre, tarda mattina: richieste del proprietario dopo l'uso (ramo `brand`, APK 250–252)
+- **WhatsApp e WhatsApp Business distinti** (fatto): `Reach.whatsapp(business=)` non ripiega più sull'altro;
+  `Reach.whatsappBusiness`. Messaggi, Telefono, bolla degli impegni offrono entrambi; nella Scrivania le righe di chat di
+  WA Business nella scheda del contatto si chiamano «WhatsApp Business» (prima si fondevano con WhatsApp).
+- **Icone** (fatto): app Eurise (Telefono, Rubrica, Messaggi, Voce, Galleria, Tastiera, Password) con disegno da 1,38 a
+  1,75, centrato, stellina d'oro in alto a destra, sfumato leggero (`aapt:attr` gradient); Orologio +18%. Scrivania: simboli
+  0,62 → 0,74 (suite 0,5 → 0,6) con sfumato leggero (`softTint` in `AppIcon.kt`). Le copie in `docs/brand/android` sono
+  rimaste come prima.
+- **Barra delle categorie**: fino a 9 (`MAX_CATEGORIES`).
+- **Scanner, priorità altissima** (riferimento: lo scanner di kDrive). Fatto: difetto delle foto a raffica (il contatore
+  ripartiva dopo ogni scatto), `AutoShot` (scatta una volta quando angoli e telefono sono fermi, si riarma solo quando la
+  scena cambia; Rifai riarma), messa a fuoco sul foglio prima dello scatto, schermata «Pagina N: va bene?» con Rifai /
+  Aggiungi un foglio / Fine, `SideRefiner` (lati rifiniti lungo la perpendicolare + retta ai minimi quadrati ortogonali,
+  640 colonne in anteprima e 1200 sulla foto; test in `SideRefinerTest`). Da provare sul telefono e confrontare con kDrive.
+  Se i bordi non bastano ancora: il passo dopo è un rilevatore appreso (rete piccola per i bordi del documento, come fanno
+  gli scanner migliori), da addestrare fuori da Actions.
+- **Mappe, prototipo** (giro 3): APK release arm64 di **57 MB** in 17 minuti (libreria 6 MB; simboli di tutte le densità
+  11,7 MB, mappe del mondo e file 11,5, caratteri 10,1, testi dei paesi 6,7, codice e risorse 10,1). Riduzioni possibili:
+  simboli della sola densità del telefono, caratteri non latini a richiesta, testi solo nelle lingue scelte.
+  Artefatto `eurise-mappe-debug-3` (firmato con la chiave di debug della suite).
+- **Mappe, segnalazioni degli utenti** (proposta da decidere): incidenti, lavori, polizia, pericoli, ostacoli come in Waze.
+  Non c'è un servizio libero in tempo reale: serve un nostro servizio piccolo (segnalazioni anonime senza account, posizione
+  solo della segnalazione, scadenza automatica: polizia 1 ora, incidente 2, pericolo 3; conferme «c'è ancora?»; si
+  scaricano a riquadri di circa 10 km, così il server non sa dove sei di preciso). Le cose che durano (lavori lunghi,
+  autovelox fissi, ostacoli) vanno invece in OpenStreetMap con l'editor già dentro CoMaps (accesso a OSM in due tocchi).
+  Da decidere col proprietario: il servizio (costo e chi lo gestisce) e la voce nel centro privacy.
+- **Browser**: prima fila **approvata**; seconda fila da approvare (BrwSchede, BrwSblocca con avviso e semaforo, BrwCondividi
+  con link pulito e WA/WA Business distinti, BrwSincro: solo telefono / Murena-Nextcloud cifrato (3 tacche) / Firefox Sync
+  (2 tacche, Mozilla conosce email e dispositivi, server USA), BrwMotore). Motore di ricerca proposto: **Brave Search**
+  (indice proprio, risposte AI con le fonti; azienda USA, più debole su ricerche molto locali); alternative DuckDuckGo
+  (Bing, Duck.ai anonimo con più modelli), Qwant ed Ecosia (europei, indice comune EUSP in crescita, in italiano ancora
+  molto Bing). AI dalla barra: prima Eurise AI sul telefono, poi Duck.ai (2 tacche, la domanda esce). Motore del browser
+  (GeckoView o WebView) ancora da scegliere.
+- **AI** (tavole AiCattura, AiModelli, AiAttiva) **approvata**: APK separato «Eurise AI» senza permesso di rete
+  (il modello lo scarica un'altra app della suite e lo passa con permesso di firma), comprensione del testo per la cattura
+  rapida (modello da circa 2 GB, verificare la licenza: la tavola dice Ministral 3B Apache 2.0), voce in testo (Whisper
+  base), traduzione (c'è già in Leggi), «chi può chiedere» per app, registro d'uso. Motore proposto: llama.cpp (MIT) dai
+  sorgenti in `third_party/` come Tesseract per Leggi; prima un prototipo che misura peso e velocità.
+
+**Prossimo passo**: prova sul telefono dello scanner nuovo (APK 252) e della barra a 9; approvazione della seconda fila del
+Browser, scelta del motore del browser e del motore di ricerca; decisione sulle segnalazioni in Mappe; poi Eurise AI
+(prototipo llama.cpp), riduzione del peso di Mappe e stile della suite su Mappe.
