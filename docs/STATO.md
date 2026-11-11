@@ -1126,3 +1126,22 @@ cercato» e password dal telefono, cloud fuori casa, voce nel centro privacy.
 
 **Prossimo passo**: esito della compilazione di questo giro; tavole Editor scanner, PDF di Office e «Salva in…»;
 codice del Ponte dal computer al telefono come deciso; esiti di Office app e Mappe giro 7.
+
+## 11 novembre, notte: tavole nuove, Actions (ramo `brand`, nuova chat)
+- **Actions**: annullato il giro di Mappe 43043196722 fermo su apt; il giro 7 (43052890129) è partito dalla coda. Office
+  app: il giro 43050501063 (commit «Lavori lunghi», senza la Suite) è lasciato finire perché salva la ccache; dopo parte
+  43052890217 con scheda Suite, «Cerca un comando» e italiano, e riparte dalla ccache.
+- **Tavole nuove da approvare** (tela «Icone della suite»):
+  - pagina **Drive e Scanner**, seconda fila: **ScanPagine** (Una a una / Tutte insieme; aspetto Foto, **Perfetta**, Grigi,
+    B/N, Colore per tutte; «Già sistemato»: raddrizzata, dito e ombra tolti, pagina mossa → Rifai), **ScanPagina** (prima e
+    dopo con la maniglia, intensità «Carta più bianca», timbro blu tenuto), **ScanRitaglio** (lente ×4 sull'angolo, maniglie
+    sui lati, aggancio ai bordi della carta, forme A4/Scontrino/Tessera, libro aperto diviso in due, «Uguale a tutte»),
+    **FileSalvaIn** (riquadro comune: nome, formato, proposte con il perché, Telefono/Murena/kDrive/Nextcloud, percorso,
+    Nuova cartella, copia sul telefono, tacche di privacy, «Salva in Casa»), **FileApriDa** (chiesto da Office: recenti
+    ovunque siano con l'origine, filtri per tipo, ricerca nel testo, Sfoglia, selettore di Android come ultima strada).
+  - pagina **Office**, terza fila: **OffPdf** (Annota: evidenzia, nota, penna, testo, firma, moduli; campi da I miei
+    dati), **OffPdfPagine** (ruota, estrai, dividi, duplica, elimina; inserisci da Scanner, PDF, foto, vuota),
+    **OffPdfCondividi** (riduci peso Schermo/Stampa/Sotto 1 MB per la PEC, togli i dati nascosti, oscura CF e IBAN trovati
+    davvero, blocca campi e firme, password in Eurise Password; si condivide una copia).
+  - Scelte da confermare: «Perfetta» come nome dell'aspetto migliorato (calcolato sul telefono); PDF nell'app Office
+    (non nel lettore PDF dell'APK principale, che resta per leggere).
