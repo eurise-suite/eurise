@@ -103,8 +103,9 @@ private class Origin(val upright: File, val mode: ScanMode, val quad: Quad?)
 
 // Abbastanza per i bordi del foglio (rette di Hough), pochi millisecondi per fotogramma.
 private const val ANALYSIS_WIDTH = 200
-private const val STILL_NEEDED = 12
-private const val STILL_LIMIT = 0.025f
+// I lati si rifiniscono su un'immagine più grande: angoli precisi al pixel anche in anteprima.
+private const val REFINE_WIDTH = 640
+private const val PHOTO_REFINE_WIDTH = 1200
 
 /** Scanner: inquadra, riconosce i bordi e scatta da solo quando il foglio è fermo, poi salva un PDF. */
 @Composable
@@ -140,11 +141,11 @@ fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false) {
     }
 }
 
-/** Luminosità ridotta a [ANALYSIS_WIDTH] colonne, già ruotata come la vede la persona. */
-private fun lumaOf(image: ImageProxy): Triple<IntArray, Int, Int> {
+/** Luminosità ridotta a circa [columns] colonne, già ruotata come la vede la persona. */
+private fun lumaOf(image: ImageProxy, columns: Int = ANALYSIS_WIDTH): Triple<IntArray, Int, Int> {
     val plane = image.planes[0]
     val buffer = plane.buffer
-    val step = maxOf(1, image.width / ANALYSIS_WIDTH)
+    val step = maxOf(1, image.width / columns)
     val w = image.width / step
     val h = image.height / step
     val raw = IntArray(w * h)
@@ -169,6 +170,10 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     var quad by remember { mutableStateOf<Quad?>(null) }
     var still by remember { mutableStateOf(0) }
     var busy by remember { mutableStateOf(false) }
+    // Scatto automatico come kDrive: una foto quando foglio e telefono sono fermi, poi «Va bene?».
+    val auto = remember { AutoShot() }
+    var confirm by remember { mutableStateOf<File?>(null) }
+    val confirmNow = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var torch by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
     val modeNow = remember { java.util.concurrent.atomic.AtomicReference(if (startQr) ScanMode.Qr else ScanMode.Document) }
@@ -189,6 +194,7 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
             .build()
     }
     val analyzer = remember { Executors.newSingleThreadExecutor() }
+    val frameMotion = remember { FrameMotion() }
     DisposableEffect(Unit) { onDispose { analyzer.shutdown() } }
     // Per i codici un po' di zoom (si può stare più lontani, dove la messa a fuoco funziona) e fuoco al centro, ogni
     // pochi secondi: molti telefoni non mettono a fuoco da vicino e i codici piccoli restano sfocati.
@@ -203,38 +209,69 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
         }
     }
 
-    fun shoot() {
+    /** Scatta: prima la messa a fuoco sul foglio (al massimo un secondo e mezzo), poi la foto, poi la conferma. */
+    fun shoot(byHand: Boolean = false) {
         if (busy) return
         busy = true
+        if (byHand) auto.shotByHand(quad)
         val corners = quad
         val chosen = mode
-        capture.takePicture(ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageCapturedCallback() {
-            override fun onCaptureSuccess(image: ImageProxy) {
-                scope.launch {
-                    val done = withContext(Dispatchers.Default) { process(image, corners, chosen, dir) }
-                    if (done != null) {
-                        pages += done.first
-                        origins[done.first] = done.second
+        val take = {
+            capture.takePicture(ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    scope.launch {
+                        val done = withContext(Dispatchers.Default) { process(image, corners, chosen, dir) }
+                        if (done != null) {
+                            pages += done.first
+                            origins[done.first] = done.second
+                            confirm = done.first
+                            confirmNow.set(true)
+                        } else auto.rearm()
+                        still = 0
+                        busy = false
                     }
-                    still = 0
-                    // Dopo uno scatto si aspetta che il foglio cambi: niente doppioni dello stesso.
-                    busy = false
                 }
-            }
-            override fun onError(exception: ImageCaptureException) { busy = false }
-        })
+                override fun onError(exception: ImageCaptureException) { busy = false; auto.rearm() }
+            })
+            Unit
+        }
+        val cam = camera
+        val center = corners?.points?.let { p -> Pt(p.map { it.x }.average().toFloat(), p.map { it.y }.average().toFloat()) }
+        if (cam == null || center == null) { take(); return }
+        val point = androidx.camera.core.SurfaceOrientedMeteringPointFactory(1f, 1f).createPoint(center.x, center.y)
+        val action = androidx.camera.core.FocusMeteringAction.Builder(point, androidx.camera.core.FocusMeteringAction.FLAG_AF)
+            .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS).build()
+        val fired = java.util.concurrent.atomic.AtomicBoolean(false)
+        val once = { if (fired.compareAndSet(false, true)) take() }
+        runCatching {
+            cam.cameraControl.startFocusAndMetering(action).addListener({ once() }, ContextCompat.getMainExecutor(context))
+        }.onFailure { once() }
+        scope.launch { kotlinx.coroutines.delay(1500); once() }
     }
 
     LaunchedEffect(mode) {
         modeNow.set(mode)
         if (mode == ScanMode.Qr) { quad = null; still = 0 }
     }
-    val owed = still >= STILL_NEEDED
-    LaunchedEffect(owed) { if (owed && !busy) shoot() }
+    var owed by remember { mutableStateOf(0) }
+    LaunchedEffect(owed) { if (owed > 0 && !busy && confirm == null) shoot() }
 
     qr?.let { text -> QrSheet(text) { qr = null; qrShown.set(false) } }
     if (qrHistory) QrHistorySheet(onOpen = { qrHistory = false; qrShown.set(true); qr = it }, onClose = { qrHistory = false })
     if (qrCreate) QrCreateSheet(onClose = { qrCreate = false })
+    confirm?.let { page ->
+        ConfirmPage(
+            page = page,
+            count = pages.size,
+            onRedo = {
+                pages.remove(page); origins.remove(page); page.delete()
+                confirm = null; confirmNow.set(false); auto.rearm()
+            },
+            onAnother = { confirm = null; confirmNow.set(false) },
+            onDone = { confirm = null; confirmNow.set(false); onDone() },
+        )
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
@@ -269,12 +306,18 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                                         return@setAnalyzer
                                     }
                                     val (luma, w, h) = lumaOf(image)
+                                    val coarse = EdgeDetector.find(luma, w, h)
+                                    // Lati rifiniti su 640 colonne: il riquadro aderisce al foglio, non solo ci assomiglia.
+                                    val found = coarse?.let { c -> val (big, bw, bh) = lumaOf(image, REFINE_WIDTH); SideRefiner.refine(big, bw, bh, c) }
                                     image.close()
-                                    val found = EdgeDetector.find(luma, w, h)
+                                    val motion = frameMotion.update(luma)
+                                    val shootNow = auto.onFrame(found, motion) && !confirmNow.get()
                                     ContextCompat.getMainExecutor(ctx).execute {
                                         val previous = quad
-                                        still = if (found != null && previous != null && found.distance(previous) < STILL_LIMIT) still + 1 else 0
-                                        quad = found
+                                        // Un po' di calma nel disegno: piccoli tremolii si smorzano, i salti veri passano subito.
+                                        quad = if (found != null && previous != null && found.distance(previous) < 0.03f) previous.blend(found, 0.5f) else found
+                                        still = auto.still
+                                        if (shootNow) owed++
                                     }
                                 }
                                 provider.unbindAll()
@@ -305,6 +348,7 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                 val status = when {
                     mode == ScanMode.Qr -> R.string.scan_status_qr
                     busy -> R.string.scan_status_saving
+                    !auto.armed && confirm == null -> R.string.scan_status_next
                     still > 3 -> R.string.scan_status_hold
                     quad != null -> R.string.scan_status_found
                     else -> R.string.scan_status_search
@@ -354,7 +398,7 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                     }
                 }
                 val shutter = stringResource(R.string.scan_shutter)
-                Box(Modifier.size(76.dp).clip(CircleShape).border(4.dp, Color.White, CircleShape).clickable(enabled = !busy && mode != ScanMode.Qr) { shoot() }.padding(8.dp).semantics { contentDescription = shutter }) {
+                Box(Modifier.size(76.dp).clip(CircleShape).border(4.dp, Color.White, CircleShape).clickable(enabled = !busy && mode != ScanMode.Qr) { shoot(byHand = true) }.padding(8.dp).semantics { contentDescription = shutter }) {
                     Box(Modifier.fillMaxSize().clip(CircleShape).background(Color.White))
                 }
                 Box(Modifier.height(44.dp).clip(CircleShape).background(if (pages.isEmpty()) Color(0x55A9C1F2) else Color(0xFFA9C1F2)).clickable(enabled = pages.isNotEmpty(), onClick = onDone).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
@@ -437,6 +481,17 @@ private fun DarkRound(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
  * basta che la mano si muova per tagliare male. Si tiene quella della foto se è credibile (non molto più piccola).
  */
 private fun refine(upright: Bitmap, live: Quad?): Quad? {
+    val found = refineCoarse(upright, live) ?: return null
+    // I lati, rifiniti sulla foto vera a 1200 colonne.
+    val w = PHOTO_REFINE_WIDTH
+    val h = (upright.height.toLong() * w / upright.width).toInt().coerceAtLeast(1)
+    val big = Bitmap.createScaledBitmap(upright, w, h, true)
+    val pixels = IntArray(w * h).also { big.getPixels(it, 0, w, 0, 0, w, h) }
+    val luma = IntArray(w * h) { i -> val c = pixels[i]; (299 * ((c shr 16) and 0xFF) + 587 * ((c shr 8) and 0xFF) + 114 * (c and 0xFF)) / 1000 }
+    return SideRefiner.refine(luma, w, h, found)
+}
+
+private fun refineCoarse(upright: Bitmap, live: Quad?): Quad? {
     val w = ANALYSIS_WIDTH
     val h = (upright.height.toLong() * w / upright.width).toInt().coerceAtLeast(1)
     val small = Bitmap.createScaledBitmap(upright, w, h, true)
@@ -671,5 +726,69 @@ private suspend fun save(
         context.getString(R.string.scan_failed)
     } catch (e: IllegalStateException) {
         context.getString(R.string.scan_failed)
+    }
+}
+
+/** Quanto è cambiata l'immagine dal fotogramma prima: differenza media di luminosità (telefono fermo = valori bassi). */
+private class FrameMotion {
+    private var previous: IntArray? = null
+
+    fun update(luma: IntArray): Float {
+        val prev = previous
+        previous = luma
+        if (prev == null || prev.size != luma.size) return Float.MAX_VALUE
+        var sum = 0L
+        var n = 0
+        var i = 0
+        while (i < luma.size) { sum += kotlin.math.abs(luma[i] - prev[i]); n++; i += 3 }
+        return if (n == 0) 0f else sum.toFloat() / n
+    }
+}
+
+/** Il quadrilatero a metà strada verso [other] (peso [t] al nuovo). */
+private fun Quad.blend(other: Quad, t: Float): Quad {
+    fun mix(a: Pt, b: Pt) = Pt(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+    return Quad(mix(tl, other.tl), mix(tr, other.tr), mix(br, other.br), mix(bl, other.bl))
+}
+
+/** Dopo lo scatto, come kDrive: la pagina già raddrizzata e tre scelte. Il riquadro si corregge poi nella revisione. */
+@Composable
+private fun ConfirmPage(page: File, count: Int, onRedo: () -> Unit, onAnother: () -> Unit, onDone: () -> Unit) {
+    BackHandler(onBack = onRedo)
+    val bitmap by produceState<Bitmap?>(null, page) {
+        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(page.path, BitmapFactory.Options().apply { inSampleSize = 2 }) }
+    }
+    Column(Modifier.fillMaxSize().background(Color(0xFF14171C)).statusBarsPadding().navigationBarsPadding()) {
+        Text(
+            stringResource(R.string.scan_confirm_title, count), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+        )
+        Text(stringResource(R.string.scan_confirm_hint), color = Color(0xFFC9CED8), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+        Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+            bitmap?.let { b ->
+                Image(
+                    b.asImageBitmap(), contentDescription = null,
+                    modifier = Modifier.aspectRatio(b.width.toFloat() / b.height).clip(RoundedCornerShape(6.dp)).background(Color.White),
+                )
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 22.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                Triple(R.string.scan_confirm_redo, false, onRedo),
+                Triple(R.string.scan_confirm_another, true, onAnother),
+                Triple(R.string.scan_confirm_done, false, onDone),
+            ).forEach { (label, strong, action) ->
+                Box(
+                    Modifier.weight(1f).height(52.dp).clip(CircleShape)
+                        .background(if (strong) Color(0xFFA9C1F2) else Color(0x33FFFFFF)).clickable(onClick = action),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        stringResource(label), fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = if (strong) Color(0xFF14203A) else Color.White, maxLines = 2,
+                    )
+                }
+            }
+        }
     }
 }
