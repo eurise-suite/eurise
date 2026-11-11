@@ -147,8 +147,8 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
             Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
             Command(R.string.eurise_translate, R.drawable.eurise_ic_translate) { open(TranslatePanel(this)) },
-            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { searchWeb() },
-            Command(R.string.eurise_ai, R.drawable.eurise_ic_spark) { askAi() },
+            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { openSearch(ai = false) },
+            Command(R.string.eurise_ai, R.drawable.eurise_ic_spark) { openSearch(ai = true) },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
             val active = panel?.title == label
@@ -189,11 +189,17 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         return selected.ifBlank { before(300).substringAfterLast('\n') }
     }
 
-    /** Cerca sul web nel riquadro, con il motore scelto. */
+    /** Cerca sul web nel riquadro, con il motore scelto (dalla scelta del pannello BrowserPanel). */
     internal fun searchWeb() {
         val q = query()
         close()
         WebSearch.search(context, bridge.hubPackage, q)
+    }
+
+    /** Tasti Browser e AI: la ricerca rapida con i posti e le tacche di privacy (TastCerca). */
+    internal fun openSearch(ai: Boolean) {
+        val selected = ime.currentInputConnection?.getSelectedText(0)?.toString().orEmpty()
+        open(SearchPanel(this, query(), fromSelection = selected.isNotBlank(), ai = ai))
     }
 
     /** Chiede all'assistente collegato; senza collegamento apre la scelta (di base non ce n'è nessuno). */

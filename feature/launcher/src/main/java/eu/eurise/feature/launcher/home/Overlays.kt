@@ -482,8 +482,9 @@ fun SearchOverlay(
     searchEvents: suspend (String) -> List<eu.eurise.core.data.calendar.CalendarEvent> = { emptyList() },
     onOpenEvent: (eu.eurise.core.data.calendar.CalendarEvent) -> Unit = {},
     onQuick: (QuickAction, String) -> Unit = { _, _ -> },
+    initialQuery: String = "",
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val q = query.trim()

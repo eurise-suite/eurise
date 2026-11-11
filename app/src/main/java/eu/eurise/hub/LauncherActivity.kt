@@ -8,12 +8,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import eu.eurise.feature.launcher.LauncherRoute
 
 /** Eurise Scrivania: la schermata iniziale del telefono. */
 class LauncherActivity : ComponentActivity() {
     private var homePresses by mutableIntStateOf(0)
+    /** Domanda arrivata da «Nella suite» della Tastiera: apre la ricerca universale con quel testo. */
+    private var searchRequest by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -23,7 +26,8 @@ class LauncherActivity : ComponentActivity() {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
         val data = (application as EuriseApplication).data
-        setContent { LauncherRoute(data, homePresses) }
+        searchRequest = intent?.getStringExtra(EXTRA_SEARCH)
+        setContent { LauncherRoute(data, homePresses, searchRequest) { searchRequest = null } }
     }
 
     override fun onResume() {
@@ -35,5 +39,10 @@ class LauncherActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.hasCategory(Intent.CATEGORY_HOME)) homePresses++
+        intent.getStringExtra(EXTRA_SEARCH)?.let { searchRequest = it }
+    }
+
+    private companion object {
+        const val EXTRA_SEARCH = "eu.eurise.extra.SEARCH"
     }
 }

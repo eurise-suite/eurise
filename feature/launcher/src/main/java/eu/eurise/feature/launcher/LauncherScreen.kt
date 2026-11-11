@@ -167,7 +167,7 @@ private const val TabletSmallestWidth = 600
  * @param homePresses aumenta ogni volta che si preme il tasto Home mentre la Scrivania è già aperta.
  */
 @Composable
-fun LauncherRoute(data: EuriseData, homePresses: Int) {
+fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = null, onSearchHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val app = context.applicationContext as Application
     val viewModel = viewModel { LauncherViewModel(app, data.notes, data.tasks, data.calendar, data.links) }
@@ -352,6 +352,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
         if (category != HomePageId && pageCategories.none { it.id == category }) category = HomePageId
         val categoryOf: (AppEntry) -> BarCategory? = { entry -> resolveCategory(entry, barCategories, settings.categoryOverrides) }
         var searching by remember { mutableStateOf(false) }
+        // «Nella suite» dalla ricerca rapida della Tastiera: la ricerca universale già con la domanda.
+        var searchStart by remember { mutableStateOf("") }
+        LaunchedEffect(searchRequest) {
+            if (searchRequest != null) { searchStart = searchRequest; searching = true; onSearchHandled() }
+        }
+        LaunchedEffect(searching) { if (!searching) searchStart = "" }
         var panelOpen by remember { mutableStateOf(false) }
         var appearance by remember { mutableStateOf(false) }
         var modesSheet by remember { mutableStateOf<eu.eurise.core.data.modes.Mode?>(null) }
@@ -691,6 +697,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
 
             if (searching) {
                 SearchOverlay(
+                    initialQuery = searchStart,
                     apps = state.apps,
                     recents = state.recents,
                     notes = state.notes,
