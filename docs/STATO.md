@@ -1072,6 +1072,14 @@ TastCerca, BolRispondi, BolAllega. Indicazione: «macina codice».
   - Non ancora: dal computer al telefono, «Ti hanno cercato» sul computer, password dal telefono, passaggio dal cloud
     fuori casa, interfaccia Compose e Flatpak per il computer, voce nel centro privacy.
 
-**Prossimo passo**: chiudere i giri in corso (Browser con `chooseEngine`, Mappe giro 7, Office app) e correggere gli
-errori; poi pubblicare tutto in `apk-prova`; Office: scheda Suite e motore a richiesta; Browser: estensione su Firefox per
-il computer con il Ponte; Ponte: «Ti hanno cercato» e password dal telefono.
+- **Ultimo APK: 273**, in `apk-prova` con Eurise Browser (`browser-debug.apk`, 94 MB: GeckoView 141, librerie compresse)
+  e **`eurise-ponte-linux.tar.gz`** (estrarre, poi `bin/eurise-ponte collega`; serve Java 17: `sudo apt install
+  openjdk-17-jre` su Ubuntu, `sudo dnf install java-17-openjdk` su Fedora). Mappe in `apk-prova` è ancora il giro 6.
+- **In corso o da rilanciare**: Mappe giro 7 (con «Segnala qui») e Office app: i server di GitHub non risolvevano i
+  mirror di Ubuntu (apt fermo); ora i lavori lunghi girano su Ubuntu 24.04 e riprovano apt-get update. Se un giro
+  fallisce ancora in «Installa gli strumenti», rilanciarlo.
+
+**Prossimo passo**: esiti di Mappe giro 7 e Office app (correggere gli errori, poi `apk-prova`); Office: scheda Suite,
+«Cerca un comando», motore a richiesta, italiano; Browser: estensione su Firefox per il computer con il Ponte e
+aggiornamento del plugin Android della suite (per l'ultima GeckoView); Ponte: dal computer al telefono, «Ti hanno
+cercato» e password dal telefono, cloud fuori casa, voce nel centro privacy.
