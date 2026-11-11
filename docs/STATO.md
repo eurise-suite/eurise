@@ -865,6 +865,22 @@ sul telefono); conferma di Office a richiesta; segnalazioni del proprietario dal
 - **Mappe, guida**: cartello dell'indicazione colorato per tipo di strada con le tinte della suite (autostrada verde,
   statale blu…) e metri alla svolta in tempo reale: requisito scritto in `maps/EURISE.md`, da fare con lo stile di Mappe.
 
+- **Richieste nuove da valutare (11 novembre)**:
+  - «Ti hanno cercato»: rispondere a un singolo fumetto e mettere una reazione. Dalle notifiche Android (risposta diretta)
+    WhatsApp e Telegram accettano solo testo: risposta citata e reazioni vere non si possono mandare da fuori. Fattibile:
+    pressione lunga sul fumetto → «Rispondi a questa frase» (la frase citata in testa alla risposta) e reazioni rapide
+    mandate come messaggio emoji; «Apri la chat» per la reazione vera. Prima la tavola.
+  - Tasto «Allega» nelle risposte (chat ed email): contatto (vCard), documento, foto dalla Galleria, fotocamera. Dalle
+    notifiche non si allega; si fa condividendo all'app con la persona già scelta dove l'app lo consente (WhatsApp sì, con
+    il numero; Telegram fa scegliere la chat). Nella nostra Mail (quando ci sarà) e in Messaggi (MMS) è diretto. Prima la tavola.
+  - App fotocamera nostra: proposta di non partire da zero ma da Aperture di LineageOS (CameraX, Apache 2.0, già usata e
+    rifinita sui telefoni Lineage/e/OS), con telefoni di riferimento scelti dal proprietario (Fairphone 6, HIROH, Gigaset
+    GS6 Pro, Volla Tablet, SHIFTphone 8: sensori da verificare modello per modello). Da decidere.
+  - Mappe e Trivago/Booking/Tripadvisor: i loro dati non si possono prelevare (condizioni d'uso; API solo per partner con
+    chiave e regole di visualizzazione). Fattibile subito: «Vedi su Booking / Tripadvisor» che apre la scheda del posto
+    nell'app o nel sito (nome e città, nessun dato nostro). In seguito, se il proprietario registra l'app come partner,
+    prezzi e voti dentro Mappe, con la voce nel centro privacy (la ricerca rivela la zona a quel servizio).
+
 **Prossimo passo**: prova sul telefono dello scanner nuovo (APK 252) e della barra a 9; approvazione della seconda fila del
 Browser, scelta del motore del browser e del motore di ricerca; decisione sulle segnalazioni in Mappe; poi Eurise AI
 (prototipo llama.cpp), riduzione del peso di Mappe e stile della suite su Mappe.
