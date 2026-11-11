@@ -15,6 +15,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import helium314.keyboard.latin.R
 import java.util.Locale
 
 /**

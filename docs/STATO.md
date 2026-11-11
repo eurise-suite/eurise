@@ -675,3 +675,59 @@ Ordine deciso dal proprietario per la road map: 1 Leggi, 4 traduzione e scrittur
     strada scorrevole, dovresti arrivare in tempo», oppure «Allerta meteo arancione: presta attenzione e anticipa la partenza».
   - Da fare prima del codice: anteprime per Mappe arricchita, Meteo e la frase nella bolla; ricerca delle fonti libere (traffico,
     allerte, pollini) da mostrare nel centro privacy.
+
+## 11–12 novembre, notte: Mappe e Meteo approvate, traduzione in Leggi, Telefono, Rubrica e Messaggi (ramo `brand`, APK 233+)
+**Anteprime approvate dal proprietario** (tela, pagina «Mappe, Messaggi e Telefono», seconda fila): MapGuida (velocità attuale,
+cartello letto, meteo e traffico sul percorso, frase d'arrivo), MapEsplora (nomi delle vie, «Monza (MB)» con bandiera e «IT»,
+orizzonte che segue meteo e ora, si spegne in Livelli), MapAttivita (benzinai col prezzo, negozi, punti di interesse,
+Professionisti «presto con QuiAccanto»), MapLivelli (cosa resta sul telefono e cosa esce, posizione arrotondata), MeteoOggi,
+MeteoAllerta (impegni toccati dall'allerta), BolImpegni (la frase su tempo e strada nella bolla «I tuoi impegni»).
+Fonti scelte (da mettere nel centro privacy quando si scrive il codice):
+- Carburanti: open data MIMIT (Osservaprezzi), CSV quotidiani «anagrafica impianti» e «prezzi alle 8», licenza IODL 2.0;
+  file uguale per tutti, nessuna posizione inviata. Dal 10 febbraio 2026 è cambiato il separatore dei campi.
+- Meteo: Open-Meteo (CC BY 4.0, attribuzione con link), in Italia il modello ICON-2I di ItaliaMeteo-ARPAE (2 km, 3 giorni);
+  pollini dall'Air Quality API di Open-Meteo (CAMS, solo Europa, 4–5 giorni, attribuzione a CAMS).
+- Allerte: MeteoAlarm (CAP) e i bollettini della Protezione Civile / Centri funzionali regionali (fanno fede questi).
+- Attività e punti di interesse: OpenStreetMap (dentro le mappe di CoMaps), poi QuiAccanto. Pagine Gialle e Registro
+  Imprese no: niente API libere (InfoCamere è a pagamento, Pagine Gialle non permette il riuso).
+- Traffico in tempo reale: non c'è una fonte libera nazionale (TomTom/HERE a pagamento; open data solo locali, es. Bolzano,
+  Torino 5T). Per ora: limiti e autovelox da OSM (CoMaps), «traffico» resta spento «in prova».
+- Lettura dei cartelli con la fotocamera: i dataset grandi (Mapillary, DFG, GTSRB) sono non commerciali; ci sono dataset
+  piccoli CC BY 4.0 (Roboflow). Serve addestrare un modello nostro: come per la scrittura a mano, va fuori da GitHub Actions.
+
+**Traduzione dentro Eurise Leggi** (decisione del proprietario): motore in `read/src/main/cpp/translate/` (libreria
+`eurise_translate` separata da `eurise_ocr`), `TranslateContract` in core/suite, `TranslateService` (permesso della suite),
+schermata «Lingue della traduzione» in Leggi (14 lingue, ognuna con l'inglese; tra due lingue si passa dall'inglese), voce
+nel centro privacy. Tolto il modulo `translate/`. Leggi ridotta: 4,9 MB; qualità invariata (chrF it→en 82,8, en→it 78,5).
+**Tastiera**: pannello Traduci (ottavo comando): selezione o paragrafo prima del cursore → Sostituisci / Aggiungi sotto.
+
+**Eurise Telefono** (`phone/`, artefatto `eurise-telefono-debug-N`, applicationId `eu.eurise.phone`): app per le chiamate
+(ruolo Telefono; la propone al primo avvio). Recenti con «Da richiamare» (perse negli ultimi 3 giorni senza chiamate dopo),
+preferiti (stella della rubrica), tastierino con ricerca anche per nome (T9), numeri bloccati di sistema, togli dai recenti.
+Schermata della chiamata (TelChiamata): impegni con la persona dal Calendario («Prima di rispondere»), nota della chiamata
+che a fine chiamata va in Note dell'app Eurise (`HubBridge`, stesso ricevitore della Tastiera), muto, tasti, vivavoce, attesa,
+scambia e unisci con due chiamate, rifiuta con un messaggio, sensore di prossimità. Notifica a schermo intero per quelle in
+arrivo. **Rubrica**: seconda icona nel cassetto (stessa app, `ContactsAlias`) che apre i contatti e riceve «Aggiungi in
+rubrica» dalle altre app; scheda con Chiama, SMS, WhatsApp, Telegram, Email, impegni insieme, recapiti (pressione lunga
+copia), editor (nome, numeri, email, azienda, indirizzo, nota), elimina, blocca. Rubrica = quella di sistema (si sincronizza
+con l'account del telefono). Base: API Android come Fossify Phone (GPL-3.0); interfaccia nostra in Compose.
+
+**Eurise Messaggi** (`messages/`, artefatto `eurise-messaggi-debug-N`, `eu.eurise.messages`): app per gli SMS (ruolo SMS).
+Elenco Persone / Codici e consegne / Avvisi (`MessageInsights.category`), codice in alto da copiare che si cancella dopo
+10 minuti (impostazione), proposta «evento giovedì 15:00» nell'elenco. Conversazione: «Capito sul telefono» sotto gli ultimi
+messaggi — appuntamento → Crea l'evento (in evidenza quando l'altra parte conferma: «ok», «va bene», «perfetto»…) e Rispondi
+«Va bene»; numero → Chiama, SMS, WhatsApp, Telegram, Aggiungi in rubrica; email, link, indirizzo → Mappe; cosa da fare →
+Attività; appunto → Note; altra lingua → «Traduci dal …» con Leggi; messaggi sospetti segnalati (conto bloccato, pacco in
+giacenza con link). MMS con foto (ricevuti e mandati, foto ridotte sotto 290 KB) con il codice AOSP in
+`third_party/aosp-mms` (Apache 2.0, vedi EURISE.md), invio programmato (WorkManager), notifiche con Rispondi, Letto, Copia
+il codice; risposta veloce durante le chiamate (`HeadlessSmsSendService`). Logica pura con test: `core/data/messages`.
+Comune ai due APK: `core/contacts` (rubrica, `Reach`, `Avatar`). Icone nuove in EuriseIcons (tastierino, chiudi chiamata…).
+
+**Da provare sul telefono**: rendere Telefono e Messaggi le app predefinite; chiamata in uscita e in arrivo (anche a schermo
+spento), nota della chiamata in Note, rifiuta con messaggio; SMS in arrivo e in uscita, codice OTP (copia, cancellazione),
+MMS con foto in arrivo e in uscita, «Crea l'evento» dopo una conferma, Traduci (serve Leggi con la lingua scaricata);
+Rubrica dall'icona e «Aggiungi in rubrica» da Messaggi; pannello Traduci nella Tastiera.
+**Non ancora**: Disponibilità e posizione dell'incontro nella barra di Messaggi (la Disponibilità c'è già nella barra della
+Tastiera), MMS di gruppo in uscita non provati, doppia SIM (si usa la SIM predefinita per gli SMS), le stesse proposte nelle
+email (non c'è ancora l'app Mail), ricerca nel testo di tutti i messaggi (ora: nomi e ultimo testo). Mappe e Meteo: anteprime
+approvate, codice da fare (base CoMaps).
