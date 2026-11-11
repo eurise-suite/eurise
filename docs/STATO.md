@@ -1145,3 +1145,22 @@ codice del Ponte dal computer al telefono come deciso; esiti di Office app e Map
     davvero, blocca campi e firme, password in Eurise Password; si condivide una copia).
   - Scelte da confermare: «Perfetta» come nome dell'aspetto migliorato (calcolato sul telefono); PDF nell'app Office
     (non nel lettore PDF dell'APK principale, che resta per leggere).
+- **Ponte, dal computer al telefono: scritto** (come deciso: Wi-Fi di casa, notifica che dice sempre cosa passa).
+  - `core/ponte`: tipi nuovi `Note`, `Task`, `Ping` (i telefoni vecchi li scartano); **`Outbox`**, la coda su file per i
+    telefoni non collegati, con scadenza per tipo (appunti 15 min, link 1 giorno, note e attività 7 giorni), l'ora della
+    consegna e l'id di sempre (un doppione si scarta). Test `outboxKeepsOrderExpiresAndRestamps`, `newKindsTravel…`.
+  - `desktop/ponte`: il collegamento del telefono resta aperto (segno di vita ogni 4 min, chiuso dopo 15 min di silenzio);
+    **`eurise-ponte manda appunti [testo] | link <url> [titolo] | nota <testo> | attivita <testo>`** (senza testo:
+    appunti del computer con wl-paste/xclip, o lo standard input). Passa dal **socket locale**
+    `$XDG_RUNTIME_DIR/eurise-ponte.sock` (permessi 600, righe JSON: lo useranno Firefox e Office); se il Ponte non è
+    acceso va in coda e parte alla prossima accensione. `prova-telefono` ora mostra per 3 s ciò che arriva.
+    Idea per GNOME: una scorciatoia (Impostazioni › Tastiera) con `eurise-ponte manda appunti`.
+  - Telefono (`feature/ponte/PonteLink.kt`): interruttore **«Dal computer al telefono»**, spento di base, con la
+    spiegazione prima di accendere; chiede le notifiche e di togliere Eurise dall'ottimizzazione della batteria (senza,
+    Android 12+ non lascia partire il primo piano dal fondo: allora la stessa notifica si mette a mano, mai collegati
+    senza vederlo). Worker WorkManager con vincolo Wi-Fi (rete senza consumo) e computer su indirizzo privato; prova il
+    computer e solo collegato mette la notifica fissa «Collegato a … · 12:03 · appunti dal computer»; tre tentativi, poi
+    di nuovo fra 15 min. Appunti (sensibili se il computer lo dice), link come notifica «Continua qui», note e attività
+    al ricevitore della Tastiera (`KeyboardBridgeReceiver`). Rispetta gli interruttori Appunti e Schede.
+  - Non provato: qui Maven Central non è raggiungibile, compila e prova Actions. Ancora da fare: voce nel centro privacy
+    (oggi elenca solo servizi esterni), password dal telefono, «Ti hanno cercato» sul computer, cloud fuori casa.

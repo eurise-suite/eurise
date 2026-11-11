@@ -1,7 +1,12 @@
 package eu.eurise.feature.ponte
 
+import android.Manifest
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -28,11 +33,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +91,8 @@ class PonteActivity : ComponentActivity() {
             return
         }
         if (intent?.action == ACTION_PAIR) pair(intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty())
+        // Con la schermata davanti Android lascia partire il collegamento in primo piano.
+        PonteLink.start(applicationContext)
         setContent { EuriseTheme { PonteScreen() } }
     }
 
@@ -95,6 +104,7 @@ class PonteActivity : ComponentActivity() {
             val result = withContext(Dispatchers.IO) { runCatching { client.pair(p) }.getOrNull() }
             pairing = if (result == null) PairState.Failed else PairState.Done(result.first.name, result.second)
             version++
+            if (result != null) PonteLink.start(applicationContext)
         }
     }
 
@@ -173,6 +183,7 @@ class PonteActivity : ComponentActivity() {
                         }
                     }
                 }
+                Receive(enabled = computers.isNotEmpty())
                 Section(stringResource(R.string.ponte_flows))
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(horizontal = 14.dp, vertical = 4.dp)) {
                     Flow(EuriseIcons.browser(2f), R.string.ponte_flow_handoff, R.string.ponte_flow_handoff_sub, Kind.Handoff)
@@ -197,6 +208,46 @@ class PonteActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /** «Dal computer al telefono»: acceso solo dopo la spiegazione; spento subito, senza conferme. */
+    @Composable
+    private fun Receive(enabled: Boolean) {
+        val scheme = MaterialTheme.colorScheme
+        var on by remember { mutableStateOf(store.receiveOn) }
+        var asking by remember { mutableStateOf(false) }
+        val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { PonteLink.start(applicationContext) }
+        fun turnOn() {
+            store.receiveOn = true
+            on = true
+            val power = getSystemService(PowerManager::class.java)
+            if (power != null && !power.isIgnoringBatteryOptimizations(packageName)) {
+                runCatching { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) }
+            }
+            if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS) else PonteLink.start(applicationContext)
+        }
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.work(2f), null, tint = scheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.ponte_receive), fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+                Text(store.lastThing.takeIf { on } ?: stringResource(R.string.ponte_receive_sub), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+            }
+            Switch(checked = on, enabled = enabled || on, onCheckedChange = { want ->
+                if (want) asking = true
+                else { store.receiveOn = false; on = false; PonteLink.stop(applicationContext) }
+            })
+        }
+        if (asking) AlertDialog(
+            onDismissRequest = { asking = false },
+            title = { Text(stringResource(R.string.ponte_receive_title)) },
+            text = { Text(stringResource(R.string.ponte_receive_explain), fontSize = 14.sp) },
+            confirmButton = { TextButton(onClick = { asking = false; turnOn() }) { Text(stringResource(R.string.ponte_receive_on)) } },
+            dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.ponte_receive_cancel)) } },
+        )
     }
 
     @Composable

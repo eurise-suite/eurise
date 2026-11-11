@@ -11,6 +11,7 @@ import eu.eurise.core.ponte.Kind
 import eu.eurise.core.ponte.Link
 import eu.eurise.core.ponte.Message
 import eu.eurise.core.ponte.Opening
+import eu.eurise.core.ponte.Outbox
 import eu.eurise.core.ponte.Pairing
 import eu.eurise.core.ponte.Wire
 import eu.eurise.core.ponte.confirmCode
@@ -20,6 +21,8 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketTimeoutException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.Base64
 import java.util.UUID
 import kotlin.concurrent.thread
@@ -31,7 +34,13 @@ import kotlin.system.exitProcess
  *   eurise-ponte                    resta in ascolto dei telefoni abbinati (appunti, dettatura, «Continua qui», chiamate)
  *   eurise-ponte dispositivi        elenca i telefoni abbinati
  *   eurise-ponte dimentica <nome>   toglie un telefono
+ *   eurise-ponte manda appunti [testo]     manda al telefono gli appunti del computer (o il testo)
+ *   eurise-ponte manda link <url> [titolo] «Continua qui» sul telefono
+ *   eurise-ponte manda nota <testo>        una nota in Eurise Note (senza testo: legge dallo standard input)
+ *   eurise-ponte manda attivita <testo>    una cosa da fare in Eurise Attività («pagare l'affitto venerdì»)
  *   eurise-ponte prova-telefono <codice>   fa finta di essere un telefono (per provare senza telefono)
+ *
+ * Se il telefono non è collegato, quello che si manda resta in coda e parte quando torna sulla rete di casa.
  */
 fun main(args: Array<String>) {
     val home = Store(dataDir())
@@ -46,18 +55,21 @@ fun main(args: Array<String>) {
             home.saveDevices(left)
             println("Fatto.")
         }
+        "manda" -> Send.run(home, args.drop(1))
         "prova-telefono" -> FakePhone.run(Pairing.parse(args.getOrNull(1) ?: fail("Manca il codice")) ?: fail("Codice non valido"), args.drop(2))
         "-h", "--help", "aiuto" -> println(HELP)
         else -> fail(HELP)
     }
 }
 
-private const val HELP = """eurise-ponte collega | ascolta | dispositivi | dimentica <nome> | prova-telefono <codice>"""
+private const val HELP = """eurise-ponte collega | ascolta | dispositivi | dimentica <nome>
+eurise-ponte manda appunti [testo] | manda link <url> [titolo] | manda nota <testo> | manda attivita <testo>
+eurise-ponte prova-telefono <codice>"""
 
 private fun fail(text: String): Nothing { System.err.println(text); exitProcess(2) }
 
 /** ~/.local/share/eurise/ponte (o $XDG_DATA_HOME): chiavi e telefoni abbinati, leggibili solo dall'utente. */
-private fun dataDir(): File {
+internal fun dataDir(): File {
     val base = System.getenv("XDG_DATA_HOME")?.takeIf { it.isNotBlank() }?.let(::File) ?: File(System.getProperty("user.home"), ".local/share")
     return File(base, "eurise/ponte").apply { mkdirs(); setReadable(false, false); setReadable(true, true); setExecutable(false, false); setExecutable(true, true) }
 }
@@ -66,6 +78,9 @@ private fun dataDir(): File {
 data class Device(val id: String, val name: String, val publicKey: ByteArray, val secret: ByteArray)
 
 class Store(private val dir: File) {
+    /** Messaggi per i telefoni non collegati in questo momento. */
+    val outbox = Outbox(File(dir, "coda"))
+
     private val b64 = Base64.getUrlEncoder().withoutPadding()
     private val d64 = Base64.getUrlDecoder()
 
@@ -96,9 +111,20 @@ class Store(private val dir: File) {
     }
 }
 
-/** Il server del Ponte sulla rete di casa: un collegamento per telefono, cifrato con la chiave comune. */
+/**
+ * Il server del Ponte sulla rete di casa: un collegamento per telefono, cifrato con la chiave comune. Il telefono lo
+ * tiene aperto finché è sul Wi-Fi di casa (con la notifica fissa che lo dice), così anche il computer può mandargli
+ * qualcosa; se non c'è, il messaggio aspetta in [Store.outbox].
+ */
 class Server(private val store: Store) {
     private val name = "${System.getProperty("user.name")} · ${InetAddress.getLocalHost().hostName}"
+
+    /** Un telefono collegato adesso. Si scrive una cornice alla volta. */
+    private class Session(val device: Device, val channel: Channel, private val out: java.io.OutputStream) {
+        @Synchronized fun send(m: Message) = Wire.writeFrame(out, channel.seal(m))
+    }
+
+    private val live = ConcurrentHashMap<String, Session>()
 
     fun run(pairing: Boolean) {
         val socket = runCatching { ServerSocket(Wire.DEFAULT_PORT) }.getOrElse { ServerSocket(0) }
@@ -112,6 +138,7 @@ class Server(private val store: Store) {
         } else {
             println("Ponte Eurise in ascolto sulla porta ${socket.localPort}. Telefoni abbinati: ${store.devices().size}")
         }
+        Control.listen { kind, fields -> deliver(kind, fields) }
         while (true) {
             val client = socket.accept()
             val s = secret
@@ -119,8 +146,31 @@ class Server(private val store: Store) {
         }
     }
 
+    /**
+     * Manda a tutti i telefoni abbinati: subito a quelli collegati, in coda per gli altri. Restituisce una riga per
+     * telefono («Pixel 8: arrivato», «Pixel 8: in coda»).
+     */
+    fun deliver(kind: Kind, fields: Map<String, String>): List<String> = store.devices().map { d ->
+        store.outbox.put(d.id, kind, fields)
+        val sent = live[d.id]?.let { flush(it) } ?: false
+        "${d.name}: " + if (sent) "arrivato" else "in coda, parte quando il telefono torna sulla rete di casa"
+    }
+
+    /** Svuota la coda verso un telefono collegato; vero se non è rimasto niente. */
+    private fun flush(session: Session): Boolean {
+        for (item in store.outbox.pending(session.device.id)) {
+            val ok = runCatching { session.send(item.message) }.isSuccess
+            if (!ok) return false
+            store.outbox.done(item)
+            println("→ ${session.device.name}: ${item.message.kind.wire}")
+        }
+        return true
+    }
+
     private fun serve(client: Socket, secret: ByteArray?, paired: () -> Unit) = client.use { c ->
-        c.soTimeout = 0
+        // Il telefono dà un segno di vita ogni pochi minuti: se tace così a lungo, il collegamento è morto.
+        c.soTimeout = 15 * 60_000
+        c.keepAlive = true
         val input = c.getInputStream().buffered()
         val output = c.getOutputStream()
         val opening = Opening.decode(Wire.readFrame(input) ?: return) ?: return
@@ -137,11 +187,19 @@ class Server(private val store: Store) {
         }
         val link = Link.between(store.identity.keys.private, Identity.publicKey(device.publicKey), device.secret)
         val channel = Channel(link, me = store.id)
-        Wire.writeFrame(output, channel.seal(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), mapOf("name" to name))))
-        while (true) {
-            val frame = runCatching { Wire.readFrame(input) }.getOrNull() ?: break
-            val m = channel.open(frame, from = device.id) ?: continue
-            Linux.handle(device, m)
+        val session = Session(device, channel, output)
+        session.send(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), mapOf("name" to name)))
+        live[device.id] = session
+        try {
+            flush(session)
+            while (true) {
+                val frame = try { Wire.readFrame(input) } catch (e: SocketTimeoutException) { null } catch (e: Exception) { null } ?: break
+                val m = channel.open(frame, from = device.id) ?: continue
+                if (m.kind == Kind.Ping || m.kind == Kind.Hello) continue
+                Linux.handle(device, m)
+            }
+        } finally {
+            live.remove(device.id, session)
         }
     }
 
@@ -188,6 +246,26 @@ object Linux {
         }
     }
 
+    /** Gli appunti del computer, per mandarli al telefono. */
+    fun paste(): String? {
+        val out = when {
+            wayland && has("wl-paste") -> output("wl-paste", "--no-newline")
+            has("xclip") -> output("xclip", "-selection", "clipboard", "-o")
+            has("xsel") -> output("xsel", "--clipboard", "--output")
+            else -> null
+        }
+        return out ?: runCatching {
+            java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
+        }.getOrNull()
+    }
+
+    private fun output(vararg cmd: String): String? = runCatching {
+        val p = ProcessBuilder(*cmd).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        p.outputStream.close()
+        val text = p.inputStream.bufferedReader().readText()
+        if (p.waitFor() == 0) text else null
+    }.getOrNull()
+
     /** Scrive dove c'è il cursore (wtype su Wayland, xdotool su X11); falso se non c'è lo strumento. */
     fun type(text: String) = when {
         wayland && has("wtype") -> run("wtype", text)
@@ -224,7 +302,7 @@ object Qr {
     }
 }
 
-/** Un telefono finto: si abbina con il codice e manda un appunto e un «Continua qui». Serve a provare il computer. */
+/** Un telefono finto: si abbina, manda un appunto e un «Continua qui», poi mostra per tre secondi ciò che arriva. */
 object FakePhone {
     fun run(p: Pairing, extra: List<String>) {
         val me = Identity.generate()
@@ -241,6 +319,12 @@ object FakePhone {
             Wire.writeFrame(out, channel.seal(Message(Kind.Clipboard, UUID.randomUUID().toString(), now, mapOf("text" to (extra.firstOrNull() ?: "IT60 X054 2811 1010 0000 0123 456")))))
             Wire.writeFrame(out, channel.seal(Message(Kind.Handoff, UUID.randomUUID().toString(), now, mapOf("url" to "https://eurise.eu/", "title" to "Eurise"))))
             println("Mandati: appunti e «Continua qui».")
+            // Come il telefono vero resta in ascolto: stampa quello che il computer manda (anche dalla coda).
+            s.soTimeout = 3_000
+            while (true) {
+                val frame = try { Wire.readFrame(input) } catch (e: SocketTimeoutException) { null } ?: break
+                channel.open(frame, from = p.deviceId)?.let { println("← ${it.kind.wire} ${it.fields}") }
+            }
         }
     }
 }

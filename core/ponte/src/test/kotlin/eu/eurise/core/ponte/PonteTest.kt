@@ -121,4 +121,37 @@ class HandshakeTest {
         assertEquals(Opening.Hi("tel-1"), Opening.decode(Opening.Hi("tel-1").encode()))
         assertNull(Opening.decode("{\"t\":\"boh\"}".toByteArray()))
     }
+
+    @Test
+    fun outboxKeepsOrderExpiresAndRestamps() {
+        val dir = kotlin.io.path.createTempDirectory("ponte-coda").toFile()
+        val box = Outbox(dir)
+        val t0 = 1_800_000_000_000L
+        val clip = box.put("telefono/1", Kind.Clipboard, mapOf("text" to "IBAN"), t0)
+        val note = box.put("telefono/1", Kind.Note, mapOf("text" to "Chiamare l'idraulico"), t0 + 1)
+        assertEquals(2, box.size("telefono/1"))
+
+        // Subito: tutti e due, in ordine, con l'ora della consegna e l'id di sempre.
+        val now = t0 + 60_000
+        val first = box.pending("telefono/1", now)
+        assertEquals(listOf(clip.id, note.id), first.map { it.message.id })
+        assertTrue(first.all { it.message.time == now })
+        assertEquals("IBAN", first[0].message["text"])
+
+        // Dopo un'ora gli appunti sono scaduti (e cancellati), la nota resta.
+        val later = box.pending("telefono/1", t0 + 60 * 60_000)
+        assertEquals(listOf(note.id), later.map { it.message.id })
+        assertEquals(1, box.size("telefono/1"))
+        box.done(later.single())
+        assertEquals(0, box.size("telefono/1"))
+        assertTrue(box.pending("altro", now).isEmpty())
+        dir.deleteRecursively()
+    }
+
+    @Test
+    fun newKindsTravelAndUnknownOnesAreDropped() {
+        val m = Message(Kind.Task, "t1", 5L, mapOf("text" to "pagare l'affitto venerdì"))
+        assertEquals(m, Message.decode(m.encode()))
+        assertNull(Message.decode(m.encode().replace("\"task\"", "\"futuro\"")))
+    }
 }

@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Il Ponte passa sulla rete di casa, diretto verso il computer collegato. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Dal computer al telefono: collegamento fisso solo sul Wi-Fi di casa, sempre con la notifica che lo dice. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Richiesto da Android 14 per il tipo connectedDevice; il Ponte non cambia la rete. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <application>
+        <!-- Il lavoro di WorkManager in primo piano per il collegamento con il computer. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="connectedDevice"
+            tools:node="merge" />
         <activity
             android:name=".PonteActivity"
             android:exported="true"

@@ -68,6 +68,19 @@ class PonteStore(context: Context) {
         left.forEach(::save)
     }
 
+    /**
+     * Dal computer al telefono: spento di base. Acceso, il telefono tiene un collegamento fisso con il computer sul
+     * Wi-Fi di casa, sempre segnalato dalla notifica (PonteLink).
+     */
+    var receiveOn: Boolean
+        get() = prefs.getBoolean("ricevi", false)
+        set(value) { prefs.edit().putBoolean("ricevi", value).apply() }
+
+    /** L'ultima cosa arrivata dal computer, per la notifica fissa («12:03 · appunti dal computer»). */
+    var lastThing: String?
+        get() = prefs.getString("ultima", null)
+        set(value) { prefs.edit().putString("ultima", value).apply() }
+
     fun isOn(kind: Kind) = prefs.getBoolean("on." + kind.wire, true)
     fun setOn(kind: Kind, on: Boolean) = prefs.edit().putBoolean("on." + kind.wire, on).apply()
 }

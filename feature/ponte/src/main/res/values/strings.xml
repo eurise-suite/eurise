@@ -18,7 +18,7 @@
     <string name="ponte_flow_notify">Ti hanno cercato</string>
     <string name="ponte_flow_notify_sub">chiamate e messaggi sul computer (in arrivo)</string>
     <string name="ponte_how_home">Stessa rete: diretto tra i due, cifrato, istantaneo.</string>
-    <string name="ponte_how_away">Fuori casa: dal tuo Murena o Nextcloud, cifrato (in arrivo).</string>
+    <string name="ponte_how_away">Fuori casa: dal tuo Murena o Nextcloud, cifrato (in arrivo). Quello che mandi dal computer intanto aspetta lì e arriva quando torni.</string>
     <string name="ponte_pairing">Collego %1$s…</string>
     <string name="ponte_paired">Collegato a %1$s. Controlla che sul computer ci sia lo stesso codice:</string>
     <string name="ponte_pair_failed">Il computer non risponde: siete sulla stessa rete? Su «eurise-ponte collega» il codice vale finché è aperto.</string>
@@ -28,4 +28,19 @@
     <string name="ponte_off">Questo tipo di invio è spento: accendilo in Telefono e computer</string>
     <string name="ponte_no_speech">Il riconoscimento vocale del telefono non è disponibile</string>
     <string name="ponte_done">Fatto</string>
+    <string name="ponte_receive">Dal computer al telefono</string>
+    <string name="ponte_receive_sub">appunti, link, note e attività dal computer, sul Wi-Fi di casa</string>
+    <string name="ponte_receive_title">Prima di accendere</string>
+    <string name="ponte_receive_explain">Cosa: appunti, link, note e cose da fare che mandi dal computer abbinato (eurise-ponte manda…).\n\nDove: diretto tra computer e telefono sulla rete di casa, cifrato. Niente passa da Internet o da server nostri.\n\nSi vede sempre: finché il telefono è collegato c\'è una notifica fissa con il nome del computer e l\'ultima cosa arrivata. Fuori casa il collegamento si chiude da solo.\n\nPer tenerlo aperto Android chiede di togliere Eurise dall\'ottimizzazione della batteria. Si spegne qui, senza conferme.</string>
+    <string name="ponte_receive_on">Accendi</string>
+    <string name="ponte_receive_cancel">Non ora</string>
+    <string name="ponte_channel_link">Collegamento con il computer</string>
+    <string name="ponte_channel_continue">Continua qui</string>
+    <string name="ponte_linked_to">Collegato a %1$s</string>
+    <string name="ponte_linked_idle">Sul Wi-Fi di casa · ancora niente dal computer</string>
+    <string name="ponte_continue_here">Continua qui · dal computer</string>
+    <string name="ponte_got_clip">appunti dal computer</string>
+    <string name="ponte_got_link">link: %1$s</string>
+    <string name="ponte_got_note">nota in Eurise Note</string>
+    <string name="ponte_got_task">da fare: %1$s</string>
 </resources>

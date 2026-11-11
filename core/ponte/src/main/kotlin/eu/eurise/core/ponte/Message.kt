@@ -22,6 +22,12 @@ enum class Kind(val wire: String) {
     File("file"),
     /** Sono qui (rete locale o cloud), con le capacità di chi scrive. */
     Hello("hello"),
+    /** Una nota mandata dal computer (o dal telefono): finisce in Eurise Note. */
+    Note("note"),
+    /** Una cosa da fare, detta come si parla («pagare l'affitto venerdì»): finisce in Eurise Attività. */
+    Task("task"),
+    /** Il collegamento fisso è ancora vivo; non porta niente. Chi non lo conosce lo scarta. */
+    Ping("ping"),
     ;
 
     companion object {
