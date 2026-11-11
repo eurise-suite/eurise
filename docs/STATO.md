@@ -1268,3 +1268,38 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - Lezione: non spingere durante una compilazione: ogni push annulla quella in corso (concurrency).
 - Prossimi passi: approvazione tavole → codice Browser completo, poi Chat (Matrix SDK leggero) ed Email; Mappe stile suite
   (tavola prima); misura AI dopo il formato corto; Voce: verificare l'installazione sul telefono.
+
+## 12 novembre, notte: giro 310, Browser completo, Email, Mappe in stile suite, Office «Apri da…»
+- **APK 310** (Compila APK run 43121538975, pubblicato in `apk-prova` dal run 43123268322) con: Browser completo, **Email
+  nuova** (`eurise-email-debug`), Office con «Apri da…» (run 43118307755), Mappe giro 8 (run 43118578759).
+- **Office**: un giro fantasma del gruppo `office-engine` (43095129592, «in coda» senza lavori, non annullabile da qui)
+  bloccava l'app: `office-app.yml` ora ha il suo gruppo `office-app`. Da annullare a mano quando capita: gli altri fantasmi
+  in coda sono «Compila APK» 43097501511, 43095454189, 43095129657 (non bloccano nulla).
+- **Browser completo** (tavole BrwMenu, BrwImpostazioni, BrwImportaPwd approvate il 12 novembre): menu a griglia di 15 voci
+  (Preferito, In Note, Da fare, Lettura, Traduci sul telefono con Firefox Translations, Trova, Cattura, Zoom del testo,
+  Sito PC, Pagina scura, Download, Segnalibri, Password, Stampa PDF, In home); tieni premuto → voce nella barra; scorri
+  sull'indirizzo → scheda accanto. Impostazioni in 11 sezioni con ricerca (Ricerca e AI con «? domanda» a Duck.ai o Le Chat,
+  Privacy Forte/Standard, solo HTTPS, DNS cifrato Quad9/DNS4EU/Mullvad con spiegazione, Password, Schede riaperte all'avvio
+  e chiuse dopo N giorni, Aspetto, Gesti, Siti con i permessi, Download, Importa ed esporta, Telefono e computer «in
+  arrivo», Cancella dati). Importa: riconosce Vivaldi e gli altri browser installati, legge CSV e HTML, conta password e
+  doppioni, passa le password a Eurise Password (ACTION_SEND) e cancella i file esportati. Cronologia sul telefono
+  (`History.kt`, 90 giorni, non dalle private). API di GeckoView 141 verificate sui sorgenti (specchio GitHub
+  mozilla-firefox/firefox, tag FIREFOX_141_0_RELEASE). Non fatti: BrwStrumenti, BrwSessioni (tavole approvate, codice dopo).
+- **Email** (`mail/`, pacchetto `eu.eurise.mail`; tavole MailPosta, MailLettura, MailScrivi, MailCaselle): caselle con
+  indirizzo e password, server trovati da soli (`Providers.kt`: Murena, Posteo, mailbox.org, Disroot, Infomaniak, GMX,
+  WEB.DE, Libero, Virgilio, Aruba, Tiscali; poi autoconfig di Thunderbird, poi tentativi sul dominio); password cifrata
+  nel Keystore; posta unificata con Persone/Avvisi/Newsletter; lettura in WebView senza JavaScript e senza rete finché non
+  tocchi «Mostra»; allegati; Archivia/Elimina/Rispondi; Scrivi con copia negli Inviati; `mailto:`; controllo ogni 15 min
+  (WorkManager) con notifica solo per le persone. Libreria nuova: Jakarta Mail per Android 1.6.7.
+  **Da decidere col proprietario**: Gmail/Outlook/iCloud servono la registrazione OAuth di Eurise presso Google/Microsoft
+  (passo una tantum del proprietario); per ora la schermata lo dice e non li offre. Non fatti: «Da fare» e scadenze trovate
+  (bolletta), In breve, cartelle oltre la posta in arrivo, allegati in Scrivi, ricerca sul server.
+- **Mappe giro 8**: `maps/eurise_style.py` (chiamato da `eurise_patch.py`) mette i colori Perla e Notte in 100 colori di
+  CoMaps (Material 3 e schermate a View), provato sui sorgenti del commit fissato (specchio github.com/comaps/comaps);
+  icona di Eurise Mappe al posto di quella di CoMaps. Resta da fare (tavole approvate): cartello colorato per tipo di strada,
+  metri in tempo reale, velocità e limite, «Vedi su…», meteo sul percorso, «dove devi andare» dalla suite.
+- **Drive/File**: invariato (nell'APK principale).
+- Lezioni: in Kotlin una `fun setX()` accanto a `var x … private set` si scontra nella firma JVM (usare `@JvmName`);
+  da qui non si raggiungono maven.mozilla.org, Maven Central né codeberg: i sorgenti si leggono dagli specchi su GitHub.
+- **Prossimi passi**: prova sul telefono di Browser (import da Vivaldi, Traduci, DNS), Email (collegare una casella
+  Murena/Libero) e Mappe; poi BrwStrumenti e BrwSessioni, Chat (Matrix), OAuth per Email, guida di Mappe.
