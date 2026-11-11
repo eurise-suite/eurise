@@ -250,9 +250,10 @@ inline std::string capture_system(int y, int m, int d) {
         "appunti e informazioni da ricordare (codici, numeri, indirizzi). Se la frase comincia con «idea», «appunto» o "
         "«nota», il tipo è \"nota\".\n"
         "- titolo: breve, in italiano, senza giorno, ora e luogo.\n"
-        "- data: AAAA-MM-GG oppure null se non c'è un giorno. Un giorno della settimana senza altre indicazioni (anche "
-        "con «entro») è il primo che viene nell'elenco qui sotto.\n"
-        "- ora: HH:MM in 24 ore oppure null. «Pomeriggio» o «sera» senza un'ora: null.\n"
+        "- data: AAAA-MM-GG oppure null se non c'è un giorno. Un giorno della settimana da solo («venerdì», «entro "
+        "venerdì») è quello segnato con ← nell'elenco qui sotto. Una data senza anno («il 3 dicembre») è la prima che viene "
+        "da oggi in poi: di quest'anno, se non è già passata.\n"
+        "- ora: HH:MM in 24 ore oppure null. «Mattina», «pomeriggio» o «sera» senza un'ora: null.\n"
         "- luogo: il posto o l'indirizzo, oppure null.\n"
         "- persone: solo i nomi propri delle persone citate (non mestieri o gruppi), anche vuoto.\n"
         "- note: altri dettagli utili, oppure null.\n"
@@ -262,7 +263,9 @@ inline std::string capture_system(int y, int m, int d) {
         t.tm_mday += i;
         std::mktime(&t);
         const char *label = i == 1 ? "domani, " : i == 2 ? "dopodomani, " : "";
-        s += "- " + std::string(label) + spoken(t) + " = " + iso(t) + "\n";
+        static const char *names[] = {"domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"};
+        const std::string mark = i <= 7 ? std::string(" ← «") + names[t.tm_wday] + "»" : "";
+        s += "- " + std::string(label) + spoken(t) + " = " + iso(t) + mark + "\n";
     }
     return s;
 }

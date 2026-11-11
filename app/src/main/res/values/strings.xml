@@ -19,5 +19,7 @@
     <string name="web_close">Chiudi</string>
     <string name="web_open_app">Apri nell\'app</string>
     <string name="web_open_browser">Apri nel browser</string>
+    <string name="web_error">La pagina non si è aperta (%1$s). La ricerca resta qui: puoi portarla nel browser senza riscriverla.</string>
+    <string name="web_retry">Riprova</string>
     <string name="web_only_query">A %1$s va solo ciò che cerchi</string>
 </resources>

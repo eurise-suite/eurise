@@ -7,7 +7,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -132,6 +134,7 @@ private fun Popup(url: String, title: String, ai: Boolean, onWeb: (WebView) -> U
     var progress by remember { mutableIntStateOf(0) }
     var canBack by remember { mutableStateOf(false) }
     var view by remember { mutableStateOf<WebView?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
     BackHandler { if (view?.canGoBack() == true) view?.goBack() else onClose() }
     val none = remember { MutableInteractionSource() }
 
@@ -145,8 +148,9 @@ private fun Popup(url: String, title: String, ai: Boolean, onWeb: (WebView) -> U
                 .padding(top = 56.dp)
                 .fillMaxWidth()
                 .fillMaxHeight(0.86f)
-                .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-                .background(MaterialTheme.colorScheme.background)
+                // Sfondo con la forma, senza clip: una WebView dentro un ritaglio in una finestra trasparente su
+                // alcuni telefoni resta bianca (segnalato dal proprietario, 11 novembre).
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
                 .clickable(none, null) {}
                 .navigationBarsPadding()
                 .imePadding(),
@@ -173,21 +177,39 @@ private fun Popup(url: String, title: String, ai: Boolean, onWeb: (WebView) -> U
             }
             if (progress in 1..99) LinearProgressIndicator(progress = { progress / 100f }, Modifier.fillMaxWidth().height(2.dp))
             else Box(Modifier.height(2.dp))
-            WebPane(url, Modifier.weight(1f).fillMaxWidth(), onCreated = { view = it; onWeb(it) }, onPage = { page ->
-                host = Uri.parse(page).host.orEmpty().removePrefix("www.")
-                canBack = view?.canGoBack() == true
-            }, onProgress = { progress = it })
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                WebPane(url, Modifier.fillMaxSize(), onCreated = { view = it; onWeb(it) }, onPage = { page ->
+                    host = Uri.parse(page).host.orEmpty().removePrefix("www.")
+                    canBack = view?.canGoBack() == true
+                    error = null
+                }, onProgress = { progress = it }, onError = { error = it })
+                // Se la pagina non si apre si dice perché, e la ricerca va nel browser già scritta.
+                error?.let { why ->
+                    Column(
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(stringResource(R.string.web_error, why), fontSize = 15.sp)
+                        TextButton(onClick = onOpen) {
+                            Icon(EuriseIcons.external(), null, Modifier.size(16.dp))
+                            Text(stringResource(if (ai) R.string.web_open_app else R.string.web_open_browser), Modifier.padding(start = 6.dp), fontWeight = FontWeight.Bold)
+                        }
+                        TextButton(onClick = { error = null; view?.reload() }) { Text(stringResource(R.string.web_retry), fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
         }
     }
 }
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun WebPane(url: String, modifier: Modifier, onCreated: (WebView) -> Unit, onPage: (String) -> Unit, onProgress: (Int) -> Unit) {
+private fun WebPane(url: String, modifier: Modifier, onCreated: (WebView) -> Unit, onPage: (String) -> Unit, onProgress: (Int) -> Unit, onError: (String) -> Unit) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
             WebView(context).apply {
+                setBackgroundColor(android.graphics.Color.WHITE)
                 settings.javaScriptEnabled = true // i motori e gli assistenti non funzionano senza
                 settings.domStorageEnabled = true
                 settings.setSupportMultipleWindows(false)
@@ -204,6 +226,14 @@ private fun WebPane(url: String, modifier: Modifier, onCreated: (WebView) -> Uni
                     }
 
                     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) = onPage(url)
+
+                    override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                        if (request.isForMainFrame) onError(error.description?.toString().orEmpty().ifBlank { "errore ${error.errorCode}" })
+                    }
+
+                    override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                        if (request.isForMainFrame && response.statusCode >= 400) onError("HTTP ${response.statusCode}")
+                    }
                     override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) = onPage(url)
                 }
                 webChromeClient = object : WebChromeClient() {
