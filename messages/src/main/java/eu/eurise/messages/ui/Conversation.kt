@@ -349,6 +349,7 @@ private fun InsightCard(m: Message, insights: List<Insight>, confirmed: Boolean,
                     Pill(stringResource(R.string.ms_call)) { Reach.open(context, Reach.dial(i.number)) }
                     Pill(stringResource(R.string.ms_sms), light = true) { Reach.open(context, Reach.sms(i.number)) }
                     Reach.whatsapp(context, i.number)?.let { w -> Pill("WhatsApp", light = true) { Reach.open(context, w) } }
+                    Reach.whatsappBusiness(context, i.number)?.let { w -> Pill("WA Business", light = true) { Reach.open(context, w) } }
                     Reach.telegram(context, i.number)?.let { t -> Pill("Telegram", light = true) { Reach.open(context, t) } }
                     Pill(stringResource(R.string.ms_add_contact), light = true) { Reach.open(context, Reach.addContact(i.number)) }
                 }

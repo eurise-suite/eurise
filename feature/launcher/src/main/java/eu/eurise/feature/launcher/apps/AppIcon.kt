@@ -28,7 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -210,21 +215,35 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {
-                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, colorFilter = ColorFilter.tint(tint), modifier = Modifier.size(size * 0.62f))
+                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.74f).softTint(tint))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
-                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
+                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.6f).softTint(tint))
                 is IconImage.Plain -> Unit
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,
-                    tint = tint,
-                    modifier = Modifier.size(size * 0.46f),
+                    tint = Color.White,
+                    modifier = Modifier.size(size * 0.56f).softTint(tint),
                 )
             }
         }
         if (badge > 0) Badge(badge, dark, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-3).dp))
     }
 }
+
+/**
+ * Colora il disegno con un leggero sfumato: dalla tinta schiarita in alto a sinistra alla tinta piena in basso a destra.
+ * Il disegno sotto conta solo per la forma (alfa).
+ */
+private fun Modifier.softTint(tint: Color): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(
+            Brush.linearGradient(listOf(lerp(tint, Color.White, 0.3f), tint), start = Offset.Zero, end = Offset(size.width, size.height)),
+            blendMode = BlendMode.SrcIn,
+        )
+    }
 
 /** Simbolo delle sezioni di Eurise (che non hanno un'icona di sistema propria). */
 private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {

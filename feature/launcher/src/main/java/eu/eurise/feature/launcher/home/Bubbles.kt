@@ -397,6 +397,7 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
         open(if (body != null) send.putExtra("sms_body", body) else send)
     }
     val whatsapp = remember(context) { context.packageManager.getLaunchIntentForPackage("com.whatsapp") != null }
+    val whatsappBusiness = remember(context) { context.packageManager.getLaunchIntentForPackage("com.whatsapp.w4b") != null }
     val lateText = stringResource(R.string.bubble_late_sms, e.title)
     val confirmText = stringResource(R.string.bubble_confirm_sms, e.title, time)
     var moving by remember { mutableStateOf(false) }
@@ -415,6 +416,9 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
                 EventAction(EuriseIcons.message(2f), stringResource(R.string.bubble_sms)) { sms(null) }
                 if (whatsapp) EventAction(EuriseIcons.chat(2f), stringResource(R.string.bubble_whatsapp)) {
                     open(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + BubbleText.whatsappNumber(phone))).setPackage("com.whatsapp"))
+                }
+                if (whatsappBusiness) EventAction(EuriseIcons.chat(2f), stringResource(R.string.bubble_whatsapp_business)) {
+                    open(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + BubbleText.whatsappNumber(phone))).setPackage("com.whatsapp.w4b"))
                 }
             }
             contact.email?.let { mail ->

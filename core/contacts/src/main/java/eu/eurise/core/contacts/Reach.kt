@@ -43,10 +43,17 @@ object Reach {
     fun map(address: String) = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(address)))
     fun web(url: String) = Intent(Intent.ACTION_VIEW, Uri.parse(if (url.startsWith("http")) url else "https://$url"))
 
-    fun whatsapp(context: Context, number: String): Intent? {
-        val pkg = listOf(WHATSAPP, WHATSAPP_BUSINESS).firstOrNull { installed(context, it) } ?: return null
+    /**
+     * Chat su WhatsApp. WhatsApp e WhatsApp Business restano due canali distinti: [business] sceglie quale, e se
+     * quell'app non c'è non si ripiega sull'altra (null).
+     */
+    fun whatsapp(context: Context, number: String, business: Boolean = false): Intent? {
+        val pkg = if (business) WHATSAPP_BUSINESS else WHATSAPP
+        if (!installed(context, pkg)) return null
         return Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=" + international(number))).setPackage(pkg)
     }
+
+    fun whatsappBusiness(context: Context, number: String): Intent? = whatsapp(context, number, business = true)
 
     fun telegram(context: Context, number: String): Intent? {
         val pkg = listOf(TELEGRAM, TELEGRAM_FOSS).firstOrNull { installed(context, it) } ?: return null

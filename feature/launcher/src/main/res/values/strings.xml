@@ -309,6 +309,7 @@
     <string name="bubble_call">Telefona</string>
     <string name="bubble_sms">SMS</string>
     <string name="bubble_whatsapp">WhatsApp</string>
+    <string name="bubble_whatsapp_business">WhatsApp Business</string>
     <string name="bubble_email">Email</string>
     <string name="doc_notes">Note</string>
     <string name="doc_pdf">Lettore PDF</string>

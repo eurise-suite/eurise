@@ -239,7 +239,8 @@ class ContactsRepository(private val context: Context) {
 
     private companion object {
         val ChatApps = linkedMapOf(
-            "whatsapp" to "WhatsApp", "telegram" to "Telegram", "thoughtcrime.securesms" to "Signal",
+            // WhatsApp Business prima di WhatsApp: le sue righe contengono anche «whatsapp» e devono restare distinte.
+            "whatsapp.w4b" to "WhatsApp Business", "whatsapp" to "WhatsApp", "telegram" to "Telegram", "thoughtcrime.securesms" to "Signal",
             "signal" to "Signal", "threema" to "Threema", "im.vector" to "Element", "simplex" to "SimpleX",
         )
     }

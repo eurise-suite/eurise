@@ -335,6 +335,7 @@ private fun PersonScreen(id: Long, onBack: () -> Unit, onCall: (String) -> Unit,
                     Action(EuriseIcons.phone(), stringResource(R.string.ph_call), Modifier.weight(1f)) { onCall(number) }
                     Action(EuriseIcons.message(), stringResource(R.string.ph_sms), Modifier.weight(1f)) { Reach.open(context, Reach.sms(number)) }
                     Reach.whatsapp(context, number)?.let { i -> Action(EuriseIcons.chat(), "WhatsApp", Modifier.weight(1f)) { Reach.open(context, i) } }
+                    Reach.whatsappBusiness(context, number)?.let { i -> Action(EuriseIcons.chat(), "WA Business", Modifier.weight(1f)) { Reach.open(context, i) } }
                     Reach.telegram(context, number)?.let { i -> Action(EuriseIcons.send(), "Telegram", Modifier.weight(1f)) { Reach.open(context, i) } }
                 }
                 c.emails.firstOrNull()?.let { e -> Action(EuriseIcons.mail(), stringResource(R.string.ph_email), Modifier.weight(1f)) { Reach.open(context, Reach.email(e.value)) } }
@@ -522,6 +523,7 @@ private fun NumberSheet(e: CallEntry, onDismiss: () -> Unit, onCall: () -> Unit,
                 SheetRow(EuriseIcons.phone(), stringResource(R.string.ph_call), onCall)
                 SheetRow(EuriseIcons.message(), stringResource(R.string.ph_sms)) { Reach.open(context, Reach.sms(e.number)) }
                 Reach.whatsapp(context, e.number)?.let { i -> SheetRow(EuriseIcons.chat(), "WhatsApp") { Reach.open(context, i) } }
+                Reach.whatsappBusiness(context, e.number)?.let { i -> SheetRow(EuriseIcons.chat(), "WhatsApp Business") { Reach.open(context, i) } }
                 SheetRow(EuriseIcons.person(), stringResource(R.string.ph_add_to_contacts), onAdd)
                 SheetRow(EuriseIcons.block(), stringResource(if (e.blocked) R.string.ph_unblock_number else R.string.ph_block_number)) { onBlock(!e.blocked) }
                 SheetRow(EuriseIcons.trash(), stringResource(R.string.ph_forget_calls), onForget)
