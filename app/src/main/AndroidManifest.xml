@@ -74,6 +74,37 @@
             android:theme="@style/Theme.Eurise.Popup"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
+        <!-- File e Scanner con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
+        <activity
+            android:name=".SectionShortcutActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay" />
+        <activity-alias
+            android:name=".FileApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_file"
+            android:label="@string/app_file"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="drive" />
+        </activity-alias>
+        <activity-alias
+            android:name=".ScannerApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_scanner"
+            android:label="@string/app_scanner"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="scanner" />
+        </activity-alias>
         <!-- Eurise File: «Salva in…» e «Apri da…» per Office, Galleria e Browser. Solo app Eurise con la stessa firma. -->
         <activity
             android:name="eu.eurise.core.files.FilesActivity"

@@ -1220,3 +1220,6 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   **Galleria** (terza voce del foglio Condividi per una foto o un video: copia dell'originale, permesso della suite e
   `HUB_PACKAGE` nella build), **Browser** (download finito: avviso in basso «Scaricato … · Salva in…» per 12 s;
   `SaveProvider` per la copia), **Office** (copia PDF di «Prima di condividere»). Manca: «Apri da…» in Office.
+- **File e Scanner con un'icona propria tra le app di Android** (segnalato: «mi manca proprio l'app File»; finora erano
+  solo nel cassetto della Scrivania): activity-alias `.FileApp` e `.ScannerApp` → `SectionShortcutActivity`, che apre
+  l'app Eurise sulla sezione; icone adattive `ic_file`/`ic_scanner` sul fondo della suite con la stellina d'oro.
