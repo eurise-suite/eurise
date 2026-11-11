@@ -738,3 +738,19 @@ il riepilogo dice «tempo scaduto», rilanciare il lavoro (riparte dalla ccache)
 **Prossimo passo**: prova sul telefono di Telefono, Rubrica, Messaggi e Traduci (APK 237: eurise-telefono, eurise-messaggi,
 eurise-tastiera, eurise-leggi, eurise-debug); misure di Office e decisione; poi Mappe (base CoMaps) e Meteo dalle anteprime
 approvate, punto 3 Browser.
+
+## 11 novembre, 01:38 UTC: misure del motore di Office (giro 2, finito; artefatto `eurise-office-motore-2`)
+- **Si compila su GitHub Actions in un giro solo**: 2 h 05 in tutto (make 1 h 59, 13.360 file oggetto), con 4 processori.
+  Con la ccache salvata (554 MB) i giri dopo saranno molto più corti. Disco: sorgenti 2,5 GB, compilazione 4,6 GB,
+  instdir 1,1 GB, archivi esterni 0,6 GB; liberi alla fine 97 GB. Lo spazio non è un problema.
+- **Peso**: `liblo-native-code.so` (già ridotta con strip) 182,7 MB, compressa 66,1 MB; altre librerie (NSS, libc++,
+  sqlite) 15 MB (4 MB compresse). Assets: interfaccia 35 MB (4 MB compressi), filtri/galleria/tavolozze 11 MB (7 MB),
+  caratteri 9,7 MB (4,6 MB), configurazione e tipi UNO 4 MB (0,6 MB).
+- **Stima dell'APK**: 214 MB con le librerie non compresse (come si fa di solito: si caricano direttamente), **87 MB** con
+  le librerie compresse (installazione più lenta e spazio doppio sul telefono dopo l'installazione); senza caratteri
+  (a richiesta) 4,6 MB in meno. Collabora Office su F-Droid sta in quell'ordine (compresso). Manca ancora l'interfaccia web
+  di Collabora (cartella browser di online, per «Tutte le opzioni»).
+- **Da decidere con il proprietario**: (a) tenere il motore intero (87 MB da scaricare, circa 270 MB installato);
+  (b) motore ridotto: togliere Base, Math, Draw, filtri rari e la parte web (stima: si può arrivare intorno ai 50–60 MB
+  compressi, va misurato con un secondo giro); (c) motore scaricato a richiesta da Eurise Office dopo l'installazione
+  (APK piccolo, il motore come i modelli AI). Poi le anteprime di Office per telefono e tablet.
