@@ -464,6 +464,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
             },
             openWeather = openWeather,
             contactActions = { viewModel.contacts.actionsForName(it) },
+            commsApps = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { viewModel.contacts.bubbleApps() } },
             startAction = { viewModel.contacts.start(it) },
         )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.

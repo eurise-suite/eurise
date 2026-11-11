@@ -248,6 +248,34 @@ class ContactsRepository(private val context: Context) {
         return out.map { it.first to it.second.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
     }
 
+    /**
+     * Le app della bolla «Ti hanno cercato», nell'ordine scelto dal proprietario: WhatsApp, WhatsApp Business,
+     * Telegram, Telefono, Email, SMS, poi Eurise Messaggi. Compaiono solo quelle installate (Telefono ed Email sempre).
+     */
+    fun bubbleApps(): List<ContactAction> {
+        val pm = context.packageManager
+        val out = mutableListOf<ContactAction>()
+        fun app(label: String, kind: ContactAction.Kind, vararg pkgs: String) {
+            for (pkg in pkgs) {
+                val i = pm.getLaunchIntentForPackage(pkg) ?: continue
+                out += ContactAction(label, "", kind, i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), pkg)
+                return
+            }
+        }
+        app("WhatsApp", ContactAction.Kind.Chat, "com.whatsapp")
+        app("WhatsApp Business", ContactAction.Kind.Chat, "com.whatsapp.w4b")
+        app("Telegram", ContactAction.Kind.Chat, "org.telegram.messenger", "org.telegram.messenger.web", "org.thunderdog.challegram")
+        out += ContactAction("Telefono", "", ContactAction.Kind.Call, Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        val mail = pm.getLaunchIntentForPackage("eu.eurise.mail") ?: pm.getLaunchIntentForPackage("eu.eurise.mail.debug")
+            ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_EMAIL)
+        out += ContactAction("Email", "", ContactAction.Kind.Email, mail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        // L'app SMS predefinita, se è diversa da Eurise Messaggi (che arriva subito dopo).
+        val sms = runCatching { android.provider.Telephony.Sms.getDefaultSmsPackage(context) }.getOrNull()
+        if (sms != null && !sms.startsWith("eu.eurise.messages")) app("SMS", ContactAction.Kind.Sms, sms)
+        app("Messaggi", ContactAction.Kind.Sms, "eu.eurise.messages", "eu.eurise.messages.debug")
+        return out
+    }
+
     fun startIntent(intent: Intent) {
         runCatching { context.startActivity(intent) }
     }

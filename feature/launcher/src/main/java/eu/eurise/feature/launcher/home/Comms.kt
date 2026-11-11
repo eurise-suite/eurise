@@ -110,6 +110,7 @@ fun CommsBody(
     onAppInfo: () -> Unit,
     onHub: () -> Unit,
 ) {
+    CommsApps(LocalBubbleActions.current)
     when {
         !enabled -> {
             PillLine(EuriseIcons.chat(), stringResource(R.string.setup_notifications), stringResource(R.string.grant), onGrant)
@@ -338,6 +339,23 @@ internal fun ScrollWithBar(maxHeight: Dp, independent: Boolean = false, content:
             Column(Modifier.weight(1f), content = content)
             Spacer(Modifier.width(14.dp))
         }
+    }
+}
+
+/** La fila delle app in testa a «Ti hanno cercato»: un tocco apre WhatsApp, Telegram, il Telefono, l'email… */
+@Composable
+private fun CommsApps(actions: BubbleActions?) {
+    if (actions == null) return
+    val apps by androidx.compose.runtime.produceState(emptyList<eu.eurise.feature.launcher.contacts.ContactAction>(), actions) {
+        value = runCatching { actions.commsApps() }.getOrDefault(emptyList())
+    }
+    if (apps.isEmpty()) return
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().padding(bottom = 2.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        apps.forEach { a -> DirectIcon(a) { actions.startAction(a) } }
     }
 }
 

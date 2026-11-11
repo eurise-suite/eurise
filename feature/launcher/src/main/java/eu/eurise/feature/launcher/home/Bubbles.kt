@@ -127,6 +127,8 @@ class BubbleActions(
     val contactActions: suspend (String) -> List<eu.eurise.feature.launcher.contacts.ContactAction> = { emptyList() },
     /** Chiama, scrive un SMS, apre la chat o l'email scelta. */
     val startAction: (eu.eurise.feature.launcher.contacts.ContactAction) -> Unit = {},
+    /** Le app di «Ti hanno cercato» (WhatsApp, Telegram, Telefono, Email, SMS, Messaggi), lette fuori dal thread principale. */
+    val commsApps: suspend () -> List<eu.eurise.feature.launcher.contacts.ContactAction> = { emptyList() },
 )
 
 // ---------------------------------------------------------------- pezzi comuni
