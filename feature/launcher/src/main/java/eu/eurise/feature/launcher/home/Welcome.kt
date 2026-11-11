@@ -408,8 +408,9 @@ private fun MiniButton(icon: ImageVector, label: String, filled: Boolean, onClic
 }
 
 /**
- * Elenco dei contatti (recenti o preferiti) che scorre: toccando un contatto compaiono i modi per
- * raggiungerlo (chiamata, SMS, chat, email).
+ * Elenco dei contatti (recenti o preferiti) che scorre: accanto a ogni contatto le icone per raggiungerlo con un
+ * tocco (chiamata, SMS, WhatsApp, WhatsApp Business, Telegram, email e le altre chat presenti); toccando il nome,
+ * l'elenco completo con numeri e indirizzi. I recenti sono divisi in Telefono, Chat ed Email.
  */
 @Composable
 fun PeopleSheet(
@@ -422,10 +423,12 @@ fun PeopleSheet(
     onOpenContact: (Person) -> Unit,
     onClose: () -> Unit,
     initial: Person? = null,
+    /** Recenti: divisi in Telefono, Chat ed Email. */
+    grouped: Boolean = false,
+    quickApps: List<Pair<String, android.content.Intent>> = emptyList(),
+    onQuickApp: (android.content.Intent) -> Unit = {},
 ) {
     var open by remember { mutableStateOf(initial) }
-    var actions by remember { mutableStateOf<List<ContactAction>?>(null) }
-    LaunchedEffect(open) { actions = open?.let { loadActions(it) } }
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)).pointerInput(Unit) { detectTapGestures { onClose() } }
             .closeOnSwipe(up = false, onClose = onClose),
@@ -459,58 +462,163 @@ fun PeopleSheet(
             if (people != null && people.isEmpty() && !needsPermission) {
                 Text(stringResource(R.string.people_empty), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            LazyColumn(Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(bottom = 16.dp)) {
-                items(people.orEmpty(), key = { it.name + it.lastAt }) { person ->
-                    Column {
+            val cache = remember { androidx.compose.runtime.mutableStateMapOf<String, List<ContactAction>>() }
+            val row: @Composable (Person) -> Unit = { person ->
+                PersonRow(person, open == person, cache, loadActions, onAction, onOpenContact) { open = if (open == person) null else person }
+            }
+            if (quickApps.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    quickApps.forEach { (label, intent) -> QuickApp(label, intent, onQuickApp) }
+                }
+            }
+            if (!grouped) {
+                LazyColumn(Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(bottom = 16.dp)) {
+                    items(people.orEmpty(), key = { it.name + it.lastAt }) { row(it) }
+                }
+            } else {
+                // Recenti: tre parti, ognuna con i suoi ultimi contatti e che scorre per conto suo.
+                val groups = eu.eurise.feature.launcher.contacts.RecentGroup.entries
+                    .map { g -> g to people.orEmpty().filter { eu.eurise.feature.launcher.contacts.recentGroup(it.via) == g } }
+                    .filter { it.second.isNotEmpty() }
+                Column(Modifier.fillMaxWidth().weight(1f)) {
+                    groups.forEach { (g, list) ->
+                        Text(
+                            stringResource(when (g) {
+                                eu.eurise.feature.launcher.contacts.RecentGroup.Phone -> R.string.people_group_phone
+                                eu.eurise.feature.launcher.contacts.RecentGroup.Chat -> R.string.people_group_chat
+                                eu.eurise.feature.launcher.contacts.RecentGroup.Email -> R.string.people_group_email
+                            }),
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+                        )
+                        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                            items(list, key = { g.name + it.name + it.lastAt }) { row(it) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Una persona: nome e da dove viene, a destra i modi per raggiungerla già pronti (un tocco); toccando il nome, l'elenco completo. */
+@Composable
+private fun PersonRow(
+    person: Person,
+    expanded: Boolean,
+    cache: MutableMap<String, List<ContactAction>>,
+    loadActions: suspend (Person) -> List<ContactAction>,
+    onAction: (ContactAction) -> Unit,
+    onOpenContact: (Person) -> Unit,
+    onToggle: () -> Unit,
+) {
+    val key = person.contactId?.toString() ?: person.name
+    LaunchedEffect(key) { if (cache[key] == null) cache[key] = loadActions(person) }
+    val actions = cache[key]
+    Column {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onToggle),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Avatar(person, 40)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(person.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                person.via?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
+            }
+            // Un'icona per modo: chiamata, SMS, ogni app di chat con la sua icona, email (la prima di ciascun tipo).
+            actions.orEmpty().distinctBy { if (it.kind == ContactAction.Kind.Chat) it.label else it.kind.name }.take(6).forEach { a ->
+                ActionIcon(a) { onAction(a) }
+            }
+        }
+        if (expanded) {
+            Column(Modifier.padding(start = 52.dp, bottom = 6.dp)) {
+                when {
+                    actions == null -> Text("…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    actions.isEmpty() -> Text(
+                        stringResource(R.string.people_no_actions), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable { onOpenContact(person) },
+                    )
+                    else -> actions.forEach { a ->
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
-                                .clickable { open = if (open == person) null else person },
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onAction(a) }.padding(vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Avatar(person, 40)
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(person.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                person.via?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            }
-                        }
-                        if (open == person) {
-                            val list = actions
-                            Column(Modifier.padding(start = 52.dp, bottom = 6.dp)) {
-                                when {
-                                    list == null -> Text("…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    list.isEmpty() -> Text(
-                                        stringResource(R.string.people_no_actions), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.clickable { onOpenContact(person) },
-                                    )
-                                    else -> list.forEach { a ->
-                                        Row(
-                                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onAction(a) }.padding(vertical = 7.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Icon(
-                                                when (a.kind) {
-                                                    ContactAction.Kind.Call -> EuriseIcons.phone()
-                                                    ContactAction.Kind.Sms -> EuriseIcons.message()
-                                                    ContactAction.Kind.Chat -> EuriseIcons.chat()
-                                                    ContactAction.Kind.Email -> EuriseIcons.mail()
-                                                },
-                                                null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp),
-                                            )
-                                            Spacer(Modifier.width(10.dp))
-                                            Column {
-                                                Text(a.label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                                Text(a.detail, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            }
-                                        }
-                                    }
-                                }
+                            ActionGlyph(a, 18.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(a.label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text(a.detail, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ActionIcon(a: ContactAction, onClick: () -> Unit) {
+    Box(
+        Modifier.size(34.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = a.label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { ActionGlyph(a, 18.dp) }
+}
+
+/** Il simbolo di un modo: i nostri per chiamata, SMS ed email; per le chat l'icona vera dell'app (WhatsApp, Telegram…). */
+@Composable
+private fun ActionGlyph(a: ContactAction, size: androidx.compose.ui.unit.Dp) {
+    val app = a.pkg?.let { appIcon(it) }
+    if (app != null) {
+        androidx.compose.foundation.Image(app, a.label, Modifier.size(size + 2.dp).clip(CircleShape))
+    } else {
+        Icon(
+            when (a.kind) {
+                ContactAction.Kind.Call -> EuriseIcons.phone()
+                ContactAction.Kind.Sms -> EuriseIcons.message()
+                ContactAction.Kind.Chat -> EuriseIcons.chat()
+                ContactAction.Kind.Email -> EuriseIcons.mail()
+            },
+            a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(size),
+        )
+    }
+}
+
+/** Icona di un'app installata, ridotta a 48 px; null se l'app non c'è. */
+@Composable
+private fun appIcon(pkg: String): androidx.compose.ui.graphics.ImageBitmap? {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var bitmap by remember(pkg) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    LaunchedEffect(pkg) {
+        bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val d = context.packageManager.getApplicationIcon(pkg)
+                val b = android.graphics.Bitmap.createBitmap(48, 48, android.graphics.Bitmap.Config.ARGB_8888)
+                val c = android.graphics.Canvas(b)
+                d.setBounds(0, 0, 48, 48)
+                d.draw(c)
+                b.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    return bitmap
+}
+
+/** Un'app da aprire in testa ai recenti (Telefono, WhatsApp, Telegram, Email). */
+@Composable
+private fun QuickApp(label: String, intent: android.content.Intent, onClick: (android.content.Intent) -> Unit) {
+    val pkg = intent.`package` ?: intent.component?.packageName
+    val icon = pkg?.let { appIcon(it) }
+    Column(
+        Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = label) { onClick(intent) }.padding(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            if (icon != null) androidx.compose.foundation.Image(icon, null, Modifier.size(28.dp).clip(CircleShape))
+            else Icon(if (label == "Email") EuriseIcons.mail() else EuriseIcons.phone(), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        }
+        Text(label, fontSize = 11.sp, maxLines = 1)
     }
 }
 

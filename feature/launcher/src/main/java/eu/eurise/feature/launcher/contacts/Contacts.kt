@@ -21,9 +21,22 @@ data class Person(
     val lastAt: Long = 0,
 )
 
-/** Un modo per raggiungere un contatto: chiamata, SMS, chat di un'app, email. */
-data class ContactAction(val label: String, val detail: String, val kind: Kind, val intent: Intent) {
+/** Un modo per raggiungere un contatto: chiamata, SMS, chat di un'app, email. [pkg]: l'app della chat (per la sua icona). */
+data class ContactAction(val label: String, val detail: String, val kind: Kind, val intent: Intent, val pkg: String? = null) {
     enum class Kind { Call, Sms, Chat, Email }
+}
+
+/** Le tre parti dei contatti recenti: chiamate, chat, email. */
+enum class RecentGroup { Phone, Chat, Email }
+
+/** Da dove viene un contatto recente: «Telefono» è il registro chiamate; le app di posta si riconoscono dal nome. */
+fun recentGroup(via: String?): RecentGroup {
+    val v = via.orEmpty().lowercase()
+    return when {
+        v == "telefono" -> RecentGroup.Phone
+        listOf("mail", "outlook", "thunderbird", "k-9", "posta", "tuta", "spark").any { it in v } -> RecentGroup.Email
+        else -> RecentGroup.Chat
+    }
 }
 
 /**
@@ -51,7 +64,7 @@ class ContactsRepository(private val context: Context) {
         if (bits.size == 3) bits[2].toLongOrNull()?.let { Triple(bits[0], bits[1], it) } else null
     }
 
-    suspend fun recent(limit: Int = 10): List<Person> = withContext(Dispatchers.IO) {
+    suspend fun recent(limit: Int = 30): List<Person> = withContext(Dispatchers.IO) {
         val calls = if (hasCallLog()) runCatching {
             context.contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
@@ -69,7 +82,8 @@ class ContactsRepository(private val context: Context) {
         (calls + history())
             .filter { it.first.isNotBlank() }
             .sortedByDescending { it.third }
-            .distinctBy { it.first.lowercase() }
+            // Uno per persona in ciascuna parte (chiamate, chat, email): la stessa persona può stare in più parti.
+            .distinctBy { it.first.lowercase() + "|" + recentGroup(it.second) }
             .take(limit)
             .map { (name, via, at) ->
                 val match = if (hasContacts()) findContact(name) else null
@@ -77,7 +91,7 @@ class ContactsRepository(private val context: Context) {
             }
     }
 
-    suspend fun starred(limit: Int = 10): List<Person> = withContext(Dispatchers.IO) {
+    suspend fun starred(limit: Int = 40): List<Person> = withContext(Dispatchers.IO) {
         if (!hasContacts()) return@withContext emptyList()
         runCatching {
             context.contentResolver.query(
@@ -200,16 +214,35 @@ class ContactsRepository(private val context: Context) {
                             out += ContactAction("Email", data1, ContactAction.Kind.Email, Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + data1)))
                         mime.startsWith("vnd.android.cursor.item/vnd.") -> {
                             // Righe aggiunte dalle app di chat: aprire la riga apre la conversazione.
-                            val label = ChatApps.entries.firstOrNull { mime.contains(it.key) }?.value ?: continue
+                            val app = ChatApps.entries.firstOrNull { mime.contains(it.key) } ?: continue
                             val uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, dataId)
-                            out += ContactAction(label, data3.ifBlank { data1 }, ContactAction.Kind.Chat, Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime))
+                            out += ContactAction(app.value, data3.ifBlank { data1 }, ContactAction.Kind.Chat, Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime), ChatPackages[app.key])
                         }
                     }
                 }
             }
         }
-        out.distinctBy { it.label + it.detail }
+        // Una chat per app (le app scrivono più righe per lo stesso contatto: «Messaggio», «Chiamata vocale»…).
+        out.distinctBy { if (it.kind == ContactAction.Kind.Chat) it.label else it.label + it.detail }
             .map { it.copy(intent = it.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    }
+
+    /** Le app da aprire in testa ai recenti, se ci sono: Telefono, WhatsApp, Telegram, Email (la nostra quando arriva). */
+    fun quickApps(): List<Pair<String, Intent>> {
+        val pm = context.packageManager
+        fun launch(pkg: String) = pm.getLaunchIntentForPackage(pkg)
+        val out = mutableListOf<Pair<String, Intent>>()
+        out += "Telefono" to Intent(Intent.ACTION_DIAL)
+        launch("com.whatsapp")?.let { out += "WhatsApp" to it }
+        launch("org.telegram.messenger")?.let { out += "Telegram" to it }
+        val mail = launch("eu.eurise.mail") ?: launch("eu.eurise.mail.debug")
+            ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_EMAIL)
+        out += "Email" to mail
+        return out.map { it.first to it.second.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+    }
+
+    fun startIntent(intent: Intent) {
+        runCatching { context.startActivity(intent) }
     }
 
     fun start(action: ContactAction) {
@@ -242,6 +275,11 @@ class ContactsRepository(private val context: Context) {
             // WhatsApp Business prima di WhatsApp: le sue righe contengono anche «whatsapp» e devono restare distinte.
             "whatsapp.w4b" to "WhatsApp Business", "whatsapp" to "WhatsApp", "telegram" to "Telegram", "thoughtcrime.securesms" to "Signal",
             "signal" to "Signal", "threema" to "Threema", "im.vector" to "Element", "simplex" to "SimpleX",
+        )
+        val ChatPackages = mapOf(
+            "whatsapp.w4b" to "com.whatsapp.w4b", "whatsapp" to "com.whatsapp", "telegram" to "org.telegram.messenger",
+            "thoughtcrime.securesms" to "org.thoughtcrime.securesms", "signal" to "org.thoughtcrime.securesms",
+            "threema" to "ch.threema.app", "im.vector" to "im.vector.app", "simplex" to "chat.simplex.app",
         )
     }
 }

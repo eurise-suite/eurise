@@ -840,6 +840,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         }
                     },
                     onClose = { peopleSheet = null },
+                    grouped = kind == "recent",
+                    quickApps = remember(kind) { if (kind == "recent") viewModel.contacts.quickApps() else emptyList() },
+                    onQuickApp = { peopleSheet = null; viewModel.contacts.startIntent(it) },
                 )
             }
             if (categoryEditor) {
