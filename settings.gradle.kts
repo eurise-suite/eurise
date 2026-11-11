@@ -21,7 +21,7 @@ include(":gallery")
 include(":password")
 include(":voice")
 include(":phone")
-// include(":messages") // in arrivo
+include(":messages")
 // Eurise Leggi (motore nativo, compilazione lunga): si compila solo nel suo lavoro, per non allungare le altre.
 if (System.getenv("EURISE_READ") == "1") include(":read")
 include(":core:designsystem")

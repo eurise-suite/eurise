@@ -252,7 +252,7 @@ private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, on
         }
     }
     Column(Modifier.fillMaxSize()) {
-        TopBar(stringResource(R.string.ph_contacts), onBack) { IconCircle(EuriseIcons.plus(), stringResource(R.string.ph_new_contact), onNew) }
+        TopBar(stringResource(R.string.ph_contacts), onBack) { IconCircle(EuriseIcons.plus(), stringResource(R.string.ph_new_contact), onClick = onNew) }
         OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.ph_search_contacts)) }, singleLine = true,
             leadingIcon = { Icon(EuriseIcons.search(), null, modifier = Modifier.size(18.dp)) },
             shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
