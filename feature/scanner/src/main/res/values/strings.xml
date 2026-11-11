@@ -101,6 +101,9 @@
     <string name="qr_otp_title">Codice 2FA</string>
     <string name="qr_otp_open">Apri in Password</string>
     <string name="qr_text_title">Testo</string>
+    <string name="qr_ponte_title">Computer da collegare</string>
+    <string name="qr_ponte_note">Ponte Eurise: il telefono e questo computer si riconosceranno da soli, senza account. Sulla rete di casa passa tutto diretto e cifrato.</string>
+    <string name="qr_ponte_pair">Collega questo computer</string>
     <string name="qr_text_note">Salva in Note</string>
     <string name="qr_saved_note">Salvato in Note</string>
     <string name="qr_history">Letti prima</string>

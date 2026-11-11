@@ -109,6 +109,7 @@ dependencies {
     implementation(project(":feature:weather"))
     implementation(project(":feature:privacy"))
     implementation(project(":feature:people"))
+    implementation(project(":feature:ponte"))
     implementation(project(":core:suite"))
 
     implementation(libs.androidx.core.ktx)

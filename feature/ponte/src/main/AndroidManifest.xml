@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Il Ponte passa sulla rete di casa, diretto verso il computer collegato. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <activity
+            android:name=".PonteActivity"
+            android:exported="true"
+            android:label="@string/ponte_title"
+            android:taskAffinity="eu.eurise.ponte"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="eu.eurise.action.PONTE_PAIR" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="eu.eurise.action.PONTE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter android:label="@string/ponte_send_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -22,12 +22,15 @@ sealed interface QrContent {
     /** Codice 2FA: il segreto non va mai mostrato, va solo passato a Password. */
     data class Otp(override val raw: String) : QrContent
     data class Text(override val raw: String) : QrContent
+    /** Codice del Ponte Eurise mostrato dal computer: si collega il telefono (core/ponte, feature/ponte). */
+    data class Ponte(override val raw: String, val name: String) : QrContent
 
     companion object {
         fun parse(text: String): QrContent {
             val t = text.trim()
             val upper = t.uppercase()
             return when {
+                t.startsWith("eurise-ponte://") -> ponte(t) ?: Text(t)
                 upper.startsWith("PAGOPA|") -> pagoPa(t) ?: Text(t)
                 upper.startsWith("BCD\n") || upper.startsWith("BCD\r\n") -> sepa(t) ?: Text(t)
                 upper.startsWith("WIFI:") -> wifi(t) ?: Text(t)
@@ -43,6 +46,11 @@ sealed interface QrContent {
                 upper.startsWith("HTTP://") || upper.startsWith("HTTPS://") -> link(t) ?: Text(t)
                 else -> Text(t)
             }
+        }
+
+        private fun ponte(t: String): Ponte? {
+            val name = t.substringAfter('?').split('&').firstOrNull { it.startsWith("n=") }?.substringAfter("n=") ?: return null
+            return Ponte(t, runCatching { java.net.URLDecoder.decode(name, "UTF-8") }.getOrDefault(name))
         }
 
         private fun link(t: String): Link? {

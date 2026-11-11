@@ -118,6 +118,7 @@ internal fun qrSummary(c: QrContent): Pair<ImageVector, String> = when (c) {
     is QrContent.Geo -> EuriseIcons.map() to "${c.lat}, ${c.lon}"
     is QrContent.Otp -> EuriseIcons.lock() to stringResource(R.string.qr_otp_title)
     is QrContent.Text -> EuriseIcons.note() to c.raw.lineSequence().first().take(60)
+    is QrContent.Ponte -> EuriseIcons.link() to c.name
 }
 
 @Composable
@@ -190,6 +191,7 @@ internal fun QrSheet(text: String, onClose: () -> Unit) {
                             is QrContent.Geo -> R.string.qr_geo_title
                             is QrContent.Otp -> R.string.qr_otp_title
                             is QrContent.Text -> R.string.qr_text_title
+                            is QrContent.Ponte -> R.string.qr_ponte_title
                         },
                     ),
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant,
@@ -289,6 +291,15 @@ internal fun QrSheet(text: String, onClose: () -> Unit) {
                 is QrContent.Otp -> {
                     Text(stringResource(R.string.scan_qr_2fa), fontSize = 14.sp)
                     Primary(stringResource(R.string.qr_otp_open)) { context.start(Intent(Intent.ACTION_VIEW, Uri.parse(content.raw))); onClose() }
+                }
+                is QrContent.Ponte -> {
+                    Text(content.name, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(stringResource(R.string.qr_ponte_note), fontSize = 13.sp, color = scheme.onSurfaceVariant)
+                    Primary(stringResource(R.string.qr_ponte_pair)) {
+                        // Il Ponte sta in feature/ponte: lo apre l'app con un'azione esplicita (solo dentro l'APK).
+                        context.start(Intent("eu.eurise.action.PONTE_PAIR").setPackage(context.packageName).putExtra(Intent.EXTRA_TEXT, content.raw))
+                        onClose()
+                    }
                 }
                 is QrContent.Text -> {
                     val boarding = remember(content.raw) { eu.eurise.core.data.trips.Bcbp.parse(content.raw, java.time.LocalDate.now()) }

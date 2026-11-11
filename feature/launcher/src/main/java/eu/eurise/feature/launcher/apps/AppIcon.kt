@@ -286,6 +286,7 @@ private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
     "weather" -> EuriseIcons.sun(1.9f)
     "qr" -> EuriseIcons.scan(1.9f)
     "privacy" -> EuriseIcons.shield(1.9f)
+    "ponte" -> EuriseIcons.work(1.9f)
     "today" -> EuriseIcons.today(1.9f)
     else -> entry.category.icon(1.9f)
 }

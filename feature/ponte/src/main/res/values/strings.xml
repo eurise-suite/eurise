@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ponte_title">Telefono e computer</string>
+    <string name="ponte_subtitle">il lavoro continua da uno all\'altro</string>
+    <string name="ponte_send_label">Invia al computer</string>
+    <string name="ponte_computers">Computer collegati</string>
+    <string name="ponte_none">Nessun computer collegato. Sul computer (Ubuntu o Fedora) apri «eurise-ponte collega» e inquadra il codice.</string>
+    <string name="ponte_pair">Collega un computer</string>
+    <string name="ponte_dictate">Detta al computer</string>
+    <string name="ponte_forget">Dimentica</string>
+    <string name="ponte_flows">Cosa passa · ognuno si spegne</string>
+    <string name="ponte_flow_handoff">Schede e documenti aperti</string>
+    <string name="ponte_flow_handoff_sub">«Invia al computer» dal menu Condividi: si apre lì</string>
+    <string name="ponte_flow_clip">Appunti</string>
+    <string name="ponte_flow_clip_sub">un testo condiviso finisce negli appunti del computer</string>
+    <string name="ponte_flow_dict">Dettatura</string>
+    <string name="ponte_flow_dict_sub">parli al telefono, il testo va dove scrivi sul computer</string>
+    <string name="ponte_flow_notify">Ti hanno cercato</string>
+    <string name="ponte_flow_notify_sub">chiamate e messaggi sul computer (in arrivo)</string>
+    <string name="ponte_how_home">Stessa rete: diretto tra i due, cifrato, istantaneo.</string>
+    <string name="ponte_how_away">Fuori casa: dal tuo Murena o Nextcloud, cifrato (in arrivo).</string>
+    <string name="ponte_pairing">Collego %1$s…</string>
+    <string name="ponte_paired">Collegato a %1$s. Controlla che sul computer ci sia lo stesso codice:</string>
+    <string name="ponte_pair_failed">Il computer non risponde: siete sulla stessa rete? Su «eurise-ponte collega» il codice vale finché è aperto.</string>
+    <string name="ponte_invalid">Codice del Ponte non valido</string>
+    <string name="ponte_sent">Inviato a %1$s</string>
+    <string name="ponte_not_sent">%1$s non risponde: è acceso e sulla stessa rete, con eurise-ponte aperto?</string>
+    <string name="ponte_off">Questo tipo di invio è spento: accendilo in Telefono e computer</string>
+    <string name="ponte_no_speech">Il riconoscimento vocale del telefono non è disponibile</string>
+    <string name="ponte_done">Fatto</string>
+</resources>

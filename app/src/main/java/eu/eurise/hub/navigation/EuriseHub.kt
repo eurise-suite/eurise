@@ -133,6 +133,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
         restoreState = true
     }
 
+    val ponteContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(request) {
         val section = request?.section ?: return@LaunchedEffect
         when {
@@ -155,6 +156,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "weather" -> navController.navigate("weather") { launchSingleTop = true }
             section == "qr" -> navController.navigate("qr") { launchSingleTop = true }
             section == "privacy" -> navController.navigate("privacy") { launchSingleTop = true }
+            section == "ponte" -> ponteContext.startActivity(android.content.Intent(ponteContext, eu.eurise.feature.ponte.PonteActivity::class.java))
             section == "notes" -> goTo(Section.Notes)
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
