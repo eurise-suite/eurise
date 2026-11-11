@@ -106,4 +106,9 @@
     <string name="eurise_translate_missing">Language missing: download it in Eurise Read.</string>
     <string name="eurise_translate_no_app">Translating needs Eurise Read.</string>
     <string name="eurise_translate_failed">Translation failed.</string>
+    <string name="eurise_free">Free</string>
+    <string name="eurise_search">Search</string>
+    <string name="eurise_more">More</string>
+    <string name="eurise_tools_title">Tools</string>
+    <string name="eurise_paste_prefix">Paste</string>
 </resources>

@@ -421,3 +421,41 @@ class CalcPanel(bar: EuriseBar) : Panel(bar, R.string.eurise_calc) {
         return root
     }
 }
+
+/**
+ * «Altro» (tavola TastRighe): gli strumenti della tastiera (appunti, emoji, una mano, annulla, impostazioni…) in una
+ * griglia al posto dei tasti, invece che nella fila dei suggerimenti dove si sovrapponevano alla barra di Eurise.
+ * Sono gli stessi scelti nelle impostazioni «Barra degli strumenti».
+ */
+class ToolsPanel(bar: EuriseBar) : Panel(bar, R.string.eurise_more) {
+    override fun view(): View {
+        val keys = helium314.keyboard.latin.utils.getEnabledToolbarKeys(context.prefs())
+        val grid = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        keys.chunked(5).forEach { row ->
+            grid.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                row.forEach { key ->
+                    val button = helium314.keyboard.latin.utils.createToolbarKey(context, key)
+                    button.setColorFilter(p.text)
+                    button.background = rounded(p.surface, context.dp(14).toFloat(), p.faint)
+                    button.setOnClickListener { v ->
+                        bar.close()
+                        helium314.keyboard.latin.utils.onClickToolbarKey(v) { code ->
+                            bar.ime.onCodeInput(code, helium314.keyboard.latin.common.Constants.SUGGESTION_STRIP_COORDINATE, helium314.keyboard.latin.common.Constants.SUGGESTION_STRIP_COORDINATE, false)
+                        }
+                    }
+                    button.setOnLongClickListener { v ->
+                        bar.close()
+                        helium314.keyboard.latin.utils.onLongClickToolbarKey(v) { code, _ ->
+                            bar.ime.onCodeInput(code, helium314.keyboard.latin.common.Constants.SUGGESTION_STRIP_COORDINATE, helium314.keyboard.latin.common.Constants.SUGGESTION_STRIP_COORDINATE, false)
+                        }
+                        true
+                    }
+                    addView(button, LinearLayout.LayoutParams(0, context.dp(52), 1f).apply { setMargins(context.dp(3), context.dp(3), context.dp(3), context.dp(3)) })
+                }
+                repeat(5 - row.size) { addView(View(context), LinearLayout.LayoutParams(0, context.dp(52), 1f)) }
+            })
+        }
+        return column(header(context.getString(R.string.eurise_tools_title)), grid)
+    }
+}

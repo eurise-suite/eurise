@@ -233,8 +233,16 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         suggestionsStrip.layoutDirection = newLayoutDirection
     }
 
-    fun setToolbarVisibility(toolbarVisible: Boolean) {
-        pinnedKeys.isVisible = !toolbarVisible
+    /**
+     * Eurise (tavola TastRighe): con la barra di Eurise accesa gli strumenti stanno in «Altro»; in questa fila restano
+     * solo le parole, gli appunti e le password. Niente tasto della barra degli strumenti, niente tasti fissati.
+     */
+    private val euriseOwnsTools: Boolean
+        get() = context.prefs().getBoolean(Settings.PREF_EURISE_BAR, helium314.keyboard.latin.settings.Defaults.PREF_EURISE_BAR)
+
+    fun setToolbarVisibility(requested: Boolean) {
+        val toolbarVisible = requested && !euriseOwnsTools
+        pinnedKeys.isVisible = !toolbarVisible && !euriseOwnsTools
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
 
@@ -522,11 +530,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             toolbarExpandKey.isVisible = true
         } else {
             toolbarExpandKey.setImageDrawable(toolbarArrowIcon)
-            toolbarExpandKey.isVisible = toolbarIsExpandable
+            toolbarExpandKey.isVisible = toolbarIsExpandable && !euriseOwnsTools
         }
 
-        toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable) null else this)
-        pinnedKeys.visibility = suggestionsStrip.visibility
+        toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable || euriseOwnsTools) null else this)
+        pinnedKeys.visibility = if (euriseOwnsTools) GONE else suggestionsStrip.visibility
         isExternalSuggestionVisible = false
     }
 

@@ -204,12 +204,18 @@ class ClipboardHistoryManager(
         clipIcon?.setBounds(0, 0, textView.lineHeight, textView.lineHeight) // scale the icon to the text
         textView.setCompoundDrawablesRelative(clipIcon, null, null, null)
         val inputType = editorInfo?.inputType ?: InputType.TYPE_NULL
+        // Eurise (tavola TastPassword): nei campi password questa fila è di Eurise Password, niente appunti.
+        if (InputTypeUtils.isPasswordInputType(inputType)) return null
         if (hasText) {
             if (TextUtils.isEmpty(content)) return null
             if (InputTypeUtils.isNumberInputType(inputType) && !content.isValidNumber()) return null
-            val shortenedContent = content.take(200) // for display only
+            val shortenedContent = content.toString().replace('\n', ' ').take(200) // for display only
             KeyboardTypeface.applyToTextView(textView)
-            textView.text = (if (isClipSensitive(inputType)) "*".repeat(shortenedContent.length) else shortenedContent)
+            // Eurise (tavola TastRighe): «Incolla · …» in una pillola che lascia spazio alle parole, non tutto il testo.
+            val shown = if (isClipSensitive(inputType)) "*".repeat(minOf(shortenedContent.length, 8)) else shortenedContent
+            textView.text = latinIME.getString(R.string.eurise_paste_prefix) + " · " + shown
+            textView.layoutParams = android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            textView.maxWidth = (latinIME.resources.displayMetrics.widthPixels * 0.62f).toInt()
         }
         val onClickListener = View.OnClickListener {
             dontShowCurrentSuggestion = true

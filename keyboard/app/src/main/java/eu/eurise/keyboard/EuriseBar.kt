@@ -134,9 +134,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     }
 
     /**
-     * Gli otto comandi: Calcola, Codici, File, Persona, Disponibilità, Traduci, Browser, AI. Icona sopra l'etichetta, così ci
-     * stanno tutti anche sui telefoni stretti; con le proposte presenti restano solo le icone. Browser e AI: tocco =
-     * cerca subito nel riquadro sopra l'app, pressione lunga = scegli motore, browser o assistente.
+     * I comandi (tavola TastRighe): Calcola, Codici, File, Persona, Libero, Traduci, Cerca e Altro. Sempre interi: icona
+     * sopra l'etichetta; con le proposte presenti restano solo le icone. Cerca: tocco = ricerca rapida (Web o AI nel
+     * pannello), pressione lunga = motore, browser o assistente. Altro = gli strumenti della tastiera.
      */
     private fun buildButtons(compact: Boolean) {
         buttons.removeAllViews()
@@ -145,16 +145,18 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_codes, R.drawable.eurise_ic_key) { open(CodesPanel(this)) },
             Command(R.string.eurise_file, R.drawable.eurise_ic_folder) { open(FilePanel(this)) },
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
-            Command(R.string.eurise_availability, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
+            Command(R.string.eurise_free, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
             Command(R.string.eurise_translate, R.drawable.eurise_ic_translate) { open(TranslatePanel(this)) },
-            Command(R.string.eurise_browser, R.drawable.eurise_ic_globe) { openSearch(ai = false) },
-            Command(R.string.eurise_ai, R.drawable.eurise_ic_spark) { openSearch(ai = true) },
+            // Browser e AI insieme (tavola TastRighe): nel pannello si sceglie Web o AI; pressione lunga = motore e browser.
+            Command(R.string.eurise_search, R.drawable.eurise_ic_globe) { openSearch(ai = false) },
+            // Gli strumenti di HeliBoard (appunti, emoji, una mano, impostazioni…): non più nella fila dei suggerimenti.
+            Command(R.string.eurise_more, R.drawable.eurise_ic_more) { open(ToolsPanel(this)) },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
-            val active = panel?.title == label
+            val active = panel?.title == label || (label == R.string.eurise_free && panel?.title == R.string.eurise_availability) ||
+                (label == R.string.eurise_search && panel is SearchPanel)
             val b = command(if (compact) "" else text, icon, active) { if (active) close() else action() }
-            if (label == R.string.eurise_browser) b.setOnLongClickListener { open(BrowserPanel(this)); true }
-            if (label == R.string.eurise_ai) b.setOnLongClickListener { open(AiPanel(this)); true }
+            if (label == R.string.eurise_search) b.setOnLongClickListener { open(BrowserPanel(this)); true }
             buttons.addView(b.lp(0, context.dp(if (compact) 40 else 46), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(4) })
         }
     }

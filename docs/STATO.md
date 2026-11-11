@@ -1204,3 +1204,12 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   come `eurise-office-debug.apk`. Giro 5 (43052890217, con la scheda Suite, «Cerca un comando», italiano): **237 MB**,
   perché il motore è ancora dentro l'APK. Il motore scaricato a richiesta (circa 66 MB, deciso) resta da fare. Da provare
   sul telefono.
+- **Approvate dal proprietario: TastRighe e TastPassword.** Fatto nella tastiera: comandi Calcola, Codici, File, Persona,
+  **Libero**, Traduci, **Cerca** (Web/AI nel pannello; pressione lunga = motore e browser) e **Altro** (`ToolsPanel`: gli
+  strumenti di HeliBoard in griglia, tocco e pressione lunga come prima); con la barra di Eurise accesa la fila dei
+  suggerimenti non mostra più il tasto della barra degli strumenti né i tasti fissati (`SuggestionStripView`,
+  `euriseOwnsTools`); la proposta degli appunti è «Incolla · …» su una riga, al massimo il 62 % della larghezza; nei
+  campi password niente appunti (la fila è di Eurise Password, che arriva con la compilazione automatica in linea).
+- **Eurise File comune (`core/files`)** e **editor dello scanner** scritti (vedi il commit «Eurise File comune…»): da
+  provare sul telefono. `FilesActivity` (`eu.eurise.action.SAVE_IN` / `OPEN_FROM`, permesso della suite) è pronta per
+  Office, Galleria e Browser: va ancora chiamata da loro.

@@ -106,4 +106,9 @@
     <string name="eurise_translate_missing">Manca la lingua: scaricala in Eurise Leggi.</string>
     <string name="eurise_translate_no_app">Per tradurre serve Eurise Leggi.</string>
     <string name="eurise_translate_failed">Traduzione non riuscita.</string>
+    <string name="eurise_free">Libero</string>
+    <string name="eurise_search">Cerca</string>
+    <string name="eurise_more">Altro</string>
+    <string name="eurise_tools_title">Strumenti</string>
+    <string name="eurise_paste_prefix">Incolla</string>
 </resources>
