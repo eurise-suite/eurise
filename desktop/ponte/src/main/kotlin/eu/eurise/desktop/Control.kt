@@ -40,10 +40,12 @@ object Control {
         }
     }
 
-    private fun answer(client: SocketChannel, deliver: (Kind, Map<String, String>) -> List<String>) = client.use { c ->
-        val line = Channels.newReader(c, Charsets.UTF_8).buffered().readLine() ?: return
-        val reply = request(line)?.let { (kind, fields) -> deliver(kind, fields) } ?: listOf("errore: richiesta non valida")
-        c.write(ByteBuffer.wrap((reply.joinToString("\n") + "\n").toByteArray()))
+    private fun answer(client: SocketChannel, deliver: (Kind, Map<String, String>) -> List<String>) {
+        client.use { c ->
+            val line = Channels.newReader(c, Charsets.UTF_8).buffered().readLine() ?: return
+            val reply = request(line)?.let { (kind, fields) -> deliver(kind, fields) } ?: listOf("errore: richiesta non valida")
+            c.write(ByteBuffer.wrap((reply.joinToString("\n") + "\n").toByteArray()))
+        }
     }
 
     /** Solo i tipi che il computer può mandare al telefono. */
