@@ -583,8 +583,9 @@ fun NextEventPill(
 }
 
 /**
- * I tuoi appuntamenti: quelli di oggi, con tutte le azioni, e sotto una linea le cose da fare. Le due parti
- * scorrono indipendenti l'una dall'altra.
+ * I tuoi impegni: gli appuntamenti di oggi, con tutte le azioni, e sotto una linea le cose da fare. Le due parti
+ * scorrono indipendenti l'una dall'altra. Se oggi ci sono farmaci da prendere o compleanni e ricorrenze, compaiono
+ * in fondo, dopo un'altra linea leggera, in una parte a sé.
  */
 @Composable
 fun AgendaPill(
@@ -600,8 +601,11 @@ fun AgendaPill(
     onConnectCalendar: () -> Unit,
     onCalendar: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    dates: List<eu.eurise.core.data.dates.ImportantDate> = emptyList(),
 ) {
     val upcoming = events.filter { it.allDay || it.end.isAfter(now) }
+    val doses = tasks.filter { it.listId == TaskList.MEDICINES && it.parentId == null }.sortedWith(compareBy({ it.due }, { it.time }))
+    val todayDates = dates.filter { it.occursOn(today) }
     val list = tasks.filter { it.listId != TaskList.MEDICINES && it.parentId == null }
     var adding by rememberSaveable { mutableStateOf(false) }
     Pill(hazeState, modifier, title = stringResource(R.string.welcome_events), trailing = {
@@ -621,6 +625,52 @@ fun AgendaPill(
             Spacer(Modifier.width(2.dp))
         }
         TaskSection(list, today, if (compact) 2 else 3, travels, adding, { adding = true }, actions, independent = true)
+        if (doses.isNotEmpty() || todayDates.isNotEmpty()) {
+            RowDivider()
+            RemindersSection(doses, todayDates, today, compact, actions)
+        }
+    }
+}
+
+/** Farmaci da prendere e ricorrenze di oggi, in fondo a «I tuoi impegni»: una riga ciascuno, i farmaci prima. */
+@Composable
+private fun RemindersSection(
+    doses: List<Task>,
+    dates: List<eu.eurise.core.data.dates.ImportantDate>,
+    today: LocalDate,
+    compact: Boolean,
+    actions: BubbleActions,
+) {
+    val rows: List<Any> = doses + dates
+    RowList(rows, if (compact) 2 else 3, { (it as? Task)?.let { t -> "m${t.id}" } ?: "d${(it as eu.eurise.core.data.dates.ImportantDate).id}" }) { r ->
+        if (r is Task) {
+            val late = r.due?.isBefore(today) == true
+            SwipeRow(
+                Swipe(stringResource(R.string.bubble_meds_taken), EuriseIcons.check(2.4f), MaterialTheme.colorScheme.primary) { actions.setDone(r) },
+                listOf(Swipe(stringResource(R.string.bubble_open), EuriseIcons.medical(2f), MaterialTheme.colorScheme.onSurfaceVariant) { actions.openMedicines() }),
+            ) {
+                BubbleRow(
+                    EuriseIcons.medical(), r.title,
+                    when {
+                        late -> stringResource(R.string.bubble_meds_missed)
+                        r.time != null -> stringResource(R.string.bubble_meds_at, r.time!!.format(TimeFormat))
+                        else -> stringResource(R.string.bubble_meds_today)
+                    },
+                    tint = if (late) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    subColor = if (late) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = actions.openMedicines,
+                    trailing = { ActionChip(stringResource(R.string.bubble_meds_taken), filled = true) { actions.setDone(r) } },
+                )
+            }
+        } else {
+            val d = r as eu.eurise.core.data.dates.ImportantDate
+            val years = d.yearsOn(today)
+            val title = stringResource(if (d.kind == eu.eurise.core.data.dates.ImportantDate.Kind.Birthday) R.string.bubble_birthday_of else R.string.bubble_anniversary_of, d.name)
+            BubbleRow(
+                EuriseIcons.gift(), title,
+                if (years != null) stringResource(R.string.bubble_date_years, years) else stringResource(R.string.bubble_meds_today),
+            )
+        }
     }
 }
 

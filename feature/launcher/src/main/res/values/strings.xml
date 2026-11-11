@@ -382,7 +382,7 @@
     <string name="greet_afternoon">Buon pomeriggio</string>
     <string name="greet_evening">Buonasera</string>
     <string name="greet_night">Buonanotte</string>
-    <string name="welcome_events">I tuoi appuntamenti</string>
+    <string name="welcome_events">I tuoi impegni</string>
     <string name="welcome_in_min">tra %1$d min</string>
     <string name="welcome_at">alle %1$s</string>
     <string name="welcome_tasks">Le cose da fare · %1$d</string>
@@ -515,6 +515,9 @@
     <string name="bubble_meds_at">oggi alle %1$s</string>
     <string name="bubble_meds_today">oggi</string>
     <string name="bubble_meds_taken">Presa</string>
+    <string name="bubble_birthday_of">Compleanno di %1$s</string>
+    <string name="bubble_anniversary_of">Ricorrenza: %1$s</string>
+    <string name="bubble_date_years">oggi · %1$d anni</string>
     <string name="bubble_clock_title">Timer e sveglie</string>
     <string name="bubble_clock_desc">timer rapidi, prossima sveglia</string>
     <string name="bubble_clock_open">Apri Orologio</string>

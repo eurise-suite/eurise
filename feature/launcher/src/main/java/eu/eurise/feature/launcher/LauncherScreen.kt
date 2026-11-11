@@ -567,6 +567,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                                         bubbles = bubbleActions,
                                         notifications = allNotifications,
                                         readCodes = settings.readCodes,
+                                        importantDates = importantDates,
                                         cardBody = { kind, modifier ->
                                             androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                                             SummaryCardBody(
@@ -981,6 +982,8 @@ private class HomeBoardData(
     val bubbles: eu.eurise.feature.launcher.home.BubbleActions,
     val notifications: List<MessageItem>,
     val readCodes: Boolean,
+    /** Compleanni e ricorrenze (Date importanti): quelli di oggi entrano nella bolla «I tuoi impegni». */
+    val importantDates: List<eu.eurise.core.data.dates.ImportantDate> = emptyList(),
 )
 
 /** Il contenuto di una bolla: sulla home o, come scheda, in una pagina laterale. */
@@ -1009,6 +1012,7 @@ private fun HomeBubble(
                 travels = welcome.travels,
                 hazeState = hazeState,
                 actions = home.bubbles,
+                dates = home.importantDates,
                 onConnectCalendar = actions.connectCalendar,
                 onCalendar = { actions.openEurise("calendar") },
                 modifier = mod,
