@@ -29,6 +29,8 @@ struct Engine {
     int n_ctx = 0;
     int n_batch = 0;
     double ms_load = 0;
+    /** I token che stanno ora nella memoria del contesto (prompt e risposta dell'ultima volta). */
+    std::vector<llama_token> cached;
 
     ~Engine() {
         if (ctx) llama_free(ctx);
@@ -118,9 +120,20 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
                      const std::function<bool(const std::string &)> &on_piece = nullptr) {
     out.clear();
     st = Stats();
-    llama_memory_clear(llama_get_memory(e.ctx), true);
     std::vector<llama_token> tokens = tokenize(e, prompt);
     if (tokens.empty() || (int) tokens.size() + max_tokens > e.n_ctx) return false;
+
+    // Le istruzioni sono uguali da una richiesta all'altra: la parte iniziale già letta resta in memoria e si legge
+    // solo il resto (la frase nuova). Almeno l'ultimo token si rilegge, per avere le probabilità del successivo.
+    llama_memory_t mem = llama_get_memory(e.ctx);
+    size_t keep = 0;
+    while (keep < e.cached.size() && keep + 1 < tokens.size() && e.cached[keep] == tokens[keep]) keep++;
+    if (keep == 0 || !llama_memory_seq_rm(mem, 0, (llama_pos) keep, -1)) {
+        llama_memory_clear(mem, true);
+        keep = 0;
+    }
+    e.cached.assign(tokens.begin(), tokens.begin() + keep);
+    std::vector<llama_token> rest(tokens.begin() + keep, tokens.end());
 
     llama_sampler *chain = llama_sampler_chain_init(llama_sampler_chain_default_params());
     if (grammar) {
@@ -134,13 +147,16 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
     llama_sampler_chain_add(chain, llama_sampler_init_greedy());
 
     double t = now_ms();
-    const bool ok = decode_all(e, tokens);
-    st.n_prompt = (int) tokens.size();
+    const bool ok = decode_all(e, rest);
+    st.n_prompt = (int) rest.size();
     st.ms_prompt = now_ms() - t;
     if (!ok) {
+        llama_memory_clear(mem, true);
+        e.cached.clear();
         llama_sampler_free(chain);
         return false;
     }
+    e.cached.insert(e.cached.end(), rest.begin(), rest.end());
 
     t = now_ms();
     char piece[256];
@@ -155,6 +171,7 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
             if (on_piece && !on_piece(p)) break;
         }
         if (llama_decode(e.ctx, llama_batch_get_one(&tok, 1)) != 0) break;
+        e.cached.push_back(tok);
     }
     st.ms_gen = now_ms() - t;
     llama_sampler_free(chain);
@@ -165,6 +182,7 @@ inline bool generate(Engine &e, const std::string &prompt, const char *grammar, 
 inline Stats bench(Engine &e, int n_prompt, int n_gen) {
     Stats st;
     llama_memory_clear(llama_get_memory(e.ctx), true);
+    e.cached.clear();
     const int n_vocab = llama_vocab_n_tokens(e.vocab);
     std::mt19937 rng(42);
     std::vector<llama_token> tokens(n_prompt);
@@ -228,12 +246,15 @@ inline std::string capture_system(int y, int m, int d) {
         "fretta e la trasformi in un oggetto JSON.\n"
         "Campi:\n"
         "- tipo: \"evento\" se c'è un appuntamento, un incontro o un impegno in un giorno; \"da_fare\" se è una cosa da "
-        "fare o da comprare; \"promemoria\" se chiede di essere avvisato a un'ora precisa; \"nota\" per idee e appunti.\n"
+        "fare o da comprare; \"promemoria\" se chiede di essere avvisato o svegliato a un'ora precisa; \"nota\" per idee, "
+        "appunti e informazioni da ricordare (codici, numeri, indirizzi). Se la frase comincia con «idea», «appunto» o "
+        "«nota», il tipo è \"nota\".\n"
         "- titolo: breve, in italiano, senza giorno, ora e luogo.\n"
-        "- data: AAAA-MM-GG oppure null se non c'è un giorno.\n"
+        "- data: AAAA-MM-GG oppure null se non c'è un giorno. Un giorno della settimana senza altre indicazioni (anche "
+        "con «entro») è il primo che viene nell'elenco qui sotto.\n"
         "- ora: HH:MM in 24 ore oppure null. «Pomeriggio» o «sera» senza un'ora: null.\n"
         "- luogo: il posto o l'indirizzo, oppure null.\n"
-        "- persone: i nomi delle persone citate, anche vuoto.\n"
+        "- persone: solo i nomi propri delle persone citate (non mestieri o gruppi), anche vuoto.\n"
         "- note: altri dettagli utili, oppure null.\n"
         "Oggi è " + spoken(base) + " (" + iso(base) + ").\n";
     for (int i = 1; i <= 14; i++) {
