@@ -322,6 +322,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
       androidx.compose.runtime.CompositionLocalProvider(
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
           eu.eurise.feature.launcher.apps.LocalAppIconColors provides settings.appIconColors,
+          eu.eurise.feature.launcher.apps.LocalIconTheme provides settings.iconTheme,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
           // Sulla Scrivania le bolle si staccano appena un po' di più dallo sfondo.
           eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors),
@@ -622,6 +623,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                                     onAppearance = { appearance = true },
                                     settings = settings,
                                     onMoveFavorite = viewModel::moveFavorite,
+                                    onReorderFavorites = viewModel::setFavoriteOrder,
                                     onQuickApp = { gallery, key -> viewModel.updateSettings { if (gallery) it.copy(quickGallery = key) else it.copy(quickCamera = key) } },
                                     welcome = welcome,
                                     onOpenFolder = { openFolder = it.id },
@@ -1096,6 +1098,7 @@ private fun PhoneHome(
     onAppearance: () -> Unit,
     settings: LauncherSettings,
     onMoveFavorite: (AppEntry, Int) -> Unit,
+    onReorderFavorites: (List<String>) -> Unit,
     welcome: WelcomeData,
     onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit,
     onCreateFolder: (AppEntry) -> Unit,
@@ -1210,35 +1213,36 @@ private fun PhoneHome(
             } else if (!imeOpen) {
                 // Griglia dei preferiti: colonne e righe scelte in Griglia e icone. Con la tastiera aperta si
                 // toglie, per non restare appoggiata sopra i tasti e lasciare spazio alla bolla in cui si scrive.
-                val shown = state.favorites.take(settings.maxFavorites)
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    shown.chunked(settings.columns).forEach { row ->
-                        Row(Modifier.fillMaxWidth()) {
-                            row.forEach { entry ->
-                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                eu.eurise.feature.launcher.home.FavoritesGrid(
+                    favorites = state.favorites.take(settings.maxFavorites),
+                    columns = settings.columns,
+                    iconSize = settings.iconSize.dp,
+                    dark = dark,
+                    onReorder = onReorderFavorites,
+                ) { entry, menuRequest, onMenuClosed, held ->
+                                Box(contentAlignment = Alignment.Center) {
                                     val folder = settings.folders.firstOrNull { it.key == entry.key }
                                     if (folder != null) {
                                         val byKey = state.apps.associateBy { it.key }
-                                        FolderTile(folder, folder.keys.mapNotNull { byKey[it] }, dark, settings.iconSize.dp, false, onOpen = { onOpenFolder(folder) })
+                                        FolderTile(folder, folder.keys.mapNotNull { byKey[it] }, dark, settings.iconSize.dp, false, onOpen = { if (!held()) onOpenFolder(folder) })
                                     } else AppTile(
                                         entry = entry,
                                         dark = dark,
                                         badge = badges[entry.packageName] ?: 0,
                                         favorite = isFavorite(entry),
-                                        onOpen = { actions.openApp(entry) },
+                                        // Durante una presa il rilascio non deve aprire l'app.
+                                        onOpen = { if (!held()) actions.openApp(entry) },
                                         onToggleFavorite = { onToggleFavorite(entry) },
                                         onInfo = if (entry.component != null) ({ actions.appInfo(entry) }) else null,
-                                        onMove = { delta -> onMoveFavorite(entry, delta) },
                                         onCreateFolder = { onCreateFolder(entry) },
                                         iconSize = settings.iconSize.dp,
                                         // Sulla home le icone vanno senza nome: più spazio per l'accoglienza.
                                         showLabel = false,
+                                        externalLongPress = true,
+                                        menuRequest = menuRequest,
+                                        onMenuClosed = onMenuClosed,
                                     )
                                 }
-                            }
-                            repeat(settings.columns - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
                 }
             }
             // Poco spazio tra i preferiti e i puntini delle pagine.

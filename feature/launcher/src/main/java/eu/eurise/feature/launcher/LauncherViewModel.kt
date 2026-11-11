@@ -304,6 +304,13 @@ class LauncherViewModel(
         prefs.edit().putString(KEY_FAVORITES, next.joinToString("|")).apply()
     }
 
+    /** Nuovo ordine dei preferiti, scelto trascinandoli sulla home. Le chiavi sconosciute si ignorano. */
+    fun setFavoriteOrder(keys: List<String>) {
+        val current = favoriteKeys.value
+        val next = keys.filter { it in current } + current.filter { it !in keys }
+        if (next != current) saveFavorites(next)
+    }
+
     /** Sposta un preferito di un posto avanti (+1) o indietro (-1). */
     fun moveFavorite(entry: AppEntry, delta: Int) {
         val list = favoriteKeys.value.toMutableList()

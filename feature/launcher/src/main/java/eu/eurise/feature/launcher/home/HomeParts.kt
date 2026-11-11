@@ -268,6 +268,8 @@ fun AppTile(
     externalLongPress: Boolean = false,
     menuRequest: Boolean = false,
     onMenuClosed: () -> Unit = {},
+    /** Avvia la selezione di più app partendo da questa; nullo per non mostrare la voce. */
+    onSelect: (() -> Unit)? = null,
 ) {
     var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
@@ -313,6 +315,13 @@ fun AppTile(
                     text = { Text(stringResource(R.string.folder_create)) },
                     leadingIcon = { Icon(EuriseIcons.grid(), null) },
                     onClick = { menu = false; onCreateFolder() },
+                )
+            }
+            if (onSelect != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.apps_select)) },
+                    leadingIcon = { Icon(EuriseIcons.check(), null) },
+                    onClick = { menu = false; onSelect() },
                 )
             }
             if (moveTargets.isNotEmpty()) {

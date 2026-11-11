@@ -162,6 +162,11 @@ fun CategoryPages(
     }
     var drag by remember { mutableStateOf<AppDrag?>(null) }
     var menuKey by remember { mutableStateOf<String?>(null) }
+    // Selezione di più app: le chiavi scelte e la categoria in cui si sta scegliendo.
+    var picked by remember { mutableStateOf(emptySet<String>()) }
+    var pickedIn by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(pager.currentPage) { if (categories.getOrNull(pager.currentPage)?.id != pickedIn) { picked = emptySet(); pickedIn = null } }
+    val picking by rememberUpdatedState(picked.isNotEmpty())
     var rootOrigin by remember { mutableStateOf(Offset.Zero) }
     var boxWidth by remember { mutableFloatStateOf(0f) }
     val grids = remember { mutableStateMapOf<Int, LazyGridState>() }
@@ -221,7 +226,7 @@ fun CategoryPages(
                         val page = pager.currentPage
                         val category = currentCategories.getOrNull(page)
                         val entry = (tileAt(page, at)?.key as? String)?.let { currentByKey[it] }
-                        if (category != null && entry != null) {
+                        if (category != null && entry != null && !picking) {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             val order = if (category.holdsApps) currentAppsOf(category).map { it.key } else null
                             drag = AppDrag(entry, category.id, at, order, locked = category.isFavorites)
@@ -293,7 +298,17 @@ fun CategoryPages(
                 contentAlignment = Alignment.BottomCenter,
             ) {
             Column(Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (picked.isNotEmpty() && pickedIn == category.id) {
+                    SelectionBar(
+                        count = picked.size,
+                        targets = categories.filter { it.id != category.id && it.holdsApps },
+                        onMove = { target ->
+                            picked.mapNotNull { byKey[it] }.forEach { onMoveTo(it, target) }
+                            picked = emptySet(); pickedIn = null
+                        },
+                        onCancel = { picked = emptySet(); pickedIn = null },
+                    )
+                } else Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         category.label,
                         style = MaterialTheme.typography.headlineMedium,
@@ -332,14 +347,19 @@ fun CategoryPages(
                     }
                     items(list, key = { it.key }) { app ->
                         val lifted = active?.moved == true && active.entry.key == app.key
+                        val isPicked = app.key in picked
                         Box(Modifier.animateItem().alpha(if (lifted) 0f else 1f), contentAlignment = Alignment.Center) {
                             AppTile(
                                 entry = app,
                                 dark = dark,
                                 badge = badges[app.packageName] ?: 0,
                                 favorite = isFavorite(app),
-                                // Durante una presa il rilascio non deve aprire l'app.
-                                onOpen = { if (drag == null) onOpen(app) },
+                                // Durante una presa il rilascio non deve aprire l'app; durante la selezione il tocco sceglie.
+                                onOpen = {
+                                    if (picked.isNotEmpty()) picked = if (isPicked) picked - app.key else picked + app.key
+                                    else if (drag == null) onOpen(app)
+                                },
+                                onSelect = if (category.holdsApps) ({ picked = setOf(app.key); pickedIn = category.id }) else null,
                                 onToggleFavorite = { onToggleFavorite(app) },
                                 onInfo = if (app.component != null || app.shortcut != null) ({ onInfo(app) }) else null,
                                 moveTargets = categories.filter { it.id != category.id && it.holdsApps },
@@ -351,6 +371,7 @@ fun CategoryPages(
                                 menuRequest = menuKey == app.key,
                                 onMenuClosed = { menuKey = null },
                             )
+                            if (picked.isNotEmpty()) PickMark(isPicked, Modifier.align(Alignment.TopEnd))
                         }
                     }
                 }
@@ -386,6 +407,50 @@ fun CategoryPages(
     }
 }
 
+/** In cima alla categoria durante la selezione: quante app sono scelte, «Sposta in…» con le categorie, Annulla. */
+@Composable
+private fun SelectionBar(count: Int, targets: List<BarCategory>, onMove: (BarCategory) -> Unit, onCancel: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.apps_selected, count), style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f),
+        )
+        Text(
+            stringResource(R.string.apps_select_cancel), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onCancel).padding(horizontal = 12.dp, vertical = 9.dp),
+        )
+        Box {
+            Text(
+                stringResource(R.string.apps_move_selected), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.primary)
+                    .clickable { open = true }.padding(horizontal = 14.dp, vertical = 9.dp),
+            )
+            androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                targets.forEach { target ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(target.label) },
+                        leadingIcon = { Icon(target.iconVector(2f), null) },
+                        onClick = { open = false; onMove(target) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Il segno di scelta sull'icona durante la selezione. */
+@Composable
+private fun PickMark(on: Boolean, modifier: Modifier) {
+    Box(
+        modifier.size(22.dp).clip(CircleShape)
+            .background(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (on) Icon(EuriseIcons.check(), null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))
+    }
+}
+
 /** Le azioni della fila sopra la tastiera: ognuna apre un foglio con ciò che si è scritto già dentro. */
 enum class QuickAction { Note, Task, Event, Documents, Web }
 
@@ -394,7 +459,7 @@ enum class QuickAction { Note, Task, Event, Documents, Web }
  * subito sopra la barra i contatti (prima i più sentiti), poi le app, poi quello che c'è in Calendario, Note,
  * Attività e conversazioni. Contatti e app scorrono di lato, ognuno per conto suo: due si leggono per intero e il
  * terzo si intravede. Il primo risultato sta a destra (a sinistra con l'opzione per mancini).
- * Sopra la tastiera la fila Nota, Da fare, Evento, Documenti e Web porta ciò che si è scritto in un foglio rapido.
+ * Nota, Da fare, Evento e Web per ciò che si è scritto stanno nella barra della Tastiera Eurise, non qui.
  * Invio apre il primo contatto, o la prima app se non ci sono contatti.
  */
 @Composable
@@ -449,7 +514,7 @@ fun SearchOverlay(
         Modifier
             .fillMaxSize()
             .glass(hazeState, RectangleShape, elevation = 0.dp, outline = false)
-            .background(scrimColor())
+            .background(searchScrim())
             .closeOnSwipe(up = false, onClose = onClose)
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .windowInsetsPadding(WindowInsets.ime),
@@ -569,48 +634,15 @@ fun SearchOverlay(
                 Icon(EuriseIcons.close(), stringResource(R.string.close), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
         }
-        Spacer(Modifier.height(8.dp))
-        QuickRow(q, hazeState, onQuick)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(10.dp))
     }
 }
 
-/** La fila sopra la tastiera: Nota, Da fare, Evento, Documenti, Web. Documenti e Web servono solo con qualcosa scritto. */
+/** Velo della ricerca: un pizzico più chiaro di quello delle categorie, così i risultati respirano. */
 @Composable
-private fun QuickRow(q: String, hazeState: HazeState, onQuick: (QuickAction, String) -> Unit) {
-    Row(
-        Modifier
-            .padding(horizontal = GlassDefaults.SideMargin)
-            .fillMaxWidth()
-            .glass(hazeState, RoundedCornerShape(22.dp), outline = false, solid = true)
-            .padding(4.dp),
-    ) {
-        listOf(
-            Triple(QuickAction.Note, R.string.quick_note, EuriseIcons.note(2f)),
-            Triple(QuickAction.Task, R.string.quick_task, EuriseIcons.task(2f)),
-            Triple(QuickAction.Event, R.string.quick_event, EuriseIcons.calendar(2f)),
-            Triple(QuickAction.Documents, R.string.quick_documents, EuriseIcons.folder(2f)),
-            Triple(QuickAction.Web, R.string.quick_web, EuriseIcons.globe(2f)),
-        ).forEach { (action, label, icon) ->
-            val enabled = q.isNotEmpty() || action == QuickAction.Note || action == QuickAction.Task || action == QuickAction.Event
-            val text = stringResource(label)
-            Column(
-                Modifier
-                    .weight(1f)
-                    .height(52.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .alpha(if (enabled) 1f else 0.4f)
-                    .clickable(enabled = enabled, onClickLabel = text) { onQuick(action, q) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.height(3.dp))
-                Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-            }
-        }
-    }
-}
+private fun searchScrim(): androidx.compose.ui.graphics.Color =
+    if (eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors.isDark) androidx.compose.ui.graphics.Color(0xFF0E1116).copy(alpha = 0.6f)
+    else androidx.compose.ui.graphics.Color(0xFF6B6A66).copy(alpha = 0.12f)
 
 /**
  * Una fila di risultati che scorre di lato per conto suo: due voci si leggono per intero e la terza si intravede.
@@ -681,15 +713,17 @@ private fun StripScrollbar(state: androidx.compose.foundation.lazy.LazyListState
     }
 }
 
+/** Un contatto o un'app nella fila: stessa pillola di vetro del campo di ricerca, solo un po' più bassa. */
 @Composable
 private fun StripCard(onClick: () -> Unit, hazeState: HazeState, strong: Boolean = false, content: @Composable () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .glass(hazeState, RoundedCornerShape(18.dp), elevation = if (strong) 4.dp else 0.dp, outline = false, solid = true)
+            .height(GlassDefaults.PillHeight)
+            .glass(hazeState, RoundedCornerShape(50), outline = false)
+            .clip(RoundedCornerShape(50))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp),
+            .padding(start = 8.dp, end = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) { content() }
 }

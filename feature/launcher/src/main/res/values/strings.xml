@@ -174,6 +174,15 @@
     <string name="tint_verde_inglese">Verde inglese</string>
     <string name="tint_azzurro_costiera">Azzurro costiera</string>
     <string name="appearance_icon_colors">Colore dei simboli</string>
+    <string name="appearance_icon_theme">Tema delle icone</string>
+    <string name="appearance_icon_theme_eurise">Eurise</string>
+    <string name="appearance_icon_theme_system">Sistema</string>
+    <string name="appearance_icon_theme_hint">Per altri temi installa un pacchetto di icone per launcher (per esempio da F-Droid): comparirà qui.</string>
+    <string name="favorite_drag_hint">Tieni premuto e trascina per spostare</string>
+    <string name="apps_select">Seleziona</string>
+    <string name="apps_selected">%1$d selezionate</string>
+    <string name="apps_move_selected">Sposta in…</string>
+    <string name="apps_select_cancel">Annulla</string>
     <string name="appearance_icons_category">Per categoria</string>
     <string name="appearance_icons_varied">Vario</string>
     <string name="appearance_icons_app">Dall’app</string>

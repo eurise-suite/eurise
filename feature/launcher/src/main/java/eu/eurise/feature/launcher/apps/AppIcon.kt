@@ -48,6 +48,8 @@ sealed interface IconImage {
     data class Full(val bitmap: ImageBitmap) : IconImage
     /** Simbolo della suite per le app di sistema che non hanno un simbolo monocromatico. */
     data class Glyph(val vector: ImageVector) : IconImage
+    /** Icona di sistema o di un pacchetto di icone: si mostra com'è, senza il tondo della suite. */
+    data class Plain(val bitmap: ImageBitmap) : IconImage
 }
 
 /**
@@ -57,18 +59,26 @@ sealed interface IconImage {
 object IconLoader {
     private val cache = LruCache<String, IconImage>(300)
 
-    suspend fun load(context: Context, entry: AppEntry, px: Int): IconImage? = withContext(Dispatchers.IO) {
-        cache.get(entry.key)?.let { return@withContext it }
+    suspend fun load(context: Context, entry: AppEntry, px: Int, theme: String = IconThemes.EURISE): IconImage? = withContext(Dispatchers.IO) {
+        val cacheKey = "$theme|${entry.key}"
+        cache.get(cacheKey)?.let { return@withContext it }
         val drawable = when {
             entry.shortcut != null -> WebApps.icon(context, entry.shortcut)
             entry.component != null -> runCatching { context.packageManager.getActivityIcon(entry.component) }.getOrNull()
             else -> null
         } ?: return@withContext null
+        if (theme != IconThemes.EURISE) {
+            // Tema di sistema o pacchetto di icone: il disegno del tema se c'è, altrimenti l'icona originale.
+            val themed = entry.component?.takeIf { theme != IconThemes.SYSTEM }?.let { IconThemes.drawable(context, theme, it) }
+            val plain = IconImage.Plain((themed ?: drawable).toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
+            cache.put(cacheKey, plain)
+            return@withContext plain
+        }
         val image = officialMono(drawable, px)
             ?: SystemGlyphs.find(entry)?.takeIf { entry.shortcut == null }?.let { IconImage.Glyph(it) }
             ?: silhouette(drawable, px)
             ?: IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
-        cache.put(entry.key, image)
+        cache.put(cacheKey, image)
         image
     }
 
@@ -155,6 +165,9 @@ val LocalVariedIcons = androidx.compose.runtime.compositionLocalOf { false }
 /** Vero quando il simbolo prende il colore dell'icona originale dell'app, portato alle tinte della suite. */
 val LocalAppIconColors = androidx.compose.runtime.compositionLocalOf { false }
 
+/** Tema delle icone scelto in Griglia e icone (vedi [IconThemes]). */
+val LocalIconTheme = androidx.compose.runtime.compositionLocalOf { IconThemes.EURISE }
+
 /** Colore del simbolo secondo la categoria della barra in cui sta l'app (fornito dalla Scrivania). */
 val LocalCategoryTint = androidx.compose.runtime.compositionLocalOf<(AppEntry) -> Color?> { { null } }
 
@@ -169,8 +182,9 @@ val IconBackgroundDark = Color(0xFF1A1E25)
 fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val px = with(androidx.compose.ui.platform.LocalDensity.current) { size.roundToPx() }
-    var image by remember(entry.key) { mutableStateOf<IconImage?>(null) }
-    LaunchedEffect(entry.key) { image = IconLoader.load(context, entry, px) }
+    val theme = LocalIconTheme.current
+    var image by remember(entry.key, theme) { mutableStateOf<IconImage?>(null) }
+    LaunchedEffect(entry.key, theme) { image = IconLoader.load(context, entry, px, theme) }
     val fromApp = LocalAppIconColors.current
     var appTint by remember(entry.key) { mutableStateOf(AppColors.cached(entry)) }
     if (fromApp && entry.euriseSection == null) {
@@ -184,7 +198,10 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark
     }
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
-        Box(
+        val plain = image as? IconImage.Plain
+        if (plain != null) {
+            Image(plain.bitmap, contentDescription = null, modifier = Modifier.size(size))
+        } else Box(
             Modifier
                 .size(size)
                 .shadow(6.dp, CircleShape)
@@ -196,6 +213,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
                 is IconImage.Mono -> Image(img.bitmap, contentDescription = null, colorFilter = ColorFilter.tint(tint), modifier = Modifier.size(size * 0.62f))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
                 is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
+                is IconImage.Plain -> Unit
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,

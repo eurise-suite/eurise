@@ -135,7 +135,8 @@ fun AppearanceSheet(
                 Text(stringResource(R.string.appearance_labels), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
             }
-            Column {
+            IconThemeChooser(settings.iconTheme) { v -> onChange { it.copy(iconTheme = v) } }
+            if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.EURISE) Column {
                 Text(stringResource(R.string.appearance_icon_colors), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 Row(
@@ -402,5 +403,42 @@ private fun Segmented(labels: List<String>, selected: Int, onPick: (Int) -> Unit
                 )
             }
         }
+    }
+}
+
+/** Tema delle icone: i tondi della suite, le icone di sistema o un pacchetto di icone installato. */
+@Composable
+private fun IconThemeChooser(current: String, onChoose: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var packs by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyList<eu.eurise.feature.launcher.apps.IconTheme>()) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        packs = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.feature.launcher.apps.IconThemes.installed(context) }
+    }
+    val choices = listOf(
+        eu.eurise.feature.launcher.apps.IconThemes.EURISE to stringResource(R.string.appearance_icon_theme_eurise),
+        eu.eurise.feature.launcher.apps.IconThemes.SYSTEM to stringResource(R.string.appearance_icon_theme_system),
+    ) + packs.map { it.packageName to it.label }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.appearance_icon_theme), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            choices.forEach { (value, label) ->
+                val on = value == current
+                Box(
+                    Modifier.clip(RoundedCornerShape(50))
+                        .background(if (on) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                        .clickable(role = Role.RadioButton) { onChoose(value) }
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                ) {
+                    Text(
+                        label, fontSize = 13.5.sp, maxLines = 1, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        if (packs.isEmpty()) Text(stringResource(R.string.appearance_icon_theme_hint), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
