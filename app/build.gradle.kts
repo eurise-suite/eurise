@@ -111,6 +111,7 @@ dependencies {
     implementation(project(":feature:people"))
     implementation(project(":feature:ponte"))
     implementation(project(":core:suite"))
+    implementation(project(":core:files"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

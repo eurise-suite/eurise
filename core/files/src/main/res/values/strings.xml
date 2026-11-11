@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="files_save_in">Salva in…</string>
+    <string name="files_from">da %1$s</string>
+    <string name="files_name">Nome</string>
+    <string name="files_suggestions">Proposte</string>
+    <string name="files_because_already">c\'è già «%1$s»</string>
+    <string name="files_last_used">l\'ultima usata</string>
+    <string name="files_phone">Telefono</string>
+    <string name="files_new_folder">Nuova cartella</string>
+    <string name="files_new_folder_name">Nome della cartella</string>
+    <string name="files_create">Crea</string>
+    <string name="files_cancel">Annulla</string>
+    <string name="files_keep_copy">Tieni una copia sul telefono</string>
+    <string name="files_keep_copy_sub">si apre anche senza rete</string>
+    <string name="files_privacy_phone">Resta sul telefono. Nessuno lo riceve.</string>
+    <string name="files_privacy_cloud">Va su %1$s, il tuo account. Nessun altro lo riceve.</string>
+    <string name="files_privacy_cloud_country">Va su %1$s (%2$s), il tuo account. Nessun altro lo riceve.</string>
+    <string name="files_save_here">Salva in %1$s</string>
+    <string name="files_saving">Salvo…</string>
+    <string name="files_saved">Salvato in %1$s</string>
+    <string name="files_failed">Non salvato: controlla la rete o lo spazio</string>
+    <string name="files_needs_access">Qui serve l\'accesso a tutti i file: scegli Documenti o Download, oppure dallo in File</string>
+    <string name="files_empty">Nessuna cartella qui</string>
+    <string name="files_cant_list">Non riesco a leggere questa cartella</string>
+    <string name="files_open_from">Apri da…</string>
+    <string name="files_for">per %1$s</string>
+    <string name="files_search">Nome del file</string>
+    <string name="files_recent">Recenti, ovunque siano</string>
+    <string name="files_browse">Sfoglia</string>
+    <string name="files_other_app">Da un\'altra app (selettore di Android)</string>
+    <string name="files_open_note">Il file si apre sul telefono; quando salvi torna nella sua cartella, anche sul cloud.</string>
+    <string name="files_opening">Apro…</string>
+    <string name="files_open_failed">Non riesco ad aprirlo: controlla la rete</string>
+    <string name="files_up">Su</string>
+    <string name="files_all">Tutto</string>
+</resources>

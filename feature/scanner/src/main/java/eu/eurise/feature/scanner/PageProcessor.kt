@@ -18,7 +18,8 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-enum class ScanMode { Document, BlackWhite, Photo, Qr }
+/** Aspetti della pagina (tavole ScanPagine e ScanPagina): Foto, Perfetta (Document), Grigi, Bianco e nero, Colore. */
+enum class ScanMode { Document, BlackWhite, Photo, Qr, Gray, Color }
 
 /** Raddrizza, migliora e mette le pagine in PDF, usando solo la grafica di sistema. */
 object PageProcessor {
@@ -43,16 +44,31 @@ object PageProcessor {
         return out
     }
 
-    fun applyMode(page: Bitmap, mode: ScanMode): Bitmap = when (mode) {
+    /** [strength] è «Carta più bianca» (0–1) per Perfetta, Grigi e Colore. */
+    fun applyMode(page: Bitmap, mode: ScanMode, strength: Float = 1f): Bitmap = when (mode) {
         ScanMode.Photo, ScanMode.Qr -> page
-        ScanMode.Document -> enhance(page)
-        ScanMode.BlackWhite -> blackWhite(page)
+        // Carta bianca e neutra, ombre tolte, testo nero, colori veri tenuti (DocumentFilter, provato senza telefono).
+        ScanMode.Document -> filtered(page) { p, w, h -> DocumentFilter.document(p, w, h, strength) }
+        ScanMode.Gray -> filtered(page) { p, w, h -> DocumentFilter.gray(p, w, h, strength) }
+        ScanMode.Color -> filtered(page) { p, w, h -> DocumentFilter.color(p, w, h, strength) }
+        ScanMode.BlackWhite -> filtered(page) { p, w, h -> DocumentFilter.blackWhite(p, w, h) }
     }
 
-    /** Carta bianca e neutra, ombre tolte, testo nero, colori veri tenuti (DocumentFilter, provato senza telefono). */
-    private fun enhance(page: Bitmap): Bitmap = filtered(page, DocumentFilter::document)
+    /** Gira la pagina di [turns] quarti di giro in senso orario. */
+    fun rotate(page: Bitmap, turns: Int): Bitmap {
+        val t = ((turns % 4) + 4) % 4
+        if (t == 0) return page
+        return Bitmap.createBitmap(page, 0, 0, page.width, page.height, Matrix().apply { postRotate(90f * t) }, true)
+    }
 
-    private fun blackWhite(page: Bitmap): Bitmap = filtered(page, DocumentFilter::blackWhite)
+    /** Luminosità ridotta a circa [columns] colonne, per [Sharpness]. */
+    fun luma(page: Bitmap, columns: Int = 600): Triple<IntArray, Int, Int> {
+        val w = minOf(columns, page.width)
+        val h = (page.height.toLong() * w / page.width).toInt().coerceAtLeast(1)
+        val small = Bitmap.createScaledBitmap(page, w, h, true)
+        val px = IntArray(w * h).also { small.getPixels(it, 0, w, 0, 0, w, h) }
+        return Triple(IntArray(w * h) { i -> val c = px[i]; (299 * ((c shr 16) and 0xFF) + 587 * ((c shr 8) and 0xFF) + 114 * (c and 0xFF)) / 1000 }, w, h)
+    }
 
     private fun filtered(page: Bitmap, filter: (IntArray, Int, Int) -> IntArray): Bitmap {
         val w = page.width

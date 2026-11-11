@@ -74,6 +74,25 @@
             android:theme="@style/Theme.Eurise.Popup"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
+        <!-- Eurise File: «Salva in…» e «Apri da…» per Office, Galleria e Browser. Solo app Eurise con la stessa firma. -->
+        <activity
+            android:name="eu.eurise.core.files.FilesActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.files"
+            android:theme="@style/Theme.Eurise.Popup">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SAVE_IN" />
+                <action android:name="eu.eurise.action.OPEN_FROM" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="eu.eurise.action.OPEN_FROM" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- Eurise Tastiera: attività e note create dalla tastiera. Solo app Eurise con la stessa firma. -->
         <receiver
             android:name=".KeyboardBridgeReceiver"

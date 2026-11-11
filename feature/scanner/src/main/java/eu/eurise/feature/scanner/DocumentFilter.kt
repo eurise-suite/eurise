@@ -63,11 +63,15 @@ object DocumentFilter {
         return Paper(grid, gw, gh, cell)
     }
 
-    fun document(pixels: IntArray, w: Int, h: Int): IntArray {
+    /**
+     * «Perfetta». [strength] è «Carta più bianca» (0–1): a 1 (di base) sopra l'88 % della carta è bianco pieno, a 0 si
+     * lascia quasi tutta la grana della carta. [keepColor] tiene anche i colori tenui (aspetto «Colore»).
+     */
+    fun document(pixels: IntArray, w: Int, h: Int, strength: Float = 1f, keepColor: Boolean = false): IntArray {
         val bg = paper(pixels, w, h)
         val out = IntArray(pixels.size)
         val black = 0.18f // sotto questo (rispetto alla carta) è inchiostro pieno
-        val white = 0.88f // sopra è carta
+        val white = 0.98f - 0.10f * strength.coerceIn(0f, 1f) // sopra è carta
         for (i in pixels.indices) {
             val c = pixels[i]
             val x = i % w
@@ -80,17 +84,21 @@ object DocumentFilter {
             val luma = 0.299f * r + 0.587f * g + 0.114f * b
             // Quasi grigio → grigio puro; colori veri tenuti, un poco più vivi perché non escano spenti.
             val chroma = hi - lo
-            val keep = ((chroma - 0.10f) / 0.12f).coerceIn(0f, 1f)
-            r = luma + (r - luma) * keep * 1.15f
-            g = luma + (g - luma) * keep * 1.15f
-            b = luma + (b - luma) * keep * 1.15f
+            val keep = if (keepColor) ((chroma - 0.03f) / 0.05f).coerceIn(0f, 1f) else ((chroma - 0.10f) / 0.12f).coerceIn(0f, 1f)
+            val boost = if (keepColor) 1.05f else 1.15f
+            r = luma + (r - luma) * keep * boost
+            g = luma + (g - luma) * keep * boost
+            b = luma + (b - luma) * keep * boost
             out[i] = (0xFF shl 24) or (byte(r) shl 16) or (byte(g) shl 8) or byte(b)
         }
         return out
     }
 
+    /** «Colore»: carta bianca e ombre tolte come «Perfetta», ma i colori restano tutti, anche quelli tenui (foto, grafici). */
+    fun color(pixels: IntArray, w: Int, h: Int, strength: Float = 1f): IntArray = document(pixels, w, h, strength, keepColor = true)
+
     /** Scala di grigi dalla pagina pulita: stessa carta bianca, niente colori. */
-    fun gray(pixels: IntArray, w: Int, h: Int): IntArray = document(pixels, w, h).also { p ->
+    fun gray(pixels: IntArray, w: Int, h: Int, strength: Float = 1f): IntArray = document(pixels, w, h, strength).also { p ->
         for (i in p.indices) {
             val c = p[i]
             val v = (((c shr 16) and 0xFF) * 299 + ((c shr 8) and 0xFF) * 587 + (c and 0xFF) * 114) / 1000

@@ -99,8 +99,19 @@ import java.time.LocalDate
 import java.util.UUID
 import java.util.concurrent.Executors
 
-/** Da cosa è nata una pagina: serve a rifare il ritaglio senza perdere qualità. */
-private class Origin(val upright: File, val mode: ScanMode, val quad: Quad?)
+/**
+ * Da cosa è nata una pagina: serve a rifarla (ritaglio, aspetto, rotazione) senza perdere qualità. [found] sono i bordi
+ * trovati allo scatto (per «Bordi trovati» e l'aggancio nel ritaglio), [blurry] se la foto è mossa.
+ */
+internal data class Origin(
+    val upright: File,
+    val mode: ScanMode,
+    val quad: Quad?,
+    val strength: Float = 1f,
+    val turns: Int = 0,
+    val found: Quad? = quad,
+    val blurry: Boolean = false,
+)
 
 // Abbastanza per i bordi del foglio (rette di Hough), pochi millisecondi per fotogramma.
 private const val ANALYSIS_WIDTH = 200
@@ -127,7 +138,7 @@ fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false) {
     BackHandler(enabled = reviewing) { reviewing = false }
     Box(Modifier.fillMaxSize().background(if (reviewing) MaterialTheme.colorScheme.background else Color(0xFF14171C))) {
         when {
-            reviewing -> Review(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
+            reviewing -> ScanEditor(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
             granted -> Camera(pages, origins, dir, onClose, startQr) { if (pages.isNotEmpty()) reviewing = true }
         }
     }
@@ -582,7 +593,10 @@ private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): 
     val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     val upright = if (rotation != 0) Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation.toFloat()) }, true) else decoded
     val original = File(dir, UUID.randomUUID().toString() + ".orig").also { f -> f.outputStream().use { upright.compress(Bitmap.CompressFormat.JPEG, 92, it) } }
-    val origin = Origin(original, mode, refine(upright, quad))
+    val found = refine(upright, quad)
+    val flat = PageProcessor.straighten(upright, found)
+    val blurry = runCatching { PageProcessor.luma(flat).let { (l, w, h) -> Sharpness.isBlurry(l, w, h) } }.getOrDefault(false)
+    val origin = Origin(original, mode, found, blurry = blurry)
     render(upright, origin, dir) to origin
 } catch (e: RuntimeException) {
     null
@@ -590,215 +604,10 @@ private fun process(image: ImageProxy, quad: Quad?, mode: ScanMode, dir: File): 
     null
 }
 
-private fun render(upright: Bitmap, origin: Origin, dir: File): File {
-    val page = PageProcessor.applyMode(PageProcessor.straighten(upright, origin.quad), origin.mode)
+internal fun render(upright: Bitmap, origin: Origin, dir: File): File {
+    val flat = PageProcessor.rotate(PageProcessor.straighten(upright, origin.quad), origin.turns)
+    val page = PageProcessor.applyMode(flat, origin.mode, origin.strength)
     return File(dir, UUID.randomUUID().toString() + ".jpg").also { f -> f.outputStream().use { page.compress(Bitmap.CompressFormat.JPEG, 88, it) } }
-}
-
-/** Trascinando si sposta l'angolo più vicino al dito. */
-@Composable
-private fun CropEditor(origin: Origin, onCancel: () -> Unit, onDone: (Quad) -> Unit) {
-    val bitmap by produceState<Bitmap?>(null, origin) {
-        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(origin.upright.path, BitmapFactory.Options().apply { inSampleSize = 2 }) }
-    }
-    val start = origin.quad ?: Quad(Pt(0.05f, 0.05f), Pt(0.95f, 0.05f), Pt(0.95f, 0.95f), Pt(0.05f, 0.95f))
-    var corners by remember { mutableStateOf(start.points) }
-    BackHandler(onBack = onCancel)
-    Column(Modifier.fillMaxSize().background(Color(0xFF14171C)).statusBarsPadding().navigationBarsPadding()) {
-        Text(stringResource(R.string.scan_crop_hint), color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(16.dp))
-        Box(Modifier.weight(1f).fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-            bitmap?.let { b ->
-                Box(Modifier.aspectRatio(b.width.toFloat() / b.height)) {
-                    Image(b.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
-                    Canvas(
-                        Modifier.fillMaxSize().pointerInput(Unit) {
-                            var active = 0
-                            detectDragGestures(
-                                onDragStart = { at ->
-                                    active = corners.indices.minBy { i -> kotlin.math.hypot(corners[i].x * size.width - at.x, corners[i].y * size.height - at.y) }
-                                },
-                                onDrag = { change, _ ->
-                                    change.consume()
-                                    val p = Pt((change.position.x / size.width).coerceIn(0f, 1f), (change.position.y / size.height).coerceIn(0f, 1f))
-                                    corners = corners.toMutableList().also { it[active] = p }
-                                },
-                            )
-                        },
-                    ) {
-                        val path = Path().apply {
-                            corners.forEachIndexed { i, p -> if (i == 0) moveTo(p.x * size.width, p.y * size.height) else lineTo(p.x * size.width, p.y * size.height) }
-                            close()
-                        }
-                        drawPath(path, Color(0x2EA9C1F2))
-                        drawPath(path, Color(0xFFA9C1F2), style = Stroke(width = 3.dp.toPx()))
-                        corners.forEach { p -> drawCircle(Color.White, 11.dp.toPx(), Offset(p.x * size.width, p.y * size.height)) }
-                    }
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = onCancel) { Text(stringResource(R.string.scan_cancel), color = Color.White) }
-            Button(onClick = { onDone(Quad(corners[0], corners[1], corners[2], corners[3])) }) { Text(stringResource(R.string.scan_crop_done)) }
-        }
-    }
-}
-
-@Composable
-private fun Thumb(file: File, modifier: Modifier) {
-    val bitmap by produceState<Bitmap?>(null, file) {
-        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = 8 }) }
-    }
-    bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, modifier = modifier.clip(RoundedCornerShape(4.dp))) }
-}
-
-@Composable
-private fun Review(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onAdd: () -> Unit, onCancel: () -> Unit, onSaved: () -> Unit) {
-    val context = LocalContext.current
-    val scheme = MaterialTheme.colorScheme
-    val scope = rememberCoroutineScope()
-    val accounts = remember { CloudAccounts.get(context).accounts.value }
-    val fallback = stringResource(R.string.scan_default_name)
-    var name by remember { mutableStateOf("${LocalDate.now()}_$fallback") }
-    var nameTouched by remember { mutableStateOf(false) }
-    var where by remember { mutableStateOf<String?>(null) }
-    var saving by remember { mutableStateOf(false) }
-    var docRead by remember { mutableStateOf<DocRead>(if (DocReading.enabled(context)) DocRead.Idle else DocRead.Off) }
-    var askReading by remember { mutableStateOf(false) }
-    val pageKey = pages.toList()
-
-    fun readText() {
-        docRead = DocRead.Reading
-        val snapshot = pages.toList()
-        scope.launch {
-            docRead = when (val r = ReadClient.read(context, snapshot)) {
-                is ReadClient.Result.Pages -> DocRead.Done(r.pages, DocReader.analyze(r.pages.joinToString("\n\n") { it.text }))
-                else -> DocRead.Problem(r)
-            }
-            (docRead as? DocRead.Done)?.facts?.fileName?.let { if (!nameTouched) name = it }
-        }
-    }
-    // Con «Leggi ogni scansione da sola» la lettura riparte quando cambiano le pagine.
-    LaunchedEffect(pageKey) {
-        if (pageKey.isNotEmpty() && DocReading.enabled(context) && DocReading.auto(context)) readText()
-        else if (docRead is DocRead.Done) docRead = DocRead.Idle
-    }
-    var menuFor by remember { mutableStateOf<File?>(null) }
-    var cropping by remember { mutableStateOf<File?>(null) }
-
-    cropping?.let { file ->
-        val origin = origins[file]
-        if (origin == null) { cropping = null; return@let }
-        CropEditor(origin, onCancel = { cropping = null }) { quad ->
-            cropping = null
-            scope.launch {
-                val updated = Origin(origin.upright, origin.mode, quad)
-                val fresh = withContext(Dispatchers.Default) {
-                    runCatching { BitmapFactory.decodeFile(origin.upright.path)?.let { render(it, updated, dir) } }.getOrNull()
-                }
-                val index = pages.indexOf(file)
-                if (fresh != null && index >= 0) {
-                    origins.remove(file)
-                    origins[fresh] = updated
-                    pages[index] = fresh
-                }
-            }
-        }
-        return
-    }
-
-    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onCancel) { Text(stringResource(R.string.scan_cancel)) }
-            Text(stringResource(R.string.scan_review_title, pages.size), fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            Button(enabled = !saving && pages.isNotEmpty() && name.isNotBlank(), onClick = {
-                saving = true
-                scope.launch {
-                    val done = (docRead as? DocRead.Done)?.takeIf { it.pages.size == pages.size }
-                    val message = save(context, pages, done?.pages, done?.facts?.folder, dir, name.trim(), where, accounts.firstOrNull { it.id == where }?.name)
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                    saving = false
-                    if (message != context.getString(R.string.scan_failed)) onSaved()
-                }
-            }) { Text(stringResource(R.string.scan_save)) }
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
-            pages.toList().forEachIndexed { i, file ->
-                val label = stringResource(R.string.scan_remove, i + 1)
-                Box(Modifier.size(92.dp, 124.dp).clickable { menuFor = file }.semantics { contentDescription = label }) {
-                    Thumb(file, Modifier.fillMaxSize())
-                }
-            }
-            val add = stringResource(R.string.scan_add_page)
-            Box(Modifier.size(92.dp, 124.dp).clip(RoundedCornerShape(8.dp)).border(2.dp, scheme.outlineVariant, RoundedCornerShape(8.dp)).clickable(onClick = onAdd).semantics { contentDescription = add }, contentAlignment = Alignment.Center) {
-                Icon(EuriseIcons.plus(), contentDescription = null, tint = scheme.onSurfaceVariant)
-            }
-        }
-        Text(stringResource(R.string.scan_review_hint), fontSize = 12.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
-        Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(name, { name = it; nameTouched = true }, singleLine = true, label = { Text(stringResource(R.string.scan_name)) }, suffix = { Text(".pdf") }, modifier = Modifier.fillMaxWidth())
-            Text(stringResource(R.string.scan_where), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
-            Row(Modifier.horizontalScroll(rememberScrollState()).heightIn(min = 36.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterPill(stringResource(R.string.scan_phone), dot = null, selected = where == null) { where = null }
-                accounts.forEach { a -> FilterPill(a.name, dot = null, selected = where == a.id) { where = a.id } }
-            }
-        }
-        DocTextPart(docRead, onRead = ::readText, onTurnOn = { askReading = true })
-        Text(stringResource(R.string.scan_local_note), fontSize = 12.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
-        Spacer(Modifier.height(16.dp))
-    }
-    if (askReading) DocReadingSheet(onClose = { askReading = false }) {
-        askReading = false
-        if (DocReading.auto(context)) readText() else docRead = DocRead.Idle
-    }
-    menuFor?.let { file ->
-        AlertDialog(
-            onDismissRequest = { menuFor = null },
-            title = { Text(stringResource(R.string.scan_page_title, pages.indexOf(file) + 1)) },
-            confirmButton = { TextButton(onClick = { menuFor = null; cropping = file }) { Text(stringResource(R.string.scan_crop)) } },
-            dismissButton = {
-                TextButton(onClick = {
-                    menuFor = null
-                    pages.remove(file)
-                    origins.remove(file)
-                    if (pages.isEmpty()) onAdd()
-                }) { Text(stringResource(R.string.scan_remove_page)) }
-            },
-        )
-    }
-}
-
-/**
- * Salva il PDF: con il testo letto è cercabile (immagini e testo invisibile, [SearchablePdf]) e va nella cartella proposta
- * (es. Documenti/Casa/Bollette), altrimenti è fatto di sole immagini e va in Documenti/Eurise/Scansioni.
- */
-private suspend fun save(
-    context: Context, pages: List<File>, read: List<ReadPage>?, folder: String?, dir: File, base: String, accountId: String?, accountName: String?,
-): String = withContext(Dispatchers.IO) {
-    val safe = base.replace('/', '-').removeSuffix(".pdf") + ".pdf"
-    val pdf = File(dir, "out.pdf")
-    val place = folder ?: "Eurise/Scansioni"
-    try {
-        val searchable = read != null && PageProcessor.writeSearchablePdf(pages, read, pdf, base)
-        if (!searchable) PageProcessor.writePdf(pages, pdf)
-        val phonePlace = if (searchable) place else "Eurise/Scansioni"
-        val cloudPlace = if (searchable && folder != null) "Eurise/$folder" else "Eurise/Scansioni"
-        if (accountId == null) {
-            if (PageProcessor.saveToPhone(context, pdf, safe, phonePlace)) context.getString(R.string.scan_saved_phone_in, phonePlace) else context.getString(R.string.scan_failed)
-        } else {
-            val dav = CloudAccounts.get(context).dav(accountId) ?: return@withContext context.getString(R.string.scan_failed)
-            dav.mkdirs(cloudPlace)
-            dav.upload("$cloudPlace/$safe", pdf)
-            context.getString(R.string.scan_saved_cloud_in, cloudPlace, accountName.orEmpty())
-        }
-    } catch (e: java.io.IOException) {
-        context.getString(R.string.scan_failed)
-    } catch (e: eu.eurise.core.cloud.DavException) {
-        context.getString(R.string.scan_failed)
-    } catch (e: OutOfMemoryError) {
-        context.getString(R.string.scan_failed)
-    } catch (e: IllegalStateException) {
-        context.getString(R.string.scan_failed)
-    }
 }
 
 /** Quanto è cambiata l'immagine dal fotogramma prima: differenza media di luminosità (telefono fermo = valori bassi). */

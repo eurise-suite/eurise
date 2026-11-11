@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ciò che Eurise File può dare alle altre app della suite: i file scaricati dal cloud e quelli del telefono. -->
+<paths>
+    <cache-path name="cloud" path="eurise-files/" />
+    <external-path name="telefono" path="." />
+</paths>
