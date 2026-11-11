@@ -8,11 +8,47 @@ gli altri sistemi. Questo lavoro costruisce l'app Android di Collabora con il no
   di «Prototipo del motore di Office» (`CORE_COMMIT`), poi POCO (`poco_android.py`, solo arm64, API 26) e zstd per
   Android, `online` al commit fissato (`ONLINE_COMMIT`, ramo `distro/collabora/co-25.04`) con `--enable-androidapp`,
   infine Gradle. Artefatto `eurise-office-app-N`: APK, misure, registri.
-- Adattamenti: `eurise_css.py` (prima di make) mette `eurise.css` in coda alla tavolozza dell'interfaccia: Perla e Notte,
-  accento azzurro, scheda attiva del nastro con tratto e grassetto, gruppi come isole bianche. `eurise_patch.py` (dopo
-  configure): pacchetto `eu.eurise.office` (`.debug` per la prova), chiave di prova della suite.
-- Passi seguenti, dalle tavole approvate (OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer): scheda **Suite**
-  del nastro (Detta, Traduci, Da fare, Evento, Note / Viaggio, Grafico) in `Control.NotebookbarWriter.js` e compagni,
-  «Cerca un comando» (Ctrl K) con il riquadro di ricerca e le tacche, Eurise File per aprire e salvare (origine sempre
-  scritta), motore scaricato a richiesta (circa 66 MB con il Wi-Fi) al posto della libreria dentro l'APK, italiano
-  (sottomodulo translations del motore). Linux: `--enable-qtapp` e Flatpak, con le stesse modifiche all'interfaccia.
+- **Italiano**: il lavoro prende dal sottomodulo `translations` solo `source/it`, allo stesso commit che il core chiede,
+  e configura il motore con `--with-lang=en-US it` (solo nel lavoro dell'app: `office/engine/autogen.input.in` resta
+  com'è, così non riparte il lavoro del motore). `WITH_LANG` finisce solo in `config_langs.h`: la ccache regge.
+
+## Interfaccia web (`eurise_web.py`, prima di `./autogen.sh` di online)
+- `web/Control.Eurise.js` → `browser/src/control/`, nella lista dei JS dopo `Control.NotebookbarBuilder.js`:
+  - **scheda Suite** del nastro in Writer, Calc, Impress e Draw (tavole OffTablet e OffComputer): gruppo «Cerca»
+    («Cerca un comando») e gruppo «★ Suite» in borgogna con Detta, Traduci, Da fare, Evento e Note; nel foglio di calcolo
+    Viaggio e Grafico al posto di Note;
+  - **Cerca un comando** (OffCerca; Ctrl K o Cmd K, che in LibreOffice era «Collegamento»: il collegamento resta tra i
+    comandi): comandi del nastro con la scheda («Tabella · Inserisci»), poi Nella suite (3 tacche), Sul web (Brave
+    Search, Qwant, Ecosia, DuckDuckGo: 2 tacche), Chiedi all'AI (Eurise AI sul dispositivo «in arrivo», Duck.ai 2,
+    Le Chat 1). Se c'è testo scelto il campo parte già scritto;
+  - **pulsante Suite** in testa alla barra in basso del telefono (OffTelefono): apre la stessa ricerca;
+  - il testo scelto si chiede al motore (`gettextselection`), il testo da inserire si scrive al cursore (`textinput`).
+- `web/eurise.css` → ultimo foglio di stile (vince sui colori scuri di Collabora; in coda a `color-palette.css` avrebbe
+  avuto `:root` doppio, che stylelint rifiuta). Colori Perla/Notte, scheda attiva con tratto e grassetto, gruppi a
+  isole, gruppo Suite borgogna, riquadro della ricerca con le tacche, avviso breve in basso.
+- `web/images/` → icone della Suite (chiare e `dark/`) dai tracciati di `EuriseIcons`.
+- Provato fuori dalla CI con le versioni di Collabora: eslint 7.0.0, prettier 3, stylelint 13.7.0, uglify-js 3.17.4, e
+  con una prova in jsdom (schede, contenuto per tipo di documento, messaggi al guscio, ricerca, Ctrl K).
+
+## Guscio Android (`eurise_patch.py`, dopo `./configure` di online)
+- Pacchetto `eu.eurise.office` (`.debug` nella prova), chiave di prova della suite.
+- `android/EuriseSuite.java` → `org.libreoffice.androidlib`; `LOActivity` passa i messaggi `EURISE {json}` a
+  `EuriseSuite.handle` e risponde con `euriseReply` (`window.euriseOffice.reply`). Stesso protocollo per il guscio Linux.
+  - Da fare e Note → app Eurise (`KEYBOARD_TASK`/`KEYBOARD_NOTE`, permesso della suite), con «Da «documento»» in coda;
+  - Viaggio → per ora Da fare con il segno «Viaggio · » (l'app Eurise non ha ancora un ricevitore per i viaggi);
+  - Evento → modulo del calendario (`ACTION_INSERT`) con titolo e descrizione;
+  - Detta → Eurise Voce (`DictateActivity`, risposta `DICTATION_RESULT`), il testo entra al cursore;
+  - Traduci → servizio di Eurise Leggi (`TranslateContract`): scelta Da/A tra le lingue scaricate, il testo tradotto
+    sostituisce la selezione; se manca una lingua si apre Leggi;
+  - Cerca → Scrivania (`EXTRA_SEARCH`) o riquadro web dell'app Eurise (`WebPopupActivity`), altrimenti il browser.
+- Manifest: permesso `SUITE_DEBUG` (solo quello di prova: l'APK è firmato con la chiave di prova; la versione ufficiale
+  userà `SUITE`), `<queries>` per le app Eurise di prova, il calendario e il browser.
+
+## Ancora da fare
+- **Motore scaricato a richiesta** (OffMotore, circa 66 MB con il Wi-Fi): oggi il motore è collegato dentro
+  `libandroidapp.so` e legge i suoi file dall'APK con l'AssetManager. Va separato: libreria e file del motore in un
+  pacchetto scaricato nella memoria dell'app, `System.load` dal percorso, file letti dal disco (modifica a
+  `androidapp.cpp`). Si fa dopo il primo APK che funziona, con le misure vere.
+- Eurise File per aprire e salvare (origine sempre scritta), colonna «In Eurise File», interruttore «ricerca» nelle
+  proprietà, campo di ricerca sempre visibile nel nastro.
+- Linux: `--enable-qtapp` e Flatpak, con le stesse modifiche all'interfaccia (`eurise_web.py` vale già).

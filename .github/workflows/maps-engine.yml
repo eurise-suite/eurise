@@ -40,6 +40,8 @@ jobs:
           df -h / | tail -1
 
       - name: Installa gli strumenti
+        # Se i mirror non rispondono il passo si ferma qui, senza tenere occupata la coda per ore.
+        timeout-minutes: 30
         run: |
           # Se il mirror di Azure non si risolve passa ad archive.ubuntu.com, poi a un DNS pubblico.
           bash .github/scripts/apt-update.sh
