@@ -263,7 +263,7 @@ fun createAppearanceSettings(context: Context) = listOf(
             baseKey = setting.key,
             dimensions = listOf(stringResource(R.string.landscape), stringResource(R.string.folded)),
             defaults = Defaults.PREF_KEY_GAP_SCALE,
-            range = 0.5f..2.5f,
+            range = 0.25f..2.5f,
             description = { "${(100 * it).toInt()}%" }
         ) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },

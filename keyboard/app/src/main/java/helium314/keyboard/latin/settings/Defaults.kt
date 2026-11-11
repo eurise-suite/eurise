@@ -89,7 +89,8 @@ object Defaults {
     val PREF_SPLIT_SPACER_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
     // Eurise: tasti più alti in verticale (prova dell'11 novembre: con il 100% si prendeva spesso il tasto accanto).
-    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(1.12f, DEFAULT_SIZE_SCALE, 1.12f, DEFAULT_SIZE_SCALE)
+    // Poi (sera dell'11): un filo più bassa, perché i tasti crescono già togliendo metà dello spazio tra l'uno e l'altro.
+    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(1.10f, DEFAULT_SIZE_SCALE, 1.10f, DEFAULT_SIZE_SCALE)
     @JvmField
     val PREF_BOTTOM_ROW_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
@@ -98,7 +99,9 @@ object Defaults {
     @JvmField
     val PREF_SIDE_PADDING_SCALE = Array(8) { 0f }
     @JvmField
-    val PREF_KEY_GAP_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    // Eurise: metà dello spazio tra i tasti (richiesta del proprietario): a parità di ingombro ogni tasto è circa il 9 %
+    // più largo e il 6 % più alto. Il tocco nello spazio va comunque al tasto più vicino.
+    val PREF_KEY_GAP_SCALE = Array(4) { 0.5f }
     const val PREF_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_HINT_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_FONT_SCALE = DEFAULT_SIZE_SCALE
