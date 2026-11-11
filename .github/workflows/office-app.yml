@@ -10,6 +10,7 @@ on:
   push:
     paths:
       - ".github/workflows/office-app.yml"
+      - ".github/scripts/apt-update.sh"
       - "office/app/**"
 
 permissions:
@@ -63,13 +64,8 @@ jobs:
       - name: Installa gli strumenti di compilazione
         run: |
           t0=$(date +%s)
-          sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
-          # I server di GitHub a volte non risolvono i mirror di Ubuntu per qualche minuto: si riprova.
-          for i in 1 2 3 4 5 6; do
-            sudo apt-get update -qq 2>&1 | tee "$RUNNER_TEMP/apt.log"
-            grep -q "Temporary failure resolving" "$RUNNER_TEMP/apt.log" || break
-            echo "Mirror non raggiungibili, riprovo tra 60 s ($i)"; sleep 60
-          done
+          # Se il mirror di Azure non si risolve passa ad archive.ubuntu.com, poi a un DNS pubblico.
+          bash .github/scripts/apt-update.sh --src
           sudo DEBIAN_FRONTEND=noninteractive apt-get build-dep -y -qq libreoffice >/dev/null
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ccache nasm gperf >/dev/null
           ccache -M 6G
