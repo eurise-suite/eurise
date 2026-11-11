@@ -910,3 +910,37 @@ Browser, scelta del motore del browser e del motore di ricerca; decisione sulle 
 
 **Prossimo passo (nuova chat)**: approvazione delle tavole Office, MapSegnala, BolRispondi/BolAllega e della seconda fila
 del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mappe con segnalazioni OSM, Office).
+
+## 11 novembre, pomeriggio: prototipo di Eurise AI, Office a nastro (ramo `brand`, nuova chat)
+- **Icone confermate** dal proprietario (tavola BrandIconeApp).
+- **Eurise AI, prototipo** (`ai/`, lavoro «Eurise AI» in `build.yml`, artefatto `eurise-ai-debug-N`, `eu.eurise.ai`):
+  llama.cpp `af6b524` (MIT) in `third_party/llama.cpp` (src, include, ggml solo CPU; vedi EURISE.md), CMake nostro
+  (`ai/src/main/cpp`). Sul telefono ggml con le varianti Android della CPU (armv8.0 … armv9.2, dotprod e i8mm) scelte
+  all'avvio, librerie estratte (`useLegacyPackaging`), `libc++_shared`. **Nessun permesso INTERNET** (la compilazione lo
+  controlla con aapt2). Modulo compilato solo con `EURISE_AI=1`: l'APK principale non cambia.
+  Motore comune `engine.hpp`: cattura rapida → JSON vincolato da grammatica GBNF (tipo evento/da_fare/promemoria/nota,
+  titolo, data, ora, luogo, persone, note; i prossimi 14 giorni scritti per esteso nelle istruzioni, così un modello piccolo
+  non sbaglia i conti), domanda libera, misura di velocità (256 token letti, 64 scritti).
+  Modello: **Ministral 3 3B Instruct 2512, Apache 2.0** (licenza verificata), GGUF ufficiale di Mistral Q4_K_M, 2,1 GB.
+  Nell'app di prova il modello si sceglie da un file già sul telefono (lo si scarica col browser da Hugging Face) e si copia
+  nella memoria dell'app; la schermata mostra telefono, varianti della CPU, memoria, thread (2/4/6/8), «Misura completa»
+  (velocità + dieci frasi di prova, `res/raw/frasi_prova.txt`, le stesse della CI) con «Copia i risultati».
+  In CI: stesso motore per il computer (`eurise_ai_test`), `ai_quality.py` scarica il GGUF (cache) e misura frasi giuste,
+  campi giusti e velocità (del computer, non indicativa).
+  **Da provare sul telefono**: installare `eurise-ai-debug-N`, scegliere il GGUF, «Misura completa», mandare il testo copiato.
+  Prossimi passi dopo le misure: passaggio del modello da un'altra app con permesso di firma (si può caricare anche da un
+  descrittore aperto, `llama_model_load_from_file_ptr`, senza copia), servizio «chi può chiedere», Whisper dentro Eurise AI
+  con una ggml sola (quella di llama.cpp), interfaccia delle tavole AiCattura/AiModelli/AiAttiva.
+- **Office, richieste del proprietario**: su tablet e computer niente interfaccia scarna: **barra a nastro** con schede
+  (File, Testo/Celle, Inserisci, …, Suite) e comandi divisi in gruppi con il nome, i più importanti grandi e subito visibili,
+  ma con carattere nostro (gruppi come isole bianche sul Perla, scheda attiva con tratto azzurro e grassetto, gruppo
+  **Suite** in borgogna con la stellina: Detta, Traduci, Da fare, Evento, Note / Viaggio, Grafico), «Cerca un comando»
+  (Ctrl K). **Office collegato a Eurise File**: apre e salva dai file locali e dai cloud scelti (Murena, Nextcloud…,
+  chiavetta), l'origine è sempre scritta («Salvato · Murena › Lavoro»), la colonna «In Eurise File» mostra la cartella e i
+  file vicini. Tavole OffTablet e OffComputer rifatte sulla tela: **da approvare**. OffTelefono resta compatta.
+- **Ancora da approvare sulla tela**: OffMotore, OffTelefono, OffTablet, OffComputer; MapSegnala; BolRispondi, BolAllega;
+  seconda fila del Browser (motore del browser e motore di ricerca da scegliere).
+- **Da provare sul telefono**: scanner nuovo, lettore QR, Eurise AI.
+- **Poi, nell'ordine**: codice di quanto approvato (bolla «Ti hanno cercato», segnalazioni OpenStreetMap e stile di Mappe
+  con Android Auto, riduzione del peso di Mappe, Eurise Office). Road map (regola di spesa): servizio nostro per
+  segnalazioni in tempo reale, prezzi e voti come partner di Booking/Tripadvisor.
