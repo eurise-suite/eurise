@@ -22,8 +22,6 @@ include(":password")
 include(":voice")
 // Eurise Leggi (motore nativo, compilazione lunga): si compila solo nel suo lavoro, per non allungare le altre.
 if (System.getenv("EURISE_READ") == "1") include(":read")
-// Prototipo di Eurise Traduci (motore nativo): solo nel suo lavoro.
-if (System.getenv("EURISE_TRANSLATE") == "1") include(":translate")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")

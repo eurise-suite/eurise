@@ -72,6 +72,8 @@
     <string name="pv_p_files_d">per File e le cartelle allineate</string>
     <string name="pv_p_dnd">Non disturbare</string>
     <string name="pv_p_dnd_d">Le modalità e la sveglia accendono e spengono «Non disturbare». Le notifiche non vengono lette.</string>
+    <string name="pv_translate">Traduzione (Eurise Leggi)</string>
+    <string name="pv_translate_d">Tutta sul telefono. Le lingue si scaricano in Leggi da Google Cloud Storage (modelli di Firefox, Mozilla): esce solo la richiesta dei file, mai il testo.</string>
     <string name="pv_read">Lettura dei documenti (Eurise Leggi)</string>
     <string name="pv_read_on">Accesa: il testo delle scansioni si legge sul telefono, nessun servizio esterno.</string>
     <string name="pv_read_off">Spenta. Si accende dallo Scanner, dopo la spiegazione.</string>

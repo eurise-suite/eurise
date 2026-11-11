@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Internet serve solo a scaricare la lingua italiana, una volta, dopo la spiegazione. -->
+    <!-- Internet serve solo a scaricare le lingue (lettura e traduzione), dopo la spiegazione. Testi e documenti non escono. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- La fotocamera serve solo a leggere una carta per Eurise Password; i fotogrammi non si salvano. -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -34,6 +34,26 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Lingue della traduzione: le altre app della suite la aprono quando manca una lingua. -->
+        <activity
+            android:name=".translate.TranslateActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="eu.eurise.action.TRANSLATE_LANGUAGES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- Traduzione per le app della suite (Tastiera, Messaggi, Eurise): solo app Eurise con la stessa firma. -->
+        <service
+            android:name=".translate.TranslateService"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.TRANSLATE" />
+            </intent-filter>
+        </service>
         <!-- Lettura delle pagine per l'app Eurise: solo app Eurise con la stessa firma. -->
         <service
             android:name=".ReadService"

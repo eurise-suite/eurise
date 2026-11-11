@@ -208,6 +208,8 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 Line()
                 TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d))
                 Line()
+                TwoLines(stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d))
+                Line()
                 // Lettura dei documenti: analisi dei contenuti, tutta sul telefono. Si accende dallo Scanner (con la
                 // spiegazione), si spegne anche da qui senza conferme.
                 var reading by remember { mutableStateOf(DocReading.enabled(context)) }

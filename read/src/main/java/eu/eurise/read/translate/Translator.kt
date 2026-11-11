@@ -1,4 +1,4 @@
-package eu.eurise.translate
+package eu.eurise.read.translate
 
 import java.io.Closeable
 import java.io.File

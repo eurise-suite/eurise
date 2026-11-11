@@ -1,4 +1,4 @@
-"""Prototipo di Eurise Traduci: scarica i modelli di Firefox italiano↔inglese, li fa girare con il motore compilato dai
+"""Traduzione di Eurise Leggi: scarica i modelli di Firefox italiano↔inglese, li fa girare con il motore compilato dai
 sorgenti (eurise_translate_test) e misura velocità e qualità (chrF contro traduzioni di riferimento) su frasi di prova.
 Uso: mt_quality.py <eseguibile> <cartella di lavoro>"""
 import gzip

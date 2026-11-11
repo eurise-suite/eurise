@@ -1,9 +1,12 @@
-# Eurise Leggi: Tesseract (Apache 2.0) e Leptonica (BSD) compilati dai sorgenti in third_party, più un piccolo ponte JNI.
+# Eurise Leggi: Tesseract (Apache 2.0) e Leptonica (BSD) per leggere il testo, slimt (MIT) con ruy e SentencePiece
+# (Apache 2.0) per tradurre, tutti compilati dai sorgenti in third_party, più due piccoli ponti JNI: eurise_ocr ed
+# eurise_translate sono librerie separate, così ognuna si carica solo quando serve.
 # Niente librerie d'immagine esterne: le immagini arrivano già come pixel da Android (Bitmap RGBA_8888).
 cmake_minimum_required(VERSION 3.22.1)
 project(eurise_read C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(THIRD ${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party)
 set(LEPT ${THIRD}/leptonica)
@@ -90,3 +93,6 @@ else()
   add_executable(eurise_ocr_test host_test.cpp)
   target_link_libraries(eurise_ocr_test tesseract pthread)
 endif()
+
+# Traduzione ------------------------------------------------------------------------------------------------------
+include(translate/translate.cmake)

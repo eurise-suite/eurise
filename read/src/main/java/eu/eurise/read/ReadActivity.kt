@@ -116,6 +116,9 @@ private fun ReadScreen() {
                 }
             }, enabled = busy == null) { Text(stringResource(R.string.read_add_english)) }
         }
+        OutlinedButton(onClick = {
+            context.startActivity(android.content.Intent(context, eu.eurise.read.translate.TranslateActivity::class.java))
+        }) { Text(stringResource(R.string.read_translate)) }
         busy?.let { Text(it) }
         if (stats.isNotEmpty()) Text(stats, style = MaterialTheme.typography.labelLarge)
         if (result.isNotEmpty()) SelectionContainer { Text(result, style = MaterialTheme.typography.bodyMedium) }

@@ -1,4 +1,4 @@
-// Ponte JNI tra Eurise Traduci (eu.eurise.translate.Translator) ed engine.hpp. Un motore si usa da un solo thread alla volta.
+// Ponte JNI tra Eurise Leggi (eu.eurise.read.translate.Translator) ed engine.hpp. Un motore si usa da un solo thread alla volta.
 #include <jni.h>
 
 #include <exception>
@@ -31,7 +31,7 @@ jbyteArray bytes(JNIEnv *env, const std::string &s) {
 
 extern "C" {
 
-JNIEXPORT jlong JNICALL Java_eu_eurise_translate_Translator_nativeOpen(JNIEnv *env, jclass, jstring model, jstring vocab,
+JNIEXPORT jlong JNICALL Java_eu_eurise_read_translate_Translator_nativeOpen(JNIEnv *env, jclass, jstring model, jstring vocab,
                                                                         jstring tgtVocab, jstring shortlist) {
   try {
     return reinterpret_cast<jlong>(new eurise::Engine(str(env, model), str(env, vocab), str(env, tgtVocab), str(env, shortlist)));
@@ -40,12 +40,12 @@ JNIEXPORT jlong JNICALL Java_eu_eurise_translate_Translator_nativeOpen(JNIEnv *e
   }
 }
 
-JNIEXPORT void JNICALL Java_eu_eurise_translate_Translator_nativeClose(JNIEnv *, jclass, jlong handle) {
+JNIEXPORT void JNICALL Java_eu_eurise_read_translate_Translator_nativeClose(JNIEnv *, jclass, jlong handle) {
   delete reinterpret_cast<eurise::Engine *>(handle);
 }
 
 /** Testo in UTF-8 come byte (l'UTF-8 "modificato" di JNI non va bene per tutti i caratteri). Null se non riesce. */
-JNIEXPORT jbyteArray JNICALL Java_eu_eurise_translate_Translator_nativeTranslate(JNIEnv *env, jclass, jlong handle, jbyteArray text) {
+JNIEXPORT jbyteArray JNICALL Java_eu_eurise_read_translate_Translator_nativeTranslate(JNIEnv *env, jclass, jlong handle, jbyteArray text) {
   try {
     return bytes(env, reinterpret_cast<eurise::Engine *>(handle)->translate(utf8(env, text)));
   } catch (const std::exception &) {

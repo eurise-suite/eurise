@@ -167,12 +167,13 @@ jobs:
           path: keyboard/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-  # Eurise Leggi (lettura del testo, Tesseract e Leptonica dai sorgenti di third_party): APK, peso e qualità in italiano.
+  # Eurise Leggi (lettura del testo con Tesseract e Leptonica, traduzione con slimt, ruy e SentencePiece, tutti dai
+  # sorgenti di third_party): APK, peso, qualità della lettura in italiano e della traduzione italiano ↔ inglese.
   # Lavoro a parte e facoltativo: se fallisce, gli altri APK restano buoni.
   read:
     name: Eurise Leggi
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     continue-on-error: true
     env:
       EURISE_READ: "1"
@@ -216,54 +217,10 @@ jobs:
           pip install --quiet pillow
           EURISE_OCR="$PWD/ocr-host/eurise_ocr_test" python3 .github/scripts/ocr_quality.py fast best
 
-  # Prototipo di Eurise Traduci (slimt, ruy, SentencePiece dai sorgenti di third_party): peso, velocità e qualità.
-  # Lavoro a parte e facoltativo: se fallisce, gli altri APK restano buoni.
-  translate:
-    name: Prototipo Eurise Traduci
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    continue-on-error: true
-    env:
-      EURISE_TRANSLATE: "1"
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - uses: gradle/actions/setup-gradle@v4
-
-      - name: Compila il prototipo
+      - name: Misura qualità e velocità della traduzione
         run: |
-          chmod +x gradlew
-          set -o pipefail
-          ./gradlew --no-daemon :translate:assembleDebug :translate:assembleRelease 2>&1 | tee build.log | tail -30
-
-      - name: Errori di compilazione
-        if: failure()
-        run: |
-          grep -E "error:|FAILED|What went wrong" -A3 build.log | head -60 | while IFS= read -r line; do echo "::error::${line}"; done
-
-      - name: Carica l'APK di Traduci
-        uses: actions/upload-artifact@v4
-        with:
-          name: eurise-traduci-debug-${{ github.run_number }}
-          path: translate/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-
-      - name: Pesa il prototipo
-        run: |
-          python3 .github/scripts/apk_size.py "Eurise Traduci, prova" translate/build/outputs/apk/debug/*.apk
-          python3 .github/scripts/apk_size.py "Eurise Traduci, versione ridotta" translate/build/outputs/apk/release/*.apk
-
-      - name: Misura qualità e velocità
-        run: |
-          cmake -S translate/src/main/cpp -B mt-host -DCMAKE_BUILD_TYPE=Release 2>&1 | tail -3
-          cmake --build mt-host -j 4 2>&1 | grep -E "error|warning: unused" | head -40 || true
-          test -x mt-host/eurise_translate_test
-          python3 .github/scripts/mt_quality.py mt-host/eurise_translate_test mt-work
+          test -x ocr-host/eurise_translate_test
+          python3 .github/scripts/mt_quality.py ocr-host/eurise_translate_test mt-work
 
   release:
     name: APK firmato (solo per i tag v*)

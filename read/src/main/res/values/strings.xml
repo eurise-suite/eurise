@@ -24,4 +24,19 @@
     <string name="card_privacy">Si legge sul telefono e non si salva nulla: i dati vanno solo a Eurise Password. Il codice CVV si scrive a mano.</string>
     <string name="read_add_english">Aggiungi l\'inglese (4 MB)</string>
     <string name="read_remove_english">Togli l\'inglese</string>
+    <string name="read_translate">Lingue della traduzione</string>
+    <string name="tr_title">Traduzione sul telefono</string>
+    <string name="tr_intro">Scarica le lingue che ti servono: la Tastiera, Messaggi e le altre app della suite traducono con queste, tutto sul telefono. Ogni lingua porta con sé l\'inglese.</string>
+    <string name="tr_download">Scarica</string>
+    <string name="tr_remove">Togli (%1$.0f MB)</string>
+    <string name="tr_try">Prova</string>
+    <string name="tr_input">Testo da tradurre</string>
+    <string name="tr_translate">Traduci</string>
+    <string name="tr_working">Traduco…</string>
+    <string name="tr_failed">Traduzione non riuscita.</string>
+    <string name="tr_download_title">Scaricare %1$s?</string>
+    <string name="tr_download_text">Servono due modelli (verso l\'inglese e dall\'inglese, circa 40–50 MB in tutto), presi dall\'elenco pubblico dei modelli di traduzione di Firefox (Mozilla), ospitato su Google Cloud Storage. Dal telefono parte solo la richiesta dei file: né testi né identificativi. Si toglie quando vuoi.</string>
+    <string name="tr_download_ok">Scarica</string>
+    <string name="tr_downloading">Scarico %1$s…</string>
+    <string name="tr_download_failed">Scaricamento non riuscito. Riprova con la rete.</string>
 </resources>
