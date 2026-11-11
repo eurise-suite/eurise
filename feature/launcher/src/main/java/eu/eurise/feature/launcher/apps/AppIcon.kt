@@ -235,6 +235,7 @@ private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
     "drive" -> EuriseIcons.folder(1.9f)
     "scanner" -> EuriseIcons.scan(1.9f)
     "calculator" -> EuriseIcons.calculator(1.9f)
+    "weather" -> EuriseIcons.sun(1.9f)
     "qr" -> EuriseIcons.scan(1.9f)
     "privacy" -> EuriseIcons.shield(1.9f)
     "today" -> EuriseIcons.today(1.9f)

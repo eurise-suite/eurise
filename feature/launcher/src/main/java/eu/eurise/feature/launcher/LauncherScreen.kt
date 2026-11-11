@@ -225,7 +225,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
     var notificationsOn by remember { mutableStateOf(NotificationStore.isEnabled(context)) }
     var isHome by remember { mutableStateOf(isDefaultHome(context)) }
     var hasLocation by remember { mutableStateOf(viewModel.hasLocationPermission()) }
+    // Meteo per la frase sotto il primo impegno: a ogni ritorno sulla Scrivania, con la copia di 30 minuti di Meteo.
+    val meteoRepo = remember { eu.eurise.core.data.weather.MeteoRepository(context) }
+    var meteo by remember { mutableStateOf<eu.eurise.core.data.weather.MeteoState?>(null) }
+    var meteoTick by remember { mutableStateOf(0) }
+    LaunchedEffect(hasLocation, meteoTick) {
+        if (!hasLocation) { meteo = null; return@LaunchedEffect }
+        if (meteo == null) meteo = meteoRepo.cached()
+        meteo = meteoRepo.load(withPollen = false)
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        meteoTick++
         now = LocalDateTime.now()
         notificationsOn = NotificationStore.isEnabled(context)
         isHome = isDefaultHome(context)
@@ -323,21 +333,16 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
           eu.eurise.feature.launcher.apps.LocalAppIconColors provides settings.appIconColors,
           eu.eurise.feature.launcher.apps.LocalIconTheme provides settings.iconTheme,
+          eu.eurise.feature.launcher.home.LocalMeteo provides meteo,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
           // Sulla Scrivania le bolle si staccano appena un po' di più dallo sfondo.
           eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors),
       ) {
         val hazeState = remember { HazeState() }
         var weatherSheet by remember { mutableStateOf(false) }
+        // Il meteo apre Eurise Meteo; senza posizione la chiede prima.
         val openWeather: () -> Unit = {
-            val app = state.apps.firstOrNull { a ->
-                a.euriseSection == null && (a.packageName.contains("weather", true) || a.label.contains("meteo", true) || a.label.contains("weather", true))
-            }
-            when {
-                app != null -> actions.openApp(app)
-                weather != null -> { weatherSheet = true }
-                else -> actions.askLocation()
-            }
+            if (hasLocation) actions.openEurise("weather") else actions.askLocation()
         }
         // Categoria scelta nella barra, per id; HomePageId è la home. I Preferiti sono una categoria come le altre.
         var category by remember { mutableStateOf(HomePageId) }
@@ -458,6 +463,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     android.widget.Toast.makeText(context, if (ok) eventMoved else eventFailed, android.widget.Toast.LENGTH_SHORT).show()
                 }
             },
+            openWeather = openWeather,
         )
         // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
         val homePager = rememberPagerState(initialPage = HomePage) { 3 }

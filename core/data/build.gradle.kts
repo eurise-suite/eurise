@@ -28,4 +28,6 @@ dependencies {
     implementation(project(":core:suite"))
 
     testImplementation(libs.junit)
+    // org.json vero per i test (in Android è solo uno stub).
+    testImplementation(libs.org.json)
 }

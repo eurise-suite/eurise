@@ -68,6 +68,8 @@ import java.util.Date
 
 private fun PrivacyService.title() = when (this) {
     PrivacyService.Weather -> R.string.pv_s_weather
+    PrivacyService.Pollen -> R.string.pv_s_pollen
+    PrivacyService.Alerts -> R.string.pv_s_alerts
     PrivacyService.News -> R.string.pv_s_news
     PrivacyService.Markets -> R.string.pv_s_markets
     PrivacyService.Horoscope -> R.string.pv_s_horoscope
@@ -77,6 +79,8 @@ private fun PrivacyService.title() = when (this) {
 
 private fun PrivacyService.detail() = when (this) {
     PrivacyService.Weather -> R.string.pv_s_weather_d
+    PrivacyService.Pollen -> R.string.pv_s_pollen_d
+    PrivacyService.Alerts -> R.string.pv_s_alerts_d
     PrivacyService.News -> R.string.pv_s_news_d
     PrivacyService.Markets -> R.string.pv_s_markets_d
     PrivacyService.Horoscope -> R.string.pv_s_horoscope_d

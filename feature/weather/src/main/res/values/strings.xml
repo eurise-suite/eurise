@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="weather_back">Indietro</string>
+    <string name="weather_refresh">Aggiorna</string>
+    <string name="weather_here">La tua zona</string>
+    <string name="weather_now">Ora</string>
+    <string name="weather_minmax">Massima %1$d° · minima %2$d° · percepita %3$d°</string>
+    <string name="weather_loading">Un attimo…</string>
+    <string name="weather_offline">Il meteo non è raggiungibile adesso. Controlla la rete o il centro privacy (Meteo · Open-Meteo).</string>
+    <string name="weather_need_location">Per il meteo serve la posizione approssimata. A Open-Meteo arriva arrotondata a circa 1 km; il nome del luogo si cerca sul telefono.</string>
+    <string name="weather_use_location">Usa la posizione approssimata</string>
+    <string name="weather_wind">Vento</string>
+    <string name="weather_wind_detail">km/h da %1$s · raffiche %2$d</string>
+    <string name="weather_pollen">Pollini</string>
+    <string name="weather_pollen_low">nessuna specie alta</string>
+    <string name="weather_pollen_none">non disponibili qui</string>
+    <string name="weather_sun">Sole</string>
+    <string name="weather_sunset">tramonto %1$s</string>
+    <string name="weather_update">Aggiornamento delle %1$s</string>
+    <string name="weather_credits">Dati: Open-Meteo (CC BY 4.0), pollini CAMS, allerte MeteoAlarm e Protezione Civile. Tocca per la fonte.</string>
+    <string name="weather_alert_title">Allerta %1$s · %2$s</string>
+    <string name="weather_alert_of">Allerta di %1$s</string>
+    <string name="weather_alert_level">Allerta %1$s</string>
+    <string name="weather_alert_source">Fonte: %1$s. Fanno fede i bollettini della Protezione Civile.</string>
+    <string name="weather_alert_yours">I tuoi impegni in quelle ore</string>
+    <string name="weather_alert_free">Nessun impegno in quelle ore.</string>
+    <string name="weather_alert_advice">Strada più lenta del solito: parti con anticipo.</string>
+    <string name="weather_alert_task">Se puoi, falla prima o dopo l\'allerta.</string>
+    <string name="weather_remind_at">Avvisami alle %1$s</string>
+    <string name="weather_open">Apri</string>
+    <string name="weather_alert_todo">Cosa fare</string>
+    <string name="weather_alert_privacy">Gli impegni si confrontano sul telefono: l\'elenco delle allerte è uguale per tutti e alla rete non arriva nulla di tuo.</string>
+</resources>

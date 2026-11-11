@@ -121,6 +121,8 @@ class BubbleActions(
     val deleteEvent: (CalendarEvent) -> Unit = {},
     /** Sposta un appuntamento a un nuovo inizio, con la stessa durata. */
     val moveEvent: (CalendarEvent, LocalDateTime) -> Unit = { _, _ -> },
+    /** Apre Eurise Meteo (dalla frase sotto il primo impegno). */
+    val openWeather: () -> Unit = {},
 )
 
 // ---------------------------------------------------------------- pezzi comuni
@@ -384,7 +386,7 @@ private fun EventAction(icon: ImageVector, label: String, onClick: () -> Unit) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: BubbleActions) {
+private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: BubbleActions, withMeteo: Boolean = false) {
     val context = LocalContext.current
     val contact = rememberEventContact(e)
     val time = if (e.allDay) stringResource(R.string.today_all_day) else e.start.format(TimeFormat)
@@ -441,6 +443,45 @@ private fun EventEntry(e: CalendarEvent, travels: Map<String, Travel>, actions: 
                 )
             }
         }
+        if (withMeteo) MeteoLineBox(e, minutes, actions)
+    }
+}
+
+/** Dati del meteo per la frase nella bolla degli impegni (forniti dalla Scrivania; nulli se il meteo è spento). */
+val LocalMeteo = androidx.compose.runtime.compositionLocalOf<eu.eurise.core.data.weather.MeteoState?> { null }
+
+/**
+ * La frase su tempo e strada sotto il primo impegno (tavola BolImpegni): tranquilla in verde, pioggia in azzurro,
+ * allerta in arancio con il pulsante per vederla. Nasce sul telefono da Calendario e Meteo.
+ */
+@Composable
+private fun MeteoLineBox(e: CalendarEvent, minutes: Int?, actions: BubbleActions) {
+    val meteo = LocalMeteo.current ?: return
+    val now = LocalDateTime.now()
+    if (e.allDay || e.start.isBefore(now) || e.start.isAfter(now.plusHours(36))) return
+    val line = remember(meteo, e.eventId, e.beginMillis, minutes) {
+        eu.eurise.core.data.weather.MeteoText.forEvent(e.start, minutes, meteo.forecast, meteo.alerts, now)
+    } ?: return
+    val (bg, fg) = when (line.tone) {
+        eu.eurise.core.data.weather.MeteoLine.Tone.Alert -> androidx.compose.ui.graphics.Color(0xFFFBE6D6) to androidx.compose.ui.graphics.Color(0xFF6E2E05)
+        eu.eurise.core.data.weather.MeteoLine.Tone.Watch -> androidx.compose.ui.graphics.Color(0xFFDDE7F3) to androidx.compose.ui.graphics.Color(0xFF233F66)
+        eu.eurise.core.data.weather.MeteoLine.Tone.Calm -> androidx.compose.ui.graphics.Color(0xFFEAF1EC) to androidx.compose.ui.graphics.Color(0xFF2B4A37)
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(14.dp)).background(bg)
+            .clickable { actions.openWeather() }.padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            when (line.tone) {
+                eu.eurise.core.data.weather.MeteoLine.Tone.Calm -> EuriseIcons.sun(2.2f)
+                eu.eurise.core.data.weather.MeteoLine.Tone.Watch -> EuriseIcons.rain(2.2f)
+                eu.eurise.core.data.weather.MeteoLine.Tone.Alert -> EuriseIcons.storm(2.2f)
+            },
+            null, tint = fg, modifier = Modifier.size(16.dp).padding(top = 1.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(line.text, fontSize = 12.5.sp, lineHeight = 17.sp, color = fg)
     }
 }
 
@@ -487,10 +528,12 @@ private fun MoveEventDialog(e: CalendarEvent, onDismiss: () -> Unit, onMove: (Lo
 @Composable
 private fun EventList(events: List<CalendarEvent>, travels: Map<String, Travel>, actions: BubbleActions, independent: Boolean) {
     val height = if (LocalBubbleWidth.current < 240.dp) 190.dp else 132.dp
+    // La frase del meteo va sotto il primo impegno con un orario ancora da venire.
+    val meteoFor = events.firstOrNull { !it.allDay && it.start.isAfter(LocalDateTime.now()) }
     val body: @Composable () -> Unit = {
         events.forEachIndexed { i, e ->
             if (i > 0) RowDivider()
-            androidx.compose.runtime.key(e.eventId, e.beginMillis) { EventEntry(e, travels, actions) }
+            androidx.compose.runtime.key(e.eventId, e.beginMillis) { EventEntry(e, travels, actions, withMeteo = e === meteoFor) }
         }
     }
     if (events.size > 1) ScrollWithBar(height, independent) { body() } else Column { body() }

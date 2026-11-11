@@ -33,6 +33,7 @@ import androidx.navigation.navArgument
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.data.EuriseData
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EuriseDock
@@ -151,6 +152,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "trash" -> navController.navigate("trash") { launchSingleTop = true }
             section == "scanner" -> navController.navigate("scanner") { launchSingleTop = true }
             section == "calculator" -> navController.navigate("calculator") { launchSingleTop = true }
+            section == "weather" -> navController.navigate("weather") { launchSingleTop = true }
             section == "qr" -> navController.navigate("qr") { launchSingleTop = true }
             section == "privacy" -> navController.navigate("privacy") { launchSingleTop = true }
             section == "notes" -> goTo(Section.Notes)
@@ -268,6 +270,27 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     eu.eurise.feature.calculator.CalculatorRoute(
                         onBack = { navController.closeIfOn("calculator") },
                         onSaveNote = { title, body -> scope.launch { data.notes.save(null, title, body) } },
+                    )
+                }
+                composable("weather") {
+                    eu.eurise.feature.weather.WeatherRoute(
+                        onBack = { navController.closeIfOn("weather") },
+                        touched = { from, to ->
+                            val zone = java.time.ZoneId.systemDefault()
+                            val events = data.calendar.startingBetween(from.atZone(zone).toInstant().toEpochMilli(), to.atZone(zone).toInstant().toEpochMilli())
+                                .filter { !it.allDay }
+                                .map { e -> eu.eurise.feature.weather.Touched(e.title, e.start, false) { navController.openEvent(e.eventId, e.beginMillis, null) } }
+                            val days = generateSequence(from.toLocalDate()) { it.plusDays(1) }.takeWhile { !it.isAfter(to.toLocalDate()) }.toSet()
+                            val tasks = data.tasks.observeOpen().first()
+                                .filter { t -> t.due in days }
+                                .map { t ->
+                                    eu.eurise.feature.weather.Touched(t.title, t.time?.let { t.due?.atTime(it) }, true) {
+                                        taskToOpen = t.id
+                                        navController.navigate(Section.Tasks.route)
+                                    }
+                                }
+                            events + tasks
+                        },
                     )
                 }
                 composable("qr") {

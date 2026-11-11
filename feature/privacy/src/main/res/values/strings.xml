@@ -47,6 +47,10 @@
 
     <string name="pv_s_weather">Meteo · Open-Meteo</string>
     <string name="pv_s_weather_d">riceve la posizione arrotondata a circa 1 km</string>
+    <string name="pv_s_pollen">Pollini · Open-Meteo (dati CAMS)</string>
+    <string name="pv_s_pollen_d">riceve la posizione arrotondata a circa 1 km</string>
+    <string name="pv_s_alerts">Allerte meteo · MeteoAlarm</string>
+    <string name="pv_s_alerts_d">scarica l\'elenco delle allerte del paese, uguale per tutti: non riceve la posizione. La zona si confronta sul telefono</string>
     <string name="pv_s_news">Notizie e ricette · siti scelti</string>
     <string name="pv_s_news_d">scaricano i titoli, non sanno chi sei</string>
     <string name="pv_s_markets">Borsa · Yahoo</string>
