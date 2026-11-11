@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import eu.eurise.core.suite.HubBridge
@@ -15,8 +16,16 @@ class BrowserModel(private val context: Context) {
     private val prefs = context.getSharedPreferences("browser", Context.MODE_PRIVATE)
     private val store = BookmarkStore(File(context.filesDir, "bookmarks.json"))
     private var nextId = 1L
+    val settings = BrowserSettings(context).also { Gecko.settings = it }
+    val history = HistoryStore(File(context.filesDir, "history.txt"))
 
     val tabs = mutableStateListOf<Tab>()
+    /** I file scelti nella schermata Importa, già letti. */
+    val picked = mutableStateListOf<PickedFile>()
+    /** Un avviso breve da mostrare (lo mostra l'interfaccia e lo azzera). */
+    var notice by mutableStateOf<String?>(null)
+    /** Download partiti in questa sessione (il numero nel menu). */
+    var downloads by mutableIntStateOf(0)
     /** Dove vanno i download di tutte le schede (lo fissa l'attività). */
     var onDownload: (String) -> Unit = {}
     var current by mutableStateOf<Tab?>(null)
@@ -32,15 +41,74 @@ class BrowserModel(private val context: Context) {
 
     /** Una scheda nuova (vuota mostra la nuova scheda di Eurise) e la mette in vista. */
     fun open(address: String? = null, private: Boolean = false): Tab {
-        val tab = Tab(context, nextId++, private) { uri -> open(uri, private) }
-        tab.onDownload = { onDownload(it) }
+        val tab = newTab(private)
         tabs += tab
-        current = tab
-        if (!address.isNullOrBlank()) tab.load(Links.resolve(address, engine))
+        show(tab)
+        if (!address.isNullOrBlank()) tab.load(resolve(address))
         return tab
     }
 
-    fun show(tab: Tab) { current = tab }
+    private fun newTab(private: Boolean): Tab {
+        val tab = Tab(context, nextId++, private, onNewTab = { uri -> open(uri, private) },
+            history = if (private) null else history, dark = { settings.darkPages })
+        tab.onDownload = { onDownload(it) }
+        return tab
+    }
+
+    /** Indirizzo, ricerca, o «? domanda» all'AI scelta nelle Impostazioni. */
+    private fun resolve(input: String): String {
+        val t = input.trim()
+        val ai = settings.aiService
+        if (t.startsWith("?") && t.length > 1 && ai != null) {
+            return ai.url.format(java.net.URLEncoder.encode(t.drop(1).trim(), "UTF-8").replace("+", "%20"))
+        }
+        return Links.resolve(t, engine)
+    }
+
+    fun show(tab: Tab) {
+        current?.lastActive = System.currentTimeMillis()
+        current = tab
+        tab.lastActive = System.currentTimeMillis()
+        // Le schede riaperte all'avvio si caricano solo quando le guardi.
+        tab.pending?.let { tab.pending = null; tab.load(it) }
+    }
+
+    /** Scheda accanto (gesto sulla barra): [step] +1 a destra, -1 a sinistra. */
+    fun neighbour(step: Int) {
+        val i = tabs.indexOf(current ?: return)
+        tabs.getOrNull(i + step)?.let(::show)
+    }
+
+    // --- Schede all'avvio (Impostazioni › Schede) ---
+
+    /** Ricorda le schede normali per riaprirle (le private no). */
+    fun saveTabs() {
+        val a = org.json.JSONArray()
+        tabs.filter { !it.private && (it.url.startsWith("http") || it.pending != null) }.forEach { t ->
+            a.put(org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive))
+        }
+        prefs.edit().putString("tabs", a.toString()).putLong("current", current?.id ?: -1).apply()
+    }
+
+    /** Riapre le schede dell'ultima volta, tranne quelle non guardate da più di N giorni; restituisce quante. */
+    fun restoreTabs(): Int {
+        if (!settings.restoreTabs) return 0
+        val a = runCatching { org.json.JSONArray(prefs.getString("tabs", "[]")) }.getOrNull() ?: return 0
+        val limit = settings.closeAfterDays.takeIf { it > 0 }?.let { System.currentTimeMillis() - it * 86_400_000L } ?: 0L
+        for (i in 0 until a.length()) {
+            val o = a.optJSONObject(i) ?: continue
+            val last = o.optLong("last")
+            if (last < limit) continue
+            val tab = newTab(private = false)
+            tab.pending = o.optString("url")
+            tab.url = o.optString("url")
+            tab.title = o.optString("title")
+            tab.lastActive = last
+            tabs += tab
+        }
+        tabs.lastOrNull()?.let(::show)
+        return tabs.size
+    }
 
     fun close(tab: Tab) {
         val i = tabs.indexOf(tab)
@@ -55,7 +123,51 @@ class BrowserModel(private val context: Context) {
 
     fun go(input: String) {
         val tab = current ?: open()
-        tab.load(Links.resolve(input, engine))
+        tab.pending = null
+        tab.load(resolve(input))
+    }
+
+    // --- Menu e Impostazioni (tavole BrwMenu, BrwImpostazioni) ---
+
+    /** Riapplica al motore le impostazioni appena cambiate. */
+    fun applySettings() = Gecko.apply(context)
+
+    fun setDarkPages(on: Boolean) {
+        settings.setDarkPages(on)
+        tabs.forEach { it.setDark(on) }
+    }
+
+    fun setTextScale(v: Float) {
+        settings.setTextScale(v)
+        applySettings()
+    }
+
+    /** Segnalibri nel file che gli altri browser sanno importare. */
+    fun exportBookmarks(): String = BookmarksExport.html(bookmarks.toList())
+
+    /** Cosa cancellare (Impostazioni › Cancella dati). [since]: dal momento indicato (0 = tutto) per la cronologia. */
+    fun clearData(history: Boolean, cookies: Boolean, cache: Boolean, permissions: Boolean, since: Long, done: () -> Unit) {
+        var flags = 0L
+        if (cookies) flags = flags or org.mozilla.geckoview.StorageController.ClearFlags.COOKIES or
+            org.mozilla.geckoview.StorageController.ClearFlags.SITE_DATA or org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+        if (cache) flags = flags or org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES
+        if (permissions) flags = flags or org.mozilla.geckoview.StorageController.ClearFlags.PERMISSIONS
+        if (history) Thread { this.history.clear(since) }.start()
+        if (flags == 0L) { done(); return }
+        Gecko.runtime(context).storageController.clearData(flags).accept({ done() }, { done() })
+    }
+
+    /** I permessi dati ai siti (posizione, notifiche, fotocamera, protezione spenta…), per Impostazioni › Siti. */
+    fun sitePermissions(callback: (List<ContentPermission>) -> Unit) {
+        Gecko.runtime(context).storageController.allPermissions.accept(
+            { list -> callback(list.orEmpty().filter { it.value != ContentPermission.VALUE_PROMPT && !it.privateMode }) },
+            { callback(emptyList()) },
+        )
+    }
+
+    /** Toglie un permesso: il sito lo chiederà di nuovo. */
+    fun forget(permission: ContentPermission) {
+        Gecko.runtime(context).storageController.setPermission(permission, ContentPermission.VALUE_PROMPT)
     }
 
     fun isPinned(url: String) = bookmarks.any { it.url == url && it.pinned }

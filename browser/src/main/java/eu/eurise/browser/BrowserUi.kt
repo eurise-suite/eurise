@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,30 +70,91 @@ import androidx.compose.ui.viewinterop.AndroidView
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import org.mozilla.geckoview.GeckoView
 
-private enum class Sheet { None, Menu, Tabs, Protection, Engine, Bookmarks }
+private enum class Sheet { None, Menu, Tabs, Protection, Engine, Bookmarks, History, Zoom, Translate }
 
-private val Safe = Color(0xFF3F6E52)
-private val Half = Color(0xFF8A6A1F)
-private val Low = Color(0xFF8C2F39)
+internal val Safe = Color(0xFF3F6E52)
+internal val Half = Color(0xFF8A6A1F)
+internal val Low = Color(0xFF8C2F39)
 
 @Composable
-fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) -> Unit, onFinish: () -> Unit) {
+fun BrowserScreen(
+    model: BrowserModel,
+    actions: BrowserActions,
+    installed: (List<String>) -> Boolean,
+    onRunImport: (passwords: Boolean, bookmarks: Boolean, deleteFiles: Boolean) -> Unit,
+) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val tab = model.current
     var sheet by remember { mutableStateOf(Sheet.None) }
     var editing by remember { mutableStateOf(false) }
+    var finding by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
+    var section by remember { mutableStateOf<SettingsSection?>(null) }
+    var importOpen by remember { mutableStateOf(false) }
+    var reader by remember { mutableStateOf<PageInfo?>(null) }
     val noteDone = stringResource(R.string.brw_note_done)
     val taskDone = stringResource(R.string.brw_task_done)
     val noHub = stringResource(R.string.brw_no_hub)
+    val pinned = stringResource(R.string.brw_pinned_done)
+    val unpinned = stringResource(R.string.brw_unpinned_done)
+    val translateErrors = mapOf(
+        "language" to stringResource(R.string.brw_translate_no_language),
+        "same" to stringResource(R.string.brw_translate_same),
+        "engine" to stringResource(R.string.brw_translate_unavailable),
+    )
+    val translateFailed = stringResource(R.string.brw_translate_failed)
+    val onImport = { importOpen = true }
+
+    model.notice?.let { text ->
+        LaunchedEffect(text) {
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+            model.notice = null
+        }
+    }
 
     BackHandler {
         when {
+            reader != null -> reader = null
+            importOpen -> importOpen = false
+            settingsOpen && section != null -> section = null
+            settingsOpen -> settingsOpen = false
             sheet != Sheet.None -> sheet = Sheet.None
+            finding -> { tab?.stopFind(); finding = false }
             editing -> editing = false
             tab?.fullscreen == true -> tab.session.exitFullScreen()
             tab?.canBack == true -> tab.session.goBack()
-            else -> onFinish()
+            else -> actions.finish()
+        }
+    }
+
+    fun translate(t: Tab) {
+        val to = java.util.Locale.getDefault().language.ifBlank { "it" }
+        t.translate(to) { reason -> model.notice = translateErrors[reason] ?: translateFailed }
+    }
+
+    /** Le voci del menu (e quella fissata nella barra). */
+    fun run(item: MenuItem) {
+        val t = tab
+        sheet = Sheet.None
+        when (item) {
+            MenuItem.Favorite -> t?.let { model.togglePin(it); model.notice = if (model.isPinned(it.url)) pinned else unpinned }
+            MenuItem.Notes -> t?.let { model.toSuite(it, task = false) { ok -> model.notice = if (ok) noteDone else noHub } }
+            MenuItem.Task -> t?.let { model.toSuite(it, task = true) { ok -> model.notice = if (ok) taskDone else noHub } }
+            MenuItem.Reader -> t?.page { info -> reader = info ?: PageInfo(t.url, t.title, "", "", "") }
+            MenuItem.Translate -> if (t != null) {
+                if (model.settings.translateOk || t.translated) translate(t) else sheet = Sheet.Translate
+            }
+            MenuItem.Find -> if (t != null) { finding = true; editing = false }
+            MenuItem.Capture -> t?.let(actions::capture)
+            MenuItem.Zoom -> sheet = Sheet.Zoom
+            MenuItem.Desktop -> t?.let { it.setDesktop(!it.desktop) }
+            MenuItem.Dark -> model.setDarkPages(!model.settings.darkPages)
+            MenuItem.Downloads -> actions.openDownloads()
+            MenuItem.Bookmarks -> sheet = Sheet.Bookmarks
+            MenuItem.Passwords -> actions.openPassword()
+            MenuItem.Pdf -> t?.let(actions::savePdf)
+            MenuItem.Home -> t?.let(actions::addToHome)
         }
     }
 
@@ -107,9 +169,13 @@ fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) 
             }
         }
         if (tab?.fullscreen != true) {
-            if (editing) AddressEditor(tab, model, onDone = { editing = false })
+            if (finding && tab != null) FindBar(tab, onClose = { finding = false })
+            else if (editing) AddressEditor(tab, model, onDone = { editing = false })
             else BottomBar(
                 tab, model.tabs.size,
+                barAction = MenuItem.byId(model.settings.barAction)?.takeIf { !it.needsPage || tab?.url?.startsWith("http") == true },
+                onBarAction = ::run,
+                onSwipe = { step: Int -> model.neighbour(step) }.takeIf { model.settings.swipeTabs },
                 onShield = { sheet = Sheet.Protection },
                 onAddress = { editing = true },
                 onTabs = { sheet = Sheet.Tabs },
@@ -118,40 +184,24 @@ fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) 
         }
     }
 
-    fun suite(task: Boolean) {
-        val t = tab ?: return
-        sheet = Sheet.None
-        model.toSuite(t, task) { ok -> Toast.makeText(context, if (!ok) noHub else if (task) taskDone else noteDone, Toast.LENGTH_SHORT).show() }
-    }
-
     when (sheet) {
         Sheet.None -> Unit
-        Sheet.Menu -> BottomSheet(onClose = { sheet = Sheet.None }) {
-            if (tab != null) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    RoundAction(EuriseIcons.chevronLeft(2f), stringResource(R.string.brw_back), tab.canBack) { tab.session.goBack(); sheet = Sheet.None }
-                    RoundAction(EuriseIcons.chevronRight(2f), stringResource(R.string.brw_forward), tab.canForward) { tab.session.goForward(); sheet = Sheet.None }
-                    RoundAction(EuriseIcons.refresh(2f), stringResource(R.string.brw_reload)) { tab.session.reload(); sheet = Sheet.None }
-                    RoundAction(EuriseIcons.star(2f), stringResource(if (model.isPinned(tab.url)) R.string.brw_unpin else R.string.brw_pin), tab.url.startsWith("http")) {
-                        model.togglePin(tab); sheet = Sheet.None
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                val page = tab.url.startsWith("http")
-                MenuRow(EuriseIcons.note(2f), stringResource(R.string.brw_to_notes), stringResource(R.string.brw_to_notes_sub), page) { suite(task = false) }
-                MenuRow(EuriseIcons.task(2f), stringResource(R.string.brw_to_tasks), stringResource(R.string.brw_to_tasks_sub), page) { suite(task = true) }
-                MenuRow(EuriseIcons.volume(2f), stringResource(R.string.brw_listen), stringResource(R.string.brw_listen_sub), page) {
-                    sheet = Sheet.None
-                    tab.page { info -> onListen(info?.selection?.ifBlank { null } ?: info?.text.orEmpty()) }
-                }
-                MenuRow(EuriseIcons.share(2f), stringResource(R.string.brw_share), stringResource(R.string.brw_share_sub), page) { sheet = Sheet.None; model.share(tab) }
-            }
-            HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.08f))
-            MenuRow(EuriseIcons.star(2f), stringResource(R.string.brw_bookmarks), stringResource(R.string.brw_bookmarks_sub, model.bookmarks.size)) { sheet = Sheet.Bookmarks }
-            MenuRow(EuriseIcons.mask(1.8f), stringResource(R.string.brw_new_private), stringResource(R.string.brw_new_private_sub)) { model.open(private = true); sheet = Sheet.None; editing = true }
-            MenuRow(EuriseIcons.search(2f), stringResource(R.string.brw_engine), model.engine.label) { sheet = Sheet.Engine }
-            MenuRow(EuriseIcons.download(2f), stringResource(R.string.brw_import), stringResource(R.string.brw_import_sub)) { sheet = Sheet.None; onImport() }
-        }
+        Sheet.Menu -> MenuSheet(
+            model, tab, model.downloads,
+            onClose = { sheet = Sheet.None },
+            onNewTab = { model.open(); sheet = Sheet.None; editing = true },
+            onPrivateTab = { model.open(private = true); sheet = Sheet.None; editing = true },
+            onHistory = { sheet = Sheet.History },
+            onItem = ::run,
+            onProtection = { sheet = Sheet.Protection },
+            onSettings = { sheet = Sheet.None; section = null; settingsOpen = true },
+        )
+        Sheet.History -> HistorySheet(model, onOpen = { url -> sheet = Sheet.None; model.go(url) }, onClose = { sheet = Sheet.None })
+        Sheet.Zoom -> ZoomSheet(model, onClose = { sheet = Sheet.None })
+        Sheet.Translate -> TranslateExplain(
+            onAccept = { model.settings.acceptTranslate(); sheet = Sheet.None; tab?.let { translate(it) } },
+            onClose = { sheet = Sheet.None },
+        )
         Sheet.Tabs -> BottomSheet(onClose = { sheet = Sheet.None }) {
             Text(stringResource(R.string.brw_tabs_title, model.tabs.size), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
             Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -230,7 +280,7 @@ fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) 
             Text(stringResource(R.string.brw_bookmarks), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
             if (model.bookmarks.isEmpty()) {
                 Text(stringResource(R.string.brw_bookmarks_empty), fontSize = 13.sp, color = scheme.onSurfaceVariant)
-                Pill(stringResource(R.string.brw_import), EuriseIcons.download(2f), Modifier.fillMaxWidth(), strong = true) { sheet = Sheet.None; onImport() }
+                Pill(stringResource(R.string.brw_import), EuriseIcons.download(2f), Modifier.fillMaxWidth(), strong = true) { sheet = Sheet.None; importOpen = true }
             }
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                 model.bookmarks.forEach { b ->
@@ -250,13 +300,27 @@ fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) 
             }
         }
     }
+
+    if (settingsOpen) SettingsScreen(
+        model, actions, section,
+        onSection = { section = it },
+        onImport = { importOpen = true },
+        onClose = { settingsOpen = false },
+    )
+    if (importOpen) ImportScreen(model, actions, installed, onRun = { p, b, d -> onRunImport(p, b, d); importOpen = false }, onClose = { importOpen = false })
+    reader?.let { info ->
+        ReaderView(
+            title = info.title.ifBlank { tab?.title.orEmpty() }, text = info.text, scale = model.settings.textScale,
+            onListen = { actions.listen(info.text) }, onClose = { reader = null },
+        )
+    }
 }
 
 /** La vista di Gecko: una sola, che passa da una sessione all'altra quando si cambia scheda. */
 @Composable
 private fun GeckoHost(tab: Tab) {
     AndroidView(
-        factory = { ctx -> GeckoView(ctx) },
+        factory = { ctx -> GeckoView(ctx).also { Gecko.view = it } },
         update = { view ->
             if (view.session !== tab.session) {
                 view.releaseSession()
@@ -316,7 +380,17 @@ private fun NewTabPage(model: BrowserModel, onImport: () -> Unit, onOpen: (Strin
 }
 
 @Composable
-private fun BottomBar(tab: Tab?, count: Int, onShield: () -> Unit, onAddress: () -> Unit, onTabs: () -> Unit, onMenu: () -> Unit) {
+private fun BottomBar(
+    tab: Tab?,
+    count: Int,
+    barAction: MenuItem?,
+    onBarAction: (MenuItem) -> Unit,
+    onSwipe: ((Int) -> Unit)?,
+    onShield: () -> Unit,
+    onAddress: () -> Unit,
+    onTabs: () -> Unit,
+    onMenu: () -> Unit,
+) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().background(scheme.surfaceContainer).navigationBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp),
@@ -331,13 +405,29 @@ private fun BottomBar(tab: Tab?, count: Int, onShield: () -> Unit, onAddress: ()
             url.isBlank() || url == "about:blank" -> stringResource(R.string.brw_address_hint)
             else -> Links.queryOf(url) ?: Links.host(url)
         }
+        // Scorrere a destra o a sinistra sull'indirizzo passa alla scheda accanto (Impostazioni › Gesti).
+        val swipe = if (onSwipe == null) Modifier else Modifier.pointerInput(onSwipe) {
+            var total = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { total = 0f },
+                onDragEnd = { if (kotlin.math.abs(total) > 80.dp.toPx()) onSwipe(if (total < 0) 1 else -1) },
+                onHorizontalDrag = { change, amount -> change.consume(); total += amount },
+            )
+        }
         Row(
-            Modifier.weight(1f).height(42.dp).clip(RoundedCornerShape(21.dp)).background(scheme.surface).clickable(onClick = onAddress).padding(horizontal = 14.dp),
+            Modifier.weight(1f).height(42.dp).clip(RoundedCornerShape(21.dp)).background(scheme.surface).then(swipe)
+                .clickable(onClick = onAddress).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (tab?.private == true) { Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(15.dp)); Spacer(Modifier.width(6.dp)) }
             if (url.startsWith("https")) { Icon(EuriseIcons.lock(2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(13.dp)); Spacer(Modifier.width(6.dp)) }
             Text(shown, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (url.isBlank()) scheme.onSurfaceVariant else scheme.onSurface)
+        }
+        if (barAction != null) {
+            val label = stringResource(barAction.label)
+            Box(Modifier.size(44.dp).clip(CircleShape).clickable { onBarAction(barAction) }.semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
+                Icon(barAction.icon(), null, tint = scheme.primary, modifier = Modifier.size(20.dp))
+            }
         }
         val tabsLabel = stringResource(R.string.brw_tabs_title, count)
         Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onTabs).semantics { contentDescription = tabsLabel }, contentAlignment = Alignment.Center) {
@@ -382,7 +472,7 @@ private fun AddressEditor(tab: Tab?, model: BrowserModel, onDone: () -> Unit) {
 }
 
 @Composable
-private fun BottomSheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun BottomSheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).pointerInput(Unit) { detectTapGestures { onClose() } },
@@ -401,7 +491,7 @@ private fun BottomSheet(onClose: () -> Unit, content: @Composable ColumnScope.()
 }
 
 @Composable
-private fun MenuRow(icon: ImageVector, title: String, sub: String, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun MenuRow(icon: ImageVector, title: String, sub: String, enabled: Boolean = true, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -418,7 +508,7 @@ private fun MenuRow(icon: ImageVector, title: String, sub: String, enabled: Bool
 }
 
 @Composable
-private fun RoundAction(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun RoundAction(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -432,7 +522,7 @@ private fun RoundAction(icon: ImageVector, label: String, enabled: Boolean = tru
 }
 
 @Composable
-private fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: Boolean = false, onClick: () -> Unit) {
+internal fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: Boolean = false, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(if (strong) scheme.primary else scheme.surface)
@@ -448,7 +538,7 @@ private fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: B
 
 /** Tre tacche crescenti: il livello di privacy di un motore. */
 @Composable
-private fun Levels(level: Int) {
+internal fun Levels(level: Int) {
     val color = when (level) { 3 -> Safe; 2 -> Half; else -> Low }
     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         for (i in 0 until 3) {

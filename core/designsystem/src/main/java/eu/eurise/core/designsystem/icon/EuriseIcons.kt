@@ -178,6 +178,20 @@ object EuriseIcons {
 
     fun train(stroke: Float = Stroke) = icon("train", stroke, "M7 3.5h10a2 2 0 0 1 2 2V15a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5.5a2 2 0 0 1 2-2z", "M5 11h14", "M8 21l2-3M16 21l-2-3", "M9 14.5h.01M15 14.5h.01")
 
+    // Browser completo (tavola BrwMenu, 12 novembre).
+    fun translate(stroke: Float = Stroke) = icon("translate", stroke,
+        "M3 5h9M7.5 3v2M5 5c1 4 3.5 6.5 6.5 7.5M10 5c-1 4-3.5 6.5-6.5 7.5M13 21l4-9 4 9M14.4 18h5.2")
+
+    fun monitor(stroke: Float = Stroke) = icon("monitor", stroke,
+        "M4.5 4h15A1.5 1.5 0 0 1 21 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 14.5v-9A1.5 1.5 0 0 1 4.5 4z", "M8 20h8M12 16v4")
+
+    fun printer(stroke: Float = Stroke) = icon("printer", stroke, "M7 9V4h10v5M7 17H5v-7h14v7h-2M7 14h10v6H7z")
+
+    fun zoomIn(stroke: Float = Stroke) = icon("zoomIn", stroke,
+        "M11 4.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z", "M16 16l4.5 4.5M8 11h6M11 8v6")
+
+    fun history(stroke: Float = Stroke) = icon("history", stroke, "M4 12a8 8 0 1 0 2.4-5.7L4 8.5", "M4 4v4.5h4.5M12 8v4l3 2")
+
     // Segni zodiacali, tratto della suite.
     fun zodiac(index: Int, stroke: Float = 2f): ImageVector = when (index) {
         0 -> icon("z0", stroke, "M12 20V8", "M12 8c0-3-2-4.5-4-4.5S4 5 4 7.5 6 11 7 11", "M12 8c0-3 2-4.5 4-4.5s4 1.5 4 4-2 3.5-3 3.5")
