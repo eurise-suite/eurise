@@ -76,9 +76,11 @@ object CallNotifications {
             .setContentIntent(open)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
         if (ringing) builder.setFullScreenIntent(open, true)
-        if (Build.VERSION.SDK_INT >= 31) {
+        // Lo stile «chiamata» vale solo per quella in arrivo (che ha lo schermo intero): per quella in corso Android lo
+        // accetta soltanto da un servizio in primo piano, che qui non serve.
+        if (Build.VERSION.SDK_INT >= 31 && ringing) {
             val person = Person.Builder().setName(title).setImportant(true).build()
-            builder.setStyle(if (ringing) Notification.CallStyle.forIncomingCall(person, decline, answer) else Notification.CallStyle.forOngoingCall(person, hangup))
+            builder.setStyle(Notification.CallStyle.forIncomingCall(person, decline, answer))
         } else if (ringing) {
             builder.addAction(Notification.Action.Builder(null, context.getString(R.string.ph_decline), decline).build())
             builder.addAction(Notification.Action.Builder(null, context.getString(R.string.ph_answer), answer).build())
