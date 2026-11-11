@@ -5,6 +5,8 @@
     <!-- Meteo da Open-Meteo con la posizione approssimata: chiesta solo toccando "Mostra il meteo". -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Solo quando si tocca «Posizione» in Allega: la posizione va nel messaggio che si sta scrivendo. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Scorrere in giù sulla Scrivania apre la tendina delle notifiche. -->
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <!-- Pannello Eurise: stato di Wi-Fi e Bluetooth, Non disturbare e rotazione (gli ultimi due solo se l'utente li consente). -->
@@ -67,6 +69,14 @@
     </queries>
 
     <application>
+        <!-- Allegati delle risposte rapide (scatti e copie), condivisi con l'app della conversazione. -->
+        <provider
+            android:name=".notifications.ReplyFileProvider"
+            android:authorities="${applicationId}.replyfiles"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/reply_paths" />
+        </provider>
         <!-- Informativa sui dati di salute, richiesta da Health Connect. -->
         <activity
             android:name=".health.HealthPrivacyActivity"

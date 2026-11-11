@@ -289,6 +289,10 @@ object EuriseIcons {
     fun eye(stroke: Float = 2.2f) = icon("eye", stroke, "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z", circle(12f, 12f, 2.8f))
     fun eyeOff(stroke: Float = 2.2f) = icon("eyeOff", stroke, "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z", "M4 4l16 16")
 
+    fun attach(stroke: Float = 2.2f) = icon("attach", stroke, "M20 11.5 12.4 19a5 5 0 0 1-7.1-7.1l8-8a3.4 3.4 0 0 1 4.8 4.8l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.3-7.3")
+    fun place(stroke: Float = 2.2f) = icon("place", stroke, "M12 21s-7-6-7-11.5a7 7 0 0 1 14 0C19 15 12 21 12 21z", circle(12f, 9.5f, 2.2f))
+    fun document(stroke: Float = 2.2f) = icon("document", stroke, "M6 3h9l3 3v15H6z", "M9 11h6M9 15h6")
+
     private fun circle(cx: Float, cy: Float, r: Float) =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0"
 

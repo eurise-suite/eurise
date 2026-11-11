@@ -342,6 +342,24 @@ class LauncherViewModel(
         viewModelScope.launch { notes.save(null, clean.substringBefore('\n').trim(), clean.substringAfter('\n', "").trim()) }
     }
 
+    /**
+     * Le disponibilità dei prossimi tre giorni lavorativi per «Allega › Disponibilità»: orari liberi da un'ora,
+     * calcolati sul telefono dagli impegni del calendario.
+     */
+    suspend fun availabilityText(): String? {
+        if (!calendar.hasPermission()) return null
+        val now = java.time.LocalDateTime.now()
+        val days = eu.eurise.feature.launcher.notifications.ReplyText.nextWorkDays(now)
+        val zone = java.time.ZoneId.systemDefault()
+        val from = days.first().atStartOfDay(zone).toInstant().toEpochMilli()
+        val to = days.last().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val events = runCatching { calendar.startingBetween(from - 12 * 3600_000L, to) }.getOrDefault(emptyList())
+        val free = days.associateWith { d ->
+            eu.eurise.core.data.calendar.FreeSlots.find(d, events, java.time.Duration.ofHours(1), now, dayStart = java.time.LocalTime.of(9, 0), dayEnd = java.time.LocalTime.of(19, 0))
+        }
+        return eu.eurise.feature.launcher.notifications.ReplyText.availability(free, now.toLocalDate())
+    }
+
     fun setTaskDone(task: Task, done: Boolean) {
         viewModelScope.launch { tasks.setDone(task.id, done) }
     }

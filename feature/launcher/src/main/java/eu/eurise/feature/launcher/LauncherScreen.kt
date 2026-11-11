@@ -905,6 +905,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
                     onOpenChat = { replyTo = null; panelOpen = false; actions.openMessage(it) },
                     onClose = { replyTo = null },
                     onTask = bubbleActions.addTask,
+                    onNote = viewModel::addNote,
+                    availability = { viewModel.availabilityText() },
                 )
             }
         }

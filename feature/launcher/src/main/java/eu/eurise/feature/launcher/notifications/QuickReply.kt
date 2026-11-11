@@ -2,6 +2,7 @@ package eu.eurise.feature.launcher.notifications
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +49,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -71,21 +74,43 @@ fun QuickReplyDialog(
     onOpenChat: (MessageItem) -> Unit,
     onClose: () -> Unit,
     onTask: (String) -> Unit = {},
+    onNote: (String) -> Unit = {},
+    availability: suspend () -> String? = { null },
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     var text by remember { mutableStateOf("") }
+    // Pressione lunga su un fumetto: il suo indice; la frase citata nella risposta; il foglio «Allega».
+    var selected by remember { mutableStateOf<Int?>(null) }
+    var quote by remember { mutableStateOf<String?>(null) }
+    var attach by remember { mutableStateOf(false) }
+    val copiedLabel = stringResource(R.string.reply_copied)
+    val pasteLabel = stringResource(R.string.reply_paste_in_chat)
+    val noteLabel = stringResource(R.string.reply_noted)
     val focus = remember { FocusRequester() }
     val sentLabel = stringResource(R.string.reply_sent)
     val hiddenLabel = stringResource(R.string.comms_hidden)
     fun send() {
         val reply = message.reply ?: return
         if (text.isBlank()) return
-        if (reply.send(context, text.trim())) {
+        val body = quote?.let { ReplyText.quoted(message.packageName, it, text) } ?: text.trim()
+        if (reply.send(context, body)) {
             Toast.makeText(context, sentLabel, Toast.LENGTH_SHORT).show()
             NotificationStore.answered(message)
             onClose()
         }
+    }
+    fun react(emoji: String) {
+        val reply = message.reply ?: return
+        if (reply.send(context, emoji)) {
+            Toast.makeText(context, sentLabel, Toast.LENGTH_SHORT).show()
+            NotificationStore.answered(message)
+            onClose()
+        }
+    }
+    fun attachText(s: String) {
+        if (message.reply != null) text = if (text.isBlank()) s else text.trimEnd() + "\n" + s
+        else { ReplyShare.copyText(context, s); Toast.makeText(context, pasteLabel, Toast.LENGTH_LONG).show() }
     }
     val history = message.history.ifEmpty { listOf(null to message.text.ifBlank { context.getString(R.string.message_no_preview) }) }
     val scroll = rememberScrollState()
@@ -130,19 +155,46 @@ fun QuickReplyDialog(
                 Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(scroll),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                history.forEach { (sender, body) ->
+                history.forEachIndexed { i, (sender, body) ->
+                    val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp)
                     Column(
-                        Modifier.padding(end = 36.dp).clip(RoundedCornerShape(topStart = 6.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp))
-                            .background(scheme.onSurface.copy(alpha = 0.07f))
+                        Modifier.padding(end = 36.dp).clip(shape)
+                            .background(scheme.onSurface.copy(alpha = if (selected == i) 0.14f else 0.07f))
+                            .then(if (selected == i) Modifier.border(2.dp, scheme.primary.copy(alpha = 0.6f), shape) else Modifier)
+                            .pointerInput(i) { detectTapGestures(onLongPress = { selected = i }, onTap = { if (selected != null) selected = null }) }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         if (!sender.isNullOrBlank()) Text(sender, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = scheme.primary)
                         Text(body, fontSize = 14.sp, lineHeight = 20.sp)
                     }
+                    if (selected == i) {
+                        MessageActions(
+                            canSend = message.reply != null,
+                            onReact = { react(it) },
+                            onQuote = { quote = body; selected = null; runCatching { focus.requestFocus() } },
+                            onCopy = { ReplyShare.copyText(context, body); Toast.makeText(context, copiedLabel, Toast.LENGTH_SHORT).show(); selected = null },
+                            onTask = { onTask(body); selected = null },
+                            onNote = { onNote(body); Toast.makeText(context, noteLabel, Toast.LENGTH_SHORT).show(); selected = null },
+                        )
+                    }
+                }
+                if (selected == null && history.size > 0 && message.kind != CommsKind.Call) {
+                    Text(stringResource(R.string.reply_long_press_hint), fontSize = 11.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
                 }
             }
             if (message.reply != null) {
+                quote?.let { q -> QuoteStrip(q) { quote = null } }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (message.kind != CommsKind.Call) {
+                        val attachLabel = stringResource(R.string.reply_attach)
+                        Box(
+                            Modifier.size(44.dp).clip(CircleShape).background(scheme.surface)
+                                .clickable(role = Role.Button, onClickLabel = attachLabel) { attach = true }
+                                .semantics { contentDescription = attachLabel },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(EuriseIcons.attach(2.2f), null, tint = scheme.primary, modifier = Modifier.size(19.dp)) }
+                        Spacer(Modifier.width(6.dp))
+                    }
                     Box(
                         Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(scheme.surface)
                             .padding(horizontal = 14.dp, vertical = 12.dp),
@@ -209,6 +261,7 @@ fun QuickReplyDialog(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val taskText = stringResource(if (message.kind == CommsKind.Email) R.string.comms_task_mail else R.string.comms_task_chat, who)
                 Chip(EuriseIcons.task(2f), stringResource(R.string.comms_todo), scheme.primary) { onTask(taskText); onClose() }
+                if (message.reply == null) Chip(EuriseIcons.attach(2.2f), stringResource(R.string.reply_attach), scheme.primary) { attach = true }
                 message.archive?.let { a ->
                     Chip(EuriseIcons.folder(2f), stringResource(R.string.comms_archive), scheme.onSurface) { runCatching { a.intent.send() }; onClose() }
                 }
@@ -227,6 +280,7 @@ fun QuickReplyDialog(
                 }
             }
         }
+        if (attach) AttachSheet(message, availability, onText = { attachText(it) }, onClose = { attach = false })
     }
 }
 
