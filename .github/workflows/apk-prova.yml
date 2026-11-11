@@ -56,8 +56,11 @@ jobs:
         run: |
           mkdir apk
           find artefatti -name '*.apk' -exec cp {} apk/ \;
+          # Il Ponte per il computer (Linux): la cartella del programma in un archivio (serve Java 17).
+          ponte=$(find artefatti -maxdepth 1 -type d -name 'eurise-ponte-linux-*' | head -1)
+          if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi
           ls -la apk
           gh release delete apk-prova -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
-          gh release create apk-prova apk/*.apk -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \
+          gh release create apk-prova apk/* -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \
             --title "APK di prova (giro ${{ steps.giro.outputs.num }})" \
             --notes "APK di prova (firmati con la chiave di prova) del giro ${{ steps.giro.outputs.num }} di Compila. Si sovrascrive a ogni pubblicazione."
