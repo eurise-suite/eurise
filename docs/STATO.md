@@ -754,3 +754,20 @@ approvate, punto 3 Browser.
   (b) motore ridotto: togliere Base, Math, Draw, filtri rari e la parte web (stima: si può arrivare intorno ai 50–60 MB
   compressi, va misurato con un secondo giro); (c) motore scaricato a richiesta da Eurise Office dopo l'installazione
   (APK piccolo, il motore come i modelli AI). Poi le anteprime di Office per telefono e tablet.
+
+## 11 novembre, 07:22 UTC: varianti del motore di Office (giro 3, 10 minuti grazie alla ccache)
+Stesso motore ricollegato con componenti diversi (`.github/scripts/office_variants.py`):
+
+| Variante | Libreria | Compressa | APK stimato (compresso) | APK stimato (non compresso) |
+|---|---|---|---|---|
+| Completo | 182,7 MB | 66,1 MB | ~87 MB | ~214 MB |
+| Senza Base e formati rari | 177,8 MB | 64,5 MB | ~85 MB | ~209 MB |
+| Testi e fogli (senza presentazioni e disegni) | 173,2 MB | 62,8 MB | ~84 MB | ~204 MB |
+| Testi e fogli, senza Base e rari | 169,4 MB | 61,5 MB | ~82 MB | ~200 MB |
+| Solo testi | 168,0 MB | 61,2 MB | ~82 MB | ~200 MB |
+
+- **Togliere componenti non conviene**: al massimo 5 MB su 87 (6%). Il peso sta nel nucleo comune (interfaccia, grafica,
+  filtri Office, dati delle lingue ICU, PDF), che serve a tutte le app. Draw e Impress sono lo stesso componente (sd).
+- Con la ccache un giro intero dura 10 minuti: provare altre riduzioni costa poco. Restano da misurare, se servono:
+  ottimizzazione per dimensione (-Os) e LTO, dati ICU ridotti alle lingue europee.
+- Nota: nel pacchetto `eurise-office-motore-3` la libreria è quella «Solo testi» (svista corretta nel lavoro).

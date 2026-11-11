@@ -137,6 +137,9 @@ jobs:
         run: |
           python3 .github/scripts/office_variants.py "$WORK/core" "$WORK/varianti" | tee -a "$GITHUB_STEP_SUMMARY"
           # Il motore completo torna com'era per le misure e l'artefatto.
+          rm -f "$WORK/core/android/jniLibs/arm64-v8a/liblo-native-code.so"
+          find "$WORK/core/android/source" -path '*obj/local*' -name liblo-native-code.so -delete
+          touch "$WORK/core/android/source/native-code.cxx"
           make -C "$WORK/core/android/source" link-so > /dev/null 2>&1 || true
 
       - name: Errori di compilazione
