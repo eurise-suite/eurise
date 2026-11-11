@@ -16,8 +16,10 @@ on:
 permissions:
   contents: read
 
+# Gruppo proprio (12 novembre): un giro fantasma del gruppo office-engine, rimasto «in coda» senza lavori, bloccava
+# l'app e non si poteva annullare. Il motore resta nel suo gruppo; i due lavori non si toccano.
 concurrency:
-  group: office-engine
+  group: office-app
   cancel-in-progress: false
 
 env:
