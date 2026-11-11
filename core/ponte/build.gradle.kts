@@ -19,3 +19,6 @@ kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarg
 dependencies {
     testImplementation(libs.junit)
 }
+
+// Nome del jar diverso da quello di desktop/ponte, che lo mette nella stessa cartella lib/.
+base { archivesName.set("eurise-ponte-core") }

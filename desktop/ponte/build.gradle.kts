@@ -26,3 +26,5 @@ dependencies {
     implementation(libs.zxing.core)
     testImplementation(libs.junit)
 }
+
+base { archivesName.set("eurise-ponte-app") }
