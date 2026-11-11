@@ -1,7 +1,8 @@
 /* -*- js-indent-level: 8 -*- */
 /*
  * Eurise Office: scheda «Suite» del nastro, «Cerca un comando» (Ctrl K) e pulsante Suite sul telefono
- * (tavole OffTelefono, OffCerca, OffTablet, OffComputer). File di Eurise aggiunto all'interfaccia di Collabora Online
+ * (tavole OffTelefono, OffCerca, OffTablet, OffComputer); con un PDF, le schede Annota e Pagine e «Prima di
+ * condividere» (tavole OffPdf, OffPdfPagine, OffPdfCondividi). File di Eurise aggiunto all'interfaccia di Collabora Online
  * (MPL 2.0) da office/app/eurise_web.py, subito dopo Control.NotebookbarBuilder.js.
  *
  * I comandi della Suite non toccano la rete: chiedono al guscio dell'app (Android: EuriseSuite.java) di passare il
@@ -478,6 +479,259 @@
 			openSearch();
 		}
 	}, true);
+
+	// --- PDF: Annota, Pagine, Prima di condividere (tavole OffPdf, OffPdfPagine, OffPdfCondividi) -------------
+	//
+	// Un PDF si apre come disegno (Draw): il testo del PDF è modificabile, le note sono i commenti, le pagine sono
+	// le pagine di Draw. Le schede Annota e Pagine compaiono solo con un PDF; «Prima di condividere» esporta una copia
+	// con le opzioni scelte attraverso il guscio, che poi la condivide o la passa a «Salva in…» di Eurise File.
+
+	function isPdf() { return /\.pdf$/i.test(documentName()); }
+
+	function unoButton(command, it, en) {
+		return {
+			'type': 'bigtoolitem',
+			'text': t(it, en),
+			'command': command,
+			'accessibility': { focusBack: true, combination: null, de: null }
+		};
+	}
+
+	function pdfAnnotate() {
+		return [
+			{
+				'type': 'overflowgroup',
+				'id': 'pdf-annota',
+				'name': t('Annota', 'Annotate'),
+				'children': [
+					bigButton('eurise-evidenzia', 'Evidenzia', 'Highlight'),
+					bigButton('eurise-sottolinea', 'Sottolinea', 'Underline'),
+					unoButton('.uno:InsertAnnotation', 'Nota', 'Note'),
+					bigButton('eurise-penna', 'Penna', 'Pen'),
+					unoButton('.uno:Text', 'Testo', 'Text'),
+					bigButton('eurise-firma', 'Firma', 'Sign')
+				]
+			},
+			{ type: 'separator', id: 'pdf-annota-break', orientation: 'vertical' },
+			{
+				'type': 'overflowgroup',
+				'id': 'pdf-condividi',
+				'name': t('Condividi', 'Share'),
+				'children': [bigButton('eurise-condividi', 'Prima di condividere', 'Before sharing')]
+			}
+		];
+	}
+
+	function pdfPages() {
+		return [
+			{
+				'type': 'overflowgroup',
+				'id': 'pdf-pagine',
+				'name': t('Pagine', 'Pages'),
+				'children': [
+					unoButton('.uno:InsertPage', 'Nuova', 'New'),
+					unoButton('.uno:DuplicatePage', 'Duplica', 'Duplicate'),
+					unoButton('.uno:MovePageUp', 'Sposta prima', 'Move up'),
+					unoButton('.uno:MovePageDown', 'Sposta dopo', 'Move down'),
+					unoButton('.uno:DeletePage', 'Togli', 'Delete')
+				]
+			}
+		];
+	}
+
+	var PDF_TABS = [
+		{ name: 'EuriseAnnota', it: 'Annota', en: 'Annotate', key: 'A', content: pdfAnnotate },
+		{ name: 'EurisePagine', it: 'Pagine', en: 'Pages', key: 'G', content: pdfPages }
+	];
+
+	function addPdfTabs(Klass) {
+		if (!Klass || !Klass.prototype) return;
+		var proto = Klass.prototype;
+		var getTabs = proto.getTabs;
+		var getTabsJSON = proto.getTabsJSON;
+		proto.getTabs = function () {
+			var tabs = getTabs.call(this).slice();
+			if (!isPdf()) return tabs;
+			return PDF_TABS.map(function (tab) {
+				return { 'text': t(tab.it, tab.en), 'id': tab.name + '-tab-label', 'name': tab.name, 'accessibility': { focusBack: true, combination: tab.key, de: null } };
+			}).concat(tabs);
+		};
+		proto.getTabsJSON = function () {
+			var json = getTabsJSON.call(this).slice();
+			if (!isPdf()) return json;
+			var self = this;
+			return PDF_TABS.map(function (tab) { return self.getTabPage(tab.name, tab.content()); }).concat(json);
+		};
+	}
+	if (window.L && window.L.Control) addPdfTabs(window.L.Control.NotebookbarDraw);
+
+	if (typeof MobileBottomBar !== 'undefined') {
+		var getPdfItems = MobileBottomBar.prototype.getToolItems;
+		MobileBottomBar.prototype.getToolItems = function () {
+			var items = getPdfItems.call(this).slice();
+			if (!isPdf()) return items;
+			// Sul telefono: dopo Suite, gli strumenti del PDF più usati.
+			var pdf = [
+				{ type: 'customtoolitem', id: 'eurise-evidenzia', command: 'eurise-evidenzia', icon: 'lc_eurise_evidenzia.svg', text: t('Evidenzia', 'Highlight') },
+				{ type: 'customtoolitem', id: 'eurise-penna', command: 'eurise-penna', icon: 'lc_eurise_penna.svg', text: t('Penna', 'Pen') },
+				{ type: 'customtoolitem', id: 'eurise-condividi', command: 'eurise-condividi', icon: 'lc_eurise_condividi.svg', text: t('Condividi', 'Share') }
+			];
+			return items.slice(0, 1).concat(pdf, items.slice(1));
+		};
+	}
+
+	function uno(command, args) { if (app.map) app.map.sendUnoCommand(command, args); }
+
+	actions['eurise-evidenzia'] = function () {
+		// Sabbia della suite (#E9CF8E) dietro al testo scelto.
+		uno('.uno:CharBackColor', { CharBackColor: { type: 'long', value: 0xE9CF8E } });
+	};
+	actions['eurise-sottolinea'] = function () { uno('.uno:Underline'); };
+	actions['eurise-penna'] = function () { uno('.uno:Freeline_Unfilled'); };
+	actions['eurise-firma'] = function () {
+		uno('.uno:Freeline_Unfilled');
+		notice(t('Firma con il dito o la penna dove serve.', 'Sign with your finger or pen where needed.'));
+	};
+	actions['eurise-condividi'] = function () { beforeSharing(); };
+
+	/** Qualità della copia: Schermo, Stampa, Sotto 1 MB (PEC). */
+	var SIZES = [
+		{ id: 'schermo', it: 'Schermo', en: 'Screen', dpi: 150, quality: 75 },
+		{ id: 'stampa', it: 'Stampa', en: 'Print', dpi: 300, quality: 90 },
+		{ id: 'pec', it: 'Sotto 1 MB (PEC)', en: 'Under 1 MB', dpi: 96, quality: 60 }
+	];
+
+	// Codice fiscale e IBAN (italiano e degli altri paesi, anche a gruppi di quattro).
+	var REDACT = [
+		'[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-EHLMPR-T][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]',
+		'[A-Z]{2}[0-9]{2}( ?[A-Z0-9]{4}){2,7}( ?[A-Z0-9]{1,4})?'
+	];
+
+	function newPassword() {
+		var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+		var out = '';
+		var bytes = new Uint32Array(14);
+		window.crypto.getRandomValues(bytes);
+		for (var i = 0; i < bytes.length; i++) out += chars[bytes[i] % chars.length];
+		return out.slice(0, 4) + '-' + out.slice(4, 9) + '-' + out.slice(9);
+	}
+
+	function beforeSharing() {
+		var box = overlay('eurise-condividi');
+		box.innerHTML = '';
+		var title = document.createElement('div');
+		title.className = 'eurise-title';
+		title.textContent = t('Prima di condividere', 'Before sharing');
+		box.appendChild(title);
+
+		function check(label, sub, on) {
+			var row = document.createElement('label');
+			row.className = 'eurise-row eurise-check';
+			var input = document.createElement('input');
+			input.type = 'checkbox';
+			input.checked = on;
+			var text = document.createElement('span');
+			text.textContent = label;
+			if (sub) {
+				var s = document.createElement('small');
+				s.className = 'eurise-sub';
+				s.textContent = sub;
+				text.appendChild(document.createElement('br'));
+				text.appendChild(s);
+			}
+			row.appendChild(input);
+			row.appendChild(text);
+			box.appendChild(row);
+			return input;
+		}
+
+		var size = SIZES[0];
+		var small = check(t('Riduci il peso', 'Reduce the size'), null, true);
+		var sizes = document.createElement('div');
+		sizes.className = 'eurise-pills';
+		SIZES.forEach(function (sz) {
+			var b = document.createElement('button');
+			b.className = 'eurise-pill' + (sz === size ? ' on' : '');
+			b.textContent = t(sz.it, sz.en);
+			b.onclick = function () {
+				size = sz;
+				Array.prototype.forEach.call(sizes.children, function (c) { c.classList.remove('on'); });
+				b.classList.add('on');
+			};
+			sizes.appendChild(b);
+		});
+		box.appendChild(sizes);
+		var notes = check(t('Togli le note e i commenti', 'Remove notes and comments'), t('restano solo in questo file', 'they stay in this file only'), true);
+		var redact = check(t('Oscura codici fiscali e IBAN', 'Redact tax codes and IBANs'),
+			t('spariscono davvero dal testo; nelle pagine scansionate restano nell\'immagine', 'removed from the text; scanned pages keep them in the image'), false);
+		var lock = check(t('Password per aprirlo', 'Password to open it'), null, false);
+		var pwdRow = document.createElement('div');
+		pwdRow.className = 'eurise-sub';
+		pwdRow.style.display = 'none';
+		box.appendChild(pwdRow);
+		var password = newPassword();
+		lock.onchange = function () {
+			pwdRow.style.display = lock.checked ? '' : 'none';
+			pwdRow.textContent = t('Password: ', 'Password: ') + password + t(' · copiata negli appunti: mandala a parte', ' · copied: send it separately');
+			if (lock.checked && navigator.clipboard) navigator.clipboard.writeText(password).catch(function () {});
+		};
+		var note = document.createElement('div');
+		note.className = 'eurise-sub';
+		note.textContent = t('Si condivide una copia: questo file resta com\'è.', 'A copy is shared: this file stays as it is.');
+		box.appendChild(note);
+
+		function go(how) {
+			var options = {
+				ExportNotes: { type: 'boolean', value: notes.checked ? 'false' : 'true' },
+				ExportNotesInMargin: { type: 'boolean', value: 'false' },
+				ReduceImageResolution: { type: 'boolean', value: small.checked ? 'true' : 'false' }
+			};
+			if (small.checked) {
+				options.MaxImageResolution = { type: 'long', value: String(size.dpi) };
+				options.Quality = { type: 'long', value: String(size.quality) };
+			}
+			if (lock.checked) {
+				options.EncryptFile = { type: 'boolean', value: 'true' };
+				options.DocumentOpenPassword = { type: 'string', value: password };
+			}
+			var redacted = 0;
+			if (redact.checked) {
+				REDACT.forEach(function (expr) {
+					uno('.uno:ExecuteSearch', {
+						'SearchItem.SearchString': { type: 'string', value: expr },
+						'SearchItem.ReplaceString': { type: 'string', value: '████████████████' },
+						'SearchItem.Backward': { type: 'boolean', value: false },
+						'SearchItem.Command': { type: 'long', value: 3 },
+						'SearchItem.AlgorithmType': { type: 'short', value: 1 },
+						'SearchItem.AlgorithmType2': { type: 'short', value: 2 },
+						'SearchItem.SearchFlags': { type: 'long', value: 0 },
+						'Quiet': { type: 'boolean', value: true }
+					});
+					redacted++;
+				});
+			}
+			closeOverlay();
+			var name = documentName().replace(/\.pdf$/i, '') + '.pdf';
+			toShell({ action: 'pdf', how: how, name: name, options: JSON.stringify(options) }, function () {
+				// La copia è fatta: l'oscuramento si toglie da questo file (il motore lavora i messaggi in ordine).
+				for (var i = 0; i < redacted; i++) uno('.uno:Undo');
+			});
+		}
+
+		var buttons = document.createElement('div');
+		buttons.className = 'eurise-pills';
+		var share = document.createElement('button');
+		share.className = 'eurise-button';
+		share.textContent = t('Condividi la copia', 'Share the copy');
+		share.onclick = function () { go('condividi'); };
+		var save = document.createElement('button');
+		save.className = 'eurise-pill';
+		save.textContent = t('Salva in…', 'Save in…');
+		save.onclick = function () { go('salva'); };
+		buttons.appendChild(share);
+		buttons.appendChild(save);
+		box.appendChild(buttons);
+	}
 
 	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice };
 	if (typeof JSDialog !== 'undefined') JSDialog.EuriseSearch = openSearch;

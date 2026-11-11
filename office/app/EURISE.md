@@ -23,6 +23,15 @@ gli altri sistemi. Questo lavoro costruisce l'app Android di Collabora con il no
     Le Chat 1). Se c'è testo scelto il campo parte già scritto;
   - **pulsante Suite** in testa alla barra in basso del telefono (OffTelefono): apre la stessa ricerca;
   - il testo scelto si chiede al motore (`gettextselection`), il testo da inserire si scrive al cursore (`textinput`).
+  - **PDF** (tavole OffPdf, OffPdfPagine, OffPdfCondividi; solo se il file aperto è un `.pdf`, che si apre in Draw):
+    schede **Annota** (Evidenzia = sfondo sabbia sul testo scelto, Sottolinea, Nota = commento, Penna, Testo, Firma a
+    mano) e **Pagine** (Nuova, Duplica, Sposta prima/dopo, Togli) prima delle altre; sul telefono Evidenzia, Penna e
+    Condividi dopo il pulsante Suite. **Prima di condividere**: peso (Schermo 150 dpi, Stampa 300, Sotto 1 MB per la
+    PEC 96), note e commenti tolti, oscuramento di codici fiscali e IBAN (sostituiti nel testo con █, poi annullati in
+    questo file dopo la copia), password per aprirlo (creata qui, copiata negli appunti). La copia la fa il guscio
+    (`pdf`: `saveAs` con le opzioni JSON del filtro PDF) e la condivide o la passa a «Salva in…» di Eurise File
+    (`FilesActivity` dell'app Eurise, permesso della suite). Provato qui con eslint 7 e stylelint 13.7 con le regole
+    di Collabora; da provare sul telefono (opzioni JSON del filtro, oscuramento con l'espressione regolare in Draw).
 - `web/eurise.css` → ultimo foglio di stile (vince sui colori scuri di Collabora; in coda a `color-palette.css` avrebbe
   avuto `:root` doppio, che stylelint rifiuta). Colori Perla/Notte, scheda attiva con tratto e grassetto, gruppi a
   isole, gruppo Suite borgogna, riquadro della ricerca con le tacche, avviso breve in basso.
@@ -49,6 +58,7 @@ gli altri sistemi. Questo lavoro costruisce l'app Android di Collabora con il no
   `libandroidapp.so` e legge i suoi file dall'APK con l'AssetManager. Va separato: libreria e file del motore in un
   pacchetto scaricato nella memoria dell'app, `System.load` dal percorso, file letti dal disco (modifica a
   `androidapp.cpp`). Si fa dopo il primo APK che funziona, con le misure vere.
-- Eurise File per aprire e salvare (origine sempre scritta), colonna «In Eurise File», interruttore «ricerca» nelle
+- Eurise File per aprire (`eu.eurise.action.OPEN_FROM`, già pronta nell'app Eurise) e salvare ogni documento,
+  non solo la copia PDF (origine sempre scritta); inserire pagine dallo Scanner; ruotare le pagine del PDF; colonna «In Eurise File», interruttore «ricerca» nelle
   proprietà, campo di ricerca sempre visibile nel nastro.
 - Linux: `--enable-qtapp` e Flatpak, con le stesse modifiche all'interfaccia (`eurise_web.py` vale già).

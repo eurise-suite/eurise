@@ -86,6 +86,7 @@ final class EuriseSuite {
                 case "lingue": languages(activity, id); break;
                 case "traduci": translate(activity, id, text, m.optString("from"), m.optString("to")); break;
                 case "cerca": search(activity, id, m.optString("where"), m.optString("query")); break;
+                case "pdf": pdf(activity, id, m.optString("how"), m.optString("name"), m.optString("options")); break;
                 default: reply(activity, id, null, null);
             }
         } catch (JSONException e) {
@@ -116,6 +117,50 @@ final class EuriseSuite {
         if (text.isEmpty()) { reply(a, id, t("Scegli prima il testo", "Select some text first"), null); return; }
         a.sendBroadcast(new Intent(action).setPackage(hub).putExtra(Intent.EXTRA_TEXT, text), permission(a));
         reply(a, id, done, null);
+    }
+
+    // --- PDF: la copia di «Prima di condividere» (tavola OffPdfCondividi) ---
+
+    /**
+     * Esporta una copia del documento in PDF con le [options] scelte (JSON del filtro di esportazione: peso, note,
+     * password), poi la condivide o la passa a «Salva in…» di Eurise File. Il file aperto non cambia.
+     */
+    private static void pdf(LOActivity a, int id, String how, String name, String options) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                java.io.File dir = new java.io.File(a.getCacheDir(), "condividi");
+                if (!dir.isDirectory() && !dir.mkdirs()) throw new java.io.IOException("cartella");
+                String safe = name.replaceAll("[\\\\/:*?\"<>|]", "-").trim();
+                if (safe.isEmpty() || safe.equals(".pdf")) safe = t("Documento.pdf", "Document.pdf");
+                java.io.File out = new java.io.File(dir, safe);
+                if (out.exists() && !out.delete()) Log.w(TAG, "copia vecchia non tolta");
+                a.saveAs(out.toURI().toString(), "pdf", options.isEmpty() ? null : options);
+                if (!out.exists() || out.length() == 0) { reply(a, id, t("Copia non riuscita", "Copy failed"), null); return; }
+                Uri uri = androidx.core.content.FileProvider.getUriForFile(a, a.getPackageName() + ".fileprovider", out);
+                String hub = pkg(a, "eu.eurise.hub");
+                Intent i;
+                if ("salva".equals(how) && installed(a, hub)) {
+                    i = new Intent("eu.eurise.action.SAVE_IN").setClassName(hub, "eu.eurise.core.files.FilesActivity")
+                            .setType("application/pdf")
+                            .putExtra(Intent.EXTRA_STREAM, uri)
+                            .putExtra(Intent.EXTRA_TITLE, safe)
+                            .putExtra("eu.eurise.extra.KIND", "office")
+                            .putExtra("eu.eurise.extra.FROM", "Office");
+                } else {
+                    Intent send = new Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    send.setClipData(android.content.ClipData.newRawUri(safe, uri));
+                    i = Intent.createChooser(send, t("Condividi la copia", "Share the copy"));
+                }
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                i.setClipData(android.content.ClipData.newRawUri(safe, uri));
+                a.startActivity(i);
+                reply(a, id, null, null);
+            } catch (Exception e) {
+                Log.w(TAG, "copia PDF", e);
+                reply(a, id, t("Copia non riuscita", "Copy failed"), null);
+            }
+        });
     }
 
     // --- Evento: il modulo del calendario con titolo e descrizione già scritti ---

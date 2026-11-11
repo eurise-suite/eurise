@@ -1213,3 +1213,6 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Eurise File comune (`core/files`)** e **editor dello scanner** scritti (vedi il commit «Eurise File comune…»): da
   provare sul telefono. `FilesActivity` (`eu.eurise.action.SAVE_IN` / `OPEN_FROM`, permesso della suite) è pronta per
   Office, Galleria e Browser: va ancora chiamata da loro.
+- **Office, app PDF** (tavole approvate): schede Annota e Pagine con un PDF, «Prima di condividere» con copia fatta dal
+  guscio e passata a Condividi o a «Salva in…» (dettagli in `office/app/EURISE.md`). Il giro di Office è lungo: l'APK
+  arriva in `apk-prova` (`eurise-office-debug.apk`) quando finisce.
