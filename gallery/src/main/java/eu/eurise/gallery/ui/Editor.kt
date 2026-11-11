@@ -1,6 +1,7 @@
 package eu.eurise.gallery.ui
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -154,7 +155,7 @@ private val LookNames = mapOf(
  * Annulla e Ripeti; tenendo premuto l'occhio si vede l'originale.
  */
 @Composable
-internal fun EditorScreen(item: MediaItem, onClose: () -> Unit) {
+internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit = {}) {
     BackHandler(onBack = onClose)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -214,10 +215,10 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit) {
                     .clickable(enabled = !busy && shown != null) {
                         busy = true
                         scope.launch {
-                            val ok = withContext(Dispatchers.IO) { try { saveEdited(context, item, state) } catch (e: Throwable) { false } }
-                            Toast.makeText(context, if (ok) savedText else failedText, Toast.LENGTH_LONG).show()
+                            val saved = withContext(Dispatchers.IO) { try { saveEdited(context, item, state) } catch (e: Throwable) { null } }
+                            Toast.makeText(context, if (saved != null) savedText else failedText, Toast.LENGTH_LONG).show()
                             busy = false
-                            if (ok) onClose()
+                            if (saved != null) { onSaved(saved); onClose() }
                         }
                     }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="gallery_app_name">Galleria</string>
+    <string name="gallery_edit_label">Modifica con Eurise</string>
     <string name="tab_photos">Foto</string>
     <string name="tab_albums">Album</string>
     <string name="filter_all">Tutte</string>

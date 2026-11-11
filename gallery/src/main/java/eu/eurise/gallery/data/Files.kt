@@ -256,7 +256,8 @@ fun drawVignette(canvas: Canvas, left: Float, top: Float, right: Float, bottom: 
 }
 
 /** Salva una copia modificata nel telefono, con la data dell'originale. La copia non porta con sé la posizione. */
-fun saveEdited(context: Context, item: MediaItem, state: EditState): Boolean {
+/** Salva la foto modificata come copia in Pictures/Eurise; restituisce la copia, o null se non è riuscito. */
+fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
     val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))
     val decoded = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
         decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / 8192))
@@ -298,11 +299,11 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Boolean {
         put(MediaStore.MediaColumns.IS_PENDING, 1)
     }
     val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return false
+    val uri = resolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return null
     val ok = runCatching { resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) } == true }.getOrDefault(false)
-    if (!ok) { resolver.delete(uri, null, null); return false }
+    if (!ok) { resolver.delete(uri, null, null); return null }
     resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
-    return true
+    return uri
 }
 
 /** Specchio e quarti di giro, nell'ordine usato da [EditState]. */

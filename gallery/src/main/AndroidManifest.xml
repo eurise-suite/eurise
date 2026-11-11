@@ -30,6 +30,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- «Modifica» o «Condividi › Modifica» da un'altra app: si apre solo l'editor, in un compito a sé. -->
+        <activity
+            android:name=".EditActivity"
+            android:exported="true"
+            android:label="@string/gallery_edit_label"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation">
+            <intent-filter android:label="@string/gallery_edit_label">
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter android:label="@string/gallery_edit_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
