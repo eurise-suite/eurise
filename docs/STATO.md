@@ -1083,3 +1083,46 @@ TastCerca, BolRispondi, BolAllega. Indicazione: «macina codice».
 «Cerca un comando», motore a richiesta, italiano; Browser: estensione su Firefox per il computer con il Ponte e
 aggiornamento del plugin Android della suite (per l'ultima GeckoView); Ponte: dal computer al telefono, «Ti hanno
 cercato» e password dal telefono, cloud fuori casa, voce nel centro privacy.
+
+## 11 novembre, sera tardi: Office Suite, scanner, tastiera, bolle (ramo `brand`, nuova chat)
+- **Lavori lunghi**: `.github/scripts/apt-update.sh` (mirror di Azure → archive.ubuntu.com → DNS pubblico) in Mappe e
+  Office app, passo d'installazione con un limite di 30 minuti. `office-engine.yml` non toccato apposta (stessa coda di
+  Office app: farebbe partire ore di compilazione davanti all'app); se lo si rilancia, metterci lo stesso script.
+  Il giro di Mappe 43043196722 è rimasto fermo su apt (non si è potuto annullarlo da qui): tiene la coda fino al suo
+  limite di 5 ore, poi parte il giro 7 nuovo. **Il proprietario può annullarlo dalla pagina Actions.**
+- **Office** (`office/app/EURISE.md`): scheda Suite del nastro, «Cerca un comando» (Ctrl K) con le tacche, pulsante
+  Suite sul telefono (`web/Control.Eurise.js`, `eurise_web.py`), guscio Android `EuriseSuite.java` (Da fare, Note,
+  Evento, Detta con Voce, Traduci con Leggi, Cerca), italiano del motore (`translations/source/it`, `--with-lang=en-US it`).
+  Corretto: `eurise.css` in coda a `color-palette.css` avrebbe fatto cadere stylelint (`:root` doppio). Da fare: motore a
+  richiesta (va separato da `libandroidapp.so`, che legge i file dall'APK), Eurise File, Linux.
+- **Scanner, documento bluastro: corretto** (`DocumentFilter.kt`, test `DocumentFilterTest`): colore della carta stimato
+  zona per zona e diviso via, grigi neutri, colori veri tenuti; bianco e nero dalla pagina pulita. Da provare sul telefono.
+- **Tastiera**: metà dello spazio tra i tasti di base (`PREF_KEY_GAP_SCALE` 0,5; regolabile da 0,25) e altezza in verticale
+  1,10 (era 1,12): tasti circa +9 % larghi e +6 % alti. Se il proprietario aveva già toccato «Spazio tra i tasti» o
+  l'altezza nelle impostazioni, valgono le sue (va rimesso il valore predefinito). **Errori di battitura**: servono
+  esempi dal proprietario (tasti vicini? spazio/lettere? lettere perse scrivendo veloce?) per lavorare su correzione del
+  tocco e autocorrezione.
+- **Scrivania**: «I tuoi appuntamenti» → **«I tuoi impegni»**; farmaci da prendere e compleanni/ricorrenze di oggi in
+  fondo, dopo una linea leggera. **Ti hanno cercato**: icone dirette per ogni contatto (chiamata, SMS, email, chat con
+  l'icona vera dell'app), recenti divisi in Telefono, Chat, Email (ognuna scorre) con in testa Telefono, WhatsApp,
+  Telegram, Email (la nostra quando arriva, `eu.eurise.mail`).
+- **Ponte, decisione del proprietario**: dal computer al telefono con un **collegamento fisso solo sul Wi-Fi di casa**
+  con un computer abbinato e acceso (eccezione limitata alla regola «niente servizi sempre attivi»), **e sempre con la
+  segnalazione di quel che si sta facendo**: la notifica fissa dice a quale computer si è collegati e l'ultima cosa
+  passata («12:03 · appunti dal computer», «Password per sito.it: approva»). Piano: worker di WorkManager con
+  `setForeground` (tipo `connectedDevice`, vincolo Wi-Fi) che tiene il socket finché il computer risponde, poi si
+  rimette in coda; sul computer coda dei messaggi per i telefoni non collegati; socket locale (`$XDG_RUNTIME_DIR`) per
+  il native messaging di Firefox e per Office; tipi nuovi Note e Task. Non ancora scritto.
+- **Richieste nuove del proprietario (11 sera), servono le tavole prima del codice**:
+  - **Editor dello scanner** dopo le foto: pagine una a una o tutte insieme; Foto, Scala di grigi, Bianco e nero,
+    versione migliorata con l'AI («documento perfetto da vedere e stampare»), filtri, ritaglio; selezione e ritaglio
+    della pagina ancora da rendere precisi. Obiettivo dichiarato: un livello sopra i migliori.
+  - **App PDF in Eurise Office**: aprire il PDF e lavorarci con strumenti avanzati prima di condividerlo.
+  - **Salva in… / Apri da…** con Eurise File (`feature/drive`, esiste già: navigatore unico telefono, Murena,
+    Nextcloud, kDrive, WebDAV): riquadro comune per Scanner, Office, Galleria, download del Browser; si sceglie la
+    cartella locale o cloud e si salva. Il proprietario lo considera ormai centrale.
+- **Mappe**: l'APK in `apk-prova` è il giro 6 (solo alleggerito): niente ancora di nostro. Stile della suite, cartello
+  della strada, «Vedi su…», segnalazioni (giro 7) da completare.
+
+**Prossimo passo**: esito della compilazione di questo giro; tavole Editor scanner, PDF di Office e «Salva in…»;
+codice del Ponte dal computer al telefono come deciso; esiti di Office app e Mappe giro 7.
