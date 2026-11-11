@@ -771,3 +771,51 @@ Stesso motore ricollegato con componenti diversi (`.github/scripts/office_varian
 - Con la ccache un giro intero dura 10 minuti: provare altre riduzioni costa poco. Restano da misurare, se servono:
   ottimizzazione per dimensione (-Os) e LTO, dati ICU ridotti alle lingue europee.
 - Nota: nel pacchetto `eurise-office-motore-3` la libreria è quella «Solo testi» (svista corretta nel lavoro).
+
+## 11 novembre, mattina: Scrivania, Meteo, prototipo di Mappe, anteprime del Browser (ramo `brand`, APK 245–246)
+**Prova del proprietario (APK 237)**: Telefono, Rubrica, Messaggi e Traduci li controlla con l'uso quotidiano e li segnala
+via via. Correzioni chieste e fatte (APK 245):
+- Home: i preferiti si spostano tenendoli premuti e trascinandoli (`home/FavoritesGrid.kt`); fermi aprono il menu. Tolto
+  «Sposta prima/dopo» un passo alla volta.
+- Categorie: «Seleziona» nel menu dell'app, poi i tocchi scelgono più app e in alto «Sposta in…» le porta tutte nella
+  categoria scelta (`SelectionBar` in `home/Overlays.kt`).
+- Temi delle icone (Griglia e icone): Eurise, Sistema e i pacchetti di icone installati (`apps/IconThemes.kt`, formato
+  `appfilter.xml` di ADW/Nova/Lawnchair; `<queries>` nel manifest della Scrivania). Le app non coperte tengono l'originale.
+- Ricerca universale: velo un pizzico più chiaro (`searchScrim`), tolta la fila Nota/Da fare/Evento/Documenti/Web (è nella
+  barra della Tastiera), contatti e app nella stessa pillola di vetro del campo di ricerca.
+
+**Office**: il proprietario non ha scelto; si procede con **(c) motore scaricato a richiesta** (regola della leggerezza; le
+varianti fanno risparmiare al massimo 5 MB). Da confermare. Un'altra sessione lavora sul lavoro di Office in parallelo.
+
+**Meteo** (tavole approvate MeteoOggi, MeteoAllerta, BolImpegni; sezione dell'APK principale, `feature/weather`, voce
+«Meteo» tra gli strumenti; peso invariato, 4,1 MB):
+- `core/data/weather`: `MeteoParse` (Open-Meteo forecast con current/hourly/daily, Air Quality per i pollini CAMS, feed Atom
+  di MeteoAlarm letto senza badare ai prefissi), `MeteoText` (nomi, aggiornamento scritto sul telefono, frase per gli
+  impegni: calma/pioggia/allerta, del traffico non dice nulla), `Places`/`Provinces` («Monza (MB)», bandiera), `MeteoRepository`
+  (file in `files/meteo`, previsioni e allerte 30 minuti, pollini 3 ore; posizione arrotondata a 2 decimali; luogo dal
+  Geocoder del telefono). Test in `core/data/src/test/.../weather/MeteoTest.kt` (org.json vero solo nei test).
+- Centro privacy: voci nuove **Pollini** (Open-Meteo, posizione arrotondata) e **Allerte** (MeteoAlarm, nessuna posizione:
+  il feed del paese è uguale per tutti e la zona si confronta sul telefono).
+- Allerta aperta: impegni del Calendario e cose da fare in quelle ore (forniti da `EuriseHub`), «Avvisami alle…» (sveglia
+  con `AlarmClock`), Apri, consigli secondo il fenomeno.
+- Scrivania: il meteo apre Eurise Meteo; sotto il primo impegno con orario la frase (`MeteoLineBox` in `Bubbles.kt`,
+  `LocalMeteo`), caricata a ogni ritorno sulla Scrivania senza pollini.
+- Da provare: nome del luogo (dipende dal Geocoder del telefono: su /e/OS può mancare, allora «La tua zona»), allerte vere
+  (il confronto per parole tra regione/provincia e area MeteoAlarm va verificato con un'allerta in corso), frase nella bolla.
+- Non ancora: modello ICON-2I scelto esplicitamente (ora «best match» di Open-Meteo), bollettini della Protezione Civile
+  regionali, spegnere la frase dal menu della bolla, meteo sul percorso in Mappe.
+
+**Mappe**: lavoro a parte «Prototipo di Eurise Mappe» (`.github/workflows/maps-engine.yml`, `maps/EURISE.md`): CoMaps da
+Codeberg al commit `df67cc01` (11 novembre), `maps/eurise_patch.py` (nome «Eurise Mappe», pacchetto `eu.eurise.maps`,
+chiave di debug della suite), `configure.sh`, `assembleFdroidDebug` arm64 con ccache. Artefatto `eurise-mappe-debug-N` con APK
+e misure. Primo giro partito alle 08:40 UTC. Poi: stile della suite e le tavole approvate, un passo alla volta (vedi EURISE.md).
+
+**Browser (punto 3)**: anteprime da approvare sulla tela, pagina nuova «Browser»: BrwNuovaScheda (siti fissati, «dalla suite
+per oggi», tracciatori bloccati), BrwPagina (In Note, Da fare, Ascolta, Traduci, data trovata → Calendario; barra in basso
+con scudo e indirizzo), BrwAccesso (passkey, password e codice 2FA da Eurise Password), BrwProtezione (bloccati su questo
+sito, interruttore, cosa esce). **Da decidere**: motore GeckoView (Gecko di Firefox, estensioni e blocco tracciatori
+completi, circa +50 MB per l'APK arm64) oppure WebView di sistema (APK piccolo, ma Chromium, aggiornato dal sistema, niente
+estensioni; il blocco dei tracciatori lo facciamo noi con gli elenchi).
+
+**Prossimo passo**: approvazione delle tavole del Browser e scelta del motore; esito del prototipo di Mappe (peso e prova
+sul telefono); conferma di Office a richiesta; segnalazioni del proprietario dall'uso quotidiano.
