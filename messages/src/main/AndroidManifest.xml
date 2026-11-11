@@ -16,6 +16,8 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <queries>
+        <package android:name="com.android.phone" />
+        <package android:name="com.android.mms.service" />
         <package android:name="eu.eurise.hub" />
         <package android:name="eu.eurise.hub.debug" />
         <package android:name="eu.eurise.read" />

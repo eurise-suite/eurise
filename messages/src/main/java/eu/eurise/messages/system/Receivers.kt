@@ -61,7 +61,7 @@ class MmsWapReceiver : BroadcastReceiver() {
         val done = PendingIntent.getBroadcast(context, file.hashCode(),
             Intent(context, MmsDownloadedReceiver::class.java).putExtra(Sender.EXTRA_FILE, file.path).putExtra("sub", subId),
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        context.grantUriPermission("com.android.phone", uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        Sender.grantToMmsService(context, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         @Suppress("DEPRECATION")
         val manager = if (subId >= 0) SmsManager.getSmsManagerForSubscriptionId(subId) else SmsManager.getDefault()
         runCatching { manager.downloadMultimediaMessage(context, location, uri, null, done) }

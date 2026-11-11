@@ -120,8 +120,13 @@ object Sender {
         val sent = PendingIntent.getBroadcast(context, file.hashCode(),
             Intent(context, SentReceiver::class.java).setAction(ACTION_MMS_SENT).putExtra(EXTRA_URI, persisted.toString()).putExtra(EXTRA_FILE, file.path),
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        context.grantUriPermission("com.android.phone", contentUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        grantToMmsService(context, contentUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         manager(context, SubscriptionManager.getDefaultSmsSubscriptionId()).sendMultimediaMessage(context, contentUri, null, null, sent)
         return threadId
+    }
+
+    /** Il servizio MMS del sistema sta in «com.android.phone» o in «com.android.mms.service», secondo il telefono. */
+    fun grantToMmsService(context: Context, uri: Uri, flags: Int) {
+        for (pkg in listOf("com.android.phone", "com.android.mms.service")) runCatching { context.grantUriPermission(pkg, uri, flags) }
     }
 }
