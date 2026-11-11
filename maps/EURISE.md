@@ -8,7 +8,7 @@ Non Organic Maps: dall'agosto 2025 i suoi dati delle mappe hanno una licenza non
   senza storia. I sorgenti non stanno nel nostro repository: sono grandi (C++ con boost, ICU, protobuf…).
 - `maps/eurise_patch.py` cambia solo nome («Eurise Mappe»), pacchetto (`eu.eurise.maps`, senza suffissi) e firma (chiave
   di debug della suite, così il permesso di firma vale con l'APK principale). Il codice Java resta in `app.organicmaps`.
-- `./configure.sh` (stili, simboli, testi, mappe del mondo) e `./gradlew -Parm64 assembleFdroidDebug`, con ccache salvata
+- `./configure.sh` (stili, simboli, testi, mappe del mondo) e `./gradlew -Parm64 assembleFdroidRelease` (release ridotta con R8 e librerie senza simboli; senza i file segreti di CoMaps la firma è la nostra chiave di debug), con ccache salvata
   nella cache di Actions. Java 21 come chiede CoMaps.
 - Artefatto `eurise-mappe-debug-N`: APK, misure (tempo per fase, peso per parte dell'APK), registro di Gradle.
 

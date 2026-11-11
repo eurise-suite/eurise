@@ -76,14 +76,14 @@ jobs:
           cd "$HOME/comaps" && ./configure.sh
           echo "configura $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
-      - name: Compila (FdroidDebug, arm64)
+      - name: Compila (FdroidRelease, arm64, firmata con la chiave di debug della suite)
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
         run: |
           t0=$(date +%s)
           cd "$HOME/comaps/android"
-          if ! ./gradlew --no-daemon -Parm64 assembleFdroidDebug > "$RUNNER_TEMP/gradle.log" 2>&1; then
+          if ! ./gradlew --no-daemon -Parm64 assembleFdroidRelease > "$RUNNER_TEMP/gradle.log" 2>&1; then
             grep -E "error:|FAILED|What went wrong" -A3 "$RUNNER_TEMP/gradle.log" | head -60
             tail -40 "$RUNNER_TEMP/gradle.log"
             exit 1
@@ -102,7 +102,7 @@ jobs:
       - name: Misura
         if: always()
         run: |
-          apk=$(ls "$HOME"/comaps/android/app/build/outputs/apk/fdroid/debug/*.apk 2>/dev/null | head -1 || true)
+          apk=$(ls "$HOME"/comaps/android/app/build/outputs/apk/fdroid/release/*.apk 2>/dev/null | head -1 || true)
           mkdir -p out
           {
             echo "## Eurise Mappe (CoMaps ${COMAPS_COMMIT:0:8}, arm64)"
@@ -137,6 +137,7 @@ jobs:
             echo
             cat "$RUNNER_TEMP/misure.txt" 2>/dev/null | sed 's/^/Sorgenti: /'
           } | tee -a "$GITHUB_STEP_SUMMARY" > out/misure.md
+          cat out/misure.md
           cp "$RUNNER_TEMP/gradle.log" out/ 2>/dev/null || true
 
       - name: Carica l'APK e le misure
