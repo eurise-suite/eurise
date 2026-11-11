@@ -19,7 +19,6 @@ import android.content.Context;
 import android.drm.DrmConvertedStatus;
 import android.drm.DrmManagerClient;
 import android.util.Log;
-import android.provider.Downloads;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,6 +26,14 @@ import java.io.RandomAccessFile;
 
 
 public class DrmConvertSession {
+    // Eurise: valori di android.provider.Downloads.Impl (API nascosta), copiati da AOSP.
+    private static final class Downloads { static final class Impl {
+        static final int STATUS_SUCCESS = 200;
+        static final int STATUS_NOT_ACCEPTABLE = 406;
+        static final int STATUS_UNKNOWN_ERROR = 491;
+        static final int STATUS_FILE_ERROR = 492;
+    } }
+
     private DrmManagerClient mDrmClient;
     private int mConvertSessionId;
     private static final String TAG = "DrmConvertSession";

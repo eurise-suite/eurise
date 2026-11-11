@@ -63,6 +63,24 @@
                 <data android:scheme="tel" />
             </intent-filter>
         </activity>
+        <!-- Rubrica: la stessa app con la sua icona nel cassetto; apre i contatti e riceve «Aggiungi in rubrica». -->
+        <activity-alias
+            android:name=".ContactsAlias"
+            android:exported="true"
+            android:icon="@mipmap/ic_contacts"
+            android:label="@string/ph_contacts_app"
+            android:targetActivity=".PhoneActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.dir/raw_contact" />
+                <data android:mimeType="vnd.android.cursor.dir/contact" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".call.CallActivity"
             android:exported="false"

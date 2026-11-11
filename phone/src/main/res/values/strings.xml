@@ -22,6 +22,7 @@
     <string name="ph_private_number">Numero privato</string>
     <string name="ph_privacy_note">Chiamate e contatti restano sul telefono. I disturbatori si riconoscono dai numeri che blocchi tu: nessun elenco esterno.</string>
     <string name="ph_contacts">Contatti</string>
+    <string name="ph_contacts_app">Rubrica</string>
     <string name="ph_dialpad">Tastierino</string>
     <string name="ph_search_contacts">Cerca nome o numero</string>
     <string name="ph_no_contacts">Nessun contatto.</string>

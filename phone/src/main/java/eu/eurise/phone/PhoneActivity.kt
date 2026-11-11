@@ -26,6 +26,8 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
 class PhoneActivity : ComponentActivity() {
     /** Numero arrivato da un'altra app (tel:): apre il tastierino già compilato. */
     private val dialNumber = mutableStateOf<String?>(null)
+    /** Aperta dall'icona Rubrica o da «Aggiungi in rubrica» di un'altra app. */
+    private val start = mutableStateOf<StartAt?>(null)
     private val refresh = mutableStateOf(0)
 
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh.value++ }
@@ -42,6 +44,8 @@ class PhoneActivity : ComponentActivity() {
                     PhoneApp(
                         dialNumber = dialNumber.value,
                         onDialConsumed = { dialNumber.value = null },
+                        start = start.value,
+                        onStartConsumed = { start.value = null },
                         refresh = refresh.value,
                         isDefault = isDefaultDialer(),
                         onBecomeDefault = ::requestRole,
@@ -64,7 +68,22 @@ class PhoneActivity : ComponentActivity() {
     }
 
     private fun read(intent: Intent?) {
-        val data = intent?.data ?: return
+        intent ?: return
+        if (intent.action == Intent.ACTION_INSERT) {
+            start.value = StartAt.Insert(
+                eu.eurise.core.contacts.ContactDraft(
+                    name = intent.getStringExtra(android.provider.ContactsContract.Intents.Insert.NAME).orEmpty(),
+                    phones = listOf(intent.getStringExtra(android.provider.ContactsContract.Intents.Insert.PHONE).orEmpty()),
+                    emails = listOfNotNull(intent.getStringExtra(android.provider.ContactsContract.Intents.Insert.EMAIL)),
+                ),
+            )
+            return
+        }
+        if (intent.action == Intent.ACTION_MAIN && intent.component?.className?.endsWith("ContactsAlias") == true) {
+            start.value = StartAt.People
+            return
+        }
+        val data = intent.data ?: return
         if (data.scheme == "tel") dialNumber.value = data.schemeSpecificPart.orEmpty()
     }
 

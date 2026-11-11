@@ -9,5 +9,6 @@ e tre classi di base. Serve a Eurise Messaggi per scaricare, salvare e mandare g
 Modifiche di Eurise:
 - `com.klinker.android.logger.Log` sostituito da `android.util.Log`, `ExternalLogger` da `Log.w`;
 - PduPersister: niente `SubscriptionIdChecker` (si salva la SIM se indicata, -1 = predefinita);
-- SendReq: il numero proprio non si legge (servirebbe un permesso in più).
+- SendReq: il numero proprio non si legge (servirebbe un permesso in più);
+- DrmConvertSession: i codici di `android.provider.Downloads.Impl` (API nascosta) sono copiati come costanti.
 Sorgente: https://github.com/FossifyOrg/mmslib (library/src/main/java/com/google/android/mms).

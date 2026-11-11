@@ -68,6 +68,12 @@ import eu.eurise.phone.data.CallEntry
 import eu.eurise.phone.data.PhoneData
 import kotlinx.coroutines.launch
 
+/** Dove aprire l'app quando arriva da fuori: la rubrica, o l'editor già compilato («Aggiungi in rubrica»). */
+sealed interface StartAt {
+    data object People : StartAt
+    data class Insert(val draft: ContactDraft) : StartAt
+}
+
 private sealed interface Screen {
     data object Home : Screen
     data object People : Screen
@@ -79,6 +85,8 @@ private sealed interface Screen {
 fun PhoneApp(
     dialNumber: String?,
     onDialConsumed: () -> Unit,
+    start: StartAt?,
+    onStartConsumed: () -> Unit,
     refresh: Int,
     isDefault: Boolean,
     onBecomeDefault: () -> Unit,
@@ -101,6 +109,14 @@ fun PhoneApp(
         numbers = Contacts.firstNumbers(context)
     }
     LaunchedEffect(dialNumber) { if (dialNumber != null) { dialpad = dialNumber; onDialConsumed() } }
+    LaunchedEffect(start) {
+        when (start) {
+            StartAt.People -> stack = listOf(Screen.Home, Screen.People)
+            is StartAt.Insert -> stack = listOf(Screen.Home, Screen.People, Screen.Edit(start.draft))
+            null -> return@LaunchedEffect
+        }
+        onStartConsumed()
+    }
 
     fun push(s: Screen) { stack = stack + s }
     fun pop() { if (stack.size > 1) stack = stack.dropLast(1) }
