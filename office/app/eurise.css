@@ -1,0 +1,62 @@
+/* Eurise Office: colori e forme della suite sull'interfaccia web di Collabora (tavole OffTablet e OffComputer).
+ * Uguale su telefono, tablet e computer. Perla di giorno, Notte di sera; accento azzurro; gruppi come isole bianche.
+ * Si aggiunge in coda a browser/css/color-palette.css prima della compilazione (office/app/eurise_css.py). */
+:root {
+	--color-main-text: #1E1D1B;
+	--color-text-dark: #1E1D1B;
+	--color-text-darker: #000;
+	--color-text-lighter: #56564F;
+	--color-main-background: #F4F4F1;
+	--color-background-dark: #ECECE7;
+	--color-background-lighter: #FFFFFF;
+	--color-background-tabs-group: #ECECE7;
+	--color-canvas: #ECECE7;
+	--color-primary: #3E5C8A;
+	--color-primary-text: #FFFFFF;
+	--color-primary-dark: #1F2A44;
+	--color-primary-darker: #14203A;
+	--color-primary-lighter: #A9C1F2;
+	--color-border: #D9D6CC;
+	--color-border-dark: #B9B6AC;
+	--color-border-lighter: #ECECE7;
+	--color-toolbar-border: #E4E2DA;
+	--color-hyperlink: #3E5C8A;
+	--color-success: #4F6B5A;
+	--color-warning: #85672B;
+	--color-error: #8C2F39;
+	--eurise-suite: #8C2F39;
+}
+[data-theme='dark'] {
+	--color-main-text: #E6E9F0;
+	--color-text-dark: #E6E9F0;
+	--color-text-darker: #FFFFFF;
+	--color-text-lighter: #A9AEB7;
+	--color-main-background: #12161D;
+	--color-background-dark: #1A1E25;
+	--color-background-lighter: #222833;
+	--color-background-tabs-group: #1A1E25;
+	--color-canvas: #0E1116;
+	--color-primary: #8FA9D9;
+	--color-primary-text: #14203A;
+	--color-primary-dark: #A9C1F2;
+	--color-primary-lighter: #3E5C8A;
+	--color-border: #2B313C;
+	--color-toolbar-border: #2B313C;
+	--color-hyperlink: #A9C1F2;
+	--eurise-suite: #DE919A;
+}
+/* Scheda attiva del nastro: tratto azzurro e grassetto, senza alone (stile della suite). */
+.ui-tab.selected.notebookbar {
+	font-weight: 700;
+	box-shadow: inset 0 -3px var(--color-primary) !important;
+}
+.ui-tab.notebookbar:hover {
+	box-shadow: inset 0 -2px var(--color-border) !important;
+}
+/* Gruppi di comandi come isole bianche sul Perla. */
+.notebookbar .ui-overflow-group {
+	background: var(--color-background-lighter);
+	border-radius: 12px;
+	margin: 4px 3px;
+	padding: 2px 6px;
+}

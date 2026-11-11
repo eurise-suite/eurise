@@ -1,0 +1,249 @@
+name: Eurise Office per Android (prototipo dell'app)
+
+# Office, passo dopo il motore (docs/PIATTAFORME.md, scelta approvata l'11 novembre): l'app Collabora Office per Android
+# (CollaboraOnline/online, MPL 2.0) sopra il nostro motore LibreOffice, con l'interfaccia web unica (la stessa di
+# Collabora Office per il computer su Ubuntu e Fedora). Primo obiettivo: che si compili e pesi quanto previsto, con nome,
+# pacchetto (eu.eurise.office) e chiave di prova di Eurise. Poi: interfaccia Eurise (nastro, Suite, ricerca) e motore
+# scaricato a richiesta. Lavoro lungo e a mano (Actions → Eurise Office per Android → Run workflow) o quando cambia.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/office-app.yml"
+      - "office/app/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: office-engine
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: https://github.com/LibreOffice/core
+  CORE_BRANCH: distro/collabora/co-25.04
+  CORE_COMMIT: e588bf8da9ddb55823b88f5d2461d3935e9ed3fb
+  ONLINE_REPO: https://github.com/CollaboraOnline/online
+  # Ramo distro/collabora/co-25.04 (11 novembre 2026).
+  ONLINE_COMMIT: 3847fbcfe35a234544cf163ed9e004a3d197337c
+  POCO_TAG: poco-1.14.2-release
+  ZSTD_TAG: v1.5.6
+  JOB_MINUTES: 355
+
+jobs:
+  app:
+    name: Eurise Office (Collabora per Android, arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fa spazio sul disco
+        run: |
+          echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+          t0=$(date +%s)
+          df -h / /mnt || true
+          # Strumenti preinstallati che qui non servono (l'SDK di Android resta).
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /usr/local/share/powershell \
+            /usr/local/share/chromium /opt/microsoft /opt/google /usr/local/julia* /opt/az || true
+          sudo docker image prune -a -f >/dev/null 2>&1 || true
+          # Si lavora sul disco con più spazio libero.
+          root_free=$(df --output=avail -B1 / | tail -1)
+          mnt_free=$(df --output=avail -B1 /mnt 2>/dev/null | tail -1 || echo 0)
+          if [ "${mnt_free:-0}" -gt "$root_free" ]; then WORK=/mnt/lo; else WORK=$HOME/lo; fi
+          sudo mkdir -p "$WORK" && sudo chown "$USER" "$WORK"
+          echo "WORK=$WORK" >> "$GITHUB_ENV"
+          echo "CCACHE_DIR=$WORK/ccache" >> "$GITHUB_ENV"
+          echo "LO_TARBALLS=$WORK/tarballs" >> "$GITHUB_ENV"
+          mkdir -p "$WORK/tarballs" "$WORK/ccache"
+          df -h / /mnt || true
+          echo "spazio $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Installa gli strumenti di compilazione
+        run: |
+          t0=$(date +%s)
+          sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get build-dep -y -qq libreoffice >/dev/null
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ccache nasm gperf >/dev/null
+          ccache -M 6G
+          echo "strumenti $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Riprende gli archivi esterni
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.WORK }}/tarballs
+          key: office-tarballs-${{ env.CORE_COMMIT }}
+          restore-keys: office-tarballs-
+
+      - name: Riprende la ccache
+        id: ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.WORK }}/ccache
+          key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
+          restore-keys: |
+            office-ccache-${{ env.CORE_COMMIT }}-
+            office-ccache-
+
+      - name: Scarica i sorgenti del core
+        run: |
+          t0=$(date +%s)
+          git init -q "$WORK/core"
+          cd "$WORK/core"
+          git remote add origin "$CORE_REPO"
+          git fetch -q --depth 1 origin "$CORE_COMMIT"
+          git checkout -q FETCH_HEAD
+          git log -1 --format='%H %ci %s'
+          echo "sorgenti $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Configura
+        run: |
+          t0=$(date +%s)
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          NDK=$(ls -d "$SDK"/ndk/2[7-9].* 2>/dev/null | sort -V | tail -1)
+          if [ -z "$NDK" ]; then
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358" >/dev/null
+            NDK="$SDK/ndk/28.2.13676358"
+          fi
+          echo "NDK: $NDK"
+          sed -e "s|@NDK@|$NDK|" -e "s|@SDK@|$SDK|" -e "s|@JDK@|$JAVA_HOME_17_X64|" -e "s|@TARBALLS@|$LO_TARBALLS|" \
+            office/engine/autogen.input.in | grep -v '^#' > "$WORK/core/autogen.input"
+          cat "$WORK/core/autogen.input"
+          cd "$WORK/core"
+          set -o pipefail
+          ./autogen.sh 2>&1 | tail -40 || { tail -80 config.log; exit 1; }
+          echo "configurazione $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Compila (finché c'è tempo)
+        run: |
+          t0=$(date +%s)
+          cd "$WORK/core"
+          budget=$(( JOB_MINUTES * 60 - (t0 - JOB_START) - 120 * 60 ))
+          echo "Tempo a disposizione per make: $(( budget / 60 )) min"
+          # Ogni 10 minuti una riga di avanzamento nel registro.
+          ( while sleep 600; do
+              echo "$(date +%H:%M) – oggetti: $(find workdir -name '*.o' 2>/dev/null | wc -l) – $(tail -1 make.log 2>/dev/null | cut -c1-150)"
+            done ) &
+          progress=$!
+          status=0
+          timeout -s INT -k 120 "$budget" make > make.log 2>&1 || status=$?
+          kill "$progress" || true
+          echo "MAKE_STATUS=$status" >> "$GITHUB_ENV"
+          echo "make $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+          echo "make ha risposto $status"
+          tail -40 make.log
+          ccache -s || true
+
+
+      - name: Salva la ccache del motore
+        if: always() && env.MAKE_STATUS != ''
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.WORK }}/ccache
+          key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
+
+      - name: Ferma se il motore non è finito
+        if: env.MAKE_STATUS != '0'
+        run: |
+          grep -E "error:|Error [0-9]|\*\*\*" "$WORK/core/make.log" | head -30 | while IFS= read -r line; do echo "::error::${line}"; done
+          echo "::warning::Motore non finito (stato $MAKE_STATUS): rilanciare il lavoro, riparte dalla ccache."
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: POCO e zstd per Android (solo arm64)
+        run: |
+          t0=$(date +%s)
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          NDK=$(ls -d "$SDK"/ndk/2[7-9].* | sort -V | tail -1)
+          echo "NDK=$NDK" >> "$GITHUB_ENV"
+          export PATH="$PATH:$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          cd "$WORK"
+          git clone -q --depth 1 -b "$POCO_TAG" https://github.com/pocoproject/poco.git poco
+          cd poco
+          # Come scripts/build-poco-android.sh di Collabora, ma solo arm64 e con gli strumenti dell'NDK attuale.
+          python3 "$GITHUB_WORKSPACE/office/app/poco_android.py" .
+          ./configure --config=AndroidEurise --prefix="$WORK/poco-install" --no-samples --no-tests \
+            --omit=ActiveRecord,Crypto,NetSSL_OpenSSL,Zip,Data,Data/SQLite,Data/ODBC,Data/MySQL,Data/PostgreSQL,MongoDB,PDF,CppParser,PageCompiler,JWT,Prometheus,Redis
+          make -s -j"$(nproc)" install > "$WORK/poco.log" 2>&1 || { tail -60 "$WORK/poco.log"; exit 1; }
+          ls "$WORK/poco-install" "$WORK/poco-install/lib" | head -40
+          cd "$WORK"
+          git clone -q --depth 1 -b "$ZSTD_TAG" https://github.com/facebook/zstd.git zstd
+          cmake -S zstd/build/cmake -B zstd-build -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=26 -DCMAKE_BUILD_TYPE=Release -DZSTD_BUILD_PROGRAMS=OFF \
+            -DZSTD_BUILD_SHARED=OFF > /dev/null
+          cmake --build zstd-build -j"$(nproc)" > /dev/null
+          find zstd-build -name 'libzstd.a' | head -2
+          echo "poco-zstd $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Scarica e configura Collabora Online (app Android)
+        run: |
+          t0=$(date +%s)
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-polib python3-lxml libtool automake m4 pkg-config >/dev/null
+          git init -q "$WORK/online" && cd "$WORK/online"
+          git remote add origin "$ONLINE_REPO"
+          git fetch -q --depth 1 origin "$ONLINE_COMMIT" && git checkout -q FETCH_HEAD
+          git log -1 --format='%H %ci %s'
+          python3 "$GITHUB_WORKSPACE/office/app/eurise_css.py" .
+          ./autogen.sh > /dev/null
+          set -o pipefail
+          ./configure --enable-androidapp --with-android-abi=arm64-v8a \
+            --with-lo-builddir="$WORK/core" \
+            --with-poco-includes="$WORK/poco-install/include" --with-poco-libs="$WORK/poco-install/lib" \
+            --with-zstd-includes="$WORK/zstd/lib" --with-zstd-libs="$WORK/zstd-build/lib" \
+            --with-app-name="Eurise Office" --with-vendor="Eurise" \
+            --disable-setcap --enable-silent-rules 2>&1 | tail -30 || { tail -120 config.log; exit 1; }
+          echo "online-configura $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Compila Collabora Online per Android
+        run: |
+          t0=$(date +%s)
+          cd "$WORK/online"
+          set -o pipefail
+          make -j"$(nproc)" > "$WORK/online-make.log" 2>&1 || { grep -E "error|Error" "$WORK/online-make.log" | head -40; tail -60 "$WORK/online-make.log"; exit 1; }
+          tail -5 "$WORK/online-make.log"
+          echo "online-make $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Adatta a Eurise e compila l'APK
+        run: |
+          t0=$(date +%s)
+          cd "$WORK/online/android"
+          python3 "$GITHUB_WORKSPACE/office/app/eurise_patch.py" . "$GITHUB_WORKSPACE/app/debug-key/eurise-debug.keystore"
+          chmod +x gradlew 2>/dev/null || true
+          set -o pipefail
+          GRADLE=./gradlew; [ -x "$GRADLE" ] || GRADLE=gradle
+          $GRADLE --no-daemon assembleDebug > "$WORK/gradle.log" 2>&1 || { grep -E "error:|FAILED|What went wrong" -A3 "$WORK/gradle.log" | head -60; exit 1; }
+          echo "apk $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Misura e carica
+        if: always()
+        run: |
+          mkdir -p "$WORK/out"
+          apk=$(find "$WORK/online/android" -path '*outputs/apk*' -name '*.apk' 2>/dev/null | head -1)
+          {
+            echo "## Eurise Office per Android (prototipo)"
+            echo
+            echo "| Fase | Minuti |"; echo "|---|---|"
+            while read -r name secs; do echo "| $name | $(( secs / 60 )) |"; done < "$RUNNER_TEMP/tempi.txt"
+            if [ -n "$apk" ]; then
+              cp "$apk" "$WORK/out/eurise-office-debug.apk"
+              echo; echo "APK: **$(du -m "$apk" | cut -f1) MB**"
+            else
+              echo; echo "APK non prodotto: vedi i registri nell'artefatto."
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY" > "$WORK/out/misure.md"
+          for f in online-make.log gradle.log poco.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
+          true
+
+      - name: Carica l'APK e i registri
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-office-app-${{ github.run_number }}
+          path: ${{ env.WORK }}/out/
+          retention-days: 14
