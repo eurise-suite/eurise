@@ -1198,3 +1198,5 @@ battitura dal proprietario per la tastiera; prova di Mappe giro 7 sul telefono; 
 
 **Prossimo passo**: approvazione di TastRighe e TastPassword, poi il loro codice; codice dell'editor dello scanner, di
 Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul telefono di tastiera, Ponte e Mappe giro 7.
+- **Tastiera, prova del proprietario sul 281** (dopo aver rimesso i valori predefiniti): tasti grandi, «forse un po'
+  troppo», e sembrano uniti. Spazio tra i tasti di base da 0,5 a **0,7** (`PREF_KEY_GAP_SCALE`); altezza invariata (1,10).
