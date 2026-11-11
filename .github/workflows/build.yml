@@ -236,6 +236,85 @@ jobs:
           test -x ocr-host/eurise_translate_test
           python3 .github/scripts/mt_quality.py ocr-host/eurise_translate_test mt-work
 
+  # Eurise AI, prototipo (llama.cpp dai sorgenti di third_party): APK senza Internet, peso, e con Ministral 3 3B
+  # (Apache 2.0, GGUF ufficiale di Mistral) comprensione della cattura rapida e velocità sul computer di compilazione.
+  # Lavoro a parte e facoltativo: se fallisce, gli altri APK restano buoni.
+  ai:
+    name: Eurise AI
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    continue-on-error: true
+    env:
+      EURISE_AI: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compila Eurise AI
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon :ai:assembleDebug :ai:assembleRelease 2>&1 | tee build.log | tail -30
+
+      - name: Riassunto degli errori
+        if: failure()
+        run: |
+          grep -E "^e: |error:|FAILED" build.log | head -40 | while IFS= read -r line; do echo "::error::${line}"; done
+          grep -A 12 "What went wrong" build.log | head -60 | grep -v "^\s*$" | while IFS= read -r line; do echo "::error::${line}"; done
+
+      - name: Carica l'APK di Eurise AI
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-ai-debug-${{ github.run_number }}
+          path: ai/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Pesa Eurise AI e controlla che non abbia Internet
+        run: |
+          python3 .github/scripts/apk_size.py "Eurise AI, prova" ai/build/outputs/apk/debug/*.apk
+          python3 .github/scripts/apk_size.py "Eurise AI, versione ridotta" ai/build/outputs/apk/release/*.apk
+          { echo "Librerie native (versione ridotta):"; echo '```'; unzip -lv ai/build/outputs/apk/release/*.apk 'lib/*' | awk 'NR>3 {print $1, $3, $8}' | sort -n -r | head -20; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$AAPT2" dump permissions ai/build/outputs/apk/release/*.apk | tee perms.txt
+          if grep -q "android.permission.INTERNET" perms.txt; then echo "::error::Eurise AI ha il permesso INTERNET"; exit 1; fi
+
+      - name: Compila il motore per il computer
+        run: |
+          cmake -S ai/src/main/cpp -B ai-host -DCMAKE_BUILD_TYPE=Release > /dev/null
+          cmake --build ai-host -j 4 > /dev/null
+
+      - name: Scegli il modello (GGUF ufficiale di Mistral, Q4_K_M)
+        id: model
+        run: |
+          REPO=mistralai/Ministral-3-3B-Instruct-2512-GGUF
+          NAME=$(curl -sSL "https://huggingface.co/api/models/$REPO" | python3 -c "
+          import json, sys
+          files = [s['rfilename'] for s in json.load(sys.stdin)['siblings'] if s['rfilename'].endswith('.gguf') and 'mmproj' not in s['rfilename'].lower()]
+          pick = [f for f in files if 'Q4_K_M' in f] or [f for f in files if 'Q4' in f] or files
+          print(pick[0])")
+          echo "Modello: $REPO/$NAME"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ai-model
+          key: ai-model-${{ steps.model.outputs.name }}
+
+      - name: Misura comprensione e velocità
+        run: |
+          mkdir -p ai-model
+          F="ai-model/${{ steps.model.outputs.name }}"
+          [ -s "$F" ] || curl -sSL --retry 3 -o "$F" "https://huggingface.co/${{ steps.model.outputs.repo }}/resolve/main/${{ steps.model.outputs.name }}"
+          ls -la ai-model
+          python3 .github/scripts/ai_quality.py ai-host/eurise_ai_test "$F" ai/src/main/res/raw/frasi_prova.txt 4
+
   release:
     name: APK firmato (solo per i tag v*)
     if: startsWith(github.ref, 'refs/tags/v')

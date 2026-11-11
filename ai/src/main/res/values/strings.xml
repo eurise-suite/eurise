@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_app_name">Eurise AI</string>
+    <string name="ai_title">Eurise AI · prototipo</string>
+    <string name="ai_offline">Questa app non ha il permesso di usare Internet: tutto quello che scrivi resta sul telefono.</string>
+    <string name="ai_phone">Telefono</string>
+    <string name="ai_phone_line">%1$s · %2$d core · %3$s di memoria</string>
+    <string name="ai_cpu_line">Motore: %1$s</string>
+    <string name="ai_model">Modello</string>
+    <string name="ai_model_hint">Per la prova serve Ministral 3 3B Instruct (Apache 2.0) nel formato GGUF Q4_K_M, circa 2,1 GB: scaricalo con il browser da huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF e sceglilo qui. Nella versione vera lo scaricherà un\'altra app della suite.</string>
+    <string name="ai_pick">Scegli il file del modello</string>
+    <string name="ai_copying">Copio il modello nella memoria di Eurise AI… %1$d%%</string>
+    <string name="ai_not_gguf">Questo file non è un modello GGUF.</string>
+    <string name="ai_loading">Carico il modello…</string>
+    <string name="ai_load_failed">Il modello non si è caricato (memoria insufficiente o file non adatto).</string>
+    <string name="ai_model_line">%1$s · %2$s · caricato in %3$s s</string>
+    <string name="ai_memory_line">Memoria usata dall\'app: %1$s · libera sul telefono: %2$s</string>
+    <string name="ai_load">Carica il modello</string>
+    <string name="ai_delete">Cancella il modello</string>
+    <string name="ai_threads">Thread</string>
+    <string name="ai_capture">Cattura rapida</string>
+    <string name="ai_capture_default">domani alle 15 dentista con Marco, portare i referti</string>
+    <string name="ai_understand">Capisci</string>
+    <string name="ai_ask">Domanda libera</string>
+    <string name="ai_ask_default">Scrivi tre idee per una cena veloce con quello che c\'è in frigo: uova, zucchine, parmigiano.</string>
+    <string name="ai_answer">Rispondi</string>
+    <string name="ai_working">Il modello lavora sul telefono…</string>
+    <string name="ai_timing">Lettura: %1$d token in %2$s s (%3$s token/s) · risposta: %4$d token in %5$s s (%6$s token/s)</string>
+    <string name="ai_failed">Non è riuscito a rispondere.</string>
+    <string name="ai_measure">Misura completa</string>
+    <string name="ai_measure_d">Velocità con 256 token letti e 64 scritti, poi le dieci frasi di prova della cattura. Dura qualche minuto; tieni lo schermo acceso.</string>
+    <string name="ai_measure_start">Misura</string>
+    <string name="ai_measure_progress">Misura in corso… %1$d di %2$d</string>
+    <string name="ai_bench_line">Velocità: lettura %1$s token/s · scrittura %2$s token/s</string>
+    <string name="ai_copy">Copia i risultati</string>
+    <string name="ai_copied">Risultati copiati</string>
+</resources>
