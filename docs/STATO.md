@@ -1121,7 +1121,7 @@ cercato» e password dal telefono, cloud fuori casa, voce nel centro privacy.
   - **Salva in… / Apri da…** con Eurise File (`feature/drive`, esiste già: navigatore unico telefono, Murena,
     Nextcloud, kDrive, WebDAV): riquadro comune per Scanner, Office, Galleria, download del Browser; si sceglie la
     cartella locale o cloud e si salva. Il proprietario lo considera ormai centrale.
-- **Ultimo APK: 281** (in `apk-prova`). **Mappe**: l'APK in `apk-prova` è il giro 6 (solo alleggerito): niente ancora di nostro. Stile della suite, cartello
+- **Ultimo APK: 285** (in `apk-prova`, con il Ponte dal computer al telefono; prima 281). **Mappe**: l'APK in `apk-prova` è il giro 6 (solo alleggerito): niente ancora di nostro. Stile della suite, cartello
   della strada, «Vedi su…», segnalazioni (giro 7) da completare.
 
 **Prossimo passo**: esito della compilazione di questo giro; tavole Editor scanner, PDF di Office e «Salva in…»;
@@ -1164,3 +1164,8 @@ codice del Ponte dal computer al telefono come deciso; esiti di Office app e Map
     al ricevitore della Tastiera (`KeyboardBridgeReceiver`). Rispetta gli interruttori Appunti e Schede.
   - Non provato: qui Maven Central non è raggiungibile, compila e prova Actions. Ancora da fare: voce nel centro privacy
     (oggi elenca solo servizi esterni), password dal telefono, «Ti hanno cercato» sul computer, cloud fuori casa.
+- **Ultimo APK: 285** in `apk-prova` (APK principale con il Ponte nuovo, `eurise-ponte-linux.tar.gz` con `manda`).
+
+**Prossimo passo**: approvazione delle tavole nuove (ScanPagine, ScanPagina, ScanRitaglio, FileSalvaIn, FileApriDa,
+OffPdf, OffPdfPagine, OffPdfCondividi); prova del Ponte dal computer al telefono sul telefono vero; esempi di errori di
+battitura dal proprietario per la tastiera; esiti di Mappe giro 7 e Office app.
