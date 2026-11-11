@@ -1191,3 +1191,10 @@ battitura dal proprietario per la tastiera; prova di Mappe giro 7 sul telefono; 
   «Incolla · …» sola e le parole), **TastPassword** (nei campi password la stessa fila mostra «Compila · account» di
   Eurise Password e «Altro account»; niente parole, niente appunti, la tastiera non impara). Dopo l'approvazione: togliere
   la barra degli strumenti di HeliBoard dalla fila dei suggerimenti (sovrapposizioni segnalate dal proprietario).
+- **Ultimo APK: 288** in `apk-prova` (tastiera con TouchFix, Ponte dal computer al telefono, Mappe giro 7). Office non
+  c'è ancora: il giro con la Suite è in coda dietro quello che salva la ccache.
+- **Richiesta del proprietario (11 novembre)**: a fine lavoro gli APK nuovi si allegano **nella chat**, tutti aggiornati
+  (scaricati dalla pre-release con `gh api …/releases/assets/<id>`, poi inviati come file), oltre a stare in `apk-prova`.
+
+**Prossimo passo**: approvazione di TastRighe e TastPassword, poi il loro codice; codice dell'editor dello scanner, di
+Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul telefono di tastiera, Ponte e Mappe giro 7.
