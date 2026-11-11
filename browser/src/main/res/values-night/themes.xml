@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.EuriseBrowser" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/brw_background</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/brw_icon_background</item>
+    </style>
+    <color name="brw_background">#12161D</color>
+    <color name="brw_icon_background">#1A1E25</color>
+</resources>

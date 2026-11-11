@@ -11,6 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // GeckoView (motore di Eurise Browser): solo i pacchetti di Mozilla da qui.
+        maven("https://maven.mozilla.org/maven2/") { content { includeGroupByRegex("org\\.mozilla\\..*") } }
     }
 }
 
@@ -26,6 +28,8 @@ include(":messages")
 if (System.getenv("EURISE_READ") == "1") include(":read")
 // Eurise AI (llama.cpp dai sorgenti, compilazione lunga): solo nel suo lavoro, come Leggi.
 if (System.getenv("EURISE_AI") == "1") include(":ai")
+// Eurise Browser (GeckoView, circa 50 MB): solo nel suo lavoro, per non appesantire gli altri.
+if (System.getenv("EURISE_BROWSER") == "1") include(":browser")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")
