@@ -136,42 +136,42 @@ object IconLoader {
 /** Simboli della suite per le app di sistema di /e/OS e Android, riconosciute per pacchetto o per nome. */
 private object SystemGlyphs {
     private val byPackage: List<Pair<String, () -> ImageVector>> = listOf(
-        "com.android.dialer" to { EuriseIcons.phone(1.9f) }, "com.google.android.dialer" to { EuriseIcons.phone(1.9f) },
-        "org.fossify.phone" to { EuriseIcons.phone(1.9f) },
-        "foundation.e.message" to { EuriseIcons.message(1.9f) }, "com.android.messaging" to { EuriseIcons.message(1.9f) },
-        "com.google.android.apps.messaging" to { EuriseIcons.message(1.9f) }, "org.fossify.messages" to { EuriseIcons.message(1.9f) },
-        "com.android.contacts" to { EuriseIcons.person(1.9f) }, "org.fossify.contacts" to { EuriseIcons.person(1.9f) },
-        "foundation.e.mail" to { EuriseIcons.mail(1.9f) },
-        "foundation.e.browser" to { EuriseIcons.globe(1.9f) }, "org.lineageos.jelly" to { EuriseIcons.globe(1.9f) },
-        "foundation.e.camera" to { EuriseIcons.camera(1.9f) }, "org.lineageos.aperture" to { EuriseIcons.camera(1.9f) },
-        "com.android.camera" to { EuriseIcons.camera(1.9f) },
-        "eu.eurise.gallery" to { EuriseIcons.image(1.9f) }, "foundation.e.gallery" to { EuriseIcons.image(1.9f) }, "org.lineageos.glimpse" to { EuriseIcons.image(1.9f) },
-        "com.android.gallery3d" to { EuriseIcons.image(1.9f) },
-        "com.android.settings" to { EuriseIcons.gear(1.9f) },
-        "com.android.deskclock" to { EuriseIcons.clock(1.9f) }, "org.fossify.clock" to { EuriseIcons.clock(1.9f) },
-        "com.android.calculator2" to { EuriseIcons.calculator(1.9f) }, "org.lineageos.calculator" to { EuriseIcons.calculator(1.9f) },
-        "org.lineageos.eleven" to { EuriseIcons.music(1.9f) }, "foundation.e.music" to { EuriseIcons.music(1.9f) },
-        "org.lineageos.recorder" to { EuriseIcons.mic(1.9f) },
-        "foundation.e.calendar" to { EuriseIcons.calendar(1.9f) }, "org.lineageos.etar" to { EuriseIcons.calendar(1.9f) },
-        "foundation.e.notes" to { EuriseIcons.note(1.9f) }, "foundation.e.tasks" to { EuriseIcons.task(1.9f) },
-        "foundation.e.advancedprivacy" to { EuriseIcons.shield(1.9f) }, "foundation.e.privacycentral" to { EuriseIcons.shield(1.9f) },
-        "foundation.e.apps" to { EuriseIcons.bag(1.9f) }, "org.fdroid" to { EuriseIcons.bag(1.9f) },
-        "com.android.documentsui" to { EuriseIcons.folder(1.9f) }, "foundation.e.drive" to { EuriseIcons.folder(1.9f) },
-        "app.organicmaps" to { EuriseIcons.map(1.9f) }, "app.comaps" to { EuriseIcons.map(1.9f) }, "foundation.e.maps" to { EuriseIcons.map(1.9f) },
-        "foundation.e.weather" to { EuriseIcons.sun(1.9f) },
+        "com.android.dialer" to { EuriseIcons.phone(2.3f) }, "com.google.android.dialer" to { EuriseIcons.phone(2.3f) },
+        "org.fossify.phone" to { EuriseIcons.phone(2.3f) },
+        "foundation.e.message" to { EuriseIcons.message(2.3f) }, "com.android.messaging" to { EuriseIcons.message(2.3f) },
+        "com.google.android.apps.messaging" to { EuriseIcons.message(2.3f) }, "org.fossify.messages" to { EuriseIcons.message(2.3f) },
+        "com.android.contacts" to { EuriseIcons.person(2.3f) }, "org.fossify.contacts" to { EuriseIcons.person(2.3f) },
+        "foundation.e.mail" to { EuriseIcons.mail(2.3f) },
+        "foundation.e.browser" to { EuriseIcons.globe(2.3f) }, "org.lineageos.jelly" to { EuriseIcons.globe(2.3f) },
+        "foundation.e.camera" to { EuriseIcons.camera(2.3f) }, "org.lineageos.aperture" to { EuriseIcons.camera(2.3f) },
+        "com.android.camera" to { EuriseIcons.camera(2.3f) },
+        "eu.eurise.gallery" to { EuriseIcons.image(2.3f) }, "foundation.e.gallery" to { EuriseIcons.image(2.3f) }, "org.lineageos.glimpse" to { EuriseIcons.image(2.3f) },
+        "com.android.gallery3d" to { EuriseIcons.image(2.3f) },
+        "com.android.settings" to { EuriseIcons.gear(2.3f) },
+        "com.android.deskclock" to { EuriseIcons.clock(2.3f) }, "org.fossify.clock" to { EuriseIcons.clock(2.3f) },
+        "com.android.calculator2" to { EuriseIcons.calculator(2.3f) }, "org.lineageos.calculator" to { EuriseIcons.calculator(2.3f) },
+        "org.lineageos.eleven" to { EuriseIcons.music(2.3f) }, "foundation.e.music" to { EuriseIcons.music(2.3f) },
+        "org.lineageos.recorder" to { EuriseIcons.mic(2.3f) },
+        "foundation.e.calendar" to { EuriseIcons.calendar(2.3f) }, "org.lineageos.etar" to { EuriseIcons.calendar(2.3f) },
+        "foundation.e.notes" to { EuriseIcons.note(2.3f) }, "foundation.e.tasks" to { EuriseIcons.task(2.3f) },
+        "foundation.e.advancedprivacy" to { EuriseIcons.shield(2.3f) }, "foundation.e.privacycentral" to { EuriseIcons.shield(2.3f) },
+        "foundation.e.apps" to { EuriseIcons.bag(2.3f) }, "org.fdroid" to { EuriseIcons.bag(2.3f) },
+        "com.android.documentsui" to { EuriseIcons.folder(2.3f) }, "foundation.e.drive" to { EuriseIcons.folder(2.3f) },
+        "app.organicmaps" to { EuriseIcons.map(2.3f) }, "app.comaps" to { EuriseIcons.map(2.3f) }, "foundation.e.maps" to { EuriseIcons.map(2.3f) },
+        "foundation.e.weather" to { EuriseIcons.sun(2.3f) },
     )
 
     /** Parole del nome dell'app, per le varianti di sistema con un pacchetto diverso. */
     private val byLabel: List<Pair<String, () -> ImageVector>> = listOf(
-        "telefono" to { EuriseIcons.phone(1.9f) }, "phone" to { EuriseIcons.phone(1.9f) },
-        "messag" to { EuriseIcons.message(1.9f) }, "contatti" to { EuriseIcons.person(1.9f) }, "contacts" to { EuriseIcons.person(1.9f) },
-        "fotocamera" to { EuriseIcons.camera(1.9f) }, "camera" to { EuriseIcons.camera(1.9f) },
-        "galleria" to { EuriseIcons.image(1.9f) }, "gallery" to { EuriseIcons.image(1.9f) },
-        "impostazioni" to { EuriseIcons.gear(1.9f) }, "settings" to { EuriseIcons.gear(1.9f) },
-        "orologio" to { EuriseIcons.clock(1.9f) }, "calcolatrice" to { EuriseIcons.calculator(1.9f) },
-        "registratore" to { EuriseIcons.mic(1.9f) }, "browser" to { EuriseIcons.globe(1.9f) },
-        "meteo" to { EuriseIcons.sun(1.9f) }, "mappe" to { EuriseIcons.map(1.9f) }, "musica" to { EuriseIcons.music(1.9f) },
-        "file" to { EuriseIcons.folder(1.9f) }, "app lounge" to { EuriseIcons.bag(1.9f) },
+        "telefono" to { EuriseIcons.phone(2.3f) }, "phone" to { EuriseIcons.phone(2.3f) },
+        "messag" to { EuriseIcons.message(2.3f) }, "contatti" to { EuriseIcons.person(2.3f) }, "contacts" to { EuriseIcons.person(2.3f) },
+        "fotocamera" to { EuriseIcons.camera(2.3f) }, "camera" to { EuriseIcons.camera(2.3f) },
+        "galleria" to { EuriseIcons.image(2.3f) }, "gallery" to { EuriseIcons.image(2.3f) },
+        "impostazioni" to { EuriseIcons.gear(2.3f) }, "settings" to { EuriseIcons.gear(2.3f) },
+        "orologio" to { EuriseIcons.clock(2.3f) }, "calcolatrice" to { EuriseIcons.calculator(2.3f) },
+        "registratore" to { EuriseIcons.mic(2.3f) }, "browser" to { EuriseIcons.globe(2.3f) },
+        "meteo" to { EuriseIcons.sun(2.3f) }, "mappe" to { EuriseIcons.map(2.3f) }, "musica" to { EuriseIcons.music(2.3f) },
+        "file" to { EuriseIcons.folder(2.3f) }, "app lounge" to { EuriseIcons.bag(2.3f) },
     )
 
     fun find(entry: AppEntry): ImageVector? {
@@ -244,15 +244,15 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {
-                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.74f).softTint(symbolTint))
+                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(symbolTint))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
-                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.6f).softTint(symbolTint))
+                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.68f).softTint(symbolTint))
                 is IconImage.Plain -> Unit
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(size * 0.56f).softTint(symbolTint),
+                    modifier = Modifier.size(size * 0.64f).softTint(symbolTint),
                 )
             }
         }
@@ -276,19 +276,19 @@ private fun Modifier.softTint(tint: Color): Modifier = this
 
 /** Simbolo delle sezioni di Eurise (che non hanno un'icona di sistema propria). */
 private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
-    "calendar" -> EuriseIcons.calendar(1.9f)
-    "notes" -> EuriseIcons.note(1.9f)
-    "tasks" -> EuriseIcons.task(1.9f)
-    "clock" -> EuriseIcons.clock(1.9f)
-    "drive" -> EuriseIcons.folder(1.9f)
-    "scanner" -> EuriseIcons.scan(1.9f)
-    "calculator" -> EuriseIcons.calculator(1.9f)
-    "weather" -> EuriseIcons.sun(1.9f)
-    "qr" -> EuriseIcons.scan(1.9f)
-    "privacy" -> EuriseIcons.shield(1.9f)
-    "ponte" -> EuriseIcons.work(1.9f)
-    "today" -> EuriseIcons.today(1.9f)
-    else -> entry.category.icon(1.9f)
+    "calendar" -> EuriseIcons.calendar(2.3f)
+    "notes" -> EuriseIcons.note(2.3f)
+    "tasks" -> EuriseIcons.task(2.3f)
+    "clock" -> EuriseIcons.clock(2.3f)
+    "drive" -> EuriseIcons.folder(2.3f)
+    "scanner" -> EuriseIcons.scan(2.3f)
+    "calculator" -> EuriseIcons.calculator(2.3f)
+    "weather" -> EuriseIcons.sun(2.3f)
+    "qr" -> EuriseIcons.scan(2.3f)
+    "privacy" -> EuriseIcons.shield(2.3f)
+    "ponte" -> EuriseIcons.work(2.3f)
+    "today" -> EuriseIcons.today(2.3f)
+    else -> entry.category.icon(2.3f)
 }
 
 /** Numero di notifiche: pastiglia piena in accento. */

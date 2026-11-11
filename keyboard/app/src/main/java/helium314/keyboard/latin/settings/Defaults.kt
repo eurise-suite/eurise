@@ -99,10 +99,9 @@ object Defaults {
     @JvmField
     val PREF_SIDE_PADDING_SCALE = Array(8) { 0f }
     @JvmField
-    // Eurise: spazio tra i tasti al 70 % (richiesta del proprietario). Con il 50 % (giro 281) i tasti sembravano uniti e un
-    // po' troppo grandi; così restano più grandi di HeliBoard (circa +5 %) ma staccati. Il tocco nello spazio va comunque
-    // al tasto più vicino.
-    val PREF_KEY_GAP_SCALE = Array(4) { 0.7f }
+    // Eurise: spazio tra i tasti al 55 % (prove del proprietario: con il 50 % uniti, con il 70 % di nuovo piccoli). Il
+    // tocco nello spazio va comunque al tasto più vicino.
+    val PREF_KEY_GAP_SCALE = Array(4) { 0.55f }
     const val PREF_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_HINT_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_FONT_SCALE = DEFAULT_SIZE_SCALE

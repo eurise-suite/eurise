@@ -215,6 +215,9 @@ private fun WebPane(url: String, modifier: Modifier, onCreated: (WebView) -> Uni
                 settings.setSupportMultipleWindows(false)
                 settings.allowFileAccess = false
                 settings.allowContentAccess = false
+                // Alcuni servizi (Duck.ai) riconoscono la WebView da «; wv» e mostrano una pagina bianca: si presenta come
+                // il Chrome del telefono, senza dire altro di sé.
+                settings.userAgentString = settings.userAgentString.replace("; wv", "").replace(Regex("""Version/\d+(\.\d+)* """), "")
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {

@@ -1229,3 +1229,18 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   `tipo|titolo|data|ora|luogo|persone|note` (vuoti senza «null», circa un terzo dei token), ricomposta in JSON uguale a
   prima (`capture_json`, provata qui); la **grammatica controlla prima solo il token scelto** e filtra tutto il
   vocabolario solo se lo rifiuta; la parte del giorno senza ora va nelle note. Da rimisurare (CI e telefono).
+
+## 11 novembre, notte: prova del proprietario sul giro 290
+- APK verificati: erano davvero quelli del giro 290 (versione 390, testi nuovi dentro).
+- **Duck.ai bianco nel riquadro** (ricerca AI dalla tastiera): la WebView si presentava con «; wv» e alcuni servizi danno
+  una pagina vuota; ora `WebPopupActivity` si presenta come il Chrome del telefono. Da riprovare.
+- **Tastiera**: con lo spazio al 70 % «di nuovo piccoli» → **55 %**.
+- **Icone più grandi e più spesse** (richiesta): icone adattive di tutti gli APK con disegno da 1,75 a **1,95** e tratto
+  da 1,8 a **2,1** (Eurise AI 1,95), stellina spostata di (1, −3) verso l'angolo, ancora nel cerchio sicuro; nella
+  Scrivania simboli al 68 % (prima 60 %), 80 % per le icone monocromatiche, 64 % per le sezioni, tratto 2,3 (prima 1,9).
+- **Mappe**: il proprietario la vede «ancora quella originale», ed è così: finora solo nome, firma, alleggerimento e
+  «Segnala qui». **Da fare** (tavole approvate): stile della suite, cartello colorato per tipo di strada con i metri in
+  tempo reale, velocità e limite, «Vedi su…», meteo sul percorso, «dove devi andare» dalla suite.
+- **Da capire con il proprietario**: Eurise Voce «non parte» (APK 390 corretto: serve sapere cosa succede, se si chiude
+  o non si apre); bolle «non vedo gli aggiornamenti» (le righe nuove compaiono solo con farmaci o ricorrenze di oggi; le
+  icone dirette di «Ti hanno cercato» solo con l'accesso alle notifiche).
