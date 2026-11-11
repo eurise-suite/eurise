@@ -1021,3 +1021,57 @@ QR, Eurise AI); poi Office (interfaccia web Eurise) e Browser (estensione comune
 
 **Prossimo passo**: codice delle segnalazioni OSM in Mappe (base CoMaps, editor OSM già dentro); dopo le approvazioni,
 Office (interfaccia web Eurise) e il nucleo del Ponte; prove sul telefono dell'APK 263.
+
+## 11 novembre, sera: tutto approvato, codice (ramo `brand`)
+**Approvato dal proprietario**: tavole Office (OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer), seconda e terza
+fila del Browser (BrwSchede, BrwSblocca, BrwCondividi, BrwSincro rifatta, BrwMotore, BrwImporta, Ponte, PcFirefox),
+TastCerca, BolRispondi, BolAllega. Indicazione: «macina codice».
+
+- **Ti hanno cercato** (BolRispondi, BolAllega; `feature/launcher/notifications/ReplyExtras.kt`, `ReplyText.kt` con i test):
+  pressione lunga su un fumetto → reazioni rapide (mandate come emoji), «Rispondi a questa frase» (in WhatsApp citazione
+  vera con «> », altrove tra «»), Copia, In Da fare, In Note. Graffetta «Allega»: Contatto (si sceglie un numero, entra
+  come testo), Documento, Galleria, Fotocamera (si aprono nell'app della conversazione; in WhatsApp nella chat giusta se
+  la rubrica conosce il numero), Posizione (permesso della posizione precisa chiesto solo qui; link OpenStreetMap),
+  Disponibilità (orari liberi da un'ora nei prossimi tre giorni lavorativi, dal Calendario), contatti nominati nella
+  conversazione. FileProvider proprio (`ReplyFileProvider`). Compilato (APK 266). Da provare sul telefono.
+- **Tastiera, ricerca rapida** (TastCerca; `keyboard/.../WebSearch.kt`, `SearchPanel`): i tasti Browser e AI aprono il
+  pannello con la domanda dalla selezione o dall'ultima riga, Cerca / Chiedi all'AI, ogni posto con chi è, dove sta e le
+  tacche (3 resta qui, 2 esce solo la domanda, 1 con il tuo account). Brave Search di base. «Nella suite» apre la ricerca
+  universale della Scrivania già scritta (extra `eu.eurise.extra.SEARCH` di `LauncherActivity`). Compilato.
+- **Mappe, «Segnala qui»** (MapSegnala; `maps/android/.../EuriseReportActivity.java`, copiata e agganciata da
+  `eurise_patch.py`): pulsante «Segnala» nella scheda del luogo (oltre il quarto va in «Altro»), sei segnalazioni con il
+  simbolo nei colori della suite, dettaglio facoltativo; con l'account OSM nota dall'editor di CoMaps, senza account nota
+  anonima con l'API 0.6 di OSM. In compilazione (giro 7 del lavoro Mappe).
+- **Eurise Browser** (`browser/`, APK separato `eu.eurise.browser`, solo arm64, lavoro a parte «Eurise Browser» con
+  `EURISE_BROWSER=1`): GeckoView dal Maven di Mozilla. La 160 chiede compileSdk 37 e un plugin Android più nuovo della
+  suite (8.7.3): per il prototipo `[130.0,142.0)`; **prima della versione ufficiale va aggiornato il plugin per tutta la
+  suite e si torna all'ultima GeckoView** (sicurezza). Fatto: schede e schede private, barra in basso (scudo, indirizzo o
+  ricerca, schede, menu), nuova scheda con siti fissati e tracciatori bloccati, protezione rigorosa e cookie isolati con
+  sblocco per sito (BrwSblocca), In Note / Da fare nell'app Eurise (HubBridge), Ascolta (sintesi vocale del telefono),
+  Condividi con link pulito (`Links.clean`), motore di ricerca con le tacche, segnalibri e importazione dal file HTML di
+  Chrome, Firefox, Brave, Edge (`BookmarksHtml`), download nel gestore di sistema, apre link, ricerche e testi condivisi.
+  L'**estensione Eurise** comune sta in `browser/extension` (stessa per Firefox sul computer): legge titolo, frase scelta
+  e testo solo quando l'app lo chiede. Password: il sistema di compilazione automatica di Android con Eurise Password.
+  Non ancora: sincronizzazione (passa dal Ponte), passkey, data trovata → Calendario, Traduci.
+- **Office per Android** (`.github/workflows/office-app.yml`, `office/app/`): app Collabora Office (online
+  `co-25.04`, `--enable-androidapp`) sul nostro motore, POCO e zstd per Android arm64, colori Eurise sull'interfaccia web
+  (`eurise.css`: Perla e Notte, accento azzurro, scheda attiva con tratto e grassetto, gruppi a isole), pacchetto
+  `eu.eurise.office`, chiave di prova. Primo giro in corso (prima caduto per la rete dei server; ora su Ubuntu 24.04).
+  Poi: scheda Suite del nastro, «Cerca un comando», Eurise File, motore a richiesta, italiano; Linux con `--enable-qtapp`.
+- **Ponte Eurise** (tavola Ponte; docs/PIATTAFORME.md):
+  - `core/ponte` (Kotlin puro JVM, test provati anche nell'ambiente di Claude): identità EC P-256, ECDH + HKDF-SHA256,
+    AES-256-GCM con il mittente autenticato, codice di conferma a sei cifre, abbinamento con prova del segreto del QR
+    (`Opening`), messaggi (Continua qui, appunti, dettatura, chiamate, password, file), guardia contro i ripetuti, cornici
+    TCP, nomi dei file per il passaggio dal cloud (non ancora usato).
+  - `desktop/ponte` → **eurise-ponte per Linux** (artefatto `eurise-ponte-linux-N`; serve Java 17): `eurise-ponte collega`
+    mostra il QR nel terminale; poi riceve sulla rete di casa e usa gli strumenti di Ubuntu e Fedora (wl-copy/xclip,
+    wtype/xdotool, xdg-open, notify-send). Provato qui con `prova-telefono`: abbinamento e messaggi arrivano.
+  - `feature/ponte` sul telefono: «Telefono e computer» tra gli strumenti della Scrivania; il lettore QR riconosce il
+    codice («Collega questo computer») e mostra il codice di conferma; «Invia al computer» nel menu Condividi (link →
+    si apre sul computer, testo → appunti); «Detta al computer». Interruttore per ogni tipo.
+  - Non ancora: dal computer al telefono, «Ti hanno cercato» sul computer, password dal telefono, passaggio dal cloud
+    fuori casa, interfaccia Compose e Flatpak per il computer, voce nel centro privacy.
+
+**Prossimo passo**: chiudere i giri in corso (Browser con `chooseEngine`, Mappe giro 7, Office app) e correggere gli
+errori; poi pubblicare tutto in `apk-prova`; Office: scheda Suite e motore a richiesta; Browser: estensione su Firefox per
+il computer con il Ponte; Ponte: «Ti hanno cercato» e password dal telefono.
