@@ -68,6 +68,20 @@ jobs:
           path: voice/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK di Telefono
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-telefono-debug-${{ github.run_number }}
+          path: phone/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Carica l'APK di Messaggi
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-messaggi-debug-${{ github.run_number }}
+          path: messages/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+
       - name: Carica l'APK di Password
         uses: actions/upload-artifact@v4
         with:

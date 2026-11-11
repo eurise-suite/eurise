@@ -85,6 +85,24 @@ object EuriseIcons {
 
     fun message(stroke: Float = Stroke) = icon("message", stroke, "M4 5h16v11H9l-5 4z")
 
+    /** Tastierino del telefono: tre file di tre punti e lo zero. */
+    fun dialpad(stroke: Float = 2.6f) = icon("dialpad", stroke,
+        "M6 5h.01M12 5h.01M18 5h.01M6 10.5h.01M12 10.5h.01M18 10.5h.01M6 16h.01M12 16h.01M18 16h.01M12 21h.01")
+
+    /** Chiudi la chiamata: la cornetta abbassata. */
+    fun hangup(stroke: Float = Stroke) = icon("hangup", stroke, "M3 14.5c5-4.5 13-4.5 18 0l-2 2.5-3.5-1.2v-2.6a10 10 0 0 0-7 0v2.6L5 17z")
+
+    fun micOff(stroke: Float = Stroke) = icon("micOff", stroke, "M9 3.5h6v11H9z", "M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v3M4 4l16 16")
+
+    /** Blocca: cerchio barrato (numeri bloccati, disturbatori). */
+    fun block(stroke: Float = Stroke) = icon("block", stroke, circle(12f, 12f, 8.5f), "M6 6l12 12")
+
+    /** Chiamata persa: cornetta con la freccia di ritorno. */
+    fun callMissed(stroke: Float = Stroke) = icon("callMissed", stroke,
+        "M6.6 3.5h2.6l1.5 4-2 1.3a11 11 0 0 0 6.5 6.5l1.3-2 4 1.5v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z", "M15 3l5 5M20 3v5h-5")
+
+    fun backspace(stroke: Float = Stroke) = icon("backspace", stroke, "M8 5h12v14H8l-5-7z", "M11 9l6 6M17 9l-6 6")
+
     fun camera(stroke: Float = Stroke) = icon("camera", stroke, "M4 8h3.5L9 5.5h6L16.5 8H20v11H4z", circle(12f, 13f, 3.5f))
 
     fun image(stroke: Float = Stroke) = icon("image", stroke, "M4 5h16v14H4z", "M4 16l5-5 4 4 2.5-2.5L20 15", circle(15.5f, 9f, 1.5f))
