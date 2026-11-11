@@ -884,3 +884,29 @@ sul telefono); conferma di Office a richiesta; segnalazioni del proprietario dal
 **Prossimo passo**: prova sul telefono dello scanner nuovo (APK 252) e della barra a 9; approvazione della seconda fila del
 Browser, scelta del motore del browser e del motore di ricerca; decisione sulle segnalazioni in Mappe; poi Eurise AI
 (prototipo llama.cpp), riduzione del peso di Mappe e stile della suite su Mappe.
+
+## 11 novembre, mezzogiorno: decisioni del proprietario e tavole nuove (fine della chat del brand)
+- **Office: confermato il motore scaricato a richiesta** (circa 66 MB con il Wi-Fi, una volta). Tavole nuove da approvare,
+  pagina «Office» della tela: OffMotore (primo avvio, semaforo), OffTelefono (testo, barra di formato e Testo/Inserisci/
+  Revisione/Tutte le opzioni, data trovata → Calendario), OffTablet (foglio di calcolo con elenco dei documenti, spese senza
+  ricevuta → Da fare/Viaggio), OffComputer (schede dei documenti, struttura, «Collegato a», commenti con @persona → Da fare,
+  revisioni Accetta/Rifiuta). Dopo l'approvazione: lavoro sull'app Eurise Office (APK piccolo) e sul download del motore.
+- **Regola di spesa** (proprietario): si fa ora tutto ciò che non ha costi aggiuntivi; ciò che richiede servizi a
+  pagamento o server nostri va nella road map, «quando e se la suite guadagnerà».
+  - Mappe, segnalazioni: ora solo OpenStreetMap (nota anonima o modifica con l'account OSM dall'editor di CoMaps): lavori,
+    strada chiusa, ostacolo fisso, autovelox fisso, limite sbagliato. Tavola MapSegnala da approvare. Polizia, incidenti e
+    code in tempo reale (servizio nostro): road map.
+  - Booking/Tripadvisor: ora solo i collegamenti «Vedi su…»; prezzi e voti come partner: road map.
+- **Mappe e Android Auto**: CoMaps lo ha già in tutte le versioni (`app.organicmaps.car.CarAppService`, libreria aperta
+  `androidx.car.app` 1.7.0, categoria NAVIGATION): Eurise Mappe lo eredita. Va mantenuto nello stile nuovo (le schermate
+  dell'auto usano i modelli di Android Auto: colori e testi nostri, forma decisa da Google). Nota: Android Auto mostra le app
+  installate fuori dal Play Store solo con «Fonti sconosciute» acceso nelle impostazioni sviluppatore di Android Auto
+  (con App Lounge di /e/OS non serve). Da provare in auto.
+- **Icone sulla tela**: tavola BrandIconeApp (pagina Brand) con prima/ora e versione a tema.
+- **«Ti hanno cercato»**: tavole BolRispondi (pressione lunga sul fumetto: reazioni rapide inviate come emoji, «Rispondi a
+  questa frase» con la citazione, Copia/Da fare/Note, Apri la chat) e BolAllega (Contatto, Documento, Galleria, Fotocamera,
+  Posizione, Disponibilità; suggeriti dalla conversazione) da approvare (pagina Bolle).
+- **Eurise AI: via libera al prototipo** (llama.cpp dai sorgenti, APK senza rete, misure di peso e velocità).
+
+**Prossimo passo (nuova chat)**: approvazione delle tavole Office, MapSegnala, BolRispondi/BolAllega e della seconda fila
+del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mappe con segnalazioni OSM, Office).
