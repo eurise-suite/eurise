@@ -176,6 +176,7 @@
     <string name="appearance_icon_colors">Colore dei simboli</string>
     <string name="appearance_icon_theme">Tema delle icone</string>
     <string name="appearance_icon_theme_eurise">Eurise</string>
+    <string name="appearance_icon_theme_eurise_color">Eurise a colori</string>
     <string name="appearance_icon_theme_system">Sistema</string>
     <string name="appearance_icon_theme_hint">Per altri temi installa un pacchetto di icone per launcher (per esempio da F-Droid): comparirà qui.</string>
     <string name="favorite_drag_hint">Tieni premuto e trascina per spostare</string>

@@ -416,6 +416,7 @@ private fun IconThemeChooser(current: String, onChoose: (String) -> Unit) {
     }
     val choices = listOf(
         eu.eurise.feature.launcher.apps.IconThemes.EURISE to stringResource(R.string.appearance_icon_theme_eurise),
+        eu.eurise.feature.launcher.apps.IconThemes.EURISE_COLOR to stringResource(R.string.appearance_icon_theme_eurise_color),
         eu.eurise.feature.launcher.apps.IconThemes.SYSTEM to stringResource(R.string.appearance_icon_theme_system),
     ) + packs.map { it.packageName to it.label }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

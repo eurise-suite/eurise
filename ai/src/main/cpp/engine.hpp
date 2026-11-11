@@ -6,6 +6,8 @@
 #include "llama.h"
 
 #include <chrono>
+#include <cctype>
+#include <cstdio>
 #include <ctime>
 #include <functional>
 #include <random>
@@ -270,8 +272,41 @@ inline std::string capture_system(int y, int m, int d) {
     return s;
 }
 
+/**
+ * Controlli fissi dopo il modello, dove sbaglia anche con le istruzioni giuste: un'ora che nella frase non c'è (nessuna
+ * cifra: «giovedì mattina») si toglie; una data senza anno scritto non va oltre i prossimi 12 mesi.
+ * Il testo segue sempre la grammatica, quindi i campi si trovano per posizione fissa.
+ */
+inline void fix_capture(std::string &out, const std::string &sentence, int y, int m, int d) {
+    bool digits = false, year = false;
+    for (size_t i = 0; i < sentence.size(); i++) {
+        if (!isdigit((unsigned char) sentence[i])) continue;
+        digits = true;
+        if (i + 3 < sentence.size() && isdigit((unsigned char) sentence[i + 1]) && isdigit((unsigned char) sentence[i + 2]) &&
+            isdigit((unsigned char) sentence[i + 3]) && (sentence[i] == '1' || sentence[i] == '2')) year = true;
+    }
+    const std::string ora = "\"ora\": \"";
+    size_t p = out.find(ora);
+    if (!digits && p != std::string::npos) out.replace(p + 7, 7, "null");
+    const std::string data = "\"data\": \"";
+    p = out.find(data);
+    if (!year && p != std::string::npos) {
+        int yy = 0, mm = 0, dd = 0;
+        if (std::sscanf(out.c_str() + p + data.size(), "%4d-%2d-%2d", &yy, &mm, &dd) == 3) {
+            int fixed = (mm > m || (mm == m && dd >= d)) ? y : y + 1;
+            if (yy != fixed) {
+                char b[8];
+                std::snprintf(b, sizeof(b), "%04d", fixed);
+                out.replace(p + data.size(), 4, b);
+            }
+        }
+    }
+}
+
 inline bool capture(Engine &e, const std::string &sentence, int y, int m, int d, std::string &out, Stats &st) {
-    return generate(e, chat_prompt(e, capture_system(y, m, d), sentence), CAPTURE_GRAMMAR, 160, out, st);
+    const bool ok = generate(e, chat_prompt(e, capture_system(y, m, d), sentence), CAPTURE_GRAMMAR, 160, out, st);
+    if (ok) fix_capture(out, sentence, y, m, d);
+    return ok;
 }
 
 inline bool ask(Engine &e, const std::string &question, int max_tokens, std::string &out, Stats &st,

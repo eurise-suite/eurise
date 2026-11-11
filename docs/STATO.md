@@ -938,7 +938,26 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
   (Ctrl K). **Office collegato a Eurise File**: apre e salva dai file locali e dai cloud scelti (Murena, Nextcloud…,
   chiavetta), l'origine è sempre scritta («Salvato · Murena › Lavoro»), la colonna «In Eurise File» mostra la cartella e i
   file vicini. Tavole OffTablet e OffComputer rifatte sulla tela: **da approvare**. OffTelefono resta compatta.
-- **Ancora da approvare sulla tela**: OffMotore, OffTelefono, OffTablet, OffComputer; MapSegnala; BolRispondi, BolAllega;
+- **Eurise AI, misure dei giri 2–4**: con le istruzioni tenute in memoria (si rilegge solo la frase) la cattura passa da
+  27 a ~7 s per frase sul computer della CI; 8/10 frasi giuste al giro 3. Controlli fissi dopo il modello (`fix_capture`):
+  ora tolta se nella frase non ci sono cifre («giovedì mattina»), data senza anno scritto entro i prossimi 12 mesi.
+- **Office, altre richieste**: anche sul telefono la Suite (fila Detta, Traduci, Da fare, Evento, Note; scheda Suite nella
+  barra in basso); **ricerca rapida** in tutte e tre le versioni (tasto o «Cerca un comando», Ctrl K): campo, Cerca /
+  Chiedi all'AI, prima i risultati nella suite (documento, Eurise File, Calendario, Persona), poi le proposte web e AI,
+  ognuna con il livello di privacy a tacche (3 resta qui, 2 esce solo la domanda, 1 con il tuo account): Nella suite,
+  Brave Search, Qwant, Ecosia, DuckDuckGo; Eurise AI sul dispositivo, Duck.ai, Le Chat. Tavole OffTelefono, OffCerca
+  (nuova), OffTablet e OffComputer con il riquadro aperto (interruttore «ricerca» nelle proprietà per nasconderlo).
+  La stessa ricerca nella **Tastiera**: tavola TastCerca (pagina Integrazioni). Tutto da approvare.
+- **Corretto, riquadro di ricerca della Tastiera** (segnalato: si apriva vuoto e la ricerca andava riscritta nel browser):
+  `WebPopupActivity` non ritaglia più la WebView (sfondo con forma al posto di `clip`), pagina con fondo bianco, errori della
+  pagina mostrati con «Apri nel browser» (la ricerca passa già scritta) e «Riprova». Da riprovare sul telefono.
+- **Icone delle app senza simbolo** (CieID, Eko, Aruba PEC, MyEdison… e le web app): `LogoMask` ricava la sagoma del logo
+  staccandola dal colore del bordo e la colora come le altre (test `LogoMaskTest`); per le web app il simbolo si cerca
+  solo per nome (il pacchetto è quello del browser). Se il bordo non è uniforme resta l'icona originale.
+- **Tema icone «Eurise a colori»** (Griglia e icone, accanto a Eurise e Sistema): stessi simboli su un tondo chiaro nella
+  tinta dell'app portata alle tinte della suite, simbolo nella stessa tinta più profonda; di sera il tondo perde luce ma
+  resta colorato. Il tema scuro resta quello di base. Da vedere sul telefono (manca la tavola: farla se va ritoccato).
+- **Ancora da approvare sulla tela**: OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer, TastCerca; MapSegnala; BolRispondi, BolAllega;
   seconda fila del Browser (motore del browser e motore di ricerca da scegliere).
 - **Da provare sul telefono**: scanner nuovo, lettore QR, Eurise AI.
 - **Poi, nell'ordine**: codice di quanto approvato (bolla «Ti hanno cercato», segnalazioni OpenStreetMap e stile di Mappe

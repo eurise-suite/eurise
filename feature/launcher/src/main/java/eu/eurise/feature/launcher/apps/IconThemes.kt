@@ -19,6 +19,11 @@ data class IconTheme(val packageName: String, val label: String)
  */
 object IconThemes {
     const val EURISE = "eurise"
+    /** Stessi simboli della suite su un tondo chiaro nella tinta dell'app: per chi non vuole le icone scure. */
+    const val EURISE_COLOR = "eurise_color"
+
+    /** Vero per i due temi della suite (simboli nel tondo). */
+    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR
     const val SYSTEM = "system"
 
     /** Le azioni con cui i pacchetti di icone si fanno trovare dai launcher. */

@@ -72,16 +72,20 @@ object IconLoader {
             entry.component != null -> runCatching { context.packageManager.getActivityIcon(entry.component) }.getOrNull()
             else -> null
         } ?: return@withContext null
-        if (theme != IconThemes.EURISE) {
+        if (!IconThemes.isSuite(theme)) {
             // Tema di sistema o pacchetto di icone: il disegno del tema se c'è, altrimenti l'icona originale.
             val themed = entry.component?.takeIf { theme != IconThemes.SYSTEM }?.let { IconThemes.drawable(context, theme, it) }
             val plain = IconImage.Plain((themed ?: drawable).toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
             cache.put(cacheKey, plain)
             return@withContext plain
         }
+        // Le web app: il pacchetto è quello del browser, quindi il simbolo si cerca solo per nome; poi la sagoma
+        // del logo staccata dal fondo, così hanno il tondo e le tinte della suite come le altre app.
+        val glyph = if (entry.shortcut == null) SystemGlyphs.find(entry) else SystemGlyphs.findByLabel(entry.label)
         val image = officialMono(drawable, px)
-            ?: SystemGlyphs.find(entry)?.takeIf { entry.shortcut == null }?.let { IconImage.Glyph(it) }
+            ?: glyph?.let { IconImage.Glyph(it) }
             ?: silhouette(drawable, px)
+            ?: logoOnBackground(drawable, px)
             ?: IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
         cache.put(cacheKey, image)
         image
@@ -107,6 +111,19 @@ object IconLoader {
         val coverage = pixels.count { (it ushr 24) > 128 }.toFloat() / pixels.size
         if (coverage < 0.04f || coverage > 0.42f) return null
         return IconImage.Mono(bitmap.extractAlpha().asImageBitmap())
+    }
+
+    /**
+     * Per le icone a tutto riquadro (le web app hanno quasi sempre il logo su un fondo pieno): il fondo è il colore del
+     * bordo; i punti che se ne staccano formano la sagoma del logo. Se il bordo non è uniforme (una foto, un disegno
+     * sfumato) o la sagoma è troppo piccola o troppo grande, null: resta l'icona originale.
+     */
+    internal fun logoOnBackground(drawable: Drawable, px: Int): IconImage? {
+        val size = px * 3 / 2
+        val bitmap = if (drawable is AdaptiveIconDrawable) cropCenter(drawable.toBitmap(size, size, Bitmap.Config.ARGB_8888))
+        else drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val mask = LogoMask.of(bitmap) ?: return null
+        return IconImage.Mono(mask.asImageBitmap())
     }
 
     /** Le icone adattive stanno in un'area di 108 dp di cui si vedono i 72 centrali. */
@@ -159,8 +176,12 @@ private object SystemGlyphs {
 
     fun find(entry: AppEntry): ImageVector? {
         byPackage.firstOrNull { entry.packageName.startsWith(it.first) }?.let { return it.second() }
-        val label = entry.label.lowercase()
-        return byLabel.firstOrNull { label.contains(it.first) }?.second?.invoke()
+        return findByLabel(entry.label)
+    }
+
+    fun findByLabel(label: String): ImageVector? {
+        val l = label.lowercase()
+        return byLabel.firstOrNull { l.contains(it.first) }?.second?.invoke()
     }
 }
 
@@ -190,7 +211,8 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     val theme = LocalIconTheme.current
     var image by remember(entry.key, theme) { mutableStateOf<IconImage?>(null) }
     LaunchedEffect(entry.key, theme) { image = IconLoader.load(context, entry, px, theme) }
-    val fromApp = LocalAppIconColors.current
+    val colorful = theme == IconThemes.EURISE_COLOR
+    val fromApp = LocalAppIconColors.current || colorful
     var appTint by remember(entry.key) { mutableStateOf(AppColors.cached(entry)) }
     if (fromApp && entry.euriseSection == null) {
         LaunchedEffect(entry.key) { if (appTint == null) appTint = AppColors.suiteTint(context, entry) }
@@ -202,6 +224,13 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     } else {
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark
     }
+    // A colori: tondo chiaro nella tinta (un po' più sfumato in alto a sinistra), simbolo nella stessa tinta più profonda;
+    // di sera il tondo perde luce ma resta colorato.
+    val symbolTint = if (colorful) lerp(tint, Color.Black, if (dark) 0.05f else 0.32f) else tint
+    val round: Brush = if (colorful) {
+        val base = if (dark) lerp(tint, IconBackgroundDark, 0.55f) else lerp(tint, Color.White, 0.80f)
+        Brush.linearGradient(listOf(lerp(base, Color.White, if (dark) 0.06f else 0.45f), base))
+    } else androidx.compose.ui.graphics.SolidColor(if (dark) IconBackgroundDark else IconBackgroundLight)
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         val plain = image as? IconImage.Plain
         if (plain != null) {
@@ -209,21 +238,21 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         } else Box(
             Modifier
                 .size(size)
-                .shadow(6.dp, CircleShape)
+                .shadow(if (colorful) 3.dp else 6.dp, CircleShape)
                 .clip(CircleShape)
-                .background(if (dark) IconBackgroundDark else IconBackgroundLight),
+                .background(round),
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {
-                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.74f).softTint(tint))
+                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.74f).softTint(symbolTint))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
-                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.6f).softTint(tint))
+                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.6f).softTint(symbolTint))
                 is IconImage.Plain -> Unit
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(size * 0.56f).softTint(tint),
+                    modifier = Modifier.size(size * 0.56f).softTint(symbolTint),
                 )
             }
         }
