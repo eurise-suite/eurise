@@ -1200,3 +1200,7 @@ battitura dal proprietario per la tastiera; prova di Mappe giro 7 sul telefono; 
 Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul telefono di tastiera, Ponte e Mappe giro 7.
 - **Tastiera, prova del proprietario sul 281** (dopo aver rimesso i valori predefiniti): tasti grandi, «forse un po'
   troppo», e sembrano uniti. Spazio tra i tasti di base da 0,5 a **0,7** (`PREF_KEY_GAP_SCALE`); altezza invariata (1,10).
+- **Office in `apk-prova`**: `apk-prova.yml` ora prende anche l'ultimo giro riuscito di `office-app.yml` e lo pubblica
+  come `eurise-office-debug.apk`. Giro 5 (43052890217, con la scheda Suite, «Cerca un comando», italiano): **237 MB**,
+  perché il motore è ancora dentro l'APK. Il motore scaricato a richiesta (circa 66 MB, deciso) resta da fare. Da provare
+  sul telefono.
