@@ -62,3 +62,8 @@ gli altri sistemi. Questo lavoro costruisce l'app Android di Collabora con il no
   non solo la copia PDF (origine sempre scritta); inserire pagine dallo Scanner; ruotare le pagine del PDF; colonna «In Eurise File», interruttore «ricerca» nelle
   proprietà, campo di ricerca sempre visibile nel nastro.
 - Linux: `--enable-qtapp` e Flatpak, con le stesse modifiche all'interfaccia (`eurise_web.py` vale già).
+
+## «Apri da…» (11 novembre, notte)
+Il pulsante Apri della schermata iniziale chiama Eurise File (`eu.eurise.action.OPEN_FROM`) se l'app Eurise è
+installata; altrimenti resta il selettore di sistema. L'Uri torna con lettura e scrittura (Office salva nello stesso
+file); non è persistente, quindi `takePersistableUriPermission` è protetto da un try.

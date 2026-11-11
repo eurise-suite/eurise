@@ -67,7 +67,8 @@ class FilesActivity : ComponentActivity() {
                         }
                         OpenFromScreen(from, extensions, onPicked = { file, entry ->
                             val uri = FileProvider.getUriForFile(this, "$packageName$AUTHORITY", file)
-                            val back = Intent().setData(uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            // Anche in scrittura: Office salva le modifiche nello stesso file (solo app della suite arrivano qui).
+                            val back = Intent().setData(uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                             back.clipData = ClipData.newRawUri(entry?.name, uri)
                             entry?.let { back.putExtra(EXTRA_ORIGIN, it.spot.key()) }
                             setResult(Activity.RESULT_OK, back)

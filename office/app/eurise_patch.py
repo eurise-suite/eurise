@@ -82,6 +82,28 @@ patch(lo, '    /** True if the App is running under ChromeOS. */\n',
 patch(lo, '    protected void onDestroy() {\n',
       '    protected void onDestroy() {\n        EuriseSuite.detach(this);\n', "onDestroy")
 
+# «Apri da…»: il pulsante Apri della schermata iniziale passa da Eurise File (cartelle della suite, server, cloud);
+# senza l'app Eurise resta il selettore di sistema. Gli Uri di Eurise File non sono persistenti: niente eccezione.
+ui = android / "app" / "src" / "main" / "java" / "org" / "libreoffice" / "androidapp" / "ui" / "LibreOfficeUIActivity.java"
+patch(ui, '        Intent i = new Intent();\n        i.addCategory(Intent.CATEGORY_OPENABLE);\n',
+      '        try {\n'
+      '            getPackageManager().getPackageInfo("eu.eurise.hub.debug", 0);\n'
+      '            startActivityForResult(new Intent("eu.eurise.action.OPEN_FROM")\n'
+      '                    .setClassName("eu.eurise.hub.debug", "eu.eurise.core.files.FilesActivity")\n'
+      '                    .putExtra("eu.eurise.extra.EXTENSIONS", "odt,ods,odp,odg,doc,docx,xls,xlsx,ppt,pptx,rtf,txt,csv,pdf")\n'
+      '                    .putExtra("eu.eurise.extra.FROM", "Office"), OPEN_FILE_REQUEST_CODE);\n'
+      '            return;\n'
+      '        } catch (Exception euriseMissing) {\n'
+      '            Log.i(LOGTAG, "Eurise File non c\'è: selettore di sistema");\n'
+      '        }\n\n'
+      '        Intent i = new Intent();\n        i.addCategory(Intent.CATEGORY_OPENABLE);\n', "l'inizio di openDocument")
+patch(ui, '                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);\n\n                open(uri);\n',
+      '                try {\n'
+      '                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);\n'
+      '                } catch (SecurityException notPersistable) {\n'
+      '                    Log.i(LOGTAG, "Uri non persistente (Eurise File): aperto per questa volta");\n'
+      '                }\n\n                open(uri);\n', "takePersistableUriPermission in onActivityResult")
+
 # Manifest: permesso della suite (solo quello di prova: l'APK è firmato con la chiave di prova) e app Eurise visibili.
 manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
 patch(manifest, '    <uses-permission android:name="android.permission.INTERNET" />\n',
