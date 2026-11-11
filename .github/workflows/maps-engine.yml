@@ -40,7 +40,12 @@ jobs:
 
       - name: Installa gli strumenti
         run: |
-          sudo apt-get update -qq
+          # I server di GitHub a volte non risolvono i mirror di Ubuntu per qualche minuto: si riprova.
+          for i in 1 2 3 4 5 6; do
+            sudo apt-get update -qq 2>&1 | tee "$RUNNER_TEMP/apt.log"
+            grep -q "Temporary failure resolving" "$RUNNER_TEMP/apt.log" || break
+            echo "Mirror non raggiungibili, riprovo tra 60 s ($i)"; sleep 60
+          done
           # Come in docs/INSTALL.md di CoMaps: configure.sh compila gli strumenti per stili e simboli (Qt, glfw con X11).
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ninja-build ccache python3-venv python3-pip optipng jq curl \
             python-is-python3 libicu-dev libfreetype-dev libharfbuzz-dev zlib1g-dev qt6-base-dev qt6-declarative-dev \
