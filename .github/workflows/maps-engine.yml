@@ -1,0 +1,145 @@
+name: Prototipo di Eurise Mappe
+
+# Punto 6 della road map, Mappe: compila CoMaps (Apache 2.0, comunitario, su F-Droid) per arm64 con il nome e il pacchetto
+# di Eurise (eu.eurise.maps) e la chiave di debug della suite; misura tempo e peso. Vedi maps/EURISE.md.
+# Parte a mano (Actions → Prototipo di Eurise Mappe → Run workflow) o quando cambiano i suoi file.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/maps-engine.yml"
+      - "maps/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maps-engine
+  cancel-in-progress: false
+
+env:
+  COMAPS_REPO: https://codeberg.org/comaps/comaps.git
+  # Commit fissato (11 novembre 2026). Per aggiornare CoMaps si cambia qui e si riprova.
+  COMAPS_COMMIT: df67cc017b1755b456180c3db258d519e1788bb7
+  JAVA_HOME: /usr/lib/jvm/temurin-21-jdk-amd64
+
+jobs:
+  mappe:
+    name: Eurise Mappe (CoMaps, arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fa spazio sul disco
+        run: |
+          echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /usr/local/share/powershell || true
+          df -h / | tail -1
+
+      - name: Installa gli strumenti
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ninja-build ccache python3-venv python3-pip optipng \
+            libfreetype-dev libharfbuzz-dev zlib1g-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev libqt6svg6-dev >/dev/null
+          pip install "protobuf<3.21" --break-system-packages -q
+          ccache -M 3G
+          echo "CCACHE_DIR=$HOME/.ccache" >> "$GITHUB_ENV"
+
+      - name: Scarica CoMaps (commit fissato, sottomoduli senza storia)
+        run: |
+          t0=$(date +%s)
+          mkdir -p "$HOME/comaps" && cd "$HOME/comaps"
+          git init -q && git remote add origin "$COMAPS_REPO"
+          git fetch -q --depth 1 origin "$COMAPS_COMMIT"
+          git checkout -q FETCH_HEAD
+          git submodule update --depth 1 --init --recursive --jobs=$(( $(nproc) * 8 ))
+          du -sh "$HOME/comaps" | tee -a "$RUNNER_TEMP/misure.txt"
+          echo "scarico $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Adatta a Eurise
+        run: python3 maps/eurise_patch.py "$HOME/comaps" app/debug-key/eurise-debug.keystore
+
+      - name: Riprende la ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache
+          key: maps-ccache-${{ env.COMAPS_COMMIT }}-${{ github.run_id }}
+          restore-keys: maps-ccache-
+
+      - name: Configura (stili, simboli, testi, mappe del mondo)
+        run: |
+          t0=$(date +%s)
+          cd "$HOME/comaps" && ./configure.sh
+          echo "configura $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Compila (FdroidDebug, arm64)
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        run: |
+          t0=$(date +%s)
+          cd "$HOME/comaps/android"
+          if ! ./gradlew --no-daemon -Parm64 assembleFdroidDebug > "$RUNNER_TEMP/gradle.log" 2>&1; then
+            grep -E "error:|FAILED|What went wrong" -A3 "$RUNNER_TEMP/gradle.log" | head -60
+            tail -40 "$RUNNER_TEMP/gradle.log"
+            exit 1
+          fi
+          grep -E "BUILD" "$RUNNER_TEMP/gradle.log" || true
+          echo "compila $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+          ccache -s | head -20
+
+      - name: Salva la ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache
+          key: maps-ccache-${{ env.COMAPS_COMMIT }}-${{ github.run_id }}
+
+      - name: Misura
+        if: always()
+        run: |
+          apk=$(ls "$HOME"/comaps/android/app/build/outputs/apk/fdroid/debug/*.apk 2>/dev/null | head -1 || true)
+          mkdir -p out
+          {
+            echo "## Eurise Mappe (CoMaps ${COMAPS_COMMIT:0:8}, arm64)"
+            echo
+            echo "| Fase | Minuti |"
+            echo "|---|---|"
+            while read -r name secs; do echo "| $name | $(( secs / 60 )) |"; done < "$RUNNER_TEMP/tempi.txt"
+            echo "| totale | $(( ($(date +%s) - T0) / 60 )) |"
+            echo
+            if [ -n "$apk" ]; then
+              cp "$apk" out/eurise-mappe-debug.apk
+              echo "APK: **$(du -m "$apk" | cut -f1) MB** ($(stat -c %s "$apk") byte)"
+              echo
+              echo "| Parte dell'APK | MB (compressi) |"
+              echo "|---|---|"
+              python3 - "$apk" <<'PY'
+          import sys, zipfile, collections
+          z = zipfile.ZipFile(sys.argv[1])
+          parts = collections.Counter()
+          for i in z.infolist():
+              n = i.filename
+              key = ("librerie " + n.split("/")[-1]) if n.startswith("lib/") else \
+                    ("assets/" + n.split("/")[1]) if n.startswith("assets/") and n.count("/") > 1 else \
+                    ("assets (file)" if n.startswith("assets/") else "codice e risorse")
+              parts[key] += i.compress_size
+          for k, v in parts.most_common(15):
+              print(f"| {k} | {v / 1048576:.1f} |")
+          PY
+            else
+              echo "APK non prodotto: vedi il registro di Gradle nell'artefatto."
+            fi
+            echo
+            cat "$RUNNER_TEMP/misure.txt" 2>/dev/null | sed 's/^/Sorgenti: /'
+          } | tee -a "$GITHUB_STEP_SUMMARY" > out/misure.md
+          cp "$RUNNER_TEMP/gradle.log" out/ 2>/dev/null || true
+
+      - name: Carica l'APK e le misure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-mappe-debug-${{ github.run_number }}
+          path: out/
