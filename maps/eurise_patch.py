@@ -60,3 +60,57 @@ if old_vp not in v:
 vp.write_text(v.replace(old_vp, """      // Eurise: solo le densità che restano nell'APK (maps/eurise_slim.py).
       {"xhdpi", kXhdpiScale}, {"6plus", k6plusScale}, {"xxhdpi", kXxhdpiScale},"""))
 print("eurise_patch: simboli xhdpi, 6plus, xxhdpi")
+
+# File nostri (maps/android/…) copiati sopra l'albero di CoMaps: «Segnala qui» (tavola MapSegnala) e i suoi testi.
+ours = Path(__file__).resolve().parent / "android"
+for f in ours.rglob("*"):
+    if f.is_file():
+        dest = root / "android" / f.relative_to(ours)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(f, dest)
+
+
+def patch(path: Path, old: str, new: str) -> None:
+    t = path.read_text()
+    if old not in t:
+        sys.exit(f"eurise_patch: non trovo {old[:70]!r} in {path}")
+    path.write_text(t.replace(old, new, 1))
+
+
+pp = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "placepage"
+# Il pulsante «Segnala» nella scheda del luogo (oltre il quarto va nel menu «Altro», come gli altri).
+patch(pp / "PlacePageButtons.java", "    ROUTE_AVOID_UNPAVED,\n    MORE", "    ROUTE_AVOID_UNPAVED,\n    EURISE_REPORT,\n    MORE")
+patch(pp / "PlacePageButtonFactory.java", "      case MORE ->", """      case EURISE_REPORT ->
+      {
+        titleId = R.string.eurise_report;
+        yield R.drawable.eurise_ic_report;
+      }
+      case MORE ->""")
+patch(pp / "PlacePageController.java", "    case ROUTE_AVOID_FERRY -> onAvoidFerryBtnClicked();",
+      """    case ROUTE_AVOID_FERRY -> onAvoidFerryBtnClicked();
+    case EURISE_REPORT ->
+    {
+      if (mMapObject != null)
+        app.organicmaps.eurise.EuriseReportActivity.open(requireActivity(), mMapObject.getLat(), mMapObject.getLon(),
+                                                         mMapObject.getTitle());
+    }""")
+patch(pp / "PlacePageController.java", """          buttons.add(mapObject.isBookmark() ? PlacePageButtons.ButtonType.BOOKMARK_DELETE
+                                             : PlacePageButtons.ButtonType.BOOKMARK_SAVE);
+      }
+    }
+    mViewModel.setCurrentButtons(buttons);""", """          buttons.add(mapObject.isBookmark() ? PlacePageButtons.ButtonType.BOOKMARK_DELETE
+                                             : PlacePageButtons.ButtonType.BOOKMARK_SAVE);
+      }
+      buttons.add(PlacePageButtons.ButtonType.EURISE_REPORT);
+    }
+    mViewModel.setCurrentButtons(buttons);""")
+patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml", """    <activity
+        android:name="app.organicmaps.MwmActivity\"""", """    <activity
+        android:name="app.organicmaps.eurise.EuriseReportActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:exported="false"
+        android:windowSoftInputMode="adjustResize" />
+
+    <activity
+        android:name="app.organicmaps.MwmActivity\"""")
+print("eurise_patch: «Segnala qui» nella scheda del luogo")

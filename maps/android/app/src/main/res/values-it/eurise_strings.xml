@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eurise_report">Segnala</string>
+    <string name="eurise_report_title">Segnala qui</string>
+    <string name="eurise_report_works">Lavori</string>
+    <string name="eurise_report_closed">Strada chiusa</string>
+    <string name="eurise_report_obstacle">Ostacolo fisso</string>
+    <string name="eurise_report_camera">Autovelox fisso</string>
+    <string name="eurise_report_limit">Limite sbagliato</string>
+    <string name="eurise_report_other">Altro errore</string>
+    <string name="eurise_report_hint">Aggiungi un dettaglio (facoltativo)</string>
+    <string name="eurise_report_osm_title">Va su OpenStreetMap, la mappa di tutti</string>
+    <string name="eurise_report_osm_anon">Senza account diventa una nota anonima che i volontari controllano. Con l\'account OSM (Impostazioni › OpenStreetMap) la correggi tu.</string>
+    <string name="eurise_report_osm_account">Esce come nota con il tuo account OSM; puoi anche correggere tu la mappa con l\'editor.</string>
+    <string name="eurise_report_privacy">Esce solo il punto segnalato e il testo, niente su di te.</string>
+    <string name="eurise_report_live_later">Polizia, incidenti e code in tempo reale: in programma, quando la suite potrà sostenere un servizio suo.</string>
+    <string name="eurise_report_send">Invia «%1$s»</string>
+    <string name="eurise_report_sent">Inviata a OpenStreetMap. Grazie!</string>
+    <string name="eurise_report_failed">Non inviata: controlla la connessione e riprova</string>
+</resources>
