@@ -47,3 +47,16 @@ if old not in s:
     sys.exit(f"eurise_patch: non trovo project_name in {strings}")
 strings.write_text(s.replace(old, '<string name="project_name" translatable="false">Eurise Mappe</string>'))
 print("eurise_patch: Eurise Mappe, eu.eurise.maps, chiave di debug della suite")
+
+# Densità dei simboli: eurise_slim.py tiene xhdpi, 6plus e xxhdpi; la tabella di VisualParams deve sceglierne una di quelle.
+vp = root / "libs" / "drape_frontend" / "visual_params.cpp"
+v = vp.read_text()
+old_vp = """      {"mdpi", kMdpiScale},
+
+      {"hdpi", kHdpiScale},     {"xhdpi", kXhdpiScale},     {"6plus", k6plusScale},
+      {"xxhdpi", kXxhdpiScale}, {"xxxhdpi", kXxxhdpiScale},"""
+if old_vp not in v:
+    sys.exit(f"eurise_patch: non trovo la tabella delle densità in {vp}")
+vp.write_text(v.replace(old_vp, """      // Eurise: solo le densità che restano nell'APK (maps/eurise_slim.py).
+      {"xhdpi", kXhdpiScale}, {"6plus", k6plusScale}, {"xxhdpi", kXxhdpiScale},"""))
+print("eurise_patch: simboli xhdpi, 6plus, xxhdpi")

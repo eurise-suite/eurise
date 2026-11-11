@@ -12,6 +12,14 @@ Non Organic Maps: dall'agosto 2025 i suoi dati delle mappe hanno una licenza non
   nella cache di Actions. Java 21 come chiede CoMaps.
 - Artefatto `eurise-mappe-debug-N`: APK, misure (tempo per fase, peso per parte dell'APK), registro di Gradle.
 
+## Peso (giro 5, 11 novembre)
+Giro 3: APK arm64 di 57 MB (simboli 11,7, mappe del mondo e file 11,5, caratteri 10,1, codice e risorse 10,1, nomi dei
+paesi 6,7, libreria 6,0). `maps/eurise_slim.py`, dopo `configure.sh`, toglie: simboli mdpi, hdpi e xxxhdpi (restano
+xhdpi, 6plus, xxhdpi; `eurise_patch.py` aggiorna la tabella di `VisualParams`), i caratteri delle scritture rare (CJK,
+tibetano, birmano, khmer, code2000: il motore usa i Noto del sistema e salta i file che mancano), i nomi dei paesi nelle
+lingue non europee (per quelle il motore usa l'inglese). Stima: circa 17 MB in meno. Dopo: caratteri rari scaricabili a
+richiesta nella cartella dei dati dell'app (il motore li cerca anche lì), se servono.
+
 ## Passi seguenti (dalle tavole approvate: MapGuida, MapEsplora, MapAttivita, MapLivelli, MapPercorso, MapCerca)
 1. Prova del prototipo sul telefono così com'è (CoMaps con il nostro nome).
 2. Stile della suite: tema Perla/Notte, barra satinata, icone EuriseIcons; schermate nuove in Compose dove si può

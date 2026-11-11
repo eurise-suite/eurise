@@ -57,7 +57,7 @@ jobs:
           git fetch -q --depth 1 origin "$COMAPS_COMMIT"
           git checkout -q FETCH_HEAD
           git submodule update --depth 1 --init --recursive --jobs=$(( $(nproc) * 8 ))
-          du -sh "$HOME/comaps" | tee -a "$RUNNER_TEMP/misure.txt"
+          echo "sorgenti $(du -sh "$HOME/comaps" | cut -f1)" | tee -a "$RUNNER_TEMP/misure.txt"
           echo "scarico $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
       - name: Adatta a Eurise
@@ -75,6 +75,11 @@ jobs:
           t0=$(date +%s)
           cd "$HOME/comaps" && ./configure.sh
           echo "configura $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      - name: Alleggerisce (simboli, caratteri rari, nomi dei paesi)
+        run: |
+          set -o pipefail
+          python3 maps/eurise_slim.py "$HOME/comaps" | tee -a "$RUNNER_TEMP/misure.txt"
 
       - name: Compila (FdroidRelease, arm64, firmata con la chiave di debug della suite)
         env:
@@ -135,7 +140,7 @@ jobs:
               echo "APK non prodotto: vedi il registro di Gradle nell'artefatto."
             fi
             echo
-            cat "$RUNNER_TEMP/misure.txt" 2>/dev/null | sed 's/^/Sorgenti: /'
+            cat "$RUNNER_TEMP/misure.txt" 2>/dev/null | sed 's/^/- /'
           } | tee -a "$GITHUB_STEP_SUMMARY" > out/misure.md
           cat out/misure.md
           cp "$RUNNER_TEMP/gradle.log" out/ 2>/dev/null || true
