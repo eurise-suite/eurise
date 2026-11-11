@@ -93,8 +93,11 @@ tasks.matching { it.name.contains("lint", ignoreCase = true) }.configureEach { d
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:suite"))
-    // Motore Gecko: versione stabile più recente per arm64 (il registro di Gradle la scrive; si fissa dopo la prova).
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:+")
+    // Motore Gecko per arm64. GeckoView 160 (novembre 2026) chiede compileSdk 37 e un Android Gradle Plugin più nuovo
+    // di quello della suite (8.7.3): per il prototipo la versione più recente che compila con compileSdk 35. Prima della
+    // versione ufficiale va aggiornato il plugin per tutta la suite e si torna all'ultima GeckoView (aggiornamenti di
+    // sicurezza del motore).
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:[130.0,142.0)")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
