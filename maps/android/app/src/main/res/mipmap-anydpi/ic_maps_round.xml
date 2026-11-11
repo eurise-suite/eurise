@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Per Android prima dell'8: fondo blu notte e simbolo, senza la maschera adattiva. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/eurise_icon_background" />
+    <item android:drawable="@drawable/ic_maps_foreground" />
+</layer-list>

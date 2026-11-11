@@ -114,3 +114,15 @@ patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml", """    
     <activity
         android:name="app.organicmaps.MwmActivity\"""")
 print("eurise_patch: «Segnala qui» nella scheda del luogo")
+
+# Stile della suite (Perla e Notte) nei colori di CoMaps: maps/eurise_style.py.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import eurise_style  # noqa: E402
+
+eurise_style.restyle(root)
+
+# Icona della suite (docs/brand/android/maps, famiglia «Firma di stella»): i file sono in maps/android, qui il manifest.
+patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
+      '      android:icon="@mipmap/ic_launcher"\n',
+      '      android:icon="@mipmap/ic_maps"\n      android:roundIcon="@mipmap/ic_maps_round"\n')
+print("eurise_patch: icona di Eurise Mappe")

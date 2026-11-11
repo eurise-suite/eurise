@@ -21,6 +21,11 @@ tibetano, birmano, khmer, code2000: il motore usa i Noto del sistema e salta i f
 lingue non europee (per quelle il motore usa l'inglese). Stima: circa 17 MB in meno. Dopo: caratteri rari scaricabili a
 richiesta nella cartella dei dati dell'app (il motore li cerca anche lì), se servono.
 
+## Stile della suite (giro 8, 12 novembre)
+`maps/eurise_style.py` (chiamato da `eurise_patch.py`) riscrive i valori dei colori di CoMaps: tema Material 3 e colori
+di base delle schermate a View diventano Perla (chiaro, accento blu notte) e Notte (scuro, accento azzurro); 100 colori,
+provati sui sorgenti del commit fissato. Icona della suite (`docs/brand/android/maps`) al posto di quella di CoMaps.
+
 ## Passi seguenti (dalle tavole approvate: MapGuida, MapEsplora, MapAttivita, MapLivelli, MapPercorso, MapCerca)
 1. Prova del prototipo sul telefono così com'è (CoMaps con il nostro nome).
 2. Stile della suite: tema Perla/Notte, barra satinata, icone EuriseIcons; schermate nuove in Compose dove si può
