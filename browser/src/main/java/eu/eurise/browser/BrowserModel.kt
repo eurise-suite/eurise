@@ -25,7 +25,7 @@ class BrowserModel(private val context: Context) {
     var engine by mutableStateOf(Links.engine(prefs.getString("engine", null)))
         private set
 
-    fun setEngine(e: Links.Engine) {
+    fun chooseEngine(e: Links.Engine) {
         engine = e
         prefs.edit().putString("engine", e.id).apply()
     }

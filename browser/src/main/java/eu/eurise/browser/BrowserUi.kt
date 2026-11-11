@@ -213,7 +213,7 @@ fun BrowserScreen(model: BrowserModel, onImport: () -> Unit, onListen: (String) 
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                         .background(if (on) scheme.primary.copy(alpha = 0.12f) else scheme.surface)
-                        .clickable(role = Role.RadioButton) { model.setEngine(e); sheet = Sheet.None }
+                        .clickable(role = Role.RadioButton) { model.chooseEngine(e); sheet = Sheet.None }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
