@@ -983,7 +983,9 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
 - **Mappe, peso** (giro 5 del lavoro «Prototipo di Eurise Mappe»): `maps/eurise_slim.py` dopo `configure.sh` toglie simboli
   mdpi/hdpi/xxxhdpi (restano xhdpi, 6plus, xxhdpi; `eurise_patch.py` aggiorna la tabella di `VisualParams`), i caratteri delle
   scritture rare (il motore usa i Noto del sistema) e i nomi dei paesi in lingue non europee (si ripiega sull'inglese).
-  Stima: da 57 a circa 40 MB. Da controllare: misure del giro e, sul telefono, simboli e scritte della mappa.
+  Giro 6: **APK da 57 a 41 MB** (simboli 11,7 → 6,4; caratteri 10,1 → 1,6; nomi dei paesi 6,7 → 4,3). I file restano su
+  disco ed escono dall'APK con `ignoreAssetsPattern` (cancellarli non funziona: Gradle rigenera i simboli). Da controllare
+  sul telefono: simboli e scritte della mappa.
   I sorgenti di CoMaps si leggono anche dal mirror GitHub `comaps/comaps` (Codeberg non è raggiungibile dall'ambiente di Claude).
 - **Sistemi (regola fissa nuova in CLAUDE.md)**: Browser e Office per /e/OS, Android e Linux con Ubuntu e Fedora come
   riferimento, struttura nucleo/interfaccia/guscio per arrivare ad altri sistemi. Proposta in `docs/PIATTAFORME.md`
@@ -993,6 +995,11 @@ del Browser; prototipo di Eurise AI; poi codice di quanto approvato (bolla, Mapp
 - **Mappe, ancora da fare** (dopo la prova del prototipo sul telefono): stile della suite, cartello colorato per tipo di
   strada con i metri in tempo reale, «Vedi su Booking / Tripadvisor», segnalazioni OSM (tavola MapSegnala da approvare),
   Android Auto nello stile nuovo, caratteri rari scaricabili a richiesta se servono.
+
+- **APK da scaricare direttamente**: pre-release `apk-prova` (https://github.com/eurise-suite/eurise/releases/tag/apk-prova),
+  con tutti gli APK dell'ultimo «Compila» riuscito sul ramo brand **e l'ultimo di Eurise Mappe**. Si ripubblica quando
+  cambia `.github/workflows/apk-prova.yml` (basta toccarne un commento: il lancio a mano non va, il file non è su `main`).
+- **Ultimo APK: 263** (in `apk-prova`; Mappe giro 6).
 
 **Prossimo passo**: approvazioni (tavole Office, seconda fila del Browser, MapSegnala, BolRispondi/BolAllega, TastCerca;
 Gecko per il Browser e interfaccia web per Office); prove sul telefono (editor da altre app, Mappe alleggerita, scanner,
