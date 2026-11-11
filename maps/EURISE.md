@@ -17,6 +17,10 @@ Non Organic Maps: dall'agosto 2025 i suoi dati delle mappe hanno una licenza non
 2. Stile della suite: tema Perla/Notte, barra satinata, icone EuriseIcons; schermate nuove in Compose dove si può
    (CoMaps usa le View di Android: si parte da ricerca, livelli e scheda del luogo).
 3. Guida: velocità attuale e limite (OSM), frase d'arrivo, meteo sul percorso da `core/data/weather`.
+   Richiesta del proprietario (11 novembre): il cartello dell'indicazione prende il colore del tipo di strada, con le tinte
+   della suite (autostrada = verde della suite, statale/extraurbana principale = blu della suite, provinciale e comunale
+   con tinte proprie); i metri alla svolta si aggiornano in tempo reale (a passi di 10 m sotto i 200 m, poi 50/100 m).
+   In CoMaps la classe della strada c'è già (tag `highway` di OSM: motorway, trunk, primary, secondary…).
 4. Suite: «dove devi andare» da Calendario, Viaggi e Rubrica; manda l'arrivo con Messaggi; percorso legato all'impegno.
 5. Benzinai col prezzo (open data MIMIT, CSV quotidiani, licenza IODL 2.0; dal 10 febbraio 2026 è cambiato il separatore).
 6. Centro privacy: cosa resta sul telefono (mappe, percorsi) e cosa esce (download delle mappe, prezzi, meteo).

@@ -10,6 +10,8 @@
     <string name="scan_status_search">Inquadra il documento</string>
     <string name="scan_status_found">Documento trovato</string>
     <string name="scan_status_hold">Fermo così · scatto automatico</string>
+    <string name="qr_status_seen">Codice visto · tieni fermo</string>
+    <string name="qr_status_read">Letto</string>
     <string name="scan_status_next">Metti il foglio successivo</string>
     <string name="scan_confirm_title">Pagina %1$d: va bene?</string>
     <string name="scan_confirm_hint">I bordi si correggono anche dopo, nella revisione.</string>

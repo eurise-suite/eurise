@@ -859,6 +859,12 @@ sul telefono); conferma di Office a richiesta; segnalazioni del proprietario dal
   base), traduzione (c'è già in Leggi), «chi può chiedere» per app, registro d'uso. Motore proposto: llama.cpp (MIT) dai
   sorgenti in `third_party/` come Tesseract per Leggi; prima un prototipo che misura peso e velocità.
 
+- **Lettore QR**: mirino animato (angoli, linea che scorre mentre cerca; angoli azzurri che pulsano e «Codice visto · tieni
+  fermo» quando ZXing trova i tre quadrati ma non legge ancora; verdi e più stretti per un attimo quando legge).
+- **Bolla Documenti**: il pulsante Scanner apre lo scanner della suite (prima cercava un'app di scansione installata).
+- **Mappe, guida**: cartello dell'indicazione colorato per tipo di strada con le tinte della suite (autostrada verde,
+  statale blu…) e metri alla svolta in tempo reale: requisito scritto in `maps/EURISE.md`, da fare con lo stile di Mappe.
+
 **Prossimo passo**: prova sul telefono dello scanner nuovo (APK 252) e della barra a 9; approvazione della seconda fila del
 Browser, scelta del motore del browser e del motore di ricerca; decisione sulle segnalazioni in Mappe; poi Eurise AI
 (prototipo llama.cpp), riduzione del peso di Mappe e stile della suite su Mappe.

@@ -178,6 +178,9 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
     var camera by remember { mutableStateOf<Camera?>(null) }
     val modeNow = remember { java.util.concurrent.atomic.AtomicReference(if (startQr) ScanMode.Qr else ScanMode.Document) }
     var qr by remember { mutableStateOf<String?>(null) }
+    // Lettore QR: «visto» quando c'è un codice nel mirino ma non si legge ancora, «preso» quando è letto.
+    var qrSeen by remember { mutableStateOf(false) }
+    var qrLock by remember { mutableStateOf(false) }
     val qrShown = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var qrHistory by remember { mutableStateOf(false) }
     var qrCreate by remember { mutableStateOf(false) }
@@ -298,10 +301,17 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                                 analysis.setAnalyzer(analyzer) { image ->
                                     if (modeNow.get() == ScanMode.Qr) {
-                                        val text = if (qrShown.get()) null else decodeQr(image)
+                                        val read = if (qrShown.get()) QrRead(null, false) else decodeQr(image)
                                         image.close()
+                                        val text = read.text
                                         if (text != null && qrShown.compareAndSet(false, true)) {
-                                            ContextCompat.getMainExecutor(ctx).execute { qr = text }
+                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                // Un attimo di conferma nel mirino (verde, si stringe), poi i dati.
+                                                qrLock = true
+                                                scope.launch { kotlinx.coroutines.delay(380); qr = text; qrLock = false; qrSeen = false }
+                                            }
+                                        } else if (text == null) {
+                                            ContextCompat.getMainExecutor(ctx).execute { qrSeen = read.seen }
                                         }
                                         return@setAnalyzer
                                     }
@@ -343,9 +353,12 @@ private fun Camera(pages: MutableList<File>, origins: MutableMap<File, Origin>, 
                     }
                 }
             }
+            if (mode == ScanMode.Qr) QrViewfinder(seen = qrSeen, locked = qrLock, modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f))
             Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 DarkRound(EuriseIcons.close(), stringResource(R.string.scan_close), onClose)
                 val status = when {
+                    mode == ScanMode.Qr && qrLock -> R.string.qr_status_read
+                    mode == ScanMode.Qr && qrSeen -> R.string.qr_status_seen
                     mode == ScanMode.Qr -> R.string.scan_status_qr
                     busy -> R.string.scan_status_saving
                     !auto.armed && confirm == null -> R.string.scan_status_next
@@ -425,7 +438,10 @@ private var liveFrame = 0
  * Un fotogramma per volta: il centro (dove si punta, più veloce), poi l'immagine intera; ogni tanto anche i colori
  * invertiti (codici chiari su fondo scuro). Il lettore si azzera dopo ogni tentativo, come chiede ZXing.
  */
-private fun decodeQr(image: ImageProxy): String? {
+/** Esito di un fotogramma: il testo se letto; [seen] se nel mirino c'è un QR riconoscibile ma non ancora leggibile. */
+private class QrRead(val text: String?, val seen: Boolean)
+
+private fun decodeQr(image: ImageProxy): QrRead {
     val plane = image.planes[0]
     val buffer = plane.buffer
     val w = image.width
@@ -450,14 +466,69 @@ private fun decodeQr(image: ImageProxy): String? {
     }
     for (source in attempts) {
         try {
-            return LiveReader.decodeWithState(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text
+            return QrRead(LiveReader.decodeWithState(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))).text, true)
         } catch (e: com.google.zxing.ReaderException) {
             // si prova la variante successiva
         } finally {
             LiveReader.reset()
         }
     }
-    return null
+    // Non si legge: si guarda almeno se nel centro ci sono i tre quadrati di un QR (per dire «tieni fermo»).
+    val seen = try {
+        com.google.zxing.qrcode.detector.Detector(com.google.zxing.common.HybridBinarizer(center).blackMatrix).detect()
+        true
+    } catch (e: com.google.zxing.ReaderException) {
+        false
+    } catch (e: RuntimeException) {
+        false
+    }
+    return QrRead(null, seen)
+}
+
+/**
+ * Il mirino del lettore: quattro angoli e una linea che scorre mentre cerca; angoli azzurri che pulsano quando vede un
+ * codice; verdi e più stretti quando lo ha letto.
+ */
+@Composable
+private fun QrViewfinder(seen: Boolean, locked: Boolean, modifier: Modifier) {
+    val loop = androidx.compose.animation.core.rememberInfiniteTransition(label = "qr")
+    val sweep by loop.animateFloat(
+        0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1700), androidx.compose.animation.core.RepeatMode.Reverse), label = "sweep",
+    )
+    val pulse by loop.animateFloat(
+        0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(520), androidx.compose.animation.core.RepeatMode.Reverse), label = "pulse",
+    )
+    val shrink by androidx.compose.animation.core.animateFloatAsState(if (locked) 0.86f else if (seen) 0.94f else 1f, label = "shrink")
+    val color by androidx.compose.animation.animateColorAsState(
+        when { locked -> Color(0xFF93BBA0); seen -> Color(0xFFA9C1F2); else -> Color.White }, label = "color",
+    )
+    Canvas(modifier) {
+        val side = minOf(size.width, size.height) * 0.64f * shrink
+        val left = (size.width - side) / 2
+        val top = (size.height - side) / 2
+        val arm = side * 0.2f
+        val width = (if (seen && !locked) 5f + 2f * pulse else 5f).dp.toPx()
+        val stroke = Stroke(width = width, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        // Velo fuori dal mirino: l'occhio va al centro.
+        drawRect(Color(0x66000000), size = androidx.compose.ui.geometry.Size(size.width, top))
+        drawRect(Color(0x66000000), topLeft = Offset(0f, top + side), size = androidx.compose.ui.geometry.Size(size.width, size.height - top - side))
+        drawRect(Color(0x66000000), topLeft = Offset(0f, top), size = androidx.compose.ui.geometry.Size(left, side))
+        drawRect(Color(0x66000000), topLeft = Offset(left + side, top), size = androidx.compose.ui.geometry.Size(size.width - left - side, side))
+        listOf(
+            Triple(Offset(left, top), 1f, 1f), Triple(Offset(left + side, top), -1f, 1f),
+            Triple(Offset(left, top + side), 1f, -1f), Triple(Offset(left + side, top + side), -1f, -1f),
+        ).forEach { (c, dx, dy) ->
+            val path = Path().apply { moveTo(c.x, c.y + dy * arm); lineTo(c.x, c.y); lineTo(c.x + dx * arm, c.y) }
+            drawPath(path, color, style = stroke)
+        }
+        if (!seen && !locked) {
+            val y = top + side * (0.08f + 0.84f * sweep)
+            drawLine(
+                androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color.Transparent, Color(0xCCA9C1F2), Color.Transparent), left, left + side),
+                Offset(left + side * 0.06f, y), Offset(left + side * 0.94f, y), strokeWidth = 2.5.dp.toPx(),
+            )
+        }
+    }
 }
 
 /** Il centro del fotogramma girato di 90°, per i codici a barre a una dimensione. */

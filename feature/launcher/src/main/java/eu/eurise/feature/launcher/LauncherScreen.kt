@@ -401,15 +401,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int) {
             onHealthGrant = { healthPermission.launch(viewModel.health.permissions) },
             onGadgetbridge = { runCatching { context.startActivity(viewModel.health.gadgetbridgeIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } },
             hazeState = hazeState,
-            onScan = {
-                // Lo scanner della suite non c'è ancora: si apre un'app di scansione installata, altrimenti la fotocamera.
-                val scanner = state.apps.firstOrNull { a ->
-                    a.euriseSection == null && (a.label.contains("scan", ignoreCase = true) || a.packageName.contains("scanner", ignoreCase = true) ||
-                        a.packageName.startsWith("de.schliweb.makeacopy"))
-                }
-                if (scanner != null) actions.openApp(scanner)
-                else runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            },
+            // Lo scanner della suite (sezione «scanner» dell'app Eurise).
+            onScan = { actions.openEurise("scanner") },
             onPlayer = {
                 val pkg = nowPlaying?.controller?.packageName
                 val intent = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) }
