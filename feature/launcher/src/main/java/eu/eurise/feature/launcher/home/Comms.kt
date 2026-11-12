@@ -110,7 +110,6 @@ fun CommsBody(
     onAppInfo: () -> Unit,
     onHub: () -> Unit,
 ) {
-    CommsApps(LocalBubbleActions.current)
     when {
         !enabled -> {
             PillLine(EuriseIcons.chat(), stringResource(R.string.setup_notifications), stringResource(R.string.grant), onGrant)
@@ -148,21 +147,6 @@ private fun MessageItem.hasBubble() = reply != null || history.isNotEmpty() || m
 @Composable
 private fun CommsRow(m: MessageItem, actions: BubbleActions?, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    // Le icone dirette (richiesta del proprietario): chiama, SMS, la chat con l'icona vera dell'app, email; solo per chi
-    // è in Rubrica. Prima la chat da cui ha scritto, poi chiamata e SMS.
-    val direct by androidx.compose.runtime.produceState(emptyList<eu.eurise.feature.launcher.contacts.ContactAction>(), m.conversation, actions) {
-        value = actions?.let { a -> runCatching { a.contactActions(m.conversation) }.getOrDefault(emptyList()) }.orEmpty()
-            .distinctBy { if (it.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat) it.label else it.kind.name }
-            .sortedBy { a ->
-                when {
-                    a.pkg != null && a.pkg == m.packageName -> 0
-                    a.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call -> 1
-                    a.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms -> 2
-                    a.kind == eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat -> 3
-                    else -> 4
-                }
-            }.take(3)
-    }
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -184,7 +168,6 @@ private fun CommsRow(m: MessageItem, actions: BubbleActions?, onClick: () -> Uni
                 color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
-        direct.forEach { a -> DirectIcon(a) { actions?.startAction?.invoke(a) } }
         Spacer(Modifier.width(6.dp))
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
@@ -339,57 +322,5 @@ internal fun ScrollWithBar(maxHeight: Dp, independent: Boolean = false, content:
             Column(Modifier.weight(1f), content = content)
             Spacer(Modifier.width(14.dp))
         }
-    }
-}
-
-/** La fila delle app in testa a «Ti hanno cercato»: un tocco apre WhatsApp, Telegram, il Telefono, l'email… */
-@Composable
-private fun CommsApps(actions: BubbleActions?) {
-    if (actions == null) return
-    val apps by androidx.compose.runtime.produceState(emptyList<eu.eurise.feature.launcher.contacts.ContactAction>(), actions) {
-        value = runCatching { actions.commsApps() }.getOrDefault(emptyList())
-    }
-    if (apps.isEmpty()) return
-    androidx.compose.foundation.layout.Row(
-        Modifier.fillMaxWidth().padding(bottom = 2.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        apps.forEach { a -> DirectIcon(a) { actions.startAction(a) } }
-    }
-}
-
-/** Un'icona diretta: le nostre per chiamata, SMS ed email; per le chat l'icona vera dell'app (WhatsApp, Telegram…). */
-@Composable
-private fun DirectIcon(a: eu.eurise.feature.launcher.contacts.ContactAction, onClick: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val app by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, a.pkg) {
-        value = a.pkg?.let { pkg ->
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                runCatching {
-                    val d = context.packageManager.getApplicationIcon(pkg)
-                    val b = android.graphics.Bitmap.createBitmap(48, 48, android.graphics.Bitmap.Config.ARGB_8888)
-                    d.setBounds(0, 0, 48, 48)
-                    d.draw(android.graphics.Canvas(b))
-                    b.asImageBitmap()
-                }.getOrNull()
-            }
-        }
-    }
-    Box(
-        Modifier.size(32.dp).clip(CircleShape).clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = a.label, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        val img = app
-        if (img != null) androidx.compose.foundation.Image(img, a.label, Modifier.size(20.dp).clip(CircleShape))
-        else Icon(
-            when (a.kind) {
-                eu.eurise.feature.launcher.contacts.ContactAction.Kind.Call -> EuriseIcons.phone()
-                eu.eurise.feature.launcher.contacts.ContactAction.Kind.Sms -> EuriseIcons.message()
-                eu.eurise.feature.launcher.contacts.ContactAction.Kind.Chat -> EuriseIcons.chat()
-                eu.eurise.feature.launcher.contacts.ContactAction.Kind.Email -> EuriseIcons.mail()
-            },
-            a.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp),
-        )
     }
 }

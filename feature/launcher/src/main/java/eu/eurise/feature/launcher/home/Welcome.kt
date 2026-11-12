@@ -60,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -526,10 +527,8 @@ private fun PersonRow(
                 Text(person.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 person.via?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
             }
-            // Un'icona per modo: chiamata, SMS, ogni app di chat con la sua icona, email (la prima di ciascun tipo).
-            actions.orEmpty().distinctBy { if (it.kind == ContactAction.Kind.Chat) it.label else it.kind.name }.take(6).forEach { a ->
-                ActionIcon(a) { onAction(a) }
-            }
+            // Nessuna icona accanto al nome (richiesta del proprietario): i modi per raggiungerla sono nella tendina.
+            Icon(EuriseIcons.chevronRight(2f), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = if (expanded) 90f else 0f })
         }
         if (expanded) {
             Column(Modifier.padding(start = 52.dp, bottom = 6.dp)) {
@@ -558,20 +557,23 @@ private fun PersonRow(
     }
 }
 
-@Composable
-private fun ActionIcon(a: ContactAction, onClick: () -> Unit) {
-    Box(
-        Modifier.size(34.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = a.label, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { ActionGlyph(a, 18.dp) }
-}
-
-/** Il simbolo di un modo: i nostri per chiamata, SMS ed email; per le chat l'icona vera dell'app (WhatsApp, Telegram…). */
+/**
+ * Il simbolo di un modo nella tendina: l'icona dell'app che lo fa (anche per chiamata, SMS ed email: telefono, messaggi
+ * e posta predefiniti), nel tema di icone scelto, come nel cassetto. Senza app, il nostro simbolo nel colore d'accento.
+ */
 @Composable
 private fun ActionGlyph(a: ContactAction, size: androidx.compose.ui.unit.Dp) {
-    val app = a.pkg?.let { appIcon(it) }
-    if (app != null) {
-        androidx.compose.foundation.Image(app, a.label, Modifier.size(size + 2.dp).clip(CircleShape))
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val pkg = remember(a) { a.pkg ?: eu.eurise.feature.launcher.contacts.DefaultApps.packageFor(context, a.kind) }
+    if (pkg != null) {
+        val entry = remember(pkg) {
+            eu.eurise.feature.launcher.apps.AppEntry(
+                key = pkg, label = a.label, packageName = pkg,
+                component = context.packageManager.getLaunchIntentForPackage(pkg)?.component,
+                category = eu.eurise.feature.launcher.apps.Category.Communication,
+            )
+        }
+        eu.eurise.feature.launcher.apps.AppIcon(entry, size + 8.dp, dark = androidx.compose.foundation.isSystemInDarkTheme())
     } else {
         Icon(
             when (a.kind) {
