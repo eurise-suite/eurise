@@ -1356,3 +1356,11 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   chiavi sul server) e **ChatVerifica** (sette figure SAS di Matrix da confrontare, Sono uguali / Non sono uguali,
   dispositivi collegati con «Esci», verifica di una persona dalla chat). Dopo l'approvazione: codice in `chat/` con
   crypto-android (backup delle chiavi, `bootstrapCrossSigning`, verifica SAS).
+- **Ultimo APK: giro 320** (Compila APK run 43172446974, pubblicato in `apk-prova` dal run 43174430865) con Browser,
+  Drive e **Mappe giro 13** (guida). Test nuovi: `SessionsTest`, `ReadingTest` (browser), `DriveSmartTest` (drive).
+- Lezione: con `str.replace` su un testo che compare due volte (`/** «Sito PC»`) il codice nuovo finisce due volte; contare
+  prima le occorrenze.
+- **Prossimi passi**: prova sul telefono (Lettura e strumenti, Immagini no, schede a gruppi e sessioni, Riordina con copie e
+  nomi, ricerca nel testo dei PDF, guida di Mappe con cartello colorato e metri fini, più le prove del giro 316 di Chat,
+  Email, Browser); approvazione di ChatRecupero e ChatVerifica, poi il loro codice; Mappe: meteo sul percorso e frase
+  d'arrivo; Browser: schede affiancate sul tablet.
