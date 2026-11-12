@@ -96,4 +96,13 @@
     <string name="ml_closed_go">Ho capito, collega</string>
     <string name="ml_app_password">%1$s non accetta la password normale da un\'app: crea una «password per le app» (serve la verifica in due passaggi) e incollala qui sopra al posto della password.</string>
     <string name="ml_app_password_go">Crea la password su %1$s</string>
+    <!-- Pillola della lettura -->
+    <string name="ml_forward">Inoltra</string>
+    <string name="ml_move_to">Sposta in</string>
+    <string name="ml_spam">Spam</string>
+    <string name="ml_spammed">Segnato come spam</string>
+    <string name="ml_moved">Spostato</string>
+    <string name="ml_move_to_title">Sposta in…</string>
+    <string name="ml_no_folders">Nessuna altra cartella in questa casella, oppure il server non risponde.</string>
+    <string name="ml_forward_header">---------- Messaggio inoltrato ----------\nDa: %1$s &lt;%2$s&gt;\nData: %3$s\nOggetto: %4$s</string>
 </resources>

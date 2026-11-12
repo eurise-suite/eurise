@@ -66,6 +66,24 @@
         <intent><action android:name="com.anddoes.launcher.THEME" /></intent>
         <intent><action android:name="com.gau.go.launcherex.theme" /></intent>
         <intent><action android:name="app.lawnchair.icons.THEMED_ICON" /></intent>
+        <!-- La dock: le app che aprono mappe, SMS, posta e pagine web (tavola ScrDockTieni). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 
     <application>

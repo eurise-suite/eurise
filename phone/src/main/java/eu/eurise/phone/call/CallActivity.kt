@@ -215,12 +215,17 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
             }
             if (item != null && item.state != Call.STATE_RINGING) {
                 Spacer(Modifier.height(12.dp))
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                    Text(stringResource(R.string.ph_call_note), color = Color(0xFF56564F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    BasicTextField(
-                        note, { note = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
-                        textStyle = TextStyle(color = Color(0xFF1E1D1B), fontSize = 15.sp), cursorBrush = SolidColor(Navy),
-                    )
+                // La nota della chiamata ha lo stesso stile del riquadro «Prima di rispondere» (correzione del proprietario):
+                // velo sul blu, titolo dorato in maiuscolo, testo bianco.
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Veil).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.ph_call_note).uppercase(Locale.getDefault()), color = Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.9.sp)
+                    Box(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
+                        if (note.isEmpty()) Text(stringResource(R.string.ph_call_note_hint), color = Soft, fontSize = 14.sp)
+                        BasicTextField(
+                            note, { note = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                            textStyle = TextStyle(color = Color.White, fontSize = 14.sp), cursorBrush = SolidColor(Color.White),
+                        )
+                    }
                 }
             }
             if (keypad && item != null) {

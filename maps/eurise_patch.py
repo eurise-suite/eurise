@@ -247,3 +247,25 @@ patch(root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps"
 
     HISTORY {""")
 print("eurise_patch: «Dove devi andare» nella ricerca e frase d'arrivo")
+
+# Ricerca (piano del 12 novembre, «Apice, BN»): domanda senza la sigla della provincia per il motore sul telefono e,
+# se le mappe scaricate non trovano nulla, la scheda della ricerca online facoltativa (maps/android/…/EuriseOnlineSearch).
+search = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "search" / "SearchFragment.java"
+patch(search,
+      """      SearchEngine.INSTANCE.searchInteractive(requireContext(), getQuery(), isCategory(), mLastQueryTimestamp,
+                                              true /* isMapAndTable */);""",
+      """      SearchEngine.INSTANCE.searchInteractive(requireContext(),
+                                              app.organicmaps.eurise.EuriseOnlineSearch.local(getQuery()), isCategory(),
+                                              mLastQueryTimestamp, true /* isMapAndTable */);""")
+patch(search,
+      """      if (!SearchEngine.INSTANCE.search(requireContext(), getQuery(), isCategory(), mLastQueryTimestamp,""",
+      """      if (!SearchEngine.INSTANCE.search(requireContext(), app.organicmaps.eurise.EuriseOnlineSearch.local(getQuery()),
+                                        isCategory(), mLastQueryTimestamp,""")
+patch(search,
+      """    UiUtils.showIf(show, mResultsPlaceholder);
+  }""",
+      """    // Eurise: niente nelle mappe scaricate → la scheda della ricerca online (facoltativa) al posto del segnaposto.
+    UiUtils.showIf(show, mResultsPlaceholder);
+    app.organicmaps.eurise.EuriseOnlineSearch.update(mResultsFrame, show && !isCategory(), getQuery(), this);
+  }""")
+print("eurise_patch: ricerca senza sigla della provincia e ricerca online facoltativa")

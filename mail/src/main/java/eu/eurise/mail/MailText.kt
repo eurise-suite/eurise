@@ -41,6 +41,12 @@ object MailText {
         return "Re: $clean"
     }
 
+    /** L'oggetto di un inoltro: «I: …» senza ripetere i prefissi. */
+    fun forwardSubject(subject: String): String {
+        val clean = subject.replace(Regex("^((re|r|fwd|fw|i|inoltra)\\s*:\\s*)+", RegexOption.IGNORE_CASE), "").trim()
+        return "I: $clean"
+    }
+
     /** Il testo citato nella risposta: «Il <data>, <chi> ha scritto:» e le righe con «> ». */
     fun quote(text: String, header: String): String =
         "\n\n$header\n" + text.trimEnd().lineSequence().joinToString("\n") { "> $it" }

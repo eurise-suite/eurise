@@ -79,4 +79,12 @@
     <string name="ph_reply_later">Ti richiamo appena posso.</string>
     <string name="ph_reply_meeting">Sono in riunione, ti scrivo dopo.</string>
     <string name="ph_reply_driving">Sto guidando, ti richiamo quando arrivo.</string>
+    <!-- Pillola delle sezioni (tavola TelPillola) -->
+    <string name="ph_favorites">Preferiti</string>
+    <string name="ph_recents_tab">Recenti</string>
+    <string name="ph_people_tab">Rubrica</string>
+    <string name="ph_note_number">Annota un numero nuovo</string>
+    <string name="ph_no_favorites">Nessun preferito. Apri un contatto e tocca la stella: comparirà qui e in cima ai Recenti.</string>
+    <string name="ph_favorites_hint">Un tocco chiama; tienilo premuto per aprire il contatto.</string>
+    <string name="ph_call_note_hint">Scrivi mentre parli: a fine chiamata va in Note</string>
 </resources>

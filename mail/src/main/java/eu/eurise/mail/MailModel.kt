@@ -115,17 +115,30 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
 
     fun close() { opened = null; opening = false }
 
-    /** Archivia o cestina il messaggio aperto. */
-    fun move(s: Summary, trash: Boolean, done: (Boolean) -> Unit) {
+    /** Archivia, cestina o segna come spam il messaggio aperto. */
+    fun move(s: Summary, target: MailClient.Target, done: (Boolean) -> Unit) = relocate(s, done) { it.move(s.uid, target) }
+
+    /** «Sposta in…»: nella cartella scelta. */
+    fun moveTo(s: Summary, folder: String, done: (Boolean) -> Unit) = relocate(s, done) { it.moveTo(s.uid, folder) }
+
+    private fun relocate(s: Summary, done: (Boolean) -> Unit, action: (MailClient) -> Boolean) {
         val a = account(s.accountId) ?: return
         scope.launch {
-            val ok = withContext(Dispatchers.IO) { runCatching { MailClient(a).move(s.uid, trash) }.getOrDefault(false) }
+            val ok = withContext(Dispatchers.IO) { runCatching { action(MailClient(a)) }.getOrDefault(false) }
             if (ok) {
                 messages.removeAll { it.accountId == s.accountId && it.uid == s.uid }
                 writeCache(a.id, messages.filter { it.accountId == a.id })
                 opened = null
             }
             done(ok)
+        }
+    }
+
+    /** Le cartelle della casella del messaggio, per «Sposta in…». */
+    fun folders(s: Summary, done: (List<String>) -> Unit) {
+        val a = account(s.accountId) ?: return done(emptyList())
+        scope.launch {
+            done(withContext(Dispatchers.IO) { runCatching { MailClient(a).folders() }.getOrDefault(emptyList()) })
         }
     }
 

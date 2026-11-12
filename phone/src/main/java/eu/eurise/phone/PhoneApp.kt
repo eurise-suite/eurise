@@ -63,6 +63,10 @@ import eu.eurise.core.contacts.Contacts
 import eu.eurise.core.contacts.Reach
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.core.designsystem.component.DockItem
+import eu.eurise.core.designsystem.component.EuriseDock
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.phone.data.CallEntry
 import eu.eurise.phone.data.PhoneData
@@ -102,6 +106,9 @@ fun PhoneApp(
     var dialpad by remember { mutableStateOf<String?>(null) }
     var unknown by remember { mutableStateOf<CallEntry?>(null) }
     var reload by remember { mutableStateOf(0) }
+    // Sezione della pillola in basso (tavola TelPillola): Preferiti, Recenti, Rubrica; il Tastierino si apre sopra.
+    var section by remember { mutableStateOf(SEC_RECENTS) }
+    val haze = remember { HazeState() }
 
     LaunchedEffect(refresh, reload) {
         recents = PhoneData.recents(context)
@@ -111,8 +118,8 @@ fun PhoneApp(
     LaunchedEffect(dialNumber) { if (dialNumber != null) { dialpad = dialNumber; onDialConsumed() } }
     LaunchedEffect(start) {
         when (start) {
-            StartAt.People -> stack = listOf(Screen.Home, Screen.People)
-            is StartAt.Insert -> stack = listOf(Screen.Home, Screen.People, Screen.Edit(start.draft))
+            StartAt.People -> { stack = listOf(Screen.Home); section = SEC_PEOPLE }
+            is StartAt.Insert -> { stack = listOf(Screen.Home, Screen.Edit(start.draft)); section = SEC_PEOPLE }
             null -> return@LaunchedEffect
         }
         onStartConsumed()
@@ -125,14 +132,32 @@ fun PhoneApp(
     val permitted = PhoneData.has(context, android.Manifest.permission.READ_CALL_LOG) && Contacts.canRead(context)
 
     when (val s = stack.last()) {
-        Screen.Home -> HomeScreen(
-            recents = recents, favorites = contacts.filter { it.starred }, permitted = permitted, isDefault = isDefault,
-            onBecomeDefault = onBecomeDefault, onAskPermissions = onAskPermissions,
-            onOpenEntry = { e -> e.contact?.let { push(Screen.Person(it.id)) } ?: run { unknown = e } },
-            onCall = onCall, onFavorite = { push(Screen.Person(it.id)) },
-            onPeople = { push(Screen.People) }, onDialpad = { dialpad = "" },
-        )
-        Screen.People -> PeopleScreen(contacts, numbers, onBack = ::pop, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall)
+        Screen.Home -> Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().hazeSource(haze)) {
+                when (section) {
+                    SEC_FAVORITES -> FavoritesScreen(contacts.filter { it.starred }, numbers, onOpen = { push(Screen.Person(it.id)) }, onCall = onCall)
+                    SEC_PEOPLE -> PeopleScreen(contacts, numbers, onBack = null, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall)
+                    else -> HomeScreen(
+                        recents = recents, favorites = contacts.filter { it.starred }, permitted = permitted, isDefault = isDefault,
+                        onBecomeDefault = onBecomeDefault, onAskPermissions = onAskPermissions,
+                        onOpenEntry = { e -> e.contact?.let { push(Screen.Person(it.id)) } ?: run { unknown = e } },
+                        onCall = onCall, onFavorite = { push(Screen.Person(it.id)) },
+                    )
+                }
+            }
+            val items = listOf(
+                DockItem(stringResource(R.string.ph_dialpad)) { EuriseIcons.dialpad(it) },
+                DockItem(stringResource(R.string.ph_favorites)) { EuriseIcons.star(it) },
+                DockItem(stringResource(R.string.ph_recents_tab)) { EuriseIcons.clock(it) },
+                DockItem(stringResource(R.string.ph_people_tab)) { EuriseIcons.person(it) },
+            )
+            EuriseDock(
+                items, selected = section, onSelect = { i -> if (i == SEC_DIALPAD) dialpad = "" else section = i },
+                hazeState = haze, modifier = Modifier.align(Alignment.BottomCenter),
+                actionLabel = stringResource(R.string.ph_note_number), onAction = { push(Screen.Edit(ContactDraft())) },
+            )
+        }
+        Screen.People -> PeopleScreen(contacts, numbers, onBack = { pop() }, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall)
         is Screen.Person -> PersonScreen(s.id, onBack = ::pop, onCall = onCall, onEdit = { d -> push(Screen.Edit(d)) }, onDeleted = { pop(); reload++ }, onChanged = { reload++ })
         is Screen.Edit -> EditScreen(s.draft, onBack = ::pop, onSaved = { id ->
             stack = stack.dropLast(1).let { rest -> if (s.draft.id == null && id != null) rest + Screen.Person(id) else rest }
@@ -159,13 +184,13 @@ fun PhoneApp(
 private fun HomeScreen(
     recents: List<CallEntry>, favorites: List<Contact>, permitted: Boolean, isDefault: Boolean,
     onBecomeDefault: () -> Unit, onAskPermissions: () -> Unit, onOpenEntry: (CallEntry) -> Unit, onCall: (String) -> Unit,
-    onFavorite: (Contact) -> Unit, onPeople: () -> Unit, onDialpad: () -> Unit,
+    onFavorite: (Contact) -> Unit,
 ) {
     val callBack = remember(recents) { PhoneData.toCallBack(recents) }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
             item(key = "head") {
-                Text(stringResource(R.string.ph_app_name), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+                Text(stringResource(R.string.ph_recents_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 10.dp))
             }
             if (!permitted) item(key = "perm") {
@@ -231,10 +256,6 @@ private fun HomeScreen(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
             }
         }
-        Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BigButton(EuriseIcons.search(), stringResource(R.string.ph_contacts), false, Modifier.weight(1f), onPeople)
-            BigButton(EuriseIcons.dialpad(), stringResource(R.string.ph_dialpad), true, Modifier.weight(1f), onDialpad)
-        }
     }
 }
 
@@ -256,10 +277,52 @@ private fun detail(e: CallEntry): String {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Preferiti (sezione della pillola)
+
+private const val SEC_DIALPAD = 0
+private const val SEC_FAVORITES = 1
+private const val SEC_RECENTS = 2
+private const val SEC_PEOPLE = 3
+
+/** I contatti con la stella, tre per riga: un tocco chiama, tenendo premuto si apre la scheda. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FavoritesScreen(favorites: List<Contact>, numbers: Map<Long, String>, onOpen: (Contact) -> Unit, onCall: (String) -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
+        item(key = "head") {
+            Text(stringResource(R.string.ph_favorites), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 10.dp))
+        }
+        if (favorites.isEmpty()) item(key = "none") {
+            Text(stringResource(R.string.ph_no_favorites), fontSize = 14.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
+        }
+        items(favorites.chunked(3), key = { row -> row.first().id }) { row ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                row.forEach { c ->
+                    Column(
+                        Modifier.weight(1f).clip(RoundedCornerShape(18.dp))
+                            .combinedClickableCompat(onClick = { numbers[c.id]?.let(onCall) ?: onOpen(c) }, onLongClick = { onOpen(c) })
+                            .padding(vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Avatar(c.name, c.photo, 64.dp)
+                        Text(c.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+        if (favorites.isNotEmpty()) item(key = "hint") {
+            Text(stringResource(R.string.ph_favorites_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Rubrica
 
 @Composable
-private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, onBack: () -> Unit, onOpen: (Contact) -> Unit, onNew: () -> Unit, onCall: (String) -> Unit) {
+private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, onBack: (() -> Unit)?, onOpen: (Contact) -> Unit, onNew: () -> Unit, onCall: (String) -> Unit) {
     var query by remember { mutableStateOf("") }
     val shown = remember(contacts, query) {
         val q = query.trim().lowercase()
@@ -268,11 +331,14 @@ private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, on
         }
     }
     Column(Modifier.fillMaxSize()) {
-        TopBar(stringResource(R.string.ph_contacts), onBack) { IconCircle(EuriseIcons.plus(), stringResource(R.string.ph_new_contact), onClick = onNew) }
+        // Nella pillola (onBack nullo) la Rubrica è una sezione: titolo grande, il «+» è quello accanto alla pillola.
+        if (onBack != null) TopBar(stringResource(R.string.ph_contacts), onBack) { IconCircle(EuriseIcons.plus(), stringResource(R.string.ph_new_contact), onClick = onNew) }
+        else Text(stringResource(R.string.ph_people_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp))
         OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.ph_search_contacts)) }, singleLine = true,
             leadingIcon = { Icon(EuriseIcons.search(), null, modifier = Modifier.size(18.dp)) },
             shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 40.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = if (onBack == null) 110.dp else 40.dp)) {
             var last = ""
             shown.forEach { c ->
                 val letter = Contacts.letter(c.name)

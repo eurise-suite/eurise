@@ -178,16 +178,35 @@ class MailClient(private val account: Account) {
         out
     }
 
-    /** Sposta nell'archivio (o nel cestino con [trash]): cartella trovata dal suo ruolo, poi dal nome. */
-    fun move(uid: Long, trash: Boolean): Boolean = store { s ->
+    /** Dove spostare un messaggio: le cartelle speciali si trovano dal loro ruolo, poi dal nome. */
+    enum class Target(val attribute: String) { Archive("\\Archive"), Trash("\\Trash"), Junk("\\Junk") }
+
+    /** Sposta nell'archivio, nel cestino o nella posta indesiderata. */
+    fun move(uid: Long, target: Target): Boolean = store { s ->
+        val names = when (target) { Target.Archive -> ARCHIVE_NAMES; Target.Trash -> TRASH_NAMES; Target.Junk -> JUNK_NAMES }
+        val folder = special(s, target.attribute, names) ?: return@store false
+        moveTo(s, uid, folder)
+    }
+
+    /** Sposta nella cartella [fullName] scelta dall'utente («Sposta in…»). */
+    fun moveTo(uid: Long, fullName: String): Boolean = store { s -> moveTo(s, uid, s.getFolder(fullName)) }
+
+    private fun moveTo(s: Store, uid: Long, target: Folder): Boolean {
         val inbox = s.getFolder("INBOX") as IMAPFolder
         inbox.open(Folder.READ_WRITE)
         try {
-            val m = inbox.getMessageByUID(uid) ?: return@store false
-            val target = special(s, if (trash) "\\Trash" else "\\Archive", if (trash) TRASH_NAMES else ARCHIVE_NAMES) ?: return@store false
+            val m = inbox.getMessageByUID(uid) ?: return false
             inbox.moveMessages(arrayOf(m), target)
-            true
+            return true
         } finally { runCatching { inbox.close(true) } }
+    }
+
+    /** Le cartelle in cui si può spostare un messaggio (non la Posta in arrivo né quelle senza messaggi). */
+    fun folders(): List<String> = store { s ->
+        s.defaultFolder.list("*").filterIsInstance<IMAPFolder>()
+            .filter { f -> (f.type and Folder.HOLDS_MESSAGES) != 0 && !f.fullName.equals("INBOX", ignoreCase = true) && f.attributes.none { it.equals("\\Noselect", true) } }
+            .map { it.fullName }
+            .sortedBy { it.lowercase() }
     }
 
     private fun special(s: Store, attribute: String, names: List<String>): Folder? {
@@ -262,6 +281,7 @@ class MailClient(private val account: Account) {
     companion object {
         private val TRASH_NAMES = listOf("Trash", "Cestino", "Deleted", "Deleted Items", "Deleted Messages", "Posta eliminata", "Bin")
         private val ARCHIVE_NAMES = listOf("Archive", "Archivio", "Archives", "All Mail")
+        private val JUNK_NAMES = listOf("Junk", "Spam", "Posta indesiderata", "Junk E-mail", "Junk Email", "Bulk Mail", "Indesiderata")
         private val SENT_NAMES = listOf("Sent", "Inviata", "Inviati", "Posta inviata", "Sent Items", "Sent Messages", "Elementi inviati")
 
         private fun decode(name: String?): String? = name?.let { runCatching { MimeUtility.decodeText(it) }.getOrDefault(it) }

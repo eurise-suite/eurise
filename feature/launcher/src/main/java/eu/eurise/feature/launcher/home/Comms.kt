@@ -72,16 +72,26 @@ private val TimeFormat = DateTimeFormatter.ofPattern("HH:mm")
 internal val RowHeight = 47.dp
 
 /** Scorciatoie verso i contatti recenti e preferiti, offerte dalla Scrivania a ogni bolla delle comunicazioni. */
-class PeopleShortcuts(val onRecent: () -> Unit, val onStarred: () -> Unit)
+class PeopleShortcuts(val onRecent: () -> Unit, val onStarred: () -> Unit, val onApps: () -> Unit = {})
+
+/** Apre le app per comunicare (tavola BolComunicaApp): lo fornisce la Scrivania. */
+val LocalCommsApps = compositionLocalOf<(() -> Unit)?> { null }
 
 val LocalPeopleShortcuts = compositionLocalOf<PeopleShortcuts?> { null }
 
 /** Le azioni delle bolle (attività, richiamate…), fornite dalla Scrivania. */
 val LocalBubbleActions = compositionLocalOf<BubbleActions?> { null }
 
-/** I due tondi in alto nella bolla: contatti recenti e preferiti. */
+/**
+ * I tondi in alto nella bolla (tavola BolComunica): le app per comunicare (menu), contatti recenti e preferiti, tutti
+ * della stessa misura e stile.
+ */
 @Composable
 fun CommsButtons(onRecent: () -> Unit, onStarred: () -> Unit) {
+    LocalCommsApps.current?.let { open ->
+        SmallRound(EuriseIcons.grid(2f), stringResource(R.string.dock_comms_title), open)
+        Spacer(Modifier.width(6.dp))
+    }
     SmallRound(EuriseIcons.clock(2f), stringResource(R.string.people_recent), onRecent)
     Spacer(Modifier.width(6.dp))
     SmallRound(EuriseIcons.star(2f), stringResource(R.string.people_starred), onStarred)

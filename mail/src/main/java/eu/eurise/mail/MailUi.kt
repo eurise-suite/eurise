@@ -11,6 +11,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import dev.chrisbanes.haze.HazeState
+import eu.eurise.core.designsystem.component.GlassDefaults
+import eu.eurise.core.designsystem.component.glass
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -108,6 +111,7 @@ private enum class Screen { Inbox, Accounts }
 
 @Composable
 fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var screen by remember { mutableStateOf(if (model.accounts.isEmpty()) Screen.Accounts else Screen.Inbox) }
     var draft by remember { mutableStateOf(startDraft) }
     val opened = model.opened
@@ -126,7 +130,13 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
             Screen.Inbox -> Inbox(model, onAccounts = { screen = Screen.Accounts }, onWrite = { draft = Draft() })
             Screen.Accounts -> AccountsScreen(model, actions, onBack = { if (model.accounts.isNotEmpty()) screen = Screen.Inbox else actions.finish() })
         }
-        if (opened != null || model.opening) Reader(model, actions, onReply = { o ->
+        if (opened != null || model.opening) Reader(model, actions, onForward = { o ->
+            draft = Draft(
+                subject = MailText.forwardSubject(o.summary.subject),
+                body = MailText.quote(o.text, forwardHeader(context, o)),
+                from = o.summary.accountId,
+            )
+        }, onReply = { o ->
             draft = Draft(
                 to = o.summary.fromAddress,
                 subject = MailText.replySubject(o.summary.subject),
@@ -258,7 +268,7 @@ private fun shortDate(time: Long): String {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun Reader(model: MailModel, actions: MailActions, onReply: (Opened) -> Unit) {
+private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -> Unit, onReply: (Opened) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val o = model.opened
     var showImages by remember(o?.summary?.uid) { mutableStateOf(!model.blockImages) }
@@ -268,18 +278,14 @@ private fun Reader(model: MailModel, actions: MailActions, onReply: (Opened) -> 
     val trashed = stringResource(R.string.ml_trashed)
     val moveFailed = stringResource(R.string.ml_move_failed)
     val attachFailed = stringResource(R.string.ml_attachment_failed)
+    val spammed = stringResource(R.string.ml_spammed)
+    val moved = stringResource(R.string.ml_moved)
+    var folders by remember(o?.summary?.uid) { mutableStateOf<List<String>?>(null) }
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(scheme.background).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             RoundIcon(EuriseIcons.chevronLeft(2.2f), stringResource(R.string.ml_back), flat = true) { model.close() }
             Spacer(Modifier.weight(1f))
-            if (o != null) {
-                RoundIcon(EuriseIcons.folder(2.2f), stringResource(R.string.ml_archive), flat = true) {
-                    model.move(o.summary, trash = false) { ok -> actions.toast(if (ok) archived else moveFailed) }
-                }
-                RoundIcon(EuriseIcons.trash(2.2f), stringResource(R.string.ml_delete), flat = true) {
-                    model.move(o.summary, trash = true) { ok -> actions.toast(if (ok) trashed else moveFailed) }
-                }
-            }
         }
         if (o == null) {
             LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
@@ -350,14 +356,97 @@ private fun Reader(model: MailModel, actions: MailActions, onReply: (Opened) -> 
             },
             modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp),
         )
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Pill(stringResource(R.string.ml_reply), EuriseIcons.reply(2.2f), Modifier.weight(1f), strong = true) { onReply(o) }
+        // Lo spazio della pillola, perché la fine del messaggio non resti sotto.
+        Spacer(Modifier.navigationBarsPadding().height(GlassDefaults.PillHeight + GlassDefaults.BottomMargin * 2))
+    }
+    // La pillola satinata delle azioni (come nelle altre app della suite): Rispondi, Inoltra, Archivia, Sposta in…,
+    // Elimina, Spam.
+    o?.let { m ->
+        ActionPill(
+            listOf(
+                PillAction(EuriseIcons.reply(2.2f), stringResource(R.string.ml_reply), strong = true) { onReply(m) },
+                PillAction(EuriseIcons.send(2.2f), stringResource(R.string.ml_forward)) { onForward(m) },
+                PillAction(EuriseIcons.folder(2.2f), stringResource(R.string.ml_archive)) {
+                    model.move(m.summary, MailClient.Target.Archive) { ok -> actions.toast(if (ok) archived else moveFailed) }
+                },
+                PillAction(EuriseIcons.drag(2.2f), stringResource(R.string.ml_move_to)) { model.folders(m.summary) { folders = it } },
+                PillAction(EuriseIcons.trash(2.2f), stringResource(R.string.ml_delete)) {
+                    model.move(m.summary, MailClient.Target.Trash) { ok -> actions.toast(if (ok) trashed else moveFailed) }
+                },
+                PillAction(EuriseIcons.block(2.2f), stringResource(R.string.ml_spam)) {
+                    model.move(m.summary, MailClient.Target.Junk) { ok -> actions.toast(if (ok) spammed else moveFailed) }
+                },
+            ),
+            Modifier.align(Alignment.BottomCenter),
+        )
+        folders?.let { list ->
+            FolderSheet(list, onPick = { f -> folders = null; model.moveTo(m.summary, f) { ok -> actions.toast(if (ok) moved else moveFailed) } }, onClose = { folders = null })
+        }
+    }
+    }
+}
+
+private class PillAction(val icon: ImageVector, val label: String, val strong: Boolean = false, val onClick: () -> Unit)
+
+/** La pillola satinata in basso con le azioni del messaggio aperto; la voce principale ha il colore d'accento. */
+@Composable
+private fun ActionPill(items: List<PillAction>, modifier: Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val haze = remember { HazeState() }
+    Row(
+        modifier.fillMaxWidth().navigationBarsPadding()
+            .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
+            .height(GlassDefaults.PillHeight).glass(haze, RoundedCornerShape(50), solid = true).padding(GlassDefaults.Padding),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        items.forEach { a ->
+            val color = if (a.strong) scheme.primary else scheme.onSurfaceVariant
+            Column(
+                Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(RoundedCornerShape(14.dp)).clickable(role = Role.Button, onClick = a.onClick),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(a.icon, null, tint = color, modifier = Modifier.size(20.dp))
+                Text(a.label, color = color, fontSize = 10.sp, fontWeight = if (a.strong) FontWeight.ExtraBold else FontWeight.SemiBold, maxLines = 1, softWrap = false)
+            }
         }
     }
 }
+
+/** «Sposta in…»: le cartelle della casella. */
+@Composable
+private fun FolderSheet(folders: List<String>, onPick: (String) -> Unit, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)).clickable(onClick = onClose),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(scheme.surfaceContainer)
+                .clickable(enabled = false) { }.navigationBarsPadding().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(stringResource(R.string.ml_move_to_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 6.dp))
+            if (folders.isEmpty()) Text(stringResource(R.string.ml_no_folders), fontSize = 13.sp, color = scheme.onSurfaceVariant)
+            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                folders.forEach { f ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onPick(f) }.padding(horizontal = 8.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(EuriseIcons.folder(2.2f), null, tint = scheme.primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(f.replace('/', '›').replace(".", " › ").trim(), fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun forwardHeader(context: android.content.Context, o: Opened): String = context.getString(
+    R.string.ml_forward_header, o.summary.fromName, o.summary.fromAddress,
+    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(o.summary.date)), o.summary.subject,
+)
 
 private fun size(bytes: Int): String = when {
     bytes <= 0 -> "—"

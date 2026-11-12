@@ -616,4 +616,29 @@
     <string name="home_widget_privacy">Il widget lo disegna la sua app: Eurise lo mostra e basta, non legge cosa contiene. Android chiede una volta il permesso.</string>
     <string name="home_widget_open">Apri l\'app</string>
     <string name="home_widget_gone">L\'app di questo widget non c\'è più: toglilo tenendo premuta la bolla.</string>
+    <!-- Dock del telefono (tavole ScrDock, ScrDockTieni, ScrDockStella, BolComunicaApp) -->
+    <string name="dock_all">Tutte le app</string>
+    <string name="dock_star">Le tue app</string>
+    <string name="dock_maps">Mappe</string>
+    <string name="dock_drive">Drive</string>
+    <string name="dock_sms">SMS</string>
+    <string name="dock_email">Email</string>
+    <string name="dock_chat">Chat</string>
+    <string name="dock_ai">Ricerca AI</string>
+    <string name="dock_browser">Browser</string>
+    <string name="dock_open_page">Apri la pagina</string>
+    <string name="dock_empty_category">Ancora nessuna app qui: spostale tenendole premute nella pagina della categoria.</string>
+    <string name="dock_all_hint">Scorri il dito sulle categorie: le loro app compaiono accanto. Con «La tua» ne crei una e scegli tu le app.</string>
+    <string name="dock_your_category">La tua</string>
+    <string name="dock_star_title">Le tue app</string>
+    <string name="dock_add">Aggiungi</string>
+    <string name="dock_star_hint">Le app con la stella. Per aggiungerne una, tienila premuta in Tutte le app e tocca la stella.</string>
+    <string name="dock_role_none">Nessuna app trovata sul telefono.</string>
+    <string name="dock_role_ref">nella dock</string>
+    <string name="dock_make_ref">Metti nella dock</string>
+    <string name="dock_unread">%1$d da leggere</string>
+    <string name="dock_nothing_new">niente di nuovo</string>
+    <string name="dock_role_hint">Un tocco apre l\'app; la stella la mette nella dock al posto di %1$s. Le icone sono quelle del tema scelto.</string>
+    <string name="dock_comms_title">Per comunicare</string>
+    <string name="dock_comms_hint">Le app di chat, il telefono, gli SMS e la posta trovati sul telefono, con le icone del tema scelto e i messaggi da leggere.</string>
 </resources>

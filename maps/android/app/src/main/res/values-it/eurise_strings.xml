@@ -60,4 +60,24 @@
     <string name="eurise_arr_late">con circa %1$d min di ritardo</string>
     <string name="eurise_arr_weather">%1$s all\'arrivo</string>
     <string name="eurise_arr_weather_good">Tempo buono all\'arrivo</string>
+    <!-- Ricerca: luoghi fuori dalle mappe scaricate (EuriseOnlineSearch) -->
+    <string name="eurise_search_none_local">«%1$s» non è nelle mappe del telefono</string>
+    <string name="eurise_search_none_local_sub">Il telefono cerca solo nelle regioni scaricate. Puoi cercarlo su OpenStreetMap, oppure scaricare la regione.</string>
+    <string name="eurise_search_online">Cerca su OpenStreetMap</string>
+    <string name="eurise_search_online_note">Escono dal telefono solo le parole che hai scritto, mai la tua posizione.</string>
+    <string name="eurise_search_download">Scarica mappe</string>
+    <string name="eurise_search_online_title">Cercare anche online?</string>
+    <string name="eurise_search_online_explain">Quando le mappe del telefono non trovano nulla, Eurise Mappe può chiedere a Photon (dati di OpenStreetMap, komoot, Germania). Riceve solo le parole cercate: niente posizione, niente identificativi del telefono. Sul telefono restano solo i risultati. La spegni dai risultati con un tocco.</string>
+    <string name="eurise_search_online_ok">Cerca</string>
+    <string name="eurise_search_online_working">Cerco «%1$s» su OpenStreetMap…</string>
+    <string name="eurise_search_online_failed">OpenStreetMap non risponde. Controlla la connessione.</string>
+    <string name="eurise_search_retry">Riprova</string>
+    <string name="eurise_search_online_empty">Nessun risultato per «%1$s», nemmeno online.</string>
+    <string name="eurise_search_online_found">Trovati online per «%1$s»</string>
+    <string name="eurise_search_online_off">Spegni la ricerca online</string>
+    <string name="eurise_search_online_source">Dati © contributori di OpenStreetMap · Photon di komoot</string>
+    <string name="eurise_search_get_region">Scaricare %1$s?</string>
+    <string name="eurise_search_get_region_sub">Il luogo è in %1$s, che non è ancora sul telefono (%2$d MB). Con la mappa scaricata lo cerchi, lo vedi e ci arrivi anche senza Internet.</string>
+    <string name="eurise_search_get_region_ok">Scarica</string>
+    <string name="eurise_search_get_region_later">Mostralo e basta</string>
 </resources>

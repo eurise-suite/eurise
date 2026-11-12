@@ -60,4 +60,24 @@
     <string name="eurise_arr_late">about %1$d min late</string>
     <string name="eurise_arr_weather">%1$s on arrival</string>
     <string name="eurise_arr_weather_good">Good weather on arrival</string>
+    <!-- Search: places outside the downloaded maps (EuriseOnlineSearch) -->
+    <string name="eurise_search_none_local">«%1$s» is not in the maps on this phone</string>
+    <string name="eurise_search_none_local_sub">The phone searches only the regions you downloaded. You can look it up on OpenStreetMap, or download the region.</string>
+    <string name="eurise_search_online">Search on OpenStreetMap</string>
+    <string name="eurise_search_online_note">Only the words you typed leave the phone, never your position.</string>
+    <string name="eurise_search_download">Download maps</string>
+    <string name="eurise_search_online_title">Search online too?</string>
+    <string name="eurise_search_online_explain">When the maps on this phone find nothing, Eurise Maps can ask Photon (OpenStreetMap data, komoot, Germany). It receives only the words you searched: no position, no phone identifier. Nothing is saved on the phone except the results. You can switch it off from the results with one tap.</string>
+    <string name="eurise_search_online_ok">Search</string>
+    <string name="eurise_search_online_working">Searching «%1$s» on OpenStreetMap…</string>
+    <string name="eurise_search_online_failed">No answer from OpenStreetMap. Check the connection.</string>
+    <string name="eurise_search_retry">Try again</string>
+    <string name="eurise_search_online_empty">Nothing found for «%1$s», even online.</string>
+    <string name="eurise_search_online_found">Found online for «%1$s»</string>
+    <string name="eurise_search_online_off">Switch off online search</string>
+    <string name="eurise_search_online_source">Data © OpenStreetMap contributors · Photon by komoot</string>
+    <string name="eurise_search_get_region">Download %1$s?</string>
+    <string name="eurise_search_get_region_sub">The place is in %1$s, which is not on the phone yet (%2$d MB). With it you can search, see the place and get directions without the Internet.</string>
+    <string name="eurise_search_get_region_ok">Download</string>
+    <string name="eurise_search_get_region_later">Just show it</string>
 </resources>

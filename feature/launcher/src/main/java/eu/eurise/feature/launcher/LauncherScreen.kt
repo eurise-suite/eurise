@@ -349,6 +349,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         var categoryEditor by remember { mutableStateOf(false) }
         val barCategories = settings.categories
         val pageCategories = barCategories
+        val dockRoles = remember(state.apps) {
+            eu.eurise.feature.launcher.home.DockRole.entries.associateWith { r -> eu.eurise.feature.launcher.home.roleApps(context, r, state.apps) }
+        }
         if (category != HomePageId && pageCategories.none { it.id == category }) category = HomePageId
         val categoryOf: (AppEntry) -> BarCategory? = { entry -> resolveCategory(entry, barCategories, settings.categoryOverrides) }
         var searching by remember { mutableStateOf(false) }
@@ -379,7 +382,12 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         var folderPicker by remember { mutableStateOf<FolderRequest?>(null) }
         // Fonti di oroscopo o ricette in modifica: "horoscope" o "recipes".
         var dailySheet by remember { mutableStateOf<String?>(null) }
-        val peopleShortcuts = remember { eu.eurise.feature.launcher.home.PeopleShortcuts({ peopleSheet = "recent" }, { peopleSheet = "starred" }) }
+        // La dock del telefono (tavole ScrDock, ScrDockTieni, ScrDockStella, BolComunicaApp): la pillola aperta sopra la dock.
+        var dockPanel by remember { mutableStateOf<eu.eurise.feature.launcher.home.DockPanel?>(null) }
+        val dockPrefs = remember { eu.eurise.feature.launcher.home.DockPrefs(context) }
+        val peopleShortcuts = remember {
+            eu.eurise.feature.launcher.home.PeopleShortcuts({ peopleSheet = "recent" }, { peopleSheet = "starred" }, { dockPanel = eu.eurise.feature.launcher.home.DockPanel.Comms })
+        }
         val welcome = WelcomeData(
             travel = travel,
             destination = destination,
@@ -525,6 +533,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
             }
         }
 
+        // Dichiarato dopo l'altro: con una pillola della dock aperta, «indietro» chiude prima quella.
+        BackHandler(enabled = dockPanel != null) { dockPanel = null }
+
         fun select(c: BarCategory) {
             // Toccare la categoria già aperta riporta alla home.
             if (category == c.id) { category = HomePageId; return }
@@ -543,6 +554,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val clearance = GlassDefaults.PillHeight + GlassDefaults.BottomMargin * 2 + navBottom
 
+        androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalCommsApps provides { dockPanel = eu.eurise.feature.launcher.home.DockPanel.Comms }) {
         Box(Modifier.fillMaxSize()) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))
 
@@ -692,9 +704,19 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         hazeState = hazeState, modifier = barModifier.widthIn(max = 960.dp),
                     )
                 } else {
-                    CategoryBar(
-                        categories = barCategories, selected = category, onSelect = ::select, onSearch = { searching = true }, onBrowser = { context.openWebSearch() },
-                        hazeState = hazeState, modifier = barModifier.fillMaxWidth(), onEdit = { categoryEditor = true },
+                    eu.eurise.feature.launcher.home.PhoneDock(
+                        roles = dockRoles.mapValues { (r, list) -> eu.eurise.feature.launcher.home.dockApp(dockPrefs, r, list) },
+                        badges = badges, open = dockPanel, hazeState = hazeState,
+                        onAll = { dockPanel = if (dockPanel == eu.eurise.feature.launcher.home.DockPanel.All) null else eu.eurise.feature.launcher.home.DockPanel.All },
+                        onStar = { dockPanel = if (dockPanel == eu.eurise.feature.launcher.home.DockPanel.Star) null else eu.eurise.feature.launcher.home.DockPanel.Star },
+                        onRole = { r ->
+                            dockPanel = null
+                            val app = eu.eurise.feature.launcher.home.dockApp(dockPrefs, r, dockRoles[r].orEmpty())
+                            if (app != null) actions.openApp(app) else dockPanel = eu.eurise.feature.launcher.home.DockPanel.Role(r)
+                        },
+                        onRoleHold = { r -> dockPanel = eu.eurise.feature.launcher.home.DockPanel.Role(r) },
+                        onSearch = { dockPanel = null; searching = true },
+                        modifier = barModifier.fillMaxWidth(),
                     )
                 }
             }
@@ -924,6 +946,42 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     availability = { viewModel.availabilityText() },
                 )
             }
+            dockPanel?.let { panel ->
+                val dockBottom = clearance + 4.dp
+                val close = { dockPanel = null }
+                when (panel) {
+                    eu.eurise.feature.launcher.home.DockPanel.All -> eu.eurise.feature.launcher.home.AllAppsPanel(
+                        categories = barCategories,
+                        start = dockPrefs.mostOpened(barCategories),
+                        appsOf = { c -> eu.eurise.feature.launcher.home.categoryApps(c, state.apps, state.favorites, categoryOf, settings.appOrder[c.id]) },
+                        badges = badges, dark = scene.themeDark, leftHanded = settings.leftHanded, hazeState = hazeState, bottom = dockBottom,
+                        onOpen = { app, c -> dockPrefs.countOpen(c.id); close(); actions.openApp(app) },
+                        onPage = { c -> dockPrefs.countOpen(c.id); close(); select(c) },
+                        onAddCategory = if (barCategories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) ({ close(); categoryEditor = true }) else null,
+                        onClose = close,
+                    )
+                    eu.eurise.feature.launcher.home.DockPanel.Star -> eu.eurise.feature.launcher.home.StarPanel(
+                        state.favorites, badges, scene.themeDark, hazeState, dockBottom,
+                        onOpen = { close(); actions.openApp(it) },
+                        onAdd = { close(); barCategories.firstOrNull { it.isAll }?.let(::select) ?: run { dockPanel = eu.eurise.feature.launcher.home.DockPanel.All } },
+                        onClose = close,
+                    )
+                    is eu.eurise.feature.launcher.home.DockPanel.Role -> {
+                        val candidates = dockRoles[panel.role].orEmpty()
+                        eu.eurise.feature.launcher.home.RolePanel(
+                            panel.role, candidates, eu.eurise.feature.launcher.home.dockApp(dockPrefs, panel.role, candidates), badges, scene.themeDark, hazeState, dockBottom,
+                            onOpen = { close(); actions.openApp(it) },
+                            onStar = { dockPrefs.setRef(panel.role, it.key) },
+                            onClose = close,
+                        )
+                    }
+                    eu.eurise.feature.launcher.home.DockPanel.Comms -> eu.eurise.feature.launcher.home.CommsAppsPanel(
+                        remember(state.apps) { eu.eurise.feature.launcher.home.commsApps(context, state.apps) }, badges, scene.themeDark, hazeState, dockBottom,
+                        onOpen = { close(); actions.openApp(it) }, onClose = close,
+                    )
+                }
+            }
+        }
         }
       }
       }

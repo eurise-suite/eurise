@@ -33,6 +33,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -375,7 +378,6 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
     val scheme = MaterialTheme.colorScheme
     val haze = remember { HazeState() }
     var tab by remember { mutableStateOf(Tab.All) }
-    var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val sync by vm.sync.collectAsStateWithLifecycle()
     val now = rememberNow()
@@ -422,7 +424,7 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().hazeSource(haze),
-            contentPadding = PaddingValues(top = topInset + 122.dp, bottom = 110.dp),
+            contentPadding = PaddingValues(top = topInset + 150.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             if ((issues.isNotEmpty() || expiring.isNotEmpty()) && tab == Tab.All && query.isBlank()) {
@@ -448,19 +450,20 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
         }
 
         Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (searching) {
-                Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(query, { query = it }, singleLine = true, placeholder = { Text(stringResource(R.string.pwd_search_hint)) }, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
-                    IconButton(onClick = { searching = false; query = "" }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.pwd_cancel)) }
-                }
-            } else {
-                Row(Modifier.padding(start = 20.dp, end = 12.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.pwd_title), fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
-                    Text(" ${entries.size}", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = scheme.onSurfaceVariant)
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { searching = true }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.pwd_search)) }
-                    IconButton(onClick = { vm.lock() }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.pwd_lock_now)) }
-                }
+            val (syncText, syncTint) = syncLabel(sync)
+            Row(Modifier.padding(start = 20.dp, end = 12.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.pwd_title), fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
+                Text(" ${entries.size}", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = scheme.onSurfaceVariant)
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { vm.lock() }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.pwd_lock_now)) }
+            }
+            // Lo stato della sincronizzazione sta qui; la ricerca è scesa in basso, vicino al pollice.
+            Row(
+                Modifier.padding(start = 20.dp, end = 16.dp).clip(RoundedCornerShape(10.dp)).clickable(onClick = onSync).padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(EuriseIcons.cloud(), contentDescription = null, tint = syncTint, modifier = Modifier.size(14.dp))
+                Text(syncText, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = syncTint, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tab.entries.filter { it != Tab.Fix || issues.isNotEmpty() || expiring.isNotEmpty() || tab == Tab.Fix }.forEach { t ->
@@ -470,14 +473,22 @@ private fun VaultList(vm: PasswordViewModel, entries: List<VaultEntry>, onOpen: 
         }
 
         Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            val (label, tint) = syncLabel(sync)
+            // La ricerca in basso (come nelle altre app della suite): si scrive subito, la ✕ svuota.
             Row(
-                Modifier.weight(1f).height(52.dp).glass(haze, CircleShape).clickable(onClick = onSync).padding(horizontal = 16.dp),
+                Modifier.weight(1f).height(52.dp).glass(haze, CircleShape).padding(start = 16.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(EuriseIcons.cloud(), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-                Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Icon(EuriseIcons.search(), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (query.isEmpty()) Text(stringResource(R.string.pwd_search_hint), fontSize = 15.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    BasicTextField(
+                        query, { query = it }, singleLine = true,
+                        textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.pwd_cancel), modifier = Modifier.size(18.dp)) }
             }
             Box(Modifier.size(52.dp).glass(haze, CircleShape).clickable(onClick = { onAdd(tab) }), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.pwd_add), tint = scheme.primary)
