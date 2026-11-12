@@ -142,6 +142,7 @@ patch(nav, "    updateStreetView(info);\n    mNavMenu.update(info);",
                                             Router.get() == Router.Pedestrian);
     app.organicmaps.eurise.EuriseRouteWeather.update(mFrame.findViewById(R.id.eurise_route_weather), info,
                                                      Router.get() == Router.Pedestrian);
+    app.organicmaps.eurise.EuriseArrival.update(mFrame.findViewById(R.id.eurise_arrival), info);
     mNavMenu.update(info);""")
 
 menu = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "menu" / "NavMenu.java"
@@ -191,6 +192,24 @@ patch(root / "android" / "app" / "src" / "main" / "res" / "layout" / "layout_nav
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/street_frame" />
 
+  <com.google.android.material.textview.MaterialTextView
+    android:id="@+id/eurise_arrival"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/margin_half"
+    android:layout_marginStart="@dimen/nav_street_left"
+    android:layout_marginEnd="@dimen/margin_half"
+    android:maxLines="3"
+    android:ellipsize="end"
+    android:visibility="gone"
+    android:clickable="true"
+    android:focusable="true"
+    app:layout_constrainedWidth="true"
+    app:layout_constraintHorizontal_bias="0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/eurise_route_weather" />
+
   <RelativeLayout
     android:id="@+id/nav_next_turn_container\"""")
 patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
@@ -204,3 +223,27 @@ patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
     <package android:name="eu.eurise.hub.debug"/>
   </queries>""")
 print("eurise_patch: meteo sul percorso")
+
+# «Dove devi andare» (tavola MapCerca): prima scheda della ricerca, EuriseGoFragment (in maps/android/…/search).
+patch(root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "search" / "TabAdapter.java",
+      """  enum Tab
+  {
+    HISTORY {""",
+      """  enum Tab
+  {
+    EURISE_GO {
+      @Override
+      public int getTitleRes()
+      {
+        return R.string.eurise_go_tab;
+      }
+
+      @Override
+      public Class<? extends Fragment> getFragmentClass()
+      {
+        return EuriseGoFragment.class;
+      }
+    },
+
+    HISTORY {""")
+print("eurise_patch: «Dove devi andare» nella ricerca e frase d'arrivo")

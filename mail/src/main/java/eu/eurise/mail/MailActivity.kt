@@ -104,6 +104,15 @@ class MailActivity : ComponentActivity(), MailActions {
         if (!ok) runCatching { fromSystem.launch(arrayOf("*/*")) }
     }
 
+    override fun toPassword(title: String, username: String, secret: String, url: String): Boolean {
+        val add = eu.eurise.core.suite.PasswordContract.addIntent(this, packageName.endsWith(".debug"), title, secret, username, url)
+            ?: return false
+        return runCatching { startActivity(add) }.isSuccess
+    }
+
+    override fun hasPassword(): Boolean =
+        eu.eurise.core.suite.PasswordContract.addIntent(this, packageName.endsWith(".debug"), "", "x") != null
+
     override fun openLink(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     }

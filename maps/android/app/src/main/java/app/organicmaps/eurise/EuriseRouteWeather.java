@@ -345,6 +345,28 @@ public final class EuriseRouteWeather
     return null;
   }
 
+  /**
+   * Il tempo all'arrivo in poche parole («Pioggia all'arrivo», «Tempo buono all'arrivo») per la frase d'arrivo, se il
+   * meteo sul percorso è acceso e ha risposto; altrimenti null.
+   */
+  @Nullable
+  public static String arrivalLabel(@NonNull Context c)
+  {
+    final Result r = sResult;
+    if (!sOn || r == null || r.code.length == 0)
+      return null;
+    final int last = r.code.length - 1;
+    final RouteSampler.Kind k = RouteSampler.kind(r.code[last], r.rain[last], r.gusts[last]);
+    return k == RouteSampler.Kind.CLEAR ? c.getString(R.string.eurise_arr_weather_good)
+                                        : c.getString(R.string.eurise_arr_weather, c.getString(label(k)));
+  }
+
+  /** La pillola satinata della suite, anche per la frase d'arrivo. */
+  public static void stylePill(@NonNull TextView line)
+  {
+    style(line);
+  }
+
   /** La pillola satinata della suite: Perla di giorno, Notte di sera. */
   private static void style(@NonNull TextView line)
   {

@@ -10,6 +10,8 @@
     <queries>
         <package android:name="eu.eurise.hub" />
         <package android:name="eu.eurise.hub.debug" />
+        <package android:name="eu.eurise.password" />
+        <package android:name="eu.eurise.password.debug" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="*/*" />

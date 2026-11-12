@@ -45,4 +45,19 @@
     <string name="eurise_rw_turn_on">Accendi</string>
     <string name="eurise_rw_not_now">Non ora</string>
     <string name="eurise_rw_explain">Durante la guida l\'app Eurise chiede a Open-Meteo il tempo in al massimo 8 punti della strada che resta, con l\'ora in cui ci passerai. I punti sono arrotondati a circa 1 km; non esce altro, niente account né identificativi del telefono. Open-Meteo vede quei punti, non chi sei. Le richieste compaiono nel centro privacy di Eurise; lo spegni qui o lì quando vuoi.</string>
+    <string name="eurise_go_tab">Impegni</string>
+    <string name="eurise_go_title">Dove devi andare</string>
+    <string name="eurise_go_from_calendar">%1$s · dal Calendario</string>
+    <string name="eurise_go_empty">Nessun impegno con un luogo nei prossimi 7 giorni.</string>
+    <string name="eurise_go_no_calendar">Per vedere qui i tuoi impegni, permetti all\'app Eurise di leggere il Calendario.</string>
+    <string name="eurise_go_no_hub">Installa l\'app Eurise per vedere qui i luoghi dei tuoi impegni.</string>
+    <string name="eurise_go_privacy">La ricerca e i percorsi lavorano sulle mappe scaricate: la tua posizione non esce dal telefono.</string>
+    <string name="eurise_arr_sentence">arrivi a «%1$s» delle %2$s %3$s.</string>
+    <string name="eurise_arr_with_weather">%1$s: %2$s</string>
+    <string name="eurise_arr_early">con %1$d min di anticipo</string>
+    <string name="eurise_arr_some">con qualche minuto di margine (%1$d min)</string>
+    <string name="eurise_arr_on_time">giusto in tempo</string>
+    <string name="eurise_arr_late">con circa %1$d min di ritardo</string>
+    <string name="eurise_arr_weather">%1$s all\'arrivo</string>
+    <string name="eurise_arr_weather_good">Tempo buono all\'arrivo</string>
 </resources>

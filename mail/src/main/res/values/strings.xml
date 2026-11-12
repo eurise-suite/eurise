@@ -63,6 +63,8 @@
     <string name="ml_link_known">%1$s · %2$s: server già noti</string>
     <string name="ml_link_find">Eurise trova da sé i server della casella</string>
     <string name="ml_link_go">Collega</string>
+    <string name="ml_keep_password">Tienila anche in Eurise Password</string>
+    <string name="ml_keep_password_sub">Dopo il collegamento Password apre la voce già compilata: la salvi se confermi</string>
     <string name="ml_link_working">Collego…</string>
     <string name="ml_err_address">Controlla l\'indirizzo email</string>
     <string name="ml_err_oauth">Outlook e Hotmail accettano solo l\'accesso dal sito di Microsoft: arriva presto</string>

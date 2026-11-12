@@ -98,6 +98,10 @@ interface MailActions {
     fun pickAttachments(onPicked: (List<android.net.Uri>) -> Unit)
     /** Il link per creare la password per le app (servizi chiusi). */
     fun openLink(url: String)
+    /** La password della casella in Eurise Password, come voce da confermare; falso se Password non c'è o è vecchia. */
+    fun toPassword(title: String, username: String, secret: String, url: String): Boolean
+    /** Eurise Password è installata e riceve voci dalla suite. */
+    fun hasPassword(): Boolean
 }
 
 private enum class Screen { Inbox, Accounts }
@@ -501,6 +505,8 @@ private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Uni
     var name by remember { mutableStateOf("") }
     var working by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<Int?>(null) }
+    val canKeep = remember { actions.hasPassword() }
+    var keep by remember { mutableStateOf(canKeep) }
     val provider = Providers.known(email)
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).clickable(enabled = !working, onClick = onClose), contentAlignment = Alignment.BottomCenter) {
         Column(
@@ -522,6 +528,14 @@ private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Uni
                 Text(stringResource(R.string.ml_app_password, provider.name), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurface)
                 Chip(stringResource(R.string.ml_app_password_go, provider.name), selected = false) { actions.openLink(url) }
             }
+            // La password anche in Eurise Password (la voce si salva là solo se confermi).
+            if (canKeep) Row(Modifier.fillMaxWidth().clickable(role = Role.Switch) { keep = !keep }, verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.ml_keep_password), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ml_keep_password_sub), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+                }
+                Switch(checked = keep, onCheckedChange = { keep = it })
+            }
             problem?.let { Text(stringResource(it), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.error) }
             Pill(
                 stringResource(if (working) R.string.ml_link_working else R.string.ml_link_go), EuriseIcons.link(2.2f),
@@ -532,7 +546,11 @@ private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Uni
                 model.link(email, password, name) { r ->
                     working = false
                     when (r) {
-                        is LinkResult.Done -> { actions.askNotifications(); onLinked() }
+                        is LinkResult.Done -> {
+                            if (keep) actions.toPassword(r.account.label, r.account.email, password, "https://" + Providers.domainOf(r.account.email))
+                            else actions.askNotifications()
+                            onLinked()
+                        }
                         is LinkResult.Failed -> problem = r.reason
                     }
                 }
