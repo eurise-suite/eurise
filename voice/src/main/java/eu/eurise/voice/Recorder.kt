@@ -27,7 +27,7 @@ class Recorder(private val maxSeconds: Int = 90) {
      * parla, le posizioni delle pause dove conviene tagliare (vedi [Chunker]).
      */
     @SuppressLint("MissingPermission")
-    fun record(onCut: ((Int) -> Unit)? = null, onBlock: ((rms: Float, end: Int) -> Unit)? = null): FloatArray {
+    fun record(onBlock: ((rms: Float, end: Int) -> Unit)? = null, onCut: ((Int) -> Unit)? = null): FloatArray {
         val rate = SAMPLE_RATE
         val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val record = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate))
