@@ -9,9 +9,9 @@ import kotlinx.coroutines.withContext
 /** Come Alfred si rivolge a chi usa il telefono. */
 enum class Address { Name, Sir, Madam, None }
 
-/** Le disposizioni di Alfred: appellativo, nome, lettura ad alta voce. Poche chiavi, lette quando serve. */
+/** Le disposizioni di Alfred: appellativo, nome, lettura ad alta voce. Nel file «eurise_alfred», così entrano nel backup cifrato. */
 class AlfredPrefs(context: Context) {
-    private val prefs = context.getSharedPreferences("alfred", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("eurise_alfred", Context.MODE_PRIVATE)
 
     var address: Address
         get() = prefs.getString("address", null)?.let { v -> Address.entries.firstOrNull { it.name == v } } ?: Address.Name

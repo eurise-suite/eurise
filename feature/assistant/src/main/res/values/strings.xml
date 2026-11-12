@@ -126,30 +126,32 @@
     <string name="alfred_name_suggest">%1$s, come in Rubrica</string>
     <string name="alfred_name_skip">Preferisco senza nome</string>
 
-    <!-- Massime e detti, una ogni tanto dopo un'azione riuscita: ironia britannica, con misura. -->
+    <!-- Massime e battute, una volta su tre dopo un'azione riuscita: ironia britannica alla Groucho Marx e Woody Allen,
+         secca e autoironica; quasi sempre sue, citazioni solo brevi e dichiarate. Mai nelle conferme, mai alla guida. -->
     <string-array name="alfred_maxims_event">
-        <item>La puntualità è la cortesia dei re, diceva Luigi XVIII.</item>
-        <item>Meglio un minuto in anticipo che uno in ritardo, ripeteva mio padre. Aveva un orologio solo, ma lo rispettava.</item>
+        <item>L\'ottanta per cento del successo è farsi vedere, diceva Woody Allen. Al restante venti penso io.</item>
+        <item>Segnato. Il commercialista la aspetta; i suoi soldi, temo, li aspetta da più tempo.</item>
+        <item>In agenda. Sarò puntuale io per entrambi, se crede.</item>
     </string-array>
     <string-array name="alfred_maxims_note">
-        <item>Verba volant, scripta manent.</item>
-        <item>La memoria è un bel posto, ma non ci si può fidare del portiere.</item>
+        <item>Ho un\'ottima memoria: è per questo che scrivo tutto.</item>
+        <item>Verba volant, scripta manent. Da me, anche le note restano ferme dove le lascio.</item>
     </string-array>
     <string-array name="alfred_maxims_task">
-        <item>Non è che abbiamo poco tempo: è che ne perdiamo molto. Seneca, se non sbaglio.</item>
-        <item>Chi ben comincia è a metà dell\'opera.</item>
+        <item>Non lo farò io, ma glielo ricorderò con un\'insistenza degna di miglior causa.</item>
+        <item>Rimandare a domani è un\'arte. Io mi limito a tenere il conto.</item>
     </string-array>
     <string-array name="alfred_maxims_message">
-        <item>La brevità è l\'anima dell\'arguzia, diceva Shakespeare.</item>
-        <item>Poche parole, ben scelte: il segreto di ogni buon messaggio.</item>
+        <item>A Lei l\'onore del tasto Invia. Io mi tengo il merito.</item>
+        <item>La brevità è l\'anima dell\'arguzia, diceva Shakespeare. Oggi ha fatto centro.</item>
     </string-array>
     <string-array name="alfred_maxims_route">
-        <item>Tutte le strade portano a Roma. Io mi limito a scegliere la più breve.</item>
-        <item>Chi va piano va sano e va lontano.</item>
+        <item>Se ci perdiamo, faremo almeno in modo che sia in un bel posto.</item>
+        <item>Non ho mai sbagliato strada: ho solo scoperto scorciatoie piuttosto lunghe.</item>
     </string-array>
     <string-array name="alfred_maxims_alarm">
-        <item>Il mattino ha l\'oro in bocca.</item>
-        <item>Keep calm and carry on, come si diceva a Londra. Anche alle sette.</item>
+        <item>Sveglia caricata. Domattina sarò io il primo a pentirmene.</item>
+        <item>Il mattino ha l\'oro in bocca. Io, a quell\'ora, ho soltanto buone maniere.</item>
     </string-array>
 
     <!-- Disposizioni. -->

@@ -87,10 +87,4 @@
   <string name="eurise_bar_saved">Saved</string>
   <string name="eurise_bar_menu">Menu</string>
   <string name="eurise_bar_report">Report here on OpenStreetMap</string>
-    <string name="eurise_bar_search">Search</string>
-    <string name="eurise_bar_layers">Layers</string>
-    <string name="eurise_bar_position">Position</string>
-    <string name="eurise_bar_saved">Saved</string>
-    <string name="eurise_bar_menu">Menu</string>
-    <string name="eurise_bar_report">Report on OpenStreetMap</string>
 </resources>

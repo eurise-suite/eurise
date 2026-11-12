@@ -87,10 +87,4 @@
   <string name="eurise_bar_saved">Salvati</string>
   <string name="eurise_bar_menu">Menu</string>
   <string name="eurise_bar_report">Segnala qui su OpenStreetMap</string>
-    <string name="eurise_bar_search">Cerca</string>
-    <string name="eurise_bar_layers">Livelli</string>
-    <string name="eurise_bar_position">Posizione</string>
-    <string name="eurise_bar_saved">Salvati</string>
-    <string name="eurise_bar_menu">Menu</string>
-    <string name="eurise_bar_report">Segnala su OpenStreetMap</string>
 </resources>
