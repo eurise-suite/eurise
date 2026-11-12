@@ -12,8 +12,8 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 /** Un servizio DNS cifrato (DNS-over-HTTPS) che si può scegliere; [where]: il paese, per la valutazione di privacy. */
 data class DnsService(val id: String, val label: String, val where: String, val uri: String)
 
-/** Un'AI da interrogare dalla barra: si scrive «? domanda». */
-data class AiService(val id: String, val label: String, val where: String, val url: String)
+/** Un'AI da interrogare dalla barra: si scrive «? domanda». [level]: tacche di privacy, come i motori. */
+data class AiService(val id: String, val label: String, val where: String, val url: String, val level: Int)
 
 /**
  * Le impostazioni del Browser (tavola BrwImpostazioni), sul telefono. Quelle del motore valgono subito per tutte le
@@ -80,8 +80,12 @@ class BrowserSettings(context: Context) {
             DnsService("mullvad", "Mullvad", "Svezia", "https://dns.mullvad.net/dns-query"),
         )
         val AIS = listOf(
-            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima", "https://duckduckgo.com/?q=%s&ia=chat"),
-            AiService("lechat", "Le Chat", "Mistral · Francia, UE", "https://chat.mistral.ai/chat?q=%s"),
+            AiService("lechat", "Le Chat", "Mistral · Francia, UE", "https://chat.mistral.ai/chat?q=%s", 2),
+            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima: i modelli non sanno chi sei", "https://duckduckgo.com/?q=%s&ia=chat", 2),
+            // Servizi chiusi: in fondo, una tacca. Conservano le conversazioni e possono usarle per addestrare i modelli.
+            AiService("chatgpt", "ChatGPT", "OpenAI · USA · conserva le conversazioni", "https://chatgpt.com/?q=%s", 1),
+            AiService("copilot", "Copilot", "Microsoft · USA · conserva le conversazioni", "https://copilot.microsoft.com/?q=%s", 1),
+            AiService("gemini", "Gemini", "Google · USA · conserva le conversazioni", "https://gemini.google.com/app?q=%s", 1),
         )
         val SCALES = listOf(0.9f, 1f, 1.1f, 1.25f, 1.5f)
     }

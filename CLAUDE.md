@@ -35,6 +35,15 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
   (es. posizione arrotondata), mai identificativi del telefono.
 
+## Servizi chiusi: si offrono, decide l'utente (regola fissa, 12 novembre 2026)
+- Google, Apple, Microsoft e gli altri servizi chiusi (posta, cloud, AI, motori di ricerca, mappe…) si possono usare:
+  siamo aperti anche in questo, e la scelta è dell'utente.
+- Ma vanno scoraggiati: sempre per ultimi negli elenchi, con valutazione di privacy bassa (una tacca), e prima di
+  collegarli un avviso chiaro su limiti e pericoli (dove stanno i dati, chi li vede, cosa ne fanno, come si torna indietro)
+  con le alternative libere ed europee accanto.
+- Dove l'accesso «due tocchi» richiede che Eurise sia registrata presso il servizio (OAuth), è un passo una tantum del
+  proprietario; nel frattempo si può offrire la via che il servizio permette (es. password per le app) con l'avviso.
+
 ## Collegamenti in due tocchi (regola fissa, 9 novembre 2026)
 - Collegare un servizio deve costare due tocchi: "Collega", accesso nel browser, approva. All'utente non si chiedono mai
   token API, chiavi, numeri di servizio o indirizzi tecnici. Registrare l'app presso un servizio è un passo una tantum del proprietario.

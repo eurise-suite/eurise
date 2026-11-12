@@ -70,15 +70,34 @@ import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
 
-/** Cosa si scrive: destinatari, oggetto, testo e, per una risposta, il messaggio a cui si risponde. */
-data class Draft(val to: String = "", val cc: String = "", val subject: String = "", val body: String = "", val inReplyTo: String? = null, val from: String? = null)
+/** Cosa si scrive: destinatari, oggetto, testo, allegati e, per una risposta, il messaggio a cui si risponde. */
+data class Draft(
+    val to: String = "",
+    val cc: String = "",
+    val subject: String = "",
+    val body: String = "",
+    val inReplyTo: String? = null,
+    val from: String? = null,
+    val attachments: List<android.net.Uri> = emptyList(),
+)
 
-/** Le azioni che passano dall'attività (file, permessi, avvisi). */
+/** Le azioni che passano dall'attività (file, altre app della suite, permessi, avvisi). */
 interface MailActions {
     fun openFile(file: java.io.File)
     fun toast(text: String)
+    fun text(id: Int): String
     fun askNotifications()
     fun finish()
+    /** Apre un'altra app (Calendario, Rubrica, Telefono, Mappe…); falso se nessuna lo sa fare. */
+    fun start(intent: android.content.Intent?): Boolean
+    /** In Attività ([task]) o in Note, nell'app Eurise. */
+    fun toHub(task: Boolean, text: String)
+    /** «Salva in…» di Eurise File: telefono o cloud. */
+    fun saveIn(file: java.io.File)
+    /** «Allega»: da Eurise File («Apri da…») o dal selettore di Android. */
+    fun pickAttachments(onPicked: (List<android.net.Uri>) -> Unit)
+    /** Il link per creare la password per le app (servizi chiusi). */
+    fun openLink(url: String)
 }
 
 private enum class Screen { Inbox, Accounts }
@@ -239,6 +258,7 @@ private fun Reader(model: MailModel, actions: MailActions, onReply: (Opened) -> 
     val scheme = MaterialTheme.colorScheme
     val o = model.opened
     var showImages by remember(o?.summary?.uid) { mutableStateOf(!model.blockImages) }
+    var chosen by remember(o?.summary?.uid) { mutableStateOf<Int?>(null) }
     val dark = isSystemInDarkTheme()
     val archived = stringResource(R.string.ml_archived)
     val trashed = stringResource(R.string.ml_trashed)
@@ -281,13 +301,19 @@ private fun Reader(model: MailModel, actions: MailActions, onReply: (Opened) -> 
                     Chip(stringResource(R.string.ml_show), selected = false) { showImages = true }
                 }
             }
+            SuiteProposals(o, actions)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->
-                        Chip("${a.name} · ${size(a.size)}", selected = false) {
-                            model.attachment(o.summary, a.index) { f -> if (f != null) actions.openFile(f) else actions.toast(attachFailed) }
-                        }
+                        Chip("${a.name} · ${size(a.size)}", selected = chosen == a.index) { chosen = if (chosen == a.index) null else a.index }
                     }
+                }
+                o.attachments.firstOrNull { it.index == chosen }?.let { a ->
+                    AttachmentChoice(
+                        a.name,
+                        onOpen = { model.attachment(o.summary, a.index) { f -> if (f != null) actions.openFile(f) else actions.toast(attachFailed) } },
+                        onSave = { model.attachment(o.summary, a.index) { f -> if (f != null) actions.saveIn(f) else actions.toast(attachFailed) } },
+                    )
                 }
             }
         }
@@ -345,6 +371,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
     var cc by remember { mutableStateOf(start.cc) }
     var subject by remember { mutableStateOf(start.subject) }
     var body by remember { mutableStateOf(start.body) }
+    val files = remember { androidx.compose.runtime.mutableStateListOf<android.net.Uri>().apply { addAll(start.attachments) } }
     var sending by remember { mutableStateOf(false) }
     val sent = stringResource(R.string.ml_sent)
     val failed = stringResource(R.string.ml_send_failed)
@@ -360,7 +387,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                         val account = from ?: return@clickable actions.toast(noAccount)
                         if (to.isBlank()) return@clickable
                         sending = true
-                        model.send(account, to, cc, subject, body, start.inReplyTo) { ok ->
+                        model.send(account, to, cc, subject, body, start.inReplyTo, files.toList()) { ok ->
                             sending = false
                             actions.toast(if (ok) sent else failed)
                             if (ok) onClose()
@@ -384,6 +411,12 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
             Field(stringResource(R.string.ml_to), to, KeyboardType.Email) { to = it }
             Field(stringResource(R.string.ml_cc), cc, KeyboardType.Email) { cc = it }
             Field(stringResource(R.string.ml_subject), subject, KeyboardType.Text) { subject = it }
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip("+ " + stringResource(R.string.ml_attach), selected = false) { actions.pickAttachments { picked -> files.addAll(picked.filter { it !in files }) } }
+                files.forEach { u ->
+                    Chip((u.lastPathSegment ?: "file").substringAfterLast('/') + "  ✕", selected = true) { files.remove(u) }
+                }
+            }
             Box(Modifier.fillMaxWidth().heightIn(min = 260.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(14.dp)) {
                 if (body.isEmpty()) Text(stringResource(R.string.ml_body), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                 BasicTextField(
@@ -403,6 +436,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
 private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var linking by remember { mutableStateOf<String?>(null) }
+    var warning by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -434,6 +468,9 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
             AddRow(EuriseIcons.shield(2.2f), stringResource(R.string.ml_add_eu), stringResource(R.string.ml_add_eu_sub)) { linking = "" }
             HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
             AddRow(EuriseIcons.globe(2.2f), stringResource(R.string.ml_add_domain), stringResource(R.string.ml_add_domain_sub)) { linking = "" }
+            HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+            // Servizi chiusi: si possono usare, ma in fondo, con valutazione bassa e prima l'avviso.
+            AddRow(EuriseIcons.mail(2.2f), stringResource(R.string.ml_add_closed), stringResource(R.string.ml_add_closed_sub)) { warning = true }
         }
         Text(stringResource(R.string.ml_oauth_later), fontSize = 12.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant)
         SectionTitle(stringResource(R.string.ml_privacy))
@@ -453,6 +490,7 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
         Spacer(Modifier.height(24.dp))
     }
     linking?.let { LinkSheet(model, actions, onClose = { linking = null }, onLinked = { linking = null; onBack() }) }
+    if (warning) ClosedWarning(onAccept = { warning = false; linking = "" }, onClose = { warning = false })
 }
 
 @Composable
@@ -480,6 +518,10 @@ private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Uni
                 else stringResource(R.string.ml_link_find),
                 fontSize = 12.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant,
             )
+            provider?.appPasswordUrl?.let { url ->
+                Text(stringResource(R.string.ml_app_password, provider.name), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurface)
+                Chip(stringResource(R.string.ml_app_password_go, provider.name), selected = false) { actions.openLink(url) }
+            }
             problem?.let { Text(stringResource(it), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.error) }
             Pill(
                 stringResource(if (working) R.string.ml_link_working else R.string.ml_link_go), EuriseIcons.link(2.2f),
@@ -611,5 +653,30 @@ private fun Field(label: String, value: String, type: KeyboardType, secret: Bool
             textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
             modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
         )
+    }
+}
+
+
+/** Prima di collegare un servizio chiuso: cosa vede, dove stanno i dati, come si torna indietro. */
+@Composable
+private fun ClosedWarning(onAccept: () -> Unit, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).clickable(onClick = onClose), contentAlignment = Alignment.BottomCenter) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(scheme.surfaceContainer)
+                .pointerInput(Unit) { detectTapGestures { } }.navigationBarsPadding().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ml_closed_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.ml_closed_level), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8C2F39))
+            }
+            Text(stringResource(R.string.ml_closed_explain), fontSize = 13.5.sp, lineHeight = 20.sp)
+            Text(stringResource(R.string.ml_closed_alternative), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Pill(stringResource(R.string.ml_cancel), EuriseIcons.close(2f), Modifier.weight(1f), strong = false, onClick = onClose)
+                Pill(stringResource(R.string.ml_closed_go), EuriseIcons.link(2f), Modifier.weight(1f), strong = true, onClick = onAccept)
+            }
+        }
     }
 }

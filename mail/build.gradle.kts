@@ -25,6 +25,9 @@ android {
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
         resourceConfigurations += listOf("it", "en")
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
+        buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
+        buildConfigField("String", "SUITE_PERMISSION", "\"eu.eurise.permission.SUITE\"")
     }
 
     signingConfigs {
@@ -48,6 +51,9 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
+            buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub.debug\"")
+            buildConfigField("String", "SUITE_PERMISSION", "\"eu.eurise.permission.SUITE_DEBUG\"")
         }
         release {
             isMinifyEnabled = true
@@ -83,6 +89,11 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    // Integrazione con la suite: Note e Attività (HubBridge), Salva in/Apri da di File, Calendario e Rubrica (Reach),
+    // date, attività e truffe capite sul telefono (MessageInsights, lo stesso di Messaggi).
+    implementation(project(":core:suite"))
+    implementation(project(":core:contacts"))
+    implementation(project(":core:data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

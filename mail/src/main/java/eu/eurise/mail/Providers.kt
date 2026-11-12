@@ -8,8 +8,19 @@ data class Server(val host: String, val port: Int, val security: Security)
 /** I server di una casella: IMAP per leggere, SMTP per inviare. [user] null = l'indirizzo intero. */
 data class ServerSettings(val imap: Server, val smtp: Server, val user: String? = null)
 
-/** Un fornitore: nome, paese, valutazione di privacy (3 = Europa e attento, 1 = USA con profilazione). */
-data class Provider(val name: String, val where: String, val level: Int, val domains: List<String>, val settings: ServerSettings)
+/**
+ * Un fornitore: nome, paese, valutazione di privacy (3 = Europa e attento, 2 = Europa, 1 = servizio chiuso fuori
+ * dall'UE: si può usare, ma si propone per ultimo e con l'avviso). [appPasswordUrl]: per i servizi che non accettano la
+ * password normale da un'app, la pagina dove crearne una «per le app».
+ */
+data class Provider(
+    val name: String,
+    val where: String,
+    val level: Int,
+    val domains: List<String>,
+    val settings: ServerSettings,
+    val appPasswordUrl: String? = null,
+)
 
 /**
  * Dove stanno i server delle caselle, senza chiedere nulla alla persona (tavola MailCaselle: «server e porte li trova
@@ -32,13 +43,17 @@ object Providers {
         Provider("Virgilio", "Italia, UE", 2, listOf("virgilio.it"), ServerSettings(ssl("in.virgilio.it"), ssl("out.virgilio.it", 465))),
         Provider("Aruba", "Italia, UE", 2, listOf("aruba.it"), ServerSettings(ssl("imaps.aruba.it"), ssl("smtps.aruba.it", 465))),
         Provider("Tiscali", "Italia, UE", 2, listOf("tiscali.it", "tiscalinet.it"), ServerSettings(ssl("imap.tiscali.it"), ssl("smtp.tiscali.it", 465))),
+        // Servizi chiusi, USA: in fondo, valutazione bassa, con l'avviso (regola dell'11-12 novembre: decide la persona).
+        Provider("Gmail", "Google · USA", 1, listOf("gmail.com", "googlemail.com"),
+            ServerSettings(ssl("imap.gmail.com"), ssl("smtp.gmail.com", 465)), "https://myaccount.google.com/apppasswords"),
+        Provider("iCloud", "Apple · USA", 1, listOf("icloud.com", "me.com", "mac.com"),
+            ServerSettings(ssl("imap.mail.me.com"), tls("smtp.mail.me.com")), "https://account.apple.com/account/manage"),
+        Provider("Yahoo", "Yahoo · USA", 1, listOf("yahoo.com", "yahoo.it", "ymail.com"),
+            ServerSettings(ssl("imap.mail.yahoo.com"), ssl("smtp.mail.yahoo.com", 465)), "https://login.yahoo.com/account/security"),
     )
 
-    /** Domini che richiedono l'accesso con il loro sito (OAuth): arrivano quando Eurise sarà registrata presso di loro. */
-    val NEEDS_OAUTH = setOf(
-        "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "hotmail.it", "live.com", "live.it", "msn.com",
-        "icloud.com", "me.com", "mac.com", "yahoo.com", "yahoo.it", "ymail.com", "aol.com",
-    )
+    /** Domini che accettano solo l'accesso dal loro sito (OAuth): arrivano quando Eurise sarà registrata presso Microsoft. */
+    val NEEDS_OAUTH = setOf("outlook.com", "outlook.it", "hotmail.com", "hotmail.it", "live.com", "live.it", "msn.com")
 
     /** Proton e Tuta cifrano tutto e non aprono IMAP sul telefono. */
     val CLOSED = setOf("proton.me", "protonmail.com", "protonmail.ch", "pm.me", "tuta.com", "tutanota.com", "tutanota.de", "tutamail.com", "tuta.io", "keemail.me")

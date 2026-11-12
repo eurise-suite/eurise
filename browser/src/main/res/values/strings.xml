@@ -37,7 +37,7 @@
     <string name="brw_close_tab">Chiudi la scheda</string>
     <string name="brw_tabs_title">Schede: %1$d</string>
     <string name="brw_engine">Motore di ricerca</string>
-    <string name="brw_engine_note">Esce solo la domanda, verso il motore scelto. Le tacche: tre resta qui, due esce solo la domanda, una con il tuo account.</string>
+    <string name="brw_engine_note">Esce solo la domanda, verso il motore scelto. Le tacche: tre resta qui, due esce solo la domanda, una è un servizio chiuso che lega le ricerche a te. Puoi sceglierli tutti: decidi tu, sapendo cosa succede.</string>
     <string name="brw_import">Importa segnalibri</string>
     <string name="brw_import_sub">dal file HTML di un altro browser</string>
     <string name="brw_import_done">Importati %1$d segnalibri nuovi</string>
@@ -135,7 +135,7 @@
 
     <string name="brw_ai_title">AI dalla barra</string>
     <string name="brw_ai_none">Nessuna</string>
-    <string name="brw_ai_note">Scrivi «?» e la domanda nella barra: la domanda va all\'AI scelta, solo quando lo fai tu.</string>
+    <string name="brw_ai_note">Scrivi «?» e la domanda nella barra: la domanda va all\'AI scelta, solo quando lo fai tu. Con una tacca: le conversazioni restano ai loro server negli Stati Uniti e possono servire ad addestrare i modelli.</string>
     <string name="brw_level_strict">Forte</string>
     <string name="brw_level_strict_sub">Blocca tracciatori, impronte digitali, cryptominer e pixel delle email. Qualche sito può non funzionare: lo sblocchi da Questo sito.</string>
     <string name="brw_level_standard">Standard</string>

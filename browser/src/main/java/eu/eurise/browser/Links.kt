@@ -19,6 +19,9 @@ object Links {
         Engine("ecosia", "Ecosia", "https://www.ecosia.org/search?q=%s", 2, "Germania, UE"),
         Engine("ddg", "DuckDuckGo", "https://duckduckgo.com/?q=%s", 2, "risultati Bing · USA"),
         Engine("startpage", "Startpage", "https://www.startpage.com/do/search?q=%s", 2, "risultati Google anonimi · Paesi Bassi"),
+        // Servizi chiusi: si possono scegliere, ma in fondo e con una tacca (regola del 12 novembre: decide la persona).
+        Engine("google", "Google", "https://www.google.com/search?q=%s", 1, "Google · USA · le ricerche legate a te e alla pubblicità"),
+        Engine("bing", "Bing", "https://www.bing.com/search?q=%s", 1, "Microsoft · USA · le ricerche legate a te e alla pubblicità"),
     )
 
     fun engine(id: String?): Engine = ENGINES.firstOrNull { it.id == id } ?: ENGINES.first()

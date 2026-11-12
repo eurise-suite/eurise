@@ -50,7 +50,7 @@
     <string name="ml_add_domain">La casella del tuo dominio</string>
     <string name="ml_add_domain_sub">Scrivi solo l\'indirizzo email</string>
     <string name="ml_link">Collega</string>
-    <string name="ml_oauth_later">Gmail, Outlook e iCloud arrivano con l\'accesso dal loro sito, quando Eurise sarà registrata presso di loro: prima dell\'accesso ti diremo cosa vedono. Proton e Tuta non aprono la posta ad altre app sul telefono.</string>
+    <string name="ml_oauth_later">Outlook e Hotmail arrivano con l\'accesso dal sito di Microsoft, quando Eurise sarà registrata presso di loro. Proton e Tuta non aprono la posta ad altre app sul telefono.</string>
     <string name="ml_privacy">Privacy</string>
     <string name="ml_block_title">Blocca chi spia l\'apertura</string>
     <string name="ml_block_sub">Immagini remote solo quando tocchi «Mostra»</string>
@@ -65,9 +65,33 @@
     <string name="ml_link_go">Collega</string>
     <string name="ml_link_working">Collego…</string>
     <string name="ml_err_address">Controlla l\'indirizzo email</string>
-    <string name="ml_err_oauth">Gmail, Outlook, iCloud e Yahoo chiedono l\'accesso dal loro sito: arriva presto</string>
+    <string name="ml_err_oauth">Outlook e Hotmail accettano solo l\'accesso dal sito di Microsoft: arriva presto</string>
     <string name="ml_err_closed">Proton e Tuta non aprono la posta ad altre app sul telefono</string>
     <string name="ml_err_exists">Questa casella è già collegata</string>
     <string name="ml_err_password">Password non accettata dal server</string>
     <string name="ml_err_servers">Non trovo i server di questa casella: controlla la rete o l\'indirizzo</string>
+
+    <!-- Email con la suite (12 novembre) -->
+    <string name="ml_from_note">Da %1$s &lt;%2$s&gt;</string>
+    <string name="ml_suspicious">Attenzione: sembra una truffa (chiede dati o di cliccare un link per sbloccare qualcosa). Banche ed enti non lo chiedono per email.</string>
+    <string name="ml_to_calendar">In Calendario · %1$s</string>
+    <string name="ml_no_calendar">Nessuna app di calendario per aggiungere l\'evento</string>
+    <string name="ml_to_task">In Da fare</string>
+    <string name="ml_to_note">In Note</string>
+    <string name="ml_to_contacts">In Rubrica</string>
+    <string name="ml_open">Apri</string>
+    <string name="ml_save_in">Salva in Drive</string>
+    <string name="ml_attach">Allega</string>
+    <string name="ml_no_hub">Serve l\'app Eurise per questo</string>
+
+    <!-- Servizi chiusi: si possono usare, ma in fondo e con l\'avviso -->
+    <string name="ml_add_closed">Gmail, iCloud, Yahoo</string>
+    <string name="ml_add_closed_sub">USA · valutazione bassa · prima ti diciamo cosa vedono</string>
+    <string name="ml_closed_title">Prima di collegare</string>
+    <string name="ml_closed_level">Privacy bassa</string>
+    <string name="ml_closed_explain">Gmail, iCloud e Yahoo tengono la tua posta negli Stati Uniti, dove le autorità possono chiederla anche senza dirtelo (CLOUD Act). Google e Yahoo analizzano i messaggi per i loro servizi e conoscono con chi scrivi e quando. Eurise non manda loro nulla in più: legge e invia la posta come qualunque programma di posta. Puoi togliere la casella quando vuoi, da Caselle.</string>
+    <string name="ml_closed_alternative">Alternative europee con valutazione alta: Murena, Posteo, mailbox.org. Se vuoi, Eurise ti aiuta a spostare la posta.</string>
+    <string name="ml_closed_go">Ho capito, collega</string>
+    <string name="ml_app_password">%1$s non accetta la password normale da un\'app: crea una «password per le app» (serve la verifica in due passaggi) e incollala qui sopra al posto della password.</string>
+    <string name="ml_app_password_go">Crea la password su %1$s</string>
 </resources>

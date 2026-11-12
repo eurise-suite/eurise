@@ -197,13 +197,24 @@ class MailClient(private val account: Account) {
     }
 
     /** Invia e mette una copia nella cartella degli inviati (se il server non lo fa da solo). */
-    fun send(to: String, cc: String, subject: String, body: String, inReplyTo: String?) {
+    fun send(to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<File> = emptyList()) {
         val msg = MimeMessage(session)
         msg.setFrom(InternetAddress(account.email, account.name.ifBlank { null }, "UTF-8"))
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false))
         if (cc.isNotBlank()) msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc, false))
         msg.setSubject(subject, "UTF-8")
-        msg.setText(body, "UTF-8")
+        if (files.isEmpty()) msg.setText(body, "UTF-8")
+        else {
+            val mixed = javax.mail.internet.MimeMultipart()
+            mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(body, "UTF-8") })
+            files.forEach { f ->
+                mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply {
+                    attachFile(f)
+                    fileName = MimeUtility.encodeText(f.name, "UTF-8", null)
+                })
+            }
+            msg.setContent(mixed)
+        }
         msg.sentDate = Date()
         if (!inReplyTo.isNullOrBlank()) {
             msg.setHeader("In-Reply-To", inReplyTo)

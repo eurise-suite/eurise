@@ -22,6 +22,6 @@
     <string name="web_error">La pagina non si è aperta (%1$s). La ricerca resta qui: puoi portarla nel browser senza riscriverla.</string>
     <string name="web_retry">Riprova</string>
     <string name="web_only_query">A %1$s va solo ciò che cerchi</string>
-    <string name="app_file">File</string>
+    <string name="app_file">Drive</string>
     <string name="app_scanner">Scanner</string>
 </resources>

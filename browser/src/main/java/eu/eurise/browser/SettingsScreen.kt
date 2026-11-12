@@ -275,7 +275,7 @@ private fun SearchPage(model: BrowserModel) {
     Card {
         ChoiceRow(stringResource(R.string.brw_ai_none), null, model.settings.aiService == null) { model.settings.setAi("none") }
         BrowserSettings.AIS.forEach { a ->
-            ChoiceRow(a.label, a.where, model.settings.ai == a.id) { model.settings.setAi(a.id) }
+            ChoiceRow(a.label, a.where, model.settings.ai == a.id, a.level) { model.settings.setAi(a.id) }
         }
     }
     Note(stringResource(R.string.brw_ai_note))

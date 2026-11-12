@@ -140,12 +140,30 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun send(from: Account, to: String, cc: String, subject: String, body: String, inReplyTo: String?, done: (Boolean) -> Unit) {
+    fun send(from: Account, to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<android.net.Uri>, done: (Boolean) -> Unit) {
         scope.launch {
-            val ok = withContext(Dispatchers.IO) { runCatching { MailClient(from).send(to, cc, subject, body, inReplyTo) }.isSuccess }
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    // Gli allegati (da File, Office, Galleria…) copiati qui, con il loro nome.
+                    val dir = File(context.cacheDir, "da_inviare").apply { deleteRecursively(); mkdirs() }
+                    val copies = files.mapIndexed { i, uri ->
+                        val name = displayName(uri) ?: "allegato-${i + 1}"
+                        val out = File(dir, name.replace('/', '-'))
+                        context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
+                        out
+                    }
+                    MailClient(from).send(to, cc, subject, body, inReplyTo, copies)
+                }.isSuccess
+            }
             done(ok)
         }
     }
+
+    private fun displayName(uri: android.net.Uri): String? = runCatching {
+        context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getString(0) else null
+        }
+    }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/')
 
     // --- Collegare una casella (tavola MailCaselle: «Collega», accedi, approva; server e porte li trova Eurise) ---
 
