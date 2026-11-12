@@ -27,7 +27,7 @@ class Recorder(private val maxSeconds: Int = 90) {
      * parla, le posizioni delle pause dove conviene tagliare (vedi [Chunker]).
      */
     @SuppressLint("MissingPermission")
-    fun record(onCut: ((Int) -> Unit)? = null): FloatArray {
+    fun record(onCut: ((Int) -> Unit)? = null, onBlock: ((rms: Float, end: Int) -> Unit)? = null): FloatArray {
         val rate = SAMPLE_RATE
         val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val record = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate))
@@ -49,7 +49,11 @@ class Recorder(private val maxSeconds: Int = 90) {
                     peak = maxOf(peak, abs(chunk[i].toInt()))
                 }
                 level = peak / 32768f
-                onCut?.let { cb -> chunker.feed(Chunker.rms(chunk, n), size)?.let(cb) }
+                if (onCut != null || onBlock != null) {
+                    val rms = Chunker.rms(chunk, n)
+                    onCut?.let { cb -> chunker.feed(rms, size)?.let(cb) }
+                    onBlock?.invoke(rms, size)
+                }
             }
         } finally {
             running = false

@@ -51,7 +51,8 @@ import app.organicmaps.util.ThemeUtils
 
 /**
  * La schermata della mappa di Eurise Mappe, passo a) del piano (tavole della suite): in basso la barra satinata con
- * Cerca, Livelli, Posizione, Salvati e Menu, e a parte il «+» satinato per segnalare su OpenStreetMap. Prende il posto
+ * Segnala, Livelli, Posizione, Salvati e Menu; a destra, in colonna, i cerchi satinati di zoom (+ e −, se accesi nelle
+ * impostazioni) e la lente per cercare dove andare (correzione del proprietario, 13 novembre). Prende il posto
  * dei pulsanti di CoMaps in basso; i comandi passano da [MapButtonClickListener] (MwmActivity), come prima: il motore
  * non cambia. Compose vive solo in questo [ComposeView].
  */
@@ -65,6 +66,9 @@ object EuriseMapBar {
             Bar(
                 night = ThemeUtils.isNightTheme(),
                 onSearch = { listener.onMapButtonClick(MapButtons.search) },
+                zoom = runCatching { app.organicmaps.sdk.util.Config.showZoomButtons() }.getOrDefault(true),
+                onZoomIn = { listener.onMapButtonClick(MapButtons.zoomIn) },
+                onZoomOut = { listener.onMapButtonClick(MapButtons.zoomOut) },
                 onLayers = { listener.onMapButtonClick(MapButtons.toggleMapLayer) },
                 onPosition = { listener.onMapButtonClick(MapButtons.myPosition) },
                 onSaved = { listener.onMapButtonClick(MapButtons.bookmarks) },
@@ -92,6 +96,9 @@ private val Notte = Palette(Color(0xE61C2333), Color(0x29FFFFFF), Color(0xFFE8EC
 private fun Bar(
     night: Boolean,
     onSearch: () -> Unit,
+    zoom: Boolean,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
     onLayers: () -> Unit,
     onPosition: () -> Unit,
     onSaved: () -> Unit,
@@ -101,7 +108,7 @@ private fun Bar(
     val p = if (night) Notte else Perla
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
@@ -112,20 +119,31 @@ private fun Bar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Item(Icons.search, R.string.eurise_bar_search, p, active = true, onSearch)
+            Item(Icons.report, R.string.eurise_bar_report_short, p, active = false, onReport)
             Item(Icons.layers, R.string.eurise_bar_layers, p, active = false, onLayers)
             Item(Icons.position, R.string.eurise_bar_position, p, active = false, onPosition)
             Item(Icons.star, R.string.eurise_bar_saved, p, active = false, onSaved)
             Item(Icons.menu, R.string.eurise_bar_menu, p, active = false, onMenu)
         }
-        val plus = androidx.compose.ui.res.stringResource(R.string.eurise_bar_report)
-        Box(
-            Modifier.size(64.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(p.glass)
-                .border(1.dp, p.edge, CircleShape).clickable(onClick = onReport)
-                .semantics { contentDescription = plus; role = Role.Button },
-            contentAlignment = Alignment.Center,
-        ) { Glyph(Icons.plus, p.ink, 26) }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (zoom) {
+                Round(Icons.plus, androidx.compose.ui.res.stringResource(R.string.eurise_bar_zoom_in), p, p.ink, onZoomIn)
+                Round(Icons.minus, androidx.compose.ui.res.stringResource(R.string.eurise_bar_zoom_out), p, p.ink, onZoomOut)
+            }
+            Round(Icons.search, androidx.compose.ui.res.stringResource(R.string.eurise_bar_search), p, p.accent, onSearch)
+        }
     }
+}
+
+/** Un cerchio satinato da 64 dp, come la lente: lo zoom e la ricerca hanno la stessa forma. */
+@Composable
+private fun Round(icon: ImageVector, label: String, p: Palette, tint: Color, onClick: () -> Unit) {
+    Box(
+        Modifier.size(64.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(p.glass)
+            .border(1.dp, p.edge, CircleShape).clickable(onClick = onClick)
+            .semantics { contentDescription = label; role = Role.Button },
+        contentAlignment = Alignment.Center,
+    ) { Glyph(icon, tint, 26) }
 }
 
 /**
@@ -175,4 +193,6 @@ private object Icons {
     val star = icon("star", 2.1f, "M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z")
     val menu = icon("menu", 2.3f, "M5 7h14M5 12h14M5 17h14")
     val plus = icon("plus", 2.4f, "M12 5v14M5 12h14")
+    val minus = icon("minus", 2.4f, "M5 12h14")
+    val report = icon("report", 2.1f, "M5 21V4", "M5 4h11l-2 4 2 4H5")
 }

@@ -245,9 +245,9 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
                     onTrashAll = { items -> action { items.forEach { runCatching { data.delete(it) } } } },
                     onRenameAll = { list -> action { list.forEach { r -> runCatching { data.rename(r.item, r.name) } } } },
                 )
-                Tab.Offline -> Box(Modifier.fillMaxSize().hazeSource(haze)) { OfflineTab(data, refresh, ::open) { selected = it } }
-                Tab.Shared -> Box(Modifier.fillMaxSize().hazeSource(haze)) { SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } } }
-                Tab.Trash -> Box(Modifier.fillMaxSize().hazeSource(haze)) {
+                Tab.Offline -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).hazeSource(haze)) { OfflineTab(data, refresh, ::open) { selected = it } }
+                Tab.Shared -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).hazeSource(haze)) { SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } } }
+                Tab.Trash -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).hazeSource(haze)) {
                     AllTrash(data, refresh, onRestoreFile = { action { data.restore(it) } }, onDeleteFile = { action { data.deleteForever(it) } }, onNewPhone = onNewPhone, bottomSpace = bottomSpace)
                 }
             }
@@ -267,6 +267,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
             actionLabel = stringResource(R.string.drive_scan),
             onAction = onScan,
             actionIcon = EuriseIcons.scan(),
+            solid = true,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
@@ -428,7 +429,7 @@ private fun FilesTab(
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().hazeSource(haze)) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).hazeSource(haze)) {
             if (folder == null) Overview(
                 data, access, places, refresh, top, onOpen, onFolder, onAccess, onCloud, sync, onManageSync,
                 onScan = onScan,
@@ -446,7 +447,7 @@ private fun FilesTab(
             } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock)
         }
 
-        Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false, solid = true).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (searching) {
                 Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(query, { query = it }, singleLine = true, placeholder = { Text(stringResource(R.string.drive_search_hint)) }, modifier = Modifier.weight(1f))

@@ -86,6 +86,9 @@
   <string name="eurise_bar_position">Posizione</string>
   <string name="eurise_bar_saved">Salvati</string>
   <string name="eurise_bar_menu">Menu</string>
+  <string name="eurise_bar_report_short">Segnala</string>
+  <string name="eurise_bar_zoom_in">Avvicina</string>
+  <string name="eurise_bar_zoom_out">Allontana</string>
   <string name="eurise_bar_report">Segnala qui su OpenStreetMap</string>
     <!-- Ricerca prima di scrivere (EuriseSearchHome, passo b) -->
     <string name="eurise_sh_hint">Indirizzo, luogo, impegno, farmacia</string>

@@ -26,5 +26,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Ascolto senza tasti per Alfred: solo le app della suite (stessa firma) possono collegarsi. -->
+        <service
+            android:name=".VoiceRecognitionService"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="android.speech.RecognitionService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

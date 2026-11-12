@@ -72,7 +72,12 @@ fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp, outlin
     // "solid": i pulsanti che devono staccarsi dal fondo. Col tema chiaro in pieno giorno il vetro al 62% si confonde
     // con il fondo perlaceo: qui diventa quasi pieno, con bordo e ombra leggera.
     val strong = solid && !extra.isDark
-    val tint = if (strong) Color.White.copy(alpha = 0.94f) else extra.glass
+    // "solid" col tema scuro: lo stesso vetro, quasi pieno, perché il testo sotto non si legga.
+    val tint = when {
+        strong -> Color.White.copy(alpha = 0.94f)
+        solid -> extra.glass.copy(alpha = 0.94f)
+        else -> extra.glass
+    }
     val style = HazeStyle(
         backgroundColor = MaterialTheme.colorScheme.background,
         tints = listOf(HazeTint(tint)),
@@ -111,6 +116,8 @@ fun EuriseDock(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     actionIcon: ImageVector? = null,
+    /** Vetro quasi pieno: per le schermate dove il contenuto passa sotto la barra e non deve leggersi (Drive). */
+    solid: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -125,7 +132,7 @@ fun EuriseDock(
             modifier = Modifier
                 .weight(1f)
                 .height(GlassDefaults.PillHeight)
-                .glass(hazeState, pill)
+                .glass(hazeState, pill, solid = solid)
                 .padding(GlassDefaults.Padding)
                 .selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -164,7 +171,7 @@ fun EuriseDock(
             Box(
                 modifier = Modifier
                     .size(GlassDefaults.PillHeight)
-                    .glass(hazeState, CircleShape)
+                    .glass(hazeState, CircleShape, solid = solid)
                     .selectable(selected = false, role = Role.Button, onClick = onAction)
                     .semantics { if (actionLabel != null) contentDescription = actionLabel },
                 contentAlignment = Alignment.Center,

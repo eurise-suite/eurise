@@ -86,6 +86,9 @@
   <string name="eurise_bar_position">Position</string>
   <string name="eurise_bar_saved">Saved</string>
   <string name="eurise_bar_menu">Menu</string>
+  <string name="eurise_bar_report_short">Report</string>
+  <string name="eurise_bar_zoom_in">Zoom in</string>
+  <string name="eurise_bar_zoom_out">Zoom out</string>
   <string name="eurise_bar_report">Report here on OpenStreetMap</string>
     <!-- Search page before typing (EuriseSearchHome, step b) -->
     <string name="eurise_sh_hint">Address, place, appointment, pharmacy</string>

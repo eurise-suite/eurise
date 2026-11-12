@@ -82,6 +82,8 @@ private val Seal = Brush.linearGradient(listOf(Color(0xFF3E5C8A), Color(0xFF8A3A
 private sealed interface Phase {
     data object Ready : Phase
     data object Thinking : Phase
+    /** Alfred ascolta: il microfono è aperto, si chiude da solo quando si smette di parlare. */
+    data object Listening : Phase
     data class Confirm(val card: Card) : Phase
     data class Said(val line: String) : Phase
     data object Settings : Phase
@@ -93,7 +95,7 @@ private sealed interface Phase {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
+fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, listenNow: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { AlfredPrefs(context) }
@@ -105,6 +107,10 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
     var readAloud by remember { mutableStateOf(prefs.readAloud) }
     val speaker = remember { lazy { Speaker(context) } }
     DisposableEffect(Unit) { onDispose { if (speaker.isInitialized()) speaker.value.release() } }
+    val ear = remember { Ear(context) }
+    DisposableEffect(Unit) { onDispose { ear.cancel() } }
+    var level by remember { mutableStateOf(0f) }
+    var speaking by remember { mutableStateOf(false) }
 
     fun say(line: String) { if (readAloud) speaker.value.say(line) }
 
@@ -123,6 +129,34 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
     fun replan(command: Command) {
         phase = Phase.Thinking
         scope.launch { phase = Phase.Confirm(butler.plan(command)) }
+    }
+
+    /** Un tocco e Alfred ascolta; quando si smette di parlare capisce da sé che si è finito e risponde. */
+    fun listenNow() {
+        if (speaker.isInitialized()) speaker.value.stop()
+        speaking = false
+        level = 0f
+        val started = ear.available && ear.listen(
+            onLevel = { level = it },
+            onSpeech = { speaking = true },
+            onText = { understand(it) },
+            onFail = { code ->
+                phase = Phase.Ready
+                // Eurise Voce senza modello o senza microfono: la prima volta si sistema dalla dettatura a schermo.
+                if (code == android.speech.SpeechRecognizer.ERROR_SERVER || code == android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                    dictation.start { understand(it) }
+                }
+            },
+        )
+        if (started) phase = Phase.Listening else dictation.start { understand(it) }
+    }
+
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) listenNow() else dictation.start { understand(it) }
+    }
+    fun voice() {
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) listenNow()
+        else micPermission.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -147,6 +181,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
         address = addressSuffix(prefs)
         if (askingName) suggestion = ownFirstName(context)
         if (!initial.isNullOrBlank() && !askingName) understand(initial)
+        else if (listenNow && !askingName) voice()
         else if (readAloud) say(context.getString(if (askingName) R.string.alfred_ask_name else R.string.alfred_greeting, address))
     }
 
@@ -200,11 +235,26 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
                     }
                     InputRow(
                         value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = dictation.source != Dictation.Source.None,
-                        onVoice = { dictation.start { understand(it) } },
+                        voice = dictation.source != Dictation.Source.None || ear.available,
+                        onVoice = { voice() },
                     )
                     Text(stringResource(R.string.alfred_how_to_open), fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth())
+                }
+                Phase.Listening -> {
+                    Header(stringResource(if (speaking) R.string.alfred_listening else R.string.alfred_listen_go, address), Mood.Attentive, onSettings = {})
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Box(
+                            Modifier.size(64.dp).clip(CircleShape).background(Mic).clickable { ear.finish() }
+                                .semantics { contentDescription = context.getString(R.string.alfred_listen_done) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.size((30 + 30 * level).dp).clip(CircleShape).background(Color(0x40FFFFFF)))
+                            Icon(EuriseIcons.mic(2.2f), null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                        Text(stringResource(R.string.alfred_listen_hint), fontSize = 12.5.sp, lineHeight = 18.sp, color = Muted, modifier = Modifier.weight(1f))
+                    }
+                    OutlineChip(stringResource(R.string.alfred_cancel)) { ear.cancel(); phase = Phase.Ready }
                 }
                 is Phase.Confirm -> {
                     val card = p.card
@@ -252,7 +302,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit) {
                     Header(p.line, Mood.Bow, onSettings = { phase = Phase.Settings })
                     InputRow(
                         value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = dictation.source != Dictation.Source.None, onVoice = { dictation.start { understand(it) } },
+                        voice = dictation.source != Dictation.Source.None, onVoice = { voice() },
                     )
                 }
                 Phase.Settings -> SettingsView(prefs, dictation.source, readAloud,

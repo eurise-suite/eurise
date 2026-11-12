@@ -332,7 +332,10 @@ kotlin {
     }
 }
 """)
-print("eurise_patch: mappa con la barra satinata (Compose) e il «+» per segnalare")
+# Lo zoom sta nella colonna tonda della barra (sopra la lente): i pulsanti di CoMaps a destra restano solo in guida.
+patch(mbc, "    case zoom: UiUtils.showIf(show && Config.showZoomButtons(), buttonView); break;",
+      "    case zoom: UiUtils.showIf(show && Config.showZoomButtons() && (isInNavigationMode() || mFrame.findViewById(R.id.eurise_map_bar) == null), buttonView); break;")
+print("eurise_patch: mappa con la barra satinata (Compose) e Segnala nella barra, lente e zoom tondi")
 
 
 # Passo b) dell'interfaccia rifatta sulle tavole (MapCerca): prima di scrivere, la ricerca mostra la pagina della suite in

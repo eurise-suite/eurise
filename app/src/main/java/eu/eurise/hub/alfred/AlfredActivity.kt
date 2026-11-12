@@ -24,6 +24,7 @@ class AlfredActivity : ComponentActivity() {
     private var session by mutableStateOf(0)
     private var initial by mutableStateOf<String?>(null)
     private var briefing by mutableStateOf(false)
+    private var listen by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -31,12 +32,13 @@ class AlfredActivity : ComponentActivity() {
         dictation = Dictation(this)
         initial = intent?.getStringExtra(Intent.EXTRA_TEXT)
         briefing = intent?.getBooleanExtra(EXTRA_BRIEFING, false) == true
+        listen = startsListening(intent)
         val source = SuiteBriefingSource(applicationContext)
         setContent {
             EuriseTheme {
                 key(session) {
                     if (briefing) BriefingPanel(source, onClose = ::finish)
-                    else AlfredPanel(dictation, initial, onClose = ::finish)
+                    else AlfredPanel(dictation, initial, onClose = ::finish, listenNow = listen)
                 }
             }
         }
@@ -47,10 +49,17 @@ class AlfredActivity : ComponentActivity() {
         super.onNewIntent(intent)
         initial = intent.getStringExtra(Intent.EXTRA_TEXT)
         briefing = intent.getBooleanExtra(EXTRA_BRIEFING, false)
+        listen = startsListening(intent)
         session++
     }
 
+    /** Dal tasto home tenuto premuto o da un comando vocale si comincia ad ascoltare senza altri tocchi. */
+    private fun startsListening(intent: Intent?): Boolean =
+        intent?.action == Intent.ACTION_ASSIST || intent?.action == Intent.ACTION_VOICE_COMMAND || intent?.getBooleanExtra(EXTRA_LISTEN, false) == true
+
     companion object {
+        /** Apri Alfred già in ascolto (per esempio dal microfono della dock). */
+        const val EXTRA_LISTEN = "eu.eurise.extra.ALFRED_LISTEN"
         /** Il punto della giornata invece del pannello dei comandi; lo stesso nome usa la Scrivania. */
         const val EXTRA_BRIEFING = "eu.eurise.extra.ALFRED_BRIEFING"
     }

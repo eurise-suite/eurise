@@ -194,4 +194,7 @@
     <string name="alfred_music_listen_in">Ascolta in %1$s</string>
     <string name="alfred_music_change">Cambia app</string>
     <string name="alfred_music_note">Scelga l\'app con cui ascoltare: la ricordo per il punto della giornata (per la sveglia si sceglie a parte). Riceve solo titolo e autore.</string>
+    <string name="alfred_listen_go">Dica pure%1$s, la ascolto.</string>
+    <string name="alfred_listen_done">Ho finito di parlare</string>
+    <string name="alfred_listen_hint">Parli pure: quando si ferma capisco da me che ha finito. Se ha fretta, tocchi il microfono.</string>
 </resources>
