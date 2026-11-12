@@ -80,4 +80,17 @@
     <string name="eurise_search_get_region_sub">Il luogo è in %1$s, che non è ancora sul telefono (%2$d MB). Con la mappa scaricata lo cerchi, lo vedi e ci arrivi anche senza Internet.</string>
     <string name="eurise_search_get_region_ok">Scarica</string>
     <string name="eurise_search_get_region_later">Mostralo e basta</string>
+  <!-- Barra della mappa (passo a). -->
+  <string name="eurise_bar_search">Cerca</string>
+  <string name="eurise_bar_layers">Livelli</string>
+  <string name="eurise_bar_position">Posizione</string>
+  <string name="eurise_bar_saved">Salvati</string>
+  <string name="eurise_bar_menu">Menu</string>
+  <string name="eurise_bar_report">Segnala qui su OpenStreetMap</string>
+    <string name="eurise_bar_search">Cerca</string>
+    <string name="eurise_bar_layers">Livelli</string>
+    <string name="eurise_bar_position">Posizione</string>
+    <string name="eurise_bar_saved">Salvati</string>
+    <string name="eurise_bar_menu">Menu</string>
+    <string name="eurise_bar_report">Segnala su OpenStreetMap</string>
 </resources>

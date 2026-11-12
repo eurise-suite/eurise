@@ -80,4 +80,17 @@
     <string name="eurise_search_get_region_sub">The place is in %1$s, which is not on the phone yet (%2$d MB). With it you can search, see the place and get directions without the Internet.</string>
     <string name="eurise_search_get_region_ok">Download</string>
     <string name="eurise_search_get_region_later">Just show it</string>
+  <!-- Barra della mappa (passo a). -->
+  <string name="eurise_bar_search">Search</string>
+  <string name="eurise_bar_layers">Layers</string>
+  <string name="eurise_bar_position">Position</string>
+  <string name="eurise_bar_saved">Saved</string>
+  <string name="eurise_bar_menu">Menu</string>
+  <string name="eurise_bar_report">Report here on OpenStreetMap</string>
+    <string name="eurise_bar_search">Search</string>
+    <string name="eurise_bar_layers">Layers</string>
+    <string name="eurise_bar_position">Position</string>
+    <string name="eurise_bar_saved">Saved</string>
+    <string name="eurise_bar_menu">Menu</string>
+    <string name="eurise_bar_report">Report on OpenStreetMap</string>
 </resources>

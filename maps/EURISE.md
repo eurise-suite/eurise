@@ -50,3 +50,13 @@ Velocità attuale e limite c'erano già in CoMaps (si accendono in Impostazioni)
 6. Centro privacy: cosa resta sul telefono (mappe, percorsi) e cosa esce (download delle mappe, prezzi, meteo).
 Traffico in tempo reale: nessuna fonte libera nazionale; resta spento «in prova». Lettura dei cartelli con la fotocamera:
 serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
+
+## Interfaccia sulle tavole, passo a) (12 novembre, sera)
+- Compose nel modulo app di CoMaps (`eurise_patch.py`: plugin del compilatore Compose con la versione di Kotlin di
+  CoMaps, BOM 2024.12.01, solo `ui` e `foundation`). Le schermate nuove stanno in `maps/android/…/eurise/ui/`.
+- `EuriseMapBar.kt`: barra satinata in basso (Cerca, Livelli, Posizione, Salvati, Menu) e «+» satinato per segnalare
+  su OpenStreetMap il punto al centro della mappa. È un `ComposeView` dentro `map_buttons_bottom.xml` (verticale); i
+  pulsanti di CoMaps restano nascosti perché `MapButtonsController` li cerca per id, e i comandi passano da
+  `MwmActivity` come prima. In orizzontale per ora resta la disposizione di CoMaps.
+- Ricerca su OpenStreetMap (Photon) nel centro privacy dell'app Eurise (`PrivacyContract`, servizio `MapSearch`):
+  acceso, spento e registrato lì; Mappe segue lo stato del centro privacy prima di ogni richiesta.

@@ -269,3 +269,118 @@ patch(search,
     app.organicmaps.eurise.EuriseOnlineSearch.update(mResultsFrame, show && !isCategory(), getQuery(), this);
   }""")
 print("eurise_patch: ricerca senza sigla della provincia e ricerca online facoltativa")
+
+# Passo a) dell'interfaccia rifatta sulle tavole: la schermata della mappa con la barra satinata in basso (Cerca,
+# Livelli, Posizione, Salvati, Menu) e il «+» per segnalare, in Compose (maps/android/…/eurise/ui/EuriseMapBar.kt).
+# Compose entra solo nel modulo dell'app (plugin del compilatore Kotlin della stessa versione di CoMaps, BOM con Compose
+# 1.8, che regge ancora il minSdk 21 di CoMaps); solo ui e foundation, niente Material 3. Il motore non cambia.
+android_root = root / "android"
+kotlin_version = None
+for line in (android_root / "gradle" / "libs.versions.toml").read_text().splitlines():
+    if line.strip().startswith("kotlin ="):
+        kotlin_version = line.split("=", 1)[1].strip().strip('"')
+        break
+if not kotlin_version:
+    sys.exit("eurise_patch: non trovo la versione di Kotlin in libs.versions.toml")
+patch(android_root / "build.gradle.kts", "    alias(libs.plugins.kotlin.android) apply false\n",
+      f'    alias(libs.plugins.kotlin.android) apply false\n    id("org.jetbrains.kotlin.plugin.compose") version "{kotlin_version}" apply false\n')
+app_gradle = android_root / "app" / "build.gradle.kts"
+patch(app_gradle, "    alias(libs.plugins.kotlin.android)\n", '    alias(libs.plugins.kotlin.android)\n    id("org.jetbrains.kotlin.plugin.compose")\n')
+patch(app_gradle, "        dataBinding = true\n", "        dataBinding = true\n        compose = true\n")
+patch(app_gradle, "    implementation(platform(libs.jetbrains.kotlin.bom))\n",
+      """    implementation(platform(libs.jetbrains.kotlin.bom))
+    // Eurise: schermate nuove in Compose (barra della mappa); solo ui e foundation.
+    implementation(platform("androidx.compose:compose-bom:2025.05.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+""")
+res = android_root / "app" / "src" / "main" / "res"
+# I pulsanti di CoMaps in basso restano nel layout (MapButtonsController li cerca per id) ma nascosti; sotto, la barra.
+bottom = res / "layout" / "map_buttons_bottom.xml"
+patch(bottom, """  <androidx.constraintlayout.widget.ConstraintLayout
+    style="@style/MwmWidget.M3.FAB.MapButton.Bottom\"""", """  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_map_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true" />
+  <androidx.constraintlayout.widget.ConstraintLayout
+    android:visibility="gone"
+    style="@style/MwmWidget.M3.FAB.MapButton.Bottom\"""")
+mbc = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "maplayer" / "MapButtonsController.java"
+patch(mbc, "    initBottomButtons();\n", """    initBottomButtons();
+    // Eurise: la barra satinata al posto dei pulsanti in basso (solo nella schermata normale della mappa).
+    final View euriseBar = mFrame.findViewById(R.id.eurise_map_bar);
+    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
+""")
+# Livelli e Posizione stanno nella barra: i pulsanti di CoMaps a destra e in alto non si mostrano più quando c'è.
+patch(mbc, "      mToggleMapLayerButton.setVisibility(View.VISIBLE);",
+      "      mToggleMapLayerButton.setVisibility(euriseBar == null ? View.VISIBLE : View.GONE);")
+patch(mbc, "UiUtils.showIf(show && !isInNavigationMode(), mToggleMapLayerButton);",
+      "UiUtils.showIf(show && !isInNavigationMode() && mFrame.findViewById(R.id.eurise_map_bar) == null, mToggleMapLayerButton);")
+patch(mbc, "        mNavMyPosition.showButton(show);",
+      "        mNavMyPosition.showButton(show && mFrame.findViewById(R.id.eurise_map_bar) == null);")
+patch(mbc, "    showButton(false, MapButtons.trackRecordingStatus);\n    return mFrame;",
+      "    showButton(false, MapButtons.trackRecordingStatus);\n    if (euriseBar != null && mNavMyPosition != null)\n      mNavMyPosition.showButton(false);\n    return mFrame;")
+print("eurise_patch: mappa con la barra satinata (Compose) e il «+» per segnalare")
+
+# Interfaccia rifatta sulle tavole, passo a) (STATO, 12 novembre): Compose nel modulo app di CoMaps, solo per le schermate
+# nuove (maps/android/…/eurise/ui). Il plugin del compilatore Compose ha la versione di Kotlin di CoMaps; Compose 1.7
+# (BOM 2024.12.01, la stessa della suite) regge minSdk 21. Solo ui e foundation: niente Material 3, i simboli sono a tratto.
+import re  # noqa: E402
+
+app_gradle = root / "android" / "app" / "build.gradle.kts"
+toml = (root / "android" / "gradle" / "libs.versions.toml").read_text()
+kotlin = re.search(r'^kotlin = "([^"]+)"', toml, re.M)
+if not kotlin:
+    sys.exit("eurise_patch: non trovo la versione di Kotlin in libs.versions.toml")
+patch(root / "android" / "build.gradle.kts", "    alias(libs.plugins.kotlin.android) apply false\n",
+      f'    alias(libs.plugins.kotlin.android) apply false\n    id("org.jetbrains.kotlin.plugin.compose") version "{kotlin.group(1)}" apply false\n')
+patch(app_gradle, "    alias(libs.plugins.kotlin.android)\n", '    alias(libs.plugins.kotlin.android)\n    id("org.jetbrains.kotlin.plugin.compose")\n')
+patch(app_gradle, "    buildFeatures {\n        dataBinding = true\n", "    buildFeatures {\n        dataBinding = true\n        compose = true\n")
+patch(app_gradle, "    implementation(platform(libs.jetbrains.kotlin.bom))\n",
+      """    implementation(platform(libs.jetbrains.kotlin.bom))
+    // Eurise: schermate nuove in Compose (barra satinata della mappa); solo ui e foundation.
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+""")
+
+# La barra satinata al posto dei pulsanti in basso di CoMaps (verticale): i pulsanti originali restano, nascosti, perché
+# MapButtonsController li cerca per id; la barra chiama gli stessi comandi.
+bottom = root / "android" / "app" / "src" / "main" / "res" / "layout" / "map_buttons_bottom.xml"
+patch(bottom, """    style="@style/MwmWidget.M3.FAB.MapButton.Bottom"
+    android:layout_width="wrap_content\"""", """    style="@style/MwmWidget.M3.FAB.MapButton.Bottom"
+    android:visibility="gone"
+    android:layout_width="wrap_content\"""")
+b = bottom.read_text()
+if not b.rstrip().endswith("</RelativeLayout>"):
+    sys.exit(f"eurise_patch: {bottom} non finisce come previsto")
+bottom.write_text(b.rstrip()[: -len("</RelativeLayout>")] + """  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true" />
+</RelativeLayout>
+""")
+ctrl = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "maplayer" / "MapButtonsController.java"
+patch(ctrl, "    initBottomButtons();\n", """    initBottomButtons();
+    // Eurise: barra satinata (Cerca, Livelli, Posizione, Salvati, Menu) e «+» per segnalare. Dove c'è, i pulsanti
+    // dei livelli e della posizione di CoMaps non servono più.
+    final View euriseBar = mFrame.findViewById(R.id.eurise_bar);
+    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
+    if (euriseBar != null)
+    {
+      for (int id : new int[] {R.id.layers_button, R.id.my_position})
+      {
+        final View v = mFrame.findViewById(id);
+        if (v != null)
+        {
+          v.setAlpha(0f);
+          v.setClickable(false);
+          v.setFocusable(false);
+          v.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        }
+      }
+    }
+""")
+print("eurise_patch: barra satinata della mappa (Compose)")

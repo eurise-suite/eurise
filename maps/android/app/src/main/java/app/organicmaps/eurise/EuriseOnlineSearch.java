@@ -58,6 +58,10 @@ public final class EuriseOnlineSearch
   private static final Pattern PROVINCE = Pattern.compile("\\s*[,(]?\\s*\\b[A-Z]{2}\\)?\\s*$");
   private static String sLastQuery = "";
   private static List<Place> sLastResults = new ArrayList<>();
+  /** App Eurise che ha il centro privacy (la versione di prova prima), come per il meteo sul percorso. */
+  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  /** Il nome del servizio nel centro privacy (core/suite PrivacyService.MapSearch, PrivacyContract). */
+  private static final String SERVICE = "MapSearch";
 
   private EuriseOnlineSearch() {}
 
@@ -97,6 +101,37 @@ public final class EuriseOnlineSearch
   }
 
   /**
+   * Il centro privacy dell'app Eurise: «status», «enable», «disable», «log» per la ricerca online. Risponde con lo
+   * stato, o null se l'app Eurise manca (allora vale solo l'interruttore qui). Mai dal thread principale.
+   */
+  @Nullable
+  private static Boolean hub(Context c, String method)
+  {
+    for (String h : HUBS)
+    {
+      try
+      {
+        android.os.Bundle b = c.getContentResolver().call(android.net.Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
+        if (b != null)
+          return b.getBoolean("on");
+      }
+      catch (Exception ignored)
+      {
+        // App Eurise assente, di un'altra firma o senza il fornitore: si prova l'altra.
+      }
+    }
+    return null;
+  }
+
+  /** Accende o spegne qui e nel centro privacy. */
+  private static void setOn(Context c, boolean on)
+  {
+    prefs(c).edit().putBoolean(KEY_ON, on).apply();
+    final Context app = c.getApplicationContext();
+    IO.execute(() -> hub(app, on ? "enable" : "disable"));
+  }
+
+  /**
    * Chiamata da SearchFragment quando cambia lo stato dei risultati: [empty] vero se la ricerca sul telefono non ha
    * trovato nulla. Mostra (o toglie) la scheda della ricerca online dentro il riquadro dei risultati.
    */
@@ -131,6 +166,19 @@ public final class EuriseOnlineSearch
       frame.addView(scroll, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
     render(box, query.trim(), fragment);
+    // Il centro privacy decide: se lì è stata spenta (o accesa), la scheda si aggiorna.
+    final Context app = c.getApplicationContext();
+    final String q = query.trim();
+    IO.execute(() -> {
+      Boolean on = hub(app, "status");
+      if (on == null || on == prefs(app).getBoolean(KEY_ON, false))
+        return;
+      prefs(app).edit().putBoolean(KEY_ON, on).apply();
+      MAIN.post(() -> {
+        if (fragment.isAdded() && box.getParent() != null)
+          render(box, q, fragment);
+      });
+    });
   }
 
   private static void render(LinearLayout box, String query, Fragment fragment)
@@ -166,7 +214,7 @@ public final class EuriseOnlineSearch
         .setTitle(R.string.eurise_search_online_title)
         .setMessage(R.string.eurise_search_online_explain)
         .setPositiveButton(R.string.eurise_search_online_ok, (d, w) -> {
-          prefs(c).edit().putBoolean(KEY_ON, true).apply();
+          setOn(c, true);
           then.run();
         })
         .setNegativeButton(android.R.string.cancel, null)
@@ -179,8 +227,19 @@ public final class EuriseOnlineSearch
     box.removeAllViews();
     box.addView(text(c, c.getString(R.string.eurise_search_online_working, query), 15, true));
     final String lang = Locale.getDefault().getLanguage();
+    final Context app = c.getApplicationContext();
     IO.execute(() -> {
+      // Spenta dal centro privacy nel frattempo: niente richiesta.
+      Boolean allowed = hub(app, "status");
+      if (Boolean.FALSE.equals(allowed))
+      {
+        prefs(app).edit().putBoolean(KEY_ON, false).apply();
+        MAIN.post(() -> { if (fragment.isAdded() && box.getParent() != null) render(box, query, fragment); });
+        return;
+      }
       List<Place> found = fetch(query, lang);
+      if (found != null)
+        hub(app, "log");
       MAIN.post(() -> {
         if (!fragment.isAdded() || box.getParent() == null)
           return;
@@ -225,7 +284,7 @@ public final class EuriseOnlineSearch
     off.setTextColor(resolveColor(c, androidx.appcompat.R.attr.colorPrimary));
     off.setPadding(0, dp(c, 14), 0, dp(c, 4));
     off.setOnClickListener(v -> {
-      prefs(c).edit().putBoolean(KEY_ON, false).apply();
+      setOn(c, false);
       render(box, query, fragment);
     });
     box.addView(off);
