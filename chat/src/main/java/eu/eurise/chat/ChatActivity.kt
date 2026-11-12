@@ -93,10 +93,12 @@ class ChatActivity : ComponentActivity(), ChatActions {
         val html = """<!doctype html><html><head><meta charset="utf-8"><style>
             body{font-family:sans-serif;margin:48px;color:#1E1D1B}h1{font-size:22px}
             .k{font-family:monospace;font-size:22px;font-weight:bold;letter-spacing:2px;line-height:1.8;padding:18px;border:2px solid #1F2A44;border-radius:12px}
-            p{font-size:13px;line-height:1.6;color:#3A3A35}</style></head><body>
+            p{font-size:13px;line-height:1.6;color:#3A3A35}
+            .q{display:flex;align-items:center;gap:18px;margin-top:22px}.q svg{width:150px;height:150px;flex:none}</style></head><body>
             <h1>${esc(getString(R.string.ch_rec_print_title))}</h1>
             <p>${esc(userId)} · ${esc(java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG).format(java.util.Date()))}</p>
             <div class="k">${esc(key)}</div>
+            <div class="q">${KeyQr.svg(key)}<p>${esc(getString(R.string.ch_rec_print_qr))}</p></div>
             <p>${esc(getString(R.string.ch_rec_print_note))}</p></body></html>"""
         val web = android.webkit.WebView(this)
         web.webViewClient = object : android.webkit.WebViewClient() {

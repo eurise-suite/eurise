@@ -87,6 +87,8 @@ dependencies {
     // Cifratura end-to-end (versione usata da Element per Android) e JNA, che collega Kotlin alla libreria in Rust.
     implementation("org.matrix.rustcomponents:crypto-android:26.05.12")
     implementation("net.java.dev.jna:jna:5.14.0@aar")
+    // Il QR sulla carta della chiave di recupero (ZXing è già nella suite: Scanner, Calendario).
+    implementation(libs.zxing.core)
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no).
     testImplementation("org.json:json:20240303")

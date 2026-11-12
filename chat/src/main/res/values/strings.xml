@@ -129,6 +129,7 @@
     <string name="ch_rec_wrong">Questa chiave non apre l\'archivio dell\'account. Controlla i caratteri (le maiuscole contano).</string>
     <string name="ch_rec_failed">Non è riuscito: controlla la connessione e riprova.</string>
     <string name="ch_rec_print_title">Chiave di recupero di Eurise Chat</string>
+    <string name="ch_rec_print_qr">Lo stesso codice in un QR: inquadralo con lo Scanner di Eurise sul telefono nuovo e incollalo in «Inserisci la chiave».</string>
     <string name="ch_rec_print_note">Tienila in un posto sicuro. Serve per riaprire i messaggi cifrati su un telefono nuovo o in Element. Chi la ha può leggerli.</string>
     <string name="ch_auth_title">Conferma che sei tu</string>
     <string name="ch_auth_sub">Il server lo chiede per le operazioni importanti sull\'account.</string>
