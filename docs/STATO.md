@@ -1680,3 +1680,14 @@ Fatto, nell'ordine chiesto dal proprietario:
   Android Auto) e tavole nuove (incrocio ingrandito, velocità e limite, segnalazioni); codice di «Alfred ovunque»
   (punto della giornata, sveglia, voce in Mappe, musica); tastiera (lavoro principale); correzioni del proprietario
   dopo la prova del giro 342 (non ancora ricevute).
+
+## 12 novembre, notte: tavole di Mappe in guida (ramo `brand`, nessun APK nuovo)
+- Tela, pagina «Mappe, Messaggi e Telefono», fila nuova «Mappe in guida» (**da approvare**): MapIncrocio e MapVelocita
+  (erano sulla tela ma fuori dall'indice, ora elencate), **MapSegnalaGuida** (sei voci a un tocco, Annulla per 5 secondi,
+  niente conferma; autovelox, limite errato e strada chiusa vanno a OpenStreetMap come nota anonima **a fine viaggio**
+  dopo un'occhiata; lavori, coda e pericolo restano sul telefono e scadono dopo due ore: per condividerle con altri
+  servirebbe un servizio comune, **da decidere**), **MapOrizzontaleGuida** (incrocio nella colonna a destra, barra in guida:
+  Segnala, Sosta, Voce, Insieme, Fine), **MapAutoSegnala** (Android Auto: schema dell'incrocio nel riquadro della manovra,
+  griglia Segnala di sei voci, velocità dal tachimetro se l'auto la passa, altrimenti GPS).
+- In attesa: correzioni del proprietario dopo la prova del giro 350; poi codice del passo b) di Mappe (MapCerca).
+- APK: nessuno cambiato, l'ultimo resta il **giro 350** con **Mappe 21**.
