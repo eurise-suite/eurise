@@ -1450,3 +1450,46 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Regola del proprietario** (12 novembre): a ogni consegna dire quali APK sono cambiati e quali no.
 - **Prossimi passi**: prove sul telefono (giri 316–331); Mappe: Viaggi e Rubrica in «Dove devi andare», mappe proposte dai
   viaggi, «Manda l'arrivo» a un partecipante; «parti entro» (MapPercorso) con la sveglia.
+
+## 12 novembre, sera: accessi ai siti, import senza file, webapp, tastiera, bolla «Ti hanno cercato» · giro 335 (vedi sotto)
+Richieste del proprietario (12 novembre, dopo le prove del giro 331), con lo stato:
+- **Password ↔ Browser, accessi istantanei** (fatto): `LoginsProvider` in Password (`autofill/`, solo app della suite,
+  a cassaforte aperta, ogni richiesta rimanda di 2 minuti la chiusura automatica), ingresso «Sblocca»
+  (`PasswordContract.ACTION_UNLOCK` sull'alias `AddFromSuite`, torna appena aperta). Browser: `Logins.kt` è lo
+  `Autocomplete.StorageDelegate` di Gecko (`loginAutofillEnabled`): un accesso solo → Gecko compila da sé; più accessi →
+  bolla «Accedi come…» (`LoginBubbles.kt`, `onLoginSelect`); dopo un accesso nuovo → «Salvo l'accesso?» (`onLoginSave`,
+  mai nelle private); Password chiusa → «Sblocca e accedi» e la pagina si ricarica. Salvataggio a cassaforte chiusa: voce
+  compilata in Password. Corrispondenza per dominio (anche sottodomini dello stesso dominio chiesto da Gecko).
+- **Import senza file** (fatto): il Browser riceve la condivisione di «Esporta password» di Vivaldi/Chrome/Brave
+  (`SEND`/`SEND_MULTIPLE` CSV o HTML, voce «Eurise · importa») e apre Importa con i conteggi; guida aggiornata («Apri»
+  apre il browser di origine). Firefox esporta solo in un file: resta «Ho già un file esportato».
+- **Webapp vere** (fatto): «In home» crea una scorciatoia verso `WebAppActivity` (finestra per sito, a schermo intero,
+  `documentLaunchMode=intoExisting`, nome e iniziale nelle recenti, icona adattiva con l'iniziale). Accessi da Password
+  anche lì; i link che aprono finestre nuove vanno nel Browser.
+- **«Ti hanno cercato»** (fatto in parte): tolte le icone accanto a ogni messaggio/chiamata, la fila di app in testa alla
+  bolla e ai recenti, le icone accanto ai contatti recenti e preferiti (resta la tendina, con le icone delle app nel tema
+  scelto, anche per telefono/SMS/posta predefiniti: `contacts/DefaultApps.kt`). Da fare dopo l'approvazione: icona menu
+  in testa (stessa dimensione e stile di recenti e preferiti) che apre la bolla con tutte le app per comunicare, icone del
+  tema e numeri delle notifiche (tavole **BolComunica**, **BolComunicaApp**).
+- **Tastiera** (fatto): tasti piccoli a ogni installazione = le migrazioni di HeliBoard ripartivano perché i numeri di
+  versione di Eurise sono più bassi (una rimetteva lo spazio tra i tasti al 175 %). Saltate (`AppUpgrade.kt`), e una volta
+  sola si tolgono i valori 1,75/1,1 lasciati. Precisione: `TouchOffset.kt` impara lo scarto medio dei tocchi riusciti e lo
+  toglie prima di scegliere il tasto (piano, max ¼ di tasto). Da valutare dopo la prova: confronto con FUTO Keyboard
+  (modello di tocco per tasto, correzione con il dizionario sulle lettere vicine).
+- **Tavole nuove da approvare** (tela «Icone della suite»): pagina Browser fila 5 — **BrwNuovaSchedaPro** (ricerca con
+  «Chiedi all'AI» e QR, «Riprendi da dove eri», siti fissati, «Per oggi, dalla suite», strumenti, protezione),
+  **BrwIndirizzo** (tocco sull'indirizzo: Copia, Condividi, Modifica, QR, In Note, Da fare, Promemoria, Leggi dopo, Manda al
+  computer, Copia pulito), **BrwSegnalibri** (icona segnalibri accanto all'indirizzo, cartelle e ricerca),
+  **BrwEstensioni** (estensioni di Firefox da addons.mozilla.org: GeckoView le supporta); pagina Scrivania fila 12 —
+  **ScrDock** (icona tutte le app → categorie + fino a 3 tue), **ScrDockTieni** (tieni premuto: app della categoria con
+  numeri e stella per la dock), **ScrDockStella** (le tue app con +), **BolComunica**, **BolComunicaApp**; pagina
+  Comunicazione — **TelPillola** (pillola satinata Tastierino, Preferiti, Recenti, Rubrica + «+» a parte per annotare un
+  numero). Ordine della dock come chiesto «da destra a sinistra»: Browser, Ricerca AI, Chat, Email, SMS, Drive, Mappe,
+  Stella, poi Tutte le app; lente a destra fuori dalla dock.
+- **Mappe: rifare l'interfaccia e la ricerca** (da fare, priorità del proprietario): «sa di vecchio», lontana dalle tavole
+  (MapCerca, MapPercorso, MapGuida, MapEsplora, MapAttivita, MapLivelli, MapSegnala); la ricerca non trova facilmente i
+  luoghi (es. Apice, BN). Piano proposto: 1) ricerca: capire se la regione era scaricata e come CoMaps ordina i risultati
+  (comuni prima dei POI omonimi lontani, nomi senza accenti), ricerca anche nelle regioni non scaricate con un servizio OSM
+  online facoltativo (Photon/Nominatim, dal centro privacy come il meteo, spento di base) che propone di scaricare la
+  regione; 2) interfaccia: schermata iniziale, ricerca, scheda del luogo e percorso rifatti sulle tavole (Compose sopra il
+  motore di CoMaps, al posto delle schermate di CoMaps), poi la guida.
