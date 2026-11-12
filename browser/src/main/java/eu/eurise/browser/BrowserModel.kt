@@ -33,6 +33,8 @@ class BrowserModel(private val context: Context) {
     val tabs = mutableStateListOf<Tab>()
     /** I file scelti nella schermata Importa, già letti. */
     val picked = mutableStateListOf<PickedFile>()
+    /** Arrivati file condivisi da un altro browser: la schermata apre Importa. */
+    var importRequested by mutableStateOf(false)
     /** Un avviso breve da mostrare (lo mostra l'interfaccia e lo azzera). */
     var notice by mutableStateOf<String?>(null)
     /** Download partiti in questa sessione (il numero nel menu). */

@@ -113,6 +113,7 @@ fun BrowserScreen(
     )
     val translateFailed = stringResource(R.string.brw_translate_failed)
     val onImport = { importOpen = true }
+    LaunchedEffect(model.importRequested) { if (model.importRequested) { model.importRequested = false; importOpen = true } }
 
     model.notice?.let { text ->
         LaunchedEffect(text) {
@@ -181,6 +182,7 @@ fun BrowserScreen(
                 LinearProgressIndicator(progress = { tab.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter))
             }
         }
+        if (tab != null && !editing && tab.fullscreen != true) LoginBubbles(tab, onUnlock = actions::unlockPassword)
         if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); editing = true }, onGroups = openGroups)
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })

@@ -53,6 +53,12 @@
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
+        <!-- Accessi ai siti per il Browser della suite (a cassaforte aperta). -->
+        <provider
+            android:name=".autofill.LoginsProvider"
+            android:authorities="${applicationId}.logins"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <!-- Voci mandate dalle altre app della suite (chiave di recupero della Chat): solo con il permesso della suite. -->
         <activity-alias
             android:name=".AddFromSuite"
@@ -61,6 +67,7 @@
             android:permission="${suitePermission}">
             <intent-filter>
                 <action android:name="eu.eurise.action.ADD_PASSWORD" />
+                <action android:name="eu.eurise.action.UNLOCK_PASSWORD" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>

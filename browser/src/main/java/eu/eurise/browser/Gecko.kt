@@ -63,9 +63,12 @@ object Gecko {
                 )
                 .aboutConfigEnabled(false)
                 .consoleOutput(false)
+                .loginAutofillEnabled(true)
                 .build(),
         ).also { rt ->
             runtime = rt
+            // Gli accessi ai siti vengono da Eurise Password (Logins).
+            rt.autocompleteStorageDelegate = Logins
             settings?.applyTo(rt.settings)
             rt.webExtensionController.ensureBuiltIn(EXTENSION_URL, EXTENSION_ID).accept(
                 { ext -> if (ext != null) synchronized(waiting) { extension = ext; waiting.forEach { it(ext) }; waiting.clear() } },
@@ -113,6 +116,9 @@ class Tab(
     var trackingPermission: ContentPermission? = null
         private set
     var protectionOn by mutableStateOf(true)
+    /** Bolla «Accedi come…» (più accessi per il sito) e bolla «Salvo l'accesso?»: le risposte vanno a Gecko. */
+    var loginChoice by mutableStateOf<LoginChoice?>(null)
+    var loginSave by mutableStateOf<LoginSave?>(null)
     /** Un file da scaricare (risposta che Gecko non mostra): lo passa al gestore dei download. */
     var onDownload: (String) -> Unit = {}
     /** «Sito PC»: la versione per il computer di questo sito. */
@@ -160,7 +166,10 @@ class Tab(
             }
         }
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) { progress = 5; blocked = 0; this@Tab.url = url }
+            override fun onPageStart(session: GeckoSession, url: String) {
+                progress = 5; blocked = 0; this@Tab.url = url
+                loginChoice?.dismiss(); loginChoice = null
+            }
             override fun onPageStop(session: GeckoSession, success: Boolean) { progress = 100 }
             override fun onProgressChange(session: GeckoSession, progress: Int) { this@Tab.progress = progress }
             override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
@@ -194,6 +203,31 @@ class Tab(
                 translated = translationState?.requestedTranslationPair != null
             }
         })
+        // Accessi ai siti: quale accesso usare e se salvarne uno nuovo (bolle sopra la barra; Logins per i dati).
+        session.promptDelegate = object : GeckoSession.PromptDelegate {
+            override fun onLoginSelect(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>,
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                loginChoice?.dismiss()
+                loginChoice = LoginChoice(request.options.toList(), request, result)
+                return result
+            }
+
+            override fun onLoginSave(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>,
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                // Nelle schede private non si salva nulla.
+                if (private) return GeckoResult.fromValue(request.dismiss())
+                val option = request.options.firstOrNull() ?: return GeckoResult.fromValue(request.dismiss())
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                loginSave?.dismiss()
+                loginSave = LoginSave(option.value, update = option.value.guid != null, request = request, result = result)
+                return result
+            }
+        }
         session.contentBlockingDelegate = object : ContentBlocking.Delegate {
             override fun onContentBlocked(session: GeckoSession, event: ContentBlocking.BlockEvent) {
                 blocked++

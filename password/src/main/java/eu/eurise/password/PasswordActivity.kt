@@ -1,5 +1,8 @@
 package eu.eurise.password
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import androidx.lifecycle.lifecycleScope
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -19,6 +22,16 @@ class PasswordActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         readOtp(intent)
         setContent { EuriseTheme { PasswordRoute() } }
+        // «Sblocca» chiesto dal Browser della suite: appena la cassaforte è aperta si torna alla pagina.
+        if (intent?.action == eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK &&
+            intent.component?.className == eu.eurise.core.suite.PasswordContract.ALIAS
+        ) {
+            lifecycleScope.launch {
+                repo.state.first { it is eu.eurise.password.data.VaultState.Open }
+                setResult(RESULT_OK)
+                finish()
+            }
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

@@ -58,7 +58,26 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            <!-- Password e segnalibri condivisi da un altro browser («Esporta» → Eurise): niente file da cercare. -->
+            <intent-filter android:label="@string/brw_import_share_label">
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="text/comma-separated-values" />
+                <data android:mimeType="application/csv" />
+                <data android:mimeType="text/html" />
+            </intent-filter>
         </activity>
+        <!-- Webapp da «In home»: una finestra per sito, nelle recenti con il suo nome. -->
+        <activity
+            android:name=".WebAppActivity"
+            android:exported="false"
+            android:documentLaunchMode="intoExisting"
+            android:taskAffinity=""
+            android:autoRemoveFromRecents="true"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|uiMode|density" />
         <provider
             android:name="eu.eurise.browser.SaveProvider"
             android:authorities="${applicationId}.salva"

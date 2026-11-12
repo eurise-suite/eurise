@@ -57,13 +57,28 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     private var tts: TextToSpeech? = null
 
     /** Importa: uno o più file esportati (CSV delle password, HTML dei segnalibri), letti qui e poi lasciati andare. */
-    private val importFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isEmpty()) return@registerForActivityResult
+    /** Sblocca Password (impronta o frase) e torna: la pagina si ricarica, Gecko richiede gli accessi e compila. */
+    private val unlock = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        if (r.resultCode == RESULT_OK) { Logins.lockedDomain = null; model.current?.session?.reload() }
+    }
+
+    override fun unlockPassword() {
+        val intent = Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
+            .setComponent(android.content.ComponentName(passwordPackage, eu.eurise.core.suite.PasswordContract.ALIAS))
+        runCatching { unlock.launch(intent) }.onFailure { openPassword() }
+    }
+
+    private val importFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> readPicked(uris) }
+
+    /** Legge i file scelti o condivisi e li mette tra quelli da importare. */
+    private fun readPicked(uris: List<Uri>, openImport: Boolean = false) {
+        if (uris.isEmpty()) return
         Thread {
             val read = uris.mapNotNull { uri -> scan(uri) }
             runOnUiThread {
                 read.forEach { f -> model.picked.removeAll { it.uri == f.uri }; model.picked += f }
                 if (read.isEmpty() || read.all { it.scan.isEmpty }) toast(getString(R.string.brw_import_failed))
+                else if (openImport) model.importRequested = true
             }
         }.start()
     }
@@ -71,6 +86,12 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Logins.init(this, passwordPackage)
+        Logins.onSaveFailed = { login ->
+            // Password chiusa al momento del salvataggio: la voce si apre compilata in Password, da confermare.
+            eu.eurise.core.suite.PasswordContract.addIntent(this, BuildConfig.DEBUG, Uri.parse(login.origin).host.orEmpty(), login.password,
+                username = login.username, url = login.origin)?.let { runCatching { startActivity(it) } }
+        }
         model = BrowserModel(this)
         model.onDownload = ::download
         model.restoreTabs()
@@ -158,7 +179,22 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         handle(intent)
     }
 
+    @Suppress("DEPRECATION")
     private fun handle(intent: Intent?) {
+        // «Esporta password» di Vivaldi, Chrome, Brave… condiviso qui: si legge e si apre Importa, senza cercare file.
+        val type = intent?.type.orEmpty()
+        if ((intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_SEND_MULTIPLE) && type != "text/plain") {
+            val uris = buildList {
+                (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)?.let(::add)
+                intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)?.let(::addAll)
+                intent.clipData?.let { c -> for (i in 0 until c.itemCount) c.getItemAt(i).uri?.let(::add) }
+            }.distinct()
+            if (uris.isNotEmpty()) {
+                if (model.tabs.isEmpty()) model.open(null)
+                readPicked(uris, openImport = true)
+                return
+            }
+        }
         val address = when (intent?.action) {
             Intent.ACTION_VIEW -> intent.dataString
             Intent.ACTION_WEB_SEARCH -> intent.getStringExtra(android.app.SearchManager.QUERY)
@@ -258,10 +294,12 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     /** «In home»: un'icona del sito nella schermata Home, che apre il sito nel Browser. */
     override fun addToHome(tab: Tab) {
         val url = tab.url
-        val open = Intent(Intent.ACTION_VIEW, Uri.parse(url)).setClass(this, BrowserActivity::class.java)
+        // Una webapp vera: finestra sua a schermo intero, senza barra, con il suo posto tra le recenti.
+        val name = tab.title.ifBlank { Links.host(url) }.take(24)
+        val open = WebAppActivity.intent(this, url, name)
         val info = ShortcutInfoCompat.Builder(this, "site:" + Links.host(url))
-            .setShortLabel(tab.title.ifBlank { Links.host(url) }.take(24))
-            .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_browser))
+            .setShortLabel(name)
+            .setIcon(IconCompat.createWithAdaptiveBitmap(WebAppActivity.letterIcon(this, Links.host(url).removePrefix("www."), 108, full = true)))
             .setIntent(open)
             .build()
         val ok = ShortcutManagerCompat.isRequestPinShortcutSupported(this) && ShortcutManagerCompat.requestPinShortcut(this, info, null)

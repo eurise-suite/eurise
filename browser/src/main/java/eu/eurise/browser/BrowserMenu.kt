@@ -66,6 +66,8 @@ interface BrowserActions {
     fun finish()
     fun pickImportFiles()
     fun openPassword()
+    /** Apre Eurise Password per sbloccarla; aperta, la pagina si ricarica e compila. */
+    fun unlockPassword()
     fun autofillSettings()
     fun openApp(packages: List<String>): Boolean
     fun capture(tab: Tab)

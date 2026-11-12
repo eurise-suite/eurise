@@ -21,6 +21,26 @@ object PasswordContract {
 
     fun passwordPackage(debug: Boolean) = if (debug) "eu.eurise.password.debug" else "eu.eurise.password"
 
+    /**
+     * Accessi ai siti per il Browser della suite (fornitore protetto dal permesso della suite). Funziona solo a cassaforte
+     * aperta: chiusa, risponde [KEY_OPEN] falso e il Browser offre «Sblocca» ([ACTION_UNLOCK] sullo stesso [ALIAS]).
+     */
+    fun loginsAuthority(passwordPackage: String) = "$passwordPackage.logins"
+    const val ACTION_UNLOCK = "eu.eurise.action.UNLOCK_PASSWORD"
+    const val METHOD_STATUS = "status"
+    /** arg: il dominio della pagina. Risposta: [KEY_GUID], [KEY_USERNAME], [KEY_PASSWORD], [KEY_ORIGIN] (array). */
+    const val METHOD_FETCH = "fetch"
+    /** extras: [KEY_ORIGIN], [KEY_USERNAME], [KEY_PASSWORD] e, per aggiornare, [KEY_GUID]. Risposta: [KEY_OK]. */
+    const val METHOD_SAVE = "save"
+    /** arg: guid della voce appena usata (le più usate vengono prima). */
+    const val METHOD_USED = "used"
+    const val KEY_OPEN = "open"
+    const val KEY_OK = "ok"
+    const val KEY_GUID = "guid"
+    const val KEY_USERNAME = "username"
+    const val KEY_PASSWORD = "password"
+    const val KEY_ORIGIN = "origin"
+
     /** L'intent per aggiungere la voce, o null se Password non è installata. */
     fun addIntent(context: Context, debug: Boolean, title: String, secret: String, username: String = "", url: String = "", notes: String = ""): Intent? {
         val intent = Intent(ACTION_ADD).setComponent(ComponentName(passwordPackage(debug), ALIAS))

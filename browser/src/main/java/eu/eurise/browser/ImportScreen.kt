@@ -109,7 +109,7 @@ internal fun ImportScreen(
                     }
                 }
                 Spacer(Modifier.size(4.dp))
-                Pill(stringResource(R.string.brw_import_pick), EuriseIcons.folder(2f), Modifier.fillMaxWidth(), strong = model.picked.isEmpty()) { actions.pickImportFiles() }
+                Pill(stringResource(R.string.brw_import_pick), EuriseIcons.folder(2f), Modifier.fillMaxWidth(), strong = false) { actions.pickImportFiles() }
             }
             if (model.picked.isNotEmpty()) {
                 Column(
