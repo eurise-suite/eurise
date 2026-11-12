@@ -1516,3 +1516,20 @@ Richieste del proprietario (12 novembre, dopo le prove del giro 331), con lo sta
   suite (Calendario, Note, Attività, Mappe, Telefono, Messaggi, Browser, Office). Voce e AI non restano app a parte: diventano
   l'Assistente (e la dettatura nella Tastiera).
 - **Ultimo APK: giro 338** in `apk-prova`. Cambiato rispetto al 336: solo app-debug (Meteo).
+
+## 12 novembre, notte: tavole approvate dal proprietario (con le sue correzioni)
+- **Browser, fila 5: APPROVATE** BrwNuovaSchedaPro, BrwIndirizzo, BrwSegnalibri, BrwEstensioni. Correzione: nel popup dei
+  segnalibri l'elenco **scorre** quando i segnalibri sono più di quelli che entrano.
+- **Scrivania, fila 12: APPROVATE** ScrDock, ScrDockTieni, ScrDockStella, BolComunica, BolComunicaApp. Correzione per
+  «Tutte le app»: le **categorie stanno in colonna sul lato destro** (sinistro per i mancini); **scorrendo il dito sulle
+  categorie**, a sinistra compaiono le app della categoria su cui si trova il dito. Al tocco sul pulsante della dock si apre
+  per prima **la categoria aperta più spesso**. Il resto come nelle tavole (le tre categorie in più scelte dall'utente
+  restano). La tavola ScrDock va aggiornata con questa disposizione prima del codice, oppure si segue questa descrizione.
+- **Telefono, TelPillola: APPROVATA** con due correzioni: resta **la carrellata dei preferiti in alto** com'era (tondi con
+  le iniziali, sopra le sezioni); la **bolla «Nota della chiamata»** che compare quando arriva una chiamata deve avere **lo
+  stesso stile e gli stessi colori della schermata di prima di rispondere**.
+- **Assistente: APPROVATA l'idea** (AI + Voce che eseguono comandi, con scheda di conferma, vedi sopra). Prossimo passo: la
+  tavola dell'Assistente, poi il codice.
+- Ordine di lavoro proposto per la prossima chat: 1) codice delle tavole approvate (Browser, Scrivania, Telefono) con le
+  correzioni; 2) pillola nella lettura delle Email e ricerca in basso in Password; 3) tavola dell'Assistente; 4) Mappe
+  (ricerca e interfaccia, piano sopra). A ogni consegna: elenco degli APK cambiati e di quelli uguali.
