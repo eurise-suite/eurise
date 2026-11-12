@@ -42,4 +42,16 @@ class MatrixTest {
         assertEquals("Anna", Matrix.roomName(emptyMap(), listOf("@me:x.it", "@anna:x.it"), mapOf("@anna:x.it" to "Anna"), "@me:x.it"))
         assertEquals("a, b, c +1", Matrix.roomName(emptyMap(), listOf("@a:x", "@b:x", "@c:x", "@d:x"), emptyMap(), "@me:x"))
     }
+
+    @Test fun richiestaDiVerifica() {
+        val e = JSONObject(
+            """{"type":"m.room.message","event_id":"${'$'}9","sender":"@anna:x.it","origin_server_ts":20,
+            "content":{"msgtype":"m.key.verification.request","body":"Anna vuole verificare","to":"@me:x.it","from_device":"ABC","methods":["m.sas.v1"]}}""",
+        )
+        val ev = Matrix.event(e, mapOf("@anna:x.it" to "Anna"))!!
+        assertEquals(Event.Kind.State, ev.kind)
+        assertEquals("verify:Anna", ev.text)
+        // I passi successivi (pronto, figure…) non sono messaggi.
+        assertEquals(null, Matrix.event(JSONObject("""{"type":"m.key.verification.ready","event_id":"${'$'}10","sender":"@anna:x.it","content":{}}""")))
+    }
 }

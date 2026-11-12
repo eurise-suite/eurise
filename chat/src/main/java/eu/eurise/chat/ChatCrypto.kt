@@ -71,11 +71,42 @@ class ChatCrypto(context: Context, private val session: Session) {
                 runCatching { mark(r.requestId, RequestType.TO_DEVICE, JSONObject()) }
             }
             is OutgoingVerificationRequest.InRoom -> {
-                val sent = client.put("/_matrix/client/v3/rooms/${ChatClient.enc(r.roomId)}/send/${ChatClient.enc(r.eventType)}/${ChatClient.enc(r.requestId)}",
-                    JSONObject(r.content))
-                runCatching { mark(r.requestId, RequestType.ROOM_MESSAGE, sent) }
+                val id = sendInRoom(client, r.roomId, r.eventType, JSONObject(r.content), r.requestId)
+                runCatching { mark(r.requestId, RequestType.ROOM_MESSAGE, JSONObject().put("event_id", id)) }
             }
         }
+    }
+
+    /** Stanze già controllate: cifrate o no (m.room.encryption). */
+    private val roomEncrypted = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    /**
+     * Un evento nella stanza, cifrato se la stanza è cifrata (come i messaggi): serve alla verifica di una persona, che
+     * passa dalla chat. «m.relates_to» resta in chiaro, come chiede la specifica. Restituisce l'id dell'evento.
+     */
+    suspend fun sendInRoom(client: ChatClient, roomId: String, type: String, content: JSONObject, txn: String): String {
+        val encrypted = roomEncrypted.getOrPut(roomId) {
+            runCatching { client.get("/_matrix/client/v3/rooms/${ChatClient.enc(roomId)}/state/m.room.encryption/"); true }.getOrDefault(false)
+        }
+        val path = "/_matrix/client/v3/rooms/${ChatClient.enc(roomId)}/send/"
+        val sent = if (encrypted) {
+            val out = encrypt(client, roomId, client.joinedMembers(roomId), type, content)
+            content.optJSONObject("m.relates_to")?.let { if (!out.has("m.relates_to")) out.put("m.relates_to", it) }
+            client.put(path + "m.room.encrypted/" + ChatClient.enc(txn), out)
+        } else client.put(path + ChatClient.enc(type) + "/" + ChatClient.enc(txn), content)
+        return sent.getString("event_id")
+    }
+
+    /**
+     * Un evento della verifica arrivato nella chat (già decifrato): richiesta, pronto, figure, conferme. Per una
+     * richiesta il modulo deve conoscere i dispositivi di chi la manda: prima si chiedono al server.
+     */
+    suspend fun receiveVerification(client: ChatClient, event: JSONObject, roomId: String) {
+        if (isVerificationRequest(event)) {
+            lock.withLock { machine.updateTrackedUsers(listOf(event.optString("sender"))) }
+            flush(client)
+        }
+        lock.withLock { runCatching { machine.receiveVerificationEvent(event.toString(), roomId) } }
     }
 
     /** Firme (dispositivo verificato, chiavi di firma) al server. */
@@ -131,7 +162,10 @@ class ChatCrypto(context: Context, private val session: Session) {
             )
             val inner = JSONObject(clear.clearEvent)
             // L'evento in chiaro prende tipo e contenuto; il resto (id, mittente, ora) resta quello del server.
-            JSONObject(event.toString()).put("type", inner.optString("type")).put("content", inner.optJSONObject("content") ?: JSONObject())
+            // «m.relates_to» sta fuori dalla parte cifrata (risposte, modifiche, passi della verifica): si rimette dentro.
+            val content = inner.optJSONObject("content") ?: JSONObject()
+            event.optJSONObject("content")?.optJSONObject("m.relates_to")?.let { if (!content.has("m.relates_to")) content.put("m.relates_to", it) }
+            JSONObject(event.toString()).put("type", inner.optString("type")).put("content", content)
         } catch (e: Exception) {
             null
         }
@@ -168,5 +202,14 @@ class ChatCrypto(context: Context, private val session: Session) {
         }
 
         fun txn() = UUID.randomUUID().toString()
+
+        /** I passi della verifica che passano dalla chat (dopo la richiesta, che è un messaggio). */
+        private val VERIFICATION_STEPS = setOf("ready", "start", "accept", "key", "mac", "done", "cancel").map { "m.key.verification.$it" }.toSet()
+
+        fun isVerificationRequest(e: JSONObject) =
+            e.optString("type") == "m.room.message" && e.optJSONObject("content")?.optString("msgtype") == "m.key.verification.request"
+
+        /** Un evento della cronologia che riguarda una verifica in chat. */
+        fun isVerificationEvent(e: JSONObject) = e.optString("type") in VERIFICATION_STEPS || isVerificationRequest(e)
     }
 }

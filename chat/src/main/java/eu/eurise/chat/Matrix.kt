@@ -71,6 +71,8 @@ object Matrix {
                     "m.image" -> Event(id, sender, body, time, Event.Kind.Image, content.optString("url").ifEmpty { null })
                     "m.file", "m.video", "m.audio" -> Event(id, sender, body, time, Event.Kind.File, content.optString("url").ifEmpty { null })
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice)
+                    // La richiesta di verifica di una persona: una riga al centro, non un messaggio.
+                    "m.key.verification.request" -> Event(id, sender, "verify:" + (names[sender] ?: localpart(sender)), time, Event.Kind.State)
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
                     else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text)
                 }

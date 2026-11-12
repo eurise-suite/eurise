@@ -69,6 +69,20 @@
     <string name="ch_state_join">%1$s è entrato</string>
     <string name="ch_state_leave">%1$s è uscito</string>
     <string name="ch_state_invite">%1$s è stato invitato</string>
+    <string name="ch_state_verify">%1$s ha chiesto di verificarvi</string>
+    <string name="ch_room_verified">Cifrata · persona verificata</string>
+    <string name="ch_ver_person">Verifica la persona</string>
+    <string name="ch_ver_person_again">Verifica di nuovo</string>
+    <string name="ch_ver_person_title">Verifica %1$s</string>
+    <string name="ch_ver_person_waiting">Richiesta mandata nella chat: aspetto che %1$s la accetti dal suo telefono (Eurise o Element).</string>
+    <string name="ch_ver_person_incoming">%1$s vuole verificare che stiate parlando proprio tra voi. Fatelo di persona o in chiamata: confronterete sette figure.</string>
+    <string name="ch_ver_person_compare">Sul telefono di %1$s devono comparire le stesse figure, nello stesso ordine. Confrontatele di persona o in chiamata, non per messaggio.</string>
+    <string name="ch_ver_person_confirmed">Fatto da qui: aspetto la conferma di %1$s.</string>
+    <string name="ch_ver_person_done">%1$s è verificata: se un giorno cambiassero le sue chiavi, la chat te lo dirà.</string>
+    <string name="ch_ver_person_cancelled">Verifica annullata. Se le figure erano diverse, qualcuno potrebbe stare in mezzo: non scrivete cose riservate e riprovate di persona.</string>
+    <string name="ch_ver_person_none">La verifica di una persona si fa nelle chat a due.</string>
+    <string name="ch_ver_person_no_keys">Questa persona non ha ancora la chiave di recupero (le chiavi di firma): finché non la crea non si può verificare.</string>
+    <string name="ch_ver_person_failed">Non riesco a mandare la richiesta di verifica. Riprova tra poco.</string>
 
     <string name="ch_channel">Messaggi</string>
     <string name="ch_new_many">%1$d messaggi nuovi</string>

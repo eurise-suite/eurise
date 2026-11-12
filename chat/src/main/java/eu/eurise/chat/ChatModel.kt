@@ -83,6 +83,13 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     val clear = cr.decrypt(e, roomId)
                     if (clear != null) a.put(i, clear) else pending.getOrPut(roomId) { mutableListOf() }.add(e)
                 }
+                // La verifica di una persona passa dalla chat: i suoi passi vanno al modulo crittografico.
+                for (i in 0 until a.length()) {
+                    val e = a.getJSONObject(i)
+                    if (!ChatCrypto.isVerificationEvent(e)) continue
+                    e.optString("sender").takeIf { it != c.session.userId }?.let { verifyPeers += it }
+                    runCatching { cr.receiveVerification(c, e, roomId) }
+                }
             }
         }
         val solved = mutableListOf<Pair<String, JSONObject>>()
@@ -414,6 +421,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     var keptInSuite by mutableStateOf(store.keptInSuite)
         private set
     private var verifyJob: Job? = null
+    /** Le persone che hanno mandato passi di verifica nelle chat: si guarda se chiedono qualcosa. Scritto sul thread di rete. */
+    private val verifyPeers: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+    /** Le persone verificate tra quelle delle chat aperte (per lo scudo nella testata). */
+    val verifiedPeople = mutableStateMapOf<String, Boolean>()
     private val hub get() = eu.eurise.core.suite.SecretsContract.hubPackage(context.packageName.endsWith(".debug"))
 
     private fun securityFor(): ChatSecurity? {
@@ -490,7 +501,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     private fun checkIncoming() {
         if (verify != null) return
         scope.launch {
-            val found = withContext(Dispatchers.IO) { securityFor()?.incoming() }
+            val found = withContext(Dispatchers.IO) { securityFor()?.incoming(verifyPeers.toList()) }
             if (found != null && verify == null) verify = found
         }
     }
@@ -504,11 +515,42 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    /** L'altra persona di una chat a due, se la stanza è a due. */
+    fun peerOf(roomId: String): String? {
+        val me = session?.userId ?: return null
+        val s = data[roomId] ?: return null
+        val others = (s.heroes + s.names.keys).distinct().filter { it != me }
+        return others.singleOrNull()?.takeIf { s.direct || others.size == 1 }
+    }
+
+    /** Guarda se la persona della chat è verificata (scudo nella testata). */
+    fun checkPeer(roomId: String) {
+        val peer = peerOf(roomId) ?: return
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { securityFor()?.isVerified(peer) } ?: return@launch
+            verifiedPeople[peer] = ok
+        }
+    }
+
+    /**
+     * «Verifica» dalla chat con una persona: la richiesta parte nella chat, lei la accetta dal suo telefono (Eurise o
+     * Element) e confrontate le figure, di persona o in chiamata. [failed] con il motivo se non si può.
+     */
+    fun startVerifyUser(roomId: String, failed: (Int) -> Unit) {
+        val peer = peerOf(roomId) ?: return failed(R.string.ch_ver_person_none)
+        verify = Verify.Waiting("", null, peer)
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { securityFor()?.requestUser(roomId, peer) ?: error("offline") } }
+            r.onSuccess { v -> verify = v; drive(v.flowId) }
+            r.onFailure { e -> verify = null; failed(if (e is NoIdentity) R.string.ch_ver_person_no_keys else R.string.ch_ver_person_failed) }
+        }
+    }
+
     fun acceptVerify() {
         val v = verify ?: return
         scope.launch {
-            withContext(Dispatchers.IO) { runCatching { securityFor()?.accept(v.flowId) } }
-            verify = Verify.Waiting(v.flowId, v.device)
+            withContext(Dispatchers.IO) { runCatching { securityFor()?.accept(v.flowId, v.user) } }
+            verify = Verify.Waiting(v.flowId, v.device, v.user)
             drive(v.flowId)
         }
     }
@@ -516,22 +558,23 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     /** La verifica avanza da sola mentre è aperta: le risposte dell'altro dispositivo arrivano con /sync. */
     private fun drive(flowId: String) {
         verifyJob?.cancel()
+        val user = verify?.user
         verifyJob = scope.launch {
             while (isActive) {
-                val v = withContext(Dispatchers.IO) { runCatching { securityFor()?.step(flowId) }.getOrNull() }
+                val v = withContext(Dispatchers.IO) { runCatching { securityFor()?.step(flowId, user) }.getOrNull() }
                 if (v != null && verify?.flowId == flowId) verify = v
                 if (v is Verify.Done || v is Verify.Cancelled || verify?.flowId != flowId) break
                 delay(700)
             }
-            if (verify is Verify.Done) refreshSecurity()
+            if (verify is Verify.Done) { refreshSecurity(); user?.let { verifiedPeople[it] = true } }
         }
     }
 
     fun confirmVerify() {
         val v = verify ?: return
         scope.launch {
-            withContext(Dispatchers.IO) { runCatching { securityFor()?.confirm(v.flowId) } }
-            verify = Verify.Confirmed(v.flowId, v.device)
+            withContext(Dispatchers.IO) { runCatching { securityFor()?.confirm(v.flowId, v.user) } }
+            verify = Verify.Confirmed(v.flowId, v.device, v.user)
         }
     }
 
@@ -540,8 +583,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val v = verify ?: return
         verifyJob?.cancel()
         verify = null
-        if (v is Verify.Done || v is Verify.Cancelled) return
-        scope.launch(Dispatchers.IO) { runCatching { securityFor()?.cancel(v.flowId, mismatch) } }
+        if (v is Verify.Done || v is Verify.Cancelled || v.flowId.isEmpty()) return
+        scope.launch(Dispatchers.IO) { runCatching { securityFor()?.cancel(v.flowId, mismatch, v.user) } }
     }
 
     fun logout() {
@@ -561,6 +604,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         security = null
         verify = null
         verifyJob?.cancel()
+        verifyPeers.clear()
+        verifiedPeople.clear()
         ready = false
         ChatWorker.cancel(context)
     }

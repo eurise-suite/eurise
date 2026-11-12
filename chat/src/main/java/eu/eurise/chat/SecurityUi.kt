@@ -240,6 +240,10 @@ internal fun VerifyScreen(model: ChatModel, actions: ChatActions, onClose: () ->
     LaunchedEffect(reload) { model.devices { r -> devices = r.getOrNull() ?: devices.orEmpty() } }
     val v = model.verify
     LaunchedEffect(v is Verify.Done) { if (v is Verify.Done) reload++ }
+    // Verifica di una persona (dalla chat): stesse figure, testi con il suo nome, niente elenco dei dispositivi.
+    val person = remember { v?.user }
+    val personName = person?.let(model::nameOf)
+    LaunchedEffect(v == null) { if (person != null && v == null) onClose() }
 
     fun logout(id: String, session: String? = null, password: String? = null) {
         model.logoutDevice(id, session, password) { r ->
@@ -255,16 +259,18 @@ internal fun VerifyScreen(model: ChatModel, actions: ChatActions, onClose: () ->
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             RoundIcon(EuriseIcons.chevronLeft(2.2f), stringResource(R.string.ch_back), onClick = onClose)
             Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.ch_ver_title), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            Text(if (personName != null) stringResource(R.string.ch_ver_person_title, personName) else stringResource(R.string.ch_ver_title),
+                fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2)
         }
-        val other = v?.device?.let { id -> devices?.firstOrNull { it.id == id }?.name ?: id }
+        val other = personName ?: v?.device?.let { id -> devices?.firstOrNull { it.id == id }?.name ?: id }
         when (v) {
             null -> {
                 Text(stringResource(R.string.ch_ver_intro), fontSize = 14.sp, lineHeight = 21.sp)
                 Pill(stringResource(R.string.ch_ver_start), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = true) { model.startVerify() }
             }
             is Verify.Incoming -> {
-                Text(stringResource(R.string.ch_ver_incoming, other ?: stringResource(R.string.ch_ver_other)), fontSize = 14.sp, lineHeight = 21.sp)
+                Text(if (personName != null) stringResource(R.string.ch_ver_person_incoming, personName)
+                    else stringResource(R.string.ch_ver_incoming, other ?: stringResource(R.string.ch_ver_other)), fontSize = 14.sp, lineHeight = 21.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(stringResource(R.string.ch_ver_refuse), EuriseIcons.close(2f), Modifier.weight(1f), strong = false) { model.cancelVerify(false) }
                     Pill(stringResource(R.string.ch_ver_accept), EuriseIcons.check(2f), Modifier.weight(1f), strong = true) { model.acceptVerify() }
@@ -274,12 +280,18 @@ internal fun VerifyScreen(model: ChatModel, actions: ChatActions, onClose: () ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                     Spacer(Modifier.width(10.dp))
-                    Text(stringResource(if (v is Verify.Confirmed) R.string.ch_ver_confirmed else R.string.ch_ver_waiting), fontSize = 14.sp, lineHeight = 20.sp)
+                    Text(when {
+                        personName != null && v is Verify.Confirmed -> stringResource(R.string.ch_ver_person_confirmed, personName)
+                        personName != null -> stringResource(R.string.ch_ver_person_waiting, personName)
+                        v is Verify.Confirmed -> stringResource(R.string.ch_ver_confirmed)
+                        else -> stringResource(R.string.ch_ver_waiting)
+                    }, fontSize = 14.sp, lineHeight = 20.sp)
                 }
                 Pill(stringResource(R.string.ch_cancel), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { model.cancelVerify(false) }
             }
             is Verify.Compare -> {
-                Text(stringResource(R.string.ch_ver_compare, other ?: stringResource(R.string.ch_ver_other)), fontSize = 14.sp, lineHeight = 21.sp)
+                Text(if (personName != null) stringResource(R.string.ch_ver_person_compare, personName)
+                    else stringResource(R.string.ch_ver_compare, other ?: stringResource(R.string.ch_ver_other)), fontSize = 14.sp, lineHeight = 21.sp)
                 Card {
                     Column(Modifier.padding(vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         v.emojis.chunked(4).forEach { row ->
@@ -304,13 +316,18 @@ internal fun VerifyScreen(model: ChatModel, actions: ChatActions, onClose: () ->
                 }
             }
             is Verify.Done -> {
-                Text(stringResource(R.string.ch_ver_done), fontSize = 14.sp, lineHeight = 21.sp, color = SALVIA, fontWeight = FontWeight.Bold)
+                Text(if (personName != null) stringResource(R.string.ch_ver_person_done, personName) else stringResource(R.string.ch_ver_done), fontSize = 14.sp, lineHeight = 21.sp, color = SALVIA, fontWeight = FontWeight.Bold)
                 Pill(stringResource(R.string.ch_rec_done), EuriseIcons.check(2f), Modifier.fillMaxWidth(), strong = true) { model.cancelVerify(false) }
             }
             is Verify.Cancelled -> {
-                Text(stringResource(R.string.ch_ver_cancelled), fontSize = 14.sp, lineHeight = 21.sp, color = RED)
-                Pill(stringResource(R.string.ch_ver_again), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = true) { model.cancelVerify(false); model.startVerify() }
+                Text(stringResource(if (personName != null) R.string.ch_ver_person_cancelled else R.string.ch_ver_cancelled), fontSize = 14.sp, lineHeight = 21.sp, color = RED)
+                if (person == null) Pill(stringResource(R.string.ch_ver_again), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = true) { model.cancelVerify(false); model.startVerify() }
+                else Pill(stringResource(R.string.ch_rec_done), EuriseIcons.check(2f), Modifier.fillMaxWidth(), strong = true, onClick = onClose)
             }
+        }
+        if (person != null) {
+            Spacer(Modifier.navigationBarsPadding().size(16.dp))
+            return@Column
         }
 
         SectionTitle(stringResource(R.string.ch_dev_title))

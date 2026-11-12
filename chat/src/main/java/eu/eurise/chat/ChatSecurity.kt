@@ -32,13 +32,18 @@ class WrongKey : Exception("wrong key")
 sealed interface Verify {
     val flowId: String
     val device: String?
-    data class Waiting(override val flowId: String, override val device: String?) : Verify
-    data class Incoming(override val flowId: String, override val device: String?) : Verify
-    data class Compare(override val flowId: String, override val device: String?, val emojis: List<Int>) : Verify
-    data class Confirmed(override val flowId: String, override val device: String?) : Verify
-    data class Done(override val flowId: String, override val device: String?) : Verify
-    data class Cancelled(override val flowId: String, override val device: String?) : Verify
+    /** La persona da verificare (verifica nella chat); null per un dispositivo dell'account. */
+    val user: String?
+    data class Waiting(override val flowId: String, override val device: String?, override val user: String? = null) : Verify
+    data class Incoming(override val flowId: String, override val device: String?, override val user: String? = null) : Verify
+    data class Compare(override val flowId: String, override val device: String?, val emojis: List<Int>, override val user: String? = null) : Verify
+    data class Confirmed(override val flowId: String, override val device: String?, override val user: String? = null) : Verify
+    data class Done(override val flowId: String, override val device: String?, override val user: String? = null) : Verify
+    data class Cancelled(override val flowId: String, override val device: String?, override val user: String? = null) : Verify
 }
+
+/** La persona non ha ancora le chiavi di firma (nessuna chiave di recupero): non si può verificare. */
+class NoIdentity : Exception("no identity")
 
 /** Un dispositivo dell'account: nome, ultimo accesso, se è verificato. */
 data class ChatDevice(val id: String, val name: String, val lastSeen: Long, val verified: Boolean, val current: Boolean)
@@ -220,11 +225,16 @@ class ChatSecurity(private val client: ChatClient, private val crypto: ChatCrypt
 
     // --- Verifica con le figure (SAS) ---
 
-    /** Una richiesta di verifica arrivata da un altro dispositivo dell'account, se c'è. */
-    suspend fun incoming(): Verify.Incoming? = runCatching {
+    /**
+     * Una richiesta di verifica arrivata e non ancora accettata: da un altro dispositivo dell'account o, nella chat, da
+     * una delle persone in [peers].
+     */
+    suspend fun incoming(peers: Collection<String> = emptyList()): Verify.Incoming? = runCatching {
         crypto.withMachine { m ->
-            m.getVerificationRequests(me).firstOrNull { !it.weStarted() && !it.isDone() && !it.isCancelled() && !it.isReady() }
-                ?.let { Verify.Incoming(it.flowId(), it.otherDeviceId()) }
+            (listOf(me) + peers.filter { it != me }).firstNotNullOfOrNull { u ->
+                m.getVerificationRequests(u).firstOrNull { !it.weStarted() && !it.isDone() && !it.isCancelled() && !it.isReady() && !it.isPassive() }
+                    ?.let { Verify.Incoming(it.flowId(), it.otherDeviceId(), u.takeIf { it != me }) }
+            }
         }
     }.getOrNull()
 
@@ -235,8 +245,24 @@ class ChatSecurity(private val client: ChatClient, private val crypto: ChatCrypt
         return Verify.Waiting(r.verification.flowId(), null)
     }
 
-    suspend fun accept(flowId: String) {
-        val out = crypto.withMachine { it.getVerificationRequest(me, flowId)?.accept(listOf(SAS)) }
+    /**
+     * Verifica di una persona dentro la chat che avete insieme ([roomId]): la richiesta è un messaggio della stanza
+     * (cifrato come gli altri), le risposte arrivano con /sync. [NoIdentity] se la persona non ha le chiavi di firma.
+     */
+    suspend fun requestUser(roomId: String, userId: String): Verify {
+        crypto.withMachine { it.updateTrackedUsers(listOf(userId)) }
+        crypto.flush(client)
+        val content = crypto.withMachine { it.verificationRequestContent(userId, listOf(SAS)) } ?: throw NoIdentity()
+        val eventId = crypto.sendInRoom(client, roomId, "m.room.message", JSONObject(content), ChatCrypto.txn())
+        val req = crypto.withMachine { it.requestVerification(userId, roomId, eventId, listOf(SAS)) } ?: throw NoIdentity()
+        return Verify.Waiting(req.flowId(), null, userId)
+    }
+
+    /** La persona è verificata (la sua identità firmata da noi o da te su un altro dispositivo). */
+    suspend fun isVerified(userId: String): Boolean = runCatching { crypto.withMachine { it.isIdentityVerified(userId) } }.getOrDefault(false)
+
+    suspend fun accept(flowId: String, user: String? = null) {
+        val out = crypto.withMachine { it.getVerificationRequest(user ?: me, flowId)?.accept(listOf(SAS)) }
         out?.let { crypto.sendVerification(client, it) }
     }
 
@@ -244,42 +270,44 @@ class ChatSecurity(private val client: ChatClient, private val crypto: ChatCrypt
      * Un passo della verifica: la fa avanzare (avvia o accetta le figure quando tocca a noi) e dice a che punto è.
      * Si chiama di continuo mentre la schermata è aperta; le risposte dell'altro arrivano con /sync.
      */
-    suspend fun step(flowId: String): Verify {
-        val device = crypto.withMachine { it.getVerificationRequest(me, flowId)?.otherDeviceId() }
-        val req = crypto.withMachine { it.getVerificationRequest(me, flowId) }
-        if (req?.isCancelled() == true) return Verify.Cancelled(flowId, device)
-        var sas = crypto.withMachine { it.getVerification(me, flowId)?.asSas() }
+    suspend fun step(flowId: String, user: String? = null): Verify {
+        val who = user ?: me
+        val req = crypto.withMachine { it.getVerificationRequest(who, flowId) }
+        val device = crypto.withMachine { req?.otherDeviceId() }
+        if (req?.isCancelled() == true) return Verify.Cancelled(flowId, device, user)
+        var sas = crypto.withMachine { it.getVerification(who, flowId)?.asSas() }
         if (sas == null && req?.isReady() == true && req.weStarted()) {
             val started = crypto.withMachine { req.startSasVerification() }
             started?.let { crypto.sendVerification(client, it.request); sas = it.sas }
         }
-        val s = sas ?: return if (req?.isDone() == true) Verify.Done(flowId, device) else Verify.Waiting(flowId, device)
+        val s = sas ?: return if (req?.isDone() == true) Verify.Done(flowId, device, user) else Verify.Waiting(flowId, device, user)
         return when (val st = crypto.withMachine { s.state() }) {
             is SasState.Started -> {
                 if (!s.weStarted()) crypto.withMachine { s.accept() }?.let { crypto.sendVerification(client, it) }
-                Verify.Waiting(flowId, device)
+                Verify.Waiting(flowId, device, user)
             }
-            is SasState.KeysExchanged -> st.emojis?.let { Verify.Compare(flowId, device, it) } ?: Verify.Waiting(flowId, device)
-            is SasState.Confirmed -> Verify.Confirmed(flowId, device)
-            is SasState.Done -> Verify.Done(flowId, device)
-            is SasState.Cancelled -> Verify.Cancelled(flowId, device)
-            else -> Verify.Waiting(flowId, device)
+            is SasState.KeysExchanged -> st.emojis?.let { Verify.Compare(flowId, device, it, user) } ?: Verify.Waiting(flowId, device, user)
+            is SasState.Confirmed -> Verify.Confirmed(flowId, device, user)
+            is SasState.Done -> Verify.Done(flowId, device, user)
+            is SasState.Cancelled -> Verify.Cancelled(flowId, device, user)
+            else -> Verify.Waiting(flowId, device, user)
         }
     }
 
-    /** «Sono uguali»: conferma e firma l'altro dispositivo. */
-    suspend fun confirm(flowId: String) {
-        val sas = crypto.withMachine { it.getVerification(me, flowId)?.asSas() } ?: return
+    /** «Sono uguali»: conferma e firma l'altro dispositivo (o l'identità della persona). */
+    suspend fun confirm(flowId: String, user: String? = null) {
+        val sas = crypto.withMachine { it.getVerification(user ?: me, flowId)?.asSas() } ?: return
         val result = crypto.withMachine { sas.confirm() } ?: return
         result.requests.forEach { crypto.sendVerification(client, it) }
         result.signatureRequest?.let { crypto.uploadSignatures(client, it.body) }
     }
 
-    /** «Non sono uguali» (o annulla): l'altro dispositivo lo vede e non riceve nulla. */
-    suspend fun cancel(flowId: String, mismatch: Boolean) {
+    /** «Non sono uguali» (o annulla): l'altro lo vede e non riceve nulla. */
+    suspend fun cancel(flowId: String, mismatch: Boolean, user: String? = null) {
+        val who = user ?: me
         val out = crypto.withMachine { m ->
-            m.getVerification(me, flowId)?.asSas()?.cancel(if (mismatch) "m.mismatched_sas" else "m.user")
-                ?: m.getVerificationRequest(me, flowId)?.cancel()
+            m.getVerification(who, flowId)?.asSas()?.cancel(if (mismatch) "m.mismatched_sas" else "m.user")
+                ?: m.getVerificationRequest(who, flowId)?.cancel()
         }
         out?.let { runCatching { crypto.sendVerification(client, it) } }
     }

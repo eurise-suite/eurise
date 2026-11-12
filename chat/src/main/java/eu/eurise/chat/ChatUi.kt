@@ -88,6 +88,7 @@ interface ChatActions {
 /** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */
 private enum class SecurityPage { Recovery, Verify }
 
+private val VERIFIED = Color(0xFF4F6B5A)
 private val TINTS = listOf(0xFF3E5C8A, 0xFF4F6B5A, 0xFF6B4A7A, 0xFF85672B, 0xFF2E6E73, 0xFFA0522D, 0xFF8C2F39, 0xFF55585E)
 private fun tintFor(key: String) = Color(TINTS[(key.hashCode() and 0x7fffffff) % TINTS.size])
 private fun initials(name: String): String {
@@ -107,7 +108,7 @@ fun ChatApp(model: ChatModel, actions: ChatActions) {
             model.session == null -> Access(model, actions)
             page == SecurityPage.Recovery -> RecoveryScreen(model, actions, onClose = { page = null })
             page == SecurityPage.Verify -> VerifyScreen(model, actions, onClose = { if (model.verify !is Verify.Incoming) model.cancelVerify(false); page = null })
-            open != null -> Conversation(model, actions, open)
+            open != null -> Conversation(model, actions, open, onVerify = { page = SecurityPage.Verify })
             else -> RoomList(model, actions, onRecovery = { page = SecurityPage.Recovery }, onVerify = { page = SecurityPage.Verify })
         }
     }
@@ -326,7 +327,7 @@ private fun NewChatSheet(model: ChatModel, actions: ChatActions, onClose: () -> 
 // --- Conversazione (tavola ChatConversazione) ---
 
 @Composable
-private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String) {
+private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String, onVerify: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val room = model.room(roomId)
     val me = model.session?.userId.orEmpty()
@@ -336,6 +337,9 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String)
     val failed = stringResource(R.string.ch_send_failed)
     val fileFailed = stringResource(R.string.ch_file_failed)
     LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(0); model.open(roomId) }
+    LaunchedEffect(roomId) { model.checkPeer(roomId) }
+    val peer = model.peerOf(roomId)
+    val peerVerified = peer != null && model.verifiedPeople[peer] == true
     LaunchedEffect(list) {
         snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index }.collect { last ->
             if (last != null && last >= events.size - 2) model.older(roomId)
@@ -351,8 +355,18 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(stringResource(if (room?.encrypted == true) R.string.ch_room_encrypted else R.string.ch_room_plain),
-                    fontSize = 11.5.sp, color = scheme.onSurfaceVariant, maxLines = 1)
+                Text(stringResource(when {
+                    room?.encrypted != true -> R.string.ch_room_plain
+                    peerVerified -> R.string.ch_room_verified
+                    else -> R.string.ch_room_encrypted
+                }), fontSize = 11.5.sp, color = if (peerVerified) VERIFIED else scheme.onSurfaceVariant, maxLines = 1)
+            }
+            // Verifica della persona (tavola ChatVerifica): solo nelle chat a due cifrate.
+            if (peer != null && room?.encrypted == true) {
+                RoundIcon(EuriseIcons.shield(2.2f), stringResource(if (peerVerified) R.string.ch_ver_person_again else R.string.ch_ver_person), flat = true) {
+                    model.startVerifyUser(roomId) { actions.toast(actions.text(it)) }
+                    onVerify()
+                }
             }
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
@@ -393,6 +407,7 @@ private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Uni
         val label = when (what) {
             "join" -> stringResource(R.string.ch_state_join, who)
             "leave" -> stringResource(R.string.ch_state_leave, who)
+            "verify" -> stringResource(R.string.ch_state_verify, who)
             else -> stringResource(R.string.ch_state_invite, who)
         }
         Text(label, fontSize = 11.5.sp, color = scheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
