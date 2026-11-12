@@ -8,8 +8,9 @@ plugins {
  * Eurise Chat: APK separato (pacchetto eu.eurise.chat), tavole approvate il 12 novembre (ChatElenco, ChatConversazione,
  * ChatAccesso). Matrix, protocollo aperto e federato: account sul server scelto (matrix.org, il tuo, poi quello di
  * Eurise), accesso dal sito del server. API client-server con HttpURLConnection e org.json: nessuna libreria nuova.
- * Primo giro senza cifratura end-to-end (scelta del proprietario: prima funzionante, poi cifrata); le chat cifrate si
- * vedono come tali e non vi si scrive in chiaro.
+ * Cifratura end-to-end con il modulo crittografico ufficiale di Matrix (org.matrix.rustcomponents:crypto-android,
+ * matrix-sdk-crypto in Rust con vodozemac, Apache 2.0, lo stesso di Element): senza rete propria, si innesta sul nostro
+ * client HTTP. Porta con sé una libreria nativa (circa 10 MB per arm64) e JNA: per questo l'APK è solo arm64.
  */
 val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
@@ -24,6 +25,7 @@ android {
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
         resourceConfigurations += listOf("it", "en")
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
 
     signingConfigs {
@@ -51,7 +53,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -78,6 +80,9 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
+    // Cifratura end-to-end (versione usata da Element per Android) e JNA, che collega Kotlin alla libreria in Rust.
+    implementation("org.matrix.rustcomponents:crypto-android:26.05.12")
+    implementation("net.java.dev.jna:jna:5.14.0@aar")
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no).
     testImplementation("org.json:json:20240303")

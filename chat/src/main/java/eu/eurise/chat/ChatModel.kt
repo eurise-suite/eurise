@@ -60,6 +60,42 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         private set
     private var loop: Job? = null
     private var since: String? = null
+    /** La cifratura end-to-end: nasce con la sessione (sul thread di rete). */
+    private var crypto: ChatCrypto? = null
+    /** Messaggi cifrati arrivati prima della loro chiave: si riprovano a ogni tornata. Solo sul thread di rete. */
+    private val pending = HashMap<String, MutableList<JSONObject>>()
+
+    private fun cryptoFor(s: Session): ChatCrypto? = crypto ?: runCatching { ChatCrypto(context, s) }.getOrNull().also { crypto = it }
+
+    /**
+     * Sul thread di rete, prima di mostrare una tornata: chiavi e dispositivi al modulo crittografico, messaggi cifrati
+     * decifrati al loro posto, quelli rimasti in attesa riprovati, richieste del modulo mandate al server.
+     */
+    private suspend fun prepare(c: ChatClient, json: JSONObject): List<Pair<String, JSONObject>> {
+        val cr = cryptoFor(c.session) ?: return emptyList()
+        runCatching { cr.receiveSync(json) }
+        json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
+            join.keys().forEach { roomId ->
+                val a = join.getJSONObject(roomId).optJSONObject("timeline")?.optJSONArray("events") ?: return@forEach
+                for (i in 0 until a.length()) {
+                    val e = a.getJSONObject(i)
+                    if (e.optString("type") != "m.room.encrypted") continue
+                    val clear = cr.decrypt(e, roomId)
+                    if (clear != null) a.put(i, clear) else pending.getOrPut(roomId) { mutableListOf() }.add(e)
+                }
+            }
+        }
+        val solved = mutableListOf<Pair<String, JSONObject>>()
+        pending.forEach { (roomId, list) ->
+            val it = list.iterator()
+            while (it.hasNext()) {
+                val e = it.next()
+                cr.decrypt(e, roomId)?.let { clear -> solved += roomId to clear; it.remove() }
+            }
+        }
+        runCatching { cr.flush(c) }
+        return solved
+    }
 
     fun timeline(roomId: String): SnapshotStateList<Event> = timelines.getOrPut(roomId) { mutableStateListOf() }
 
@@ -72,14 +108,18 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     /** Accende il ciclo di /sync (app aperta). */
     fun start() {
         if (session == null || loop?.isActive == true) return
+        active = true
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
                 val c = client ?: break
                 val first = since == null
-                val r = withContext(Dispatchers.IO) { runCatching { c.sync(since, if (first) 0 else 30_000) } }
-                r.onSuccess { json ->
+                val r = withContext(Dispatchers.IO) {
+                    runCatching { c.sync(since, if (first) 0 else 30_000) }.map { json -> json to prepare(c, json) }
+                }
+                r.onSuccess { (json, solved) ->
                     apply(json)
+                    resolve(solved)
                     since = json.optString("next_batch").ifEmpty { since }
                     ready = true
                     error = null
@@ -94,7 +134,19 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun stop() { loop?.cancel(); loop = null }
+    fun stop() { loop?.cancel(); loop = null; active = false }
+
+    /** I messaggi decifrati in ritardo (la chiave è arrivata dopo) prendono il posto di quelli «cifrati». */
+    private fun resolve(solved: List<Pair<String, JSONObject>>) {
+        if (solved.isEmpty()) return
+        solved.forEach { (roomId, json) ->
+            val e = Matrix.event(json, data[roomId]?.names.orEmpty()) ?: return@forEach
+            val list = timeline(roomId)
+            val i = list.indexOfFirst { it.id == e.id }
+            if (i >= 0) list[i] = e
+        }
+        publish()
+    }
 
     private fun apply(json: JSONObject) {
         val me = session?.userId.orEmpty()
@@ -206,7 +258,16 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val c = client ?: return
         s.prevBatch = null
         scope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { c.messages(roomId, from) }.getOrNull() } ?: run { s.prevBatch = from; return@launch }
+            val r = withContext(Dispatchers.IO) {
+                runCatching { c.messages(roomId, from) }.getOrNull()?.also { r ->
+                    val a = r.optJSONArray("chunk") ?: return@also
+                    val cr = cryptoFor(c.session) ?: return@also
+                    for (i in 0 until a.length()) {
+                        val e = a.getJSONObject(i)
+                        if (e.optString("type") == "m.room.encrypted") cr.decrypt(e, roomId)?.let { a.put(i, it) }
+                    }
+                }
+            } ?: run { s.prevBatch = from; return@launch }
             val chunk = Matrix.events(r.optJSONArray("chunk"), s.names).reversed()
             val list = timeline(roomId)
             list.addAll(0, chunk.filter { e -> list.none { it.id == e.id } })
@@ -219,8 +280,17 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val me = session?.userId.orEmpty()
         val local = Event("local:" + System.nanoTime(), me, text, System.currentTimeMillis(), Event.Kind.Text)
         timeline(roomId).add(local)
+        val encrypted = data[roomId]?.encrypted == true
         scope.launch {
-            val ok = withContext(Dispatchers.IO) { runCatching { c.sendText(roomId, text) }.isSuccess }
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (encrypted) {
+                        val cr = cryptoFor(c.session) ?: error("crypto")
+                        val content = JSONObject().put("msgtype", "m.text").put("body", text)
+                        c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), "m.room.message", content))
+                    } else c.sendText(roomId, text)
+                }.isSuccess
+            }
             if (!ok) { timeline(roomId).remove(local); failed() }
         }
     }
@@ -246,7 +316,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 if (runCatching { c.profile(userId) }.isFailure) return@withContext null to R.string.ch_err_unknown_user
                 runCatching { c.createDirect(userId) }.fold({ it to null }, { null to R.string.ch_err_create })
             }
-            result.first?.let { roomId -> data.getOrPut(roomId) { RoomState(roomId) }.apply { direct = true; heroes = listOf(userId) }; publish() }
+            result.first?.let { roomId -> data.getOrPut(roomId) { RoomState(roomId) }.apply { direct = true; encrypted = true; heroes = listOf(userId) }; publish() }
             done(result.first, result.second)
         }
     }
@@ -257,7 +327,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val c = client ?: return
         scope.launch {
             val r = withContext(Dispatchers.IO) { runCatching { c.createGroup(name.trim(), ids) }.getOrNull() }
-            if (r != null) { data.getOrPut(r) { RoomState(r) }.state["m.room.name"] = JSONObject().put("name", name.trim()); publish() }
+            if (r != null) {
+                data.getOrPut(r) { RoomState(r) }.apply { encrypted = true; state["m.room.name"] = JSONObject().put("name", name.trim()) }
+                publish()
+            }
             done(r, if (r == null) R.string.ch_err_create else null)
         }
     }
@@ -337,11 +410,15 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         session = null
         since = null
         rooms.clear(); data.clear(); timelines.clear()
+        crypto = null
+        pending.clear()
         ready = false
         ChatWorker.cancel(context)
     }
 
     companion object {
         const val REDIRECT = "eurisechat://login"
+        /** La Chat è aperta e sincronizza da sé: il lavoro in background non tocca le chiavi nello stesso momento. */
+        @Volatile var active = false
     }
 }

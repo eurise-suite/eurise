@@ -143,7 +143,7 @@ private fun Access(model: ChatModel, actions: ChatActions) {
         problem?.let { Text(stringResource(it), fontSize = 13.sp, color = scheme.error) }
         SectionTitle(stringResource(R.string.ch_who_sees))
         Card {
-            SeesRow(EuriseIcons.lock(2.2f), stringResource(R.string.ch_sees_messages), stringResource(R.string.ch_sees_messages_sub), stringResource(R.string.ch_server), Color(0xFF85672B))
+            SeesRow(EuriseIcons.lock(2.2f), stringResource(R.string.ch_sees_messages), stringResource(R.string.ch_sees_messages_sub), stringResource(R.string.ch_yours), Color(0xFF4F6B5A))
             Divider()
             SeesRow(EuriseIcons.eye(2.2f), stringResource(R.string.ch_sees_server), stringResource(R.string.ch_sees_server_sub), stringResource(R.string.ch_server), Color(0xFF85672B))
             Divider()
@@ -194,10 +194,10 @@ private fun RoomList(model: ChatModel, actions: ChatActions) {
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x3385672B)).padding(horizontal = 12.dp, vertical = 9.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x334F6B5A)).padding(horizontal = 12.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(EuriseIcons.lock(2f), null, tint = Color(0xFF85672B), modifier = Modifier.size(15.dp))
+                Icon(EuriseIcons.lock(2f), null, tint = Color(0xFF4F6B5A), modifier = Modifier.size(15.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.ch_e2ee_soon), fontSize = 12.sp, lineHeight = 17.sp)
             }
@@ -341,10 +341,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String)
                 Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
             }
         }
-        if (room?.encrypted == true) {
-            Text(stringResource(R.string.ch_cant_send_encrypted), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp))
-        } else Row(
+        Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom,
         ) {

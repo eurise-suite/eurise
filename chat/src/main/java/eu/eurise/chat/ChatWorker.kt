@@ -29,9 +29,27 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val ctx = applicationContext
         val store = SessionStore(ctx)
         val s = store.load() ?: return Result.success()
+        // App aperta: sincronizza lei (e tiene lei le chiavi), qui non serve.
+        if (ChatModel.active) return Result.success()
         val since = store.since
-        val json = runCatching { ChatClient(s).sync(since, 0) }.getOrNull() ?: return Result.retry()
+        val client = ChatClient(s)
+        val json = runCatching { client.sync(since, 0) }.getOrNull() ?: return Result.retry()
         store.since = json.optString("next_batch").ifEmpty { since }
+        // Le chiavi delle stanze arrivate ad app chiusa vanno al modulo crittografico, se no si perderebbero.
+        val crypto = runCatching { ChatCrypto(ctx, s) }.getOrNull()
+        if (crypto != null) {
+            runCatching { crypto.receiveSync(json) }
+            json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
+                join.keys().forEach { roomId ->
+                    val a = join.getJSONObject(roomId).optJSONObject("timeline")?.optJSONArray("events") ?: return@forEach
+                    for (i in 0 until a.length()) {
+                        val e = a.getJSONObject(i)
+                        if (e.optString("type") == "m.room.encrypted") crypto.decrypt(e, roomId)?.let { a.put(i, it) }
+                    }
+                }
+            }
+            runCatching { crypto.flush(client) }
+        }
         if (since == null) return Result.success()
         var count = 0
         var lastFrom = ""

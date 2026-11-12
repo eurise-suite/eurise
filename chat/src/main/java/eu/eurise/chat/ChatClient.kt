@@ -62,6 +62,16 @@ class ChatClient(val session: Session) {
         runCatching { post("/_matrix/client/v3/rooms/${enc(roomId)}/receipt/m.read/${enc(eventId)}", JSONObject()) }
     }
 
+    /** Messaggio cifrato (contenuto già cifrato da [ChatCrypto]). */
+    fun sendEncrypted(roomId: String, content: JSONObject): String =
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/send/m.room.encrypted/${UUID.randomUUID()}", content).optString("event_id")
+
+    /** Chi è nella stanza (per condividere con loro la chiave della stanza). */
+    fun joinedMembers(roomId: String): List<String> {
+        val joined = get("/_matrix/client/v3/rooms/${enc(roomId)}/joined_members").optJSONObject("joined") ?: return emptyList()
+        return joined.keys().asSequence().toList()
+    }
+
     fun join(roomId: String) { post("/_matrix/client/v3/join/${enc(roomId)}", JSONObject()) }
 
     fun leave(roomId: String) { post("/_matrix/client/v3/rooms/${enc(roomId)}/leave", JSONObject()) }
@@ -69,12 +79,14 @@ class ChatClient(val session: Session) {
     /** Una chat a due con [userId] (stanza privata, solo su invito). */
     fun createDirect(userId: String): String {
         val body = JSONObject().put("is_direct", true).put("preset", "trusted_private_chat").put("invite", JSONArray().put(userId))
+            .put("initial_state", encryptedState())
         return post("/_matrix/client/v3/createRoom", body).getString("room_id")
     }
 
     /** Un gruppo con un nome e le persone invitate. */
     fun createGroup(name: String, users: List<String>): String {
         val body = JSONObject().put("name", name).put("preset", "private_chat").put("invite", JSONArray(users))
+            .put("initial_state", encryptedState())
         return post("/_matrix/client/v3/createRoom", body).getString("room_id")
     }
 
@@ -93,6 +105,12 @@ class ChatClient(val session: Session) {
         } finally { c.disconnect() }
         return out
     }
+
+    /** Le chat nuove nascono cifrate end-to-end (Megolm, come Element). */
+    private fun encryptedState() = JSONArray().put(
+        JSONObject().put("type", "m.room.encryption").put("state_key", "")
+            .put("content", JSONObject().put("algorithm", "m.megolm.v1.aes-sha2")),
+    )
 
     fun logout() { runCatching { post("/_matrix/client/v3/logout", JSONObject()) } }
 
@@ -178,7 +196,15 @@ class SessionStore(context: Context) {
             .putString("token", seal(s.token)).remove("since").apply()
     }
 
-    fun clear() = prefs.edit().clear().apply()
+    fun clear() = prefs.edit().remove("hs").remove("user").remove("device").remove("token").remove("since").apply()
+
+    /** La frase dell'archivio delle chiavi di cifratura: casuale, creata una volta, custodita cifrata dal Keystore. */
+    fun cryptoPassphrase(): String {
+        prefs.getString("crypto", null)?.let { sealed -> runCatching { open(sealed) }.getOrNull()?.let { return it } }
+        val fresh = ChatCrypto.newPassphrase()
+        prefs.edit().putString("crypto", seal(fresh)).apply()
+        return fresh
+    }
 
     var since: String?
         get() = prefs.getString("since", null)
