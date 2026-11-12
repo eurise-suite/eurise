@@ -79,8 +79,11 @@ public class KeyDetector {
         if (mKeyboard == null) {
             return null;
         }
-        final int touchX = getTouchX(x);
-        final int touchY = getTouchY(y);
+        // Eurise: lo scarto abituale dei tocchi, imparato (TouchOffset), si toglie prima di scegliere il tasto.
+        final int rawX = getTouchX(x);
+        final int rawY = getTouchY(y);
+        final int touchX = rawX - eu.eurise.keyboard.TouchOffset.INSTANCE.dx(mKeyboard);
+        final int touchY = rawY - eu.eurise.keyboard.TouchOffset.INSTANCE.dy(mKeyboard);
 
         int minDistance = Integer.MAX_VALUE;
         Key primaryKey = null;
@@ -102,6 +105,8 @@ public class KeyDetector {
             }
         }
         // Eurise: la parte bassa dei tasti sopra la barra spaziatrice conta come spazio (TouchFix).
-        return eu.eurise.keyboard.TouchFix.INSTANCE.adjust(mKeyboard, primaryKey, touchX, touchY);
+        final Key chosen = eu.eurise.keyboard.TouchFix.INSTANCE.adjust(mKeyboard, primaryKey, touchX, touchY);
+        eu.eurise.keyboard.TouchOffset.INSTANCE.touched(chosen, rawX, rawY);
+        return chosen;
     }
 }

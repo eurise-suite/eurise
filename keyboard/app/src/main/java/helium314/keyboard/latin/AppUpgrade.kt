@@ -83,12 +83,28 @@ fun transferOldPinnedClips(context: Context) {
 private object AppUpgrade {
     fun onUpgrade(context: Context) {
         val prefs = context.prefs()
-        val oldVersion = prefs.getInt(Settings.PREF_VERSION_CODE, 0)
-        if (oldVersion == 0) {
+        val storedVersion = prefs.getInt(Settings.PREF_VERSION_CODE, 0)
+        if (storedVersion == 0) {
             // fresh install -> no need to upgrade, as this does things like keeping old defaults which is on wanted on actual upgrade
             prefs.edit { putInt(Settings.PREF_VERSION_CODE, BuildConfig.VERSION_CODE) }
             return
         }
+        // Eurise: i numeri di versione di Eurise (100 + giro della compilazione) sono più piccoli di quelli di HeliBoard,
+        // così a ogni aggiornamento ripartivano tutte le migrazioni di HeliBoard: una rimetteva lo spazio tra i tasti al
+        // 175 % (tasti piccoli dopo ogni installazione, 12 novembre). Eurise non ha mai avuto quei formati vecchi: si
+        // saltano. Una volta sola si tolgono i valori lasciati da quella migrazione, così tornano quelli di Eurise.
+        if (!prefs.getBoolean("eurise_gap_fixed", false)) {
+            prefs.edit {
+                for (i in 0..3) {
+                    val key = createPrefKeyForBooleanSettings(Settings.PREF_KEY_GAP_SCALE_PREFIX, i, 2)
+                    val v = prefs.getFloat(key, -1f)
+                    if (v == 1.75f || v == 1.1f) remove(key)
+                }
+                putBoolean("eurise_gap_fixed", true)
+            }
+        }
+        // Nessuna migrazione di HeliBoard: tutte le condizioni «oldVersion <= …» risultano false.
+        val oldVersion = Int.MAX_VALUE
         // clear extracted dictionaries, in case updated version contains newer ones
         DictionaryInfoUtils.getCacheDirectories(context).forEach {
             for (file in it.listFiles()!!) {
