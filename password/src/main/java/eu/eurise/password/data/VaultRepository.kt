@@ -75,6 +75,9 @@ class VaultRepository private constructor(context: Context) {
     /** Un file aperto o condiviso verso Password, in attesa che la cassaforte sia aperta. */
     val pendingImport = MutableStateFlow<android.net.Uri?>(null)
 
+    /** Una voce mandata da un'altra app della suite (chiave della Chat): si apre compilata, si salva se la persona conferma. */
+    val pendingEntry = MutableStateFlow<eu.eurise.password.kdbx.EntryDraft?>(null)
+
     /** Una schermata dell'app è in primo piano. Se si è stati via troppo, il timer può aver ritardato: si blocca ora. */
     fun enter() {
         mainHandler.removeCallbacks(lockTask)

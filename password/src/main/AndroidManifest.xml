@@ -53,6 +53,17 @@
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
+        <!-- Voci mandate dalle altre app della suite (chiave di recupero della Chat): solo con il permesso della suite. -->
+        <activity-alias
+            android:name=".AddFromSuite"
+            android:targetActivity=".PasswordActivity"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.ADD_PASSWORD" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".autofill.FillActivity"
             android:exported="false"

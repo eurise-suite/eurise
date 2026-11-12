@@ -104,7 +104,7 @@
     <string name="ch_rec_suite_sub">Con la tua frase segreta: la ritrovi al ripristino del telefono nuovo · consigliato</string>
     <string name="ch_rec_suite_missing">Serve l\'app Eurise con il backup attivo</string>
     <string name="ch_rec_password">In Eurise Password</string>
-    <string name="ch_rec_password_sub">La chiave è copiata: in Password crea la voce «Chat · chiave di recupero» e incollala</string>
+    <string name="ch_rec_password_sub">Password apre la voce già compilata: conferma e la chiave è al sicuro con le altre</string>
     <string name="ch_rec_password_open">Apri</string>
     <string name="ch_rec_paper">Su carta</string>
     <string name="ch_rec_paper_sub">Un foglio da stampare e tenere a casa</string>
@@ -129,6 +129,7 @@
     <string name="ch_rec_wrong">Questa chiave non apre l\'archivio dell\'account. Controlla i caratteri (le maiuscole contano).</string>
     <string name="ch_rec_failed">Non è riuscito: controlla la connessione e riprova.</string>
     <string name="ch_rec_print_title">Chiave di recupero di Eurise Chat</string>
+    <string name="ch_rec_password_entry">Chat · chiave di recupero</string>
     <string name="ch_rec_print_qr">Lo stesso codice in un QR: inquadralo con lo Scanner di Eurise sul telefono nuovo e incollalo in «Inserisci la chiave».</string>
     <string name="ch_rec_print_note">Tienila in un posto sicuro. Serve per riaprire i messaggi cifrati su un telefono nuovo o in Element. Chi la ha può leggerli.</string>
     <string name="ch_auth_title">Conferma che sei tu</string>

@@ -80,7 +80,7 @@ interface ChatActions {
     /** Copia un segreto (la chiave di recupero): segnato come sensibile, non compare nelle anteprime degli appunti. */
     fun copySecret(text: String)
     /** «In Eurise Password»: copia la chiave e apre Password per incollarla in una voce nuova. */
-    fun openPassword(key: String)
+    fun openPassword(key: String, userId: String)
     /** «Su carta»: un foglio con la chiave da stampare. */
     fun printKey(key: String, userId: String)
 }

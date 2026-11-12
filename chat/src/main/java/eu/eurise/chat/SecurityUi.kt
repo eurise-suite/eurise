@@ -136,7 +136,7 @@ internal fun RecoveryScreen(model: ChatModel, actions: ChatActions, onClose: () 
                     }
                     Divider()
                     KeepRow(EuriseIcons.key(2.2f), stringResource(R.string.ch_rec_password), stringResource(R.string.ch_rec_password_sub)) {
-                        Chip(stringResource(R.string.ch_rec_password_open), selected = false) { actions.openPassword(k) }
+                        Chip(stringResource(R.string.ch_rec_password_open), selected = false) { actions.openPassword(k, model.session?.userId.orEmpty()) }
                     }
                     Divider()
                     KeepRow(EuriseIcons.printer(2.2f), stringResource(R.string.ch_rec_paper), stringResource(R.string.ch_rec_paper_sub)) {

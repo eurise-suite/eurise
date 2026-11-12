@@ -75,10 +75,17 @@ class ChatActivity : ComponentActivity(), ChatActions {
         cm.setPrimaryClip(clip)
     }
 
-    override fun openPassword(key: String) {
+    /**
+     * «In Eurise Password»: la chiave arriva a Password come voce già compilata (si salva se confermi), senza passare
+     * dagli appunti. Con una Password vecchia, che non ha ancora l'ingresso della suite: copia e apri, come prima.
+     */
+    override fun openPassword(key: String, userId: String) {
+        val debug = packageName.endsWith(".debug")
+        val add = eu.eurise.core.suite.PasswordContract.addIntent(this, debug, getString(R.string.ch_rec_password_entry), key,
+            username = userId, url = "https://app.element.io", notes = getString(R.string.ch_rec_print_note))
+        if (add != null && runCatching { startActivity(add) }.isSuccess) return
         copySecret(key)
-        val pkg = if (packageName.endsWith(".debug")) "eu.eurise.password.debug" else "eu.eurise.password"
-        val launch = packageManager.getLaunchIntentForPackage(pkg)
+        val launch = packageManager.getLaunchIntentForPackage(eu.eurise.core.suite.PasswordContract.passwordPackage(debug))
         if (launch != null) {
             toast(getString(R.string.ch_rec_copied))
             runCatching { startActivity(launch) }

@@ -307,6 +307,12 @@ private fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
         if (uri.startsWith("otpauth-migration", ignoreCase = true)) vm.showImport(ready)
         else ready.items.firstOrNull()?.let { screen = Screen.Edit(null, prefill = it.draft) }
     }
+    val pendingEntry by vm.repo.pendingEntry.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingEntry) {
+        val draft = pendingEntry ?: return@LaunchedEffect
+        vm.repo.pendingEntry.value = null
+        screen = Screen.Edit(null, prefill = draft)
+    }
     val pendingImport by vm.repo.pendingImport.collectAsStateWithLifecycle()
     LaunchedEffect(pendingImport) {
         val file = pendingImport ?: return@LaunchedEffect
@@ -768,10 +774,10 @@ private fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDr
     var title by remember { mutableStateOf(entry?.title ?: prefill?.title.orEmpty()) }
     var user by remember { mutableStateOf(entry?.username ?: prefill?.username.orEmpty()) }
     var phrase by remember { mutableStateOf(true) }
-    var password by remember { mutableStateOf(entry?.password ?: if (prefill != null) "" else Generator.passphrase()) }
-    var url by remember { mutableStateOf(entry?.url.orEmpty()) }
+    var password by remember { mutableStateOf(entry?.password ?: prefill?.password ?: Generator.passphrase()) }
+    var url by remember { mutableStateOf(entry?.url ?: prefill?.url.orEmpty()) }
     var otp by remember { mutableStateOf(entry?.otp ?: prefill?.otp.orEmpty()) }
-    var notes by remember { mutableStateOf(entry?.notes.orEmpty()) }
+    var notes by remember { mutableStateOf(entry?.notes ?: prefill?.notes.orEmpty()) }
     var isCard by remember { mutableStateOf(startAsCard || entry?.card != null) }
     var number by remember { mutableStateOf(entry?.card?.number.orEmpty()) }
     var holder by remember { mutableStateOf(entry?.card?.holder.orEmpty()) }

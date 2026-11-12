@@ -28,6 +28,19 @@ class PasswordActivity : ComponentActivity() {
 
     private fun readOtp(intent: android.content.Intent?) {
         when (intent?.action) {
+            // Solo dall'ingresso protetto dal permesso della suite: altrove l'azione si ignora.
+            eu.eurise.core.suite.PasswordContract.ACTION_ADD -> {
+                if (intent.component?.className != eu.eurise.core.suite.PasswordContract.ALIAS) return
+                val secret = intent.getStringExtra(eu.eurise.core.suite.PasswordContract.EXTRA_SECRET).orEmpty()
+                if (secret.isEmpty()) return
+                fun x(k: String) = intent.getStringExtra(k).orEmpty()
+                repo.pendingEntry.value = eu.eurise.password.kdbx.EntryDraft(
+                    x(eu.eurise.core.suite.PasswordContract.EXTRA_TITLE), x(eu.eurise.core.suite.PasswordContract.EXTRA_USERNAME), secret,
+                    x(eu.eurise.core.suite.PasswordContract.EXTRA_URL), x(eu.eurise.core.suite.PasswordContract.EXTRA_NOTES), null,
+                )
+                // Il segreto non resta nell'intent (che il sistema ricorda per le app recenti).
+                intent.removeExtra(eu.eurise.core.suite.PasswordContract.EXTRA_SECRET)
+            }
             android.content.Intent.ACTION_VIEW -> {
                 val data = intent.data ?: return
                 if (data.scheme == "content" || data.scheme == "file") repo.pendingImport.value = data else repo.pendingOtp.value = data.toString()
