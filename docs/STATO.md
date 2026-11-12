@@ -1606,3 +1606,77 @@ Fatto (ramo `brand`), nell'ordine chiesto dal proprietario:
      (MapCerca, con «Dove devi andare» e la ricerca online già fatta); c) scheda del luogo; d) percorso (MapPercorso);
      e) guida (MapGuida); f) livelli (MapLivelli), segnala (MapSegnala), esplora (MapEsplora), attività (MapAttivita).
   4. Insieme al passo a): la voce «Ricerca su OpenStreetMap (Photon)» nel centro privacy.
+
+## 12 novembre, sera: Alfred in codice, «Alfred ovunque» in tavola, Mappe passo a), Android Auto (ramo `brand`)
+Fatto, nell'ordine chiesto dal proprietario:
+- **Alfred (proposta confermata dal proprietario)**: parla italiano, dà del Lei, cortese e asciutto; ironia britannica **alla
+  Groucho Marx e Woody Allen** (battute secche, paradossi, autoironia; quasi sempre sue, citazioni brevi e dichiarate),
+  anche **per massime e detti**, una volta su tre dopo un'azione riuscita, mai nelle conferme pratiche né alla guida.
+  Appellativo: **di base il nome che scrive l'utente** (la prima volta Alfred lo chiede, con il nome della Rubrica come
+  suggerimento); opzioni signore, signora, nessuno. Icona: **papillon** morbido e arrotondato (`EuriseIcons.bowtie`),
+  **animato** nell'app (si aggiusta all'arrivo, ondeggia mentre pensa, inchino quando ha fatto: `BowTie.kt`).
+- Tavole AstAscolto, AstConferma, AstMessaggio, AstLibera, AstImpostazioni rifatte nella voce di Alfred (pagina AI,
+  seconda fila); testi approvati con le correzioni sopra.
+- **Codice** (`feature/assistant`, nuovo modulo, nessuna libreria nuova):
+  - `Grammar.kt` + `GrammarTest.kt`: chiama, nota, ricordami/da fare, appuntamento (anche «dentista martedì alle 9»),
+    portami, manda/scrivi a … (su WhatsApp/SMS/Telegram/Signal) che …, sveglia, timer, cerca (web o suite), apri;
+    il resto è richiesta libera. Date e ore da `QuickAdd`.
+  - `Plan.kt` (`Butler`): scheda di conferma con righe da correggere (tocco sulla matita: testo o scelta), persone dalla
+    Rubrica (preferiti prima, alternative come pillole), calendari scrivibili, azioni **solo dopo il tocco**: evento
+    (`CalendarRepository.save`), nota, attività, chiamata (permesso CALL_PHONE chiesto al momento, altrimenti
+    tastierino), Mappe (`geo:` verso Eurise Mappe), sveglia e timer (Orologio della suite), WhatsApp con il testo già
+    scritto, SMS precompilato, Telegram/Signal con il testo negli appunti, ricerca della Scrivania o del web, app per
+    nome. Richiesta libera: passa a Eurise AI se c'è (testo negli appunti), altrimenti cerca. Il modello AI che sceglie
+    le azioni da sé è il passo successivo.
+  - `Voice.kt`: dettatura con Eurise Voce (risultato col permesso della suite) o il riconoscimento del telefono;
+    lettura ad alta voce con la sintesi del telefono, solo voci locali (la voce di Alfred da 60 MB arriverà dopo).
+  - `AlfredPrefs` nel file `eurise_alfred`, quindi dentro il **backup cifrato**.
+  - App: `alfred/AlfredActivity` (ASSIST e VOICE_COMMAND: si sceglie come «app di assistenza digitale» di Android
+    per il tasto home tenuto premuto). **Niente VoiceInteractionService**: cambierebbe il riconoscimento vocale delle
+    altre app. Scrivania: «Alfred» tra le app AI e prima scelta di Ricerca AI nella dock (`openAlfred`).
+  - Centro privacy: permesso «Chiamate» (per Alfred).
+- **Tavole nuove approvate** (pagina AI, terza fila «Alfred ovunque»): **AlfGiornata** (bottone «Il punto» col papillon in
+  «I tuoi appuntamenti»: impegni, meteo, Borse, notizie Italia e mondo, una perla musicale del passato col suo commento,
+  un'opera, un luogo, una curiosità; letto dalla sua voce, pausa e salta), **AlfSera** (il discorso cambia con l'ora),
+  **AlfSveglia** (Alfred come opzione della sveglia: saluto col meteo, una frase, un brano scelto con gusto, italiano o
+  internazionale, generi diversi, classica compresa, con due righe su brano e autori), **AlfMappe** (indicazioni nella
+  sua voce, «una battuta ogni tanto» mai vicino a una svolta). Da fare in codice.
+- **Musica di Alfred (deciso)**: catalogo suo sul telefono (titolo, autori, anno, genere, momento, commento verificato);
+  riproduzione con l'intento standard «riproduci da ricerca» nell'app scelta dall'utente (Spotify, YouTube Music,
+  Deezer, VLC…), prima i brani già sul telefono; **la scelta è dell'utente, separata per il punto della giornata e per
+  la sveglia**. Sveglia con rete di sicurezza: se la musica non parte in pochi secondi, classica libera scaricata la
+  sera prima (Musopen, Wikimedia Commons), poi la suoneria. Centro privacy: «l'app di musica riceve il brano».
+- **Memoria di Alfred (proposta, da fare)**: il modello non si riaddestra sul telefono; Alfred impara con una memoria
+  personale locale (chi è «Marco», canale preferito, calendario, abitudini, generi saltati), visibile e cancellabile
+  dal centro privacy, nel backup cifrato.
+- **Tastiera: prossimo lavoro principale (approvato)**: modello del tocco per tasto (come FUTO), correzioni con le
+  lettere vicine e il dizionario italiano, suggerimenti dalle frasi abituali, dizionario personale e apprendimento nel
+  backup (oggi il backup copre solo l'app Eurise: `BackupArchive` prende `eurise.db` e le preferenze `eurise_*`;
+  EuriseTastiera è un APK a parte e va aggiunta passando dal permesso della suite).
+- **Mappe, passo a) del piano** (in codice): Compose nel modulo app di CoMaps (`eurise_patch.py`: plugin del compilatore
+  con la Kotlin di CoMaps 2.2.20, BOM 2024.12.01, solo ui e foundation; opzione `-Xskip-metadata-version-check` perché la
+  BOM di CoMaps porta la libreria standard 2.4). `eurise/ui/EuriseMapBar.kt`: barra satinata (Cerca, Livelli, Posizione,
+  Salvati, Menu) e «+» per Segnala al centro della mappa, dentro `map_buttons_bottom.xml` (verticale); pulsanti di CoMaps
+  nascosti ma presenti (id). **Ricerca su OpenStreetMap (Photon) nel centro privacy**: servizio `MapSearch`,
+  `PrivacyContract` + `PrivacyProvider` nell'app Eurise; Mappe chiede lo stato prima di ogni richiesta e registra i
+  contatti.
+- **Android Auto e orizzontale (richiesta del proprietario: Mappe si userà soprattutto in auto)**: tavole nuove sulla
+  pagina «Mappe, Messaggi e Telefono», ultima fila: MapOraVerticale (passo a com'è), **MapOrizzontale** (barra in colonna
+  a sinistra, schede a destra), **MapAutoGuida** e **MapAutoCerca** (in Android Auto la cornice è del sistema, nostri
+  mappa, colori, testi, elenchi e voce). Da approvare; poi passo b) e il lavoro sullo schermo dell'auto (CoMaps ha già
+  la parte Android Auto in `app/organicmaps/car`).
+- Nota: in `eurise_patch.py` e nelle stringhe di Mappe c'erano già, prima di questo lavoro, un blocco Compose e i testi
+  della barra (da un lavoro precedente non annotato qui): tenuto un solo blocco.
+- **Ultimo APK: giro 350** in `apk-prova`, **Mappe 21**. Cambiati rispetto al 342: app-debug (Alfred, Scrivania con
+  Alfred nella dock, centro privacy con Chiamate e ricerca OpenStreetMap), eurise-mappe (barra satinata, Photon nel
+  centro privacy). Uguali nel funzionamento (ricompilati per il papillon in `core/designsystem` e il servizio nuovo in
+  `core/suite`): browser, phone, mail, password, ai, chat, gallery, messages, read, voice, EuriseTastiera, Office.
+- **Richieste del proprietario per Mappe (12 sera, da mettere nelle tavole)**: velocità istantanea e limite sempre in
+  vista; conto alla rovescia in metri (c'è, anche in Auto e nella voce); alle diramazioni zoom automatico e riquadro
+  grande con lo schema, la freccia e le corsie; segnalazioni rapide in guida; lettura dei cartelli (Android Auto non
+  passa i dati della telecamera dell'auto: limiti da OSM, poi eventuale modello sul telefono con la fotocamera);
+  traffico (nessuna fonte libera nazionale: ricerca sulle fonti aperte italiane, CCISS, concessionarie, Comuni).
+- **Prossima chat / prossimi passi**: prova del giro 350 e di Mappe 21; approvazione delle tavole di Mappe (orizzontale,
+  Android Auto) e tavole nuove (incrocio ingrandito, velocità e limite, segnalazioni); codice di «Alfred ovunque»
+  (punto della giornata, sveglia, voce in Mappe, musica); tastiera (lavoro principale); correzioni del proprietario
+  dopo la prova del giro 342 (non ancora ricevute).
