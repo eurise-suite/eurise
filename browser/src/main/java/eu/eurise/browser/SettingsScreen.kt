@@ -346,6 +346,17 @@ private fun TabsPage(model: BrowserModel) {
             ) { s.setCloseAfter(d) }
         }
     }
+    // Barra delle schede sulla pagina (tavola BrwBarraSchede).
+    Title(stringResource(R.string.brw_strip_title))
+    Card {
+        listOf(
+            "auto" to R.string.brw_strip_auto, "off" to R.string.brw_strip_off,
+            "bottom" to R.string.brw_strip_bottom, "top" to R.string.brw_strip_top,
+        ).forEach { (id, label) ->
+            ChoiceRow(stringResource(label), if (id == "auto") stringResource(R.string.brw_strip_auto_sub) else null, s.tabStrip == id) { s.setTabStrip(id) }
+        }
+    }
+    Note(stringResource(R.string.brw_strip_note))
     Note(stringResource(R.string.brw_private_note))
 }
 

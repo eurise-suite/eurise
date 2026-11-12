@@ -283,4 +283,15 @@
     <string name="brw_group_new">Nuovo gruppo</string>
     <string name="brw_group_create">Crea il gruppo</string>
     <string name="brw_group_none">Senza gruppo</string>
+
+    <!-- Barra delle schede sulla pagina (tavola BrwBarraSchede) -->
+    <string name="brw_strip_title">Barra delle schede</string>
+    <string name="brw_strip_auto">Automatica</string>
+    <string name="brw_strip_auto_sub">Sul tablet in cima, sul telefono spenta</string>
+    <string name="brw_strip_off">Spenta</string>
+    <string name="brw_strip_bottom">Sopra la barra in basso</string>
+    <string name="brw_strip_top">In cima alla pagina</string>
+    <string name="brw_strip_note">Il colore sotto la scheda è il suo gruppo. Scorri la barra per le altre schede; tieni premuto per spostarle o metterle in un gruppo.</string>
+    <string name="brw_strip_left">Sposta a sinistra</string>
+    <string name="brw_strip_right">Sposta a destra</string>
 </resources>

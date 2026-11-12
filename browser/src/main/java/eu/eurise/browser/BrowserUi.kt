@@ -162,8 +162,12 @@ fun BrowserScreen(
         }
     }
 
+    // Barra delle schede sulla pagina (tavola BrwBarraSchede): in cima, sopra la barra in basso, o nessuna.
+    val strip = if (tab?.fullscreen == true) StripPlace.None else stripPlace(model.settings.tabStrip)
+    val openGroups = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true }
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
-        Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true) Modifier else Modifier.statusBarsPadding())) {
+        if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); editing = true }, onGroups = openGroups)
+        Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding())) {
             if (tab != null) GeckoHost(tab)
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {
                 NewTabPage(model, onImport = onImport, onOpen = { model.go(it) })
@@ -172,6 +176,7 @@ fun BrowserScreen(
                 LinearProgressIndicator(progress = { tab.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter))
             }
         }
+        if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); editing = true }, onGroups = openGroups)
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })
             else if (editing) AddressEditor(tab, model, onDone = { editing = false })

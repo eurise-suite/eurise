@@ -124,6 +124,16 @@ class BrowserModel(private val context: Context) {
         }
     }
 
+    /** Sposta una scheda di un posto (barra delle schede: tieni premuto › Sposta). */
+    fun move(tab: Tab, step: Int) {
+        val i = tabs.indexOf(tab)
+        val j = i + step
+        if (i < 0 || j !in tabs.indices) return
+        tabs.removeAt(i)
+        tabs.add(j, tab)
+        saveTabs()
+    }
+
     // --- Gruppi e sessioni (tavola BrwSessioni) ---
 
     fun group(name: String?) = groups.firstOrNull { it.name == name }
