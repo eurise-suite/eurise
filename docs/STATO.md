@@ -1493,3 +1493,12 @@ Richieste del proprietario (12 novembre, dopo le prove del giro 331), con lo sta
   online facoltativo (Photon/Nominatim, dal centro privacy come il meteo, spento di base) che propone di scaricare la
   regione; 2) interfaccia: schermata iniziale, ricerca, scheda del luogo e percorso rifatti sulle tavole (Compose sopra il
   motore di CoMaps, al posto delle schermate di CoMaps), poi la guida.
+- **Email** (12 sera): Proton/Tuta restano fuori (IMAP solo con Bridge sul computer): messaggio spiegato. Infomaniak
+  (kMail) «Password non accettata» = verifica in due passaggi → serve la password per le app: messaggio che lo spiega.
+  Da fare: se il dominio è personale, guardare l'MX (mx.infomaniak.ch → server di Infomaniak); **lettura di un messaggio
+  con la pillola satinata in basso** (Rispondi, Inoltra, Archivia, Sposta in…, Elimina, Spam) come nelle altre app.
+- **Password**: il campo di ricerca va in basso (vicino al pollice), come nelle altre app. Da fare.
+- **Ultimo APK: giro 336** in `apk-prova`. Cambiati rispetto al 331: app-debug (Scrivania), browser, password, mail,
+  EuriseTastiera. Uguali: gli altri (Mappe resta la 15).
+- **Prossima chat**: prova del giro 336; approvazione delle tavole nuove (Browser fila 5, Scrivania fila 12, TelPillola) e
+  loro codice; pillola della lettura in Email; ricerca in basso in Password; Mappe (piano sopra) come lavoro principale.
