@@ -27,7 +27,6 @@ class AlfredPrefs(context: Context) {
         set(value) = prefs.edit().putBoolean("read_aloud", value).apply()
 }
 
-/**
 /** L'appellativo pronto per le frasi di Alfred: «, Giulia», «, signore» o niente (nome non ancora detto). */
 fun addressSuffix(prefs: AlfredPrefs): String = when (prefs.address) {
     Address.None -> ""
