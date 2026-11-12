@@ -1391,3 +1391,40 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   («Invalid unicode escape»). Dopo ogni scrittura di testi: controllare gli apostrofi.
 - **Ultimo APK: giro 324** in `apk-prova`. Prossimi passi: prova sul telefono (giri 316, 320, 324); verifica di una
   persona dalla chat; QR sulla carta; Password che riceve voci dalla suite; Mappe: meteo sul percorso.
+
+## 12 novembre, pomeriggio: verifica di una persona, QR sulla carta, Password dalla suite, meteo sul percorso · giro 328
+- **Chat · verifica di una persona** (tavola ChatVerifica, `ChatSecurity.requestUser`, `ChatCrypto.sendInRoom` e
+  `receiveVerification`): nelle chat a due cifrate lo scudo in testata manda la richiesta come messaggio della stanza
+  (`verificationRequestContent` + `requestVerification`, cifrata come gli altri messaggi; i passi della verifica pure). I
+  passi in arrivo (`m.key.verification.*` e la richiesta) vanno dal /sync al modulo (`receiveVerificationEvent`; per la
+  richiesta prima `/keys/query` del mittente). Le richieste in arrivo si cercano anche tra le persone che hanno mandato passi
+  (`incoming(peers)`): la schermata delle figure si apre da sola con i testi per la persona («confrontatele di persona o in
+  chiamata»), senza elenco dei dispositivi. Testata: «Cifrata · persona verificata» (`isIdentityVerified`). Nella chat la
+  richiesta è una riga al centro («Anna ha chiesto di verificarvi»). Se la persona non ha chiavi di firma: avviso. Corretto
+  anche `decrypt`: `m.relates_to` (in chiaro fuori dalla parte cifrata) torna nel contenuto decifrato.
+- **Chat · QR sulla carta** (`KeyQr.kt`): SVG disegnato con ZXing (già nella suite), correzione M, accanto alla chiave;
+  si legge con lo Scanner di Eurise e si incolla in «Inserisci la chiave».
+- **Password riceve voci dalla suite** (`PasswordContract` in core/suite): ingresso `AddFromSuite` (activity-alias di
+  PasswordActivity con il permesso della suite; l'azione `eu.eurise.action.ADD_PASSWORD` si ignora se non arriva da lì);
+  la voce si apre compilata e si salva solo se confermi; il segreto si toglie dall'intent. La scheda di modifica ora prende
+  dalla voce precompilata anche password, indirizzo e note. La Chat manda «Chat · chiave di recupero» così (niente appunti);
+  con una Password vecchia resta «copia e apri».
+- **Mappe · meteo sul percorso** (tavola MapGuida): Mappe non contatta servizi da sola. Chiede all'app Eurise
+  (`RouteWeatherContract`, `RouteWeatherProvider` nel modulo app) che passa dal **centro privacy** (servizio nuovo
+  «Meteo sul percorso · Open-Meteo», `PrivacyService.RouteWeather`, **spento di base**) e fa una sola richiesta a Open-Meteo
+  con fino a 8 punti della strada che resta (arrotondati a ~1 km) e l'ora di passaggio (`core/data` `RouteWeather`, test
+  `RouteWeatherTest`). In Mappe (`EuriseRouteWeather.java`, `RouteSampler.java`, agganci in `eurise_patch.py`): riga
+  satinata sotto la via («🌧 Pioggia tra 40 km, verso le 15:20», «☀ Niente da segnalare · 14° all'arrivo»), toccandola
+  l'elenco punto per punto con «Spegni»; spenta, la riga invita ad accenderlo con la spiegazione (cosa esce, dove va, chi
+  lo vede, come si torna indietro). Punti dalla strada del percorso (`nativeGetRouteJunctionPoints(1000)`), uno ogni almeno
+  20 km; ore in proporzione al tempo che resta; si richiede ogni 15 minuti. Solo in auto/bici, non a piedi. Mappe dichiara
+  e usa `SUITE_DEBUG` (è firmata con la chiave di debug della suite); senza l'app Eurise la riga non compare. Patch provata
+  sui sorgenti del commit fissato; `RouteSampler` provato con javac qui.
+- Nota per dopo: `SecretsProvider` e `RouteWeatherProvider` accettano anche `SUITE_DEBUG`; con le versioni ufficiali
+  converrà accettare solo `SUITE` (la chiave di debug sta nelle Actions).
+- **Ultimo APK: giro 328** (Compila APK run 43224127579) e **Mappe giro 14** (run 43224127057) in `apk-prova`.
+- **Prossimi passi**: prova sul telefono dei giri 316, 320, 324 (elenco nella chat del 12 novembre) e ora 328: verifica di una
+  persona con Element sull'altro telefono, QR stampato e letto con lo Scanner, «In Eurise Password» dalla Chiave di recupero
+  (voce compilata), meteo sul percorso in un viaggio (accendi, riga, elenco, Spegni; poi controlla il centro privacy).
+  Dopo: Mappe frase d'arrivo e «dove devi andare» dalla suite; Browser schede affiancate sul tablet; Email «Salva in
+  Password» con lo stesso contratto.
