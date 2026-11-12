@@ -1428,3 +1428,25 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   (voce compilata), meteo sul percorso in un viaggio (accendi, riga, elenco, Spegni; poi controlla il centro privacy).
   Dopo: Mappe frase d'arrivo e «dove devi andare» dalla suite; Browser schede affiancate sul tablet; Email «Salva in
   Password» con lo stesso contratto.
+
+## 12 novembre, pomeriggio (seconda parte): «Dove devi andare», frase d'arrivo, schede affiancate · giro 331
+- **Mappe · «Dove devi andare»** (tavola MapCerca): prima scheda della ricerca, «Impegni» (`search/EuriseGoFragment.java`,
+  aggancio in `TabAdapter` da `eurise_patch.py`): impegni dei prossimi 7 giorni con un luogo, letti dall'app Eurise
+  (`DestinationsContract` in core/suite, `DestinationsProvider` nel modulo app, solo app della suite, niente rete). Un tocco
+  mette il luogo nella ricerca (mappe scaricate) e ricorda l'impegno. Messaggi se manca l'app Eurise o il permesso del
+  Calendario. Non ancora: Viaggi (voli) e Rubrica come voci a sé (la Rubrica c'è già col pulsante contatti di CoMaps),
+  «Mappe sul telefono» proposte dai viaggi.
+- **Mappe · frase d'arrivo** (tavola MapGuida): riga sotto il meteo nella guida (`EuriseArrival.java`, `ArrivalPhrase.java`
+  provata con javac): «Pioggia all'arrivo: arrivi a «Sopralluogo» delle 9:30 con qualche minuto di margine (6 min)»; anticipo,
+  giusto in tempo, ritardo; il tempo all'arrivo solo se il meteo sul percorso è acceso. Toccandola, «Manda l'arrivo». Vale per
+  6 ore dalla scelta e fino a mezz'ora dopo l'inizio. Non ancora: «Manda l'arrivo ad Anna» con i partecipanti dell'evento.
+- **Email**: nel foglio «Collega», «Tienila anche in Eurise Password» (acceso se Password c'è): dopo il collegamento Password
+  apre la voce compilata (PasswordContract).
+- **Browser · schede affiancate** sul tablet (larghezza ≥ 720 dp; tavola BrwSessioni): «Affianca a quella aperta» tenendo
+  premuta una scheda nella barra, Ctrl+\; un tocco sceglie il riquadro in uso (riga colorata), ✕ per tornare a una sola.
+  Una sessione di Gecko sta in una vista alla volta (`Gecko.views`); la vista si libera quando sparisce.
+- **Ultimo APK: giro 331** (Compila APK run 43229914728) e **Mappe giro 15** (run 43229649215) in `apk-prova`.
+  Cambiati rispetto al 328: app-debug (Eurise), browser, mail, eurise-mappe. Uguali: gli altri.
+- **Regola del proprietario** (12 novembre): a ogni consegna dire quali APK sono cambiati e quali no.
+- **Prossimi passi**: prove sul telefono (giri 316–331); Mappe: Viaggi e Rubrica in «Dove devi andare», mappe proposte dai
+  viaggi, «Manda l'arrivo» a un partecipante; «parti entro» (MapPercorso) con la sveglia.

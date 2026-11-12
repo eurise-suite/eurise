@@ -3,7 +3,7 @@ name: APK di prova in una pre-release
 # Copia gli APK di prova di un giro di «Compila» nella pre-release «apk-prova» (sempre la stessa, sovrascritta), così si
 # scaricano con un link diretto anche da dove gli artefatti di Actions non arrivano. Parte a mano con il numero del giro
 # (solo dal ramo predefinito) o quando cambia questo file (ultimo giro riuscito sul ramo brand). Aggiunge anche l'ultimo
-# APK riuscito di Eurise Mappe (lavoro a parte, «Prototipo di Eurise Mappe»). Ultima pubblicazione: giro 328 (verifica di una persona, QR, Password dalla suite, meteo sul percorso), Mappe 14.
+# APK riuscito di Eurise Mappe (lavoro a parte, «Prototipo di Eurise Mappe»). Ultima pubblicazione: giro 331 (dove devi andare, frase d'arrivo, schede affiancate), Mappe 15.
 on:
   push:
     paths:
