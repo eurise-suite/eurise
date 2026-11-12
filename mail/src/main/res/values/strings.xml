@@ -68,9 +68,9 @@
     <string name="ml_link_working">Collego…</string>
     <string name="ml_err_address">Controlla l\'indirizzo email</string>
     <string name="ml_err_oauth">Outlook e Hotmail accettano solo l\'accesso dal sito di Microsoft: arriva presto</string>
-    <string name="ml_err_closed">Proton e Tuta non aprono la posta ad altre app sul telefono</string>
+    <string name="ml_err_closed">Proton e Tuta cifrano tutto e aprono la posta ad altri programmi solo dal computer (Proton Mail Bridge). Sul telefono usa la loro app: i messaggi compaiono lo stesso in «Ti hanno cercato» sulla Scrivania.</string>
     <string name="ml_err_exists">Questa casella è già collegata</string>
-    <string name="ml_err_password">Password non accettata dal server</string>
+    <string name="ml_err_password">Password non accettata. Se hai la verifica in due passaggi, il servizio vuole una «password per le app», diversa da quella con cui entri: creala nel tuo account e incollala qui (Infomaniak: Manager › Profilo › Sicurezza › Password per le applicazioni; Libero e Aruba: impostazioni di sicurezza della casella).</string>
     <string name="ml_err_servers">Non trovo i server di questa casella: controlla la rete o l\'indirizzo</string>
 
     <!-- Email con la suite (12 novembre) -->
