@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
 import eu.eurise.core.suite.HubBridge
 import java.io.File
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
@@ -18,6 +19,16 @@ class BrowserModel(private val context: Context) {
     private var nextId = 1L
     val settings = BrowserSettings(context).also { Gecko.settings = it }
     val history = HistoryStore(File(context.filesDir, "history.txt"))
+    private val sessionStore = SessionStore(File(context.filesDir, "sessions.json"))
+    private val laterStore = LaterStore(File(context.filesDir, "later.json"))
+    val siteNotes = SiteNotes(File(context.filesDir, "site_notes.json"))
+
+    /** Gruppi colorati, sessioni salvate, schede chiuse di recente (tavola BrwSessioni). */
+    val groups = mutableStateListOf<TabGroup>()
+    val sessions = mutableStateListOf<Session>()
+    val closed = mutableStateListOf<SavedTab>()
+    /** «Leggi dopo» (tavola BrwStrumenti). */
+    val later = mutableStateListOf<LaterItem>()
 
     val tabs = mutableStateListOf<Tab>()
     /** I file scelti nella schermata Importa, già letti. */
@@ -30,9 +41,22 @@ class BrowserModel(private val context: Context) {
     var onDownload: (String) -> Unit = {}
     var current by mutableStateOf<Tab?>(null)
         private set
+    /** La schermata delle schede è aperta; [tabsSearch]: con la ricerca (Ctrl+K). */
+    var tabsOpen by mutableStateOf(false)
+    var tabsSearch by mutableStateOf(false)
     val bookmarks = mutableStateListOf<Bookmark>().apply { addAll(store.load()) }
     var engine by mutableStateOf(Links.engine(prefs.getString("engine", null)))
         private set
+
+    init {
+        sessionStore.load().let { d -> groups.addAll(d.groups); sessions.addAll(d.sessions); closed.addAll(d.closed) }
+        later.addAll(laterStore.load())
+    }
+
+    private fun saveSessions() {
+        val d = SessionStore.Data(groups.toList(), sessions.toList(), closed.toList())
+        Thread { sessionStore.save(d) }.start()
+    }
 
     fun chooseEngine(e: Links.Engine) {
         engine = e
@@ -49,8 +73,8 @@ class BrowserModel(private val context: Context) {
     }
 
     private fun newTab(private: Boolean): Tab {
-        val tab = Tab(context, nextId++, private, onNewTab = { uri -> open(uri, private) },
-            history = if (private) null else history, dark = { settings.darkPages })
+        val tab = Tab(context, nextId++, private, onNewTab = { uri -> val g = current?.group; open(uri, private).group = g },
+            history = if (private) null else history, dark = { settings.darkPages }, images = { settings.images })
         tab.onDownload = { onDownload(it) }
         return tab
     }
@@ -66,6 +90,7 @@ class BrowserModel(private val context: Context) {
     }
 
     fun show(tab: Tab) {
+        current?.takeIf { it !== tab }?.let(::snapshot)
         current?.lastActive = System.currentTimeMillis()
         current = tab
         tab.lastActive = System.currentTimeMillis()
@@ -73,10 +98,116 @@ class BrowserModel(private val context: Context) {
         tab.pending?.let { tab.pending = null; tab.load(it) }
     }
 
-    /** Scheda accanto (gesto sulla barra): [step] +1 a destra, -1 a sinistra. */
-    fun neighbour(step: Int) {
-        val i = tabs.indexOf(current ?: return)
-        tabs.getOrNull(i + step)?.let(::show)
+    /** Scheda accanto (gesto sulla barra, Ctrl+Tab): [step] +1 a destra, -1 a sinistra. Falso se non c'è. */
+    fun neighbour(step: Int): Boolean {
+        val i = tabs.indexOf(current ?: return false)
+        val next = tabs.getOrNull(i + step) ?: return false
+        show(next)
+        return true
+    }
+
+    /** Una miniatura piccola della pagina in vista, per la griglia delle schede (resta in memoria, mai su disco). */
+    fun snapshot(tab: Tab) {
+        if (!tab.url.startsWith("http")) return
+        val view = Gecko.view ?: return
+        if (view.session !== tab.session) return
+        runCatching {
+            view.capturePixels().accept({ bmp ->
+                if (bmp == null || bmp.width == 0) return@accept
+                val w = 270
+                val small = android.graphics.Bitmap.createScaledBitmap(bmp, w, (bmp.height * w / bmp.width).coerceAtLeast(1), true)
+                if (small !== bmp) bmp.recycle()
+                // Basta la parte alta della pagina: è quella che si riconosce.
+                val crop = if (small.height > 360) android.graphics.Bitmap.createBitmap(small, 0, 0, w, 360).also { small.recycle() } else small
+                tab.thumb = crop.asImageBitmap()
+            }, { })
+        }
+    }
+
+    // --- Gruppi e sessioni (tavola BrwSessioni) ---
+
+    fun group(name: String?) = groups.firstOrNull { it.name == name }
+
+    /** Mette la scheda in un gruppo (nuovo se il nome non c'è ancora); null la toglie dal gruppo. */
+    fun setGroup(tab: Tab, name: String?) {
+        val clean = name?.trim()?.takeIf { it.isNotBlank() }
+        if (clean != null && group(clean) == null) groups += TabGroup(clean, SessionStore.nextTint(groups))
+        tab.group = clean
+        dropEmptyGroups()
+        saveSessions()
+    }
+
+    private fun dropEmptyGroups() {
+        groups.removeAll { g -> tabs.none { it.group == g.name } }
+    }
+
+    /** Salva le schede (di un gruppo o tutte) come sessione da riaprire. */
+    fun saveSession(name: String, list: List<Tab>) {
+        val saved = list.filter { !it.private }.mapNotNull { t ->
+            val url = t.pending ?: t.url
+            if (url.startsWith("http")) SavedTab(url, t.title, t.lastActive) else null
+        }
+        if (saved.isEmpty()) return
+        val updated = SessionStore.upsert(sessions.toList(), Session(name.trim(), saved, System.currentTimeMillis()))
+        sessions.clear(); sessions.addAll(updated)
+        saveSessions()
+    }
+
+    /** Riapre una sessione in un gruppo con il suo nome; le pagine si caricano quando le guardi. */
+    fun openSession(s: Session) {
+        if (group(s.name) == null) groups += TabGroup(s.name, SessionStore.nextTint(groups))
+        s.tabs.forEach { saved ->
+            val tab = newTab(private = false)
+            tab.pending = saved.url; tab.url = saved.url; tab.title = saved.title; tab.group = s.name
+            tabs += tab
+        }
+        tabs.lastOrNull { it.group == s.name }?.let(::show)
+        saveSessions()
+    }
+
+    fun removeSession(s: Session) {
+        sessions.remove(s)
+        saveSessions()
+    }
+
+    /** Riapre una scheda chiusa di recente e la toglie dall'elenco. */
+    fun reopen(saved: SavedTab) {
+        closed.remove(saved)
+        open(saved.url)
+        saveSessions()
+    }
+
+    /** Chiude tutte le schede indicate (un gruppo, o tutte); finiscono in «Chiuse di recente». */
+    fun closeAll(list: List<Tab>) {
+        list.toList().forEach { close(it) }
+    }
+
+    // --- Leggi dopo (tavola BrwStrumenti) ---
+
+    fun isLater(url: String) = later.any { it.url == url }
+
+    /** Salva l'articolo con il suo testo (si legge anche senza rete); di nuovo lo toglie. Restituisce se ora c'è. */
+    fun toggleLater(info: PageInfo): Boolean {
+        val url = info.url.ifBlank { return false }
+        val now = if (isLater(url)) { later.removeAll { it.url == url }; false } else {
+            val updated = LaterStore.add(later.toList(), LaterItem(url, info.title, info.text, System.currentTimeMillis()))
+            later.clear(); later.addAll(updated); true
+        }
+        val copy = later.toList()
+        Thread { laterStore.save(copy) }.start()
+        return now
+    }
+
+    fun removeLater(item: LaterItem) {
+        later.remove(item)
+        val copy = later.toList()
+        Thread { laterStore.save(copy) }.start()
+    }
+
+    fun setImages(on: Boolean) {
+        settings.setImages(on)
+        tabs.forEach { it.setImages(on) }
+        current?.session?.reload()
     }
 
     // --- Schede all'avvio (Impostazioni › Schede) ---
@@ -85,37 +216,55 @@ class BrowserModel(private val context: Context) {
     fun saveTabs() {
         val a = org.json.JSONArray()
         tabs.filter { !it.private && (it.url.startsWith("http") || it.pending != null) }.forEach { t ->
-            a.put(org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive))
+            a.put(org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive).put("group", t.group ?: ""))
         }
         prefs.edit().putString("tabs", a.toString()).putLong("current", current?.id ?: -1).apply()
     }
 
-    /** Riapre le schede dell'ultima volta, tranne quelle non guardate da più di N giorni; restituisce quante. */
+    /**
+     * Riapre le schede dell'ultima volta. Quelle non guardate da più di N giorni non si riaprono ma vanno in «Chiuse di
+     * recente»: non si perdono (tavola BrwSessioni). Restituisce quante schede sono aperte.
+     */
     fun restoreTabs(): Int {
         if (!settings.restoreTabs) return 0
         val a = runCatching { org.json.JSONArray(prefs.getString("tabs", "[]")) }.getOrNull() ?: return 0
         val limit = settings.closeAfterDays.takeIf { it > 0 }?.let { System.currentTimeMillis() - it * 86_400_000L } ?: 0L
+        val forgotten = mutableListOf<SavedTab>()
         for (i in 0 until a.length()) {
             val o = a.optJSONObject(i) ?: continue
             val last = o.optLong("last")
-            if (last < limit) continue
+            if (last < limit) { forgotten += SavedTab(o.optString("url"), o.optString("title"), last); continue }
             val tab = newTab(private = false)
             tab.pending = o.optString("url")
             tab.url = o.optString("url")
             tab.title = o.optString("title")
+            tab.group = o.optString("group").takeIf { it.isNotBlank() && group(it) != null }
             tab.lastActive = last
             tabs += tab
         }
+        if (forgotten.isNotEmpty()) {
+            val updated = SessionStore.remember(closed.toList(), forgotten)
+            closed.clear(); closed.addAll(updated)
+        }
+        dropEmptyGroups()
+        saveSessions()
         tabs.lastOrNull()?.let(::show)
         return tabs.size
     }
 
     fun close(tab: Tab) {
+        if (!tab.private) {
+            val url = tab.pending ?: tab.url
+            val updated = SessionStore.remember(closed.toList(), listOf(SavedTab(url, tab.title, System.currentTimeMillis())))
+            if (updated != closed.toList()) { closed.clear(); closed.addAll(updated) }
+        }
         val i = tabs.indexOf(tab)
         tabs.remove(tab)
         tab.close()
         if (current === tab) current = tabs.getOrNull(i.coerceAtMost(tabs.size - 1))
         if (tabs.isEmpty()) open()
+        dropEmptyGroups()
+        saveSessions()
     }
 
     /** Chiude tutte le schede private (pulsante nel foglio delle schede). */

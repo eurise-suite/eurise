@@ -40,6 +40,10 @@ class BrowserSettings(context: Context) {
     /** La persona ha letto e accettato la spiegazione della traduzione sul telefono (modelli scaricati da Mozilla). */
     var translateOk by mutableStateOf(prefs.getBoolean("translate_ok", false)); private set
     var dnsExplained by mutableStateOf(prefs.getBoolean("dns_ok", false)); private set
+    /** Immagini nelle pagine (Strumenti › Immagini sì/no). */
+    var images by mutableStateOf(prefs.getBoolean("images", true)); private set
+    /** Carattere della Lettura: con le grazie (come un libro) o senza. */
+    var readerSerif by mutableStateOf(prefs.getBoolean("reader_serif", true)); private set
 
     @JvmName("changeStrict") fun setStrict(on: Boolean) { strictProtection = on; prefs.edit().putBoolean("strict", on).apply() }
     @JvmName("changeHttpsOnly") fun setHttpsOnly(on: Boolean) { httpsOnly = on; prefs.edit().putBoolean("https_only", on).apply() }
@@ -52,6 +56,8 @@ class BrowserSettings(context: Context) {
     @JvmName("changeSwipeTabs") fun setSwipeTabs(on: Boolean) { swipeTabs = on; prefs.edit().putBoolean("swipe_tabs", on).apply() }
     @JvmName("changeAskWhereToSave") fun setAskWhereToSave(on: Boolean) { askWhereToSave = on; prefs.edit().putBoolean("ask_save", on).apply() }
     @JvmName("changeBarAction") fun setBarAction(id: String) { barAction = id; prefs.edit().putString("bar_action", id).apply() }
+    @JvmName("changeImages") fun setImages(on: Boolean) { images = on; prefs.edit().putBoolean("images", on).apply() }
+    @JvmName("changeReaderSerif") fun setReaderSerif(on: Boolean) { readerSerif = on; prefs.edit().putBoolean("reader_serif", on).apply() }
     fun acceptTranslate() { translateOk = true; prefs.edit().putBoolean("translate_ok", true).apply() }
 
     val dnsService get() = DNS.firstOrNull { it.id == dns }

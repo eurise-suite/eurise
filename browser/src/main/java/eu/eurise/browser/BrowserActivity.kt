@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
+import android.view.KeyEvent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -43,6 +44,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import eu.eurise.core.designsystem.theme.EuriseTheme
+import eu.eurise.core.contacts.Reach
 import eu.eurise.core.suite.FilesContract
 import java.io.File
 import java.text.SimpleDateFormat
@@ -264,6 +266,47 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
             .build()
         val ok = ShortcutManagerCompat.isRequestPinShortcutSupported(this) && ShortcutManagerCompat.requestPinShortcut(this, info, null)
         if (!ok) toast(getString(R.string.brw_home_unsupported))
+    }
+
+    /** «Promemoria» della Lettura: evento già compilato nel Calendario (con l'ora, se c'è; se no, il giorno intero). */
+    override fun addEvent(title: String, date: PageDate, url: String) {
+        val name = title.ifBlank { Links.host(url) }.take(80)
+        val intent = date.time?.let { t -> Reach.event(name, date.date.atTime(t), description = date.text.take(500) + "\n" + Links.clean(url)) }
+            ?: Reach.allDayEvent(name, date.date)
+        if (!Reach.open(this, intent)) toast(getString(R.string.brw_no_calendar))
+    }
+
+    /**
+     * «Cattura intera»: l'articolo della vista Lettura disegnato in un'immagine lunga (titolo, testo, sito), che va a
+     * «Salva in…». Si disegna sul telefono; fino a [MAX_CAPTURE] pixel di altezza, poi si taglia con i puntini.
+     */
+    override fun captureArticle(title: String, text: String, url: String) {
+        if (text.isBlank()) { toast(getString(R.string.brw_capture_failed)); return }
+        toast(getString(R.string.brw_capture_working))
+        Thread {
+            val file = runCatching { ArticleImage.render(this, title, text, Links.host(url), File(freshDir(), "${Links.host(url)} ${stamp()}.png")) }.getOrNull()
+            runOnUiThread { if (file != null) offer(file, "image/png", "image") else toast(getString(R.string.brw_capture_failed)) }
+        }.start()
+    }
+
+    // Tastiera (tablet e computer): Ctrl+T nuova scheda, Ctrl+W chiudi, Ctrl+Tab / Ctrl+Maiusc+Tab scheda accanto,
+    // Ctrl+K cerca tra le schede, Ctrl+L indirizzo (lo fa l'interfaccia).
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.isCtrlPressed) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_TAB -> { model.neighbour(if (event.isShiftPressed) -1 else 1).also { if (!it) cycle(event.isShiftPressed) }; return true }
+                KeyEvent.KEYCODE_K -> { model.tabsSearch = true; model.tabsOpen = true; return true }
+                KeyEvent.KEYCODE_T -> { model.tabsOpen = false; model.open(); return true }
+                KeyEvent.KEYCODE_W -> { model.current?.let(model::close); return true }
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    /** Ctrl+Tab sull'ultima scheda torna alla prima (e al contrario). */
+    private fun cycle(back: Boolean) {
+        val t = if (back) model.tabs.lastOrNull() else model.tabs.firstOrNull()
+        t?.let(model::show)
     }
 
     override fun openDownloads() {

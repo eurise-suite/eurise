@@ -224,4 +224,63 @@
     <string name="brw_import_check">Dopo l\'importazione il controllo delle password di Eurise Password ti dice quali sono deboli, ripetute o finite in una fuga di dati (controllo anonimo, si spegne).</string>
     <string name="brw_import_run_passwords">Importa in Eurise Password</string>
     <string name="brw_import_run_bookmarks">Importa i segnalibri</string>
+
+    <!-- Lettura e strumenti della pagina (tavola BrwStrumenti) -->
+    <string name="brw_reader_exit">Esci dalla lettura</string>
+    <string name="brw_reader_minutes">Lettura · %1$d min</string>
+    <string name="brw_reader_remind">Promemoria</string>
+    <string name="brw_tools_title">Strumenti della pagina</string>
+    <string name="brw_tools_hide">Nascondi gli strumenti</string>
+    <string name="brw_tool_capture">Cattura intera</string>
+    <string name="brw_tool_note">Nota del sito</string>
+    <string name="brw_tool_text">Testo %1$d%%</string>
+    <string name="brw_tool_font_serif">Con grazie</string>
+    <string name="brw_tool_font_sans">Senza grazie</string>
+    <string name="brw_tool_pdf">PDF</string>
+    <string name="brw_tool_images_on">Immagini sì</string>
+    <string name="brw_tool_images_off">Immagini no</string>
+    <string name="brw_tool_later">Leggi dopo</string>
+    <string name="brw_tool_later_on">Salvato</string>
+    <string name="brw_later_saved">In «Leggi dopo»: lo trovi in Segnalibri, anche senza rete</string>
+    <string name="brw_later_removed">Tolto da «Leggi dopo»</string>
+    <string name="brw_later_offline">salvato sul telefono</string>
+    <string name="brw_later_title">Da leggere · %1$d</string>
+    <string name="brw_note_title">Nota per %1$s</string>
+    <string name="brw_note_hint">Un appunto su questo sito: numero di pratica, cosa cercavi, a chi chiedere…</string>
+    <string name="brw_note_where">Resta solo sul telefono. La ritrovi in cima alla Lettura ogni volta che torni su questo sito.</string>
+    <string name="brw_note_save">Salva la nota</string>
+    <string name="brw_no_calendar">Nessuna app del calendario su questo telefono</string>
+    <string name="brw_capture_working">Disegno la pagina intera…</string>
+
+    <!-- Schede, gruppi e sessioni (tavola BrwSessioni) -->
+    <string name="brw_tabs_count">Schede · %1$d</string>
+    <string name="brw_tabs_search">Cerca nelle schede</string>
+    <string name="brw_tabs_all">Tutte</string>
+    <string name="brw_tabs_private">Private · %1$d</string>
+    <string name="brw_tabs_none">Nessuna scheda qui.</string>
+    <string name="brw_tabs_keys">Tieni premuta una scheda per metterla in un gruppo. Con la tastiera: Ctrl+Tab per la scheda accanto, Ctrl+K per cercare tra le schede, Ctrl+T e Ctrl+W per aprire e chiudere.</string>
+    <string name="brw_more">Altro</string>
+    <string name="brw_sessions">Sessioni salvate</string>
+    <string name="brw_sessions_last">«%1$s» (%2$d schede) · riaprila quando vuoi</string>
+    <string name="brw_sessions_none">Salva un gruppo di schede e riaprilo quando vuoi</string>
+    <string name="brw_sessions_sub">%1$d salvate</string>
+    <string name="brw_sessions_save">Salva ora</string>
+    <string name="brw_sessions_save_title">Salva %1$d schede come sessione</string>
+    <string name="brw_sessions_explain">Una sessione è un gruppo di schede con un nome (un viaggio, un lavoro): la chiudi e la riapri intera quando ti serve.</string>
+    <string name="brw_session_default">Schede del %1$s</string>
+    <string name="brw_session_tabs">%1$d schede · %2$s</string>
+    <string name="brw_session_open">Riapri</string>
+    <string name="brw_forgotten">Schede dimenticate</string>
+    <string name="brw_forgotten_sub">Dopo %1$d giorni vanno in «Chiuse di recente», non si perdono</string>
+    <string name="brw_on_computer">Sul computer</string>
+    <string name="brw_on_computer_soon">In arrivo: le schede aperte su Firefox con l'estensione Eurise</string>
+    <string name="brw_closed_recent">Chiuse di recente</string>
+    <string name="brw_closed_recent_sub">%1$d schede da riaprire</string>
+    <string name="brw_close_all">Chiudi tutte le schede</string>
+    <string name="brw_close_group">Chiudi il gruppo «%1$s»</string>
+    <string name="brw_close_all_sub">Le normali restano in «Chiuse di recente»</string>
+    <string name="brw_group_put">Metti nel gruppo</string>
+    <string name="brw_group_new">Nuovo gruppo</string>
+    <string name="brw_group_create">Crea il gruppo</string>
+    <string name="brw_group_none">Senza gruppo</string>
 </resources>

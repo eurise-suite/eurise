@@ -74,6 +74,10 @@ interface BrowserActions {
     fun openDownloads()
     fun exportBookmarks()
     fun toast(text: String)
+    /** «Promemoria»: la data trovata nella pagina va nel Calendario. */
+    fun addEvent(title: String, date: PageDate, url: String)
+    /** «Cattura intera»: tutto l'articolo in un'immagine lunga. */
+    fun captureArticle(title: String, text: String, url: String)
 }
 
 /** Le voci della griglia del menu (tavola BrwMenu); [needsPage]: servono una pagina web aperta. */
@@ -277,34 +281,6 @@ internal fun FindBar(tab: Tab, onClose: () -> Unit) {
         SmallRound(EuriseIcons.chevronLeft(2f), stringResource(R.string.brw_find_previous), text.isNotEmpty()) { tab.find(text, backwards = true) }
         SmallRound(EuriseIcons.chevronRight(2f), stringResource(R.string.brw_find_next), text.isNotEmpty()) { tab.find(text) }
         SmallRound(EuriseIcons.close(2f), stringResource(R.string.brw_cancel), true) { tab.stopFind(); onClose() }
-    }
-}
-
-/** Vista Lettura: solo il testo dell'articolo, nella dimensione scelta, con «Ascolta». */
-@Composable
-internal fun ReaderView(title: String, text: String, scale: Float, onListen: () -> Unit, onClose: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().background(scheme.background).statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            SmallRound(EuriseIcons.chevronLeft(2f), stringResource(R.string.brw_back), true, onClose)
-            Text(stringResource(R.string.brw_m_reader), fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Chip(stringResource(R.string.brw_listen), onClick = onListen)
-        }
-        Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 8.dp).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(title, fontSize = (24 * scale).sp, lineHeight = (31 * scale).sp, fontWeight = FontWeight.ExtraBold)
-            if (text.isBlank()) Text(stringResource(R.string.brw_reader_empty), fontSize = 14.sp, color = scheme.onSurfaceVariant)
-            text.split("\n\n").filter { it.isNotBlank() }.forEach { block ->
-                if (block.startsWith("# ")) {
-                    Text(block.removePrefix("# "), fontSize = (19 * scale).sp, lineHeight = (25 * scale).sp, fontWeight = FontWeight.Bold)
-                } else {
-                    Text(block, fontSize = (17 * scale).sp, lineHeight = (27 * scale).sp)
-                }
-            }
-            Spacer(Modifier.height(40.dp))
-        }
     }
 }
 

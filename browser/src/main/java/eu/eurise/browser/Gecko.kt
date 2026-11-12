@@ -92,6 +92,8 @@ class Tab(
     private val history: HistoryStore? = null,
     /** Pagine scure accese? Lo chiede l'estensione a ogni pagina. */
     private val dark: () -> Boolean = { false },
+    /** Immagini caricate? (Strumenti › Immagini sì/no: senza, le pagine pesano meno). */
+    private val images: () -> Boolean = { true },
 ) {
     val session: GeckoSession = GeckoSession(
         GeckoSessionSettings.Builder().usePrivateMode(private).allowJavascript(true).build(),
@@ -111,6 +113,11 @@ class Tab(
     var protectionOn by mutableStateOf(true)
     /** Un file da scaricare (risposta che Gecko non mostra): lo passa al gestore dei download. */
     var onDownload: (String) -> Unit = {}
+    /** Immagini sì/no: lo dice all'estensione, che le blocca prima che si scarichino. */
+    fun setImages(on: Boolean) {
+        runCatching { port?.postMessage(JSONObject().put("type", "images").put("on", on)) }
+    }
+
     /** «Sito PC»: la versione per il computer di questo sito. */
     var desktop by mutableStateOf(false)
         private set
@@ -124,6 +131,10 @@ class Tab(
     var findTotal by mutableIntStateOf(0)
     /** Ultima volta che la scheda era in vista (per chiudere da sole quelle dimenticate). */
     var lastActive: Long = System.currentTimeMillis()
+    /** Il gruppo colorato della scheda (tavola BrwSessioni), o nessuno. */
+    var group by mutableStateOf<String?>(null)
+    /** Miniatura della pagina per la griglia delle schede (solo in memoria). */
+    var thumb by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
     /** Indirizzo da caricare quando la scheda torna in vista (schede riaperte all'avvio). */
     var pending: String? = null
 
@@ -198,6 +209,7 @@ class Tab(
                 override fun onConnect(port: WebExtension.Port) {
                     this@Tab.port = port
                     runCatching { port.postMessage(JSONObject().put("type", "dark").put("on", dark())) }
+                    runCatching { port.postMessage(JSONObject().put("type", "images").put("on", images())) }
                     port.setDelegate(object : WebExtension.PortDelegate {
                         override fun onPortMessage(message: Any, port: WebExtension.Port) {
                             val o = message as? JSONObject ?: return
@@ -229,6 +241,11 @@ class Tab(
     /** Pagine scure: l'estensione scurisce la pagina che non ha un suo tema scuro (o la riporta com'era). */
     fun setDark(on: Boolean) {
         runCatching { port?.postMessage(JSONObject().put("type", "dark").put("on", on)) }
+    }
+
+    /** Immagini sì/no: lo dice all'estensione, che le blocca prima che si scarichino. */
+    fun setImages(on: Boolean) {
+        runCatching { port?.postMessage(JSONObject().put("type", "images").put("on", on)) }
     }
 
     /** «Sito PC»: chiede la versione per il computer (o torna a quella per il telefono) e ricarica. */

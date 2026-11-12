@@ -59,5 +59,9 @@
   port.onMessage.addListener(function (message) {
     if (message && message.type === "page") port.postMessage(pageInfo());
     if (message && message.type === "dark") setDark(!!message.on);
+    // Immagini sì/no: lo sa lo sfondo dell'estensione, che le ferma prima che si scarichino.
+    if (message && message.type === "images") {
+      try { browser.runtime.sendMessage({ type: "images", on: !!message.on }); } catch (e) { /* niente */ }
+    }
   });
 })();

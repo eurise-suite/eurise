@@ -94,6 +94,9 @@ tasks.matching { it.name.contains("lint", ignoreCase = true) }.configureEach { d
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:suite"))
+    // Le date nelle pagine (Lettura › Promemoria) con lo stesso lettore dei messaggi, e l'evento per il Calendario.
+    implementation(project(":core:data"))
+    implementation(project(":core:contacts"))
     // Motore Gecko per arm64. GeckoView 160 (novembre 2026) chiede compileSdk 37 e un Android Gradle Plugin più nuovo
     // di quello della suite (8.7.3): per il prototipo la versione più recente che compila con compileSdk 35. Prima della
     // versione ufficiale va aggiornato il plugin per tutta la suite e si torna all'ultima GeckoView (aggiornamenti di
@@ -106,4 +109,6 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
+    // org.json vero per i test (in Android è solo uno stub).
+    testImplementation(libs.org.json)
 }
