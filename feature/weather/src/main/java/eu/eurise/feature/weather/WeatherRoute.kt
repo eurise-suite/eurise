@@ -83,6 +83,7 @@ fun WeatherRoute(
     var loading by remember { mutableStateOf(true) }
     var reload by remember { mutableIntStateOf(0) }
     var openAlert by remember { mutableStateOf<Alert?>(null) }
+    var openDay by remember { mutableStateOf<java.time.LocalDate?>(null) }
     val scope = rememberCoroutineScope()
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) reload++ }
 
@@ -97,6 +98,13 @@ fun WeatherRoute(
     if (alert != null) {
         BackHandler { openAlert = null }
         AlertScreen(alert, touched, onBack = { openAlert = null })
+        return
+    }
+    val dayOpen = openDay
+    val fc = state?.forecast
+    if (dayOpen != null && fc != null) {
+        BackHandler { openDay = null }
+        DayScreen(fc, dayOpen, onBack = { openDay = null })
         return
     }
     BackHandler(onBack = onBack)
@@ -181,7 +189,7 @@ fun WeatherRoute(
                 Card(Modifier.padding(horizontal = 16.dp), padding = PaddingValues(horizontal = 14.dp, vertical = 2.dp)) {
                     f.days.drop(1).forEachIndexed { i, d ->
                         if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
-                        Row(Modifier.fillMaxWidth().height(46.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().height(48.dp).clickable { openDay = d.date }, verticalAlignment = Alignment.CenterVertically) {
                             Text(MeteoText.dayName(d.date, now.toLocalDate()), fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.width(84.dp))
                             Icon(skyIcon(d.sky), null, tint = skyTint(d.sky), modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
@@ -193,6 +201,8 @@ fun WeatherRoute(
                             )
                             Text("${d.min}°", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("${d.max}°", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.width(38.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                            Spacer(Modifier.width(6.dp))
+                            Icon(EuriseIcons.chevronRight(), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
@@ -221,15 +231,21 @@ fun WeatherRoute(
 
 private val HourMin: DateTimeFormatter = DateTimeFormatter.ofPattern("H:mm")
 
+/** Un'ombra leggera sotto i testi bianchi: si leggono anche sopra le nuvole chiare e la neve. */
+private val Readable = androidx.compose.ui.text.TextStyle(
+    shadow = androidx.compose.ui.graphics.Shadow(Color(0x66000000), androidx.compose.ui.geometry.Offset(0f, 1.5f), 6f),
+)
+
 /** Fascia in alto: luogo con bandiera, temperatura grande, cielo, massima, minima e percepita. Il colore segue il cielo. */
 @Composable
 private fun Header(s: MeteoState?, loading: Boolean, topInset: androidx.compose.ui.unit.Dp, onBack: () -> Unit, onRefresh: () -> Unit) {
     val f = s?.forecast
-    val (top, bottom) = skyGradient(f?.now?.sky, f?.now?.day ?: true)
+    // Il tempo che fa, disegnato (pioggia, neve, sole, nuvole…), come negli sfondi della Scrivania.
+    Box(Modifier.fillMaxWidth()) {
+    SkyScene(f?.now?.sky, f?.now?.day ?: true, Modifier.matchParentSize())
     Column(
         Modifier.fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(top, bottom)))
-            .padding(top = topInset + 6.dp, start = 12.dp, end = 12.dp, bottom = 22.dp),
+            .padding(top = topInset + 6.dp, start = 12.dp, end = 12.dp, bottom = 64.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             RoundButton(EuriseIcons.chevronLeft(), stringResource(R.string.weather_back), onBack)
@@ -240,26 +256,27 @@ private fun Header(s: MeteoState?, loading: Boolean, topInset: androidx.compose.
             val place = s?.place
             Text(
                 listOfNotNull(place?.label ?: stringResource(R.string.weather_here), place?.flag).joinToString("  "),
-                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, style = Readable,
             )
             if (f != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${f.now.temp}°", color = Color.White, fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 76.sp)
+                    Text("${f.now.temp}°", color = Color.White, fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 76.sp, style = Readable)
                     Spacer(Modifier.weight(1f))
                     Icon(skyIcon(f.now.sky, f.now.day), null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(84.dp))
                 }
-                Text(MeteoText.sky(f.now.sky), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(MeteoText.sky(f.now.sky), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, style = Readable)
                 val today = f.days.firstOrNull()
                 if (today != null) {
                     Text(
                         stringResource(R.string.weather_minmax, today.max, today.min, f.now.feels),
-                        color = Color.White.copy(alpha = 0.88f), fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.92f), fontSize = 13.sp, style = Readable,
                     )
                 }
             } else {
                 Spacer(Modifier.height(80.dp))
             }
         }
+    }
     }
 }
 
@@ -504,11 +521,90 @@ private fun skyTint(s: Sky): Color = when (s) {
     else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
-/** Colori della fascia in alto: azzurro col sereno, grigio-blu con nuvole e pioggia, ardesia col temporale, blu notte di sera. */
-private fun skyGradient(s: Sky?, day: Boolean): Pair<Color, Color> = when {
-    !day -> Color(0xFF1B2540) to Color(0xFF3A4A6B)
-    s == Sky.Clear || s == Sky.PartlyCloudy -> Color(0xFF4F86C6) to Color(0xFF9CC3E6)
-    s == Sky.Storm -> Color(0xFF4A5363) to Color(0xFF8792A3)
-    s == Sky.Snow || s == Sky.Fog -> Color(0xFF8C97A6) to Color(0xFFC7CED8)
-    else -> Color(0xFF6F7F96) to Color(0xFFA9B4C3)
+
+/**
+ * Un giorno della settimana aperto (richiesta del proprietario, 12 novembre): il tempo disegnato, massima e minima, ora per
+ * ora, quando piove, vento e sole. Le ore vengono dalla stessa previsione di Open-Meteo: nessuna richiesta in più.
+ */
+@Composable
+private fun DayScreen(f: eu.eurise.core.data.weather.Forecast, date: java.time.LocalDate, onBack: () -> Unit) {
+    val d = f.days.firstOrNull { it.date == date } ?: return onBack()
+    val today = LocalDateTime.now(f.zone).toLocalDate()
+    val hours = f.allHours.filter { it.time.toLocalDate() == date }
+    val insets = WindowInsets.safeDrawing.asPaddingValues()
+    LazyColumn(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = insets.calculateBottomPadding() + 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item("head") {
+            Box(Modifier.fillMaxWidth()) {
+                SkyScene(d.sky, day = true, modifier = Modifier.matchParentSize())
+                Column(Modifier.fillMaxWidth().padding(top = insets.calculateTopPadding() + 6.dp, start = 12.dp, end = 12.dp, bottom = 64.dp)) {
+                    RoundButton(EuriseIcons.chevronLeft(), stringResource(R.string.weather_back), onBack)
+                    Column(Modifier.padding(horizontal = 8.dp)) {
+                        Text(
+                            MeteoText.dayName(date, today) + " " + date.dayOfMonth,
+                            color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, style = Readable,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${d.max}°", color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 68.sp, style = Readable)
+                            Spacer(Modifier.width(10.dp))
+                            Text("${d.min}°", color = Color.White.copy(alpha = 0.85f), fontSize = 28.sp, fontWeight = FontWeight.Bold, style = Readable)
+                        }
+                        Text(MeteoText.sky(d.sky), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, style = Readable)
+                    }
+                }
+            }
+        }
+        if (hours.isNotEmpty()) item("hours") {
+            Card(Modifier.padding(horizontal = 16.dp), padding = PaddingValues(vertical = 12.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    items(hours, key = { it.time.toString() }) { h ->
+                        Column(Modifier.width(54.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("${h.time.hour}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val dayHour = d.sunrise?.let { r -> d.sunset?.let { s -> !h.time.isBefore(r) && h.time.isBefore(s) } } ?: (h.time.hour in 7..18)
+                            Icon(skyIcon(h.sky, dayHour), null, tint = skyTint(h.sky), modifier = Modifier.size(20.dp))
+                            Text("${h.temp}°", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(if (h.rainChance >= 10) "${h.rainChance}%" else "", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+        item("story") {
+            Card(Modifier.padding(horizontal = 16.dp)) {
+                Text(dayStory(d, hours), fontSize = 14.sp, lineHeight = 20.sp)
+            }
+        }
+        item("tiles") {
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tile(stringResource(R.string.weather_day_rain), Modifier.weight(1f)) {
+                    Text("${d.rainChance}%", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    Small(stringResource(R.string.weather_day_rain_sub))
+                }
+                Tile(stringResource(R.string.weather_wind), Modifier.weight(1f)) {
+                    Text("${d.gustKmh}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    Small(stringResource(R.string.weather_day_gusts))
+                }
+                Tile(stringResource(R.string.weather_sun), Modifier.weight(1f)) {
+                    Text(d.sunrise?.format(HourMin) ?: "—", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                    Small(stringResource(R.string.weather_sunset, d.sunset?.format(HourMin) ?: "—"))
+                }
+            }
+        }
+    }
+}
+
+/** Una frase sul giorno: quando piove (le ore con probabilità alta, unite in fasce) o che resta asciutto. */
+@Composable
+private fun dayStory(d: eu.eurise.core.data.weather.Day, hours: List<eu.eurise.core.data.weather.Hour>): String {
+    val wet = setOf(Sky.Drizzle, Sky.Rain, Sky.Showers, Sky.Storm, Sky.Snow)
+    val rainy = hours.filter { it.rainChance >= 40 || (it.sky in wet && it.rainChance >= 25) }.map { it.time.hour }
+    if (rainy.isEmpty()) return stringResource(if (d.rainChance >= 30) R.string.weather_day_maybe else R.string.weather_day_dry, d.max, d.min)
+    val spans = mutableListOf<IntRange>()
+    rainy.forEach { h -> if (spans.isNotEmpty() && spans.last().last == h - 1) spans[spans.size - 1] = spans.last().first..h else spans += h..h }
+    val text = spans.joinToString(", ") { r -> if (r.first == r.last) "verso le ${r.first}" else "dalle ${r.first} alle ${r.last + 1}" }
+    val what = if (hours.any { it.sky == Sky.Snow && it.time.hour in rainy }) R.string.weather_day_snow else if (hours.any { it.sky == Sky.Storm && it.time.hour in rainy }) R.string.weather_day_storm else R.string.weather_day_wet
+    return stringResource(what, text)
 }

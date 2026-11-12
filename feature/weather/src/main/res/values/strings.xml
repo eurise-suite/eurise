@@ -30,4 +30,12 @@
     <string name="weather_open">Apri</string>
     <string name="weather_alert_todo">Cosa fare</string>
     <string name="weather_alert_privacy">Gli impegni si confrontano sul telefono: l\'elenco delle allerte è uguale per tutti e alla rete non arriva nulla di tuo.</string>
+    <string name="weather_day_rain">Pioggia</string>
+    <string name="weather_day_rain_sub">probabilità massima</string>
+    <string name="weather_day_gusts">km/h di raffiche al massimo</string>
+    <string name="weather_day_dry">Giornata asciutta: massima %1$d°, minima %2$d°.</string>
+    <string name="weather_day_maybe">Qualche goccia possibile, niente di sicuro: massima %1$d°, minima %2$d°.</string>
+    <string name="weather_day_wet">Pioggia probabile %1$s.</string>
+    <string name="weather_day_storm">Temporali probabili %1$s: meglio non mettersi in viaggio in quelle ore.</string>
+    <string name="weather_day_snow">Neve probabile %1$s: catene o gomme invernali se esci in auto.</string>
 </resources>

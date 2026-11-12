@@ -21,7 +21,11 @@ data class Day(
 )
 
 /** Previsioni per un punto: adesso, le prossime ore e i giorni. */
-data class Forecast(val now: Now, val hours: List<Hour>, val days: List<Day>, val zone: ZoneId)
+data class Forecast(
+    val now: Now, val hours: List<Hour>, val days: List<Day>, val zone: ZoneId,
+    /** Tutte le ore dei sette giorni (per il dettaglio di un giorno); [hours] sono le prossime 24. */
+    val allHours: List<Hour> = hours,
+)
 
 /** Pollini di oggi: livello complessivo (0 assenti, 1 bassi, 2 moderati, 3 alti) e le specie più presenti. */
 data class Pollen(val level: Int, val top: List<String>)
@@ -65,14 +69,15 @@ object MeteoParse {
         val start = from ?: LocalDateTime.parse(c.getString("time")).withMinute(0)
         val h = root.getJSONObject("hourly")
         val times = h.getJSONArray("time")
-        val hours = (0 until times.length()).map { i ->
+        val all = (0 until times.length()).map { i ->
             Hour(
                 LocalDateTime.parse(times.getString(i)),
                 h.getJSONArray("temperature_2m").num(i).roundToInt(),
                 h.optJSONArray("precipitation_probability")?.num(i)?.roundToInt() ?: 0,
                 sky(h.getJSONArray("weather_code").num(i).toInt()),
             )
-        }.filter { !it.time.isBefore(start) }.take(24)
+        }
+        val hours = all.filter { !it.time.isBefore(start) }.take(24)
         val d = root.getJSONObject("daily")
         val dates = d.getJSONArray("time")
         val days = (0 until dates.length()).map { i ->
@@ -87,7 +92,7 @@ object MeteoParse {
                 sunset = d.optJSONArray("sunset")?.optString(i)?.takeIf { it.isNotEmpty() }?.let(LocalDateTime::parse),
             )
         }
-        return Forecast(now, hours, days, zone)
+        return Forecast(now, hours, days, zone, all)
     }
 
     private fun JSONArray.num(i: Int): Double = if (isNull(i)) 0.0 else getDouble(i)
