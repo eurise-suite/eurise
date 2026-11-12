@@ -1533,3 +1533,47 @@ Richieste del proprietario (12 novembre, dopo le prove del giro 331), con lo sta
 - Ordine di lavoro proposto per la prossima chat: 1) codice delle tavole approvate (Browser, Scrivania, Telefono) con le
   correzioni; 2) pillola nella lettura delle Email e ricerca in basso in Password; 3) tavola dell'Assistente; 4) Mappe
   (ricerca e interfaccia, piano sopra). A ogni consegna: elenco degli APK cambiati e di quelli uguali.
+
+## 12 novembre, notte: tavole approvate in codice, pillole, ricerca di Mappe, tavola dell'Assistente · giro 342, Mappe 16
+Fatto (ramo `brand`), nell'ordine chiesto dal proprietario:
+- **Browser, fila 5** (`browser/`): `NewTab.kt` (BrwNuovaSchedaPro: ricerca con «Chiedi all'AI», «Nella cronologia» e QR,
+  che apre il lettore QR della suite; «Riprendi da dove eri» = ultima scheda chiusa e primo «Leggi dopo»; siti fissati con
+  «Fissa» (apre i segnalibri in modo «fissa»; tieni premuto un sito per toglierlo); «Per oggi, dalla suite» dal nuovo
+  `TodayLinksProvider` dell'app Eurise (`core/suite/TodayLinksContract`: impegni delle prossime 18 ore e cose da fare dei
+  prossimi 3 giorni con un link, permesso della suite); scorciatoie Download, Password, Estensioni, Cronologia; tracciatori
+  fermati nella settimana). Differenze dalla tavola: «Sul computer» e «Al computer» non ci sono finché manca la
+  sincronizzazione; «Traduci» non è tra le scorciatoie della nuova scheda (non c'è una pagina da tradurre).
+  Barra a pillola galleggiante: tocco sull'indirizzo = `AddressMenu.kt` (BrwIndirizzo; «Manda al computer» spento con la
+  spiegazione), tieni premuto = scrivi; icona segnalibri = `BookmarksPopup.kt` (BrwSegnalibri, elenco che **scorre**,
+  cartelle, ricerca, tieni premuto per scheda nuova/fissa/rinomina/sposta/togli). `Extensions.kt` + `ExtensionsUi.kt`
+  (BrwEstensioni): Impostazioni › Estensioni, consigliate da AMO, scheda dei permessi prima di installare (GeckoView 141,
+  `onInstallPromptRequest` a 4 argomenti), interruttore e rimozione; i file .xpi aperti da addons.mozilla.org si installano
+  passando dalla stessa scheda. ZXing aggiunto al Browser per il QR dell'indirizzo.
+- **Scrivania, fila 12** (`feature/launcher/home/Dock.kt`): sul telefono la dock sostituisce la barra delle categorie
+  (sul tablet resta `TabletDock`). Tutte le app con la correzione (colonna di categorie a destra, a sinistra per i mancini,
+  app che compaiono scorrendo il dito, apertura sulla categoria più aperta: conteggi in `DockPrefs`, preferenze «dock»);
+  «Apri la pagina» porta alla pagina intera della categoria (riordino, cartelle). Stella = le tue app con «+». Compiti
+  (Mappe, Drive, SMS, Email, Chat, Ricerca AI, Browser): app trovate per intent (geo, smsto, mailto, https) e per elenchi
+  di pacchetti, la suite per prima; stella = app di riferimento. «Ti hanno cercato»: tondo del menu (`LocalCommsApps`) con
+  le app per comunicare. La tavola ScrDock non è stata ridisegnata: si è seguita la descrizione della correzione.
+- **Telefono** (TelPillola): `EuriseDock` con Tastierino (apre il tastierino), Preferiti (griglia: tocco chiama, tieni
+  premuto apre), Recenti (con la carrellata dei preferiti in cima), Rubrica; «+» = contatto nuovo. Nota della chiamata con
+  lo stile del riquadro «Prima di rispondere» (velo, titolo dorato, testo bianco).
+- **Email**: lettura con la pillola satinata Rispondi, Inoltra (oggetto «I:», testo citato; gli allegati non si inoltrano
+  ancora), Archivia, Sposta in… (cartelle IMAP), Elimina, Spam (cartella `\Junk` o per nome).
+- **Password**: ricerca in basso (sempre visibile, si scrive subito); stato della sincronizzazione sotto il titolo.
+- **Assistente**: tavola sulla tela, pagina AI, seconda fila (AstAscolto, AstConferma, AstMessaggio, AstLibera,
+  AstImpostazioni) · **da approvare**; il codice parte dopo l'approvazione.
+- **Mappe, punto 1 del piano (ricerca)**: `maps/android/…/eurise/EuriseOnlineSearch.java` + agganci in `eurise_patch.py`:
+  la domanda va al motore senza la sigla della provincia («Apice, BN» → «Apice»); se le mappe scaricate non trovano
+  nulla, scheda «non è nelle mappe del telefono» con «Cerca su OpenStreetMap» (Photon di komoot: solo le parole cercate,
+  niente posizione; spiegazione la prima volta, si spegne dai risultati) e «Scarica mappe»; toccando un risultato la mappa
+  va lì e, se la regione non è sul telefono, propone di scaricarla con il peso. Da fare: la voce nel centro privacy.
+- **Mappe, punto 2 (interfaccia rifatta sulle tavole)**: non ancora iniziato. Serve Compose nel modulo app di CoMaps
+  (oggi solo View) e schermate nuove al posto di quelle di CoMaps: home della mappa con la barra satinata, ricerca
+  (MapCerca), scheda del luogo, percorso (MapPercorso), poi guida (MapGuida), livelli, segnala. Lavoro lungo: va fatto
+  in una chat dedicata, una schermata per giro di Mappe.
+- **Ultimo APK: giro 342** in `apk-prova`, Mappe 16. Cambiati rispetto al 338: app-debug (Scrivania, «Per oggi» per il
+  Browser), browser, phone, mail, password, eurise-mappe. Uguali nel funzionamento (solo ricompilati per le icone nuove
+  di `core/designsystem` e il contratto in `core/suite`): ai, chat, gallery, messages, read, voice, EuriseTastiera, Office.
+- **Prossima chat**: prova del giro 342; approvazione della tavola dell'Assistente e suo codice; Mappe punto 2.
