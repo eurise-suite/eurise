@@ -1323,5 +1323,5 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
 - **Drive** (icona «Drive», ex «File»): testata e dock trasparenti corretti (la testata era dentro il suo `hazeSource`:
   ora ogni scheda ha il suo fondo e testata/dock stanno sopra). Come sulla tela: Scansiona/Carica/Cartella, colori per
   tipo (`DriveLook.kt`, anche Notte), cartelle a due toni per posto, barre dello spazio, filtri per tipo con i conteggi.
-  Intelligenti: «Riordina Download» (documenti → Documenti, file vecchi e quanto pesano). Prossime idee: file per gli
-  impegni di oggi (dal Calendario), doppioni, ricerca nel testo dei PDF e delle scansioni, nomi proposti alle scansioni.
+  Intelligenti: «Riordina Download» (documenti → Documenti, file vecchi e quanto pesano). Fatto anche «Per i tuoi impegni»
+  (file per gli appuntamenti delle prossime 36 ore, dal Calendario). **Ultimo APK: giro 316** in `apk-prova`. Prossime idee: doppioni, ricerca nel testo dei PDF e delle scansioni, nomi proposti alle scansioni.
