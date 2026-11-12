@@ -13,6 +13,7 @@ import org.matrix.rustcomponents.sdk.crypto.EncryptionSettings
 import org.matrix.rustcomponents.sdk.crypto.EventEncryptionAlgorithm
 import org.matrix.rustcomponents.sdk.crypto.HistoryVisibility
 import org.matrix.rustcomponents.sdk.crypto.OlmMachine
+import org.matrix.rustcomponents.sdk.crypto.OutgoingVerificationRequest
 import org.matrix.rustcomponents.sdk.crypto.Request
 import org.matrix.rustcomponents.sdk.crypto.RequestType
 import uniffi.matrix_sdk_crypto.DecryptionSettings
@@ -54,9 +55,35 @@ class ChatCrypto(context: Context, private val session: Session) {
     suspend fun flush(client: ChatClient) {
         val requests = lock.withLock { machine.outgoingRequests() }
         requests.forEach { send(client, it) }
+        // La copia cifrata delle chiavi sul server (se c'è la chiave di recupero): un pacchetto per tornata.
+        lock.withLock { runCatching { if (machine.backupEnabled()) machine.backupRoomKeys() else null }.getOrNull() }?.let { send(client, it) }
     }
 
-    private suspend fun send(client: ChatClient, r: Request) {
+    /** Lavoro diretto sul modulo crittografico (chiave di recupero, verifica), uno alla volta. */
+    suspend fun <T> withMachine(block: (OlmMachine) -> T): T = lock.withLock { block(machine) }
+
+    /** Un messaggio della verifica (tra dispositivi o nella stanza) al server, poi segnato come mandato. */
+    suspend fun sendVerification(client: ChatClient, r: OutgoingVerificationRequest) {
+        when (r) {
+            is OutgoingVerificationRequest.ToDevice -> {
+                client.put("/_matrix/client/v3/sendToDevice/${ChatClient.enc(r.eventType)}/${ChatClient.enc(r.requestId)}",
+                    JSONObject().put("messages", JSONObject(r.body)))
+                runCatching { mark(r.requestId, RequestType.TO_DEVICE, JSONObject()) }
+            }
+            is OutgoingVerificationRequest.InRoom -> {
+                val sent = client.put("/_matrix/client/v3/rooms/${ChatClient.enc(r.roomId)}/send/${ChatClient.enc(r.eventType)}/${ChatClient.enc(r.requestId)}",
+                    JSONObject(r.content))
+                runCatching { mark(r.requestId, RequestType.ROOM_MESSAGE, sent) }
+            }
+        }
+    }
+
+    /** Firme (dispositivo verificato, chiavi di firma) al server. */
+    fun uploadSignatures(client: ChatClient, body: String) {
+        client.post("/_matrix/client/v3/keys/signatures/upload", JSONObject(body))
+    }
+
+    suspend fun send(client: ChatClient, r: Request) {
         try {
             when (r) {
                 is Request.KeysUpload -> mark(r.requestId, RequestType.KEYS_UPLOAD, client.post("/_matrix/client/v3/keys/upload", JSONObject(r.body)))
@@ -80,7 +107,8 @@ class ChatCrypto(context: Context, private val session: Session) {
                     val sent = client.put("/_matrix/client/v3/rooms/${ChatClient.enc(r.roomId)}/send/${ChatClient.enc(r.eventType)}/${ChatClient.enc(r.requestId)}", JSONObject(r.content))
                     mark(r.requestId, RequestType.ROOM_MESSAGE, sent)
                 }
-                is Request.KeysBackup -> Unit // Il backup delle chiavi arriva con la chiave di recupero (backup cifrato della suite).
+                is Request.KeysBackup -> mark(r.requestId, RequestType.KEYS_BACKUP,
+                    client.put("/_matrix/client/v3/room_keys/keys?version=${ChatClient.enc(r.version)}", JSONObject().put("rooms", JSONObject(r.rooms))))
                 else -> Unit
             }
         } catch (e: Exception) {

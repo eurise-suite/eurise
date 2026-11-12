@@ -77,7 +77,16 @@ interface ChatActions {
     fun text(id: Int): String
     fun askNotifications()
     fun finish()
+    /** Copia un segreto (la chiave di recupero): segnato come sensibile, non compare nelle anteprime degli appunti. */
+    fun copySecret(text: String)
+    /** «In Eurise Password»: copia la chiave e apre Password per incollarla in una voce nuova. */
+    fun openPassword(key: String)
+    /** «Su carta»: un foglio con la chiave da stampare. */
+    fun printKey(key: String, userId: String)
 }
+
+/** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */
+private enum class SecurityPage { Recovery, Verify }
 
 private val TINTS = listOf(0xFF3E5C8A, 0xFF4F6B5A, 0xFF6B4A7A, 0xFF85672B, 0xFF2E6E73, 0xFFA0522D, 0xFF8C2F39, 0xFF55585E)
 private fun tintFor(key: String) = Color(TINTS[(key.hashCode() and 0x7fffffff) % TINTS.size])
@@ -89,12 +98,17 @@ private fun initials(name: String): String {
 @Composable
 fun ChatApp(model: ChatModel, actions: ChatActions) {
     val open = model.openRoom
-    BackHandler(enabled = open != null) { model.open(null) }
+    var page by remember { mutableStateOf<SecurityPage?>(null) }
+    BackHandler(enabled = open != null && page == null) { model.open(null) }
+    // Un altro dispositivo chiede la verifica: si apre la schermata delle figure.
+    LaunchedEffect(model.verify is Verify.Incoming) { if (model.verify is Verify.Incoming) page = SecurityPage.Verify }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             model.session == null -> Access(model, actions)
+            page == SecurityPage.Recovery -> RecoveryScreen(model, actions, onClose = { page = null })
+            page == SecurityPage.Verify -> VerifyScreen(model, actions, onClose = { if (model.verify !is Verify.Incoming) model.cancelVerify(false); page = null })
             open != null -> Conversation(model, actions, open)
-            else -> RoomList(model, actions)
+            else -> RoomList(model, actions, onRecovery = { page = SecurityPage.Recovery }, onVerify = { page = SecurityPage.Verify })
         }
     }
 }
@@ -179,7 +193,7 @@ private fun PasswordSheet(model: ChatModel, actions: ChatActions, homeserver: St
 // --- Elenco (tavola ChatElenco) ---
 
 @Composable
-private fun RoomList(model: ChatModel, actions: ChatActions) {
+private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> Unit, onVerify: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
     var creating by remember { mutableStateOf(false) }
@@ -193,13 +207,16 @@ private fun RoomList(model: ChatModel, actions: ChatActions) {
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
+            // Senza chiave di recupero l'avviso invita a crearla (cambiando telefono i messaggi cifrati non si riaprirebbero).
+            val safe = model.security?.backup == true
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x334F6B5A)).padding(horizontal = 12.dp, vertical = 9.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (safe) Color(0x334F6B5A) else Color(0x3385672B))
+                    .clickable(role = Role.Button, onClick = onRecovery).padding(horizontal = 12.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(EuriseIcons.lock(2f), null, tint = Color(0xFF4F6B5A), modifier = Modifier.size(15.dp))
+                Icon(if (safe) EuriseIcons.lock(2f) else EuriseIcons.key(2f), null, tint = if (safe) Color(0xFF4F6B5A) else Color(0xFF85672B), modifier = Modifier.size(15.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.ch_e2ee_soon), fontSize = 12.sp, lineHeight = 17.sp)
+                Text(stringResource(if (safe) R.string.ch_e2ee_safe else R.string.ch_e2ee_key), fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f))
             }
         }
         if (!model.ready) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
@@ -226,6 +243,8 @@ private fun RoomList(model: ChatModel, actions: ChatActions) {
     if (account) Sheet({ account = false }) {
         Text(model.session?.userId.orEmpty(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
         Text(model.session?.homeserver.orEmpty(), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+        Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
+        Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.ch_logout), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.logout() }
     }
 }
@@ -413,15 +432,15 @@ private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Uni
 // --- Pezzi comuni ---
 
 @Composable
-private fun Card(content: @Composable ColumnScope.() -> Unit) {
+internal fun Card(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 14.dp), content = content)
 }
 
 @Composable
-private fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
+internal fun Divider() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
 
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(text.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
 }
@@ -455,14 +474,14 @@ private fun SeesRow(icon: ImageVector, title: String, sub: String, who: String, 
 }
 
 @Composable
-private fun IconBox(icon: ImageVector) {
+internal fun IconBox(icon: ImageVector) {
     Box(Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)), contentAlignment = Alignment.Center) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
     }
 }
 
 @Composable
-private fun Sheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun Sheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).pointerInput(Unit) { detectTapGestures { onClose() } }, contentAlignment = Alignment.BottomCenter) {
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(MaterialTheme.colorScheme.surfaceContainer)
@@ -473,7 +492,7 @@ private fun Sheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Un
 }
 
 @Composable
-private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(if (selected) scheme.primary else scheme.primary.copy(alpha = 0.12f))
@@ -483,7 +502,7 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: Boolean, onClick: () -> Unit) {
+internal fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(if (strong) scheme.primary else scheme.surface)
@@ -497,7 +516,7 @@ private fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: B
 }
 
 @Composable
-private fun RoundIcon(icon: ImageVector, label: String, flat: Boolean = false, onClick: () -> Unit) {
+internal fun RoundIcon(icon: ImageVector, label: String, flat: Boolean = false, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier.size(40.dp).clip(CircleShape).background(if (flat) Color.Transparent else scheme.surface)
@@ -522,7 +541,7 @@ private fun SearchField(value: String, hint: String, onChange: (String) -> Unit)
 }
 
 @Composable
-private fun Field(label: String, value: String, type: KeyboardType, secret: Boolean = false, onChange: (String) -> Unit) {
+internal fun Field(label: String, value: String, type: KeyboardType, secret: Boolean = false, onChange: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).clip(RoundedCornerShape(14.dp)).background(scheme.background).padding(horizontal = 14.dp, vertical = 8.dp)) {
         Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)

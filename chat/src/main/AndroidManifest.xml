@@ -4,6 +4,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="${suitePermission}" />
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+
+    <!-- L'app Eurise (backup cifrato della suite) ed Eurise Password, per la chiave di recupero. -->
+    <queries>
+        <package android:name="eu.eurise.hub" />
+        <package android:name="eu.eurise.hub.debug" />
+        <package android:name="eu.eurise.password" />
+        <package android:name="eu.eurise.password.debug" />
+    </queries>
 
     <application
         android:allowBackup="false"

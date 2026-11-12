@@ -20,7 +20,8 @@ import org.json.JSONObject
 /** L'accesso a un server Matrix: dove sta, chi sei, il gettone d'accesso (cifrato sul telefono). */
 data class Session(val homeserver: String, val userId: String, val deviceId: String, val token: String)
 
-class MatrixException(val status: Int, val code: String, message: String) : Exception(message)
+/** Un errore del server; [body] è la risposta intera (serve per la conferma d'identità, «UIA»: session e flows). */
+class MatrixException(val status: Int, val code: String, message: String, val body: JSONObject = JSONObject()) : Exception(message)
 
 /**
  * L'API client-server di Matrix con HttpURLConnection e org.json: niente librerie nuove. Le chiamate sono bloccanti:
@@ -114,6 +115,49 @@ class ChatClient(val session: Session) {
 
     fun logout() { runCatching { post("/_matrix/client/v3/logout", JSONObject()) } }
 
+    // --- Chiave di recupero e dispositivi (tavole ChatRecupero e ChatVerifica) ---
+
+    private fun accountPath(type: String) = "/_matrix/client/v3/user/${enc(session.userId)}/account_data/${enc(type)}"
+
+    /** Un dato dell'account (archivio dei segreti), o null se non c'è. */
+    fun accountData(type: String): JSONObject? = try {
+        get(accountPath(type))
+    } catch (e: MatrixException) {
+        if (e.status == 404) null else throw e
+    }
+
+    fun putAccountData(type: String, content: JSONObject) { put(accountPath(type), content) }
+
+    /** Le chiavi pubbliche di un utente sul server (per sapere se ha già le chiavi di firma). */
+    fun keysQuery(userId: String): JSONObject =
+        post("/_matrix/client/v3/keys/query", JSONObject().put("device_keys", JSONObject().put(userId, JSONArray())).put("timeout", 10_000))
+
+    /** I dispositivi dell'account: nome, ultimo accesso. */
+    fun devices(): List<JSONObject> {
+        val a = get("/_matrix/client/v3/devices").optJSONArray("devices") ?: return emptyList()
+        return (0 until a.length()).mapNotNull { a.optJSONObject(it) }
+    }
+
+    /**
+     * Fa uscire un dispositivo. Il server chiede di confermare chi sei («UIA»): la prima volta senza [auth] torna una
+     * [MatrixException] 401 con session e flows; poi si riprova con la password o, dopo la conferma nel browser, con la sola session.
+     */
+    fun deleteDevice(deviceId: String, auth: JSONObject?) {
+        val body = JSONObject().put("devices", JSONArray().put(deviceId))
+        if (auth != null) body.put("auth", auth)
+        post("/_matrix/client/v3/delete_devices", body)
+    }
+
+    /** Le chiavi di firma (prima volta: i server recenti non chiedono conferma; altrimenti come [deleteDevice]). */
+    fun uploadSigningKeys(body: JSONObject, auth: JSONObject?) {
+        if (auth != null) body.put("auth", auth)
+        post("/_matrix/client/v3/keys/device_signing/upload", body)
+    }
+
+    /** La pagina del server dove confermare chi sei (accesso dal sito), per i server senza password. */
+    fun ssoFallback(uiaSession: String) =
+        "${session.homeserver}/_matrix/client/v3/auth/m.login.sso/fallback/web?session=${enc(uiaSession)}"
+
     companion object {
         fun enc(s: String): String = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
@@ -135,7 +179,7 @@ class ChatClient(val session: Session) {
                 val stream = if (code in 200..299) c.inputStream else c.errorStream
                 val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
                 val json = runCatching { JSONObject(text.ifBlank { "{}" }) }.getOrDefault(JSONObject())
-                if (code !in 200..299) throw MatrixException(code, json.optString("errcode", "M_UNKNOWN"), json.optString("error", "HTTP $code"))
+                if (code !in 200..299) throw MatrixException(code, json.optString("errcode", "M_UNKNOWN"), json.optString("error", "HTTP $code"), json)
                 return json
             } finally { c.disconnect() }
         }
@@ -196,7 +240,7 @@ class SessionStore(context: Context) {
             .putString("token", seal(s.token)).remove("since").apply()
     }
 
-    fun clear() = prefs.edit().remove("hs").remove("user").remove("device").remove("token").remove("since").apply()
+    fun clear() = prefs.edit().remove("hs").remove("user").remove("device").remove("token").remove("since").remove("recovery").apply()
 
     /** La frase dell'archivio delle chiavi di cifratura: casuale, creata una volta, custodita cifrata dal Keystore. */
     fun cryptoPassphrase(): String {
@@ -205,6 +249,16 @@ class SessionStore(context: Context) {
         prefs.edit().putString("crypto", seal(fresh)).apply()
         return fresh
     }
+
+    /** La chiave di recupero, sigillata dal Keystore: si rivede con «Mostra», non va nei backup di Android. */
+    fun saveRecovery(key: String) { prefs.edit().putString("recovery", seal(key)).apply() }
+
+    fun recovery(): String? = prefs.getString("recovery", null)?.let { runCatching { open(it) }.getOrNull() }
+
+    /** La chiave è stata affidata anche al backup cifrato della suite. */
+    var keptInSuite: Boolean
+        get() = prefs.getBoolean("kept_in_suite", true)
+        set(v) { prefs.edit().putBoolean("kept_in_suite", v).apply() }
 
     var since: String?
         get() = prefs.getString("since", null)

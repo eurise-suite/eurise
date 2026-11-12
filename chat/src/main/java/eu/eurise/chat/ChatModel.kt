@@ -124,6 +124,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     ready = true
                     error = null
                     backoff = 2_000L
+                    checkIncoming()
+                    if (security == null) refreshSecurity()
                 }.onFailure { e ->
                     if (e is MatrixException && e.code == "M_UNKNOWN_TOKEN") { forget(); return@launch }
                     error = context.getString(R.string.ch_offline)
@@ -398,6 +400,150 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         start()
     }
 
+    // --- Chiave di recupero e verifica (tavole ChatRecupero e ChatVerifica) ---
+
+    /** Lo stato della chiave e della copia delle chiavi; null finché non si sa. */
+    var security by mutableStateOf<SecurityStatus?>(null)
+        private set
+    /** Una verifica in corso o appena chiesta da un altro dispositivo. */
+    var verify by mutableStateOf<Verify?>(null)
+        private set
+    /** La chiave di recupero custodita (sigillata dal Keystore) per «Mostra» e «Copia». */
+    val recoveryKey: String? get() = store.recovery()
+    /** La chiave è anche nel backup cifrato della suite (nell'app Eurise). */
+    var keptInSuite by mutableStateOf(store.keptInSuite)
+        private set
+    private var verifyJob: Job? = null
+    private val hub get() = eu.eurise.core.suite.SecretsContract.hubPackage(context.packageName.endsWith(".debug"))
+
+    private fun securityFor(): ChatSecurity? {
+        val c = client ?: return null
+        val cr = cryptoFor(c.session) ?: return null
+        return ChatSecurity(c, cr)
+    }
+
+    fun refreshSecurity() {
+        scope.launch { security = withContext(Dispatchers.IO) { securityFor()?.let { runCatching { it.status() }.getOrNull() } } }
+    }
+
+    /**
+     * Crea la chiave (prima volta) o, con [text], apre quella che c'è già. [auth] è la conferma d'identità se il server
+     * l'ha chiesta. Il risultato: la chiave a gruppi, o l'errore (AuthNeeded, AlreadySetUp, WrongKey…).
+     */
+    fun recovery(text: String?, auth: JSONObject?, done: (Result<String>) -> Unit) {
+        scope.launch {
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    val sec = securityFor() ?: error("offline")
+                    if (text == null) sec.setup(auth) else sec.restore(text)
+                }
+            }
+            r.onSuccess { key ->
+                store.saveRecovery(key)
+                if (keptInSuite) withContext(Dispatchers.IO) { eu.eurise.core.suite.SecretsContract.put(context, hub, SUITE_SECRET, key) }
+            }
+            refreshSecurity()
+            done(r)
+        }
+    }
+
+    /** La chiave salvata nel backup della suite (telefono nuovo, ripristinato): si può usare senza scriverla. */
+    suspend fun suiteKey(): String? = withContext(Dispatchers.IO) { eu.eurise.core.suite.SecretsContract.get(context, hub, SUITE_SECRET) }
+
+    /** Tiene (o toglie) la chiave nel backup cifrato della suite; falso se l'app Eurise non c'è. */
+    fun keepInSuite(on: Boolean, done: (Boolean) -> Unit) {
+        scope.launch {
+            val key = recoveryKey
+            val ok = withContext(Dispatchers.IO) {
+                if (on) key != null && eu.eurise.core.suite.SecretsContract.put(context, hub, SUITE_SECRET, key)
+                else eu.eurise.core.suite.SecretsContract.remove(context, hub, SUITE_SECRET)
+            }
+            if (ok || !on) { keptInSuite = on; store.keptInSuite = on }
+            done(ok)
+        }
+    }
+
+    fun devices(done: (Result<List<ChatDevice>>) -> Unit) {
+        scope.launch { done(withContext(Dispatchers.IO) { runCatching { securityFor()?.devices() ?: error("offline") } }) }
+    }
+
+    /** Fa uscire un dispositivo; con [password] o dopo la conferma nel browser ([session]) se il server l'ha chiesta. */
+    fun logoutDevice(id: String, session: String?, password: String?, done: (Result<Unit>) -> Unit) {
+        scope.launch {
+            done(withContext(Dispatchers.IO) {
+                runCatching {
+                    val sec = securityFor() ?: error("offline")
+                    val auth = when {
+                        session != null && password != null -> sec.passwordAuth(session, password)
+                        session != null -> sec.sessionAuth(session)
+                        else -> null
+                    }
+                    sec.logoutDevice(id, auth)
+                }
+            })
+        }
+    }
+
+    fun ssoConfirmUrl(session: String): String? = client?.ssoFallback(session)
+
+    /** Dopo ogni tornata: c'è un altro dispositivo che chiede la verifica? */
+    private fun checkIncoming() {
+        if (verify != null) return
+        scope.launch {
+            val found = withContext(Dispatchers.IO) { securityFor()?.incoming() }
+            if (found != null && verify == null) verify = found
+        }
+    }
+
+    /** «Verifica questo telefono» da qui: lo chiede agli altri dispositivi dell'account. */
+    fun startVerify() {
+        scope.launch {
+            val v = withContext(Dispatchers.IO) { runCatching { securityFor()?.requestSelf() }.getOrNull() }
+            verify = v
+            if (v != null) drive(v.flowId)
+        }
+    }
+
+    fun acceptVerify() {
+        val v = verify ?: return
+        scope.launch {
+            withContext(Dispatchers.IO) { runCatching { securityFor()?.accept(v.flowId) } }
+            verify = Verify.Waiting(v.flowId, v.device)
+            drive(v.flowId)
+        }
+    }
+
+    /** La verifica avanza da sola mentre è aperta: le risposte dell'altro dispositivo arrivano con /sync. */
+    private fun drive(flowId: String) {
+        verifyJob?.cancel()
+        verifyJob = scope.launch {
+            while (isActive) {
+                val v = withContext(Dispatchers.IO) { runCatching { securityFor()?.step(flowId) }.getOrNull() }
+                if (v != null && verify?.flowId == flowId) verify = v
+                if (v is Verify.Done || v is Verify.Cancelled || verify?.flowId != flowId) break
+                delay(700)
+            }
+            if (verify is Verify.Done) refreshSecurity()
+        }
+    }
+
+    fun confirmVerify() {
+        val v = verify ?: return
+        scope.launch {
+            withContext(Dispatchers.IO) { runCatching { securityFor()?.confirm(v.flowId) } }
+            verify = Verify.Confirmed(v.flowId, v.device)
+        }
+    }
+
+    /** «Non sono uguali» ([mismatch]) o chiudi: la verifica si annulla anche sull'altro dispositivo. */
+    fun cancelVerify(mismatch: Boolean) {
+        val v = verify ?: return
+        verifyJob?.cancel()
+        verify = null
+        if (v is Verify.Done || v is Verify.Cancelled) return
+        scope.launch(Dispatchers.IO) { runCatching { securityFor()?.cancel(v.flowId, mismatch) } }
+    }
+
     fun logout() {
         val c = client
         scope.launch(Dispatchers.IO) { c?.logout() }
@@ -412,12 +558,17 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         rooms.clear(); data.clear(); timelines.clear()
         crypto = null
         pending.clear()
+        security = null
+        verify = null
+        verifyJob?.cancel()
         ready = false
         ChatWorker.cancel(context)
     }
 
     companion object {
         const val REDIRECT = "eurisechat://login"
+        /** Il nome della chiave di recupero tra i segreti affidati all'app Eurise. */
+        const val SUITE_SECRET = "chat.recovery_key"
         /** La Chat è aperta e sincronizza da sé: il lavoro in background non tocca le chiavi nello stesso momento. */
         @Volatile var active = false
     }

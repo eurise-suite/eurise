@@ -134,5 +134,11 @@
                 <action android:name="eu.eurise.action.KEYBOARD_NOTE" />
             </intent-filter>
         </receiver>
+        <!-- Segreti affidati dagli altri APK della suite (chiave di recupero della Chat): nel backup cifrato. -->
+        <provider
+            android:name=".SecretsProvider"
+            android:authorities="${applicationId}.secrets"
+            android:exported="true"
+            android:permission="${suitePermission}" />
     </application>
 </manifest>

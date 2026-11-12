@@ -26,6 +26,7 @@ android {
         versionName = "0.1.0"
         resourceConfigurations += listOf("it", "en")
         ndk { abiFilters += listOf("arm64-v8a") }
+        manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
     }
 
     signingConfigs {
@@ -49,6 +50,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
         }
         release {
             isMinifyEnabled = true
@@ -73,6 +75,8 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    // Chiave di recupero nel backup cifrato della suite (SecretsContract), solo tra app con la stessa firma.
+    implementation(project(":core:suite"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
