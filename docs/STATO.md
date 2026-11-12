@@ -1325,3 +1325,34 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   tipo (`DriveLook.kt`, anche Notte), cartelle a due toni per posto, barre dello spazio, filtri per tipo con i conteggi.
   Intelligenti: «Riordina Download» (documenti → Documenti, file vecchi e quanto pesano). Fatto anche «Per i tuoi impegni»
   (file per gli appuntamenti delle prossime 36 ore, dal Calendario). **Ultimo APK: giro 316** in `apk-prova`. Prossime idee: doppioni, ricerca nel testo dei PDF e delle scansioni, nomi proposti alle scansioni.
+
+## 12 novembre, mattina: Browser (BrwStrumenti, BrwSessioni), guida di Mappe, Drive «Riordina», tavole della Chat
+- **Browser · Lettura con gli strumenti** (tavola BrwStrumenti, `ReaderScreen.kt`, `Reading.kt`, `ArticleImage.kt`): in alto
+  minuti di lettura, Traduci (rilegge il testo dopo la traduzione), Ascolta; la prima data da oggi in poi trovata nel testo
+  (stesso lettore dei messaggi, `MessageInsights`) con «Promemoria» → evento nel Calendario (`Reach.event`); la nota del sito
+  in cima. Strumenti in basso (si nascondono scorrendo): Trova nel testo con evidenziazione, Cattura intera (l'articolo
+  disegnato in un'immagine lunga, fino a 16.000 px), Nota del sito (sul telefono, per dominio), Testo %, Carattere con o
+  senza grazie, PDF, Immagini sì/no (lo sfondo dell'estensione `background.js` ferma le richieste di immagini con
+  webRequest; versione dell'estensione 0.2.0), Leggi dopo (il testo resta sul telefono; elenco «Da leggere» in Segnalibri,
+  si apre anche senza rete).
+- **Browser · Schede** (tavola BrwSessioni, `TabsScreen.kt`, `Sessions.kt`): schermata intera con gruppi colorati (tinte
+  della suite; tieni premuta una scheda → gruppo; i link aperti da una scheda restano nel suo gruppo), griglia con miniature
+  (solo in memoria), ricerca, sessioni salvate da riaprire, «Chiuse di recente» (40), schede dimenticate dopo 7 giorni che
+  finiscono lì invece di sparire. Tastiera: Ctrl+Tab, Ctrl+Maiusc+Tab, Ctrl+K, Ctrl+T, Ctrl+W. Non fatti: due schede affiancate
+  sul tablet, «Sul computer» (in arrivo con l'estensione su Firefox). Il modulo usa ora anche `core:data` e `core:contacts`.
+- **Mappe · guida** (giro 9, `maps/android/.../eurise/EuriseGuide.java` agganciato da `eurise_patch.py`): cartello della
+  svolta e striscia della via con il colore del tipo di strada (A = Salvia, SS/SR/E = Blu notte, SP = Petrolio, comunale =
+  blu della suite; senza riferimento decide il colore del cartello OSM), metri alla svolta a passi fini (10 m sotto i 200,
+  50 fino a 500, 100 fino al km), «Manda l'arrivo» nel menu della guida. Patch provata sui sorgenti del commit fissato
+  (specchio github.com/comaps/comaps). Restano: meteo sul percorso, frase d'arrivo, «dove devi andare» dalla suite.
+- **Drive · «Riordina»** (accorpato, come chiesto: solo l'utile, in una scheda): oltre a documenti da spostare e file
+  vecchi, ora copie doppie (stesso peso e stesso nome a meno di «(1)», «- Copia», «-1»: resta la più recente, le altre nel
+  Cestino di Eurise per 30 giorni, con conferma) e nomi veri per le scansioni con un nome da scanner (Scan_0012,
+  IMG_…, CamScanner…: testo del PDF letto sul telefono, `DocReader.fileName`, es. «2026-11 Bolletta luce Enel»; conferma
+  con l'elenco). **Ricerca nel testo**: cercando in una cartella del telefono compare «Nel testo dei PDF» con il pezzo di
+  frase (`DriveSmart.pdfText`, fino a 12 MB, in memoria). I nomi delle scansioni fatte con Eurise c'erano già (Scanner).
+- **Tavole nuove da approvare** (tela, pagina «Chat ed Email», prima fila): **ChatRecupero** (chiave di recupero a gruppi,
+  Mostra/Copia; dove tenerla: backup cifrato della suite consigliato, Eurise Password, carta con QR; copia cifrata delle
+  chiavi sul server) e **ChatVerifica** (sette figure SAS di Matrix da confrontare, Sono uguali / Non sono uguali,
+  dispositivi collegati con «Esci», verifica di una persona dalla chat). Dopo l'approvazione: codice in `chat/` con
+  crypto-android (backup delle chiavi, `bootstrapCrossSigning`, verifica SAS).

@@ -113,11 +113,6 @@ class Tab(
     var protectionOn by mutableStateOf(true)
     /** Un file da scaricare (risposta che Gecko non mostra): lo passa al gestore dei download. */
     var onDownload: (String) -> Unit = {}
-    /** Immagini sì/no: lo dice all'estensione, che le blocca prima che si scarichino. */
-    fun setImages(on: Boolean) {
-        runCatching { port?.postMessage(JSONObject().put("type", "images").put("on", on)) }
-    }
-
     /** «Sito PC»: la versione per il computer di questo sito. */
     var desktop by mutableStateOf(false)
         private set

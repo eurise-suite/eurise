@@ -242,6 +242,8 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
                     onRemoveTree = { p -> data.removeTree(p); scope = null; folder = null; refresh++ },
                     onScan = onScan,
                     onMoveAll = { items, to -> action { items.forEach { runCatching { data.move(it, to) } } } },
+                    onTrashAll = { items -> action { items.forEach { runCatching { data.delete(it) } } } },
+                    onRenameAll = { list -> action { list.forEach { r -> runCatching { data.rename(r.item, r.name) } } } },
                 )
                 Tab.Offline -> Box(Modifier.fillMaxSize().hazeSource(haze)) { OfflineTab(data, refresh, ::open) { selected = it } }
                 Tab.Shared -> Box(Modifier.fillMaxSize().hazeSource(haze)) { SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } } }
@@ -412,6 +414,7 @@ private fun FilesTab(
     onUnlock: (Place) -> Unit, onNewVault: (Folder) -> Unit, onAddFiles: (Folder) -> Unit, onLock: (Place) -> Unit,
     onAddTree: () -> Unit, onRemoveTree: (Place) -> Unit,
     onScan: () -> Unit, onMoveAll: (List<DriveItem>, String) -> Unit,
+    onTrashAll: (List<DriveItem>) -> Unit, onRenameAll: (List<Rename>) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
@@ -432,6 +435,8 @@ private fun FilesTab(
                 onUpload = { onAddFiles(Folder(data.phone, Environment.DIRECTORY_DOCUMENTS)) },
                 onNewFolder = { creating = true },
                 onMoveAll = onMoveAll,
+                onTrashAll = onTrashAll,
+                onRenameAll = onRenameAll,
             )
             else if (folder.place.account == null && !access) {
                 Column(Modifier.fillMaxSize().padding(top = top + 130.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -567,13 +572,20 @@ private fun Overview(
     onOpen: (DriveItem) -> Unit, onFolder: (Folder?) -> Unit, onAccess: () -> Unit, onCloud: () -> Unit,
     sync: FolderSync, onManageSync: (SyncPair) -> Unit,
     onScan: () -> Unit, onUpload: () -> Unit, onNewFolder: () -> Unit, onMoveAll: (List<DriveItem>, String) -> Unit,
+    onTrashAll: (List<DriveItem>) -> Unit = {}, onRenameAll: (List<Rename>) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val recents = remember(refresh) { data.recents() }
     val spaces by produceState(emptyList<Space>(), refresh, access) { value = if (access) data.spaces() else emptyList() }
     val tidy by produceState<Tidy?>(null, refresh, access) {
-        value = if (access) runCatching { tidyOf(data.list(data.phone, Environment.DIRECTORY_DOWNLOADS)) }.getOrNull() else null
+        value = if (access) runCatching {
+            val downloads = data.list(data.phone, Environment.DIRECTORY_DOWNLOADS)
+            val documents = runCatching { data.list(data.phone, Environment.DIRECTORY_DOCUMENTS) }.getOrDefault(emptyList())
+            val base = tidyOf(downloads, documents)
+            // Nomi veri per le scansioni con un nome da scanner: il testo si legge sul telefono, i file restano dove sono.
+            base.copy(renames = DriveSmart.proposedNames(data, (downloads + documents).filter { it !in base.copies }))
+        }.getOrNull() else null
     }
     // Per i tuoi impegni: oggi e domani dal Calendario, i file con le stesse parole nel nome (tutto sul telefono).
     val forEvents by produceState(emptyList<ForEvent>(), refresh, access) {
@@ -590,12 +602,14 @@ private fun Overview(
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item(key = "quick") { QuickActions(onScan, onUpload, onNewFolder) }
         if (forEvents.isNotEmpty()) item(key = "events") { ForEventsCard(forEvents, onOpen) }
-        tidy?.takeIf { it.documents.isNotEmpty() || it.old.isNotEmpty() }?.let { t ->
+        tidy?.takeIf { !it.isEmpty }?.let { t ->
             item(key = "tidy") {
                 TidyCard(
                     t,
                     onMoveDocs = { onMoveAll(t.documents, Environment.DIRECTORY_DOCUMENTS) },
                     onReview = { onFolder(Folder(data.phone, Environment.DIRECTORY_DOWNLOADS)) },
+                    onTrashCopies = onTrashAll,
+                    onRename = onRenameAll,
                 )
             }
         }
@@ -719,6 +733,20 @@ private fun FolderList(
             .filter { kind == null || (!it.folder && Kind.of(it.extension) == kind) }
             .sortedWith(compareBy<DriveItem> { !it.folder }.then(if (sort == Sort.Size) compareByDescending { it.size ?: 0 } else compareBy { it.name.lowercase() }))
     }
+    // Ricerca nel testo dei PDF della cartella (telefono): il nome non c'entra, la parola è dentro. Le scansioni senza
+    // testo si rendono cercabili con «Aggiungi il testo». Tutto sul telefono.
+    val inText by produceState(emptyList<Pair<DriveItem, String>>(), current, query) {
+        value = emptyList()
+        val q = query.trim()
+        if (q.length < 3 || folder.place.account != null) return@produceState
+        kotlinx.coroutines.delay(350)
+        val names = shown.map { it.key }.toSet()
+        val pdfs = current.orEmpty().filter { !it.folder && it.extension == "pdf" && it.key !in names }.take(80)
+        val found = mutableListOf<Pair<DriveItem, String>>()
+        for (f in pdfs) {
+            DriveSmart.snippet(DriveSmart.pdfText(data, f), q)?.let { found += f to it; value = found.toList() }
+        }
+    }
     if (current == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         return
@@ -738,7 +766,7 @@ private fun FolderList(
         // Filtri per tipo, solo quelli presenti nella cartella, con quanti sono (PDF 4, Immagini 12…).
         val kinds = current.filter { !it.folder }.groupingBy { Kind.of(it.extension) }.eachCount()
         if (kinds.size > 1) item(key = "kinds") { KindFilter(kinds, kind) { kind = it } }
-        if (shown.isEmpty()) item(key = "e") {
+        if (shown.isEmpty() && inText.isEmpty()) item(key = "e") {
             EmptyState(EuriseIcons.folder(), stringResource(if (failed) R.string.drive_error_network else R.string.drive_empty), stringResource(R.string.drive_empty_msg))
         }
         itemsIndexed(shown, key = { _, it -> it.key }) { i, item ->
@@ -747,6 +775,19 @@ private fun FolderList(
             Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(top2, top2, bot, bot)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
                 if (i > 0) CardDivider()
                 ItemRow(item, onClick = { if (item.folder) onFolder(folder.copy(path = item.path)) else onOpen(item) }, onMore = { onMore(item) })
+            }
+        }
+        if (inText.isNotEmpty()) {
+            item(key = "l-text") { SectionLabel(stringResource(R.string.drive_in_text)) }
+            itemsIndexed(inText, key = { _, it -> "t:" + it.first.key }) { i, (item, snippet) ->
+                val top2 = if (i == 0) 18.dp else 0.dp
+                val bot = if (i == inText.size - 1) 18.dp else 0.dp
+                Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(top2, top2, bot, bot)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
+                    if (i > 0) CardDivider()
+                    ItemRow(item, onClick = { onOpen(item) }, onMore = { onMore(item) })
+                    Text(snippet, fontSize = 12.sp, lineHeight = 16.sp, color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
+                }
             }
         }
     }

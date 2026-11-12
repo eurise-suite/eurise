@@ -14,15 +14,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -170,23 +176,48 @@ internal fun SpaceBars(spaces: List<Space>) {
     }
 }
 
-/** I file da riordinare in Download: documenti da mettere in Documenti, file vecchi e pesanti. */
-internal data class Tidy(val documents: List<DriveItem>, val old: List<DriveItem>, val oldBytes: Long)
+/**
+ * I file da riordinare (Download e Documenti del telefono): documenti da mettere in Documenti, file vecchi e pesanti,
+ * copie doppie, scansioni con un nome da scanner. Tutto in un'unica proposta «Riordina».
+ */
+internal data class Tidy(
+    val documents: List<DriveItem>,
+    val old: List<DriveItem>,
+    val oldBytes: Long,
+    val copies: List<DriveItem> = emptyList(),
+    val renames: List<Rename> = emptyList(),
+) {
+    val copiesBytes get() = copies.sumOf { it.size ?: 0L }
+    val isEmpty get() = documents.isEmpty() && old.isEmpty() && copies.isEmpty() && renames.isEmpty()
+}
 
-internal fun tidyOf(downloads: List<DriveItem>, now: Long = System.currentTimeMillis()): Tidy {
+internal fun tidyOf(downloads: List<DriveItem>, documents: List<DriveItem> = emptyList(), now: Long = System.currentTimeMillis()): Tidy {
     val files = downloads.filter { !it.folder }
     val docs = files.filter { Kind.of(it.extension) in setOf(Kind.Pdf, Kind.Doc, Kind.Sheet, Kind.Slides) }
     val old = files.filter { f -> f.modified != null && now - f.modified > 60L * 86_400_000L }
-    return Tidy(docs, old, old.sumOf { it.size ?: 0L })
+    val copies = DriveSmart.duplicateCopies(files + documents.filter { !it.folder })
+    // Una copia doppia non si propone anche da spostare: prima si sceglie quale tenere.
+    return Tidy(docs - copies.toSet(), old - copies.toSet(), (old - copies.toSet()).sumOf { it.size ?: 0L }, copies)
 }
 
+/** Cosa chiede conferma in «Riordina» prima di toccare i file. */
+private enum class TidyAsk { Copies, Names }
+
 /**
- * «Riordina» (funzione intelligente): Download si riempie da solo. Eurise propone di spostare i documenti in Documenti
- * e mostra quanto spazio occupano i file vecchi; non sposta né cancella nulla senza il tuo tocco.
+ * «Riordina» (funzione intelligente): Download si riempie da solo. Eurise propone di spostare i documenti in Documenti,
+ * mostra quanto occupano i file vecchi, trova le copie doppie e propone nomi veri alle scansioni (letti nel testo, sul
+ * telefono). Non sposta, rinomina né cancella nulla senza il tuo tocco; le copie vanno nel cestino per 30 giorni.
  */
 @Composable
-internal fun TidyCard(tidy: Tidy, onMoveDocs: () -> Unit, onReview: () -> Unit) {
+internal fun TidyCard(
+    tidy: Tidy,
+    onMoveDocs: () -> Unit,
+    onReview: () -> Unit,
+    onTrashCopies: (List<DriveItem>) -> Unit = {},
+    onRename: (List<Rename>) -> Unit = {},
+) {
     val context = LocalContext.current
+    var ask by remember { mutableStateOf<TidyAsk?>(null) }
     Column(
         Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x3385672B)).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -202,6 +233,24 @@ internal fun TidyCard(tidy: Tidy, onMoveDocs: () -> Unit, onReview: () -> Unit) 
                 SmallAction(stringResource(R.string.drive_tidy_move), onMoveDocs)
             }
         }
+        if (tidy.renames.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.drive_tidy_names, tidy.renames.size), fontSize = 13.sp)
+                    val first = tidy.renames.first()
+                    Text("${first.item.name} → ${first.name}", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                SmallAction(stringResource(R.string.drive_tidy_rename)) { ask = TidyAsk.Names }
+            }
+        }
+        if (tidy.copies.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.drive_tidy_copies, tidy.copies.size, Formatter.formatShortFileSize(context, tidy.copiesBytes)),
+                    fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                SmallAction(stringResource(R.string.drive_tidy_review)) { ask = TidyAsk.Copies }
+            }
+        }
         if (tidy.old.isNotEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.drive_tidy_old, tidy.old.size, Formatter.formatShortFileSize(context, tidy.oldBytes)),
@@ -210,6 +259,41 @@ internal fun TidyCard(tidy: Tidy, onMoveDocs: () -> Unit, onReview: () -> Unit) 
             }
         }
     }
+    when (ask) {
+        null -> Unit
+        TidyAsk.Copies -> TidyConfirm(
+            title = stringResource(R.string.drive_tidy_copies_title),
+            note = stringResource(R.string.drive_tidy_copies_note),
+            lines = tidy.copies.map { it.name + " · " + Formatter.formatShortFileSize(context, it.size ?: 0L) },
+            confirm = stringResource(R.string.drive_tidy_copies_go),
+            onClose = { ask = null },
+            onConfirm = { ask = null; onTrashCopies(tidy.copies) },
+        )
+        TidyAsk.Names -> TidyConfirm(
+            title = stringResource(R.string.drive_tidy_names_title),
+            note = stringResource(R.string.drive_tidy_names_note),
+            lines = tidy.renames.map { "${it.item.name}\n→ ${it.name}" },
+            confirm = stringResource(R.string.drive_tidy_rename),
+            onClose = { ask = null },
+            onConfirm = { ask = null; onRename(tidy.renames) },
+        )
+    }
+}
+
+@Composable
+private fun TidyConfirm(title: String, note: String, lines: List<String>, confirm: String, onClose: () -> Unit, onConfirm: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(title) },
+        text = {
+            Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(note, fontSize = 13.sp, lineHeight = 18.sp)
+                lines.forEach { Text(it, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onConfirm) { Text(confirm) } },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onClose) { Text(stringResource(R.string.drive_cancel)) } },
+    )
 }
 
 @Composable
