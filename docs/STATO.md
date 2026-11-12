@@ -1674,7 +1674,7 @@ Fatto, nell'ordine chiesto dal proprietario:
 - **Richieste del proprietario per Mappe (12 sera, da mettere nelle tavole)**: velocità istantanea e limite sempre in
   vista; conto alla rovescia in metri (c'è, anche in Auto e nella voce); alle diramazioni zoom automatico e riquadro
   grande con lo schema, la freccia e le corsie; segnalazioni rapide in guida; lettura dei cartelli (Android Auto non
-  passa i dati della telecamera dell'auto: limiti da OSM, poi eventuale modello sul telefono con la fotocamera);
+  passa i dati della telecamera dell'auto: **deciso dal proprietario, limiti dalle mappe OSM**, niente fotocamera);
   traffico (nessuna fonte libera nazionale: ricerca sulle fonti aperte italiane, CCISS, concessionarie, Comuni).
 - **Prossima chat / prossimi passi**: prova del giro 350 e di Mappe 21; approvazione delle tavole di Mappe (orizzontale,
   Android Auto) e tavole nuove (incrocio ingrandito, velocità e limite, segnalazioni); codice di «Alfred ovunque»
