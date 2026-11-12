@@ -80,6 +80,8 @@ interface BrowserActions {
     fun addEvent(title: String, date: PageDate, url: String)
     /** «Cattura intera»: tutto l'articolo in un'immagine lunga. */
     fun captureArticle(title: String, text: String, url: String)
+    /** Il lettore QR della suite (nell'app Eurise): un link letto si apre qui. */
+    fun openQr()
 }
 
 /** Le voci della griglia del menu (tavola BrwMenu); [needsPage]: servono una pagina web aperta. */

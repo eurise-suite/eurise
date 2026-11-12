@@ -224,6 +224,16 @@ object EuriseIcons {
     fun sort(stroke: Float = Stroke) = icon("sort", stroke, "M4 7h16M7 12h10M10 17h4")
     fun flash(stroke: Float = Stroke) = icon("flash", stroke, "M13 3 5 13.5h6L10 21l8-10.5h-6z")
 
+    /** Segnalibro (nastro): i segnalibri del Browser. */
+    fun bookmark(stroke: Float = Stroke) = icon("bookmark", stroke, "M6 3.5h12v17l-6-4-6 4z")
+    /** Codice QR. */
+    fun qr(stroke: Float = Stroke) = icon("qr", stroke, "M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h2v2h-2z", "M18 18h2v2h-2z", "M14 19h2", "M19 14h1")
+    /** Tessera di puzzle: le estensioni del Browser. */
+    fun puzzle(stroke: Float = Stroke) = icon("puzzle", stroke,
+        "M9 4.5a2 2 0 0 1 4 0V6h4a1 1 0 0 1 1 1v4h-1.5a2 2 0 0 0 0 4H18v4a1 1 0 0 1-1 1h-4v-1.5a2 2 0 0 0-4 0V20H5a1 1 0 0 1-1-1v-4h1.5a2 2 0 0 0 0-4H4V7a1 1 0 0 1 1-1h4z")
+    /** Videocamera: le riunioni. */
+    fun video(stroke: Float = Stroke) = icon("video", stroke, "M3 6.5h12v11H3z", "M15 10.5l6-3.5v10l-6-3.5z")
+
     fun read(stroke: Float = Stroke) = icon("read", stroke, "M3.5 12.5l4 4 8-9", "M12.5 16.5l1 0 8-9")
 
     /** Chiave: codici di accesso. */

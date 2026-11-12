@@ -120,6 +120,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     override fun onStop() {
         model.saveTabs()
+        model.saveBlocked()
         super.onStop()
     }
 
@@ -243,6 +244,12 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     }
 
     private val passwordPackage get() = if (BuildConfig.DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
+
+    override fun openQr() {
+        val qr = Intent().setClassName(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", "qr")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { startActivity(qr) }.isFailure) toast(getString(R.string.brw_no_hub))
+    }
 
     override fun openPassword() {
         val launch = packageManager.getLaunchIntentForPackage(passwordPackage)

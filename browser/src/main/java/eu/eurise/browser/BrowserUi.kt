@@ -9,6 +9,9 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +78,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import org.mozilla.geckoview.GeckoView
 
-private enum class Sheet { None, Menu, Protection, Engine, Bookmarks, History, Zoom, Translate }
+private enum class Sheet { None, Menu, Protection, Engine, Bookmarks, Pin, Address, History, Zoom, Translate }
 
 internal val Safe = Color(0xFF3F6E52)
 internal val Half = Color(0xFF8A6A1F)
@@ -172,18 +175,29 @@ fun BrowserScreen(
     val strip = if (tab?.fullscreen == true) StripPlace.None else stripPlace(model.settings.tabStrip)
     val openGroups = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true }
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
-        if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); editing = true }, onGroups = openGroups)
+        if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
         Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding())) {
             if (tab != null) Panes(model, tab)
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {
-                NewTabPage(model, onImport = onImport, onOpen = { model.go(it) })
+                NewTabPage(
+                    model, onImport = onImport, onOpen = { model.go(it) }, onQr = actions::openQr, onPin = { sheet = Sheet.Pin },
+                    onLater = { l -> readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) },
+                    onTool = { tool ->
+                        when (tool) {
+                            NewTabTool.Downloads -> actions.openDownloads()
+                            NewTabTool.Passwords -> actions.openPassword()
+                            NewTabTool.Extensions -> { section = SettingsSection.Extensions; settingsOpen = true }
+                            NewTabTool.History -> sheet = Sheet.History
+                        }
+                    },
+                )
             }
             if (tab != null && tab.progress in 1..99) {
                 LinearProgressIndicator(progress = { tab.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter))
             }
         }
         if (tab != null && !editing && tab.fullscreen != true) LoginBubbles(tab, onUnlock = actions::unlockPassword)
-        if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); editing = true }, onGroups = openGroups)
+        if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })
             else if (editing) AddressEditor(tab, model, onDone = { editing = false })
@@ -193,7 +207,9 @@ fun BrowserScreen(
                 onBarAction = ::run,
                 onSwipe = { step: Int -> model.neighbour(step); Unit }.takeIf { model.settings.swipeTabs },
                 onShield = { sheet = Sheet.Protection },
-                onAddress = { editing = true },
+                onAddress = { if (tab?.url?.startsWith("http") == true) sheet = Sheet.Address else editing = true },
+                onEditAddress = { editing = true },
+                onBookmarks = { sheet = Sheet.Bookmarks },
                 onTabs = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true },
                 onMenu = { sheet = Sheet.Menu },
             )
@@ -205,8 +221,8 @@ fun BrowserScreen(
         Sheet.Menu -> MenuSheet(
             model, tab, model.downloads,
             onClose = { sheet = Sheet.None },
-            onNewTab = { model.open(); sheet = Sheet.None; editing = true },
-            onPrivateTab = { model.open(private = true); sheet = Sheet.None; editing = true },
+            onNewTab = { model.open(); sheet = Sheet.None; model.focusNewTab = true },
+            onPrivateTab = { model.open(private = true); sheet = Sheet.None; model.focusNewTab = true },
             onHistory = { sheet = Sheet.History },
             onItem = ::run,
             onProtection = { sheet = Sheet.Protection },
@@ -260,55 +276,12 @@ fun BrowserScreen(
             }
             Text(stringResource(R.string.brw_engine_note), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
         }
-        Sheet.Bookmarks -> BottomSheet(onClose = { sheet = Sheet.None }) {
-            Text(stringResource(R.string.brw_bookmarks), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-            if (model.later.isNotEmpty()) {
-                Text(stringResource(R.string.brw_later_title, model.later.size).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp, color = scheme.onSurfaceVariant)
-                Column(Modifier.heightIn(max = 200.dp).verticalScroll(rememberScrollState())) {
-                    model.later.toList().forEach { l ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable {
-                                sheet = Sheet.None; readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text)
-                            }.padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(EuriseIcons.read(2f), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(l.title.ifBlank { Links.host(l.url) }, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(Links.host(l.url) + " · " + stringResource(R.string.brw_reader_minutes, Reading.minutes(l.text)), fontSize = 12.sp, color = scheme.onSurfaceVariant, maxLines = 1)
-                            }
-                            val remove = stringResource(R.string.brw_remove)
-                            Box(Modifier.size(36.dp).clip(CircleShape).clickable { model.removeLater(l) }.semantics { contentDescription = remove }, contentAlignment = Alignment.Center) {
-                                Icon(EuriseIcons.close(2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                            }
-                        }
-                    }
-                }
-                Text(stringResource(R.string.brw_bookmarks).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = scheme.onSurfaceVariant)
-            }
-            if (model.bookmarks.isEmpty()) {
-                Text(stringResource(R.string.brw_bookmarks_empty), fontSize = 13.sp, color = scheme.onSurfaceVariant)
-                Pill(stringResource(R.string.brw_import), EuriseIcons.download(2f), Modifier.fillMaxWidth(), strong = true) { sheet = Sheet.None; importOpen = true }
-            }
-            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                model.bookmarks.forEach { b ->
-                    Row(Modifier.fillMaxWidth().clickable { model.go(b.url); sheet = Sheet.None }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (b.pinned) EuriseIcons.pin(2f) else EuriseIcons.star(2f), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(b.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(listOf(b.folder, Links.host(b.url)).filter { it.isNotBlank() }.joinToString(" · "), fontSize = 12.sp, color = scheme.onSurfaceVariant, maxLines = 1)
-                        }
-                        val remove = stringResource(R.string.brw_remove)
-                        Box(Modifier.size(36.dp).clip(CircleShape).clickable { model.removeBookmark(b) }.semantics { contentDescription = remove }, contentAlignment = Alignment.Center) {
-                            Icon(EuriseIcons.close(2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-            }
-        }
+        Sheet.Bookmarks, Sheet.Pin -> BookmarksPopup(
+            model, tab, pinMode = sheet == Sheet.Pin, onImport = onImport,
+            onLater = { l -> readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) },
+            onClose = { sheet = Sheet.None },
+        )
+        Sheet.Address -> if (tab != null) AddressMenu(model, tab, actions, onEdit = { sheet = Sheet.None; editing = true }, onClose = { sheet = Sheet.None })
     }
 
     if (settingsOpen) SettingsScreen(
@@ -316,12 +289,13 @@ fun BrowserScreen(
         onSection = { section = it },
         onImport = { importOpen = true },
         onClose = { settingsOpen = false },
+        onOpenUrl = { url -> settingsOpen = false; model.open(url) },
     )
     if (importOpen) ImportScreen(model, actions, installed, onRun = { p, b, d -> onRunImport(p, b, d); importOpen = false }, onClose = { importOpen = false })
     if (model.tabsOpen) TabsScreen(
         model, startSearch = model.tabsSearch,
         onOpenTab = { model.tabsOpen = false },
-        onNewTab = { private -> model.open(private = private); model.tabsOpen = false; editing = true },
+        onNewTab = { private -> model.open(private = private); model.tabsOpen = false; model.focusNewTab = true },
         onClose = { model.tabsOpen = false },
     )
     reader?.let { info ->
@@ -331,6 +305,7 @@ fun BrowserScreen(
             onClose = { reader = null },
         )
     }
+    Extensions.pending?.let { ExtensionPrompt(it) }
 }
 
 /**
@@ -398,54 +373,11 @@ private fun Panes(model: BrowserModel, tab: Tab) {
     }
 }
 
-@Composable
-private fun NewTabPage(model: BrowserModel, onImport: () -> Unit, onOpen: (String) -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Column(
-        Modifier.fillMaxSize().background(scheme.background).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text(stringResource(if (model.current?.private == true) R.string.brw_private_title else R.string.brw_new_tab), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-        if (model.current?.private == true) {
-            Text(stringResource(R.string.brw_private_note), fontSize = 13.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant)
-        }
-        val pins = model.bookmarks.filter { it.pinned }
-        if (pins.isNotEmpty()) {
-            Text(stringResource(R.string.brw_pinned).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = scheme.onSurfaceVariant)
-            pins.chunked(4).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { b ->
-                        Column(
-                            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable { onOpen(b.url) }.padding(vertical = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Box(Modifier.size(48.dp).clip(CircleShape).background(scheme.primary.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                                Text(Links.host(b.url).take(1).uppercase(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = scheme.primary)
-                            }
-                            Spacer(Modifier.height(6.dp))
-                            Text(b.title, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-        } else {
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.brw_pinned_empty), fontSize = 13.5.sp, lineHeight = 19.sp)
-                Pill(stringResource(R.string.brw_import), EuriseIcons.download(2f), Modifier.fillMaxWidth()) { onImport() }
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(EuriseIcons.shield(2f), null, tint = Safe, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.brw_blocked_total, Gecko.blockedTotal), fontSize = 13.sp, modifier = Modifier.weight(1f))
-        }
-    }
-}
-
+/**
+ * La barra del browser (tavole BrwIndirizzo, BrwSegnalibri): una pillola galleggiante con protezione, indirizzo (tocco: il
+ * menu dell'indirizzo; tieni premuto: scrivi subito un altro indirizzo), segnalibri, schede e menu.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun BottomBar(
     tab: Tab?,
@@ -455,23 +387,23 @@ private fun BottomBar(
     onSwipe: ((Int) -> Unit)?,
     onShield: () -> Unit,
     onAddress: () -> Unit,
+    onEditAddress: () -> Unit,
+    onBookmarks: () -> Unit,
     onTabs: () -> Unit,
     onMenu: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     Row(
-        Modifier.fillMaxWidth().background(scheme.surfaceContainer).navigationBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp).height(60.dp)
+            .shadow(10.dp, RoundedCornerShape(30.dp), ambientColor = Color.Black.copy(alpha = 0.1f), spotColor = Color.Black.copy(alpha = 0.1f))
+            .clip(RoundedCornerShape(30.dp)).background(scheme.surface.copy(alpha = 0.94f)).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val shield = stringResource(R.string.brw_protection)
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onShield).semantics { contentDescription = shield }, contentAlignment = Alignment.Center) {
-            Icon(EuriseIcons.shield(2f), null, tint = if (tab?.protectionOn != false) Safe else Half, modifier = Modifier.size(20.dp))
-        }
+        BarButton(shield, onShield) { Icon(EuriseIcons.shield(2.2f), null, tint = if (tab?.protectionOn != false) Safe else Half, modifier = Modifier.size(20.dp)) }
         val url = tab?.url.orEmpty()
-        val shown = when {
-            url.isBlank() || url == "about:blank" -> stringResource(R.string.brw_address_hint)
-            else -> Links.queryOf(url) ?: Links.host(url)
-        }
+        val blank = url.isBlank() || url == "about:blank"
+        val shown = if (blank) stringResource(R.string.brw_address_hint) else Links.queryOf(url) ?: Links.host(url)
         // Scorrere a destra o a sinistra sull'indirizzo passa alla scheda accanto (Impostazioni › Gesti).
         val swipe = if (onSwipe == null) Modifier else Modifier.pointerInput(onSwipe) {
             var total = 0f
@@ -481,32 +413,41 @@ private fun BottomBar(
                 onHorizontalDrag = { change, amount -> change.consume(); total += amount },
             )
         }
+        val addressLabel = stringResource(R.string.brw_addr_label)
         Row(
-            Modifier.weight(1f).height(42.dp).clip(RoundedCornerShape(21.dp)).background(scheme.surface).then(swipe)
-                .clickable(onClick = onAddress).padding(horizontal = 14.dp),
+            Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(22.dp)).background(scheme.onSurface.copy(alpha = 0.06f)).then(swipe)
+                .combinedClickable(onClick = onAddress, onLongClick = onEditAddress).semantics { contentDescription = addressLabel }
+                .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (tab?.private == true) { Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(15.dp)); Spacer(Modifier.width(6.dp)) }
             if (url.startsWith("https")) { Icon(EuriseIcons.lock(2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(13.dp)); Spacer(Modifier.width(6.dp)) }
-            Text(shown, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (url.isBlank()) scheme.onSurfaceVariant else scheme.onSurface)
+            Text(shown, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (blank) scheme.onSurfaceVariant else scheme.onSurface)
         }
-        if (barAction != null) {
+        if (barAction != null && barAction != MenuItem.Bookmarks) {
             val label = stringResource(barAction.label)
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable { onBarAction(barAction) }.semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
-                Icon(barAction.icon(), null, tint = scheme.primary, modifier = Modifier.size(20.dp))
-            }
+            BarButton(label, { onBarAction(barAction) }) { Icon(barAction.icon(), null, tint = scheme.primary, modifier = Modifier.size(20.dp)) }
         }
+        val bookmarks = stringResource(R.string.brw_bookmarks)
+        BarButton(bookmarks, onBookmarks) { Icon(EuriseIcons.bookmark(2.2f), null, tint = scheme.primary, modifier = Modifier.size(20.dp)) }
         val tabsLabel = stringResource(R.string.brw_tabs_title, count)
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onTabs).semantics { contentDescription = tabsLabel }, contentAlignment = Alignment.Center) {
-            Box(Modifier.size(22.dp).clip(RoundedCornerShape(6.dp)).background(scheme.onSurface.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                Text(if (count > 99) "∞" else "$count", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        BarButton(tabsLabel, onTabs) {
+            Box(Modifier.size(22.dp).border(2.dp, scheme.onSurface, RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) {
+                Text(if (count > 99) "∞" else "$count", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
             }
         }
         val more = stringResource(R.string.brw_menu)
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onMenu).semantics { contentDescription = more }, contentAlignment = Alignment.Center) {
-            Icon(EuriseIcons.more(2f), null, modifier = Modifier.size(20.dp))
-        }
+        BarButton(more, onMenu) { Icon(EuriseIcons.more(2.2f), null, modifier = Modifier.size(20.dp)) }
     }
+}
+
+@Composable
+private fun BarButton(label: String, onClick: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        Modifier.size(width = 42.dp, height = 44.dp).clip(RoundedCornerShape(22.dp)).clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { content() }
 }
 
 @Composable

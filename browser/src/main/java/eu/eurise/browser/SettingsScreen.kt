@@ -55,6 +55,7 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 enum class SettingsSection(val title: Int) {
     Search(R.string.brw_s_search), Privacy(R.string.brw_s_privacy), Passwords(R.string.brw_s_passwords),
     Tabs(R.string.brw_s_tabs), Look(R.string.brw_s_look), Gestures(R.string.brw_s_gestures), Sites(R.string.brw_s_sites),
+    Extensions(R.string.brw_s_extensions),
     Downloads(R.string.brw_s_downloads), Import(R.string.brw_s_import), Sync(R.string.brw_s_sync), Clear(R.string.brw_s_clear);
 
     fun icon(): ImageVector = when (this) {
@@ -65,6 +66,7 @@ enum class SettingsSection(val title: Int) {
         Look -> EuriseIcons.palette(2.2f)
         Gestures -> EuriseIcons.drag(2.2f)
         Sites -> EuriseIcons.lists(2.2f)
+        Extensions -> EuriseIcons.puzzle(2.2f)
         Downloads -> EuriseIcons.download(2.2f)
         Import -> EuriseIcons.upload(2.2f)
         Sync -> EuriseIcons.monitor(2.2f)
@@ -95,6 +97,8 @@ private fun summary(section: SettingsSection, model: BrowserModel): String {
         SettingsSection.Sites -> stringResource(R.string.brw_s_sites_sub)
         SettingsSection.Downloads -> stringResource(if (s.askWhereToSave) R.string.brw_s_downloads_ask else R.string.brw_s_downloads_plain)
         SettingsSection.Import -> stringResource(R.string.brw_s_import_sub)
+        SettingsSection.Extensions -> if (Extensions.installed.isEmpty()) stringResource(R.string.brw_s_extensions_sub)
+            else Extensions.installed.joinToString(", ") { it.metaData.name ?: it.id }
         SettingsSection.Sync -> stringResource(R.string.brw_s_sync_sub)
         SettingsSection.Clear -> stringResource(R.string.brw_s_clear_sub)
     }
@@ -108,6 +112,7 @@ internal fun SettingsScreen(
     onSection: (SettingsSection?) -> Unit,
     onImport: () -> Unit,
     onClose: () -> Unit,
+    onOpenUrl: (String) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().background(scheme.background).statusBarsPadding()) {
@@ -139,6 +144,7 @@ internal fun SettingsScreen(
                 SettingsSection.Sites -> SitesPage(model)
                 SettingsSection.Downloads -> DownloadsPage(model, actions)
                 SettingsSection.Import -> ImportExportPage(onImport, actions)
+                SettingsSection.Extensions -> ExtensionsPage(onOpenUrl)
                 SettingsSection.Sync -> Note(stringResource(R.string.brw_sync_note))
                 SettingsSection.Clear -> ClearPage(model, actions)
             }
@@ -480,5 +486,93 @@ private fun ClearPage(model: BrowserModel, actions: BrowserActions) {
         val now = System.currentTimeMillis()
         val since = when (period) { 0 -> now - 3_600_000L; 1 -> now - 86_400_000L; else -> 0L }
         model.clearData(history, cookies, cache, permissions, since) { actions.toast(done) }
+    }
+}
+
+/**
+ * Estensioni (tavola BrwEstensioni): le stesse di Firefox, da addons.mozilla.org. Le attive con l'interruttore (e ciò che
+ * leggono), le consigliate per lavorare con «Aggiungi»: prima di installare compare la scheda dei permessi.
+ */
+@Composable
+private fun ExtensionsPage(onOpenUrl: (String) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    var query by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { Extensions.refresh() }
+    Text(stringResource(R.string.brw_ext_intro), fontSize = 13.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant)
+    Row(
+        Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.search(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(17.dp))
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            if (query.isEmpty()) Text(stringResource(R.string.brw_ext_search), fontSize = 14.5.sp, color = scheme.onSurfaceVariant)
+            BasicTextField(
+                value = query, onValueChange = { query = it }, singleLine = true,
+                textStyle = TextStyle(fontSize = 14.5.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = {
+                    if (query.isNotBlank()) onOpenUrl("https://addons.mozilla.org/android/search/?q=" + java.net.URLEncoder.encode(query.trim(), "UTF-8"))
+                }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+    if (Extensions.failed) Text(stringResource(R.string.brw_ext_failed), fontSize = 12.5.sp, color = Low)
+    if (Extensions.installed.isNotEmpty()) {
+        Title(stringResource(R.string.brw_ext_active))
+        Card {
+            Extensions.installed.forEachIndexed { i, ext ->
+                if (i > 0) HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+                val meta = ext.metaData
+                Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ExtDot(meta.name ?: ext.id)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(meta.name ?: ext.id, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        meta.description?.takeIf { it.isNotBlank() }?.let { Text(it, fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                        val reads = extensionReads(meta.requiredPermissions.toList(), meta.requiredOrigins.toList())
+                        if (reads.isNotEmpty()) Text(reads.first(), fontSize = 11.sp, color = Half)
+                        Text(stringResource(R.string.brw_ext_remove), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Low,
+                            modifier = Modifier.padding(top = 2.dp).clickable(role = Role.Button) { Extensions.uninstall(ext) })
+                    }
+                    Switch(checked = meta.enabled, onCheckedChange = { on -> Extensions.setEnabled(ext, on) })
+                }
+            }
+        }
+    }
+    Title(stringResource(R.string.brw_ext_suggested))
+    Card {
+        Extensions.SUGGESTED.forEachIndexed { i, s ->
+            if (i > 0) HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                ExtDot(s.name)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(s.name, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(s.about), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+                    Text(stringResource(s.reads), fontSize = 11.sp, color = Half)
+                }
+                Spacer(Modifier.width(8.dp))
+                when {
+                    Extensions.has(s.name) -> Text(stringResource(R.string.brw_ext_added), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Safe)
+                    Extensions.busy == s.slug -> androidx.compose.material3.CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp)
+                    else -> Box(
+                        Modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).background(scheme.primary)
+                            .clickable(role = Role.Button) { Extensions.install(s) }.padding(horizontal = 13.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(stringResource(R.string.brw_ext_add), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary) }
+                }
+            }
+        }
+    }
+    Note(stringResource(R.string.brw_ext_note))
+}
+
+@Composable
+private fun ExtDot(name: String) {
+    val (bg, fg) = siteTint(name)
+    Box(Modifier.size(36.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
+        Text(name.take(1).uppercase(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = fg)
     }
 }

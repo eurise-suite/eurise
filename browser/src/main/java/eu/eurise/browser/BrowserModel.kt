@@ -35,6 +35,8 @@ class BrowserModel(private val context: Context) {
     val picked = mutableStateListOf<PickedFile>()
     /** Arrivati file condivisi da un altro browser: la schermata apre Importa. */
     var importRequested by mutableStateOf(false)
+    /** Scheda nuova appena aperta: il campo di ricerca della nuova scheda prende il fuoco (e la tastiera). */
+    var focusNewTab by mutableStateOf(false)
     /** Un avviso breve da mostrare (lo mostra l'interfaccia e lo azzera). */
     var notice by mutableStateOf<String?>(null)
     /** Download partiti in questa sessione (il numero nel menu). */
@@ -53,6 +55,7 @@ class BrowserModel(private val context: Context) {
     init {
         sessionStore.load().let { d -> groups.addAll(d.groups); sessions.addAll(d.sessions); closed.addAll(d.closed) }
         later.addAll(laterStore.load())
+        Gecko.onBlocked = ::countBlocked
     }
 
     private fun saveSessions() {
@@ -367,6 +370,62 @@ class BrowserModel(private val context: Context) {
     fun removeBookmark(b: Bookmark) {
         bookmarks.remove(b)
         store.save(bookmarks.toList())
+    }
+
+    fun isBookmarked(url: String) = url.startsWith("http") && bookmarks.any { it.url == url }
+
+    /** «Aggiungi questa pagina» nel popup dei segnalibri (BrwSegnalibri); un secondo tocco la toglie. */
+    fun toggleBookmark(tab: Tab, folder: String = ""): Boolean {
+        if (!tab.url.startsWith("http")) return false
+        val i = bookmarks.indexOfFirst { it.url == tab.url }
+        if (i >= 0) bookmarks.removeAt(i) else bookmarks += Bookmark(tab.title.ifBlank { Links.host(tab.url) }, tab.url, folder)
+        store.save(bookmarks.toList())
+        return i < 0
+    }
+
+    /** Cambia titolo, cartella o «fissato» di un segnalibro (tieni premuto nel popup). */
+    fun updateBookmark(old: Bookmark, new: Bookmark) {
+        val i = bookmarks.indexOf(old)
+        if (i < 0) return
+        bookmarks[i] = new
+        store.save(bookmarks.toList())
+    }
+
+    /** Le cartelle dei segnalibri, con quanti ne contengono, nell'ordine in cui compaiono. */
+    fun folders(): List<Pair<String, Int>> =
+        bookmarks.filter { it.folder.isNotBlank() }.groupBy { it.folder }.map { (f, l) -> f to l.size }
+
+    // --- Nuova scheda (tavola BrwNuovaSchedaPro) ---
+
+    /** Tracciatori fermati questa settimana (si contano sul telefono, da lunedì). */
+    var blockedWeek by mutableIntStateOf(weekCount())
+        private set
+
+    private fun weekKey(): Int {
+        val d = java.time.LocalDate.now()
+        return d.year * 100 + d.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    }
+
+    private fun weekCount(): Int = if (prefs.getInt("blocked_week", 0) == weekKey()) prefs.getInt("blocked_count", 0) else 0
+
+    /** Lo chiama la scheda a ogni tracciatore fermato; si salva ogni tanto per non scrivere di continuo. */
+    fun countBlocked() {
+        val key = weekKey()
+        if (prefs.getInt("blocked_week", 0) != key) { blockedWeek = 0; prefs.edit().putInt("blocked_week", key).apply() }
+        blockedWeek++
+        if (blockedWeek % 10 == 1) prefs.edit().putInt("blocked_week", key).putInt("blocked_count", blockedWeek).apply()
+    }
+
+    fun saveBlocked() = prefs.edit().putInt("blocked_week", weekKey()).putInt("blocked_count", blockedWeek).apply()
+
+    /** «Per oggi, dalla suite»: riunioni, impegni e cose da fare con un link, letti dall'app Eurise. */
+    val today = mutableStateListOf<TodayLink>()
+
+    fun loadToday() {
+        Thread {
+            val list = TodayLinks.read(context, BuildConfig.HUB_PACKAGE)
+            android.os.Handler(android.os.Looper.getMainLooper()).post { today.clear(); today.addAll(list) }
+        }.start()
     }
 
     /** Segnalibri da un file esportato da un altro browser; restituisce quanti sono nuovi. */

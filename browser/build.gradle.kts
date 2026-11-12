@@ -102,6 +102,8 @@ dependencies {
     // versione ufficiale va aggiornato il plugin per tutta la suite e si torna all'ultima GeckoView (aggiornamenti di
     // sicurezza del motore).
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:[130.0,142.0)")
+    // Il QR dell'indirizzo (tavola BrwIndirizzo): ZXing è già nella suite (Scanner, Calendario, Chat).
+    implementation(libs.zxing.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

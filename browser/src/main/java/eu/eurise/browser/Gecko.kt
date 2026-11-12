@@ -35,6 +35,8 @@ object Gecko {
 
     /** Tracciatori bloccati da quando l'app è aperta (la nuova scheda lo dice). */
     var blockedTotal by mutableIntStateOf(0)
+    /** Chiamata a ogni tracciatore fermato (il conteggio della settimana sta nel modello). */
+    var onBlocked: () -> Unit = {}
 
     /** La vista di Gecko sullo schermo (per «Cattura»). */
     var view: org.mozilla.geckoview.GeckoView? = null
@@ -69,6 +71,8 @@ object Gecko {
             runtime = rt
             // Gli accessi ai siti vengono da Eurise Password (Logins).
             rt.autocompleteStorageDelegate = Logins
+            // Estensioni di Firefox scelte dall'utente (tavola BrwEstensioni): prima di installarne una, i permessi.
+            Extensions.attach(rt)
             settings?.applyTo(rt.settings)
             rt.webExtensionController.ensureBuiltIn(EXTENSION_URL, EXTENSION_ID).accept(
                 { ext -> if (ext != null) synchronized(waiting) { extension = ext; waiting.forEach { it(ext) }; waiting.clear() } },
@@ -183,6 +187,13 @@ class Tab(
             }
             override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) { fullscreen = fullScreen }
             override fun onExternalResponse(session: GeckoSession, response: org.mozilla.geckoview.WebResponse) {
+                // Un'estensione di Firefox (pulsante «Aggiungi» su addons.mozilla.org): la installa il motore, che prima
+                // chiede il permesso con la scheda dei permessi (Extensions.prompt).
+                val type = response.headers["Content-Type"] ?: response.headers["content-type"]
+                if (type?.startsWith("application/x-xpinstall") == true || response.uri.substringBefore('?').endsWith(".xpi")) {
+                    Extensions.install(response.uri)
+                    return
+                }
                 onDownload(response.uri)
             }
         }
@@ -232,6 +243,7 @@ class Tab(
             override fun onContentBlocked(session: GeckoSession, event: ContentBlocking.BlockEvent) {
                 blocked++
                 Gecko.blockedTotal++
+                Gecko.onBlocked()
             }
         }
         session.open(Gecko.runtime(context))
