@@ -383,6 +383,7 @@
     <string name="greet_evening">Buonasera</string>
     <string name="greet_night">Buonanotte</string>
     <string name="welcome_events">I tuoi impegni</string>
+    <string name="bubble_alfred_point">Il punto</string>
     <string name="welcome_in_min">tra %1$d min</string>
     <string name="welcome_at">alle %1$s</string>
     <string name="welcome_tasks">Le cose da fare · %1$d</string>

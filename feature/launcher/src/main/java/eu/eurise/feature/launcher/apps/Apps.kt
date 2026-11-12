@@ -195,6 +195,14 @@ fun Context.openEurise(section: String) {
     runCatching { startActivity(intent) }
 }
 
+/** Il punto della giornata di Alfred (tavole AlfGiornata e AlfSera), dal pulsante «Il punto» in «I tuoi impegni». */
+fun Context.openAlfredBriefing() {
+    val intent = Intent().setClassName(packageName, "eu.eurise.hub.alfred.AlfredActivity")
+        .putExtra("eu.eurise.extra.ALFRED_BRIEFING", true)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { startActivity(intent) }
+}
+
 /** Alfred, il maggiordomo della suite: si apre come pannello sopra l'app in cui si è. */
 fun Context.openAlfred(text: String? = null) {
     val intent = Intent().setClassName(packageName, "eu.eurise.hub.alfred.AlfredActivity")

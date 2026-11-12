@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,6 +72,7 @@ import eu.eurise.core.data.model.Task
 import eu.eurise.core.data.model.TaskList
 import eu.eurise.core.suite.ClockContract
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.feature.launcher.apps.openAlfredBriefing
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NotificationStore
@@ -615,8 +617,12 @@ fun AgendaPill(
     val list = tasks.filter { it.listId != TaskList.MEDICINES && it.parentId == null }
     var adding by rememberSaveable { mutableStateOf(false) }
     Pill(hazeState, modifier, title = stringResource(R.string.welcome_events), trailing = {
-        untilLabel(upcoming.firstOrNull { !it.allDay && it.start.isAfter(now) }, now)?.let {
-            Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            untilLabel(upcoming.firstOrNull { !it.allDay && it.start.isAfter(now) }, now)?.let {
+                Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(6.dp))
+            }
+            AlfredPointButton()
         }
     }) {
         when {
@@ -635,6 +641,27 @@ fun AgendaPill(
             RowDivider()
             RemindersSection(doses, todayDates, today, compact, actions)
         }
+    }
+}
+
+/** «Il punto» col papillon di Alfred (tavola AlfGiornata): apre il punto della giornata, letto dalla sua voce. */
+@Composable
+private fun AlfredPointButton() {
+    val context = LocalContext.current
+    val label = stringResource(R.string.bubble_alfred_point)
+    Row(
+        Modifier.height(30.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFF1F2A44))
+            .clickable(role = Role.Button, onClickLabel = label) { context.openAlfredBriefing() }
+            .padding(start = 3.dp, end = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(24.dp).clip(CircleShape)
+                .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF3E5C8A), Color(0xFF8A3A5C)))),
+            contentAlignment = Alignment.Center,
+        ) { Icon(EuriseIcons.bowtie(), null, tint = Color.White, modifier = Modifier.size(15.dp)) }
+        Spacer(Modifier.width(6.dp))
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
     }
 }
 

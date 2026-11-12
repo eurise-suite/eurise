@@ -180,4 +180,18 @@
     <string name="alfred_try">Provi: «nota: comprare il latte»</string>
     <string name="alfred_try_text">nota: comprare il latte</string>
     <string name="alfred_back">Indietro</string>
+    <!-- Il punto della giornata (tavole AlfGiornata e AlfSera) -->
+    <string name="alfred_brief_preparing">Alfred · il punto</string>
+    <string name="alfred_brief_wait">Un istante: raccolgo agenda, tempo e notizie.</string>
+    <string name="alfred_brief_play">Leggi</string>
+    <string name="alfred_brief_pause">Pausa</string>
+    <string name="alfred_brief_skip">Salta al prossimo argomento</string>
+    <string name="alfred_brief_reading">Sto leggendo · argomento %1$d di %2$d</string>
+    <string name="alfred_brief_paused">In pausa · argomento %1$d di %2$d</string>
+    <string name="alfred_brief_done">Ho finito. Le auguro una buona giornata.</string>
+    <string name="alfred_brief_now">ORA</string>
+    <string name="alfred_music_none">Non trovo un\'app di musica che sappia cercare un brano: con Spotify, YouTube Music, Deezer o VLC lo apro io.</string>
+    <string name="alfred_music_listen_in">Ascolta in %1$s</string>
+    <string name="alfred_music_change">Cambia app</string>
+    <string name="alfred_music_note">Scelga l\'app con cui ascoltare: la ricordo per il punto della giornata (per la sveglia si sceglie a parte). Riceve solo titolo e autore.</string>
 </resources>

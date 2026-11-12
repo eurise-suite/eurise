@@ -341,13 +341,13 @@ print("eurise_patch: mappa con la barra satinata (Compose) e il «+» per segnal
 search_layout = res / "layout" / "fragment_search.xml"
 patch(search_layout, """        android:orientation="vertical">
         <com.google.android.material.tabs.TabLayout
-          android:id="@+id/tabs"""", """        android:orientation="vertical">
+          android:id="@+id/tabs\"""", """        android:orientation="vertical">
         <androidx.compose.ui.platform.ComposeView
           android:id="@+id/eurise_search_home"
           android:layout_width="match_parent"
           android:layout_height="match_parent" />
         <com.google.android.material.tabs.TabLayout
-          android:id="@+id/tabs"""")
+          android:id="@+id/tabs\"""")
 patch(search, """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));""",
       """    // Eurise (passo b, MapCerca): la pagina della suite prima di scrivere, al posto delle schede.
     final View euriseHome = root.findViewById(R.id.eurise_search_home);

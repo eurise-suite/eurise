@@ -14,5 +14,9 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- La musica di Alfred: l'app scelta dall'utente riceve titolo e autore del brano («riproduci da ricerca»). -->
+        <intent>
+            <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+        </intent>
     </queries>
 </manifest>

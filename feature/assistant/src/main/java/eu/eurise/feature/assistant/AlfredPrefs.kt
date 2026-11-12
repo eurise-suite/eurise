@@ -25,6 +25,16 @@ class AlfredPrefs(context: Context) {
     var readAloud: Boolean
         get() = prefs.getBoolean("read_aloud", false)
         set(value) = prefs.edit().putBoolean("read_aloud", value).apply()
+
+    /** L'app di musica per la perla del punto della giornata (pacchetto); vuoto = non ancora scelta. */
+    var musicBriefing: String
+        get() = prefs.getString("music_briefing", "").orEmpty()
+        set(value) = prefs.edit().putString("music_briefing", value).apply()
+
+    /** L'app di musica per la sveglia di Alfred: scelta a parte, come deciso con il proprietario. */
+    var musicAlarm: String
+        get() = prefs.getString("music_alarm", "").orEmpty()
+        set(value) = prefs.edit().putString("music_alarm", value).apply()
 }
 
 /** L'appellativo pronto per le frasi di Alfred: «, Giulia», «, signore» o niente (nome non ancora detto). */

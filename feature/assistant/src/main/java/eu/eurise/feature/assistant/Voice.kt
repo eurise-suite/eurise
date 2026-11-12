@@ -93,13 +93,7 @@ class Speaker(context: Context) {
         }
     }
 
-    private fun pickVoice() = runCatching {
-        tts.language = Locale.ITALIAN
-        val italian = tts.voices.orEmpty().filter { it.locale.language == "it" && !it.isNetworkConnectionRequired }
-        (italian.firstOrNull { "male" in it.name.lowercase() && "female" !in it.name.lowercase() } ?: italian.firstOrNull())?.let { tts.voice = it }
-        tts.setSpeechRate(0.95f)
-        tts.setPitch(0.9f)
-    }
+    private fun pickVoice() = tts.alfredVoice()
 
     fun say(text: String) {
         if (!ready) { pending = text; return }
@@ -107,4 +101,13 @@ class Speaker(context: Context) {
     }
 
     fun release() = runCatching { tts.stop(); tts.shutdown() }
+}
+
+/** La voce di Alfred con la sintesi del telefono: italiana, locale, maschile se il motore ne ha una, pacata. */
+internal fun TextToSpeech.alfredVoice() = runCatching {
+    language = Locale.ITALIAN
+    val italian = voices.orEmpty().filter { it.locale.language == "it" && !it.isNetworkConnectionRequired }
+    (italian.firstOrNull { "male" in it.name.lowercase() && "female" !in it.name.lowercase() } ?: italian.firstOrNull())?.let { voice = it }
+    setSpeechRate(0.95f)
+    setPitch(0.9f)
 }
