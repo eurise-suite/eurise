@@ -87,4 +87,16 @@
   <string name="eurise_bar_saved">Salvati</string>
   <string name="eurise_bar_menu">Menu</string>
   <string name="eurise_bar_report">Segnala qui su OpenStreetMap</string>
+    <!-- Ricerca prima di scrivere (EuriseSearchHome, passo b) -->
+    <string name="eurise_sh_hint">Indirizzo, luogo, impegno, farmacia</string>
+    <string name="eurise_sh_loading">Guardo i tuoi impegni…</string>
+    <string name="eurise_sh_contact">L\'indirizzo di un contatto</string>
+    <string name="eurise_sh_contact_sub">Dalla Rubrica, cercato sulle mappe del telefono</string>
+    <string name="eurise_sh_near">Cerca vicino</string>
+    <string name="eurise_sh_recent">Cercati di recente</string>
+    <string name="eurise_sh_maps">Mappe sul telefono</string>
+    <string name="eurise_sh_maps_none">Nessuna mappa scaricata: la ricerca lavora solo sulle regioni che scarichi.</string>
+    <string name="eurise_sh_maps_manage">Scarica o aggiorna le mappe</string>
+    <string name="eurise_sh_map_ready">Pronta</string>
+    <string name="eurise_sh_map_update">Aggiorna</string>
 </resources>

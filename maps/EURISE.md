@@ -60,3 +60,14 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   `MwmActivity` come prima. In orizzontale per ora resta la disposizione di CoMaps.
 - Ricerca su OpenStreetMap (Photon) nel centro privacy dell'app Eurise (`PrivacyContract`, servizio `MapSearch`):
   acceso, spento e registrato lì; Mappe segue lo stato del centro privacy prima di ogni richiesta.
+
+## Interfaccia sulle tavole, passo b) (13 novembre)
+- `eurise/ui/EuriseSearchHome.kt` (Compose): nella ricerca, prima di scrivere, la pagina della tavola MapCerca al posto
+  delle schede di CoMaps (cronologia, categorie, «Impegni»), che restano nel layout ma nascoste. Sezioni: «Dove devi
+  andare» (impegni con un luogo dall'app Eurise, come prima; più «L'indirizzo di un contatto», che usa il selettore della
+  Rubrica di CoMaps, senza permesso dei contatti), «Cerca vicino» (farmacia, benzinaio, parcheggio, dove mangiare,
+  alimentari, bancomat, ospedale, bagni, alberghi: le categorie del motore), «Cercati di recente» (se la cronologia è
+  accesa), «Mappe sul telefono» (regioni scaricate con peso, Pronta o Aggiorna, e «Scarica o aggiorna le mappe»).
+  Testo d'aiuto del campo: «Indirizzo, luogo, impegno, farmacia».
+- Non ancora: il campo di ricerca e la barra in alto restano quelli di CoMaps (colori della suite già applicati); la
+  proposta di scaricare la regione di un impegno che non è sul telefono (serve sapere dove sta il luogo prima di cercarlo).

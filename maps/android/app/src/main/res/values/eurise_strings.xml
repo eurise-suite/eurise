@@ -87,4 +87,16 @@
   <string name="eurise_bar_saved">Saved</string>
   <string name="eurise_bar_menu">Menu</string>
   <string name="eurise_bar_report">Report here on OpenStreetMap</string>
+    <!-- Search page before typing (EuriseSearchHome, step b) -->
+    <string name="eurise_sh_hint">Address, place, appointment, pharmacy</string>
+    <string name="eurise_sh_loading">Looking at your appointments…</string>
+    <string name="eurise_sh_contact">A contact\'s address</string>
+    <string name="eurise_sh_contact_sub">From the address book, searched on the maps on this phone</string>
+    <string name="eurise_sh_near">Search nearby</string>
+    <string name="eurise_sh_recent">Recent searches</string>
+    <string name="eurise_sh_maps">Maps on this phone</string>
+    <string name="eurise_sh_maps_none">No maps downloaded yet: search works only on the regions you download.</string>
+    <string name="eurise_sh_maps_manage">Download or update maps</string>
+    <string name="eurise_sh_map_ready">Ready</string>
+    <string name="eurise_sh_map_update">Update</string>
 </resources>

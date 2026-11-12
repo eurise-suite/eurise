@@ -334,3 +334,36 @@ kotlin {
 """)
 print("eurise_patch: mappa con la barra satinata (Compose) e il «+» per segnalare")
 
+
+# Passo b) dell'interfaccia rifatta sulle tavole (MapCerca): prima di scrivere, la ricerca mostra la pagina della suite in
+# Compose (maps/android/…/eurise/ui/EuriseSearchHome.kt: Dove devi andare, Cerca vicino, recenti, contatto, mappe sul
+# telefono) al posto delle schede di CoMaps, che restano nel layout ma nascoste. Il motore di ricerca non cambia.
+search_layout = res / "layout" / "fragment_search.xml"
+patch(search_layout, """        android:orientation="vertical">
+        <com.google.android.material.tabs.TabLayout
+          android:id="@+id/tabs"""", """        android:orientation="vertical">
+        <androidx.compose.ui.platform.ComposeView
+          android:id="@+id/eurise_search_home"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent" />
+        <com.google.android.material.tabs.TabLayout
+          android:id="@+id/tabs"""")
+patch(search, """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));""",
+      """    // Eurise (passo b, MapCerca): la pagina della suite prima di scrivere, al posto delle schede.
+    final View euriseHome = root.findViewById(R.id.eurise_search_home);
+    if (euriseHome != null)
+    {
+      tabLayout.setVisibility(View.GONE);
+      root.findViewById(R.id.tabs_divider).setVisibility(View.GONE);
+      pager.setVisibility(View.GONE);
+      final android.widget.TextView euriseQuery = root.findViewById(R.id.query);
+      if (euriseQuery != null)
+        euriseQuery.setHint(R.string.eurise_sh_hint);
+      app.organicmaps.eurise.ui.EuriseSearchHome.attach(euriseHome, this::setQuery,
+          compatibleContactsAppInstalled ? () -> mContactPickerLauncher.launch(Utils.openContactPicker()) : null);
+    }
+    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));""")
+# Il contatto sta nella pagina della suite: niente pulsante tondo di CoMaps sopra.
+patch(search, "    UiUtils.showIf(!hasQuery && compatibleContactsAppInstalled, mOpenContactPicker);",
+      "    UiUtils.showIf(!hasQuery && compatibleContactsAppInstalled && (getView() == null || getView().findViewById(R.id.eurise_search_home) == null), mOpenContactPicker);")
+print("eurise_patch: ricerca con la pagina della suite (passo b)")
