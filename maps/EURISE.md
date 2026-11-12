@@ -26,6 +26,16 @@ richiesta nella cartella dei dati dell'app (il motore li cerca anche lì), se se
 di base delle schermate a View diventano Perla (chiaro, accento blu notte) e Notte (scuro, accento azzurro); 100 colori,
 provati sui sorgenti del commit fissato. Icona della suite (`docs/brand/android/maps`) al posto di quella di CoMaps.
 
+## Guida (giro 9, 12 novembre)
+`maps/android/.../eurise/EuriseGuide.java`, agganciato da `eurise_patch.py` a `NavigationController` e `NavMenu`:
+- il cartello della svolta e la striscia della via prendono il colore del tipo di strada dove si gira (riferimento OSM
+  `A…`/`RA…` = autostrada, Salvia; `SS`/`SR`/`E…` = statale, Blu notte; `SP`/`SC` = provinciale, Petrolio; senza
+  riferimento = comunale, blu della suite; se manca il riferimento decide il colore del cartello di OSM);
+- i metri alla svolta scendono a passi di 10 m sotto i 200 m, 50 m fino a 500, 100 m fino al chilometro (si aggiornano
+  a ogni posizione);
+- «Manda l'arrivo» nel menu della guida (ora d'arrivo, minuti e distanza, con l'app che scegli).
+Velocità attuale e limite c'erano già in CoMaps (si accendono in Impostazioni).
+
 ## Passi seguenti (dalle tavole approvate: MapGuida, MapEsplora, MapAttivita, MapLivelli, MapPercorso, MapCerca)
 1. Prova del prototipo sul telefono così com'è (CoMaps con il nostro nome).
 2. Stile della suite: tema Perla/Notte, barra satinata, icone EuriseIcons; schermate nuove in Compose dove si può

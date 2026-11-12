@@ -126,3 +126,42 @@ patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
       '      android:icon="@mipmap/ic_launcher"\n',
       '      android:icon="@mipmap/ic_maps"\n      android:roundIcon="@mipmap/ic_maps_round"\n')
 print("eurise_patch: icona di Eurise Mappe")
+
+# Guida (tavola MapGuida): cartello colorato per tipo di strada, metri alla svolta a passi fini, «Manda l'arrivo».
+# La logica sta in maps/android/.../eurise/EuriseGuide.java; qui solo gli agganci.
+nav = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "NavigationController.java"
+t = nav.read_text()
+old_dist = "    mNextTurnDistance.setText(Utils.formatDistance(mFrame.getContext(), info.distToTurn));"
+if t.count(old_dist) != 2:
+    sys.exit(f"eurise_patch: in {nav} la distanza alla svolta non compare due volte")
+t = t.replace(old_dist, "    mNextTurnDistance.setText(app.organicmaps.eurise.EuriseGuide.turnDistance(mFrame.getContext(), info.distToTurn));")
+nav.write_text(t)
+patch(nav, "    updateStreetView(info);\n    mNavMenu.update(info);",
+      """    updateStreetView(info);
+    app.organicmaps.eurise.EuriseGuide.tint(mFrame.findViewById(R.id.nav_next_turn_frame), mStreetFrame, info,
+                                            Router.get() == Router.Pedestrian);
+    mNavMenu.update(info);""")
+
+menu = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "menu" / "NavMenu.java"
+patch(menu, "    mTrackRecording.setOnClickListener(v -> onTrackRecordingClicked());",
+      """    mTrackRecording.setOnClickListener(v -> onTrackRecordingClicked());
+    bottomFrame.findViewById(R.id.eurise_share_arrival)
+        .setOnClickListener(v -> app.organicmaps.eurise.EuriseGuide.shareArrival(mActivity, mRoutingInfo));""")
+patch(root / "android" / "app" / "src" / "main" / "res" / "layout" / "layout_nav_bottom.xml",
+      """    <com.google.android.material.button.MaterialButton
+      android:id="@+id/stop\"""",
+      """    <com.google.android.material.imageview.ShapeableImageView
+      android:id="@+id/eurise_share_arrival"
+      android:layout_width="0dp"
+      android:layout_height="@dimen/nav_icon_size"
+      android:layout_weight="0.2"
+      android:padding="12dp"
+      android:background="?selectableItemBackgroundBorderless"
+      android:contentDescription="@string/eurise_arrival_share"
+      android:scaleType="fitCenter"
+      app:srcCompat="@drawable/ic_share"
+      app:tint="?iconTint" />
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/stop\"""")
+print("eurise_patch: guida con cartello colorato, metri fini e «Manda l'arrivo»")

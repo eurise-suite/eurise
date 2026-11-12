@@ -273,7 +273,7 @@
     <string name="brw_forgotten">Schede dimenticate</string>
     <string name="brw_forgotten_sub">Dopo %1$d giorni vanno in «Chiuse di recente», non si perdono</string>
     <string name="brw_on_computer">Sul computer</string>
-    <string name="brw_on_computer_soon">In arrivo: le schede aperte su Firefox con l'estensione Eurise</string>
+    <string name="brw_on_computer_soon">In arrivo: le schede aperte su Firefox con l\'estensione Eurise</string>
     <string name="brw_closed_recent">Chiuse di recente</string>
     <string name="brw_closed_recent_sub">%1$d schede da riaprire</string>
     <string name="brw_close_all">Chiudi tutte le schede</string>

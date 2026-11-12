@@ -17,4 +17,7 @@
     <string name="eurise_report_send">Send «%1$s»</string>
     <string name="eurise_report_sent">Sent to OpenStreetMap. Thank you!</string>
     <string name="eurise_report_failed">Not sent: check the connection and try again</string>
+    <string name="eurise_arrival_share">Send arrival</string>
+    <string name="eurise_arrival_text">I\'ll arrive around %1$s (in %2$d min, %3$s to go). Sent from Eurise Maps.</string>
+    <string name="eurise_arrival_text_short">I\'ll arrive around %1$s (in %2$d min). Sent from Eurise Maps.</string>
 </resources>
