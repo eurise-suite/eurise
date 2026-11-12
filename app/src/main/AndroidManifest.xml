@@ -74,6 +74,24 @@
             android:theme="@style/Theme.Eurise.Popup"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
+        <!-- Alfred, il maggiordomo della suite: pannello sopra l'app in cui si è (dock, e tasto home tenuto premuto scegliendolo
+             come «app di assistenza» di Android: ASSIST). Niente servizio vocale di sistema, così il riconoscimento vocale
+             delle altre app resta quello scelto da chi usa il telefono. -->
+        <activity
+            android:name=".alfred.AlfredActivity"
+            android:exported="true"
+            android:label="@string/alfred_label"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="eu.eurise.alfred"
+            android:theme="@style/Theme.Eurise.Popup"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- File e Scanner con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
         <activity
             android:name=".SectionShortcutActivity"
@@ -156,6 +174,12 @@
         <provider
             android:name=".RouteWeatherProvider"
             android:authorities="${applicationId}.routeweather"
+            android:exported="true"
+            android:permission="${suitePermission}" />
+        <!-- Centro privacy per le altre app della suite (ricerca su OpenStreetMap di Eurise Mappe). -->
+        <provider
+            android:name=".PrivacyProvider"
+            android:authorities="${applicationId}.privacy"
             android:exported="true"
             android:permission="${suitePermission}" />
     </application>

@@ -108,6 +108,7 @@ dependencies {
     implementation(project(":feature:calculator"))
     implementation(project(":feature:weather"))
     implementation(project(":feature:privacy"))
+    implementation(project(":feature:assistant"))
     implementation(project(":feature:people"))
     implementation(project(":feature:ponte"))
     implementation(project(":core:suite"))

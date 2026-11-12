@@ -162,6 +162,7 @@ fun roleApps(context: Context, role: DockRole, apps: List<AppEntry>): List<AppEn
         val pkg = a.packageName
         when {
             role == DockRole.Drive && a.euriseSection == "drive" -> true
+            role == DockRole.Ai && a.euriseSection == "alfred" -> true
             a.euriseSection != null || a.shortcut != null -> false
             pkg == own -> false
             suite != null && pkg.startsWith(suite) -> true
@@ -176,7 +177,7 @@ fun roleApps(context: Context, role: DockRole, apps: List<AppEntry>): List<AppEn
 }
 
 private fun isSuite(a: AppEntry, role: DockRole) =
-    (role == DockRole.Drive && a.euriseSection == "drive") || SUITE[role]?.let { a.packageName.startsWith(it) } == true
+    (role == DockRole.Drive && a.euriseSection == "drive") || (role == DockRole.Ai && a.euriseSection == "alfred") || SUITE[role]?.let { a.packageName.startsWith(it) } == true
 
 /** L'app della dock per il compito: quella scelta con la stella, o la prima (la suite, se c'è). */
 fun dockApp(prefs: DockPrefs, role: DockRole, candidates: List<AppEntry>): AppEntry? =

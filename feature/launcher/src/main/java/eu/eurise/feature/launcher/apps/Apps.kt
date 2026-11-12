@@ -108,6 +108,7 @@ class AppsRepository(private val context: Context) {
         AppEntry("eurise:ponte", "Telefono e computer", own, null, Category.Tools, "ponte"),
         AppEntry("eurise:notes", "Note", own, null, Category.Work, "notes"),
         AppEntry("eurise:tasks", "Attività", own, null, Category.Work, "tasks"),
+        AppEntry("eurise:alfred", "Alfred", own, null, Category.Ai, "alfred"),
     )
 
     /**
@@ -187,8 +188,17 @@ const val EXTRA_SECTION = "eu.eurise.extra.SECTION"
 
 /** Apre una sezione dell'app Eurise (vedi [EXTRA_SECTION]); "note:<id>" apre una nota. */
 fun Context.openEurise(section: String) {
+    if (section == "alfred") return openAlfred()
     val intent = Intent().setClassName(packageName, "eu.eurise.hub.MainActivity")
         .putExtra(EXTRA_SECTION, section)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    runCatching { startActivity(intent) }
+}
+
+/** Alfred, il maggiordomo della suite: si apre come pannello sopra l'app in cui si è. */
+fun Context.openAlfred(text: String? = null) {
+    val intent = Intent().setClassName(packageName, "eu.eurise.hub.alfred.AlfredActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    text?.let { intent.putExtra(Intent.EXTRA_TEXT, it) }
     runCatching { startActivity(intent) }
 }

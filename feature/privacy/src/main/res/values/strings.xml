@@ -62,6 +62,8 @@
     <string name="pv_s_routes">Percorsi · OpenStreetMap</string>
     <string name="pv_s_route_weather">Meteo sul percorso · Open-Meteo</string>
     <string name="pv_s_route_weather_d">per Eurise Mappe durante la guida: fino a 8 punti della strada, arrotondati a circa 1 km, con l\'ora di passaggio</string>
+    <string name="pv_s_map_search">Ricerca su OpenStreetMap (Photon, komoot · Germania)</string>
+    <string name="pv_s_map_search_d">per Eurise Mappe, solo quando le mappe del telefono non trovano un luogo: riceve le parole cercate e la lingua, mai la posizione</string>
     <string name="pv_s_routes_d">riceve partenza e arrivo, solo per il tempo di viaggio degli impegni</string>
 
     <string name="pv_p_calendar">Calendario</string>
@@ -72,6 +74,8 @@
     <string name="pv_p_location_d">per il meteo, l\'alba e i percorsi</string>
     <string name="pv_p_calls">Registro chiamate</string>
     <string name="pv_p_calls_d">per Ti hanno cercato</string>
+    <string name="pv_p_call_phone">Chiamate</string>
+    <string name="pv_p_call_phone_d">per Alfred, quando gli chiedi di chiamare qualcuno (dopo la scheda di conferma)</string>
     <string name="pv_p_camera">Fotocamera</string>
     <string name="pv_p_camera_d">per lo Scanner</string>
     <string name="pv_p_files">Tutti i file</string>

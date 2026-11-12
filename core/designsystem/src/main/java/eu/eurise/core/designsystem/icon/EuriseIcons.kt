@@ -163,6 +163,11 @@ object EuriseIcons {
     fun euro(stroke: Float = Stroke) = icon("euro", stroke, "M18 6.8A6.5 6.5 0 0 0 7.5 12a6.5 6.5 0 0 0 10.5 5.2", "M4.5 10.2h9", "M4.5 13.8h8")
     fun compass(stroke: Float = Stroke) = icon("compass", stroke, circle(12f, 12f, 9f), "M15.5 8.5l-2 5-5 2 2-5z")
     fun spark(stroke: Float = Stroke) = icon("spark", stroke, "M11 5l1.9 5.1L18 12l-5.1 1.9L11 19l-1.9-5.1L4 12l5.1-1.9z", "M18.5 3.5v3", "M17 5h3")
+    /** Il papillon di Alfred, il maggiordomo della suite. */
+    fun bowtie(stroke: Float = Stroke) = icon("bowtie", stroke,
+        "M10 10.4C8.1 8.6 6.2 7.4 4.8 7.6 3.5 7.8 3 9.5 3 12s.5 4.2 1.8 4.4c1.4.2 3.3-1 5.2-2.8",
+        "M14 10.4c1.9-1.8 3.8-3 5.2-2.8 1.3.2 1.8 1.9 1.8 4.4s-.5 4.2-1.8 4.4c-1.4.2-3.3-1-5.2-2.8",
+        "M11.7 9.7h.6a1.7 1.7 0 0 1 1.7 1.7v1.2a1.7 1.7 0 0 1-1.7 1.7h-.6a1.7 1.7 0 0 1-1.7-1.7v-1.2a1.7 1.7 0 0 1 1.7-1.7z", "M6.4 10.6c.6.4 1.1.9 1.5 1.4", "M17.6 10.6c-.6.4-1.1.9-1.5 1.4")
     fun browser(stroke: Float = Stroke) = icon("browser", stroke, "M3.5 5.5h17v13h-17z", "M3.5 9.5h17", "M6.5 7.5h.01", "M9.5 7.5h.01")
     fun work(stroke: Float = Stroke) = icon("work", stroke, "M4 8h16v11H4z", "M9 8V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2", "M4 13h16")
 

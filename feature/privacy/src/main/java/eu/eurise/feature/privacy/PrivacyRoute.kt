@@ -76,6 +76,7 @@ private fun PrivacyService.title() = when (this) {
     PrivacyService.Videos -> R.string.pv_s_videos
     PrivacyService.Routes -> R.string.pv_s_routes
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather
+    PrivacyService.MapSearch -> R.string.pv_s_map_search
 }
 
 private fun PrivacyService.detail() = when (this) {
@@ -88,6 +89,7 @@ private fun PrivacyService.detail() = when (this) {
     PrivacyService.Videos -> R.string.pv_s_videos_d
     PrivacyService.Routes -> R.string.pv_s_routes_d
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather_d
+    PrivacyService.MapSearch -> R.string.pv_s_map_search_d
 }
 
 private class Permission(val title: Int, val detail: Int)
@@ -99,6 +101,7 @@ private fun Context.activePermissions(): List<Permission> = buildList {
     if (has(Manifest.permission.ACCESS_COARSE_LOCATION)) add(Permission(R.string.pv_p_location, R.string.pv_p_location_d))
     if (has(Manifest.permission.READ_CALL_LOG)) add(Permission(R.string.pv_p_calls, R.string.pv_p_calls_d))
     if (has(Manifest.permission.CAMERA)) add(Permission(R.string.pv_p_camera, R.string.pv_p_camera_d))
+    if (has(Manifest.permission.CALL_PHONE)) add(Permission(R.string.pv_p_call_phone, R.string.pv_p_call_phone_d))
     if (android.os.Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()) add(Permission(R.string.pv_p_files, R.string.pv_p_files_d))
     if (getSystemService(android.app.NotificationManager::class.java)?.isNotificationPolicyAccessGranted == true) {
         add(Permission(R.string.pv_p_dnd, R.string.pv_p_dnd_d))
