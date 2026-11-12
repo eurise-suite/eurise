@@ -3,6 +3,11 @@ package eu.eurise.browser
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -168,7 +173,7 @@ fun BrowserScreen(
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
         if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); editing = true }, onGroups = openGroups)
         Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding())) {
-            if (tab != null) GeckoHost(tab)
+            if (tab != null) Panes(model, tab)
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {
                 NewTabPage(model, onImport = onImport, onOpen = { model.go(it) })
             }
@@ -326,19 +331,69 @@ fun BrowserScreen(
     }
 }
 
-/** La vista di Gecko: una sola, che passa da una sessione all'altra quando si cambia scheda. */
+/**
+ * La vista di Gecko per [tab]. Passa da una sessione all'altra quando si cambia scheda; una sessione sta in una vista
+ * sola, quindi prima la si toglie dall'altra (schede affiancate). [focused]: la vista della scheda che usi (cattura,
+ * stampa).
+ */
 @Composable
-private fun GeckoHost(tab: Tab) {
+private fun GeckoHost(tab: Tab, modifier: Modifier, focused: Boolean) {
     AndroidView(
-        factory = { ctx -> GeckoView(ctx).also { Gecko.view = it } },
+        factory = { ctx -> GeckoView(ctx).also { Gecko.views += it } },
         update = { view ->
             if (view.session !== tab.session) {
+                Gecko.views.forEach { other -> if (other !== view && other.session === tab.session) other.releaseSession() }
                 view.releaseSession()
                 view.setSession(tab.session)
             }
+            if (focused) Gecko.view = view
         },
-        modifier = Modifier.fillMaxSize(),
+        onRelease = { view -> view.releaseSession(); Gecko.views -= view },
+        modifier = modifier,
     )
+}
+
+/**
+ * La pagina, o due schede affiancate sul tablet (tavola BrwSessioni). Il primo riquadro resta sempre lo stesso, così la
+ * vista non si rifà quando si affianca o si torna a una sola. Un tocco su un riquadro lo rende quello in uso (riga
+ * colorata in cima); la ✕ sul riquadro di destra torna a una scheda sola.
+ */
+@Composable
+private fun Panes(model: BrowserModel, tab: Tab) {
+    val scheme = MaterialTheme.colorScheme
+    val wide = LocalConfiguration.current.screenWidthDp >= 720
+    val pair = model.split?.takeIf { wide && (tab === it.first || tab === it.second) }
+    val shown = if (pair != null) listOf(pair.first, pair.second) else listOf(tab)
+    Row(Modifier.fillMaxSize()) {
+        shown.forEachIndexed { i, t ->
+            val focused = model.current === t
+            if (i == 1) Box(Modifier.fillMaxHeight().width(1.dp).background(scheme.onSurface.copy(alpha = 0.12f)))
+            Box(
+                Modifier.weight(1f).fillMaxHeight().pointerInput(t, pair != null) {
+                    if (pair == null) return@pointerInput
+                    // Si guarda il tocco prima della pagina, senza toglierlo: la pagina lo riceve comunque.
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        if (model.current !== t) model.show(t)
+                    }
+                },
+            ) {
+                GeckoHost(t, Modifier.fillMaxSize(), focused = focused)
+                if (pair != null) {
+                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (focused) scheme.primary else Color.Transparent).align(Alignment.TopCenter))
+                }
+                if (i == 1) {
+                    val close = stringResource(R.string.brw_split_close)
+                    Box(
+                        Modifier.align(Alignment.TopEnd).padding(8.dp).size(32.dp).clip(CircleShape)
+                            .background(scheme.surface.copy(alpha = 0.92f)).clickable(role = Role.Button) { model.unsplit() }
+                            .semantics { contentDescription = close },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(EuriseIcons.close(2.2f), null, tint = scheme.onSurface, modifier = Modifier.size(15.dp)) }
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -68,6 +68,7 @@ internal fun stripPlace(setting: String): StripPlace = when (setting) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> Unit, onGroups: () -> Unit) {
+    val wide = LocalConfiguration.current.screenWidthDp >= 720
     val scheme = MaterialTheme.colorScheme
     val list = rememberLazyListState()
     val current = model.current
@@ -118,6 +119,8 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                         if (i > 0) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_left)) }, onClick = { menu = false; model.move(t, -1) })
                         if (i < model.tabs.size - 1) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_right)) }, onClick = { menu = false; model.move(t, 1) })
                         DropdownMenuItem(text = { Text(stringResource(R.string.brw_group_put)) }, onClick = { menu = false; model.show(t); onGroups() })
+                        // Sul tablet: affianca questa scheda a quella che stai usando (tavola BrwSessioni).
+                        if (wide && t !== model.current) DropdownMenuItem(text = { Text(stringResource(R.string.brw_split_with)) }, onClick = { menu = false; model.splitWith(t) })
                         DropdownMenuItem(text = { Text(stringResource(R.string.brw_close_tab)) }, onClick = { menu = false; model.close(t) })
                     }
                 }

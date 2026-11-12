@@ -38,6 +38,8 @@ object Gecko {
 
     /** La vista di Gecko sullo schermo (per «Cattura»). */
     var view: org.mozilla.geckoview.GeckoView? = null
+    /** Le viste vive (due con le schede affiancate): una sessione sta in una vista sola alla volta. */
+    val views = java.util.Collections.newSetFromMap(java.util.WeakHashMap<org.mozilla.geckoview.GeckoView, Boolean>())
 
     /** Le impostazioni da applicare al motore appena nasce (le fissa il modello prima della prima scheda). */
     var settings: BrowserSettings? = null

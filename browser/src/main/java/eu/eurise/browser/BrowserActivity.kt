@@ -298,6 +298,12 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                 KeyEvent.KEYCODE_K -> { model.tabsSearch = true; model.tabsOpen = true; return true }
                 KeyEvent.KEYCODE_T -> { model.tabsOpen = false; model.open(); return true }
                 KeyEvent.KEYCODE_W -> { model.current?.let(model::close); return true }
+                // Ctrl+\ : affianca la scheda accanto, o torna a una sola (tablet).
+                KeyEvent.KEYCODE_BACKSLASH -> {
+                    if (model.split != null) model.unsplit()
+                    else model.current?.let { c -> model.tabs.getOrNull(model.tabs.indexOf(c) + 1) ?: model.tabs.getOrNull(model.tabs.indexOf(c) - 1) }?.let(model::splitWith)
+                    return true
+                }
             }
         }
         return super.dispatchKeyEvent(event)

@@ -294,4 +294,6 @@
     <string name="brw_strip_note">Il colore sotto la scheda è il suo gruppo. Scorri la barra per le altre schede; tieni premuto per spostarle o metterle in un gruppo.</string>
     <string name="brw_strip_left">Sposta a sinistra</string>
     <string name="brw_strip_right">Sposta a destra</string>
+    <string name="brw_split_with">Affianca a quella aperta</string>
+    <string name="brw_split_close">Torna a una scheda sola</string>
 </resources>

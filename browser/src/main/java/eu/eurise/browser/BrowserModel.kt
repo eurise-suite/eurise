@@ -89,7 +89,28 @@ class BrowserModel(private val context: Context) {
         return Links.resolve(t, engine)
     }
 
+    /**
+     * Sul tablet, due schede affiancate (tavola BrwSessioni): la coppia resta ferma nei due riquadri, [current] è quella
+     * che usi (tocchi un riquadro per passarci). Se apri un'altra scheda prende il posto di quella che usavi.
+     */
+    var split by mutableStateOf<Pair<Tab, Tab>?>(null)
+        private set
+
+    /** Affianca [tab] alla scheda che stai usando. */
+    fun splitWith(tab: Tab) {
+        val c = current ?: return
+        if (c === tab) return
+        split = c to tab
+        tab.pending?.let { tab.pending = null; tab.load(it) }
+    }
+
+    fun unsplit() { split = null }
+
     fun show(tab: Tab) {
+        split?.let { (a, b) ->
+            val prev = current
+            if (tab !== a && tab !== b) split = if (prev === b) a to tab else tab to b
+        }
         current?.takeIf { it !== tab }?.let(::snapshot)
         current?.lastActive = System.currentTimeMillis()
         current = tab
@@ -269,6 +290,7 @@ class BrowserModel(private val context: Context) {
             if (updated != closed.toList()) { closed.clear(); closed.addAll(updated) }
         }
         val i = tabs.indexOf(tab)
+        split?.let { (a, b) -> if (tab === a || tab === b) split = null }
         tabs.remove(tab)
         tab.close()
         if (current === tab) current = tabs.getOrNull(i.coerceAtMost(tabs.size - 1))
