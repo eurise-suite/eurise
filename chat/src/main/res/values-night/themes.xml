@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.EuriseChat" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ch_background</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/eurise_icon_background</item>
+    </style>
+    <color name="ch_background">#14171C</color>
+    <color name="eurise_icon_background">#1A1E25</color>
+</resources>

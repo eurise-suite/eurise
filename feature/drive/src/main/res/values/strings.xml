@@ -142,4 +142,14 @@
     <string name="drive_text_missing">Manca Eurise Leggi: installala e riprova.</string>
     <string name="drive_text_no_model">Apri Eurise Leggi e scarica l\'italiano, poi riprova.</string>
     <string name="drive_text_failed">Lettura non riuscita.</string>
+    <!-- Drive come sulla tela, con le funzioni intelligenti (12 novembre) -->
+    <string name="drive_scan_short">Scansiona</string>
+    <string name="drive_upload">Carica</string>
+    <string name="drive_new_folder_short">Cartella</string>
+    <string name="drive_space_of">%1$s di %2$s</string>
+    <string name="drive_tidy_title">Riordina Download</string>
+    <string name="drive_tidy_docs">%1$d documenti (PDF, testi, fogli) andrebbero in Documenti</string>
+    <string name="drive_tidy_move">Sposta</string>
+    <string name="drive_tidy_old">%1$d file non aperti da più di 2 mesi · %2$s</string>
+    <string name="drive_tidy_review">Rivedi</string>
 </resources>

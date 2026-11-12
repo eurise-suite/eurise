@@ -96,6 +96,13 @@ jobs:
           path: mail/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Carica l'APK di Chat
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-chat-debug-${{ github.run_number }}
+          path: chat/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
       - name: Carica l'APK di Password
         uses: actions/upload-artifact@v4
         with:

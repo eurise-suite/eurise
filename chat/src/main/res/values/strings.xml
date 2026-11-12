@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ch_app_name">Chat</string>
+    <string name="ch_title">Chat</string>
+    <string name="ch_access_title">Chat di Eurise</string>
+    <string name="ch_access_intro">Scegli dove vive il tuo account. «Collega», accedi nel browser, approva.</string>
+    <string name="ch_eurise">Eurise</string>
+    <string name="ch_eurise_sub">Server europeo della suite · in arrivo</string>
+    <string name="ch_own">Il tuo server o quello del lavoro</string>
+    <string name="ch_own_sub">Matrix: scrivi solo il nome, es. «studio.it»</string>
+    <string name="ch_own_hint">Nome del server</string>
+    <string name="ch_matrixorg_sub">Server pubblico della fondazione Matrix · Regno Unito</string>
+    <string name="ch_link">Collega</string>
+    <string name="ch_working">Un momento…</string>
+    <string name="ch_who_sees">Cosa vede chi</string>
+    <string name="ch_sees_messages">Messaggi, foto, file</string>
+    <string name="ch_sees_messages_sub">In questa prima versione non sono cifrati end-to-end: il server può leggerli. La cifratura arriva nel prossimo giro.</string>
+    <string name="ch_sees_server">Il server vede</string>
+    <string name="ch_sees_server_sub">Chi è nel gruppo e quando scrive</string>
+    <string name="ch_sees_contacts">Trovare amici dalla rubrica</string>
+    <string name="ch_sees_contacts_sub">Spento: si cercano solo per nome. La rubrica non esce dal telefono.</string>
+    <string name="ch_server">Server</string>
+    <string name="ch_yours">Tuo</string>
+    <string name="ch_whatsapp_note">WhatsApp e Telegram restano le loro app: la bolla «Ti hanno cercato» e la ricerca della suite li mostrano insieme alle chat di Eurise. Nessun ponte che legga i tuoi messaggi su un server.</string>
+    <string name="ch_password_title">Accedi a %1$s</string>
+    <string name="ch_user">Nome utente</string>
+    <string name="ch_password">Password</string>
+    <string name="ch_err_password">Nome o password non accettati</string>
+    <string name="ch_err_server">Server non raggiungibile: controlla il nome e la rete</string>
+    <string name="ch_err_flows">Questo server non permette l\'accesso da altre app</string>
+    <string name="ch_err_sso">Accesso non riuscito: riprova</string>
+    <string name="ch_welcome">Collegata. Benvenuto nella Chat!</string>
+
+    <string name="ch_account">Account</string>
+    <string name="ch_logout">Esci da questo account</string>
+    <string name="ch_search">Cerca nelle chat</string>
+    <string name="ch_e2ee_soon">Cifratura end-to-end in arrivo: per ora le chat nuove non sono cifrate. Quelle già cifrate le vedi con il lucchetto.</string>
+    <string name="ch_empty">Ancora nessuna chat. Tocca «Nuova» e scrivi l\'indirizzo Matrix di chi vuoi, es. @anna:matrix.org.</string>
+    <string name="ch_new">Nuova</string>
+    <string name="ch_new_direct">Con una persona</string>
+    <string name="ch_new_group">Gruppo</string>
+    <string name="ch_group_name">Nome del gruppo</string>
+    <string name="ch_who">Indirizzo Matrix (es. @anna:matrix.org)</string>
+    <string name="ch_who_many">Indirizzi Matrix, separati da virgola</string>
+    <string name="ch_new_note">La chat nasce privata (solo su invito) e non ancora cifrata end-to-end.</string>
+    <string name="ch_create">Crea</string>
+    <string name="ch_err_id">Scrivi l\'indirizzo intero, con il server: @nome:server</string>
+    <string name="ch_err_unknown_user">Questo indirizzo non esiste</string>
+    <string name="ch_err_create">Chat non creata: riprova</string>
+    <string name="ch_err_group_name">Dai un nome al gruppo</string>
+    <string name="ch_invite">Ti ha invitato</string>
+    <string name="ch_accept">Accetta</string>
+    <string name="ch_decline">Rifiuta</string>
+    <string name="ch_offline">Senza rete: riprovo da sola</string>
+    <string name="ch_you">Tu</string>
+    <string name="ch_photo">Foto</string>
+    <string name="ch_file">File</string>
+    <string name="ch_encrypted_short">Messaggio cifrato</string>
+
+    <string name="ch_back">Indietro</string>
+    <string name="ch_room_encrypted">Chat cifrata · si leggerà con la cifratura in arrivo</string>
+    <string name="ch_room_plain">Non cifrata end-to-end</string>
+    <string name="ch_cant_send_encrypted">Questa chat è cifrata end-to-end: per non mandare messaggi in chiaro, si scrive qui quando arriva la cifratura (prossimo giro).</string>
+    <string name="ch_encrypted_long">Messaggio cifrato: lo leggerai con la cifratura in arrivo</string>
+    <string name="ch_photo_open">Foto · tocca per aprire</string>
+    <string name="ch_write">Scrivi un messaggio</string>
+    <string name="ch_send">Invia</string>
+    <string name="ch_send_failed">Messaggio non inviato</string>
+    <string name="ch_file_failed">File non aperto</string>
+    <string name="ch_state_join">%1$s è entrato</string>
+    <string name="ch_state_leave">%1$s è uscito</string>
+    <string name="ch_state_invite">%1$s è stato invitato</string>
+
+    <string name="ch_channel">Messaggi</string>
+    <string name="ch_new_many">%1$d messaggi nuovi</string>
+    <string name="ch_new_invites">%1$d inviti nuovi</string>
+</resources>

@@ -219,7 +219,9 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
     BackHandler(enabled = folder == null, onBack = onBack)
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(Modifier.fillMaxSize().hazeSource(haze)) {
+        // Il fondo da sfocare è il contenuto di ogni scheda; testata e dock stanno sopra (come nelle Note): se la testata
+        // satinata fosse dentro il suo stesso fondo, Haze non la disegnerebbe e resterebbe trasparente.
+        Box(Modifier.fillMaxSize()) {
             when (tab) {
                 Tab.Files -> FilesTab(
                     data, access, scope, folder, refresh, haze,
@@ -238,10 +240,14 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
                     onLock = { p -> data.lock(p); scope = null; folder = null; refresh++ },
                     onAddTree = { pickTree.launch(null) },
                     onRemoveTree = { p -> data.removeTree(p); scope = null; folder = null; refresh++ },
+                    onScan = onScan,
+                    onMoveAll = { items, to -> action { items.forEach { runCatching { data.move(it, to) } } } },
                 )
-                Tab.Offline -> OfflineTab(data, refresh, ::open) { selected = it }
-                Tab.Shared -> SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } }
-                Tab.Trash -> AllTrash(data, refresh, onRestoreFile = { action { data.restore(it) } }, onDeleteFile = { action { data.deleteForever(it) } }, onNewPhone = onNewPhone, bottomSpace = bottomSpace)
+                Tab.Offline -> Box(Modifier.fillMaxSize().hazeSource(haze)) { OfflineTab(data, refresh, ::open) { selected = it } }
+                Tab.Shared -> Box(Modifier.fillMaxSize().hazeSource(haze)) { SharedTab(data, refresh) { place, share -> action { data.removeLink(place, share) } } }
+                Tab.Trash -> Box(Modifier.fillMaxSize().hazeSource(haze)) {
+                    AllTrash(data, refresh, onRestoreFile = { action { data.restore(it) } }, onDeleteFile = { action { data.deleteForever(it) } }, onNewPhone = onNewPhone, bottomSpace = bottomSpace)
+                }
             }
         }
         if (loading) {
@@ -405,6 +411,7 @@ private fun FilesTab(
     sync: FolderSync, onManageSync: (SyncPair) -> Unit,
     onUnlock: (Place) -> Unit, onNewVault: (Folder) -> Unit, onAddFiles: (Folder) -> Unit, onLock: (Place) -> Unit,
     onAddTree: () -> Unit, onRemoveTree: (Place) -> Unit,
+    onScan: () -> Unit, onMoveAll: (List<DriveItem>, String) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
@@ -418,13 +425,21 @@ private fun FilesTab(
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(Modifier.fillMaxSize()) {
-        if (folder == null) Overview(data, access, places, refresh, top, onOpen, onFolder, onAccess, onCloud, sync, onManageSync)
-        else if (folder.place.account == null && !access) {
-            Column(Modifier.fillMaxSize().padding(top = top + 130.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                EmptyState(EuriseIcons.folder(), stringResource(R.string.drive_phone), stringResource(R.string.drive_access_title))
-                TextButton(onClick = onAccess) { Text(stringResource(R.string.drive_access_grant)) }
-            }
-        } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock)
+        Box(Modifier.fillMaxSize().hazeSource(haze)) {
+            if (folder == null) Overview(
+                data, access, places, refresh, top, onOpen, onFolder, onAccess, onCloud, sync, onManageSync,
+                onScan = onScan,
+                onUpload = { onAddFiles(Folder(data.phone, Environment.DIRECTORY_DOCUMENTS)) },
+                onNewFolder = { creating = true },
+                onMoveAll = onMoveAll,
+            )
+            else if (folder.place.account == null && !access) {
+                Column(Modifier.fillMaxSize().padding(top = top + 130.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    EmptyState(EuriseIcons.folder(), stringResource(R.string.drive_phone), stringResource(R.string.drive_access_title))
+                    TextButton(onClick = onAccess) { Text(stringResource(R.string.drive_access_grant)) }
+                }
+            } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock)
+        }
 
         Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (searching) {
@@ -470,10 +485,12 @@ private fun FilesTab(
             }
         }
     }
-    if (creating && folder != null) {
+    if (creating) {
+        // Dalla panoramica la cartella nuova va in Documenti del telefono.
+        val target = folder ?: Folder(data.phone, Environment.DIRECTORY_DOCUMENTS)
         NameDialog(stringResource(R.string.drive_new_folder), "", stringResource(R.string.drive_create), { creating = false }) { name ->
             creating = false
-            onCreate(folder, name)
+            onCreate(target, name)
         }
     }
 }
@@ -549,12 +566,26 @@ private fun Overview(
     data: DriveData, access: Boolean, places: List<Place>, refresh: Int, top: androidx.compose.ui.unit.Dp,
     onOpen: (DriveItem) -> Unit, onFolder: (Folder?) -> Unit, onAccess: () -> Unit, onCloud: () -> Unit,
     sync: FolderSync, onManageSync: (SyncPair) -> Unit,
+    onScan: () -> Unit, onUpload: () -> Unit, onNewFolder: () -> Unit, onMoveAll: (List<DriveItem>, String) -> Unit,
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val recents = remember(refresh) { data.recents() }
     val spaces by produceState(emptyList<Space>(), refresh, access) { value = if (access) data.spaces() else emptyList() }
+    val tidy by produceState<Tidy?>(null, refresh, access) {
+        value = if (access) runCatching { tidyOf(data.list(data.phone, Environment.DIRECTORY_DOWNLOADS)) }.getOrNull() else null
+    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item(key = "quick") { QuickActions(onScan, onUpload, onNewFolder) }
+        tidy?.takeIf { it.documents.isNotEmpty() || it.old.isNotEmpty() }?.let { t ->
+            item(key = "tidy") {
+                TidyCard(
+                    t,
+                    onMoveDocs = { onMoveAll(t.documents, Environment.DIRECTORY_DOCUMENTS) },
+                    onReview = { onFolder(Folder(data.phone, Environment.DIRECTORY_DOWNLOADS)) },
+                )
+            }
+        }
         if (recents.isNotEmpty()) {
             item(key = "l-r") { SectionLabel(stringResource(R.string.drive_recent)) }
             item(key = "recents") {
@@ -575,7 +606,7 @@ private fun Overview(
                 }
                 places.forEach { p ->
                     CardDivider()
-                    FolderRow(p.label, stringResource(R.string.drive_title)) { onFolder(Folder(p, "")) }
+                    FolderRow(p.label, stringResource(R.string.drive_title), p) { onFolder(Folder(p, "")) }
                 }
             }
         }
@@ -600,16 +631,8 @@ private fun Overview(
             }
         }
         if (spaces.isNotEmpty()) {
-            item(key = "space") {
-                Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.drive_space), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
-                    spaces.forEach { s ->
-                        val used = Formatter.formatShortFileSize(context, s.used)
-                        val total = s.total?.let { Formatter.formatShortFileSize(context, it) }
-                        Text(if (total != null) "${s.label}: $used / $total" else "${s.label}: $used", fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
-                    }
-                }
-            }
+            item(key = "l-space") { SectionLabel(stringResource(R.string.drive_space)) }
+            item(key = "space") { SpaceBars(spaces) }
         }
     }
 }
@@ -618,8 +641,9 @@ private fun Overview(
 private fun RecentCard(item: DriveItem, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.width(112.dp).clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).clickable(onClick = onClick).padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(10.dp)).background(tint(item.extension)), contentAlignment = Alignment.Center) {
-            Text(item.extension.take(4).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimaryContainer)
+        val (bg, ink) = kindColors(item.extension)
+        Box(Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(10.dp)).background(bg), contentAlignment = Alignment.Center) {
+            Text(item.extension.take(4).uppercase().ifEmpty { "FILE" }, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = ink)
         }
         Text(item.name, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(item.place.label, fontSize = 11.5.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -638,10 +662,10 @@ private fun tint(extension: String): Color {
 }
 
 @Composable
-private fun FolderRow(title: String, detail: String, onClick: () -> Unit) {
+private fun FolderRow(title: String, detail: String, place: Place? = null, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(EuriseIcons.folder(), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+        FolderGlyph(place)
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(detail, fontSize = 12.sp, color = scheme.onSurfaceVariant, maxLines = 1)
@@ -654,13 +678,8 @@ private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?)
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (item.folder) {
-            Icon(EuriseIcons.folder(), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(26.dp))
-        } else {
-            Box(Modifier.size(36.dp).clip(RoundedCornerShape(9.dp)).background(tint(item.extension)), contentAlignment = Alignment.Center) {
-                Text(item.extension.take(3).uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimaryContainer)
-            }
-        }
+        if (item.folder) FolderGlyph(item.place, Modifier.size(34.dp, 29.dp))
+        else KindTile(item.extension, 36.dp, 36.dp, 9.dp, 10)
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
             Text(item.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val detail = listOfNotNull(item.place.label, item.size?.let { Formatter.formatShortFileSize(context, it) }).joinToString(" · ")
