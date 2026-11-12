@@ -700,8 +700,10 @@ private fun FolderList(
         value = try { data.list(folder.place, folder.path) } catch (e: java.io.IOException) { failed = true; emptyList() } catch (e: DavException) { failed = true; emptyList() }
     }
     val current = items
-    val shown = remember(current, query, sort) {
+    var kind by remember(folder) { mutableStateOf<Kind?>(null) }
+    val shown = remember(current, query, sort, kind) {
         current.orEmpty().filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+            .filter { kind == null || (!it.folder && Kind.of(it.extension) == kind) }
             .sortedWith(compareBy<DriveItem> { !it.folder }.then(if (sort == Sort.Size) compareByDescending { it.size ?: 0 } else compareBy { it.name.lowercase() }))
     }
     if (current == null) {
@@ -720,6 +722,9 @@ private fun FolderList(
                 Text(stringResource(R.string.drive_vault_found), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
         }
+        // Filtri per tipo, solo quelli presenti nella cartella, con quanti sono (PDF 4, Immagini 12…).
+        val kinds = current.filter { !it.folder }.groupingBy { Kind.of(it.extension) }.eachCount()
+        if (kinds.size > 1) item(key = "kinds") { KindFilter(kinds, kind) { kind = it } }
         if (shown.isEmpty()) item(key = "e") {
             EmptyState(EuriseIcons.folder(), stringResource(if (failed) R.string.drive_error_network else R.string.drive_empty), stringResource(R.string.drive_empty_msg))
         }

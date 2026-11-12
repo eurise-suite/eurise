@@ -5,6 +5,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -217,4 +219,46 @@ private fun SmallAction(label: String, onClick: () -> Unit) {
             .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center,
     ) { Text(label, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary) }
+}
+
+
+@Composable
+private fun kindLabel(k: Kind): String = stringResource(
+    when (k) {
+        Kind.Pdf -> R.string.drive_kind_pdf
+        Kind.Doc -> R.string.drive_kind_doc
+        Kind.Sheet -> R.string.drive_kind_sheet
+        Kind.Slides -> R.string.drive_kind_slides
+        Kind.Image -> R.string.drive_kind_image
+        Kind.Media -> R.string.drive_kind_media
+        Kind.Archive -> R.string.drive_kind_archive
+        Kind.Other -> R.string.drive_kind_other
+    },
+)
+
+/** I tipi di file della cartella come filtri colorati: un tocco e restano solo quelli. */
+@Composable
+internal fun KindFilter(counts: Map<Kind, Int>, selected: Kind?, onSelect: (Kind?) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val dark = EuriseThemeExtras.colors.isDark
+    Row(
+        Modifier.padding(bottom = 10.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(if (selected == null) scheme.primary else scheme.surfaceContainerLow)
+                .clickable(role = Role.Button) { onSelect(null) }.padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text(stringResource(R.string.drive_kind_all), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (selected == null) scheme.onPrimary else scheme.onSurface) }
+        Kind.entries.filter { it in counts }.forEach { k ->
+            val on = selected == k
+            val bg = Color(if (dark) k.dark else k.light)
+            val ink = Color(if (dark) k.darkInk else k.lightInk)
+            Box(
+                Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(if (on) ink else bg)
+                    .clickable(role = Role.Button) { onSelect(if (on) null else k) }.padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text("${kindLabel(k)} ${counts[k]}", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) bg else ink) }
+        }
+    }
 }

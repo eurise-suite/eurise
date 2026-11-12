@@ -152,4 +152,13 @@
     <string name="drive_tidy_move">Sposta</string>
     <string name="drive_tidy_old">%1$d file non aperti da più di 2 mesi · %2$s</string>
     <string name="drive_tidy_review">Rivedi</string>
+    <string name="drive_kind_all">Tutto</string>
+    <string name="drive_kind_pdf">PDF</string>
+    <string name="drive_kind_doc">Testi</string>
+    <string name="drive_kind_sheet">Fogli</string>
+    <string name="drive_kind_slides">Presentazioni</string>
+    <string name="drive_kind_image">Immagini</string>
+    <string name="drive_kind_media">Audio e video</string>
+    <string name="drive_kind_archive">Archivi</string>
+    <string name="drive_kind_other">Altro</string>
 </resources>

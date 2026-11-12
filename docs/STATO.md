@@ -1303,3 +1303,25 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   da qui non si raggiungono maven.mozilla.org, Maven Central né codeberg: i sorgenti si leggono dagli specchi su GitHub.
 - **Prossimi passi**: prova sul telefono di Browser (import da Vivaldi, Traduci, DNS), Email (collegare una casella
   Murena/Libero) e Mappe; poi BrwStrumenti e BrwSessioni, Chat (Matrix), OAuth per Email, guida di Mappe.
+
+## 12 novembre, notte (seconda parte): servizi chiusi, Email integrata, Chat cifrata, Drive come sulla tela
+- **Regola nuova** (CLAUDE.md, «Servizi chiusi»): Google, Apple, Microsoft si offrono, decide l'utente; per ultimi, una
+  tacca, avviso con limiti e alternative. Applicata a Email (Gmail, iCloud, Yahoo con password per le app e avviso;
+  Outlook aspetta l'OAuth) e Browser (Google, Bing; ChatGPT, Copilot, Gemini).
+- **OAuth (passo del proprietario)**: registrare Eurise presso Google Cloud (verifica per la posta), Microsoft Azure,
+  Apple Developer; poi il client ID nel codice e l'accesso diventa «due tocchi».
+- **Email con la suite**: proposte da MessageInsights (Calendario via `Reach.event`, Da fare e Note via `HubBridge`,
+  Rubrica, chiama, Mappe, avviso truffa); allegati Apri / Salva in Drive (`FilesContract.saveIn`); Scrivi con allegati da
+  Drive («Apri da…») o dal selettore; ACTION_SEND/SEND_MULTIPLE con file da ogni app.
+- **Chat** (`chat/`, `eu.eurise.chat`): Matrix su HTTP nostro (ChatClient), accesso SSO dal browser (eurisechat://login)
+  o password; elenco, inviti, conversazione, gruppi, notifiche ogni 15 min. **Cifratura end-to-end** (`ChatCrypto`):
+  crypto-android 26.05.12 (matrix-sdk-crypto, come Element per Android; riferimento: OlmMachine.kt e
+  OutgoingRequestsProcessor.kt di element-hq/element-android) + JNA 5.14 @aar, APK solo arm64. Chat nuove cifrate;
+  decifratura con riprova quando arriva la chiave; il lavoro in background passa le chiavi al modulo (se l'app è aperta,
+  `ChatModel.active`, lascia fare a lei). **Da fare**: chiave di recupero e backup delle chiavi (nel backup cifrato
+  della suite), verifica dei dispositivi con emoji, UnifiedPush, server Eurise, prova con Element su un'altra chat.
+- **Drive** (icona «Drive», ex «File»): testata e dock trasparenti corretti (la testata era dentro il suo `hazeSource`:
+  ora ogni scheda ha il suo fondo e testata/dock stanno sopra). Come sulla tela: Scansiona/Carica/Cartella, colori per
+  tipo (`DriveLook.kt`, anche Notte), cartelle a due toni per posto, barre dello spazio, filtri per tipo con i conteggi.
+  Intelligenti: «Riordina Download» (documenti → Documenti, file vecchi e quanto pesano). Prossime idee: file per gli
+  impegni di oggi (dal Calendario), doppioni, ricerca nel testo dei PDF e delle scansioni, nomi proposti alle scansioni.
