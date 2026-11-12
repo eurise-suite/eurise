@@ -1502,3 +1502,17 @@ Richieste del proprietario (12 novembre, dopo le prove del giro 331), con lo sta
   EuriseTastiera. Uguali: gli altri (Mappe resta la 15).
 - **Prossima chat**: prova del giro 336; approvazione delle tavole nuove (Browser fila 5, Scrivania fila 12, TelPillola) e
   loro codice; pillola della lettura in Email; ricerca in basso in Password; Mappe (piano sopra) come lavoro principale.
+- **Meteo** (fatto, giro 338): in cima il tempo disegnato nello stile degli sfondi (sereno, poco nuvoloso, nuvoloso,
+  nebbia, pioviggine, pioggia, rovesci, neve, temporale; giorno e notte) — `feature/weather/SkyScene.kt`; toccando un giorno
+  della settimana si apre il dettaglio (`DayScreen`: ora per ora, fasce di pioggia, raffiche, alba e tramonto).
+- **AI e Voce: oggi non servono a niente di concreto** (proprietario, 12 sera). Proposta da discutere (prima la tavola):
+  una sola **Assistente** (tavola Assistente già sulla pagina App) che si apre tenendo premuto il tasto home o dalla dock
+  («Ricerca AI»), con voce o testo, e che *fa* le cose: «chiama Anna», «nota: …», «appuntamento giovedì alle 10 con Marco
+  dal commercialista», «portami ad Apice», «manda a Marco su WhatsApp che arrivo», «cerca …», «apri …», «scrivi una lettera
+  a …». Come: 1) parole → testo sul telefono (riconoscimento più rapido e corretto: modello per i comandi brevi in streaming,
+  Whisper solo per le dettature lunghe); 2) testo → azione con una grammatica italiana dei comandi più comuni (subito, senza
+  modello) e il modello AI sul telefono solo per le richieste libere, che sceglie tra le azioni della suite (funzioni); 3)
+  una scheda di conferma prima di agire (chi, cosa, quando), un tocco per eseguire; 4) le azioni passano dai contratti della
+  suite (Calendario, Note, Attività, Mappe, Telefono, Messaggi, Browser, Office). Voce e AI non restano app a parte: diventano
+  l'Assistente (e la dettatura nella Tastiera).
+- **Ultimo APK: giro 338** in `apk-prova`. Cambiato rispetto al 336: solo app-debug (Meteo).
