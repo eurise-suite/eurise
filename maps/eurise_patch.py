@@ -140,6 +140,8 @@ patch(nav, "    updateStreetView(info);\n    mNavMenu.update(info);",
       """    updateStreetView(info);
     app.organicmaps.eurise.EuriseGuide.tint(mFrame.findViewById(R.id.nav_next_turn_frame), mStreetFrame, info,
                                             Router.get() == Router.Pedestrian);
+    app.organicmaps.eurise.EuriseRouteWeather.update(mFrame.findViewById(R.id.eurise_route_weather), info,
+                                                     Router.get() == Router.Pedestrian);
     mNavMenu.update(info);""")
 
 menu = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "menu" / "NavMenu.java"
@@ -165,3 +167,40 @@ patch(root / "android" / "app" / "src" / "main" / "res" / "layout" / "layout_nav
     <com.google.android.material.button.MaterialButton
       android:id="@+id/stop\"""")
 print("eurise_patch: guida con cartello colorato, metri fini e «Manda l'arrivo»")
+
+# Meteo sul percorso (tavola MapGuida): una riga sotto la via, logica in EuriseRouteWeather.java e RouteSampler.java.
+# Chiede all'app Eurise (permesso della suite di prova: Mappe è firmata con la chiave di debug della suite).
+patch(root / "android" / "app" / "src" / "main" / "res" / "layout" / "layout_nav_top.xml",
+      """  <RelativeLayout
+    android:id="@+id/nav_next_turn_container\"""",
+      """  <com.google.android.material.textview.MaterialTextView
+    android:id="@+id/eurise_route_weather"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/margin_half"
+    android:layout_marginStart="@dimen/nav_street_left"
+    android:layout_marginEnd="@dimen/margin_half"
+    android:maxLines="2"
+    android:ellipsize="end"
+    android:visibility="gone"
+    android:clickable="true"
+    android:focusable="true"
+    app:layout_constrainedWidth="true"
+    app:layout_constraintHorizontal_bias="0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/street_frame" />
+
+  <RelativeLayout
+    android:id="@+id/nav_next_turn_container\"""")
+patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
+      """  <uses-permission android:name="android.permission.INTERNET"/>""",
+      """  <uses-permission android:name="android.permission.INTERNET"/>
+  <!-- Eurise: meteo sul percorso dall'app Eurise di prova (stessa chiave di debug della suite). -->
+  <permission android:name="eu.eurise.permission.SUITE_DEBUG" android:protectionLevel="signature"/>
+  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
+  <queries>
+    <package android:name="eu.eurise.hub"/>
+    <package android:name="eu.eurise.hub.debug"/>
+  </queries>""")
+print("eurise_patch: meteo sul percorso")

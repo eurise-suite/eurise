@@ -60,6 +60,8 @@
     <string name="pv_s_videos">Video · YouTube</string>
     <string name="pv_s_videos_d">riceve i canali che segui</string>
     <string name="pv_s_routes">Percorsi · OpenStreetMap</string>
+    <string name="pv_s_route_weather">Meteo sul percorso · Open-Meteo</string>
+    <string name="pv_s_route_weather_d">per Eurise Mappe durante la guida: fino a 8 punti della strada, arrotondati a circa 1 km, con l\'ora di passaggio</string>
     <string name="pv_s_routes_d">riceve partenza e arrivo, solo per il tempo di viaggio degli impegni</string>
 
     <string name="pv_p_calendar">Calendario</string>

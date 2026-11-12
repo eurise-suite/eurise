@@ -4,7 +4,7 @@ import android.content.Context
 import java.io.File
 
 /** I servizi esterni che la Scrivania contatta da sola, ognuno con il suo interruttore. */
-enum class PrivacyService(val defaultOn: Boolean) { Weather(true), Pollen(true), Alerts(true), News(true), Markets(true), Horoscope(true), Videos(true), Routes(false) }
+enum class PrivacyService(val defaultOn: Boolean) { Weather(true), Pollen(true), Alerts(true), News(true), Markets(true), Horoscope(true), Videos(true), Routes(false), RouteWeather(false) }
 
 /** Una riga del registro: [count] richieste allo stesso servizio raccolte in una. */
 data class PrivacyEvent(val time: Long, val service: PrivacyService, val count: Int)

@@ -75,6 +75,7 @@ private fun PrivacyService.title() = when (this) {
     PrivacyService.Horoscope -> R.string.pv_s_horoscope
     PrivacyService.Videos -> R.string.pv_s_videos
     PrivacyService.Routes -> R.string.pv_s_routes
+    PrivacyService.RouteWeather -> R.string.pv_s_route_weather
 }
 
 private fun PrivacyService.detail() = when (this) {
@@ -86,6 +87,7 @@ private fun PrivacyService.detail() = when (this) {
     PrivacyService.Horoscope -> R.string.pv_s_horoscope_d
     PrivacyService.Videos -> R.string.pv_s_videos_d
     PrivacyService.Routes -> R.string.pv_s_routes_d
+    PrivacyService.RouteWeather -> R.string.pv_s_route_weather_d
 }
 
 private class Permission(val title: Int, val detail: Int)

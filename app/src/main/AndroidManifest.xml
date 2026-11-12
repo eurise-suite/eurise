@@ -140,5 +140,11 @@
             android:authorities="${applicationId}.secrets"
             android:exported="true"
             android:permission="${suitePermission}" />
+        <!-- Meteo sul percorso per Eurise Mappe (passa dal centro privacy). -->
+        <provider
+            android:name=".RouteWeatherProvider"
+            android:authorities="${applicationId}.routeweather"
+            android:exported="true"
+            android:permission="${suitePermission}" />
     </application>
 </manifest>
