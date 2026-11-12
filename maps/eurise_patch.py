@@ -321,5 +321,14 @@ patch(mbc, "        mNavMyPosition.showButton(show);",
       "        mNavMyPosition.showButton(show && mFrame.findViewById(R.id.eurise_map_bar) == null);")
 patch(mbc, "    showButton(false, MapButtons.trackRecordingStatus);\n    return mFrame;",
       "    showButton(false, MapButtons.trackRecordingStatus);\n    if (euriseBar != null && mNavMyPosition != null)\n      mNavMyPosition.showButton(false);\n    return mFrame;")
+# CoMaps compila con Kotlin 2.2 ma la sua BOM porta la libreria standard 2.4: finché il codice Kotlin era poco, non se ne
+# accorgeva nessuno. Il compilatore legge comunque quelle classi; si salta solo il controllo della versione dei metadati.
+with open(app_gradle, "a") as g:
+    g.write("""
+// Eurise: Kotlin 2.2 del compilatore con la libreria standard 2.4 della BOM di CoMaps.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
+}
+""")
 print("eurise_patch: mappa con la barra satinata (Compose) e il «+» per segnalare")
 
