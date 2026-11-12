@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -259,6 +260,66 @@ internal fun KindFilter(counts: Map<Kind, Int>, selected: Kind?, onSelect: (Kind
                     .clickable(role = Role.Button) { onSelect(if (on) null else k) }.padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center,
             ) { Text("${kindLabel(k)} ${counts[k]}", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) bg else ink) }
+        }
+    }
+}
+
+
+/** Un impegno vicino e i file che sembrano servirgli. */
+internal data class ForEvent(val title: String, val start: java.time.LocalDateTime, val files: List<DriveItem>)
+
+private val STOP = setOf(
+    "della", "dello", "delle", "degli", "con", "per", "presso", "alle", "dalle", "nella", "nelle", "sulla", "riunione",
+    "incontro", "appuntamento", "chiamata", "call", "meeting", "evento", "promemoria", "oggi", "domani", "the", "and", "with",
+)
+
+/** Le parole che contano di un titolo: almeno 4 lettere, niente parole vuote, senza accenti. */
+internal fun keywords(text: String): Set<String> = java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD)
+    .replace(Regex("\\p{Mn}+"), "")
+    .split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length >= 4 && it !in STOP }.toSet()
+
+/**
+ * Per ogni impegno, i file (al massimo tre) che hanno nel nome almeno una parola importante del titolo o del luogo.
+ * Tutto sul telefono: il Calendario non esce.
+ */
+internal fun filesForEvents(events: List<Triple<String, String, java.time.LocalDateTime>>, files: List<DriveItem>): List<ForEvent> =
+    events.mapNotNull { (title, place, start) ->
+        val words = keywords("$title $place")
+        if (words.isEmpty()) return@mapNotNull null
+        val hits = files.filter { f -> !f.folder && keywords(f.name.substringBeforeLast('.')).any { it in words } }.distinctBy { it.key }.take(3)
+        if (hits.isEmpty()) null else ForEvent(title, start, hits)
+    }
+
+/** «Per i tuoi impegni»: la riunione di oggi alle 15 → preventivo.pdf. Un tocco e si apre. */
+@Composable
+internal fun ForEventsCard(items: List<ForEvent>, onOpen: (DriveItem) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("EEE HH:mm", java.util.Locale.getDefault())
+    Column(
+        Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x334F6B5A)).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.calendar(2f), null, tint = Color(0xFF4F6B5A), modifier = Modifier.size(17.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.drive_for_events), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+        items.forEach { e ->
+            Text(e.title + " · " + e.start.format(fmt), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                e.files.forEach { f ->
+                    Row(
+                        Modifier.height(36.dp).clip(RoundedCornerShape(12.dp)).background(scheme.surfaceContainerLow)
+                            .clickable(role = Role.Button) { onOpen(f) }.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        KindTile(f.extension, 24.dp, 24.dp, 6.dp, 7)
+                        Spacer(Modifier.width(6.dp))
+                        Text(f.name, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 180.dp))
+                    }
+                }
+            }
         }
     }
 }

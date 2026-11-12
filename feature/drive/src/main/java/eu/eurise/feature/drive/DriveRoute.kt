@@ -575,8 +575,21 @@ private fun Overview(
     val tidy by produceState<Tidy?>(null, refresh, access) {
         value = if (access) runCatching { tidyOf(data.list(data.phone, Environment.DIRECTORY_DOWNLOADS)) }.getOrNull() else null
     }
+    // Per i tuoi impegni: oggi e domani dal Calendario, i file con le stesse parole nel nome (tutto sul telefono).
+    val forEvents by produceState(emptyList<ForEvent>(), refresh, access) {
+        value = runCatching {
+            val calendar = eu.eurise.core.data.EuriseData.create(context).calendar
+            if (!calendar.hasPermission()) return@runCatching emptyList()
+            val now = System.currentTimeMillis()
+            val events = calendar.startingBetween(now - 3_600_000L, now + 36 * 3_600_000L).take(6)
+                .map { Triple(it.title, it.location, it.start) }
+            val files = recents + (if (access) data.list(data.phone, Environment.DIRECTORY_DOCUMENTS) + data.list(data.phone, Environment.DIRECTORY_DOWNLOADS) else emptyList())
+            filesForEvents(events, files).take(3)
+        }.getOrDefault(emptyList())
+    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item(key = "quick") { QuickActions(onScan, onUpload, onNewFolder) }
+        if (forEvents.isNotEmpty()) item(key = "events") { ForEventsCard(forEvents, onOpen) }
         tidy?.takeIf { it.documents.isNotEmpty() || it.old.isNotEmpty() }?.let { t ->
             item(key = "tidy") {
                 TidyCard(
