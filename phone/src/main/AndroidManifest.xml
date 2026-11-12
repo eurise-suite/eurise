@@ -100,6 +100,15 @@
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
         </service>
+        <!-- Filtro antispam: Android lo chiama per ogni chiamata in arrivo quando Eurise Telefono è l'app predefinita. -->
+        <service
+            android:name=".call.SpamScreening"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
         <receiver
             android:name=".call.CallActionReceiver"
             android:exported="false" />

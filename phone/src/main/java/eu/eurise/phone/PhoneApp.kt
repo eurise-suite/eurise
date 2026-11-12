@@ -83,6 +83,8 @@ private sealed interface Screen {
     data object People : Screen
     data class Person(val id: Long) : Screen
     data class Edit(val draft: ContactDraft) : Screen
+    /** Filtro antispam e numeri bloccati. */
+    data object Filter : Screen
 }
 
 @Composable
@@ -110,7 +112,9 @@ fun PhoneApp(
     var section by remember { mutableStateOf(SEC_RECENTS) }
     val haze = remember { HazeState() }
 
+    var filteredLog by remember { mutableStateOf<List<eu.eurise.phone.data.SpamFilter.Filtered>>(emptyList()) }
     LaunchedEffect(refresh, reload) {
+        filteredLog = eu.eurise.phone.data.SpamFilter.filtered(context)
         recents = PhoneData.recents(context)
         contacts = Contacts.all(context)
         numbers = Contacts.firstNumbers(context)
@@ -142,6 +146,9 @@ fun PhoneApp(
                         onBecomeDefault = onBecomeDefault, onAskPermissions = onAskPermissions,
                         onOpenEntry = { e -> e.contact?.let { push(Screen.Person(it.id)) } ?: run { unknown = e } },
                         onCall = onCall, onFavorite = { push(Screen.Person(it.id)) },
+                        onLongEntry = { e -> unknown = e },
+                        onFilter = { push(Screen.Filter) },
+                        filtered = filteredLog,
                     )
                 }
             }
@@ -159,6 +166,7 @@ fun PhoneApp(
         }
         Screen.People -> PeopleScreen(contacts, numbers, onBack = { pop() }, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall)
         is Screen.Person -> PersonScreen(s.id, onBack = ::pop, onCall = onCall, onEdit = { d -> push(Screen.Edit(d)) }, onDeleted = { pop(); reload++ }, onChanged = { reload++ })
+        Screen.Filter -> FilterScreen(isDefault, onBecomeDefault, onBack = ::pop, onChanged = { reload++ })
         is Screen.Edit -> EditScreen(s.draft, onBack = ::pop, onSaved = { id ->
             stack = stack.dropLast(1).let { rest -> if (s.draft.id == null && id != null) rest + Screen.Person(id) else rest }
             reload++
@@ -170,7 +178,8 @@ fun PhoneApp(
             onAdd = { n -> dialpad = null; push(Screen.Edit(ContactDraft(phones = listOf(n)))) })
     }
     unknown?.let { e ->
-        NumberSheet(e, onDismiss = { unknown = null }, onCall = { unknown = null; onCall(e.number) },
+        NumberSheet(e, filteredLog.any { PhoneData.same(it.number, e.number) }, onDismiss = { unknown = null }, onCall = { unknown = null; onCall(e.number) },
+            onTrust = { eu.eurise.phone.data.SpamFilter.trust(context, e.number); unknown = null; reload++ },
             onAdd = { unknown = null; push(Screen.Edit(ContactDraft(phones = listOf(e.number)))) },
             onBlock = { block -> scope.launch { PhoneData.setBlocked(context, e.number, block); unknown = null; reload++ } },
             onForget = { scope.launch { PhoneData.deleteFromLog(context, e.number); unknown = null; reload++ } })
@@ -180,18 +189,24 @@ fun PhoneApp(
 // ---------------------------------------------------------------------------------------------------------------------
 // Recenti
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeScreen(
     recents: List<CallEntry>, favorites: List<Contact>, permitted: Boolean, isDefault: Boolean,
     onBecomeDefault: () -> Unit, onAskPermissions: () -> Unit, onOpenEntry: (CallEntry) -> Unit, onCall: (String) -> Unit,
     onFavorite: (Contact) -> Unit,
+    onLongEntry: (CallEntry) -> Unit = {},
+    onFilter: () -> Unit = {},
+    filtered: List<eu.eurise.phone.data.SpamFilter.Filtered> = emptyList(),
 ) {
     val callBack = remember(recents) { PhoneData.toCallBack(recents) }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
             item(key = "head") {
-                Text(stringResource(R.string.ph_recents_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 10.dp))
+                Row(Modifier.statusBarsPadding().padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.ph_recents_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                    IconCircle(EuriseIcons.shield(), stringResource(R.string.ph_filter_title), onClick = onFilter)
+                }
             }
             if (!permitted) item(key = "perm") {
                 Banner(stringResource(R.string.ph_need_permissions), stringResource(R.string.ph_allow), onAskPermissions)
@@ -234,7 +249,7 @@ private fun HomeScreen(
             items(recents.take(150), key = { "${it.date}-${it.number}" }) { e ->
                 Row(
                     Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .clickable { onOpenEntry(e) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                        .combinedClickable(onClick = { onOpenEntry(e) }, onLongClick = { onLongEntry(e) }).padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (e.blocked) Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x268C2F39)), contentAlignment = Alignment.Center) {
@@ -243,7 +258,9 @@ private fun HomeScreen(
                     Column(Modifier.weight(1f)) {
                         Text(title(e) + if (e.count > 1) " (${e.count})" else "", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             color = if (e.missed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
-                        Text(detail(e), fontSize = 12.sp, color = if (e.blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        val stopped = filtered.firstOrNull { f -> PhoneData.same(f.number, e.number) && kotlin.math.abs(f.at - e.date) < 120_000L }
+                        Text(if (stopped != null) stringResource(R.string.ph_filter_stopped_row, reasonText(stopped.reason)) else detail(e), fontSize = 12.sp,
+                            color = if (e.blocked || stopped != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }
                     Text(DateUtils.getRelativeTimeSpanString(e.date, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString(),
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -580,17 +597,18 @@ private fun t9(name: String): String = name.lowercase().map { ch ->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NumberSheet(e: CallEntry, onDismiss: () -> Unit, onCall: () -> Unit, onAdd: () -> Unit, onBlock: (Boolean) -> Unit, onForget: () -> Unit) {
+private fun NumberSheet(e: CallEntry, wasFiltered: Boolean, onDismiss: () -> Unit, onCall: () -> Unit, onTrust: () -> Unit, onAdd: () -> Unit, onBlock: (Boolean) -> Unit, onForget: () -> Unit) {
     val context = LocalContext.current
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
         Column(Modifier.navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(e.number.takeIf { it.isNotBlank() }?.let(Contacts::format) ?: stringResource(R.string.ph_private_number), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(e.contact?.name ?: e.number.takeIf { it.isNotBlank() }?.let(Contacts::format) ?: stringResource(R.string.ph_private_number), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             if (e.number.isNotBlank()) {
                 SheetRow(EuriseIcons.phone(), stringResource(R.string.ph_call), onCall)
                 SheetRow(EuriseIcons.message(), stringResource(R.string.ph_sms)) { Reach.open(context, Reach.sms(e.number)) }
                 Reach.whatsapp(context, e.number)?.let { i -> SheetRow(EuriseIcons.chat(), "WhatsApp") { Reach.open(context, i) } }
                 Reach.whatsappBusiness(context, e.number)?.let { i -> SheetRow(EuriseIcons.chat(), "WhatsApp Business") { Reach.open(context, i) } }
-                SheetRow(EuriseIcons.person(), stringResource(R.string.ph_add_to_contacts), onAdd)
+                if (e.contact == null) SheetRow(EuriseIcons.person(), stringResource(R.string.ph_add_to_contacts), onAdd)
+                if (wasFiltered) SheetRow(EuriseIcons.check(), stringResource(R.string.ph_filter_trust_long), onTrust)
                 SheetRow(EuriseIcons.block(), stringResource(if (e.blocked) R.string.ph_unblock_number else R.string.ph_block_number)) { onBlock(!e.blocked) }
                 SheetRow(EuriseIcons.trash(), stringResource(R.string.ph_forget_calls), onForget)
             }

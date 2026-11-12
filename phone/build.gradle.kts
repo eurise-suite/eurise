@@ -78,6 +78,7 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    testImplementation(libs.junit)
     implementation(project(":core:contacts"))
     implementation(project(":core:suite"))
     implementation(libs.androidx.core.ktx)

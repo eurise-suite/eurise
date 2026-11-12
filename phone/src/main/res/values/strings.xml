@@ -20,7 +20,7 @@
     <string name="ph_rejected">Rifiutata</string>
     <string name="ph_blocked">Numero bloccato · silenziato</string>
     <string name="ph_private_number">Numero privato</string>
-    <string name="ph_privacy_note">Chiamate e contatti restano sul telefono. I disturbatori si riconoscono dai numeri che blocchi tu: nessun elenco esterno.</string>
+    <string name="ph_privacy_note">Chiamate e contatti restano sul telefono. Il filtro antispam decide sul telefono, con le tue regole e i numeri che blocchi tu: nessun elenco esterno. Tieni premuta una chiamata per bloccare il numero.</string>
     <string name="ph_contacts">Contatti</string>
     <string name="ph_contacts_app">Rubrica</string>
     <string name="ph_dialpad">Tastierino</string>
@@ -87,4 +87,33 @@
     <string name="ph_no_favorites">Nessun preferito. Apri un contatto e tocca la stella: comparirà qui e in cima ai Recenti.</string>
     <string name="ph_favorites_hint">Un tocco chiama; tienilo premuto per aprire il contatto.</string>
     <string name="ph_call_note_hint">Scrivi mentre parli: a fine chiamata va in Note</string>
+    <!-- Filtro antispam e numeri bloccati -->
+    <string name="ph_filter_title">Filtro e numeri bloccati</string>
+    <string name="ph_filter_need_default">Il filtro e il blocco funzionano quando Eurise Telefono è l\'app predefinita per le chiamate. Tocca qui per sceglierla.</string>
+    <string name="ph_filter_rules">Filtro antispam</string>
+    <string name="ph_filter_on">Filtro acceso</string>
+    <string name="ph_filter_on_sub">Chi è in Rubrica e chi hai già chiamato passa sempre.</string>
+    <string name="ph_filter_foreign">Sconosciuti dall\'estero in silenzio</string>
+    <string name="ph_filter_foreign_sub">Contro le truffe «squillo e richiama» da prefissi esteri: la chiamata arriva senza suonare.</string>
+    <string name="ph_filter_hidden">Numeri nascosti in silenzio</string>
+    <string name="ph_filter_hidden_sub">Arrivano senza suonare e restano tra i recenti.</string>
+    <string name="ph_filter_unknown">Tutti gli sconosciuti in silenzio</string>
+    <string name="ph_filter_unknown_sub">Suona solo chi è in Rubrica o hai già chiamato.</string>
+    <string name="ph_filter_repeated">Chi insiste</string>
+    <string name="ph_filter_repeated_sub">Un numero estero fermato già due volte in un quarto d\'ora viene rifiutato; un numero italiano che richiama per la terza volta invece suona: potrebbe essere urgente.</string>
+    <string name="ph_filter_privacy">Tutto si decide sul telefono, con la Rubrica e il registro delle chiamate: nessun numero esce, nessun elenco da internet.</string>
+    <string name="ph_filter_stopped">Fermate dal filtro, ultimi 7 giorni</string>
+    <string name="ph_filter_stopped_none">Nessuna chiamata fermata.</string>
+    <string name="ph_filter_stopped_row">Filtrata: %1$s</string>
+    <string name="ph_filter_trust">Fidato</string>
+    <string name="ph_filter_trust_long">Non è un disturbatore</string>
+    <string name="ph_filter_blocked">Numeri bloccati</string>
+    <string name="ph_filter_blocked_none">Nessun numero bloccato.</string>
+    <string name="ph_filter_add_hint">Numero da bloccare</string>
+    <string name="ph_block_short">Blocca</string>
+    <string name="ph_unblock_short">Sblocca</string>
+    <string name="ph_filter_why_hidden">numero nascosto</string>
+    <string name="ph_filter_why_foreign">sconosciuto dall\'estero</string>
+    <string name="ph_filter_why_unknown">non in Rubrica</string>
+    <string name="ph_filter_why_repeated">insisteva dall\'estero</string>
 </resources>
