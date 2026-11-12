@@ -1364,3 +1364,30 @@ Salva in… / Apri da… e dell'app PDF di Office (tavole approvate); prova sul 
   nomi, ricerca nel testo dei PDF, guida di Mappe con cartello colorato e metri fini, più le prove del giro 316 di Chat,
   Email, Browser); approvazione di ChatRecupero e ChatVerifica, poi il loro codice; Mappe: meteo sul percorso e frase
   d'arrivo; Browser: schede affiancate sul tablet.
+
+## 12 novembre, tarda mattina: Chat (ChatRecupero, ChatVerifica) e barra delle schede del Browser · giro 324
+- Tavole **ChatRecupero**, **ChatVerifica** e **BrwBarraSchede** approvate dal proprietario; codice scritto.
+- **Chat · chiave di recupero** (`SecretStorage.kt`, `ChatSecurity.kt`, `SecurityUi.kt`): archivio dei segreti di Matrix
+  (m.secret_storage.v1.aes-hmac-sha2, HKDF/AES-CTR/HMAC) e chiave nel formato di Element (base58, prefisso 0x8B01,
+  parità), compatibili con Element. Prima volta: chiavi di firma (`bootstrapCrossSigning`; i server recenti non chiedono
+  conferma, altrimenti foglio «Conferma che sei tu»: password o conferma nel browser con il fallback SSO), copia cifrata
+  delle chiavi (`room_keys`, megolm backup v1, firmata) e archivio. Se l'account ha già una chiave (Element): la si
+  inserisce → chiavi di firma importate, telefono firmato (`verifyDevice`), copia riattivata e scaricata
+  (`importRoomKeysFromBackup`). La copia delle chiavi sale a ogni tornata (`backupRoomKeys` in `flush`). Chiave sigillata
+  dal Keystore per «Mostra/Copia» (appunti segnati sensibili).
+- **Dove la tengo**: backup cifrato della suite tramite `SecretsContract` (core/suite) e `SecretsProvider` nell'app
+  Eurise (preferenze `eurise_secrets`, comprese nel backup; risponde solo con il permesso della suite); sul telefono nuovo
+  «Usa quella del backup della suite». Eurise Password: copia la chiave e apre Password (Password non ha ancora un modo
+  per ricevere voci dalle altre app). Carta: stampa di Android (anche PDF), senza QR per ora.
+- **Chat · verifica** (SAS con le 64 figure di Matrix, nomi italiani): richiesta da un altro dispositivo → si apre la
+  schermata; «Verifica questo telefono» → `requestSelfVerification`; la verifica avanza da sola ogni 0,7 s; Sono uguali /
+  Non sono uguali (`m.mismatched_sas`). Elenco dispositivi (`/devices` + fiducia del modulo) con «Esci» (`delete_devices`
+  con conferma d'identità). Non ancora: verifica di una persona dalla chat (in stanza), QR.
+- **Browser · barra delle schede** (`TabStrip.kt`, tavola BrwBarraSchede): Impostazioni › Schede › Barra delle schede:
+  Automatica (tablet in cima, telefono spenta), Spenta, Sopra la barra in basso, In cima alla pagina; colore del gruppo
+  sotto la scheda, ✕ su quella aperta, «+»; tieni premuto: sposta a sinistra/destra, gruppo, chiudi.
+- Test nuovi: `SecretStorageTest` (esempio della specifica, andata e ritorno, errori di battitura, mac).
+- Lezione (di nuovo): negli `strings.xml` scritti con Python, `\'` dentro `'''…'''` diventa `'` e aapt2 si ferma
+  («Invalid unicode escape»). Dopo ogni scrittura di testi: controllare gli apostrofi.
+- **Ultimo APK: giro 324** in `apk-prova`. Prossimi passi: prova sul telefono (giri 316, 320, 324); verifica di una
+  persona dalla chat; QR sulla carta; Password che riceve voci dalla suite; Mappe: meteo sul percorso.
