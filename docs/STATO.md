@@ -1577,3 +1577,32 @@ Fatto (ramo `brand`), nell'ordine chiesto dal proprietario:
   Browser), browser, phone, mail, password, eurise-mappe. Uguali nel funzionamento (solo ricompilati per le icone nuove
   di `core/designsystem` e il contratto in `core/suite`): ai, chat, gallery, messages, read, voice, EuriseTastiera, Office.
 - **Prossima chat**: prova del giro 342; approvazione della tavola dell'Assistente e suo codice; Mappe punto 2.
+
+## 12 novembre, notte (fine chat): scelte del proprietario
+- **Assistente: si chiama Alfred e parla come un maggiordomo inglese.** Tavole AstAscolto, AstConferma, AstMessaggio,
+  AstLibera, AstImpostazioni approvate nel contenuto. Prima del codice vanno rifatti i testi della tavola nella voce di Alfred.
+  Cosa vuol dire, come proposta da confermare nella prossima chat:
+  - parla italiano (la lingua del telefono), con il registro di un maggiordomo inglese: dà del Lei, è cortese e
+    asciutto, ha un filo di ironia britannica e non è mai servile né chiacchierone. Esempi: «Subito.», «Mi permetta di
+    riepilogare prima di procedere.», «Ho preparato l'appuntamento: attende soltanto il suo assenso.», «Temo che
+    WhatsApp non mi lasci inviare da qui: le apro la conversazione con il testo già scritto.», «Non ho trovato Apice
+    tra le mappe del telefono. Desidera che cerchi altrove?»;
+  - come si rivolge all'utente: col nome della propria scheda nella Rubrica, oppure «signore»/«signora» (scelta nelle
+    impostazioni), oppure senza appellativo;
+  - la voce di sintesi (quando legge le risposte) è una voce maschile pacata, scaricata a richiesta;
+  - nome e icona: «Alfred» al posto di «Assistente» nella dock (Ricerca AI tenuta premuta), nel tasto home e nelle schede.
+    La scheda di conferma resta sempre l'ultimo passo, prima di ogni azione.
+- **Mappe, punto 2: interfaccia rifatta sulle tavole.** Il proprietario ha chiesto la spiegazione e il lavoro, nella
+  prossima chat. Come si fa:
+  1. Compose dentro Mappe: `eurise_patch.py` aggiunge al modulo `android/app` di CoMaps il plugin Kotlin e Compose,
+     Compose BOM e Material 3; i nostri file Kotlin stanno in `maps/android/…/eurise/ui/` e si copiano sopra l'albero
+     come gli altri. Il motore (disegno della mappa in C++, `Framework`, `SearchEngine`, `RoutingController`, `MapManager`)
+     non si tocca: le schermate nuove lo chiamano come fanno quelle di CoMaps. Peso stimato: 2–3 MB in più nell'APK di
+     Mappe, da spiegare nel commit.
+  2. Le schermate nuove entrano in `ComposeView` dentro le attività e i frammenti di CoMaps (`MwmActivity`,
+     `SearchFragment`, scheda del luogo), una alla volta; quelle vecchie restano finché la nuova non è provata.
+  3. Ordine, un giro di Mappe per passo (circa 16 minuti ciascuno) e una prova sul telefono: a) schermata della mappa con la
+     barra satinata in basso (ricerca, livelli, posizione, «+» per segnala) al posto dei pulsanti di CoMaps; b) ricerca
+     (MapCerca, con «Dove devi andare» e la ricerca online già fatta); c) scheda del luogo; d) percorso (MapPercorso);
+     e) guida (MapGuida); f) livelli (MapLivelli), segnala (MapSegnala), esplora (MapEsplora), attività (MapAttivita).
+  4. Insieme al passo a): la voce «Ricerca su OpenStreetMap (Photon)» nel centro privacy.
