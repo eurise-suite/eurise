@@ -1828,3 +1828,9 @@ Fatto (ramo `brand`):
 - **Voce**: nessun nome a parte (Tonio scartato). Per l'utente è «la voce di Alfred». Resta un APK separato perché è il motore di
   sintesi e di riconoscimento per tutta la suite (dettatura della tastiera, guida di Mappe, lettura ad alta voce in Leggi),
   ma nel cassetto e nelle impostazioni compare come parte di Alfred («Alfred · voce e modelli»).
+- **Elenco dei nomi completo (13 novembre, notte)**, da verificare su TMview/EUIPO nelle classi 9 e 42 prima di entrare nel
+  codice e nelle icone: Desco (Scrivania), Agenore (Calendario), Brigida (Attività), Scribò (Note), Rubens (Contatti),
+  Orazio (Orologio), Stipet (Drive e File), Copisto (Scanner e QR), Tommaso (Leggi e PDF), Ofelia (Office), Ciarly (Chat),
+  Bisbi (Messaggi), Chiara (Telefono), Fidippo (Email), Imma (Galleria), Clavio (Password), Pigi (Tastiera), Girolamo
+  (Mappe), Pelorus (Browser; riserva Sbircio), Arietta (Meteo), Bonacci (Calcolatrice), Turciman (Traduttore), Alfred
+  (assistente, con la sua voce). Usciti: Spunta, Fotonda, Postello, Letterio, Drin, Zonzo.
