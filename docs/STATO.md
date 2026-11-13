@@ -1866,3 +1866,5 @@ Fatto (ramo `brand`):
 - **Sfumatura, seconda correzione** (la radiale sembrava un bottone in rilievo): fondo **piatto** con sfumatura lineare
   diagonale dal lato della stellina (in alto a destra, #34456F) al lato opposto (#161D33), più un **alone caldo** solo attorno
   alla stellina (radiale, centro 77,35, raggio 24, #F6E2B4 al 30 %; a colori al 55 %).
+- **Icone chiare (a colori): approvate.** Icone scure ritoccate: diagonale #3A4D80 → #222D4D (55 %) → #121828; alone dorato
+  #E4C27A al 42 % che sfuma (raggio 26). Da riguardare.
