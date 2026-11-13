@@ -1724,3 +1724,30 @@ Fatto (ramo `brand`):
      di sistema, cioè il fork di /e/OS); proposta da fare in tavola.
   5. Restano: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe), Mappe passi c)–f) e guida (MapIncrocio,
      MapVelocita, MapSegnalaGuida, orizzontale, Android Auto), tastiera (lavoro principale).
+
+## 13 novembre, giorno: Alfred ascolta e parla davvero, Mappe passo c), nomi delle app · giro 365, Mappe 26
+Fatto (ramo `brand`):
+- **Correzioni dopo la prova del 356.**
+  - Il microfono di Alfred non va più in background su Eurise Voce. Alfred registra da sé (`feature/assistant/AlfredEar.kt`,
+    `Endpoint` spostato in `core/suite`) e manda l'audio a `TranscribeService` di Voce (Messenger e pipe, riservato alla
+    suite, `core/suite/VoiceContract.kt`). Senza Voce usa il riconoscimento del telefono. Se manca qualcosa compare
+    «Scarica il modello · Riprova · Scrivo».
+  - Dopo un comando a voce Alfred chiede «Procedo?» e capisce sì/no (`Grammar.answer`).
+  - **Voce di Alfred naturale**: Eurise Voce è ora anche motore di sintesi di sistema (`speech/AlfredVoiceService.kt`).
+    Usa sherpa-onnx 1.13.7 (AAR scaricato in compilazione con SHA-256) e voci Piper italiane: Riccardo, 19 MB, e
+    Paola, 60 MB. Le voci si scaricano a richiesta dalla pre-release `voci` (lavoro `voci.yml`) nella pagina «Modelli e
+    voce» di Voce.
+  - La punteggiatura non si legge più (`core/suite/SpeechText.kt` con test). Alfred e Il punto usano prima la voce di
+    Eurise (`AlfredVoice.kt`).
+  - L'APK di Mappe si scaricava già: è stato dato il link diretto della pre-release.
+- **Mappe passo c)** (`EuriseLuogo.kt`, `EuriseMapStyle.kt`): la scheda del luogo ha Indicazioni/Parti ora,
+  Salva/Chiama/Impegno/Condividi e l'impegno della suite collegato. Tolti i tasti doppi di CoMaps.
+  - **Voce della guida**: TtsPlayer usa il motore Eurise Voce se ha l'italiano.
+- **Tavole**: MapLuogo e MapLuogoAperta approvate. MapIncrocio rifatta dal punto di vista del guidatore, con frecce animate
+  sulla corsia e cartello d'uscita che lampeggia. Nuova MapRotonda con il percorso animato. Le due tavole sono da approvare.
+- **Nomi (scelte del proprietario finora)**: Ciarla (Chat), Postello (Email), Fotonda (Galleria), Clavio (Password),
+  Zonzo (Mappe), Drin (Telefono), Spunta (Attività). Proposti: **Desco** per la Scrivania (meglio di Plancia) e
+  **Oblò** o **Varco** per il Browser (Lanterna scartato per «Lantern»). Dopo la scelta: ricerca TMview/EUIPO e tavole
+  delle icone (disegno ispessito; set iOS, Android, /e/OS).
+- Office e PDF continuano in una chat a parte, con il messaggio preparato.
+- Prossimo: nomi, poi icone; Mappe d) percorso, e) guida, f) livelli/segnala/esplora; sveglia di Alfred; tastiera.
