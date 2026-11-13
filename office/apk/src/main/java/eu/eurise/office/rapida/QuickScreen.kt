@@ -8,7 +8,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -95,6 +97,7 @@ private val OkBack = Color(0xFFEAF1EC)
  * del salvataggio, l'etichetta «Vista rapida» e «Aspetto esatto»; al centro il documento; in basso, vicino al pollice,
  * Correggi, Commenta, Completa, Condividi e la lente.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onFull: () -> Unit, onShare: () -> Unit) {
     val context = LocalContext.current
@@ -135,7 +138,9 @@ fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onF
         }
 
         val bottom = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-        if (editing == null) Column(bottom) {
+        // Con la tastiera aperta (cella in modifica) la scheda sale sopra la tastiera e la barra si fa da parte.
+        val typing = WindowInsets.isImeVisible
+        if (editing == null) Column(bottom.imePadding()) {
             val state = model.state
             if (state is QuickState.Sheets) {
                 SheetTabs(model, state.doc)
@@ -147,7 +152,7 @@ fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onF
                 firstTip && state is QuickState.Text -> Hint(stringResource(R.string.quick_tip))
             }
             if (model.searching) SearchField(model)
-            EuriseDock(
+            if (!typing || model.searching) EuriseDock(
                 items = listOf(
                     DockItem(stringResource(R.string.quick_correct)) { EuriseIcons.pencil(it) },
                     DockItem(stringResource(R.string.quick_comment)) { EuriseIcons.chat(it) },
