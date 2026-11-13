@@ -34,8 +34,9 @@ env:
   ZSTD_TAG: v1.5.6
   JOB_MINUTES: 355
   # 1 = build di prova con la diagnosi del motore (office/app/eurise_diag.py): pila ed eccezioni nel logcat, registro
-  # «trace», librerie non ripulite nell'artefatto office-simboli. Acceso il 13 novembre per trovare la chiusura del motore.
-  DIAGNOSI: "1"
+  # «trace», librerie non ripulite nell'artefatto office-simboli. Acceso il 13 novembre per trovare la chiusura del motore,
+  # spento la sera stessa quando la causa è stata corretta (office/app/eurise_online.py).
+  DIAGNOSI: "0"
 
 jobs:
   app:

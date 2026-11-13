@@ -1812,10 +1812,9 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - APK di prova: pre-release `apk-prova-office`: `eurise-office-debug.apk` (Office, leggero) e
   `eurise-office-motore-debug.apk` (il motore, si installa anche da Office con «Scarica»). Il proprietario prova gli APK da
   un'altra chat. Le modifiche all'app principale sono solo sul ramo `office`.
-- In corso: office-app giro **43484238959** (diagnosi che svuota stderr al segnale e rimette i gestori; fonts.conf).
-  Quando finisce: `gh workflow run office-prova.yml --ref office -f fonte=motore`, poi leggere `riassunto.md` della
-  pre-release `office-prova-schermate` (righe EuriseDiag, EuriseStderr subito prima dell'abort, «gestore rimesso»).
-  Controllare con `git log` che non l'abbia già fatto la chat precedente.
+- Motore corretto e diviso in APK compagno (strada A), verificato sull'emulatore (vedi sotto). Per riprovare:
+  `gh workflow run office-prova.yml --ref office -f fonte=motore`, poi `riassunto.md` e le schermate della pre-release
+  `office-prova-schermate` (scaricarle con `gh api .../releases/assets/ID`, `gh release download` passa da GraphQL).
 - Strumenti: test JVM della vista rapida in locale con kotlinc scaricato da GitHub (Maven non raggiungibile; junit in
   /opt/gradle-*/lib); prova sull'emulatore: `office-prova.yml` con `fonte` motore | nativo | collabora (+ `versione`).
 
@@ -1866,7 +1865,18 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   aggiunto come servizio (PrivacyService + PrivacyRoute in feature/privacy, file della chat del brand: si fa al merge).
   F-Droid: il motore va pubblicato come secondo pacchetto (se F-Droid firma con la sua chiave, Office lo deve sapere).
 
-**Prossimo passo**: verificare sull'emulatore che il motore apra i sei campioni (prima con l'APK unico del giro
-43497554743, poi con i due APK); poi motore a richiesta (OffMotore: capire se i file del
+**Verificato sull'emulatore (13 novembre, notte)**
+- Prova 43501850496 (APK unico del giro 43497554743, tutti i formati nella modifica completa): docx, xlsx, pptx, odt, ods
+  si aprono e si disegnano nel motore, nessuna chiusura. **Il motore funziona.**
+- Prova 43506139456 (due APK del giro 43499114301): Office passa il documento al processo di
+  `eu.eurise.office.motore.debug`, che apre e disegna tutti e cinque i formati; il PDF resta nell'editor nativo.
+- Misure: Office 17 MB (debug); **Motore 113 MB da scaricare, circa 315 MB sul telefono** (191 MB di
+  `liblo-native-code.so` estratta). I 66 MB della tavola venivano da xz: testi del foglio corretti (115/320 MB).
+  Per scendere: librerie non compresse nell'APK (niente estrazione, ma download ~200 MB), oppure togliere dal core
+  quello che non serve (lingue, filtri rari): da valutare.
+- Non ancora provato: il percorso «Scarica» dentro Office (download, controllo firme, conferma di Android). La prova
+  installa il motore con adb. DIAGNOSI spenta in office-app.yml.
+
+**Prossimo passo**: provare «Scarica» dal telefono (o automatizzarlo nella prova con uiautomator); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
