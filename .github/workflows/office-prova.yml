@@ -1,0 +1,73 @@
+name: "Office: prova sull'emulatore"
+
+# Apre i campioni di office/prova/campioni (docx, xlsx, pptx, odt, ods, pdf) con Eurise Office su un emulatore Android
+# x86_64 con traduzione ARM (l'APK è solo arm64), da Uri content:// come «Apri con» e da file://, e carica registro e
+# schermate. Serve a vedere perché un documento non si apre senza dover chiedere il registro al telefono.
+# APK: l'ultimo giro riuscito di office-app.yml sul ramo del push; se non c'è, quello della pre-release apk-prova.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/office-prova.yml"
+      - "office/prova/**"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: office-prova-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prova:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prende l'APK di Office
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apk
+          branch="${GITHUB_REF_NAME}"
+          run=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=$branch&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          if [ -n "$run" ]; then
+            gh run download "$run" -R "${{ github.repository }}" -D apk/art && find apk/art -name '*.apk' -exec cp {} apk/office.apk \;
+            echo "APK dal giro $run di office-app ($branch)"
+          fi
+          if [ ! -f apk/office.apk ]; then
+            gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-debug.apk -O apk/office.apk
+            echo "APK dalla pre-release apk-prova"
+          fi
+          ls -la apk/office.apk
+
+      - name: Abilita KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulatore e prova
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: bash office/prova/prova.sh apk/office.apk prova-office
+
+      - name: Riassunto
+        if: always()
+        run: cat prova-office/riassunto.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-prova-${{ github.run_number }}
+          path: prova-office/
+          retention-days: 14
