@@ -1828,6 +1828,18 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   `lo_apkentry`, interfaccia web da file, librerie con `System.load` dalla cartella dell'app; un solo pacchetto, serve
   un posto da cui scaricarlo e una voce nel centro privacy). Da decidere con il proprietario.
 
-**Prossimo passo**: correggere la causa dell'abort del motore; poi motore a richiesta (OffMotore: capire se i file del
+**Fatto (13 novembre, sera tardi): causa della chiusura del motore trovata**
+- La diagnosi (giro 43484238959, prova 43495166402) mostra che non è un SIGABRT ma un **SIGSEGV in `UnitKit::get()`**,
+  chiamata da `Document::drainQueue()` subito dopo «New session created». Su mobile `UnitWSD::init` non viene mai
+  chiamata (in `COOLWSD::innerInitialize` sta dentro `#if !MOBILEAPP`), la tabella dei test resta vuota e `get()` legge
+  `GlobalArray[-1]`. Le altre chiamate del kit sono già protette con `if (!Util::isMobileApp())`, quella di `drainQueue`
+  no (anche in cima al ramo co-25.04: l'app ufficiale viene da una versione precedente).
+- Correzione: `office/app/eurise_online.py` (dopo il checkout di online): `drainQueue` salta il filtro su mobile, e
+  `UnitKit::get()` su mobile restituisce un UnitKit vuoto se la tabella è vuota. La diagnosi non riempie più il registro
+  con «gestore rimesso» (libsigchain lo fa sembrare sempre cambiato).
+- **Decisione (proprietario, 13 novembre): motore a richiesta con la strada A**, app compagna «Eurise Office Motore»
+  firmata con la stessa chiave; nessuna patch al core per gli asset.
+
+**Prossimo passo**: verificare sull'emulatore che il motore apra i sei campioni; poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).

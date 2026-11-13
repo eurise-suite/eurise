@@ -214,6 +214,7 @@ jobs:
           git remote add origin "$ONLINE_REPO"
           git fetch -q --depth 1 origin "$ONLINE_COMMIT" && git checkout -q FETCH_HEAD
           git log -1 --format='%H %ci %s'
+          python3 "$GITHUB_WORKSPACE/office/app/eurise_online.py" .
           python3 "$GITHUB_WORKSPACE/office/app/eurise_web.py" .
           ./autogen.sh > /dev/null
           set -o pipefail

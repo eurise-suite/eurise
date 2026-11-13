@@ -191,6 +191,9 @@ void installHandlers()
 void* guardHandlers(void*)
 {
     pthread_setname_np(pthread_self(), "eurise_diag");
+    // Sotto libsigchain (e la traduzione ARM) sigaction restituisce sempre un gestore diverso dal nostro: si rimette
+    // comunque, ma lo si scrive nel registro solo la prima volta.
+    bool logged = false;
     for (;;)
     {
         struct sigaction current{};
@@ -200,9 +203,11 @@ void* guardHandlers(void*)
             Dl_info info{};
             const void* other = reinterpret_cast<const void*>(current.sa_sigaction);
             dladdr(other, &info);
-            __android_log_print(ANDROID_LOG_INFO, TAG, "gestore di SIGABRT rimesso (c'era %s %s)",
+            if (!logged)
+                __android_log_print(ANDROID_LOG_INFO, TAG, "gestore di SIGABRT rimesso (c'era %s %s)",
                                 info.dli_fname != nullptr ? info.dli_fname : "?",
                                 info.dli_sname != nullptr ? info.dli_sname : "");
+            logged = true;
             installHandlers();
         }
         if (std::get_terminate() != onTerminate)
