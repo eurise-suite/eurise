@@ -18,12 +18,16 @@ import helium314.keyboard.latin.common.Constants
  * Tutto resta sul telefono (una sola cifra nelle impostazioni della tastiera).
  */
 object TouchFix {
-    /** Quota del tasto, dal basso, che va allo spazio: di base un quinto, mai meno di [MIN] né più di [MAX]. */
-    const val DEFAULT_REACH = 0.20f
-    private const val MIN = 0.08f
-    private const val MAX = 0.38f
-    private const val STEP = 0.025f
-    private const val PREF = "eurise_space_reach"
+    /**
+     * Quota del tasto, dal basso, che va allo spazio: di base un ottavo, mai meno di [MIN] né più di [MAX].
+     * Prova del proprietario (13 novembre, sera): spazi dove non dovevano esserci. Con il tetto di prima (38 %) la zona
+     * cresceva fino a prendersi quasi metà di c v b n m; ora resta piccola e si riparte da capo (chiave nuova).
+     */
+    const val DEFAULT_REACH = 0.12f
+    private const val MIN = 0.05f
+    private const val MAX = 0.20f
+    private const val STEP = 0.02f
+    private const val PREF = "eurise_space_reach_2"
 
     private var prefs: SharedPreferences? = null
     @Volatile var reach = DEFAULT_REACH

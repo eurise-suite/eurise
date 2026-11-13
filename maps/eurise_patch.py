@@ -423,7 +423,7 @@ patch(mwm, """    if (!RoutingController.get().isPlanning())
 
     closeSearchToolbar(true, true);
     if (app.organicmaps.eurise.ui.EuriseLuogo.consumeStartWhenBuilt())
-      RoutingController.get().start();""")
+      onRoutingStart();""")
 print("eurise_patch: scheda del luogo con le azioni della suite (passo c)")
 
 # La voce di Alfred anche in Mappe: se c'è Eurise Voce con la voce scaricata, la guida parla con lei; altrimenti, come

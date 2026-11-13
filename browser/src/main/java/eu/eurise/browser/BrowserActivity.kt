@@ -126,7 +126,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     // --- Download finiti: «Salva in…» di Eurise File (tavola FileSalvaIn) ---
 
-    private class Finished(val id: Long, val name: String, val mime: String)
+    private class Finished(val uri: Uri, val name: String, val mime: String)
 
     private var finished by mutableStateOf<Finished?>(null)
     private val mine = HashSet<Long>()
@@ -142,7 +142,8 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                     if (c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) != DownloadManager.STATUS_SUCCESSFUL) return@use
                     val name = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE)).orEmpty().ifBlank { "download" }
                     val mime = dm.getMimeTypeForDownloadedFile(id) ?: "application/octet-stream"
-                    finished = Finished(id, name, mime)
+                    val uri = dm.getUriForDownloadedFile(id) ?: return@use
+                    finished = Finished(uri, name, mime)
                 }
             }
         }
@@ -151,9 +152,8 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     /** Una copia del file scaricato passa all'app Eurise, che la mette nella cartella scelta (telefono o cloud). */
     private fun saveIn(done: Finished) {
         runCatching {
-            val dm = getSystemService(DownloadManager::class.java)
             val file = File(freshDir(), done.name.replace('/', '-'))
-            dm.openDownloadedFile(done.id).use { pfd -> java.io.FileInputStream(pfd.fileDescriptor).use { input -> file.outputStream().use { input.copyTo(it) } } }
+            contentResolver.openInputStream(done.uri)!!.use { input -> file.outputStream().use { input.copyTo(it) } }
             offer(file, done.mime, "download")
         }.onFailure { toast(getString(R.string.brw_save_in_missing)) }
     }
@@ -205,8 +205,34 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         if (address != null || model.tabs.isEmpty()) model.open(address)
     }
 
-    /** I download vanno nel gestore di sistema, in Download; la notifica dice quando è finito. */
-    private fun download(url: String) {
+    /**
+     * Un download: si salva in Download la risposta che il motore ha già ricevuto, con i cookie della sessione e il nome
+     * mandato dal sito (prova del 13 novembre: file mancanti o illeggibili). Se non si può (telefono prima di Android 10,
+     * risposta senza corpo), il gestore dei download di Android, come prima.
+     */
+    private fun download(response: org.mozilla.geckoview.WebResponse) {
+        val shown = Downloads.fileName(response.uri, null, null)
+        runOnUiThread { toast(getString(R.string.brw_download_started, shown)) }
+        Thread {
+            val saved = runCatching { Downloads.save(applicationContext, response) }
+            runOnUiThread {
+                val s = saved.getOrNull()
+                when {
+                    s != null -> {
+                        model.downloads = model.downloads + 1
+                        toast(getString(R.string.brw_download_done, s.name))
+                        if (model.settings.askWhereToSave) finished = Finished(s.uri, s.name, s.mime)
+                    }
+                    saved.isFailure -> toast(getString(R.string.brw_download_failed))
+                    response.uri.startsWith("http", ignoreCase = true) -> downloadByUrl(response.uri)
+                    else -> toast(getString(R.string.brw_download_failed))
+                }
+            }
+        }.start()
+    }
+
+    /** Ripiego: il gestore dei download di Android (rifà la richiesta, senza i cookie della sessione). */
+    private fun downloadByUrl(url: String) {
         runOnUiThread {
             runCatching {
                 val uri = Uri.parse(url)
@@ -215,7 +241,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
                 mine += getSystemService(DownloadManager::class.java).enqueue(request)
-                model.downloads = mine.size
+                model.downloads = model.downloads + 1
                 toast(getString(R.string.brw_download_started, name))
             }.onFailure { toast(getString(R.string.brw_download_failed)) }
         }

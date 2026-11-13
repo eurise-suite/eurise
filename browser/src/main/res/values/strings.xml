@@ -52,6 +52,7 @@
     <string name="brw_task_done">Aggiunto a Da fare</string>
     <string name="brw_no_hub">Serve l\'app Eurise</string>
     <string name="brw_download_started">Scarico %1$s</string>
+    <string name="brw_download_done">In Download: %1$s</string>
     <string name="brw_download_failed">Il download non parte</string>
     <string name="brw_downloaded_save">Scaricato %1$s · Salva in…</string>
     <string name="brw_save_in_missing">Serve l\'app Eurise per «Salva in…»</string>

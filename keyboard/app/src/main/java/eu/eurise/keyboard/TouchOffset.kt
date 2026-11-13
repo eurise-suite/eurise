@@ -18,12 +18,14 @@ import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
  */
 object TouchOffset {
     private const val ALPHA = 0.03f
-    private const val MAX = 0.25f
+    /** Al massimo un ottavo di tasto (era un quarto: prova del 13 novembre, lettere scambiate con quelle accanto). */
+    private const val MAX = 0.12f
     /** Prima di questi campioni la correzione cresce gradualmente (niente salti con i primi tocchi). */
     private const val WARMUP = 60
-    private const val PREF_X = "offset_x"
-    private const val PREF_Y = "offset_y"
-    private const val PREF_N = "offset_n"
+    // Chiavi nuove il 13 novembre: lo scarto imparato con il tetto di prima si dimentica.
+    private const val PREF_X = "offset2_x"
+    private const val PREF_Y = "offset2_y"
+    private const val PREF_N = "offset2_n"
 
     private var prefs: SharedPreferences? = null
     @Volatile private var meanX = 0f

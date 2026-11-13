@@ -123,8 +123,8 @@ class Tab(
     /** Bolla «Accedi come…» (più accessi per il sito) e bolla «Salvo l'accesso?»: le risposte vanno a Gecko. */
     var loginChoice by mutableStateOf<LoginChoice?>(null)
     var loginSave by mutableStateOf<LoginSave?>(null)
-    /** Un file da scaricare (risposta che Gecko non mostra): lo passa al gestore dei download. */
-    var onDownload: (String) -> Unit = {}
+    /** Un file da scaricare (risposta che Gecko non mostra): si salva la risposta già ricevuta (vedi [Downloads]). */
+    var onDownload: (org.mozilla.geckoview.WebResponse) -> Unit = {}
     /** «Sito PC»: la versione per il computer di questo sito. */
     var desktop by mutableStateOf(false)
         private set
@@ -194,7 +194,7 @@ class Tab(
                     Extensions.install(response.uri)
                     return
                 }
-                onDownload(response.uri)
+                onDownload(response)
             }
         }
         session.historyDelegate = object : GeckoSession.HistoryDelegate {

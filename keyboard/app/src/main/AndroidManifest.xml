@@ -45,9 +45,13 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             <meta-data android:name="android.view.im" android:resource="@xml/method_dummy" />
         </service>
 
+        <!-- Eurise: il controllo ortografico di sistema è spento (prova del proprietario, 13 novembre): toccando una
+             parola sottolineata Android apriva il riquadro delle correzioni e la tastiera spariva. La tastiera corregge
+             già mentre si scrive. -->
         <service android:name=".spellcheck.AndroidSpellCheckerService"
                  android:label="@string/spell_checker_service_name"
                  android:permission="android.permission.BIND_TEXT_SERVICE"
+                 android:enabled="false"
                  android:exported="true">
             <intent-filter>
                 <action android:name="android.service.textservice.SpellCheckerService" />

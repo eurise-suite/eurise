@@ -15,8 +15,9 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 Quando il proprietario chiede «cosa c'è ancora da fare», in generale o su un'app, si risponde **da qui** (e dalle ultime
 sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
 - **Mappe**
-  - Passi dell'interfaccia rifatta: d) percorso (MapPercorso), e) guida (MapGuida, MapIncrocio, MapRotonda con lo schema
-    dell'incrocio anche in Android Auto, MapVelocita, MapSegnalaGuida, orizzontale), f) livelli, segnala, esplora, attività.
+  - Passi dell'interfaccia rifatta: e) guida in orizzontale (MapOrizzontaleGuida, con la scena dell'incrocio a destra);
+    f) livelli, segnala, esplora, attività. Fatti: d) percorso, e) velocità, incrocio, rotonda, Segnala in guida.
+  - Segnalazioni brevi (lavori, coda, pericolo) condivise con gli altri: serve un servizio comune, da decidere.
   - **Km vero su autostrade, superstrade e provinciali** («Sei su A51 · km 12,4», per soccorsi e carro attrezzi): le mappe di
     CoMaps non hanno le pietre miliari. Strada scelta (13 novembre): un **file piccolo a parte** con le pietre miliari di
     OpenStreetMap (`highway=milestone`: strada, km, posizione), scaricato a richiesta come le mappe; il km si calcola tra le
@@ -33,7 +34,8 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
     carburante col consumo dell'auto; scelta confermata → Il mio viaggio, Calendario, Cose da fare, Note. Fonti da
     verificare prima del codice: Transitous (MOTIS, dati aperti GTFS) per gli orari, tariffe dei pedaggi, nessuna fonte
     libera per i prezzi dei voli (solo collegamento al sito del vettore). Interruttore nel centro privacy.
-- **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe).
+- **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe). Voce più «da maggiordomo» (domanda del
+  13 novembre, notte): oggi Riccardo (Piper, italiano neutro); due strade proposte, da scegliere (vedi in fondo).
 - **Tastiera**: lavoro principale dopo Mappe.
 - **Icone** in codice: simboli nuovi, sfumatura e alone della stellina negli APK e nei temi; stili iOS, Android, /e/OS;
   forma a scelta in «Griglia e icone»; iniziale come ripiego; «Eurise a colori» con i simboli nuovi (tavola IconeColori,
@@ -2034,3 +2036,48 @@ Fatto (ramo `brand`):
   di Alfred e tastiera.
 - Sorgenti di CoMaps dallo specchio GitHub (`github.com/comaps/comaps`, commit in `maps-engine.yml`), Codeberg dà 403.
   `gh release download` non funziona qui (GraphQL): gli APK si scaricano con `gh api …/releases/assets/<id>`.
+
+## 13 novembre, notte: Mappe passo e), seconda parte, Segnala in guida (ramo `brand`) · giro 430, Mappe 31
+- **Segnala in guida** (tavole MapSegnalaGuida e MapAutoSegnala, approvate il 13 novembre): dettagli in `maps/EURISE.md`.
+  - Telefono: bandierina tonda in guida sopra la lente; foglio con sei voci in due gruppi, un tocco senza conferma,
+    «Annulla» per 5 secondi. Autovelox, limite errato, strada chiusa: a fine viaggio l'elenco con la spunta, poi note
+    anonime su OpenStreetMap (punto, tipo, direzione, strada). Lavori, coda, pericolo: sul telefono per due ore, con
+    l'avviso a chi ripassa nella stessa direzione («Tua segnalazione di 25 min fa: Coda tra 300 m»).
+  - Android Auto: bandierina nella fila della guida, griglia di sei voci sopra la mappa, «Annulla» per 5 secondi. Il
+    microfono di Alfred in auto (senza guida) capisce «autovelox», «c'è una coda».
+  - Alfred sul telefono: «Alfred, autovelox», «c'è una coda», «strada chiusa»… segnano subito in Mappe, senza scheda né
+    «Procedo?» (`Grammar` con `Command.Report`, test in `GrammarTest`).
+  - Centro privacy: nuovo servizio **Note su OpenStreetMap** (`PrivacyService.MapReports`, OSMF Regno Unito, 6/10), acceso
+    di base (ogni invio parte da un tocco), condiviso con Mappe; vale anche per «Segnala qui» fuori guida.
+- Da provare: bandierina e foglio in guida, Annulla, elenco di fine viaggio (anche dopo un viaggio in auto, alla
+  riapertura), invio delle note, avviso ripassando; in auto la griglia e il messaggio con Annulla; «Alfred, autovelox»
+  con Mappe in guida; interruttore nel centro privacy.
+- Non ancora: guida in orizzontale (MapOrizzontaleGuida, prossimo passo); segnalazioni brevi disegnate sulla mappa.
+- **Domanda del proprietario: la voce di Alfred è da maggiordomo britannico?** Risposta: il carattere sì (testi, battute
+  alla Groucho Marx e Woody Allen, una su tre dopo un'azione riuscita, mai alla guida); la voce no: Riccardo (Piper, 19 MB)
+  è una voce italiana pacata ma neutra, e tra le voci italiane libere non c'è un timbro da maggiordomo. Proposte: a)
+  ritoccare Riccardo (più lento, più grave, pause più lunghe; subito, effetto limitato); b) addestrare una voce Piper
+  nostra su registrazioni di un attore con licenza (ore di calcolo fuori da GitHub Actions). **Da scegliere.**
+
+## 13 novembre, notte: correzioni dopo la prova del proprietario (giro 411, Mappe 30) · ramo `brand`
+Segnalazioni del proprietario: Mappe non avvia la navigazione dopo aver scelto l'indirizzo (tasti nuovi e vecchi mescolati);
+tastiera che dà una lettera per l'altra e spazi dove non servono, e il riquadro delle correzioni che toglie la tastiera;
+Browser che non scarica o salva file illeggibili; Office che chiude i documenti appena aperti; dall'icona di Voce non si
+arriva alle voci di Alfred.
+- **Mappe**: «Avvia la navigazione» (EurisePercorso) e «Parti ora» (EuriseLuogo) chiamano `MwmActivity.onRoutingStart`
+  (lo stesso percorso di «Inizia» di CoMaps: punto di partenza, avviso, voce) invece del clic sul pulsante nascosto o di
+  `RoutingController.start()`. **Da verificare col proprietario**: cosa succede esattamente al tocco (niente, un
+  messaggio, torna alla mappa) e una foto della schermata del percorso, per i tasti «mescolati».
+- **Tastiera**: la zona dello spazio sopra la barra (TouchFix) aveva un tetto del 38 % del tasto e cresceva da sola:
+  ora 12 % di base, al massimo 20 %, e si riparte da capo (chiave nuova). Lo scarto imparato dei tocchi (TouchOffset)
+  ora al massimo un ottavo di tasto (era un quarto), ripartendo da capo. Spento il controllo ortografico di sistema
+  della tastiera e tolte le alternative attaccate alle parole scritte (`SuggestionSpan`): erano loro ad aprire il
+  riquadro «Sostituisci» che nascondeva la tastiera.
+- **Browser**: i download salvano in Download la risposta già ricevuta dal motore (cookie della sessione, `blob:`,
+  `data:`, moduli), con nome e tipo mandati dal sito (`Downloads.kt`, test `DownloadsTest`); il gestore dei download di
+  Android resta solo come ripiego (Android 9 o risposta senza corpo).
+- **Voce**: sotto «Detta» il pulsante «Modelli e voci di Alfred». Strada di oggi: Alfred › impostazioni › «La mia voce» ›
+  Scarica.
+- **Office**: non corretto. Era già noto (documenti e PDF non si aprono, lavoro dedicato in una chat a parte). Serve il
+  registro dell'errore: proposta di aggiungere a Office un «rapporto del problema» (motivo dell'ultima chiusura da
+  `ApplicationExitInfo`, da condividere) per capire dove si ferma il motore.

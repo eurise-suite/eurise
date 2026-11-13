@@ -256,6 +256,12 @@ private fun DictateSheet(language: String, fromKeyboard: Boolean, onDeliver: (St
                 }
             }
             speed?.let { Text(it, fontSize = 12.sp, color = scheme.onSurfaceVariant) }
+            // Domanda del proprietario (13 novembre): dall'icona di Voce non si arrivava alle voci di Alfred.
+            if (phase == Phase.Ready && !fromKeyboard) TextButton(onClick = {
+                runCatching { context.startActivity(android.content.Intent(context, ModelsActivity::class.java)) }
+            }) {
+                Text(stringResource(R.string.voice_open_models), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 

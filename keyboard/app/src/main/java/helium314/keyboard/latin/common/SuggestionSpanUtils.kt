@@ -13,6 +13,8 @@ import android.text.style.SuggestionSpan
 import helium314.keyboard.latin.SuggestedWords
 import java.util.*
 
+private const val EURISE_NO_SUGGESTION_SPANS = true
+
 fun getTextWithAutoCorrectionIndicatorUnderline(context: Context?, text: String, locale: Locale?): CharSequence {
     if (text.isEmpty())
         return text
@@ -23,6 +25,10 @@ fun getTextWithAutoCorrectionIndicatorUnderline(context: Context?, text: String,
 }
 
 fun getTextWithSuggestionSpan(context: Context, pickedWord: String, suggestedWords: SuggestedWords, locale: Locale): CharSequence {
+    // Eurise (prova del 13 novembre): niente alternative attaccate alla parola scritta. Con queste, toccando la parola per
+    // correggerla, l'app apriva il riquadro «Sostituisci» e la tastiera spariva. Per tornare indietro c'è Cancella
+    // subito dopo la correzione automatica (annulla la correzione) e la striscia dei suggerimenti.
+    if (EURISE_NO_SUGGESTION_SPANS) return pickedWord
     if (pickedWord.isEmpty() || suggestedWords.isEmpty
         || suggestedWords.isPrediction || suggestedWords.isPunctuationSuggestions
     ) {

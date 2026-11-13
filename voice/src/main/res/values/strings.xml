@@ -30,6 +30,7 @@
     <string name="voice_close">Chiudi</string>
     <string name="voice_delete">Elimina</string>
     <string name="voice_models_title">Modelli e voce</string>
+    <string name="voice_open_models">Modelli e voci di Alfred</string>
     <string name="voice_models_lead">Tutto resta sul telefono: si scarica una volta e poi funziona anche senza rete.</string>
     <string name="voice_models_hear">Per ascoltare (Alfred e dettatura)</string>
     <string name="voice_models_speak">La voce di Alfred</string>

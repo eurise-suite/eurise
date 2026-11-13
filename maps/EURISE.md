@@ -97,3 +97,30 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   ferma, va nella finestrella della manovra (`RoutingInfo.Builder.setJunctionImage`).
 - Non ancora: «tra 200 m: 70» (il limite che arriva: CoMaps non lo dà in anticipo), il limite «dedotto» (bordo
   tratteggiato), velocità e limite anche senza percorso, la scena in orizzontale.
+
+## Guida, passo e) seconda parte: Segnala in guida (13 novembre, notte)
+- `eurise/EuriseGuideReports.java` (tavole MapSegnalaGuida e MapAutoSegnala): sei voci, l'archivio (preferenze dell'app,
+  JSON), la fine del viaggio e l'avviso a chi ripassa. Il punto e la direzione si prendono al tocco (ultima posizione
+  della guida, anche in auto), con la strada sotto l'auto (`EuriseCarInfo.roadLabel`) e, per «limite errato», il limite
+  in mappa in quel momento (`EuriseSpeed.lastLimit`).
+  - Autovelox, limite errato, strada chiusa: restano finché il viaggio finisce (`MwmActivity.onNavigationCancelled`,
+    anche all'arrivo; in auto `NavigationScreen.onNavigationCancelled`). Poi `EuriseReportReviewActivity`: l'elenco con la
+    spunta, «Manda N a OpenStreetMap» (una nota anonima ciascuna: tipo, limite in mappa, direzione in gradi, strada,
+    `#EuriseMappe`), «Più tardi». Se il viaggio finisce in auto o col telefono in tasca, l'elenco si apre alla prossima
+    apertura della mappa. Quelle non partite (niente rete) restano per il viaggio dopo.
+  - Lavori, coda, pericolo: restano sul telefono due ore. Chi ripassa di lì, nella stessa direzione (±60°), entro 500 m
+    davanti, vede una volta «Tua segnalazione di 25 min fa: Coda tra 300 m» (avviso sul telefono, CarToast in auto).
+    Condividerle con altri richiede un servizio comune: da decidere.
+- `eurise/EuriseGuideReportActivity.java`: il foglio sul telefono (bandierina tonda sopra la lente, a sinistra, nel
+  layout della guida), due gruppi da tre, barra scura con il tondo che si svuota e «Annulla»; dopo 5 s si chiude. È
+  esportata solo alle app della suite (`SUITE_DEBUG`): Alfred la apre con `REPORT_KIND` e segna subito.
+- `eurise/car/EuriseCarReportScreen.java`: in Android Auto la bandierina nella fila in alto della guida apre la griglia
+  di sei voci sopra la mappa (`MapWithContentTemplate` + `GridTemplate`), poi un messaggio con «Annulla» e «OK» che torna
+  alla guida da solo dopo 5 s. Il microfono di Alfred in auto (senza guida) capisce «autovelox», «c'è una coda»
+  (`Kind.fromWords`) e segna invece di cercare.
+- Centro privacy: le note vanno sotto il servizio `MapReports` dell'app Eurise (OpenStreetMap Foundation, Regno Unito,
+  6 su 10), acceso di base perché ogni invio parte da un tocco; spento, l'elenco lo dice e non manda nulla. Vale anche per
+  «Segnala qui» fuori guida.
+- Simboli: `res/drawable/eurise_rep_*.xml` (riquadro chiaro nella tinta, disegno della tavola), `eurise_ic_flag.xml`.
+- Non ancora: la barra in orizzontale (Segnala, Sosta, Voce, Insieme, Fine: tavola MapOrizzontaleGuida); le segnalazioni
+  brevi disegnate sulla mappa (oggi solo l'avviso).

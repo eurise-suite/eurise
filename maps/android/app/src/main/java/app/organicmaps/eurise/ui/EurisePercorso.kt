@@ -79,8 +79,15 @@ object EurisePercorso {
         tick.intValue++
     }
 
-    internal fun start() {
-        startButton?.performClick()
+    /**
+     * «Avvia la navigazione»: lo stesso percorso di «Inizia» di CoMaps (MwmActivity.onRoutingStart: punto di partenza,
+     * avviso la prima volta, voce), chiamato direttamente. Il clic sul pulsante nascosto dipendeva dallo stato di CoMaps e
+     * a volte non partiva (prova del 13 novembre); resta solo come ripiego.
+     */
+    internal fun start(context: Context) {
+        val listener = context.activity() as? app.organicmaps.routing.RoutingBottomMenuListener
+        if (listener != null && RoutingController.get().isPlanning) listener.onRoutingStart()
+        else startButton?.performClick()
     }
 }
 
@@ -151,7 +158,7 @@ private fun Panel(night: Boolean) {
         Box(
             Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(18.dp))
                 .background(if (built) c.accent else c.accent.copy(alpha = 0.35f))
-                .clickable(enabled = built) { EurisePercorso.start() }.semantics { role = Role.Button },
+                .clickable(enabled = built) { EurisePercorso.start(context) }.semantics { role = Role.Button },
             contentAlignment = Alignment.Center,
         ) {
             BasicText(stringResource(R.string.eurise_pc_start), style = TextStyle(color = c.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold))

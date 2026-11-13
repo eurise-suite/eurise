@@ -42,7 +42,7 @@ class BrowserModel(private val context: Context) {
     /** Download partiti in questa sessione (il numero nel menu). */
     var downloads by mutableIntStateOf(0)
     /** Dove vanno i download di tutte le schede (lo fissa l'attività). */
-    var onDownload: (String) -> Unit = {}
+    var onDownload: (org.mozilla.geckoview.WebResponse) -> Unit = {}
     var current by mutableStateOf<Tab?>(null)
         private set
     /** La schermata delle schede è aperta; [tabsSearch]: con la ricerca (Ctrl+K). */
