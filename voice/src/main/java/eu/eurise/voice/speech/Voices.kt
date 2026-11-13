@@ -41,7 +41,23 @@ object Voices {
     fun choose(context: Context, voice: Voice) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_CHOSEN, voice.id).apply()
 
-    fun delete(context: Context, voice: Voice) = voice.dir(context).deleteRecursively()
+    fun delete(context: Context, voice: Voice) = voice.dir(context).deleteRecursively().also { clearStopped(context) }
+
+    /*
+     * La spia della voce. La sintesi gira in un processo a parte (":voce"): se il motore nativo si ferma di colpo, chiude
+     * solo quel processo. Il file «parla» si scrive prima di ogni frase e si toglie dopo; se al riavvio c'è ancora, la
+     * voce si è fermata parlando e diventa «ferma»: Alfred passa alla voce del telefono invece di restare muto, finché
+     * «Ascolta una prova» non la rimette in uso. File e non preferenze, perché li leggono due processi.
+     */
+    private fun flag(context: Context, name: String) = File(File(context.filesDir, "voices").apply { mkdirs() }, name)
+    fun speakingStart(context: Context) = runCatching { flag(context, "parla").writeText("1") }
+    fun speakingEnd(context: Context) = runCatching { flag(context, "parla").delete() }
+    /** Al riavvio del motore: se l'ultima frase non è finita, la voce è ferma. */
+    fun checkCrash(context: Context) = runCatching {
+        if (flag(context, "parla").exists()) { flag(context, "parla").delete(); flag(context, "ferma").writeText("1") }
+    }
+    fun stopped(context: Context) = flag(context, "ferma").exists()
+    fun clearStopped(context: Context) = runCatching { flag(context, "ferma").delete() }
 
     /** Scarica l'archivio in una copia temporanea, lo apre in una cartella nuova e la mette al suo posto solo se è intera. */
     fun download(context: Context, voice: Voice, progress: (Int) -> Unit): Boolean {
@@ -87,6 +103,7 @@ object Voices {
             val target = voice.dir(context)
             target.deleteRecursively()
             check(unpack.renameTo(target))
+            clearStopped(context)
             progress(100)
             voice.installed(context)
         }.getOrElse { false }.also {

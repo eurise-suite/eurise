@@ -99,6 +99,9 @@ private fun ModelsPage(onClose: () -> Unit) {
     }
 
     fun tryVoice() {
+        // Riprovare rimette in uso una voce «ferma»: se si ferma di nuovo, la spia la segna ancora.
+        Voices.clearStopped(context)
+        tick++
         tester.value?.shutdown()
         var tts: TextToSpeech? = null
         tts = TextToSpeech(context, { status ->
@@ -140,6 +143,7 @@ private fun ModelsPage(onClose: () -> Unit) {
                 onChoose = if (speak(v) && !inUse) ({ Voices.choose(context, v); tick++ }) else null)
         }
         if (Voices.installed(context) != null) {
+            if (Voices.stopped(context)) Text(stringResource(R.string.voice_tts_stopped), fontSize = 13.sp, color = scheme.error)
             TextButton(onClick = ::tryVoice) { Text(stringResource(R.string.voice_tts_try), fontWeight = FontWeight.Bold) }
             Text(stringResource(R.string.voice_tts_system), fontSize = 12.sp, color = scheme.onSurfaceVariant)
         }

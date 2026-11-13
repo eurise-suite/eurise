@@ -27,6 +27,8 @@ object VoiceContract {
     const val KEY_AUDIO = "audio"
     /** String: codice di due lettere della lingua («it»), oppure «auto». */
     const val KEY_LANGUAGE = "language"
+    /** Frasi d'esempio che orientano Whisper sulle parole attese (comandi brevi di Alfred); facoltativo. */
+    const val KEY_PROMPT = "prompt"
     const val KEY_TEXT = "text"
     const val KEY_ERROR = "error"
     const val KEY_HEARING = "hearing"

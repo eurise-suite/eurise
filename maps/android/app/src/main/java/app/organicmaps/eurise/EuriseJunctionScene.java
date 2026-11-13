@@ -59,6 +59,11 @@ public final class EuriseJunctionScene
     public final float progress;
     @NonNull public final String exitRef, roadRef, destination, street, current;
     public final boolean motorway;
+    /**
+     * Rotonda: di quanto gira la strada tra l'entrata e l'uscita, in gradi (+ a destra, − a sinistra, ±180 si torna
+     * indietro), dalla forma del percorso. NaN se non si sa: allora le uscite si dispongono a ventaglio.
+     */
+    public float turnDeg = Float.NaN;
 
     Model(@NonNull Kind kind, boolean left, int lanes, int exitNum, float progress, @NonNull String exitRef,
           @NonNull String roadRef, @NonNull String destination, @NonNull String street, @NonNull String current,
@@ -117,8 +122,12 @@ public final class EuriseJunctionScene
       return null;
     final float progress = (float) Math.max(0, Math.min(1, 1 - m / show));
     if (roundabout)
-      return new Model(Kind.ROUNDABOUT, info.isLeftHandTraffic, 1, Math.max(1, info.exitNum), progress, "", "", "",
-                       nz(info.nextStreet), nz(info.currentStreet), false);
+    {
+      final Model r = new Model(Kind.ROUNDABOUT, info.isLeftHandTraffic, 1, Math.max(1, info.exitNum), progress, "", "",
+                                "", nz(info.nextStreet), nz(info.currentStreet), false);
+      r.turnDeg = (float) RoundaboutTurn.degrees(m);
+      return r;
+    }
     final boolean left = d == CarDirection.EXIT_HIGHWAY_TO_LEFT || d == CarDirection.TURN_SLIGHT_LEFT;
     final LaneInfo[] lanes = info.lanes;
     int main = lanes == null ? 3 : Math.max(2, Math.min(5, lanes.length - countExitLanes(lanes, left)));
@@ -310,10 +319,8 @@ public final class EuriseJunctionScene
     k.save();
     if (m.left)
       k.scale(-1, 1, W / 2f, 0);
-    final int count = Math.max(3, m.exitNum);
-    final float[] angles = new float[count];
-    for (int i = 0; i < count; i++)
-      angles[i] = -10f - i * (160f / (count - 1));
+    final float[] angles = exitAngles(m);
+    final int count = angles.length;
 
     final Shader asphalt = new LinearGradient(0, 95, 0, H, 0xFF80868F, 0xFF535963, Shader.TileMode.CLAMP);
     p.setShader(asphalt);
@@ -339,6 +346,10 @@ public final class EuriseJunctionScene
       route.lineTo(ringX(a), ringY(a));
     route.lineTo(ringX(target), ringY(target));
     final float[] out = outer(target, 1.0f);
+    // Uscita sulla via da cui si è entrati (inversione): si esce sul lato opposto della stessa via.
+    final boolean back = backToEntry(target);
+    if (back)
+      out[0] -= 14;
     route.lineTo(out[0], out[1]);
     final Paint band = stroke(0xFF3E5C8A, 24);
     band.setAlpha((int) (255 * (0.35f + 0.25f * pulse(t, PULSE))));
@@ -356,6 +367,11 @@ public final class EuriseJunctionScene
     }
     // All'uscita frecce che scorrono dritte verso la via.
     final float[] from = outer(target, 0.25f), to = outer(target, 0.95f);
+    if (back)
+    {
+      from[0] -= 14;
+      to[0] -= 14;
+    }
     final float dir = (float) Math.toDegrees(Math.atan2(to[1] - from[1], to[0] - from[0])) + 90;
     for (int i = 0; i < 3; i++)
       flowArrow(k, (t + i * PERIOD / 3f) % PERIOD / PERIOD, from[0], from[1], to[0], to[1], dir, 1.5f);
@@ -369,6 +385,9 @@ public final class EuriseJunctionScene
     for (int i = 0; i < count; i++)
     {
       final float[] o = outer(angles[i], 1.05f);
+      // Il numero dell'uscita che coincide con l'entrata va accanto alla via, non sopra.
+      if (backToEntry(angles[i]))
+        o[0] -= 46;
       final float x = m.left ? W - o[0] : o[0];
       final boolean mine = i == Math.min(m.exitNum, count) - 1;
       p.setColor(mine ? 0xFF3E5C8A : Color.WHITE);
@@ -391,6 +410,48 @@ public final class EuriseJunctionScene
     k.drawRoundRect(board, 6, 6, p);
     k.drawRoundRect(board, 6, 6, stroke(0xFF1F2A44, 2));
     text(k, txt, label, board.left + 12, board.bottom - 10, board.width() - 24);
+  }
+
+  /**
+   * Gli angoli delle uscite sullo schermo (0 = destra, −90 = in alto, 90 = in basso dove si entra), nel verso di marcia.
+   * Con la forma del percorso l'uscita giusta sta dove va davvero la strada: dritto in alto, a destra a destra, a
+   * sinistra a sinistra, l'inversione in basso sulla via d'entrata; le uscite prima si dispongono tra l'entrata e lei.
+   * Senza, a ventaglio nella metà alta come nella tavola.
+   */
+  @NonNull
+  static float[] exitAngles(@NonNull Model m)
+  {
+    if (Float.isNaN(m.turnDeg))
+    {
+      final int count = Math.max(3, m.exitNum);
+      final float[] a = new float[count];
+      for (int i = 0; i < count; i++)
+        a[i] = -10f - i * (160f / (count - 1));
+      return a;
+    }
+    // Si guida a sinistra: la scena è specchiata, quindi la svolta si legge al contrario.
+    float turn = m.left ? -m.turnDeg : m.turnDeg;
+    // Nel verso di marcia (antiorario sullo schermo) dall'entrata: a destra subito, poi dritto, sinistra, indietro.
+    float target = -90f + turn;
+    // Oltre i 120° a destra è un'inversione presa dall'altra parte: si fa il giro.
+    if (target > 30f)
+      target -= 360f;
+    target = Math.max(-350f, Math.min(-10f, target));
+    final int n = Math.max(1, m.exitNum);
+    final int extra = target > -250f ? 1 : 0; // un'uscita dopo la nostra, se c'è posto
+    final float[] a = new float[n + extra];
+    final float first = Math.max(target, -25f);
+    for (int i = 0; i < n; i++)
+      a[i] = n == 1 ? target : first + (target - first) * i / (n - 1);
+    if (extra == 1)
+      a[n] = (target + -330f) / 2f;
+    return a;
+  }
+
+  /** L'uscita è in basso, sulla via da cui si entra. */
+  static boolean backToEntry(float deg)
+  {
+    return Math.sin(Math.toRadians(deg)) > 0.9;
   }
 
   private static float ringX(float deg)

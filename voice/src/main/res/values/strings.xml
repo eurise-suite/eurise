@@ -43,6 +43,7 @@
     <string name="voice_tts_in_use">in uso</string>
     <string name="voice_tts_use">Usa</string>
     <string name="voice_tts_try">Ascolta una prova</string>
+    <string name="voice_tts_stopped">La voce si è fermata l\'ultima volta che ha parlato. Intanto Alfred usa la voce del telefono. Tocca «Ascolta una prova» per riprovarla.</string>
     <string name="voice_tts_sample">Buongiorno. Ho dato un\'occhiata alla giornata: nulla che non si possa affrontare con un buon caffè.</string>
     <string name="voice_tts_system">Per sentirla anche in Mappe e nelle altre app: Impostazioni del telefono, Sintesi vocale, motore preferito «Eurise Voce (Alfred)».</string>
 </resources>

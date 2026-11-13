@@ -64,7 +64,10 @@ class TranscribeService : Service() {
                                 whisper = Whisper.load(model.file(this))
                                 loaded = model
                             }
-                            whisper?.transcribe(audio, language)
+                            // Con le frasi d'esempio (Alfred) il comando è breve: contesto pieno, più preciso; il
+                            // contesto ridotto, buono per la dettatura lunga, sbagliava le parole dei comandi.
+                            val prompt = msg.data.getString(VoiceContract.KEY_PROMPT).orEmpty().take(400)
+                            whisper?.transcribe(audio, language, prompt, fullContext = prompt.isNotEmpty())
                         }.getOrNull()?.let(::clean)
                         when {
                             text == null -> out.putString(VoiceContract.KEY_ERROR, VoiceContract.ERROR_FAILED)

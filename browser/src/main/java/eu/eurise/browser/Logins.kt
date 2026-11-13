@@ -14,14 +14,42 @@ import org.mozilla.geckoview.Autocomplete
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 
+/**
+ * Una risposta a Gecko data una volta sola. Gecko può aver già chiuso la richiesta (pagina cambiata, modulo sparito) o la
+ * bolla può essere toccata due volte: rispondere di nuovo lanciava un errore che chiudeva il Browser (prova del 13
+ * novembre: schermo nero mentre compilava le password). Qui la seconda risposta non fa niente.
+ */
+abstract class OnceAnswer(
+    private val request: GeckoSession.PromptDelegate.BasePrompt,
+    private val result: GeckoResult<GeckoSession.PromptDelegate.PromptResponse>,
+) {
+    private var answered = false
+
+    protected fun answer(response: () -> GeckoSession.PromptDelegate.PromptResponse) {
+        if (answered || request.isComplete) { answered = true; return }
+        answered = true
+        runCatching { result.complete(response()) }
+    }
+
+    /** Gecko chiude la richiesta da sé: [onGone] toglie la bolla. */
+    fun onGone(onGone: () -> Unit) = runCatching {
+        request.setDelegate(object : GeckoSession.PromptDelegate.PromptInstanceDelegate {
+            override fun onPromptDismiss(prompt: GeckoSession.PromptDelegate.BasePrompt) {
+                answered = true
+                onGone()
+            }
+        })
+    }
+}
+
 /** Una scelta di accesso da confermare con un tocco (bolla «Accedi come…»). */
 class LoginChoice(
     val options: List<Autocomplete.LoginSelectOption>,
     private val request: GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSelectOption>,
-    private val result: GeckoResult<GeckoSession.PromptDelegate.PromptResponse>,
-) {
-    fun pick(option: Autocomplete.LoginSelectOption) = result.complete(request.confirm(option))
-    fun dismiss() = result.complete(request.dismiss())
+    result: GeckoResult<GeckoSession.PromptDelegate.PromptResponse>,
+) : OnceAnswer(request, result) {
+    fun pick(option: Autocomplete.LoginSelectOption) = answer { request.confirm(option) }
+    fun dismiss() = answer { request.dismiss() }
 }
 
 /** Un accesso nuovo o cambiato da salvare in Eurise Password (bolla «Salvo l'accesso?»). */
@@ -29,10 +57,10 @@ class LoginSave(
     val entry: Autocomplete.LoginEntry,
     val update: Boolean,
     private val request: GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSaveOption>,
-    private val result: GeckoResult<GeckoSession.PromptDelegate.PromptResponse>,
-) {
-    fun save() = result.complete(request.confirm(request.options.first()))
-    fun dismiss() = result.complete(request.dismiss())
+    result: GeckoResult<GeckoSession.PromptDelegate.PromptResponse>,
+) : OnceAnswer(request, result) {
+    fun save() = answer { request.confirm(request.options.first()) }
+    fun dismiss() = answer { request.dismiss() }
 }
 
 /**
@@ -71,8 +99,13 @@ object Logins : Autocomplete.StorageDelegate {
                 val user = b.getStringArray(C.KEY_USERNAME).orEmpty()
                 val pass = b.getStringArray(C.KEY_PASSWORD).orEmpty()
                 val origin = b.getStringArray(C.KEY_ORIGIN).orEmpty()
+                // Gecko compila solo gli accessi con l'origine esatta della pagina: Password li ha già scelti per dominio
+                // (anche i sottodomini), quindi prendono l'origine della pagina aperta. Il modulo può mandare i dati
+                // altrove (accounts.…): l'origine del modulo resta vuota, che per Gecko vuol dire «qualsiasi».
+                // Prova del 13 novembre: accessi salvati in Password ma mai compilati.
+                val page = pageOrigin(domain)
                 guid.indices.filter { it < user.size && it < pass.size && it < origin.size }.map { i ->
-                    Autocomplete.LoginEntry.Builder().guid(guid[i]).origin(origin[i]).formActionOrigin(origin[i])
+                    Autocomplete.LoginEntry.Builder().guid(guid[i]).origin(page ?: origin[i]).formActionOrigin("")
                         .username(user[i]).password(pass[i]).build()
                 }.toTypedArray()
             } else emptyArray()
@@ -103,6 +136,19 @@ object Logins : Autocomplete.StorageDelegate {
         val guid = login.guid ?: return
         io.execute { call(C.METHOD_USED, guid) }
     }
+
+    /** L'indirizzo della scheda in primo piano (lo imposta l'attività). */
+    var currentUrl: () -> String? = { null }
+
+    /** «https://www.sito.it» della pagina aperta, se è del dominio chiesto da Gecko. */
+    private fun pageOrigin(domain: String): String? = runCatching {
+        val url = Uri.parse(currentUrl() ?: return null)
+        val host = url.host ?: return null
+        val scheme = url.scheme?.takeIf { it == "https" || it == "http" } ?: return null
+        val d = domain.removePrefix("www.")
+        if (host != domain && host != d && !host.endsWith(".$d")) return null
+        scheme + "://" + host + if (url.port > 0) ":" + url.port else ""
+    }.getOrNull()
 
     /** Salvataggio non riuscito (cassaforte chiusa): l'attività apre Password con la voce compilata. */
     var onSaveFailed: ((Autocomplete.LoginEntry) -> Unit)? = null

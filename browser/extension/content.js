@@ -56,6 +56,23 @@
     };
   }
 
+  // L'icona del sito, solo nella pagina principale: l'indirizzo della migliore dichiarata dalla pagina (o /favicon.ico).
+  // L'app la scarica dallo stesso sito, senza cookie, e la tiene sul telefono per schede e segnalibri.
+  function siteIcon() {
+    if (window !== window.top || !/^https?:$/.test(location.protocol)) return;
+    let best = null, bestScore = -1;
+    document.querySelectorAll('link[rel~="icon"], link[rel="shortcut icon"], link[rel~="apple-touch-icon"]').forEach(function (l) {
+      if (!l.href) return;
+      const size = parseInt(String(l.getAttribute("sizes") || "").split(/[x ]/)[0], 10) || (/apple-touch/.test(l.rel) ? 180 : 16);
+      const svg = /svg/.test(l.type || "") || /\.svg(\?|$)/.test(l.href);
+      // Si preferisce un'icona tra 32 e 192 px; le svg non si leggono sul telefono.
+      const score = svg ? -1 : (size >= 32 && size <= 192 ? 1000 - Math.abs(size - 64) : size);
+      if (score > bestScore) { best = l.href; bestScore = score; }
+    });
+    port.postMessage({ type: "icon", host: location.hostname, url: best || (location.origin + "/favicon.ico") });
+  }
+  try { siteIcon(); } catch (e) { /* niente */ }
+
   port.onMessage.addListener(function (message) {
     if (message && message.type === "page") port.postMessage(pageInfo());
     if (message && message.type === "dark") setDark(!!message.on);

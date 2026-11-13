@@ -422,8 +422,13 @@ patch(mwm, """    if (!RoutingController.get().isPlanning())
       return;
 
     closeSearchToolbar(true, true);
+    // «Parti ora»: la guida parte dopo che CoMaps ha finito di aggiornare il pannello del percorso (chiamata qui dentro,
+    // l'aggiornamento successivo del pannello rimetteva la pianificazione sopra la guida).
     if (app.organicmaps.eurise.ui.EuriseLuogo.consumeStartWhenBuilt())
-      onRoutingStart();""")
+      getWindow().getDecorView().post(() -> {
+        if (RoutingController.get().isPlanning() && RoutingController.get().isBuilt())
+          onRoutingStart();
+      });""")
 print("eurise_patch: scheda del luogo con le azioni della suite (passo c)")
 
 # La voce di Alfred anche in Mappe: se c'è Eurise Voce con la voce scaricata, la guida parla con lei; altrimenti, come

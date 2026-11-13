@@ -18,10 +18,10 @@ import java.util.Locale
 internal object AlfredTts {
     fun voicePackage(context: Context): String? = VoiceContract.PACKAGES.firstOrNull { Reach.installed(context, it) }
 
-    fun open(context: Context, onReady: (TextToSpeech, natural: Boolean) -> Unit): Holder {
+    fun open(context: Context, phoneOnly: Boolean = false, onReady: (TextToSpeech, natural: Boolean) -> Unit): Holder {
         val app = context.applicationContext
         val holder = Holder()
-        val voice = voicePackage(app)
+        val voice = if (phoneOnly) null else voicePackage(app)
         fun system() {
             var tts: TextToSpeech? = null
             tts = TextToSpeech(app) { status ->
@@ -72,23 +72,28 @@ internal fun TextToSpeech.phoneVoice() = runCatching {
  * usando la sua voce o quella del telefono.
  */
 class Speaker(context: Context) {
+    private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private var engine: TextToSpeech? = null
     private var pending: Pair<String, (() -> Unit)?>? = null
     private val done = mutableMapOf<String, () -> Unit>()
+    private val lines = mutableMapOf<String, String>()
     private var counter = 0
 
     @Volatile var natural = false
         private set
 
-    private val holder = AlfredTts.open(context) { tts, isNatural ->
+    private var holder = open(phoneOnly = false)
+
+    private fun open(phoneOnly: Boolean) = AlfredTts.open(app, phoneOnly) { tts, isNatural ->
         natural = isNatural
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(id: String) = Unit
-            override fun onDone(id: String) { main.post { done.remove(id)?.invoke() } }
+            override fun onDone(id: String) { main.post { lines.remove(id); done.remove(id)?.invoke() } }
             @Deprecated("Deprecated in Java")
-            override fun onError(id: String) { main.post { done.remove(id)?.invoke() } }
-            override fun onStop(id: String, interrupted: Boolean) { main.post { done.remove(id) } }
+            override fun onError(id: String) { main.post { failed(id) } }
+            override fun onError(id: String, errorCode: Int) { main.post { failed(id) } }
+            override fun onStop(id: String, interrupted: Boolean) { main.post { lines.remove(id); done.remove(id) } }
         })
         main.post {
             engine = tts
@@ -97,16 +102,33 @@ class Speaker(context: Context) {
         }
     }
 
+    /**
+     * La voce di Alfred non ha letto la frase (motore fermo, voce rovinata): invece di restare muto Alfred passa alla
+     * voce del telefono e la ripete (prova del 13 novembre: voci scaricate ma Alfred senza voce).
+     */
+    private fun failed(id: String) {
+        val line = lines.remove(id)
+        val cb = done.remove(id)
+        if (natural && line != null) {
+            natural = false
+            engine = null
+            holder.shutdown()
+            pending = line to cb
+            holder = open(phoneOnly = true)
+        } else cb?.invoke()
+    }
+
     fun say(text: String, onDone: (() -> Unit)? = null) {
         val line = SpeechText.clean(text)
         val tts = engine ?: run { pending = line to onDone; return }
         val id = "alfred-${counter++}"
         if (onDone != null) done[id] = onDone
+        lines[id] = line
         tts.speak(line, TextToSpeech.QUEUE_FLUSH, null, id)
     }
 
     /** Zitto: quando si comincia a parlare, Alfred smette di leggere. */
-    fun stop() { done.clear(); runCatching { engine?.stop() } }
+    fun stop() { done.clear(); lines.clear(); runCatching { engine?.stop() } }
 
-    fun release() { done.clear(); holder.shutdown() }
+    fun release() { done.clear(); lines.clear(); holder.shutdown() }
 }

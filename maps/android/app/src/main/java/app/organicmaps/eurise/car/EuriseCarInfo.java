@@ -45,6 +45,13 @@ public final class EuriseCarInfo
 
   private EuriseCarInfo() {}
 
+  /** L'ultima posizione ricevuta in guida (telefono o auto), per la scena della rotonda. */
+  @Nullable
+  public static Location last()
+  {
+    return sLast;
+  }
+
   /** A ogni posizione (thread principale): rilegge la strada se ci si è spostati abbastanza. */
   public static void onLocation(@Nullable Location location)
   {

@@ -222,7 +222,9 @@ class Tab(
             ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 loginChoice?.dismiss()
-                loginChoice = LoginChoice(request.options.toList(), request, result)
+                loginChoice = LoginChoice(request.options.toList(), request, result).also { c ->
+                    c.onGone { if (loginChoice === c) loginChoice = null }
+                }
                 return result
             }
 
@@ -235,7 +237,9 @@ class Tab(
                 val option = request.options.firstOrNull() ?: return GeckoResult.fromValue(request.dismiss())
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 loginSave?.dismiss()
-                loginSave = LoginSave(option.value, update = option.value.guid != null, request = request, result = result)
+                loginSave = LoginSave(option.value, update = option.value.guid != null, request = request, result = result).also { c ->
+                    c.onGone { if (loginSave === c) loginSave = null }
+                }
                 return result
             }
         }
@@ -256,6 +260,10 @@ class Tab(
                     port.setDelegate(object : WebExtension.PortDelegate {
                         override fun onPortMessage(message: Any, port: WebExtension.Port) {
                             val o = message as? JSONObject ?: return
+                            if (o.optString("type") == "icon") {
+                                SiteIcons.offer(context, o.optString("host"), o.optString("url"), private)
+                                return
+                            }
                             if (o.optString("type") == "page") {
                                 pageRequest?.invoke(PageInfo.from(o))
                                 pageRequest = null

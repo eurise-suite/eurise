@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Eurise",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Eurise nella pagina: In Note, Da fare, Ascolta, Traduci. Stessa estensione sul telefono (GeckoView) e sul computer (Firefox).",
   "browser_specific_settings": {
     "gecko": {

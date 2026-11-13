@@ -321,6 +321,7 @@ private fun TabCard(model: BrowserModel, t: Tab, current: Boolean, onOpen: () ->
         Box(Modifier.fillMaxWidth().height(4.dp).background(color ?: if (current) scheme.primary else Color.Transparent))
         Row(Modifier.fillMaxWidth().padding(start = 10.dp, top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
             if (t.private) { Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(13.dp)); Spacer(Modifier.width(4.dp)) }
+            else if (SiteIcons.get(Links.host(t.url)) != null) { SiteIcon(t.url, 14.dp) {}; Spacer(Modifier.width(5.dp)) }
             Text(
                 t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) },
                 fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),

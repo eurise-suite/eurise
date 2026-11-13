@@ -38,6 +38,7 @@
         <!-- La voce di Alfred come motore di sintesi del telefono: riceve solo il testo da leggere, che non esce. -->
         <service
             android:name=".speech.AlfredVoiceService"
+            android:process=":voce"
             android:exported="true"
             android:label="@string/voice_tts_engine">
             <intent-filter>

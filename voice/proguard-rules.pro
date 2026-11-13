@@ -3,3 +3,6 @@
 
 # sherpa-onnx: le classi di configurazione si leggono dal codice nativo (JNI) per nome di campo.
 -keep class com.k2fsa.sherpa.onnx.** { *; }
+
+# Il codice nativo di sherpa-onnx chiama per nome anche le funzioni Kotlin che riceve (invoke).
+-keep interface kotlin.jvm.functions.Function1 { *; }

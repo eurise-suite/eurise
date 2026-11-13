@@ -179,6 +179,7 @@ class Ear(private val context: Context) {
                     data = Bundle().apply {
                         putParcelable(VoiceContract.KEY_AUDIO, read)
                         putString(VoiceContract.KEY_LANGUAGE, Locale.getDefault().language)
+                        if (Locale.getDefault().language == "it") putString(VoiceContract.KEY_PROMPT, COMMAND_PROMPT)
                     }
                     replyTo = reply
                 }
@@ -232,3 +233,11 @@ class Ear(private val context: Context) {
         if (runCatching { r.startListening(intent) }.isFailure) onFail(Problem.Failed)
     }
 }
+
+/**
+ * Le frasi tipiche dette ad Alfred: Whisper le prende come testo già detto e riconosce meglio verbi, ore e nomi dei
+ * comandi (prova del 13 novembre: Alfred non capiva). Restano sul telefono come l'audio.
+ */
+private const val COMMAND_PROMPT =
+    "Alfred, chiama Laura. Scrivi a Marco che arrivo alle otto. Ricordami domani alle nove di pagare la bolletta. " +
+        "Sveglia alle sette. Che tempo fa? Portami a casa. Apri il calendario. Autovelox. C'è una coda. Strada chiusa."

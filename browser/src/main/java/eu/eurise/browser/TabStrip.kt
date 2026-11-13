@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -78,7 +80,12 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
         modifier.fillMaxWidth().background(scheme.surfaceContainer).padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LazyRow(state = list, modifier = Modifier.weight(1f), contentPadding = PaddingValues(end = 4.dp)) {
+        // Molte schede: si stringono per starci tutte (fino alla sola icona), poi scorrono (richiesta del 13 novembre).
+        BoxWithConstraints(Modifier.weight(1f)) {
+        val count = model.tabs.size.coerceAtLeast(1)
+        val share: Dp = (maxWidth - 4.dp) / count
+        val narrowest = 40.dp
+        LazyRow(state = list, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(end = 4.dp)) {
             items(model.tabs, key = { it.id }) { t ->
                 var menu by remember { mutableStateOf(false) }
                 val on = t === current
@@ -86,24 +93,27 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                 val title = t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) }
                 Box {
                     Column(
-                        Modifier.padding(horizontal = 1.dp).widthIn(max = if (on) 180.dp else 140.dp).height(40.dp)
+                        Modifier.padding(horizontal = 1.dp)
+                            .then(
+                                // La scheda aperta resta leggibile; le altre prendono la loro parte dello spazio.
+                                if (on) Modifier.widthIn(min = 120.dp.coerceAtMost(maxWidth / 2), max = 180.dp)
+                                else Modifier.width(share.coerceIn(narrowest, 140.dp))
+                            ).height(40.dp)
                             .then(if (on) Modifier.shadow(2.dp, RoundedCornerShape(20.dp)) else Modifier)
                             .clip(RoundedCornerShape(20.dp)).background(if (on) scheme.surface else Color.Transparent)
                             .semantics { selected = on }
                             .combinedClickable(role = Role.Tab, onClick = { model.show(t) }, onLongClick = { menu = true }),
                     ) {
-                        Row(Modifier.weight(1f).padding(start = 8.dp, end = if (on) 2.dp else 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(20.dp).clip(CircleShape).background(if (on) scheme.primary.copy(alpha = 0.10f) else scheme.onSurface.copy(alpha = 0.07f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (t.private) Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(12.dp))
-                                else Text(Links.host(t.url).removePrefix("www.").take(1).uppercase().ifBlank { "+" }, fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.ExtraBold, color = if (on) scheme.primary else scheme.onSurfaceVariant)
-                            }
+                        val iconOnly = !on && share < 76.dp
+                        Row(Modifier.weight(1f).padding(start = if (iconOnly) 0.dp else 8.dp, end = if (on) 2.dp else if (iconOnly) 0.dp else 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = if (iconOnly) androidx.compose.foundation.layout.Arrangement.Center else androidx.compose.foundation.layout.Arrangement.Start) {
+                            if (t.private) TabInitial(t, on) else SiteIcon(t.url, 20.dp) { TabInitial(t, on) }
+                            if (!iconOnly) {
                             Spacer(Modifier.width(7.dp))
                             Text(title, fontSize = 12.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1,
                                 overflow = TextOverflow.Ellipsis, color = if (on) scheme.onSurface else scheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+                            }
                             if (on) {
                                 val close = stringResource(R.string.brw_close_tab)
                                 Box(Modifier.size(28.dp).clip(CircleShape).clickable { model.close(t) }.semantics { contentDescription = close }, contentAlignment = Alignment.Center) {
@@ -126,10 +136,25 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                 }
             }
         }
+        }
         val add = stringResource(R.string.brw_new_tab)
         Box(
             Modifier.size(40.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.primary, modifier = Modifier.size(16.dp)) }
+    }
+}
+
+/** L'iniziale del sito (o la maschera delle schede private) quando l'icona non c'è. */
+@Composable
+private fun TabInitial(t: Tab, on: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier.size(20.dp).clip(CircleShape).background(if (on) scheme.primary.copy(alpha = 0.10f) else scheme.onSurface.copy(alpha = 0.07f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (t.private) Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(12.dp))
+        else Text(Links.host(t.url).removePrefix("www.").take(1).uppercase().ifBlank { "+" }, fontSize = 10.5.sp,
+            fontWeight = FontWeight.ExtraBold, color = if (on) scheme.primary else scheme.onSurfaceVariant)
     }
 }

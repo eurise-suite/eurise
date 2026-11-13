@@ -86,6 +86,14 @@ internal fun siteTint(host: String): Pair<Color, Color> {
 internal fun SiteDot(url: String, size: Int = 32) {
     val host = Links.host(url)
     val (bg, fg) = siteTint(host)
+    // L'icona del sito, se è già sul telefono (SiteIcons), su un tondo chiaro; altrimenti l'iniziale.
+    val icon = SiteIcons.get(host)
+    if (icon != null) {
+        Box(Modifier.size(size.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHighest), contentAlignment = Alignment.Center) {
+            androidx.compose.foundation.Image(icon, null, Modifier.size((size * 0.6f).dp).clip(androidx.compose.foundation.shape.RoundedCornerShape((size * 0.12f).dp)))
+        }
+        return
+    }
     Box(Modifier.size(size.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
         Text(host.take(1).uppercase(), fontSize = (size * 0.4f).sp, fontWeight = FontWeight.ExtraBold, color = fg)
     }

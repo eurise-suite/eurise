@@ -68,8 +68,9 @@ object EurisePercorso {
         attached = true
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
-            tick.intValue // si ridisegna a ogni percorso nuovo
-            Panel(ThemeUtils.isNightTheme())
+            // Il numero del giro entra come parametro: senza, Compose saltava il pannello (parametri uguali) e restava
+            // fermo allo stato del primo disegno, con «Avvia la navigazione» spento (prova del 13 novembre, sera).
+            Panel(ThemeUtils.isNightTheme(), tick.intValue)
         }
     }
 
@@ -98,7 +99,7 @@ private tailrec fun Context.activity(): Activity? = when (this) {
 }
 
 @Composable
-private fun Panel(night: Boolean) {
+private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
     val c = if (night) Notte else Perla
     val context = LocalContext.current
     val rc = RoutingController.get()

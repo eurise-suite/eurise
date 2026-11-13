@@ -87,12 +87,14 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Logins.init(this, passwordPackage)
+        SiteIcons.init(this)
         Logins.onSaveFailed = { login ->
             // Password chiusa al momento del salvataggio: la voce si apre compilata in Password, da confermare.
             eu.eurise.core.suite.PasswordContract.addIntent(this, BuildConfig.DEBUG, Uri.parse(login.origin).host.orEmpty(), login.password,
                 username = login.username, url = login.origin)?.let { runCatching { startActivity(it) } }
         }
         model = BrowserModel(this)
+        Logins.currentUrl = { model.current?.url }
         model.onDownload = ::download
         model.restoreTabs()
         handle(intent)
