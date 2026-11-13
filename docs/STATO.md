@@ -1825,3 +1825,6 @@ Fatto (ramo `brand`):
   Da rinominare con la nuova regola (nome di persona che evoca l'azione): Galleria (Fotonda) → proposte **Imma**
   (immagine), Nadar (il fotografo francese), Rita (ritratto); Attività (Spunta) → proposta **Brigida** (sbrigare; Santa
   Brigida è compatrona d'Europa), in alternativa Sbrigo. Nessun conflitto trovato sul web per i nuovi nomi.
+- **Voce**: nessun nome a parte (Tonio scartato). Per l'utente è «la voce di Alfred». Resta un APK separato perché è il motore di
+  sintesi e di riconoscimento per tutta la suite (dettatura della tastiera, guida di Mappe, lettura ad alta voce in Leggi),
+  ma nel cassetto e nelle impostazioni compare come parte di Alfred («Alfred · voce e modelli»).
