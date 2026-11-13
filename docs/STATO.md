@@ -11,6 +11,29 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
   `main` quando il proprietario l'ha provato sul telefono.
   L'APK di prova si scarica da GitHub Actions (artefatto `eurise-debug-N` della compilazione su `main`).
 
+## Cose da fare ancora (road map aperta) – da ricordare al proprietario
+Quando il proprietario chiede «cosa c'è ancora da fare», in generale o su un'app, si risponde **da qui** (e dalle ultime
+sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
+- **Mappe**
+  - Passi dell'interfaccia rifatta: d) percorso (MapPercorso), e) guida (MapGuida, MapIncrocio, MapRotonda con lo schema
+    dell'incrocio anche in Android Auto, MapVelocita, MapSegnalaGuida, orizzontale), f) livelli, segnala, esplora, attività.
+  - **Km vero su autostrade, superstrade e provinciali** («Sei su A51 · km 12,4», per soccorsi e carro attrezzi): le mappe di
+    CoMaps non hanno le pietre miliari. Strada scelta (13 novembre): un **file piccolo a parte** con le pietre miliari di
+    OpenStreetMap (`highway=milestone`: strada, km, posizione), scaricato a richiesta come le mappe; il km si calcola tra le
+    due pietre più vicine misurando la distanza lungo la strada. Solo stima dalla lunghezza della strada senza pietre: no
+    (l'inizio della strada nei dati non coincide con il km 0 e le varianti di tracciato spostano tutto di chilometri; per i
+    soccorsi un km sbagliato è peggio di nessuno). Dove mancano le pietre restano le coordinate («Soccorsi: 45.46420, 9.19003»).
+  - Panoramica del percorso prima di partire che si riadatta quando Android Auto riduce la mappa.
+  - Traffico: nessuna fonte libera nazionale; si riprende se se ne trova una.
+  - «Dove devi andare» (impegni del Calendario) anche nella ricerca di Android Auto.
+- **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe).
+- **Tastiera**: lavoro principale dopo Mappe.
+- **Icone** in codice: simboli nuovi, sfumatura e alone della stellina negli APK e nei temi; stili iOS, Android, /e/OS;
+  forma a scelta in «Griglia e icone»; iniziale come ripiego; «Eurise a colori» con i simboli nuovi (tavola IconeColori).
+- **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
+  registrazione di «Eurise» (proprietario).
+- In fondo: computer (vedi sotto), Password Famiglia, kDrive (bloccato da Infomaniak).
+
 ## Metodo concordato con il proprietario
 - Prima le anteprime sulla tela, se ne parla, e solo dopo l'approvazione si scrive il codice.
   Le correzioni chiare (bug, colori, spaziature) si fanno direttamente.
