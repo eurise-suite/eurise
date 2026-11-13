@@ -1787,3 +1787,18 @@ Fatto (ramo `brand`):
   6. Quando la mappa di Android Auto si riduce per far posto ad altre app (telefono, musica), la vista ridotta **riprende
      quella grande**, dando priorità alla navigazione. Il percorso e la freccia vanno **ricentrati nell'area ridotta**:
      ora restano dove stavano nella vista grande, cioè fuori centro (va usata la `visibleArea`/`stableArea` di Car App).
+- **Android Auto in tavola** (aggiornate le tavole esistenti, nessuna nuova): **MapAutoGuida** ha il microfono di Alfred
+  sotto la lente, la riga «Sei su A51 Tangenziale Est · km 12,4» con il traffico sotto l'arrivo e la scena dell'uscita nella
+  finestrella. **MapAutoCerca** ha la lista «Dove devi andare», che si apre dalla lente o dal microfono. Accanto c'è la mappa
+  ridotta in guida libera: freccia al centro rivolta in alto lungo la strada, «Sei su», traffico, meteo, velocità e limite,
+  e si ricentra nello spazio rimasto. La tavola dice anche che al collegamento Mappe si apre da sola.
+- **Marchi**: la ricerca su TMview/EUIPO non è partita, perché la richiesta di accesso al sito è rimasta senza risposta.
+  Primo controllo sul web: **Zonzo è a rischio** (ZonzoFox, guida d'Italia con mappe, circa 273 mila installazioni);
+  **Desco** è registrato negli USA in classe 9 (Desco Industries, elettronica); Lunario e Celeste esistono già come app.
+  Liberi per quanto si vede: Ciarly, Spunta, Postello, Fotonda, Clavio, Drin (c'è un'app per droni), Pigi, Bisbi, Stipo,
+  Copisto, Sbircio, Leggio, Cucù.
+- **Nomi nuovi proposti** (stesso metodo di Ciarly: parola comune, dialettale o di gergo che evoca l'azione e suona come un
+  nome di persona): Agenore (Calendario), Compare (Contatti), Stipo (Drive e File), Svegliarino o Cucù (Orologio),
+  Copisto (Scanner), Leggio (Leggi/PDF), Scrittoio o Bottega (Office), Pigi (Tastiera), Bisbi (Messaggi), Arietta
+  o Celeste (Meteo), Conti (Calcolatrice), Turcimanno (Traduttore), Scribò (Note); per sostituire Zonzo: Girolamo.
+  Alternative per le app con nome: Letterio (Email), Sbircio (Browser), Pronto (Telefono). Da scegliere.
