@@ -78,6 +78,12 @@ public final class EuriseCarInfo
     sName = p[2];
   }
 
+  /** Su autostrada o superstrada: la scena dell'uscita compare prima (600 m invece di 300). */
+  public static boolean isFastRoad()
+  {
+    return sClass == MOTORWAY || sClass == TRUNK;
+  }
+
   /** Si riparte da capo (nuova sessione dell'auto). */
   public static void reset()
   {

@@ -134,4 +134,20 @@
     <string name="eurise_pc_save_place">Save the place</string>
     <string name="eurise_pc_start">Start navigation</string>
     <string name="eurise_pc_offline">Route calculated on the phone, without network. OpenStreetMap maps, updated when you want.</string>
+    <string name="eurise_junction_exit">Exit %1$s</string>
+    <string name="eurise_junction_roundabout">Exit %1$d</string>
+    <string name="eurise_speed_tolerance">Speed turns red above the limit by</string>
+    <string name="eurise_speed_sound">Sound when going over</string>
+    <string name="eurise_limit_notice">Notice when the limit changes</string>
+    <string name="eurise_limit_notice_summary">The sign pulses and sounds twice</string>
+    <string-array name="eurise_speed_tolerance_entries">
+        <item>0</item>
+        <item>+5 km/h</item>
+        <item>+10%</item>
+    </string-array>
+    <string-array name="eurise_speed_tolerance_values" translatable="false">
+        <item>0</item>
+        <item>5</item>
+        <item>10p</item>
+    </string-array>
 </resources>

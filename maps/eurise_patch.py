@@ -771,3 +771,126 @@ patch(bottom_menu, """    boolean result = show && RoutingController.get().isBui
     // Eurise: «Avvia la navigazione» è nel pannello della suite; questo resta nascosto ma fa il lavoro.
     UiUtils.showIf(result && !app.organicmaps.eurise.ui.EurisePercorso.getAttached(), mStart);""")
 print("eurise_patch: pannello del percorso della suite (passo d)")
+
+# Passo e) della guida, prima parte (tavole MapVelocita, MapIncrocio, MapRotonda, MapAutoGuida).
+# Velocità e limite: maps/android/…/eurise/EuriseSpeed.java. La velocità diventa un tondo rosso oltre il limite più la
+# tolleranza (Impostazioni › Navigazione), con un suono breve; il cartello del limite resta bianco col bordo rosso.
+nav = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "NavigationController.java"
+patch(nav, """    final int fSpeedLimit = StringUtils.nativeFormatSpeed(info.speedLimitMps);
+    final boolean speedLimitExceeded = fSpeedLimit < StringUtils.nativeFormatSpeed(location.getSpeed());
+    mSpeedLimit.setSpeedLimit(fSpeedLimit, speedLimitExceeded);
+    mCurrentSpeed.setCurrentSpeed(location.getSpeed());""", """    final int fSpeedLimit = StringUtils.nativeFormatSpeed(info.speedLimitMps);
+    // Eurise (MapVelocita): rossa la velocità oltre il limite più la tolleranza; il cartello resta bianco.
+    mSpeedLimit.setSpeedLimit(fSpeedLimit, false);
+    mCurrentSpeed.setCurrentSpeed(location.getSpeed());
+    app.organicmaps.eurise.EuriseSpeed.apply(mSpeedLimit, mCurrentSpeed, info.speedLimitMps, location.getSpeed());
+    // La strada sotto l'auto (autostrada o no) decide quando compare la scena dell'uscita.
+    app.organicmaps.eurise.car.EuriseCarInfo.onLocation(location);""")
+speedview = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "CurrentSpeedView.java"
+patch(speedview, "    int ALERT_COLOR = 0xFFFF0000;", "    int ALERT_COLOR = 0xFFC8102E; // Eurise: il rosso dei cartelli")
+patch(speedview, "    int TEXT_ALERT_COLOR = 0xFFFF0000;", "    int TEXT_ALERT_COLOR = 0xFFFFFFFF; // Eurise: bianco sul tondo rosso")
+
+# La scena dell'uscita o della rotonda (maps/android/…/eurise/EuriseJunctionScene.java): sul telefono sotto le corsie,
+# in verticale (in orizzontale arriva con la tavola MapOrizzontaleGuida); in Android Auto nella finestrella della manovra.
+patch(res / "layout" / "layout_nav_top.xml", """  <app.organicmaps.widget.CurrentSpeedView
+      android:id="@+id/nav_current_speed\"""", """  <androidx.constraintlayout.widget.Barrier
+      android:id="@+id/eurise_junction_top"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:barrierDirection="bottom"
+      app:constraint_referenced_ids="lanes,eurise_route_weather,eurise_arrival" />
+
+  <app.organicmaps.eurise.EuriseJunctionView
+      android:id="@+id/eurise_junction"
+      android:layout_width="0dp"
+      android:layout_height="210dp"
+      android:layout_marginEnd="@dimen/margin_half"
+      android:layout_marginTop="@dimen/margin_quarter"
+      android:elevation="@dimen/nav_elevation"
+      android:visibility="gone"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toEndOf="@id/nav_next_turn_container"
+      app:layout_constraintTop_toBottomOf="@id/eurise_junction_top" />
+
+  <app.organicmaps.widget.CurrentSpeedView
+      android:id="@+id/nav_current_speed\"""")
+patch(nav, """  @NonNull
+  private final CurrentSpeedView mCurrentSpeed;
+""", """  @NonNull
+  private final CurrentSpeedView mCurrentSpeed;
+  // Eurise: la scena dell'uscita o della rotonda (solo nel layout verticale, per ora).
+  @Nullable
+  private final app.organicmaps.eurise.EuriseJunctionView mEuriseJunction;
+""")
+patch(nav, """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
+""", """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
+    mEuriseJunction = topFrame.findViewById(R.id.eurise_junction);
+""")
+patch(nav, """    mLanesView.setLanes(info.lanes);
+""", """    mLanesView.setLanes(info.lanes);
+    if (mEuriseJunction != null)
+      mEuriseJunction.update(info);
+""")
+patch(nav, """    info.pedestrianTurnDirection.setTurnDrawable(mNextTurnImage);
+""", """    info.pedestrianTurnDirection.setTurnDrawable(mNextTurnImage);
+    if (mEuriseJunction != null)
+      mEuriseJunction.hide();
+""")
+patch(nav, """  public void show(boolean show)
+  {
+""", """  public void show(boolean show)
+  {
+    if (!show)
+    {
+      app.organicmaps.eurise.EuriseSpeed.reset();
+      if (mEuriseJunction != null)
+        mEuriseJunction.hide();
+    }
+""")
+patch(navscreen, """    if (steps.size() > 1)
+      builder.setNextStep(steps.get(1));
+
+    return builder.build();""", """    if (steps.size() > 1)
+      builder.setNextStep(steps.get(1));
+
+    // Eurise (MapAutoGuida): la scena dell'uscita o della rotonda nella finestrella della manovra.
+    final android.graphics.Bitmap junction = app.organicmaps.eurise.EuriseJunctionScene.bitmap(
+        getCarContext(),
+        app.organicmaps.eurise.EuriseJunctionScene.from(Framework.nativeGetRouteFollowingInfo(),
+                                                        app.organicmaps.eurise.car.EuriseCarInfo.isFastRoad()),
+        640, 360);
+    if (junction != null)
+      builder.setJunctionImage(new androidx.car.app.model.CarIcon.Builder(
+                                   androidx.core.graphics.drawable.IconCompat.createWithBitmap(junction)).build());
+
+    return builder.build();""")
+
+# Impostazioni › Navigazione: tolleranza, suono, avviso del limite che cambia (tavola MapVelocita).
+patch(res / "xml" / "prefs_navigation.xml", """    app:icon="@drawable/ic_speed"
+    app:singleLineTitle="true" />""", """    app:icon="@drawable/ic_speed"
+    app:singleLineTitle="true" />
+  <ListPreference
+    android:defaultValue="5"
+    android:dependency="@string/pref_speedlimit"
+    android:entries="@array/eurise_speed_tolerance_entries"
+    android:entryValues="@array/eurise_speed_tolerance_values"
+    android:key="eurise_speed_tolerance"
+    android:summary="%s"
+    android:title="@string/eurise_speed_tolerance"
+    app:singleLineTitle="false" />
+  <SwitchPreferenceCompat
+    android:defaultValue="true"
+    android:dependency="@string/pref_speedlimit"
+    android:key="eurise_speed_sound"
+    android:title="@string/eurise_speed_sound"
+    android:widgetLayout="@layout/preference_switch"
+    app:singleLineTitle="false" />
+  <SwitchPreferenceCompat
+    android:defaultValue="true"
+    android:dependency="@string/pref_speedlimit"
+    android:key="eurise_limit_notice"
+    android:title="@string/eurise_limit_notice"
+    android:summary="@string/eurise_limit_notice_summary"
+    android:widgetLayout="@layout/preference_switch"
+    app:singleLineTitle="false" />""")
+print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e della rotonda, anche in Android Auto)")

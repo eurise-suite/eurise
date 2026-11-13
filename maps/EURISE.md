@@ -82,3 +82,18 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
 - Colori Perla e Notte e lettura degli impegni ora sono in comune (`eurise/ui/EuriseMapStyle.kt`).
 - Non ancora: la scheda aperta con orari e contatti nello stile della tavola (oggi sono le righe di CoMaps con i colori
   della suite), «Nota del luogo» e «Cerca qui vicino».
+
+## Guida, passo e) prima parte (13 novembre, sera)
+- `eurise/EuriseSpeed.java` (tavola MapVelocita): la velocità diventa un tondo rosso oltre il limite più la tolleranza
+  (Impostazioni › Navigazione: 0, +5 km/h di base, +10%), con un suono breve all'inizio del superamento (non più di uno
+  ogni 20 s); il cartello del limite resta bianco col bordo rosso; quando il limite cambia il cartello pulsa e suona due
+  volte (si spegne). Limite da OpenStreetMap, velocità dal GPS.
+- `eurise/EuriseJunctionScene.java` (tavole MapIncrocio e MapRotonda): la manovra vista dal volante, disegnata su Canvas.
+  Uscita: corsie di OSM, corsia di uscita colorata, frecce che scorrono dritte verso la rampa, portale con il cartello
+  (numero d'uscita, sigla, destinazioni; verde se autostrada) che lampeggia piano. Rotonda: uscite numerate, quella
+  giusta blu, frecce dipinte che si accendono nel verso di marcia, frecce dritte all'uscita, cartello «3ª uscita · via».
+  Compare 600 m prima su autostrada e superstrada, 300 m altrove e alle rotonde; si chiude dopo la manovra.
+  `EuriseJunctionView` la mostra animata sotto le corsie (solo in verticale per ora); in Android Auto la stessa scena,
+  ferma, va nella finestrella della manovra (`RoutingInfo.Builder.setJunctionImage`).
+- Non ancora: «tra 200 m: 70» (il limite che arriva: CoMaps non lo dà in anticipo), il limite «dedotto» (bordo
+  tratteggiato), velocità e limite anche senza percorso, la scena in orizzontale.
