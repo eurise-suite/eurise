@@ -27,4 +27,21 @@
     <string name="voice_speed">Misura la velocità</string>
     <string name="voice_speed_working">Misuro… (mezzo minuto)</string>
     <string name="voice_speed_result">Thread %1$s → uso %2$d</string>
+    <string name="voice_close">Chiudi</string>
+    <string name="voice_delete">Elimina</string>
+    <string name="voice_models_title">Modelli e voce</string>
+    <string name="voice_models_lead">Tutto resta sul telefono: si scarica una volta e poi funziona anche senza rete.</string>
+    <string name="voice_models_hear">Per ascoltare (Alfred e dettatura)</string>
+    <string name="voice_models_speak">La voce di Alfred</string>
+    <string name="voice_models_private">Né la voce né il testo escono dal telefono. Escono solo le richieste dei file che scarichi.</string>
+    <string name="voice_tts_engine">Eurise Voce (Alfred)</string>
+    <string name="voice_tts_riccardo">Alfred, voce maschile pacata</string>
+    <string name="voice_tts_riccardo_d">%1$d MB · la voce di Alfred, leggera</string>
+    <string name="voice_tts_paola">Voce femminile</string>
+    <string name="voice_tts_paola_d">%1$d MB · più ricca, più pesante</string>
+    <string name="voice_tts_in_use">in uso</string>
+    <string name="voice_tts_use">Usa</string>
+    <string name="voice_tts_try">Ascolta una prova</string>
+    <string name="voice_tts_sample">Buongiorno. Ho dato un\'occhiata alla giornata: nulla che non si possa affrontare con un buon caffè.</string>
+    <string name="voice_tts_system">Per sentirla anche in Mappe e nelle altre app: Impostazioni del telefono, Sintesi vocale, motore preferito «Eurise Voce (Alfred)».</string>
 </resources>

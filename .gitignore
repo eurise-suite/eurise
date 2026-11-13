@@ -17,3 +17,4 @@ captures/
 !app/debug-key/eurise-debug.keystore
 keystore.properties
 __pycache__/
+voice/libs/

@@ -3,7 +3,8 @@
     <!-- Solo quando si chiede ad Alfred di chiamare qualcuno; senza, si apre il tastierino con il numero. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
-    <!-- Alfred che ascolta: il microfono si chiede al primo tocco; l'audio va solo a Eurise Voce o al riconoscimento del telefono. -->
+    <!-- Alfred che ascolta: il microfono si chiede al primo tocco; registra Alfred stesso, l'audio va solo a Eurise Voce
+         (che trascrive sul telefono) o, senza Voce, al riconoscimento del telefono. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <queries>
         <package android:name="eu.eurise.voice" />
@@ -18,6 +19,10 @@
         </intent>
         <intent>
             <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <!-- La voce di Alfred: i motori di sintesi del telefono (Eurise Voce o quello di sistema). -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
         <!-- La musica di Alfred: l'app scelta dall'utente riceve titolo e autore del brano («riproduci da ricerca»). -->
         <intent>

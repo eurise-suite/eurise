@@ -1,4 +1,4 @@
-package eu.eurise.voice
+package eu.eurise.core.suite
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -26,14 +26,40 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Ascolto senza tasti per Alfred: solo le app della suite (stessa firma) possono collegarsi. -->
+        <!-- Trascrizione per Alfred: l'audio arriva già registrato da lui; solo le app della suite (stessa firma). -->
         <service
-            android:name=".VoiceRecognitionService"
+            android:name=".TranscribeService"
             android:exported="true"
             android:permission="${suitePermission}">
             <intent-filter>
-                <action android:name="android.speech.RecognitionService" />
+                <action android:name="eu.eurise.action.TRANSCRIBE" />
             </intent-filter>
         </service>
+        <!-- La voce di Alfred come motore di sintesi del telefono: riceve solo il testo da leggere, che non esce. -->
+        <service
+            android:name=".speech.AlfredVoiceService"
+            android:exported="true"
+            android:label="@string/voice_tts_engine">
+            <intent-filter>
+                <action android:name="android.intent.action.TTS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="android.speech.tts" android:resource="@xml/tts_engine" />
+        </service>
+        <!-- Modelli e voci da scaricare: dalla suite, dalle impostazioni della sintesi del telefono e da Voce. -->
+        <activity
+            android:name=".ModelsActivity"
+            android:exported="true"
+            android:label="@string/voice_models_title"
+            android:theme="@style/Theme.EuriseVoice">
+            <intent-filter>
+                <action android:name="eu.eurise.action.VOICE_MODELS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

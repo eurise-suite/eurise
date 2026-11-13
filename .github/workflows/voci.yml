@@ -1,0 +1,46 @@
+name: Voci di Alfred
+
+# Prepara le voci neurali che Eurise Voce scarica a richiesta (voice/…/speech/Voices.kt) e le mette nella pre-release
+# «voci». Parte dagli archivi pubblicati da sherpa-onnx (voci Piper, licenza MIT; dati di pronuncia di espeak-ng, GPL 3)
+# e tiene solo ciò che serve all'italiano, così il download scende da ~19 MB di dati a ~1 MB. Formato zip, che Android
+# apre senza librerie in più. Parte quando cambia questo file o a mano.
+on:
+  push:
+    paths:
+      - ".github/workflows/voci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  voci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepara gli archivi
+        run: |
+          set -e
+          mkdir out
+          for pair in "alfred-riccardo:vits-piper-it_IT-riccardo-x_low" "alfred-paola:vits-piper-it_IT-paola-medium"; do
+            id="${pair%%:*}"; src="${pair#*:}"
+            curl -fsSL -o "$src.tar.bz2" "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/$src.tar.bz2"
+            tar xjf "$src.tar.bz2"
+            cd "$src"
+            # Dati di espeak-ng: tabelle comuni, voci e lingue, solo i dizionari italiano e inglese (nomi stranieri).
+            find espeak-ng-data -maxdepth 1 -name '*_dict' ! -name it_dict ! -name en_dict -delete
+            printf 'Voce Piper (licenza MIT) da rhasspy/piper-voices, convertita da sherpa-onnx.\nDati di pronuncia: espeak-ng (GPL 3), https://github.com/espeak-ng/espeak-ng\n' > LEGGIMI.txt
+            zip -qr9 "../out/$id.zip" *.onnx tokens.txt espeak-ng-data MODEL_CARD LEGGIMI.txt
+            cd ..
+            ls -l "out/$id.zip"
+          done
+
+      - name: Pubblica nella pre-release «voci»
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view voci -R "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create voci -R "${{ github.repository }}" --prerelease --title "Voci di Alfred" \
+              --notes "Voci neurali per Eurise Voce, scaricate a richiesta dall'app. Piper (MIT) con i dati di espeak-ng (GPL 3)."
+          gh release upload voci out/*.zip --clobber -R "${{ github.repository }}"
+          echo "### Voci pubblicate" >> "$GITHUB_STEP_SUMMARY"
+          ls -l out >> "$GITHUB_STEP_SUMMARY"

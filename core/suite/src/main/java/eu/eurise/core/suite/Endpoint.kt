@@ -1,4 +1,4 @@
-package eu.eurise.voice
+package eu.eurise.core.suite
 
 /**
  * Quando si è finito di parlare, per l'ascolto senza tasti (Alfred e le altre app della suite): guarda l'energia dei

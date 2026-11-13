@@ -84,6 +84,10 @@ private sealed interface Phase {
     data object Thinking : Phase
     /** Alfred ascolta: il microfono è aperto, si chiude da solo quando si smette di parlare. */
     data object Listening : Phase
+    /** La frase è finita: Eurise Voce la sta trascrivendo. */
+    data object Working : Phase
+    /** Qualcosa impedisce di ascoltare: si dice cosa, e cosa fare. */
+    data class Trouble(val problem: Ear.Problem) : Phase
     data class Confirm(val card: Card) : Phase
     data class Said(val line: String) : Phase
     data object Settings : Phase
@@ -111,22 +115,65 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     DisposableEffect(Unit) { onDispose { ear.cancel() } }
     var level by remember { mutableStateOf(0f) }
     var speaking by remember { mutableStateOf(false) }
+    /** Alfred aspetta a voce «sì» o «no» sulla scheda (solo se gli si è parlato). */
+    var answering by remember { mutableStateOf(false) }
 
-    fun say(line: String) { if (readAloud) speaker.value.say(line) }
+    fun say(line: String, onDone: (() -> Unit)? = null) {
+        if (readAloud) speaker.value.say(line, onDone) else onDone?.invoke()
+    }
 
-    fun understand(text: String) {
-        if (text.isBlank()) return
-        heard = text.trim()
-        typed = ""
-        phase = Phase.Thinking
+    fun execute(card: Card) {
+        answering = false
+        ear.cancel()
         scope.launch {
-            val card = butler.plan(Grammar.parse(heard, LocalDateTime.now()))
-            phase = Phase.Confirm(card)
-            say(card.lead)
+            val out = butler.run(card)
+            phase = Phase.Said(out.line)
+            say(out.line)
+            if (out.close) { delay(900L + out.line.length * 35L); onClose() }
         }
     }
 
+    lateinit var understandSaid: (String, Boolean) -> Unit
+
+    /** Dopo la scheda letta a voce, Alfred ascolta la risposta: «sì» agisce, «no» annulla, altro è una correzione. */
+    fun askAnswer(card: Card) {
+        if ((phase as? Phase.Confirm)?.card != card) return
+        answering = true
+        ear.listen(
+            onLevel = { level = it }, onSpeech = {}, onWorking = {},
+            onText = { said ->
+                answering = false
+                if ((phase as? Phase.Confirm)?.card != card) return@listen
+                when (Grammar.answer(said)) {
+                    Grammar.Answer.Yes -> execute(card)
+                    Grammar.Answer.No -> { heard = ""; phase = Phase.Ready; say(context.getString(R.string.alfred_cancelled)) }
+                    Grammar.Answer.Other -> understandSaid(said, true)
+                }
+            },
+            onFail = { answering = false },
+        )
+    }
+
+    understandSaid = { text, spoken ->
+        if (text.isNotBlank()) {
+            heard = text.trim()
+            typed = ""
+            phase = Phase.Thinking
+            scope.launch {
+                val card = butler.plan(Grammar.parse(heard, LocalDateTime.now()))
+                phase = Phase.Confirm(card)
+                val canAct = card.ready && (card.kind != Kind.Call ||
+                    context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
+                if (spoken && readAloud && canAct) say(card.lead + " " + context.getString(R.string.alfred_ask_confirm)) { askAnswer(card) }
+                else say(card.lead)
+            }
+        }
+    }
+    fun understand(text: String) = understandSaid(text, false)
+
     fun replan(command: Command) {
+        answering = false
+        ear.cancel()
         phase = Phase.Thinking
         scope.launch { phase = Phase.Confirm(butler.plan(command)) }
     }
@@ -135,24 +182,20 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     fun listenNow() {
         if (speaker.isInitialized()) speaker.value.stop()
         speaking = false
+        answering = false
         level = 0f
-        val started = ear.available && ear.listen(
+        phase = Phase.Listening
+        ear.listen(
             onLevel = { level = it },
             onSpeech = { speaking = true },
-            onText = { understand(it) },
-            onFail = { code ->
-                phase = Phase.Ready
-                // Eurise Voce senza modello o senza microfono: la prima volta si sistema dalla dettatura a schermo.
-                if (code == android.speech.SpeechRecognizer.ERROR_SERVER || code == android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-                    dictation.start { understand(it) }
-                }
-            },
+            onWorking = { phase = Phase.Working },
+            onText = { understandSaid(it, true) },
+            onFail = { problem -> phase = Phase.Trouble(problem) },
         )
-        if (started) phase = Phase.Listening else dictation.start { understand(it) }
     }
 
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) listenNow() else dictation.start { understand(it) }
+        if (ok) listenNow() else phase = Phase.Trouble(Ear.Problem.Mic)
     }
     fun voice() {
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) listenNow()
@@ -163,14 +206,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         (phase as? Phase.Confirm)?.let { replan(it.card.command) }
     }
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        (phase as? Phase.Confirm)?.let { c ->
-            scope.launch {
-                val out = butler.run(c.card)
-                phase = Phase.Said(out.line)
-                say(out.line)
-                if (out.close) { delay(900L + out.line.length * 35L); onClose() }
-            }
-        }
+        (phase as? Phase.Confirm)?.let { c -> execute(c.card) }
     }
 
     // La prima volta Alfred chiede come chiamare chi usa il telefono (il nome si cambia poi dalle disposizioni).
@@ -235,8 +271,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     }
                     InputRow(
                         value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = dictation.source != Dictation.Source.None || ear.available,
-                        onVoice = { voice() },
+                        voice = ear.available, onVoice = { voice() },
                     )
                     Text(stringResource(R.string.alfred_how_to_open), fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth())
@@ -255,6 +290,25 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         Text(stringResource(R.string.alfred_listen_hint), fontSize = 12.5.sp, lineHeight = 18.sp, color = Muted, modifier = Modifier.weight(1f))
                     }
                     OutlineChip(stringResource(R.string.alfred_cancel)) { ear.cancel(); phase = Phase.Ready }
+                }
+                Phase.Working -> {
+                    Header(stringResource(R.string.alfred_working), Mood.Thinking, onSettings = {})
+                    Text(stringResource(R.string.alfred_on_phone), fontSize = 12.sp, color = Muted)
+                }
+                is Phase.Trouble -> {
+                    val line = when (p.problem) {
+                        Ear.Problem.Nothing -> stringResource(R.string.alfred_p_nothing, address)
+                        Ear.Problem.NoModel -> stringResource(R.string.alfred_p_no_model)
+                        Ear.Problem.NoEngine -> stringResource(R.string.alfred_p_no_engine)
+                        Ear.Problem.Mic -> stringResource(R.string.alfred_p_mic)
+                        Ear.Problem.Failed -> stringResource(R.string.alfred_p_failed)
+                    }
+                    Header(line, Mood.Attentive, onSettings = { phase = Phase.Settings })
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (p.problem == Ear.Problem.NoModel) OutlineChip(stringResource(R.string.alfred_p_get_model)) { AlfredTts.openModels(context) }
+                        if (p.problem != Ear.Problem.NoEngine) OutlineChip(stringResource(R.string.alfred_p_again)) { voice() }
+                        OutlineChip(stringResource(R.string.alfred_p_write)) { phase = Phase.Ready }
+                    }
                 }
                 is Phase.Confirm -> {
                     val card = p.card
@@ -281,20 +335,21 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         BigButton(stringResource(R.string.alfred_cancel), primary = false, enabled = true, modifier = Modifier.weight(1f)) {
+                            answering = false
+                            ear.cancel()
                             heard = ""
                             phase = Phase.Ready
                         }
                         BigButton(card.action, primary = true, enabled = card.ready, modifier = Modifier.weight(1.4f)) {
                             if (card.kind == Kind.Call && context.checkSelfPermission(Manifest.permission.CALL_PHONE) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                answering = false
+                                ear.cancel()
                                 callPermission.launch(Manifest.permission.CALL_PHONE)
-                            } else scope.launch {
-                                val out = butler.run(card)
-                                phase = Phase.Said(out.line)
-                                say(out.line)
-                                if (out.close) { delay(900L + out.line.length * 35L); onClose() }
-                            }
+                            } else execute(card)
                         }
                     }
+                    if (answering) Text(stringResource(R.string.alfred_answer_hint), fontSize = 12.sp, color = Gold, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth())
                     Text(stringResource(R.string.alfred_last_step), fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth())
                 }
@@ -302,10 +357,10 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     Header(p.line, Mood.Bow, onSettings = { phase = Phase.Settings })
                     InputRow(
                         value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = dictation.source != Dictation.Source.None, onVoice = { voice() },
+                        voice = ear.available, onVoice = { voice() },
                     )
                 }
-                Phase.Settings -> SettingsView(prefs, dictation.source, readAloud,
+                Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural,
                     onReadAloud = { readAloud = it; prefs.readAloud = it },
                     onAddress = { address = addressSuffix(prefs) },
                     onTry = { understand(context.getString(R.string.alfred_try_text)) },
@@ -476,6 +531,7 @@ private fun SettingsView(
     prefs: AlfredPrefs,
     source: Dictation.Source,
     readAloud: Boolean,
+    natural: Boolean,
     onReadAloud: (Boolean) -> Unit,
     onAddress: () -> Unit,
     onTry: () -> Unit,
@@ -526,6 +582,16 @@ private fun SettingsView(
         ) {}
         Divider()
         SettingRow(stringResource(R.string.alfred_s_voice), stringResource(R.string.alfred_s_voice_d)) { Toggle(readAloud, enabled = true, onReadAloud) }
+        Divider()
+        SettingRow(
+            stringResource(R.string.alfred_s_voice_mine),
+            stringResource(if (natural) R.string.alfred_s_voice_mine_on else R.string.alfred_s_voice_mine_off),
+        ) {
+            if (!natural) Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
+                .clickable { AlfredTts.openModels(context) }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.alfred_s_voice_get), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
+            }
+        }
         Divider()
         SettingRow(stringResource(R.string.alfred_s_ai), stringResource(R.string.alfred_s_ai_d)) {}
         Divider()

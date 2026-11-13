@@ -84,4 +84,14 @@ class GrammarTest {
     @Test fun letteraERichiestaLibera() {
         assertTrue(p("Scrivi una lettera all'amministratore per la perdita d'acqua dal piano di sopra") is Command.Free)
     }
+
+    @Test fun rispostaAllaScheda() {
+        assertEquals(Grammar.Answer.Yes, Grammar.answer("Sì, procedi."))
+        assertEquals(Grammar.Answer.Yes, Grammar.answer("Alfred, va bene"))
+        assertEquals(Grammar.Answer.Yes, Grammar.answer("Ok"))
+        assertEquals(Grammar.Answer.No, Grammar.answer("No, lascia stare."))
+        assertEquals(Grammar.Answer.No, Grammar.answer("annulla"))
+        assertEquals(Grammar.Answer.Other, Grammar.answer("alle dieci invece"))
+        assertEquals(Grammar.Answer.Other, Grammar.answer("Sicuramente Marco"))
+    }
 }

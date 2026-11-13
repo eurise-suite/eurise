@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
+import eu.eurise.core.suite.SpeechText
 import android.speech.tts.UtteranceProgressListener
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -258,13 +259,11 @@ class BriefReader(context: Context) {
     private var pending: Pair<List<String>, Int>? = null
     private var parts: List<String> = emptyList()
 
-    private val tts: TextToSpeech = TextToSpeech(context.applicationContext) { status ->
-        if (status == TextToSpeech.SUCCESS) onReady()
-    }
+    private var tts: TextToSpeech? = null
+    private val holder = AlfredTts.open(context) { engine, _ -> main.post { tts = engine; onReady(engine) } }
 
-    private fun onReady() {
+    private fun onReady(tts: TextToSpeech) {
         ready = true
-        tts.alfredVoice()
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(id: String) {
                 main.post { id.removePrefix("brief-").toIntOrNull()?.let { current = it }; playing = true; finished = false }
@@ -288,19 +287,20 @@ class BriefReader(context: Context) {
         finished = false
         if (!ready) { pending = all to at; return }
         parts = all
+        val tts = tts ?: return
         tts.stop()
         for (i in at until all.size) {
-            tts.speak(all[i], if (i == at) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, "brief-$i")
+            tts.speak(SpeechText.clean(all[i]), if (i == at) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, "brief-$i")
         }
         playing = true
     }
 
     fun pause() {
-        runCatching { tts.stop() }
+        runCatching { tts?.stop() }
         playing = false
     }
 
-    fun release() = runCatching { tts.stop(); tts.shutdown() }
+    fun release() = holder.shutdown()
 }
 
 /**

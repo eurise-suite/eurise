@@ -166,7 +166,11 @@
     <string name="alfred_s_address_none">Nessuno</string>
     <string name="alfred_s_name_hint">Il suo nome</string>
     <string name="alfred_s_voice">Leggo ad alta voce le risposte</string>
-    <string name="alfred_s_voice_d">Voce del telefono, maschile e pacata se c\'è · la voce di Alfred (60 MB) arriverà a richiesta</string>
+    <string name="alfred_s_voice_d">Con la mia voce, se l\'ha scaricata in Eurise Voce; altrimenti con quella del telefono</string>
+    <string name="alfred_s_voice_mine">La mia voce</string>
+    <string name="alfred_s_voice_mine_on">In uso: la mia voce, sul telefono</string>
+    <string name="alfred_s_voice_mine_off">Ora uso la voce del telefono. La mia (19 MB) si scarica in Eurise Voce</string>
+    <string name="alfred_s_voice_get">Scarica</string>
     <string name="alfred_s_dictation">Dettatura</string>
     <string name="alfred_s_dictation_d_voice">Eurise Voce, sul telefono</string>
     <string name="alfred_s_dictation_d_system">Riconoscimento vocale del telefono</string>
@@ -197,4 +201,16 @@
     <string name="alfred_listen_go">Dica pure%1$s, la ascolto.</string>
     <string name="alfred_listen_done">Ho finito di parlare</string>
     <string name="alfred_listen_hint">Parli pure: quando si ferma capisco da me che ha finito. Se ha fretta, tocchi il microfono.</string>
+    <string name="alfred_working">Ho capito, trascrivo.</string>
+    <string name="alfred_ask_confirm">Procedo?</string>
+    <string name="alfred_answer_hint">Risponda «sì» o «no», oppure tocchi.</string>
+    <string name="alfred_cancelled">Come non detto.</string>
+    <string name="alfred_p_nothing">Non ho sentito nulla%1$s. Riproviamo?</string>
+    <string name="alfred_p_no_model">Per ascoltarla senza rete mi serve il modello di Eurise Voce (57 MB). Si scarica una volta sola.</string>
+    <string name="alfred_p_no_engine">Per parlarmi serve Eurise Voce. Nel frattempo può scrivermi.</string>
+    <string name="alfred_p_mic">Il microfono non si apre: forse lo sta usando un\'altra app.</string>
+    <string name="alfred_p_failed">Temo di essermi perso a metà. Riproviamo?</string>
+    <string name="alfred_p_get_model">Scarica il modello</string>
+    <string name="alfred_p_again">Riprova</string>
+    <string name="alfred_p_write">Scrivo</string>
 </resources>

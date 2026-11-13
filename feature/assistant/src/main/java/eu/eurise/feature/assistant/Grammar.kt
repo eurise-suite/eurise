@@ -55,6 +55,21 @@ object Grammar {
     /** Parole dell'evento che restano nel titolo («Cena da Anna»); le altre («appuntamento») si tolgono. */
     private val KEEP_WORD = setOf("riunione", "incontro", "cena", "pranzo", "colazione", "aperitivo", "visita")
 
+    /** La risposta a voce alla scheda di conferma: «sì, procedi» agisce, «no, lascia stare» annulla. */
+    enum class Answer { Yes, No, Other }
+
+    private val YES = Regex("$O^(?:sì|si|certo|certamente|ok(?:ay)?|va\\s+bene|procedi|proceda|vai|vada|fallo|lo\\s+faccia|confermo|conferma|esatto|perfetto|d'accordo|invia|manda|chiama|salva)(?![\\p{L}])")
+    private val NO = Regex("$O^(?:no|annulla|lascia(?:\\s+(?:perdere|stare))?|lasci(?:\\s+(?:perdere|stare))?|non\\s+(?:ora|adesso|importa)|aspetta|ferma|fermati|niente|stop)(?![\\p{L}])")
+
+    fun answer(sentence: String): Answer {
+        val t = POLITE_HEAD.replace(sentence.trim().lowercase(), "").trim().trimStart(',', ' ')
+        return when {
+            NO.containsMatchIn(t) -> Answer.No
+            YES.containsMatchIn(t) -> Answer.Yes
+            else -> Answer.Other
+        }
+    }
+
     fun parse(sentence: String, now: LocalDateTime): Command {
         val text = POLITE_TAIL.replace(POLITE_HEAD.replace(sentence.trim().trimEnd('.', '!', '?'), ""), "").trim()
         if (text.isEmpty()) return Command.Free(sentence)
