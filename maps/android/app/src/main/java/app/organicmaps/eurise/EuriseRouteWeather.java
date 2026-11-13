@@ -5,6 +5,8 @@ import android.content.res.Configuration;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -39,6 +41,7 @@ public final class EuriseRouteWeather
   private static final long REFRESH_MS = 15 * 60_000L;
 
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
+  private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
   // Stato della guida in corso (thread principale).
   @Nullable private static String sHub;
@@ -65,29 +68,40 @@ public final class EuriseRouteWeather
   {
     if (line == null)
       return;
-    if (!sChecked)
-    {
-      sChecked = true;
-      final Context app = line.getContext().getApplicationContext();
-      IO.execute(() -> {
-        final Bundle b = call(app, null, STATUS, null);
-        line.post(() -> {
-          sOn = b != null && b.getBoolean(ON);
-          if (b == null)
-            sHub = null;
-          show(line);
-        });
-      });
-      return;
-    }
-    if (sHub == null || pedestrian)
+    if (pedestrian)
     {
       line.setVisibility(View.GONE);
       return;
     }
-    show(line);
-    if (!sOn || sBusy)
-      return;
+    if (tick(line.getContext().getApplicationContext(), info, () -> show(line)))
+      show(line);
+  }
+
+  /**
+   * Android Auto, in guida: la stessa cosa importante della riga del telefono, per la bolla dell'arrivo; null se il meteo
+   * è spento, manca l'app Eurise o non ha ancora risposto. [changed]: quando arriva una risposta.
+   */
+  @Nullable
+  public static String carLine(@NonNull Context c, @NonNull RoutingInfo info, @NonNull Runnable changed)
+  {
+    tick(c.getApplicationContext(), info, changed);
+    final Result r = sResult;
+    return sHub == null || !sOn || r == null ? null : summary(c, r);
+  }
+
+  /**
+   * Stato, strada e richiesta del tempo, per il telefono e per l'auto. Falso finché non si sa ancora se c'è l'app Eurise
+   * (la prima volta). Le risposte arrivano sul thread principale e chiamano [changed].
+   */
+  private static boolean tick(@NonNull Context app, @NonNull RoutingInfo info, @NonNull Runnable changed)
+  {
+    if (!sChecked)
+    {
+      checkStatus(app, changed);
+      return false;
+    }
+    if (sHub == null || !sOn || sBusy)
+      return true;
     final long now = System.currentTimeMillis();
     // La strada si rilegge al più ogni minuto (un ricalcolo del percorso la cambia).
     if (now - sRouteChecked > 60_000L)
@@ -96,10 +110,87 @@ public final class EuriseRouteWeather
       loadRoute();
     }
     if (sCum == null || sCum.length < 2)
-      return;
+      return true;
     if (sResult != null && now - sFetched < REFRESH_MS)
-      return;
-    fetch(line.getContext().getApplicationContext(), line, info, now);
+      return true;
+    fetch(app, info, now, changed);
+    return true;
+  }
+
+  private static void checkStatus(@NonNull Context app, @NonNull Runnable changed)
+  {
+    sChecked = true;
+    IO.execute(() -> {
+      final Bundle b = call(app, null, STATUS, null);
+      MAIN.post(() -> {
+        sOn = b != null && b.getBoolean(ON);
+        if (b == null)
+          sHub = null;
+        changed.run();
+      });
+    });
+  }
+
+  // Il tempo qui, senza destinazione (Android Auto in guida libera).
+  @Nullable private static Result sHere;
+  private static long sHereFetched;
+  private static boolean sHereBusy;
+  private static double sHereLat, sHereLon;
+
+  /**
+   * Il tempo dove si è, senza destinazione («🌧 Pioggia · 12°»): stesso interruttore del meteo sul percorso, un solo punto
+   * (l'app Eurise lo arrotonda a circa 1 km), al più ogni 15 minuti o dopo 10 km. Null se spento o non ancora arrivato.
+   */
+  @Nullable
+  public static String here(@NonNull Context app, double lat, double lon, @NonNull Runnable changed)
+  {
+    if (!sChecked)
+    {
+      checkStatus(app, changed);
+      return null;
+    }
+    if (sHub == null || !sOn)
+      return null;
+    final long now = System.currentTimeMillis();
+    final float[] moved = new float[1];
+    if (sHere != null)
+      android.location.Location.distanceBetween(sHereLat, sHereLon, lat, lon, moved);
+    if (!sHereBusy && (sHere == null || now - sHereFetched > REFRESH_MS || moved[0] > 10_000))
+    {
+      sHereBusy = true;
+      sHereFetched = now;
+      sHereLat = lat;
+      sHereLon = lon;
+      IO.execute(() -> {
+        final Bundle in = new Bundle();
+        in.putDoubleArray(LAT, new double[] {lat});
+        in.putDoubleArray(LON, new double[] {lon});
+        in.putLongArray(TIME, new long[] {now / 1000});
+        final Bundle out = call(app, sHub, ROUTE, in);
+        MAIN.post(() -> {
+          sHereBusy = false;
+          if (out == null)
+            return;
+          sOn = out.getBoolean(ON);
+          final Result r = new Result();
+          r.code = out.getIntArray(CODE);
+          r.rain = out.getIntArray(RAIN);
+          r.temp = out.getFloatArray(TEMP);
+          r.gusts = out.getFloatArray(GUSTS);
+          if (r.code != null && r.code.length == 1 && r.rain != null && r.temp != null && r.gusts != null)
+          {
+            sHere = r;
+            changed.run();
+          }
+        });
+      });
+    }
+    final Result r = sHere;
+    if (r == null)
+      return null;
+    final RouteSampler.Kind k = RouteSampler.kind(r.code[0], r.rain[0], r.gusts[0]);
+    final String sky = k == RouteSampler.Kind.CLEAR ? sky(r.code[0]) : glyph(k) + " " + app.getString(label(k));
+    return Float.isNaN(r.temp[0]) ? sky : sky + " · " + Math.round(r.temp[0]) + "°";
   }
 
   /** La strada del percorso (punti al massimo a 1 km): si rilegge solo quando il percorso cambia. */
@@ -127,7 +218,7 @@ public final class EuriseRouteWeather
     sFetched = 0;
   }
 
-  private static void fetch(@NonNull Context app, @NonNull TextView line, @NonNull RoutingInfo info, long now)
+  private static void fetch(@NonNull Context app, @NonNull RoutingInfo info, long now, @NonNull Runnable changed)
   {
     final double total = sCum[sCum.length - 1];
     final double traveled = total * Math.max(0, Math.min(100, info.completionPercent)) / 100.0;
@@ -148,7 +239,7 @@ public final class EuriseRouteWeather
       in.putDoubleArray(LON, lon);
       in.putLongArray(TIME, time);
       final Bundle out = call(app, sHub, ROUTE, in);
-      line.post(() -> {
+      MAIN.post(() -> {
         sBusy = false;
         if (out == null)
           return;
@@ -166,7 +257,7 @@ public final class EuriseRouteWeather
           if (r.rain != null && r.temp != null && r.gusts != null)
             sResult = r;
         }
-        show(line);
+        changed.run();
       });
     });
   }

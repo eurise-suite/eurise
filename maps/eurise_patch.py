@@ -473,3 +473,263 @@ patch(tts, """        sOnReloadCallback.run();
       }
     }), mEuriseEngine);""")
 print("eurise_patch: la guida parla con la voce di Alfred, se c'è")
+
+# Android Auto, correzioni del proprietario dopo la prova del 13 novembre (tavole MapAutoGuida e MapAutoCerca).
+# La logica sta in maps/android/…/eurise/car (EuriseCarInfo, EuriseCarVoice); qui gli agganci.
+car = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car"
+libs = root / "libs"
+
+# 1) Collegandosi all'auto la mappa passa lì da sola, senza «Continua in auto»; il telefono mostra «Continua sul
+#    telefono» (MapPlaceholderActivity di CoMaps) e la riprende con un tocco. Un solo motore disegna una mappa alla volta.
+session = car / "CarAppSession.java"
+patch(session, """      screensStack.add(new MapPlaceholderScreen(getCarContext()));
+    }
+""", """      screensStack.add(new MapPlaceholderScreen(getCarContext()));
+      // Eurise: niente domanda, la mappa va subito all'auto (il segnaposto qui sopra si chiude da solo).
+      app.organicmaps.sdk.util.concurrency.UiThread.runLater(() -> mDisplayManager.changeDisplay(DisplayType.Car));
+    }
+""")
+# 3) Senza guida la freccia guarda in alto lungo la strada (segui e ruota), come in guida.
+patch(session, "  private boolean mInitFailed = false;\n", """  private boolean mInitFailed = false;
+  // Eurise: l'ultimo modo della posizione, per capire se «segui senza rotazione» l'ha chiesto chi guida.
+  private int mEuriseMode = -1;
+""")
+patch(session, """  public void onMyPositionModeChanged(int newMode)
+  {
+""", """  public void onMyPositionModeChanged(int newMode)
+  {
+    app.organicmaps.eurise.car.EuriseCarInfo.onModeChanged(mEuriseMode, newMode);
+    mEuriseMode = newMode;
+""")
+patch(session, """      ThemeUtils.update(getCarContext());
+      restoreRoute();
+    }""", """      ThemeUtils.update(getCarContext());
+      restoreRoute();
+      app.organicmaps.eurise.car.EuriseCarInfo.rotate();
+    }""")
+patch(session, "    Framework.nativeSetCarScreenMode(true);\n",
+      "    Framework.nativeSetCarScreenMode(true);\n    app.organicmaps.eurise.car.EuriseCarInfo.reset();\n")
+
+# 2) Il microfono di Alfred sotto la lente; 4) e 5) senza destinazione «Sei su …», soccorsi e meteo qui.
+mapscreen = car / "screens" / "MapScreen.java"
+patch(mapscreen, "    builder.addAction(createIconAction(R.drawable.ic_search, this::openSearch));\n",
+      """    builder.addAction(createIconAction(R.drawable.ic_search, this::openSearch));
+    builder.addAction(createIconAction(R.drawable.eurise_ic_mic, this::euriseVoice));
+""")
+patch(mapscreen, """    builder.setMapActionStrip(UiHelpers.createMapActionStrip(getCarContext(), getSurfaceRenderer()));
+    return builder.build();
+  }""", """    builder.setMapActionStrip(UiHelpers.createMapActionStrip(getCarContext(), getSurfaceRenderer()));
+    final androidx.car.app.navigation.model.MessageInfo euriseInfo =
+        app.organicmaps.eurise.car.EuriseCarInfo.freeDrive(getCarContext(), this::invalidate);
+    if (euriseInfo != null)
+      builder.setNavigationInfo(euriseInfo);
+    return builder.build();
+  }
+
+  // Eurise: la strada sotto l'auto e il riferimento per i soccorsi seguono la posizione.
+  private final app.organicmaps.sdk.location.LocationListener mEuriseListener = this::euriseLocation;
+  @androidx.annotation.Nullable
+  private String mEuriseShown;
+  @androidx.annotation.Nullable
+  private android.location.Location mEuriseShownAt;
+
+  @Override
+  public void onStart(@NonNull androidx.lifecycle.LifecycleOwner owner)
+  {
+    super.onStart(owner);
+    app.organicmaps.MwmApplication.from(getCarContext()).getLocationHelper().addListener(mEuriseListener);
+  }
+
+  @Override
+  public void onStop(@NonNull androidx.lifecycle.LifecycleOwner owner)
+  {
+    app.organicmaps.MwmApplication.from(getCarContext()).getLocationHelper().removeListener(mEuriseListener);
+    super.onStop(owner);
+  }
+
+  private void euriseLocation(@NonNull android.location.Location location)
+  {
+    app.organicmaps.eurise.car.EuriseCarInfo.onLocation(location);
+    final String where = app.organicmaps.eurise.car.EuriseCarInfo.where(getCarContext(), null);
+    // Si ridisegna quando cambia la strada o dopo 100 m (le coordinate per i soccorsi restano vicine al vero).
+    if (!java.util.Objects.equals(where, mEuriseShown) || mEuriseShownAt == null
+        || location.distanceTo(mEuriseShownAt) > 100)
+    {
+      mEuriseShown = where;
+      mEuriseShownAt = location;
+      invalidate();
+    }
+  }
+
+  private void euriseVoice()
+  {
+    if (getScreenManager().getTop() != this)
+      return;
+    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
+      if (getScreenManager().getTop() == this)
+        getScreenManager().push(
+            new SearchScreen.Builder(getCarContext(), getSurfaceRenderer()).setQuery(text).build());
+    });
+  }""")
+
+# 4) In guida «Sei su …» e il meteo sul percorso nella bolla dell'arrivo (TravelEstimate.setTripText).
+navscreen = car / "screens" / "NavigationScreen.java"
+patch(navscreen, "    final RoutingInfo info = Framework.nativeGetRouteFollowingInfo();\n",
+      "    app.organicmaps.eurise.car.EuriseCarInfo.onLocation(location);\n"
+      "    final RoutingInfo info = Framework.nativeGetRouteFollowingInfo();\n")
+patch(navscreen, """    finish();
+    getScreenManager().popToRoot();
+  }""", """    finish();
+    getScreenManager().popToRoot();
+    app.organicmaps.eurise.car.EuriseCarInfo.rotate();
+  }""")
+rutils = car / "util" / "RoutingUtils.java"
+patch(rutils, """    builder.addDestination(destinationBuilder.build(),
+                           createTravelEstimate(info.distToTarget, info.totalTimeInSeconds));""",
+      """    builder.addDestination(destinationBuilder.build(), euriseDestinationEstimate(context, info));""")
+patch(rutils, """  @NonNull
+  private static CharacterStyle createRoadShieldSpan""", """  /** Eurise (MapAutoGuida): la stima dell'arrivo con «Sei su …» e il meteo sul percorso accanto a km e ora. */
+  @SuppressWarnings("NewApi") // ZonedDateTime is backported for Android versions below 8.0.
+  @NonNull
+  private static TravelEstimate euriseDestinationEstimate(@NonNull final CarContext context, @NonNull RoutingInfo info)
+  {
+    final TravelEstimate.Builder builder =
+        new TravelEstimate.Builder(RoutingHelpers.createDistance(info.distToTarget),
+                                   ZonedDateTime.now().plusSeconds(info.totalTimeInSeconds))
+            .setRemainingTimeSeconds(info.totalTimeInSeconds)
+            .setRemainingDistanceColor(Colors.DISTANCE);
+    final String weather = app.organicmaps.eurise.EuriseRouteWeather.carLine(context, info, () -> {});
+    final androidx.car.app.model.CarText trip =
+        app.organicmaps.eurise.car.EuriseCarInfo.tripText(context, info.currentStreet, weather);
+    if (trip != null)
+      builder.setTripText(trip);
+    return builder.build();
+  }
+
+  @NonNull
+  private static CharacterStyle createRoadShieldSpan""")
+
+# La strada sotto l'auto: stesso abbinamento del limite di velocità (RoutingManager::GetRoadSpeedLimitMps), ma restituisce
+# «classe|sigla|nome»; senza direzione (auto ferma) prende la strada più vicina.
+rm_hpp = libs / "map" / "routing_manager.hpp"
+patch(rm_hpp, "  double GetRoadSpeedLimitMps(double lat, double lon, double bearingDeg);\n",
+      """  double GetRoadSpeedLimitMps(double lat, double lon, double bearingDeg);
+  /// Eurise: la strada sotto l'auto, «classe|sigla|nome» (classe = ftypes::HighwayClass); vuota se non c'è.
+  /// bearingDeg < 0: auto ferma, si prende la strada più vicina.
+  std::string EuriseRoadAt(double lat, double lon, double bearingDeg);
+""")
+rm_cpp = libs / "map" / "routing_manager.cpp"
+patch(rm_cpp, '#include "indexer/data_source.hpp"\n', """#include "indexer/data_source.hpp"
+#include "indexer/feature.hpp"
+#include "indexer/feature_data.hpp"
+#include "indexer/ftypes_matcher.hpp"
+
+#include <algorithm>
+""")
+patch(rm_cpp, "void RoutingManager::ResetRoadSpeedLimitCache()\n", """std::string RoutingManager::EuriseRoadAt(double lat, double lon, double bearingDeg)
+{
+  double constexpr kMatchRadiusM = 30.0;
+
+  if (!m_roadSpeedLimit)
+    m_roadSpeedLimit = std::make_unique<RoadSpeedLimitState>(m_callbacks.m_dataSourceGetter(),
+                                                             m_callbacks.m_countryParentNameGetterFn);
+  auto & s = *m_roadSpeedLimit;
+
+  m2::PointD const point = mercator::FromLatLon(lat, lon);
+  bool const hasBearing = bearingDeg >= 0;
+  double const rad = (hasBearing ? bearingDeg : 0.0) * std::numbers::pi / 180.0;
+  m2::PointD const direction(std::sin(rad), std::cos(rad));
+
+  std::vector<std::pair<routing::Edge, geometry::PointWithAltitude>> candidates;
+  s.m_graph.FindClosestEdges(mercator::RectByCenterXYAndSizeInMeters(point, kMatchRadiusM), 4, candidates);
+
+  routing::IndexRouter::BestEdgeComparator cmp(point, direction);
+  routing::Edge const * best = nullptr;
+  double bestDist = std::numeric_limits<double>::max();
+  for (auto const & c : candidates)
+  {
+    if (hasBearing && !cmp.IsAlmostCodirectional(c.first))
+      continue;
+    double const d = cmp.GetSquaredDist(c.first);
+    if (d < bestDist)
+    {
+      bestDist = d;
+      best = &c.first;
+    }
+  }
+  if (!best || !best->GetFeatureId().IsValid())
+    return {};
+
+  FeatureID const & fid = best->GetFeatureId();
+  FeaturesLoaderGuard guard(m_callbacks.m_dataSourceGetter(), fid.m_mwmId);
+  auto ft = guard.GetFeatureByIndex(fid.m_index);
+  if (!ft)
+    return {};
+
+  auto const cls = ftypes::GetHighwayClass(feature::TypesHolder(*ft));
+  std::string ref = ft->GetRef();
+  std::string name(ft->GetName(StringUtf8Multilang::kDefaultCode));
+  std::replace(ref.begin(), ref.end(), '|', ' ');
+  std::replace(name.begin(), name.end(), '|', ' ');
+  // «A51;E64»: la prima sigla basta.
+  if (auto const semi = ref.find(';'); semi != std::string::npos)
+    ref.resize(semi);
+  return std::to_string(static_cast<int>(cls)) + "|" + ref + "|" + name;
+}
+
+void RoutingManager::ResetRoadSpeedLimitCache()
+""")
+fw_cpp = android_root / "sdk" / "src" / "main" / "cpp" / "app" / "organicmaps" / "sdk" / "Framework.cpp"
+patch(fw_cpp, """JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeResetRoadSpeedLimit(JNIEnv *, jclass)
+{
+  frm()->GetRoutingManager().ResetRoadSpeedLimitCache();
+}
+""", """JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeResetRoadSpeedLimit(JNIEnv *, jclass)
+{
+  frm()->GetRoutingManager().ResetRoadSpeedLimitCache();
+}
+
+// Eurise: la strada sotto l'auto per Android Auto («Sei su …»), vedi RoutingManager::EuriseRoadAt.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseRoadAt(JNIEnv * env, jclass, jdouble lat,
+                                                                               jdouble lon, jdouble bearingDeg)
+{
+  return jni::ToJavaString(env, frm()->GetRoutingManager().EuriseRoadAt(lat, lon, bearingDeg));
+}
+""")
+fw_java = android_root / "sdk" / "src" / "main" / "java" / "app" / "organicmaps" / "sdk" / "Framework.java"
+patch(fw_java, "  public static native void nativeResetRoadSpeedLimit();\n", """  public static native void nativeResetRoadSpeedLimit();
+  /** Eurise: «classe|sigla|nome» della strada sotto l'auto; vuota se non c'è. bearingDeg &lt; 0: auto ferma. */
+  public static native String nativeEuriseRoadAt(double lat, double lon, double bearingDeg);
+""")
+
+# 6) Quando Android Auto riduce la mappa (telefono, musica accanto), freccia e percorso si ricentrano nell'area rimasta:
+#    la freccia sta al centro dell'area visibile (non dello schermo intero) e cambiare area la riporta subito lì.
+mpc = libs / "drape_frontend" / "my_position_controller.cpp"
+patch(mpc, """void MyPositionController::SetVisibleViewport(m2::RectD const & rect)
+{
+  m_visiblePixelRect = rect;
+}""", """void MyPositionController::SetVisibleViewport(m2::RectD const & rect)
+{
+  // Eurise: se l'area visibile cambia mentre si segue la posizione, la vista si ricentra subito nell'area nuova.
+  bool const changed = !m_visiblePixelRect.IsEmptyInterior() && !m2::IsEqual(m_visiblePixelRect, rect, 0.5, 0.5);
+  m_visiblePixelRect = rect;
+  if (changed && m_isPositionAssigned && (m_mode == location::Follow || m_mode == location::FollowAndRotate))
+    UpdateViewport(kDoNotChangeZoom);
+}""")
+patch(mpc, """  double x = m_visiblePixelRect.Center().x;
+  if (m_enablePerspectiveInRouting && ScreenBase::IsCarNavigationView())
+    x = std::clamp(m_pixelRect.Center().x, m_visiblePixelRect.minX(), m_visiblePixelRect.maxX());
+""", """  // Eurise: sempre al centro dell'area visibile (CoMaps teneva il centro dello schermo intero, fuori centro quando
+  // Android Auto riduce la mappa).
+  double const x = m_visiblePixelRect.Center().x;
+""")
+
+# Microfono (solo quando si tocca il microfono di Alfred) ed Eurise Voce, che trascrive sul telefono.
+patch(android_root / "app" / "src" / "main" / "AndroidManifest.xml",
+      """  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
+  <queries>""", """  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <queries>
+    <package android:name="eu.eurise.voice"/>
+    <package android:name="eu.eurise.voice.debug"/>""")
+print("eurise_patch: Android Auto (apertura diretta, Alfred, freccia in alto, «Sei su», meteo, area ridotta)")

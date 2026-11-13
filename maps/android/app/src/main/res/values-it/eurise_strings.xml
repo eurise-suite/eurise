@@ -110,4 +110,16 @@
     <string name="eurise_pl_event">Impegno</string>
     <string name="eurise_pl_share">Condividi</string>
     <string name="eurise_pl_event_here">Impegno qui · %1$s</string>
+    <!-- Android Auto (tavole MapAutoGuida e MapAutoCerca) -->
+    <string name="eurise_car_on">Sei su %1$s</string>
+    <string name="eurise_car_in">Sei in %1$s</string>
+    <string name="eurise_car_rescue">Soccorsi: %1$s</string>
+    <string name="eurise_car_mic">Alfred</string>
+    <string name="eurise_car_voice_listening">Ti ascolto: dimmi dove andare</string>
+    <string name="eurise_car_voice_working">Un attimo…</string>
+    <string name="eurise_car_voice_nothing">Non ho sentito, riprova</string>
+    <string name="eurise_car_voice_missing">Per parlare con Alfred serve Eurise Voce sul telefono</string>
+    <string name="eurise_car_voice_model">In Eurise Voce manca il modello per ascoltare: scaricalo dal telefono</string>
+    <string name="eurise_car_voice_mic">Il microfono non si apre: concedi il permesso sul telefono</string>
+    <string name="eurise_car_voice_failed">Eurise Voce non risponde, riprova</string>
 </resources>

@@ -1868,3 +1868,28 @@ Fatto (ramo `brand`):
   alla stellina (radiale, centro 77,35, raggio 24, #F6E2B4 al 30 %; a colori al 55 %).
 - **Icone chiare (a colori): approvate.** Icone scure ritoccate: diagonale #3A4D80 → #222D4D (55 %) → #121828; alone dorato
   #E4C27A al 42 % che sfuma (raggio 26). Da riguardare.
+
+## 13 novembre, sera: Android Auto, le sei correzioni in codice (ramo `brand`)
+- Codice in `maps/android/…/eurise/car` (`EuriseCarInfo`, `EuriseCarVoice`) e agganci in `maps/eurise_patch.py` (sezione
+  «Android Auto, correzioni del proprietario»). Sorgenti di CoMaps letti dallo specchio GitHub (`github.com/comaps/comaps`,
+  stesso commit fissato): Codeberg dall'ambiente di Claude risponde 403.
+  1. **Apertura diretta**: collegandosi, la mappa passa all'auto da sola (`DisplayManager.changeDisplay(Car)`), senza
+     «Continua in auto». Un solo motore disegna una mappa alla volta: il telefono mostra «Continua sul telefono» e la
+     riprende con un tocco (poi in auto c'è «Continua in auto»). Le due mappe insieme non si possono avere.
+  2. **Microfono di Alfred** sotto la lente: microfono dell'auto (`CarAudioRecord`), fine frase automatica (come
+     `Endpoint`), trascrizione con Eurise Voce sul telefono (Whisper, l'audio non esce), via «portami a…», poi la ricerca
+     con quelle parole. Permesso del microfono chiesto sul telefono la prima volta. Serve Eurise Voce con il modello.
+  3. **Freccia in alto lungo la strada** anche senza guida: in auto «segui» diventa «segui e ruota» (salvo quando è chi
+     guida a chiedere il nord in alto), anche a fine guida.
+  4. **«Sei su A51 Tangenziale Est»**: strada sotto l'auto trovata come il limite di velocità (nuovo
+     `RoutingManager::EuriseRoadAt`, JNI `nativeEuriseRoadAt`). In guida nella bolla dell'arrivo (`setTripText`), senza
+     destinazione nel messaggio della mappa. **Km: le mappe di CoMaps non hanno le pietre miliari**; al loro posto, su
+     autostrade, superstrade, statali e provinciali, «Soccorsi: 45.46420, 9.19003» (coordinate, che il 112 accetta).
+     Il km vero richiede mappe generate da noi con le pietre miliari di OSM: da decidere.
+  5. **Meteo senza destinazione**: «il tempo qui» (un punto, stesso interruttore del meteo sul percorso, ogni 15 min o
+     10 km); in guida il meteo sul percorso va nella bolla anche in auto (prima girava solo con la guida sul telefono).
+     **Traffico: non c'è** (nessuna fonte libera nazionale), la riga non lo inventa.
+  6. **Mappa ridotta**: la freccia sta al centro dell'area visibile (CoMaps teneva il centro dello schermo intero) e,
+     quando Android Auto riduce la mappa, la vista si ricentra subito (`MyPositionController::SetVisibleViewport`).
+     Non ancora: la panoramica del percorso prima di partire (scheda del luogo) non si riadatta all'area ridotta.
+- Da provare in auto: tutti e sei; il messaggio senza destinazione dipende da come l'auto mostra `MessageInfo`.

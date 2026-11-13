@@ -110,4 +110,16 @@
     <string name="eurise_pl_event">Event</string>
     <string name="eurise_pl_share">Share</string>
     <string name="eurise_pl_event_here">Event here · %1$s</string>
+    <!-- Android Auto (MapAutoGuida and MapAutoCerca boards) -->
+    <string name="eurise_car_on">On %1$s</string>
+    <string name="eurise_car_in">On %1$s</string>
+    <string name="eurise_car_rescue">For rescue: %1$s</string>
+    <string name="eurise_car_mic">Alfred</string>
+    <string name="eurise_car_voice_listening">Listening: tell me where to go</string>
+    <string name="eurise_car_voice_working">One moment…</string>
+    <string name="eurise_car_voice_nothing">I didn\'t hear you, try again</string>
+    <string name="eurise_car_voice_missing">To talk to Alfred, install Eurise Voice on the phone</string>
+    <string name="eurise_car_voice_model">Eurise Voice has no listening model yet: download it on the phone</string>
+    <string name="eurise_car_voice_mic">The microphone won\'t open: allow it on the phone</string>
+    <string name="eurise_car_voice_failed">Eurise Voice is not responding, try again</string>
 </resources>
