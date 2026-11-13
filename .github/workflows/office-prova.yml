@@ -17,6 +17,10 @@ env:
   # «collabora»: prova di controllo (approvata dal proprietario il 13 novembre) con l'app ufficiale di Collabora da
   # F-Droid al posto della nostra; solo sull'emulatore di Actions, non si distribuisce.
   RIFERIMENTO: ""
+  # Attività da aprire: vuote = quelle di Eurise Office (DocumentActivity, OfficeActivity). Per un APK con la vecchia
+  # app di Collabora: org.libreoffice.androidlib.LOActivity e org.libreoffice.androidapp.ui.LibreOfficeUIActivity.
+  LO: "org.libreoffice.androidlib.LOActivity"
+  HOME_ACTIVITY: "org.libreoffice.androidapp.ui.LibreOfficeUIActivity"
 
 permissions:
   contents: read
@@ -77,7 +81,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
+          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()
