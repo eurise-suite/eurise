@@ -1944,7 +1944,7 @@ Fatto (ramo `brand`):
   compilazione Mappe 29); tema «Eurise a colori» conservato con i simboli nuovi (giorno a metà strada, sera approvata);
   papillon di Alfred morbido in tutte le icone; tavole nuove MapMezzi, MapLontano, MapLontanoScelta (da approvare);
   sezione «Cose da fare ancora» in cima a questo file.
-- Ultimi APK in `apk-prova`: giro 397, Mappe 28 (Mappe 29 col passo d) appena compilato: se è riuscito, pubblicarlo
+- Ultimi APK in `apk-prova`: giro 397, Mappe 29 (pubblicato anche Mappe 29 col passo d): per pubblicare un giro nuovo
   aggiornando la riga «Ultima pubblicazione» in `.github/workflows/apk-prova.yml`).
 - Sorgenti di CoMaps: Codeberg dall'ambiente di Claude risponde 403; si leggono dallo specchio
   `https://github.com/comaps/comaps.git` al commit fissato (`git fetch --depth 1 --filter=blob:none` + sparse-checkout).
