@@ -9,7 +9,7 @@
 set -u
 APK=$1
 OUT=$2
-PKG=eu.eurise.office.debug
+PKG=${PKG:-eu.eurise.office.debug}
 LO=org.libreoffice.androidlib.LOActivity
 WAIT=${WAIT:-40}
 HERE=$(cd "$(dirname "$0")" && pwd)

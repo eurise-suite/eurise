@@ -14,6 +14,9 @@ on:
 env:
   # Campioni da aprire (vuoto = tutti), per esempio «lettera.docx».
   SOLO: "lettera.docx"
+  # «collabora»: prova di controllo (approvata dal proprietario il 13 novembre) con l'app ufficiale di Collabora da
+  # F-Droid al posto della nostra; solo sull'emulatore di Actions, non si distribuisce.
+  RIFERIMENTO: "collabora"
 
 permissions:
   contents: read
@@ -45,6 +48,13 @@ jobs:
             gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-debug.apk -O apk/office.apk
             echo "APK dalla pre-release apk-prova"
           fi
+          if [ "$RIFERIMENTO" = collabora ]; then
+            codes=$(curl -sfL https://f-droid.org/api/v1/packages/com.collabora.libreoffice | jq -r '.packages[].versionCode')
+            for c in $codes; do
+              curl -sfL -o apk/ref.apk "https://f-droid.org/repo/com.collabora.libreoffice_$c.apk" || continue
+              if unzip -l apk/ref.apk | grep -q 'lib/arm64-v8a/'; then mv apk/ref.apk apk/office.apk; echo "Collabora $c (F-Droid)"; echo "PKG=com.collabora.libreoffice" >> "$GITHUB_ENV"; break; fi
+            done
+          fi
           ls -la apk/office.apk
 
       - name: Abilita KVM
@@ -63,7 +73,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
+          script: PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()
