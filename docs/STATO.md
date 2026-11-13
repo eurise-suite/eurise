@@ -1958,3 +1958,25 @@ Fatto (ramo `brand`):
   - Soccorsi: le **coordinate ci sono sempre**, anche quando ci sarà il km dalla pietra miliare («km 12,4 · 45.46420,
     9.19003»). Oggi in Mappe 29 compaiono già (su autostrade, superstrade, statali e provinciali); quando arrivano le
     pietre miliari si aggiunge il km accanto, senza toglierle.
+
+## 13 novembre, sera: approvazioni e semaforo della privacy in codice (ramo `brand`)
+- **Approvato dal proprietario**: tavole **MapMezzi**, **MapLontano**, **MapLontanoScelta** (mezzi, orari, viaggi lontani);
+  tema **«Eurise a colori»** con i simboli nuovi (anche il giorno); **papillon morbido** di Alfred; **icone scure** ritoccate;
+  la scala del semaforo, con la correzione qui sotto.
+- **Semaforo, correzione del proprietario**: le tacchette riportano la **privacy effettiva dei propri dati**, non il paese.
+  Il paese si mostra **a parte, con una sigla** (UE, CH, UK, USA, «tuo» per un server proprio, «vari»), e pesa poco: un servizio
+  europeo ha una marcia in più (GDPR), uno americano una in meno (Patriot Act, CLOUD Act, FISA 702).
+- **In codice** (`core/designsystem/component/PrivacyMeter.kt`, con i test): `privacyScore(out, where, endToEnd, closed)`.
+  Base da ciò che il servizio riceve: niente 10 (solo il telefono arriva a 10), uguale per tutti 8, il minimo senza
+  identità 6, contenuti tuoi in chiaro 4, profilazione 1. Cifratura da capo a capo +4; UE e CH +1, USA ed extra UE −1,
+  server tuo +3; massimo 9 fuori dal telefono; servizi chiusi al massimo 2. Fasce: verde 8–10, giallo 5–7, rosso 1–4
+  (più chiare sul tema Notte). `PrivacyMeter(score, where)` disegna le dieci tacchette e la sigla (UE blu con lettere oro).
+- Dove è già: centro privacy (ogni servizio, più Tastiera, Voce, Traduzione, Lettura dei documenti, con una nota sulla
+  scala), «Salva in» di File (telefono 10, Murena 5, kDrive 5, Nextcloud e WebDAV 7), Browser (motori: Qwant, Ecosia,
+  Startpage 7; Brave e DuckDuckGo 5; Google e Bing 1; AI: Le Chat e Duck.ai 5, ChatGPT, Copilot, Gemini 2; DNS 7;
+  protezione Forte 9, Standard 6), ricerca rapida della Tastiera (stessa scala scritta a parte: la tastiera non vede `core`).
+- Valori scelti per i servizi del centro privacy: Meteo, Pollini, Meteo sul percorso (Open-Meteo, Svizzera) 7; Allerte
+  (MeteoAlarm, UE) 9; Notizie e Oroscopo (siti vari, nulla di tuo) 8; Percorsi (OSRM di FOSSGIS, Germania) 7; Ricerca su
+  OpenStreetMap (Photon, Germania) 7; Borsa (Yahoo) e Video (YouTube): servizi chiusi, 2.
+- Ancora da fare col semaforo: destinazioni del backup e servizi collegati quando avranno la loro schermata; Password
+  (Have I Been Pwned, alias) e Galleria (OpenStreetMap per i luoghi); le tavole sulla tela con le tacche vecchie.
