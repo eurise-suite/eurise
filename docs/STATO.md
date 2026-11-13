@@ -1819,6 +1819,15 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - Strumenti: test JVM della vista rapida in locale con kotlinc scaricato da GitHub (Maven non raggiungibile; junit in
   /opt/gradle-*/lib); prova sull'emulatore: `office-prova.yml` con `fonte` motore | nativo | collabora (+ `versione`).
 
+- **Motore a richiesta, cosa si è capito** (core co-25.04, `sal/android/libreofficekit-jni.c`, `sal/osl/unx/file.cxx`):
+  il motore legge `/assets/…` con l'AssetManager di Android e mappa in memoria il file passato come `apkFile`
+  (`lo_apkentry`, voci non compresse); l'interfaccia web viene da `file:///android_asset/dist`. Un AssetManager su un
+  file qualsiasi chiede API nascoste, quindi due strade: **A** APK compagno «Eurise Office Motore» firmato con la stessa
+  chiave (Office prende AssetManager, percorso e librerie da `createPackageContext`, controlla la firma; su F-Droid due
+  pacchetti, nessuna patch al core); **B** zip scaricato dentro Office (patch a `file.cxx` per leggere gli asset con
+  `lo_apkentry`, interfaccia web da file, librerie con `System.load` dalla cartella dell'app; un solo pacchetto, serve
+  un posto da cui scaricarlo e una voce nel centro privacy). Da decidere con il proprietario.
+
 **Prossimo passo**: correggere la causa dell'abort del motore; poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
