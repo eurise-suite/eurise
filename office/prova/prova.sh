@@ -60,7 +60,11 @@ simbolizza() {
 	sym=$(command -v llvm-symbolizer || ls "${ANDROID_NDK_HOME:-/nonexistent}"/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-symbolizer 2>/dev/null | head -1)
 	[ -n "$sym" ] || { echo "(llvm-symbolizer non trovato)"; return 0; }
 	echo "--- pila tradotta ---"
-	grep -oE "pila #[0-9]+ pc [0-9a-f]+ [^ ]+" "$1" | while read -r _ n _ off lib; do
+	# Le righe di debuggerd («#05 pc 0000000001234abc  /data/app/.../liblo-native-code.so (…)») e quelle di EuriseDiag.
+	{
+		grep -oE "#[0-9]+ pc [0-9a-f]+ +[^ ]+\.so" "$1" "$2" 2>/dev/null | sed -E 's/^[^#]*#([0-9]+) pc ([0-9a-f]+) +(.*)$/pila #\1 pc \2 \3/'
+		grep -oE "pila #[0-9]+ pc [0-9a-f]+ [^ ]+" "$1"
+	} | awk '!seen[$0]++' | head -60 | while read -r _ n _ off lib; do
 		base=$(basename "$lib")
 		if [ -f "$SIMBOLI/$base" ]; then
 			echo "$n $base+0x$off $("$sym" --obj="$SIMBOLI/$base" --functions=linkage --demangle "0x$off" 2>/dev/null | head -1)"
@@ -91,7 +95,9 @@ open_one() { # via nome uri tipo
 		[ -n "$pid" ] && awk -v p="$pid" '$3 == p' "$OUT/$tag.log" | grep -v -E "OpenGLRenderer|Success copying unpack|CoreBackPreview|HWUI|EGL" | tail -60
 		grep -E " F (libc|DEBUG) .*(Abort message|signal|Cause)" "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -10
 	} >> "$sum"
-	simbolizza "$OUT/$tag.log" >> "$sum"
+	echo "--- debuggerd ---" >> "$sum"
+	grep -hE "F DEBUG +: +(#[0-9]+|backtrace|Abort|Cause|signal)" "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -c33- | awk '!seen[$0]++' | head -50 >> "$sum"
+	simbolizza "$OUT/$tag.log" "$OUT/$tag-arresto.log" >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
 	sleep 3
