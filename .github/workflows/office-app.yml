@@ -14,7 +14,8 @@ on:
       - "office/app/**"
 
 permissions:
-  contents: read
+  # write: pubblica l'APK nella pre-release apk-prova-office (Office si prova da lì, senza toccare apk-prova del ramo brand).
+  contents: write
 
 # Gruppo proprio (12 novembre): un giro fantasma del gruppo office-engine, rimasto «in coda» senza lavori, bloccava
 # l'app e non si poteva annullare. Il motore resta nel suo gruppo; i due lavori non si toccano.
@@ -285,3 +286,16 @@ jobs:
           name: eurise-office-app-${{ github.run_number }}
           path: ${{ env.WORK }}/out/
           retention-days: 14
+
+      - name: Pubblica nella pre-release apk-prova-office
+        if: success() && github.ref_name == 'office'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          f="$WORK/out/eurise-office-debug.apk"
+          [ -f "$f" ] || exit 0
+          notes="Eurise Office di prova dal ramo office (giro ${{ github.run_number }}, $(git -C "$GITHUB_WORKSPACE" log -1 --format=%h)). Si sovrascrive a ogni giro."
+          gh release view apk-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create apk-prova-office -R "${{ github.repository }}" --prerelease --target office --title "APK di prova di Office" --notes "$notes"
+          gh release edit apk-prova-office -R "${{ github.repository }}" --notes "$notes"
+          gh release upload apk-prova-office "$f" -R "${{ github.repository }}" --clobber

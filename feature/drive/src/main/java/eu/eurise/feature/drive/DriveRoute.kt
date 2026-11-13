@@ -390,8 +390,14 @@ private fun uriOf(context: Context, file: File): Uri = FileProvider.getUriForFil
 private fun mime(file: File): String =
     MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase(Locale.ROOT)) ?: "*/*"
 
+/**
+ * Apre [file] con l'app scelta. I file del telefono sono quelli veri: l'app (Office) può anche salvarli. Le copie di
+ * file del cloud o della cartella cifrata restano in sola lettura, perché una modifica lì non tornerebbe al suo posto.
+ */
 private fun viewExternally(context: Context, file: File) {
-    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uriOf(context, file), mime(file)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val writable = file.absolutePath.startsWith(Environment.getExternalStorageDirectory().absolutePath + "/")
+    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or (if (writable) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
+    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uriOf(context, file), mime(file)).addFlags(flags)
     try {
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {

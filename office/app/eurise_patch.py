@@ -82,6 +82,20 @@ patch(lo, '    /** True if the App is running under ChromeOS. */\n',
 patch(lo, '    protected void onDestroy() {\n',
       '    protected void onDestroy() {\n        EuriseSuite.detach(this);\n', "onDestroy")
 
+# Il documento tiene il suo nome: la copia di lavoro di un Uri content:// si chiama come il file (in una cartella
+# unica della cache) invece di «LibreOffice123.tmp». Titolo, tipo e riconoscimento dei PDF tornano giusti.
+patch(lo, '                        mTempFile = File.createTempFile("LibreOffice", suffix, mActivity.getCacheDir());\n',
+      '                        mTempFile = EuriseSuite.workingCopy(mActivity, uri, suffix);\n',
+      "la copia temporanea del documento")
+# Uri file:// (gestori di file vecchi): Collabora non apriva nemmeno la pagina perché mancava la copia di lavoro;
+# il file stesso fa da copia, e si salva lì.
+patch(lo, '                urlToLoad = getIntent().getData().toString();\n'
+          '                Log.d(TAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());\n',
+      '                urlToLoad = getIntent().getData().toString();\n'
+      '                mTempFile = new File(getIntent().getData().getPath());\n'
+      '                Log.d(TAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());\n',
+      "il ramo SCHEME_FILE")
+
 # «Apri da…»: il pulsante Apri della schermata iniziale passa da Eurise File (cartelle della suite, server, cloud);
 # senza l'app Eurise resta il selettore di sistema. Gli Uri di Eurise File non sono persistenti: niente eccezione.
 ui = android / "app" / "src" / "main" / "java" / "org" / "libreoffice" / "androidapp" / "ui" / "LibreOfficeUIActivity.java"

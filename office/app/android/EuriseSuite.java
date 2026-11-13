@@ -18,7 +18,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.OpenableColumns;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,7 +35,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.Locale;
 
 final class EuriseSuite {
@@ -68,6 +73,30 @@ final class EuriseSuite {
     }
     private static boolean it() { return Locale.getDefault().getLanguage().equals("it"); }
     private static String t(String it, String en) { return it() ? it : en; }
+
+    /**
+     * Copia di lavoro di un documento arrivato come content://: stesso nome del file, in una cartella unica della cache
+     * (due documenti con lo stesso nome non si pestano). Senza un nome leggibile resta il file temporaneo di Collabora.
+     */
+    static File workingCopy(Context c, Uri uri, String suffix) throws IOException {
+        String name = null;
+        try (Cursor cursor = c.getContentResolver().query(uri, new String[] { OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst())
+                name = cursor.getString(0);
+        } catch (RuntimeException e) {
+            Log.i(TAG, "nome del documento non leggibile: " + e);
+        }
+        if (name != null)
+            name = name.replaceAll("[/\\\\:*?\"<>|\\p{Cntrl}]", "_").trim();
+        if (name == null || name.isEmpty() || name.startsWith("."))
+            return File.createTempFile("LibreOffice", suffix, c.getCacheDir());
+        if (suffix != null && !name.toLowerCase(Locale.ROOT).endsWith(suffix))
+            name = name + suffix;
+        File dir = new File(new File(c.getCacheDir(), "documenti"), UUID.randomUUID().toString());
+        if (!dir.mkdirs())
+            return File.createTempFile("LibreOffice", suffix, c.getCacheDir());
+        return new File(dir, name);
+    }
 
     static void handle(LOActivity activity, String json) {
         try {
