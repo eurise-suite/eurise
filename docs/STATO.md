@@ -27,7 +27,7 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
   - Traffico: nessuna fonte libera nazionale; si riprende se se ne trova una.
   - «Dove devi andare» (impegni del Calendario) anche nella ricerca di Android Auto.
   - **Mezzi, orari e viaggi lontani** (richiesta del 13 novembre, tavole **MapMezzi**, **MapLontano**, **MapLontanoScelta**
-    da approvare): auto di base (sempre con Android Auto), Mezzi, Bici, A piedi a un tocco con il tempo già calcolato;
+    approvate il 13 novembre, sera): auto di base (sempre con Android Auto), Mezzi, Bici, A piedi a un tocco con il tempo già calcolato;
     orari di treni, metro, bus; per le mete lontane alternative anche miste (auto, treno, aereo, auto + treno) con filtri
     (più veloce, meno caro, più comodo, senza cambi, parti dopo / arriva entro), pedaggio stimato con le tariffe pubbliche,
     carburante col consumo dell'auto; scelta confermata → Il mio viaggio, Calendario, Cose da fare, Note. Fonti da
@@ -36,7 +36,10 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
 - **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe).
 - **Tastiera**: lavoro principale dopo Mappe.
 - **Icone** in codice: simboli nuovi, sfumatura e alone della stellina negli APK e nei temi; stili iOS, Android, /e/OS;
-  forma a scelta in «Griglia e icone»; iniziale come ripiego; «Eurise a colori» con i simboli nuovi (tavola IconeColori).
+  forma a scelta in «Griglia e icone»; iniziale come ripiego; «Eurise a colori» con i simboli nuovi (tavola IconeColori,
+  approvata con il papillon morbido e le icone scure, 13 novembre, sera).
+- **Privacy**: semaforo a 10 tacchette con la sigla del paese in codice (13 novembre, sera); restano backup, Password,
+  Galleria e le tavole sulla tela.
 - **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
   registrazione di «Eurise» (proprietario).
 - In fondo: computer (vedi sotto), Password Famiglia, kDrive (bloccato da Infomaniak).
