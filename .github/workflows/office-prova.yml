@@ -49,11 +49,14 @@ jobs:
             echo "APK dalla pre-release apk-prova"
           fi
           if [ "$RIFERIMENTO" = collabora ]; then
-            codes=$(curl -sfL https://f-droid.org/api/v1/packages/com.collabora.libreoffice | jq -r '.packages[].versionCode')
-            for c in $codes; do
-              curl -sfL -o apk/ref.apk "https://f-droid.org/repo/com.collabora.libreoffice_$c.apk" || continue
-              if unzip -l apk/ref.apk | grep -q 'lib/arm64-v8a/'; then mv apk/ref.apk apk/office.apk; echo "Collabora $c (F-Droid)"; echo "PKG=com.collabora.libreoffice" >> "$GITHUB_ENV"; break; fi
-            done
+            # Repository F-Droid di Collabora (non è nel catalogo principale): l'APK arm64 più recente.
+            repo=https://www.collaboraonline.com/downloads/fdroid/repo
+            curl -sfL "$repo/index-v1.json" -o apk/index.json || echo "::warning::indice F-Droid di Collabora non raggiungibile"
+            name=$(jq -r '.packages["com.collabora.libreoffice"] | map(select((.nativecode // []) | index("arm64-v8a"))) | max_by(.versionCode) | .apkName' apk/index.json 2>/dev/null)
+            echo "APK di riferimento: $name"
+            if [ -n "$name" ] && [ "$name" != null ] && curl -sfL -o apk/ref.apk "$repo/$name"; then
+              mv apk/ref.apk apk/office.apk; echo "PKG=com.collabora.libreoffice" >> "$GITHUB_ENV"
+            fi
           fi
           ls -la apk/office.apk
 
