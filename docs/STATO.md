@@ -1860,3 +1860,6 @@ Fatto (ramo `brand`):
   icone» (cerchio, quadrato arrotondato, squircle, goccia, quadrato), indipendente dallo stile e valida per tutte le app;
   ogni stile parte dalla sua (Eurise, A colori, Android: cerchio; iOS, /e/OS: quadrato arrotondato). In tavola c'è il
   pannello «Griglia e icone» con stile e forma.
+- **Sfumatura, corretta dal proprietario**: più evidente e **radiale dalla stellina** («la stella di Eurise rischiara»):
+  centro (77, 35) nel riquadro 18–90, raggio 78; blu notte #4A5C8E → #2C3A62 (35 %) → #121A2E nel lato opposto; a colori dal
+  tono chiaro schiarito all'82 % fino alla tinta chiara piena. Vale per le icone degli APK e per i temi della Scrivania.
