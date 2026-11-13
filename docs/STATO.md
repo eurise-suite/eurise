@@ -1997,3 +1997,4 @@ Fatto (ramo `brand`):
     privacy (riga **Rete**) si può dire «È Advanced Privacy» / «È un'altra VPN». Permesso nuovo: `ACCESS_NETWORK_STATE`
     (nessun accesso a Internet in più). «Falsifica la posizione» di Advanced Privacy non entra nel voto (si vede solo
     nel meteo sbagliato).
+- **Ultimo APK: giro 407** (Claude nel Browser, VPN e Advanced Privacy nel semaforo), Mappe 29.
