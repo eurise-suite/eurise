@@ -1812,3 +1812,11 @@ Fatto (ramo `brand`):
   **Tommaso** (il tomo), **Ofelia** (officina, Office), **Corrado** (corriere), **Bonacci** (Fibonacci, «figlio di
   Bonacci», Liber Abaci): nessun conflitto trovato. Scartati: Libero (Libero Mail), Paciolo (gestionale italiano),
   Fibo (calcolatrice esistente). Telemaco è già un'app (fondo pensione delle telecomunicazioni); Chiara è da verificare.
+- **Nomi confermati (13 novembre, sera tardi)**: Desco (Scrivania), Agenore (Calendario), Spunta (Attività), Scribò (Note),
+  Rubens (Contatti), Orazio (Orologio), Copisto (Scanner e QR), Tommaso (Leggi e PDF), Ofelia (Office), Ciarly (Chat),
+  Bisbi (Messaggi), Fotonda (Galleria), Clavio (Password), Pigi (Tastiera), Girolamo (Mappe), Pelorus (Browser, con Sbircio
+  come riserva), Arietta (Meteo), Bonacci (Calcolatrice), Turciman (Traduttore), Alfred (assistente).
+  Da decidere: **Drive e File** (Stipet, proposto dal proprietario, ricorda «stipetto»: nessun conflitto trovato);
+  **Email** (Postello e Letterio, più le proposte nuove legate a chi portava la posta: **Tassis**, da Omodeo Tasso e dalla
+  Compagnia dei Corrieri; Omodeo; Cheval, il postino Ferdinand Cheval; Fidippo, da Fidippide); **Telefono** (Drin o Chiara);
+  **Voce** (proposta: Tonio, da «tono»). Corrado scartato dal proprietario. Tutti in attesa della verifica TMview/EUIPO.
