@@ -10,8 +10,11 @@ on:
       fonte:
         description: "motore = APK di office-app (con LibreOffice); nativo = Office compilato qui senza motore (vista rapida, PDF)"
         type: choice
-        options: [motore, nativo]
+        options: [motore, nativo, collabora]
         default: motore
+      versione:
+        description: "Con fonte collabora: inizio della versione da provare (per esempio 25.04); vuoto = la più recente"
+        default: ""
   push:
     paths:
       - ".github/workflows/office-prova.yml"
@@ -77,14 +80,18 @@ jobs:
             gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-debug.apk -O apk/office.apk
             echo "APK dalla pre-release apk-prova"
           fi
-          if [ "$RIFERIMENTO" = collabora ]; then
+          if [ "$RIFERIMENTO" = collabora ] || [ "${{ inputs.fonte }}" = collabora ]; then
             # Repository F-Droid di Collabora (non è nel catalogo principale): l'APK arm64 più recente.
             repo=https://www.collaboraonline.com/downloads/fdroid/repo
             curl -sfL "$repo/index-v1.json" -o apk/index.json || echo "::warning::indice F-Droid di Collabora non raggiungibile"
-            name=$(jq -r '.packages["com.collabora.libreoffice"] | map(select((.nativecode // []) | index("arm64-v8a"))) | max_by(.versionCode) | .apkName' apk/index.json 2>/dev/null)
+            want="${{ inputs.versione }}"
+            jq -r '.packages["com.collabora.libreoffice"][] | "\(.versionName) \(.versionCode) \(.nativecode // [] | join(","))"' apk/index.json 2>/dev/null | head -40
+            name=$(jq -r --arg v "$want" '.packages["com.collabora.libreoffice"] | map(select(((.nativecode // []) | index("arm64-v8a")) and (.versionName | startswith($v)))) | max_by(.versionCode) | .apkName' apk/index.json 2>/dev/null)
             echo "APK di riferimento: $name"
             if [ -n "$name" ] && [ "$name" != null ] && curl -sfL -o apk/ref.apk "$repo/$name"; then
-              mv apk/ref.apk apk/office.apk; echo "PKG=com.collabora.libreoffice" >> "$GITHUB_ENV"
+              mv apk/ref.apk apk/office.apk
+              { echo "PKG=com.collabora.libreoffice"; echo "LO=org.libreoffice.androidlib.LOActivity"
+                echo "HOME_ACTIVITY=org.libreoffice.androidapp.ui.LibreOfficeUIActivity"; } >> "$GITHUB_ENV"
             fi
           fi
           ls -la apk/office.apk
