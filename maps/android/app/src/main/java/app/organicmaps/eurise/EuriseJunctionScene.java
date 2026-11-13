@@ -60,8 +60,8 @@ public final class EuriseJunctionScene
     @NonNull public final String exitRef, roadRef, destination, street, current;
     public final boolean motorway;
     /**
-     * Rotonda: di quanto gira la strada tra l'entrata e l'uscita, in gradi (+ a destra, − a sinistra, ±180 si torna
-     * indietro), dalla forma del percorso. NaN se non si sa: allora le uscite si dispongono a ventaglio.
+     * Di quanto gira la strada nella manovra, in gradi (+ a destra, − a sinistra, ±180 si torna indietro), dalla forma del
+     * percorso ([TurnGeometry]). Rotonda: tra l'entrata e l'uscita (NaN: uscite a ventaglio); uscita: la rampa.
      */
     public float turnDeg = Float.NaN;
 
@@ -125,16 +125,22 @@ public final class EuriseJunctionScene
     {
       final Model r = new Model(Kind.ROUNDABOUT, info.isLeftHandTraffic, 1, Math.max(1, info.exitNum), progress, "", "",
                                 "", nz(info.nextStreet), nz(info.currentStreet), false);
-      r.turnDeg = (float) RoundaboutTurn.degrees(m);
+      r.turnDeg = (float) TurnGeometry.roundabout(m);
       return r;
     }
-    final boolean left = d == CarDirection.EXIT_HIGHWAY_TO_LEFT || d == CarDirection.TURN_SLIGHT_LEFT;
+    // Il lato dell'uscita (o dell'immissione sulla rampa) si legge dalla forma del percorso, quando è chiara: la scena
+    // deve mostrare la strada vera (richiesta del 14 novembre); altrimenti vale l'indicazione di CoMaps.
+    final double turn = TurnGeometry.simple(m);
+    final boolean left = !Double.isNaN(turn) && Math.abs(turn) >= 6 ? turn < 0
+                         : d == CarDirection.EXIT_HIGHWAY_TO_LEFT || d == CarDirection.TURN_SLIGHT_LEFT;
     final LaneInfo[] lanes = info.lanes;
     int main = lanes == null ? 3 : Math.max(2, Math.min(5, lanes.length - countExitLanes(lanes, left)));
     final String roadRef = nz(info.nextDestinationRef).isEmpty() ? nz(info.nextRef) : nz(info.nextDestinationRef);
     final String dest = nz(info.nextDestination).isEmpty() ? nz(info.nextName) : nz(info.nextDestination);
-    return new Model(Kind.EXIT, left, main, 0, progress, nz(info.nextJunctionRef), roadRef, dest,
-                     nz(info.nextStreet), nz(info.currentStreet), fastRoad);
+    final Model e = new Model(Kind.EXIT, left, main, 0, progress, nz(info.nextJunctionRef), roadRef, dest,
+                              nz(info.nextStreet), nz(info.currentStreet), fastRoad);
+    e.turnDeg = (float) turn;
+    return e;
   }
 
   /** Le corsie che vanno all'uscita, contate dal suo lato (non sono corsie della strada che continua). */

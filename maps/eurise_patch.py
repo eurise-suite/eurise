@@ -776,6 +776,17 @@ patch(bottom_menu, """    boolean result = show && RoutingController.get().isBui
     // Eurise: «Avvia la navigazione» è nel pannello della suite; questo resta nascosto ma fa il lavoro.
     UiUtils.showIf(result && !app.organicmaps.eurise.ui.EurisePercorso.getAttached(), mStart);""")
 print("eurise_patch: pannello del percorso della suite (passo d)")
+# Android Auto di sera (prova del 13 novembre): in «Automatico» CoMaps segue solo il buio dichiarato dall'auto, e al
+# tramonto molte auto dicono ancora «giorno»: la mappa restava nello stile chiaro, gialla. Ora è notte anche quando il
+# sole è tramontato nel punto in cui si è (stesso calcolo di «Alba e tramonto»).
+car_theme = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car" / "util" / "ThemeUtils.java"
+patch(car_theme, """    if (themeMode == ThemeMode.AUTO)
+      return context.isDarkMode();""", """    if (themeMode == ThemeMode.AUTO)
+      return context.isDarkMode() || !isDaytime(context);""")
+patch(car_theme, """    if (oldThemeMode == ThemeMode.SUNRISE_SUNSET)
+      scheduleSunCheck(context);""", """    if (oldThemeMode == ThemeMode.SUNRISE_SUNSET || oldThemeMode == ThemeMode.AUTO)
+      scheduleSunCheck(context);""")
+
 
 # Passo e) della guida, prima parte (tavole MapVelocita, MapIncrocio, MapRotonda, MapAutoGuida).
 # Velocità e limite: maps/android/…/eurise/EuriseSpeed.java. La velocità diventa un tondo rosso oltre il limite più la
@@ -1013,3 +1024,16 @@ patch(mapscreen, """    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarC
       }
       if (getScreenManager().getTop() == this)""")
 print("eurise_patch: guida, seconda parte (Segnala in guida, sul telefono e in Android Auto; elenco di fine viaggio)")
+
+# Guida in orizzontale (tavola MapOrizzontaleGuida): layout nostri in maps/android/…/res/layout-land (barra della guida a
+# sinistra, colonna della manovra a destra), qui solo gli agganci: barra e arrivo in Compose, aggiornati a ogni guida.
+patch(nav, """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
+""", """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachBar(mFrame.findViewById(R.id.eurise_guida_bar));
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachArrival(topFrame.findViewById(R.id.eurise_guida_arrivo));
+""")
+patch(nav, """    mNavMenu.update(info);
+  }""", """    mNavMenu.update(info);
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
+  }""")
+print("eurise_patch: guida in orizzontale (MapOrizzontaleGuida)")

@@ -2,4 +2,6 @@
 <resources>
     <!-- Fondo blu notte delle icone della suite (docs/brand/android/README.md). -->
     <color name="eurise_icon_background">#1F2A44</color>
+    <!-- Colonna della manovra in orizzontale: Perla (Notte in values-night). -->
+    <color name="eurise_guide_column">#F4F4F1</color>
 </resources>

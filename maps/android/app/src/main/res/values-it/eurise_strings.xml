@@ -192,4 +192,11 @@
     <string name="eurise_review_later">Più tardi</string>
     <string name="eurise_review_sent">Mandate: %1$d note. Grazie!</string>
     <string name="eurise_review_partly">Mandate %1$d su %2$d: le altre restano per la fine del prossimo viaggio</string>
+
+  <!-- Guida in orizzontale (MapOrizzontaleGuida): la barra in colonna. -->
+  <string name="eurise_go_stop">Sosta</string>
+  <string name="eurise_go_voice">Voce</string>
+  <string name="eurise_go_muted">Muto</string>
+  <string name="eurise_go_together">Insieme</string>
+  <string name="eurise_go_end">Fine</string>
 </resources>

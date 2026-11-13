@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Il cartello della manovra: piatto, la tinta del tipo di strada arriva da EuriseGuide.tint. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@android:color/white" />
+</shape>

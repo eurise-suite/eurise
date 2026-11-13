@@ -9,14 +9,16 @@ import app.organicmaps.sdk.routing.RouteGeometry;
 import app.organicmaps.sdk.routing.RoutingController;
 
 /**
- * Di quanto gira la strada in una rotonda, dalla forma del percorso: serve alla scena perché l'uscita disegnata sia
- * quella vera (prova del 13 novembre: tornando indietro sulla via d'entrata, la scena mostrava l'uscita prima).
+ * Di quanto gira la strada in una manovra, dalla forma del percorso: serve alle scene perché ciò che si vede sia quello
+ * vero (prova del 13 novembre: tornando indietro sulla via d'entrata, la scena della rotonda mostrava l'uscita prima;
+ * richiesta del proprietario: lo stesso per uscite, immissioni e incroci). Per uscite e svolte basta la forma della
+ * strada nei 40 m prima e dopo il punto della manovra ([simple]); per le rotonde serve la via da cui si entra, sotto.
  *
  * <p>L'uscita è il punto del percorso a [distToTurn] metri da qui; la direzione d'uscita è quella dei 25 m dopo. La
  * direzione d'entrata si prende la prima volta che la scena compare (a qualche centinaio di metri, sulla via che porta
  * alla rotonda) e si tiene per quella manovra: dentro l'anello la direzione dell'auto non dice più niente.
  */
-final class RoundaboutTurn
+final class TurnGeometry
 {
   private static final double OUT_M = 25, IN_M = 30, MIN_FIRST_SIGHT_M = 80;
 
@@ -25,24 +27,49 @@ final class RoundaboutTurn
   private static double sExitLat = Double.NaN, sExitLon = Double.NaN;
   private static double sIn = Double.NaN;
 
-  private RoundaboutTurn() {}
+  private TurnGeometry() {}
 
-  /** Gradi tra −180 e 180 (+ a destra), o NaN se non si sa. Thread principale. */
-  static double degrees(double distToTurn)
+  /**
+   * Uscita, immissione o svolta: la direzione nei [SIDE_M] metri prima del punto della manovra contro quella nei
+   * [SIDE_M] metri dopo. Gradi tra −180 e 180 (+ a destra), o NaN se non si sa.
+   */
+  static double simple(double distToTurn)
   {
     final Location loc = EuriseCarInfo.last();
-    final RouteGeometry g = RoutingController.get().getRouteGeometry();
-    final JunctionInfo[] p = g.mJunctions;
+    final JunctionInfo[] p = RoutingController.get().getRouteGeometry().mJunctions;
     if (loc == null || p.length < 2 || distToTurn < 0)
       return Double.NaN;
-    if (g.mRevision != sRevision)
+    final int near = nearest(p, loc, RoutingController.get().getRouteGeometry().mRevision);
+    final double[] turn = along(p, near, loc.getLatitude(), loc.getLongitude(), distToTurn);
+    final double[] before = along(p, near, loc.getLatitude(), loc.getLongitude(), Math.max(0, distToTurn - SIDE_M));
+    if (turn == null || before == null)
+      return Double.NaN;
+    final double[] after = along(p, (int) turn[2], turn[0], turn[1], SIDE_M);
+    if (after == null || meters(before[0], before[1], turn[0], turn[1]) < 5)
+      return Double.NaN;
+    return normalize(bearing(turn[0], turn[1], after[0], after[1]) - bearing(before[0], before[1], turn[0], turn[1]));
+  }
+
+  private static final double SIDE_M = 40;
+
+  private static double normalize(double turn)
+  {
+    while (turn > 180)
+      turn -= 360;
+    while (turn <= -180)
+      turn += 360;
+    return turn;
+  }
+
+  /** Il tratto del percorso più vicino all'auto (si cerca in avanti dall'ultimo: il percorso non torna indietro). */
+  private static int nearest(@NonNull JunctionInfo[] p, @NonNull Location loc, int revision)
+  {
+    if (revision != sRevision)
     {
-      sRevision = g.mRevision;
+      sRevision = revision;
       sNear = 0;
       sExitLat = sExitLon = sIn = Double.NaN;
     }
-
-    // Il tratto del percorso più vicino all'auto (si cerca in avanti dall'ultimo, il percorso non torna indietro).
     final int from = Math.max(0, sNear - 20), to = Math.min(p.length - 1, sNear == 0 ? p.length - 1 : sNear + 3000);
     int near = from;
     double best = Double.MAX_VALUE;
@@ -56,6 +83,18 @@ final class RoundaboutTurn
       }
     }
     sNear = near;
+    return near;
+  }
+
+  /** Rotonda: gradi tra −180 e 180 (+ a destra), o NaN se non si sa. Thread principale. */
+  static double roundabout(double distToTurn)
+  {
+    final Location loc = EuriseCarInfo.last();
+    final RouteGeometry g = RoutingController.get().getRouteGeometry();
+    final JunctionInfo[] p = g.mJunctions;
+    if (loc == null || p.length < 2 || distToTurn < 0)
+      return Double.NaN;
+    final int near = nearest(p, loc, g.mRevision);
 
     final double[] exit = along(p, near, loc.getLatitude(), loc.getLongitude(), distToTurn);
     if (exit == null)
@@ -80,12 +119,7 @@ final class RoundaboutTurn
     }
     if (Double.isNaN(sIn))
       return Double.NaN;
-    double turn = out - sIn;
-    while (turn > 180)
-      turn -= 360;
-    while (turn <= -180)
-      turn += 360;
-    return turn;
+    return normalize(out - sIn);
   }
 
   /** Il punto a [dist] metri lungo il percorso partendo da (lat, lon) sul tratto [i]: {lat, lon, tratto}. */
