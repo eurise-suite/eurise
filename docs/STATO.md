@@ -1875,7 +1875,8 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   Per scendere: librerie non compresse nell'APK (niente estrazione, ma download ~200 MB), oppure togliere dal core
   quello che non serve (lingue, filtri rari): da valutare.
 - Non ancora provato: il percorso «Scarica» dentro Office (download, controllo firme, conferma di Android). La prova
-  installa il motore con adb. DIAGNOSI spenta in office-app.yml.
+  installa il motore con adb. DIAGNOSI spenta in office-app.yml: giro 43507364768 (APK in apk-prova-office), prova
+  43510672834 di nuovo tutta buona.
 
 **Prossimo passo**: provare «Scarica» dal telefono (o automatizzarlo nella prova con uiautomator); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
