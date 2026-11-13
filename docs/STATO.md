@@ -1747,5 +1747,29 @@ contratti di `core/` che servono; alla fine merge in `brand`. Ultimo APK di Offi
   sui PDF (solo ACTION_SEND per i biglietti); `apk-prova.yml` prende Office solo dal ramo `brand`.
 - Peso: `liblo-native-code.so` 191 MB già senza simboli (52 MB compresso xz), memorizzato non compresso nell'APK.
 
-**Prossimo passo**: proposta al proprietario (in chat); poi build di diagnosi (registro «trace», terminate handler che
-scrive tipo e messaggio dell'eccezione) per trovare la riga, e correzione. Nessun APK cambiato finora.
+**Decisioni del proprietario (13 novembre)**: sì a tutto: ordine 1) apertura 2) PDF 3) Office sulle tavole 4) motore
+a richiesta; editor PDF **nativo con PdfBox-Android** al posto di Draw; prova di controllo con l'app di Collabora;
+correzione in Eurise File; tavola OffHome. Approvate: **OffHome** (con PDF e Nota tra i «Nuovo» e il Calendario in alto)
+e le tavole **RicTira / RicTiraDestra / RicTiraSinistra** (ricerca che si tira giù, mano dominante, Aggiorna come
+pulsante): regola «Ergonomia» in CLAUDE.md. Tela riordinata: stati «approvata» allineati allo STATO, ScrDock e TelPillola
+ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Mappe e nomi lasciati alla chat di brand).
+
+**Fatto (13 novembre, pomeriggio)**
+- Controllo: sull'emulatore l'app ufficiale di Collabora 26.04.4.2 (repository F-Droid di Collabora) apre lettera.docx.
+  **La chiusura del motore è della nostra compilazione.** Diagnosi in corso: `office/app/diag/eurise_diag.cpp` (con
+  `DIAGNOSI=1` in office-app.yml) scrive nel logcat pila al segnale, eccezioni non prese e stderr; le librerie non
+  ripulite vanno nell'artefatto office-simboli e office-prova traduce la pila.
+- LOActivity: copia di lavoro con il **nome vero** (`EuriseSuite.workingCopy`), `file://` apribile; Eurise File passa i
+  file del telefono **anche in scrittura** (copie di cloud e cartella cifrata restano in sola lettura).
+- **Office nativo, modulo `office/apk`** (Kotlin/Compose, `eu.eurise.office`): schermata iniziale OffHome, DocumentActivity
+  per «Apri con», editor PDF completo (Annota, Modifica, Pagine, Suite, Altro, Prima di condividere) con PdfBox-Android;
+  test `PdfLogicTest`. Compila in «Compila APK». office-app.yml ora costruisce l'APK di Office da questo modulo con dentro
+  l'AAR della libreria di Collabora (l'app di Collabora non c'è più). L'APK di prova va nella pre-release
+  **apk-prova-office** (apk-prova resta del ramo brand).
+- Limiti noti: «I miei dati» nei moduli manca (serve un contratto con Eurise Password); «Inserisci dallo Scanner» apre lo
+  Scanner ma non torna con le pagine (serve un contratto «scansiona e restituisci»); «Link dal cloud» non c'è ancora;
+  la mano dominante è un'impostazione di Office finché l'app Eurise non la offre a tutta la suite; ricerca che si tira
+  giù da fare come componente comune in core/designsystem.
+
+**Prossimo passo**: leggere la pila della diagnosi, correggere il motore, prova sull'emulatore di DocumentActivity e
+PdfActivity, consegna dell'APK. Poi Office sulle tavole (OffTelefono…) e motore a richiesta.
