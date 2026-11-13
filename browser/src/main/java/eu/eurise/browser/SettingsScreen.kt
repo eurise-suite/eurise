@@ -356,6 +356,13 @@ private fun TabsPage(model: BrowserModel) {
             ) { s.setCloseAfter(d) }
         }
     }
+    // Barra dell'indirizzo in basso o in alto; in alto si tira giù col pollice (come la ricerca delle altre schermate).
+    Title(stringResource(R.string.brw_bar_title))
+    Card {
+        listOf("bottom" to R.string.brw_bar_bottom, "top" to R.string.brw_bar_top).forEach { (id, label) ->
+            ChoiceRow(stringResource(label), if (id == "top") stringResource(R.string.brw_bar_top_sub) else null, s.addressBar == id) { s.setAddressBar(id) }
+        }
+    }
     // Barra delle schede sulla pagina (tavola BrwBarraSchede).
     Title(stringResource(R.string.brw_strip_title))
     Card {

@@ -56,6 +56,8 @@ class BrowserSettings(context: Context) {
     var dnsExplained by mutableStateOf(prefs.getBoolean("dns_ok", false)); private set
     /** Barra delle schede sulla pagina (tavola BrwBarraSchede): auto (sul tablet in cima), off, bottom, top. */
     var tabStrip by mutableStateOf(prefs.getString("tab_strip", "auto") ?: "auto"); private set
+    /** Dove sta la barra dell'indirizzo: "bottom" (di base) o "top", da tirare giù col pollice (come RicTira). */
+    var addressBar by mutableStateOf(prefs.getString("address_bar", "bottom") ?: "bottom"); private set
     /** Immagini nelle pagine (Strumenti › Immagini sì/no). */
     var images by mutableStateOf(prefs.getBoolean("images", true)); private set
     /** Carattere della Lettura: con le grazie (come un libro) o senza. */
@@ -73,6 +75,7 @@ class BrowserSettings(context: Context) {
     @JvmName("changeAskWhereToSave") fun setAskWhereToSave(on: Boolean) { askWhereToSave = on; prefs.edit().putBoolean("ask_save", on).apply() }
     @JvmName("changeBarAction") fun setBarAction(id: String) { barAction = id; prefs.edit().putString("bar_action", id).apply() }
     @JvmName("changeTabStrip") fun setTabStrip(v: String) { tabStrip = v; prefs.edit().putString("tab_strip", v).apply() }
+    @JvmName("changeAddressBar") fun setAddressBar(v: String) { addressBar = v; prefs.edit().putString("address_bar", v).apply() }
     @JvmName("changeImages") fun setImages(on: Boolean) { images = on; prefs.edit().putBoolean("images", on).apply() }
     @JvmName("changeReaderSerif") fun setReaderSerif(on: Boolean) { readerSerif = on; prefs.edit().putBoolean("reader_serif", on).apply() }
     fun acceptTranslate() { translateOk = true; prefs.edit().putBoolean("translate_ok", true).apply() }

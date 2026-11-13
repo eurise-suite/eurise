@@ -98,13 +98,38 @@ class TranscribeService : Service() {
                 bytes.write(buf, 0, n)
             }
             val b = bytes.toByteArray()
-            FloatArray(b.size / 2) { i -> ((b[2 * i].toInt() and 0xFF) or (b[2 * i + 1].toInt() shl 8)).toShort() / 32768f }
+            normalize(FloatArray(b.size / 2) { i -> ((b[2 * i].toInt() and 0xFF) or (b[2 * i + 1].toInt() shl 8)).toShort() / 32768f })
         }
     }.getOrNull()
 
-    private companion object {
-        /** Whisper a volte scrive tra parentesi i rumori («[musica]», «(risate)»): non sono parole dette. */
-        fun clean(text: String) = text.replace(Regex("""\[[^\]]*]|\([^)]*\)"""), " ").replace(Regex("\\s+"), " ").trim()
+    internal companion object {
+        /**
+         * Whisper a volte scrive tra parentesi i rumori («[musica]», «(risate)») e, su audio quasi vuoto, inventa frasi
+         * fatte («Mi scusi?», «Grazie.», «Sottotitoli a cura di…»): non sono parole dette, e Alfred deve chiedere di
+         * ripetere invece di «non capire» (prova del 13 novembre).
+         */
+        fun clean(text: String): String {
+            val t = text.replace(Regex("""\[[^\]]*]|\([^)]*\)"""), " ").replace(Regex("\\s+"), " ").trim()
+            val bare = t.lowercase().trim(' ', '.', '!', '?', ',', '…')
+            return if (bare in HALLUCINATIONS || HALLUCINATION_PREFIXES.any { bare.startsWith(it) }) "" else t
+        }
+
+        private val HALLUCINATIONS = setOf("mi scusi", "scusi", "grazie", "grazie a tutti", "grazie mille",
+            "grazie per la visione", "grazie per l'attenzione", "thank you", "thanks for watching")
+        private val HALLUCINATION_PREFIXES = listOf("sottotitoli", "sottotitolato", "a cura di", "subtitles by")
+
+        /**
+         * Il microfono in modalità riconoscimento non alza il volume da sé: una voce bassa arrivava a Whisper quasi
+         * come silenzio. Si porta il picco a 0,9 (al massimo 8 volte più forte, per non gonfiare il rumore).
+         */
+        fun normalize(audio: FloatArray): FloatArray {
+            var peak = 0f
+            for (v in audio) { val a = kotlin.math.abs(v); if (a > peak) peak = a }
+            if (peak <= 0f || peak >= 0.5f) return audio
+            val gain = (0.9f / peak).coerceAtMost(8f)
+            for (i in audio.indices) audio[i] = audio[i] * gain
+            return audio
+        }
     }
 }
 

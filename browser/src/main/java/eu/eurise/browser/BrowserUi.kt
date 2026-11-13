@@ -14,6 +14,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -175,9 +176,32 @@ fun BrowserScreen(
     // Barra delle schede sulla pagina (tavola BrwBarraSchede): in cima, sopra la barra in basso, o nessuna.
     val strip = if (tab?.fullscreen == true) StripPlace.None else stripPlace(model.settings.tabStrip)
     val openGroups = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true }
+    // Barra dell'indirizzo in alto (Impostazioni): uno scorrimento giù la porta sotto il pollice; alla pagina dopo, o
+    // scorrendo su, torna in alto.
+    val barTopSetting = model.settings.addressBar == "top"
+    var barPulledDown by remember { mutableStateOf(false) }
+    LaunchedEffect(tab?.url) { barPulledDown = false }
+    val barAtTop = barTopSetting && !barPulledDown && !editing && !finding && tab?.fullscreen != true
+    val bar: @Composable (Boolean) -> Unit = { top ->
+        BottomBar(
+            tab, model.tabs.size,
+            barAction = MenuItem.byId(model.settings.barAction)?.takeIf { !it.needsPage || tab?.url?.startsWith("http") == true },
+            onBarAction = ::run,
+            onSwipe = { step: Int -> model.neighbour(step); Unit }.takeIf { model.settings.swipeTabs },
+            onShield = { sheet = Sheet.Protection },
+            onAddress = { if (tab?.url?.startsWith("http") == true) sheet = Sheet.Address else editing = true },
+            onEditAddress = { editing = true },
+            onBookmarks = { sheet = Sheet.Bookmarks },
+            onTabs = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true },
+            onMenu = { sheet = Sheet.Menu },
+            top = top,
+            onPull = if (!barTopSetting) null else { down -> barPulledDown = down },
+        )
+    }
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
         if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
-        Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding())) {
+        if (barAtTop) Box(if (strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding()) { bar(true) }
+        Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top || barAtTop) Modifier else Modifier.statusBarsPadding())) {
             if (tab != null) Panes(model, tab)
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {
                 NewTabPage(
@@ -202,18 +226,7 @@ fun BrowserScreen(
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })
             else if (editing) AddressEditor(tab, model, onDone = { editing = false })
-            else BottomBar(
-                tab, model.tabs.size,
-                barAction = MenuItem.byId(model.settings.barAction)?.takeIf { !it.needsPage || tab?.url?.startsWith("http") == true },
-                onBarAction = ::run,
-                onSwipe = { step: Int -> model.neighbour(step); Unit }.takeIf { model.settings.swipeTabs },
-                onShield = { sheet = Sheet.Protection },
-                onAddress = { if (tab?.url?.startsWith("http") == true) sheet = Sheet.Address else editing = true },
-                onEditAddress = { editing = true },
-                onBookmarks = { sheet = Sheet.Bookmarks },
-                onTabs = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true },
-                onMenu = { sheet = Sheet.Menu },
-            )
+            else if (!barAtTop) bar(false)
         }
     }
 
@@ -393,10 +406,25 @@ private fun BottomBar(
     onBookmarks: () -> Unit,
     onTabs: () -> Unit,
     onMenu: () -> Unit,
+    top: Boolean = false,
+    onPull: ((down: Boolean) -> Unit)? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
+    // Barra in alto: scorrere giù la porta sotto il pollice; in basso (se in alto è la scelta) scorrere su la riporta.
+    val pull = if (onPull == null) Modifier else Modifier.pointerInput(top) {
+        var total = 0f
+        detectVerticalDragGestures(
+            onDragStart = { total = 0f },
+            onDragEnd = {
+                val far = 48.dp.toPx()
+                if (top && total > far) onPull(true) else if (!top && total < -far) onPull(false)
+            },
+            onVerticalDrag = { change, amount -> change.consume(); total += amount },
+        )
+    }
     Row(
-        Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp).height(60.dp)
+        Modifier.fillMaxWidth().then(if (top) Modifier else Modifier.navigationBarsPadding())
+            .padding(start = 12.dp, end = 12.dp, top = if (top) 8.dp else 6.dp, bottom = if (top) 6.dp else 10.dp).then(pull).height(60.dp)
             .shadow(10.dp, RoundedCornerShape(30.dp), ambientColor = Color.Black.copy(alpha = 0.1f), spotColor = Color.Black.copy(alpha = 0.1f))
             .clip(RoundedCornerShape(30.dp)).background(scheme.surface.copy(alpha = 0.94f)).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,

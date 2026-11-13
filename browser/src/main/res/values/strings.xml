@@ -296,6 +296,10 @@
     <string name="brw_group_none">Senza gruppo</string>
 
     <!-- Barra delle schede sulla pagina (tavola BrwBarraSchede) -->
+    <string name="brw_bar_title">Barra dell\'indirizzo</string>
+    <string name="brw_bar_bottom">In basso</string>
+    <string name="brw_bar_top">In alto</string>
+    <string name="brw_bar_top_sub">Scorri giù sulla barra per portarla sotto il pollice; torna su da sola alla pagina dopo</string>
     <string name="brw_strip_title">Barra delle schede</string>
     <string name="brw_strip_auto">Automatica</string>
     <string name="brw_strip_auto_sub">Sul tablet in cima, sul telefono spenta</string>
