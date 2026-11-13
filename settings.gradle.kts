@@ -32,6 +32,9 @@ if (System.getenv("EURISE_READ") == "1") include(":read")
 if (System.getenv("EURISE_AI") == "1") include(":ai")
 // Eurise Browser (GeckoView, circa 50 MB): solo nel suo lavoro, per non appesantire gli altri.
 if (System.getenv("EURISE_BROWSER") == "1") include(":browser")
+// Eurise Office (APK a parte): schermata iniziale ed editor PDF nativi; il motore dei documenti (Collabora) si aggiunge
+// solo nel lavoro office-app.yml, con EURISE_OFFICE_AAR (vedi office/apk/build.gradle.kts).
+include(":office:apk")
 include(":core:designsystem")
 include(":core:data")
 include(":core:cloud")
