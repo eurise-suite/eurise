@@ -85,6 +85,7 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
         val count = model.tabs.size.coerceAtLeast(1)
         val share: Dp = (maxWidth - 4.dp) / count
         val narrowest = 40.dp
+        val half = maxWidth / 2
         LazyRow(state = list, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(end = 4.dp)) {
             items(model.tabs, key = { it.id }) { t ->
                 var menu by remember { mutableStateOf(false) }
@@ -96,7 +97,7 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                         Modifier.padding(horizontal = 1.dp)
                             .then(
                                 // La scheda aperta resta leggibile; le altre prendono la loro parte dello spazio.
-                                if (on) Modifier.widthIn(min = 120.dp.coerceAtMost(maxWidth / 2), max = 180.dp)
+                                if (on) Modifier.widthIn(min = 120.dp.coerceAtMost(half), max = 180.dp)
                                 else Modifier.width(share.coerceIn(narrowest, 140.dp))
                             ).height(40.dp)
                             .then(if (on) Modifier.shadow(2.dp, RoundedCornerShape(20.dp)) else Modifier)
