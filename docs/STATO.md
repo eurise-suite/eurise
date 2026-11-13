@@ -2007,3 +2007,12 @@ Fatto (ramo `brand`):
   c'è una sola app VPN (Advanced Privacy o del catalogo) è lei, altrimenti la persona la indica nel centro privacy (riga Rete,
   «Quale VPN stai usando?»). Da aggiungere al catalogo quando servono: IVPN, Surfshark, ExpressVPN, Windscribe.
 - **Ultimo APK: giro 411** (ogni VPN col suo voto), Mappe 29.
+
+## 13 novembre, sera: Mappe passo e), prima parte · Mappe 30
+- **Velocità e limite** (MapVelocita, `EuriseSpeed`): velocità rossa oltre il limite più la tolleranza (Impostazioni ›
+  Navigazione: 0, +5 km/h di base, +10%), suono breve, il cartello pulsa e suona quando il limite cambia.
+- **Uscita e rotonda viste dal volante** (MapIncrocio, MapRotonda, `EuriseJunctionScene`, `EuriseJunctionView`): scena
+  animata sotto le corsie in verticale; la stessa, ferma, nella finestrella della manovra di Android Auto.
+- Non ancora (restano nel passo e): «tra 200 m: 70», limite dedotto, velocità e limite senza percorso, scena in
+  orizzontale. **Prossimo**: MapSegnalaGuida (sei voci, Annulla 5 s, invio a OSM a fine viaggio), poi MapOrizzontaleGuida.
+- **Ultimo APK: giro 411, Mappe 30.**
