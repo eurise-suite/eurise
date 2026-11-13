@@ -32,7 +32,7 @@ data class Field(val key: String, val label: Int, val value: String, val choices
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Alarm, Timer, Search, Open, Free }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free }
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -79,6 +79,9 @@ class Butler(private val context: Context) {
             s(R.string.alfred_note_grammar), s(R.string.alfred_do_task))
         is Command.Navigate -> Card(Kind.Route, command, s(R.string.alfred_lead_route), R.string.alfred_card_route,
             listOf(Field("place", R.string.alfred_f_destination, command.place)), s(R.string.alfred_note_route), s(R.string.alfred_do_route))
+        is Command.Report -> Card(Kind.Report, command, s(R.string.alfred_lead_report), R.string.alfred_card_report,
+            listOf(Field("what", R.string.alfred_f_what, s(reportLabel(command.kind)))), s(R.string.alfred_note_report),
+            s(R.string.alfred_do_report))
         is Command.Alarm -> Card(Kind.Alarm, command, s(R.string.alfred_lead_alarm), R.string.alfred_card_alarm,
             listOf(Field("time", R.string.alfred_f_time, command.time.format(HOUR))),
             if (command.day != null && command.day != nextOccurrence(command.time)) s(R.string.alfred_note_alarm_day) else s(R.string.alfred_note_grammar),
@@ -300,6 +303,14 @@ class Butler(private val context: Context) {
                 val maps = listOf("eu.eurise.maps").firstOrNull { Reach.installed(context, it) }
                 start(Intent(Intent.ACTION_VIEW, uri).apply { maps?.let { setPackage(it) } })
             }
+            Kind.Report -> {
+                // Senza conferma, come il tocco sulla griglia: Mappe segna dove si è e lascia «Annulla» per 5 secondi.
+                val kind = (card.command as Command.Report).kind
+                if (!Reach.installed(context, MAPS)) return Outcome(s(R.string.alfred_no_maps), false)
+                start(Intent().setClassName(MAPS, "app.organicmaps.eurise.EuriseGuideReportActivity")
+                    .putExtra("eu.eurise.maps.REPORT_KIND", kind.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    .let { if (it.close) Outcome(s(R.string.alfred_done_report, s(reportLabel(kind))), true) else it }
+            }
             Kind.Alarm -> {
                 val t = LocalTime.parse(card.value("time").replace('.', ':').padStart(5, '0'))
                 start(Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR, t.hour).putExtra(AlarmClock.EXTRA_MINUTES, t.minute)
@@ -405,8 +416,18 @@ class Butler(private val context: Context) {
     private fun nextOccurrence(t: LocalTime): LocalDate =
         if (t.isAfter(LocalTime.now())) LocalDate.now() else LocalDate.now().plusDays(1)
 
+    private fun reportLabel(k: ReportKind) = when (k) {
+        ReportKind.CAMERA -> R.string.alfred_report_camera
+        ReportKind.LIMIT -> R.string.alfred_report_limit
+        ReportKind.CLOSED -> R.string.alfred_report_closed
+        ReportKind.WORKS -> R.string.alfred_report_works
+        ReportKind.QUEUE -> R.string.alfred_report_queue
+        ReportKind.DANGER -> R.string.alfred_report_danger
+    }
+
     companion object {
         private const val LABEL = "eu.eurise.alfred.LABEL"
+        private const val MAPS = "eu.eurise.maps"
 
         /** Minuscole, senza accenti né punteggiatura: «Città» e «citta» sono la stessa parola. */
         fun fold(s: String): String =

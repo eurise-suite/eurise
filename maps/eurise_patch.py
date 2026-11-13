@@ -894,3 +894,117 @@ patch(res / "xml" / "prefs_navigation.xml", """    app:icon="@drawable/ic_speed"
     android:widgetLayout="@layout/preference_switch"
     app:singleLineTitle="false" />""")
 print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e della rotonda, anche in Android Auto)")
+
+# Passo e) della guida, seconda parte: Segnala in guida (tavole MapSegnalaGuida e MapAutoSegnala). La logica sta in
+# maps/android/…/eurise (EuriseGuideReports, EuriseGuideReportActivity, EuriseReportReviewActivity) e in
+# eurise/car/EuriseCarReportScreen; qui gli agganci. Sei voci a un tocco, Annulla per 5 secondi; autovelox, limite errato e
+# strada chiusa vanno a OpenStreetMap come nota anonima a fine viaggio, dopo un'occhiata all'elenco; lavori, coda e
+# pericolo restano sul telefono due ore e avvisano chi ripassa di lì.
+manifest = android_root / "app" / "src" / "main" / "AndroidManifest.xml"
+patch(manifest, """    <activity
+        android:name="app.organicmaps.eurise.EuriseReportActivity\"""", """    <!-- Segnala in guida: dalla bandierina o da Alfred (app della suite con la stessa firma, EXTRA_KIND). -->
+    <activity
+        android:name="app.organicmaps.eurise.EuriseGuideReportActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:exported="true"
+        android:permission="eu.eurise.permission.SUITE_DEBUG"
+        android:excludeFromRecents="true" />
+
+    <activity
+        android:name="app.organicmaps.eurise.EuriseReportReviewActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:exported="false"
+        android:excludeFromRecents="true" />
+
+    <activity
+        android:name="app.organicmaps.eurise.EuriseReportActivity\"""")
+
+# Sul telefono, in guida: la bandierina tonda sopra la lente, a sinistra (un tocco col pollice, senza aprire il menu).
+patch(res / "layout" / "map_buttons_layout_navigation.xml", """    <include
+      layout="@layout/map_buttons_search"
+""", """    <com.google.android.material.floatingactionbutton.FloatingActionButton
+      android:id="@+id/eurise_guide_report"
+      style="@style/MwmWidget.M3.FAB.MapButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="@dimen/margin_half"
+      android:contentDescription="@string/eurise_guide_report"
+      android:tint="?iconTint"
+      app:srcCompat="@drawable/eurise_ic_flag"
+      app:shapeAppearance="@style/Widget.MaterialComponents.FloatingActionButton"
+      app:layout_constraintBottom_toTopOf="@+id/btn_search"
+      app:layout_constraintStart_toStartOf="parent" />
+    <include
+      layout="@layout/map_buttons_search"
+""")
+patch(mbc, """    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
+""", """    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
+    // Eurise: Segnala in guida (tavola MapSegnalaGuida), solo nel layout della navigazione.
+    final View euriseGuideReport = mFrame.findViewById(R.id.eurise_guide_report);
+    if (euriseGuideReport != null)
+      euriseGuideReport.setOnClickListener(v -> app.organicmaps.eurise.EuriseGuideReportActivity.open(activity));
+""")
+
+# Fine del viaggio (arrivo o «Fine»): l'elenco per OpenStreetMap; se si era in auto o col telefono in tasca, alla
+# prossima apertura della mappa.
+mwm = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "MwmActivity.java"
+patch(mwm, """  public void onNavigationCancelled()
+  {
+    closeFloatingToolbarsAndPanels(true);
+""", """  public void onNavigationCancelled()
+  {
+    closeFloatingToolbarsAndPanels(true);
+    app.organicmaps.eurise.EuriseGuideReports.tripEnded(this);
+""")
+patch(mwm, """    MwmApplication.from(this).getSensorHelper().addListener(this);
+  }""", """    MwmApplication.from(this).getSensorHelper().addListener(this);
+    app.organicmaps.eurise.EuriseGuideReports.maybeReview(this);
+  }""")
+
+# Chi ripassa di lì: «Tua segnalazione di 25 min fa: Coda tra 300 m», una volta, nella stessa direzione.
+patch(nav, """    app.organicmaps.eurise.car.EuriseCarInfo.onLocation(location);""",
+      """    app.organicmaps.eurise.car.EuriseCarInfo.onLocation(location);
+    final String euriseWarning = app.organicmaps.eurise.EuriseGuideReports.warning(mFrame.getContext(), location);
+    if (euriseWarning != null)
+      android.widget.Toast.makeText(mFrame.getContext(), euriseWarning, android.widget.Toast.LENGTH_LONG).show();""")
+
+# Android Auto (MapAutoSegnala): la bandierina nella fila in alto della guida apre la griglia di sei voci sopra la mappa.
+patch(navscreen, """    builder.addAction(stopActionBuilder.build());
+    return builder.build();""", """    builder.addAction(new Action.Builder()
+                          .setIcon(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(),
+                                                                                     R.drawable.eurise_ic_flag)).build())
+                          .setOnClickListener(() -> getScreenManager().push(
+                              new app.organicmaps.eurise.car.EuriseCarReportScreen(getCarContext(), getSurfaceRenderer())))
+                          .build());
+    builder.addAction(stopActionBuilder.build());
+    return builder.build();""")
+patch(navscreen, """    NavigationService.stopService(getCarContext());
+    ThemeUtils.update(getCarContext());
+    finish();""", """    NavigationService.stopService(getCarContext());
+    ThemeUtils.update(getCarContext());
+    app.organicmaps.eurise.EuriseGuideReports.tripEnded(getCarContext());
+    finish();""")
+patch(navscreen, """    mNavigationManager.updateTrip(mTrip);
+""", """    mNavigationManager.updateTrip(mTrip);
+    final String euriseWarning = app.organicmaps.eurise.EuriseGuideReports.warning(getCarContext(), location);
+    if (euriseWarning != null)
+      CarToast.makeText(getCarContext(), euriseWarning, CarToast.LENGTH_LONG).show();
+""")
+# Il microfono di Alfred in auto: «autovelox», «c'è una coda» segnano qui invece di cercare.
+patch(mapscreen, """    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
+      if (getScreenManager().getTop() == this)""", """    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
+      final app.organicmaps.eurise.EuriseGuideReports.Kind euriseKind =
+          app.organicmaps.eurise.EuriseGuideReports.Kind.fromWords(text);
+      if (euriseKind != null)
+      {
+        final app.organicmaps.eurise.EuriseGuideReports.Report r =
+            app.organicmaps.eurise.EuriseGuideReports.add(getCarContext(), euriseKind);
+        androidx.car.app.CarToast.makeText(getCarContext(),
+            r == null ? getCarContext().getString(R.string.eurise_guide_no_position)
+                      : getCarContext().getString(euriseKind.label) + " "
+                        + app.organicmaps.eurise.EuriseGuideReports.placed(getCarContext(), r),
+            androidx.car.app.CarToast.LENGTH_LONG).show();
+        return;
+      }
+      if (getScreenManager().getTop() == this)""")
+print("eurise_patch: guida, seconda parte (Segnala in guida, sul telefono e in Android Auto; elenco di fine viaggio)")

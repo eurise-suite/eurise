@@ -150,4 +150,51 @@
         <item>5</item>
         <item>10p</item>
     </string-array>
+    <!-- Segnala in guida (MapSegnalaGuida, MapAutoSegnala) e l'elenco di fine viaggio. -->
+    <string name="eurise_guide_report">Report</string>
+    <string name="eurise_guide_title">Report here</string>
+    <string name="eurise_guide_one_tap">one tap, nothing to type</string>
+    <string name="eurise_guide_group_osm">STAY IN THE MAPS · GO TO OPENSTREETMAP</string>
+    <string name="eurise_guide_group_short">SHORT-LIVED · STAY ON THE PHONE</string>
+    <string name="eurise_guide_camera">Speed camera</string>
+    <string name="eurise_guide_limit">Wrong limit</string>
+    <string name="eurise_guide_closed">Road closed</string>
+    <string name="eurise_guide_works">Roadworks</string>
+    <string name="eurise_guide_queue">Queue</string>
+    <string name="eurise_guide_danger">Danger</string>
+    <string name="eurise_guide_placed">marked here</string>
+    <string name="eurise_guide_placed_on">marked here · %1$s</string>
+    <string name="eurise_guide_undo">Undo</string>
+    <string name="eurise_guide_ok">OK</string>
+    <string name="eurise_guide_undo_hint">Marked · you can undo for 5 seconds</string>
+    <string name="eurise_guide_undone">Report removed</string>
+    <string name="eurise_guide_no_position">Your position isn\'t known yet: try again in a moment</string>
+    <string name="eurise_guide_foot">Opens from the flag while driving or by saying «Alfred, speed camera». No confirmation: the point and the direction are taken when you tap. Reports for OpenStreetMap leave at the end of the trip, after a look at the list (anonymous note: position, type and direction, nothing else). Short ones stay on the phone and disappear after two hours.</string>
+    <string name="eurise_guide_warning">Your report from %2$s: %1$s in %3$d m</string>
+    <string name="eurise_guide_ago_min">%1$d min ago</string>
+    <string name="eurise_guide_ago_days">a few hours ago</string>
+    <string-array name="eurise_guide_compass">
+        <item>north</item>
+        <item>north-east</item>
+        <item>east</item>
+        <item>south-east</item>
+        <item>south</item>
+        <item>south-west</item>
+        <item>west</item>
+        <item>north-west</item>
+    </string-array>
+    <string name="eurise_review_title">Reports from this trip</string>
+    <string name="eurise_review_lead">Before they go to OpenStreetMap, a quick look: untick the ones you got wrong.</string>
+    <string name="eurise_review_limit">%1$s (map says %2$d)</string>
+    <string name="eurise_review_heading">heading %1$s</string>
+    <string name="eurise_review_include">Send «%1$s»</string>
+    <string name="eurise_review_osm_title">Anonymous notes on OpenStreetMap</string>
+    <string name="eurise_review_osm_body">Each report becomes a public note that volunteers check and fix on the map. Only the point, the type, the direction and the road leave: no account, nothing about you.</string>
+    <string name="eurise_review_blocked">Notes to OpenStreetMap are switched off in the privacy centre of the Eurise app.</string>
+    <string name="eurise_review_send">Send %1$d to OpenStreetMap</string>
+    <string name="eurise_review_discard">Discard and close</string>
+    <string name="eurise_review_sending">Sending…</string>
+    <string name="eurise_review_later">Later</string>
+    <string name="eurise_review_sent">Sent: %1$d notes. Thank you!</string>
+    <string name="eurise_review_partly">Sent %1$d of %2$d: the others stay for the end of the next trip</string>
 </resources>

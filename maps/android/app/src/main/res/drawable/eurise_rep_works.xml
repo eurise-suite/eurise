@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eurise Mappe: lavori (tavole MapSegnalaGuida e MapAutoSegnala), riquadro chiaro nella tinta e disegno pieno. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp" android:height="40dp" android:viewportWidth="36" android:viewportHeight="36">
+    <path android:fillColor="#FFF6E3C9" android:pathData="M12,0 H24 A12,12 0 0 1 36,12 V24 A12,12 0 0 1 24,36 H12 A12,12 0 0 1 0,24 V12 A12,12 0 0 1 12,0 Z" />
+    <group android:translateX="7" android:translateY="7" android:scaleX="0.9166" android:scaleY="0.9166">
+        <path android:strokeColor="#FF9A5A1C" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M5,20 H19" />
+        <path android:strokeColor="#FF9A5A1C" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M8,20 L11,6 H13 L16,20" />
+        <path android:strokeColor="#FF9A5A1C" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M9.3,14 H14.7" />
+    </group>
+</vector>

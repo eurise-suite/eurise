@@ -84,6 +84,7 @@ private fun PrivacyService.title() = when (this) {
     PrivacyService.Routes -> R.string.pv_s_routes
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather
     PrivacyService.MapSearch -> R.string.pv_s_map_search
+    PrivacyService.MapReports -> R.string.pv_s_map_reports
 }
 
 private fun PrivacyService.detail() = when (this) {
@@ -97,6 +98,7 @@ private fun PrivacyService.detail() = when (this) {
     PrivacyService.Routes -> R.string.pv_s_routes_d
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather_d
     PrivacyService.MapSearch -> R.string.pv_s_map_search_d
+    PrivacyService.MapReports -> R.string.pv_s_map_reports_d
 }
 
 /** Dove sta chi riceve i dati del servizio (il simbolo accanto al semaforo). */
@@ -105,6 +107,7 @@ private fun PrivacyService.where() = when (this) {
     PrivacyService.Alerts -> Jurisdiction.EU // EUMETNET, Bruxelles
     PrivacyService.Routes -> Jurisdiction.EU // server OSRM di FOSSGIS, Germania
     PrivacyService.MapSearch -> Jurisdiction.EU // Photon di komoot, Germania
+    PrivacyService.MapReports -> Jurisdiction.UK // OpenStreetMap Foundation, Regno Unito
     PrivacyService.News, PrivacyService.Horoscope -> Jurisdiction.Various
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
 }

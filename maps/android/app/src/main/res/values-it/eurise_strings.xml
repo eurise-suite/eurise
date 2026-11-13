@@ -145,4 +145,51 @@
         <item>+5 km/h</item>
         <item>+10%</item>
     </string-array>
+    <!-- Segnala in guida (MapSegnalaGuida, MapAutoSegnala) e l'elenco di fine viaggio. -->
+    <string name="eurise_guide_report">Segnala</string>
+    <string name="eurise_guide_title">Segnala qui</string>
+    <string name="eurise_guide_one_tap">un tocco, niente da scrivere</string>
+    <string name="eurise_guide_group_osm">RESTANO NELLE MAPPE · VANNO A OPENSTREETMAP</string>
+    <string name="eurise_guide_group_short">DURANO POCO · RESTANO SUL TELEFONO</string>
+    <string name="eurise_guide_camera">Autovelox</string>
+    <string name="eurise_guide_limit">Limite errato</string>
+    <string name="eurise_guide_closed">Strada chiusa</string>
+    <string name="eurise_guide_works">Lavori</string>
+    <string name="eurise_guide_queue">Coda</string>
+    <string name="eurise_guide_danger">Pericolo</string>
+    <string name="eurise_guide_placed">segnato qui</string>
+    <string name="eurise_guide_placed_on">segnato qui · %1$s</string>
+    <string name="eurise_guide_undo">Annulla</string>
+    <string name="eurise_guide_ok">OK</string>
+    <string name="eurise_guide_undo_hint">Segnato · si può annullare per 5 secondi</string>
+    <string name="eurise_guide_undone">Segnalazione tolta</string>
+    <string name="eurise_guide_no_position">Non so ancora dove sei: riprova tra un attimo</string>
+    <string name="eurise_guide_foot">Si apre dalla bandierina in guida o dicendo «Alfred, autovelox». Niente conferma: il punto e la direzione si prendono al tocco. Le segnalazioni per OpenStreetMap partono a fine viaggio, dopo un\'occhiata nell\'elenco (nota anonima: posizione, tipo e direzione, nient\'altro). Quelle brevi restano sul telefono e spariscono dopo due ore.</string>
+    <string name="eurise_guide_warning">Tua segnalazione di %2$s: %1$s tra %3$d m</string>
+    <string name="eurise_guide_ago_min">%1$d min fa</string>
+    <string name="eurise_guide_ago_days">qualche ora fa</string>
+    <string-array name="eurise_guide_compass">
+        <item>nord</item>
+        <item>nord-est</item>
+        <item>est</item>
+        <item>sud-est</item>
+        <item>sud</item>
+        <item>sud-ovest</item>
+        <item>ovest</item>
+        <item>nord-ovest</item>
+    </string-array>
+    <string name="eurise_review_title">Segnalazioni del viaggio</string>
+    <string name="eurise_review_lead">Prima di mandarle a OpenStreetMap, un\'occhiata: togli la spunta a quelle sbagliate.</string>
+    <string name="eurise_review_limit">%1$s (in mappa %2$d)</string>
+    <string name="eurise_review_heading">verso %1$s</string>
+    <string name="eurise_review_include">Manda «%1$s»</string>
+    <string name="eurise_review_osm_title">Note anonime su OpenStreetMap</string>
+    <string name="eurise_review_osm_body">Ogni segnalazione diventa una nota pubblica che i volontari controllano e correggono sulla mappa. Escono solo il punto, il tipo, la direzione e la strada: nessun account, niente di te.</string>
+    <string name="eurise_review_blocked">Le note a OpenStreetMap sono spente nel centro privacy dell\'app Eurise.</string>
+    <string name="eurise_review_send">Manda %1$d a OpenStreetMap</string>
+    <string name="eurise_review_discard">Scarta e chiudi</string>
+    <string name="eurise_review_sending">Invio…</string>
+    <string name="eurise_review_later">Più tardi</string>
+    <string name="eurise_review_sent">Mandate: %1$d note. Grazie!</string>
+    <string name="eurise_review_partly">Mandate %1$d su %2$d: le altre restano per la fine del prossimo viaggio</string>
 </resources>

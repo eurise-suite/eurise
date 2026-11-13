@@ -20,6 +20,16 @@ class GrammarTest {
         assertEquals(LocalTime.of(10, 0), c.time)
     }
 
+    @Test fun segnalaInGuida() {
+        assertEquals(ReportKind.CAMERA, (p("Alfred, autovelox") as Command.Report).kind)
+        assertEquals(ReportKind.QUEUE, (p("c'è una coda") as Command.Report).kind)
+        assertEquals(ReportKind.LIMIT, (p("segnala limite sbagliato") as Command.Report).kind)
+        assertEquals(ReportKind.CLOSED, (p("strada chiusa") as Command.Report).kind)
+        assertEquals(ReportKind.WORKS, (p("lavori in corso") as Command.Report).kind)
+        assertEquals(ReportKind.DANGER, (p("Alfred, pericolo!") as Command.Report).kind)
+        assertTrue(p("coda alla posta alle 9") !is Command.Report)
+    }
+
     @Test fun cenaTieneLaParola() {
         val c = p("cena venerdì alle 20 da Anna") as Command.Event
         assertEquals("Cena da Anna", c.title)

@@ -231,8 +231,20 @@ public class EuriseReportActivity extends Activity
       return;
     }
     new Thread(() -> {
-      boolean ok = anonymousNote(mLat, mLon, body);
-      runOnUiThread(() -> done(ok));
+      // Il centro privacy dell'app Eurise (servizio MapReports) può aver spento le note a OpenStreetMap.
+      final boolean blocked = Boolean.FALSE.equals(EuriseGuideReports.hub(getApplicationContext(), "status"));
+      final boolean ok = !blocked && anonymousNote(mLat, mLon, body);
+      if (ok)
+        EuriseGuideReports.hub(getApplicationContext(), "log");
+      runOnUiThread(() -> {
+        if (blocked)
+        {
+          Toast.makeText(this, R.string.eurise_review_blocked, Toast.LENGTH_LONG).show();
+          mSend.setEnabled(true);
+        }
+        else
+          done(ok);
+      });
     }).start();
   }
 
@@ -246,7 +258,7 @@ public class EuriseReportActivity extends Activity
   }
 
   /** Nota anonima con l'API 0.6 di OpenStreetMap (POST /notes): niente account, solo punto e testo. */
-  private static boolean anonymousNote(double lat, double lon, String text)
+  static boolean anonymousNote(double lat, double lon, String text)
   {
     HttpURLConnection c = null;
     try

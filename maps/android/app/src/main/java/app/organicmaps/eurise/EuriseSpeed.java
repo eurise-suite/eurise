@@ -30,6 +30,8 @@ public final class EuriseSpeed
   private static final long SOUND_GAP_MS = 20_000;
 
   private static int sLastLimit = -1;
+  /** Il limite mostrato adesso (unità dell'utente), -1 se non si sa: va nella segnalazione «limite errato». */
+  private static int sShownLimit = -1;
   private static boolean sOver;
   private static long sLastBeep;
   @Nullable private static ToneGenerator sTone;
@@ -85,13 +87,21 @@ public final class EuriseSpeed
     }
     if (limit > 0)
       sLastLimit = limit;
+    sShownLimit = limit;
     return limit;
+  }
+
+  /** Il limite in mappa per la strada di adesso, nelle unità mostrate; -1 se non si sa. */
+  public static int lastLimit()
+  {
+    return sShownLimit;
   }
 
   /** A fine guida: il prossimo viaggio riparte senza ricordi. */
   public static void reset()
   {
     sLastLimit = -1;
+    sShownLimit = -1;
     sOver = false;
   }
 

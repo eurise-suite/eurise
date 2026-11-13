@@ -78,6 +78,20 @@ public final class EuriseCarInfo
     sName = p[2];
   }
 
+  /** L'ultima posizione vista in guida o in auto (per «Segnala»); null all'inizio. */
+  @Nullable
+  public static Location lastLocation()
+  {
+    return sLast;
+  }
+
+  /** La strada sotto l'auto, «SS36 Nuova Valassina» o «Via Roma»; vuota se non si sa. */
+  @NonNull
+  public static String roadLabel()
+  {
+    return join(sRef, sName);
+  }
+
   /** Su autostrada o superstrada: la scena dell'uscita compare prima (600 m invece di 300). */
   public static boolean isFastRoad()
   {

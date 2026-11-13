@@ -30,6 +30,7 @@
     <string name="alfred_lead_note">Annoto questo, se mi dà il permesso.</string>
     <string name="alfred_lead_task">Lo metto tra le cose da fare, se crede.</string>
     <string name="alfred_lead_call">Chiamo%1$s, appena me lo conferma.</string>
+    <string name="alfred_lead_report">Lo segno sulla mappa, qui dove siamo.</string>
     <string name="alfred_lead_route">Le preparo la strada.</string>
     <string name="alfred_lead_alarm">La sveglia è pronta. Non mi resta che caricarla.</string>
     <string name="alfred_lead_timer">Conto il tempo per Lei.</string>
@@ -45,6 +46,7 @@
     <string name="alfred_card_note">Nota</string>
     <string name="alfred_card_task">Da fare</string>
     <string name="alfred_card_call">Chiamata</string>
+    <string name="alfred_card_report">Segnalazione</string>
     <string name="alfred_card_route">Percorso</string>
     <string name="alfred_card_alarm">Sveglia</string>
     <string name="alfred_card_timer">Timer</string>
@@ -86,6 +88,13 @@
     <string name="alfred_note_sms">Le apro il messaggio già scritto: a Lei il tocco su Invia. Inviare da solo mi è precluso, e forse è meglio così.</string>
     <string name="alfred_note_other_app">Le apro la conversazione: il testo è negli appunti, basta incollarlo.</string>
     <string name="alfred_note_call">Senza il permesso di chiamare le apro il tastierino con il numero già scritto.</string>
+    <string name="alfred_note_report">Punto e direzione li prende Eurise Mappe. A fine viaggio le mostra quelle per OpenStreetMap, prima di mandarle.</string>
+    <string name="alfred_report_camera">Autovelox</string>
+    <string name="alfred_report_limit">Limite errato</string>
+    <string name="alfred_report_closed">Strada chiusa</string>
+    <string name="alfred_report_works">Lavori</string>
+    <string name="alfred_report_queue">Coda</string>
+    <string name="alfred_report_danger">Pericolo</string>
     <string name="alfred_note_route">La strada la traccia Eurise Mappe, sul telefono.</string>
     <string name="alfred_note_alarm_day">Le sveglie ricordano l\'ora, non il giorno: suonerà alla prima occasione.</string>
     <string name="alfred_note_free">Le richieste libere le affiderò al modello AI del telefono, che sceglierà soltanto tra le azioni della suite. Nel frattempo posso passare la domanda a Eurise AI, o cercarla.</string>
@@ -98,6 +107,7 @@
     <string name="alfred_do_note">Salva la nota</string>
     <string name="alfred_do_task">Aggiungi</string>
     <string name="alfred_do_call">Chiama</string>
+    <string name="alfred_do_report">Segna</string>
     <string name="alfred_do_route">Apri Mappe</string>
     <string name="alfred_do_alarm">Imposta</string>
     <string name="alfred_do_timer">Avvia</string>
@@ -114,6 +124,8 @@
     <string name="alfred_done_note">Annotato.</string>
     <string name="alfred_done_task">Messo tra le cose da fare.</string>
     <string name="alfred_done">Subito.</string>
+    <string name="alfred_done_report">%1$s segnato. Ha cinque secondi per ripensarci.</string>
+    <string name="alfred_no_maps">Temo che Eurise Mappe non sia sul telefono: non saprei dove segnarlo.</string>
     <string name="alfred_failed">Temo che qualcosa non sia andato per il verso giusto. Riprovi, se vuole, o lo faccia dall\'app.</string>
     <string name="alfred_no_calendar">Non trovo un calendario in cui scrivere. Ne creo uno sul telefono, «Eurise»: riprovi pure.</string>
     <string name="alfred_need_calendar">Mi serve il permesso del Calendario: lo chieda pure dall\'app Calendario e riprovi.</string>

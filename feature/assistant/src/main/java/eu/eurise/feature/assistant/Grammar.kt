@@ -12,6 +12,8 @@ sealed interface Command {
     data class Task(val title: String, val due: LocalDate?, val time: LocalTime?) : Command
     data class Event(val title: String, val who: String?, val day: LocalDate?, val time: LocalTime?) : Command
     data class Navigate(val place: String) : Command
+    /** Una segnalazione per Eurise Mappe, segnata subito dove si è («Alfred, autovelox»). */
+    data class Report(val kind: ReportKind) : Command
     data class Message(val who: String, val text: String, val channel: Channel?) : Command
     data class Alarm(val time: LocalTime, val day: LocalDate?) : Command
     data class Timer(val minutes: Int) : Command
@@ -22,6 +24,9 @@ sealed interface Command {
 }
 
 enum class Channel { WhatsApp, Sms, Telegram, Signal }
+
+/** Le sei voci di «Segnala in guida» di Eurise Mappe (stessi nomi di EuriseGuideReports.Kind). */
+enum class ReportKind { CAMERA, LIMIT, CLOSED, WORKS, QUEUE, DANGER }
 
 enum class Scope { Web, Suite }
 
@@ -50,6 +55,9 @@ object Grammar {
     private val EVENT = Regex("$O^(appuntamento|riunione|incontro|cena|pranzo|colazione|aperitivo|visita|metti\\s+in\\s+calendario|segna(?:\\s+in\\s+calendario)?|fissa(?:\\s+un\\s+appuntamento)?)\\b\\s*(.*)$")
     private val SEARCH = Regex("$O^(?:cerca|trova|cercami)\\s+(?:(nei\\s+documenti|nelle\\s+note|nella\\s+suite|sul\\s+telefono|sul\\s+web|in\\s+rete|su\\s+internet)\\s+)?(.+)$")
     private val OPEN = Regex("$O^(?:apri|avvia|lancia|aprimi)\\s+(?:l'|il\\s+|la\\s+|lo\\s+|app\\s+)?(.+)$")
+    /** Segnala in guida (tavola MapSegnalaGuida): poche parole, senza verbo o con «segnala», «c'è». */
+    private val REPORT = Regex("$O^(?:segnala(?:re)?\\s+|segnalo\\s+|c'è\\s+|c'e\\s+|ce\\s+|attenzione\\s+)?(?:una\\s+|uno\\s+|un'\\s*|un\\s+)?" +
+        "(autovelox|velox|tutor|limite\\s+(?:di\\s+velocità\\s+)?(?:sbagliato|errato)|strada\\s+chiusa|lavori(?:\\s+in\\s+corso)?|cantiere|coda|traffico|incolonnamento|pericolo|ostacolo)$")
     private val WITH = Regex("(?u)(?<![\\p{L}])[Cc]on\\s+([\\p{L}'’]+(?:\\s+\\p{Lu}[\\p{L}'’]+)?)")
 
     /** Parole dell'evento che restano nel titolo («Cena da Anna»); le altre («appuntamento») si tolgono. */
@@ -74,6 +82,7 @@ object Grammar {
         val text = POLITE_TAIL.replace(POLITE_HEAD.replace(sentence.trim().trimEnd('.', '!', '?'), ""), "").trim()
         if (text.isEmpty()) return Command.Free(sentence)
 
+        REPORT.matchEntire(text)?.let { m -> return Command.Report(reportKind(m.groupValues[1].lowercase())) }
         NOTE.matchEntire(text)?.let { return Command.Note(capital(it.groupValues[1])) }
         TASK.matchEntire(text)?.let { m ->
             val q = QuickAdd.parse(m.groupValues[1], now)
@@ -132,6 +141,15 @@ object Grammar {
             else -> "Appuntamento"
         }
         return Command.Event(title, who, q.due, q.time)
+    }
+
+    private fun reportKind(w: String): ReportKind = when {
+        w.startsWith("limite") -> ReportKind.LIMIT
+        w.startsWith("strada") -> ReportKind.CLOSED
+        w.startsWith("lavori") || w == "cantiere" -> ReportKind.WORKS
+        w == "coda" || w == "traffico" || w == "incolonnamento" -> ReportKind.QUEUE
+        w == "pericolo" || w == "ostacolo" -> ReportKind.DANGER
+        else -> ReportKind.CAMERA
     }
 
     /** «sveglia alle 7» lo legge QuickAdd; «sveglia 7» o «sveglia 6.30» no. */

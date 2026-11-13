@@ -161,6 +161,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
             phase = Phase.Thinking
             scope.launch {
                 val card = butler.plan(Grammar.parse(heard, LocalDateTime.now()))
+                // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
+                if (card.kind == Kind.Report) { execute(card); return@launch }
                 phase = Phase.Confirm(card)
                 val canAct = card.ready && (card.kind != Kind.Call ||
                     context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
@@ -465,7 +467,7 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Call -> EuriseIcons.phone(2.3f)
     Kind.Note -> EuriseIcons.note(2.3f)
     Kind.Task -> EuriseIcons.task(2.3f)
-    Kind.Route -> EuriseIcons.map(2.3f)
+    Kind.Route, Kind.Report -> EuriseIcons.map(2.3f)
     Kind.Alarm, Kind.Timer -> EuriseIcons.clock(2.3f)
     Kind.Search -> EuriseIcons.search(2.3f)
     Kind.Open -> EuriseIcons.grid(2.3f)
