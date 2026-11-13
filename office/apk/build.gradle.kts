@@ -30,6 +30,9 @@ android {
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
         buildConfigField("boolean", "ENGINE_IN_APK", (engineAar != null).toString())
+        // Il motore esiste solo per arm64: senza filtro, le librerie androidx per altre architetture
+        // fanno scegliere al sistema (per esempio un emulatore x86_64) una cartella senza il motore.
+        if (engineAar != null) ndk { abiFilters += listOf("arm64-v8a") }
     }
 
     signingConfigs {
