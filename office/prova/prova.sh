@@ -64,15 +64,16 @@ open_one() { # via nome uri tipo
 	{
 		echo "processo: $(adb shell pidof "$PKG" || echo 'non c\x27è più')"
 		echo "attività in primo piano: $(adb shell dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity' | sed 's/^ *//')"
-		grep -E "FATAL|AndroidRuntime|UnsatisfiedLink|SIGSEGV|SIGABRT|backtrace|couldn't create temporary|file not found|Success copying|LOActivity|COOLWSD|loadDocument|lok|kit|error|Error" "$OUT/$tag.log" |
-			grep -v -E "chatty|GoogleApi|Finsky|gms" | head -60
+		# Del motore: avvertimenti ed errori di coolwsd e del kit, poi l'eventuale arresto con la pila completa.
+		grep -E "coolwsd.*(WRN|ERR|FTL|CRT)|LibreOfficeKit|LOActivity: (Success copying [0-9]|SCHEME|Initializing|postMobileMessage: load)|couldn't create temporary|file not found|AndroidRuntime" "$OUT/$tag.log" | head -40
+		grep -E " F (libc|DEBUG) " "$OUT/$tag.log" | head -80
 	} >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
 	sleep 3
 }
 
-for f in "$HERE"/campioni/*; do
+for f in "$HERE"/campioni/${SOLO:-*}; do
 	name=$(basename "$f")
 	type=$(mime "$name")
 	id=$(adb shell content query --uri content://media/external/file --projection _id --where "\"_display_name='$name'\"" | sed -n 's/.*_id=\([0-9]*\).*/\1/p' | head -1)
@@ -81,6 +82,7 @@ for f in "$HERE"/campioni/*; do
 	else
 		echo "## $name (content): non trovato in MediaStore" >> "$sum"
 	fi
-	open_one file "$name" "file:///data/data/$PKG/files/prova/$name" "$type"
+	# file:// solo se chiesto: in Collabora quel ramo non apre la pagina (serve un file temporaneo).
+	[ -n "${CON_FILE:-}" ] && open_one file "$name" "file:///data/data/$PKG/files/prova/$name" "$type"
 done
 cat "$sum"

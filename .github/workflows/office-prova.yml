@@ -11,6 +11,10 @@ on:
       - ".github/workflows/office-prova.yml"
       - "office/prova/**"
 
+env:
+  # Campioni da aprire (vuoto = tutti), per esempio «lettera.docx».
+  SOLO: "lettera.docx"
+
 permissions:
   contents: read
   actions: read
@@ -59,7 +63,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: bash office/prova/prova.sh apk/office.apk prova-office
+          script: SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()
