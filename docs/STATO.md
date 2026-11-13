@@ -1691,3 +1691,36 @@ Fatto, nell'ordine chiesto dal proprietario:
   griglia Segnala di sei voci, velocità dal tachimetro se l'auto la passa, altrimenti GPS).
 - In attesa: correzioni del proprietario dopo la prova del giro 350; poi codice del passo b) di Mappe (MapCerca).
 - APK: nessuno cambiato, l'ultimo resta il **giro 350** con **Mappe 21**.
+
+## 13 novembre, notte: passo b) di Mappe, il punto di Alfred, correzioni del proprietario, filtro antispam · giro 356, Mappe 24
+Fatto (ramo `brand`):
+- **Mappe passo b)** (`maps/…/eurise/ui/EuriseSearchHome.kt`): nella ricerca, prima di scrivere, la pagina di MapCerca in
+  Compose al posto delle schede di CoMaps: Dove devi andare (impegni + indirizzo di un contatto), Cerca vicino, Cercati di
+  recente, Mappe sul telefono (Pronta/Aggiorna). Campo e barra in alto restano di CoMaps.
+- **Correzioni del proprietario dopo la prova del 350**: Mappe con **Segnala nella barra**, nel cerchio la **lente**, **+ e −
+  tondi** sopra la lente (zoom di CoMaps solo in guida); **Drive** con testata e dock in vetro quasi pieno (`solid` in
+  `glass`/`EuriseDock`, anche Notte); **Alfred ascolta subito** dal microfono arancione e capisce da solo quando si è finito
+  (Eurise Voce diventa `VoiceRecognitionService` riservato alla suite, con `Endpoint` e test; altrimenti il riconoscimento
+  del telefono; dal tasto home tenuto premuto parte già in ascolto). Tavola **MapIncrocio rifatta** (vista dal volante,
+  portale con i cartelli). Il proprietario ha **approvato tutte le tavole di Mappe** (in guida, orizzontale, Android Auto).
+- **Alfred ovunque, il punto** (`feature/assistant/Briefing.kt`, `BriefingPanel.kt`, test): pulsante «Il punto» col
+  papillon in «I tuoi impegni»; mattino e sera; impegni, tempo, Borse, notizie (Italia/mondo dalle fonti scelte), perla
+  musicale con «Ascolta in…» (app scelta a parte per punto e sveglia), opera, luogo, curiosità, massima; lettura per
+  argomenti con pausa e salta. Fonti raccolte da `app/…/alfred/SuiteBriefingSource.kt`.
+- **Telefono**: filtro antispam sul telefono (`SpamScreening`, `SpamFilter` con test): Rubrica e chi si è chiamato passano;
+  sconosciuti dall'estero in silenzio; a scelta nascosti e tutti gli sconosciuti; chi insiste dall'estero rifiutato, chi
+  richiama dall'Italia per la terza volta suona. Schermata «Filtro e numeri bloccati» (scudo nei Recenti), tieni premuta
+  una chiamata per bloccare, chiamate filtrate segnate.
+- **Ultimo APK: giro 356**, **Mappe 24**. Cambiati rispetto al 350: app-debug, eurise-mappe, voice, phone. Uguali nel
+  funzionamento (ricompilati): browser, mail, password, ai, chat, gallery, messages, read, EuriseTastiera, Office.
+- **Richieste nuove del proprietario (da fare, in quest'ordine proposto)**:
+  1. **Nomi caratterizzanti per le app** (tradizione, cultura, musica, arte, luoghi, modi di dire europei): proposta in chat
+     del 13 novembre, da scegliere; poi verifica dei marchi (EUIPO) prima di adottarli.
+  2. **Icone**: ingrandire e ispessire il disegno interno di quelle con la stellina rimaste piccole; disegno interno più
+     caratterizzato (legato al nome); set in più: **stile iOS, stile Android, stile /e/OS** oltre ai due esistenti. Prima le
+     tavole sulla tela (pagina Icone), poi il codice.
+  3. **Office**: documenti e PDF non si aprono; Office è ancora rudimentale. Serve un lavoro dedicato (chat a parte).
+  4. **Chiamate in testo o tradotte**: Android non lascia registrare l'audio delle chiamate alle app normali (serve un'app
+     di sistema, cioè il fork di /e/OS); proposta da fare in tavola.
+  5. Restano: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe), Mappe passi c)–f) e guida (MapIncrocio,
+     MapVelocita, MapSegnalaGuida, orizzontale, Android Auto), tastiera (lavoro principale).
