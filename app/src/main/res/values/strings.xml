@@ -4,6 +4,8 @@
     <string name="launcher_label">Eurise Scrivania</string>
     <string name="alfred_label">Alfred</string>
     <string name="share_trip">Prepara il viaggio</string>
+    <string name="pdf_reader_name">Lettore PDF</string>
+    <string name="pdf_open_error">Questo PDF non si apre: forse è danneggiato o l\'app che lo ha mandato non lo condivide più.</string>
     <string name="section_today">Oggi</string>
     <string name="section_calendar">Calendario</string>
     <string name="section_clock">Orologio</string>

@@ -208,7 +208,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
 
     pdf?.let { (file, title) ->
         BackHandler { pdf = null }
-        PdfViewer(file, title) { pdf = null }
+        PdfViewer(file, title, onEdit = officeEdit(context, file)) { pdf = null }
         return
     }
 
@@ -403,6 +403,13 @@ private fun viewExternally(context: Context, file: File) {
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, R.string.drive_no_app, Toast.LENGTH_SHORT).show()
     }
+}
+
+/** «Modifica in Office» per un PDF di Eurise File, o null se Office non è installata. */
+private fun officeEdit(context: Context, file: File): (() -> Unit)? {
+    val writable = file.absolutePath.startsWith(Environment.getExternalStorageDirectory().absolutePath + "/")
+    val intent = eu.eurise.core.suite.OfficeContract.editIntent(context, uriOf(context, file), "application/pdf", writable) ?: return null
+    return { context.startActivity(intent) }
 }
 
 private fun share(context: Context, file: File) {
@@ -1241,7 +1248,7 @@ private fun PdfAnnotator(source: PdfSource, start: Int, file: File, title: Strin
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
+private fun PdfViewer(file: File, title: String, onEdit: (() -> Unit)? = null, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val source = remember(file) { runCatching { PdfSource(file) }.getOrNull() }
     DisposableEffect(source) { onDispose { source?.close() } }
@@ -1266,7 +1273,12 @@ private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (source != null) {
                 if (canSearch) IconButton(onClick = { searching = !searching; results = null }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_pdf_search)) }
-                IconButton(onClick = { annotating = true }) { Icon(EuriseIcons.pen(), contentDescription = stringResource(R.string.drive_pdf_annotate)) }
+                if (onEdit != null) {
+                    // Office c'è: annotare, firmare e lavorare sulle pagine si fa lì, sul file stesso.
+                    TextButton(onClick = onEdit) { Text(stringResource(R.string.drive_pdf_office), fontWeight = FontWeight.SemiBold) }
+                } else {
+                    IconButton(onClick = { annotating = true }) { Icon(EuriseIcons.pen(), contentDescription = stringResource(R.string.drive_pdf_annotate)) }
+                }
             }
         }
         if (source == null) {
@@ -1309,4 +1321,14 @@ private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Il lettore PDF della suite per chi apre un PDF da un'altra app («Apri con»): [file] è la copia da leggere, [onEdit] passa
+ * l'originale a Office (null se Office non c'è: resta l'annotazione semplice su copia).
+ */
+@Composable
+fun PdfReader(file: File, title: String, onEdit: (() -> Unit)?, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    PdfViewer(file, title, onEdit, onClose)
 }

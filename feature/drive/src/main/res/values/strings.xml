@@ -80,6 +80,7 @@
     <string name="drive_pdf_no_results">Nessun risultato.</string>
     <string name="drive_pdf_result">Pagina %1$d · %2$d risultati</string>
     <string name="drive_pdf_annotate">Firma o annota</string>
+    <string name="drive_pdf_office">Modifica in Office</string>
     <string name="drive_pdf_undo">Annulla il tratto</string>
     <string name="drive_pdf_prev">Pagina precedente</string>
     <string name="drive_pdf_next">Pagina successiva</string>

@@ -33,6 +33,22 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+        <!-- Lettore PDF per «Apri con» da qualsiasi app; per modificare passa a Eurise Office. -->
+        <activity
+            android:name=".PdfOpenActivity"
+            android:exported="true"
+            android:label="@string/pdf_reader_name"
+            android:taskAffinity=""
+            android:excludeFromRecents="false">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".AodActivity"
             android:exported="false"
