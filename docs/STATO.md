@@ -1900,3 +1900,5 @@ Fatto (ramo `brand`):
   tondo. Nella tavola ci sono anche «prima e ora» su quattro app. Generatore: `tela/gen/colori.py` (fuori dal repo).
   **Papillon di Alfred morbido** in tutte le icone (IconeStili e IconeColori): lo stesso di `EuriseIcons.bowtie` nel
   codice (ali tonde, nodo arrotondato), senza le due pieghe, che da piccolo non si leggono. Da approvare.
+- **Ultimo APK: giro 397**, **Mappe 28** (le sei correzioni di Android Auto). Il giro 397 non cambia l'app rispetto al 365.
+  Prima prova di Mappe 28 fallita per l'API dei nomi di CoMaps (`localisation::kDefaultNameIndex`), corretta.
