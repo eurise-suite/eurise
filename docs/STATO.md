@@ -1802,3 +1802,13 @@ Fatto (ramo `brand`):
   Copisto (Scanner), Leggio (Leggi/PDF), Scrittoio o Bottega (Office), Pigi (Tastiera), Bisbi (Messaggi), Arietta
   o Celeste (Meteo), Conti (Calcolatrice), Turcimanno (Traduttore), Scribò (Note); per sostituire Zonzo: Girolamo.
   Alternative per le app con nome: Letterio (Email), Sbircio (Browser), Pronto (Telefono). Da scegliere.
+- **Nomi, scelte del proprietario (13 novembre, sera)**: approvati **Agenore** (Calendario), **Copisto** (Scanner), **Pigi**
+  (Tastiera), **Bisbi** (Messaggi), **Arietta** (Meteo), **Scribò** (Note), **Girolamo** (Mappe, al posto di Zonzo),
+  **Sbircio** (da chiarire se sostituisce Pelorus per il Browser), **Turciman** (Traduttore, da Turcimanno).
+  Accettati con riserva, ma il proprietario vuole un nome che suoni come quello di una persona (come Ciarly): Compare (Contatti),
+  Stipo (Drive e File), Cucù (Orologio), Leggio (Leggi), Scrittoio (Office), Letterio (Email), Pronto (Telefono).
+  Per la Calcolatrice serve un nome che richiami chi «fa di conto».
+  Proposte nuove con primo controllo sul web: **Rubens** (rubrica), **Stipe** (nome croato, da stipare), **Orazio** (l'ora),
+  **Tommaso** (il tomo), **Ofelia** (officina, Office), **Corrado** (corriere), **Bonacci** (Fibonacci, «figlio di
+  Bonacci», Liber Abaci): nessun conflitto trovato. Scartati: Libero (Libero Mail), Paciolo (gestionale italiano),
+  Fibo (calcolatrice esistente). Telemaco è già un'app (fondo pensione delle telecomunicazioni); Chiara è da verificare.
