@@ -1,3 +1,6 @@
+import java.net.URI
+import java.security.MessageDigest
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -15,18 +18,18 @@ val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 /**
  * La voce di Alfred: sherpa-onnx (Apache 2.0, motore ONNX per le voci Piper). La libreria pubblicata dal progetto si
  * scarica una volta in voice/libs (fuori dal repository) e si controlla con la sua impronta. Peso: circa 12 MB in più
- * nell'APK di Voce (solo arm64); le voci (22–62 MB) si scaricano a richiesta. Motivo: la sintesi del telefono è spesso
+ * nell'APK di Voce (solo arm64); le voci (19–60 MB) si scaricano a richiesta. Motivo: la sintesi del telefono è spesso
  * metallica e legge la punteggiatura (prova del proprietario, 13 novembre).
  */
 val sherpaVersion = "1.13.7"
 val sherpaSha256 = "c4ef49e309f24fcee5c106b8a279481aaecaabb078cd37b2cd6e9a62cc8a73c8"
 val sherpaAar: File = file("libs/sherpa-onnx-$sherpaVersion.aar").also { aar ->
-    fun sha(f: File) = java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+    fun sha(f: File) = MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
     if (!aar.isFile || sha(aar) != sherpaSha256) {
         aar.parentFile.mkdirs()
         val part = File(aar.path + ".part")
-        java.net.URI("https://github.com/k2-fsa/sherpa-onnx/releases/download/v$sherpaVersion/sherpa-onnx-$sherpaVersion.aar")
-            .toURL().openStream().use { input -> part.outputStream().use { input.copyTo(it) } }
+        URI("https://github.com/k2-fsa/sherpa-onnx/releases/download/v$sherpaVersion/sherpa-onnx-$sherpaVersion.aar")
+            .toURL().openStream().use { input -> part.outputStream().use { out -> input.copyTo(out) } }
         check(sha(part) == sherpaSha256) { "sherpa-onnx: impronta diversa da quella attesa" }
         part.renameTo(aar)
     }
