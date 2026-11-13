@@ -1806,5 +1806,19 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   Nuova diagnosi in compilazione (giro 43484238959): svuota stderr al segnale, rimette i gestori; fonts.conf con le
   cartelle di Office.
 
-**Prossimo passo**: leggere il motivo dell'abort dal giro 43484238959 e correggerlo; prova sul telefono di Office
-leggero; poi barra a nastro nel motore (OffTelefono…) e motore a richiesta (OffMotore).
+**Per ripartire (13 novembre, sera)**
+- Ramo `office` (da `brand`; merge in `brand` alla fine). Tocca solo `office/`, lettore PDF e Scanner dell'app
+  principale, contratti in `core/suite` (OfficeContract, ScannerContract).
+- APK di prova: pre-release `apk-prova-office`: `eurise-office-leggero-debug.apk` (senza motore: vista rapida, PDF,
+  schermata iniziale) e `eurise-office-debug.apk` (con motore, si chiude: non usarlo). Il proprietario prova gli APK da
+  un'altra chat. Le modifiche all'app principale sono solo sul ramo `office`.
+- In corso: office-app giro **43484238959** (diagnosi che svuota stderr al segnale e rimette i gestori; fonts.conf).
+  Quando finisce: `gh workflow run office-prova.yml --ref office -f fonte=motore`, poi leggere `riassunto.md` della
+  pre-release `office-prova-schermate` (righe EuriseDiag, EuriseStderr subito prima dell'abort, «gestore rimesso»).
+  Controllare con `git log` che non l'abbia già fatto la chat precedente.
+- Strumenti: test JVM della vista rapida in locale con kotlinc scaricato da GitHub (Maven non raggiungibile; junit in
+  /opt/gradle-*/lib); prova sull'emulatore: `office-prova.yml` con `fonte` motore | nativo | collabora (+ `versione`).
+
+**Prossimo passo**: correggere la causa dell'abort del motore; poi motore a richiesta (OffMotore: capire se i file del
+motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
+Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
