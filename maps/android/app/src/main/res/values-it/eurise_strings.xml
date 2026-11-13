@@ -102,4 +102,12 @@
     <string name="eurise_sh_maps_manage">Scarica o aggiorna le mappe</string>
     <string name="eurise_sh_map_ready">Pronta</string>
     <string name="eurise_sh_map_update">Aggiorna</string>
+    <string name="eurise_pl_directions">Indicazioni</string>
+    <string name="eurise_pl_go_now">Parti ora</string>
+    <string name="eurise_pl_save">Salva</string>
+    <string name="eurise_pl_saved">Salvato</string>
+    <string name="eurise_pl_call">Chiama</string>
+    <string name="eurise_pl_event">Impegno</string>
+    <string name="eurise_pl_share">Condividi</string>
+    <string name="eurise_pl_event_here">Impegno qui · %1$s</string>
 </resources>

@@ -71,3 +71,14 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   Testo d'aiuto del campo: «Indirizzo, luogo, impegno, farmacia».
 - Non ancora: il campo di ricerca e la barra in alto restano quelli di CoMaps (colori della suite già applicati); la
   proposta di scaricare la regione di un impegno che non è sul telefono (serve sapere dove sta il luogo prima di cercarlo).
+
+## Interfaccia sulle tavole, passo c) (13 novembre)
+- `eurise/ui/EuriseLuogo.kt` (Compose, tavole MapLuogo e MapLuogoAperta approvate): nella scheda del luogo, sotto nome,
+  tipo, indirizzo e stato di apertura di CoMaps, le azioni della suite: «Indicazioni» grande e «Parti ora» (il percorso si
+  calcola e la guida parte da sola: `MwmActivity.onBuiltRoute`), poi Salva, Chiama (primo numero di OSM), Impegno (nuovo
+  evento con il luogo già scritto, nel calendario predefinito), Condividi (nome, indirizzo e link OpenStreetMap), e
+  l'impegno della suite con quel luogo (DestinationsContract, come «Dove devi andare»).
+- In basso restano solo «Parti da qui» e «Segnala»; quando si pianifica un percorso tornano tutti i pulsanti di CoMaps.
+- Colori Perla e Notte e lettura degli impegni ora sono in comune (`eurise/ui/EuriseMapStyle.kt`).
+- Non ancora: la scheda aperta con orari e contatti nello stile della tavola (oggi sono le righe di CoMaps con i colori
+  della suite), «Nota del luogo» e «Cerca qui vicino».

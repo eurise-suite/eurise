@@ -370,3 +370,58 @@ patch(search, """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlacehold
 patch(search, "    UiUtils.showIf(!hasQuery && compatibleContactsAppInstalled, mOpenContactPicker);",
       "    UiUtils.showIf(!hasQuery && compatibleContactsAppInstalled && (getView() == null || getView().findViewById(R.id.eurise_search_home) == null), mOpenContactPicker);")
 print("eurise_patch: ricerca con la pagina della suite (passo b)")
+
+# Passo c) dell'interfaccia rifatta sulle tavole (MapLuogo e MapLuogoAperta): nella scheda del luogo, sotto nome e indirizzo,
+# le azioni della suite in Compose (maps/android/…/eurise/ui/EuriseLuogo.kt): Indicazioni e Parti ora, Salva, Chiama,
+# Impegno, Condividi, e l'impegno della suite con questo luogo. I dettagli di CoMaps restano sotto.
+pp_preview = res / "layout" / "place_page_preview.xml"
+patch(pp_preview, """  </LinearLayout>
+
+  <androidx.fragment.app.FragmentContainerView
+    android:id="@+id/place_page_track_fragment\"""", """  </LinearLayout>
+
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_luogo"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+  <androidx.fragment.app.FragmentContainerView
+    android:id="@+id/place_page_track_fragment\"""")
+patch(pp / "PlacePageView.java", "    mPreview = mFrame.findViewById(R.id.pp__preview);",
+      """    mPreview = mFrame.findViewById(R.id.pp__preview);
+    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));""")
+patch(pp / "PlacePageView.java", """      mOsmDescriptionContainer.setVisibility(VISIBLE);
+    }
+  }
+
+  void refreshCategoryPreview()""", """      mOsmDescriptionContainer.setVisibility(VISIBLE);
+    }
+    app.organicmaps.eurise.ui.EuriseLuogo.bind(mMapObject);
+  }
+
+  void refreshCategoryPreview()""")
+# Le azioni sono nella scheda: in basso restano solo «Parti da qui» e «Segnala» (e tutto quando si sta pianificando).
+patch(pp / "PlacePageController.java", """      buttons.add(PlacePageButtons.ButtonType.EURISE_REPORT);
+    }
+    mViewModel.setCurrentButtons(buttons);""", """      buttons.add(PlacePageButtons.ButtonType.EURISE_REPORT);
+      if (!RoutingController.get().isPlanning() && !RoutingController.get().isNavigating() && !mapObject.isTrack()
+          && !mapObject.isMyPosition())
+      {
+        buttons.remove(PlacePageButtons.ButtonType.BOOKMARK_SAVE);
+        buttons.remove(PlacePageButtons.ButtonType.BOOKMARK_DELETE);
+        buttons.remove(PlacePageButtons.ButtonType.ROUTE_TO);
+      }
+    }
+    mViewModel.setCurrentButtons(buttons);""")
+# «Parti ora»: appena il percorso è calcolato, la guida parte da sola.
+mwm = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "MwmActivity.java"
+patch(mwm, """    if (!RoutingController.get().isPlanning())
+      return;
+
+    closeSearchToolbar(true, true);""", """    if (!RoutingController.get().isPlanning())
+      return;
+
+    closeSearchToolbar(true, true);
+    if (app.organicmaps.eurise.ui.EuriseLuogo.consumeStartWhenBuilt())
+      RoutingController.get().start();""")
+print("eurise_patch: scheda del luogo con le azioni della suite (passo c)")
