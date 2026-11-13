@@ -89,8 +89,8 @@ object EuriseMapBar {
 
 private class Palette(val glass: Color, val edge: Color, val ink: Color, val muted: Color, val accent: Color, val onAccent: Color)
 
-private val Perla = Palette(Color(0xE6FFFFFF), Color(0x1F1E1D1B), Color(0xFF1F2A44), Color(0xFF56564F), Color(0xFF1F2A44), Color.White)
-private val Notte = Palette(Color(0xE61C2333), Color(0x29FFFFFF), Color(0xFFE8ECF4), Color(0xFFA9B4C4), Color(0xFFA9C1F2), Color(0xFF14192A))
+private val BarPerla = Palette(Color(0xE6FFFFFF), Color(0x1F1E1D1B), Color(0xFF1F2A44), Color(0xFF56564F), Color(0xFF1F2A44), Color.White)
+private val BarNotte = Palette(Color(0xE61C2333), Color(0x29FFFFFF), Color(0xFFE8ECF4), Color(0xFFA9B4C4), Color(0xFFA9C1F2), Color(0xFF14192A))
 
 @Composable
 private fun Bar(
@@ -105,7 +105,7 @@ private fun Bar(
     onMenu: () -> Unit,
     onReport: () -> Unit,
 ) {
-    val p = if (night) Notte else Perla
+    val p = if (night) BarNotte else BarPerla
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Bottom,

@@ -425,3 +425,51 @@ patch(mwm, """    if (!RoutingController.get().isPlanning())
     if (app.organicmaps.eurise.ui.EuriseLuogo.consumeStartWhenBuilt())
       RoutingController.get().start();""")
 print("eurise_patch: scheda del luogo con le azioni della suite (passo c)")
+
+# La voce di Alfred anche in Mappe: se c'è Eurise Voce con la voce scaricata, la guida parla con lei; altrimenti, come
+# prima, con il motore del telefono. Il testo da leggere va a Voce, sul telefono, e non esce.
+tts = android_root / "sdk" / "src" / "main" / "java" / "app" / "organicmaps" / "sdk" / "sound" / "TtsPlayer.java"
+patch(tts, "  private boolean mInitializing;\n", """  private boolean mInitializing;
+  // Eurise: il motore di Eurise Voce (voce di Alfred) se c'è; se non ha la lingua si torna al motore del telefono.
+  @Nullable
+  private String mEuriseEngine;
+  private boolean mEuriseSkip;
+
+  @Nullable
+  private static String euriseEngine(@NonNull Context context)
+  {
+    for (String p : new String[] {"eu.eurise.voice", "eu.eurise.voice.debug"})
+    {
+      try
+      {
+        context.getPackageManager().getPackageInfo(p, 0);
+        return p;
+      }
+      catch (Exception ignored) {}
+    }
+    return null;
+  }
+""")
+patch(tts, """    mTts = new TextToSpeech(context, status -> UiThread.run(() -> {
+      if (status == TextToSpeech.ERROR)""", """    mEuriseEngine = mEuriseSkip ? null : euriseEngine(context);
+    mTts = new TextToSpeech(context, status -> UiThread.run(() -> {
+      if (mEuriseEngine != null && (status == TextToSpeech.ERROR
+          || mTts.isLanguageAvailable(Locale.getDefault()) < TextToSpeech.LANG_AVAILABLE))
+      {
+        mEuriseEngine = null;
+        mEuriseSkip = true;
+        mTts.shutdown();
+        mTts = null;
+        mInitializing = false;
+        initialize(context);
+        return;
+      }
+      if (status == TextToSpeech.ERROR)""")
+patch(tts, """        sOnReloadCallback.run();
+        mReloadTriggered = false;
+      }
+    }));""", """        sOnReloadCallback.run();
+        mReloadTriggered = false;
+      }
+    }), mEuriseEngine);""")
+print("eurise_patch: la guida parla con la voce di Alfred, se c'è")
