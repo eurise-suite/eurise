@@ -2006,3 +2006,4 @@ Fatto (ramo `brand`):
   VPN da 7 in su dà **+2**, le altre **+1**, una sconosciuta **+0**; Tor +2. Quale VPN: Android non lo dice; se sul telefono
   c'è una sola app VPN (Advanced Privacy o del catalogo) è lei, altrimenti la persona la indica nel centro privacy (riga Rete,
   «Quale VPN stai usando?»). Da aggiungere al catalogo quando servono: IVPN, Surfshark, ExpressVPN, Windscribe.
+- **Ultimo APK: giro 411** (ogni VPN col suo voto), Mappe 29.
