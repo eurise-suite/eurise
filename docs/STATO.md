@@ -26,6 +26,13 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
   - Panoramica del percorso prima di partire che si riadatta quando Android Auto riduce la mappa.
   - Traffico: nessuna fonte libera nazionale; si riprende se se ne trova una.
   - «Dove devi andare» (impegni del Calendario) anche nella ricerca di Android Auto.
+  - **Mezzi, orari e viaggi lontani** (richiesta del 13 novembre, tavole **MapMezzi**, **MapLontano**, **MapLontanoScelta**
+    da approvare): auto di base (sempre con Android Auto), Mezzi, Bici, A piedi a un tocco con il tempo già calcolato;
+    orari di treni, metro, bus; per le mete lontane alternative anche miste (auto, treno, aereo, auto + treno) con filtri
+    (più veloce, meno caro, più comodo, senza cambi, parti dopo / arriva entro), pedaggio stimato con le tariffe pubbliche,
+    carburante col consumo dell'auto; scelta confermata → Il mio viaggio, Calendario, Cose da fare, Note. Fonti da
+    verificare prima del codice: Transitous (MOTIS, dati aperti GTFS) per gli orari, tariffe dei pedaggi, nessuna fonte
+    libera per i prezzi dei voli (solo collegamento al sito del vettore). Interruttore nel centro privacy.
 - **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe).
 - **Tastiera**: lavoro principale dopo Mappe.
 - **Icone** in codice: simboli nuovi, sfumatura e alone della stellina negli APK e nei temi; stili iOS, Android, /e/OS;
@@ -1931,3 +1938,16 @@ Fatto (ramo `brand`):
   tardi «Parti subito: arrivi alle…»), «Manda l'arrivo», «Salva il luogo», «Avvia la navigazione» grande (il pulsante di
   CoMaps resta nascosto e fa il lavoro), la riga «Percorso calcolato sul telefono». Non ancora: la scheda in alto
   «Casa → Studio Tecnico» (restano punti e barra dei mezzi di CoMaps) e «la sveglia può tenerne conto» (con AlfSveglia).
+
+## 13 novembre, pomeriggio tardi: Android Auto, percorso, mezzi e icone (ramo `brand`) — punto di ripartenza
+- Fatto in questa chat: le sei correzioni di Android Auto (Mappe 28, vedi sopra); passo d) percorso (EurisePercorso,
+  compilazione Mappe 29); tema «Eurise a colori» conservato con i simboli nuovi (giorno a metà strada, sera approvata);
+  papillon di Alfred morbido in tutte le icone; tavole nuove MapMezzi, MapLontano, MapLontanoScelta (da approvare);
+  sezione «Cose da fare ancora» in cima a questo file.
+- Ultimi APK in `apk-prova`: giro 397, Mappe 28 (Mappe 29 col passo d) appena compilato: se è riuscito, pubblicarlo
+  aggiornando la riga «Ultima pubblicazione» in `.github/workflows/apk-prova.yml`).
+- Sorgenti di CoMaps: Codeberg dall'ambiente di Claude risponde 403; si leggono dallo specchio
+  `https://github.com/comaps/comaps.git` al commit fissato (`git fetch --depth 1 --filter=blob:none` + sparse-checkout).
+- Generatori delle tavole (fuori dal repo, in `/home/claude/tela/gen`: icone.py, colori.py, viaggi.py) si perdono con la
+  chat: le tavole pubblicate sulla tela restano la fonte.
+- Prossimo: approvazione delle tavole dei mezzi e delle icone; Mappe e) guida e f); poi sveglia di Alfred e tastiera.
