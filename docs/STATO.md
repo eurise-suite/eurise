@@ -1863,3 +1863,6 @@ Fatto (ramo `brand`):
 - **Sfumatura, corretta dal proprietario**: più evidente e **radiale dalla stellina** («la stella di Eurise rischiara»):
   centro (77, 35) nel riquadro 18–90, raggio 78; blu notte #4A5C8E → #2C3A62 (35 %) → #121A2E nel lato opposto; a colori dal
   tono chiaro schiarito all'82 % fino alla tinta chiara piena. Vale per le icone degli APK e per i temi della Scrivania.
+- **Sfumatura, seconda correzione** (la radiale sembrava un bottone in rilievo): fondo **piatto** con sfumatura lineare
+  diagonale dal lato della stellina (in alto a destra, #34456F) al lato opposto (#161D33), più un **alone caldo** solo attorno
+  alla stellina (radiale, centro 77,35, raggio 24, #F6E2B4 al 30 %; a colori al 55 %).
