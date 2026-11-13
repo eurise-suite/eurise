@@ -1820,3 +1820,8 @@ Fatto (ramo `brand`):
   **Email** (Postello e Letterio, più le proposte nuove legate a chi portava la posta: **Tassis**, da Omodeo Tasso e dalla
   Compagnia dei Corrieri; Omodeo; Cheval, il postino Ferdinand Cheval; Fidippo, da Fidippide); **Telefono** (Drin o Chiara);
   **Voce** (proposta: Tonio, da «tono»). Corrado scartato dal proprietario. Tutti in attesa della verifica TMview/EUIPO.
+- **Nomi, aggiornamento**: confermati **Stipet** (Drive e File) e **Chiara** (Telefono; nessun conflitto trovato sul web).
+  Email: il proprietario sceglie tra **Omodeo** e **Fidippo** (Tassis scartato perché ricorda le tasse); consigliato Fidippo.
+  Da rinominare con la nuova regola (nome di persona che evoca l'azione): Galleria (Fotonda) → proposte **Imma**
+  (immagine), Nadar (il fotografo francese), Rita (ritratto); Attività (Spunta) → proposta **Brigida** (sbrigare; Santa
+  Brigida è compatrona d'Europa), in alternativa Sbrigo. Nessun conflitto trovato sul web per i nuovi nomi.
