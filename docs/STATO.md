@@ -2081,3 +2081,16 @@ arriva alle voci di Alfred.
 - **Office**: non corretto. Era già noto (documenti e PDF non si aprono, lavoro dedicato in una chat a parte). Serve il
   registro dell'errore: proposta di aggiungere a Office un «rapporto del problema» (motivo dell'ultima chiusura da
   `ApplicationExitInfo`, da condividere) per capire dove si ferma il motore.
+
+## Punto di ripartenza (13 novembre, notte)
+- **Ramo `brand`. Ultimi APK in apk-prova: giro 434 e Mappe 32.** Contengono le correzioni dopo la prova (sezione sopra),
+  Segnala in guida (Mappe, Android Auto, Alfred), l'icona delle impostazioni di Alfred e «Modelli e voci di Alfred» in Voce.
+- **Da provare per primo**: avvio della navigazione dopo aver scelto l'indirizzo; tastiera (lettere, spazi, niente
+  riquadro delle correzioni); download del Browser; Segnala in guida.
+- **Metodo nuovo, chiesto dopo la prova del 13 novembre**: prima la stabilità (niente funzioni nuove finché Mappe,
+  tastiera, Browser e Office non vanno nell'uso quotidiano); un'app alla volta e giri piccoli con l'elenco di cosa
+  provare; ogni strada indicata al proprietario si verifica prima nel codice; «rapporto del problema» nelle app per
+  vedere gli errori (Office per primo, in attesa dell'ok del proprietario).
+- **Domande aperte**: cosa succede esattamente toccando «Avvia la navigazione» e foto della schermata del percorso;
+  rapporto del problema in Office (sì/no); voce di Alfred più «da maggiordomo» (a/b); NordVPN, Traduzione, Borsa e Video.
+- Dopo: guida in orizzontale (MapOrizzontaleGuida), tavole dei mezzi, «Eurise a colori», sveglia di Alfred, tastiera.
