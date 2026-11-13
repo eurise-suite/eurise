@@ -1766,8 +1766,7 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   test `PdfLogicTest`. Compila in «Compila APK». office-app.yml ora costruisce l'APK di Office da questo modulo con dentro
   l'AAR della libreria di Collabora (l'app di Collabora non c'è più). L'APK di prova va nella pre-release
   **apk-prova-office** (apk-prova resta del ramo brand).
-- Limiti noti: «I miei dati» nei moduli manca (serve un contratto con Eurise Password); «Inserisci dallo Scanner» apre lo
-  Scanner ma non torna con le pagine (serve un contratto «scansiona e restituisci»); «Link dal cloud» non c'è ancora;
+- Limiti noti: «I miei dati» nei moduli manca (serve un contratto con Eurise Password); «Link dal cloud» non c'è ancora;
   la mano dominante è un'impostazione di Office finché l'app Eurise non la offre a tutta la suite; ricerca che si tira
   giù da fare come componente comune in core/designsystem.
 
@@ -1782,6 +1781,12 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   un commento) cambiando **solo quel pezzo del file**, il resto resta identico; «Modifica completa» apre lo stesso
   documento nel motore alla stessa pagina (il motore si scarica lì la prima volta). Tavole OffLettura, OffLetturaCorreggi,
   OffLetturaFoglio, OffLetturaCompleta sulla pagina Office (da approvare).
+
+- **Lettore PDF dell'APK principale**: si apre con «Apri con» da qualsiasi app (`PdfOpenActivity`, copia in cache);
+  «Modifica in Office» (anche da Eurise File) passa l'originale a Office, con la scrittura se c'era (`OfficeContract`).
+  Senza Office resta l'annotazione su copia.
+- **Scansiona e restituisci**: `ScannerContract` + `ScanForResultActivity` (permesso della suite); in Office «Inserisci da
+  Scanner» riceve le pagine e le inserisce dopo la selezione. Lo Scanner, chiamato così, mostra «Aggiungi al documento».
 
 **Prossimo passo**: esito di office-app con solo arm64, prova dei sei formati sull'emulatore, consegna dell'APK. Poi Office
 sulle tavole (OffTelefono…), motore a richiesta (OffMotore), quindi la vista rapida se le tavole sono approvate.
