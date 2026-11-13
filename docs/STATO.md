@@ -2094,3 +2094,32 @@ arriva alle voci di Alfred.
 - **Domande aperte**: cosa succede esattamente toccando «Avvia la navigazione» e foto della schermata del percorso;
   rapporto del problema in Office (sì/no); voce di Alfred più «da maggiordomo» (a/b); NordVPN, Traduzione, Borsa e Video.
 - Dopo: guida in orizzontale (MapOrizzontaleGuida), tavole dei mezzi, «Eurise a colori», sveglia di Alfred, tastiera.
+
+## 14 novembre, notte: correzioni dopo la prova del giro 434 e di Mappe 32 · ramo `brand`
+Esito della prova del proprietario: Mappe in auto va (scelta della strada e guida), ma la mappa era troppo gialla di sera
+e alla rotonda (inversione sulla via d'entrata) la scena mostrava l'uscita prima; sul telefono «Avvia la navigazione» è
+grigio e nessun tasto del pannello funziona (foto). Tastiera: la usa ancora qualche giorno prima di dire. Browser: il
+download va; schede da stringere; password salvate mai compilate; schermo nero e chiusura riportando le password.
+Alfred: voci scaricate ma mute, «Ascolta una prova» chiude Voce, non capisce i comandi.
+- **Mappe**: `EurisePercorso` non si ridisegnava (Compose saltava `Panel(night)` a parametri uguali: il giro ora è un
+  parametro). «Parti ora» avvia la guida con un `post` dopo l'aggiornamento del pannello. Rotonda: `RoundaboutTurn` ricava
+  dalla forma del percorso di quanto gira la strada (direzione d'entrata presa alla prima comparsa, ≥ 80 m prima;
+  d'uscita nei 25 m dopo); `EuriseJunctionScene.exitAngles` mette l'uscita giusta a quell'angolo, l'inversione sulla via
+  d'entrata; senza dati resta il ventaglio della tavola.
+- **Giallo in auto**: non è un filtro nostro, è lo stile «auto» di CoMaps di giorno (Android Auto in «Automatico» segue il
+  buio dell'auto). **Domanda aperta**: era ancora giorno o già buio? Proposte: sera = Notte dal tramonto (come «Alba e
+  tramonto» di CoMaps) e/o stile auto di giorno meno giallo (con tavola, dentro «Eurise a colori»).
+- **Voce/Alfred**: sintesi nel processo `:voce`; `generate()` per frase al posto di `generateWithCallback`; keep di
+  `kotlin.jvm.functions.Function1`; spia `voices/parla`→`voices/ferma` (`Voices.checkCrash`): voce ferma = «dati mancanti»,
+  Alfred usa la voce del telefono; `Speaker` ripete con la voce del telefono una frase non letta. La voce Piper e la
+  libreria (1.13.7) sono state provate qui sul computer con sherpa-onnx in Python: l'archivio è sano.
+- **Ascolto**: `VoiceContract.KEY_PROMPT`; Alfred manda frasi d'esempio dei comandi e Whisper usa il contesto pieno.
+  **Da chiedere**: cosa scrive Alfred sotto «Ho sentito» quando non capisce (per sapere se sbaglia l'ascolto o la grammatica).
+- **Browser**: `Logins` dà agli accessi l'origine della pagina aperta e `formActionOrigin("")`; `OnceAnswer` risponde a
+  Gecko una sola volta e toglie la bolla quando Gecko chiude la richiesta (sospettato dello schermo nero). Schede in alto
+  che si stringono fino all'icona (`TabStrip`). Favicon (`SiteIcons`, estensione 0.3.0): icona dichiarata dalla pagina,
+  scaricata dallo stesso sito senza cookie con `GeckoWebExecutor`, 64 px in `files/icone`, rinnovo a 30 giorni; non nelle
+  schede private; nei segnalibri solo dei siti già aperti.
+- **Richieste nuove**: barra di ricerca del Browser spostabile (in alto/di lato, trascinabile giù col pollice): prima la
+  tavola. Office: «rapporto del problema» da confermare.
+
