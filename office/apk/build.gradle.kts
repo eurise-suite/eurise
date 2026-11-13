@@ -6,14 +6,13 @@ plugins {
 
 /**
  * Eurise Office: APK a parte (struttura degli APK, 8 novembre 2026). Qui stanno le parti native, in Kotlin e Compose come
- * il resto della suite: la schermata iniziale (tavola OffHome) e l'editor PDF (OffPdf, OffPdfPagine, OffPdfCondividi),
- * che funzionano anche senza il motore dei documenti.
+ * il resto della suite: la schermata iniziale (tavola OffHome), la vista rapida (OffLettura…) e l'editor PDF (OffPdf,
+ * OffPdfPagine, OffPdfCondividi), che funzionano senza il motore dei documenti.
  *
- * Il motore (Collabora Online + LibreOffice, office/app ed office/engine) è una libreria Android (AAR) prodotta dal lavoro
- * office-app.yml: con EURISE_OFFICE_AAR (percorso dell'AAR) entra nell'APK insieme a LOActivity e alle sue dipendenze.
- * Senza, l'APK resta piccolo e i documenti di testo, fogli e presentazioni chiedono il motore (tavola OffMotore).
+ * Il motore (Collabora Online + LibreOffice) è l'APK compagno «Eurise Office Motore» (office/motore, strada A decisa il
+ * 13 novembre 2026): Office lo scarica la prima volta che serve (tavola OffMotore), controlla che sia firmato con la
+ * stessa chiave e gli passa i documenti con un intent esplicito.
  */
-val engineAar: String? = System.getenv("EURISE_OFFICE_AAR")?.takeIf { it.isNotBlank() && file(it).exists() }
 val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
 android {
@@ -29,10 +28,9 @@ android {
         resourceConfigurations += listOf("it", "en")
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
-        buildConfigField("boolean", "ENGINE_IN_APK", (engineAar != null).toString())
-        // Il motore esiste solo per arm64: senza filtro, le librerie androidx per altre architetture
-        // fanno scegliere al sistema (per esempio un emulatore x86_64) una cartella senza il motore.
-        if (engineAar != null) ndk { abiFilters += listOf("arm64-v8a") }
+        buildConfigField("String", "ENGINE_PACKAGE", "\"eu.eurise.office.motore\"")
+        // Archivio delle versioni (GitHub, gratuito: regola di spesa): l'ultima versione ufficiale del motore.
+        buildConfigField("String", "ENGINE_URL", "\"https://github.com/eurise-suite/eurise/releases/latest/download/eurise-office-motore.apk\"")
     }
 
     signingConfigs {
@@ -58,6 +56,9 @@ android {
             versionNameSuffix = "-debug"
             manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
             buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub.debug\"")
+            buildConfigField("String", "ENGINE_PACKAGE", "\"eu.eurise.office.motore.debug\"")
+            // Il motore di prova del ramo office (office-app.yml lo pubblica a ogni giro).
+            buildConfigField("String", "ENGINE_URL", "\"https://github.com/eurise-suite/eurise/releases/download/apk-prova-office/eurise-office-motore-debug.apk\"")
         }
         release {
             isMinifyEnabled = true
@@ -74,10 +75,6 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
-    packaging {
-        // L'AAR del motore porta le sue librerie native già pronte e non compresse (si caricano dall'APK).
-        jniLibs.useLegacyPackaging = false
-    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -97,15 +94,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // Editor PDF (motivo nel commit): annotazioni vere, pagine, moduli, cifratura e oscuramento scritti nel file.
     implementation(libs.pdfbox.android)
-    // LOActivity del motore è un'AppCompatActivity: il suo tema (Theme.EuriseOffice.Document) vive qui anche senza motore.
-    implementation("androidx.appcompat:appcompat:1.7.0")
-
-    if (engineAar != null) {
-        implementation(files(engineAar))
-        // Le dipendenze della libreria android/lib di Collabora (l'AAR in file non le porta con sé).
-        implementation("com.google.android.material:material:1.12.0")
-        implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    }
 
     testImplementation(libs.junit)
 }

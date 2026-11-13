@@ -22,6 +22,8 @@ import eu.eurise.office.BuildConfig
 import eu.eurise.office.R
 import eu.eurise.office.data.DocKind
 import eu.eurise.office.data.Engine
+import eu.eurise.office.data.EngineInstaller
+import eu.eurise.office.data.EngineState
 import eu.eurise.office.data.NewDocuments
 import eu.eurise.office.data.OfficeDocs
 import eu.eurise.office.data.Recent
@@ -34,6 +36,11 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     private var query by mutableStateOf("")
     private var dialog by mutableStateOf<Int?>(null)
     private var showSettings by mutableStateOf(false)
+    /** Tavola OffMotore aperta, e il documento che aspetta il motore (si apre da solo appena è installato). */
+    private var engineSheet by mutableStateOf(false)
+    private var pending by mutableStateOf<Uri?>(null)
+    private var pendingFlags = 0
+    private var onWifi by mutableStateOf(true)
     private var leftHanded by mutableStateOf(false)
     private val recents by lazy { Recents.get(this) }
 
@@ -54,15 +61,16 @@ class OfficeActivity : ComponentActivity(), HomeActions {
             recents.load()
             leftHanded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.leftHanded(this@OfficeActivity) }
         }
-        if (intent?.hasExtra(EXTRA_ENGINE_FOR) == true && !Engine.available()) dialog = R.string.office_engine_dialog
+        engineFor(intent)
         setContent {
             EuriseTheme {
                 val list by recents.items.collectAsStateWithLifecycle()
+                val engine by EngineInstaller.state.collectAsStateWithLifecycle()
                 HomeScreen(
                     recents = list,
                     query = query,
                     onQuery = { query = it },
-                    engineReady = Engine.available(),
+                    engineReady = engine == EngineState.Ready,
                     leftHanded = leftHanded,
                     actions = this,
                 )
@@ -80,9 +88,23 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                                         OfficePrefs.setLeftHanded(this@OfficeActivity, it)
                                     })
                                 }
-                                Text(stringResource(if (Engine.available()) R.string.office_about_engine else R.string.office_about_no_engine, BuildConfig.VERSION_NAME))
+                                Text(
+                                    if (engine == EngineState.Ready) stringResource(R.string.office_about_engine, BuildConfig.VERSION_NAME, Engine.version(this@OfficeActivity).orEmpty())
+                                    else stringResource(R.string.office_about_no_engine, BuildConfig.VERSION_NAME),
+                                )
                             }
                         },
+                    )
+                }
+                if (engineSheet) {
+                    EngineSheet(
+                        state = engine,
+                        onWifi = onWifi,
+                        hasPending = pending != null,
+                        onDownload = { EngineInstaller.start(this@OfficeActivity) },
+                        onCancel = EngineInstaller::cancel,
+                        onOpenPending = ::openPending,
+                        onDismiss = { engineSheet = false },
                     )
                 }
                 dialog?.let { text ->
@@ -98,7 +120,42 @@ class OfficeActivity : ComponentActivity(), HomeActions {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.hasExtra(EXTRA_ENGINE_FOR) && !Engine.available()) dialog = R.string.office_engine_dialog
+        engineFor(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        EngineInstaller.refresh(this)
+        onWifi = EngineInstaller.onUnmeteredNetwork(this)
+    }
+
+    /** Un documento arrivato mentre il motore manca: lo si tiene (con i suoi permessi) e si apre la tavola OffMotore. */
+    private fun engineFor(intent: Intent?) {
+        intent ?: return
+        val uri = intent.data ?: intent.getStringExtra(EXTRA_ENGINE_FOR)?.let(Uri::parse) ?: return
+        if (!intent.hasExtra(EXTRA_ENGINE_FOR)) return
+        pending = uri
+        pendingFlags = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        showEngine()
+    }
+
+    private fun showEngine() {
+        EngineInstaller.refresh(this)
+        onWifi = EngineInstaller.onUnmeteredNetwork(this)
+        engineSheet = true
+    }
+
+    private fun openPending() {
+        val uri = pending ?: return
+        pending = null
+        engineSheet = false
+        val writable = pendingFlags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION != 0 || OfficeDocs.canWrite(this, uri)
+        lifecycleScope.launch {
+            val info = OfficeDocs.info(this@OfficeActivity, uri)
+            val kind = DocKind.of(info.name, contentResolver.getType(uri))
+            val ok = runCatching { Engine.open(this@OfficeActivity, uri, contentResolver.getType(uri), kind, writable, info.name, full = true) }
+            if (ok.getOrDefault(false).not()) Toast.makeText(this@OfficeActivity, R.string.office_cannot_open, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun openPicked(uri: Uri, flags: Int) {
@@ -116,7 +173,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         val ok = runCatching { Engine.open(this, uri, contentResolver.getType(uri), kind, writable, name) }
         when {
             ok.isFailure -> Toast.makeText(this, R.string.office_cannot_open, Toast.LENGTH_LONG).show()
-            ok.getOrDefault(false).not() -> dialog = R.string.office_engine_dialog
+            ok.getOrDefault(false).not() -> showEngine()
         }
     }
 
@@ -142,8 +199,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
 
     override fun create(kind: DocKind) {
         // Testi e fogli nuovi si scrivono anche nella vista rapida; le presentazioni vogliono il motore.
-        if (kind != DocKind.Pdf && kind != DocKind.Text && kind != DocKind.Sheet && !Engine.available()) {
-            dialog = R.string.office_engine_dialog
+        if (kind != DocKind.Pdf && kind != DocKind.Text && kind != DocKind.Sheet && !Engine.available(this)) {
+            showEngine()
             return
         }
         lifecycleScope.launch {
@@ -180,9 +237,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         showSettings = true
     }
 
-    override fun downloadEngine() {
-        dialog = R.string.office_engine_dialog
-    }
+    override fun downloadEngine() = showEngine()
 
     override fun files() = openFrom()
 
@@ -191,7 +246,10 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     }
 
     companion object {
-        /** Un documento arrivato con «Apri con» mentre il motore manca: si propone di scaricarlo. */
+        /**
+         * Un documento arrivato con «Apri con» mentre il motore manca: si propone di scaricarlo. L'Uri viaggia anche
+         * come dato dell'intent, con i permessi ricevuti, così dopo l'installazione si apre senza chiederlo di nuovo.
+         */
         const val EXTRA_ENGINE_FOR = "eu.eurise.office.extra.ENGINE_FOR"
     }
 }

@@ -64,15 +64,6 @@ jobs:
           mkdir -p apk && cp office/apk/build/outputs/apk/debug/*.apk apk/office.apk
           ls -la apk/office.apk
 
-      # Office leggero (vista rapida e PDF, senza motore), da provare sul telefono mentre il motore si sistema.
-      - name: Pubblica Office leggero in apk-prova-office
-        if: inputs.fonte == 'nativo' && github.ref_name == 'office'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cp apk/office.apk apk/eurise-office-leggero-debug.apk
-          gh release upload apk-prova-office apk/eurise-office-leggero-debug.apk -R "${{ github.repository }}" --clobber
-
       - name: Prende l'APK di Office
         if: inputs.fonte != 'nativo'
         env:
@@ -82,7 +73,10 @@ jobs:
           branch="${GITHUB_REF_NAME}"
           run=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=$branch&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
           if [ -n "$run" ]; then
-            gh run download "$run" -R "${{ github.repository }}" -D apk/art && find apk/art -name '*.apk' -exec cp {} apk/office.apk \;
+            gh run download "$run" -R "${{ github.repository }}" -D apk/art
+            # Strada A: Office e, a parte, «Eurise Office Motore».
+            o=$(find apk/art -name 'eurise-office-debug.apk' | head -1); [ -n "$o" ] && cp "$o" apk/office.apk
+            m=$(find apk/art -name 'eurise-office-motore-debug.apk' | head -1); [ -n "$m" ] && cp "$m" apk/motore.apk && ls -la apk/motore.apk
             d=$(dirname "$(find apk/art -name liblo-native-code.so | head -1)"); [ "$d" != . ] && mv "$d" apk/simboli && ls -la apk/simboli
             echo "APK dal giro $run di office-app ($branch)"
           fi
@@ -122,7 +116,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
+          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" MOTORE_APK="${{ github.workspace }}/apk/motore.apk" COMPLETA="${{ inputs.fonte == 'motore' && '1' || '' }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()

@@ -556,7 +556,7 @@ private fun ToolPanel(model: PdfModel, state: PdfState) {
             ToolKey(R.string.pdf_tool_cover, { EuriseIcons.eraser(it) }, model.tool == Tool.Cover) { model.toggle(Tool.Cover) }
             ToolKey(R.string.pdf_tool_image, { EuriseIcons.image(it) }, model.tool == Tool.Image) { pickImage.launch("image/*") }
             ToolKey(R.string.pdf_tool_engine, { EuriseIcons.office(it) }, false) {
-                if (Engine.available()) {
+                if (Engine.available(context)) {
                     Engine.open(context, model.uri, "application/vnd.oasis.opendocument.graphics", DocKind.Drawing, false)
                 } else {
                     Toast.makeText(context, R.string.pdf_engine_needed, Toast.LENGTH_LONG).show()

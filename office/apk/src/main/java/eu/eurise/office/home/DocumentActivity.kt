@@ -38,7 +38,8 @@ class DocumentActivity : androidx.activity.ComponentActivity() {
                 startActivity(
                     Intent(this@DocumentActivity, OfficeActivity::class.java)
                         .putExtra(OfficeActivity.EXTRA_ENGINE_FOR, uri.toString())
-                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                        .setData(uri)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP or flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)),
                 )
             }
             setResult(Activity.RESULT_OK)

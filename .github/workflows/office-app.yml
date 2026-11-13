@@ -247,9 +247,9 @@ jobs:
           $GRADLE --no-daemon assembleDebug > "$WORK/gradle.log" 2>&1 || { grep -E "error:|FAILED|What went wrong" -A3 "$WORK/gradle.log" | head -60; exit 1; }
           echo "apk-collabora $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
-      # Eurise Office (13 novembre): l'APK è il nostro modulo :office:apk (schermata iniziale ed editor PDF nativi) con
-      # dentro la libreria android/lib di Collabora (AAR: LOActivity, motore, interfaccia web). L'app di Collabora non serve più.
-      - name: Eurise Office con il motore (modulo office/apk)
+      # Strada A (13 novembre): due APK. «Eurise Office Motore» (:office:motore) porta la libreria android/lib di Collabora
+      # (AAR: LOActivity, motore, interfaccia web) e si scarica a richiesta; Eurise Office (:office:apk) resta leggero.
+      - name: Eurise Office e il motore (moduli office/apk e office/motore)
         run: |
           t0=$(date +%s)
           aar=$(find "$WORK/online/android" -path '*outputs/aar*' -name '*.aar' | grep -i debug | head -1)
@@ -257,7 +257,7 @@ jobs:
           echo "AAR: $aar ($(du -m "$aar" | cut -f1) MB)"
           cd "$GITHUB_WORKSPACE"
           set -o pipefail
-          EURISE_OFFICE_AAR="$aar" ./gradlew --no-daemon :office:apk:assembleDebug > "$WORK/office-apk.log" 2>&1 || {
+          EURISE_OFFICE_AAR="$aar" ./gradlew --no-daemon :office:motore:assembleDebug :office:apk:assembleDebug > "$WORK/office-apk.log" 2>&1 || {
             grep -E "^e: |error:|FAILED|What went wrong" -A3 "$WORK/office-apk.log" | head -60; exit 1; }
           echo "apk $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
@@ -266,14 +266,19 @@ jobs:
         run: |
           mkdir -p "$WORK/out"
           apk=$(find "$GITHUB_WORKSPACE/office/apk/build/outputs/apk/debug" -name '*.apk' 2>/dev/null | head -1)
+          motore=$(find "$GITHUB_WORKSPACE/office/motore/build/outputs/apk/debug" -name '*.apk' 2>/dev/null | head -1)
           {
             echo "## Eurise Office per Android (prototipo)"
             echo
             echo "| Fase | Minuti |"; echo "|---|---|"
             while read -r name secs; do echo "| $name | $(( secs / 60 )) |"; done < "$RUNNER_TEMP/tempi.txt"
-            if [ -n "$apk" ]; then
+            if [ -n "$apk" ] && [ -n "$motore" ]; then
               cp "$apk" "$WORK/out/eurise-office-debug.apk"
-              echo; echo "APK: **$(du -m "$apk" | cut -f1) MB**"
+              cp "$motore" "$WORK/out/eurise-office-motore-debug.apk"
+              echo; echo "Office: **$(du -m "$apk" | cut -f1) MB** · Motore: **$(du -m "$motore" | cut -f1) MB** da scaricare"
+              # Quanto occupa sul telefono: l'APK più le librerie estratte all'installazione.
+              libs=$(unzip -l "$motore" 'lib/*' | tail -1 | awk '{print int($1/1048576)}')
+              echo "Motore installato: circa **$(( $(du -m "$motore" | cut -f1) + libs )) MB** (librerie estratte: $libs MB)"
             else
               echo; echo "APK non prodotto: vedi i registri nell'artefatto."
             fi
@@ -315,9 +320,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           f="$WORK/out/eurise-office-debug.apk"
-          [ -f "$f" ] || exit 0
+          m="$WORK/out/eurise-office-motore-debug.apk"
+          [ -f "$f" ] && [ -f "$m" ] || exit 0
           notes="Eurise Office di prova dal ramo office (giro ${{ github.run_number }}, $(git -C "$GITHUB_WORKSPACE" log -1 --format=%h)). Si sovrascrive a ogni giro."
           gh release view apk-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create apk-prova-office -R "${{ github.repository }}" --prerelease --target office --title "APK di prova di Office" --notes "$notes"
           gh release edit apk-prova-office -R "${{ github.repository }}" --notes "$notes"
-          gh release upload apk-prova-office "$f" -R "${{ github.repository }}" --clobber
+          gh release upload apk-prova-office "$f" "$m" -R "${{ github.repository }}" --clobber
+          # Office leggero non serve più a parte: Office è sempre leggero, il motore è l'altro APK.
+          gh release delete-asset apk-prova-office eurise-office-leggero-debug.apk -R "${{ github.repository }}" -y 2>/dev/null || true

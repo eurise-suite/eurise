@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Eurise File, Note, Calendario e Scanner si aprono solo tra app della suite firmate con la stessa chiave. -->
+    <!-- Eurise File, Note, Calendario, Scanner e il motore si aprono solo tra app della suite firmate con la stessa chiave.
+         Office lo definisce anche lui: il motore può arrivare prima dell'app Eurise. -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
     <uses-permission android:name="${suitePermission}" />
+    <!-- Solo per scaricare il motore dei documenti la prima volta (tavola OffMotore), quando lo chiede la persona. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <queries>
         <package android:name="eu.eurise.hub" />
         <package android:name="eu.eurise.hub.debug" />
         <package android:name="eu.eurise.password" />
         <package android:name="eu.eurise.password.debug" />
+        <package android:name="eu.eurise.office.motore" />
+        <package android:name="eu.eurise.office.motore.debug" />
     </queries>
 
     <application
@@ -47,7 +55,7 @@
         </activity>
 
         <!-- Documenti di testo, fogli e presentazioni («Apri con» da Eurise File e dalle altre app): passano da qui, che
-             controlla il motore e apre LOActivity, oppure propone di scaricarlo (tavola OffMotore). -->
+             controlla il motore e apre LOActivity nell'APK del motore, oppure propone di scaricarlo (tavola OffMotore). -->
         <!-- Vista rapida (tavole OffLettura…): Word, Excel e OpenDocument senza motore. -->
         <activity
             android:name=".rapida.QuickActivity"
@@ -81,20 +89,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Motore dei documenti (Collabora, libreria del lavoro office-app.yml). Non esportate: ci arriva solo Office. -->
-        <activity
-            android:name="org.libreoffice.androidlib.LOActivity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:exported="false"
-            android:launchMode="singleTask"
-            android:theme="@style/Theme.EuriseOffice.Document"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name="org.libreoffice.androidlib.SlideShowActivity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:exported="false"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.EuriseOffice.Document" />
+        <!-- Esito dell'installazione del motore (APK compagno «Eurise Office Motore»). -->
+        <receiver
+            android:name=".data.EngineInstallReceiver"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

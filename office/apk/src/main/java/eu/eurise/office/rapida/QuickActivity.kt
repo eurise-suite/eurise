@@ -35,7 +35,7 @@ class QuickActivity : ComponentActivity() {
             EuriseTheme {
                 QuickScreen(
                     model,
-                    engineReady = Engine.available(),
+                    engineReady = Engine.available(this),
                     onBack = { finish() },
                     onFull = ::full,
                     onShare = ::share,
@@ -54,7 +54,8 @@ class QuickActivity : ComponentActivity() {
                 startActivity(
                     Intent(this@QuickActivity, OfficeActivity::class.java)
                         .putExtra(OfficeActivity.EXTRA_ENGINE_FOR, uri.toString())
-                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                        .setData(uri)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION or (if (writable) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)),
                 )
             } else {
                 finish()

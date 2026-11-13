@@ -1809,8 +1809,8 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 **Per ripartire (13 novembre, sera)**
 - Ramo `office` (da `brand`; merge in `brand` alla fine). Tocca solo `office/`, lettore PDF e Scanner dell'app
   principale, contratti in `core/suite` (OfficeContract, ScannerContract).
-- APK di prova: pre-release `apk-prova-office`: `eurise-office-leggero-debug.apk` (senza motore: vista rapida, PDF,
-  schermata iniziale) e `eurise-office-debug.apk` (con motore, si chiude: non usarlo). Il proprietario prova gli APK da
+- APK di prova: pre-release `apk-prova-office`: `eurise-office-debug.apk` (Office, leggero) e
+  `eurise-office-motore-debug.apk` (il motore, si installa anche da Office con «Scarica»). Il proprietario prova gli APK da
   un'altra chat. Le modifiche all'app principale sono solo sul ramo `office`.
 - In corso: office-app giro **43484238959** (diagnosi che svuota stderr al segnale e rimette i gestori; fonts.conf).
   Quando finisce: `gh workflow run office-prova.yml --ref office -f fonte=motore`, poi leggere `riassunto.md` della
@@ -1840,6 +1840,33 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - **Decisione (proprietario, 13 novembre): motore a richiesta con la strada A**, app compagna «Eurise Office Motore»
   firmata con la stessa chiave; nessuna patch al core per gli asset.
 
-**Prossimo passo**: verificare sull'emulatore che il motore apra i sei campioni; poi motore a richiesta (OffMotore: capire se i file del
+**Fatto (13 novembre, notte): motore a richiesta, strada A (da provare)**
+- Modulo nuovo `office/motore` → APK **«Eurise Office Motore»** (`eu.eurise.office.motore`, `.debug` in prova): contiene
+  l'AAR di Collabora e dichiara LOActivity (esportata ma protetta dal permesso di firma della suite), SlideShowActivity e
+  il FileProvider `.fileprovider` del guscio della Suite. Nessuna icona nel cassetto, **nessun permesso INTERNET**.
+  Librerie native compresse nell'APK (`useLegacyPackaging = true`) per scaricare meno: misure nel riepilogo di office-app.
+  Esiste solo dentro office-app.yml (settings lo include con `EURISE_OFFICE_AAR`).
+- Il motore gira **nel suo processo e legge i suoi asset dal suo APK**, come l'app di Collabora: Office lo apre con un
+  intent esplicito (`setClassName(motore, LOActivity)`) passando l'Uri con i permessi di lettura/scrittura. Nessun
+  `createPackageContext`, nessuna patch al core.
+- `office/apk` ora è **sempre leggero** (niente AAR, niente appcompat). `Engine.available(context)` = motore installato e
+  `checkSignatures` uguale a Office. `EngineInstaller`: scarica da `BuildConfig.ENGINE_URL` (debug: pre-release
+  `apk-prova-office/eurise-office-motore-debug.apk`; ufficiale: `releases/latest/download/eurise-office-motore.apk`),
+  segue i rimandi solo in https, **controlla pacchetto e firme dell'APK prima di installarlo** (altrimenti lo cancella),
+  installa con PackageInstaller (Android chiede conferma; serve REQUEST_INSTALL_PACKAGES, INTERNET solo per questo).
+- Tavola **OffMotore** in Compose (`home/EngineSheet.kt`), con gli stati non disegnati nello stesso foglio: rete a
+  consumo («Scarica con la rete mobile»), avanzamento con Annulla, conferma di Android, errore (rete, firma, installazione,
+  annullata), pronto con «Apri il documento»: il documento arrivato con «Apri con» aspetta con i suoi permessi e si apre
+  nella modifica completa appena il motore c'è. Pesi nei testi (70 MB / 270 MB) da correggere con le misure vere.
+- office-app.yml pubblica `eurise-office-debug.apk` (Office) e `eurise-office-motore-debug.apk` in apk-prova-office e
+  toglie `eurise-office-leggero-debug.apk`. office-prova installa entrambi; con `fonte=motore` imposta «Apri sempre nella
+  modifica completa» (`COMPLETA=1`), così tutti i formati passano dal motore.
+- **Da fare al merge in `brand`**: `apk-prova.yml` prende da office-app il primo `*.apk` dell'artefatto: va presa
+  `eurise-office-debug.apk` e aggiunta `eurise-office-motore-debug.apk`. **Centro privacy**: il download del motore va
+  aggiunto come servizio (PrivacyService + PrivacyRoute in feature/privacy, file della chat del brand: si fa al merge).
+  F-Droid: il motore va pubblicato come secondo pacchetto (se F-Droid firma con la sua chiave, Office lo deve sapere).
+
+**Prossimo passo**: verificare sull'emulatore che il motore apra i sei campioni (prima con l'APK unico del giro
+43497554743, poi con i due APK); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).

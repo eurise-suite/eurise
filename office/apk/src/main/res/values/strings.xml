@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="office_about_engine">Eurise Office %1$s. Il motore dei documenti è installato: testi, fogli e presentazioni si aprono e si salvano sul telefono, senza Internet.</string>
+    <string name="office_about_engine">Eurise Office %1$s, motore %2$s. Il motore dei documenti è installato: testi, fogli e presentazioni si aprono e si salvano sul telefono, senza Internet.</string>
     <string name="office_about_no_engine">Eurise Office %1$s. I PDF si aprono e si modificano già. Per testi, fogli e presentazioni serve il motore dei documenti.</string>
     <string name="office_app_name">Office</string>
     <string name="office_cannot_create">Il documento nuovo non si è potuto creare.</string>
     <string name="office_cannot_open">Questo documento non si apre.</string>
-    <string name="office_engine_dialog">Per aprire testi, fogli e presentazioni serve il motore dei documenti (LibreOffice). In questa versione di prova non c\'è ancora: arriverà da scaricare con il Wi-Fi, una volta sola. I PDF si aprono già.</string>
     <string name="office_engine_download">Scarica</string>
     <string name="office_engine_missing">Motore dei documenti da scaricare</string>
-    <string name="office_engine_missing_detail">66 MB con il Wi-Fi · i PDF si aprono già</string>
+    <string name="office_engine_missing_detail">Una volta sola, con il Wi-Fi · PDF e vista rapida funzionano già</string>
     <string name="office_engine_needed">Per questo documento serve il motore dei documenti.</string>
     <string name="office_found_empty">Nessun documento con questo nome tra i recenti.</string>
     <string name="office_found_title">Trovati</string>
@@ -204,4 +203,32 @@
     <string name="quick_full_open">Apri</string>
     <string name="quick_full_download">Scarica e apri</string>
     <string name="quick_full_always">Apri sempre i documenti nella modifica completa</string>
+    <!-- Tavola OffMotore: il motore dei documenti (APK compagno «Eurise Office Motore»). -->
+    <string name="engine_once">Una volta sola</string>
+    <string name="engine_title">Scaricare il motore dei documenti?</string>
+    <string name="engine_ready_title">Il motore dei documenti è pronto</string>
+    <string name="engine_what_label">Cos\'è</string>
+    <string name="engine_what">LibreOffice: apre e modifica Word, Excel, PowerPoint, PDF e ODF</string>
+    <string name="engine_size_label">Quanto pesa</string>
+    <string name="engine_size">Circa 70 MB da scaricare con il Wi-Fi, circa 270 MB sul telefono</string>
+    <string name="engine_from_label">Da dove</string>
+    <string name="engine_from">dal nostro archivio delle versioni, firmato come l\'app</string>
+    <string name="engine_docs_label">I tuoi documenti</string>
+    <string name="engine_docs">restano sul telefono: il motore lavora qui, senza Internet</string>
+    <string name="engine_privacy">La tua privacy resta al livello più alto</string>
+    <string name="engine_meanwhile">Intanto puoi già aprire i PDF e correggere testi e fogli nella vista rapida. Dopo il download Android ti chiede di confermare l\'installazione.</string>
+    <string name="engine_mobile">Non sei collegato al Wi-Fi: il download userebbe la rete mobile.</string>
+    <string name="engine_download_wifi">Scarica con il Wi-Fi</string>
+    <string name="engine_download_anyway">Scarica con la rete mobile</string>
+    <string name="engine_later">Più tardi</string>
+    <string name="engine_cancel">Annulla</string>
+    <string name="engine_downloading">Scaricati %1$d di %2$d MB</string>
+    <string name="engine_confirm">Conferma l\'installazione nella finestra di Android. Se Android chiede di permettere a Office di installare app, è solo per il motore: puoi spegnerlo subito dopo.</string>
+    <string name="engine_ready">Testi, fogli e presentazioni si aprono e si modificano sul telefono.</string>
+    <string name="engine_ready_pending">Il documento che stavi aprendo è pronto nella modifica completa.</string>
+    <string name="engine_open_pending">Apri il documento</string>
+    <string name="engine_failed_network">Il download non è riuscito. Controlla la connessione e riprova.</string>
+    <string name="engine_failed_signature">Il file scaricato non è firmato come Office: è stato cancellato e non è stato installato.</string>
+    <string name="engine_failed_install">L\'installazione non è riuscita. Riprova; se continua, controlla lo spazio libero.</string>
+    <string name="engine_failed_cancelled">Installazione annullata. Puoi riprovare quando vuoi.</string>
 </resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LOActivity è un'AppCompatActivity. -->
+    <style name="Theme.EuriseOffice.Document" parent="Theme.AppCompat.DayNight.NoActionBar" />
+    <color name="office_icon_background">#1F2A44</color>
+</resources>

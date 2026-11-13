@@ -10,6 +10,8 @@ set -u
 APK=$1
 OUT=$2
 PKG=${PKG:-eu.eurise.office.debug}
+# Strada A: il motore è l'APK compagno «Eurise Office Motore», con il suo processo.
+MOTORE_PKG=${MOTORE_PKG:-eu.eurise.office.motore.debug}
 # «Apri con» passa da DocumentActivity (LOActivity non è esportata: ci arriva solo Office).
 LO=${LO:-eu.eurise.office.home.DocumentActivity}
 WAIT=${WAIT:-40}
@@ -23,6 +25,10 @@ adb logcat -G 32M || true
 adb shell getprop ro.product.cpu.abilist | tee -a "$sum"
 adb install -r -g "$APK" 2>&1 | tail -2 | tee -a "$sum" || true
 adb shell pm list packages | grep -q "$PKG" || { echo "Installazione non riuscita" | tee -a "$sum"; exit 0; }
+if [ -n "${MOTORE_APK:-}" ] && [ -f "$MOTORE_APK" ]; then
+	echo "motore: $(du -m "$MOTORE_APK" | cut -f1) MB" >> "$sum"
+	adb install -r -g "$MOTORE_APK" 2>&1 | tail -2 | tee -a "$sum" || true
+fi
 
 mime() {
 	case "$1" in
@@ -42,6 +48,13 @@ sleep 20
 adb exec-out screencap -p > "$OUT/00-iniziale.png"
 adb logcat -d > "$OUT/00-iniziale.log"
 adb shell am force-stop "$PKG"
+# COMPLETA=1: «Apri sempre nella modifica completa», così anche Word, Excel e OpenDocument passano dal motore.
+if [ -n "${COMPLETA:-}" ]; then
+	adb shell "run-as $PKG mkdir -p shared_prefs"
+	echo '<?xml version="1.0" encoding="utf-8" standalone="yes" ?><map><boolean name="sempre_completa" value="true" /></map>' |
+		adb shell "run-as $PKG sh -c 'cat > shared_prefs/office.xml'"
+	echo "modifica completa per tutti i documenti" >> "$sum"
+fi
 
 for f in "$HERE"/campioni/*; do
 	name=$(basename "$f")
@@ -86,13 +99,15 @@ open_one() { # via nome uri tipo
 	adb logcat -d > "$OUT/$tag.log"
 	adb logcat -b crash -d > "$OUT/$tag-arresto.log"
 	{
-		echo "processo: $(adb shell pidof "$PKG" || echo 'non c\x27è più')"
+		echo "processo: $(adb shell pidof "$PKG" || echo 'non c\x27è più') · motore: $(adb shell pidof "$MOTORE_PKG" || echo 'nessuno')"
 		echo "attività in primo piano: $(adb shell dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity' | sed 's/^ *//')"
 		# Del motore: avvertimenti ed errori di coolwsd e del kit, poi l'eventuale arresto con la pila completa.
 		grep -E "coolwsd.*(WRN|ERR|FTL|CRT)|LibreOfficeKit|LOActivity: (Success copying [0-9]|SCHEME|Initializing|postMobileMessage: load)|couldn't create temporary|file not found|AndroidRuntime" "$OUT/$tag.log" | head -40
 		# Tutte le righe del processo di Office (messaggi di libc++abi, asserzioni, ultime righe del kit).
-		pid=$(grep -m1 -oE "Start proc [0-9]+:$PKG" "$OUT/$tag.log" | grep -oE "[0-9]+" | head -1)
-		[ -n "$pid" ] && awk -v p="$pid" '$3 == p' "$OUT/$tag.log" | grep -v -E "OpenGLRenderer|Success copying unpack|CoreBackPreview|HWUI|EGL" | tail -60
+		for p in "$PKG" "$MOTORE_PKG"; do
+			pid=$(grep -m1 -oE "Start proc [0-9]+:$p[/ ]" "$OUT/$tag.log" | grep -oE "[0-9]+" | head -1)
+			[ -n "$pid" ] && awk -v p="$pid" '$3 == p' "$OUT/$tag.log" | grep -v -E "OpenGLRenderer|Success copying unpack|CoreBackPreview|HWUI|EGL|EuriseDiag: gestore" | tail -60
+		done
 		grep -E " F (libc|DEBUG) .*(Abort message|signal|Cause)" "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -10
 	} >> "$sum"
 	echo "--- debuggerd ---" >> "$sum"
@@ -100,6 +115,7 @@ open_one() { # via nome uri tipo
 	simbolizza "$OUT/$tag.log" "$OUT/$tag-arresto.log" >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
+	adb shell am force-stop "$MOTORE_PKG"
 	sleep 3
 }
 
@@ -150,7 +166,7 @@ correggi() { # nome testo-da-toccare tasti-da-cancellare testo-nuovo voce-nel-fi
 	adb shell am force-stop "$PKG"
 	sleep 2
 }
-if [ -z "${SOLO:-}" ] && [ "$PKG" = eu.eurise.office.debug ]; then
+if [ -z "${SOLO:-}" ] && [ -z "${COMPLETA:-}" ] && [ "$PKG" = eu.eurise.office.debug ]; then
 	correggi lettera.docx "Gentile cliente" 1 "%sCORRETTO." word/document.xml "IBAN IT60X0542811101000000123456 CORRETTO."
 	correggi conti.xlsx "750" 3 "800" xl/worksheets/sheet1.xml "<v>1260</v>"
 	correggi testo.odt "Testo ODF" 1 "%sCORRETTO." content.xml "CORRETTO."
