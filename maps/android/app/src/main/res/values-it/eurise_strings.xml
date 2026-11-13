@@ -122,4 +122,16 @@
     <string name="eurise_car_voice_model">In Eurise Voce manca il modello per ascoltare: scaricalo dal telefono</string>
     <string name="eurise_car_voice_mic">Il microfono non si apre: concedi il permesso sul telefono</string>
     <string name="eurise_car_voice_failed">Eurise Voce non risponde, riprova</string>
+    <!-- Percorso (tavola MapPercorso) -->
+    <string name="eurise_pc_car">Auto</string>
+    <string name="eurise_pc_bike">Bici</string>
+    <string name="eurise_pc_walk">A piedi</string>
+    <string name="eurise_pc_mode_time">%1$s · %2$s</string>
+    <string name="eurise_pc_event_at">Impegno qui · %1$s</string>
+    <string name="eurise_pc_leave_by">Parti entro le %1$s</string>
+    <string name="eurise_pc_leave_now">Parti subito: arrivi alle %1$s</string>
+    <string name="eurise_pc_send_arrival">Manda l\'arrivo</string>
+    <string name="eurise_pc_save_place">Salva il luogo</string>
+    <string name="eurise_pc_start">Avvia la navigazione</string>
+    <string name="eurise_pc_offline">Percorso calcolato sul telefono, senza rete. Mappe di OpenStreetMap, aggiornate quando vuoi.</string>
 </resources>

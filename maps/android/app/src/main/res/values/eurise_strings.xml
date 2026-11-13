@@ -122,4 +122,16 @@
     <string name="eurise_car_voice_model">Eurise Voice has no listening model yet: download it on the phone</string>
     <string name="eurise_car_voice_mic">The microphone won\'t open: allow it on the phone</string>
     <string name="eurise_car_voice_failed">Eurise Voice is not responding, try again</string>
+    <!-- Route (MapPercorso board) -->
+    <string name="eurise_pc_car">Car</string>
+    <string name="eurise_pc_bike">Bike</string>
+    <string name="eurise_pc_walk">Walk</string>
+    <string name="eurise_pc_mode_time">%1$s · %2$s</string>
+    <string name="eurise_pc_event_at">Event here · %1$s</string>
+    <string name="eurise_pc_leave_by">Leave by %1$s</string>
+    <string name="eurise_pc_leave_now">Leave now: you arrive at %1$s</string>
+    <string name="eurise_pc_send_arrival">Send arrival time</string>
+    <string name="eurise_pc_save_place">Save the place</string>
+    <string name="eurise_pc_start">Start navigation</string>
+    <string name="eurise_pc_offline">Route calculated on the phone, without network. OpenStreetMap maps, updated when you want.</string>
 </resources>

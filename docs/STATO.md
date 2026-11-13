@@ -1925,3 +1925,9 @@ Fatto (ramo `brand`):
   codice (ali tonde, nodo arrotondato), senza le due pieghe, che da piccolo non si leggono. Da approvare.
 - **Ultimo APK: giro 397**, **Mappe 28** (le sei correzioni di Android Auto). Il giro 397 non cambia l'app rispetto al 365.
   Prima prova di Mappe 28 fallita per l'API dei nomi di CoMaps (`localisation::kDefaultNameIndex`), corretta.
+- **Mappe, passo d) percorso (tavola MapPercorso), in codice**: `maps/android/…/eurise/ui/EurisePercorso.kt`, agganciato
+  in `RoutingBottomMenuController` e `altitude_chart_panel.xml`. Sotto il percorso calcolato: Auto, Bici, A piedi (il
+  tempo sul mezzo scelto), l'impegno della suite con questa destinazione e «Parti entro le…» (10 minuti di margine; se è
+  tardi «Parti subito: arrivi alle…»), «Manda l'arrivo», «Salva il luogo», «Avvia la navigazione» grande (il pulsante di
+  CoMaps resta nascosto e fa il lavoro), la riga «Percorso calcolato sul telefono». Non ancora: la scheda in alto
+  «Casa → Studio Tecnico» (restano punti e barra dei mezzi di CoMaps) e «la sveglia può tenerne conto» (con AlfSveglia).

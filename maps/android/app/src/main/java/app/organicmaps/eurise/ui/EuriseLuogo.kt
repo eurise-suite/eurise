@@ -142,7 +142,7 @@ private tailrec fun Context.activity(): Activity? = when (this) {
 }
 
 /** L'impegno della suite che ha questo luogo (stesso nome o indirizzo), il più vicino nel tempo. */
-private fun matching(items: List<Destination>, place: MapObject): Destination? {
+internal fun matching(items: List<Destination>, place: MapObject): Destination? {
     val keys = listOf(place.title, place.address).mapNotNull { it?.trim()?.lowercase(Locale.getDefault())?.takeIf { k -> k.length >= 4 } }
     if (keys.isEmpty()) return null
     return items.filter { d ->

@@ -733,3 +733,41 @@ patch(android_root / "app" / "src" / "main" / "AndroidManifest.xml",
     <package android:name="eu.eurise.voice"/>
     <package android:name="eu.eurise.voice.debug"/>""")
 print("eurise_patch: Android Auto (apertura diretta, Alfred, freccia in alto, «Sei su», meteo, area ridotta)")
+
+# Passo d) dell'interfaccia rifatta sulle tavole (MapPercorso): sotto il percorso calcolato il pannello della suite in
+# Compose (maps/android/…/eurise/ui/EurisePercorso.kt): Auto, Bici, A piedi; impegno con «Parti entro le…»; Manda
+# l'arrivo, Salva il luogo; «Avvia la navigazione» grande. Il pulsante «Inizia» di CoMaps resta nel layout, nascosto, e
+# fa il lavoro; il calcolo del percorso non cambia.
+patch(res / "layout" / "altitude_chart_panel.xml", """      app:iconTint="?android:textColorPrimary" />
+  </LinearLayout>
+
+</LinearLayout>""", """      app:iconTint="?android:textColorPrimary" />
+  </LinearLayout>
+
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_percorso"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+</LinearLayout>""")
+bottom_menu = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "RoutingBottomMenuController.java"
+patch(bottom_menu, """    MaterialButton saveButton = altitudeChartFrame.findViewById(R.id.btn__save);
+    saveButton.setOnClickListener(this);
+  }""", """    MaterialButton saveButton = altitudeChartFrame.findViewById(R.id.btn__save);
+    saveButton.setOnClickListener(this);
+    // Eurise (passo d, MapPercorso): il pannello della suite sotto il percorso.
+    app.organicmaps.eurise.ui.EurisePercorso.attach(altitudeChartFrame.findViewById(R.id.eurise_percorso), mStart);
+  }""")
+patch(bottom_menu, """    showRoutingDetails();
+    UiUtils.show(mAltitudeChartFrame);""", """    showRoutingDetails();
+    UiUtils.show(mAltitudeChartFrame);
+    app.organicmaps.eurise.ui.EurisePercorso.update();""")
+patch(bottom_menu, """    UiUtils.hide(mAltitudeChartFrame, mTransitFrame);
+  }""", """    UiUtils.hide(mAltitudeChartFrame, mTransitFrame);
+    app.organicmaps.eurise.ui.EurisePercorso.update();
+  }""")
+patch(bottom_menu, """    boolean result = show && RoutingController.get().isBuilt();
+    UiUtils.showIf(result, mStart);""", """    boolean result = show && RoutingController.get().isBuilt();
+    // Eurise: «Avvia la navigazione» è nel pannello della suite; questo resta nascosto ma fa il lavoro.
+    UiUtils.showIf(result && !app.organicmaps.eurise.ui.EurisePercorso.getAttached(), mStart);""")
+print("eurise_patch: pannello del percorso della suite (passo d)")
