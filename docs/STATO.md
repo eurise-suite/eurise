@@ -1788,5 +1788,23 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - **Scansiona e restituisci**: `ScannerContract` + `ScanForResultActivity` (permesso della suite); in Office «Inserisci da
   Scanner» riceve le pagine e le inserisce dopo la selezione. Lo Scanner, chiamato così, mostra «Aggiungi al documento».
 
-**Prossimo passo**: esito di office-app con solo arm64, prova dei sei formati sull'emulatore, consegna dell'APK. Poi Office
-sulle tavole (OffTelefono…), motore a richiesta (OffMotore), quindi la vista rapida se le tavole sono approvate.
+**Fatto (13 novembre, notte)**
+- **Vista rapida (tavole OffLettura… approvate)**, `office/apk/.../rapida/`: .docx, .odt, .xlsx, .ods si aprono subito
+  senza motore. Correzione di un paragrafo con diff sui soli pezzi di testo toccati (formattazione intorno intatta, il
+  paragrafo torna nel file al suo posto), Invio = paragrafo nuovo, G C S su Word, commenti (Word e ODT), celle con
+  ricalcolo di SUM/AVERAGE/MIN/MAX/COUNT/PRODUCT/ROUND/ABS e + − × ÷ nello stesso foglio; il resto chiede il ricalcolo
+  all'apertura (fullCalcOnLoad, via calcChain). Paragrafi con immagini, campi, note o revisioni: solo modifica completa.
+  Salva sul file dopo ogni correzione, Annulla fino a 20 passi, «Salva in…» in sola lettura. Nessuna libreria nuova.
+  Test JVM (17) e prova sull'emulatore: tocca, scrive, Fatto, rilegge il file del telefono (docx e odt verificati).
+- `Engine.open` manda testi e fogli alla vista rapida (salvo «Apri sempre nella modifica completa»); testi e fogli nuovi
+  si creano anche senza motore. Presentazioni: motore.
+- office-prova: `fonte` = motore | nativo (Office compilato senza motore, gira sull'x86 senza traduzione e si pubblica
+  come `eurise-office-leggero-debug.apk` in apk-prova-office) | collabora (+ `versione`).
+- **Motore**: si carica (solo arm64), ma si chiude con SIGABRT nel thread kitbroker ~100 ms dopo «New session created»,
+  per tutti i formati. Collabora 25.04 ufficiale apre tutti i campioni sullo stesso emulatore: il ramo va bene, è la
+  nostra compilazione. La pila di sistema sotto traduzione ARM non dice nulla; il gestore di EuriseDiag veniva sostituito.
+  Nuova diagnosi in compilazione (giro 43484238959): svuota stderr al segnale, rimette i gestori; fonts.conf con le
+  cartelle di Office.
+
+**Prossimo passo**: leggere il motivo dell'abort dal giro 43484238959 e correggerlo; prova sul telefono di Office
+leggero; poi barra a nastro nel motore (OffTelefono…) e motore a richiesta (OffMotore).
