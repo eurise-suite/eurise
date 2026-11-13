@@ -1855,3 +1855,8 @@ Fatto (ramo `brand`):
   iOS, Android e /e/OS usano **la palette del loro sistema** (iOS: colori di sistema con sfumatura; Android: palette Material,
   tono 100 di fondo e 800 per il simbolo; /e/OS: tinte piene vivaci, da confrontare con le icone vere). Il colore di un'app
   esterna si porta al più vicino della palette dello stile. Eurise ed Eurise a colori restano con le tinte della suite.
+- **IconeStili, altri ritocchi**: Eurise ed Eurise a colori approvati come disegno, con una **lieve sfumatura nel fondo**
+  (blu notte da #2A3860 in alto a sinistra a #18203A; a colori dal tono chiaro schiarito). **Forma a scelta** in «Griglia e
+  icone» (cerchio, quadrato arrotondato, squircle, goccia, quadrato), indipendente dallo stile e valida per tutte le app;
+  ogni stile parte dalla sua (Eurise, A colori, Android: cerchio; iOS, /e/OS: quadrato arrotondato). In tavola c'è il
+  pannello «Griglia e icone» con stile e forma.
