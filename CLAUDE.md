@@ -32,13 +32,15 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Ogni funzione che cambia la privacy (dati che escono, permessi, analisi di contenuti) si accende e si spegne
   con un interruttore; accenderla mostra prima una spiegazione breve: cosa viene letto, dove va, chi lo vede,
   come si torna indietro. Spegnerla non chiede conferme.
+- Il grado di privacy si misura con **10 tacchette piccole** a semaforo (non 3 o 4 tacche), ovunque compaia:
+  servizi, destinazioni, fonti di dati (13 novembre 2026).
 - Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
   (es. posizione arrotondata), mai identificativi del telefono.
 
 ## Servizi chiusi: si offrono, decide l'utente (regola fissa, 12 novembre 2026)
 - Google, Apple, Microsoft e gli altri servizi chiusi (posta, cloud, AI, motori di ricerca, mappe…) si possono usare:
   siamo aperti anche in questo, e la scelta è dell'utente.
-- Ma vanno scoraggiati: sempre per ultimi negli elenchi, con valutazione di privacy bassa (una tacca), e prima di
+- Ma vanno scoraggiati: sempre per ultimi negli elenchi, con valutazione di privacy bassa (una o due tacchette su dieci), e prima di
   collegarli un avviso chiaro su limiti e pericoli (dove stanno i dati, chi li vede, cosa ne fanno, come si torna indietro)
   con le alternative libere ed europee accanto.
 - Dove l'accesso «due tocchi» richiede che Eurise sia registrata presso il servizio (OAuth), è un passo una tantum del

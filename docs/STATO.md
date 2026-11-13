@@ -1951,3 +1951,10 @@ Fatto (ramo `brand`):
 - Generatori delle tavole (fuori dal repo, in `/home/claude/tela/gen`: icone.py, colori.py, viaggi.py) si perdono con la
   chat: le tavole pubblicate sulla tela restano la fonte.
 - Prossimo: approvazione delle tavole dei mezzi e delle icone; Mappe e) guida e f); poi sveglia di Alfred e tastiera.
+- **Osservazioni del proprietario (13 novembre, sera) da portare avanti**:
+  - Privacy: il «semaforo» passa da 3–4 tacche a **10 tacchette piccole** (regola scritta in CLAUDE.md); ogni fonte di
+    dati esterna (orari di Transitous, ecc.) ha indicazioni e semaforo, come nelle tavole dei mezzi. Da applicare alle
+    tavole e al codice dove oggi ci sono le tacche (centro privacy, destinazioni del backup, servizi collegati).
+  - Soccorsi: le **coordinate ci sono sempre**, anche quando ci sarà il km dalla pietra miliare («km 12,4 · 45.46420,
+    9.19003»). Oggi in Mappe 29 compaiono già (su autostrade, superstrade, statali e provinciali); quando arrivano le
+    pietre miliari si aggiunge il km accanto, senza toglierle.
