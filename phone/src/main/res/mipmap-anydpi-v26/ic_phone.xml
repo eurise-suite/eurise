@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ph_icon_background" />
+    <background android:drawable="@drawable/ic_phone_background" />
     <foreground android:drawable="@drawable/ic_phone_foreground" />
-    <monochrome android:drawable="@drawable/ic_phone_foreground" />
+    <monochrome android:drawable="@drawable/ic_phone_monochrome" />
 </adaptive-icon>

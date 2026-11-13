@@ -1,29 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Eurise Messaggi: fumetto nella tinta Comunicazione (azzurro) e la stellina d'oro in alto a destra, firma della suite (disegno ingrandito, leggero sfumato). -->
+<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <group
-        android:scaleX="1.95"
-        android:scaleY="1.95"
-        android:translateX="30.6"
-        android:translateY="30.6">
-        <path
-            android:pathData="M4,5h16v11H9l-5,4z"
-            android:strokeWidth="2.1"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round">
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
+        <path android:pathData="M4,5 h16 v11 H9 l-5,4 z" android:strokeWidth="2.35"
+            android:strokeLineCap="round" android:strokeLineJoin="round">
             <aapt:attr name="android:strokeColor">
-                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21" android:endY="21" android:startColor="#C9D8F6" android:endColor="#94A9D4" />
+                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
+                    android:endY="21" android:startColor="#C9D8F6" android:endColor="#94A9D4" />
+            </aapt:attr>
+        </path>
+        <path android:pathData="M8.5,10.5 h0.01 M12,10.5 h0.01 M15.5,10.5 h0.01" android:strokeWidth="3.35"
+            android:strokeLineCap="round" android:strokeLineJoin="round">
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
+                    android:endY="21" android:startColor="#C9D8F6" android:endColor="#94A9D4" />
             </aapt:attr>
         </path>
     </group>
-    <group android:translateX="1" android:translateY="-3">
-    <path
-        android:fillColor="#D2B06A"
-        android:pathData="M77.00,30.32 Q77.47,34.53 81.68,35.00 Q77.47,35.47 77.00,39.68 Q76.53,35.47 72.32,35.00 Q76.53,34.53 77.00,30.32 Z" />
-    </group>
+    <path android:fillColor="#D2B06A" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
 </vector>

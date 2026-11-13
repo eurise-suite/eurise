@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.designsystem.icon.SuiteSymbols
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -136,42 +138,42 @@ object IconLoader {
 /** Simboli della suite per le app di sistema di /e/OS e Android, riconosciute per pacchetto o per nome. */
 private object SystemGlyphs {
     private val byPackage: List<Pair<String, () -> ImageVector>> = listOf(
-        "com.android.dialer" to { EuriseIcons.phone(2.3f) }, "com.google.android.dialer" to { EuriseIcons.phone(2.3f) },
-        "org.fossify.phone" to { EuriseIcons.phone(2.3f) },
-        "foundation.e.message" to { EuriseIcons.message(2.3f) }, "com.android.messaging" to { EuriseIcons.message(2.3f) },
-        "com.google.android.apps.messaging" to { EuriseIcons.message(2.3f) }, "org.fossify.messages" to { EuriseIcons.message(2.3f) },
-        "com.android.contacts" to { EuriseIcons.person(2.3f) }, "org.fossify.contacts" to { EuriseIcons.person(2.3f) },
-        "foundation.e.mail" to { EuriseIcons.mail(2.3f) },
-        "foundation.e.browser" to { EuriseIcons.globe(2.3f) }, "org.lineageos.jelly" to { EuriseIcons.globe(2.3f) },
+        "com.android.dialer" to { SuiteSymbols.phone }, "com.google.android.dialer" to { SuiteSymbols.phone },
+        "org.fossify.phone" to { SuiteSymbols.phone },
+        "foundation.e.message" to { SuiteSymbols.messages }, "com.android.messaging" to { SuiteSymbols.messages },
+        "com.google.android.apps.messaging" to { SuiteSymbols.messages }, "org.fossify.messages" to { SuiteSymbols.messages },
+        "com.android.contacts" to { SuiteSymbols.contacts }, "org.fossify.contacts" to { SuiteSymbols.contacts },
+        "foundation.e.mail" to { SuiteSymbols.mail },
+        "foundation.e.browser" to { SuiteSymbols.browser }, "org.lineageos.jelly" to { SuiteSymbols.browser },
         "foundation.e.camera" to { EuriseIcons.camera(2.3f) }, "org.lineageos.aperture" to { EuriseIcons.camera(2.3f) },
         "com.android.camera" to { EuriseIcons.camera(2.3f) },
-        "eu.eurise.gallery" to { EuriseIcons.image(2.3f) }, "foundation.e.gallery" to { EuriseIcons.image(2.3f) }, "org.lineageos.glimpse" to { EuriseIcons.image(2.3f) },
-        "com.android.gallery3d" to { EuriseIcons.image(2.3f) },
+        "eu.eurise.gallery" to { SuiteSymbols.gallery }, "foundation.e.gallery" to { SuiteSymbols.gallery }, "org.lineageos.glimpse" to { SuiteSymbols.gallery },
+        "com.android.gallery3d" to { SuiteSymbols.gallery },
         "com.android.settings" to { EuriseIcons.gear(2.3f) },
-        "com.android.deskclock" to { EuriseIcons.clock(2.3f) }, "org.fossify.clock" to { EuriseIcons.clock(2.3f) },
-        "com.android.calculator2" to { EuriseIcons.calculator(2.3f) }, "org.lineageos.calculator" to { EuriseIcons.calculator(2.3f) },
+        "com.android.deskclock" to { SuiteSymbols.clock }, "org.fossify.clock" to { SuiteSymbols.clock },
+        "com.android.calculator2" to { SuiteSymbols.calculator }, "org.lineageos.calculator" to { SuiteSymbols.calculator },
         "org.lineageos.eleven" to { EuriseIcons.music(2.3f) }, "foundation.e.music" to { EuriseIcons.music(2.3f) },
         "org.lineageos.recorder" to { EuriseIcons.mic(2.3f) },
-        "foundation.e.calendar" to { EuriseIcons.calendar(2.3f) }, "org.lineageos.etar" to { EuriseIcons.calendar(2.3f) },
-        "foundation.e.notes" to { EuriseIcons.note(2.3f) }, "foundation.e.tasks" to { EuriseIcons.task(2.3f) },
+        "foundation.e.calendar" to { SuiteSymbols.calendar }, "org.lineageos.etar" to { SuiteSymbols.calendar },
+        "foundation.e.notes" to { SuiteSymbols.notes }, "foundation.e.tasks" to { SuiteSymbols.tasks },
         "foundation.e.advancedprivacy" to { EuriseIcons.shield(2.3f) }, "foundation.e.privacycentral" to { EuriseIcons.shield(2.3f) },
         "foundation.e.apps" to { EuriseIcons.bag(2.3f) }, "org.fdroid" to { EuriseIcons.bag(2.3f) },
-        "com.android.documentsui" to { EuriseIcons.folder(2.3f) }, "foundation.e.drive" to { EuriseIcons.folder(2.3f) },
-        "app.organicmaps" to { EuriseIcons.map(2.3f) }, "app.comaps" to { EuriseIcons.map(2.3f) }, "foundation.e.maps" to { EuriseIcons.map(2.3f) },
-        "foundation.e.weather" to { EuriseIcons.sun(2.3f) },
+        "com.android.documentsui" to { SuiteSymbols.files }, "foundation.e.drive" to { SuiteSymbols.files },
+        "app.organicmaps" to { SuiteSymbols.maps }, "app.comaps" to { SuiteSymbols.maps }, "foundation.e.maps" to { SuiteSymbols.maps },
+        "foundation.e.weather" to { SuiteSymbols.weather },
     )
 
     /** Parole del nome dell'app, per le varianti di sistema con un pacchetto diverso. */
     private val byLabel: List<Pair<String, () -> ImageVector>> = listOf(
-        "telefono" to { EuriseIcons.phone(2.3f) }, "phone" to { EuriseIcons.phone(2.3f) },
-        "messag" to { EuriseIcons.message(2.3f) }, "contatti" to { EuriseIcons.person(2.3f) }, "contacts" to { EuriseIcons.person(2.3f) },
+        "telefono" to { SuiteSymbols.phone }, "phone" to { SuiteSymbols.phone },
+        "messag" to { SuiteSymbols.messages }, "contatti" to { SuiteSymbols.contacts }, "contacts" to { SuiteSymbols.contacts },
         "fotocamera" to { EuriseIcons.camera(2.3f) }, "camera" to { EuriseIcons.camera(2.3f) },
-        "galleria" to { EuriseIcons.image(2.3f) }, "gallery" to { EuriseIcons.image(2.3f) },
+        "galleria" to { SuiteSymbols.gallery }, "gallery" to { SuiteSymbols.gallery },
         "impostazioni" to { EuriseIcons.gear(2.3f) }, "settings" to { EuriseIcons.gear(2.3f) },
-        "orologio" to { EuriseIcons.clock(2.3f) }, "calcolatrice" to { EuriseIcons.calculator(2.3f) },
-        "registratore" to { EuriseIcons.mic(2.3f) }, "browser" to { EuriseIcons.globe(2.3f) },
-        "meteo" to { EuriseIcons.sun(2.3f) }, "mappe" to { EuriseIcons.map(2.3f) }, "musica" to { EuriseIcons.music(2.3f) },
-        "file" to { EuriseIcons.folder(2.3f) }, "app lounge" to { EuriseIcons.bag(2.3f) },
+        "orologio" to { SuiteSymbols.clock }, "calcolatrice" to { SuiteSymbols.calculator },
+        "registratore" to { EuriseIcons.mic(2.3f) }, "browser" to { SuiteSymbols.browser },
+        "meteo" to { SuiteSymbols.weather }, "mappe" to { SuiteSymbols.maps }, "musica" to { EuriseIcons.music(2.3f) },
+        "file" to { SuiteSymbols.files }, "app lounge" to { EuriseIcons.bag(2.3f) },
     )
 
     fun find(entry: AppEntry): ImageVector? {
@@ -224,13 +226,14 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     } else {
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark
     }
-    // A colori: tondo chiaro nella tinta (un po' più sfumato in alto a sinistra), simbolo nella stessa tinta più profonda;
-    // di sera il tondo perde luce ma resta colorato.
-    val symbolTint = if (colorful) lerp(tint, Color.Black, if (dark) 0.05f else 0.32f) else tint
+    // A colori (tavola IconeColori): tondo chiaro nella tinta (un po' più sfumato in alto a sinistra), di sera il tondo
+    // perde luce ma resta colorato; il simbolo va da una tinta viva a una più profonda, chiara e brillante di sera.
+    // Eurise (tavola IconeStili): tondo blu notte con la sfumatura diagonale e l'alone caldo, il simbolo nella tinta.
+    val symbolBrush = if (colorful) vividSymbol(tint, dark) else listOf(lerp(tint, Color.White, 0.3f), tint)
     val round: Brush = if (colorful) {
         val base = if (dark) lerp(tint, IconBackgroundDark, 0.55f) else lerp(tint, Color.White, 0.80f)
         Brush.linearGradient(listOf(lerp(base, Color.White, if (dark) 0.06f else 0.45f), base))
-    } else androidx.compose.ui.graphics.SolidColor(if (dark) IconBackgroundDark else IconBackgroundLight)
+    } else EuriseRound
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         val plain = image as? IconImage.Plain
         if (plain != null) {
@@ -240,19 +243,20 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
                 .size(size)
                 .shadow(if (colorful) 3.dp else 6.dp, CircleShape)
                 .clip(CircleShape)
-                .background(round),
+                .background(round)
+                .then(if (colorful) Modifier else Modifier.background(EuriseGlow)),
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {
-                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(symbolTint))
+                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(symbolBrush))
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
-                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.68f).softTint(symbolTint))
+                is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.72f).softTint(symbolBrush))
                 is IconImage.Plain -> Unit
                 null -> Icon(
                     sectionIcon(entry),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(size * 0.64f).softTint(symbolTint),
+                    modifier = Modifier.size(size * 0.72f).softTint(symbolBrush),
                 )
             }
         }
@@ -261,35 +265,61 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
 }
 
 /**
- * Colora il disegno con un leggero sfumato: dalla tinta schiarita in alto a sinistra alla tinta piena in basso a destra.
- * Il disegno sotto conta solo per la forma (alfa).
+ * Colora il disegno con una sfumatura diagonale: [colors] dall'alto a sinistra al basso a destra. Il disegno sotto conta
+ * solo per la forma (alfa).
  */
-private fun Modifier.softTint(tint: Color): Modifier = this
+private fun Modifier.softTint(colors: List<Color>): Modifier = this
     .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
     .drawWithContent {
         drawContent()
-        drawRect(
-            Brush.linearGradient(listOf(lerp(tint, Color.White, 0.3f), tint), start = Offset.Zero, end = Offset(size.width, size.height)),
-            blendMode = BlendMode.SrcIn,
-        )
+        drawRect(Brush.linearGradient(colors, start = Offset.Zero, end = Offset(size.width, size.height)), blendMode = BlendMode.SrcIn)
     }
+
+/** Il tondo blu notte delle icone: sfumatura diagonale dal lato della stellina (in alto a destra) al lato opposto. */
+private val EuriseRound: Brush = object : androidx.compose.ui.graphics.ShaderBrush() {
+    override fun createShader(size: androidx.compose.ui.geometry.Size) = androidx.compose.ui.graphics.LinearGradientShader(
+        from = Offset(size.width, 0f), to = Offset(0f, size.height),
+        colors = listOf(Color(0xFF3A4D80), Color(0xFF222D4D), Color(0xFF121828)), colorStops = listOf(0f, 0.55f, 1f),
+    )
+}
+
+/** L'alone caldo attorno al posto della stellina (centro 77,35 e raggio 26 nel tondo da 72 della tavola). */
+private val EuriseGlow: Brush = object : androidx.compose.ui.graphics.ShaderBrush() {
+    override fun createShader(size: androidx.compose.ui.geometry.Size) = androidx.compose.ui.graphics.RadialGradientShader(
+        center = Offset(size.width * 59f / 72f, size.height * 17f / 72f), radius = size.width * 26f / 72f,
+        colors = listOf(Color(0x6BE4C27A), Color(0x24C9A45A), Color(0x00C9A45A)), colorStops = listOf(0f, 0.5f, 1f),
+    )
+}
+
+/**
+ * «Eurise a colori»: il simbolo nella tinta dell'app, più vivo e contrastato del tondo (tavola IconeColori): di giorno
+ * dalla luminosità 0,48 a 0,31, di sera da 0,83 a 0,70, con la saturazione portata su con un tetto.
+ */
+internal fun vividSymbol(tint: Color, dark: Boolean): List<Color> {
+    val hsl = FloatArray(3)
+    androidx.core.graphics.ColorUtils.colorToHSL(tint.toArgb(), hsl)
+    val s = if (dark) (hsl[1] + 0.14f).coerceIn(0.60f, 0.68f) else (0.15f + 0.45f * hsl[1]).coerceIn(0.20f, 0.55f)
+    val (from, to) = if (dark) 0.83f to 0.70f else 0.48f to 0.31f
+    return listOf(Color(androidx.core.graphics.ColorUtils.HSLToColor(floatArrayOf(hsl[0], s, from))),
+        Color(androidx.core.graphics.ColorUtils.HSLToColor(floatArrayOf(hsl[0], s, to))))
+}
 
 /** Simbolo delle sezioni di Eurise (che non hanno un'icona di sistema propria). */
 private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
-    "calendar" -> EuriseIcons.calendar(2.3f)
-    "notes" -> EuriseIcons.note(2.3f)
-    "tasks" -> EuriseIcons.task(2.3f)
-    "clock" -> EuriseIcons.clock(2.3f)
-    "drive" -> EuriseIcons.folder(2.3f)
-    "scanner" -> EuriseIcons.scan(2.3f)
-    "calculator" -> EuriseIcons.calculator(2.3f)
-    "weather" -> EuriseIcons.sun(2.3f)
-    "qr" -> EuriseIcons.scan(2.3f)
-    "privacy" -> EuriseIcons.shield(2.3f)
-    "ponte" -> EuriseIcons.work(2.3f)
-    "today" -> EuriseIcons.today(2.3f)
-    "alfred" -> EuriseIcons.bowtie(2.3f)
-    else -> entry.category.icon(2.3f)
+    "calendar" -> SuiteSymbols.calendar
+    "notes" -> SuiteSymbols.notes
+    "tasks" -> SuiteSymbols.tasks
+    "clock" -> SuiteSymbols.clock
+    "drive" -> SuiteSymbols.files
+    "scanner" -> SuiteSymbols.scanner
+    "calculator" -> SuiteSymbols.calculator
+    "weather" -> SuiteSymbols.weather
+    "qr" -> EuriseIcons.scan(SuiteSymbols.Stroke)
+    "privacy" -> EuriseIcons.shield(SuiteSymbols.Stroke)
+    "ponte" -> EuriseIcons.work(SuiteSymbols.Stroke)
+    "today" -> EuriseIcons.today(SuiteSymbols.Stroke)
+    "alfred" -> SuiteSymbols.alfred
+    else -> entry.category.icon(SuiteSymbols.Stroke)
 }
 
 /** Numero di notifiche: pastiglia piena in accento. */

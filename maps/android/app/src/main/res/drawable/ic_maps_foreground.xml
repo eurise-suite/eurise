@@ -1,36 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Eurise Mappe: simbolo nella tinta Strumenti (prugna) e la stellina d'oro, firma della suite.
-     Vale anche come livello monocromatico. Riferimento: tela, pagina Brand, «Firma di stella» (BrandIcona). -->
+<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <group
-        android:scaleX="1.38"
-        android:scaleY="1.38"
-        android:translateX="37.44"
-        android:translateY="33.12">
-        <path
-            android:pathData="M12,18.2 s-5.4,-4.6 -5.4,-9 a5.4,5.4 0 0,1 10.8,0 c0,4.4 -5.4,9 -5.4,9 z"
-            android:strokeColor="#BA9BCB"
-            android:strokeWidth="1.8"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round" />
-        <path
-            android:pathData="M10,9.2 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
-            android:strokeColor="#BA9BCB"
-            android:strokeWidth="1.8"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round" />
-        <path
-            android:pathData="M7.5,21 h9"
-            android:strokeColor="#BA9BCB"
-            android:strokeWidth="1.8"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round" />
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
+        <path android:pathData="M3.5,6.5 l5,-2 l7,2.5 l5,-2 v13 l-5,2 l-7,-2.5 l-5,2 z M8.5,4.5 v13.5 M15.5,7 v13.5" android:strokeWidth="2.35"
+            android:strokeLineCap="round" android:strokeLineJoin="round">
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
+                    android:endY="21" android:startColor="#D4C1DE" android:endColor="#A388B2" />
+            </aapt:attr>
+        </path>
     </group>
-    <path
-        android:fillColor="#D2B06A"
-        android:pathData="M54,72.36 Q54.47,76.57 58.68,77.04 Q54.47,77.51 54,81.72 Q53.53,77.51 49.32,77.04 Q53.53,76.57 54,72.36 Z" />
+    <path android:fillColor="#D2B06A" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
 </vector>

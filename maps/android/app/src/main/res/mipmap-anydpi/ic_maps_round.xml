@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Per Android prima dell'8: fondo blu notte e simbolo, senza la maschera adattiva. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/eurise_icon_background" />
-    <item android:drawable="@drawable/ic_maps_foreground" />
-</layer-list>
+<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp" android:viewportWidth="72" android:viewportHeight="72">
+    <group android:translateX="-18" android:translateY="-18">
+        <path android:fillColor="#222D4D" android:pathData="M18,54 a36,36 0 1,0 72,0 a36,36 0 1,0 -72,0" />
+        <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
+            <path android:pathData="M3.5,6.5 l5,-2 l7,2.5 l5,-2 v13 l-5,2 l-7,-2.5 l-5,2 z M8.5,4.5 v13.5 M15.5,7 v13.5" android:strokeColor="#D4C1DE" android:strokeWidth="2.35"
+                android:strokeLineCap="round" android:strokeLineJoin="round" />
+        </group>
+        <path android:fillColor="#D2B06A" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
+    </group>
+</vector>
