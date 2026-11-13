@@ -237,13 +237,27 @@ jobs:
           set -o pipefail
           GRADLE=./gradlew; [ -x "$GRADLE" ] || GRADLE=gradle
           $GRADLE --no-daemon assembleDebug > "$WORK/gradle.log" 2>&1 || { grep -E "error:|FAILED|What went wrong" -A3 "$WORK/gradle.log" | head -60; exit 1; }
+          echo "apk-collabora $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      # Eurise Office (13 novembre): l'APK è il nostro modulo :office:apk (schermata iniziale ed editor PDF nativi) con
+      # dentro la libreria android/lib di Collabora (AAR: LOActivity, motore, interfaccia web). L'app di Collabora non serve più.
+      - name: Eurise Office con il motore (modulo office/apk)
+        run: |
+          t0=$(date +%s)
+          aar=$(find "$WORK/online/android" -path '*outputs/aar*' -name '*.aar' | grep -i debug | head -1)
+          [ -n "$aar" ] || { echo "::error::AAR della libreria di Collabora non trovato"; exit 1; }
+          echo "AAR: $aar ($(du -m "$aar" | cut -f1) MB)"
+          cd "$GITHUB_WORKSPACE"
+          set -o pipefail
+          EURISE_OFFICE_AAR="$aar" ./gradlew --no-daemon :office:apk:assembleDebug > "$WORK/office-apk.log" 2>&1 || {
+            grep -E "^e: |error:|FAILED|What went wrong" -A3 "$WORK/office-apk.log" | head -60; exit 1; }
           echo "apk $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
       - name: Misura e carica
         if: always()
         run: |
           mkdir -p "$WORK/out"
-          apk=$(find "$WORK/online/android" -path '*outputs/apk*' -name '*.apk' 2>/dev/null | head -1)
+          apk=$(find "$GITHUB_WORKSPACE/office/apk/build/outputs/apk/debug" -name '*.apk' 2>/dev/null | head -1)
           {
             echo "## Eurise Office per Android (prototipo)"
             echo
@@ -256,7 +270,7 @@ jobs:
               echo; echo "APK non prodotto: vedi i registri nell'artefatto."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY" > "$WORK/out/misure.md"
-          for f in online-make.log gradle.log poco.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
+          for f in online-make.log gradle.log poco.log office-apk.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
           true
 
       - name: Librerie non ripulite (per tradurre la pila)

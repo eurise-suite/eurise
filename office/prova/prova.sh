@@ -10,7 +10,8 @@ set -u
 APK=$1
 OUT=$2
 PKG=${PKG:-eu.eurise.office.debug}
-LO=org.libreoffice.androidlib.LOActivity
+# «Apri con» passa da DocumentActivity (LOActivity non è esportata: ci arriva solo Office).
+LO=${LO:-eu.eurise.office.home.DocumentActivity}
 WAIT=${WAIT:-40}
 HERE=$(cd "$(dirname "$0")" && pwd)
 mkdir -p "$OUT"
@@ -36,7 +37,7 @@ mime() {
 
 # Primo avvio dalla schermata iniziale (estrae i file del motore).
 adb logcat -c
-adb shell am start -W -n "$PKG/org.libreoffice.androidapp.ui.LibreOfficeUIActivity" | tee -a "$sum"
+adb shell am start -W -n "$PKG/${HOME_ACTIVITY:-eu.eurise.office.home.OfficeActivity}" | tee -a "$sum"
 sleep 20
 adb exec-out screencap -p > "$OUT/00-iniziale.png"
 adb logcat -d > "$OUT/00-iniziale.log"
