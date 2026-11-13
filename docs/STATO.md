@@ -1767,7 +1767,14 @@ Fatto (ramo `brand`):
     software.
   - **Kerno**: almeno tre società di software (Kerno.io per il cloud, Kerno in Svizzera, Kerno per la produzione).
     Sconsigliato.
-- **Desco** per la Scrivania: **approvato**. Le tavole **MapIncrocio** e **MapRotonda** il proprietario le sta guardando.
+- **Desco** per la Scrivania: **approvato**. **Ciarly** e **Pelorus**: il proprietario li ha accettati, in attesa della verifica su TMview/EUIPO.
+- **Elenco dei nomi (13 novembre)**: Desco (Scrivania), Spunta (Attività), Ciarly (Chat), Postello (Email), Fotonda (Galleria),
+  Clavio (Password), Zonzo (Mappe), Drin (Telefono), Pelorus (Browser). Tutti in attesa della ricerca ufficiale su TMview/EUIPO
+  (classi 9 e 42). Prima di quella ricerca non vanno nel codice né nelle icone.
+- **Tavole MapIncrocio e MapRotonda approvate** e aggiornate sulla tela. Le frecce non girano più. In MapIncrocio scorrono dritte
+  dalla tua corsia a quella di uscita. In MapRotonda il percorso ha frecce dipinte ferme che si accendono nel verso di marcia,
+  e all'uscita le frecce scorrono dritte verso la via. **MapAutoGuida** ha la stessa scena nella finestrella della manovra
+  (in codice: `RoutingInfo.Builder.setJunctionImage` della Car App Library); la finestrella si chiude dopo la manovra.
 - **Prova di Mappe su Android Auto** (prima di installare il giro 365): funziona bene. C'è ancora lavoro sull'interfaccia,
   e la voce era quella vecchia. Correzioni richieste, da aggiungere ai passi d)–f):
   1. Quando ci si collega ad Android Auto, Mappe si apre lì **senza chiedere il permesso** di passare all'auto e resta
