@@ -5,22 +5,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import eu.eurise.core.suite.NetworkExit
 import eu.eurise.core.suite.NetworkShield
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Come esce adesso il Browser in rete (VPN, Advanced Privacy con Tor), per le tacchette in più del semaforo. */
+/** Come esce adesso il Browser in rete (VPN e quale, Advanced Privacy con Tor), per le tacchette in più del semaforo. */
 @Composable
-internal fun rememberNetworkShield(): NetworkShield {
+internal fun rememberNetworkShield(): NetworkExit {
     val context = LocalContext.current
-    val shield by produceState(NetworkShield.None) { value = withContext(Dispatchers.IO) { NetworkShield.current(context) } }
-    return shield
+    val exit by produceState(NetworkExit.DIRECT) { value = withContext(Dispatchers.IO) { NetworkExit.current(context) } }
+    return exit
 }
 
-/** L'etichetta delle tacchette guadagnate: «+1 VPN», «+2 Tor». */
+/** L'etichetta delle tacchette guadagnate: «+2 Proton VPN», «+2 Tor». */
 @Composable
-internal fun NetworkShield.label(): String? = when (this) {
-    NetworkShield.None -> null
-    NetworkShield.Vpn -> stringResource(R.string.brw_boost_vpn)
-    NetworkShield.Tor -> stringResource(R.string.brw_boost_tor)
+internal fun NetworkExit.label(): String? = when {
+    bonus == 0 -> null
+    kind == NetworkShield.Tor -> stringResource(R.string.brw_boost_tor)
+    else -> stringResource(R.string.brw_boost_vpn, bonus, vpn?.name ?: "VPN")
 }

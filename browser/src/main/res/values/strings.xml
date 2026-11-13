@@ -37,7 +37,7 @@
     <string name="brw_close_tab">Chiudi la scheda</string>
     <string name="brw_tabs_title">Schede: %1$d</string>
     <string name="brw_engine">Motore di ricerca</string>
-    <string name="brw_engine_note">Esce solo la domanda, verso il motore scelto. Le tacchette (su dieci) dicono quanto restano privati i tuoi dati; la sigla dice dove sta il servizio: UE con il GDPR, USA dove le autorità possono chiedere i dati. Con una VPN si sale di una tacchetta, con Advanced Privacy di /e/OS (Tor) di due: sono quelle più chiare. Google e Bing, che legano le ricerche a te, restano a una. Puoi sceglierli tutti: decidi tu, sapendo cosa succede.</string>
+    <string name="brw_engine_note">Esce solo la domanda, verso il motore scelto. Le tacchette (su dieci) dicono quanto restano privati i tuoi dati; la sigla dice dove sta il servizio: UE con il GDPR, USA dove le autorità possono chiedere i dati. Con l\'indirizzo nascosto si sale: Advanced Privacy di /e/OS (Tor) +2, una VPN secondo il suo voto (Proton VPN e Mullvad +2, NordVPN +1, una che non conosciamo +0); sono le tacchette più chiare. Google e Bing, che legano le ricerche a te, restano a una. Puoi sceglierli tutti: decidi tu, sapendo cosa succede.</string>
     <string name="brw_import">Importa segnalibri</string>
     <string name="brw_import_sub">dal file HTML di un altro browser</string>
     <string name="brw_import_done">Importati %1$d segnalibri nuovi</string>
@@ -415,6 +415,6 @@
     <string name="brw_extp_privacy">Cambia le impostazioni di privacy</string>
     <string name="brw_extp_proxy">Cambia il proxy della rete</string>
     <string name="brw_extp_native">Parla con altre app del telefono</string>
-    <string name="brw_boost_vpn">+1 VPN</string>
+    <string name="brw_boost_vpn">+%1$d %2$s</string>
     <string name="brw_boost_tor">+2 Tor</string>
 </resources>

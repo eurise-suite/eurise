@@ -62,7 +62,9 @@ import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.privacyScore
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.suite.NetworkExit
 import eu.eurise.core.suite.NetworkShield
+import eu.eurise.core.suite.VpnProvider
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyEvent
 import eu.eurise.core.suite.PrivacyService
@@ -114,13 +116,31 @@ private fun PrivacyService.score(hiddenIp: Int = 0) = when (this) {
     else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)
 }
 
-/** L'etichetta delle tacchette guadagnate: «+1 VPN», «+2 Tor». */
+/** L'etichetta delle tacchette guadagnate: «+2 Proton VPN», «+2 Tor». */
 @Composable
-private fun NetworkShield.label(): String? = when (this) {
-    NetworkShield.None -> null
-    NetworkShield.Vpn -> stringResource(R.string.pv_boost_vpn)
-    NetworkShield.Tor -> stringResource(R.string.pv_boost_tor)
+private fun NetworkExit.label(): String? = when {
+    bonus == 0 -> null
+    kind == NetworkShield.Tor -> stringResource(R.string.pv_boost_tor)
+    else -> stringResource(R.string.pv_boost_vpn, bonus, vpn?.name ?: "VPN")
 }
+
+/** La sigla della sede di una VPN, come per gli altri servizi. */
+private fun VpnProvider.jurisdiction() = when {
+    country == "CH" -> Jurisdiction.CH
+    european -> Jurisdiction.EU
+    country == "GB" -> Jurisdiction.UK
+    country == "US" -> Jurisdiction.US
+    else -> Jurisdiction.Other
+}
+
+/** Una riga della VPN: cosa le dà o le toglie fiducia, in parole. */
+@Composable
+private fun VpnProvider.facts(): String = listOf(
+    stringResource(if (verifiedNoLogs) (if (publicReport) R.string.pv_vpn_audit_public else R.string.pv_vpn_audit_private) else R.string.pv_vpn_audit_none),
+    stringResource(if (openSourceApps) R.string.pv_vpn_open else R.string.pv_vpn_closed),
+    stringResource(if (anonymousAccount) R.string.pv_vpn_anon else R.string.pv_vpn_email),
+    stringResource(if (european) R.string.pv_vpn_europe else R.string.pv_vpn_outside, country),
+).joinToString(" · ")
 
 private class Permission(val title: Int, val detail: Int)
 
@@ -183,8 +203,9 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     }
     var asking by remember { mutableStateOf<PrivacyService?>(null) }
     var shieldTick by remember { mutableStateOf(0) }
-    val shield by produceState(NetworkShield.None, shieldTick) { value = withContext(Dispatchers.IO) { NetworkShield.current(context) } }
-    val advancedPrivacy = remember { NetworkShield.hasAdvancedPrivacy(context) }
+    val shield by produceState(NetworkExit.DIRECT, shieldTick) { value = withContext(Dispatchers.IO) { NetworkExit.current(context) } }
+    var picking by remember { mutableStateOf(false) }
+    val choices by produceState(emptyList<NetworkExit>(), shieldTick) { value = withContext(Dispatchers.IO) { NetworkExit.choices(context) } }
     val notesAccount = accounts.firstOrNull { it.id == settings.notesAccount }?.takeIf { settings.notesEnabled }
     val notesPlace = notesAccount?.let { if (it.kind == CloudKind.Murena) "Murena" else it.name }
     val on = states.count { it.value }
@@ -213,24 +234,43 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
         item(key = "network") {
             SectionLabel(stringResource(R.string.pv_network))
             Card {
-                TwoLines(
-                    stringResource(when (shield) { NetworkShield.None -> R.string.pv_net_direct; NetworkShield.Vpn -> R.string.pv_net_vpn; NetworkShield.Tor -> R.string.pv_net_tor }),
-                    stringResource(when (shield) { NetworkShield.None -> R.string.pv_net_direct_d; NetworkShield.Vpn -> R.string.pv_net_vpn_d; NetworkShield.Tor -> R.string.pv_net_tor_d }),
-                )
-                // Advanced Privacy compare ad Android come una VPN qualunque: se la suite non lo capisce da sola, lo dice la persona.
-                if (shield != NetworkShield.None && advancedPrivacy) {
+                val vpn = shield.vpn
+                when {
+                    shield.kind == NetworkShield.None -> TwoLines(stringResource(R.string.pv_net_direct), stringResource(R.string.pv_net_direct_d))
+                    shield.kind == NetworkShield.Tor -> TwoLines(stringResource(R.string.pv_net_tor), stringResource(R.string.pv_net_tor_d))
+                    vpn != null -> TwoLines(
+                        stringResource(R.string.pv_net_vpn_named, vpn.name, shield.bonus), stringResource(R.string.pv_net_vpn_named_d, vpn.facts()),
+                        score = vpn.score, where = vpn.jurisdiction(),
+                    )
+                    else -> TwoLines(stringResource(R.string.pv_net_vpn_unknown), stringResource(R.string.pv_net_vpn_unknown_d))
+                }
+                // Android non dice di chi è la VPN: se ce n'è più d'una, o la suite sbaglia, la persona la indica.
+                if (shield.kind != NetworkShield.None) {
                     Line()
-                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
-                        NetworkShield.choose(context, if (shield == NetworkShield.Tor) NetworkShield.Vpn else NetworkShield.Tor)
-                        shieldTick++
-                    }, verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(if (shield == NetworkShield.Tor) R.string.pv_net_is_vpn else R.string.pv_net_is_tor),
-                            fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
-                        )
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { picking = !picking }, verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.pv_net_which), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (picking) (choices + listOf<NetworkExit?>(null)).forEach { option ->
+                        Line()
+                        val title = when {
+                            option == null -> stringResource(R.string.pv_net_auto)
+                            option.kind == NetworkShield.Tor -> stringResource(R.string.pv_net_tor)
+                            option.vpn != null -> option.vpn!!.name
+                            else -> stringResource(R.string.pv_net_vpn_unknown)
+                        }
+                        Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clickable {
+                            NetworkExit.choose(context, option); picking = false; shieldTick++
+                        }, verticalAlignment = Alignment.CenterVertically) {
+                            Text(title, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            option?.vpn?.let { PrivacyMeter(it.score, it.jurisdiction()) }
+                        }
                     }
                 }
             }
+            Text(
+                stringResource(R.string.pv_vpn_note), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
+            )
         }
         item(key = "where") {
             SectionLabel(stringResource(R.string.pv_where))

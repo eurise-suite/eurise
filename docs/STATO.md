@@ -1998,3 +1998,11 @@ Fatto (ramo `brand`):
     (nessun accesso a Internet in più). «Falsifica la posizione» di Advanced Privacy non entra nel voto (si vede solo
     nel meteo sbagliato).
 - **Ultimo APK: giro 407** (Claude nel Browser, VPN e Advanced Privacy nel semaforo), Mappe 29.
+- **VPN, correzione del proprietario («non tutte le VPN sono uguali»)**: ogni VPN ha il suo semaforo, perché vede a quali
+  siti vai. Catalogo in `core/suite/NetworkShield.kt` (`VpnProvider`, dati del 13 novembre 2026): parte da 5; +1 registri
+  verificati da terzi, +1 app aperte, +1 account senza nome, +1 sede in Europa (−1 fuori). **Mullvad 9** (Svezia, app aperte,
+  account con un numero), **Proton VPN 8** (Svizzera, verifiche annuali Securitum con rapporto pubblico, app aperte, account con
+  email), **NordVPN 5** (Panamá, verifiche Deloitte ma rapporti solo ai clienti, app Android chiusa). Agli altri servizi una
+  VPN da 7 in su dà **+2**, le altre **+1**, una sconosciuta **+0**; Tor +2. Quale VPN: Android non lo dice; se sul telefono
+  c'è una sola app VPN (Advanced Privacy o del catalogo) è lei, altrimenti la persona la indica nel centro privacy (riga Rete,
+  «Quale VPN stai usando?»). Da aggiungere al catalogo quando servono: IVPN, Surfshark, ExpressVPN, Windscribe.
