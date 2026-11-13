@@ -39,6 +39,11 @@ data class Mark(val index: Int, val subtype: String, val rect: PdfRect, val cont
 object PdfEdits {
     private const val AUTHOR = "Eurise Office"
 
+    // Flag delle annotazioni (specifica PDF, tabella 165): in PdfBox-Android le costanti di PDAnnotation sono private.
+    private const val FLAG_PRINT = 4
+    private const val FLAG_NO_ZOOM = 8
+    private const val FLAG_NO_ROTATE = 16
+
     fun highlight(doc: PDDocument, page: PDPage, lines: List<PdfRect>, color: InkColor, underline: Boolean): PDAnnotation? {
         if (lines.isEmpty()) return null
         val rect = lines.reduce { a, b -> a.union(b) }.inflate(1f)
@@ -110,7 +115,7 @@ object PdfEdits {
         val dict = base("Text", rect, color)
         dict.setString(COSName.CONTENTS, text)
         dict.setName(COSName.getPDFName("Name"), "Comment")
-        dict.setInt(COSName.F, PDAnnotation.FLAG_PRINT or PDAnnotation.FLAG_NO_ZOOM or PDAnnotation.FLAG_NO_ROTATE)
+        dict.setInt(COSName.F, FLAG_PRINT or FLAG_NO_ZOOM or FLAG_NO_ROTATE)
         val ap = appearance(doc, rect) { cs ->
             cs.setNonStrokingColor(color.r, color.g, color.b)
             cs.setStrokingColor(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f)
@@ -215,7 +220,7 @@ object PdfEdits {
         dict.setName(COSName.SUBTYPE, subtype)
         dict.setItem(COSName.RECT, PDRectangle(rect.left, rect.bottom, rect.width, rect.height).cosArray)
         if (color != null) dict.setItem(COSName.C, COSArray().also { a -> listOf(color.r, color.g, color.b).forEach { a.add(COSFloat(it)) } })
-        dict.setInt(COSName.F, PDAnnotation.FLAG_PRINT)
+        dict.setInt(COSName.F, FLAG_PRINT)
         dict.setString(COSName.T, AUTHOR)
         dict.setString(COSName.NM, UUID.randomUUID().toString())
         dict.setDate(COSName.M, Calendar.getInstance())
