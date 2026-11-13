@@ -12,6 +12,7 @@
  */
 
 #include <android/log.h>
+#include <fcntl.h>
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <pthread.h>
@@ -30,6 +31,47 @@
 namespace
 {
 constexpr const char* TAG = "EuriseDiag";
+
+int g_pipe[2] = { -1, -1 };
+char g_pending[2048];
+size_t g_pendingLength = 0;
+
+/// Scrive nel logcat le righe complete arrivate su stderr; tiene il resto per la prossima lettura.
+void emitLines(const char* data, size_t length, bool flushAll)
+{
+    for (size_t i = 0; i < length; ++i)
+    {
+        const char c = data[i];
+        if (c == '\n' || g_pendingLength == sizeof(g_pending) - 1)
+        {
+            g_pending[g_pendingLength] = '\0';
+            __android_log_write(ANDROID_LOG_WARN, "EuriseStderr", g_pending);
+            g_pendingLength = 0;
+            if (c == '\n')
+                continue;
+        }
+        g_pending[g_pendingLength++] = c;
+    }
+    if (flushAll && g_pendingLength > 0)
+    {
+        g_pending[g_pendingLength] = '\0';
+        __android_log_write(ANDROID_LOG_WARN, "EuriseStderr", g_pending);
+        g_pendingLength = 0;
+    }
+}
+
+/// Al segnale: quello che il motore ha scritto su stderr e il lettore non ha ancora portato nel logcat.
+void drainOutput()
+{
+    if (g_pipe[0] < 0)
+        return;
+    fcntl(g_pipe[0], F_SETFL, fcntl(g_pipe[0], F_GETFL) | O_NONBLOCK);
+    char buffer[4096];
+    ssize_t n;
+    while ((n = read(g_pipe[0], buffer, sizeof(buffer))) > 0)
+        emitLines(buffer, static_cast<size_t>(n), false);
+    emitLines("", 0, true);
+}
 
 void logFrame(int index, uintptr_t pc)
 {
@@ -80,6 +122,7 @@ void onFatalSignal(int signal, siginfo_t* info, void* context)
     __android_log_print(ANDROID_LOG_FATAL, TAG, "segnale %d (codice %d) nel thread %d [%s]", signal,
                         info != nullptr ? info->si_code : 0, gettid(), name);
     logStack(static_cast<const ucontext_t*>(context));
+    drainOutput();
     // Poi il gestore di sistema, che scrive la tombstone come sempre.
     struct sigaction defaults{};
     defaults.sa_handler = SIG_DFL;
@@ -124,21 +167,50 @@ void onTerminate()
     abort();
 }
 
-int g_pipe[2] = { -1, -1 };
-
 void* forwardOutput(void*)
 {
     pthread_setname_np(pthread_self(), "eurise_stderr");
-    FILE* in = fdopen(g_pipe[0], "r");
-    if (in == nullptr)
-        return nullptr;
-    char line[1024];
-    while (fgets(line, sizeof(line), in) != nullptr)
+    char buffer[1024];
+    ssize_t n;
+    while ((n = read(g_pipe[0], buffer, sizeof(buffer))) > 0)
+        emitLines(buffer, static_cast<size_t>(n), false);
+    return nullptr;
+}
+
+void installHandlers()
+{
+    struct sigaction action{};
+    action.sa_sigaction = onFatalSignal;
+    action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&action.sa_mask);
+    for (int signal : { SIGABRT, SIGSEGV, SIGBUS, SIGILL, SIGFPE })
+        sigaction(signal, &action, nullptr);
+}
+
+/// LibreOffice e coolwsd mettono i loro gestori dopo di noi: ogni 50 ms rimettiamo i nostri (solo build di prova).
+void* guardHandlers(void*)
+{
+    pthread_setname_np(pthread_self(), "eurise_diag");
+    for (;;)
     {
-        const size_t length = strlen(line);
-        if (length > 0 && line[length - 1] == '\n')
-            line[length - 1] = '\0';
-        __android_log_write(ANDROID_LOG_WARN, "EuriseStderr", line);
+        struct sigaction current{};
+        sigaction(SIGABRT, nullptr, &current);
+        if (current.sa_sigaction != onFatalSignal)
+        {
+            Dl_info info{};
+            const void* other = reinterpret_cast<const void*>(current.sa_sigaction);
+            dladdr(other, &info);
+            __android_log_print(ANDROID_LOG_INFO, TAG, "gestore di SIGABRT rimesso (c'era %s %s)",
+                                info.dli_fname != nullptr ? info.dli_fname : "?",
+                                info.dli_sname != nullptr ? info.dli_sname : "");
+            installHandlers();
+        }
+        if (std::get_terminate() != onTerminate)
+        {
+            __android_log_write(ANDROID_LOG_INFO, TAG, "gestore di std::terminate rimesso");
+            std::set_terminate(onTerminate);
+        }
+        usleep(50 * 1000);
     }
     return nullptr;
 }
@@ -146,13 +218,10 @@ void* forwardOutput(void*)
 __attribute__((constructor)) void installDiagnostics()
 {
     std::set_terminate(onTerminate);
-
-    struct sigaction action{};
-    action.sa_sigaction = onFatalSignal;
-    action.sa_flags = SA_SIGINFO | SA_ONSTACK;
-    sigemptyset(&action.sa_mask);
-    for (int signal : { SIGABRT, SIGSEGV, SIGBUS, SIGILL, SIGFPE })
-        sigaction(signal, &action, nullptr);
+    installHandlers();
+    pthread_t guard;
+    if (pthread_create(&guard, nullptr, guardHandlers, nullptr) == 0)
+        pthread_detach(guard);
 
     if (pipe(g_pipe) == 0)
     {

@@ -75,6 +75,36 @@ final class EuriseSuite {
     private static String t(String it, String en) { return it() ? it : en; }
 
     /**
+     * I file di configurazione del motore nascono con il pacchetto dell'app di Collabora
+     * (/data/data/org.libreoffice.androidapp): fontconfig non trova la sua cache e lo scrive su stderr. Qui si rimettono
+     * le cartelle vere di Office prima di avviare il motore.
+     */
+    static void fixPaths(Context c, String dataDir) {
+        File conf = new File(dataDir, "etc/fonts/fonts.conf");
+        if (!conf.isFile())
+            return;
+        try {
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            try (java.io.InputStream in = new java.io.FileInputStream(conf)) {
+                byte[] buffer = new byte[8192];
+                int n;
+                while ((n = in.read(buffer)) > 0)
+                    bytes.write(buffer, 0, n);
+            }
+            String text = bytes.toString("UTF-8");
+            String fixed = text.replace("/data/data/org.libreoffice.androidapp", dataDir);
+            if (!fixed.equals(text)) {
+                try (java.io.OutputStream out = new java.io.FileOutputStream(conf)) {
+                    out.write(fixed.getBytes("UTF-8"));
+                }
+                Log.i(TAG, "fonts.conf: cartelle di Office");
+            }
+        } catch (IOException | RuntimeException e) {
+            Log.w(TAG, "fonts.conf non aggiornato: " + e);
+        }
+    }
+
+    /**
      * Copia di lavoro di un documento arrivato come content://: stesso nome del file, in una cartella unica della cache
      * (due documenti con lo stesso nome non si pestano). Senza un nome leggibile resta il file temporaneo di Collabora.
      */

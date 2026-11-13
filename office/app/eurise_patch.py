@@ -96,6 +96,12 @@ patch(lo, '                urlToLoad = getIntent().getData().toString();\n'
       '                Log.d(TAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());\n',
       "il ramo SCHEME_FILE")
 
+# Le cartelle del motore (fonts.conf) puntano al pacchetto di Collabora: si correggono prima di avviarlo.
+patch(lo, '        createCOOLWSD(dataDir, cacheDir, apkFile, assetManager, urlToLoad, uiMode, userName);\n',
+      '        EuriseSuite.fixPaths(this, dataDir);\n'
+      '        createCOOLWSD(dataDir, cacheDir, apkFile, assetManager, urlToLoad, uiMode, userName);\n',
+      "l'avvio di COOLWSD")
+
 # «Apri da…»: il pulsante Apri della schermata iniziale passa da Eurise File (cartelle della suite, server, cloud);
 # senza l'app Eurise resta il selettore di sistema. Gli Uri di Eurise File non sono persistenti: niente eccezione.
 ui = android / "app" / "src" / "main" / "java" / "org" / "libreoffice" / "androidapp" / "ui" / "LibreOfficeUIActivity.java"
