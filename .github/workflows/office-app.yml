@@ -32,6 +32,9 @@ env:
   POCO_TAG: poco-1.14.2-release
   ZSTD_TAG: v1.5.6
   JOB_MINUTES: 355
+  # 1 = build di prova con la diagnosi del motore (office/app/eurise_diag.py): pila ed eccezioni nel logcat, registro
+  # «trace», librerie non ripulite nell'artefatto office-simboli. Acceso il 13 novembre per trovare la chiusura del motore.
+  DIAGNOSI: "1"
 
 jobs:
   app:
@@ -228,6 +231,7 @@ jobs:
           t0=$(date +%s)
           cd "$WORK/online/android"
           python3 "$GITHUB_WORKSPACE/office/app/eurise_patch.py" . "$GITHUB_WORKSPACE/app/debug-key/eurise-debug.keystore"
+          if [ "$DIAGNOSI" = 1 ]; then python3 "$GITHUB_WORKSPACE/office/app/eurise_diag.py" .; fi
           chmod +x gradlew 2>/dev/null || true
           set -o pipefail
           GRADLE=./gradlew; [ -x "$GRADLE" ] || GRADLE=gradle
@@ -253,6 +257,26 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY" > "$WORK/out/misure.md"
           for f in online-make.log gradle.log poco.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
           true
+
+      - name: Librerie non ripulite (per tradurre la pila)
+        if: always() && env.DIAGNOSI == '1'
+        run: |
+          mkdir -p "$WORK/simboli"
+          # La copia più grande di ogni libreria è quella con la tabella dei simboli.
+          for lib in libandroidapp.so liblo-native-code.so; do
+            f=$(find "$WORK/online" "$WORK/core" -name "$lib" -type f -printf '%s %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+            [ -n "$f" ] && cp "$f" "$WORK/simboli/" && echo "$lib: $f ($(du -m "$f" | cut -f1) MB)"
+          done
+          true
+
+      - name: Carica le librerie non ripulite
+        if: always() && env.DIAGNOSI == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-simboli-${{ github.run_number }}
+          path: ${{ env.WORK }}/simboli/
+          retention-days: 7
+          compression-level: 6
 
       - name: Carica l'APK e i registri
         if: always()
