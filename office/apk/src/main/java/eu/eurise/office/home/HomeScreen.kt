@@ -19,6 +19,12 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.offset
+import androidx.activity.compose.BackHandler
+import eu.eurise.core.designsystem.component.LoweredSearchField
+import eu.eurise.core.designsystem.component.pullToSearch
+import eu.eurise.core.designsystem.component.rememberPullSearchState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -87,16 +93,23 @@ fun HomeScreen(
     actions: HomeActions,
 ) {
     val haze = remember { HazeState() }
+    val list = rememberLazyListState()
+    val pull = rememberPullSearchState()
+    BackHandler(enabled = pull.lowered) { pull.raise() }
     val shown = remember(recents, query) {
         if (query.isBlank()) recents else recents.filter { it.name.contains(query.trim(), ignoreCase = true) }
     }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().hazeSource(haze),
+            state = list,
+            modifier = Modifier.fillMaxSize().hazeSource(haze).pullToSearch(list, pull),
             contentPadding = PaddingValues(bottom = 120.dp),
         ) {
             item(key = "testata") { Header(actions) }
-            item(key = "cerca") { SearchField(query, onQuery, leftHanded) }
+            item(key = "cerca") {
+                // Mentre si tira giù il campo accenna a scendere (tavola RicTira).
+                Box(Modifier.offset(y = (pull.pull * 14f).dp)) { SearchField(query, onQuery, leftHanded) }
+            }
             if (query.isBlank()) item(key = "nuovo") { NewGrid(actions) }
             item(key = "titolo-recenti") {
                 Row(
@@ -144,7 +157,7 @@ fun HomeScreen(
             DockItem(stringResource(R.string.office_tab_files)) { EuriseIcons.folder(it) },
             DockItem(stringResource(R.string.office_tab_templates)) { EuriseIcons.document(it) },
         )
-        EuriseDock(
+        if (!pull.lowered) EuriseDock(
             items = items,
             selected = 0,
             onSelect = { when (it) { 1 -> actions.files(); 2 -> actions.templates() } },
@@ -152,6 +165,15 @@ fun HomeScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
             actionLabel = stringResource(R.string.office_new),
             onAction = { actions.create(DocKind.Text) },
+        )
+        LoweredSearchField(
+            state = pull,
+            query = query,
+            onQuery = onQuery,
+            hint = stringResource(R.string.office_search_hint),
+            searchLabel = stringResource(R.string.office_search),
+            leftHanded = leftHanded,
+            modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
 }

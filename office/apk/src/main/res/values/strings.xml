@@ -31,6 +31,7 @@
     <string name="office_recent_empty">I documenti che apri compaiono qui, ovunque siano: telefono, cloud, allegati.</string>
     <string name="office_recent_gone">Questo documento non si raggiunge più: l\'ho tolto dai recenti.</string>
     <string name="office_recent_title">Recenti, ovunque siano</string>
+    <string name="office_search">Cerca</string>
     <string name="office_search_hint">Cerca tra i documenti</string>
     <string name="office_settings">Impostazioni di Office</string>
     <string name="office_tab_files">File</string>
