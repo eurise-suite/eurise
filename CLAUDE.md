@@ -90,6 +90,17 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Database: indici sulle colonne filtrate; conteggi con query, non leggendo tutto; migrazioni senza perdita di dati.
 - Qualità: la logica che si può provare senza telefono (lettori, calcoli, formati) ha i suoi test.
 
+## Ergonomia (regola importantissima, 13 novembre 2026)
+- Sempre massima attenzione all'ergonomia: ciò che si usa spesso sta dove arriva il pollice. Se serve, la stessa funzione
+  si declina diversamente su un formato diverso (telefono, tablet, computer) invece di copiare la disposizione.
+- Mano dominante: impostazione della suite (destra di base, sinistra per i mancini). La lente della ricerca e i comandi
+  principali delle barre stanno dal lato di quella mano.
+- Ricerca in alto che si tira giù: dove un'app ha il campo di ricerca in alto, uno swipe verso il basso con la lista già in
+  cima porta il campo appena sopra la tastiera, sotto il pollice; avviata la ricerca, torna al suo posto. Dove il campo non
+  c'è, il gesto fa quello che faceva già (per esempio scorrere un documento). La prima volta il campo accenna a scendere.
+- «Tirare giù» non aggiorna più le liste: l'aggiornamento è un pulsante nella zona del campo di ricerca, così scende con
+  lui ed è raggiungibile con lo stesso gesto.
+
 ## Stile (deciso il 7 novembre 2026)
 - Tema chiaro Perla, tema scuro Notte (blu-grafite, accento azzurro).
 - Barra delle sezioni flottante e satinata con il pulsante + satinato accanto; la sezione attiva si riconosce
