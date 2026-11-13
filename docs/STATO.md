@@ -2016,3 +2016,21 @@ Fatto (ramo `brand`):
 - Non ancora (restano nel passo e): «tra 200 m: 70», limite dedotto, velocità e limite senza percorso, scena in
   orizzontale. **Prossimo**: MapSegnalaGuida (sei voci, Annulla 5 s, invio a OSM a fine viaggio), poi MapOrizzontaleGuida.
 - **Ultimo APK: giro 411, Mappe 30.**
+
+## Punto di ripartenza (13 novembre, sera tardi)
+- **Ramo `brand`. Ultimi APK in apk-prova: giro 411 e Mappe 30.** Il proprietario li prova stasera; gli APK cambiati da ieri
+  sera: Eurise (app), Mappe, Browser, Tastiera, Voce, Telefono, Email, Password.
+- **Da provare**: semaforo a 10 tacchette con la sigla del paese (centro privacy, «Salva in», Browser › Ricerca e DNS,
+  ricerca rapida della Tastiera); riga **Rete** del centro privacy con VPN (Proton, Mullvad, NordVPN) e Advanced Privacy;
+  Claude tra le AI del Browser (2/10); Mappe 30: velocità rossa oltre la tolleranza, suono, cartello che pulsa, scena
+  dell'uscita e della rotonda (anche nella finestrella di Android Auto).
+- **Domande aperte al proprietario**: NordVPN con sede Panamá (5) o olandese (7)? Traduzione (modelli da Google Cloud
+  Storage) a 7 o a 2? Borsa e Video (Yahoo, YouTube) accesi di base ma a 2 su 10: restano accesi?
+- **Prossimo**: Mappe passo e) seconda parte, **Segnala in guida** (MapSegnalaGuida: sei voci in due gruppi, Annulla 5 s,
+  autovelox/limite errato/strada chiusa → nota OSM anonima a fine viaggio dopo un'occhiata; lavori/coda/pericolo sul
+  telefono per 2 ore; dal «+» della barra e da «Alfred, autovelox»), poi **MapOrizzontaleGuida** (scena a destra, barra
+  Segnala/Sosta/Voce/Insieme/Fine), poi passo f) livelli, segnala, esplora, attività; poi le tavole approvate dei mezzi
+  (MapMezzi, MapLontano, MapLontanoScelta: prima la verifica delle fonti) e il tema «Eurise a colori» in codice; poi sveglia
+  di Alfred e tastiera.
+- Sorgenti di CoMaps dallo specchio GitHub (`github.com/comaps/comaps`, commit in `maps-engine.yml`), Codeberg dà 403.
+  `gh release download` non funziona qui (GraphQL): gli APK si scaricano con `gh api …/releases/assets/<id>`.
