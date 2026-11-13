@@ -1893,3 +1893,10 @@ Fatto (ramo `brand`):
      quando Android Auto riduce la mappa, la vista si ricentra subito (`MyPositionController::SetVisibleViewport`).
      Non ancora: la panoramica del percorso prima di partire (scheda del luogo) non si riadatta all'area ridotta.
 - Da provare in auto: tutti e sei; il messaggio senza destinazione dipende da come l'auto mostra `MessageInfo`.
+- **Icone, richiesta del proprietario (13 novembre, sera)**: si **conserva il tema «Eurise a colori»** (tavola
+  **IconeColori**, pagina Icone): tondo chiaro nella tinta, di sera più scuro, le dodici tinte. Cambia solo il disegno
+  interno: i simboli nuovi delle app (scala 2,15, tratto 2,35) con la sfumatura diagonale in una tinta **più viva e più
+  contrastata** (di giorno luminosità 0,48→0,31, di sera 0,83→0,70, saturazione aumentata con un tetto), così si stacca dal
+  tondo. Nella tavola ci sono anche «prima e ora» su quattro app. Generatore: `tela/gen/colori.py` (fuori dal repo).
+  **Papillon di Alfred morbido** in tutte le icone (IconeStili e IconeColori): lo stesso di `EuriseIcons.bowtie` nel
+  codice (ali tonde, nodo arrotondato), senza le due pieghe, che da piccolo non si leggono. Da approvare.
