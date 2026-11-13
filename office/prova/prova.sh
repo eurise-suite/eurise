@@ -11,13 +11,14 @@ APK=$1
 OUT=$2
 PKG=eu.eurise.office.debug
 LO=org.libreoffice.androidlib.LOActivity
-WAIT=${WAIT:-75}
+WAIT=${WAIT:-40}
 HERE=$(cd "$(dirname "$0")" && pwd)
 mkdir -p "$OUT"
 sum="$OUT/riassunto.md"
 echo "# Prova di apertura di Eurise Office" > "$sum"
 
 adb wait-for-device
+adb logcat -G 32M || true
 adb shell getprop ro.product.cpu.abilist | tee -a "$sum"
 adb install -r -g "$APK" 2>&1 | tail -2 | tee -a "$sum" || true
 adb shell pm list packages | grep -q "$PKG" || { echo "Installazione non riuscita" | tee -a "$sum"; exit 0; }
@@ -53,7 +54,7 @@ sleep 5
 
 open_one() { # via nome uri tipo
 	local via=$1 name=$2 uri=$3 type=$4 tag="$2-$1"
-	adb logcat -c
+	adb logcat -c; adb logcat -b crash -c
 	echo "## $name ($via)" >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am start -W -a android.intent.action.VIEW -t "$type" -d "'$uri'" \
@@ -61,12 +62,13 @@ open_one() { # via nome uri tipo
 	sleep "$WAIT"
 	adb exec-out screencap -p > "$OUT/$tag.png"
 	adb logcat -d > "$OUT/$tag.log"
+	adb logcat -b crash -d > "$OUT/$tag-arresto.log"
 	{
 		echo "processo: $(adb shell pidof "$PKG" || echo 'non c\x27è più')"
 		echo "attività in primo piano: $(adb shell dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity' | sed 's/^ *//')"
 		# Del motore: avvertimenti ed errori di coolwsd e del kit, poi l'eventuale arresto con la pila completa.
 		grep -E "coolwsd.*(WRN|ERR|FTL|CRT)|LibreOfficeKit|LOActivity: (Success copying [0-9]|SCHEME|Initializing|postMobileMessage: load)|couldn't create temporary|file not found|AndroidRuntime" "$OUT/$tag.log" | head -40
-		grep -E " F (libc|DEBUG) " "$OUT/$tag.log" | head -80
+		grep -E " F (libc|DEBUG) " "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -90
 	} >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
