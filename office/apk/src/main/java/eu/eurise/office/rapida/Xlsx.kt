@@ -74,7 +74,30 @@ object Xlsx : SheetFormat {
                 maxRow = maxOf(maxRow, row); maxCol = maxOf(maxCol, col)
             }
         }
+        fillMissing(cells, styles, doc.documentElement)
         return Sheet(part.name, cells, maxRow + 1, maxCol + 1)
+    }
+
+    /**
+     * Formule senza valore salvato (file fatti da programmi che non calcolano): la vista rapida le calcola, se sa, solo
+     * per mostrarle; il file non cambia.
+     */
+    private fun fillMissing(cells: MutableMap<Long, Cell>, styles: Styles, root: Element) {
+        val missing = cells.values.filter { it.formula != null && it.number == null && it.display.isEmpty() }
+        if (missing.isEmpty()) return
+        val styleOf = HashMap<Pair<Int, Int>, Int>()
+        each(root) { c, col, row -> styleOf[col to row] = c.getAttribute("s").toIntOrNull() ?: 0 }
+        var left = missing
+        repeat(8) {
+            val still = ArrayList<Cell>()
+            for (cell in left) {
+                val v = runCatching { Formula.parse(cell.formula!!).eval { c, r -> cells[Sheet.key(c, r)]?.number } }.getOrNull()
+                if (v == null) { still += cell; continue }
+                cells[Sheet.key(cell.col, cell.row)] = cell.copy(number = v, display = show(v, styleOf[cell.col to cell.row] ?: 0, styles))
+            }
+            if (still.size == left.size) return
+            left = still
+        }
     }
 
     /** Ogni cella del foglio con la sua colonna e riga (anche quando il file non scrive i riferimenti). */

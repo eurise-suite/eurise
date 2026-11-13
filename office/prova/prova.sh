@@ -109,4 +109,44 @@ for f in "$HERE"/campioni/${SOLO:-*}; do
 	# file:// solo se chiesto: in Collabora quel ramo non apre la pagina (serve un file temporaneo).
 	[ -n "${CON_FILE:-}" ] && open_one file "$name" "file:///data/data/$PKG/files/prova/$name" "$type"
 done
+
+# Correzione nella vista rapida: tocca, scrive, «Fatto», e guarda se il file nel telefono è cambiato davvero.
+centro() { # testo (anche parziale) -> «x y» del primo elemento sullo schermo che lo contiene
+	adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
+	adb shell cat /sdcard/ui.xml | tr '>' '\n' | grep -F "text=\"$1" | head -1 |
+		sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\1 \2 \3 \4/p' |
+		awk '{ printf "%d %d", ($1 + $3) / 2, ($2 + $4) / 2 }'
+}
+tocca() { local xy; xy=$(centro "$1"); [ -n "$xy" ] && adb shell input tap $xy && return 0; echo "non trovato sullo schermo: $1" >> "$sum"; return 1; }
+correggi() { # nome testo-da-toccare tasti-da-cancellare testo-nuovo voce-nel-file cosa-cercare
+	local name=$1 target=$2 dels=$3 typed=$4 entry=$5 expect=$6
+	local id type
+	type=$(mime "$name")
+	id=$(adb shell content query --uri content://media/external/file --projection _id --where "\"_display_name='$name'\"" | sed -n 's/.*_id=\([0-9]*\).*/\1/p' | head -1)
+	[ -n "$id" ] || return 0
+	echo "## Correzione in $name" >> "$sum"
+	adb shell am start -W -a android.intent.action.VIEW -t "$type" -d "'content://media/external/file/$id'" \
+		--grant-read-uri-permission --grant-write-uri-permission -n "$PKG/$LO" > /dev/null 2>&1
+	sleep 8
+	tocca "$target" || { adb shell am force-stop "$PKG"; return 0; }
+	sleep 2
+	adb shell input keyevent KEYCODE_MOVE_END
+	for _ in $(seq 1 "$dels"); do adb shell input keyevent KEYCODE_DEL; done
+	adb shell input text "$typed"
+	sleep 1
+	adb exec-out screencap -p > "$OUT/$name-correzione.png"
+	tocca "Fatto"
+	sleep 4
+	adb exec-out screencap -p > "$OUT/$name-corretto.png"
+	adb shell cat "/sdcard/Download/$name" > "$OUT/$name"
+	if unzip -p "$OUT/$name" "$entry" 2>/dev/null | grep -q "$expect"; then echo "file cambiato: trovato «$expect» in $entry" >> "$sum"
+	else echo "**il file non contiene «$expect»**" >> "$sum"; fi
+	adb shell am force-stop "$PKG"
+	sleep 2
+}
+if [ -z "${SOLO:-}" ] && [ "$PKG" = eu.eurise.office.debug ]; then
+	correggi lettera.docx "Gentile cliente" 1 "%sCORRETTO." word/document.xml "IBAN IT60X0542811101000000123456 CORRETTO."
+	correggi conti.xlsx "750" 3 "800" xl/worksheets/sheet1.xml "<v>1260</v>"
+	correggi testo.odt "Testo ODF" 1 "%sCORRETTO." content.xml "CORRETTO."
+fi
 cat "$sum"
