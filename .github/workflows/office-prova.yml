@@ -23,7 +23,8 @@ env:
   HOME_ACTIVITY: ""
 
 permissions:
-  contents: read
+  # write: le schermate vanno nella pre-release office-prova-schermate (si guardano anche da dove gli artefatti non arrivano).
+  contents: write
   actions: read
 
 concurrency:
@@ -86,6 +87,17 @@ jobs:
       - name: Riassunto
         if: always()
         run: cat prova-office/riassunto.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Schermate nella pre-release office-prova-schermate
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls prova-office/*.png > /dev/null 2>&1 || exit 0
+          gh release view office-prova-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create office-prova-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Schermate della prova di Office" --notes "Sovrascritte a ogni prova sull'emulatore."
+          gh release upload office-prova-schermate prova-office/*.png prova-office/riassunto.md -R "${{ github.repository }}" --clobber
 
       - uses: actions/upload-artifact@v4
         if: always()
