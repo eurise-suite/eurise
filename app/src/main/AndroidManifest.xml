@@ -33,6 +33,16 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+        <!-- Scanner per le altre app della suite (Office): le pagine tornano come PDF. Solo app con la stessa firma. -->
+        <activity
+            android:name=".ScanForResultActivity"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SCAN_PAGES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- Lettore PDF per «Apri con» da qualsiasi app; per modificare passa a Eurise Office. -->
         <activity
             android:name=".PdfOpenActivity"

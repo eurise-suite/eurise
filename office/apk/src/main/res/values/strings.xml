@@ -66,7 +66,6 @@
     <string name="pdf_insert_pdf">Un altro PDF</string>
     <string name="pdf_insert_photo">Foto</string>
     <string name="pdf_insert_scanner">Scanner</string>
-    <string name="pdf_insert_scanner_hint">Salva la scansione come PDF, poi inseriscila con «Un altro PDF».</string>
     <string name="pdf_loading">Apro il PDF…</string>
     <string name="pdf_mark_cover">Riquadro che copre</string>
     <string name="pdf_mark_highlight">Evidenziato</string>

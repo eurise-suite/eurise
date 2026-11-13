@@ -121,7 +121,7 @@ private const val PHOTO_REFINE_WIDTH = 1200
 
 /** Scanner: inquadra, riconosce i bordi e scatta da solo quando il foglio è fermo, poi salva un PDF. */
 @Composable
-fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false) {
+fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false, onReturn: ((File) -> Unit)? = null) {
     val context = LocalContext.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var explain by remember { mutableStateOf(!granted) }
@@ -138,7 +138,7 @@ fun ScannerRoute(onClose: () -> Unit, startQr: Boolean = false) {
     BackHandler(enabled = reviewing) { reviewing = false }
     Box(Modifier.fillMaxSize().background(if (reviewing) MaterialTheme.colorScheme.background else Color(0xFF14171C))) {
         when {
-            reviewing -> ScanEditor(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose)
+            reviewing -> ScanEditor(pages, origins, dir, onAdd = { reviewing = false }, onCancel = onClose, onSaved = onClose, onReturn = onReturn)
             granted -> Camera(pages, origins, dir, onClose, startQr) { if (pages.isNotEmpty()) reviewing = true }
         }
     }

@@ -113,7 +113,10 @@ private val aspects = listOf(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun ScanEditor(pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onAdd: () -> Unit, onCancel: () -> Unit, onSaved: () -> Unit) {
+internal fun ScanEditor(
+    pages: MutableList<File>, origins: MutableMap<File, Origin>, dir: File, onAdd: () -> Unit, onCancel: () -> Unit, onSaved: () -> Unit,
+    onReturn: ((File) -> Unit)? = null,
+) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
@@ -195,7 +198,18 @@ internal fun ScanEditor(pages: MutableList<File>, origins: MutableMap<File, Orig
                 )
                 if (!all && pages.size > 1) PagerArrow(EuriseIcons.chevronRight(), enabled = current < pages.lastIndex) { current++ }
             }
-            Button(enabled = pages.isNotEmpty() && !working, onClick = { saving = true }) { Text(stringResource(R.string.ed_next)) }
+            if (onReturn != null) {
+                // Chiamato da un'altra app (Office): le pagine tornano lì come PDF, senza «Salva in…».
+                Button(enabled = pages.isNotEmpty() && !working, onClick = {
+                    working = true
+                    scope.launch {
+                        val pdf = withContext(Dispatchers.IO) { File(dir, "pagine.pdf").also { PageProcessor.writePdf(pages.toList(), it) } }
+                        onReturn(pdf)
+                    }
+                }) { Text(stringResource(R.string.ed_return)) }
+            } else {
+                Button(enabled = pages.isNotEmpty() && !working, onClick = { saving = true }) { Text(stringResource(R.string.ed_next)) }
+            }
         }
         if (pages.size > 1) Row(
             Modifier.padding(start = 16.dp, end = 12.dp, top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surfaceContainerHigh).padding(3.dp),

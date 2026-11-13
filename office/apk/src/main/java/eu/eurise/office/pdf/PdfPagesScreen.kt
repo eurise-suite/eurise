@@ -79,8 +79,8 @@ fun PdfPagesScreen(model: PdfModel, onClose: () -> Unit) {
 
     fun after(): Int = chosen.maxOrNull() ?: (state.pages.size - 1)
 
-    val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri != null) scope.launch {
+    fun insertFrom(uri: Uri) {
+        scope.launch {
             val other = withContext(Dispatchers.IO) {
                 runCatching { context.contentResolver.openInputStream(uri)!!.use { PDDocument.load(it, MemoryUsageSetting.setupMainMemoryOnly()) } }.getOrNull()
             }
@@ -93,6 +93,11 @@ fun PdfPagesScreen(model: PdfModel, onClose: () -> Unit) {
                 chosen.clear()
             }
         }
+    }
+    val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? -> if (uri != null) insertFrom(uri) }
+    // «Scansiona e restituisci»: le pagine dello Scanner dell'app Eurise tornano qui e si inseriscono dopo la selezione.
+    val scan = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        result.data?.data?.takeIf { result.resultCode == android.app.Activity.RESULT_OK }?.let { insertFrom(it) }
     }
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) scope.launch {
@@ -153,8 +158,8 @@ fun PdfPagesScreen(model: PdfModel, onClose: () -> Unit) {
                 Text(stringResource(R.string.pdf_insert_from).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(stringResource(R.string.pdf_insert_scanner), Modifier.weight(1f)) {
-                        if (Suite.section(context, "scanner")) Toast.makeText(context, R.string.pdf_insert_scanner_hint, Toast.LENGTH_LONG).show()
-                        else Toast.makeText(context, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
+                        val intent = eu.eurise.core.suite.ScannerContract.scanIntent(context, Suite.hub)
+                        if (intent != null) scan.launch(intent) else Toast.makeText(context, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
                     }
                     Pill(stringResource(R.string.pdf_insert_pdf), Modifier.weight(1f)) { pickPdf.launch(arrayOf("application/pdf")) }
                     Pill(stringResource(R.string.pdf_insert_photo), Modifier.weight(1f)) { pickImage.launch("image/*") }

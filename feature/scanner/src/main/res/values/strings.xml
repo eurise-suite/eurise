@@ -175,6 +175,7 @@
     <!-- Editor dopo lo scatto (tavole ScanPagine, ScanPagina, ScanRitaglio) -->
     <string name="ed_back">Indietro</string>
     <string name="ed_next">Avanti</string>
+    <string name="ed_return">Aggiungi al documento</string>
     <string name="ed_pages">%d pagine</string>
     <string name="ed_page_of">Pagina %1$d di %2$d</string>
     <string name="ed_one">Una a una</string>
