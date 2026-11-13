@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Solo per sapere se la rete passa da una VPN o da Advanced Privacy (semaforo della privacy): nessun accesso a Internet in più. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <queries>
+        <package android:name="foundation.e.advancedprivacy" />
+        <intent>
+            <action android:name="android.net.VpnService" />
+        </intent>
+    </queries>
+</manifest>

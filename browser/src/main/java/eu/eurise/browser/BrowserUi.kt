@@ -259,6 +259,7 @@ fun BrowserScreen(
         }
         Sheet.Engine -> BottomSheet(onClose = { sheet = Sheet.None }) {
             Text(stringResource(R.string.brw_engine), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            val net = rememberNetworkShield()
             Links.ENGINES.forEach { e ->
                 val on = e.id == model.engine.id
                 Row(
@@ -272,7 +273,7 @@ fun BrowserScreen(
                         Text(e.label, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(e.sub, fontSize = 12.sp, color = scheme.onSurfaceVariant)
                     }
-                    PrivacyMeter(e.level, e.where)
+                    PrivacyMeter(e.level(net.bonus), e.where, boost = e.level(net.bonus) - e.level, boostLabel = net.label())
                 }
             }
             Text(stringResource(R.string.brw_engine_note), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)

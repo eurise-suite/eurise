@@ -1984,3 +1984,16 @@ Fatto (ramo `brand`):
 - Ancora da fare col semaforo: destinazioni del backup e servizi collegati quando avranno la loro schermata; Password
   (Have I Been Pwned, alias) e Galleria (OpenStreetMap per i luoghi); le tavole sulla tela con le tacche vecchie.
 - **Ultimo APK: giro 404** (semaforo della privacy), Mappe 29. Da provare: centro privacy, «Salva in» di File, motori/AI/DNS del Browser, ricerca rapida della Tastiera.
+- **Semaforo, aggiunte del proprietario (13 novembre, sera)**:
+  - **Claude nel Browser** («tu non ti sei valutato»): tra le AI chiuse, **2 su 10**, come ChatGPT, Copilot e Gemini. Motivo
+    scritto nella riga: dall'ottobre 2025 Anthropic addestra sulle chat dei piani personali se non lo si spegne, e allora le
+    tiene fino a cinque anni (spento, 30 giorni). Nella Tastiera c'era già a 2.
+  - **Rete nascosta**: `privacyScore(…, hiddenIp)`; **VPN +1**, **Advanced Privacy «Nascondi l'indirizzo IP» (Tor) +2**, solo per
+    i servizi che ricevono il minimo o nulla di tuo (non per contenuti tuoi né per i servizi chiusi, che riconoscono
+    l'account); tetto 9. Le tacchette guadagnate sono più chiare, con «+1 VPN» / «+2 Tor» accanto.
+  - Come si capisce (`core/suite/NetworkShield.kt`): la rete attiva della suite ha `TRANSPORT_VPN` (vale per app: se in
+    Advanced Privacy la suite ha l'indirizzo vero, non c'è VPN). Advanced Privacy compare ad Android come VPN: se è
+    installata (`foundation.e.advancedprivacy`) e nessun'altra app offre una VPN, si conta Tor; altrimenti VPN, e nel centro
+    privacy (riga **Rete**) si può dire «È Advanced Privacy» / «È un'altra VPN». Permesso nuovo: `ACCESS_NETWORK_STATE`
+    (nessun accesso a Internet in più). «Falsifica la posizione» di Advanced Privacy non entra nel voto (si vede solo
+    nel meteo sbagliato).

@@ -63,9 +63,13 @@ enum class DataOut(val base: Int) {
  * punto (tre per un server tuo). I servizi chiusi (Google, Microsoft, Apple, le AI che conservano tutto) restano a una
  * o due tacchette qualunque cosa ricevano (regola del 12 novembre).
  */
-fun privacyScore(out: DataOut, where: Jurisdiction, endToEnd: Boolean = false, closed: Boolean = false): Int {
+fun privacyScore(out: DataOut, where: Jurisdiction, endToEnd: Boolean = false, closed: Boolean = false, hiddenIp: Int = 0): Int {
     if (out == DataOut.None) return 10
-    val score = (out.base + (if (endToEnd) 4 else 0) + where.adjust).coerceIn(1, 9)
+    // Indirizzo di rete nascosto (VPN +1, Advanced Privacy con Tor +2): conta solo dove l'indirizzo era l'unica traccia,
+    // cioè per i servizi che ricevono il minimo o nulla di tuo. Non per i contenuti tuoi né per i servizi chiusi, che ti
+    // riconoscono dall'account.
+    val ip = if (!closed && (out == DataOut.Anonymous || out == DataOut.Minimal)) hiddenIp else 0
+    val score = (out.base + (if (endToEnd) 4 else 0) + where.adjust + ip).coerceIn(1, 9)
     return if (closed) score.coerceAtMost(2) else score
 }
 
@@ -94,20 +98,31 @@ fun privacyColor(score: Int): Color {
  * simbolo di [where] (UE, CH, USA…). Per lo schermo letto ad alta voce: «Privacy 7 su 10, Unione europea».
  */
 @Composable
-fun PrivacyMeter(score: Int, where: Jurisdiction? = null, modifier: Modifier = Modifier) {
+fun PrivacyMeter(score: Int, where: Jurisdiction? = null, modifier: Modifier = Modifier, boost: Int = 0, boostLabel: String? = null) {
     val s = score.coerceIn(1, 10)
+    val gained = boost.coerceIn(0, s - 1)
     val color = privacyColor(s)
     val off = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-    val said = stringResource(R.string.ds_privacy_score, s) + (where?.let { ", " + stringResource(it.longName()) }.orEmpty())
+    val said = stringResource(R.string.ds_privacy_score, s) + (where?.let { ", " + stringResource(it.longName()) }.orEmpty()) +
+        (if (gained > 0 && boostLabel != null) ", $boostLabel" else "")
     Row(
         modifier.clearAndSetSemantics { contentDescription = said },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(1.5.dp), verticalAlignment = Alignment.CenterVertically) {
-            repeat(10) { i -> Box(Modifier.width(3.dp).height(10.dp).clip(RoundedCornerShape(1.5.dp)).background(if (i < s) color else off)) }
+            repeat(10) { i ->
+                // Le tacchette guadagnate con la rete nascosta (VPN, Tor) sono più chiare: si vede quanto valgono.
+                val tint = when {
+                    i >= s -> off
+                    i >= s - gained -> color.copy(alpha = 0.45f)
+                    else -> color
+                }
+                Box(Modifier.width(3.dp).height(10.dp).clip(RoundedCornerShape(1.5.dp)).background(tint))
+            }
         }
         if (where != null && where != Jurisdiction.Phone) JurisdictionBadge(where)
+        if (gained > 0 && boostLabel != null) Text(boostLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
     }
 }
 

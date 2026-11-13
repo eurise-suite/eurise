@@ -13,22 +13,27 @@ import java.net.URLEncoder
  */
 object Links {
 
-    /** Motori di ricerca della barra (BrwMotore); Brave Search di base. [level]: grado di privacy su 10, [where]: il paese. */
-    data class Engine(val id: String, val label: String, val url: String, val level: Int, val sub: String, val where: Jurisdiction)
-
-    private val SEARCH = privacyScore(DataOut.Minimal, Jurisdiction.EU)
-    private val SEARCH_US = privacyScore(DataOut.Minimal, Jurisdiction.US)
-    private val PROFILED = privacyScore(DataOut.Profiled, Jurisdiction.US, closed = true)
+    /**
+     * Motori di ricerca della barra (BrwMotore); Brave Search di base. Ricevono la domanda: [out] dice se anche chi sei;
+     * [where]: il paese. [level]: grado di privacy su 10, con [hiddenIp] tacchette in più se la rete passa da VPN o Tor.
+     */
+    data class Engine(
+        val id: String, val label: String, val url: String, val sub: String, val where: Jurisdiction,
+        val out: DataOut = DataOut.Minimal, val closed: Boolean = false,
+    ) {
+        val level: Int get() = level(0)
+        fun level(hiddenIp: Int) = privacyScore(out, where, closed = closed, hiddenIp = hiddenIp)
+    }
 
     val ENGINES = listOf(
-        Engine("brave", "Brave Search", "https://search.brave.com/search?q=%s", SEARCH_US, "indice proprio · USA", Jurisdiction.US),
-        Engine("qwant", "Qwant", "https://www.qwant.com/?q=%s", SEARCH, "Francia, UE", Jurisdiction.EU),
-        Engine("ecosia", "Ecosia", "https://www.ecosia.org/search?q=%s", SEARCH, "Germania, UE", Jurisdiction.EU),
-        Engine("ddg", "DuckDuckGo", "https://duckduckgo.com/?q=%s", SEARCH_US, "risultati Bing · USA", Jurisdiction.US),
-        Engine("startpage", "Startpage", "https://www.startpage.com/do/search?q=%s", SEARCH, "risultati Google anonimi · Paesi Bassi", Jurisdiction.EU),
+        Engine("brave", "Brave Search", "https://search.brave.com/search?q=%s", "indice proprio · USA", Jurisdiction.US),
+        Engine("qwant", "Qwant", "https://www.qwant.com/?q=%s", "Francia, UE", Jurisdiction.EU),
+        Engine("ecosia", "Ecosia", "https://www.ecosia.org/search?q=%s", "Germania, UE", Jurisdiction.EU),
+        Engine("ddg", "DuckDuckGo", "https://duckduckgo.com/?q=%s", "risultati Bing · USA", Jurisdiction.US),
+        Engine("startpage", "Startpage", "https://www.startpage.com/do/search?q=%s", "risultati Google anonimi · Paesi Bassi", Jurisdiction.EU),
         // Servizi chiusi: si possono scegliere, ma in fondo e con una tacchetta su dieci (regola del 12 novembre: decide la persona).
-        Engine("google", "Google", "https://www.google.com/search?q=%s", PROFILED, "Google · USA · le ricerche legate a te e alla pubblicità", Jurisdiction.US),
-        Engine("bing", "Bing", "https://www.bing.com/search?q=%s", PROFILED, "Microsoft · USA · le ricerche legate a te e alla pubblicità", Jurisdiction.US),
+        Engine("google", "Google", "https://www.google.com/search?q=%s", "Google · USA · le ricerche legate a te e alla pubblicità", Jurisdiction.US, DataOut.Profiled, closed = true),
+        Engine("bing", "Bing", "https://www.bing.com/search?q=%s", "Microsoft · USA · le ricerche legate a te e alla pubblicità", Jurisdiction.US, DataOut.Profiled, closed = true),
     )
 
     fun engine(id: String?): Engine = ENGINES.firstOrNull { it.id == id } ?: ENGINES.first()

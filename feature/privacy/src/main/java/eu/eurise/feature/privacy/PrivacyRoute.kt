@@ -62,6 +62,7 @@ import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.privacyScore
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.suite.NetworkShield
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyEvent
 import eu.eurise.core.suite.PrivacyService
@@ -106,11 +107,19 @@ private fun PrivacyService.where() = when (this) {
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
 }
 
-/** Il grado di privacy effettivo: da ciò che il servizio riceve (vedi [privacyScore]). */
-private fun PrivacyService.score() = when (this) {
-    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope -> privacyScore(DataOut.Anonymous, where())
+/** Il grado di privacy effettivo: da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
+private fun PrivacyService.score(hiddenIp: Int = 0) = when (this) {
+    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope -> privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
     PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
-    else -> privacyScore(DataOut.Minimal, where())
+    else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)
+}
+
+/** L'etichetta delle tacchette guadagnate: «+1 VPN», «+2 Tor». */
+@Composable
+private fun NetworkShield.label(): String? = when (this) {
+    NetworkShield.None -> null
+    NetworkShield.Vpn -> stringResource(R.string.pv_boost_vpn)
+    NetworkShield.Tor -> stringResource(R.string.pv_boost_tor)
 }
 
 private class Permission(val title: Int, val detail: Int)
@@ -142,11 +151,14 @@ private fun Card(content: @Composable () -> Unit) {
 private fun Line() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
 
 @Composable
-private fun TwoLines(title: String, detail: String?, modifier: Modifier = Modifier, score: Int? = null, where: Jurisdiction? = null) {
+private fun TwoLines(
+    title: String, detail: String?, modifier: Modifier = Modifier, score: Int? = null, where: Jurisdiction? = null,
+    boost: Int = 0, boostLabel: String? = null,
+) {
     Column(modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
         Text(title, fontSize = 15.sp)
         detail?.let { Text(it, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        score?.let { PrivacyMeter(it, where, Modifier.padding(top = 4.dp)) }
+        score?.let { PrivacyMeter(it, where, Modifier.padding(top = 4.dp), boost, boostLabel) }
     }
 }
 
@@ -170,6 +182,9 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
         value = true
     }
     var asking by remember { mutableStateOf<PrivacyService?>(null) }
+    var shieldTick by remember { mutableStateOf(0) }
+    val shield by produceState(NetworkShield.None, shieldTick) { value = withContext(Dispatchers.IO) { NetworkShield.current(context) } }
+    val advancedPrivacy = remember { NetworkShield.hasAdvancedPrivacy(context) }
     val notesAccount = accounts.firstOrNull { it.id == settings.notesAccount }?.takeIf { settings.notesEnabled }
     val notesPlace = notesAccount?.let { if (it.kind == CloudKind.Murena) "Murena" else it.name }
     val on = states.count { it.value }
@@ -192,6 +207,28 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                     Text(stringResource(if (on == 0 && notesPlace == null) R.string.pv_head_none else R.string.pv_head), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     val sync = notesPlace?.let { stringResource(R.string.pv_head_sync, it) }.orEmpty()
                     if (loaded) Text(sync + pluralStringResource(R.plurals.pv_head_services, on, on), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+        }
+        item(key = "network") {
+            SectionLabel(stringResource(R.string.pv_network))
+            Card {
+                TwoLines(
+                    stringResource(when (shield) { NetworkShield.None -> R.string.pv_net_direct; NetworkShield.Vpn -> R.string.pv_net_vpn; NetworkShield.Tor -> R.string.pv_net_tor }),
+                    stringResource(when (shield) { NetworkShield.None -> R.string.pv_net_direct_d; NetworkShield.Vpn -> R.string.pv_net_vpn_d; NetworkShield.Tor -> R.string.pv_net_tor_d }),
+                )
+                // Advanced Privacy compare ad Android come una VPN qualunque: se la suite non lo capisce da sola, lo dice la persona.
+                if (shield != NetworkShield.None && advancedPrivacy) {
+                    Line()
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
+                        NetworkShield.choose(context, if (shield == NetworkShield.Tor) NetworkShield.Vpn else NetworkShield.Tor)
+                        shieldTick++
+                    }, verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(if (shield == NetworkShield.Tor) R.string.pv_net_is_vpn else R.string.pv_net_is_tor),
+                            fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
         }
@@ -220,7 +257,11 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 PrivacyService.entries.forEachIndexed { i, service ->
                     if (i > 0) Line()
                     Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
-                        TwoLines(stringResource(service.title()), stringResource(service.detail()), Modifier.weight(1f).padding(end = 8.dp), service.score(), service.where())
+                        val score = service.score(shield.bonus)
+                        TwoLines(
+                            stringResource(service.title()), stringResource(service.detail()), Modifier.weight(1f).padding(end = 8.dp),
+                            score, service.where(), score - service.score(), shield.label(),
+                        )
                         Switch(states[service] == true, enabled = loaded, onCheckedChange = { value ->
                             if (value) asking = service else { states[service] = false; PrivacyCenter.set(service, false) }
                         })
@@ -241,9 +282,17 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 Line()
                 TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d), score = 10, where = Jurisdiction.Phone)
                 Line()
-                TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US), where = Jurisdiction.US)
+                TwoLines(
+                    stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus),
+                    where = Jurisdiction.US, boost = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus) - privacyScore(DataOut.Anonymous, Jurisdiction.US),
+                    boostLabel = shield.label(),
+                )
                 Line()
-                TwoLines(stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US), where = Jurisdiction.US)
+                TwoLines(
+                    stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus),
+                    where = Jurisdiction.US, boost = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus) - privacyScore(DataOut.Anonymous, Jurisdiction.US),
+                    boostLabel = shield.label(),
+                )
                 Line()
                 // Lettura dei documenti: analisi dei contenuti, tutta sul telefono. Si accende dallo Scanner (con la
                 // spiegazione), si spegne anche da qui senza conferme.

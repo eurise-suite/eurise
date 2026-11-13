@@ -12,14 +12,22 @@ import eu.eurise.core.designsystem.component.privacyScore
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
-/** Un servizio DNS cifrato (DNS-over-HTTPS) che si può scegliere; [where]: il paese; [level]: grado di privacy su 10. */
+/** Un servizio DNS cifrato (DNS-over-HTTPS) che si può scegliere; [where]: il paese, scritto; [country]: la sigla. */
 data class DnsService(val id: String, val label: String, val where: String, val uri: String, val country: Jurisdiction) {
-    /** Riceve i nomi dei siti visitati, senza sapere chi sei. */
-    val level get() = privacyScore(DataOut.Minimal, country)
+    /** Riceve i nomi dei siti visitati, senza sapere chi sei: grado di privacy su 10, più la rete nascosta. */
+    fun level(hiddenIp: Int = 0) = privacyScore(DataOut.Minimal, country, hiddenIp = hiddenIp)
 }
 
-/** Un'AI da interrogare dalla barra: si scrive «? domanda». [level]: grado di privacy su 10, come i motori. */
-data class AiService(val id: String, val label: String, val where: String, val url: String, val level: Int, val country: Jurisdiction)
+/**
+ * Un'AI da interrogare dalla barra: si scrive «? domanda». [out]: cosa ne fa delle conversazioni; [closed]: modello e
+ * servizio chiusi (al massimo due tacchette). Grado di privacy su 10, come i motori.
+ */
+data class AiService(
+    val id: String, val label: String, val where: String, val url: String, val country: Jurisdiction,
+    val out: DataOut, val closed: Boolean = false,
+) {
+    fun level(hiddenIp: Int = 0) = privacyScore(out, country, closed = closed, hiddenIp = hiddenIp)
+}
 
 /**
  * Le impostazioni del Browser (tavola BrwImpostazioni), sul telefono. Quelle del motore valgono subito per tutte le
@@ -95,12 +103,15 @@ class BrowserSettings(context: Context) {
             DnsService("mullvad", "Mullvad", "Svezia", "https://dns.mullvad.net/dns-query", Jurisdiction.EU),
         )
         val AIS = listOf(
-            AiService("lechat", "Le Chat", "Mistral · Francia, UE", "https://chat.mistral.ai/chat?q=%s", privacyScore(DataOut.Personal, Jurisdiction.EU), Jurisdiction.EU),
-            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima: i modelli non sanno chi sei", "https://duckduckgo.com/?q=%s&ia=chat", privacyScore(DataOut.Minimal, Jurisdiction.US), Jurisdiction.US),
+            AiService("lechat", "Le Chat", "Mistral · Francia, UE · conserva le conversazioni", "https://chat.mistral.ai/chat?q=%s", Jurisdiction.EU, DataOut.Personal),
+            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima: i modelli non sanno chi sei", "https://duckduckgo.com/?q=%s&ia=chat", Jurisdiction.US, DataOut.Minimal),
             // Servizi chiusi: in fondo, due tacchette su dieci. Conservano le conversazioni e possono usarle per addestrare i modelli.
-            AiService("chatgpt", "ChatGPT", "OpenAI · USA · conserva le conversazioni", "https://chatgpt.com/?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
-            AiService("copilot", "Copilot", "Microsoft · USA · conserva le conversazioni", "https://copilot.microsoft.com/?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
-            AiService("gemini", "Gemini", "Google · USA · conserva le conversazioni", "https://gemini.google.com/app?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
+            // Claude compreso (anche chi scrive questo codice si valuta con la stessa regola): dall'ottobre 2025 le chat
+            // servono ad addestrare i modelli se non lo spegni, e allora restano fino a cinque anni; spento, 30 giorni.
+            AiService("claude", "Claude", "Anthropic · USA · addestra sulle chat se non lo spegni; le tiene fino a 5 anni", "https://claude.ai/new?q=%s", Jurisdiction.US, DataOut.Personal, closed = true),
+            AiService("chatgpt", "ChatGPT", "OpenAI · USA · conserva le conversazioni", "https://chatgpt.com/?q=%s", Jurisdiction.US, DataOut.Personal, closed = true),
+            AiService("copilot", "Copilot", "Microsoft · USA · conserva le conversazioni", "https://copilot.microsoft.com/?q=%s", Jurisdiction.US, DataOut.Personal, closed = true),
+            AiService("gemini", "Gemini", "Google · USA · conserva le conversazioni", "https://gemini.google.com/app?q=%s", Jurisdiction.US, DataOut.Personal, closed = true),
         )
         val SCALES = listOf(0.9f, 1f, 1.1f, 1.25f, 1.5f)
     }

@@ -23,6 +23,14 @@ class PrivacyScoreTest {
         assertEquals(1, privacyScore(DataOut.Profiled, Jurisdiction.US, closed = true))
     }
 
+    @Test fun hiddenIpHelpsOnlyWhereTheAddressWasTheTrace() {
+        assertEquals(8, privacyScore(DataOut.Minimal, Jurisdiction.EU, hiddenIp = 1))
+        assertEquals(9, privacyScore(DataOut.Minimal, Jurisdiction.EU, hiddenIp = 2))
+        assertEquals(9, privacyScore(DataOut.Anonymous, Jurisdiction.EU, hiddenIp = 2))
+        assertEquals(5, privacyScore(DataOut.Personal, Jurisdiction.EU, hiddenIp = 2))
+        assertEquals(2, privacyScore(DataOut.Personal, Jurisdiction.US, closed = true, hiddenIp = 2))
+    }
+
     @Test fun bands() {
         assertEquals(PrivacyBand.Good, privacyBand(8))
         assertEquals(PrivacyBand.Fair, privacyBand(5))
