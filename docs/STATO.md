@@ -1933,7 +1933,7 @@ Fatto (ramo `brand`):
   tondo. Nella tavola ci sono anche «prima e ora» su quattro app. Generatore: `tela/gen/colori.py` (fuori dal repo).
   **Papillon di Alfred morbido** in tutte le icone (IconeStili e IconeColori): lo stesso di `EuriseIcons.bowtie` nel
   codice (ali tonde, nodo arrotondato), senza le due pieghe, che da piccolo non si leggono. Da approvare.
-- **Ultimo APK: giro 397**, **Mappe 28** (le sei correzioni di Android Auto). Il giro 397 non cambia l'app rispetto al 365.
+- **Ultimo APK: giro 397** (poi giro 404 col semaforo), **Mappe 28** (le sei correzioni di Android Auto). Il giro 397 non cambia l'app rispetto al 365.
   Prima prova di Mappe 28 fallita per l'API dei nomi di CoMaps (`localisation::kDefaultNameIndex`), corretta.
 - **Mappe, passo d) percorso (tavola MapPercorso), in codice**: `maps/android/…/eurise/ui/EurisePercorso.kt`, agganciato
   in `RoutingBottomMenuController` e `altitude_chart_panel.xml`. Sotto il percorso calcolato: Auto, Bici, A piedi (il
@@ -1983,3 +1983,4 @@ Fatto (ramo `brand`):
   OpenStreetMap (Photon, Germania) 7; Borsa (Yahoo) e Video (YouTube): servizi chiusi, 2.
 - Ancora da fare col semaforo: destinazioni del backup e servizi collegati quando avranno la loro schermata; Password
   (Have I Been Pwned, alias) e Galleria (OpenStreetMap per i luoghi); le tavole sulla tela con le tacche vecchie.
+- **Ultimo APK: giro 404** (semaforo della privacy), Mappe 29. Da provare: centro privacy, «Salva in» di File, motori/AI/DNS del Browser, ricerca rapida della Tastiera.
