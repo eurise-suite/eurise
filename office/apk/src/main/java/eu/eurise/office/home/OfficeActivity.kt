@@ -108,12 +108,12 @@ class OfficeActivity : ComponentActivity(), HomeActions {
             val info = OfficeDocs.info(this@OfficeActivity, uri)
             val kind = DocKind.of(info.name, contentResolver.getType(uri))
             recents.add(uri, info.name, OfficeDocs.where(this@OfficeActivity, uri), kind, writable)
-            start(uri, kind, writable)
+            start(uri, kind, writable, info.name)
         }
     }
 
-    private fun start(uri: Uri, kind: DocKind, writable: Boolean) {
-        val ok = runCatching { Engine.open(this, uri, contentResolver.getType(uri), kind, writable) }
+    private fun start(uri: Uri, kind: DocKind, writable: Boolean, name: String?) {
+        val ok = runCatching { Engine.open(this, uri, contentResolver.getType(uri), kind, writable, name) }
         when {
             ok.isFailure -> Toast.makeText(this, R.string.office_cannot_open, Toast.LENGTH_LONG).show()
             ok.getOrDefault(false).not() -> dialog = R.string.office_engine_dialog
@@ -129,7 +129,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         }
         lifecycleScope.launch {
             recents.add(recent.uri, recent.name, recent.where, recent.kind, recent.writable)
-            start(recent.uri, recent.kind, recent.writable && OfficeDocs.canWrite(this@OfficeActivity, recent.uri))
+            start(recent.uri, recent.kind, recent.writable && OfficeDocs.canWrite(this@OfficeActivity, recent.uri), recent.name)
         }
     }
 
@@ -141,7 +141,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     }
 
     override fun create(kind: DocKind) {
-        if (kind != DocKind.Pdf && !Engine.available()) {
+        // Testi e fogli nuovi si scrivono anche nella vista rapida; le presentazioni vogliono il motore.
+        if (kind != DocKind.Pdf && kind != DocKind.Text && kind != DocKind.Sheet && !Engine.available()) {
             dialog = R.string.office_engine_dialog
             return
         }
@@ -159,7 +160,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                 return@launch
             }
             recents.add(created.uri, created.name, getString(R.string.office_where_documents), kind, true)
-            start(created.uri, kind, true)
+            start(created.uri, kind, true, created.name)
         }
     }
 

@@ -48,6 +48,11 @@
 
         <!-- Documenti di testo, fogli e presentazioni («Apri con» da Eurise File e dalle altre app): passano da qui, che
              controlla il motore e apre LOActivity, oppure propone di scaricarlo (tavola OffMotore). -->
+        <!-- Vista rapida (tavole OffLettura…): Word, Excel e OpenDocument senza motore. -->
+        <activity
+            android:name=".rapida.QuickActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".home.DocumentActivity"
             android:exported="true"

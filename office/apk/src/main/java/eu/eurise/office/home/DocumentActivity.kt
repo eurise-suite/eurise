@@ -32,7 +32,7 @@ class DocumentActivity : androidx.activity.ComponentActivity() {
             val info = OfficeDocs.info(this@DocumentActivity, uri)
             val kind = DocKind.of(info.name, intent.type)
             Recents.get(this@DocumentActivity).add(uri, info.name, OfficeDocs.where(this@DocumentActivity, uri), kind, writable)
-            val opened = runCatching { Engine.open(this@DocumentActivity, uri, intent.type, kind, writable) }.getOrDefault(false)
+            val opened = runCatching { Engine.open(this@DocumentActivity, uri, intent.type, kind, writable, info.name) }.getOrDefault(false)
             if (!opened) {
                 if (kind != DocKind.Pdf) Toast.makeText(this@DocumentActivity, R.string.office_engine_needed, Toast.LENGTH_LONG).show()
                 startActivity(
