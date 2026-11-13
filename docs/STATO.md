@@ -1838,3 +1838,5 @@ Fatto (ramo `brand`):
   - **Desco: occupato in Europa.** DESCO è registrato in Polonia (PPO, classi 1, 9, 11, 35, 37, 40, 42) e c'è una
     registrazione internazionale WIPO di ILSA S.p.A. (classi 9, 11, 20, 21); fuori dall'Europa anche Stati Uniti (Desco
     Industries, classe 9), Cina, Corea e Cile. Serve un altro nome per la Scrivania: proposto **Domenico** (da domus, casa).
+  - **Domenico, Dome, Nico, Nik**: occupati (ricerca del proprietario). Nuove proposte per la Scrivania: **Benvenuto**,
+    **Casimiro** (casa; Kazimierz in Polonia), **Larino** (i Lari, protettori della casa).
