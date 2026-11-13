@@ -1840,3 +1840,12 @@ Fatto (ramo `brand`):
     Industries, classe 9), Cina, Corea e Cile. Serve un altro nome per la Scrivania: proposto **Domenico** (da domus, casa).
   - **Domenico, Dome, Nico, Nik**: occupati (ricerca del proprietario). Nuove proposte per la Scrivania: **Benvenuto**,
     **Casimiro** (casa; Kazimierz in Polonia), **Larino** (i Lari, protettori della casa).
+- **Tela, 13 novembre**: tavola **BrandNomiApp** (pagina Brand, accanto a «Verifica del nome») con tutti i nomi, l'origine e lo
+  stato TMview; per ora in interfaccia e icone restano i nomi dei servizi. Tavola **IconeStili** (pagina Icone, a destra,
+  da approvare): disegno 2,15 e tratto 2,35 (prima 1,95 e 2,1), un simbolo per servizio (Scrivania casa, Calendario,
+  Attività spunta, Note matita, Contatti rubrica, Orologio sveglia, Drive cartella, Scanner cornice, Leggi libro aperto,
+  Office foglio, Chat due fumetti, Messaggi fumetto con puntini, Telefono con onde, Email busta, Galleria, Password chiave,
+  Tastiera, Mappe mappa piegata, Browser bussola col nord, Meteo sole e nuvola, Calcolatrice, Traduttore globo, Alfred
+  papillon) in cinque stili: Eurise, Eurise a colori, stile iOS, stile Android (a tema), stile /e/OS. Dopo l'approvazione:
+  icone adattive degli APK, `EuriseIcons` e temi in «Griglia e icone» (`apps/IconThemes.kt`).
+- **Scrivania, nomi**: Benvenuto, Casimiro, Larino da verificare (Domenico e diminutivi occupati).
