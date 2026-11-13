@@ -1,5 +1,6 @@
 package eu.eurise.browser
 
+import eu.eurise.core.designsystem.component.PrivacyMeter
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -271,7 +272,7 @@ fun BrowserScreen(
                         Text(e.label, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(e.sub, fontSize = 12.sp, color = scheme.onSurfaceVariant)
                     }
-                    Levels(e.level)
+                    PrivacyMeter(e.level, e.where)
                 }
             }
             Text(stringResource(R.string.brw_engine_note), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
@@ -544,13 +545,3 @@ internal fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: 
     }
 }
 
-/** Tre tacche crescenti: il livello di privacy di un motore. */
-@Composable
-internal fun Levels(level: Int) {
-    val color = when (level) { 3 -> Safe; 2 -> Half; else -> Low }
-    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        for (i in 0 until 3) {
-            Box(Modifier.width(5.dp).height((7 + 4 * i).dp).clip(RoundedCornerShape(2.dp)).background(if (i < level) color else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)))
-        }
-    }
-}

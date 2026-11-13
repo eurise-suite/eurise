@@ -17,4 +17,22 @@
     <string name="ds_color_dark_weak">Leggibile su Perla, poco sul tema scuro Notte</string>
     <string name="ds_color_light_weak">Leggibile su Notte, poco sul tema chiaro Perla</string>
     <string name="ds_color_weak">Poco leggibile su entrambi i temi: scegline uno più deciso</string>
+    <!-- Semaforo della privacy (10 tacchette) e simbolo del paese di chi riceve i dati. -->
+    <string name="ds_privacy_score">Privacy %1$d su 10</string>
+    <string name="ds_where_phone">tel.</string>
+    <string name="ds_where_own">tuo</string>
+    <string name="ds_where_eu">UE</string>
+    <string name="ds_where_ch">CH</string>
+    <string name="ds_where_uk">UK</string>
+    <string name="ds_where_us">USA</string>
+    <string name="ds_where_various">vari</string>
+    <string name="ds_where_other">extra UE</string>
+    <string name="ds_where_phone_long">sul telefono</string>
+    <string name="ds_where_own_long">server tuo</string>
+    <string name="ds_where_eu_long">Unione europea, protetto dal GDPR</string>
+    <string name="ds_where_ch_long">Svizzera, legge equivalente al GDPR</string>
+    <string name="ds_where_uk_long">Regno Unito, legge equivalente al GDPR</string>
+    <string name="ds_where_us_long">Stati Uniti, le autorità possono chiedere i dati</string>
+    <string name="ds_where_various_long">siti diversi scelti da te</string>
+    <string name="ds_where_other_long">fuori dall\'Europa</string>
 </resources>

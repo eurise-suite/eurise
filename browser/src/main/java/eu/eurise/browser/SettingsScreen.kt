@@ -1,5 +1,7 @@
 package eu.eurise.browser
 
+import eu.eurise.core.designsystem.component.Jurisdiction
+import eu.eurise.core.designsystem.component.PrivacyMeter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -230,7 +232,7 @@ private fun SwitchRow(title: String, sub: String?, checked: Boolean, onChange: (
 }
 
 @Composable
-private fun ChoiceRow(title: String, sub: String?, selected: Boolean, level: Int? = null, onClick: () -> Unit) {
+private fun ChoiceRow(title: String, sub: String?, selected: Boolean, level: Int? = null, where: Jurisdiction? = null, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(role = Role.RadioButton, onClick = onClick).padding(vertical = 8.dp),
@@ -245,7 +247,7 @@ private fun ChoiceRow(title: String, sub: String?, selected: Boolean, level: Int
             Text(title, fontSize = 14.5.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold)
             if (sub != null) Text(sub, fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
         }
-        if (level != null) Levels(level)
+        if (level != null) PrivacyMeter(level, where)
     }
 }
 
@@ -273,7 +275,7 @@ private fun SearchPage(model: BrowserModel) {
     Title(stringResource(R.string.brw_engine))
     Card {
         Links.ENGINES.forEach { e ->
-            ChoiceRow(e.label, e.sub, e.id == model.engine.id, e.level) { model.chooseEngine(e) }
+            ChoiceRow(e.label, e.sub, e.id == model.engine.id, e.level, e.where) { model.chooseEngine(e) }
         }
     }
     Note(stringResource(R.string.brw_engine_note))
@@ -281,7 +283,7 @@ private fun SearchPage(model: BrowserModel) {
     Card {
         ChoiceRow(stringResource(R.string.brw_ai_none), null, model.settings.aiService == null) { model.settings.setAi("none") }
         BrowserSettings.AIS.forEach { a ->
-            ChoiceRow(a.label, a.where, model.settings.ai == a.id, a.level) { model.settings.setAi(a.id) }
+            ChoiceRow(a.label, a.where, model.settings.ai == a.id, a.level, a.country) { model.settings.setAi(a.id) }
         }
     }
     Note(stringResource(R.string.brw_ai_note))
@@ -293,10 +295,10 @@ private fun PrivacyPage(model: BrowserModel) {
     var explainDns by remember { mutableStateOf<DnsService?>(null) }
     Title(stringResource(R.string.brw_protection))
     Card {
-        ChoiceRow(stringResource(R.string.brw_level_strict), stringResource(R.string.brw_level_strict_sub), s.strictProtection, 3) {
+        ChoiceRow(stringResource(R.string.brw_level_strict), stringResource(R.string.brw_level_strict_sub), s.strictProtection, 9) {
             s.setStrict(true); model.applySettings()
         }
-        ChoiceRow(stringResource(R.string.brw_level_standard), stringResource(R.string.brw_level_standard_sub), !s.strictProtection, 2) {
+        ChoiceRow(stringResource(R.string.brw_level_standard), stringResource(R.string.brw_level_standard_sub), !s.strictProtection, 6) {
             s.setStrict(false); model.applySettings()
         }
     }
@@ -307,7 +309,7 @@ private fun PrivacyPage(model: BrowserModel) {
     Card {
         ChoiceRow(stringResource(R.string.brw_dns_phone), stringResource(R.string.brw_dns_phone_sub), s.dnsService == null) { s.setDns("off"); model.applySettings() }
         BrowserSettings.DNS.forEach { d ->
-            ChoiceRow(d.label, d.where, s.dns == d.id) {
+            ChoiceRow(d.label, d.where, s.dns == d.id, d.level, d.country) {
                 if (s.dnsExplained) { s.setDns(d.id); model.applySettings() } else explainDns = d
             }
         }

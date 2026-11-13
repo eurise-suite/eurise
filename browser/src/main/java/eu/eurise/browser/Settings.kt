@@ -6,14 +6,20 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import eu.eurise.core.designsystem.component.DataOut
+import eu.eurise.core.designsystem.component.Jurisdiction
+import eu.eurise.core.designsystem.component.privacyScore
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
-/** Un servizio DNS cifrato (DNS-over-HTTPS) che si può scegliere; [where]: il paese, per la valutazione di privacy. */
-data class DnsService(val id: String, val label: String, val where: String, val uri: String)
+/** Un servizio DNS cifrato (DNS-over-HTTPS) che si può scegliere; [where]: il paese; [level]: grado di privacy su 10. */
+data class DnsService(val id: String, val label: String, val where: String, val uri: String, val country: Jurisdiction) {
+    /** Riceve i nomi dei siti visitati, senza sapere chi sei. */
+    val level get() = privacyScore(DataOut.Minimal, country)
+}
 
-/** Un'AI da interrogare dalla barra: si scrive «? domanda». [level]: tacche di privacy, come i motori. */
-data class AiService(val id: String, val label: String, val where: String, val url: String, val level: Int)
+/** Un'AI da interrogare dalla barra: si scrive «? domanda». [level]: grado di privacy su 10, come i motori. */
+data class AiService(val id: String, val label: String, val where: String, val url: String, val level: Int, val country: Jurisdiction)
 
 /**
  * Le impostazioni del Browser (tavola BrwImpostazioni), sul telefono. Quelle del motore valgono subito per tutte le
@@ -84,17 +90,17 @@ class BrowserSettings(context: Context) {
 
     companion object {
         val DNS = listOf(
-            DnsService("quad9", "Quad9", "Svizzera", "https://dns.quad9.net/dns-query"),
-            DnsService("dns4eu", "DNS4EU", "Unione europea", "https://unfiltered.joindns4.eu/dns-query"),
-            DnsService("mullvad", "Mullvad", "Svezia", "https://dns.mullvad.net/dns-query"),
+            DnsService("quad9", "Quad9", "Svizzera", "https://dns.quad9.net/dns-query", Jurisdiction.CH),
+            DnsService("dns4eu", "DNS4EU", "Unione europea", "https://unfiltered.joindns4.eu/dns-query", Jurisdiction.EU),
+            DnsService("mullvad", "Mullvad", "Svezia", "https://dns.mullvad.net/dns-query", Jurisdiction.EU),
         )
         val AIS = listOf(
-            AiService("lechat", "Le Chat", "Mistral · Francia, UE", "https://chat.mistral.ai/chat?q=%s", 2),
-            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima: i modelli non sanno chi sei", "https://duckduckgo.com/?q=%s&ia=chat", 2),
-            // Servizi chiusi: in fondo, una tacca. Conservano le conversazioni e possono usarle per addestrare i modelli.
-            AiService("chatgpt", "ChatGPT", "OpenAI · USA · conserva le conversazioni", "https://chatgpt.com/?q=%s", 1),
-            AiService("copilot", "Copilot", "Microsoft · USA · conserva le conversazioni", "https://copilot.microsoft.com/?q=%s", 1),
-            AiService("gemini", "Gemini", "Google · USA · conserva le conversazioni", "https://gemini.google.com/app?q=%s", 1),
+            AiService("lechat", "Le Chat", "Mistral · Francia, UE", "https://chat.mistral.ai/chat?q=%s", privacyScore(DataOut.Personal, Jurisdiction.EU), Jurisdiction.EU),
+            AiService("duck", "Duck.ai", "DuckDuckGo · USA, anonima: i modelli non sanno chi sei", "https://duckduckgo.com/?q=%s&ia=chat", privacyScore(DataOut.Minimal, Jurisdiction.US), Jurisdiction.US),
+            // Servizi chiusi: in fondo, due tacchette su dieci. Conservano le conversazioni e possono usarle per addestrare i modelli.
+            AiService("chatgpt", "ChatGPT", "OpenAI · USA · conserva le conversazioni", "https://chatgpt.com/?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
+            AiService("copilot", "Copilot", "Microsoft · USA · conserva le conversazioni", "https://copilot.microsoft.com/?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
+            AiService("gemini", "Gemini", "Google · USA · conserva le conversazioni", "https://gemini.google.com/app?q=%s", privacyScore(DataOut.Personal, Jurisdiction.US, closed = true), Jurisdiction.US),
         )
         val SCALES = listOf(0.9f, 1f, 1.1f, 1.25f, 1.5f)
     }

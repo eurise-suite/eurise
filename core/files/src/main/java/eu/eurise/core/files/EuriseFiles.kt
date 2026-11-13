@@ -1,5 +1,8 @@
 package eu.eurise.core.files
 
+import eu.eurise.core.designsystem.component.DataOut
+import eu.eurise.core.designsystem.component.Jurisdiction
+import eu.eurise.core.designsystem.component.privacyScore
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -139,8 +142,20 @@ class EuriseFiles private constructor(private val context: Context) {
             instance ?: EuriseFiles(context.applicationContext).also { instance = it }
         }
 
-        /** Il livello di privacy di un luogo, per le tacche: 3 il telefono, 2 un cloud europeo o il tuo server. */
-        fun privacy(kind: CloudKind?): Int = if (kind == null) 3 else 2
+        /**
+         * Dove stanno i file di un luogo, per il simbolo accanto al semaforo: il telefono, Murena in Francia, kDrive in
+         * Svizzera; Nextcloud e WebDAV si contano come server tuo.
+         */
+        fun where(kind: CloudKind?): Jurisdiction = when (kind) {
+            null -> Jurisdiction.Phone
+            CloudKind.Murena -> Jurisdiction.EU
+            CloudKind.KDrive -> Jurisdiction.CH
+            CloudKind.Nextcloud, CloudKind.WebDav -> Jurisdiction.Own
+        }
+
+        /** Il grado di privacy di un luogo (10 tacchette): i file stanno in chiaro presso il cloud, non cifrati da capo a capo. */
+        fun privacy(kind: CloudKind?): Int =
+            if (kind == null) privacyScore(DataOut.None, Jurisdiction.Phone) else privacyScore(DataOut.Personal, where(kind))
 
         fun country(kind: CloudKind?): String? = when (kind) {
             CloudKind.Murena -> "Francia"

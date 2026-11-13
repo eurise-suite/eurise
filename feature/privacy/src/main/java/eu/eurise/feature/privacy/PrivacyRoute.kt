@@ -56,7 +56,11 @@ import eu.eurise.core.cloud.CloudAccounts
 import eu.eurise.core.cloud.CloudKind
 import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.data.docs.DocReading
+import eu.eurise.core.designsystem.component.DataOut
+import eu.eurise.core.designsystem.component.Jurisdiction
+import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.core.designsystem.component.privacyScore
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyEvent
@@ -92,6 +96,23 @@ private fun PrivacyService.detail() = when (this) {
     PrivacyService.MapSearch -> R.string.pv_s_map_search_d
 }
 
+/** Dove sta chi riceve i dati del servizio (il simbolo accanto al semaforo). */
+private fun PrivacyService.where() = when (this) {
+    PrivacyService.Weather, PrivacyService.Pollen, PrivacyService.RouteWeather -> Jurisdiction.CH // OpenMeteo GmbH, Bürglen
+    PrivacyService.Alerts -> Jurisdiction.EU // EUMETNET, Bruxelles
+    PrivacyService.Routes -> Jurisdiction.EU // server OSRM di FOSSGIS, Germania
+    PrivacyService.MapSearch -> Jurisdiction.EU // Photon di komoot, Germania
+    PrivacyService.News, PrivacyService.Horoscope -> Jurisdiction.Various
+    PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
+}
+
+/** Il grado di privacy effettivo: da ciò che il servizio riceve (vedi [privacyScore]). */
+private fun PrivacyService.score() = when (this) {
+    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope -> privacyScore(DataOut.Anonymous, where())
+    PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
+    else -> privacyScore(DataOut.Minimal, where())
+}
+
 private class Permission(val title: Int, val detail: Int)
 
 private fun Context.activePermissions(): List<Permission> = buildList {
@@ -121,10 +142,11 @@ private fun Card(content: @Composable () -> Unit) {
 private fun Line() = HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
 
 @Composable
-private fun TwoLines(title: String, detail: String?, modifier: Modifier = Modifier) {
+private fun TwoLines(title: String, detail: String?, modifier: Modifier = Modifier, score: Int? = null, where: Jurisdiction? = null) {
     Column(modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
         Text(title, fontSize = 15.sp)
         detail?.let { Text(it, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        score?.let { PrivacyMeter(it, where, Modifier.padding(top = 4.dp)) }
     }
 }
 
@@ -198,13 +220,17 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 PrivacyService.entries.forEachIndexed { i, service ->
                     if (i > 0) Line()
                     Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
-                        TwoLines(stringResource(service.title()), stringResource(service.detail()), Modifier.weight(1f).padding(end = 8.dp))
+                        TwoLines(stringResource(service.title()), stringResource(service.detail()), Modifier.weight(1f).padding(end = 8.dp), service.score(), service.where())
                         Switch(states[service] == true, enabled = loaded, onCheckedChange = { value ->
                             if (value) asking = service else { states[service] = false; PrivacyCenter.set(service, false) }
                         })
                     }
                 }
             }
+            Text(
+                stringResource(R.string.pv_meter_note), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
+            )
         }
         item(key = "others") {
             SectionLabel(stringResource(R.string.pv_other_apps))
@@ -213,17 +239,17 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 Line()
                 TwoLines(stringResource(R.string.pv_password), stringResource(R.string.pv_password_d))
                 Line()
-                TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d))
+                TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d), score = 10, where = Jurisdiction.Phone)
                 Line()
-                TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d))
+                TwoLines(stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US), where = Jurisdiction.US)
                 Line()
-                TwoLines(stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d))
+                TwoLines(stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US), where = Jurisdiction.US)
                 Line()
                 // Lettura dei documenti: analisi dei contenuti, tutta sul telefono. Si accende dallo Scanner (con la
                 // spiegazione), si spegne anche da qui senza conferme.
                 var reading by remember { mutableStateOf(DocReading.enabled(context)) }
                 Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TwoLines(stringResource(R.string.pv_read), stringResource(if (reading) R.string.pv_read_on else R.string.pv_read_off), Modifier.weight(1f).padding(end = 8.dp))
+                    TwoLines(stringResource(R.string.pv_read), stringResource(if (reading) R.string.pv_read_on else R.string.pv_read_off), Modifier.weight(1f).padding(end = 8.dp), 10, Jurisdiction.Phone)
                     Switch(reading, enabled = reading, onCheckedChange = { if (!it) { reading = false; DocReading.set(context, enabled = false) } })
                 }
             }

@@ -1,5 +1,6 @@
 package eu.eurise.core.files
 
+import eu.eurise.core.designsystem.component.PrivacyMeter
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -197,7 +198,7 @@ fun SaveInSheet(request: SaveRequest, onSaved: (Saved) -> Unit, onDismiss: () ->
                     Switch(checked = copy, onCheckedChange = { copy = it })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PrivacyNotches(EuriseFiles.privacy(place?.kind))
+                    PrivacyMeter(EuriseFiles.privacy(place?.kind), EuriseFiles.where(place?.kind))
                     val country = EuriseFiles.country(place?.kind)
                     Text(
                         when {
@@ -258,12 +259,3 @@ fun SaveInSheet(request: SaveRequest, onSaved: (Saved) -> Unit, onDismiss: () ->
     }
 }
 
-/** Le tre tacche della privacy: verdi quelle accese. */
-@Composable
-fun PrivacyNotches(level: Int) {
-    val on = Color(0xFF4F6B5A)
-    val off = MaterialTheme.colorScheme.outlineVariant
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        repeat(3) { i -> Box(Modifier.size(6.dp, 12.dp).clip(RoundedCornerShape(2.dp)).background(if (i < level) on else off)) }
-    }
-}

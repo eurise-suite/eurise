@@ -87,4 +87,5 @@
     <string name="pv_read">Lettura dei documenti (Eurise Leggi)</string>
     <string name="pv_read_on">Accesa: il testo delle scansioni si legge sul telefono, nessun servizio esterno.</string>
     <string name="pv_read_off">Spenta. Si accende dallo Scanner, dopo la spiegazione.</string>
+    <string name="pv_meter_note">Le tacchette misurano cosa ricevono davvero i tuoi dati: 10 restano sul telefono; verde 8–10, giallo 5–7, rosso 1–4. La sigla dice dove sta il servizio: nell\'UE vale il GDPR, in Svizzera e nel Regno Unito leggi equivalenti; negli USA le autorità possono chiedere i dati anche se stanno in Europa. Google, Microsoft, Apple e simili restano a una o due tacchette.</string>
 </resources>

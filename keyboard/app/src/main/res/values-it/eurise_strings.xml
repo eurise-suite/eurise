@@ -83,7 +83,7 @@
     <string name="eurise_privacy_3">Resta qui</string>
     <string name="eurise_privacy_2">Esce solo la domanda</string>
     <string name="eurise_privacy_1">Con il tuo account</string>
-    <string name="eurise_privacy_level">Privacy: %1$d su 3, %2$s</string>
+    <string name="eurise_privacy_level">Privacy: %1$d su 10, %2$s</string>
     <string name="eurise_browser">Browser</string>
     <string name="eurise_browser_choose">Dove cercare</string>
     <string name="eurise_browser_browsers">Browser</string>

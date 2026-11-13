@@ -25,29 +25,37 @@ internal object WebSearch {
     /** Un posto dove cercare: un browser installato ([pkg]) o un sito con la domanda nell'indirizzo ([url] con %s). */
     data class Target(
         val id: String, val label: String, val pkg: String? = null, val url: String? = null, val home: String? = null,
-        /** Livello di privacy a tacche: 3 resta sul telefono, 2 esce solo la domanda, 1 con il tuo account o profilazione. */
+        /** Cosa succede alla domanda, in parole: 3 resta sul telefono, 2 esce solo la domanda, 1 con il tuo account o profilazione. */
         val level: Int = 2,
+        /**
+         * Grado di privacy su 10 per il semaforo, con la stessa scala di `privacyScore` della suite (la tastiera è un
+         * progetto a parte e non vede `core`): domanda senza identità 6, ±1 per il paese (UE/CH +1, USA −1); servizi
+         * chiusi al massimo 2; Google, che profila, 1.
+         */
+        val score: Int = 5,
+        /** Dove sta il servizio, come sigla accanto al semaforo: UE, CH, USA. */
+        val where: String = "",
         /** Una riga sotto il nome: chi è e dove sta. */
         val sub: String = "",
     )
 
     /** Motori per il riquadro del tasto Browser; Brave Search di base (scelta approvata l'11 novembre). */
     val engines = listOf(
-        Target("engine:brave", "Brave Search", url = "https://search.brave.com/search?q=%s", home = "https://search.brave.com/", sub = "indice proprio · USA"),
-        Target("engine:qwant", "Qwant", url = "https://www.qwant.com/?q=%s", home = "https://www.qwant.com/", sub = "Francia, UE"),
-        Target("engine:ecosia", "Ecosia", url = "https://www.ecosia.org/search?q=%s", home = "https://www.ecosia.org/", sub = "Germania, UE"),
-        Target("engine:ddg", "DuckDuckGo", url = "https://duckduckgo.com/?q=%s", home = "https://duckduckgo.com/", sub = "risultati Bing · USA"),
-        Target("engine:startpage", "Startpage", url = "https://www.startpage.com/do/search?q=%s", home = "https://www.startpage.com/", sub = "risultati Google anonimi · Paesi Bassi"),
-        Target("engine:google", "Google", url = "https://www.google.com/search?q=%s", home = "https://www.google.com/", level = 1, sub = "profila le ricerche · USA"),
+        Target("engine:brave", "Brave Search", url = "https://search.brave.com/search?q=%s", home = "https://search.brave.com/", sub = "indice proprio · USA", score = 5, where = "USA"),
+        Target("engine:qwant", "Qwant", url = "https://www.qwant.com/?q=%s", home = "https://www.qwant.com/", sub = "Francia, UE", score = 7, where = "UE"),
+        Target("engine:ecosia", "Ecosia", url = "https://www.ecosia.org/search?q=%s", home = "https://www.ecosia.org/", sub = "Germania, UE", score = 7, where = "UE"),
+        Target("engine:ddg", "DuckDuckGo", url = "https://duckduckgo.com/?q=%s", home = "https://duckduckgo.com/", sub = "risultati Bing · USA", score = 5, where = "USA"),
+        Target("engine:startpage", "Startpage", url = "https://www.startpage.com/do/search?q=%s", home = "https://www.startpage.com/", sub = "risultati Google anonimi · Paesi Bassi", score = 7, where = "UE"),
+        Target("engine:google", "Google", url = "https://www.google.com/search?q=%s", home = "https://www.google.com/", level = 1, sub = "profila le ricerche · USA", score = 1, where = "USA"),
     )
 
     /** Assistenti che accettano la domanda nell'indirizzo; [pkg] è la loro app, per "Apri nell'app". */
     val assistants = listOf(
-        Target("ai:duck", "Duck.ai", pkg = "com.duckduckgo.mobile.android", url = "https://duck.ai/?q=%s", home = "https://duck.ai/", sub = "anonimo, senza account · USA"),
-        Target("ai:lechat", "Le Chat", pkg = "ai.mistral.chat", url = "https://chat.mistral.ai/chat?q=%s", home = "https://chat.mistral.ai/chat", level = 1, sub = "Mistral · Francia, UE"),
-        Target("ai:claude", "Claude", pkg = "com.anthropic.claude", url = "https://claude.ai/new?q=%s", home = "https://claude.ai/new", level = 1, sub = "Anthropic · USA"),
-        Target("ai:chatgpt", "ChatGPT", pkg = "com.openai.chatgpt", url = "https://chatgpt.com/?q=%s", home = "https://chatgpt.com/", level = 1, sub = "OpenAI · USA"),
-        Target("ai:perplexity", "Perplexity", pkg = "ai.perplexity.app.android", url = "https://www.perplexity.ai/search?q=%s", home = "https://www.perplexity.ai/", level = 1, sub = "USA"),
+        Target("ai:duck", "Duck.ai", pkg = "com.duckduckgo.mobile.android", url = "https://duck.ai/?q=%s", home = "https://duck.ai/", sub = "anonimo, senza account · USA", score = 5, where = "USA"),
+        Target("ai:lechat", "Le Chat", pkg = "ai.mistral.chat", url = "https://chat.mistral.ai/chat?q=%s", home = "https://chat.mistral.ai/chat", level = 1, sub = "Mistral · Francia, UE", score = 5, where = "UE"),
+        Target("ai:claude", "Claude", pkg = "com.anthropic.claude", url = "https://claude.ai/new?q=%s", home = "https://claude.ai/new", level = 1, sub = "Anthropic · USA", score = 2, where = "USA"),
+        Target("ai:chatgpt", "ChatGPT", pkg = "com.openai.chatgpt", url = "https://chatgpt.com/?q=%s", home = "https://chatgpt.com/", level = 1, sub = "OpenAI · USA", score = 2, where = "USA"),
+        Target("ai:perplexity", "Perplexity", pkg = "ai.perplexity.app.android", url = "https://www.perplexity.ai/search?q=%s", home = "https://www.perplexity.ai/", level = 1, sub = "USA", score = 2, where = "USA"),
     )
 
     fun browsers(context: Context): List<Target> {
@@ -243,7 +251,7 @@ class SearchPanel(bar: EuriseBar, private val query: String, private val fromSel
             ((go.getChildAt(0)) as android.widget.TextView).text =
                 context.getString(if (ai && chosen != suiteId) R.string.eurise_search_ask else R.string.eurise_search_go, label)
         }
-        fun row(id: String, title: String, sub: String, level: Int, enabled: Boolean = true) = LinearLayout(context).apply {
+        fun row(id: String, title: String, sub: String, level: Int, score: Int, where: String, enabled: Boolean = true) = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             minimumHeight = context.dp(48)
@@ -255,21 +263,30 @@ class SearchPanel(bar: EuriseBar, private val query: String, private val fromSel
                 addView(context.label(title, p, 13.5f, bold = true))
                 if (sub.isNotEmpty()) addView(context.label(sub, p, 11.5f, muted = true))
             }.lp(0, weight = 1f))
-            addView(tacche(level))
             val words = context.getString(when (level) { 3 -> R.string.eurise_privacy_3; 2 -> R.string.eurise_privacy_2; else -> R.string.eurise_privacy_1 })
-            addView(context.label(words, p, 11f, bold = true).apply { setTextColor(levelColor(level)); gravity = Gravity.END }.lp(context.dp(104)))
-            contentDescription = "$title. " + context.getString(R.string.eurise_privacy_level, level, words)
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.END
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL or Gravity.END
+                    addView(tacchette(score))
+                    if (where.isNotEmpty()) addView(badge(where))
+                })
+                addView(context.label(words, p, 10.5f, bold = true).apply { setTextColor(scoreColor(score)); gravity = Gravity.END })
+            }.lp(context.dp(112)))
+            contentDescription = "$title. " + context.getString(R.string.eurise_privacy_level, score, words) + (if (where.isNotEmpty()) ", $where" else "")
             if (enabled) setOnClickListener { chosen = id; refresh() }
             rows += id to this
         }
         if (!ai) {
             views += context.label(context.getString(R.string.eurise_search_with).uppercase(), p, 10.5f, bold = true, muted = true)
-            views += row(suiteId, context.getString(R.string.eurise_search_suite), context.getString(R.string.eurise_search_suite_sub), 3)
-            WebSearch.engines.forEach { views += row(it.id, it.label, it.sub, it.level) }
+            views += row(suiteId, context.getString(R.string.eurise_search_suite), context.getString(R.string.eurise_search_suite_sub), 3, 10, "")
+            WebSearch.engines.forEach { views += row(it.id, it.label, it.sub, it.level, it.score, it.where) }
         } else {
             views += context.label(context.getString(R.string.eurise_search_or_ai).uppercase(), p, 10.5f, bold = true, muted = true)
-            views += row("ai:local", context.getString(R.string.eurise_search_ai_local), context.getString(R.string.eurise_search_ai_local_sub), 3, enabled = false)
-            WebSearch.assistants.forEach { views += row(it.id, it.label, it.sub, it.level) }
+            views += row("ai:local", context.getString(R.string.eurise_search_ai_local), context.getString(R.string.eurise_search_ai_local_sub), 3, 10, "", enabled = false)
+            WebSearch.assistants.forEach { views += row(it.id, it.label, it.sub, it.level, it.score, it.where) }
         }
         go = context.pill(" ", p, on = true) { run(chosen, prefs) }
         views += LinearLayout(context).apply {
@@ -298,17 +315,36 @@ class SearchPanel(bar: EuriseBar, private val query: String, private val fromSel
         }
     }
 
-    private fun levelColor(level: Int) = when (level) { 3 -> 0xFF3F6E52.toInt(); 2 -> 0xFF8A6A1F.toInt(); else -> 0xFF8C2F39.toInt() }
+    /** Il semaforo: verde 8–10, giallo 5–7, rosso 1–4 (come `privacyColor` della suite). */
+    private fun scoreColor(score: Int): Int {
+        val dark = androidx.core.graphics.ColorUtils.calculateLuminance(p.surface) < 0.4
+        return when {
+            score >= 8 -> if (dark) 0xFF7FC39A.toInt() else 0xFF3F6E52.toInt()
+            score >= 5 -> if (dark) 0xFFE2B95C.toInt() else 0xFF8A6A1F.toInt()
+            else -> if (dark) 0xFFE88A93.toInt() else 0xFF8C2F39.toInt()
+        }
+    }
 
-    /** Tre tacche crescenti, piene fino a [level]. */
-    private fun tacche(level: Int) = LinearLayout(context).apply {
+    /** Dieci tacchette piccole, accese fino a [score] (regola del 13 novembre). */
+    private fun tacchette(score: Int) = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.BOTTOM
+        gravity = Gravity.CENTER_VERTICAL
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        for (i in 0 until 3) addView(View(context).apply {
-            background = rounded(if (i < level) levelColor(level) else p.faint, context.dp(2).toFloat())
-        }.lp(context.dp(5), context.dp(7 + 4 * i)).apply { (layoutParams as LinearLayout.LayoutParams).marginEnd = context.dp(2) })
-        setPadding(0, 0, context.dp(6), 0)
+        val color = scoreColor(score)
+        for (i in 0 until 10) addView(View(context).apply {
+            background = rounded(if (i < score) color else p.faint, context.dp(1.5f).toFloat())
+        }.lp(context.dp(3), context.dp(10)).apply { (layoutParams as LinearLayout.LayoutParams).marginEnd = context.dp(1.5f) })
+    }
+
+    /** La sigla del paese: UE in blu con le lettere oro, le altre in grigio. */
+    private fun badge(where: String) = context.label(where, p, 9.5f, bold = true).apply {
+        val eu = where == "UE"
+        if (eu) setTextColor(0xFFF4CE45.toInt())
+        background = rounded(if (eu) 0xFF1F3C88.toInt() else p.faint, context.dp(5).toFloat())
+        setPadding(context.dp(4), 0, context.dp(4), 0)
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+    }.lp(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+        (layoutParams as LinearLayout.LayoutParams).marginStart = context.dp(5)
     }
 
     private fun blend(a: Int, b: Int, t: Float): Int {
