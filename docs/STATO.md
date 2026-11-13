@@ -1724,3 +1724,28 @@ Fatto (ramo `brand`):
      di sistema, cioè il fork di /e/OS); proposta da fare in tavola.
   5. Restano: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe), Mappe passi c)–f) e guida (MapIncrocio,
      MapVelocita, MapSegnalaGuida, orizzontale, Android Auto), tastiera (lavoro principale).
+
+## Office (ramo `office`, chat dedicata dal 13 novembre)
+Ramo `office` creato da `brand` (b858da8). Si toccano solo `office/`, il lettore PDF e lo Scanner dell'app principale e i
+contratti di `core/` che servono; alla fine merge in `brand`. Ultimo APK di Office provato: `eurise-office-debug.apk` di
+`apk-prova` (giro 43118307755 di office-app, 249 MB).
+
+**Perché documenti e PDF non si aprono (13 novembre, trovato)**
+- Prova automatica nuova: `.github/workflows/office-prova.yml` + `office/prova/` (emulatore x86_64 Android 14 con
+  traduzione ARM, sei campioni docx/xlsx/pptx/odt/ods/pdf aperti con VIEW e Uri `content://` come «Apri con»; registro e
+  schermate). Si lancia da sola quando cambia `office/prova/**`; `SOLO` nel file sceglie i campioni.
+- Esito: per **tutti i formati** il file viene copiato bene (`Success copying … bytes`), l'interfaccia web parte, il
+  motore crea la sessione e poi **si chiude con SIGABRT nel thread `kitbroker_001`** circa 0,2 s dopo («New session [001]
+  created», prima di «Loading url»). L'app sparisce: è il «non si apre» del telefono. Non è un problema di permessi né di
+  Uri, né dell'interfaccia Eurise (in Chrome parte senza errori), né di librerie mancanti (simboli tutti risolti).
+- Sotto traduzione ARM la pila non ha nomi; nessun «Abort message», nessun messaggio di libc++abi. Indiziati, in ordine:
+  POCO 1.14.2 compilato da noi (Collabora usa il ramo master con la sua configurazione), differenze della configurazione
+  del core (`--disable-sal-log`, `--with-lang=en-US it`, NDK 28), un'eccezione C++ non presa nel kit.
+- Altri difetti trovati: con `file://` Collabora non apre nemmeno la pagina (serve la copia temporanea); Eurise File
+  passa i documenti a Office **solo in lettura** (`viewExternally` con il solo FLAG_GRANT_READ); il documento si chiama
+  `LibreOffice….tmp` (nome perso: titolo sbagliato e `isPdf()` che sbaglia); l'app principale non si offre per «Apri con»
+  sui PDF (solo ACTION_SEND per i biglietti); `apk-prova.yml` prende Office solo dal ramo `brand`.
+- Peso: `liblo-native-code.so` 191 MB già senza simboli (52 MB compresso xz), memorizzato non compresso nell'APK.
+
+**Prossimo passo**: proposta al proprietario (in chat); poi build di diagnosi (registro «trace», terminate handler che
+scrive tipo e messaggio dell'eccezione) per trovare la riga, e correzione. Nessun APK cambiato finora.
