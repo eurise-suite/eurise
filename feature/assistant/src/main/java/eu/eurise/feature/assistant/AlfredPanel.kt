@@ -388,6 +388,12 @@ private fun Header(line: String, mood: Mood, onSettings: () -> Unit) {
             Icon(EuriseIcons.shield(2.4f), null, tint = Safe, modifier = Modifier.size(12.dp))
             Text(stringResource(R.string.alfred_on_phone), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Safe)
         }
+        // Le impostazioni anche da un'icona visibile (prova del 13 novembre: col solo tondo del papillon non si trovavano).
+        Box(
+            Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onSettings)
+                .semantics { contentDescription = "Impostazioni di Alfred" },
+            contentAlignment = Alignment.Center,
+        ) { Icon(EuriseIcons.gear(2.2f), null, tint = Soft, modifier = Modifier.size(18.dp)) }
     }
 }
 
