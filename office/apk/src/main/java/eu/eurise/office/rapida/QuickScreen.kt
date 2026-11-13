@@ -146,7 +146,10 @@ fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onF
                 SheetTabs(model, state.doc)
                 model.selected?.let { sel -> CellCard(model, state.doc, sel, onFull = { model.showFull = true }) }
             }
+            val waiting = model.lastResult?.pending.orEmpty()
             when {
+                model.selected == null && waiting.isNotEmpty() ->
+                    Hint(stringResource(R.string.quick_pending, waiting.joinToString(", ")), stringResource(R.string.quick_full)) { model.showFull = true }
                 model.unsaved -> Hint(stringResource(R.string.quick_unsaved_hint), stringResource(R.string.quick_save_in)) { model.saveIn(context) }
                 model.commenting -> Hint(stringResource(R.string.quick_comment_tip))
                 firstTip && state is QuickState.Text -> Hint(stringResource(R.string.quick_tip))
