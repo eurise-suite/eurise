@@ -62,6 +62,16 @@ jobs:
         run: |
           ./gradlew --no-daemon :office:apk:assembleDebug
           mkdir -p apk && cp office/apk/build/outputs/apk/debug/*.apk apk/office.apk
+          ls -la apk/office.apk
+
+      # Office leggero (vista rapida e PDF, senza motore), da provare sul telefono mentre il motore si sistema.
+      - name: Pubblica Office leggero in apk-prova-office
+        if: inputs.fonte == 'nativo' && github.ref_name == 'office'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apk/office.apk apk/eurise-office-leggero-debug.apk
+          gh release upload apk-prova-office apk/eurise-office-leggero-debug.apk -R "${{ github.repository }}" --clobber
 
       - name: Prende l'APK di Office
         if: inputs.fonte != 'nativo'
