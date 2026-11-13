@@ -16,7 +16,7 @@ env:
   SOLO: "lettera.docx"
   # «collabora»: prova di controllo (approvata dal proprietario il 13 novembre) con l'app ufficiale di Collabora da
   # F-Droid al posto della nostra; solo sull'emulatore di Actions, non si distribuisce.
-  RIFERIMENTO: "collabora"
+  RIFERIMENTO: ""
 
 permissions:
   contents: read
@@ -42,6 +42,7 @@ jobs:
           run=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=$branch&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
           if [ -n "$run" ]; then
             gh run download "$run" -R "${{ github.repository }}" -D apk/art && find apk/art -name '*.apk' -exec cp {} apk/office.apk \;
+            d=$(dirname "$(find apk/art -name liblo-native-code.so | head -1)"); [ "$d" != . ] && mv "$d" apk/simboli && ls -la apk/simboli
             echo "APK dal giro $run di office-app ($branch)"
           fi
           if [ ! -f apk/office.apk ]; then
@@ -76,7 +77,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
+          script: SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()

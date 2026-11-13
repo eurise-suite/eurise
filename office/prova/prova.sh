@@ -52,6 +52,23 @@ for f in "$HERE"/campioni/*; do
 done
 sleep 5
 
+# Traduce le righe «EuriseDiag: pila #NN pc SCOSTAMENTO LIBRERIA» con le librerie non ripulite di $SIMBOLI.
+simbolizza() {
+	[ -n "${SIMBOLI:-}" ] && [ -d "$SIMBOLI" ] || return 0
+	local sym
+	sym=$(command -v llvm-symbolizer || ls "${ANDROID_NDK_HOME:-/nonexistent}"/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-symbolizer 2>/dev/null | head -1)
+	[ -n "$sym" ] || { echo "(llvm-symbolizer non trovato)"; return 0; }
+	echo "--- pila tradotta ---"
+	grep -oE "pila #[0-9]+ pc [0-9a-f]+ [^ ]+" "$1" | while read -r _ n _ off lib; do
+		base=$(basename "$lib")
+		if [ -f "$SIMBOLI/$base" ]; then
+			echo "$n $base+0x$off $("$sym" --obj="$SIMBOLI/$base" --functions=linkage --demangle "0x$off" 2>/dev/null | head -1)"
+		else
+			echo "$n $base+0x$off"
+		fi
+	done
+}
+
 open_one() { # via nome uri tipo
 	local via=$1 name=$2 uri=$3 type=$4 tag="$2-$1"
 	adb logcat -c; adb logcat -b crash -c
@@ -73,6 +90,7 @@ open_one() { # via nome uri tipo
 		[ -n "$pid" ] && awk -v p="$pid" '$3 == p' "$OUT/$tag.log" | grep -v -E "OpenGLRenderer|Success copying unpack|CoreBackPreview|HWUI|EGL" | tail -60
 		grep -E " F (libc|DEBUG) .*(Abort message|signal|Cause)" "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -10
 	} >> "$sum"
+	simbolizza "$OUT/$tag.log" >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
 	sleep 3
