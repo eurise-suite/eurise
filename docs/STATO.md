@@ -1807,6 +1807,8 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   cartelle di Office.
 
 **Per ripartire (13 novembre, sera)**
+- **Consegna degli APK (richiesta del proprietario, 14 novembre)**: a ogni consegna l'APK da provare si allega
+  direttamente nella chat (scaricato dalla pre-release e mandato come file), senza aspettare che lo chieda.
 - Ramo `office` (da `brand`; merge in `brand` alla fine). Tocca solo `office/`, lettore PDF e Scanner dell'app
   principale, contratti in `core/suite` (OfficeContract, ScannerContract).
 - APK di prova: pre-release `apk-prova-office`: `eurise-office-debug.apk` (Office, leggero) e
