@@ -668,7 +668,7 @@ patch(rm_cpp, "void RoutingManager::ResetRoadSpeedLimitCache()\n", """std::strin
 
   auto const cls = ftypes::GetHighwayClass(feature::TypesHolder(*ft));
   std::string ref = ft->GetRef();
-  std::string name(ft->GetName(StringUtf8Multilang::kDefaultCode));
+  std::string name(ft->GetName(localisation::kDefaultNameIndex));
   std::replace(ref.begin(), ref.end(), '|', ' ');
   std::replace(name.begin(), name.end(), '|', ' ');
   // «A51;E64»: la prima sigla basta.
