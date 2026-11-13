@@ -6,6 +6,12 @@ name: "Office: prova sull'emulatore"
 # APK: l'ultimo giro riuscito di office-app.yml sul ramo del push; se non c'è, quello della pre-release apk-prova.
 on:
   workflow_dispatch:
+    inputs:
+      fonte:
+        description: "motore = APK di office-app (con LibreOffice); nativo = Office compilato qui senza motore (vista rapida, PDF)"
+        type: choice
+        options: [motore, nativo]
+        default: motore
   push:
     paths:
       - ".github/workflows/office-prova.yml"
@@ -38,7 +44,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-java@v4
+        if: inputs.fonte == 'nativo'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: inputs.fonte == 'nativo'
+
+      # Senza motore l'APK non ha librerie arm64: gira sull'emulatore x86_64 senza traduzione.
+      - name: Compila Office senza motore
+        if: inputs.fonte == 'nativo'
+        run: |
+          ./gradlew --no-daemon :office:apk:assembleDebug
+          mkdir -p apk && cp office/apk/build/outputs/apk/debug/*.apk apk/office.apk
+
       - name: Prende l'APK di Office
+        if: inputs.fonte != 'nativo'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
