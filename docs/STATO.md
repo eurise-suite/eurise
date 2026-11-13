@@ -1771,5 +1771,17 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   la mano dominante è un'impostazione di Office finché l'app Eurise non la offre a tutta la suite; ricerca che si tira
   giù da fare come componente comune in core/designsystem.
 
-**Prossimo passo**: leggere la pila della diagnosi, correggere il motore, prova sull'emulatore di DocumentActivity e
-PdfActivity, consegna dell'APK. Poi Office sulle tavole (OffTelefono…) e motore a richiesta.
+**Fatto (13 novembre, sera)**
+- Il motore non partiva sull'emulatore per l'impacchettamento: `libandroidx.graphics.path.so` portava le cartelle x86/x86_64
+  e il sistema sceglieva x86_64, dove `libandroidapp.so` non c'è (UnsatisfiedLinkError in `Engine.available`). Ora
+  `office/apk` con il motore dentro tiene solo arm64-v8a. ccache: basedir, compilercheck content, sloppiness e
+  `--disable-pch` per riusarla tra i giri. La prova sull'emulatore prova tutti e sei i campioni.
+- **Decisione (proprietario, 13 novembre): via di mezzo, in due tempi.** Non si riscrive un Office da zero. Prima il motore
+  LibreOffice deve aprire e modificare tutti i formati; poi davanti al motore una **vista rapida nativa** (Word, Excel,
+  PowerPoint): apre subito senza motore, permette correzioni piccole (un paragrafo, una cella con somme e formule semplici,
+  un commento) cambiando **solo quel pezzo del file**, il resto resta identico; «Modifica completa» apre lo stesso
+  documento nel motore alla stessa pagina (il motore si scarica lì la prima volta). Tavole OffLettura, OffLetturaCorreggi,
+  OffLetturaFoglio, OffLetturaCompleta sulla pagina Office (da approvare).
+
+**Prossimo passo**: esito di office-app con solo arm64, prova dei sei formati sull'emulatore, consegna dell'APK. Poi Office
+sulle tavole (OffTelefono…), motore a richiesta (OffMotore), quindi la vista rapida se le tavole sono approvate.
