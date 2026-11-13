@@ -13,6 +13,7 @@
     <string name="office_found_title">Trovati</string>
     <string name="office_left_handed">Sono mancino: comandi e lente a sinistra</string>
     <string name="office_needs_eurise">Serve l\'app Eurise.</string>
+    <string name="office_update_eurise_scanner">Aggiorna l\'app Eurise: questa versione non passa ancora le scansioni a Office.</string>
     <string name="office_new">Nuovo documento</string>
     <string name="office_new_note">Nota</string>
     <string name="office_new_pdf">PDF</string>

@@ -166,6 +166,45 @@ correggi() { # nome testo-da-toccare tasti-da-cancellare testo-nuovo voce-nel-fi
 	adb shell am force-stop "$PKG"
 	sleep 2
 }
+# Nel motore, come farebbe una persona: matita (modifica), doppio tocco sul titolo, tocco lungo. Una schermata per passo
+# e gli errori della pagina web (console di Chromium) del processo del motore.
+usa_motore() { # nome
+	local name=$1 id type W H
+	type=$(mime "$name")
+	id=$(adb shell content query --uri content://media/external/file --projection _id --where "\"_display_name='$name'\"" | sed -n 's/.*_id=\([0-9]*\).*/\1/p' | head -1)
+	[ -n "$id" ] || return 0
+	read -r W H < <(adb shell wm size | grep -oE "[0-9]+x[0-9]+" | tail -1 | tr x ' ')
+	echo "## Uso nel motore: $name (${W}x$H)" >> "$sum"
+	adb logcat -c
+	adb shell am start -W -a android.intent.action.VIEW -t "$type" -d "'content://media/external/file/$id'" \
+		--grant-read-uri-permission --grant-write-uri-permission -n "$PKG/$LO" > /dev/null 2>&1
+	sleep 12
+	adb exec-out screencap -p > "$OUT/$name-uso-0-aperto.png"
+	adb shell input tap $((W * 86 / 100)) $((H * 845 / 1000))
+	sleep 4
+	adb exec-out screencap -p > "$OUT/$name-uso-1-matita.png"
+	local x=$((W / 2)) y=$((H * 385 / 1000))
+	adb shell input tap $x $y; adb shell input tap $x $y
+	sleep 3
+	adb exec-out screencap -p > "$OUT/$name-uso-2-doppio.png"
+	adb shell input swipe $x $y $x $y 1200
+	sleep 3
+	adb exec-out screencap -p > "$OUT/$name-uso-3-lungo.png"
+	adb logcat -d > "$OUT/$name-uso.log"
+	{
+		echo '```'
+		grep -E "chromium|Console|Uncaught|TypeError|ReferenceError|\.js:[0-9]+" "$OUT/$name-uso.log" | grep -v "EuriseDiag" | cut -c1-260 | tail -40
+		echo '```'
+	} >> "$sum"
+	adb shell am force-stop "$PKG"
+	adb shell am force-stop "$MOTORE_PKG"
+	sleep 2
+}
+if [ -n "${COMPLETA:-}" ]; then
+	usa_motore slide.pptx
+	usa_motore lettera.docx
+fi
+
 if [ -z "${SOLO:-}" ] && [ -z "${COMPLETA:-}" ] && [ "$PKG" = eu.eurise.office.debug ]; then
 	correggi lettera.docx "Gentile cliente" 1 "%sCORRETTO." word/document.xml "IBAN IT60X0542811101000000123456 CORRETTO."
 	correggi conti.xlsx "750" 3 "800" xl/worksheets/sheet1.xml "<v>1260</v>"

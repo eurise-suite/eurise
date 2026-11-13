@@ -159,7 +159,13 @@ fun PdfPagesScreen(model: PdfModel, onClose: () -> Unit) {
                 Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(stringResource(R.string.pdf_insert_scanner), Modifier.weight(1f)) {
                         val intent = eu.eurise.core.suite.ScannerContract.scanIntent(context, Suite.hub)
-                        if (intent != null) scan.launch(intent) else Toast.makeText(context, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
+                        // L'app Eurise può esserci ma essere di una versione senza lo Scanner per le altre app.
+                        val hubThere = runCatching { context.packageManager.getPackageInfo(Suite.hub, 0) }.isSuccess
+                        when {
+                            intent != null -> scan.launch(intent)
+                            hubThere -> Toast.makeText(context, R.string.office_update_eurise_scanner, Toast.LENGTH_LONG).show()
+                            else -> Toast.makeText(context, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
+                        }
                     }
                     Pill(stringResource(R.string.pdf_insert_pdf), Modifier.weight(1f)) { pickPdf.launch(arrayOf("application/pdf")) }
                     Pill(stringResource(R.string.pdf_insert_photo), Modifier.weight(1f)) { pickImage.launch("image/*") }
