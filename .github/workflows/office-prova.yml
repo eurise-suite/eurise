@@ -56,13 +56,26 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         if: inputs.fonte == 'nativo'
 
-      # Senza motore l'APK non ha librerie arm64: gira sull'emulatore x86_64 senza traduzione.
-      - name: Compila Office senza motore
+      # Office è sempre leggero (strada A): si compila qui in pochi minuti, senza il lavoro del motore. Si prova con il
+      # motore già pubblicato in apk-prova-office.
+      - name: Compila Office
         if: inputs.fonte == 'nativo'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           ./gradlew --no-daemon :office:apk:assembleDebug
           mkdir -p apk && cp office/apk/build/outputs/apk/debug/*.apk apk/office.apk
           ls -la apk/office.apk
+          gh release download apk-prova-office -R "${{ github.repository }}" -p eurise-office-motore-debug.apk -O apk/motore.apk || true
+
+      # Office del ramo, da provare sul telefono (il motore resta quello pubblicato da office-app).
+      - name: Pubblica Office in apk-prova-office
+        if: inputs.fonte == 'nativo' && github.ref_name == 'office'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apk/office.apk apk/eurise-office-debug.apk
+          gh release upload apk-prova-office apk/eurise-office-debug.apk -R "${{ github.repository }}" --clobber
 
       - name: Prende l'APK di Office
         if: inputs.fonte != 'nativo'
