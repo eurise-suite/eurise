@@ -1849,3 +1849,9 @@ Fatto (ramo `brand`):
   papillon) in cinque stili: Eurise, Eurise a colori, stile iOS, stile Android (a tema), stile /e/OS. Dopo l'approvazione:
   icone adattive degli APK, `EuriseIcons` e temi in «Griglia e icone» (`apps/IconThemes.kt`).
 - **Scrivania, nomi**: Benvenuto, Casimiro, Larino da verificare (Domenico e diminutivi occupati).
+- **IconeStili, ritocchi del proprietario**: (1) lo stile vale per **tutte** le app, anche esterne e web app: sezione nuova
+  con la catena di `IconLoader` (sagoma ufficiale Android 13 → nostro simbolo → sagoma del primo piano → logo staccato dal
+  fondo → **nuovo: iniziale del nome** → icona originale rimpicciolita nella forma) mostrata nei cinque stili; (2) gli stili
+  iOS, Android e /e/OS usano **la palette del loro sistema** (iOS: colori di sistema con sfumatura; Android: palette Material,
+  tono 100 di fondo e 800 per il simbolo; /e/OS: tinte piene vivaci, da confrontare con le icone vere). Il colore di un'app
+  esterna si porta al più vicino della palette dello stile. Eurise ed Eurise a colori restano con le tinte della suite.
