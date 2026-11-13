@@ -1767,7 +1767,7 @@ Fatto (ramo `brand`):
     software.
   - **Kerno**: almeno tre società di software (Kerno.io per il cloud, Kerno in Svizzera, Kerno per la produzione).
     Sconsigliato.
-- **Desco** (Scrivania) e le tavole **MapIncrocio**/**MapRotonda** sono ancora da confermare: il proprietario non ha risposto.
+- **Desco** per la Scrivania: **approvato**. Le tavole **MapIncrocio** e **MapRotonda** il proprietario le sta guardando.
 - **Prova di Mappe su Android Auto** (prima di installare il giro 365): funziona bene. C'è ancora lavoro sull'interfaccia,
   e la voce era quella vecchia. Correzioni richieste, da aggiungere ai passi d)–f):
   1. Quando ci si collega ad Android Auto, Mappe si apre lì **senza chiedere il permesso** di passare all'auto e resta
