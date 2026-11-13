@@ -68,7 +68,10 @@ open_one() { # via nome uri tipo
 		echo "attività in primo piano: $(adb shell dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity' | sed 's/^ *//')"
 		# Del motore: avvertimenti ed errori di coolwsd e del kit, poi l'eventuale arresto con la pila completa.
 		grep -E "coolwsd.*(WRN|ERR|FTL|CRT)|LibreOfficeKit|LOActivity: (Success copying [0-9]|SCHEME|Initializing|postMobileMessage: load)|couldn't create temporary|file not found|AndroidRuntime" "$OUT/$tag.log" | head -40
-		grep -E " F (libc|DEBUG) " "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -90
+		# Tutte le righe del processo di Office (messaggi di libc++abi, asserzioni, ultime righe del kit).
+		pid=$(grep -m1 -oE "Start proc [0-9]+:$PKG" "$OUT/$tag.log" | grep -oE "[0-9]+" | head -1)
+		[ -n "$pid" ] && awk -v p="$pid" '$3 == p' "$OUT/$tag.log" | grep -v -E "OpenGLRenderer|Success copying unpack|CoreBackPreview|HWUI|EGL" | tail -60
+		grep -E " F (libc|DEBUG) .*(Abort message|signal|Cause)" "$OUT/$tag.log" "$OUT/$tag-arresto.log" | cut -d: -f2- | sort -u | head -10
 	} >> "$sum"
 	echo '```' >> "$sum"
 	adb shell am force-stop "$PKG"
