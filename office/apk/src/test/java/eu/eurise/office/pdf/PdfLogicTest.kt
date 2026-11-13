@@ -46,4 +46,18 @@ class PdfLogicTest {
         assertEquals(0.75f, g.displayAspect, 1e-6f)
         assertEquals(800f / 600f, PageGeometry(0f, 0f, 600f, 800f, 90).displayAspect, 1e-6f)
     }
+
+    @Test fun appearanceFitsItsRectangle() {
+        // Aspetto disegnato nelle stesse coordinate della pagina (come quelli di PdfEdits): nessuno spostamento.
+        val same = PdfDisplay.fit(floatArrayOf(100f, 200f, 300f, 220f), floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f), floatArrayOf(100f, 200f, 300f, 220f))!!
+        assertEquals(listOf(1f, 0f, 0f, 1f, 0f, 0f), same.toList())
+        // Riquadro da 0, metà grandezza del rettangolo: scala 2 e spostamento sul rettangolo.
+        val t = PdfDisplay.fit(floatArrayOf(0f, 0f, 50f, 10f), floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f), floatArrayOf(10f, 20f, 110f, 40f))!!
+        assertEquals(2f, t[0], 1e-5f); assertEquals(2f, t[3], 1e-5f)
+        assertEquals(10f, t[4], 1e-5f); assertEquals(20f, t[5], 1e-5f)
+        // Matrice dell'aspetto con uno spostamento: si compensa.
+        val moved = PdfDisplay.fit(floatArrayOf(0f, 0f, 10f, 10f), floatArrayOf(1f, 0f, 0f, 1f, 5f, 5f), floatArrayOf(5f, 5f, 15f, 15f))!!
+        assertEquals(0f, moved[4], 1e-5f); assertEquals(0f, moved[5], 1e-5f)
+        assertEquals(null, PdfDisplay.fit(floatArrayOf(0f, 0f, 0f, 10f), floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f), floatArrayOf(0f, 0f, 1f, 1f)))
+    }
 }

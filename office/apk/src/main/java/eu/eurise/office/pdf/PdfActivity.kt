@@ -37,6 +37,8 @@ class PdfModel(app: Application, val uri: Uri, writable: Boolean) : AndroidViewM
     val session = PdfSession(app, uri, writable, viewModelScope)
 
     var tab by mutableStateOf(PdfTab.Annotate)
+    /** Il pannello della scheda sopra la dock: chiuso all'apertura, così il documento ha tutto lo spazio. */
+    var panel by mutableStateOf(false)
     var tool by mutableStateOf(Tool.None)
     var color by mutableStateOf(InkColor.Sabbia)
     var underline by mutableStateOf(false)

@@ -55,6 +55,9 @@ class PdfSession(private val context: Context, val uri: Uri, private val writabl
     private val source = File(dir, "originale.pdf")
     private val views = arrayOf(File(dir, "vista-a.pdf"), File(dir, "vista-b.pdf"))
     private var view = source
+    /** La copia per lo schermo, con le annotazioni stampate sulla pagina ([PdfDisplay]); il renderer apre questa. */
+    private val displays = arrayOf(File(dir, "schermo-a.pdf"), File(dir, "schermo-b.pdf"))
+    private var display = source
     private var doc: PDDocument? = null
     private var renderer: PdfRenderer? = null
     private var fd: ParcelFileDescriptor? = null
@@ -96,7 +99,7 @@ class PdfSession(private val context: Context, val uri: Uri, private val writabl
                     writeView()
                 } else {
                     view = source
-                    reopenRenderer()
+                    refreshDisplay()
                 }
                 texts = arrayOfNulls(loaded.numberOfPages)
                 publish(SaveState.Saved.takeIf { writable && !encrypted } ?: if (encrypted) SaveState.Protected else SaveState.ReadOnly)
@@ -136,7 +139,7 @@ class PdfSession(private val context: Context, val uri: Uri, private val writabl
                 previous.delete()
                 doc = PDDocument.load(target, MemoryUsageSetting.setupMixed(64L * 1024 * 1024))
                 view = target
-                reopenRenderer()
+                refreshDisplay()
                 texts = arrayOfNulls(doc!!.numberOfPages)
                 publish(if (writable && !encrypted) SaveState.Pending else state.value.save)
             }.onFailure { state.update { s -> s.copy(error = true) } }
@@ -223,12 +226,19 @@ class PdfSession(private val context: Context, val uri: Uri, private val writabl
         val target = views.first { it != view }
         target.outputStream().use { d.save(it) }
         view = target
+        refreshDisplay()
+    }
+
+    /** Ricostruisce la copia per lo schermo da [view]; se non riesce, si mostra [view] (senza annotazioni). */
+    private fun refreshDisplay() {
+        closeRenderer()
+        display = runCatching { PdfDisplay.build(view, displays.first { it != display }) }.getOrDefault(view)
         reopenRenderer()
     }
 
     private fun reopenRenderer() {
         closeRenderer()
-        fd = ParcelFileDescriptor.open(view, ParcelFileDescriptor.MODE_READ_ONLY)
+        fd = ParcelFileDescriptor.open(display, ParcelFileDescriptor.MODE_READ_ONLY)
         renderer = PdfRenderer(fd!!)
     }
 

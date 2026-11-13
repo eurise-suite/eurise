@@ -125,8 +125,12 @@ fun PdfScreen(model: PdfModel, writable: Boolean, onBack: () -> Unit) {
         PdfShareScreen(model, onClose = { model.showShare = false })
         return
     }
-    BackHandler(enabled = model.tool != Tool.None || model.searching) {
-        if (model.searching) model.searching = false else model.tool = Tool.None
+    BackHandler(enabled = model.tool != Tool.None || model.searching || model.panel) {
+        when {
+            model.searching -> model.searching = false
+            model.tool != Tool.None -> model.tool = Tool.None
+            else -> model.panel = false
+        }
     }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))) {
@@ -141,11 +145,12 @@ fun PdfScreen(model: PdfModel, writable: Boolean, onBack: () -> Unit) {
             }
         }
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
-            if (state.hasForm && model.tab == PdfTab.Annotate && model.tool == Tool.None) {
+            if (state.hasForm && model.panel && model.tab == PdfTab.Annotate && model.tool == Tool.None) {
                 Hint(stringResource(R.string.pdf_form_hint))
             }
             if (!writable && state.pages.isNotEmpty()) Hint(stringResource(R.string.pdf_read_only_hint))
-            ToolPanel(model, state)
+            // Tavola OffPdf: si vede solo la dock; il pannello della scheda compare quando la si tocca.
+            if (model.panel) ToolPanel(model, state)
             BottomTabs(model)
         }
     }
@@ -290,7 +295,7 @@ private fun Pages(model: PdfModel, state: PdfState, modifier: Modifier) {
             LazyColumn(
                 state = list,
                 modifier = Modifier.width(pageWidth).fillMaxHeight(),
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 220.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = if (model.panel) 220.dp else 96.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(state.pages.size, key = { "${state.version}-$it" }) { index ->
@@ -636,13 +641,18 @@ private fun BottomTabs(model: PdfModel) {
             PdfTab.Annotate to R.string.pdf_tab_annotate, PdfTab.Edit to R.string.pdf_tab_edit, PdfTab.Pages to R.string.pdf_tab_pages,
             PdfTab.Suite to R.string.pdf_tab_suite, PdfTab.More to R.string.pdf_tab_more,
         ).forEach { (tab, label) ->
-            val active = model.tab == tab
+            val active = model.panel && model.tab == tab
             Row(
                 Modifier.weight(1f).height(46.dp).clip(CircleShape)
                     .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable {
                         model.tool = Tool.None
-                        if (tab == PdfTab.Pages) model.showPages = true else model.tab = tab
+                        when {
+                            tab == PdfTab.Pages -> model.showPages = true
+                            // La stessa scheda di nuovo: il pannello si chiude e torna tutto lo spazio al documento.
+                            active -> model.panel = false
+                            else -> { model.tab = tab; model.panel = true }
+                        }
                     }
                     .semantics { role = Role.Tab; selected = active },
                 horizontalArrangement = Arrangement.Center,
