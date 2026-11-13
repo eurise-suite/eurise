@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <initializer_list>
 #include <typeinfo>
 
 namespace

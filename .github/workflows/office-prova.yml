@@ -19,8 +19,8 @@ env:
   RIFERIMENTO: ""
   # Attività da aprire: vuote = quelle di Eurise Office (DocumentActivity, OfficeActivity). Per un APK con la vecchia
   # app di Collabora: org.libreoffice.androidlib.LOActivity e org.libreoffice.androidapp.ui.LibreOfficeUIActivity.
-  LO: "org.libreoffice.androidlib.LOActivity"
-  HOME_ACTIVITY: "org.libreoffice.androidapp.ui.LibreOfficeUIActivity"
+  LO: ""
+  HOME_ACTIVITY: ""
 
 permissions:
   contents: read
