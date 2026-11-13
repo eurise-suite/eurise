@@ -1751,3 +1751,32 @@ Fatto (ramo `brand`):
   delle icone (disegno ispessito; set iOS, Android, /e/OS).
 - Office e PDF continuano in una chat a parte, con il messaggio preparato.
 - Prossimo: nomi, poi icone; Mappe d) percorso, e) guida, f) livelli/segnala/esplora; sveglia di Alfred; tastiera.
+
+## 13 novembre, pomeriggio: nomi nuovi proposti dal proprietario, prova di Mappe su Android Auto
+- **Nomi proposti dal proprietario**: **Ciarly** per la Chat (al posto di Ciarla: suona come un nome proprio e richiama
+  il dialetto); per il Browser **Pelorus** (il suo preferito), Zefiro, Borea, Kerno (Oblò e Varco messi da parte).
+  Primo controllo sul web, prima della ricerca ufficiale su TMview/EUIPO:
+  - **Ciarly**: nessun software o marchio trovato con questo nome. Libero, per quanto si vede.
+  - **Pelorus**: è il grafometro dei naviganti e il nome antico di Capo Peloro, a Messina. I marchi PELORUS per il
+    software negli USA sono quasi tutti decaduti (ICL 1995, Pelorus Health, Computervision in Australia). Restano una
+    domanda di JESSIX LLC (2019, software di simulazione militare), un'app di viaggi (PelorusX) e varie società
+    finanziarie. Rischio contenuto, da confermare su EUIPO nelle classi 9 e 42.
+  - **Zefiro**: c'è già un'app «Zefiro» di Funambol, un cloud personale per foto e file. Stesso campo di Eurise:
+    sconsigliato.
+  - **Borea**: BOREA è un'azienda francese di software dentale (Rayplicker). Campo diverso, ma è un nome già usato nel
+    software.
+  - **Kerno**: almeno tre società di software (Kerno.io per il cloud, Kerno in Svizzera, Kerno per la produzione).
+    Sconsigliato.
+- **Desco** (Scrivania) e le tavole **MapIncrocio**/**MapRotonda** sono ancora da confermare: il proprietario non ha risposto.
+- **Prova di Mappe su Android Auto** (prima di installare il giro 365): funziona bene. C'è ancora lavoro sull'interfaccia,
+  e la voce era quella vecchia. Correzioni richieste, da aggiungere ai passi d)–f):
+  1. Quando ci si collega ad Android Auto, Mappe si apre lì **senza chiedere il permesso** di passare all'auto e resta
+     usabile anche dal telefono.
+  2. Accanto alla lente (scrivere l'indirizzo) c'è un **microfono che chiama Alfred**, per dire e scegliere la via a voce.
+  3. Senza navigazione la **freccia punta comunque in alto lungo la strada**, come in guida (mappa orientata sulla direzione).
+  4. Nella bolla con km e ora d'arrivo compare **«Sei in/su [strada]»**. Su autostrade, superstrade e provinciali c'è anche
+     il **km** (o il riferimento da dare a soccorsi e carro attrezzi). Vale con e senza destinazione.
+  5. **Traffico** e **meteo** si vedono anche senza destinazione.
+  6. Quando la mappa di Android Auto si riduce per far posto ad altre app (telefono, musica), la vista ridotta **riprende
+     quella grande**, dando priorità alla navigazione. Il percorso e la freccia vanno **ricentrati nell'area ridotta**:
+     ora restano dove stavano nella vista grande, cioè fuori centro (va usata la `visibleArea`/`stableArea` di Car App).
