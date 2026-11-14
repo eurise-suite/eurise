@@ -2023,6 +2023,17 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   basta il tag `coda-25.04.9.2-2` di CollaboraOnline/online (Control.SidebarBase.ts, Control.NavigatorPanel.ts,
   jssidebar.css); il resto si legge da `bundle.js` del pacchetto Flathub (lo fa prova.sh in `giro-guidato.txt`).
 
+**14 novembre, pomeriggio: righello verticale e icone Eurise (richieste del proprietario)**
+- **Righelli** sempre accesi nei testi sul computer: preferenza `ShowRuler` impostata prima dell'apertura (Collabora crea i
+  righelli solo se è accesa) più `uiManager.showRuler()`; la 26.04 li disegna al primo evento della pagina, quindi un
+  `resize` dopo l'apertura (schermata `-1-mouse` della prova: righello verticale e orizzontale visibili).
+- **Icone Eurise al posto di quelle di Collabora, su computer, tablet e telefono** (codice condiviso): `ICONS` in
+  Control.Eurise.js, 110 icone disegnate (24×24, tratto 1,7 Notte, dettagli azzurro, campiture leggere, tinte della suite
+  per colore del testo ed evidenzia, variante per il tema scuro), servite avvolgendo `app.LOUtil.getImageURL` (un punto
+  solo: nastro, colonna Properties, menu, dialoghi). Le icone chieste che non abbiamo restano di Collabora e la prova le
+  elenca (`missingIcons` nella diagnosi: soprattutto quelle del nastro di Collabora, nascosto). Anteprima del set:
+  rendering locale con rsvg-convert. `icon-maskable` della 26.04 colora le icone solo nel contrasto elevato.
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in

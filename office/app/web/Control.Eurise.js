@@ -1854,7 +1854,12 @@
 		ribbon.el = top.querySelector('#eurise-ribbon');
 		showRibbon(list[0]);
 		status();
-		if (desk) { deskSide(docType); deskRulers(docType); }
+		if (desk) {
+			deskSide(docType);
+			deskRulers(docType);
+			// La 26.04 disegna i righelli al primo evento della pagina: un ridimensionamento li fa comparire subito.
+			setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 1500);
+		}
 		if (app.map.invalidateSize) setTimeout(function () { app.map.invalidateSize(); }, 50);
 	}
 
