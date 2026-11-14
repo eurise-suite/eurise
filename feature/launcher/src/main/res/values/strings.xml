@@ -4,6 +4,7 @@
 
     <string name="weather_today">Oggi</string>
     <string name="weather_grant">Mostra il meteo</string>
+    <string name="weather_off">Meteo spento · Accendi</string>
 
     <string name="today_next">Prossimo</string>
     <string name="today_todo">Da fare</string>

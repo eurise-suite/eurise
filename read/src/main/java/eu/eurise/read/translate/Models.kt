@@ -98,6 +98,8 @@ object Models {
             c.instanceFollowRedirects = false
             c.connectTimeout = 15_000
             c.readTimeout = 60_000
+            // Senza questo Android manda «Dalvik/… (Linux; Android 14; modello del telefono)»: un'impronta del telefono.
+            c.setRequestProperty("User-Agent", "EuriseLeggi")
             when (c.responseCode) {
                 in 300..399 -> { url = URL(url, c.getHeaderField("Location")); c.disconnect() }
                 200 -> return c.inputStream.use { it.readBytes() }

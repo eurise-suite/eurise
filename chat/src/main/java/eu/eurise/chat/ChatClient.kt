@@ -100,6 +100,7 @@ class ChatClient(val session: Session) {
         c.setRequestProperty("Authorization", "Bearer ${session.token}")
         c.connectTimeout = 15_000
         c.readTimeout = 60_000
+        c.setRequestProperty("User-Agent", USER_AGENT)
         try {
             if (c.responseCode !in 200..299) throw MatrixException(c.responseCode, "M_UNKNOWN", "download")
             c.inputStream.use { input -> out.outputStream().use { input.copyTo(it) } }
@@ -159,6 +160,9 @@ class ChatClient(val session: Session) {
         "${session.homeserver}/_matrix/client/v3/auth/m.login.sso/fallback/web?session=${enc(uiaSession)}"
 
     companion object {
+        /** Senza, Android manda modello del telefono e versione del sistema: un'impronta che il server non deve avere. */
+        const val USER_AGENT = "EuriseChat"
+
         fun enc(s: String): String = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
         /** Una richiesta al server; gli errori di Matrix ({errcode, error}) diventano [MatrixException]. */
@@ -168,6 +172,7 @@ class ChatClient(val session: Session) {
             c.connectTimeout = 15_000
             c.readTimeout = timeoutMs
             c.setRequestProperty("Accept", "application/json")
+            c.setRequestProperty("User-Agent", USER_AGENT)
             if (token != null) c.setRequestProperty("Authorization", "Bearer $token")
             try {
                 if (body != null) {
@@ -193,6 +198,7 @@ class ChatClient(val session: Session) {
                 val c = URL("https://$d/.well-known/matrix/client").openConnection() as HttpURLConnection
                 c.connectTimeout = 10_000
                 c.readTimeout = 10_000
+                c.setRequestProperty("User-Agent", USER_AGENT)
                 try { if (c.responseCode == 200) c.inputStream.bufferedReader().use { it.readText() } else null } finally { c.disconnect() }
             }.getOrNull()?.let(Matrix::wellKnown)
             return wellKnown ?: "https://$d"

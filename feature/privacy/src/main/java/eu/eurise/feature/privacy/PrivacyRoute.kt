@@ -18,23 +18,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -61,6 +56,12 @@ import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.privacyScore
+import eu.eurise.core.designsystem.component.where
+import eu.eurise.core.designsystem.component.titleRes
+import eu.eurise.core.designsystem.component.score
+import eu.eurise.core.designsystem.component.detailRes
+import eu.eurise.core.designsystem.component.ServiceStates
+import eu.eurise.core.designsystem.component.ServiceConsentSheet
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.suite.NetworkExit
 import eu.eurise.core.suite.NetworkShield
@@ -73,55 +74,12 @@ import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.util.Date
 
-private fun PrivacyService.title() = when (this) {
-    PrivacyService.Weather -> R.string.pv_s_weather
-    PrivacyService.Pollen -> R.string.pv_s_pollen
-    PrivacyService.Alerts -> R.string.pv_s_alerts
-    PrivacyService.News -> R.string.pv_s_news
-    PrivacyService.Markets -> R.string.pv_s_markets
-    PrivacyService.Horoscope -> R.string.pv_s_horoscope
-    PrivacyService.Videos -> R.string.pv_s_videos
-    PrivacyService.Routes -> R.string.pv_s_routes
-    PrivacyService.RouteWeather -> R.string.pv_s_route_weather
-    PrivacyService.MapSearch -> R.string.pv_s_map_search
-    PrivacyService.MapReports -> R.string.pv_s_map_reports
-    PrivacyService.FuelPrices -> R.string.pv_s_fuel
-}
-
-private fun PrivacyService.detail() = when (this) {
-    PrivacyService.Weather -> R.string.pv_s_weather_d
-    PrivacyService.Pollen -> R.string.pv_s_pollen_d
-    PrivacyService.Alerts -> R.string.pv_s_alerts_d
-    PrivacyService.News -> R.string.pv_s_news_d
-    PrivacyService.Markets -> R.string.pv_s_markets_d
-    PrivacyService.Horoscope -> R.string.pv_s_horoscope_d
-    PrivacyService.Videos -> R.string.pv_s_videos_d
-    PrivacyService.Routes -> R.string.pv_s_routes_d
-    PrivacyService.RouteWeather -> R.string.pv_s_route_weather_d
-    PrivacyService.MapSearch -> R.string.pv_s_map_search_d
-    PrivacyService.MapReports -> R.string.pv_s_map_reports_d
-    PrivacyService.FuelPrices -> R.string.pv_s_fuel_d
-}
-
-/** Dove sta chi riceve i dati del servizio (il simbolo accanto al semaforo). */
-private fun PrivacyService.where() = when (this) {
-    PrivacyService.Weather, PrivacyService.Pollen, PrivacyService.RouteWeather -> Jurisdiction.CH // OpenMeteo GmbH, Bürglen
-    PrivacyService.Alerts -> Jurisdiction.EU // EUMETNET, Bruxelles
-    PrivacyService.Routes -> Jurisdiction.EU // server OSRM di FOSSGIS, Germania
-    PrivacyService.MapSearch -> Jurisdiction.EU // Photon di komoot, Germania
-    PrivacyService.MapReports -> Jurisdiction.UK // OpenStreetMap Foundation, Regno Unito
-    PrivacyService.FuelPrices -> Jurisdiction.EU // Ministero delle Imprese e del Made in Italy, Roma
-    PrivacyService.News, PrivacyService.Horoscope -> Jurisdiction.Various
-    PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
-}
-
-/** Il grado di privacy effettivo: da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
-private fun PrivacyService.score(hiddenIp: Int = 0) = when (this) {
-    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices ->
-        privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
-    PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
-    else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)
-}
+/**
+ * Traduzione di Leggi: un file uguale per tutti (8), da un archivio negli Stati Uniti (−1) gestito da Google per conto di
+ * Mozilla: Google può collegare l'indirizzo di rete al resto del traffico che riceve (−1). Esce solo la coppia di lingue,
+ * una volta per lingua. Criteri del 14 novembre; con la rete nascosta sale (Tor +2).
+ */
+private fun translateScore(hiddenIp: Int = 0) = (privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = hiddenIp) - 1).coerceAtLeast(1)
 
 /** L'etichetta delle tacchette guadagnate: «+2 Proton VPN», «+2 Tor». */
 @Composable
@@ -196,7 +154,6 @@ fun PrivacyRoute(onBack: () -> Unit) {
     if (showLog) LogScreen { showLog = false } else Overview(onBack) { showLog = true }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     val context = LocalContext.current
@@ -204,7 +161,7 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     val settings by cloud.settings.collectAsStateWithLifecycle()
     val accounts by CloudAccounts.get(context).accounts.collectAsStateWithLifecycle()
     val states = remember { mutableStateMapOf<PrivacyService, Boolean>() }
-    val loaded by produceState(false) {
+    val loaded by produceState(false, ServiceStates.version) {
         withContext(Dispatchers.IO) { PrivacyService.entries.forEach { states[it] = PrivacyCenter.allowed(it) } }
         value = true
     }
@@ -306,11 +263,11 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                     Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
                         val score = service.score(shield.bonus)
                         TwoLines(
-                            stringResource(service.title()), stringResource(service.detail()), Modifier.weight(1f).padding(end = 8.dp),
+                            stringResource(service.titleRes()), stringResource(service.detailRes()), Modifier.weight(1f).padding(end = 8.dp),
                             score, service.where(), score - service.score(), shield.label(),
                         )
                         Switch(states[service] == true, enabled = loaded, onCheckedChange = { value ->
-                            if (value) asking = service else { states[service] = false; PrivacyCenter.set(service, false) }
+                            if (value) asking = service else { states[service] = false; ServiceStates.set(service, false) }
                         })
                     }
                 }
@@ -336,8 +293,8 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 )
                 Line()
                 TwoLines(
-                    stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus),
-                    where = Jurisdiction.US, boost = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus) - privacyScore(DataOut.Anonymous, Jurisdiction.US),
+                    stringResource(R.string.pv_translate), stringResource(R.string.pv_translate_d), score = translateScore(shield.bonus),
+                    where = Jurisdiction.US, boost = translateScore(shield.bonus) - translateScore(),
                     boostLabel = shield.label(),
                 )
                 Line()
@@ -362,38 +319,12 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     }
 
     asking?.let { service ->
-        ModalBottomSheet(onDismissRequest = { asking = null }, containerColor = MaterialTheme.colorScheme.background) {
-            Column(Modifier.navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.pv_on_title).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                Text(stringResource(service.title()), fontSize = 21.sp, fontWeight = FontWeight.Bold)
-                Column(Modifier.clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
-                    Labeled(R.string.pv_on_read, stringResource(service.detail()))
-                    Line()
-                    Labeled(R.string.pv_on_where, stringResource(service.title()))
-                    Line()
-                    Labeled(R.string.pv_on_who, stringResource(R.string.pv_on_who_d))
-                    Line()
-                    Labeled(R.string.pv_on_back, stringResource(R.string.pv_on_back_d))
-                }
-                Button(onClick = { states[service] = true; PrivacyCenter.set(service, true); asking = null }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                    Text(stringResource(R.string.pv_on_ok), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                }
-                TextButton(onClick = { asking = null }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.pv_on_no), fontWeight = FontWeight.Bold) }
-            }
-        }
+        ServiceConsentSheet(service, shield.bonus, onDismiss = { asking = null }, onAccept = { states[service] = true; asking = null })
     }
 }
 
 @Composable
 private fun Spacer8() = Column(Modifier.height(2.dp)) {}
-
-@Composable
-private fun Labeled(label: Int, value: String) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-        Text(stringResource(label), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontSize = 14.5.sp)
-    }
-}
 
 @Composable
 private fun LogScreen(onBack: () -> Unit) {
@@ -428,7 +359,7 @@ private fun LogScreen(onBack: () -> Unit) {
             Card {
                 if (events.isEmpty() && syncEvents.isEmpty()) TwoLines(stringResource(R.string.pv_log_empty), null)
                 val rows: List<Pair<Long, String>> = events.map { e ->
-                    e.time to (if (e.count > 1) stringResource(R.string.pv_log_count, stringResource(e.service.title()), e.count) else stringResource(e.service.title()))
+                    e.time to (if (e.count > 1) stringResource(R.string.pv_log_count, stringResource(e.service.titleRes()), e.count) else stringResource(e.service.titleRes()))
                 } + syncEvents.map { it.time to it.text }
                 rows.sortedByDescending { it.first }.take(100).forEachIndexed { i, (time, text) ->
                     if (i > 0) Line()

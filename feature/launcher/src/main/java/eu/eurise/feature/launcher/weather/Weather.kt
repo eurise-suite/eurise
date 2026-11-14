@@ -45,6 +45,7 @@ class WeatherRepository(private val context: Context) {
             (URL(url).openConnection() as HttpURLConnection).run {
                 connectTimeout = 8_000
                 readTimeout = 8_000
+                setRequestProperty("User-Agent", "Eurise")
                 try { inputStream.bufferedReader().readText() } finally { disconnect() }
             }
         }.getOrNull() ?: return@withContext null

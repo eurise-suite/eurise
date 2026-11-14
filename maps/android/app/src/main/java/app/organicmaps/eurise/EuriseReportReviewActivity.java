@@ -123,7 +123,7 @@ public class EuriseReportReviewActivity extends Activity
     info.addView(what, lp(dp(4)));
     sheet.addView(info, lp(dp(12)));
 
-    mBlocked = text(getString(R.string.eurise_review_blocked), 12.5f, true, 0xFFC8102E);
+    mBlocked = text(getString(R.string.eurise_review_blocked), 12.5f, false, muted);
     mBlocked.setVisibility(View.GONE);
     sheet.addView(mBlocked, lp(dp(8)));
 
@@ -191,9 +191,11 @@ public class EuriseReportReviewActivity extends Activity
   {
     final int n = checked();
     final boolean blocked = mBlocked.getVisibility() == View.VISIBLE;
-    mSend.setText(n == 0 ? getString(R.string.eurise_review_discard) : getString(R.string.eurise_review_send, n));
-    mSend.setEnabled(n == 0 || !blocked);
-    mSend.setAlpha(mSend.isEnabled() ? 1f : 0.45f);
+    // Spente nel centro privacy (lo sono di base): il tasto le accende e manda, con la spiegazione qui sopra.
+    mSend.setText(n == 0 ? getString(R.string.eurise_review_discard)
+                         : getString(blocked ? R.string.eurise_review_enable_send : R.string.eurise_review_send, n));
+    mSend.setEnabled(true);
+    mSend.setAlpha(1f);
   }
 
   /** Manda le spuntate (una nota ciascuna), scarta le altre; quelle non partite restano per la prossima volta. */
@@ -213,9 +215,13 @@ public class EuriseReportReviewActivity extends Activity
       finish();
       return;
     }
+    final boolean enable = mBlocked.getVisibility() == View.VISIBLE;
     mSend.setEnabled(false);
     mSend.setText(R.string.eurise_review_sending);
     new Thread(() -> {
+      // La persona ha toccato «Accendi e manda»: si accende il servizio nel centro privacy.
+      if (enable)
+        EuriseGuideReports.hub(getApplicationContext(), "enable");
       // Ultimo controllo: il centro privacy può averle spente mentre l'elenco era aperto.
       if (Boolean.FALSE.equals(EuriseGuideReports.hub(getApplicationContext(), "status")))
       {

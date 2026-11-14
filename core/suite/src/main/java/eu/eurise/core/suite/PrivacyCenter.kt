@@ -3,8 +3,15 @@ package eu.eurise.core.suite
 import android.content.Context
 import java.io.File
 
-/** I servizi esterni che la Scrivania contatta da sola, ognuno con il suo interruttore. */
-enum class PrivacyService(val defaultOn: Boolean) { Weather(true), Pollen(true), Alerts(true), News(true), Markets(true), Horoscope(true), Videos(true), Routes(false), RouteWeather(false), MapSearch(false), MapReports(true), FuelPrices(false) }
+/**
+ * I servizi esterni che la suite contatta da sola, ognuno con il suo interruttore. Regola fissa del 14 novembre: tutti
+ * spenti di base; li accende la persona, dopo l'avviso su cosa esce e come cambia la privacy. Vale anche per chi aveva
+ * già l'app e non li aveva mai toccati: senza una scelta salvata, sono spenti.
+ */
+enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, Videos, Routes, RouteWeather, MapSearch, MapReports, FuelPrices;
+
+    val defaultOn: Boolean get() = false
+}
 
 /** Una riga del registro: [count] richieste allo stesso servizio raccolte in una. */
 data class PrivacyEvent(val time: Long, val service: PrivacyService, val count: Int)

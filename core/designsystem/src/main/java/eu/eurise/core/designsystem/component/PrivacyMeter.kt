@@ -156,7 +156,7 @@ private fun Jurisdiction.shortName() = when (this) {
     Jurisdiction.Other -> R.string.ds_where_other
 }
 
-private fun Jurisdiction.longName() = when (this) {
+internal fun Jurisdiction.longName() = when (this) {
     Jurisdiction.Phone -> R.string.ds_where_phone_long
     Jurisdiction.Own -> R.string.ds_where_own_long
     Jurisdiction.EU -> R.string.ds_where_eu_long

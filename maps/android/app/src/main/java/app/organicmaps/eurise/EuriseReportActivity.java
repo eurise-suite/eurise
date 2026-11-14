@@ -238,8 +238,19 @@ public class EuriseReportActivity extends Activity
       runOnUiThread(() -> {
         if (blocked)
         {
-          Toast.makeText(this, R.string.eurise_review_blocked, Toast.LENGTH_LONG).show();
+          // Spente di base nel centro privacy: si chiede qui, con la spiegazione, se accenderle e mandare.
           mSend.setEnabled(true);
+          new android.app.AlertDialog.Builder(this)
+              .setMessage(getString(R.string.eurise_review_osm_body) + "\n\n" + getString(R.string.eurise_review_blocked))
+              .setPositiveButton(R.string.eurise_report_enable_send, (d, w) -> {
+                mSend.setEnabled(false);
+                new Thread(() -> {
+                  EuriseGuideReports.hub(getApplicationContext(), "enable");
+                  runOnUiThread(this::send);
+                }).start();
+              })
+              .setNegativeButton(android.R.string.cancel, null)
+              .show();
         }
         else
           done(ok);

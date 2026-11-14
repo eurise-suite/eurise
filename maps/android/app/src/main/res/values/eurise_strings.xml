@@ -190,9 +190,11 @@
     <string name="eurise_review_include">Send «%1$s»</string>
     <string name="eurise_review_osm_title">Anonymous notes on OpenStreetMap</string>
     <string name="eurise_review_osm_body">Each report becomes a public note that volunteers check and fix on the map. Only the point, the type, the direction and the road leave: no account, nothing about you.</string>
-    <string name="eurise_review_blocked">Notes to OpenStreetMap are switched off in the privacy centre of the Eurise app.</string>
+    <string name="eurise_review_blocked">Notes to OpenStreetMap are off in the privacy centre of the Eurise app (off by default). «Switch on and send» turns them on there: only the data above leaves, and you can switch them off at any time.</string>
     <string name="eurise_review_send">Send %1$d to OpenStreetMap</string>
     <string name="eurise_review_discard">Discard and close</string>
+    <string name="eurise_review_enable_send">Switch on and send %1$d</string>
+    <string name="eurise_report_enable_send">Switch on and send</string>
     <string name="eurise_review_sending">Sending…</string>
     <string name="eurise_review_later">Later</string>
     <string name="eurise_review_sent">Sent: %1$d notes. Thank you!</string>

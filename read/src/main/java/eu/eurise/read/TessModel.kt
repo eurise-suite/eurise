@@ -30,6 +30,7 @@ internal object TessModel {
             c.instanceFollowRedirects = false
             c.connectTimeout = 15_000
             c.readTimeout = 30_000
+            c.setRequestProperty("User-Agent", "EuriseLeggi")
             when (c.responseCode) {
                 in 300..399 -> { url = URL(url, c.getHeaderField("Location")); c.disconnect() }
                 200 -> {

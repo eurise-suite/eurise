@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher.summary
 
+import eu.eurise.core.suite.PrivacyService
+import eu.eurise.core.designsystem.component.ServiceGate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -461,29 +463,31 @@ fun WeatherCard(
     modifier: Modifier = Modifier,
 ) {
     SummaryCard(stringResource(R.string.weather_title), hazeState, modifier, onClick = if (forecast == null) onAsk else null) {
-        if (forecast.isNullOrEmpty()) {
-            Text(stringResource(R.string.weather_grant), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        } else if (size == CardSize.Wide) {
-            val days = 5
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                forecast.take(days).forEachIndexed { i, d ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(dayName(i, d), fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
-                        Icon(skyIcon(d.sky), null, modifier = Modifier.padding(vertical = 4.dp).size(20.dp))
-                        Text("${d.max}°", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text("${d.min}°", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ServiceGate(PrivacyService.Weather) {
+            if (forecast.isNullOrEmpty()) {
+                Text(stringResource(R.string.weather_grant), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            } else if (size == CardSize.Wide) {
+                val days = 5
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    forecast.take(days).forEachIndexed { i, d ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(dayName(i, d), fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                            Icon(skyIcon(d.sky), null, modifier = Modifier.padding(vertical = 4.dp).size(20.dp))
+                            Text("${d.max}°", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("${d.min}°", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
-            }
-        } else {
-            val days = when (size) { CardSize.Small -> 1; CardSize.Medium -> 3; else -> 7 }
-            forecast.take(days).forEachIndexed { i, d ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(skyIcon(d.sky), null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(dayName(i, d), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    Text("${d.max}°", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
-                    Text(" ${d.min}°", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                val days = when (size) { CardSize.Small -> 1; CardSize.Medium -> 3; else -> 7 }
+                forecast.take(days).forEachIndexed { i, d ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(skyIcon(d.sky), null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(dayName(i, d), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text("${d.max}°", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                        Text(" ${d.min}°", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
@@ -599,25 +603,27 @@ fun NewsCard(
     val max = 25
     val now = System.currentTimeMillis()
     SummaryCard(stringResource(R.string.card_news), hazeState, modifier, action = stringResource(R.string.news_sources), onAction = onSources) {
-        when {
-            items == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-            items.isEmpty() -> Text(stringResource(R.string.news_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
-            else -> items.take(max).forEach { n ->
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (n.image != null) {
-                        NewsThumb(n.image)
-                        Spacer(Modifier.width(10.dp))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            n.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, lineHeight = 18.sp,
-                            maxLines = if (size.half) 3 else 2, overflow = TextOverflow.Ellipsis,
-                        )
-                        val meta = listOfNotNull(n.province, n.source, if (n.publishedAt > 0) agoText(now, n.publishedAt) else null).joinToString(" · ")
-                        Text(meta, color = if (n.province != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        ServiceGate(PrivacyService.News) {
+            when {
+                items == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                items.isEmpty() -> Text(stringResource(R.string.news_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
+                else -> items.take(max).forEach { n ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpen(n) }.padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (n.image != null) {
+                            NewsThumb(n.image)
+                            Spacer(Modifier.width(10.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                n.title, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, lineHeight = 18.sp,
+                                maxLines = if (size.half) 3 else 2, overflow = TextOverflow.Ellipsis,
+                            )
+                            val meta = listOfNotNull(n.province, n.source, if (n.publishedAt > 0) agoText(now, n.publishedAt) else null).joinToString(" · ")
+                            Text(meta, color = if (n.province != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
             }
@@ -660,29 +666,31 @@ fun StocksCard(
 ) {
     val max = 20
     SummaryCard(stringResource(R.string.card_stocks), hazeState, modifier, action = stringResource(R.string.stocks_symbols), onAction = onSymbols) {
-        when {
-            quotes == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-            quotes.isEmpty() -> Text(stringResource(R.string.stocks_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
-            else -> {
-                quotes.take(max).forEach { q ->
-                    val up = q.changePercent >= 0
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onOpenQuote(q) }.padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(q.name, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        if (!size.half) {
-                            Text(String.format(Italian, "%,.2f", q.price), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+        ServiceGate(PrivacyService.Markets) {
+            when {
+                quotes == null -> Text(stringResource(R.string.news_loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                quotes.isEmpty() -> Text(stringResource(R.string.stocks_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)
+                else -> {
+                    quotes.take(max).forEach { q ->
+                        val up = q.changePercent >= 0
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onOpenQuote(q) }.padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(q.name, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            if (!size.half) {
+                                Text(String.format(Italian, "%,.2f", q.price), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+                            }
+                            Text(
+                                String.format(Italian, "%+.2f%%", q.changePercent),
+                                fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                                color = if (up) CalendarTint.Salvia.colors().dot else CalendarTint.Borgogna.colors().dot,
+                            )
                         }
-                        Text(
-                            String.format(Italian, "%+.2f%%", q.changePercent),
-                            fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
-                            color = if (up) CalendarTint.Salvia.colors().dot else CalendarTint.Borgogna.colors().dot,
-                        )
                     }
-                }
-                if (size.tall || !size.half) {
-                    Text(stringResource(R.string.stocks_delay), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (size.tall || !size.half) {
+                        Text(stringResource(R.string.stocks_delay), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

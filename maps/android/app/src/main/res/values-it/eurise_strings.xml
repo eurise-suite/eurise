@@ -185,9 +185,11 @@
     <string name="eurise_review_include">Manda «%1$s»</string>
     <string name="eurise_review_osm_title">Note anonime su OpenStreetMap</string>
     <string name="eurise_review_osm_body">Ogni segnalazione diventa una nota pubblica che i volontari controllano e correggono sulla mappa. Escono solo il punto, il tipo, la direzione e la strada: nessun account, niente di te.</string>
-    <string name="eurise_review_blocked">Le note a OpenStreetMap sono spente nel centro privacy dell\'app Eurise.</string>
+    <string name="eurise_review_blocked">Le note a OpenStreetMap sono spente nel centro privacy dell\'app Eurise (spente di base). «Accendi e manda» le accende lì: escono solo i dati scritti sopra, e le spegni quando vuoi.</string>
     <string name="eurise_review_send">Manda %1$d a OpenStreetMap</string>
     <string name="eurise_review_discard">Scarta e chiudi</string>
+    <string name="eurise_review_enable_send">Accendi e manda %1$d</string>
+    <string name="eurise_report_enable_send">Accendi e manda</string>
     <string name="eurise_review_sending">Invio…</string>
     <string name="eurise_review_later">Più tardi</string>
     <string name="eurise_review_sent">Mandate: %1$d note. Grazie!</string>

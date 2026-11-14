@@ -118,8 +118,12 @@ class MeteoRepository(context: Context) {
         val key = String.format(Locale.ROOT, "%.2f,%.2f", lat, lon)
         val file = File(dir, "place.txt")
         val saved = file.takeIf { it.exists() }?.readLines()
-        val lines = if (saved != null && saved.firstOrNull() == key) saved else if (network && Geocoder.isPresent()) {
-            val a = runCatching { Geocoder(app, Locale.ITALIAN).getFromLocation(lat, lon, 1)?.firstOrNull() }.getOrNull()
+        // Il servizio di posizione del telefono (Google o OpenStreetMap con microG) riceve la stessa posizione arrotondata
+        // del meteo, e solo se il meteo è acceso nel centro privacy.
+        val lines = if (saved != null && saved.firstOrNull() == key) saved else if (network && Geocoder.isPresent() && PrivacyCenter.allowed(PrivacyService.Weather)) {
+            val a = runCatching {
+                Geocoder(app, Locale.ITALIAN).getFromLocation(Math.round(lat * 100) / 100.0, Math.round(lon * 100) / 100.0, 1)?.firstOrNull()
+            }.getOrNull()
             if (a == null) null else listOf(key, a.locality ?: a.subLocality ?: a.subAdminArea ?: "", a.subAdminArea ?: "", a.adminArea ?: "", a.countryCode ?: "")
                 .also { file.writeText(it.joinToString("\n")) }
         } else null

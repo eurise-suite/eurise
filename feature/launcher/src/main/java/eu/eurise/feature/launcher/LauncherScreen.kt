@@ -177,6 +177,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
     val sign by viewModel.sign.collectAsStateWithLifecycle()
     val signName = stringResource(sign.label)
     LaunchedEffect(signName) { viewModel.refreshHoroscope(signName); viewModel.refreshRecipes() }
+    // Un servizio appena acceso (o spento) dal centro privacy o da una scheda: si ricaricano subito i dati.
+    val services = eu.eurise.core.designsystem.component.ServiceStates.version
+    LaunchedEffect(services) {
+        if (services > 0) {
+            viewModel.refresh()
+            viewModel.refreshNews(force = true)
+            viewModel.refreshVideos(force = true)
+            viewModel.refreshHoroscope(signName, force = true)
+            viewModel.refreshRecipes(force = true)
+        }
+    }
     val calendarMonth by viewModel.calendarMonth.collectAsStateWithLifecycle()
     val monthEvents by viewModel.monthEvents.collectAsStateWithLifecycle()
     val monthTasks by viewModel.monthTasks.collectAsStateWithLifecycle()

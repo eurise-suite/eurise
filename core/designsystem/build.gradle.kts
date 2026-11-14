@@ -23,6 +23,8 @@ dependencies {
     // Vetro satinato: sfocatura di ciò che scorre dietro barre e testate (Apache 2.0).
     api(libs.haze)
     implementation(libs.androidx.core.ktx)
+    // I servizi esterni e il loro interruttore (enum e preferenze, nessuna dipendenza): per l'avviso comune.
+    api(project(":core:suite"))
 
     testImplementation(libs.junit)
 }

@@ -51,6 +51,8 @@ import eu.eurise.feature.launcher.feeds.FeedReader
 import eu.eurise.feature.launcher.home.Pill
 import eu.eurise.feature.launcher.summary.BottomSheet
 import eu.eurise.feature.launcher.summary.SwitchRow
+import eu.eurise.core.designsystem.component.ServiceGate
+import eu.eurise.core.suite.PrivacyService
 import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -70,16 +72,18 @@ fun VideosPill(
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onChannels).padding(horizontal = 6.dp, vertical = 3.dp),
         )
     }) {
-        when {
-            !hasChannels -> Text(
-                stringResource(R.string.videos_empty), fontSize = 12.5.sp, lineHeight = 17.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.clickable(onClick = onChannels),
-            )
-            videos == null -> Text(stringResource(R.string.news_loading), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            videos.isEmpty() -> Text(stringResource(R.string.videos_none), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(videos, key = { it.id }) { v -> VideoTile(v) { onOpen(v) } }
+        ServiceGate(PrivacyService.Videos) {
+            when {
+                !hasChannels -> Text(
+                    stringResource(R.string.videos_empty), fontSize = 12.5.sp, lineHeight = 17.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable(onClick = onChannels),
+                )
+                videos == null -> Text(stringResource(R.string.news_loading), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                videos.isEmpty() -> Text(stringResource(R.string.videos_none), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(videos, key = { it.id }) { v -> VideoTile(v) { onOpen(v) } }
+                }
             }
         }
     }

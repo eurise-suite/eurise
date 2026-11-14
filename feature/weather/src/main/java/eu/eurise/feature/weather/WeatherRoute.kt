@@ -1,5 +1,8 @@
 package eu.eurise.feature.weather
 
+import eu.eurise.core.suite.PrivacyService
+import eu.eurise.core.designsystem.component.rememberServiceOn
+import eu.eurise.core.designsystem.component.ServiceOffNotice
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
@@ -109,6 +112,9 @@ fun WeatherRoute(
     BackHandler(onBack = onBack)
 
     val s = state
+    val weatherOn = rememberServiceOn(PrivacyService.Weather)
+    val alertsOn = rememberServiceOn(PrivacyService.Alerts)
+    val pollenOn = rememberServiceOn(PrivacyService.Pollen)
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
@@ -120,19 +126,24 @@ fun WeatherRoute(
             if (s == null || s.forecast == null) {
                 item("empty") {
                     Card(Modifier.padding(horizontal = 16.dp)) {
-                        Text(
-                            stringResource(
-                                when {
-                                    s?.needsLocation == true -> R.string.weather_need_location
-                                    loading -> R.string.weather_loading
-                                    else -> R.string.weather_offline
-                                },
-                            ),
-                            fontSize = 14.sp, lineHeight = 20.sp,
-                        )
-                        if (s?.needsLocation == true) {
-                            Spacer(Modifier.height(10.dp))
-                            Pill(stringResource(R.string.weather_use_location), strong = true) { askLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }
+                        // Spento di base (regola del 14 novembre): qui lo si accende, con l'avviso.
+                        if (weatherOn == false) {
+                            ServiceOffNotice(PrivacyService.Weather, onTurnedOn = { reload++ })
+                        } else {
+                            Text(
+                                stringResource(
+                                    when {
+                                        s?.needsLocation == true -> R.string.weather_need_location
+                                        loading -> R.string.weather_loading
+                                        else -> R.string.weather_offline
+                                    },
+                                ),
+                                fontSize = 14.sp, lineHeight = 20.sp,
+                            )
+                            if (s?.needsLocation == true) {
+                                Spacer(Modifier.height(10.dp))
+                                Pill(stringResource(R.string.weather_use_location), strong = true) { askLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }
+                            }
                         }
                     }
                 }
@@ -214,6 +225,20 @@ fun WeatherRoute(
                     Text(story.title, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(2.dp))
                     Text(story.body, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            // Allerte e pollini sono servizi a parte, spenti di base: si accendono da qui, con l'avviso.
+            if (alertsOn == false || pollenOn == false) item("more") {
+                Card(Modifier.padding(horizontal = 16.dp)) {
+                    if (alertsOn == false) {
+                        Text(stringResource(R.string.weather_alerts_off), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        ServiceOffNotice(PrivacyService.Alerts, onTurnedOn = { reload++ })
+                    }
+                    if (alertsOn == false && pollenOn == false) Spacer(Modifier.height(10.dp))
+                    if (pollenOn == false) {
+                        Text(stringResource(R.string.weather_pollen_off), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        ServiceOffNotice(PrivacyService.Pollen, onTurnedOn = { reload++ })
+                    }
                 }
             }
             item("credits") {

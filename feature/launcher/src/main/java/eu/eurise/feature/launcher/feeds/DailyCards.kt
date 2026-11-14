@@ -1,5 +1,6 @@
 package eu.eurise.feature.launcher.feeds
 
+import eu.eurise.core.designsystem.component.ServiceGate
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyService
 import kotlinx.coroutines.withContext
@@ -196,25 +197,27 @@ fun HoroscopeCard(
     onOpen: (FeedEntry) -> Unit,
 ) {
     SummaryCard(stringResource(R.string.card_horoscope), hazeState, modifier, action = stringResource(R.string.news_sources), onAction = onSources) {
-        Row(
-            Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onSign).padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SignBadge(sign, dark, 30)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(sign.label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = sign.color(dark))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.horoscope_change), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        when {
-            !loaded -> Text(stringResource(R.string.news_loading), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            entry == null -> Text(stringResource(R.string.horoscope_empty), fontSize = 13.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> Column(Modifier.clip(RoundedCornerShape(10.dp)).clickable { onOpen(entry) }) {
-                Text(entry.text, fontSize = 13.5.sp, lineHeight = 19.sp, maxLines = if (size.tall) 12 else 3, overflow = TextOverflow.Ellipsis)
-                Text(
-                    entry.source + " · " + stringResource(R.string.horoscope_read), fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp),
-                )
+        ServiceGate(PrivacyService.Horoscope) {
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onSign).padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SignBadge(sign, dark, 30)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(sign.label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = sign.color(dark))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.horoscope_change), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            when {
+                !loaded -> Text(stringResource(R.string.news_loading), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                entry == null -> Text(stringResource(R.string.horoscope_empty), fontSize = 13.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> Column(Modifier.clip(RoundedCornerShape(10.dp)).clickable { onOpen(entry) }) {
+                    Text(entry.text, fontSize = 13.5.sp, lineHeight = 19.sp, maxLines = if (size.tall) 12 else 3, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        entry.source + " · " + stringResource(R.string.horoscope_read), fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
     }
@@ -275,37 +278,39 @@ fun RecipeCard(
     onOpen: (FeedEntry) -> Unit,
 ) {
     SummaryCard(stringResource(R.string.card_recipe), hazeState, modifier, action = stringResource(R.string.news_sources), onAction = onSources) {
-        when {
-            recipes == null -> Text(stringResource(R.string.news_loading), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            recipes.isEmpty() -> Text(stringResource(R.string.recipe_empty), fontSize = 13.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> {
-                val pager = rememberPagerState { recipes.size }
-                HorizontalPager(pager, Modifier.fillMaxWidth(), pageSpacing = 12.dp) { page ->
-                    val r = recipes[page]
-                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onOpen(r) }) {
-                        if (r.image != null && (size.tall || !size.half)) {
-                            var bitmap by remember(r.image) { mutableStateOf<ImageBitmap?>(null) }
-                            LaunchedEffect(r.image) { bitmap = FeedReader.image(r.image) }
-                            Box(
-                                Modifier.size(if (size.tall) 92.dp else 64.dp).clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                            ) { bitmap?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) } }
-                            Spacer(Modifier.width(12.dp))
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text(r.title, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text(r.source, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (size.tall) {
-                                Text(r.text, fontSize = 12.5.sp, lineHeight = 16.sp, maxLines = 4, overflow = TextOverflow.Ellipsis)
+        ServiceGate(PrivacyService.News) {
+            when {
+                recipes == null -> Text(stringResource(R.string.news_loading), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                recipes.isEmpty() -> Text(stringResource(R.string.recipe_empty), fontSize = 13.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> {
+                    val pager = rememberPagerState { recipes.size }
+                    HorizontalPager(pager, Modifier.fillMaxWidth(), pageSpacing = 12.dp) { page ->
+                        val r = recipes[page]
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onOpen(r) }) {
+                            if (r.image != null && (size.tall || !size.half)) {
+                                var bitmap by remember(r.image) { mutableStateOf<ImageBitmap?>(null) }
+                                LaunchedEffect(r.image) { bitmap = FeedReader.image(r.image) }
+                                Box(
+                                    Modifier.size(if (size.tall) 92.dp else 64.dp).clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                ) { bitmap?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) } }
+                                Spacer(Modifier.width(12.dp))
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(r.title, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(r.source, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (size.tall) {
+                                    Text(r.text, fontSize = 12.5.sp, lineHeight = 16.sp, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                                }
                             }
                         }
                     }
-                }
-                if (recipes.size > 1) {
-                    Text(
-                        "${pager.currentPage + 1}/${recipes.size}", fontSize = 10.5.sp, fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (recipes.size > 1) {
+                        Text(
+                            "${pager.currentPage + 1}/${recipes.size}", fontSize = 10.5.sp, fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

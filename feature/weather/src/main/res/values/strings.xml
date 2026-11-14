@@ -38,4 +38,6 @@
     <string name="weather_day_wet">Pioggia probabile %1$s.</string>
     <string name="weather_day_storm">Temporali probabili %1$s: meglio non mettersi in viaggio in quelle ore.</string>
     <string name="weather_day_snow">Neve probabile %1$s: catene o gomme invernali se esci in auto.</string>
+    <string name="weather_alerts_off">Allerte meteo</string>
+    <string name="weather_pollen_off">Pollini</string>
 </resources>

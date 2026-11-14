@@ -241,6 +241,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
                 c.connectTimeout = 8000
                 c.readTimeout = 8000
                 c.instanceFollowRedirects = true
+                c.setRequestProperty("User-Agent", "EuriseEmail")
                 try { if (c.responseCode == 200) c.inputStream.bufferedReader().use { it.readText() } else null } finally { c.disconnect() }
             }.getOrNull() ?: continue
             Providers.parseAutoconfig(xml, email)?.let { return it }

@@ -35,4 +35,45 @@
     <string name="ds_where_us_long">Stati Uniti, le autorità possono chiedere i dati</string>
     <string name="ds_where_various_long">siti diversi scelti da te</string>
     <string name="ds_where_other_long">fuori dall\'Europa</string>
+    <!-- Servizi esterni e avviso prima di accenderli (centro privacy e schede della Scrivania) -->
+    <string name="ds_off_line">Spento: niente esce dal telefono.</string>
+    <string name="ds_off_turn_on">Accendi…</string>
+    <string name="ds_on_title">Cosa cambia per la tua privacy</string>
+    <string name="ds_on_read">Cosa riceve</string>
+    <string name="ds_on_where">Dove va</string>
+    <string name="ds_on_who">Chi lo vede</string>
+    <string name="ds_on_who_d">chi gestisce il servizio, che vede anche l\'indirizzo di rete del telefono</string>
+    <string name="ds_on_privacy">Come cambia la privacy</string>
+    <string name="ds_on_privacy_d">Oggi è a 10 su 10: tutto resta sul telefono. Acceso, questo servizio è a %1$d su 10.</string>
+    <string name="ds_on_back">Per tornare indietro</string>
+    <string name="ds_on_back_d">spegnilo nel centro privacy: le richieste si fermano subito, senza conferme</string>
+    <string name="ds_on_ok">Accendi</string>
+    <string name="ds_on_no">Non ora</string>
+
+    <string name="ds_s_weather">Meteo · Open-Meteo</string>
+    <string name="ds_s_weather_d">la posizione arrotondata a circa 1 km. Il nome del luogo lo cerca il servizio di posizione del telefono, con la stessa posizione arrotondata (su /e/OS OpenStreetMap, su Android con Google i server di Google)</string>
+    <string name="ds_s_pollen">Pollini · Open-Meteo (dati CAMS)</string>
+    <string name="ds_s_pollen_d">la posizione arrotondata a circa 1 km</string>
+    <string name="ds_s_alerts">Allerte meteo · MeteoAlarm</string>
+    <string name="ds_s_alerts_d">la richiesta dell\'elenco delle allerte del paese, uguale per tutti: non riceve la posizione. La zona si confronta sul telefono</string>
+    <string name="ds_s_news">Notizie e ricette · siti scelti</string>
+    <string name="ds_s_news_d">la richiesta dei titoli e delle foto dei siti che scegli: non sanno chi sei</string>
+    <string name="ds_s_markets">Borsa · Yahoo</string>
+    <string name="ds_s_markets_d">i titoli che segui, insieme all\'indirizzo di rete, a ogni aggiornamento della scheda</string>
+    <string name="ds_s_markets_warn">Yahoo è un servizio chiuso, negli Stati Uniti, che vive di pubblicità: può collegare i titoli che segui al tuo indirizzo di rete e ad altri dati che ha già. Alternativa: tieni la Borsa spenta e apri i titoli nel Browser, nella scheda privata.</string>
+    <string name="ds_s_horoscope">Oroscopo · siti scelti</string>
+    <string name="ds_s_horoscope_d">la richiesta dell\'oroscopo del giorno, uguale per tutti</string>
+    <string name="ds_s_videos">Video · YouTube</string>
+    <string name="ds_s_videos_d">i canali che segui e la richiesta delle miniature, insieme all\'indirizzo di rete</string>
+    <string name="ds_s_videos_warn">YouTube è di Google, servizio chiuso negli Stati Uniti che vive di pubblicità: può collegare i canali che segui al tuo indirizzo di rete e al resto di ciò che sa di te. Alternativa: segui i canali su PeerTube, o guardali con NewPipe, a codice aperto e senza account.</string>
+    <string name="ds_s_routes">Percorsi · OpenStreetMap</string>
+    <string name="ds_s_routes_d">partenza e arrivo, solo per il tempo di viaggio degli impegni</string>
+    <string name="ds_s_route_weather">Meteo sul percorso · Open-Meteo</string>
+    <string name="ds_s_route_weather_d">per Eurise Mappe durante la guida: fino a 8 punti della strada, arrotondati a circa 1 km, con l\'ora di passaggio</string>
+    <string name="ds_s_map_search">Ricerca su OpenStreetMap (Photon, komoot · Germania)</string>
+    <string name="ds_s_map_search_d">per Eurise Mappe, solo quando le mappe del telefono non trovano un luogo: le parole cercate e la lingua, mai la posizione</string>
+    <string name="ds_s_map_reports">Note su OpenStreetMap (OpenStreetMap Foundation · Regno Unito)</string>
+    <string name="ds_s_map_reports_d">per Eurise Mappe, solo quando mandi le segnalazioni a fine viaggio, dopo averle viste: punto, tipo, direzione e strada di ciascuna, come nota anonima e pubblica; niente account né dati del telefono</string>
+    <string name="ds_s_fuel">Prezzi dei carburanti (Ministero delle Imprese · Italia)</string>
+    <string name="ds_s_fuel_d">per Eurise Mappe, al massimo una volta al giorno quando apri i benzinai: la richiesta del file pubblico dei prezzi, uguale per tutti; non esce la posizione né altro</string>
 </resources>

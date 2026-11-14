@@ -1,5 +1,8 @@
 package eu.eurise.feature.launcher.home
 
+import eu.eurise.core.suite.PrivacyService
+import eu.eurise.core.designsystem.component.rememberServiceOn
+import eu.eurise.core.designsystem.component.ServiceConsentSheet
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -126,6 +129,20 @@ fun skyIcon(sky: Sky) = when (sky) {
 @Composable
 fun WeatherRow(forecast: List<DayForecast>?, canAsk: Boolean, onAsk: () -> Unit, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val color = MaterialTheme.colorScheme.onBackground
+    // Meteo spento nel centro privacy (spento di base): una riga che lo dice e lo fa accendere, con l'avviso.
+    if (rememberServiceOn(PrivacyService.Weather) == false) {
+        var asking by remember { mutableStateOf(false) }
+        Row(
+            modifier.clip(RoundedCornerShape(50)).clickable { asking = true }.padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.sun(), null, tint = color.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.weather_off), color = color.copy(alpha = 0.8f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        }
+        if (asking) ServiceConsentSheet(PrivacyService.Weather, onDismiss = { asking = false }, onAccept = { asking = false })
+        return
+    }
     if (forecast.isNullOrEmpty()) {
         if (canAsk) {
             Row(
