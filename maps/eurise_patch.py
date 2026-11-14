@@ -988,6 +988,13 @@ patch(res / "xml" / "prefs_navigation.xml", """    android:key="eurise_limit_not
       android:summary="@string/eurise_feasts_summary"
       android:widgetLayout="@layout/preference_switch"
       app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_your_days"
+      android:title="@string/eurise_your_days"
+      android:summary="@string/eurise_your_days_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
   </PreferenceCategory>""")
 print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e della rotonda, anche in Android Auto)")
 

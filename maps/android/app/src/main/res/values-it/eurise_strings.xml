@@ -167,6 +167,8 @@
     <string name="eurise_seasons_summary">Prato e alberi di primavera, estate, autunno, inverno</string>
     <string name="eurise_feasts">Feste</string>
     <string name="eurise_feasts_summary">Natale, Capodanno, Halloween e la festa nazionale del paese del telefono</string>
+    <string name="eurise_your_days">I tuoi giorni</string>
+    <string name="eurise_your_days_summary">Compleanni e anniversari dal Calendario: letti sul telefono, nulla esce, nessun nome sullo schermo</string>
     <string name="eurise_speed_tolerance">Velocità in rosso oltre il limite di</string>
     <string name="eurise_speed_sound">Suono quando si supera</string>
     <string name="eurise_limit_notice">Avvisa del limite che cambia</string>

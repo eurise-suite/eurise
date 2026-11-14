@@ -170,6 +170,8 @@
     <string name="eurise_seasons_summary">Grass and trees of spring, summer, autumn, winter</string>
     <string name="eurise_feasts">Holidays</string>
     <string name="eurise_feasts_summary">Christmas, New Year, Halloween and the national day of the phone\'s country</string>
+    <string name="eurise_your_days">Your days</string>
+    <string name="eurise_your_days_summary">Birthdays and anniversaries from the Calendar: read on the phone, nothing leaves, no names on screen</string>
     <string name="eurise_speed_tolerance">Speed turns red above the limit by</string>
     <string name="eurise_speed_sound">Sound when going over</string>
     <string name="eurise_limit_notice">Notice when the limit changes</string>

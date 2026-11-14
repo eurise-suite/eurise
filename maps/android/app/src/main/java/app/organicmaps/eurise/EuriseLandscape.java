@@ -27,7 +27,8 @@ import java.util.Locale;
  * In movimento: le nuvole scorrono piano (più veloci con raffiche forti), nel temporale un lampo ogni tanto; pioggia,
  * neve e grandine cadono sul cielo e sul prato, **mai sulla strada** (la strada si passa in [precip] e resta fuori).
  * Il meteo è quello che la guida ha già (EuriseRouteWeather): nessun dato in più esce dal telefono; se è spento, il
- * cielo segue solo l'ora. Ogni parte si spegne in Impostazioni › Navigazione › Cielo e stagioni.
+ * cielo segue solo l'ora. I tuoi giorni (compleanno, anniversario) arrivano da EuriseYourDays, senza nomi, e passano
+ * davanti alle feste. Ogni parte si spegne in Impostazioni › Navigazione › Cielo e stagioni.
  *
  * Lo spazio di disegno è quello delle scene (390 × 260); [t] in secondi.
  */
@@ -36,7 +37,7 @@ public final class EuriseLandscape
   public enum Tempo { SERENO, POCO_NUVOLOSO, MOLTO_NUVOLOSO, PIOGGIA, TEMPORALE, GRANDINE, NEVE }
   public enum Momento { GIORNO, SERA, NOTTE }
   public enum Stagione { PRIMAVERA, ESTATE, AUTUNNO, INVERNO }
-  public enum Festa { NESSUNA, NATALE, CAPODANNO, NAZIONALE, HALLOWEEN }
+  public enum Festa { NESSUNA, NATALE, CAPODANNO, NAZIONALE, HALLOWEEN, COMPLEANNO, ANNIVERSARIO }
 
   public static final String PREF_SKY = "eurise_sky_weather", PREF_SEASONS = "eurise_seasons", PREF_FEASTS = "eurise_feasts",
                              PREF_YOUR_DAYS = "eurise_your_days";
@@ -79,6 +80,14 @@ public final class EuriseLandscape
     s.stagione = p.getBoolean(PREF_SEASONS, true) ? stagione(month) : Stagione.ESTATE;
     if (p.getBoolean(PREF_FEASTS, true))
       feast(s, month, day, Locale.getDefault().getCountry());
+    if (p.getBoolean(PREF_YOUR_DAYS, true))
+    {
+      final int mine = EuriseYourDays.today(c);
+      if (mine == EuriseYourDays.BIRTHDAY)
+        s.festa = Festa.COMPLEANNO;
+      else if (mine == EuriseYourDays.ANNIVERSARY)
+        s.festa = Festa.ANNIVERSARIO;
+    }
     return s;
   }
 
@@ -322,6 +331,27 @@ public final class EuriseLandscape
         k.drawPath(trail, st);
       }
     }
+    if (s.festa == Festa.ANNIVERSARIO)
+      hearts(k, p, w, h);
+  }
+
+  /** Sei cuoricini nel cielo, a due altezze alterne (anniversario). */
+  private static void hearts(@NonNull Canvas k, @NonNull Paint p, float w, float h)
+  {
+    for (int i = 0; i < 6; i++)
+    {
+      final float x = w * (0.12f + i * 0.15f), y = h * (0.25f + (i % 2) * 0.25f), z = h * 0.045f;
+      final Path c = new Path();
+      c.moveTo(x, y + z);
+      c.cubicTo(x - 2 * z, y - 0.2f * z, x - z, y - 1.6f * z, x, y - 0.6f * z);
+      c.cubicTo(x + z, y - 1.6f * z, x + 2 * z, y - 0.2f * z, x, y + z);
+      c.close();
+      p.setShader(null);
+      p.setStyle(Paint.Style.FILL);
+      p.setColor(0xFFE8A0B0);
+      p.setAlpha(217);
+      k.drawPath(c, p);
+    }
   }
 
   // ---- Alberi ----------------------------------------------------------------------------------------------------
@@ -400,6 +430,24 @@ public final class EuriseLandscape
         p.setColor(0xFF6F8F5E);
         k.drawRect(x + z * 0.67f, y - z * 0.55f, x + z * 0.74f, y - z * 0.43f, p);
       }
+      if (s.festa == Festa.COMPLEANNO && i == 0)
+        balloons(k, p, x, y, z);
+    }
+  }
+
+  /** Tre palloncini legati al primo albero (compleanno). */
+  private static void balloons(@NonNull Canvas k, @NonNull Paint p, float x, float y, float z)
+  {
+    final int[] colors = {0xFFF2A0A0, 0xFF9EC5E8, 0xFFF2D27A};
+    final Paint string = new Paint(Paint.ANTI_ALIAS_FLAG);
+    string.setStyle(Paint.Style.STROKE);
+    string.setStrokeWidth(0.8f);
+    string.setColor(0xFF7C8598);
+    for (int b = 0; b < 3; b++)
+    {
+      final float bx = x + (b - 1) * z * 0.55f, by = y - z * (3.1f + (b % 2) * 0.3f);
+      k.drawLine(x, y - z * 1.8f, bx, by + z * 0.35f, string);
+      oval(k, p, bx, by, z * 0.26f, z * 0.33f, colors[b], 1f);
     }
   }
 

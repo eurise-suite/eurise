@@ -176,6 +176,12 @@
             android:authorities="${applicationId}.routeweather"
             android:exported="true"
             android:permission="${suitePermission}" />
+        <!-- «I tuoi giorni» per il paesaggio di Eurise Mappe: solo il tipo di giorno, senza rete. -->
+        <provider
+            android:name=".YourDaysProvider"
+            android:authorities="${applicationId}.yourdays"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <!-- Centro privacy per le altre app della suite (ricerca su OpenStreetMap di Eurise Mappe). -->
         <provider
             android:name=".PrivacyProvider"

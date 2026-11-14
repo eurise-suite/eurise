@@ -2355,3 +2355,12 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
     `home/Wallpaper.kt` disegnata su bitmap alla misura dello schermo; si ridisegna solo quando cambia la scena (momento,
     meteo, festa), con WorkManager, niente servizi. Alcune ROM ignorano lo sfondo di blocco di terze parti: da provare sul
     telefono del proprietario.
+
+## 14 novembre, sera: «I tuoi giorni» nel paesaggio (ramo `brand`, forma già approvata in MapCieli)
+- Contratto `core/suite/YourDaysContract` e fornitore `app/.../hub/YourDaysProvider` (`${applicationId}.yourdays`, permesso
+  della suite): risponde solo col tipo di giorno di oggi (0 niente, 1 compleanno, 2 anniversario), dalle Date importanti
+  segnate come «mie»; il compleanno ha la precedenza. Nessun nome, nessuna data, niente rete.
+- Mappe: `EuriseYourDays` (una domanda al giorno, fuori dal thread principale; senza l'app Eurise è un giorno qualsiasi);
+  `EuriseLandscape.Festa` ha COMPLEANNO (tre palloncini legati al primo albero) e ANNIVERSARIO (sei cuoricini nel cielo),
+  che passano davanti alle feste. Interruttore «I tuoi giorni» in Navigazione › Cielo e stagioni (acceso di base: nulla esce).
+- Da provare: segnare il proprio compleanno di oggi in Calendario › Date importanti e aprire un incrocio in guida.
