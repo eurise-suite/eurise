@@ -99,8 +99,12 @@ object EuriseLuogo {
     internal fun route(context: Context, place: MapObject, now: Boolean) {
         val rc = RoutingController.get()
         startWhenBuilt = now
-        if (rc.isPlanning) rc.setEndPoint(place)
-        else (context.activity() as? MwmActivity)?.startLocationToPoint(place)
+        val activity = context.activity() as? MwmActivity
+        if (rc.isPlanning) {
+            // Come «Percorso fin qui» di CoMaps: la scheda si chiude, altrimenti resta sopra il pannello del percorso.
+            rc.setEndPoint(place)
+            activity?.closePlacePage()
+        } else activity?.startLocationToPoint(place)
     }
 
     internal fun save(place: MapObject) {
