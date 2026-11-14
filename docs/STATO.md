@@ -2283,3 +2283,9 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   una chiave, quindi «due tocchi» solo con un conto di Eurise e un piccolo inoltro (o la chiave dell'utente, che la
   regola esclude). AlfComputer: opzione «Sveglialo fuori casa, col router» con guida in 4 passi (pagina del router,
   «Wake on LAN», consenti da fuori senza aprire porte, prova coi dati mobili).
+- **APK in apk-prova: giro 489 e Mappe 41** (foglio del primo avvio).
+- **Paesaggio della guida, tavole da approvare** (pagina Mappe): MapCieli (7 tempi × giorno/sera/notte, 4 stagioni, feste:
+  Natale, Capodanno, festa nazionale, Halloween; i tuoi giorni: compleanno, anniversario; impostazioni «Cielo e stagioni»
+  con 4 interruttori). Un solo motore di disegno (`scene()` nello script delle tavole MapCieli, MapIncroci, MapGuida: da
+  portare in Java come `EuriseLandscape` usato da `EuriseJunctionScene` e dal cielo della guida). MapIncroci e MapGuida
+  hanno le Tweaks tempo, momento, stagione, festa.
