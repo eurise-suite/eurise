@@ -2065,6 +2065,32 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
     43612114571, con «Colore d'accento delle icone» nelle impostazioni) e motore, **cambiati tutti e due**. Il tablet il
     proprietario lo prova quando arriva il Volla.
 
+**14 novembre, sera: richieste del proprietario dopo la prova sul telefono (foto del documento nel motore)**
+- **Dock della schermata iniziale** (Recenti, File dal telefono, File dal cloud: tocco = cartella del cloud di riferimento,
+  tocco lungo = scelta con la stellina del preferito; Eurise File con le cartelle sincronizzate se c'è, altrimenti l'app
+  del cloud): **la fa un'altra chat**, conferma del proprietario. I suoi file non salvati (`Clouds.kt`, `CloudSheet.kt`,
+  `HomeScreen.kt`, `Suite.kt`, `OfficePrefs.kt`, `FilesContract.kt`) sono nella stessa copia del repository: in questa
+  chat si salvano solo i propri file, uno per uno, mai `git add -A`.
+- **Caricamento del motore nei nostri colori** (`office/motore/src/main/res`): il verde era l'accento di base di AppCompat
+  (`accent_material_light`, il tema non ne dichiarava uno). Tema Perla/Notte con accento azzurro, barre di sistema dello
+  stesso colore, dialoghi come isole arrotondate, e `lolib_dialog_loading` sostituito (le risorse dell'app vincono su
+  quelle della libreria): icona di Office, «Apro il documento…», barra sottile nell'accento; testi anche in `values-it`
+  (altrimenti vince il `values-it` di Collabora).
+- **Intestazione del telefono come OffTelefono**: Collabora dava ai pulsanti della sua riga un fondo grigio con selettori
+  più forti; ora `!important` su fondo, misura e raggio, Perla/Notte, nome e stato nel nostro carattere. Il segnaposto del
+  cursore (`.leaflet-cursor-handler`, la goccia scura) è una goccia sottile nell'accento, stessa misura e punta.
+- **Chiusura durante la modifica**: la prova nuova di lavoro lungo (`lavoro_lungo` in office/prova/prova.sh: dieci giri di
+  scrittura in testo.odt, ognuno con il salvataggio automatico) sull'emulatore **non** la riproduce (prova 43621698180:
+  motore vivo, dieci salvataggi riusciti). Il salvataggio verso l'originale (`copyTempBackToIntent`) prende tutte le
+  eccezioni. Punto scoperto trovato: nessuno gestiva `onRenderProcessGone` (né Collabora né noi), e WebView in quel caso
+  fa cadere tutta l'app; sui telefoni veri Android chiude il processo che disegna la pagina quando manca memoria. Ora
+  `COWebViewClient` lo gestisce (`eurise_patch.py` → `EuriseSuite.renderGone`): avviso e chiusura in ordine, il documento
+  è già salvato. **Ipotesi da confermare**: se si chiude ancora, serve il registro del telefono (rapporto OffRapporto,
+  approvato, o adb logcat).
+- **Tavole aggiornate** sulla pagina Office, fila «Eurise Office com'è oggi» (y 7900): OffOggiTelefono, OffOggiHome (con la
+  dock nuova e la scelta del cloud), OffOggiCaricamento, OffOggiTablet, OffOggiComputer. Generate da
+  `/home/claude/tela/gen/gen.py` con le icone di `ICONS` (non nel repository).
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
