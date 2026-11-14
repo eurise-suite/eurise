@@ -434,3 +434,231 @@ body.eurise-tel #toolbar-row {
 [data-theme='dark'] #eurise-panel.suite .eurise-key { background: #222833 !important; }
 [data-theme='dark'] #eurise-panel .eurise-key.on { background: #2B3A55 !important; color: #E6E9F0; box-shadow: inset 0 -2px 0 #A9C1F2; }
 [data-theme='dark'] .eurise-status { color: #9CC3A8; }
+
+/* Telefono: ricerca e scelte come foglio che sale dal basso, sotto il pollice (tavola OffCerca). */
+body.eurise-tel #eurise-overlay {
+	align-items: flex-end;
+	padding-top: 0;
+}
+body.eurise-tel #eurise-overlay > .eurise-panel {
+	width: 100vw;
+	max-height: 82vh;
+	padding: 14px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+	box-sizing: border-box;
+	border-radius: 26px 26px 0 0;
+	background: #F4F4F1;
+}
+[data-theme='dark'] body.eurise-tel #eurise-overlay > .eurise-panel,
+body.eurise-tel[data-theme='dark'] #eurise-overlay > .eurise-panel { background: #1B2029; }
+
+/* --- Tablet: barra a nastro Eurise (tavola OffTablet, Control.Eurise.js) ------------------------------------------ */
+body.eurise-tablet #toolbar-row > :not(#eurise-top),
+body.eurise-tablet #mobile-edit-button {
+	display: none !important;
+}
+body.eurise-tablet #toolbar-row {
+	height: auto;
+	padding: 10px 14px 8px;
+	background: #F4F4F1;
+	border: 0;
+}
+#eurise-top {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-header.tablet {
+	height: 52px;
+	padding: 0 8px 0 16px;
+	border-radius: 26px;
+	background: #FFFFFF;
+	gap: 4px;
+}
+#eurise-header.tablet .eurise-doc {
+	flex-direction: row;
+	align-items: baseline;
+	gap: 12px;
+}
+#eurise-header.tablet .eurise-status { font-size: 12px; }
+.eurise-cmdsearch {
+	width: 220px;
+	height: 40px;
+	margin: 0 6px !important;
+	padding: 0 10px;
+	border: 0 !important;
+	border-radius: 20px;
+	background: #FFFFFF;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	color: #56564F;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: 500 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.eurise-cmdsearch span { flex: 1; text-align: left; }
+.eurise-cmdsearch kbd {
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: #F4F4F1;
+	font: 700 10.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.eurise-share {
+	height: 40px;
+	margin: 0 !important;
+	padding: 0 16px;
+	border: 0 !important;
+	border-radius: 20px;
+	background: #1F2A44 !important;
+	color: #FFFFFF;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font: 700 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+#eurise-tabs {
+	height: 44px;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+#eurise-tabs .eurise-rtab {
+	height: 44px;
+	margin: 0 !important;
+	padding: 0 12px;
+	border: 0 !important;
+	border-radius: 0;
+	background: transparent !important;
+	box-shadow: none;
+	color: #1E1D1B;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	font: 600 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+#eurise-tabs .eurise-rtab.file {
+	height: 30px;
+	padding: 0 14px;
+	border-radius: 15px;
+	background: #1F2A44 !important;
+	color: #FFFFFF;
+	font-weight: 700;
+}
+#eurise-tabs .eurise-rtab.suite { color: #7A3440; }
+#eurise-tabs .eurise-rtab.suite svg { color: #B8923F; }
+#eurise-tabs .eurise-rtab.active {
+	color: #1F2A44;
+	font-weight: 800;
+	box-shadow: inset 0 -3px 0 #3E5C8A;
+}
+#eurise-ribbon {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+#eurise-ribbon::-webkit-scrollbar { display: none; }
+.eurise-group {
+	flex: none;
+	padding: 6px 8px 4px;
+	border-radius: 14px;
+	background: #FFFFFF;
+	box-shadow: 0 1px 2px rgba(31, 42, 68, 0.06);
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.eurise-group.suite {
+	margin-left: auto;
+	background: #F7EEEF;
+}
+.eurise-gbody {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.eurise-smalls {
+	display: grid;
+	grid-template-rows: repeat(2, 38px);
+	grid-auto-flow: column;
+	gap: 2px;
+}
+#eurise-ribbon .eurise-rb {
+	margin: 0 !important;
+	border: 0 !important;
+	box-shadow: none;
+	background: transparent !important;
+	width: 40px;
+	height: 38px;
+	padding: 0;
+	border-radius: 9px;
+	color: #1E1D1B;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#eurise-ribbon .eurise-rb.big {
+	width: auto;
+	min-width: 58px;
+	max-width: 84px;
+	height: 76px;
+	padding: 0 4px;
+	border-radius: 12px;
+	flex-direction: column;
+	gap: 5px;
+	font: 600 11.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	line-height: 1.15;
+	text-align: center;
+	white-space: normal;
+}
+#eurise-ribbon .eurise-rb.suite { color: #7A3440; }
+#eurise-ribbon .eurise-rb:active { background: #ECECE7 !important; }
+#eurise-ribbon .eurise-rb.on {
+	background: #DDE3F0 !important;
+	color: #1F2A44;
+	box-shadow: inset 0 -2px 0 #3E5C8A;
+}
+.eurise-gfoot {
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	font: 700 10.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: #56564F;
+}
+.eurise-group.suite .eurise-gfoot { color: #7A3440; }
+.eurise-gmore {
+	width: 18px;
+	height: 18px;
+	margin: 0 !important;
+	padding: 0;
+	border: 0 !important;
+	border-radius: 5px;
+	background: transparent !important;
+	color: #56564F;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+[data-theme='dark'] body.eurise-tablet #toolbar-row,
+body.eurise-tablet[data-theme='dark'] #toolbar-row { background: #171B22; }
+[data-theme='dark'] #eurise-top { color: #E6E9F0; }
+[data-theme='dark'] #eurise-header.tablet,
+[data-theme='dark'] .eurise-group,
+[data-theme='dark'] .eurise-cmdsearch { background: #222833; }
+[data-theme='dark'] .eurise-group.suite { background: #2A2128; }
+[data-theme='dark'] #eurise-tabs .eurise-rtab,
+[data-theme='dark'] #eurise-ribbon .eurise-rb { color: #E6E9F0; }
+[data-theme='dark'] #eurise-tabs .eurise-rtab.active { color: #A9C1F2; box-shadow: inset 0 -3px 0 #A9C1F2; }
+[data-theme='dark'] #eurise-tabs .eurise-rtab.file,
+[data-theme='dark'] .eurise-share { background: #A9C1F2 !important; color: #14203A; }
+[data-theme='dark'] #eurise-ribbon .eurise-rb.on { background: #2B3A55 !important; color: #E6E9F0; }
+[data-theme='dark'] .eurise-gfoot,
+[data-theme='dark'] .eurise-gmore { color: #A8AEBB; }
