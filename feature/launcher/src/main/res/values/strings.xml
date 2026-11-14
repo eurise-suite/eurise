@@ -645,12 +645,12 @@
     <string name="snd_more_size">scarica · %1$s MB</string>
     <string name="snd_downloading">Scarico… %1$d%%</string>
     <string name="snd_download_title">Scaricare le suonerie?</string>
-    <string name="snd_download_body">Un file di %1$s MB dall'archivio di Eurise su %2$s. Esce solo la richiesta del file, nessun tuo dato. Poi suonano anche senza rete.</string>
+    <string name="snd_download_body">Un file di %1$s MB dall\'archivio di Eurise su %2$s. Esce solo la richiesta del file, nessun tuo dato. Poi suonano anche senza rete.</string>
     <string name="snd_download_ok">Scarica</string>
     <string name="snd_download_failed">Non è stato possibile scaricare le suonerie. Riprova con la rete.</string>
     <string name="snd_cancel">Annulla</string>
     <string name="snd_listen">Ascolta %1$s</string>
-    <string name="snd_stop">Ferma l'ascolto</string>
+    <string name="snd_stop">Ferma l\'ascolto</string>
     <string name="snd_song">Una canzone che hai sul telefono</string>
     <string name="snd_song_hint">scegli il pezzo che vuoi, anche il ritornello</string>
     <string name="snd_rules">Chi suona come</string>
@@ -674,7 +674,7 @@
     <string name="cut_fade_in">Entra piano</string>
     <string name="cut_fade_in_hint">il volume sale nei primi 2 secondi</string>
     <string name="cut_seamless">Ricomincia senza stacco</string>
-    <string name="cut_seamless_hint">la fine sfuma nell'inizio</string>
+    <string name="cut_seamless_hint">la fine sfuma nell\'inizio</string>
     <string name="cut_note">Il pezzo resta sul telefono, nella cartella Suonerie. Il brano originale non si tocca.</string>
     <string name="cut_use_for">Usalo per</string>
     <string name="cut_all_calls">Tutte le chiamate</string>
@@ -702,10 +702,10 @@
     <string name="rules_hours">solo %1$d–%2$d, poi in silenzio</string>
     <string name="rules_info">Le app che non sono di Eurise suonano da sole. Per sentire il suono scelto qui, si toglie il loro suono una volta e lo fa Eurise al posto loro. Silenzioso e Non disturbare valgono sempre.</string>
     <string name="rules_mute_app">Togli il suono di %1$s</string>
-    <string name="rules_needs_listener">Per suonare al posto delle app serve l'accesso alle notifiche.</string>
-    <string name="rules_grant_listener">Concedi l'accesso</string>
+    <string name="rules_needs_listener">Per suonare al posto delle app serve l\'accesso alle notifiche.</string>
+    <string name="rules_grant_listener">Concedi l\'accesso</string>
     <string name="rules_pick_contact">Scegli una persona</string>
-    <string name="rules_pick_app">Scegli un'app</string>
+    <string name="rules_pick_app">Scegli un\'app</string>
     <string name="rules_search">Cerca</string>
     <string name="rules_save">Salva</string>
     <string name="rules_remove">Togli</string>
@@ -716,7 +716,7 @@
     <string name="rules_only_hours">Solo in certe ore</string>
     <string name="rules_from">Dalle</string>
     <string name="rules_until">Alle</string>
-    <string name="rules_contacts_needed">Per scegliere le persone serve l'accesso alla rubrica.</string>
+    <string name="rules_contacts_needed">Per scegliere le persone serve l\'accesso alla rubrica.</string>
     <string name="rules_pick_sound">Scegli il suono</string>
     <!-- Sfondo sulla schermata di blocco (tavola SfoBlocco) -->
     <string name="lock_wp_title">Sfondo</string>
@@ -730,8 +730,8 @@
     <string name="lock_wp_other">Uno diverso per il blocco</string>
     <string name="lock_wp_other_hint">un altro sfondo di Eurise o una tua foto</string>
     <string name="lock_wp_on_lock">Sulla schermata di blocco</string>
-    <string name="lock_wp_dim">Un po' più scuro</string>
-    <string name="lock_wp_dim_hint">l'ora si legge meglio</string>
+    <string name="lock_wp_dim">Un po\' più scuro</string>
+    <string name="lock_wp_dim_hint">l\'ora si legge meglio</string>
     <string name="lock_wp_follow">Segue momento, meteo e feste</string>
     <string name="lock_wp_follow_hint">si ridisegna solo quando cambia qualcosa</string>
     <string name="lock_wp_photo">Una tua foto</string>
