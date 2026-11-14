@@ -48,6 +48,11 @@ class Ear(private val context: Context) {
     @Volatile private var cancelled = false
     private var system: SpeechRecognizer? = null
     private var connection: ServiceConnection? = null
+    /** Voce collegata (resta collegata finché il pannello di Alfred è aperto: il modello resta in memoria). */
+    private var service: Messenger? = null
+    private val waiting = ArrayList<(Messenger?) -> Unit>()
+    /** La trascrizione in corso: un esito nuovo chiude la precedente. */
+    private var pending: (() -> Unit)? = null
 
     private val voicePackage get() = AlfredTts.voicePackage(context)
 
@@ -83,8 +88,43 @@ class Ear(private val context: Context) {
         recording = false
         system?.let { runCatching { it.cancel(); it.destroy() } }
         system = null
+        pending = null
+    }
+
+    /** Alla chiusura del pannello: si scollega da Voce, che libera il modello. */
+    fun close() {
+        cancel()
         connection?.let { runCatching { context.unbindService(it) } }
         connection = null
+        service = null
+        waiting.clear()
+    }
+
+    /** Si collega a Voce (una volta sola): Voce comincia a caricare il modello appena si collega. */
+    private fun connect(voice: String, then: (Messenger?) -> Unit) {
+        service?.let { return then(it) }
+        waiting += then
+        if (connection != null) return
+        val conn = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, binder: IBinder) {
+                val m = Messenger(binder)
+                service = m
+                waiting.toList().also { waiting.clear() }.forEach { it(m) }
+            }
+            override fun onServiceDisconnected(name: ComponentName?) {
+                service = null
+                connection = null
+                pending?.invoke()
+            }
+        }
+        connection = conn
+        val bound = runCatching {
+            context.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(voice), conn, Context.BIND_AUTO_CREATE)
+        }.getOrDefault(false)
+        if (!bound) {
+            connection = null
+            waiting.toList().also { waiting.clear() }.forEach { it(null) }
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -93,6 +133,7 @@ class Ear(private val context: Context) {
         onText: (String) -> Unit, onFail: (Problem) -> Unit,
     ) {
         recording = true
+        connect(voice) {}
         thread(name = "alfred-ear") {
             val rate = VoiceContract.SAMPLE_RATE
             val record = runCatching {
@@ -152,13 +193,17 @@ class Ear(private val context: Context) {
     /** L'audio va a Voce in un tubo (può superare il limite dei messaggi tra app); la risposta torna con [Messenger]. */
     private fun transcribe(voice: String, audio: ByteArray, onText: (String) -> Unit, onFail: (Problem) -> Unit) {
         var finished = false
+        lateinit var timeout: Runnable
         fun end(block: () -> Unit) {
             if (finished) return
             finished = true
-            connection?.let { runCatching { context.unbindService(it) } }
-            connection = null
+            main.removeCallbacks(timeout)
+            pending = null
             if (!cancelled) block()
         }
+        val failNow: () -> Unit = { end { onFail(Problem.Failed) } }
+        timeout = Runnable { failNow() }
+        pending = failNow
         val reply = Messenger(Handler(Looper.getMainLooper()) { msg ->
             val data = msg.data
             val text = data.getString(VoiceContract.KEY_TEXT)
@@ -172,33 +217,26 @@ class Ear(private val context: Context) {
             }
             true
         })
-        val conn = object : ServiceConnection {
-            override fun onServiceConnected(name: ComponentName?, service: IBinder) {
-                val (read, write) = ParcelFileDescriptor.createPipe()
-                val msg = Message.obtain(null, VoiceContract.MSG_TRANSCRIBE).apply {
-                    data = Bundle().apply {
-                        putParcelable(VoiceContract.KEY_AUDIO, read)
-                        putString(VoiceContract.KEY_LANGUAGE, Locale.getDefault().language)
-                        if (Locale.getDefault().language == "it") putString(VoiceContract.KEY_PROMPT, COMMAND_PROMPT)
-                    }
-                    replyTo = reply
+        connect(voice) { m ->
+            if (m == null) return@connect failNow()
+            val (read, write) = ParcelFileDescriptor.createPipe()
+            val msg = Message.obtain(null, VoiceContract.MSG_TRANSCRIBE).apply {
+                data = Bundle().apply {
+                    putParcelable(VoiceContract.KEY_AUDIO, read)
+                    putString(VoiceContract.KEY_LANGUAGE, Locale.getDefault().language)
+                    if (Locale.getDefault().language == "it") putString(VoiceContract.KEY_PROMPT, COMMAND_PROMPT)
                 }
-                val sent = runCatching { Messenger(service).send(msg) }.isSuccess
-                runCatching { read.close() }
-                if (!sent) { runCatching { write.close() }; end { onFail(Problem.Failed) }; return }
-                thread(name = "alfred-ear-pipe") {
-                    runCatching { ParcelFileDescriptor.AutoCloseOutputStream(write).use { it.write(audio) } }
-                }
+                replyTo = reply
             }
-            override fun onServiceDisconnected(name: ComponentName?) = end { onFail(Problem.Failed) }
+            val sent = runCatching { m.send(msg) }.isSuccess
+            runCatching { read.close() }
+            if (!sent) { runCatching { write.close() }; return@connect failNow() }
+            thread(name = "alfred-ear-pipe") {
+                runCatching { ParcelFileDescriptor.AutoCloseOutputStream(write).use { it.write(audio) } }
+            }
         }
-        connection = conn
-        val bound = runCatching {
-            context.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(voice), conn, Context.BIND_AUTO_CREATE)
-        }.getOrDefault(false)
-        if (!bound) { connection = null; end { onFail(Problem.Failed) } }
         // Whisper sul telefono impiega qualche secondo; oltre il minuto qualcosa non va.
-        main.postDelayed({ end { onFail(Problem.Failed) } }, 60_000)
+        main.postDelayed(timeout, 60_000)
     }
 
     /** Senza Eurise Voce: il riconoscimento del telefono (chiede di restare sul telefono, se può). */

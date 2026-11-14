@@ -22,6 +22,12 @@ enum class Model(val id: String, val megabytes: Int, val label: Int, val detail:
         const val HOST = "huggingface.co"
 
         fun installed(context: Context): Model? = entries.lastOrNull { it.installed(context) }
+
+        /**
+         * Il modello per i comandi brevi di Alfred: il più veloce installato. Base trascrive un comando in circa un
+         * secondo; Small è più preciso sulla dettatura lunga ma su un comando impiega diverse volte tanto.
+         */
+        fun forCommands(context: Context): Model? = entries.firstOrNull { it.installed(context) }
     }
 }
 

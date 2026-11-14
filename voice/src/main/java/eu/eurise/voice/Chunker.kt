@@ -59,6 +59,13 @@ class Chunker(
          * Il contesto audio per un pezzo di [samples] campioni: Whisper lavora su 30 s (1500); per un pezzo più corto
          * basta la sua durata più un margine di 2 s, a multipli di 64. 0 vuol dire "intero".
          */
+        /**
+         * Contesto per i comandi di Alfred: metà della finestra intera (15 secondi), mai meno. Con il contesto stretto
+         * della dettatura Whisper sbagliava le parole dei comandi; con la finestra intera (30 s) un comando di due
+         * secondi costava all'encoder il doppio del necessario.
+         */
+        fun commandCtx(samples: Int, rate: Int = 16_000): Int = maxOf(768, audioCtx(samples, rate).takeIf { it > 0 } ?: 1500).let { if (it >= 1500) 0 else it }
+
         fun audioCtx(samples: Int, rate: Int = 16_000): Int {
             val seconds = samples.toDouble() / rate + 2.0
             val ctx = (ceil(seconds * 50 / 64) * 64).toInt().coerceAtLeast(384)

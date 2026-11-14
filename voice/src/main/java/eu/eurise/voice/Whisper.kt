@@ -23,7 +23,7 @@ class Whisper private constructor(private var ptr: Long) : AutoCloseable {
     @Synchronized
     fun transcribe(audio: FloatArray, language: String, prompt: String = "", threads: Int = Whisper.threads(), fullContext: Boolean = false): String {
         check(ptr != 0L)
-        val ctx = if (fullContext) 0 else Chunker.audioCtx(audio.size)
+        val ctx = if (fullContext) Chunker.commandCtx(audio.size) else Chunker.audioCtx(audio.size)
         return WhisperNative.transcribe(ptr, threads, audio, language, prompt, ctx).trim()
     }
 

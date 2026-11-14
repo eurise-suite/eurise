@@ -133,7 +133,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     val speaker = remember { lazy { Speaker(context) } }
     DisposableEffect(Unit) { onDispose { if (speaker.isInitialized()) speaker.value.release() } }
     val ear = remember { Ear(context) }
-    DisposableEffect(Unit) { onDispose { ear.cancel() } }
+    DisposableEffect(Unit) { onDispose { ear.close() } }
     var level by remember { mutableStateOf(0f) }
     var speaking by remember { mutableStateOf(false) }
     /** Alfred aspetta a voce «sì» o «no» sulla scheda (solo se gli si è parlato). */
@@ -241,10 +241,10 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
                 if (card.kind == Kind.Report) { execute(card); return@launch }
                 // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
+                // Nessun messaggio intermedio: la domanda va subito al servizio (la prima volta, la spiegazione del centro
+                // privacy chiede il permesso).
                 if (card.kind == Kind.Free && prefs.freeOnline) {
-                    val line = context.getString(R.string.alfred_free_going, favorite.name)
-                    phase = Phase.Said(line)
-                    say(line)
+                    phase = Phase.Ready
                     askOnline(favorite)
                     return@launch
                 }

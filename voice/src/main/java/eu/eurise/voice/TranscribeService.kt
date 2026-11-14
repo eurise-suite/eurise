@@ -29,6 +29,16 @@ class TranscribeService : Service() {
         Speed.load(this)
         thread = HandlerThread("eurise-transcribe").apply { start() }
         messenger = Messenger(Handler(thread.looper) { msg -> handle(msg); true })
+        // Alfred si collega appena comincia ad ascoltare: il modello si carica mentre la persona parla, non dopo.
+        Handler(thread.looper).post { runCatching { ensure(Model.forCommands(this)) } }
+    }
+
+    /** Carica [model] se non è già quello in memoria. */
+    private fun ensure(model: Model?) {
+        if (model == null || (whisper != null && loaded == model)) return
+        whisper?.close()
+        whisper = Whisper.load(model.file(this))
+        loaded = model
     }
 
     override fun onBind(intent: Intent): IBinder = messenger.binder
@@ -53,20 +63,17 @@ class TranscribeService : Service() {
                 val pipe = msg.data.getParcelableCompat(VoiceContract.KEY_AUDIO)
                 val language = msg.data.getString(VoiceContract.KEY_LANGUAGE)?.takeIf { it.length in 2..4 } ?: "auto"
                 val audio = pipe?.let { readPcm(it) }
-                val model = Model.installed(this)
+                val prompt = msg.data.getString(VoiceContract.KEY_PROMPT).orEmpty().take(400)
+                // I comandi (con le frasi d'esempio) vanno al modello più veloce; il resto al più preciso.
+                val model = if (prompt.isNotEmpty()) Model.forCommands(this) else Model.installed(this)
                 when {
                     model == null -> out.putString(VoiceContract.KEY_ERROR, VoiceContract.ERROR_NO_MODEL)
                     audio == null || audio.size < VoiceContract.SAMPLE_RATE / 4 -> out.putString(VoiceContract.KEY_ERROR, VoiceContract.ERROR_NOTHING)
                     else -> {
                         val text = runCatching {
-                            if (whisper == null || loaded != model) {
-                                whisper?.close()
-                                whisper = Whisper.load(model.file(this))
-                                loaded = model
-                            }
-                            // Con le frasi d'esempio (Alfred) il comando è breve: contesto pieno, più preciso; il
-                            // contesto ridotto, buono per la dettatura lunga, sbagliava le parole dei comandi.
-                            val prompt = msg.data.getString(VoiceContract.KEY_PROMPT).orEmpty().take(400)
+                            ensure(model)
+                            // Con le frasi d'esempio (Alfred) il comando è breve: contesto di metà finestra
+                            // (Chunker.commandCtx), più preciso del contesto stretto della dettatura.
                             whisper?.transcribe(audio, language, prompt, fullContext = prompt.isNotEmpty())
                         }.getOrNull()?.let(::clean)
                         when {

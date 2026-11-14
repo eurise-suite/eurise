@@ -16,7 +16,7 @@ class EndpointTest {
         val events = run(List(5) { 0.002f } + List(10) { 0.08f } + List(10) { 0.002f })
         assertEquals(Endpoint.Event.Started, events[6])
         val finished = events.indexOf(Endpoint.Event.Finished)
-        assertEquals(15 + 8, finished)
+        assertEquals(15 + 6, finished) // pausa di 700 ms
     }
 
     @Test

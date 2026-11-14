@@ -7,7 +7,7 @@ package eu.eurise.core.suite
  */
 class Endpoint(
     private val rate: Int = 16_000,
-    private val endPauseMs: Int = 850,
+    private val endPauseMs: Int = 700,
     private val minSpeechMs: Int = 300,
     private val waitMs: Int = 6_000,
     private val maxMs: Int = 20_000,
