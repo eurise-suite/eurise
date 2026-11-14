@@ -1,0 +1,56 @@
+# Prototipo di Office sul computer (tavola OffComputer): Collabora Office per Linux da Flathub con la nostra interfaccia
+# web sopra, su uno schermo virtuale. Le schermate vanno nella pre-release office-computer-schermate.
+name: "Office: prova sul computer (prototipo)"
+
+on:
+  workflow_dispatch:
+  # Un workflow nuovo su un ramo che non è quello principale si avvia solo con un push.
+  push:
+    branches: [office]
+    paths:
+      - office/computer/**
+      - .github/workflows/office-computer.yml
+
+concurrency:
+  group: office-computer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  prova:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q flatpak xvfb xdotool imagemagick x11-apps dbus-x11 > /dev/null
+
+      - name: Collabora Office da Flathub con l'interfaccia Eurise
+        run: bash office/computer/prova.sh prova-computer
+
+      - name: Riassunto
+        if: always()
+        run: cat prova-computer/riassunto.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Schermate nella pre-release office-computer-schermate
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls prova-computer/*.png > /dev/null 2>&1 || exit 0
+          gh release view office-computer-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create office-computer-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Schermate della prova di Office sul computer" --notes "Sovrascritte a ogni prova."
+          gh release upload office-computer-schermate prova-computer/*.png prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-computer-${{ github.run_number }}
+          path: prova-computer/
+          retention-days: 14

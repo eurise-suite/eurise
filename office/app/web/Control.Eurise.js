@@ -31,7 +31,8 @@
 		var id = nextId++;
 		message.id = id;
 		if (onReply) pending[id] = onReply;
-		if (window.ThisIsAMobileApp && window.postMobileMessage) {
+		// Nel guscio Linux di Collabora (coda-qt) i messaggi sconosciuti andrebbero al motore: lì il canale Eurise non c'è ancora.
+		if (window.ThisIsAMobileApp && window.postMobileMessage && !window.ThisIsTheQtApp) {
 			window.postMobileMessage('EURISE ' + JSON.stringify(message));
 		} else if (window.parent && window.parent !== window) {
 			// Sul computer (guscio futuro) o in una pagina che ospita l'editor.
@@ -1572,8 +1573,13 @@
 
 	function setupTablet() {
 		var map = app.map;
-		if (!map || !window.mode || !window.mode.isTablet() || !window.ThisIsAMobileApp) return;
+		if (!map || !window.mode) return;
+		// Tablet nell'app Android, oppure computer nel guscio Linux di Collabora (coda-qt): stesso nastro (OffTablet,
+		// OffComputer); sul computer la classe eurise-desk regola le misure.
+		var desk = !!window.ThisIsTheQtApp && window.mode.isDesktop();
+		if (!desk && !(window.mode.isTablet() && window.ThisIsAMobileApp)) return;
 		document.body.classList.add('eurise-tablet');
+		if (desk) document.body.classList.add('eurise-desk');
 		editAtOnce(map);
 		function build() {
 			if (isPdf()) { document.body.classList.remove('eurise-tablet'); return; }
