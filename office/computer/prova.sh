@@ -20,7 +20,7 @@ VERSION=$(flatpak info --user "$APP" | sed -n 's/^ *Version: *//p')
 echo "- Collabora Office $VERSION da Flathub" >> "$R"
 
 # La pagina dell'interfaccia: WebView::load apre <dati>/browser/dist/cool.html; nel pacchetto ce ne può essere più d'una
-# (quella del server ha i segnaposto %SERVICE_ROOT%), quindi la nostra interfaccia va in tutte.
+# (cool-qt.html è quella del guscio Qt, cool.html quella del server), quindi la nostra interfaccia va in tutte e due.
 FILES="$(flatpak info --user --show-location "$APP")/files"
 find "$FILES" -name 'cool*.html' | sed "s|^$FILES|    |" >> "$R"
 DIAG=$(mktemp)
@@ -43,7 +43,7 @@ cat > "$DIAG" <<'JS'
 JS
 # Copie nuove (cp poi mv): i file del pacchetto sono legami fisici con il deposito di ostree.
 put() { cp "$1" "$2.eurise" && mv -f "$2.eurise" "$2"; }
-find "$FILES" -name 'cool.html' | while read -r COOL; do
+find "$FILES" \( -name 'cool.html' -o -name 'cool-qt.html' \) | while read -r COOL; do
 	DIST=$(dirname "$COOL")
 	chmod -R u+w "$DIST"
 	put "$WEB/Control.Eurise.js" "$DIST/Control.Eurise.js"
