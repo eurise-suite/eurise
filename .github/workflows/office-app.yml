@@ -327,6 +327,8 @@ jobs:
           gh release view apk-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create apk-prova-office -R "${{ github.repository }}" --prerelease --target office --title "APK di prova di Office" --notes "$notes"
           gh release edit apk-prova-office -R "${{ github.repository }}" --notes "$notes"
-          gh release upload apk-prova-office "$f" "$m" -R "${{ github.repository }}" --clobber
+          # Solo il motore: Office lo pubblica la prova rapida (office-prova, fonte=nativo), che segue ogni commit di
+          # office/apk in pochi minuti; da qui arriverebbe un Office più vecchio sopra quello nuovo.
+          gh release upload apk-prova-office "$m" -R "${{ github.repository }}" --clobber
           # Office leggero non serve più a parte: Office è sempre leggero, il motore è l'altro APK.
           gh release delete-asset apk-prova-office eurise-office-leggero-debug.apk -R "${{ github.repository }}" -y 2>/dev/null || true
