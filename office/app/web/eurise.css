@@ -453,9 +453,18 @@ body.eurise-tel[data-theme='dark'] #eurise-overlay > .eurise-panel { background:
 
 /* --- Tablet: barra a nastro Eurise (tavola OffTablet, Control.Eurise.js) ------------------------------------------ */
 body.eurise-tablet #toolbar-row > :not(#eurise-top),
-body.eurise-tablet #mobile-edit-button {
+body.eurise-tablet #mobile-edit-button,
+body.eurise-tablet .main-nav {
 	display: none !important;
 }
+/* Collabora colora e incornicia i pulsanti con selettori più forti. */
+body.eurise-tablet #eurise-header .eurise-hbtn {
+	background: transparent !important;
+	box-shadow: none !important;
+	color: #1E1D1B !important;
+}
+body.eurise-tablet .eurise-share,
+body.eurise-tablet .eurise-share span { color: #FFFFFF !important; }
 body.eurise-tablet #toolbar-row {
 	height: auto;
 	padding: 10px 14px 8px;
@@ -659,6 +668,9 @@ body.eurise-tablet[data-theme='dark'] #toolbar-row { background: #171B22; }
 [data-theme='dark'] #eurise-tabs .eurise-rtab.active { color: #A9C1F2; box-shadow: inset 0 -3px 0 #A9C1F2; }
 [data-theme='dark'] #eurise-tabs .eurise-rtab.file,
 [data-theme='dark'] .eurise-share { background: #A9C1F2 !important; color: #14203A; }
+[data-theme='dark'] body.eurise-tablet .eurise-share span { color: #14203A !important; }
 [data-theme='dark'] #eurise-ribbon .eurise-rb.on { background: #2B3A55 !important; color: #E6E9F0; }
 [data-theme='dark'] .eurise-gfoot,
 [data-theme='dark'] .eurise-gmore { color: #A8AEBB; }
+[data-theme='dark'] body.eurise-tablet #eurise-header .eurise-hbtn,
+body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9F0 !important; }
