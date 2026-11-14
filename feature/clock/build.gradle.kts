@@ -23,6 +23,8 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:suite"))
+    // Catalogo, disposizioni e parole di Alfred per la sua sveglia (AlfSveglia); il meteo già scaricato.
+    implementation(project(":core:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

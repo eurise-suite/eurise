@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.eurise.feature.clock.R
+import eu.eurise.feature.clock.system.AlfredRing
 import eu.eurise.feature.clock.data.ClockStore
 import eu.eurise.feature.clock.logic.Alarm
 import eu.eurise.feature.clock.logic.ItalianHolidays
@@ -380,6 +381,20 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
                     SwitchRow(stringResource(R.string.opt_routine), stringResource(R.string.opt_routine_sub), a.routine) { a = a.copy(routine = it) }
                 }
             }
+
+            // La sveglia di Alfred (AlfSveglia): saluto, una massima, un brano; la musica la sceglie la persona.
+            SectionLabel(stringResource(R.string.section_alfred))
+            GroupCard {
+                Column(Modifier.padding(horizontal = 4.dp)) {
+                    SwitchRow(stringResource(R.string.opt_alfred), stringResource(R.string.opt_alfred_sub), a.alfred) { on ->
+                        a = a.copy(alfred = on, routine = if (on) false else a.routine)
+                    }
+                    if (a.alfred) {
+                        CardDivider()
+                        AlfredMusicChoice()
+                    }
+                }
+            }
             if (initial.id != 0) {
                 TextButton(onClick = onDelete, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text(stringResource(R.string.alarm_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
@@ -402,5 +417,29 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
             confirmButton = { TextButton(onClick = { calendarPermission.launch(Manifest.permission.READ_CALENDAR) }) { Text(stringResource(R.string.turn_on), fontWeight = FontWeight.Bold) } },
             dismissButton = { TextButton(onClick = { explainCalendar = null }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+/**
+ * Dove suona il brano della sveglia di Alfred: un'app di musica (riceve solo titolo e autore), i brani del telefono o
+ * la suoneria. Scelta separata da quella del punto della giornata, come deciso.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AlfredMusicChoice() {
+    val context = LocalContext.current
+    val prefs = remember { eu.eurise.core.data.alfred.AlfredPrefs(context) }
+    val apps = remember { eu.eurise.core.data.alfred.AlfredMusic.apps(context) }
+    var chosen by remember { mutableStateOf(prefs.musicAlarm) }
+    Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.alfred_music), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            apps.forEach { (pkg, label) -> Chip(label, filled = chosen == pkg) { chosen = pkg; prefs.musicAlarm = pkg } }
+            Chip(stringResource(R.string.alfred_music_phone), filled = chosen == AlfredRing.PHONE) { chosen = AlfredRing.PHONE; prefs.musicAlarm = AlfredRing.PHONE }
+            Chip(stringResource(R.string.alfred_music_ringtone), filled = chosen.isEmpty() || chosen == AlfredRing.RINGTONE) {
+                chosen = AlfredRing.RINGTONE; prefs.musicAlarm = AlfredRing.RINGTONE
+            }
+        }
+        Text(stringResource(R.string.alfred_music_sub), fontSize = 12.5.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

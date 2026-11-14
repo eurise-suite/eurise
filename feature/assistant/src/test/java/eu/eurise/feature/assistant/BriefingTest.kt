@@ -1,5 +1,6 @@
 package eu.eurise.feature.assistant
 
+import eu.eurise.core.data.alfred.AlfredCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

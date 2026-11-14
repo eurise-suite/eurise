@@ -38,9 +38,15 @@
     <string name="voice_tts_engine">Eurise Voce (Alfred)</string>
     <string name="voice_tts_riccardo">Alfred, voce maschile pacata</string>
     <string name="voice_tts_riccardo_d">%1$d MB · la voce di Alfred, leggera</string>
-    <string name="voice_tts_actor">Voce di un attore</string>
-    <string name="voice_tts_actor_d">%1$d MB · registrata da un attore per Alfred</string>
     <string name="voice_models_other">Altre voci</string>
+    <string name="voice_import">Carica una voce dal telefono</string>
+    <string name="voice_import_d">Un archivio .zip di una voce Piper nel formato di sherpa-onnx (modello .onnx e tokens.txt). Resta sul telefono. Carica solo voci che hai il diritto di usare.</string>
+    <string name="voice_imported_d">caricata dal telefono</string>
+    <string name="voice_import_working">Controllo la voce…</string>
+    <string name="voice_import_ok">Voce caricata: toccala per usarla.</string>
+    <string name="voice_import_not_voice">Nell\'archivio non c\'è una voce: servono un modello .onnx e tokens.txt.</string>
+    <string name="voice_import_need_data">A questa voce mancano i dati di pronuncia: scarica prima Riccardo, poi ricaricala.</string>
+    <string name="voice_import_failed">Non sono riuscito a leggere l\'archivio.</string>
     <string name="voice_opt_plain">Riccardo</string>
     <string name="voice_opt_plain_d">%1$d MB · la voce di Alfred com\'è</string>
     <string name="voice_opt_butler">Riccardo ritoccato</string>
@@ -48,7 +54,6 @@
     <string name="voice_opt_speed">Velocità: %1$d%%</string>
     <string name="voice_opt_pitch">Tono: %1$s semitoni</string>
     <string name="voice_opt_reset">Torna al ritocco proposto</string>
-    <string name="voice_opt_actor_soon">In preparazione: la registriamo con un attore e si scaricherà come le altre.</string>
     <string name="voice_opt_delete">Elimina Riccardo (%1$d MB)</string>
     <string name="voice_tts_paola">Voce femminile</string>
     <string name="voice_tts_paola_d">%1$d MB · più ricca, più pesante</string>

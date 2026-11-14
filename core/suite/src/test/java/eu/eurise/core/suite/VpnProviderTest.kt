@@ -9,7 +9,7 @@ class VpnProviderTest {
     @Test fun scores() {
         assertEquals(8, vpn("proton").score)
         assertEquals(9, vpn("mullvad").score)
-        assertEquals(5, vpn("nord").score)
+        assertEquals(6, vpn("nord").score)
     }
 
     @Test fun bonusFollowsTrust() {

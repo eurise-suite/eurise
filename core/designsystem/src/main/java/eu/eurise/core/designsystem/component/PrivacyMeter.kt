@@ -61,15 +61,19 @@ enum class DataOut(val base: Int) {
  * Il grado di privacy da 1 a 10 (regola del 13 novembre: 10 tacchette, ovunque). Decide [out], ciò che il servizio
  * riceve davvero; la cifratura da capo a capo vale +4 (il servizio tiene i dati ma non li legge); [where] sposta di un
  * punto (tre per un server tuo). I servizi chiusi (Google, Microsoft, Apple, le AI che conservano tutto) restano a una
- * o due tacchette qualunque cosa ricevano (regola del 12 novembre).
+ * o due tacchette qualunque cosa ricevano (regola del 12 novembre). [linkable]: chi riceve può collegare l'indirizzo
+ * di rete ad altri dati che ha già (per esempio un archivio di Google per conto di altri): −1.
  */
-fun privacyScore(out: DataOut, where: Jurisdiction, endToEnd: Boolean = false, closed: Boolean = false, hiddenIp: Int = 0): Int {
+fun privacyScore(
+    out: DataOut, where: Jurisdiction, endToEnd: Boolean = false, closed: Boolean = false, hiddenIp: Int = 0, linkable: Boolean = false,
+): Int {
     if (out == DataOut.None) return 10
     // Indirizzo di rete nascosto (VPN +1, Advanced Privacy con Tor +2): conta solo dove l'indirizzo era l'unica traccia,
     // cioè per i servizi che ricevono il minimo o nulla di tuo. Non per i contenuti tuoi né per i servizi chiusi, che ti
     // riconoscono dall'account.
     val ip = if (!closed && (out == DataOut.Anonymous || out == DataOut.Minimal)) hiddenIp else 0
-    val score = (out.base + (if (endToEnd) 4 else 0) + where.adjust + ip).coerceIn(1, 9)
+    // −1 se chi riceve può collegare l'indirizzo di rete ad altri dati che ha già su di te (criteri del 14 novembre).
+    val score = (out.base + (if (endToEnd) 4 else 0) + where.adjust + ip - (if (linkable) 1 else 0)).coerceIn(1, 9)
     return if (closed) score.coerceAtMost(2) else score
 }
 

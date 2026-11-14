@@ -12,24 +12,29 @@ import java.util.zip.ZipInputStream
  * preparato dalla suite (`.github/workflows/voci.yml`) con il modello, i simboli e i dati di pronuncia italiani di
  * espeak-ng. Si scarica solo toccando «Scarica»: escono la richiesta del file e l'indirizzo di rete, nient'altro.
  */
-enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label: Int, val detail: Int, val ready: Boolean = true) {
+enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label: Int, val detail: Int) {
     /** Maschile, pacata: la voce di Alfred. */
     Riccardo("alfred-riccardo", "it_IT-riccardo-x_low.onnx", 19, R.string.voice_tts_riccardo, R.string.voice_tts_riccardo_d),
-    /**
-     * La voce di un attore, allenata per Alfred (Piper, partendo da una voce italiana) e scaricabile come le altre.
-     * [ready] falso finché l'archivio non è nella pre-release «voci»: la riga dice che arriverà, senza «Scarica».
-     */
-    Attore("alfred-attore", "alfred-attore.onnx", 60, R.string.voice_tts_actor, R.string.voice_tts_actor_d, ready = false),
     /** Femminile, più ricca: per chi la preferisce. */
     Paola("alfred-paola", "it_IT-paola-medium.onnx", 60, R.string.voice_tts_paola, R.string.voice_tts_paola_d);
 
     val url get() = "https://github.com/eurise-suite/eurise/releases/download/voci/$id.zip"
 
     fun dir(context: Context) = File(File(context.filesDir, "voices"), id)
-    fun model(context: Context) = File(dir(context), onnx)
-    fun tokens(context: Context) = File(dir(context), "tokens.txt")
-    fun data(context: Context) = File(dir(context), "espeak-ng-data")
-    fun installed(context: Context) = model(context).isFile && tokens(context).isFile && data(context).isDirectory
+    fun pack(context: Context) = VoicePack(id, null, dir(context), onnx)
+    fun installed(context: Context) = pack(context).installed
+}
+
+/**
+ * Una voce sul telefono: una delle nostre ([Voice]) o una caricata dalla persona ([name] è il nome scelto, null per le
+ * nostre). Tre cose servono al motore: il modello, i simboli e i dati di pronuncia di espeak-ng.
+ */
+data class VoicePack(val id: String, val name: String?, val dir: File, val onnx: String) {
+    val model get() = File(dir, onnx)
+    val tokens get() = File(dir, "tokens.txt")
+    val data get() = File(dir, "espeak-ng-data")
+    val installed get() = model.isFile && tokens.isFile && data.isDirectory
+    val imported get() = name != null
 }
 
 /**
@@ -55,16 +60,77 @@ object Voices {
     private const val PREFS = "voices"
     private const val KEY_CHOSEN = "chosen"
 
-    /** La voce in uso: quella scelta se c'è, altrimenti la prima scaricata. */
-    fun installed(context: Context): Voice? {
-        val chosen = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CHOSEN, null)
-        return Voice.entries.firstOrNull { it.id == chosen && it.installed(context) } ?: Voice.entries.firstOrNull { it.installed(context) }
+    /** Tutte le voci sul telefono: le nostre scaricate e quelle caricate dalla persona. */
+    fun all(context: Context): List<VoicePack> =
+        Voice.entries.map { it.pack(context) }.filter { it.installed } + imported(context)
+
+    /**
+     * La voce in uso: quella scelta se c'è, altrimenti la prima sul telefono. La scelta sta in un file perché la legge
+     * anche il processo «:voce».
+     */
+    fun current(context: Context): VoicePack? {
+        val chosen = runCatching { flag(context, "scelta").readText().trim() }.getOrNull()
+            ?: context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CHOSEN, null)
+        val all = all(context)
+        return all.firstOrNull { it.id == chosen } ?: all.firstOrNull()
     }
 
-    fun choose(context: Context, voice: Voice) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_CHOSEN, voice.id).apply()
+    fun choose(context: Context, id: String) {
+        runCatching { flag(context, "scelta").writeText(id) }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_CHOSEN, id).apply()
+    }
+
+    fun choose(context: Context, voice: Voice) = choose(context, voice.id)
 
     fun delete(context: Context, voice: Voice) = voice.dir(context).deleteRecursively().also { clearStopped(context) }
+
+    fun delete(context: Context, pack: VoicePack) = pack.dir.deleteRecursively().also { clearStopped(context) }
+
+    // ---- Voci caricate dalla persona -------------------------------------------------------------------------------
+
+    private fun importedRoot(context: Context) = File(File(context.filesDir, "voices"), "caricate")
+
+    fun imported(context: Context): List<VoicePack> =
+        importedRoot(context).listFiles().orEmpty().filter { it.isDirectory && !it.name.endsWith(".new") }.mapNotNull { d ->
+            val onnx = File(d, "modello.txt").takeIf { it.isFile }?.readText()?.trim() ?: return@mapNotNull null
+            val name = File(d, "nome.txt").takeIf { it.isFile }?.readText()?.trim() ?: d.name
+            VoicePack("caricata-" + d.name, name, d, onnx).takeIf { it.installed }
+        }.sortedBy { it.name.orEmpty().lowercase() }
+
+    enum class ImportResult { Ok, NotAVoice, NeedsPronunciation, Failed }
+
+    /**
+     * Carica una voce da un archivio .zip nel formato di sherpa-onnx (modello .onnx con i suoi dati, tokens.txt; i dati
+     * di pronuncia di espeak-ng se ci sono, altrimenti si prendono da una nostra voce già scaricata). Tutto sul
+     * telefono: il file non va da nessuna parte.
+     */
+    fun importZip(context: Context, zip: java.io.InputStream, displayName: String): ImportResult {
+        val root = importedRoot(context).apply { mkdirs() }
+        val id = System.currentTimeMillis().toString()
+        val part = File(root, "$id.zip.part")
+        val unpack = File(root, "$id.new")
+        return runCatching {
+            part.outputStream().use { zip.copyTo(it) }
+            unzip(part, unpack)
+            // Il modello può stare in una cartella dentro l'archivio (come negli archivi di sherpa-onnx).
+            val model = unpack.walk().filter { it.isFile && it.name.endsWith(".onnx") }.minByOrNull { it.path.length }
+                ?: return@runCatching ImportResult.NotAVoice
+            val home = model.parentFile ?: return@runCatching ImportResult.NotAVoice
+            if (!File(home, "tokens.txt").isFile) return@runCatching ImportResult.NotAVoice
+            if (!File(home, "espeak-ng-data").isDirectory) {
+                val donor = Voice.entries.map { it.pack(context) }.firstOrNull { it.installed } ?: return@runCatching ImportResult.NeedsPronunciation
+                donor.data.copyRecursively(File(home, "espeak-ng-data"), overwrite = true)
+            }
+            File(home, "modello.txt").writeText(model.name)
+            File(home, "nome.txt").writeText(displayName.substringBeforeLast('.').ifBlank { model.nameWithoutExtension })
+            val target = File(root, id)
+            check(home.renameTo(target))
+            ImportResult.Ok
+        }.getOrElse { ImportResult.Failed }.also {
+            part.delete()
+            unpack.deleteRecursively()
+        }
+    }
 
     /*
      * La spia della voce. La sintesi gira in un processo a parte (":voce"): se il motore nativo si ferma di colpo, chiude

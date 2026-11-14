@@ -22,8 +22,15 @@ import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-/** Che cosa sta suonando, per lo schermo della sveglia. */
-data class Ringing(val alarmId: Int?, val timerId: Int?, val title: String, val snoozesLeft: Int, val challenge: Boolean, val routine: Boolean)
+/** Che cosa sta suonando, per lo schermo della sveglia. [alfred] c'è quando sveglia Alfred (tavola AlfSveglia). */
+data class Ringing(
+    val alarmId: Int?, val timerId: Int?, val title: String, val snoozesLeft: Int, val challenge: Boolean, val routine: Boolean,
+    val alfred: AlfredScreen? = null,
+    val snoozeMinutes: Int = 10,
+)
+
+/** Ciò che lo schermo della sveglia di Alfred mostra: le sue parole e dove suona il brano (null: la suoneria). */
+data class AlfredScreen(val wake: eu.eurise.core.data.alfred.AlfredWakeUp, val music: String?, val madam: Boolean?)
 
 /**
  * Fa suonare una sveglia o un timer: suono che cresce piano, vibrazione, schermo intero sopra il blocco.
@@ -55,8 +62,40 @@ class RingService : Service() {
         _state.value = Ringing(id, null, title, left, alarm.challenge, alarm.routine)
         snoozeCount = snoozes
         foreground(Notifications.ring(this, title, LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")), left > 0, !alarm.challenge, null))
-        play(alarm.sound?.let(Uri::parse), alarm.rampSeconds, alarm.vibrate)
         handler.postDelayed({ if (left > 0) snoozeNow() else dismissNow() }, 10 * 60_000L)
+        if (alarm.alfred) { startAlfred(alarm, title, left); return }
+        play(alarm.sound?.let(Uri::parse), alarm.rampSeconds, alarm.vibrate)
+    }
+
+    private var alfred: AlfredRing? = null
+
+    /**
+     * Sveglia di Alfred: le sue parole si preparano fuori dal thread principale (meteo dal disco), poi parla e parte
+     * il brano. La suoneria resta la rete di sicurezza ([AlfredRing]); la vibrazione parte con la suoneria.
+     */
+    private fun startAlfred(alarm: eu.eurise.feature.clock.logic.Alarm, title: String, left: Int) {
+        val ring = AlfredRing(
+            this,
+            fallback = { handler.post { if (player == null) play(alarm.sound?.let(Uri::parse), alarm.rampSeconds, alarm.vibrate) } },
+            playLocal = { uri -> handler.post { play(uri, alarm.rampSeconds, vibrate = false) } },
+        )
+        alfred = ring
+        Thread {
+            val wake = runCatching { ring.compose() }.getOrNull()
+            val music = runCatching { ring.musicLabel() }.getOrNull()
+            val address = runCatching { eu.eurise.core.data.alfred.AlfredPrefs(this).address }.getOrNull()
+            val madam = when (address) {
+                eu.eurise.core.data.alfred.Address.Madam -> true
+                eu.eurise.core.data.alfred.Address.Sir -> false
+                else -> null
+            }
+            handler.post {
+                if (alfred !== ring) return@post
+                if (wake == null) { play(alarm.sound?.let(Uri::parse), alarm.rampSeconds, alarm.vibrate); return@post }
+                _state.value = Ringing(alarm.id, null, title, left, alarm.challenge, routine = false, alfred = AlfredScreen(wake, music, madam), snoozeMinutes = alarm.snoozeMinutes)
+                ring.start(wake)
+            }
+        }.start()
     }
 
     private fun startTimer(id: Int, chime: Boolean) {
@@ -80,6 +119,7 @@ class RingService : Service() {
 
     private fun snoozeNow() {
         val r = _state.value
+        if (r?.alfred != null) alfred?.pauseMusic()
         val id = r?.alarmId
         if (id != null) {
             val alarm = ClockStore.get(this).alarm(id)
@@ -129,6 +169,8 @@ class RingService : Service() {
 
     private fun stopAll() {
         handler.removeCallbacksAndMessages(null)
+        // Il brano nell'app di musica continua dopo «Sono sveglia»: è il punto della sveglia di Alfred.
+        alfred?.stop(); alfred = null
         runCatching { player?.stop() }
         player?.release(); player = null
         runCatching { getSystemService(Vibrator::class.java)?.cancel() }
@@ -140,6 +182,7 @@ class RingService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        alfred?.stop(); alfred = null
         player?.release()
         _state.value = null
         super.onDestroy()

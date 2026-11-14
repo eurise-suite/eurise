@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import eu.eurise.voice.speech.VoiceTuning
 import androidx.compose.ui.semantics.Role
@@ -80,6 +82,29 @@ private fun ModelsPage(onClose: () -> Unit) {
     val progress = remember { mutableStateMapOf<Item, Int>() }
     var ask by remember { mutableStateOf<Item?>(null) }
     var failed by remember { mutableStateOf(false) }
+    // Carica una voce dal telefono (archivio .zip): si apre e si controlla qui, fuori dal thread principale.
+    var importMessage by remember { mutableStateOf<Int?>(null) }
+    val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val name = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: "voce.zip"
+        importMessage = R.string.voice_import_working
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { context.contentResolver.openInputStream(uri)?.use { Voices.importZip(context, it, name) } }.getOrNull()
+                    ?: Voices.ImportResult.Failed
+            }
+            importMessage = when (result) {
+                Voices.ImportResult.Ok -> R.string.voice_import_ok
+                Voices.ImportResult.NotAVoice -> R.string.voice_import_not_voice
+                Voices.ImportResult.NeedsPronunciation -> R.string.voice_import_need_data
+                Voices.ImportResult.Failed -> R.string.voice_import_failed
+            }
+            tick++
+        }
+    }
     // Prova della voce: la sintesi del telefono con il motore di Voce stesso.
     val tester = remember { mutableStateOf<TextToSpeech?>(null) }
     DisposableEffect(Unit) { onDispose { tester.value?.shutdown() } }
@@ -138,8 +163,8 @@ private fun ModelsPage(onClose: () -> Unit) {
         }
 
         Section(stringResource(R.string.voice_models_speak))
-        // Le tre opzioni di Alfred (14 novembre): Riccardo com'è, Riccardo ritoccato, la voce di un attore.
-        val current = Voices.installed(context)
+        // Le voci di Alfred (14 novembre): Riccardo com'è, Riccardo ritoccato, altre voci da scaricare o caricare.
+        val current = Voices.current(context)?.id
         val riccardo = speak(Voice.Riccardo)
         var tuning by remember { mutableStateOf(Voices.tuning(context)) }
         fun pick(voice: Voice, t: VoiceTuning?) {
@@ -151,13 +176,13 @@ private fun ModelsPage(onClose: () -> Unit) {
         }
         Choice(
             stringResource(R.string.voice_opt_plain), stringResource(R.string.voice_opt_plain_d, Voice.Riccardo.megabytes),
-            selected = current == Voice.Riccardo && !tuning.retouched, enabled = true, percent = progress[Item.Speak(Voice.Riccardo)],
-        ) { pick(Voice.Riccardo, tuning.copy(retouched = false, speed = 1f, pitch = 1f)) }
+            selected = current == Voice.Riccardo.id && !tuning.retouched, enabled = true, percent = progress[Item.Speak(Voice.Riccardo)],
+        ) { pick(Voice.Riccardo, VoiceTuning.PLAIN) }
         Choice(
             stringResource(R.string.voice_opt_butler), stringResource(R.string.voice_opt_butler_d),
-            selected = current == Voice.Riccardo && tuning.retouched, enabled = true, percent = null,
+            selected = current == Voice.Riccardo.id && tuning.retouched, enabled = true, percent = null,
         ) { pick(Voice.Riccardo, if (tuning.retouched) tuning else VoiceTuning.BUTLER) }
-        if (current == Voice.Riccardo && tuning.retouched) {
+        if (current == Voice.Riccardo.id && tuning.retouched) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(stringResource(R.string.voice_opt_speed, (tuning.speed * 100).toInt()), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 Slider(tuning.speed, { tuning = tuning.copy(speed = it) }, valueRange = VoiceTuning.SPEED, onValueChangeFinished = { Voices.setTuning(context, tuning) })
@@ -168,25 +193,35 @@ private fun ModelsPage(onClose: () -> Unit) {
                 }
             }
         }
-        Choice(
-            stringResource(Voice.Attore.label),
-            if (Voice.Attore.ready) stringResource(Voice.Attore.detail, Voice.Attore.megabytes) else stringResource(R.string.voice_opt_actor_soon),
-            selected = current == Voice.Attore, enabled = Voice.Attore.ready, percent = progress[Item.Speak(Voice.Attore)],
-        ) { pick(Voice.Attore, null) }
         if (riccardo) TextButton(onClick = { Voices.delete(context, Voice.Riccardo); tick++ }) {
             Text(stringResource(R.string.voice_opt_delete, Voice.Riccardo.megabytes), fontSize = 12.5.sp)
         }
+
         Section(stringResource(R.string.voice_models_other))
         listOf(Voice.Paola).forEach { v ->
             val item = Item.Speak(v)
-            val inUse = current == v
+            val inUse = current == v.id
             ModelRow(stringResource(v.label) + if (inUse) " · " + stringResource(R.string.voice_tts_in_use) else "",
                 stringResource(v.detail, v.megabytes), speak(v), progress[item],
                 onDownload = { ask = item },
                 onDelete = { Voices.delete(context, v); tick++ },
                 onChoose = if (speak(v) && !inUse) ({ Voices.choose(context, v); tick++ }) else null)
         }
-        if (Voices.installed(context) != null) {
+        // Voci caricate dalla persona: archivi .zip nel formato di sherpa-onnx, dal telefono. Non escono.
+        Voices.imported(context).forEach { pack ->
+            val inUse = current == pack.id
+            ModelRow((pack.name ?: pack.id) + if (inUse) " · " + stringResource(R.string.voice_tts_in_use) else "",
+                stringResource(R.string.voice_imported_d), installed = true, percent = null,
+                onDownload = {},
+                onDelete = { Voices.delete(context, pack); tick++ },
+                onChoose = if (!inUse) ({ Voices.choose(context, pack.id); tick++ }) else null)
+        }
+        TextButton(onClick = { importer.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }) {
+            Text(stringResource(R.string.voice_import), fontWeight = FontWeight.Bold)
+        }
+        Text(stringResource(R.string.voice_import_d), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+        importMessage?.let { Text(stringResource(it), fontSize = 13.sp, color = if (it == R.string.voice_import_ok) scheme.primary else scheme.error) }
+        if (Voices.current(context) != null) {
             if (Voices.stopped(context)) Text(stringResource(R.string.voice_tts_stopped), fontSize = 13.sp, color = scheme.error)
             TextButton(onClick = ::tryVoice) { Text(stringResource(R.string.voice_tts_try), fontWeight = FontWeight.Bold) }
             Text(stringResource(R.string.voice_tts_system), fontSize = 12.sp, color = scheme.onSurfaceVariant)

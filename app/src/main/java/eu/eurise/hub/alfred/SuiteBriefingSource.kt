@@ -5,12 +5,12 @@ import eu.eurise.core.data.EuriseData
 import eu.eurise.core.data.calendar.CalendarEvent
 import eu.eurise.core.data.weather.MeteoRepository
 import eu.eurise.core.data.weather.MeteoText
-import eu.eurise.feature.assistant.AlfredPrefs
+import eu.eurise.core.data.alfred.AlfredPrefs
 import eu.eurise.feature.assistant.BriefEvent
 import eu.eurise.feature.assistant.BriefFacts
 import eu.eurise.feature.assistant.BriefQuote
 import eu.eurise.feature.assistant.BriefingSource
-import eu.eurise.feature.assistant.addressSuffix
+import eu.eurise.core.data.alfred.addressSuffix
 import eu.eurise.feature.launcher.markets.MarketsRepository
 import eu.eurise.feature.launcher.news.BuiltInFeeds
 import eu.eurise.feature.launcher.news.FeedGroup

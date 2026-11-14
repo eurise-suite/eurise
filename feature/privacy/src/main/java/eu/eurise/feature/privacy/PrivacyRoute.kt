@@ -79,7 +79,13 @@ import java.util.Date
  * Mozilla: Google può collegare l'indirizzo di rete al resto del traffico che riceve (−1). Esce solo la coppia di lingue,
  * una volta per lingua. Criteri del 14 novembre; con la rete nascosta sale (Tor +2).
  */
-private fun translateScore(hiddenIp: Int = 0) = (privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = hiddenIp) - 1).coerceAtLeast(1)
+private fun translateScore(hiddenIp: Int = 0) = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = hiddenIp, linkable = true)
+
+/**
+ * Voce: file uguali per tutti da Hugging Face (USA) e dalle Releases di GitHub (USA, Microsoft, che può collegare
+ * l'indirizzo ad altri dati): vale il caso peggiore dei due, come la Traduzione.
+ */
+private fun voiceScore(hiddenIp: Int = 0) = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = hiddenIp, linkable = true)
 
 /** L'etichetta delle tacchette guadagnate: «+2 Proton VPN», «+2 Tor». */
 @Composable
@@ -91,7 +97,7 @@ private fun NetworkExit.label(): String? = when {
 
 /** La sigla della sede di una VPN, come per gli altri servizi. */
 private fun VpnProvider.jurisdiction() = when {
-    country == "CH" -> Jurisdiction.CH
+    operations == "CH" -> Jurisdiction.CH
     european -> Jurisdiction.EU
     country == "GB" -> Jurisdiction.UK
     country == "US" -> Jurisdiction.US
@@ -104,7 +110,11 @@ private fun VpnProvider.facts(): String = listOf(
     stringResource(if (verifiedNoLogs) (if (publicReport) R.string.pv_vpn_audit_public else R.string.pv_vpn_audit_private) else R.string.pv_vpn_audit_none),
     stringResource(if (openSourceApps) R.string.pv_vpn_open else R.string.pv_vpn_closed),
     stringResource(if (anonymousAccount) R.string.pv_vpn_anon else R.string.pv_vpn_email),
-    stringResource(if (european) R.string.pv_vpn_europe else R.string.pv_vpn_outside, country),
+    when {
+        operations != country && european -> stringResource(R.string.pv_vpn_split, country, operations)
+        european -> stringResource(R.string.pv_vpn_europe, country)
+        else -> stringResource(R.string.pv_vpn_outside, country)
+    },
 ).joinToString(" · ")
 
 private class Permission(val title: Int, val detail: Int)
@@ -287,8 +297,8 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
                 TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d), score = 10, where = Jurisdiction.Phone)
                 Line()
                 TwoLines(
-                    stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d), score = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus),
-                    where = Jurisdiction.US, boost = privacyScore(DataOut.Anonymous, Jurisdiction.US, hiddenIp = shield.bonus) - privacyScore(DataOut.Anonymous, Jurisdiction.US),
+                    stringResource(R.string.pv_voice), stringResource(R.string.pv_voice_d), score = voiceScore(shield.bonus),
+                    where = Jurisdiction.US, boost = voiceScore(shield.bonus) - voiceScore(),
                     boostLabel = shield.label(),
                 )
                 Line()

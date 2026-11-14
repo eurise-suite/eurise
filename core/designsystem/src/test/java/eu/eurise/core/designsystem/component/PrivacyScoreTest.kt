@@ -31,6 +31,13 @@ class PrivacyScoreTest {
         assertEquals(2, privacyScore(DataOut.Personal, Jurisdiction.US, closed = true, hiddenIp = 2))
     }
 
+    @Test fun linkableRecipientLosesOne() {
+        // Traduzione: file uguale per tutti, archivio di Google negli USA per conto di Mozilla (criteri del 14 novembre).
+        assertEquals(6, privacyScore(DataOut.Anonymous, Jurisdiction.US, linkable = true))
+        assertEquals(8, privacyScore(DataOut.Anonymous, Jurisdiction.US, linkable = true, hiddenIp = 2))
+        assertEquals(7, privacyScore(DataOut.Anonymous, Jurisdiction.US, linkable = true, hiddenIp = 1))
+    }
+
     @Test fun bands() {
         assertEquals(PrivacyBand.Good, privacyBand(8))
         assertEquals(PrivacyBand.Fair, privacyBand(5))

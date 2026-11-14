@@ -22,7 +22,7 @@ import eu.eurise.core.suite.SpeechText
  */
 class AlfredVoiceService : TextToSpeechService() {
     private var engine: OfflineTts? = null
-    private var loaded: Voice? = null
+    private var loaded: VoicePack? = null
     @Volatile private var stopped = false
 
     override fun onCreate() {
@@ -40,7 +40,7 @@ class AlfredVoiceService : TextToSpeechService() {
 
     override fun onIsLanguageAvailable(lang: String?, country: String?, variant: String?): Int = when {
         !italian(lang) -> TextToSpeech.LANG_NOT_SUPPORTED
-        Voices.installed(this) == null || Voices.stopped(this) -> TextToSpeech.LANG_MISSING_DATA
+        Voices.current(this) == null || Voices.stopped(this) -> TextToSpeech.LANG_MISSING_DATA
         country.isNullOrEmpty() || country.equals("ITA", true) || country.equals("IT", true) -> TextToSpeech.LANG_COUNTRY_AVAILABLE
         else -> TextToSpeech.LANG_AVAILABLE
     }
@@ -57,7 +57,7 @@ class AlfredVoiceService : TextToSpeechService() {
 
     @Synchronized
     private fun ensureEngine(): OfflineTts? {
-        val voice = Voices.installed(this) ?: return null
+        val voice = Voices.current(this) ?: return null
         if (engine != null && loaded == voice) return engine
         engine?.release()
         engine = null
@@ -67,9 +67,9 @@ class AlfredVoiceService : TextToSpeechService() {
                 config = OfflineTtsConfig(
                     model = OfflineTtsModelConfig(
                         vits = OfflineTtsVitsModelConfig(
-                            model = voice.model(this).absolutePath,
-                            tokens = voice.tokens(this).absolutePath,
-                            dataDir = voice.data(this).absolutePath,
+                            model = voice.model.absolutePath,
+                            tokens = voice.tokens.absolutePath,
+                            dataDir = voice.data.absolutePath,
                         ),
                         numThreads = 2,
                         debug = false,
@@ -90,7 +90,7 @@ class AlfredVoiceService : TextToSpeechService() {
         if (tts == null) { callback.error(); return }
         // Riccardo ritoccato: frequenza dichiarata più bassa (tono più grave) e Piper un po' più svelto per compensare,
         // così il passo finale è quello scelto. Vale solo per Riccardo: le altre voci restano come sono.
-        val tuning = if (loaded == Voice.Riccardo) Voices.tuning(this) else VoiceTuning.PLAIN
+        val tuning = if (loaded?.id == Voice.Riccardo.id) Voices.tuning(this) else VoiceTuning.PLAIN
         val rate = (tts.sampleRate() * tuning.pitch).toInt()
         if (callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return
         if (text.isBlank()) { callback.done(); return }

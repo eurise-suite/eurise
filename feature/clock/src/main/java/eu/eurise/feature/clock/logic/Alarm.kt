@@ -16,6 +16,8 @@ import java.time.LocalTime
  * @property skipped data in cui la sveglia non suonerà, una volta sola (pulsante "Salta").
  * @property routine dopo lo spegnimento legge l'ora e gli impegni del giorno, poi fa partire la musica.
  * @property date giorno preciso di una sveglia che suona una volta sola (per esempio la partenza di un viaggio).
+ * @property alfred sveglia di Alfred (tavola AlfSveglia): saluto con l'ora e il meteo, una massima, un brano del suo
+ * catalogo nell'app di musica scelta; se la musica non parte, la suoneria.
  */
 data class Alarm(
     val id: Int,
@@ -35,6 +37,7 @@ data class Alarm(
     val skipped: LocalDate? = null,
     val routine: Boolean = false,
     val date: LocalDate? = null,
+    val alfred: Boolean = false,
 ) {
     val repeating: Boolean get() = days.isNotEmpty()
 
@@ -46,6 +49,7 @@ data class Alarm(
         .put("challenge", challenge).put("vibrate", vibrate).put("skipped", skipped?.toString() ?: JSONObject.NULL)
         .put("routine", routine)
         .put("date", date?.toString() ?: JSONObject.NULL)
+        .put("alfred", alfred)
 
     companion object {
         fun fromJson(o: JSONObject): Alarm = Alarm(
@@ -66,6 +70,7 @@ data class Alarm(
             skipped = o.optString("skipped").takeIf { !o.isNull("skipped") && it.isNotBlank() }?.let(LocalDate::parse),
             routine = o.optBoolean("routine"),
             date = o.optString("date").takeIf { !o.isNull("date") && it.isNotBlank() }?.let(LocalDate::parse),
+            alfred = o.optBoolean("alfred"),
         )
 
         val Workdays: Set<DayOfWeek> = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)

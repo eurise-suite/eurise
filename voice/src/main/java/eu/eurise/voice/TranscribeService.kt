@@ -47,7 +47,7 @@ class TranscribeService : Service() {
         when (msg.what) {
             VoiceContract.MSG_STATUS -> {
                 out.putBoolean(VoiceContract.KEY_HEARING, Model.installed(this) != null)
-                out.putBoolean(VoiceContract.KEY_SPEAKING, Voices.installed(this) != null)
+                out.putBoolean(VoiceContract.KEY_SPEAKING, Voices.current(this) != null)
             }
             VoiceContract.MSG_TRANSCRIBE -> {
                 val pipe = msg.data.getParcelableCompat(VoiceContract.KEY_AUDIO)
