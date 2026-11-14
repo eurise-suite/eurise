@@ -160,8 +160,14 @@ fun Context.pdfApp(apps: List<AppEntry>): AppEntry? {
     return apps.firstOrNull { it.component != null && it.packageName in known }
 }
 
-private val OfficeApps = listOf("org.libreoffice", "com.collabora", "com.microsoft.office", "cn.wps", "com.onlyoffice", "com.google.android.apps.docs.editors")
+private val OfficeApps = listOf(SUITE_OFFICE, "org.libreoffice", "com.collabora", "com.microsoft.office", "cn.wps", "com.onlyoffice", "com.google.android.apps.docs.editors")
 private val DriveApps = listOf("com.infomaniak.drive", "foundation.e.drive", "com.nextcloud", "me.proton.android.drive", "com.google.android.apps.docs", "com.dropbox")
+
+/** Prefisso del pacchetto di Eurise Office (la versione di prova finisce in ".debug"). */
+private const val SUITE_OFFICE = "eu.eurise.office"
+
+/** Eurise Office, se è installato: apre anche i PDF (Annota, Pagine, Firma). */
+fun suiteOffice(apps: List<AppEntry>): AppEntry? = apps.firstOrNull { it.component != null && it.packageName.startsWith(SUITE_OFFICE) }
 
 fun officeApp(apps: List<AppEntry>): AppEntry? =
     OfficeApps.firstNotNullOfOrNull { prefix -> apps.firstOrNull { it.packageName.startsWith(prefix) && !it.packageName.contains("outlook") } }

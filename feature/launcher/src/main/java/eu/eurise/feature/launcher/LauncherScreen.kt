@@ -114,6 +114,7 @@ import eu.eurise.feature.launcher.apps.BarCategory
 import eu.eurise.feature.launcher.apps.cameraChoices
 import eu.eurise.feature.launcher.apps.driveApp
 import eu.eurise.feature.launcher.apps.officeApp
+import eu.eurise.feature.launcher.apps.suiteOffice
 import eu.eurise.feature.launcher.apps.pdfApp
 import eu.eurise.feature.launcher.apps.galleryChoices
 import eu.eurise.feature.launcher.apps.suiteGallery
@@ -1371,6 +1372,11 @@ private fun SidePage(
     }
 }
 
+/** «Apri da…» di Eurise File (FilesActivity dell'app Eurise, stesso processo della Scrivania). */
+private const val OPEN_FROM = "eu.eurise.action.OPEN_FROM"
+private const val EXTRA_EXTENSIONS = "eu.eurise.extra.EXTENSIONS"
+private const val EXTRA_FROM = "eu.eurise.extra.FROM"
+
 /** Le scorciatoie di Documenti, da sinistra: fotocamera, note, PDF, Office, Drive, scanner. Quelle senza app non compaiono. */
 @Composable
 private fun documentShortcuts(apps: List<AppEntry>, welcome: WelcomeData, actions: LauncherActions): List<eu.eurise.feature.launcher.home.DocShortcut> {
@@ -1382,7 +1388,19 @@ private fun documentShortcuts(apps: List<AppEntry>, welcome: WelcomeData, action
     val drive = stringResource(R.string.doc_drive)
     val scanner = stringResource(R.string.welcome_scan)
     val icons = eu.eurise.core.designsystem.icon.EuriseIcons
-    return remember(apps, welcome.onScan) {
+    val suiteOffice = suiteOffice(apps)
+    // PDF con Eurise Office: si sceglie il file da Eurise File («Apri da…», solo PDF) e lo apre Office (Annota, Pagine, Firma).
+    val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        val office = suiteOffice ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").setPackage(office.packageName)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION),
+            )
+        }.onFailure { actions.openApp(office) }
+    }
+    return remember(apps, welcome.onScan, suiteOffice) {
         val shortcut = { icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, run: () -> Unit -> eu.eurise.feature.launcher.home.DocShortcut(icon, label, run) }
         val launch = { entry: AppEntry -> { actions.openApp(entry) } }
         listOfNotNull(
@@ -1390,7 +1408,15 @@ private fun documentShortcuts(apps: List<AppEntry>, welcome: WelcomeData, action
                 runCatching { context.startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             },
             shortcut(icons.pen(2f), notes) { actions.openEurise("notes") },
-            context.pdfApp(apps)?.let { shortcut(icons.pdf(2f), pdf, launch(it)) },
+            if (suiteOffice != null) {
+                shortcut(icons.pdf(2f), pdf) {
+                    val open = Intent(OPEN_FROM).setPackage(context.packageName)
+                        .putExtra(EXTRA_EXTENSIONS, "pdf").putExtra(EXTRA_FROM, pdf)
+                    runCatching { pickPdf.launch(open) }.onFailure { actions.openApp(suiteOffice) }
+                }
+            } else {
+                context.pdfApp(apps)?.let { shortcut(icons.pdf(2f), pdf, launch(it)) }
+            },
             officeApp(apps)?.let { shortcut(icons.office(2f), office, launch(it)) },
             driveApp(apps)?.let { shortcut(icons.cloud(2f), drive, launch(it)) },
             shortcut(icons.scanner(2f), scanner, welcome.onScan),
