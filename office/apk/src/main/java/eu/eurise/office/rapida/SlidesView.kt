@@ -274,7 +274,7 @@ private fun ParaLine(p: SlidePara, scale: Float, ink: Color, query: String) {
     if (p.text.isBlank()) { Spacer(Modifier.height((4 * scale).dp)); return }
     val size = (if (p.level == 0) 12f else 11f) * scale
     Row(Modifier.padding(start = (p.level * 14 * scale).dp)) {
-        if (p.bullet) Text(if (p.level == 0) "•" else "–", fontSize = size.sp, color = ink, modifier = Modifier.padding(end = (6 * scale).dp))
+        if (p.bullet) Text(if (p.level == 0) "•" else "–", fontSize = size.sp, lineHeight = (size * 1.45f).sp, color = ink, modifier = Modifier.padding(end = (6 * scale).dp))
         Text(
             styled(p.spans, query), fontSize = size.sp, lineHeight = (size * 1.45f).sp, color = ink,
             textAlign = when (p.align) {

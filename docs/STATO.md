@@ -1931,12 +1931,32 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   ScanForResultActivity).
 - Sulla pagina Office della tela sono comparse, da un'altra chat, **OffRapporto** e **OffRapportoVedi** (rapporto
   quando Office si è chiuso, da approvare): chiedere al proprietario chi le porta avanti prima di toccarle.
-- In corso alla chiusura della chat: office-app per i ritocchi del tablet (`.main-nav` nascosta, Condividi leggibile,
-  annulla e ripeti senza cornici): provarlo con `schermo=tablet` e consegnarlo.
+- Ritocchi del tablet (`.main-nav` nascosta, Condividi leggibile, annulla e ripeti senza cornici): provati con
+  `schermo=tablet` (prova 43580487360, motore del giro 43577666467) e consegnati.
 
-**Prossimo passo**: i gruppi a card sul telefono (OffTelefonoGruppi: stesso codice dei RIBBONS del tablet, card al
-posto della fila di pulsanti) con le tendine di carattere e dimensione anche sul tablet; poi la vista rapida delle
-presentazioni (OffLetturaPresentazione, modulo `rapida`: lettore pptx/odp in sola lettura); poi il computer
+**14 novembre, tarda mattina (nuova chat)**
+- **OffTelefonoGruppi in codice** (Control.Eurise.js, eurise.css): le schede della dock del telefono prendono i gruppi dai
+  RIBBONS del tablet (`phoneTabs`): testo = Testo (Carattere, Paragrafo, Stili, Appunti), Inserisci, Revisione, Suite,
+  Altro (Layout, Vista, Documento); foglio = Celle, Inserisci, Dati (Formule + Dati), Suite, Altro (Revisione, Vista,
+  Documento); presentazione = Diapositiva (Diapositive, Presentazione), Testo, Inserisci, Suite, Altro. Toccando una
+  scheda: pastiglie dei gruppi sopra, card larghe min(330 px, schermo − 52) che scorrono di lato (scroll-snap, la
+  pastiglia segue lo scorrimento), pulsanti da 44, B I U S x² x₂ come segni, etichetta e «altre opzioni» in basso.
+  Gruppo Carattere con **tendine di carattere** (elenco dei caratteri del motore, `getToolbarCommandValues`, con ricerca;
+  si applica con `map.applyFont`) **e dimensione** (`applyFontSize`), anche sul nastro del tablet; togli formattazione
+  (`.uno:ResetAttributes`, `.uno:SetDefault` nelle presentazioni); colore ed evidenzia con le tinte della suite
+  (`.uno:FontColor`/`.uno:Color` e `.uno:CharBackColor`/`.uno:BackgroundColor` con il parametro `X.Color`, come
+  Widget.ColorPickerButton di Collabora). Provato in locale con eslint 7 e stylelint 13.7 (regole di Collabora).
+  La prova sul telefono fotografa anche `-uso-1-tendina` e `-uso-1-gruppi`.
+- **OffLetturaPresentazione in codice** (`rapida/Slides.kt`, `rapida/SlidesView.kt`): pptx e odp si aprono nella vista
+  rapida in sola lettura: diapositive nelle loro proporzioni (sldSz / page-layout), titolo, sottotitolo, testi con
+  elenchi e livelli, tabelle, immagini (decodificate ridotte, segnaposto per EMF/WMF/SVG), sfondo pieno se dichiarato
+  dalla diapositiva, note del relatore, diapositive nascoste segnate; «diapositiva N di M», ricerca con evidenziazione;
+  **Presenta** a schermo intero in orizzontale (tocco a destra/sinistra, scorrimento, salta le nascoste). Completa e
+  Aspetto esatto aprono il motore. Le presentazioni **nuove** vanno sempre nel motore. Test JVM `SlidesTest` (4).
+  Limite: l'impaginazione è semplificata (forme in colonna dall'alto in basso, sfondi e segnaposto ereditati dal layout
+  e dal master non letti): per l'aspetto vero c'è il motore.
+
+**Prossimo passo**: provare sul telefono le card dei gruppi e la vista rapida delle presentazioni; poi il computer
 (OffComputer); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
