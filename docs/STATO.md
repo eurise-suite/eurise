@@ -1929,6 +1929,8 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   motore che si chiudeva dopo qualche secondo di modifica; la nostra interfaccia anche nella modifica completa.
   Scanner da «Pagine» di Office: si prova dopo il merge in `brand` (l'app Eurise del ramo brand non ha ancora
   ScanForResultActivity).
+- Sulla pagina Office della tela sono comparse, da un'altra chat, **OffRapporto** e **OffRapportoVedi** (rapporto
+  quando Office si è chiuso, da approvare): chiedere al proprietario chi le porta avanti prima di toccarle.
 - In corso alla chiusura della chat: office-app per i ritocchi del tablet (`.main-nav` nascosta, Condividi leggibile,
   annulla e ripeti senza cornici): provarlo con `schermo=tablet` e consegnarlo.
 
