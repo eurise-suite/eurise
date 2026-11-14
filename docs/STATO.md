@@ -1899,6 +1899,15 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - La prova rapida `fonte=nativo` ora compila e **pubblica Office** in apk-prova-office (Office non esce da «Compila
   APK» e office-app impiega 25 minuti).
 
-**Prossimo passo**: vedere le schermate della nuova interfaccia del motore (prova `fonte=motore`), sistemarla; poi motore a richiesta (OffMotore: capire se i file del
+- Verificato sull'emulatore (prova 43539935216, motore del giro 43537001256): dock e pannelli per tipo, doppio tocco
+  entra nel testo della diapositiva con tastiera, tocco lungo apre Taglia/Copia/Incolla, schede dei fogli e miniature
+  sopra la dock, nessuna chiusura. Consegnati al proprietario: Office (lampo dell'evidenziatore tolto: chiave delle
+  pagine = indice, segno tenuto finché arriva il ridisegno) e il motore con l'interfaccia Eurise.
+- In corso: giro office-app per il commit cb2179c (nome del documento da `file_path`, pulsanti senza cornici di
+  Collabora). office-app ora pubblica **solo il motore**; Office lo pubblica `office-prova` con `fonte=nativo`.
+  Attenzione: un push su `office/prova/**` fa partire una prova che annulla quella in corso (stesso gruppo): annullarla.
+
+**Prossimo passo**: rifinire l'interfaccia del motore (etichette italiane già nel codice: l'emulatore è in inglese),
+tablet e computer con il nastro (OffTablet, OffComputer), OffCerca; poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
