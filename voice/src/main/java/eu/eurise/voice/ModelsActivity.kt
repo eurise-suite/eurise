@@ -5,6 +5,11 @@ import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import eu.eurise.voice.speech.VoiceTuning
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.Slider
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -133,9 +138,48 @@ private fun ModelsPage(onClose: () -> Unit) {
         }
 
         Section(stringResource(R.string.voice_models_speak))
-        Voice.entries.forEach { v ->
+        // Le tre opzioni di Alfred (14 novembre): Riccardo com'è, Riccardo ritoccato, la voce di un attore.
+        val current = Voices.installed(context)
+        val riccardo = speak(Voice.Riccardo)
+        var tuning by remember { mutableStateOf(Voices.tuning(context)) }
+        fun pick(voice: Voice, t: VoiceTuning?) {
+            // Il ritocco si salva subito: vale anche se la voce si deve ancora scaricare.
+            t?.let { tuning = it; Voices.setTuning(context, it) }
+            if (!voice.installed(context)) { ask = Item.Speak(voice); return }
+            Voices.choose(context, voice)
+            tick++
+        }
+        Choice(
+            stringResource(R.string.voice_opt_plain), stringResource(R.string.voice_opt_plain_d, Voice.Riccardo.megabytes),
+            selected = current == Voice.Riccardo && !tuning.retouched, enabled = true, percent = progress[Item.Speak(Voice.Riccardo)],
+        ) { pick(Voice.Riccardo, tuning.copy(retouched = false, speed = 1f, pitch = 1f)) }
+        Choice(
+            stringResource(R.string.voice_opt_butler), stringResource(R.string.voice_opt_butler_d),
+            selected = current == Voice.Riccardo && tuning.retouched, enabled = true, percent = null,
+        ) { pick(Voice.Riccardo, if (tuning.retouched) tuning else VoiceTuning.BUTLER) }
+        if (current == Voice.Riccardo && tuning.retouched) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.voice_opt_speed, (tuning.speed * 100).toInt()), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Slider(tuning.speed, { tuning = tuning.copy(speed = it) }, valueRange = VoiceTuning.SPEED, onValueChangeFinished = { Voices.setTuning(context, tuning) })
+                Text(stringResource(R.string.voice_opt_pitch, semitones(tuning.pitch)), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Slider(tuning.pitch, { tuning = tuning.copy(pitch = it) }, valueRange = VoiceTuning.PITCH, onValueChangeFinished = { Voices.setTuning(context, tuning) })
+                TextButton(onClick = { tuning = VoiceTuning.BUTLER; Voices.setTuning(context, tuning) }) {
+                    Text(stringResource(R.string.voice_opt_reset), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        Choice(
+            stringResource(Voice.Attore.label),
+            if (Voice.Attore.ready) stringResource(Voice.Attore.detail, Voice.Attore.megabytes) else stringResource(R.string.voice_opt_actor_soon),
+            selected = current == Voice.Attore, enabled = Voice.Attore.ready, percent = progress[Item.Speak(Voice.Attore)],
+        ) { pick(Voice.Attore, null) }
+        if (riccardo) TextButton(onClick = { Voices.delete(context, Voice.Riccardo); tick++ }) {
+            Text(stringResource(R.string.voice_opt_delete, Voice.Riccardo.megabytes), fontSize = 12.5.sp)
+        }
+        Section(stringResource(R.string.voice_models_other))
+        listOf(Voice.Paola).forEach { v ->
             val item = Item.Speak(v)
-            val inUse = Voices.installed(context) == v
+            val inUse = current == v
             ModelRow(stringResource(v.label) + if (inUse) " · " + stringResource(R.string.voice_tts_in_use) else "",
                 stringResource(v.detail, v.megabytes), speak(v), progress[item],
                 onDownload = { ask = item },
@@ -166,6 +210,30 @@ private fun ModelsPage(onClose: () -> Unit) {
             confirmButton = { TextButton(onClick = { ask = null; download(item) }) { Text(stringResource(R.string.voice_download)) } },
             dismissButton = { TextButton(onClick = { ask = null }) { Text(stringResource(R.string.voice_cancel)) } },
         )
+    }
+}
+
+/** Semitoni dal rapporto di frequenza: 0,92 → −1,4. */
+private fun semitones(pitch: Float): String = String.format(Locale.ITALIAN, "%+.1f", 12 * kotlin.math.ln(pitch) / kotlin.math.ln(2f))
+
+/** Una delle tre voci di Alfred: un tocco la sceglie (e la scarica, se serve). */
+@Composable
+private fun Choice(title: String, detail: String, selected: Boolean, enabled: Boolean, percent: Int?, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .background(if (selected) scheme.secondaryContainer else scheme.surfaceContainerLow)
+            .selectable(selected = selected, enabled = enabled && percent == null, role = Role.RadioButton, onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RadioButton(selected = selected, onClick = null, enabled = enabled)
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Bold, color = if (enabled) scheme.onSurface else scheme.onSurfaceVariant)
+            Text(detail, fontSize = 12.sp, color = scheme.onSurfaceVariant)
+        }
+        if (percent != null) Text("$percent%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = scheme.primary)
     }
 }
 

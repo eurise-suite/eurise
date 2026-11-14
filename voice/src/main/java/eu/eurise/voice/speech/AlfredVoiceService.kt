@@ -88,18 +88,22 @@ class AlfredVoiceService : TextToSpeechService() {
         val text = SpeechText.clean(request.charSequenceText?.toString() ?: request.text.orEmpty())
         val tts = if (italian(request.language) && !Voices.stopped(this)) ensureEngine() else null
         if (tts == null) { callback.error(); return }
-        val rate = tts.sampleRate()
+        // Riccardo ritoccato: frequenza dichiarata più bassa (tono più grave) e Piper un po' più svelto per compensare,
+        // così il passo finale è quello scelto. Vale solo per Riccardo: le altre voci restano come sono.
+        val tuning = if (loaded == Voice.Riccardo) Voices.tuning(this) else VoiceTuning.PLAIN
+        val rate = (tts.sampleRate() * tuning.pitch).toInt()
         if (callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return
         if (text.isBlank()) { callback.done(); return }
         // La velocità del telefono (100 = normale); Alfred parla un filo più piano.
-        val speed = (request.speechRate / 100f).coerceIn(0.5f, 2.5f) * 0.95f
+        val speed = (request.speechRate / 100f).coerceIn(0.5f, 2.5f) * 0.95f * tuning.speed / tuning.pitch
+        val pause = ByteArray(rate * tuning.pauseMs / 1000 * 2)
         val max = callback.maxBufferSize.coerceAtLeast(1024)
         Voices.speakingStart(this)
         val ok = runCatching {
-            for (sentence in sentences(text)) {
+            for ((i, sentence) in sentences(text).withIndex()) {
                 if (stopped) break
                 val audio = tts.generate(sentence, 0, speed)
-                val bytes = pcm(audio.samples)
+                val bytes = if (i > 0 && pause.isNotEmpty()) pause + pcm(audio.samples) else pcm(audio.samples)
                 var off = 0
                 while (off < bytes.size && !stopped) {
                     val n = minOf(max, bytes.size - off)

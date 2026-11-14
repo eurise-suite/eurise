@@ -12,9 +12,14 @@ import java.util.zip.ZipInputStream
  * preparato dalla suite (`.github/workflows/voci.yml`) con il modello, i simboli e i dati di pronuncia italiani di
  * espeak-ng. Si scarica solo toccando «Scarica»: escono la richiesta del file e l'indirizzo di rete, nient'altro.
  */
-enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label: Int, val detail: Int) {
+enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label: Int, val detail: Int, val ready: Boolean = true) {
     /** Maschile, pacata: la voce di Alfred. */
     Riccardo("alfred-riccardo", "it_IT-riccardo-x_low.onnx", 19, R.string.voice_tts_riccardo, R.string.voice_tts_riccardo_d),
+    /**
+     * La voce di un attore, allenata per Alfred (Piper, partendo da una voce italiana) e scaricabile come le altre.
+     * [ready] falso finché l'archivio non è nella pre-release «voci»: la riga dice che arriverà, senza «Scarica».
+     */
+    Attore("alfred-attore", "alfred-attore.onnx", 60, R.string.voice_tts_actor, R.string.voice_tts_actor_d, ready = false),
     /** Femminile, più ricca: per chi la preferisce. */
     Paola("alfred-paola", "it_IT-paola-medium.onnx", 60, R.string.voice_tts_paola, R.string.voice_tts_paola_d);
 
@@ -25,6 +30,24 @@ enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label
     fun tokens(context: Context) = File(dir(context), "tokens.txt")
     fun data(context: Context) = File(dir(context), "espeak-ng-data")
     fun installed(context: Context) = model(context).isFile && tokens(context).isFile && data(context).isDirectory
+}
+
+/**
+ * Come parla Riccardo: com'è, o ritoccato «da maggiordomo» (più lento e più grave). Il tono si abbassa dichiarando
+ * all'audio una frequenza più bassa di quella vera ([pitch] < 1: voce più grave e più lenta insieme); la velocità di
+ * Piper si corregge perché il passo finale sia [speed]. Niente librerie e niente download: costa zero.
+ */
+data class VoiceTuning(val retouched: Boolean, val speed: Float, val pitch: Float) {
+    /** Pausa in più tra una frase e l'altra, in millisecondi. */
+    val pauseMs: Int get() = if (retouched) 220 else 0
+
+    companion object {
+        val PLAIN = VoiceTuning(false, 1f, 1f)
+        /** Il ritocco proposto: passo all'85%, tono circa un semitono e mezzo sotto. */
+        val BUTLER = VoiceTuning(true, 0.85f, 0.92f)
+        val SPEED = 0.70f..1.10f
+        val PITCH = 0.84f..1.04f
+    }
 }
 
 object Voices {
@@ -57,6 +80,17 @@ object Voices {
         if (flag(context, "parla").exists()) { flag(context, "parla").delete(); flag(context, "ferma").writeText("1") }
     }
     fun stopped(context: Context) = flag(context, "ferma").exists()
+
+    /** Il ritocco della voce: in un file perché lo legge anche il processo «:voce». */
+    fun tuning(context: Context): VoiceTuning = runCatching {
+        val p = flag(context, "stile").readText().trim().split(' ')
+        if (p.size < 3) VoiceTuning.PLAIN
+        else VoiceTuning(p[0] == "1", p[1].toFloat().coerceIn(VoiceTuning.SPEED), p[2].toFloat().coerceIn(VoiceTuning.PITCH))
+    }.getOrDefault(VoiceTuning.PLAIN)
+
+    fun setTuning(context: Context, t: VoiceTuning) = runCatching {
+        flag(context, "stile").writeText("${if (t.retouched) 1 else 0} ${t.speed} ${t.pitch}")
+    }
     fun clearStopped(context: Context) = runCatching { flag(context, "ferma").delete() }
 
     /** Scarica l'archivio in una copia temporanea, lo apre in una cartella nuova e la mette al suo posto solo se è intera. */
