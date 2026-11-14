@@ -1074,6 +1074,8 @@ body.eurise-tablet #eurise-header.riga .eurise-hbtn {
 	font-size: 12px;
 }
 #eurise-header.riga .eurise-cmdsearch span { overflow: hidden; text-overflow: ellipsis; }
+/* Nel campo più corto «Ctrl K» non ci sta: resta nel suggerimento (title) e nella scorciatoia. */
+#eurise-header.riga .eurise-cmdsearch kbd { display: none; }
 #eurise-header.riga .eurise-share.icon {
 	width: 42px;
 	height: 42px;
