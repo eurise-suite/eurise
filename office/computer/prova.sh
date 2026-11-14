@@ -30,6 +30,24 @@ chmod -R u+w "$DIST"
 put() { cp "$1" "$2.eurise" && mv -f "$2.eurise" "$2"; }
 put "$WEB/Control.Eurise.js" "$DIST/Control.Eurise.js"
 put "$WEB/eurise.css" "$DIST/eurise.css"
+# Diagnosi per la prova: cosa vede il nostro codice dentro il guscio Qt (scritto in console, letto dal log).
+cat > "$DIST/eurise-diag.js" <<'JS'
+(function () {
+	function report(when) {
+		var m = window.mode;
+		console.log('EURISE-DIAG ' + when + ' ' + JSON.stringify({
+			qt: !!window.ThisIsTheQtApp, mobileApp: !!window.ThisIsAMobileApp,
+			desktop: !!(m && m.isDesktop && m.isDesktop()), tablet: !!(m && m.isTablet && m.isTablet()),
+			ours: !!window.euriseOffice, map: !!(window.app && window.app.map), doc: !!(window.app && window.app.map && window.app.map._docLayer),
+			body: document.body ? document.body.className : '', top: !!document.getElementById('eurise-top'),
+			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row')
+		}));
+	}
+	window.addEventListener('error', function (e) { console.log('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
+	setTimeout(function () { report('5s'); }, 5000);
+	setTimeout(function () { report('20s'); }, 20000);
+})();
+JS
 mkdir -p "$DIST/images/dark"
 for svg in "$WEB"/images/*.svg; do put "$svg" "$DIST/images/$(basename "$svg")"; done
 for svg in "$WEB"/images/dark/*.svg; do [ -e "$svg" ] && put "$svg" "$DIST/images/dark/$(basename "$svg")"; done
@@ -45,7 +63,8 @@ if 'Control.Eurise.js' not in s:
         sys.exit('bundle.js non trovato in cool.html')
     tag = m.group(0)
     ours = re.sub(r'src="[^"]*bundle\.js"', 'src="Control.Eurise.js"', tag)
-    s = s.replace(tag, tag + '\n' + ours, 1)
+    diag = re.sub(r'src="[^"]*bundle\.js"', 'src="eurise-diag.js"', tag)
+    s = s.replace(tag, tag + '\n' + ours + '\n' + diag, 1)
 open(p + '.eurise', 'w', encoding='utf-8').write(s)
 EOF
 mv -f "$COOL.eurise" "$COOL"
@@ -88,7 +107,7 @@ apri() {
 	shot "$name-1-aperto"
 	# Ctrl K: «Cerca un comando» della nostra interfaccia.
 	[ -n "$win" ] && xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+k && sleep 2 && shot "$name-2-cerca" && xdotool key Escape
-	grep -iE "eurise|uncaught|error" "$OUT/$name.log" | grep -v "^$" | head -15 | sed 's/^/    /' >> "$R"
+	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError|js:" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
 	kill "$pid" 2> /dev/null
 	pkill -f coda-qt 2> /dev/null
 	sleep 3
