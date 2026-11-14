@@ -2220,4 +2220,5 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   nel centro privacy).
 - **Tavole**: MapIncroci e MapFinestrini (forma approvata, colori rifatti più vivi: da rivedere); OffRapporto e
   OffRapportoVedi **approvate** → Office passa all'altra chat.
+- **APK in apk-prova: giro 474 e Mappe 40.**
 - **Domanda aperta del proprietario**: unire Alfred ed Eurise AI e uso dell'online con la massima privacy (risposta in chat).
