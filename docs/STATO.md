@@ -2454,3 +2454,8 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   approvata come opzione; MapCieloColline approvata; le altre restano come confronto).
 - Lavori aperti: cielo nel motore (sopra), «I tuoi giorni» da provare, PC come cervello di Alfred (col Ponte), suonerie
   (l'altra chat), Office (l'altra chat).
+- **Giro 539** (mandato in chat come `Eurise-giro539.apk`): «Domande libere subito online» nelle disposizioni di Alfred
+  (`AlfredPrefs.freeOnline`, acceso di base): la domanda libera apre subito il servizio preferito, senza scheda; la prima
+  volta resta la spiegazione del centro privacy. Icona di Office B in codice (bolla, icone a tema, APK di Office via
+  `eurise_patch.py`); l'APK di Office con l'icona nuova è in compilazione (lavoro lungo del motore).
+- **Regola fissa nuova** (CLAUDE.md, «APK in chat»): ogni aggiornamento si consegna con gli APK mandati in chat.
