@@ -926,11 +926,17 @@
 	 */
 	function scheduleSave() {
 		clearTimeout(phone.saveTimer);
-		phone.saveTimer = setTimeout(function () {
-			if (phone.saved) return;
-			if (app.socket && app.socket.sendMessage) app.socket.sendMessage('save dontTerminateEdit=1 dontSaveIfUnmodified=1');
-			else if (app.map.save) app.map.save(true, true);
-		}, 8000);
+		phone.saveTimer = setTimeout(function () { if (!phone.saved) saveNow(true); }, 8000);
+	}
+
+	/**
+	 * Salva con il messaggio «save». Mai uno('.uno:Save'): il motore lo rifiuta con un'asserzione
+	 * (DocumentBroker::forwardToChild) e si chiude, come è successo sul telefono il 14 novembre.
+	 */
+	function saveNow(onlyIfModified) {
+		var message = 'save dontTerminateEdit=1' + (onlyIfModified ? ' dontSaveIfUnmodified=1' : '');
+		if (app.socket && app.socket.sendMessage) app.socket.sendMessage(message);
+		else if (app.map.save) app.map.save(true, !!onlyIfModified);
 	}
 
 	function phoneDock(docType) {
@@ -1263,7 +1269,7 @@
 
 	function fileMenu() {
 		chooser(t('File', 'File'), [
-			[t('Salva', 'Save'), function () { uno('.uno:Save'); }],
+			[t('Salva', 'Save'), function () { saveNow(false); }],
 			[t('Condividi o esporta in PDF', 'Share or export to PDF'), beforeSharing],
 			[t('Stampa', 'Print'), function () { dispatch('print'); }],
 			[t('Proprietà del documento', 'Document properties'), function () { uno('.uno:SetDocumentProperties'); }],
