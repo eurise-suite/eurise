@@ -2307,3 +2307,23 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
 - **Tavole nuove da approvare (pagina AI)**: AlfUnico (destrimano) e AlfUnicoMancino: tre tasti larghi 68 px, PC · online
   (col preferito e la stellina) · Invio sotto il pollice; AlfScegli (pressione lunga sul globo), AlfFinestra, AlfRisposta.
   AlfDove aggiornata (Lumo preferito). **Regola d'ergonomia** aggiunta in CLAUDE.md.
+
+## Punto di ripartenza (14 novembre, sera)
+- **APK in apk-prova: giro 516 e Mappe 42.** Ramo `brand`. Tela «Icone della suite»: pagine AI, Privacy, Mappe.
+- **In codice oggi**: servizi spenti di base con la correzione per chi aggiorna (`PrivacyCenter.keepOldChoices`); foglio del
+  primo avvio (`ServicesWelcome`); Alfred con i tre tasti (`online/OnlineViews.AskBox`), «Chiedi a…» (`ChooseView`), finestra
+  AI (`online/AiWindowActivity`), ripulitura dei dati (`online/Redactor`, con test), risposta che torna (`AnswerView`),
+  servizio `PrivacyService.AiOnline` spento di base; Mappe: incroci (`EuriseJunctionScene` Kind.TURN, prospettiva),
+  finestrini e «Cielo e stagioni» nelle impostazioni, paesaggio (`EuriseLandscape`).
+- **Da provare sul telefono** (dire al proprietario cosa guardare): lo script che scrive la domanda in Lumo, Euria, Le Chat
+  e «Porta ad Alfred» (selettori generici: se non trova, appunti e avviso); la categoria annidata nelle impostazioni di
+  Navigazione; i colori del paesaggio la sera e con la pioggia.
+- **Non ancora fatto**:
+  1. «I tuoi giorni» (compleanni e anniversari dal Calendario) nel paesaggio: serve un contratto con l'app principale
+     (come il meteo del percorso); palloncini e cuoricini sono nella tavola MapCieli.
+  2. Il cielo nella **schermata di guida** (tavola MapGuida): la mappa in 3D la disegna il motore di CoMaps (C++); serve
+     decidere col proprietario se sovrapporre una fascia di cielo in alto (semplice, copre un po' di mappa lontana) o
+     cambiare il colore di sfondo del motore (più pulito, lavoro in `drape_frontend`).
+  3. Il PC come cervello (tavola AlfComputer): per ora il tasto dice che arriva col Ponte.
+  4. Lumo con l'API ufficiale quando esce; «usa il tuo account» resta la via della finestra AI.
+- **Prossimo passo proposto**: prova sul telefono del giro 516, poi la decisione sul cielo della schermata di guida.
