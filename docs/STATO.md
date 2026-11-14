@@ -2289,3 +2289,12 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   con 4 interruttori). Un solo motore di disegno (`scene()` nello script delle tavole MapCieli, MapIncroci, MapGuida: da
   portare in Java come `EuriseLandscape` usato da `EuriseJunctionScene` e dal cielo della guida). MapIncroci e MapGuida
   hanno le Tweaks tempo, momento, stagione, festa.
+- **MapCieli approvata** (14 novembre, pomeriggio) con: precipitazioni su cielo e prato, **mai sulla strada** (clip
+  della strada nel finestrino; nella guida solo nel cielo e sulle colline); pioggia, neve e grandine cadono; nuvole che
+  scorrono piano (più veloci se il meteo segnala vento, Tweak «vento»); lampo ogni tanto nel temporale; «I tuoi giorni»
+  acceso di base. Da portare in codice: `EuriseLandscape` (Java, in Mappe) per finestrino e cielo della guida.
+- **AI online, confronto in corso**: Lumo (API in uscita, accesso anticipato; cifratura zero-access, nessun registro),
+  Euria/Infomaniak (API con chiave e Product ID, richieste non registrate, CH; polemica 2025 sulla legge svizzera di
+  sorveglianza), Mistral (API UE, 30 giorni di conservazione contro gli abusi salvo ZDR su richiesta, Large 4 a 38
+  sull'indice di Artificial Analysis). Proposta: scelta fra tutte e tre col conto Eurise e l'inoltro; Lumo quando l'API
+  è pubblica. Decisione del proprietario in sospeso.
