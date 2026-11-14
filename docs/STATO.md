@@ -2495,3 +2495,23 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   Dopo l'approvazione: servizio di Eurise AI con permesso di firma (risposta in streaming, scelta tra le azioni come
   funzioni), scarico del modello (scegliere i modelli liberi e misurarli: l'ultima misura era 7,4 token/s in scrittura su
   Fairphone 6), memoria locale nel backup cifrato e nel centro privacy.
+
+## 14 novembre, notte: Mail e Chat da lavoro (richiesta del proprietario, solo tavole e documento)
+- **Richiesta**: Chat e Mail come strumenti di lavoro e collaborazione. Chat con chiamate e videochiamate, a due e di gruppo,
+  e gruppi di lavoro con strumenti condivisi (note, calendario, cose da fare, documenti, immagini, mail) a un tocco. Email
+  professionale ma svecchiata, più smart e collaborativa. Inoltre una guida per KMail e le alternative per un servizio di posta nostro.
+- **Tavole nuove, da approvare** (tela, pagina «Chat ed Email»): fila «Chat al lavoro» con ChatLavoro (gruppo di lavoro con
+  le sei schede e la riunione dal calendario), ChatVideo (schermo condiviso; «Mentre parlate» propone attività, eventi e note
+  dalla trascrizione sul telefono) e ChatCondividi (il + della suite; un documento «Insieme» o in copia). Fila «Email da
+  lavoro» con MailSmart (Per te, Aspetti, Squadra; il punto del mattino; risposte in un tocco), MailInsieme (commenti della
+  squadra che il cliente non vede, Assegna, Rispondo io, Bozza insieme) e MailScriviLavoro (orari liberi, link che scade,
+  promemoria se non risponde, invio all'ora giusta, tono e modelli).
+- **Documento** «Mail e Chat da lavoro · proposta, guida KMail, posta nostra»: https://claude.ai/artifact/F7uLSEo2KPWyaYBFtNCWJe
+  Contiene il funzionamento tecnico (MatrixRTC con LiveKit per le chiamate di gruppo; i commenti della squadra in una stanza Chat
+  legata alla mail dal Message-ID), la guida KMail (pacchetto del sistema, non il Flatpak di Kontact; IMAP; Inviati e Bozze
+  sul server; DAV; OpenPGP e Autocrypt), le strade per la posta (Migadu Micro 19 $/anno, Purelymail 10 $/anno, mailbox.org,
+  server Eurise con Stalwart + Continuwuity + LiveKit su un VPS, gratis con Cloudflare + Brevo) e l'ordine dei lavori in 7 passi.
+- **Decisioni del proprietario**: approvare le tavole; dove stanno gli strumenti del gruppo (cloud del gruppo o server
+  Eurise); fornitore della posta o server nostro; il dominio.
+- Nessun codice in questo giro (prima le anteprime). Il primo passo dopo l'approvazione: le viste e i promemoria di Email,
+  che stanno tutti sul telefono.
