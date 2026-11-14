@@ -6,6 +6,12 @@
 - Il documento di progetto e la tela "Icone della suite" (pagina Calendario, fila "Dopo") sono il riferimento.
 - La chiave di firma delle versioni ufficiali non si chiede e non si tocca: la custodisce solo il proprietario.
 
+## APK in chat (regola fissa, 14 novembre 2026)
+- Ogni volta che si aggiorna qualcosa, appena la compilazione riesce si mandano **direttamente in chat** gli APK di ciò che è
+  cambiato (scaricati dalla pre-release `apk-prova` o dagli artefatti, con nome e giro, es. `Eurise-giro529.apk`), oltre al link.
+  Non basta il link a GitHub: il proprietario prova dal file. Se un APK richiede più tempo (Office, Mappe), si manda
+  subito quello pronto e l'altro appena arriva.
+
 ## Conversazioni lunghe (regola, 8 novembre 2026)
 - Quando la chat con il proprietario diventa lunga (molti lavori, contesto riassunto più volte), avvisarlo alla
   consegna dell'APK e consigliare una chat nuova, con le istruzioni pronte da incollare: leggere CLAUDE.md e
