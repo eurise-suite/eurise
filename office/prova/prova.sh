@@ -24,6 +24,13 @@ adb wait-for-device
 adb logcat -G 32M || true
 adb shell getprop ro.product.cpu.abilist | tee -a "$sum"
 adb install -r -g "$APK" 2>&1 | tail -2 | tee -a "$sum" || true
+# SCHERMO=tablet: lo stesso emulatore con lo schermo di un tablet (tavola OffTablet, 1280×800 a 160 dpi).
+if [ "${SCHERMO:-}" = tablet ]; then
+	adb shell wm size 1280x800
+	adb shell wm density 160
+	sleep 3
+	echo "schermo: tablet $(adb shell wm size | tail -1)" >> "$sum"
+fi
 adb shell pm list packages | grep -q "$PKG" || { echo "Installazione non riuscita" | tee -a "$sum"; exit 0; }
 if [ -n "${MOTORE_APK:-}" ] && [ -f "$MOTORE_APK" ]; then
 	echo "motore: $(du -m "$MOTORE_APK" | cut -f1) MB" >> "$sum"

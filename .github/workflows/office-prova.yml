@@ -15,6 +15,11 @@ on:
       versione:
         description: "Con fonte collabora: inizio della versione da provare (per esempio 25.04); vuoto = la più recente"
         default: ""
+      schermo:
+        description: "telefono, oppure tablet (1280×800, 160 dpi: la barra a nastro di Collabora e la tavola OffTablet)"
+        type: choice
+        options: [telefono, tablet]
+        default: telefono
   push:
     paths:
       - ".github/workflows/office-prova.yml"
@@ -129,7 +134,7 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
-          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" MOTORE_APK="${{ github.workspace }}/apk/motore.apk" COMPLETA="${{ inputs.fonte == 'motore' && '1' || '' }}" bash office/prova/prova.sh apk/office.apk prova-office
+          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" MOTORE_APK="${{ github.workspace }}/apk/motore.apk" COMPLETA="${{ inputs.fonte == 'motore' && '1' || '' }}" SCHERMO="${{ inputs.schermo }}" bash office/prova/prova.sh apk/office.apk prova-office
 
       - name: Riassunto
         if: always()
