@@ -104,4 +104,49 @@ class GrammarTest {
         assertEquals(Grammar.Answer.Other, Grammar.answer("alle dieci invece"))
         assertEquals(Grammar.Answer.Other, Grammar.answer("Sicuramente Marco"))
     }
+
+    // --- Frasi come le scrive Whisper (prova del proprietario, 15 novembre: «capisce una cosa per un'altra») ---
+
+    @Test fun aggiungiAlCalendario() {
+        val c = p("Aggiungi al calendario dentista martedì alle 9.") as Command.Event
+        assertEquals("Dentista", c.title)
+        assertEquals(LocalTime.of(9, 0), c.time)
+    }
+
+    @Test fun creaUnEvento() {
+        val c = p("Alfred, crea un evento domani alle 15 riunione con Luca") as Command.Event
+        assertEquals(LocalDate.of(2026, 11, 13), c.day)
+        assertEquals(LocalTime.of(15, 0), c.time)
+    }
+
+    @Test fun mettiNelCalendario() {
+        assertTrue(p("Metti nel calendario cena da Anna venerdì alle 20") is Command.Event)
+    }
+
+    @Test fun notaSenzaTesto() {
+        assertEquals(Command.Note(""), p("Scrivi una nota."))
+        assertEquals(Command.Note("Comprare il latte"), p("Nuova nota: comprare il latte"))
+    }
+
+    @Test fun chiamataScrittaMale() {
+        assertEquals(Command.Call("Marco"), p("Chiamo Marco."))
+        assertEquals(Command.Call("Laura"), p("Fai una telefonata a Laura"))
+    }
+
+    @Test fun messaggioWhatsappDetto() {
+        val c = p("Manda un WhatsApp a Luca che arrivo tra poco") as Command.Message
+        assertEquals("Luca", c.who)
+        assertEquals("Arrivo tra poco", c.text)
+        assertEquals(Channel.WhatsApp, c.channel)
+    }
+
+    @Test fun promemoriaConDomanda() {
+        val c = p("Mi ricordi di comprare il pane domani?") as Command.Task
+        assertEquals(LocalDate.of(2026, 11, 13), c.due)
+    }
+
+    @Test fun leDomandeRestanoLibere() {
+        assertTrue(p("Quanto deve cuocere un uovo sodo?") is Command.Free)
+        assertTrue(p("Quando ho l'appuntamento dal dentista?") is Command.Free)
+    }
 }

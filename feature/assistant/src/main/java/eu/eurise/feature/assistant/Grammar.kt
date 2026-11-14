@@ -42,7 +42,9 @@ object Grammar {
     private val POLITE_HEAD = Regex("$O^(?:(?:ehi|ok|senti)\\s+)?(?:alfred[,.!]?\\s*)?(?:per\\s+(?:favore|piacere)[,]?\\s+)?(?:puoi|potresti|vorrei che\\s+tu)?\\s*")
     private val POLITE_TAIL = Regex("$O[,\\s]*(?:per\\s+(?:favore|piacere)|grazie)[.!]?\\s*$")
 
-    private val NOTE = Regex("$O^(?:nota|annota|prendi\\s+(?:nota|appunto)|scrivi\\s+(?:una\\s+)?nota|appunta)(?![\\p{L}])\\s*(?:[:,]|che)?\\s*(.+)$")
+    private val NOTE = Regex("$O^(?:(?:nuova\\s+)?nota|annota|prendi\\s+(?:nota|appunto)|(?:scrivi|crea|fai|aggiungi|apri)\\s+(?:una\\s+)?(?:nuova\\s+)?nota|appunta)(?![\\p{L}])\\s*(?:[:,]|che)?\\s*(.*)$")
+    /** «Aggiungi al calendario…», «crea un evento…», «metti nel calendario…»: almeno una delle parole del calendario. */
+    private val CALENDAR = Regex("$O^(?:aggiungi|metti|mettimi|inserisci|segna|segnami|crea|salva|fissa|fissami|programma)\\s+(?:(?:un|un'|l'|il|lo|nuovo)\\s*)?(?:(evento|appuntamento|impegno)\\s*)?(?:(?:in|nel|al|sul|a)\\s+(calendario|agenda))?\\s*[:,]?\\s*(.*)$")
     private val TASK = Regex("$O^(?:ricordami\\s+(?:di|che)|promemoria(?:\\s+per)?|da\\s+fare|aggiungi\\s+(?:alle\\s+cose\\s+da\\s+fare|un'?\\s*attività)|devo)(?![\\p{L}])\\s*[:,]?\\s*(.+)$")
     private val TIMER = Regex("$O^(?:metti\\s+(?:un\\s+)?|imposta\\s+(?:un\\s+)?)?timer\\s+(?:di|da|per)?\\s*(\\d+|un|uno|mezz'?ora|un'?ora)\\s*(minut[oi]|or[ae])?$")
     private val ALARM = Regex("$O^(?:metti\\s+la\\s+|imposta\\s+la\\s+)?(?:sveglia|svegliami)\\b\\s*(.*)$")
@@ -79,11 +81,14 @@ object Grammar {
     }
 
     fun parse(sentence: String, now: LocalDateTime): Command {
-        val text = POLITE_TAIL.replace(POLITE_HEAD.replace(sentence.trim().trimEnd('.', '!', '?'), ""), "").trim()
+        val text = POLITE_TAIL.replace(POLITE_HEAD.replace(normalize(sentence), ""), "").trim().trimStart(',', ' ').trim()
         if (text.isEmpty()) return Command.Free(sentence)
 
         REPORT.matchEntire(text)?.let { m -> return Command.Report(reportKind(m.groupValues[1].lowercase())) }
         NOTE.matchEntire(text)?.let { return Command.Note(capital(it.groupValues[1])) }
+        CALENDAR.matchEntire(text)?.let { m ->
+            if (m.groupValues[1].isNotEmpty() || m.groupValues[2].isNotEmpty()) return event("", m.groupValues[3], now)
+        }
         TASK.matchEntire(text)?.let { m ->
             val q = QuickAdd.parse(m.groupValues[1], now)
             return Command.Task(capital(q.title.ifBlank { m.groupValues[1] }), q.due, q.time)
@@ -121,7 +126,68 @@ object Grammar {
         if (q.time != null && q.pieces.any { it.kind == QuickAdd.Kind.Date } && text.split(' ').size <= 10) {
             return event("", text, now)
         }
-        return Command.Free(sentence.trim())
+        return guess(text, now) ?: Command.Free(sentence.trim())
+    }
+
+    /** Il testo come lo scrive Whisper: apostrofi tipografici, puntini, punteggiatura in fondo. */
+    private fun normalize(s: String) = s.replace('’', '\'').replace("…", " ").replace(Regex("\\s+"), " ").trim().trimEnd('.', '!', '?', ',', ';')
+
+    private fun has(text: String, pattern: String) = Regex("$O$pattern").containsMatchIn(text)
+
+    /** Ciò che segue la prima parola che corrisponde a [pattern] (senza articoli e preposizioni all'inizio). */
+    private fun after(text: String, pattern: String): String {
+        val m = Regex("$O$pattern").find(text) ?: return ""
+        return text.substring(m.range.last + 1).trim().trimStart(',', ':', ' ')
+            .replace(Regex("$O^(?:a|ad|al|alla|allo|ai|la|il|lo|l'|di|che|per|in|nel|nella|sul|sulla)\\s+"), "").trim()
+    }
+
+    /**
+     * Seconda lettura, quando nessuna regola esatta prende la frase: si cercano le parole dei comandi ovunque
+     * (anche con le forme del verbo che Whisper scrive male: «chiamo», «chiamare», «nel calendario»). Ne esce la
+     * scheda di conferma, che si corregge con un tocco: meglio una scheda da sistemare che una frase mandata a un'AI
+     * online. Solo le frasi senza parole di comando restano richieste libere.
+     */
+    internal fun guess(text: String, now: LocalDateTime): Command? {
+        val t = text.lowercase()
+        // Le domande («quando ho l'appuntamento…», «chi mi ha chiamato») non sono comandi.
+        if (has(t, "^(?:che|cosa|come|quando|quanto|quanta|quanti|quante|quale|quali|qual|chi|dove|perché|perche)\\b")) return null
+        return when {
+            has(t, "\\b(?:calendario|agenda|evento|appuntamento|impegno)\\b") ->
+                event("", after(text, "\\b(?:evento|appuntamento|impegno|calendario|agenda)\\b(?:\\s+(?:in|nel|al|sul)\\s+(?:calendario|agenda))?"), now)
+            has(t, "\\b(?:not[ae]|appunto|appunta|annota)\\b") ->
+                Command.Note(capital(after(text, "\\b(?:not[ae]|appunto|appunta|annota)\\b")))
+            has(t, "\\b(?:promemoria|ricord\\w*)\\b") -> {
+                val rest = after(text, "\\b(?:promemoria|ricord\\w*)\\b")
+                val q = QuickAdd.parse(rest, now)
+                Command.Task(capital(q.title.ifBlank { rest }), q.due, q.time)
+            }
+            has(t, "\\b(?:messaggio|whatsapp|sms|telegram|signal|scrivi\\s+a|scrivere\\s+a|manda\\w*\\s+a|invia\\w*\\s+a|di'?\\s+a|dici\\s+a)\\b") -> {
+                val who = Regex("$O\\b(?:a|ad)\\s+([\\p{L}']+(?:\\s+\\p{L}[\\p{L}']+)?)").find(text.substringBefore(" che ").substringBefore(":"))?.groupValues?.get(1)
+                    ?.replace(Regex("$O\\s+(?:su|con|via|per|in)$"), "").orEmpty()
+                val body = Regex("$O(?:\\bche\\b|:)\\s*(.+)$").find(text)?.groupValues?.get(1).orEmpty()
+                val channel = when {
+                    "whatsapp" in t -> Channel.WhatsApp
+                    "telegram" in t -> Channel.Telegram
+                    "signal" in t -> Channel.Signal
+                    "sms" in t -> Channel.Sms
+                    else -> null
+                }
+                Command.Message(who.trim(), capital(body), channel)
+            }
+            has(t, "\\b(?:chiam\\w*|telefon\\w*)\\b") ->
+                Command.Call(after(text, "\\b(?:chiam\\w*|telefon\\w*)\\b"))
+            has(t, "\\bsvegli\\w*\\b") -> {
+                val rest = after(t, "\\bsvegli\\w*\\b")
+                val q = QuickAdd.parse(rest, now)
+                (q.time ?: bareHour(rest))?.let { Command.Alarm(it, if (q.pieces.any { p -> p.kind == QuickAdd.Kind.Date }) q.due else null) }
+            }
+            has(t, "\\btimer\\b") -> Regex("$O(\\d+|un|uno|mezz'?ora|un'?ora)\\s*(minut[oi]|or[ae])?").find(after(t, "\\btimer\\b"))
+                ?.let { m -> timerMinutes(m.groupValues[1], m.groupValues[2])?.let { Command.Timer(it) } }
+            has(t, "\\b(?:portami|naviga\\w*|indicazioni|accompagnami|guidami)\\b") ->
+                Command.Navigate(after(text, "\\b(?:portami|naviga\\w*|indicazioni|accompagnami|guidami)\\b(?:\\s+(?:per|verso|fino))?"))
+            has(t, "^(?:apri\\w*|avvia)\\b") -> Command.Open(after(text, "^(?:apri\\w*|avvia)\\b(?:\\s+(?:l'|il|la|lo|app))?"))
+            else -> null
+        }
     }
 
     private fun event(keyword: String, rest: String, now: LocalDateTime): Command.Event {

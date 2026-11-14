@@ -30,7 +30,7 @@ class TranscribeService : Service() {
         thread = HandlerThread("eurise-transcribe").apply { start() }
         messenger = Messenger(Handler(thread.looper) { msg -> handle(msg); true })
         // Alfred si collega appena comincia ad ascoltare: il modello si carica mentre la persona parla, non dopo.
-        Handler(thread.looper).post { runCatching { ensure(Model.forCommands(this)) } }
+        Handler(thread.looper).post { runCatching { ensure(Model.installed(this)) } }
     }
 
     /** Carica [model] se non è già quello in memoria. */
@@ -64,8 +64,9 @@ class TranscribeService : Service() {
                 val language = msg.data.getString(VoiceContract.KEY_LANGUAGE)?.takeIf { it.length in 2..4 } ?: "auto"
                 val audio = pipe?.let { readPcm(it) }
                 val prompt = msg.data.getString(VoiceContract.KEY_PROMPT).orEmpty().take(400)
-                // I comandi (con le frasi d'esempio) vanno al modello più veloce; il resto al più preciso.
-                val model = if (prompt.isNotEmpty()) Model.forCommands(this) else Model.installed(this)
+                // Sempre il modello più preciso installato (con Base Alfred capiva una cosa per un'altra, 15 novembre):
+                // la rapidità viene dal modello già in memoria e dal contesto più corto, non da un modello più piccolo.
+                val model = Model.installed(this)
                 when {
                     model == null -> out.putString(VoiceContract.KEY_ERROR, VoiceContract.ERROR_NO_MODEL)
                     audio == null || audio.size < VoiceContract.SAMPLE_RATE / 4 -> out.putString(VoiceContract.KEY_ERROR, VoiceContract.ERROR_NOTHING)
