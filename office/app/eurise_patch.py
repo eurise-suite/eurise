@@ -79,6 +79,17 @@ patch(lo, '    /** True if the App is running under ChromeOS. */\n',
       '        });\n'
       '    }\n\n'
       '    /** True if the App is running under ChromeOS. */\n', "il commento di isChromeOS")
+# Il processo che disegna la pagina (renderer della WebView) può essere chiuso da Android quando manca memoria, sui
+# telefoni veri più che sull'emulatore: senza onRenderProcessGone WebView porta giù tutto il motore («il documento in
+# modifica si chiude da solo», proprietario, 14 novembre). Ora il motore resta in piedi e lo dice (EuriseSuite.renderGone).
+client = androidlib / "COWebViewClient.java"
+patch(client, '    @Nullable\n    @Override\n    public WebResourceResponse shouldInterceptRequest(',
+      '    /** Eurise: la pagina chiusa da Android non porta giù il motore (EuriseSuite.renderGone). */\n'
+      '    @Override\n'
+      '    public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {\n'
+      '        return EuriseSuite.renderGone(view, detail);\n'
+      '    }\n\n'
+      '    @Nullable\n    @Override\n    public WebResourceResponse shouldInterceptRequest(', "shouldInterceptRequest in COWebViewClient")
 patch(lo, '    protected void onDestroy() {\n',
       '    protected void onDestroy() {\n        EuriseSuite.detach(this);\n', "onDestroy")
 

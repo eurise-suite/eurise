@@ -128,6 +128,32 @@ final class EuriseSuite {
         return new File(dir, name);
     }
 
+    /**
+     * Android ha chiuso il processo che disegna la pagina (di solito per liberare memoria, a volte per un errore): la
+     * WebView non si può più usare. Invece di far cadere tutto il motore (comportamento di base di WebView), si avvisa e
+     * si chiude il documento in ordine: il salvataggio automatico (8 s dopo l'ultima modifica) l'ha già scritto.
+     */
+    static boolean renderGone(android.webkit.WebView view, android.webkit.RenderProcessGoneDetail detail) {
+        boolean crashed = Build.VERSION.SDK_INT >= 26 && detail != null && detail.didCrash();
+        Log.e(TAG, "pagina chiusa da Android: " + (crashed ? "errore del disegno" : "memoria") + "; il motore resta in piedi");
+        Context c = view.getContext();
+        while (c instanceof android.content.ContextWrapper && !(c instanceof LOActivity))
+            c = ((android.content.ContextWrapper) c).getBaseContext();
+        if (c instanceof LOActivity) {
+            final LOActivity a = (LOActivity) c;
+            a.runOnUiThread(() -> {
+                android.widget.Toast.makeText(a, crashed
+                        ? t("La pagina del documento si è interrotta. Il documento era salvato: riaprilo da Office.",
+                            "The document page stopped. The document was saved: open it again from Office.")
+                        : t("Android ha chiuso la pagina per liberare memoria. Il documento era salvato: riaprilo da Office.",
+                            "Android closed the page to free memory. The document was saved: open it again from Office."),
+                        android.widget.Toast.LENGTH_LONG).show();
+                a.finish();
+            });
+        }
+        return true;
+    }
+
     static void handle(LOActivity activity, String json) {
         try {
             JSONObject m = new JSONObject(json);
