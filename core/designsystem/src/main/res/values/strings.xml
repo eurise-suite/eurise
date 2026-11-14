@@ -46,7 +46,7 @@
     <string name="ds_w_maps">Mappe</string>
     <string name="ds_w_closed">Servizi chiusi · sconsigliati</string>
     <string name="ds_w_turn_on">Accendi</string>
-    <string name="ds_w_footer">L'interruttore apre prima la spiegazione; spegnere non chiede conferme. Ritrovi tutto nel centro privacy, con il registro di ogni contatto. Le funzioni che lavorano solo sul telefono (Alfred, AI, voce, lettura dei documenti) non sono qui: non fanno uscire nulla.</string>
+    <string name="ds_w_footer">L\'interruttore apre prima la spiegazione; spegnere non chiede conferme. Ritrovi tutto nel centro privacy, con il registro di ogni contatto. Le funzioni che lavorano solo sul telefono (Alfred, AI, voce, lettura dei documenti) non sono qui: non fanno uscire nulla.</string>
     <string name="ds_w_done_none">Fatto</string>
     <plurals name="ds_w_done">
         <item quantity="one">Fatto · %1$d servizio acceso</item>
