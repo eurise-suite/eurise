@@ -397,6 +397,7 @@ class EuriseNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         NotificationStore.update(this)
         if (sbn != null) eu.eurise.feature.launcher.aod.AodController.onNotification(this, sbn)
+        if (sbn != null) runCatching { eu.eurise.feature.launcher.sounds.SoundRouter.onPosted(this, sbn) }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = NotificationStore.update(this)

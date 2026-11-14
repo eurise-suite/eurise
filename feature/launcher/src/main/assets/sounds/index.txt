@@ -1,0 +1,8 @@
+alba	eurise	call	Alba sul lago	arpa	17
+vetro	eurise	call	Vetro	cristallo	15
+campanelle	eurise	call	Campanelle di montagna	campane	15
+gocce	eurise	short	Gocce	acqua	1
+bolla	eurise	short	Bolla	acqua	1
+campanella	eurise	short	Campanella	campana	2
+avviso	eurise	short	Avviso deciso	marimba	2
+lieve	eurise	short	Lieve	cristallo	2

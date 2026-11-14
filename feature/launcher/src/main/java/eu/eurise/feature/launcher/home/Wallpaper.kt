@@ -239,27 +239,30 @@ private val StarPoints = listOf(
 /** Disegna lo sfondo della Scrivania. */
 @Composable
 fun SceneBackground(scene: Scene, modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        drawRect(Brush.verticalGradient(scene.sky))
-        val sx = size.width / 390f
-        val sy = size.height / 844f
-        scale(sx, sy, pivot = Offset.Zero) {
-            val clear = scene.weather == null || scene.weather == Sky.Clear || scene.weather == Sky.Cloudy
-            if (scene.moon && clear) StarPoints.forEach { (x, y) -> drawCircle(Color(0xFFE9E4D6).copy(alpha = 0.7f), 1.4f, Offset(x, y)) }
-            if (clear || scene.weather == Sky.Cloudy) {
-                drawCircle(scene.astro.copy(alpha = 0.9f), if (scene.moon) 22f else 34f, Offset(if (scene.moon) 338f else 300f, scene.astroY))
-            }
-            if (scene.weather == Sky.Cloudy) clouds(scene.dark)
-            festivitySky(scene)
-            HillPaths.forEachIndexed { i, path -> drawPath(path, scene.hills[i]) }
-            if (scene.weather == Sky.Snow) drawPath(SnowCap, Color.White.copy(alpha = if (scene.dark) 0.35f else 0.75f))
-            festivityGround(scene)
-            when (scene.weather) {
-                Sky.Rain, Sky.Storm -> rain(scene.dark, heavy = scene.weather == Sky.Storm)
-                Sky.Snow -> snow()
-                Sky.Fog -> drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = if (scene.dark) 0.12f else 0.35f))), size = Size(390f, 844f))
-                else -> Unit
-            }
+    Canvas(modifier) { drawScene(scene) }
+}
+
+/** La scena su qualsiasi superficie: la Scrivania e l'immagine della schermata di blocco ([LockWallpaper]). */
+fun DrawScope.drawScene(scene: Scene) {
+    drawRect(Brush.verticalGradient(scene.sky))
+    val sx = size.width / 390f
+    val sy = size.height / 844f
+    scale(sx, sy, pivot = Offset.Zero) {
+        val clear = scene.weather == null || scene.weather == Sky.Clear || scene.weather == Sky.Cloudy
+        if (scene.moon && clear) StarPoints.forEach { (x, y) -> drawCircle(Color(0xFFE9E4D6).copy(alpha = 0.7f), 1.4f, Offset(x, y)) }
+        if (clear || scene.weather == Sky.Cloudy) {
+            drawCircle(scene.astro.copy(alpha = 0.9f), if (scene.moon) 22f else 34f, Offset(if (scene.moon) 338f else 300f, scene.astroY))
+        }
+        if (scene.weather == Sky.Cloudy) clouds(scene.dark)
+        festivitySky(scene)
+        HillPaths.forEachIndexed { i, path -> drawPath(path, scene.hills[i]) }
+        if (scene.weather == Sky.Snow) drawPath(SnowCap, Color.White.copy(alpha = if (scene.dark) 0.35f else 0.75f))
+        festivityGround(scene)
+        when (scene.weather) {
+            Sky.Rain, Sky.Storm -> rain(scene.dark, heavy = scene.weather == Sky.Storm)
+            Sky.Snow -> snow()
+            Sky.Fog -> drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = if (scene.dark) 0.12f else 0.35f))), size = Size(390f, 844f))
+            else -> Unit
         }
     }
 }

@@ -60,6 +60,8 @@ fun AppearanceSheet(
     onClose: () -> Unit,
     onEditCategories: () -> Unit,
     onAod: () -> Unit,
+    onSounds: () -> Unit = {},
+    onLockWallpaper: () -> Unit = {},
 ) {
     Box(
         Modifier
@@ -183,6 +185,21 @@ fun AppearanceSheet(
                     Text(stringResource(R.string.aod_summary), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            listOf(
+                Triple(R.string.snd_title, R.string.snd_summary, onSounds),
+                Triple(R.string.lock_wp_title, R.string.lock_wp_summary, onLockWallpaper),
+            ).forEach { (title, summary, open) ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = open).padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(title), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(summary), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             // Tema: segue lo sfondo oppure sempre chiaro / sempre scuro.
             Column {

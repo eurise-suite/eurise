@@ -17,6 +17,11 @@
     <!-- Accoglienza: contatti recenti e preferiti (Rubrica e registro chiamate) e ultimi lavori (file recenti).
          Tutti chiesti solo quando l'utente tocca la voce relativa. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Suoni: suoneria di una persona nella rubrica (vale con ogni app Telefono). -->
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <!-- Suoni in vibrazione; sfondo della schermata di blocco. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <!-- Pillola Salute: solo lettura da Health Connect. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />

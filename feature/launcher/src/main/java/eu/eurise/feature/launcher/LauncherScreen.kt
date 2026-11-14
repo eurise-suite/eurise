@@ -312,6 +312,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
     )
     val scene = sceneFor(now, settings.wallpaper, weather?.firstOrNull()?.sky, personal)
         .let { s -> when (settings.themeMode) { 1 -> s.copy(forceDark = false); 2 -> s.copy(forceDark = true); else -> s } }
+    // La schermata di blocco segue la stessa scena, se l'utente l'ha chiesto: si ridisegna solo quando cambia.
+    androidx.compose.runtime.LaunchedEffect(scene.copy(forceDark = null)) {
+        eu.eurise.feature.launcher.home.LockWallpaper.noteInputs(context, weather?.firstOrNull()?.sky, personal)
+        eu.eurise.feature.launcher.home.LockWallpaper.refresh(context)
+    }
     // La tastiera di Eurise segue le bolle: scure qui, scura anche lei.
     androidx.compose.runtime.LaunchedEffect(scene.themeDark) { context.tellKeyboardTheme(scene.themeDark) }
     EuriseTheme(darkTheme = scene.themeDark) {
@@ -368,6 +373,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         var appearance by remember { mutableStateOf(false) }
         var modesSheet by remember { mutableStateOf<eu.eurise.core.data.modes.Mode?>(null) }
         var aodSettings by remember { mutableStateOf(false) }
+        var soundsScreen by remember { mutableStateOf(false) }
+        var lockWallpaperScreen by remember { mutableStateOf(false) }
         var editingCards by remember { mutableStateOf(false) }
         var editingHome by remember { mutableStateOf(false) }
         var homeCatalog by remember { mutableStateOf(false) }
@@ -935,9 +942,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     settings, scene.themeDark, onChange = viewModel::updateSettings, onClose = { appearance = false },
                     onEditCategories = { appearance = false; categoryEditor = true },
                     onAod = { appearance = false; aodSettings = true },
+                    onSounds = { appearance = false; soundsScreen = true },
+                    onLockWallpaper = { appearance = false; lockWallpaperScreen = true },
                 )
             }
             if (aodSettings) eu.eurise.feature.launcher.aod.AodSettingsScreen(onClose = { aodSettings = false })
+            if (soundsScreen) eu.eurise.feature.launcher.sounds.SoundsScreen(onClose = { soundsScreen = false })
+            if (lockWallpaperScreen) eu.eurise.feature.launcher.home.LockWallpaperScreen(scene, onClose = { lockWallpaperScreen = false })
             // Risposta rapida: sopra a tutto, dal Pannello o dalla bolla "Ti hanno cercato".
             replyTo?.let { m ->
                 eu.eurise.feature.launcher.notifications.QuickReplyDialog(

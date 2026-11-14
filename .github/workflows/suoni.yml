@@ -1,0 +1,36 @@
+name: Suonerie da scaricare
+
+# Prepara il pacchetto di suonerie che la Scrivania scarica a richiesta (Suoni → «Altre suonerie Eurise» e «Grandi
+# classici») e lo mette nella pre-release «suoni» come suoni.zip. I suoni sono sintetizzati da scripts/suoni.py: nessun
+# campione né registrazione altrui, melodie dei classici in pubblico dominio, file liberi (CC0). Quelli che stanno
+# dentro l'APK sono in feature/launcher/src/main/assets/sounds e si rigenerano con lo stesso script.
+# Parte quando cambia questo file o lo script, o a mano.
+on:
+  push:
+    paths:
+      - ".github/workflows/suoni.yml"
+      - "scripts/suoni.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  suoni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sintetizza
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install --quiet numpy
+          python3 scripts/suoni.py out
+          cd out/pacchetto && zip -q -9 ../suoni.zip *.ogg index.txt && cd ../.. && ls -la out/suoni.zip
+      - name: Pubblica nella pre-release suoni
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete suoni -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create suoni out/suoni.zip -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \
+            --title "Suonerie da scaricare" \
+            --notes "Suonerie originali di Eurise e grandi classici sintetizzati (CC0). Le scarica la Scrivania quando le chiedi."
