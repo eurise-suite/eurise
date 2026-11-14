@@ -117,7 +117,7 @@ internal fun SndPlayButton(id: String, title: String, playing: String?, onPlayin
  * Ascoltare non chiude il foglio; toccare il nome sceglie.
  */
 @Composable
-internal fun SoundPickerDialog(current: String?, short: Boolean, allowGeneral: Boolean, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+internal fun SoundPickerDialog(current: String?, short: Boolean, allowGeneral: Boolean, onDismiss: () -> Unit, onPick: (String?) -> Unit) {
     val context = LocalContext.current
     var sounds by remember { mutableStateOf<List<Sound>>(emptyList()) }
     var playing by remember { mutableStateOf<String?>(null) }
