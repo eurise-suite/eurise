@@ -221,7 +221,8 @@ private fun SlideView(model: QuickModel, slide: Slide, ratio: Float, query: Stri
     BoxWithConstraints(
         modifier.aspectRatio(ratio).clip(RoundedCornerShape(10.dp)).background(background).semantics { contentDescription = label },
     ) {
-        val scale = maxWidth / Reference
+        val slideWidth = maxWidth
+        val scale = slideWidth / Reference
         val pad = (20 * scale).dp
         val texts = slide.shapes.filter { it !is SlideImage }
         val images = slide.shapes.filterIsInstance<SlideImage>()
@@ -256,11 +257,11 @@ private fun SlideView(model: QuickModel, slide: Slide, ratio: Float, query: Stri
             if (images.isNotEmpty()) {
                 val alone = texts.isEmpty() && slide.title.isBlank()
                 Column(
-                    if (alone) Modifier.fillMaxSize() else Modifier.width(maxWidth * 0.3f).fillMaxHeight(),
+                    if (alone) Modifier.fillMaxSize() else Modifier.width(slideWidth * 0.3f).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy((6 * scale).dp, Alignment.CenterVertically),
                 ) {
                     images.take(if (alone) 2 else 3).forEach { image ->
-                        SlidePicture(model, image, maxWidth, Modifier.fillMaxWidth().weight(1f), dark)
+                        SlidePicture(model, image, slideWidth, Modifier.fillMaxWidth().weight(1f), dark)
                     }
                 }
             }
