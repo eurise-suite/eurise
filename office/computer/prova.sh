@@ -19,23 +19,16 @@ flatpak install --user -y --noninteractive flathub "$APP" > "$OUT/installa.log" 
 VERSION=$(flatpak info --user "$APP" | sed -n 's/^ *Version: *//p')
 echo "- Collabora Office $VERSION da Flathub" >> "$R"
 
-# La pagina dell'interfaccia: WebView::load apre <dati>/browser/dist/cool.html.
+# La pagina dell'interfaccia: WebView::load apre <dati>/browser/dist/cool.html; nel pacchetto ce ne può essere più d'una
+# (quella del server ha i segnaposto %SERVICE_ROOT%), quindi la nostra interfaccia va in tutte.
 FILES="$(flatpak info --user --show-location "$APP")/files"
-COOL=$(find "$FILES" -path '*browser/dist/cool.html' | head -1)
-[ -n "$COOL" ] || { echo "cool.html non trovato" | tee -a "$R"; exit 1; }
-DIST=$(dirname "$COOL")
-echo "- interfaccia in \`${DIST#"$FILES"}\`" >> "$R"
-chmod -R u+w "$DIST"
-# Copie nuove (cp poi mv): i file del pacchetto sono legami fisici con il deposito di ostree.
-put() { cp "$1" "$2.eurise" && mv -f "$2.eurise" "$2"; }
-put "$WEB/Control.Eurise.js" "$DIST/Control.Eurise.js"
-put "$WEB/eurise.css" "$DIST/eurise.css"
-# Diagnosi per la prova: cosa vede il nostro codice dentro il guscio Qt (scritto in console, letto dal log).
-cat > "$DIST/eurise-diag.js" <<'JS'
+find "$FILES" -name 'cool*.html' | sed "s|^$FILES|    |" >> "$R"
+DIAG=$(mktemp)
+cat > "$DIAG" <<'JS'
 (function () {
 	function report(when) {
 		var m = window.mode;
-		console.log('EURISE-DIAG ' + when + ' ' + JSON.stringify({
+		console.log('EURISE-DIAG ' + when + ' ' + location.href.split('?')[0] + ' ' + JSON.stringify({
 			qt: !!window.ThisIsTheQtApp, mobileApp: !!window.ThisIsAMobileApp,
 			desktop: !!(m && m.isDesktop && m.isDesktop()), tablet: !!(m && m.isTablet && m.isTablet()),
 			ours: !!window.euriseOffice, map: !!(window.app && window.app.map), doc: !!(window.app && window.app.map && window.app.map._docLayer),
@@ -48,27 +41,37 @@ cat > "$DIST/eurise-diag.js" <<'JS'
 	setTimeout(function () { report('20s'); }, 20000);
 })();
 JS
-mkdir -p "$DIST/images/dark"
-for svg in "$WEB"/images/*.svg; do put "$svg" "$DIST/images/$(basename "$svg")"; done
-for svg in "$WEB"/images/dark/*.svg; do [ -e "$svg" ] && put "$svg" "$DIST/images/dark/$(basename "$svg")"; done
-python3 - "$COOL" <<'EOF'
+# Copie nuove (cp poi mv): i file del pacchetto sono legami fisici con il deposito di ostree.
+put() { cp "$1" "$2.eurise" && mv -f "$2.eurise" "$2"; }
+find "$FILES" -name 'cool.html' | while read -r COOL; do
+	DIST=$(dirname "$COOL")
+	chmod -R u+w "$DIST"
+	put "$WEB/Control.Eurise.js" "$DIST/Control.Eurise.js"
+	put "$WEB/eurise.css" "$DIST/eurise.css"
+	put "$DIAG" "$DIST/eurise-diag.js"
+	mkdir -p "$DIST/images/dark"
+	for svg in "$WEB"/images/*.svg; do put "$svg" "$DIST/images/$(basename "$svg")"; done
+	for svg in "$WEB"/images/dark/*.svg; do [ -e "$svg" ] && put "$svg" "$DIST/images/dark/$(basename "$svg")"; done
+	python3 - "$COOL" <<'EOF2'
 import re, sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
 if 'Control.Eurise.js' not in s:
-    # Il nostro foglio di stile per ultimo; il nostro script subito dopo bundle.js, con gli stessi attributi (defer).
-    s = s.replace('</head>', '<link rel="stylesheet" href="eurise.css" />\n</head>', 1)
-    m = re.search(r'<script[^>]*src="[^"]*bundle\.js"[^>]*>\s*</script>', s)
+    m = re.search(r'<script[^>]*src="([^"]*)bundle\.js"[^>]*>\s*</script>', s)
     if not m:
-        sys.exit('bundle.js non trovato in cool.html')
-    tag = m.group(0)
-    ours = re.sub(r'src="[^"]*bundle\.js"', 'src="Control.Eurise.js"', tag)
-    diag = re.sub(r'src="[^"]*bundle\.js"', 'src="eurise-diag.js"', tag)
+        sys.exit(p + ': bundle.js non trovato')
+    tag, prefix = m.group(0), m.group(1)
+    # Stessa cartella di bundle.js e stessi attributi (defer): il nostro script parte subito dopo.
+    ours = tag.replace(prefix + 'bundle.js', prefix + 'Control.Eurise.js')
+    diag = tag.replace(prefix + 'bundle.js', prefix + 'eurise-diag.js')
     s = s.replace(tag, tag + '\n' + ours + '\n' + diag, 1)
+    s = s.replace('</head>', '<link rel="stylesheet" href="' + prefix + 'eurise.css" />\n</head>', 1)
 open(p + '.eurise', 'w', encoding='utf-8').write(s)
-EOF
-mv -f "$COOL.eurise" "$COOL"
-grep -o '<script[^>]*\(bundle\|Eurise\)[^>]*>' "$COOL" | sed 's/^/    /' >> "$R"
+EOF2
+	mv -f "$COOL.eurise" "$COOL"
+	echo "- interfaccia Eurise in \`${COOL#"$FILES"}\`" >> "$R"
+	grep -o '<script[^>]*\(bundle\|Eurise\)[^>]*>' "$COOL" | sed 's/^/    /' >> "$R"
+done
 
 # Schermo virtuale e sessione D-Bus (il guscio Qt parla con il portale per il tema).
 export DISPLAY=:99
@@ -104,6 +107,8 @@ apri() {
 		echo "- finestra comparsa" >> "$R"
 	fi
 	sleep 25
+	# Il benvenuto di Collabora al primo avvio copre la pagina: Esc lo chiude.
+	[ -n "$win" ] && xdotool key Escape && sleep 2
 	shot "$name-1-aperto"
 	# Ctrl K: «Cerca un comando» della nostra interfaccia.
 	[ -n "$win" ] && xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+k && sleep 2 && shot "$name-2-cerca" && xdotool key Escape
