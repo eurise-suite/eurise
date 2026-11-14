@@ -22,6 +22,15 @@ class AlfredPrefs(context: Context) {
         get() = prefs.getBoolean("read_aloud", false)
         set(value) = prefs.edit().putBoolean("read_aloud", value).apply()
 
+    /**
+     * Domande libere subito online (richiesta del proprietario, 14 novembre): Alfred apre direttamente il servizio AI
+     * preferito, con la domanda ripulita, invece di mostrare la scheda. Acceso di base; la prima volta resta comunque la
+     * spiegazione del centro privacy, perché il servizio online è spento finché non lo si accende.
+     */
+    var freeOnline: Boolean
+        get() = prefs.getBoolean("free_online", true)
+        set(value) = prefs.edit().putBoolean("free_online", value).apply()
+
     /** L'app di musica per la perla del punto della giornata (pacchetto); vuoto = non ancora scelta. */
     var musicBriefing: String
         get() = prefs.getString("music_briefing", "").orEmpty()

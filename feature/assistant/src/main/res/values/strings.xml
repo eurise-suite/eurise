@@ -178,6 +178,9 @@
     <string name="alfred_s_dictation_d_voice">Eurise Voce, sul telefono</string>
     <string name="alfred_s_dictation_d_system">Riconoscimento vocale del telefono</string>
     <string name="alfred_s_dictation_d_none">Nessuna: installi Eurise Voce per parlarmi</string>
+    <string name="alfred_s_free_online">Domande libere subito online</string>
+    <string name="alfred_s_free_online_d">Le apro direttamente su %1$s, senza i tuoi dati. Spento: prima ti mostro la scheda</string>
+    <string name="alfred_free_going">Lo chiedo a %1$s, senza i suoi dati.</string>
     <string name="alfred_s_ai">Richieste libere con Eurise AI</string>
     <string name="alfred_s_ai_d">In arrivo: oggi le passo a Eurise AI con un tocco</string>
     <string name="alfred_s_home">Tieni premuto home</string>

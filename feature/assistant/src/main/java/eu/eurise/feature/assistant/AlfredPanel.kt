@@ -240,6 +240,14 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 val card = butler.plan(Grammar.parse(heard, LocalDateTime.now()))
                 // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
                 if (card.kind == Kind.Report) { execute(card); return@launch }
+                // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
+                if (card.kind == Kind.Free && prefs.freeOnline) {
+                    val line = context.getString(R.string.alfred_free_going, favorite.name)
+                    phase = Phase.Said(line)
+                    say(line)
+                    askOnline(favorite)
+                    return@launch
+                }
                 phase = Phase.Confirm(card)
                 val canAct = card.ready && (card.kind != Kind.Call ||
                     context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
@@ -459,7 +467,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         onSend = { replan(Command.Message("", p.text, null)) },
                     )
                 }
-                Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural,
+                Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural, favoriteName = favorite.name,
                     onReadAloud = { readAloud = it; prefs.readAloud = it },
                     onAddress = { address = addressSuffix(prefs) },
                     onTry = { understand(context.getString(R.string.alfred_try_text)) },
@@ -640,6 +648,7 @@ private fun SettingsView(
     source: Dictation.Source,
     readAloud: Boolean,
     natural: Boolean,
+    favoriteName: String,
     onReadAloud: (Boolean) -> Unit,
     onAddress: () -> Unit,
     onTry: () -> Unit,
@@ -701,7 +710,10 @@ private fun SettingsView(
             }
         }
         Divider()
-        SettingRow(stringResource(R.string.alfred_s_ai), stringResource(R.string.alfred_s_ai_d)) {}
+        var freeOnline by remember { mutableStateOf(prefs.freeOnline) }
+        SettingRow(stringResource(R.string.alfred_s_free_online), stringResource(R.string.alfred_s_free_online_d, favoriteName)) {
+            Toggle(freeOnline, enabled = true) { freeOnline = it; prefs.freeOnline = it }
+        }
         Divider()
         SettingRow(stringResource(R.string.alfred_s_home), stringResource(R.string.alfred_s_home_d)) {
             Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
