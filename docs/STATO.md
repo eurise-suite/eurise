@@ -2246,3 +2246,25 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
      o dal Ponte); spento, l'icona computer è grigia con «Computer spento» e Alfred propone il telefono o l'online.
      Alternativa per chi vuole il cervello sempre pronto: un piccolo computer di casa sempre acceso. Da discutere.
 4. Office: lo segue un'altra chat (le tavole OffRapporto e OffRapportoVedi sono approvate).
+
+## 14 novembre, tarda mattina: chat nuova (ramo `brand`)
+- **Servizi spenti di base, correzione**: `PrivacyCenter.keepOldChoices` — al primo uso, se l'app era già installata
+  (installazione ≠ ultimo aggiornamento), scrive «acceso» per i servizi accesi di base fino al giro 474 (Weather, Pollen,
+  Alerts, News, Markets, Horoscope, Videos, MapReports), solo dove non c'è una scelta; una volta sola (`old_defaults_kept`).
+  Caso limite accettato: chi ha installato una versione nuova, non l'ha mai aperta e poi aggiorna, ritrova i vecchi accesi
+  e non vede l'elenco del primo avvio. `welcomePending()`/`welcomeDone()`: il segno per l'elenco del primo avvio.
+- **Tavola PrivPrimoAvvio** (pagina Privacy, **da approvare**): foglio «Tutto resta sul telefono» alla prima installazione;
+  servizi a gruppi (Scrivania e meteo, Mappe, servizi chiusi in fondo), ognuno con cosa esce, semaforo e paese; toccando
+  si apre la spiegazione con «Accendi»; «Fatto · N servizi accesi» e «Lascia tutto spento». Il codice dopo l'approvazione.
+- **Mappe, tavole**: MapIncroci con palazzi a metà (#E4BBA0, #E4CC90, #ACD3BE, #C1B5DA); MapFinestrini nei colori della
+  suite. **In codice** (prima dell'approvazione dei colori, forma già approvata): `EuriseJunctionScene` Kind.TURN
+  (`drawTurn`, angolo da `TurnGeometry.simple`, 150 m in città / 250 fuori), impostazioni in Navigazione › Finestrini della
+  guida (`eurise_window_exit|roundabout|turn|timing|arrows`, patch di `prefs_navigation.xml`, categoria annidata: da
+  controllare sul telefono), tenere premuto il finestrino → «Non mostrare più…». Valgono anche in Android Auto.
+- **APK in apk-prova: giro 483 e Mappe 41.**
+- **Alfred unico, tavole** (pagina AI, **da approvare**): AlfUnico (campo: Invio = telefono, globo = AI online, computer
+  con la luna se dorme; consiglio di Alfred quando il telefono non basta), AlfDove (da dove risponde: telefono 10, computer
+  9 «tuo», AI online 7 CH; cosa esce dopo aver tolto i dati, con segnaposto [PERSONA 1]…; «Quando il telefono non basta:
+  me lo chiede»; AI online proposta: Lumo di Proton, alternativa Mistral — **verificare che Lumo abbia un'API** prima del
+  codice), AlfComputer (collegamento via Ponte, modello scelto sulla scheda video, risveglio in casa sì, fuori casa solo
+  con un apparecchio sempre acceso, rimettilo a dormire dopo 20 min, spento = icona grigia, computer piccolo sempre pronto).
