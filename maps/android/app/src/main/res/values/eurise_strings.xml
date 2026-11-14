@@ -162,6 +162,9 @@
         <item>1</item>
         <item>1.4</item>
     </string-array>
+    <string name="eurise_guide_side_category">Landscape guidance</string>
+    <string name="eurise_guide_right">Guidance controls on the right</string>
+    <string name="eurise_guide_right_summary">The control bar on the right under your thumb, the manoeuvre column on the left. Off: bar on the left, for left-handed people</string>
     <string name="eurise_landscape">Sky and seasons</string>
     <string name="eurise_landscape_summary">In the junction, exit and roundabout window, Android Auto too. All drawn, nothing to download.</string>
     <string name="eurise_sky_weather">Sky from the weather</string>

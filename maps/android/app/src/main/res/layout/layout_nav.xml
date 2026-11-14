@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eurise (tavola MapGuidaVertB): in verticale l'arrivo e i comandi della guida (Segnala, Sosta, Voce, Insieme, Fine) stanno
+  in una scheda satinata in basso. Il menu a scomparsa di CoMaps resta nel layout, nascosto: i suoi pulsanti fanno il
+  lavoro quando li tocca la scheda, come in orizzontale.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/navigation_frame"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <include layout="@layout/layout_nav_top" />
+
+  <androidx.coordinatorlayout.widget.CoordinatorLayout
+    android:id="@+id/nav_bottom_sheet_coordinator"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone">
+
+    <View
+      android:id="@+id/nav_bottom_sheet_background"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:visibility="gone" />
+
+    <FrameLayout
+      android:id="@+id/nav_bottom_sheet"
+      style="?attr/bottomSheetStyle"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+      <include layout="@layout/layout_nav_bottom" />
+    </FrameLayout>
+
+  </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_guida_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom" />
+
+  <View
+    android:id="@+id/nav_bottom_sheet_nav_bar"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:layout_gravity="bottom|center" />
+</FrameLayout>

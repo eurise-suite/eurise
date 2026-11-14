@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Eurise (tavola MapOrizzontaleGuida): in orizzontale la manovra sta in una colonna a destra (cartello colorato per tipo
-  di strada, scena dell'incrocio, corsie, arrivo) e la strada davanti resta libera; velocità e limite in basso, accanto
-  alla barra della guida. Stessi id del layout di CoMaps: NavigationController li trova e li aggiorna come prima.
+  Eurise (tavole MapOrizzontaleGuida e MapGuidaOrizA, approvate): in orizzontale la manovra sta in una colonna (cartello
+  colorato per tipo di strada, finestrino dell'incrocio, meteo sul percorso, corsie, arrivo) e la strada davanti resta
+  libera; velocità e limite in basso, accanto alla barra della guida. La colonna sta a destra o a sinistra secondo
+  «Comandi della guida a destra» (EuriseGuidaOrizzontale.applySide): la barra dei comandi va dal lato della mano. Stessi id del layout di CoMaps: NavigationController li trova e li aggiorna come prima.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
@@ -135,7 +136,20 @@
     <app.organicmaps.eurise.EuriseJunctionView
       android:id="@+id/eurise_junction"
       android:layout_width="match_parent"
-      android:layout_height="140dp"
+      android:layout_height="170dp"
+      android:visibility="gone" />
+
+    <com.google.android.material.textview.MaterialTextView
+      android:id="@+id/eurise_route_weather"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="10dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginEnd="10dp"
+      android:clickable="true"
+      android:ellipsize="end"
+      android:focusable="true"
+      android:maxLines="2"
       android:visibility="gone" />
 
     <app.organicmaps.widget.LanesView

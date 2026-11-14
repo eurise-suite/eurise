@@ -171,47 +171,6 @@ print("eurise_patch: guida con cartello colorato, metri fini e «Manda l'arrivo�
 
 # Meteo sul percorso (tavola MapGuida): una riga sotto la via, logica in EuriseRouteWeather.java e RouteSampler.java.
 # Chiede all'app Eurise (permesso della suite di prova: Mappe è firmata con la chiave di debug della suite).
-patch(root / "android" / "app" / "src" / "main" / "res" / "layout" / "layout_nav_top.xml",
-      """  <RelativeLayout
-    android:id="@+id/nav_next_turn_container\"""",
-      """  <com.google.android.material.textview.MaterialTextView
-    android:id="@+id/eurise_route_weather"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/margin_half"
-    android:layout_marginStart="@dimen/nav_street_left"
-    android:layout_marginEnd="@dimen/margin_half"
-    android:maxLines="2"
-    android:ellipsize="end"
-    android:visibility="gone"
-    android:clickable="true"
-    android:focusable="true"
-    app:layout_constrainedWidth="true"
-    app:layout_constraintHorizontal_bias="0"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/street_frame" />
-
-  <com.google.android.material.textview.MaterialTextView
-    android:id="@+id/eurise_arrival"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/margin_half"
-    android:layout_marginStart="@dimen/nav_street_left"
-    android:layout_marginEnd="@dimen/margin_half"
-    android:maxLines="3"
-    android:ellipsize="end"
-    android:visibility="gone"
-    android:clickable="true"
-    android:focusable="true"
-    app:layout_constrainedWidth="true"
-    app:layout_constraintHorizontal_bias="0"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/eurise_route_weather" />
-
-  <RelativeLayout
-    android:id="@+id/nav_next_turn_container\"""")
 patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
       """  <uses-permission android:name="android.permission.INTERNET"/>""",
       """  <uses-permission android:name="android.permission.INTERNET"/>
@@ -808,28 +767,6 @@ patch(speedview, "    int TEXT_ALERT_COLOR = 0xFFFF0000;", "    int TEXT_ALERT_C
 
 # La scena dell'uscita o della rotonda (maps/android/…/eurise/EuriseJunctionScene.java): sul telefono sotto le corsie,
 # in verticale (in orizzontale arriva con la tavola MapOrizzontaleGuida); in Android Auto nella finestrella della manovra.
-patch(res / "layout" / "layout_nav_top.xml", """  <app.organicmaps.widget.CurrentSpeedView
-      android:id="@+id/nav_current_speed\"""", """  <androidx.constraintlayout.widget.Barrier
-      android:id="@+id/eurise_junction_top"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      app:barrierDirection="bottom"
-      app:constraint_referenced_ids="lanes,eurise_route_weather,eurise_arrival" />
-
-  <app.organicmaps.eurise.EuriseJunctionView
-      android:id="@+id/eurise_junction"
-      android:layout_width="0dp"
-      android:layout_height="210dp"
-      android:layout_marginEnd="@dimen/margin_half"
-      android:layout_marginTop="@dimen/margin_half"
-      android:elevation="@dimen/nav_elevation"
-      android:visibility="gone"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toEndOf="@id/nav_next_turn_container"
-      app:layout_constraintTop_toBottomOf="@id/eurise_junction_top" />
-
-  <app.organicmaps.widget.CurrentSpeedView
-      android:id="@+id/nav_current_speed\"""")
 patch(nav, """  @NonNull
   private final CurrentSpeedView mCurrentSpeed;
 """, """  @NonNull
@@ -963,6 +900,18 @@ patch(res / "xml" / "prefs_navigation.xml", """    android:key="eurise_limit_not
       app:singleLineTitle="false" />
   </PreferenceCategory>
   <PreferenceCategory
+    android:key="eurise_guide_side_category"
+    android:title="@string/eurise_guide_side_category"
+    app:iconSpaceReserved="false">
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_guide_right"
+      android:title="@string/eurise_guide_right"
+      android:summary="@string/eurise_guide_right_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+  </PreferenceCategory>
+  <PreferenceCategory
     android:key="eurise_landscape"
     android:title="@string/eurise_landscape"
     android:summary="@string/eurise_landscape_summary"
@@ -1022,31 +971,12 @@ patch(manifest, """    <activity
     <activity
         android:name="app.organicmaps.eurise.EuriseReportActivity\"""")
 
-# Sul telefono, in guida: la bandierina tonda sopra la lente, a sinistra (un tocco col pollice, senza aprire il menu).
-patch(res / "layout" / "map_buttons_layout_navigation.xml", """    <include
-      layout="@layout/map_buttons_search"
-""", """    <com.google.android.material.floatingactionbutton.FloatingActionButton
-      android:id="@+id/eurise_guide_report"
-      style="@style/MwmWidget.M3.FAB.MapButton"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginBottom="@dimen/margin_half"
-      android:contentDescription="@string/eurise_guide_report"
-      android:tint="?iconTint"
-      app:srcCompat="@drawable/eurise_ic_flag"
-      app:shapeAppearance="@style/Widget.MaterialComponents.FloatingActionButton"
-      app:layout_constraintBottom_toTopOf="@+id/btn_search"
-      app:layout_constraintStart_toStartOf="parent" />
-    <include
-      layout="@layout/map_buttons_search"
-""")
-patch(mbc, """    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
-""", """    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);
-    // Eurise: Segnala in guida (tavola MapSegnalaGuida), solo nel layout della navigazione.
-    final View euriseGuideReport = mFrame.findViewById(R.id.eurise_guide_report);
-    if (euriseGuideReport != null)
-      euriseGuideReport.setOnClickListener(v -> app.organicmaps.eurise.EuriseGuideReportActivity.open(activity));
-""")
+# Sul telefono, in guida (tavola MapGuidaVertB): i pulsanti della mappa stanno sopra la scheda satinata in basso.
+patch(res / "layout" / "map_buttons_layout_navigation.xml", 'android:layout_marginBottom="@dimen/nav_menu_height"',
+      'android:layout_marginBottom="156dp"')
+patch(res / "layout" / "map_buttons_layout_navigation.xml", 'android:layout_marginBottom="@dimen/nav_menu_height"',
+      'android:layout_marginBottom="156dp"')
+
 
 # Fine del viaggio (arrivo o «Fine»): l'elenco per OpenStreetMap; se si era in auto o col telefono in tasca, alla
 # prossima apertura della mappa.
@@ -1117,6 +1047,8 @@ print("eurise_patch: guida, seconda parte (Segnala in guida, sul telefono e in A
 patch(nav, """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
 """, """    mCurrentSpeed = topFrame.findViewById(R.id.nav_current_speed);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachBar(mFrame.findViewById(R.id.eurise_guida_bar));
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachCard(mFrame.findViewById(R.id.eurise_guida_card));
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.applySide(mFrame);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachArrival(topFrame.findViewById(R.id.eurise_guida_arrivo));
 """)
 patch(nav, """    mNavMenu.update(info);
@@ -1141,7 +1073,9 @@ patch(nav, """      UiUtils.setViewInsetsPaddingNoTopNoBottom(v, windowInsets);
       if (euriseColumn != null)
       {
         final android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) euriseColumn.getLayoutParams();
-        lp.setMarginEnd(Math.round(14 * v.getResources().getDisplayMetrics().density) + safeDrawingInsets.right);
+        final int m = Math.round(14 * v.getResources().getDisplayMetrics().density);
+        lp.setMarginStart(m + safeDrawingInsets.left);
+        lp.setMarginEnd(m + safeDrawingInsets.right);
         euriseColumn.setLayoutParams(lp);
       }
       nextTurnContainer.setPadding(euriseColumn != null ? 0 : safeDrawingInsets.left, nextTurnContainer.getPaddingTop(),""")

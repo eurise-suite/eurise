@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La scheda della manovra in verticale (tavola MapGuidaVertB): la tinta del tipo di strada arriva da EuriseGuide.tint. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@android:color/white" />
+  <corners android:radius="24dp" />
+</shape>

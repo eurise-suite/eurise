@@ -886,11 +886,13 @@ public final class EuriseJunctionScene
   {
     final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     final float d = w / W;
-    final RectF bar = new RectF(w - 14 * d, h * 0.42f, w - 7 * d, h * 0.92f);
-    p.setColor(0x80FFFFFF);
-    k.drawRoundRect(bar, 4 * d, 4 * d, p);
+    // Orizzontale in basso, si riempie avvicinandosi (tavole MapGuidaVertB e MapGuidaOrizA): verticale a destra
+    // sembrava una barra di scorrimento.
+    final RectF bar = new RectF(14 * d, h - 15 * d, w - 14 * d, h - 10 * d);
+    p.setColor(0x73FFFFFF);
+    k.drawRoundRect(bar, 3 * d, 3 * d, p);
     p.setColor(Color.WHITE);
-    k.drawRoundRect(new RectF(bar.left, bar.bottom - bar.height() * (1 - progress), bar.right, bar.bottom), 4 * d, 4 * d, p);
+    k.drawRoundRect(new RectF(bar.left, bar.top, bar.left + bar.width() * progress, bar.bottom), 3 * d, 3 * d, p);
   }
 
   @NonNull

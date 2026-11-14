@@ -89,7 +89,13 @@ public final class EuriseGuide
     if (turnFrame != null)
       ViewCompat.setBackgroundTintList(turnFrame, c);
     if (streetFrame != null)
+    {
       ViewCompat.setBackgroundTintList(streetFrame, c);
+      // In verticale (tavola MapGuidaVertB) la scheda intera, dietro il finestrino, ha la stessa tinta.
+      final View card = streetFrame.getRootView().findViewById(app.organicmaps.R.id.eurise_guide_card);
+      if (card != null)
+        ViewCompat.setBackgroundTintList(card, c);
+    }
   }
 
   /** Metri arrotondati per la guida: [-1] se non si arrotonda (miglia, piedi, oltre il chilometro). */

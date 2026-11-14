@@ -159,6 +159,9 @@
         <item>Presto</item>
     </string-array>
     <!-- Il paesaggio della guida (MapCieli). -->
+    <string name="eurise_guide_side_category">Guida in orizzontale</string>
+    <string name="eurise_guide_right">Comandi della guida a destra</string>
+    <string name="eurise_guide_right_summary">La barra dei comandi a destra sotto il pollice e la colonna della manovra a sinistra. Spento: barra a sinistra, per chi è mancino</string>
     <string name="eurise_landscape">Cielo e stagioni</string>
     <string name="eurise_landscape_summary">Nel finestrino degli incroci, delle uscite e delle rotonde, anche in Android Auto. Tutto disegnato, niente da scaricare.</string>
     <string name="eurise_sky_weather">Cielo dal meteo</string>

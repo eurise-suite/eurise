@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eurise (tavola MapGuidaVertB, approvata il 14 novembre): in verticale la manovra è una scheda sola, nella tinta del tipo
+  di strada: freccia e metri, la via, e sotto, quando la svolta si avvicina, il finestrino dell'incrocio (la scheda si
+  allunga e poi torna corta). Sotto la scheda corsie, meteo sul percorso e frase d'arrivo; velocità e limite a sinistra.
+  Stessi id del layout di CoMaps: NavigationController li trova e li aggiorna come prima.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/nav_top_frame"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <FrameLayout
+    android:id="@+id/statutbar"
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <LinearLayout
+    android:id="@+id/eurise_guide_card"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="12dp"
+    android:background="@drawable/eurise_guide_card"
+    android:clipToOutline="true"
+    android:elevation="@dimen/nav_elevation"
+    android:orientation="vertical"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/statutbar">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal">
+
+      <RelativeLayout
+        android:id="@+id/nav_next_turn_container"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:clickable="true">
+
+        <LinearLayout
+          android:id="@+id/nav_next_turn_frame"
+          android:layout_width="96dp"
+          android:layout_height="wrap_content"
+          android:minHeight="92dp"
+          android:background="@drawable/eurise_guide_header"
+          android:gravity="center"
+          android:orientation="vertical">
+
+          <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal">
+
+            <app.organicmaps.widget.ArrowView
+              android:id="@+id/turn"
+              android:layout_width="44dp"
+              android:layout_height="44dp"
+              android:theme="?navigationTheme"
+              app:tint="@android:color/white" />
+
+            <com.google.android.material.textview.MaterialTextView
+              android:id="@+id/circle_exit"
+              style="@style/MwmWidget.TextView.NavNextTurn.Exit"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_gravity="center"
+              android:textColor="@android:color/white" />
+          </FrameLayout>
+
+          <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/distance"
+            style="@style/MwmWidget.TextView.NavNextTurn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:textColor="@android:color/white"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+        </LinearLayout>
+
+        <FrameLayout
+          android:id="@+id/nav_next_next_turn_frame"
+          android:layout_width="wrap_content"
+          android:layout_height="0dp"
+          android:visibility="gone">
+
+          <com.google.android.material.imageview.ShapeableImageView
+            android:id="@id/turn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        </FrameLayout>
+      </RelativeLayout>
+
+      <LinearLayout
+        android:id="@+id/street_frame"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/eurise_guide_header"
+        android:clickable="true"
+        android:gravity="center_vertical">
+
+        <RelativeLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content">
+
+          <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/street"
+            style="@style/MwmWidget.TextView.NavStreet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autoSizeMaxTextSize="22sp"
+            android:autoSizeMinTextSize="14sp"
+            android:autoSizeTextType="uniform"
+            android:ellipsize="end"
+            android:gravity="center_vertical|start"
+            android:maxLines="3"
+            android:paddingStart="4dp"
+            android:paddingEnd="14dp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+        </RelativeLayout>
+      </LinearLayout>
+    </LinearLayout>
+
+    <app.organicmaps.eurise.EuriseJunctionView
+      android:id="@+id/eurise_junction"
+      android:layout_width="match_parent"
+      android:layout_height="196dp"
+      android:layout_marginStart="12dp"
+      android:layout_marginEnd="12dp"
+      android:layout_marginBottom="12dp"
+      android:visibility="gone" />
+  </LinearLayout>
+
+  <app.organicmaps.widget.LanesView
+    android:id="@+id/lanes"
+    android:layout_width="0dp"
+    android:layout_height="56dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="12dp"
+    android:padding="@dimen/margin_half"
+    android:visibility="gone"
+    app:lanesActiveLaneTintColor="@android:color/white"
+    app:lanesBackgroundColor="#1F2A44"
+    app:lanesCornerRadius="16dp"
+    app:lanesEditModeLanesCount="5"
+    app:lanesInactiveLaneTintColor="#59FFFFFF"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/eurise_guide_card" />
+
+  <com.google.android.material.textview.MaterialTextView
+    android:id="@+id/eurise_route_weather"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="12dp"
+    android:clickable="true"
+    android:ellipsize="end"
+    android:focusable="true"
+    android:maxLines="2"
+    android:visibility="gone"
+    app:layout_constrainedWidth="true"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/lanes" />
+
+  <com.google.android.material.textview.MaterialTextView
+    android:id="@+id/eurise_arrival"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="12dp"
+    android:clickable="true"
+    android:ellipsize="end"
+    android:focusable="true"
+    android:maxLines="3"
+    android:visibility="gone"
+    app:layout_constrainedWidth="true"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/eurise_route_weather" />
+
+  <androidx.constraintlayout.widget.Barrier
+    android:id="@+id/eurise_guide_bottom"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:barrierDirection="bottom"
+    app:constraint_referenced_ids="eurise_guide_card,lanes,eurise_route_weather,eurise_arrival" />
+
+  <app.organicmaps.widget.CurrentSpeedView
+    android:id="@+id/nav_current_speed"
+    style="@style/MwmWidget.CurrentSpeed"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:layout_marginStart="14dp"
+    android:layout_marginTop="12dp"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/eurise_guide_bottom" />
+
+  <app.organicmaps.widget.SpeedLimitView
+    android:id="@+id/nav_speed_limit"
+    style="@style/MwmWidget.SpeedLimit"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:layout_marginStart="8dp"
+    app:layout_constraintBottom_toBottomOf="@id/nav_current_speed"
+    app:layout_constraintStart_toEndOf="@id/nav_current_speed"
+    app:layout_constraintTop_toTopOf="@id/nav_current_speed" />
+</androidx.constraintlayout.widget.ConstraintLayout>
