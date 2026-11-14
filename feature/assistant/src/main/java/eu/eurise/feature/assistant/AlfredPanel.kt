@@ -1,6 +1,7 @@
 package eu.eurise.feature.assistant
 
 import eu.eurise.core.data.alfred.Address
+import eu.eurise.core.data.alfred.addressSuffix
 import eu.eurise.core.data.alfred.AlfredPrefs
 import android.Manifest
 import android.content.Intent
