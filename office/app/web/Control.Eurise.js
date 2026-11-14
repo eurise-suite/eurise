@@ -1038,8 +1038,17 @@
 		map.on('mobilewizard closealldialogs', closePanel);
 	}
 
+	/**
+	 * La mappa c'è e window.mode sa già dire che schermo è: nel guscio Linux di Collabora (26.04) window.mode esiste
+	 * prima delle sue funzioni, e il nostro script parte subito dopo bundle.js.
+	 */
+	function ready() {
+		return !!(window.app && app.map && app.map.on && window.mode && typeof window.mode.isMobile === 'function' &&
+			typeof window.mode.isTablet === 'function' && typeof window.mode.isDesktop === 'function');
+	}
+
 	(function waitForMap(tries) {
-		if (window.app && app.map && app.map.on) { setupPhone(); return; }
+		if (ready()) { setupPhone(); return; }
 		if (tries > 0) setTimeout(function () { waitForMap(tries - 1); }, 100);
 	})(300);
 
@@ -1592,7 +1601,7 @@
 	}
 
 	(function waitForTabletMap(tries) {
-		if (window.app && app.map && app.map.on) { setupTablet(); return; }
+		if (ready()) { setupTablet(); return; }
 		if (tries > 0) setTimeout(function () { waitForTabletMap(tries - 1); }, 100);
 	})(300);
 

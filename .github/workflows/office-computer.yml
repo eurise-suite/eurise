@@ -9,6 +9,7 @@ on:
     branches: [office]
     paths:
       - office/computer/**
+      - office/app/web/**
       - .github/workflows/office-computer.yml
 
 concurrency:
