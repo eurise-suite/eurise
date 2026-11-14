@@ -250,8 +250,14 @@
    riga, la matita e la barra in basso di Collabora si nascondono. */
 body.eurise-tel #toolbar-row > :not(#eurise-header),
 body.eurise-tel #mobile-edit-button,
-body.eurise-tel #toolbar-down {
+body.eurise-tel #toolbar-down,
+body.eurise-tel .leaflet-control-zoom {
 	display: none !important;
+}
+/* Schede dei fogli e miniature delle diapositive sopra la dock, non sotto. */
+body.eurise-tel #spreadsheet-toolbar,
+body.eurise-tel #presentation-controls-wrapper.portrait {
+	margin-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
 }
 body.eurise-tel #toolbar-row {
 	height: 52px;

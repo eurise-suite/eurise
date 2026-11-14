@@ -888,6 +888,9 @@
 	}
 
 	function status() {
+		// Il nome arriva con le informazioni del file, a volte dopo che l'intestazione è già sullo schermo.
+		var name = document.querySelector('#eurise-header .eurise-name');
+		if (name && !name.textContent) name.textContent = documentName();
 		var el = document.querySelector('#eurise-header .eurise-status');
 		if (el) el.textContent = phone.saved ? t('Salvato', 'Saved') : t('Modifiche in corso…', 'Editing…');
 		if (el) el.classList.toggle('pending', !phone.saved);
@@ -1016,6 +1019,7 @@
 			phoneDock(map.getDocType());
 		}
 		if (map._docLayer) build(); else map.on('doclayerinit', build);
+		map.on('docloaded wopiprops', status);
 		map.on('commandstatechanged', onState);
 		// Il pannello si chiude da solo quando si apre un dialogo o il menu di Collabora.
 		map.on('mobilewizard closealldialogs', closePanel);

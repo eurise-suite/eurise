@@ -180,8 +180,12 @@ usa_motore() { # nome scheda
 		--grant-read-uri-permission --grant-write-uri-permission -n "$PKG/$LO" > /dev/null 2>&1
 	sleep 12
 	adb exec-out screencap -p > "$OUT/$name-uso-0-aperto.png"
-	# La prima scheda della dock Eurise (Testo, Celle o Diapositiva): il suo pannello deve comparire.
-	tocca "$2" || adb shell input tap $((W * 86 / 100)) $((H * 845 / 1000))
+	# La prima scheda della dock Eurise (Testo, Celle o Diapositiva): il suo pannello deve comparire. La pagina web non
+	# si legge con uiautomator: si tocca dove la dock sta (14 dp dal fondo, alta 60 dp, cinque schede tra 18 dp di bordi).
+	local dpi d
+	dpi=$(adb shell wm density | grep -oE "[0-9]+" | tail -1)
+	d=$((dpi * 100 / 160))
+	adb shell input tap $(( (18 * d / 100) + (W - 36 * d / 100) / 10 )) $(( H - 44 * d / 100 ))
 	sleep 4
 	adb exec-out screencap -p > "$OUT/$name-uso-1-scheda.png"
 	local x=$((W / 2)) y=$((H * 385 / 1000))
@@ -194,7 +198,7 @@ usa_motore() { # nome scheda
 	adb logcat -d > "$OUT/$name-uso.log"
 	{
 		echo '```'
-		grep -E "chromium|Console|Uncaught|TypeError|ReferenceError|\.js:[0-9]+" "$OUT/$name-uso.log" | grep -v "EuriseDiag" | cut -c1-260 | tail -40
+		grep -E "Uncaught|TypeError|ReferenceError|AndroidRuntime|F DEBUG|Abort message|Fatal signal|BYE|Force finishing|finishWithProgress|LOActivity.*(onDestroy|finish|onBackPressed)|ActivityTaskManager.*motore" "$OUT/$name-uso.log" | grep -v "EuriseDiag" | cut -c1-260 | tail -40
 		echo '```'
 	} >> "$sum"
 	adb shell am force-stop "$PKG"
