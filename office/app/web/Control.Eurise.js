@@ -20,6 +20,200 @@
 	var IT = String(String.locale || navigator.language || 'it').toLowerCase().indexOf('it') === 0;
 	function t(it, en) { return IT ? it : en; }
 
+	// --- Icone Eurise al posto di quelle di Collabora (richiesta del proprietario, 14 novembre) --------------------
+	//
+	// Un solo punto: LOUtil.getImageURL, che serve il nastro, la colonna Properties, i menu e i dialoghi. Se l'icona
+	// chiesta (lc_bold.svg, sc_bold.svg…) è tra le nostre, si dà la nostra come immagine SVG in linea, nei colori della
+	// suite: tratto Notte, dettagli in azzurro, tinte della suite dove l'icona parla di colore; versione chiara per il tema
+	// scuro. Le altre restano quelle di Collabora. Livelli: m = tratto principale, a = accento, f = campitura leggera
+	// dell'accento, #rrggbb = tratto di quel colore, *#rrggbb = campitura piena di quel colore.
+	var ICONS = {
+		// Appunti
+		paste: [['m', 'M9 4h6v3H9z M7.5 5.5H6v15h12v-15h-1.5'], ['a', 'M9.5 12h5 M9.5 15.5h3.5']],
+		cut: [['m', 'M6.5 4.5l11 11 M17.5 4.5l-11 11'], ['a', 'M6 16.5a2.5 2.5 0 1 0 0 .01 M18 16.5a2.5 2.5 0 1 0 0 .01']],
+		copy: [['f', 'M9 8h11v12H9z'], ['m', 'M9 8h11v12H9z M15 8V4H4v12h5']],
+		formatpaintbrush: [['m', 'M5 4h12v5H5z M17 6.5h2v4.5h-8v3'], ['a', 'M10 14h2v6h-2z']],
+		// Carattere
+		bold: [['m', 'M7.5 4.5h5.2a3.6 3.6 0 0 1 0 7.2H7.5z M7.5 11.7h6.2a3.9 3.9 0 0 1 0 7.8H7.5z']],
+		italic: [['m', 'M10 4.5h8 M6 19.5h8 M14.5 4.5l-5 15']],
+		underline: [['m', 'M7 4.5v6.5a5 5 0 0 0 10 0V4.5'], ['a', 'M5.5 20h13']],
+		strikeout: [['m', 'M16.5 7.2C15.8 5.6 14.2 4.7 12 4.7c-2.6 0-4.3 1.3-4.3 3.2 0 1.3.8 2.1 2 2.6 M8 16.4c.6 1.8 2.2 2.9 4.2 2.9 2.7 0 4.4-1.4 4.4-3.4 0-.8-.3-1.5-.8-2'], ['a', 'M4.5 12h15']],
+		superscript: [['m', 'M4.5 9l8 10.5 M12.5 9l-8 10.5'], ['a', 'M15.5 5.2a1.9 1.9 0 0 1 3.6.9c0 1.4-3.6 2.4-3.6 4h3.9']],
+		subscript: [['m', 'M4.5 4.5L12.5 15 M12.5 4.5L4.5 15'], ['a', 'M15.5 14.2a1.9 1.9 0 0 1 3.6.9c0 1.4-3.6 2.4-3.6 4h3.9']],
+		color: [['m', 'M6.5 15.5L12 3.5l5.5 12 M8.6 11h6.8'], ['*#B4441A', 'M4 18h16v3H4z']],
+		fontcolor: 'color',
+		charbackcolor: [['m', 'M13.5 4.5l5 5-7 7H6.5v-5z M9 9l5 5'], ['*#F2D98B', 'M4 18.5h16v2.5H4z']],
+		backcolor: 'charbackcolor',
+		backgroundcolor: [['m', 'M5 11l6-6.5 7 7-6 6.5z M5 11h13'], ['f', 'M5 11h13l-6 6.5z'], ['a', 'M19.5 15.5c0 1.5-1 2.5-1 3.5a1 1 0 0 0 2 0c0-1-1-2-1-3.5z']],
+		grow: [['m', 'M3.5 19L8.5 7l5 12 M5.4 15h6.2'], ['a', 'M18 13V4 M15 7l3-3 3 3']],
+		shrink: [['m', 'M3.5 19L8.5 7l5 12 M5.4 15h6.2'], ['a', 'M18 4v9 M15 10l3 3 3-3']],
+		resetattributes: [['m', 'M5 19L10.5 5h3L8 19 M7.5 12.5h5'], ['a', 'M15 14l5.5 5.5 M20.5 14L15 19.5']],
+		setdefault: 'resetattributes',
+		shadowed: [['f', 'M8 20l6-15.5 6 15.5'], ['m', 'M5 18L11 3.5 17 18 M7.4 12.5h7.2']],
+		spacing: [['m', 'M5 13l3.5-8.5 3.5 8.5 M6 10.5h5 M13 13l3-8.5 3 8.5'], ['a', 'M4 18.5h16 M6.5 16.5l-2.5 2 2.5 2 M17.5 16.5l2.5 2-2.5 2']],
+		// Paragrafo
+		defaultbullet: [['a', 'M5 6.5h.01 M5 12h.01 M5 17.5h.01'], ['m', 'M9.5 6.5h10 M9.5 12h10 M9.5 17.5h10']],
+		defaultnumbering: [['a', 'M4.5 5l1.5-1v4.5 M3.8 14.5a1.4 1.4 0 0 1 2.7.6c0 .9-2.7 1.8-2.7 2.9h2.9'], ['m', 'M10 6.5h10 M10 12h10 M10 17.5h10']],
+		leftpara: [['m', 'M4 5.5h16 M4 10h10 M4 14.5h16'], ['a', 'M4 19h10']],
+		centerpara: [['m', 'M4 5.5h16 M7 10h10 M4 14.5h16'], ['a', 'M7 19h10']],
+		rightpara: [['m', 'M4 5.5h16 M10 10h10 M4 14.5h16'], ['a', 'M10 19h10']],
+		justifypara: [['m', 'M4 5.5h16 M4 10h16 M4 14.5h16'], ['a', 'M4 19h16']],
+		alignleft: 'leftpara',
+		alignhorizontalcenter: 'centerpara',
+		alignright: 'rightpara',
+		alignblock: 'justifypara',
+		incrementindent: [['m', 'M4 5h16 M11 9.7h9 M11 14.3h9 M4 19h16'], ['a', 'M4 9l3.2 3L4 15']],
+		decrementindent: [['m', 'M4 5h16 M11 9.7h9 M11 14.3h9 M4 19h16'], ['a', 'M7.2 9L4 12l3.2 3']],
+		hangingindent: [['m', 'M4 5h16 M9 9.7h11 M9 14.3h11 M4 19h16'], ['a', 'M4 9.7h2 M4 14.3h2']],
+		paralefttoright: [['m', 'M10 4.5v10 M14 4.5v10 M9 4.5h7 M10 4.5a3 3 0 0 0 0 6'], ['a', 'M5 19h14 M16.5 16.5L19 19l-2.5 2.5']],
+		pararighttoleft: [['m', 'M10 4.5v10 M14 4.5v10 M9 4.5h7 M10 4.5a3 3 0 0 0 0 6'], ['a', 'M5 19h14 M7.5 16.5L5 19l2.5 2.5']],
+		linespacing: [['m', 'M11 6h9 M11 12h9 M11 18h9'], ['a', 'M5.5 4v16 M3.5 6l2-2 2 2 M3.5 18l2 2 2-2']],
+		paraspaceincrease: [['m', 'M11 8.5h9 M11 15.5h9'], ['a', 'M5.5 4v16 M3.5 6l2-2 2 2 M3.5 18l2 2 2-2']],
+		paraspacedecrease: [['m', 'M11 10h9 M11 14h9'], ['a', 'M5.5 3v6 M3.5 7l2 2 2-2 M5.5 21v-6 M3.5 17l2-2 2 2']],
+		// Stili
+		stylenewbyexample: [['m', 'M5 18.5L10 5.5l5 13 M6.9 14h6.2'], ['a', 'M18.5 4v6 M15.5 7h6']],
+		styleupdatebyexample: [['m', 'M5 18.5L10 5.5l5 13 M6.9 14h6.2'], ['a', 'M21 7.5a3 3 0 1 1-1-2.2 M20.5 3.2v2.4h-2.4']],
+		stylewatercanmode: [['m', 'M5 9h10v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z M15 11l5-4'], ['a', 'M20.5 10.5v.01 M19 13v.01']],
+		editstyle: [['m', 'M5 18.5L10 5.5l5 13 M6.9 14h6.2'], ['a', 'M16 19.5l4.5-4.5-1.5-1.5-4.5 4.5v1.5z']],
+		// Modifica e inserimento
+		searchdialog: [['m', 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13 M15.3 15.3L20 20'], ['a', 'M8 10.5h5']],
+		hyperlinkdialog: [['m', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'], ['a', 'M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1']],
+		inserttable: [['f', 'M4 5h16v4.5H4z'], ['m', 'M4 5h16v14H4z M4 9.5h16 M4 14.2h16 M10 9.5V19 M15 9.5V19']],
+		insertgraphic: [['m', 'M4 5h16v14H4z'], ['f', 'M4 19l6-7 4 4.5 2.5-2.5 3.5 5z'], ['a', 'M4 17l6-6 4 4.5 2.5-2.5L20 16.5 M15.5 8.5h.01']],
+		insertobjectchart: [['m', 'M4 20h16'], ['f', 'M6 14h3v6H6z M10.5 8h3v12h-3z M15 11h3v9h-3z'], ['a', 'M6 14h3v6 M10.5 20V8h3v12 M15 20v-9h3v9']],
+		'basicshapes.rectangle': [['f', 'M4.5 6.5h15v11h-15z'], ['m', 'M4.5 6.5h15v11h-15z']],
+		basicshapes: 'basicshapes.rectangle',
+		insertannotation: [['m', 'M4.5 5h15v10.5h-8L7 19.5v-4H4.5z'], ['a', 'M8 9h8 M8 12h5']],
+		insertfootnote: [['m', 'M4 5.5h16 M4 10h16 M4 14.5h9'], ['a', 'M16.5 15.2l1.6-1v5.3 M4 19.5h4']],
+		charmapcontrol: [['m', 'M6.5 19.5h4v-2.2A6.5 6.5 0 1 1 13.5 17.3v2.2h4']],
+		insertdatefield: [['m', 'M4 6h16v14H4z M8 3.5v4 M16 3.5v4 M4 10h16'], ['a', 'M8 14h.01 M12 14h.01 M16 14h.01 M8 17h.01 M12 17h.01']],
+		insertpagenumberfield: [['m', 'M6 3.5h9l3.5 3.5v13.5H6z M15 3.5v3.5h3.5'], ['a', 'M10.5 12.2l1.7-1.2v6']],
+		insertpagebreak: [['m', 'M6 3.5v5h12v-5 M6 20.5v-5h12v5'], ['a', 'M3.5 12h2 M8 12h2 M12.5 12h2 M17 12h2']],
+		insertbreak: 'insertpagebreak',
+		insertmultiindex: [['m', 'M9.5 6h10 M11.5 12h8 M11.5 18h8'], ['a', 'M4.5 6h.01 M6.5 12h.01 M6.5 18h.01']],
+		pagedialog: [['m', 'M6 3.5h12v17H6z'], ['a', 'M9 7h6 M9 17h6 M9 7v10 M15 7v10']],
+		formatcolumns: [['m', 'M4 4.5h16v15H4z'], ['a', 'M12 4.5v15'], ['m', 'M6.5 8h3 M6.5 11h3 M14.5 8h3 M14.5 11h3']],
+		spellingandgrammardialog: [['m', 'M3.5 14L7 5l3.5 9 M4.7 11h4.6 M12.5 5v9h2.6a2.3 2.3 0 0 0 0-4.6h-2.6'], ['a', 'M8 18l2.5 2.5L16 15']],
+		spelldialog: 'spellingandgrammardialog',
+		spellingdialog: 'spellingandgrammardialog',
+		wordcountdialog: [['m', 'M5 4h14v16H5z M8.5 8h7 M8.5 11.5h7'], ['a', 'M8.5 15.5h1.2 M11.4 15.5h1.2 M14.3 15.5h1.2']],
+		trackchanges: [['m', 'M4 18h4l10-10-4-4L4 14z'], ['a', 'M12 20h8']],
+		accepttrackedchange: [['m', 'M4 6h11 M4 10.5h8'], ['a', 'M10 17l3 3 7-8']],
+		rejecttrackedchange: [['m', 'M4 6h11 M4 10.5h8'], ['a', 'M12 13.5l7 7 M19 13.5l-7 7']],
+		accepttrackedchanges: [['m', 'M4 5h16 M4 9.5h10'], ['a', 'M4 15.5l2.5 2.5L11 13.5 M13 15.5l2.5 2.5L20 13.5']],
+		zoomplus: [['m', 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13 M15.3 15.3L20 20'], ['a', 'M10.5 7.5v6 M7.5 10.5h6']],
+		zoomminus: [['m', 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13 M15.3 15.3L20 20'], ['a', 'M7.5 10.5h6']],
+		fullscreen: [['m', 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5'], ['f', 'M8 8h8v8H8z']],
+		ruler: [['m', 'M3.5 8h17v8h-17z'], ['a', 'M7 8v3 M10.5 8v4 M14 8v3 M17.5 8v4']],
+		controlcodes: [['m', 'M13 4.5v15 M17 4.5v15 M11 4.5h8.5'], ['a', 'M13 4.5H10a4 4 0 0 0 0 8h3']],
+		formattingmarkmenu: 'controlcodes',
+		navigator: [['m', 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17'], ['f', 'M15.5 8.5l-2 5-5 2 2-5z'], ['a', 'M15.5 8.5l-2 5-5 2 2-5z']],
+		// Celle
+		wraptext: [['m', 'M4 6h16 M4 12h12.5a3 3 0 0 1 0 6H12'], ['a', 'M14 16l-2 2 2 2'], ['m', 'M4 18h5']],
+		togglemergecells: [['m', 'M4 5h16v14H4z'], ['a', 'M7.5 12h9 M9.5 10l-2 2 2 2 M14.5 10l2 2-2 2']],
+		mergecells: 'togglemergecells',
+		setborderstyle: [['m', 'M4 4h16v16H4z'], ['a', 'M12 4v16 M4 12h16']],
+		aligntop: [['a', 'M4 4.5h16'], ['m', 'M8 8.5h3v11H8z M13 8.5h3v6h-3z']],
+		alignverticalcenter: [['a', 'M4 12h16'], ['m', 'M8 6.5h3v11H8z M13 9h3v6h-3z']],
+		alignbottom: [['a', 'M4 19.5h16'], ['m', 'M8 4.5h3v11H8z M13 9.5h3v6h-3z']],
+		numberformatcurrency: [['m', 'M17 6.5a6 6 0 1 0 0 11'], ['a', 'M5 10.5h8 M5 13.5h8']],
+		numberformatpercent: [['m', 'M18.5 5.5l-13 13'], ['a', 'M7 5a2 2 0 1 0 0 4a2 2 0 1 0 0-4 M17 15a2 2 0 1 0 0 4a2 2 0 1 0 0-4']],
+		numberformatthousands: [['m', 'M4.5 9.5l1.5-1v7 M9 9.5a1.6 1.6 0 0 1 3 .8c0 1.4-3 2.6-3 5.2h3.2 M15 9h3.5l-2 2.5a2 2 0 1 1-1.8 2.7'], ['a', 'M13.2 16.5l-.6 1.6']],
+		numberformatdate: 'insertdatefield',
+		numberformatdecimal: [['m', 'M8 8.5a2.5 3.5 0 1 0 0 7a2.5 3.5 0 1 0 0-7 M16 8.5a2.5 3.5 0 1 0 0 7a2.5 3.5 0 1 0 0-7'], ['a', 'M12 15.5h.01']],
+		numberformatincdecimals: [['m', 'M5 15.5h.01 M9.5 8.5a2 3.5 0 1 0 0 7a2 3.5 0 1 0 0-7'], ['a', 'M16 12h5 M18.5 9.5v5']],
+		numberformatdecdecimals: [['m', 'M5 15.5h.01 M9.5 8.5a2 3.5 0 1 0 0 7a2 3.5 0 1 0 0-7'], ['a', 'M16 12h5']],
+		autosum: [['m', 'M17.5 6V4.5h-11l6 7.5-6 7.5h11V18']],
+		sortascending: [['m', 'M4 10l2.5-6 2.5 6 M4.8 8h3.4 M4 14h5l-5 6h5'], ['a', 'M17 4v16 M14 17l3 3 3-3']],
+		sortdescending: [['m', 'M4 4h5L4 10h5 M4 20l2.5-6 2.5 6 M4.8 18h3.4'], ['a', 'M17 4v16 M14 17l3 3 3-3']],
+		datasort: 'sortascending',
+		datafilterautofilter: [['f', 'M4 5h16l-6 7.5V19l-4-2v-4.5z'], ['m', 'M4 5h16l-6 7.5V19l-4-2v-4.5z']],
+		datafilterstandardfilter: [['m', 'M4 5h16l-6 7.5V19l-4-2v-4.5z'], ['a', 'M17 15h4 M17 18h4']],
+		insertrowsbefore: [['m', 'M4 12h16v8H4z M4 16h16'], ['a', 'M12 3v6 M9 6h6']],
+		insertrowsafter: [['m', 'M4 4h16v8H4z M4 8h16'], ['a', 'M12 15v6 M9 18h6']],
+		insertcolumnsbefore: [['m', 'M12 4h8v16h-8z M16 4v16'], ['a', 'M3 12h6 M6 9v6']],
+		insertcolumnsafter: [['m', 'M4 4h8v16H4z M8 4v16'], ['a', 'M15 12h6 M18 9v6']],
+		deleterows: [['m', 'M4 8h16v8H4z'], ['a', 'M9 10l6 4 M15 10l-6 4']],
+		deletecolumns: [['m', 'M8 4h8v16H8z'], ['a', 'M10 9l4 6 M14 9l-4 6']],
+		functiondialog: [['m', 'M11 20c2 0 2.2-2 2.6-5l1-7c.4-2.6.8-4 3-4 M9.5 10h7'], ['a', 'M4 13l4 5 M8 13l-4 5']],
+		calculate: [['m', 'M6 3.5h12v17H6z M8.5 6.5h7v3h-7z'], ['a', 'M9 13h.01 M12 13h.01 M15 13h.01 M9 16.5h.01 M12 16.5h.01 M15 16.5h.01']],
+		definename: [['m', 'M4 12.5V5h7.5l8.5 8.5-7.5 7.5z'], ['a', 'M8 8.5h.01']],
+		validation: [['m', 'M4 5h16v14H4z M4 9.5h16'], ['a', 'M8.5 14l2 2 4-4.5']],
+		datasubtotals: [['m', 'M4 5h16 M4 9h16 M4 13h16'], ['a', 'M4 18h16 M15 15.5v5']],
+		datadatapilotrun: [['m', 'M4 4h16v16H4z M4 9h16 M9 4v16'], ['a', 'M12.5 13h4.5v4.5 M17 13l-4.5 4.5']],
+		protect: [['m', 'M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3'], ['a', 'M12 14.5v2']],
+		freezepanes: [['m', 'M4 4h16v16H4z'], ['a', 'M4 9h16 M9 4v16']],
+		togglesheetgrid: [['m', 'M4 4h16v16H4z M4 9.3h16 M4 14.7h16 M9.3 4v16 M14.7 4v16']],
+		viewrowcolumnheaders: [['f', 'M4 4h16v4H4z M4 8h4v12H4z'], ['m', 'M4 4h16v16H4z M4 8h16 M8 4v16']],
+		// Diapositive
+		insertpage: [['m', 'M3.5 6h13v10h-13z'], ['a', 'M19.5 14v6 M16.5 17h6']],
+		insertslide: 'insertpage',
+		duplicatepage: [['f', 'M7.5 9h13v10h-13z'], ['m', 'M7.5 9h13v10h-13z M3.5 15V5h13']],
+		duplicateslide: 'duplicatepage',
+		deletepage: [['m', 'M3.5 6h13v10h-13z'], ['a', 'M17 16l4 4 M21 16l-4 4']],
+		deleteslide: 'deletepage',
+		text: [['m', 'M5 6V4.5h14V6 M12 4.5v15 M9.5 19.5h5']],
+		normalmultipanegui: [['m', 'M3.5 5h17v14h-17z M8 5v14'], ['a', 'M10.5 8h7.5v6h-7.5z']],
+		notesmode: [['m', 'M5 3.5h14v17H5z M8 6.5h8v6H8z'], ['a', 'M8 15.5h8 M8 18h5']],
+		diamode: [['m', 'M3.5 5h7v5.5h-7z M13.5 5h7v5.5h-7z M3.5 13.5h7V19h-7z M13.5 13.5h7V19h-7z']],
+		presentation: [['m', 'M3.5 4.5h17v11h-17z M12 15.5V20 M8.5 20h7'], ['a', 'M10.5 7.5v5l4-2.5z']],
+		// File
+		exporttopdf: [['m', 'M6 3.5h8.5L18 7v13.5H6z M14.5 3.5V7H18'], ['a', 'M12 10.5v6.5 M9.3 14.3L12 17l2.7-2.7']],
+		print: [['m', 'M7 9V3.5h10V9 M7 17H4.5V9h15v8H17 M7 13.5h10v7H7z'], ['a', 'M16.5 11.5h.01']],
+		save: [['m', 'M5 4h11.5L19.5 7v13H5z M8 4v5h7V4'], ['a', 'M8 20v-6h8v6']],
+		undo: [['m', 'M9 5L4 10l5 5 M4 10h10.5a5 5 0 0 1 0 10H11']],
+		redo: [['m', 'M15 5l5 5-5 5 M20 10H9.5a5 5 0 0 0 0 10H13']],
+		morebutton: [['m', 'M8 16L16 8 M10 8h6v6']]
+	};
+
+	var ICON_CACHE = {};
+
+	/** L'icona nostra come immagine SVG in linea, oppure null se non l'abbiamo. */
+	function euriseIcon(file, dark) {
+		var key = String(file || '').split('/').pop().replace(/\.svg$/, '').replace(/^(lc|sc|cmd)_/, '').toLowerCase();
+		var spec = ICONS[key];
+		if (typeof spec === 'string') spec = ICONS[spec];
+		if (!spec) return null;
+		var cacheKey = key + (dark ? ':d' : ':l');
+		if (ICON_CACHE[cacheKey]) return ICON_CACHE[cacheKey];
+		var main = dark ? '#E6E9F0' : '#1F2A44';
+		var accent = dark ? '#A9C1F2' : '#3E5C8A';
+		var body = spec.map(function (layer) {
+			var style = layer[0];
+			if (style === 'f') return '<path d="' + layer[1] + '" fill="' + accent + '" fill-opacity="0.18" stroke="none"/>';
+			if (style.charAt(0) === '*') return '<path d="' + layer[1] + '" fill="' + style.slice(1) + '" stroke="none"/>';
+			var color = style === 'm' ? main : style === 'a' ? accent : style;
+			return '<path d="' + layer[1] + '" stroke="' + color + '"/>';
+		}).join('');
+		var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.7" ' +
+			'stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
+		ICON_CACHE[cacheKey] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+		return ICON_CACHE[cacheKey];
+	}
+
+	/** Icone chieste e non nostre: la prova le elenca per completare il disegno. */
+	var missingIcons = {};
+
+	(function useEuriseIcons(tries) {
+		var util = window.app && window.app.LOUtil;
+		if (!util || typeof util.getImageURL !== 'function') {
+			if (tries > 0) setTimeout(function () { useEuriseIcons(tries - 1); }, 50);
+			return;
+		}
+		if (util.getImageURL.eurise) return;
+		var original = util.getImageURL;
+		var ours = function (name) {
+			var dark = false;
+			try { dark = !!(window.prefs && window.prefs.getBoolean && window.prefs.getBoolean('darkTheme')); } catch (e) { dark = false; }
+			var mine = euriseIcon(name, dark);
+			if (mine) return mine;
+			if (/^(lc|sc)_/.test(String(name))) missingIcons[name] = true;
+			return original.apply(this, arguments);
+		};
+		ours.eurise = true;
+		util.getImageURL = ours;
+	})(200);
+
 	var SUITE_TAB = 'Suite';
 
 	// --- Ponte con il guscio dell'app -------------------------------------------------------------------------
@@ -1660,7 +1854,7 @@
 		ribbon.el = top.querySelector('#eurise-ribbon');
 		showRibbon(list[0]);
 		status();
-		if (desk) deskSide(docType);
+		if (desk) { deskSide(docType); deskRulers(docType); }
 		if (app.map.invalidateSize) setTimeout(function () { app.map.invalidateSize(); }, 50);
 	}
 
@@ -1769,6 +1963,27 @@
 	}
 
 	/**
+	 * Sul computer i righelli (orizzontale e verticale) si vedono sempre nei testi, come in un programma da scrivania
+	 * (richiesta del proprietario, 14 novembre). Collabora li crea dopo il caricamento: si aspetta che ci siano.
+	 */
+	function deskRulers(docType) {
+		if (docType !== 'text') return;
+		(function tryRulers(tries) {
+			var ui = app.map.uiManager;
+			var vertical = app.UI && app.UI.verticalRuler;
+			if (!ui || !vertical) {
+				if (tries > 0) setTimeout(function () { tryRulers(tries - 1); }, 500);
+				return;
+			}
+			if (ui.isRulerVisible && !ui.isRulerVisible() && ui.showRuler) ui.showRuler();
+			if (vertical.show) vertical.show();
+			if (app.UI.horizontalRuler && app.UI.horizontalRuler.show) app.UI.horizontalRuler.show();
+			app.map.fire('rulerchanged');
+			trace.push('rulers on');
+		})(40);
+	}
+
+	/**
 	 * Il giro guidato di Collabora (26.04, «Welcome to Collabora Online… This short tour») non serve: la prima volta che
 	 * compare lo si salta con il suo pulsante, così Collabora ricorda di non mostrarlo più.
 	 */
@@ -1837,6 +2052,6 @@
 		if (tries > 0) setTimeout(function () { waitForTabletMap(tries - 1); }, 100);
 	})(300);
 
-	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice, trace: trace };
+	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice, trace: trace, missingIcons: missingIcons };
 	if (typeof JSDialog !== 'undefined') JSDialog.EuriseSearch = openSearch;
 })();

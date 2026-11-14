@@ -42,6 +42,8 @@ cat > "$DIAG" <<'JS'
 			body: document.body ? document.body.className : '', top: !!document.getElementById('eurise-top'),
 			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row'),
 			trace: window.euriseOffice ? window.euriseOffice.trace : null,
+			missingIcons: window.euriseOffice && window.euriseOffice.missingIcons ? Object.keys(window.euriseOffice.missingIcons) : null,
+			rulers: { v: !!document.getElementById('vertical-ruler'), vShown: !!(document.getElementById('vertical-ruler') && document.getElementById('vertical-ruler').offsetParent) },
 			modeKeys: m ? Object.keys(m).map(function (k) { return k + ':' + typeof m[k]; }) : null,
 			appKeys: window.app ? Object.keys(window.app).slice(0, 60) : null
 		}));
