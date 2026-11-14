@@ -208,6 +208,8 @@ private fun WebPane(url: String, modifier: Modifier, onCreated: (WebView) -> Uni
         modifier = modifier,
         factory = { context ->
             WebView(context).apply {
+                // A tutta altezza, come nella finestra AI: con «quanto il contenuto» le web app restano tagliate.
+                layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                 setBackgroundColor(android.graphics.Color.WHITE)
                 settings.javaScriptEnabled = true // i motori e gli assistenti non funzionano senza
                 settings.domStorageEnabled = true

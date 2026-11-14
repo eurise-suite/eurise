@@ -31,7 +31,7 @@
     <string name="alfred_lead_timer">Conto il tempo per Lei.</string>
     <string name="alfred_lead_search">Cerco questo, se è d\'accordo.</string>
     <string name="alfred_lead_open">Apro questo, se è d\'accordo.</string>
-    <string name="alfred_lead_free">Mi conceda un istante: qui servirebbe Eurise AI.</string>
+    <string name="alfred_lead_free">Questa la chiedo online, togliendo prima i suoi dati.</string>
     <string name="alfred_lead_unknown_person">Temo di non trovare «%1$s» nella Rubrica. Mi dica pure il nome per intero, o il numero.</string>
     <string name="alfred_lead_no_app">Non trovo «%1$s» tra le app del telefono. Mi corregga il nome, se vuole.</string>
 
@@ -89,7 +89,7 @@
     <string name="alfred_report_danger">Pericolo</string>
     <string name="alfred_note_route">La strada la traccia Eurise Mappe, sul telefono.</string>
     <string name="alfred_note_alarm_day">Le sveglie ricordano l\'ora, non il giorno: suonerà alla prima occasione.</string>
-    <string name="alfred_note_free">Le richieste libere le affiderò al modello AI del telefono, che sceglierà soltanto tra le azioni della suite. Nel frattempo posso passare la domanda a Eurise AI, o cercarla.</string>
+    <string name="alfred_note_free">Sul telefono non so ancora rispondere alle domande libere. La passo al servizio che preferisce, senza nomi, numeri e indirizzi: tenendo premuto il globo ne sceglie un altro.</string>
     <string name="alfred_note_free_no_ai">Le richieste libere le affiderò al modello AI del telefono. Per ora posso cercarla, se crede.</string>
     <string name="alfred_last_step">Nulla si muove finché non tocca: la scheda è sempre l\'ultimo passo.</string>
 

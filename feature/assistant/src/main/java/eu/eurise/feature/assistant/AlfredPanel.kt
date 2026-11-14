@@ -190,13 +190,17 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         }
     }
 
+    /** Alfred parla solo se gli si è parlato: aprirlo o scrivergli non lo fa parlare. */
+    var voiceTurn by remember { mutableStateOf(false) }
     fun say(line: String, onDone: (() -> Unit)? = null) {
-        if (readAloud) speaker.value.say(line, onDone) else onDone?.invoke()
+        if (readAloud && voiceTurn) speaker.value.say(line, onDone) else onDone?.invoke()
     }
 
     fun execute(card: Card) {
         answering = false
         ear.cancel()
+        // Richiesta libera: sul telefono non c'è ancora chi risponde; va al servizio online preferito, ripulita.
+        if (card.kind == Kind.Free) { askOnline(favorite); return }
         scope.launch {
             val out = butler.run(card)
             phase = Phase.Said(out.line)
@@ -227,6 +231,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     }
 
     understandSaid = { text, spoken ->
+        voiceTurn = spoken
         if (text.isNotBlank()) {
             heard = text.trim()
             typed = ""
@@ -292,7 +297,6 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         if (askingName) suggestion = ownFirstName(context)
         if (!initial.isNullOrBlank() && !askingName) understand(initial)
         else if (listenNow && !askingName) voice()
-        else if (readAloud) say(context.getString(if (askingName) R.string.alfred_ask_name else R.string.alfred_greeting, address))
     }
 
     fun introduce(name: String) {
@@ -405,7 +409,6 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     if (!Contacts.canRead(context) && card.kind in setOf(Kind.Call, Kind.Message, Kind.Event)) {
                         OutlineChip(stringResource(R.string.alfred_need_contacts)) { contactsPermission.launch(Manifest.permission.READ_CONTACTS) }
                     }
-                    if (card.kind == Kind.Free) OutlineChip(stringResource(R.string.alfred_ask_online, favorite.name)) { askOnline(favorite) }
                     if (card.chips.isNotEmpty()) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             card.chips.forEach { chip -> OutlineChip(chip.label) { replan(chip.command) } }
@@ -418,7 +421,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                             heard = ""
                             phase = Phase.Ready
                         }
-                        BigButton(card.action, primary = true, enabled = card.ready, modifier = Modifier.weight(1.4f)) {
+                        val action = if (card.kind == Kind.Free) stringResource(R.string.alfred_ask_online, favorite.name) else card.action
+                        BigButton(action, primary = true, enabled = card.ready, modifier = Modifier.weight(1.4f)) {
                             if (card.kind == Kind.Call && context.checkSelfPermission(Manifest.permission.CALL_PHONE) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                                 answering = false
                                 ear.cancel()

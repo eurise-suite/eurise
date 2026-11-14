@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -138,7 +139,12 @@ class AiWindowActivity : ComponentActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun makeWebView(ctx: Context) = WebView(ctx).apply {
+        // A tutta altezza: con la misura «quanto il contenuto» (quella di AndroidView) la pagina crede che lo schermo sia
+        // alto quanto il suo contenuto, e le web app a schermo intero restano tagliate in alto o bianche.
+        layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         settings.javaScriptEnabled = true
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = true
         settings.domStorageEnabled = true
         settings.allowFileAccess = false
         settings.allowContentAccess = false

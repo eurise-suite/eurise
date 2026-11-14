@@ -231,16 +231,12 @@ class Butler(private val context: Context) {
 
     // --- Richiesta libera ---
 
-    private fun aiPackage(): String? = listOf("eu.eurise.ai", "eu.eurise.ai.debug").firstOrNull { Reach.installed(context, it) }
 
-    private fun free(c: Command.Free): Card {
-        val ai = aiPackage()
-        return Card(Kind.Free, c, s(R.string.alfred_lead_free), R.string.alfred_card_free,
+    private fun free(c: Command.Free): Card =
+        Card(Kind.Free, c, s(R.string.alfred_lead_free), R.string.alfred_card_free,
             listOf(Field("text", R.string.alfred_f_text, c.text)),
-            s(if (ai != null) R.string.alfred_note_free else R.string.alfred_note_free_no_ai),
-            s(if (ai != null) R.string.alfred_do_free_ai else R.string.alfred_search_instead),
-            if (ai != null) listOf(Chip(s(R.string.alfred_search_instead), Command.Search(c.text, Scope.Web))) else emptyList())
-    }
+            s(R.string.alfred_note_free), s(R.string.alfred_search_instead),
+            listOf(Chip(s(R.string.alfred_search_instead), Command.Search(c.text, Scope.Web))))
 
     // --- Persone ---
 
@@ -324,14 +320,7 @@ class Butler(private val context: Context) {
             }
             Kind.Search -> search(card.value("query"), card.value("scope") == s(R.string.alfred_web))
             Kind.Open -> start(card.app ?: return Outcome(s(R.string.alfred_failed), false))
-            Kind.Free -> {
-                val ai = aiPackage()
-                if (ai != null) {
-                    clip(card.value("text"))
-                    start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(ai)
-                        .putExtra(Intent.EXTRA_TEXT, card.value("text")))
-                } else search(card.value("text"), web = true)
-            }
+            Kind.Free -> search(card.value("text"), web = true)
         }
     }.getOrElse { Outcome(s(R.string.alfred_failed), false) }
 
