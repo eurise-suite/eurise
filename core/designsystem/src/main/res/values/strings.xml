@@ -53,6 +53,9 @@
         <item quantity="other">Fatto · %1$d servizi accesi</item>
     </plurals>
     <string name="ds_w_all_off">Lascia tutto spento</string>
+    <string name="ds_w_alfred">Alfred</string>
+    <string name="ds_s_ai_online">AI online · Alfred</string>
+    <string name="ds_s_ai_online_d">solo la domanda che scegli di mandare, dopo che Alfred ha tolto sul telefono nomi, indirizzi, numeri, email e codici. Va al servizio che scegli (Lumo, Euria, Le Chat…), nella finestra AI di Eurise, col tuo account se sei entrato; la conversazione resta presso di lui secondo le sue regole</string>
     <string name="ds_off_line">Spento: niente esce dal telefono.</string>
     <string name="ds_off_turn_on">Accendi…</string>
     <string name="ds_on_title">Cosa cambia per la tua privacy</string>

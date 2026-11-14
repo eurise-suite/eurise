@@ -6,7 +6,21 @@
     <!-- Alfred che ascolta: il microfono si chiede al primo tocco; registra Alfred stesso, l'audio va solo a Eurise Voce
          (che trascrive sul telefono) o, senza Voce, al riconoscimento del telefono. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- La finestra AI di Alfred (tavola AlfFinestra): la web app dell'AI scelta, col proprio account. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <activity
+            android:name=".online.AiWindowActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
     <queries>
+        <!-- «Da un'app installata»: le app che accettano un testo condiviso. -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
         <package android:name="eu.eurise.voice" />
         <package android:name="eu.eurise.voice.debug" />
         <package android:name="eu.eurise.maps" />

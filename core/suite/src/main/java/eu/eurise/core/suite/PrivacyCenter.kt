@@ -8,7 +8,9 @@ import java.io.File
  * spenti di base; li accende la persona, dopo l'avviso su cosa esce e come cambia la privacy. Chi aggiorna da una
  * versione in cui erano accesi di base li ritrova accesi (vedi [PrivacyCenter.keepOldChoices]).
  */
-enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, Videos, Routes, RouteWeather, MapSearch, MapReports, FuelPrices;
+enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, Videos, Routes, RouteWeather, MapSearch, MapReports, FuelPrices,
+    /** Alfred che passa una domanda, ripulita sul telefono, all'AI online scelta (Lumo, Euria, Le Chat…). */
+    AiOnline;
 
     val defaultOn: Boolean get() = false
 }

@@ -59,6 +59,7 @@ fun PrivacyService.titleRes(): Int = when (this) {
     PrivacyService.MapSearch -> R.string.ds_s_map_search
     PrivacyService.MapReports -> R.string.ds_s_map_reports
     PrivacyService.FuelPrices -> R.string.ds_s_fuel
+    PrivacyService.AiOnline -> R.string.ds_s_ai_online
 }
 
 fun PrivacyService.detailRes(): Int = when (this) {
@@ -74,6 +75,7 @@ fun PrivacyService.detailRes(): Int = when (this) {
     PrivacyService.MapSearch -> R.string.ds_s_map_search_d
     PrivacyService.MapReports -> R.string.ds_s_map_reports_d
     PrivacyService.FuelPrices -> R.string.ds_s_fuel_d
+    PrivacyService.AiOnline -> R.string.ds_s_ai_online_d
 }
 
 /** I servizi chiusi: avviso su limiti e pericoli, con l'alternativa (regola del 12 novembre). */
@@ -91,7 +93,7 @@ fun PrivacyService.where(): Jurisdiction = when (this) {
     PrivacyService.MapSearch -> Jurisdiction.EU // Photon di komoot, Germania
     PrivacyService.MapReports -> Jurisdiction.UK // OpenStreetMap Foundation, Regno Unito
     PrivacyService.FuelPrices -> Jurisdiction.EU // Ministero delle Imprese e del Made in Italy, Roma
-    PrivacyService.News, PrivacyService.Horoscope -> Jurisdiction.Various
+    PrivacyService.News, PrivacyService.Horoscope, PrivacyService.AiOnline -> Jurisdiction.Various // l'AI che sceglie la persona
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
 }
 

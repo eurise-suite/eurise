@@ -66,6 +66,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.contacts.Contacts
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.designsystem.component.ServiceConsentSheet
+import eu.eurise.core.suite.PrivacyCenter
+import eu.eurise.core.suite.PrivacyService
+import eu.eurise.feature.assistant.online.AiService
+import eu.eurise.feature.assistant.online.AiServices
+import eu.eurise.feature.assistant.online.AiWindowActivity
+import eu.eurise.feature.assistant.online.AnswerView
+import eu.eurise.feature.assistant.online.AskBox
+import eu.eurise.feature.assistant.online.ChooseView
+import eu.eurise.feature.assistant.online.Redaction
+import eu.eurise.feature.assistant.online.Redactor
+import eu.eurise.feature.assistant.online.WaysLegend
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -94,6 +108,10 @@ private sealed interface Phase {
     data class Confirm(val card: Card) : Phase
     data class Said(val line: String) : Phase
     data object Settings : Phase
+    /** «Chiedi a…»: pressione lunga sul globo (tavola AlfScegli). */
+    data object Choose : Phase
+    /** La risposta dell'AI online tornata in Alfred, con i dati rimessi (tavola AlfRisposta). */
+    data class Answer(val text: String, val from: String) : Phase
 }
 
 /**
@@ -120,6 +138,57 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     var speaking by remember { mutableStateOf(false) }
     /** Alfred aspetta a voce «sì» o «no» sulla scheda (solo se gli si è parlato). */
     var answering by remember { mutableStateOf(false) }
+
+    // AI online (tavole AlfUnico, AlfScegli, AlfFinestra, AlfRisposta): la domanda esce ripulita, nella finestra AI.
+    val services = remember { AiServices(context) }
+    var favorite by remember { mutableStateOf(services.preferred()) }
+    val leftHanded = remember { context.getSharedPreferences("eurise_launcher", android.content.Context.MODE_PRIVATE).getBoolean("left_handed", false) }
+    var redaction by remember { mutableStateOf<Redaction?>(null) }
+    var consentFor by remember { mutableStateOf<AiService?>(null) }
+    val onlineWindow = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val back = result.data?.getStringExtra(AiWindowActivity.EXTRA_ANSWER)
+        if (result.resultCode == android.app.Activity.RESULT_OK && !back.isNullOrBlank()) {
+            phase = Phase.Answer(redaction?.restore(back) ?: back, result.data?.getStringExtra(AiWindowActivity.EXTRA_NAME).orEmpty())
+        }
+    }
+
+    /** La domanda da mandare online: quella scritta, o l'ultima detta. */
+    fun question(): String = typed.ifBlank { heard }.trim()
+
+    /** Toglie i dati personali sul telefono e apre il servizio con la domanda già scritta. */
+    fun sendOnline(s: AiService) {
+        val q = question()
+        scope.launch {
+            val names = withContext(Dispatchers.IO) {
+                val people = if (Contacts.canRead(context)) runCatching { Contacts.all(context).map { it.name } }.getOrDefault(emptyList()) else emptyList()
+                people + listOf(prefs.name).filter { it.isNotBlank() }
+            }
+            val r = Redactor.redact(q, names)
+            redaction = r
+            withContext(Dispatchers.IO) { PrivacyCenter.log(PrivacyService.AiOnline) }
+            if (s.isApp) {
+                val ok = services.shareTo(s, r.text)
+                phase = Phase.Said(context.getString(if (ok) R.string.alfred_sent_to_app else R.string.alfred_app_failed, s.name))
+                return@launch
+            }
+            onlineWindow.launch(
+                Intent(context, AiWindowActivity::class.java)
+                    .putExtra(AiWindowActivity.EXTRA_URL, s.startUrl(r.text))
+                    .putExtra(AiWindowActivity.EXTRA_NAME, s.name)
+                    .putExtra(AiWindowActivity.EXTRA_SCORE, s.score)
+                    .putExtra(AiWindowActivity.EXTRA_QUESTION, r.text)
+                    .putExtra(AiWindowActivity.EXTRA_PREFILLED, s.prefill.isNotEmpty() && r.text.isNotEmpty()),
+            )
+        }
+    }
+
+    /** Il globo: la prima volta la spiegazione del centro privacy (servizio spento di base), poi subito il servizio. */
+    fun askOnline(s: AiService) {
+        scope.launch {
+            val on = withContext(Dispatchers.IO) { PrivacyCenter.allowed(PrivacyService.AiOnline) }
+            if (on) sendOnline(s) else consentFor = s
+        }
+    }
 
     fun say(line: String, onDone: (() -> Unit)? = null) {
         if (readAloud) speaker.value.say(line, onDone) else onDone?.invoke()
@@ -274,9 +343,12 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                             OutlineChip(label) { if (label.endsWith("…")) typed = label.removeSuffix("…") else understand(label) }
                         }
                     }
-                    InputRow(
-                        value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = ear.available, onVoice = { voice() },
+                    WaysLegend(favorite)
+                    AskBox(
+                        value = typed, onValue = { typed = it }, hint = stringResource(R.string.alfred_input_hint),
+                        favorite = favorite.name, leftHanded = leftHanded, voice = ear.available, onVoice = { voice() },
+                        onSend = { understand(typed) }, onOnline = { askOnline(favorite) }, onChoose = { phase = Phase.Choose },
+                        onPc = { phase = Phase.Said(context.getString(R.string.alfred_pc_soon)) },
                     )
                     Text(stringResource(R.string.alfred_how_to_open), fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth())
@@ -333,6 +405,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     if (!Contacts.canRead(context) && card.kind in setOf(Kind.Call, Kind.Message, Kind.Event)) {
                         OutlineChip(stringResource(R.string.alfred_need_contacts)) { contactsPermission.launch(Manifest.permission.READ_CONTACTS) }
                     }
+                    if (card.kind == Kind.Free) OutlineChip(stringResource(R.string.alfred_ask_online, favorite.name)) { askOnline(favorite) }
                     if (card.chips.isNotEmpty()) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             card.chips.forEach { chip -> OutlineChip(chip.label) { replan(chip.command) } }
@@ -360,9 +433,26 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 }
                 is Phase.Said -> {
                     Header(p.line, Mood.Bow, onSettings = { phase = Phase.Settings })
-                    InputRow(
-                        value = typed, onValue = { typed = it }, onSend = { understand(typed) },
-                        voice = ear.available, onVoice = { voice() },
+                    AskBox(
+                        value = typed, onValue = { typed = it }, hint = stringResource(R.string.alfred_input_hint),
+                        favorite = favorite.name, leftHanded = leftHanded, voice = ear.available, onVoice = { voice() },
+                        onSend = { understand(typed) }, onOnline = { askOnline(favorite) }, onChoose = { phase = Phase.Choose },
+                        onPc = { phase = Phase.Said(context.getString(R.string.alfred_pc_soon)) },
+                    )
+                }
+                Phase.Choose -> ChooseView(
+                    services, question = question().let { if (it.isEmpty()) it else Redactor.redact(it).text }, favorite = favorite,
+                    onFavorite = { services.setPreferred(it); favorite = it },
+                    onPick = { askOnline(it) },
+                    onBack = { phase = Phase.Ready },
+                )
+                is Phase.Answer -> {
+                    Header(stringResource(R.string.alfred_answer_line, p.from), Mood.Bow, onSettings = { phase = Phase.Settings })
+                    AnswerView(
+                        p.text,
+                        onNote = { replan(Command.Note(p.text)) },
+                        onTask = { replan(Command.Task(p.text.lineSequence().first { it.isNotBlank() }.take(90), null, null)) },
+                        onSend = { replan(Command.Message("", p.text, null)) },
                     )
                 }
                 Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural,
@@ -371,6 +461,9 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     onTry = { understand(context.getString(R.string.alfred_try_text)) },
                     onBack = { phase = Phase.Ready })
             }
+        }
+        consentFor?.let { s ->
+            ServiceConsentSheet(PrivacyService.AiOnline, onDismiss = { consentFor = null }, onAccept = { consentFor = null; sendOnline(s) })
         }
     }
 }
