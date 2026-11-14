@@ -37,14 +37,15 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
     carburante col consumo dell'auto; scelta confermata → Il mio viaggio, Calendario, Cose da fare, Note. Fonti da
     verificare prima del codice: Transitous (MOTIS, dati aperti GTFS) per gli orari, tariffe dei pedaggi, nessuna fonte
     libera per i prezzi dei voli (solo collegamento al sito del vettore). Interruttore nel centro privacy.
-- **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe). Voce più «da maggiordomo» (domanda del
-  13 novembre, notte): oggi Riccardo (Piper, italiano neutro); due strade proposte, da scegliere (vedi in fondo).
-- **Tastiera**: lavoro principale dopo Mappe.
-- **Icone**: fatti (14 novembre) icone degli APK (`scripts/icone.py`), simboli nuovi e sfondi nei temi «Eurise» ed «Eurise a
-  colori». Restano: stili iOS, Android, /e/OS; forma a scelta in «Griglia e icone»; iniziale come ripiego; icone di Eurise
-  (simbolo della suite), AI (provvisoria) e Office (del motore).
-- **Privacy**: semaforo a 10 tacchette con la sigla del paese in codice (13 novembre, sera); restano backup, Password,
-  Galleria e le tavole sulla tela.
+- **Alfred**: fatti sveglia (AlfSveglia), voce in Mappe (Voce come motore di sintesi), tre voci (Riccardo, ritoccato,
+  caricate), finestra AI, domande libere subito online. **Aperto, il più importante**: Eurise AI che **risponde sul
+  telefono** (servizio con permesso di firma: domande libere, azioni della suite come funzioni, memoria di Alfred, vedi
+  «Memoria di Alfred» e «Alfred unico»); poi il PC come cervello (col Ponte); classica scaricata per la sveglia.
+- **Tastiera**: lavoro principale dopo Mappe (il proprietario la sta usando: sentire cosa non va).
+- **Icone**: fatti icone degli APK, temi «Eurise» ed «Eurise a colori», stili iOS, Android, /e/OS e forma a scelta
+  (`IconStyles.kt`), Office (B). Restano: simbolo di Eurise e icona di AI (provvisoria).
+- **Privacy**: semaforo a 10 tacchette, servizi spenti di base, foglio del primo avvio. Restano le tavole sulla tela con le
+  tacche vecchie.
 - **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
   registrazione di «Eurise» (proprietario).
 - **Suonerie e sfondo di blocco**: tavole approvate e in codice (14 novembre, sera). Da provare sul telefono; restano: ascoltare
