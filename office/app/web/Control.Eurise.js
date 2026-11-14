@@ -1042,6 +1042,9 @@
 	 * La mappa c'è e window.mode sa già dire che schermo è: nel guscio Linux di Collabora (26.04) window.mode esiste
 	 * prima delle sue funzioni, e il nostro script parte subito dopo bundle.js.
 	 */
+	/** Tappe dell'avvio, lette dalla prova sul computer (window.euriseOffice.trace). */
+	var trace = [];
+
 	function ready() {
 		return !!(window.app && app.map && app.map.on && window.mode && typeof window.mode.isMobile === 'function' &&
 			typeof window.mode.isTablet === 'function' && typeof window.mode.isDesktop === 'function');
@@ -1528,6 +1531,7 @@
 
 	function tabletChrome(docType) {
 		var row = document.getElementById('toolbar-row');
+		trace.push('chrome row=' + !!row);
 		if (!row || document.getElementById('eurise-top')) return;
 		var top = document.createElement('div');
 		top.id = 'eurise-top';
@@ -1582,6 +1586,7 @@
 
 	function setupTablet() {
 		var map = app.map;
+		trace.push('setupTablet');
 		if (!map || !window.mode) return;
 		// Tablet nell'app Android, oppure computer nel guscio Linux di Collabora (coda-qt): stesso nastro (OffTablet,
 		// OffComputer); sul computer la classe eurise-desk regola le misure.
@@ -1590,8 +1595,10 @@
 		if (!desk && !(window.mode.isTablet() && window.ThisIsAMobileApp)) return;
 		document.body.classList.add('eurise-tablet');
 		if (desk) document.body.classList.add('eurise-desk');
+		trace.push(desk ? 'desk' : 'tablet');
 		editAtOnce(map);
 		function build() {
+			trace.push('build ' + map.getDocType());
 			if (isPdf()) { document.body.classList.remove('eurise-tablet'); return; }
 			tabletChrome(map.getDocType());
 		}
@@ -1606,6 +1613,6 @@
 		if (tries > 0) setTimeout(function () { waitForTabletMap(tries - 1); }, 100);
 	})(300);
 
-	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice };
+	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice, trace: trace };
 	if (typeof JSDialog !== 'undefined') JSDialog.EuriseSearch = openSearch;
 })();

@@ -33,7 +33,8 @@ cat > "$DIAG" <<'JS'
 			desktop: !!(m && m.isDesktop && m.isDesktop()), tablet: !!(m && m.isTablet && m.isTablet()),
 			ours: !!window.euriseOffice, map: !!(window.app && window.app.map), doc: !!(window.app && window.app.map && window.app.map._docLayer),
 			body: document.body ? document.body.className : '', top: !!document.getElementById('eurise-top'),
-			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row')
+			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row'),
+			trace: window.euriseOffice ? window.euriseOffice.trace : null
 		}));
 	}
 	window.addEventListener('error', function (e) { console.log('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
