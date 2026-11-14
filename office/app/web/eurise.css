@@ -244,3 +244,178 @@
 #eurise-notice.visible {
 	opacity: 1;
 }
+
+/* --- Telefono: interfaccia Eurise (tavola OffTelefono, Control.Eurise.js) ------------------------------------------- */
+/* L'intestazione Eurise sta nella riga della barra di Collabora (stessa altezza nel calcolo della pagina); il resto della
+   riga, la matita e la barra in basso di Collabora si nascondono. */
+body.eurise-tel #toolbar-row > :not(#eurise-header),
+body.eurise-tel #mobile-edit-button,
+body.eurise-tel #toolbar-down {
+	display: none !important;
+}
+body.eurise-tel #toolbar-row {
+	height: 52px;
+	padding: 0;
+	background: var(--color-main-background);
+}
+#eurise-header {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	width: 100%;
+	height: 52px;
+	padding: 0 6px;
+	box-sizing: border-box;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--color-main-text);
+}
+.eurise-hbtn {
+	flex: none;
+	width: 42px;
+	height: 42px;
+	border: 0;
+	border-radius: 21px;
+	background: transparent;
+	color: inherit;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.eurise-hbtn:active { background: var(--color-background-dark); }
+.eurise-doc {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+.eurise-name {
+	font-size: 15px;
+	font-weight: 800;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.eurise-status {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #3F5E4B;
+}
+.eurise-status.pending { color: var(--color-text-lighter); }
+
+/* Dock in basso, sotto il pollice; il pannello della scheda compare sopra solo quando la si tocca. */
+#eurise-dock {
+	position: fixed;
+	left: 12px;
+	right: 12px;
+	bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+	height: 60px;
+	padding: 0 6px;
+	box-sizing: border-box;
+	border-radius: 30px;
+	background: rgba(255, 255, 255, 0.94);
+	box-shadow: 0 6px 24px rgba(30, 29, 27, 0.14);
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	z-index: 1500;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.eurise-tab {
+	flex: 1;
+	min-width: 0;
+	height: 46px;
+	border: 0;
+	border-radius: 23px;
+	background: transparent;
+	color: #1E1D1B;
+	font: 700 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+.eurise-tab.suite { color: #7A3440; }
+.eurise-tab.suite svg { color: #B8923F; flex: none; }
+.eurise-tab.more { color: #3E5C8A; }
+.eurise-tab.active {
+	background: #1F2A44;
+	color: #FFFFFF;
+	font-weight: 800;
+}
+.eurise-tab.active svg { color: #E9CF8E; }
+#eurise-panel {
+	position: fixed;
+	left: 12px;
+	right: 12px;
+	bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+	min-height: 52px;
+	padding: 6px;
+	box-sizing: border-box;
+	border-radius: 26px;
+	background: rgba(255, 255, 255, 0.97);
+	box-shadow: 0 6px 24px rgba(30, 29, 27, 0.14);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	z-index: 1500;
+}
+#eurise-panel::-webkit-scrollbar { display: none; }
+#eurise-panel.suite { background: #F7EEEF; }
+.eurise-key {
+	flex: none;
+	height: 40px;
+	min-width: 42px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 20px;
+	background: transparent;
+	color: #1E1D1B;
+	font: 700 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	white-space: nowrap;
+}
+.eurise-key.glyph {
+	font-family: Georgia, 'Source Serif 4', serif;
+	font-size: 16px;
+}
+.eurise-key:active { background: #ECECE7; }
+.eurise-key.on {
+	background: #DDE3F0;
+	color: #1F2A44;
+	box-shadow: inset 0 -2px 0 #3E5C8A;
+}
+#eurise-panel.suite .eurise-key {
+	background: #FFFFFF;
+	color: #7A3440;
+}
+#eurise-chooser .eurise-row {
+	display: block;
+	width: 100%;
+	min-height: 48px;
+	padding: 0 14px;
+	border: 0;
+	border-radius: 14px;
+	background: transparent;
+	color: var(--color-main-text);
+	font: 600 15px 'Plus Jakarta Sans', system-ui, sans-serif;
+	text-align: left;
+}
+#eurise-chooser .eurise-row:active { background: var(--color-background-dark); }
+[data-theme='dark'] #eurise-dock,
+[data-theme='dark'] #eurise-panel {
+	background: rgba(34, 40, 51, 0.95);
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .eurise-tab,
+[data-theme='dark'] .eurise-key { color: #E6E9F0; }
+[data-theme='dark'] .eurise-tab.suite,
+[data-theme='dark'] #eurise-panel.suite .eurise-key { color: #DE919A; }
+[data-theme='dark'] .eurise-tab.more { color: #A9C1F2; }
+[data-theme='dark'] .eurise-tab.active { background: #A9C1F2; color: #14203A; }
+[data-theme='dark'] #eurise-panel.suite { background: #2A2128; }
+[data-theme='dark'] #eurise-panel.suite .eurise-key { background: #222833; }
+[data-theme='dark'] .eurise-key.on { background: #2B3A55; color: #E6E9F0; box-shadow: inset 0 -2px 0 #A9C1F2; }
+[data-theme='dark'] .eurise-status { color: #9CC3A8; }

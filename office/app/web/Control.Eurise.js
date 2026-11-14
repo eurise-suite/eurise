@@ -733,6 +733,299 @@
 		box.appendChild(buttons);
 	}
 
+	// --- Telefono: l'interfaccia Eurise al posto di quella di Collabora (tavola OffTelefono) -------------------
+	//
+	// In alto: indietro, nome e stato del salvataggio, ricerca, annulla, condividi (dentro #toolbar-row, così il
+	// documento resta impaginato come Collabora lo calcola). In basso: la dock con le schede del tipo di documento; il
+	// pannello di una scheda compare solo toccandola e si richiude toccandola di nuovo (come nell'editor PDF). Il
+	// documento si apre già modificabile: niente matita. Le barre di Collabora restano nascoste (eurise.css).
+
+	function dispatch(name) { if (app.dispatcher) app.dispatcher.dispatch(name); }
+
+	var SVG = {
+		back: 'M15 6l-6 6 6 6',
+		search: 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14 M16 16l4 4',
+		undo: 'M9 6L4 11l5 5 M4 11h10a6 6 0 0 1 0 12',
+		share: 'M18 4a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5 M6 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5 M18 15a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5 M8.2 10.8l7.6-4.1 M8.2 13.2l7.6 4.1',
+		star: 'M12 2 Q13.2 10.8 22 12 Q13.2 13.2 12 22 Q10.8 13.2 2 12 Q10.8 10.8 12 2Z'
+	};
+
+	function icon(path, size) {
+		return '<svg width="' + (size || 20) + '" height="' + (size || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+			'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + path + '"></path></svg>';
+	}
+
+	/** Voce di un pannello: [etichetta it, en, comando .uno o funzione, segno da mostrare al posto dell'etichetta]. */
+	function k(it, en, run, glyph) { return { label: t(it, en), run: run, glyph: glyph }; }
+
+	var styleMenu = function () {
+		chooser(t('Stile del paragrafo', 'Paragraph style'), [
+			[t('Testo', 'Text'), 'Standard'], [t('Titolo 1', 'Heading 1'), 'Heading 1'],
+			[t('Titolo 2', 'Heading 2'), 'Heading 2'], [t('Titolo 3', 'Heading 3'), 'Heading 3'],
+			[t('Citazione', 'Quotation'), 'Quotations']
+		], function (style) {
+			uno('.uno:StyleApply', { Style: { type: 'string', value: style }, FamilyName: { type: 'string', value: 'ParagraphStyles' } });
+		});
+	};
+
+	var clipboard = [
+		k('Copia', 'Copy', '.uno:Copy'), k('Taglia', 'Cut', '.uno:Cut'), k('Incolla', 'Paste', '.uno:Paste'),
+		k('Tutto', 'Select all', '.uno:SelectAll')
+	];
+	var suite = [
+		k('Detta', 'Dictate', function () { actions['eurise-detta'](); }),
+		k('Traduci', 'Translate', function () { actions['eurise-traduci'](); }),
+		k('Da fare', 'To-do', function () { actions['eurise-dafare'](); }),
+		k('Evento', 'Event', function () { actions['eurise-evento'](); }),
+		k('Note', 'Notes', function () { actions['eurise-note'](); })
+	];
+	function more(extra) {
+		return clipboard.concat(extra || []).concat([
+			k('Trova', 'Find', function () { dispatch('showsearchbar'); }),
+			k('PDF', 'PDF', function () { beforeSharing(); }),
+			k('Stampa', 'Print', function () { dispatch('print'); }),
+			k('Tutte le opzioni', 'All options', function () { dispatch('mobile_wizard'); })
+		]);
+	}
+
+	var DOCKS = {
+		text: [
+			{ id: 'testo', label: t('Testo', 'Text'), keys: [
+				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
+				k('Sottolineato', 'Underline', '.uno:Underline', 'U'), k('Stile', 'Style', styleMenu, t('Titolo ▾', 'Heading ▾')),
+				k('Elenco', 'Bullets', '.uno:DefaultBullet', '•≡'), k('Numeri', 'Numbering', '.uno:DefaultNumbering', '1≡'),
+				k('Centra', 'Center', '.uno:CenterPara', '≡'), k('Evidenzia', 'Highlight', function () { actions['eurise-evidenzia'](); })
+			] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
+				k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
+				k('Tabella', 'Table', function () { uno('.uno:InsertTable', { Columns: { type: 'long', value: 2 }, Rows: { type: 'long', value: 3 } }); }),
+				k('Collegamento', 'Link', function () { dispatch('hyperlinkdialog'); }),
+				k('Commento', 'Comment', function () { dispatch('insertcomment'); }),
+				k('Nuova pagina', 'Page break', '.uno:InsertPagebreak'), k('Data', 'Date', '.uno:InsertDateField'),
+				k('Simbolo', 'Symbol', '.uno:CharmapControl')
+			] },
+			{ id: 'revisione', label: t('Revisione', 'Review'), keys: [
+				k('Traccia modifiche', 'Track changes', '.uno:TrackChanges'), k('Accetta', 'Accept', '.uno:AcceptTrackedChange'),
+				k('Rifiuta', 'Reject', '.uno:RejectTrackedChange'), k('Commento', 'Comment', function () { dispatch('insertcomment'); }),
+				k('Ortografia', 'Spelling', '.uno:SpellingAndGrammarDialog'), k('Conta parole', 'Word count', '.uno:WordCountDialog')
+			] },
+			{ id: 'suite', label: 'Suite', suite: true, keys: suite },
+			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
+		],
+		spreadsheet: [
+			{ id: 'celle', label: t('Celle', 'Cells'), keys: [
+				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
+				k('Somma', 'Sum', '.uno:AutoSum', 'Σ'), k('Euro', 'Currency', '.uno:NumberFormatCurrency', '€'),
+				k('Percento', 'Percent', '.uno:NumberFormatPercent', '%'), k('Unisci', 'Merge', '.uno:ToggleMergeCells'),
+				k('Centra', 'Center', '.uno:AlignHorizontalCenter', '≡'), k('A capo', 'Wrap', '.uno:WrapText')
+			] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
+				k('Riga sopra', 'Row above', '.uno:InsertRowsBefore'), k('Colonna prima', 'Column before', '.uno:InsertColumnsBefore'),
+				k('Elimina riga', 'Delete row', '.uno:DeleteRows'), k('Elimina colonna', 'Delete column', '.uno:DeleteColumns'),
+				k('Grafico', 'Chart', '.uno:InsertObjectChart'), k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
+				k('Commento', 'Comment', function () { dispatch('insertcomment'); }), k('Foglio', 'Sheet', '.uno:Insert')
+			] },
+			{ id: 'dati', label: t('Dati', 'Data'), keys: [
+				k('Ordina A-Z', 'Sort A-Z', '.uno:SortAscending'), k('Ordina Z-A', 'Sort Z-A', '.uno:SortDescending'),
+				k('Filtro', 'Filter', '.uno:DataFilterAutoFilter'), k('Blocca', 'Freeze', '.uno:FreezePanes'),
+				k('Ricalcola', 'Recalculate', '.uno:Calculate')
+			] },
+			{ id: 'suite', label: 'Suite', suite: true, keys: suite.slice(0, 4).concat([
+				k('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }),
+				k('Grafico', 'Chart', function () { actions['eurise-grafico'](); })
+			]) },
+			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
+		],
+		presentation: [
+			{ id: 'diapositiva', label: t('Diapositiva', 'Slide'), keys: [
+				k('Nuova', 'New', '.uno:InsertPage'), k('Duplica', 'Duplicate', '.uno:DuplicatePage'),
+				k('Elimina', 'Delete', '.uno:DeletePage'), k('Presenta', 'Present', function () { dispatch('presentation'); }),
+				k('Dalla corrente', 'From current', function () { dispatch('presentation-currentslide'); })
+			] },
+			{ id: 'testo', label: t('Testo', 'Text'), keys: [
+				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
+				k('Sottolineato', 'Underline', '.uno:Underline', 'U'), k('Più grande', 'Bigger', '.uno:Grow', 'A+'),
+				k('Più piccolo', 'Smaller', '.uno:Shrink', 'A−'), k('Elenco', 'Bullets', '.uno:DefaultBullet', '•≡'),
+				k('Centra', 'Center', '.uno:CenterPara', '≡')
+			] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
+				k('Casella di testo', 'Text box', '.uno:Text'), k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
+				k('Tabella', 'Table', function () { uno('.uno:InsertTable', { Columns: { type: 'long', value: 2 }, Rows: { type: 'long', value: 2 } }); }),
+				k('Forma', 'Shape', '.uno:BasicShapes.rectangle'), k('Commento', 'Comment', function () { dispatch('insertcomment'); })
+			] },
+			{ id: 'suite', label: 'Suite', suite: true, keys: suite },
+			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
+		]
+	};
+	DOCKS.drawing = DOCKS.presentation;
+
+	var phone = { open: null, dock: null, panel: null, saved: true, saveTimer: null };
+
+	function phoneHeader() {
+		var row = document.getElementById('toolbar-row');
+		if (!row || document.getElementById('eurise-header')) return;
+		var h = document.createElement('div');
+		h.id = 'eurise-header';
+		h.innerHTML =
+			'<button type="button" class="eurise-hbtn" data-a="back" aria-label="' + t('Indietro', 'Back') + '">' + icon(SVG.back) + '</button>' +
+			'<span class="eurise-doc"><span class="eurise-name"></span><span class="eurise-status"></span></span>' +
+			'<button type="button" class="eurise-hbtn" data-a="search" aria-label="' + t('Ricerca rapida', 'Quick search') + '">' + icon(SVG.search, 19) + '</button>' +
+			'<button type="button" class="eurise-hbtn" data-a="undo" aria-label="' + t('Annulla', 'Undo') + '">' + icon(SVG.undo, 19) + '</button>' +
+			'<button type="button" class="eurise-hbtn" data-a="share" aria-label="' + t('Condividi', 'Share') + '">' + icon(SVG.share, 19) + '</button>';
+		h.querySelector('.eurise-name').textContent = documentName();
+		h.onclick = function (e) {
+			var b = e.target.closest && e.target.closest('button');
+			if (!b) return;
+			var a = b.getAttribute('data-a');
+			if (a === 'back') {
+				if (window.ThisIsAMobileApp) window.postMobileMessage('BYE'); else dispatch('closemobile');
+			} else if (a === 'search') openSearch();
+			else if (a === 'undo') uno('.uno:Undo');
+			else if (a === 'share') beforeSharing();
+		};
+		row.appendChild(h);
+		status();
+	}
+
+	function status() {
+		var el = document.querySelector('#eurise-header .eurise-status');
+		if (el) el.textContent = phone.saved ? t('Salvato', 'Saved') : t('Modifiche in corso…', 'Editing…');
+		if (el) el.classList.toggle('pending', !phone.saved);
+	}
+
+	/** Salva da sé poco dopo l'ultima modifica: il motore scrive nel file originale (LOActivity, SAVE). */
+	function scheduleSave() {
+		clearTimeout(phone.saveTimer);
+		phone.saveTimer = setTimeout(function () {
+			if (!phone.saved) uno('.uno:Save', { DontTerminateEdit: { type: 'boolean', value: true } });
+		}, 4000);
+	}
+
+	function phoneDock(docType) {
+		if (document.getElementById('eurise-dock')) return;
+		var tabs = DOCKS[docType] || DOCKS.text;
+		var dock = document.createElement('nav');
+		dock.id = 'eurise-dock';
+		dock.setAttribute('aria-label', t('Strumenti', 'Tools'));
+		tabs.forEach(function (tab) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-tab' + (tab.suite ? ' suite' : '') + (tab.more ? ' more' : '');
+			b.innerHTML = (tab.suite ? '<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + SVG.star + '"></path></svg>' : '') +
+				'<span>' + tab.label + '</span>';
+			b.onclick = function () { togglePanel(tab, b); };
+			dock.appendChild(b);
+		});
+		document.body.appendChild(dock);
+		phone.dock = dock;
+	}
+
+	function togglePanel(tab, button) {
+		var same = phone.open === tab.id;
+		closePanel();
+		if (same) return;
+		phone.open = tab.id;
+		button.classList.add('active');
+		var panel = document.createElement('div');
+		panel.id = 'eurise-panel';
+		panel.className = tab.suite ? 'suite' : '';
+		panel.setAttribute('role', 'toolbar');
+		panel.setAttribute('aria-label', tab.label);
+		tab.keys.forEach(function (key) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-key' + (key.glyph ? ' glyph' : '');
+			b.textContent = key.glyph || key.label;
+			b.title = key.label;
+			b.setAttribute('aria-label', key.label);
+			if (typeof key.run === 'string') {
+				b.setAttribute('data-uno', key.run);
+				if (phone.states[key.run] === 'true') b.classList.add('on');
+			}
+			b.onclick = function () {
+				if (typeof key.run === 'string') uno(key.run); else key.run();
+			};
+			panel.appendChild(b);
+		});
+		document.body.appendChild(panel);
+		phone.panel = panel;
+	}
+
+	function closePanel() {
+		phone.open = null;
+		if (phone.panel) phone.panel.remove();
+		phone.panel = null;
+		if (phone.dock) Array.prototype.forEach.call(phone.dock.querySelectorAll('.active'), function (b) { b.classList.remove('active'); });
+	}
+
+	phone.states = {};
+
+	function onState(e) {
+		var name = e.commandName;
+		var state = e.state;
+		if (name === '.uno:ModifiedStatus') {
+			phone.saved = state !== 'true';
+			status();
+			if (!phone.saved) scheduleSave();
+			return;
+		}
+		if (typeof state !== 'string') return;
+		phone.states[name] = state;
+		if (phone.panel) {
+			Array.prototype.forEach.call(phone.panel.querySelectorAll('[data-uno="' + name + '"]'), function (b) {
+				b.classList.toggle('on', state === 'true');
+			});
+		}
+	}
+
+	/** Chi può modificare entra subito in modifica, senza la matita di Collabora. */
+	function editAtOnce(map) {
+		var setPermission = map.setPermission;
+		map.setPermission = function (perm) {
+			setPermission.apply(map, arguments);
+			if (perm === 'edit' && map.isReadOnlyMode && map.isReadOnlyMode() && map._switchToEditMode) {
+				setTimeout(function () { map._switchToEditMode(); }, 0);
+			}
+		};
+	}
+
+	function chooser(title, items, done) {
+		var box = overlay('eurise-chooser');
+		var h = document.createElement('h2');
+		h.textContent = title;
+		box.appendChild(h);
+		items.forEach(function (it) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-row';
+			b.textContent = it[0];
+			b.onclick = function () { closeOverlay(); done(it[1]); };
+			box.appendChild(b);
+		});
+	}
+
+	function setupPhone() {
+		var map = app.map;
+		if (!map || !window.mode || !window.mode.isMobile()) return;
+		document.body.classList.add('eurise-tel');
+		editAtOnce(map);
+		function build() {
+			// Un PDF aperto nel motore ha già le sue schede Annota e Pagine: lì resta l'interfaccia di Collabora.
+			if (isPdf()) { document.body.classList.remove('eurise-tel'); return; }
+			phoneHeader();
+			phoneDock(map.getDocType());
+		}
+		if (map._docLayer) build(); else map.on('doclayerinit', build);
+		map.on('commandstatechanged', onState);
+		// Il pannello si chiude da solo quando si apre un dialogo o il menu di Collabora.
+		map.on('mobilewizard closealldialogs', closePanel);
+	}
+
+	(function waitForMap(tries) {
+		if (window.app && app.map && app.map.on) { setupPhone(); return; }
+		if (tries > 0) setTimeout(function () { waitForMap(tries - 1); }, 100);
+	})(300);
+
 	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice };
 	if (typeof JSDialog !== 'undefined') JSDialog.EuriseSearch = openSearch;
 })();
