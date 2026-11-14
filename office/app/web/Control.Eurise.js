@@ -88,7 +88,12 @@
 
 	function documentName() {
 		var wopi = app.map && app.map['wopi'];
-		return (wopi && wopi.BaseFileName) || '';
+		if (wopi && wopi.BaseFileName) return wopi.BaseFileName;
+		// Nell'app (Android) il file arriva come file_path nell'indirizzo della pagina: il nome è l'ultimo pezzo.
+		var path = '';
+		try { path = new URLSearchParams(window.location.search).get('file_path') || ''; } catch (e) { path = ''; }
+		try { path = decodeURIComponent(path); } catch (e) { /* già decodificato */ }
+		return path.split('/').pop() || '';
 	}
 
 	/** Scrive il testo nel punto del cursore; se c'è una selezione la sostituisce (come quando si digita). */
