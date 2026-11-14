@@ -47,6 +47,8 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
   Galleria e le tavole sulla tela.
 - **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
   registrazione di «Eurise» (proprietario).
+- **Suonerie e sfondo di blocco** (richiesta del 14 novembre, sera; tavole SuoSuonerie, SuoTaglia, SuoRegole, SfoBlocco sulla
+  tela, pagina «Suonerie e sfondo», **da approvare**): vedi la sezione in fondo.
 - In fondo: computer (vedi sotto), Password Famiglia, kDrive (bloccato da Infomaniak).
 
 ## Metodo concordato con il proprietario
@@ -2327,3 +2329,29 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   3. Il PC come cervello (tavola AlfComputer): per ora il tasto dice che arriva col Ponte.
   4. Lumo con l'API ufficiale quando esce; «usa il tuo account» resta la via della finestra AI.
 - **Prossimo passo proposto**: prova sul telefono del giro 516, poi la decisione sul cielo della schermata di guida.
+
+## 14 novembre, sera: suonerie per persona e per app, sfondo sul blocco – tavole da approvare (ramo `brand`)
+- Richiesta del proprietario: suonerie belle e libere, anche musiche famose se possibile; personalizzare chiamate, chat ed
+  email per app e per persona; lo sfondo della Scrivania anche sulla schermata di blocco.
+- **Tavole** (pagina «Suonerie e sfondo»): SuoSuonerie (Chiamate, Messaggi, Email, Altro; suonerie Eurise originali nell'APK,
+  le altre 24 a richiesta; grandi classici con registrazioni libere a richiesta; una canzone dal telefono), SuoTaglia (pezzo
+  della canzone: «Trova il ritornello», durata 10/16/30 s o libera, entra piano, ricomincia senza stacco; il pezzo va nella
+  cartella Suonerie, l'originale non si tocca), SuoRegole (persona > app > generale; WhatsApp e Telegram «suona Eurise»),
+  SfoBlocco (solo Scrivania / anche il blocco / uno diverso; un po' più scuro; segue momento, meteo e feste).
+- **Musica famosa**: le canzoni sotto diritti non si possono mettere nella suite né scaricare da noi; si usano i brani che
+  l'utente ha sul telefono (SuoTaglia). I classici sì, ma servono **registrazioni** libere (pubblico dominio o CC0, es.
+  Musopen), non solo composizioni libere: verificare la licenza di ogni file prima di pubblicarlo.
+- **Come si fa in codice** (dopo l'approvazione):
+  - Chiamate per persona: `ContactsContract.Contacts.CUSTOM_RINGTONE` sul contatto (vale con ogni app Telefono); Eurise
+    Telefono la legge già dal sistema. Messaggi, Email, Chat di Eurise: canale di notifica per persona (o suono scelto al
+    momento) nelle nostre app.
+  - App esterne (WhatsApp, Telegram…): Android non permette di cambiare il suono di un'altra app. Eurise ha già l'ascolto
+    delle notifiche: toglie il suono del canale dell'app (l'utente lo fa una volta da «Togli il suono di…», che apre le
+    impostazioni del canale) e suona al posto suo, riconoscendo la persona dal mittente della notifica. Rispettare sempre
+    modalità silenziosa, vibrazione e Non disturbare (`NotificationListenerService.getCurrentInterruptionFilter`), con
+    eccezione per le persone scelte («suona anche col Non disturbare», solo se l'utente lo accende).
+  - Leggerezza: nell'APK solo poche suonerie piccole (Opus/OGG); il resto a richiesta, come gli altri contenuti pesanti.
+  - Sfondo sul blocco: `WallpaperManager.setBitmap(…, FLAG_LOCK)` (permesso `SET_WALLPAPER`, normale) con la scena di
+    `home/Wallpaper.kt` disegnata su bitmap alla misura dello schermo; si ridisegna solo quando cambia la scena (momento,
+    meteo, festa), con WorkManager, niente servizi. Alcune ROM ignorano lo sfondo di blocco di terze parti: da provare sul
+    telefono del proprietario.
