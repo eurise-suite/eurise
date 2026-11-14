@@ -148,7 +148,7 @@ class AiWindowActivity : ComponentActivity() {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
         webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView, newProgress: Int) { progress = newProgress }
+            override fun onProgressChanged(view: WebView, newProgress: Int) { this@AiWindowActivity.progress = newProgress }
         }
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {

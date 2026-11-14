@@ -63,6 +63,20 @@ public final class EuriseRouteWeather
 
   private EuriseRouteWeather() {}
 
+  /**
+   * Il tempo di adesso per il paesaggio della guida (tavola MapCieli): codice WMO e raffiche in km/h, dal punto in cui si
+   * è o dal primo punto del percorso. Null se il meteo è spento o non è ancora arrivato: allora il cielo segue solo l'ora.
+   */
+  @Nullable
+  public static float[] now()
+  {
+    final Result r = sHere != null ? sHere : sResult;
+    if (r == null || r.code == null || r.code.length == 0)
+      return null;
+    final float gust = r.gusts != null && r.gusts.length > 0 ? r.gusts[0] : 0f;
+    return new float[] {r.code[0], Float.isNaN(gust) ? 0f : gust};
+  }
+
   /** A ogni aggiornamento della guida (thread principale). [line]: la riga sotto la via. */
   public static void update(@Nullable TextView line, @NonNull RoutingInfo info, boolean pedestrian)
   {

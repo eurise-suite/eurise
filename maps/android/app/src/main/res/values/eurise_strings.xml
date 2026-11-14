@@ -162,6 +162,14 @@
         <item>1</item>
         <item>1.4</item>
     </string-array>
+    <string name="eurise_landscape">Sky and seasons</string>
+    <string name="eurise_landscape_summary">In the junction, exit and roundabout window, Android Auto too. All drawn, nothing to download.</string>
+    <string name="eurise_sky_weather">Sky from the weather</string>
+    <string name="eurise_sky_weather_summary">Seven kinds of weather, by day, evening and night: the same weather the guidance already shows, no extra data. Off: time of day only</string>
+    <string name="eurise_seasons">Seasons</string>
+    <string name="eurise_seasons_summary">Grass and trees of spring, summer, autumn, winter</string>
+    <string name="eurise_feasts">Holidays</string>
+    <string name="eurise_feasts_summary">Christmas, New Year, Halloween and the national day of the phone\'s country</string>
     <string name="eurise_speed_tolerance">Speed turns red above the limit by</string>
     <string name="eurise_speed_sound">Sound when going over</string>
     <string name="eurise_limit_notice">Notice when the limit changes</string>

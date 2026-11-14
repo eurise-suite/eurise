@@ -158,6 +158,15 @@
         <item>Normale</item>
         <item>Presto</item>
     </string-array>
+    <!-- Il paesaggio della guida (MapCieli). -->
+    <string name="eurise_landscape">Cielo e stagioni</string>
+    <string name="eurise_landscape_summary">Nel finestrino degli incroci, delle uscite e delle rotonde, anche in Android Auto. Tutto disegnato, niente da scaricare.</string>
+    <string name="eurise_sky_weather">Cielo dal meteo</string>
+    <string name="eurise_sky_weather_summary">Sette tempi, di giorno, di sera e di notte: lo stesso meteo che la guida già mostra, nessun dato in più. Spento: solo l\'ora del giorno</string>
+    <string name="eurise_seasons">Stagioni</string>
+    <string name="eurise_seasons_summary">Prato e alberi di primavera, estate, autunno, inverno</string>
+    <string name="eurise_feasts">Feste</string>
+    <string name="eurise_feasts_summary">Natale, Capodanno, Halloween e la festa nazionale del paese del telefono</string>
     <string name="eurise_speed_tolerance">Velocità in rosso oltre il limite di</string>
     <string name="eurise_speed_sound">Suono quando si supera</string>
     <string name="eurise_limit_notice">Avvisa del limite che cambia</string>

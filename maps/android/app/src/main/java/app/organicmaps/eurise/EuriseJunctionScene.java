@@ -70,6 +70,8 @@ public final class EuriseJunctionScene
      * percorso ([TurnGeometry]). Rotonda: tra l'entrata e l'uscita (NaN: uscite a ventaglio); uscita: la rampa.
      */
     public float turnDeg = Float.NaN;
+    /** Il paesaggio di adesso: cielo dal meteo, stagione, feste (tavola MapCieli). */
+    @NonNull public EuriseLandscape.State land = new EuriseLandscape.State();
 
     Model(@NonNull Kind kind, boolean left, int lanes, int exitNum, float progress, @NonNull String exitRef,
           @NonNull String roadRef, @NonNull String destination, @NonNull String street, @NonNull String current,
@@ -143,7 +145,10 @@ public final class EuriseJunctionScene
       timing = 1f;
     }
     final Model m = from(info, fastRoad, timing);
-    return m != null && p.getBoolean(prefFor(m.kind), true) ? m : null;
+    if (m == null || !p.getBoolean(prefFor(m.kind), true))
+      return null;
+    m.land = EuriseLandscape.now(c);
+    return m;
   }
 
   /**
@@ -278,7 +283,7 @@ public final class EuriseJunctionScene
   private static void drawExit(@NonNull Context c, @NonNull Canvas k, @NonNull Model m, float t)
   {
     final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-    sky(k, p, 0xFF9DBBD8, 0xFFDCE7EF, 106);
+    EuriseLandscape.sky(k, m.land, W, 106, t);
     p.setShader(null);
     p.setColor(0xFFA7B79A);
     k.drawPath(path("M0 92 C60 84 110 88 160 85 C220 82 300 78 390 88 L390 106 L0 106 Z"), p);
@@ -427,13 +432,19 @@ public final class EuriseJunctionScene
   private static void drawTurn(@NonNull Context c, @NonNull Canvas k, @NonNull Model m, float t)
   {
     final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-    sky(k, p, 0xFF4FB3FF, 0xFFC9ECFF, HORIZON + 6);
-    p.setColor(0xFFEDE6F7);
+    final EuriseLandscape.State land = m.land;
+    EuriseLandscape.sky(k, land, W, HORIZON + 6, t);
+    // Gli alberelli oltre i palazzi, poi il prato della stagione.
+    EuriseLandscape.trees(k, land, new float[][] {{14, 72, 7}, {32, 69, 8}, {100, 73, 5}, {116, 74, 5}, {274, 74, 5},
+                                                  {288, 72, 6}, {346, 66, 8}, {368, 70, 7}});
+    final int[] lawn = EuriseLandscape.ground(land);
+    p.setShader(new LinearGradient(0, HORIZON, 0, H, lawn[0], lawn[1], Shader.TileMode.CLAMP));
     k.drawRect(-W, HORIZON, 2 * W, 2 * H, p);
+    p.setShader(null);
     // I palazzi ai lati della strada, con le finestre.
     final float[][] houses = {{-10, 24, 74, 104}, {64, 42, 112, 104}, {278, 32, 330, 104}, {330, 14, 400, 104}};
     final Paint win = new Paint(Paint.ANTI_ALIAS_FLAG);
-    win.setColor(0x99FFFFFF);
+    win.setColor(EuriseLandscape.windows(land));
     for (int i = 0; i < houses.length; i++)
     {
       final float[] h = houses[i];
@@ -453,17 +464,41 @@ public final class EuriseJunctionScene
     k.drawPath(branch(turnDeg, 30, 300), p);
     k.drawPath(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), p);
     p.setShader(null);
+    // Tutta la strada in un pezzo solo: la pioggia, la neve e la grandine non ci cadono mai sopra.
+    final Path road = path("M-30 262 L176 70 L214 70 L420 262 Z");
+    road.op(branch(turnDeg, 30, 300), Path.Op.UNION);
+    road.op(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), Path.Op.UNION);
 
-    // Le strisce pedonali prima dell'incrocio e la mezzeria.
-    p.setColor(0xEBEDEAE2);
-    for (int i = 0; i < 7; i++)
+    // Sera, notte e maltempo scuriscono la scena; segnaletica, percorso e cartello restano chiari.
+    final float shade = EuriseLandscape.shade(land);
+    if (shade > 0)
     {
-      final float x = 104 + i * 28;
-      k.drawRect(x, 176, x + 15, 184, p);
+      p.setColor(0xFF0E1424);
+      p.setAlpha((int) (255 * shade));
+      k.drawRect(-W, -H, 2 * W, 2 * H, p);
+      p.setAlpha(255);
     }
-    final Paint dash = stroke(Color.WHITE, 3.2f);
-    dash.setPathEffect(new DashPathEffect(new float[] {18, 14}, 0));
-    k.drawLine(195, 262, 195, 190, dash);
+
+    // Le strisce pedonali prima dell'incrocio, verso il punto di fuga.
+    p.setColor(0xEBEDEAE2);
+    for (int i = -3; i <= 3; i++)
+    {
+      final float xc = JX + i * 28, wNear = 7.5f, wFar = 7.5f * (176 - HORIZON) / (184 - HORIZON);
+      final float xFar = JX + (xc - JX) * (176 - HORIZON) / (184 - HORIZON);
+      final Path stripe = new Path();
+      stripe.moveTo(xFar - wFar, 176);
+      stripe.lineTo(xFar + wFar, 176);
+      stripe.lineTo(xc + wNear, 184);
+      stripe.lineTo(xc - wNear, 184);
+      stripe.close();
+      k.drawPath(stripe, p);
+    }
+    // La mezzeria in prospettiva: tratti larghi e lunghi vicino, sottili e corti verso l'orizzonte.
+    p.setColor(Color.WHITE);
+    for (float z = 0.95f; HORIZON + 192 / z > 190; z += 0.62f)
+      dash(k, p, z, Math.min(z + 0.32f, 192f / (190 - HORIZON)));
+    for (float z = 3.2f; z < 30; z += 0.62f * z / 1.8f)
+      dash(k, p, z, z + 0.3f * z / 1.8f);
 
     // Il percorso: dalla corsia giusta all'incrocio, poi nella via.
     final float laneX = m.left ? 160 : 252;
@@ -473,43 +508,109 @@ public final class EuriseJunctionScene
     route.lineTo(laneX, 196);
     route.quadTo(laneX, JY + 6, near[0], near[1]);
     route.lineTo(far[0], far[1]);
-    final Paint band = stroke(0xFF2F7BFF, 30);
-    band.setStrokeCap(Paint.Cap.BUTT);
-    band.setAlpha((int) (255 * (0.38f + 0.24f * pulse(t, PULSE))));
-    k.drawPath(route, band);
-
-    // Frecce dipinte che si accendono una dopo l'altra nel verso di marcia, più piccole verso l'orizzonte.
+    // La fascia blu in prospettiva: larga vicino, sempre più stretta verso la via in cui si gira.
     final PathMeasure pm = new PathMeasure(route, false);
     final float len = pm.getLength();
     final float[] pos = new float[2], tan = new float[2];
+    final int steps = 48;
+    final float[] lx = new float[steps + 1], ly = new float[steps + 1], rx = new float[steps + 1], ry = new float[steps + 1];
+    for (int i = 0; i <= steps; i++)
+    {
+      pm.getPosTan(len * i / steps, pos, tan);
+      final float half = bandWidth(pos[1], i / (float) steps) / 2;
+      lx[i] = pos[0] - tan[1] * half;
+      ly[i] = pos[1] + tan[0] * half;
+      rx[i] = pos[0] + tan[1] * half;
+      ry[i] = pos[1] - tan[0] * half;
+    }
+    final Path ribbon = new Path();
+    ribbon.moveTo(lx[0], ly[0]);
+    for (int i = 1; i <= steps; i++)
+      ribbon.lineTo(lx[i], ly[i]);
+    for (int i = steps; i >= 0; i--)
+      ribbon.lineTo(rx[i], ry[i]);
+    ribbon.close();
+    p.setColor(0xFF2F7BFF);
+    p.setAlpha((int) (255 * (0.38f + 0.24f * pulse(t, PULSE))));
+    k.drawPath(ribbon, p);
+    p.setAlpha(255);
+
+    // Frecce dipinte che si accendono una dopo l'altra nel verso di marcia, schiacciate sull'asfalto e più piccole
+    // verso l'orizzonte.
     for (int i = 0; i < 6; i++)
     {
-      pm.getPosTan(len * (0.06f + i * 0.13f), pos, tan);
+      final float f = 0.06f + i * 0.14f;
+      pm.getPosTan(len * f, pos, tan);
       final float on = pulse(t - i * 0.3f, PULSE);
-      final float sc = 0.7f + 0.9f * Math.max(0, (pos[1] - HORIZON) / (H - HORIZON));
-      solidArrow(k, pos[0], pos[1], (float) Math.toDegrees(Math.atan2(tan[1], tan[0])) + 90, sc, 0.3f + 0.7f * on);
+      final float sc = bandWidth(pos[1], f) / 22f;
+      final float flat = pos[1] > JY + 10 ? 0.55f : 0.75f;
+      flatArrow(k, pos[0], pos[1], (float) Math.toDegrees(Math.atan2(tan[1], tan[0])) + 90, sc, flat, 0.3f + 0.7f * on);
     }
+
+    // Pioggia, neve e grandine: sul cielo e sul prato, mai sulla strada.
+    EuriseLandscape.precip(k, land, W, H, t, road);
 
     // Il cartello della via all'angolo, dalla parte della svolta: lampeggia piano.
     if (!m.street.isEmpty())
     {
+      // Più grande, pulsa crescendo un poco e lampeggia in verde (correzione del 14 novembre).
       final Paint txt = new Paint(Paint.ANTI_ALIAS_FLAG);
       txt.setTypeface(Typeface.DEFAULT_BOLD);
-      txt.setTextSize(13);
+      txt.setTextSize(16);
       txt.setColor(0xFF1E1D1B);
-      final float tw = Math.min(150, txt.measureText(m.street) + 18);
-      final float cx = m.left ? 64 : W - 64;
-      final RectF board = new RectF(cx - tw / 2, 102, cx + tw / 2, 124);
+      final float tw = Math.min(170, txt.measureText(m.street) + 22);
+      final float cx = m.left ? 70 : W - 70;
+      final float cy = 112;
       p.setColor(0xFF7C8598);
-      k.drawRect(cx - 1.5f, board.bottom, cx + 1.5f, board.bottom + 44, p);
+      k.drawRect(cx - 2, cy + 16, cx + 2, cy + 64, p);
+      final float grow = 1f + 0.16f * pulse(t, PULSE);
+      k.save();
+      k.scale(grow, grow, cx, cy);
+      final RectF board = new RectF(cx - tw / 2, cy - 16, cx + tw / 2, cy + 16);
       p.setColor(Color.WHITE);
-      k.drawRoundRect(board, 4, 4, p);
-      final Paint border = stroke(0xFF10B981, 3);
-      border.setAlpha((int) (255 * (0.35f + 0.65f * pulse(t, PULSE))));
-      k.drawRoundRect(board, 4, 4, border);
+      k.drawRoundRect(board, 5, 5, p);
+      final Paint border = stroke(0xFF10B981, 3.5f);
+      border.setAlpha((int) (255 * (0.25f + 0.75f * pulse(t, PULSE))));
+      k.drawRoundRect(board, 5, 5, border);
       txt.setTextAlign(Paint.Align.CENTER);
-      text(k, txt, m.street, cx, board.bottom - 6.5f, tw - 12);
+      text(k, txt, m.street, cx, cy + 6, tw - 14);
+      k.restore();
     }
+  }
+
+  /** Un tratto della mezzeria tra le profondità [z1] e [z2] (1 = in basso), largo e lungo vicino, sottile lontano. */
+  private static void dash(@NonNull Canvas k, @NonNull Paint p, float z1, float z2)
+  {
+    final float y1 = HORIZON + 192 / z1, y2 = HORIZON + 192 / z2, w1 = 3.6f / z1, w2 = 3.6f / z2;
+    final Path d = new Path();
+    d.moveTo(JX - w1, y1);
+    d.lineTo(JX + w1, y1);
+    d.lineTo(JX + w2, y2);
+    d.lineTo(JX - w2, y2);
+    d.close();
+    k.drawPath(d, p);
+  }
+
+  /** La larghezza della fascia blu: il 42% della corsia sulla strada, poi più stretta nella via traversa. */
+  private static float bandWidth(float y, float along)
+  {
+    if (y > JY + 10)
+      return Math.max(14, 0.42f * (19 + (y - HORIZON) / 192f * 206));
+    return Math.max(9, 15 - 6 * Math.max(0, along - 0.55f) / 0.45f);
+  }
+
+  /** La freccia dipinta per terra: ruotata nel verso di marcia, poi schiacciata dalla prospettiva. */
+  private static void flatArrow(@NonNull Canvas k, float x, float y, float deg, float scale, float flat, float alpha)
+  {
+    final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+    p.setColor(Color.WHITE);
+    p.setAlpha((int) (255 * Math.max(0, Math.min(1, alpha))));
+    k.save();
+    k.translate(x, y);
+    k.scale(scale, scale * flat);
+    k.rotate(deg);
+    k.drawPath(path("M-10 6 L0 -8 L10 6 L5 6 L0 -1 L-5 6 Z"), p);
+    k.restore();
   }
 
   /** La freccia piena dipinta sull'asfalto, ferma, che si accende con [alpha]. */
@@ -533,7 +634,7 @@ public final class EuriseJunctionScene
   private static void drawRoundabout(@NonNull Context c, @NonNull Canvas k, @NonNull Model m, float t)
   {
     final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-    sky(k, p, 0xFFA9C3DB, 0xFFE1E9EF, 96);
+    EuriseLandscape.sky(k, m.land, W, 96, t);
     p.setShader(null);
     p.setColor(0xFFC9C3B6);
     k.drawRect(10, 56, 80, 96, p);

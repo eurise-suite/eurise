@@ -961,6 +961,33 @@ patch(res / "xml" / "prefs_navigation.xml", """    android:key="eurise_limit_not
       android:summary="@string/eurise_window_arrows_summary"
       android:widgetLayout="@layout/preference_switch"
       app:singleLineTitle="false" />
+  </PreferenceCategory>
+  <PreferenceCategory
+    android:key="eurise_landscape"
+    android:title="@string/eurise_landscape"
+    android:summary="@string/eurise_landscape_summary"
+    app:iconSpaceReserved="false">
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_sky_weather"
+      android:title="@string/eurise_sky_weather"
+      android:summary="@string/eurise_sky_weather_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_seasons"
+      android:title="@string/eurise_seasons"
+      android:summary="@string/eurise_seasons_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_feasts"
+      android:title="@string/eurise_feasts"
+      android:summary="@string/eurise_feasts_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
   </PreferenceCategory>""")
 print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e della rotonda, anche in Android Auto)")
 
