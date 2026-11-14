@@ -2057,6 +2057,13 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
     `Accent.decode` e risponde `light`/`dark` (`color(false/true).toArgb()`) e `name` (`encode()`); `palette` risponde
     nomi (`Accent.Suite/Extra(...).encode()`), etichette, chiari e scuri di CalendarTint (senza Grafite) ed ExtraTint.
     Finché non c'è, Office usa Ottone (l'accento di base della Scrivania) e offre le sette tinte della suite.
+  - Alias: Collabora chiede alcune icone con altri nomi (`iconURLAliases` di LOUtil: incrementindent → leftindent,
+    backgroundcolor → fillcolor, hyperlinkdialog → inserthyperlink…): sono in `ICONS` come rimandi.
+  - Verificato: computer (prova 43613483354; nel foglio la prova passa a Cuoio: barretta della U marrone, nel testo
+    azzurra); telefono con il motore del giro 43613483349 (prova 43616215650): dettagli in Ottone (l'emulatore non ha
+    l'app Eurise), motore vivo dopo 12 s nei tre formati. Consegnati (14 novembre, 16:45 UTC): Office (prova
+    43612114571, con «Colore d'accento delle icone» nelle impostazioni) e motore, **cambiati tutti e due**. Il tablet il
+    proprietario lo prova quando arriva il Volla.
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
