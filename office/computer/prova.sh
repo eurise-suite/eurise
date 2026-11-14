@@ -34,7 +34,9 @@ cat > "$DIAG" <<'JS'
 			ours: !!window.euriseOffice, map: !!(window.app && window.app.map), doc: !!(window.app && window.app.map && window.app.map._docLayer),
 			body: document.body ? document.body.className : '', top: !!document.getElementById('eurise-top'),
 			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row'),
-			trace: window.euriseOffice ? window.euriseOffice.trace : null
+			trace: window.euriseOffice ? window.euriseOffice.trace : null,
+			modeKeys: m ? Object.keys(m).map(function (k) { return k + ':' + typeof m[k]; }) : null,
+			appKeys: window.app ? Object.keys(window.app).slice(0, 60) : null
 		}));
 	}
 	window.addEventListener('error', function (e) { console.log('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
