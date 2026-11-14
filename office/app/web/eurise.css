@@ -674,3 +674,273 @@ body.eurise-tablet[data-theme='dark'] #toolbar-row { background: #171B22; }
 [data-theme='dark'] .eurise-gmore { color: #A8AEBB; }
 [data-theme='dark'] body.eurise-tablet #eurise-header .eurise-hbtn,
 body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9F0 !important; }
+
+/* --- Telefono: i gruppi del nastro come card sopra la dock (tavola OffTelefonoGruppi) ----------------------------- */
+#eurise-panel.groups {
+	left: 0;
+	right: 0;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+	overflow: visible;
+	pointer-events: none;
+}
+#eurise-panel.groups > * { pointer-events: auto; }
+.eurise-gpills {
+	padding: 0 14px;
+	display: flex;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.eurise-gpills::-webkit-scrollbar,
+.eurise-cards::-webkit-scrollbar { display: none; }
+#eurise-panel .eurise-gpill {
+	flex: none;
+	height: 30px;
+	margin: 0 !important;
+	padding: 0 12px;
+	border: 0 !important;
+	border-radius: 15px;
+	background: rgba(255, 255, 255, 0.92) !important;
+	box-shadow: 0 1px 3px rgba(31, 42, 68, 0.1);
+	color: #1E1D1B;
+	font: 600 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	white-space: nowrap;
+}
+#eurise-panel .eurise-gpill.suite { color: #7A3440; }
+#eurise-panel .eurise-gpill.active {
+	background: #1F2A44 !important;
+	color: #FFFFFF;
+	font-weight: 700;
+}
+.eurise-cards {
+	position: relative;
+	padding: 0 12px 4px;
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scroll-padding-left: 12px;
+	scrollbar-width: none;
+}
+/* Spazio a destra perché l'ultima card possa arrivare al bordo sinistro. */
+.eurise-cards::after { content: ''; flex: none; width: 4px; }
+.eurise-card {
+	flex: none;
+	width: min(330px, calc(100vw - 52px));
+	padding: 12px 10px 6px;
+	box-sizing: border-box;
+	border-radius: 22px;
+	background: #FFFFFF;
+	box-shadow: 0 6px 24px rgba(30, 29, 27, 0.14);
+	scroll-snap-align: start;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+.eurise-card.suite { background: #F7EEEF; }
+.eurise-cardkeys {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 2px;
+}
+.eurise-card .eurise-ck,
+.eurise-fontrow .eurise-ck {
+	flex: none;
+	min-width: 38px;
+	height: 44px;
+	margin: 0 !important;
+	padding: 0 3px;
+	border: 0 !important;
+	border-radius: 10px;
+	background: transparent !important;
+	box-shadow: none;
+	color: #1E1D1B;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	font: 600 11.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	line-height: 1.15;
+	text-align: center;
+}
+.eurise-fontrow .eurise-ck { width: 44px; }
+.eurise-card .eurise-ck.big {
+	min-width: 60px;
+	max-width: 92px;
+	height: 64px;
+	padding: 0 6px;
+	white-space: normal;
+}
+.eurise-card .eurise-ck.big.plain {
+	height: 44px;
+	padding: 0 12px;
+	max-width: none;
+	border-radius: 22px;
+	background: #F4F4F1 !important;
+	font-size: 12.5px;
+	font-weight: 700;
+}
+.eurise-card.suite .eurise-ck { color: #7A3440; }
+.eurise-card.suite .eurise-ck.big.plain { background: #FFFFFF !important; }
+.eurise-card .eurise-ck:active { background: #ECECE7 !important; }
+.eurise-card .eurise-ck.on {
+	background: #DDE3F0 !important;
+	color: #1F2A44;
+	box-shadow: inset 0 -2px 0 #3E5C8A;
+}
+.eurise-glyph {
+	font: 18px Georgia, 'Source Serif 4', serif;
+	line-height: 1;
+}
+.eurise-glyph.g-B { font-weight: 700; }
+.eurise-glyph.g-I { font-style: italic; }
+.eurise-glyph.g-U { text-decoration: underline; }
+.eurise-glyph.g-S { text-decoration: line-through; }
+.eurise-glyph.g-x { font-size: 15px; }
+.eurise-swatch {
+	width: 20px;
+	height: 4px;
+	border-radius: 2px;
+	box-shadow: inset 0 0 0 1px rgba(30, 29, 27, 0.08);
+}
+/* Tendine di carattere e dimensione (telefono e tablet). */
+.eurise-fontrow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.eurise-drop {
+	height: 44px;
+	margin: 0 !important;
+	padding: 0 8px 0 12px;
+	box-sizing: border-box;
+	border: 0 !important;
+	border-radius: 12px;
+	background: #F4F4F1 !important;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	color: #1E1D1B;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+	font: 600 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.eurise-drop span {
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.eurise-drop svg { flex: none; }
+.eurise-drop.name { flex: 1; min-width: 0; }
+.eurise-drop.size { width: 74px; flex: none; }
+#eurise-ribbon .eurise-drop {
+	height: 38px;
+	padding: 0 8px 0 10px;
+	border-radius: 9px;
+	font-size: 12.5px;
+}
+#eurise-ribbon .eurise-drop.size { width: 58px; }
+.eurise-fontcol {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 4px;
+}
+.eurise-fontline {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+#eurise-ribbon .eurise-rb.swatched {
+	flex-direction: column;
+	gap: 1px;
+}
+#eurise-ribbon .eurise-rb .eurise-swatch { width: 18px; }
+/* Colori, caratteri e dimensioni: foglio che sale dal basso sul telefono, riquadro al centro sul tablet. */
+.eurise-panel h2 {
+	margin: 2px 6px 12px;
+	font: 800 16px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.eurise-swatches {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+}
+.eurise-sw {
+	min-height: 48px;
+	margin: 0 !important;
+	padding: 0 10px;
+	border: 0 !important;
+	border-radius: 14px;
+	background: var(--color-main-background) !important;
+	color: var(--color-main-text);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: 600 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+	text-align: left;
+}
+.eurise-sw span {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	border-radius: 11px;
+	box-shadow: inset 0 0 0 1px rgba(30, 29, 27, 0.15);
+}
+.eurise-sw.none span {
+	background: linear-gradient(135deg, transparent 45%, #B4441A 45%, #B4441A 55%, transparent 55%) !important;
+}
+.eurise-sw.on { box-shadow: inset 0 0 0 1.5px #3E5C8A; }
+.eurise-fontlist {
+	margin-top: 8px;
+	overflow-y: auto;
+	min-height: 0;
+}
+.eurise-fontlist .eurise-row.on,
+.eurise-size.on {
+	background: #DDE3F0 !important;
+	color: #1F2A44;
+}
+.eurise-wait {
+	margin: 12px;
+	color: var(--color-text-lighter);
+}
+.eurise-sizegrid {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 6px;
+	overflow-y: auto;
+}
+.eurise-size {
+	height: 48px;
+	margin: 0 !important;
+	border: 0 !important;
+	border-radius: 12px;
+	background: var(--color-main-background) !important;
+	color: var(--color-main-text);
+	font: 700 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+[data-theme='dark'] #eurise-panel .eurise-gpill { background: rgba(34, 40, 51, 0.95) !important; color: #E6E9F0; }
+[data-theme='dark'] #eurise-panel .eurise-gpill.active { background: #A9C1F2 !important; color: #14203A; }
+[data-theme='dark'] .eurise-card { background: #222833; color: #E6E9F0; }
+[data-theme='dark'] .eurise-card.suite { background: #2A2128; }
+[data-theme='dark'] .eurise-card .eurise-ck,
+[data-theme='dark'] .eurise-fontrow .eurise-ck { color: #E6E9F0; }
+[data-theme='dark'] .eurise-card.suite .eurise-ck { color: #DE919A; }
+[data-theme='dark'] .eurise-card .eurise-ck.big.plain { background: #1B2029 !important; }
+[data-theme='dark'] .eurise-card .eurise-ck.on { background: #2B3A55 !important; color: #E6E9F0; box-shadow: inset 0 -2px 0 #A9C1F2; }
+[data-theme='dark'] .eurise-drop { background: #1B2029 !important; box-shadow: inset 0 0 0 1px #343B48 !important; color: #E6E9F0; }
+[data-theme='dark'] .eurise-fontlist .eurise-row.on,
+[data-theme='dark'] .eurise-size.on { background: #2B3A55 !important; color: #E6E9F0; }

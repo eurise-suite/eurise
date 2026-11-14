@@ -779,109 +779,7 @@
 			'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + path + '"></path></svg>';
 	}
 
-	/** Voce di un pannello: [etichetta it, en, comando .uno o funzione, segno da mostrare al posto dell'etichetta]. */
-	function k(it, en, run, glyph) { return { label: t(it, en), run: run, glyph: glyph }; }
-
-	var styleMenu = function () {
-		chooser(t('Stile del paragrafo', 'Paragraph style'), [
-			[t('Testo', 'Text'), 'Standard'], [t('Titolo 1', 'Heading 1'), 'Heading 1'],
-			[t('Titolo 2', 'Heading 2'), 'Heading 2'], [t('Titolo 3', 'Heading 3'), 'Heading 3'],
-			[t('Citazione', 'Quotation'), 'Quotations']
-		], function (style) {
-			uno('.uno:StyleApply', { Style: { type: 'string', value: style }, FamilyName: { type: 'string', value: 'ParagraphStyles' } });
-		});
-	};
-
-	var clipboard = [
-		k('Copia', 'Copy', '.uno:Copy'), k('Taglia', 'Cut', '.uno:Cut'), k('Incolla', 'Paste', '.uno:Paste'),
-		k('Tutto', 'Select all', '.uno:SelectAll')
-	];
-	var suite = [
-		k('Detta', 'Dictate', function () { actions['eurise-detta'](); }),
-		k('Traduci', 'Translate', function () { actions['eurise-traduci'](); }),
-		k('Da fare', 'To-do', function () { actions['eurise-dafare'](); }),
-		k('Evento', 'Event', function () { actions['eurise-evento'](); }),
-		k('Note', 'Notes', function () { actions['eurise-note'](); })
-	];
-	function more(extra) {
-		return clipboard.concat(extra || []).concat([
-			k('Trova', 'Find', function () { dispatch('showsearchbar'); }),
-			k('PDF', 'PDF', function () { beforeSharing(); }),
-			k('Stampa', 'Print', function () { dispatch('print'); }),
-			k('Tutte le opzioni', 'All options', function () { dispatch('mobile_wizard'); })
-		]);
-	}
-
-	var DOCKS = {
-		text: [
-			{ id: 'testo', label: t('Testo', 'Text'), keys: [
-				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
-				k('Sottolineato', 'Underline', '.uno:Underline', 'U'), k('Stile', 'Style', styleMenu, t('Titolo ▾', 'Heading ▾')),
-				k('Elenco', 'Bullets', '.uno:DefaultBullet', '•≡'), k('Numeri', 'Numbering', '.uno:DefaultNumbering', '1≡'),
-				k('Centra', 'Center', '.uno:CenterPara', '≡'), k('Evidenzia', 'Highlight', function () { actions['eurise-evidenzia'](); })
-			] },
-			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
-				k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
-				k('Tabella', 'Table', function () { uno('.uno:InsertTable', { Columns: { type: 'long', value: 2 }, Rows: { type: 'long', value: 3 } }); }),
-				k('Collegamento', 'Link', function () { dispatch('hyperlinkdialog'); }),
-				k('Commento', 'Comment', function () { dispatch('insertcomment'); }),
-				k('Nuova pagina', 'Page break', '.uno:InsertPagebreak'), k('Data', 'Date', '.uno:InsertDateField'),
-				k('Simbolo', 'Symbol', '.uno:CharmapControl')
-			] },
-			{ id: 'revisione', label: t('Revisione', 'Review'), keys: [
-				k('Traccia modifiche', 'Track changes', '.uno:TrackChanges'), k('Accetta', 'Accept', '.uno:AcceptTrackedChange'),
-				k('Rifiuta', 'Reject', '.uno:RejectTrackedChange'), k('Commento', 'Comment', function () { dispatch('insertcomment'); }),
-				k('Ortografia', 'Spelling', '.uno:SpellingAndGrammarDialog'), k('Conta parole', 'Word count', '.uno:WordCountDialog')
-			] },
-			{ id: 'suite', label: 'Suite', suite: true, keys: suite },
-			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
-		],
-		spreadsheet: [
-			{ id: 'celle', label: t('Celle', 'Cells'), keys: [
-				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
-				k('Somma', 'Sum', '.uno:AutoSum', 'Σ'), k('Euro', 'Currency', '.uno:NumberFormatCurrency', '€'),
-				k('Percento', 'Percent', '.uno:NumberFormatPercent', '%'), k('Unisci', 'Merge', '.uno:ToggleMergeCells'),
-				k('Centra', 'Center', '.uno:AlignHorizontalCenter', '≡'), k('A capo', 'Wrap', '.uno:WrapText')
-			] },
-			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
-				k('Riga sopra', 'Row above', '.uno:InsertRowsBefore'), k('Colonna prima', 'Column before', '.uno:InsertColumnsBefore'),
-				k('Elimina riga', 'Delete row', '.uno:DeleteRows'), k('Elimina colonna', 'Delete column', '.uno:DeleteColumns'),
-				k('Grafico', 'Chart', '.uno:InsertObjectChart'), k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
-				k('Commento', 'Comment', function () { dispatch('insertcomment'); }), k('Foglio', 'Sheet', '.uno:Insert')
-			] },
-			{ id: 'dati', label: t('Dati', 'Data'), keys: [
-				k('Ordina A-Z', 'Sort A-Z', '.uno:SortAscending'), k('Ordina Z-A', 'Sort Z-A', '.uno:SortDescending'),
-				k('Filtro', 'Filter', '.uno:DataFilterAutoFilter'), k('Blocca', 'Freeze', '.uno:FreezePanes'),
-				k('Ricalcola', 'Recalculate', '.uno:Calculate')
-			] },
-			{ id: 'suite', label: 'Suite', suite: true, keys: suite.slice(0, 4).concat([
-				k('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }),
-				k('Grafico', 'Chart', function () { actions['eurise-grafico'](); })
-			]) },
-			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
-		],
-		presentation: [
-			{ id: 'diapositiva', label: t('Diapositiva', 'Slide'), keys: [
-				k('Nuova', 'New', '.uno:InsertPage'), k('Duplica', 'Duplicate', '.uno:DuplicatePage'),
-				k('Elimina', 'Delete', '.uno:DeletePage'), k('Presenta', 'Present', function () { dispatch('presentation'); }),
-				k('Dalla corrente', 'From current', function () { dispatch('presentation-currentslide'); })
-			] },
-			{ id: 'testo', label: t('Testo', 'Text'), keys: [
-				k('Grassetto', 'Bold', '.uno:Bold', 'B'), k('Corsivo', 'Italic', '.uno:Italic', 'I'),
-				k('Sottolineato', 'Underline', '.uno:Underline', 'U'), k('Più grande', 'Bigger', '.uno:Grow', 'A+'),
-				k('Più piccolo', 'Smaller', '.uno:Shrink', 'A−'), k('Elenco', 'Bullets', '.uno:DefaultBullet', '•≡'),
-				k('Centra', 'Center', '.uno:CenterPara', '≡')
-			] },
-			{ id: 'inserisci', label: t('Inserisci', 'Insert'), keys: [
-				k('Casella di testo', 'Text box', '.uno:Text'), k('Immagine', 'Image', function () { dispatch('localgraphic'); }),
-				k('Tabella', 'Table', function () { uno('.uno:InsertTable', { Columns: { type: 'long', value: 2 }, Rows: { type: 'long', value: 2 } }); }),
-				k('Forma', 'Shape', '.uno:BasicShapes.rectangle'), k('Commento', 'Comment', function () { dispatch('insertcomment'); })
-			] },
-			{ id: 'suite', label: 'Suite', suite: true, keys: suite },
-			{ id: 'altro', label: t('Altro', 'More'), more: true, keys: more() }
-		]
-	};
-	DOCKS.drawing = DOCKS.presentation;
+	// Le schede della dock e i loro gruppi vengono dal nastro del tablet (phoneTabs, più sotto).
 
 	var phone = { open: null, dock: null, panel: null, saved: true, saveTimer: null };
 
@@ -941,7 +839,7 @@
 
 	function phoneDock(docType) {
 		if (document.getElementById('eurise-dock')) return;
-		var tabs = DOCKS[docType] || DOCKS.text;
+		var tabs = phoneTabs(docType);
 		var dock = document.createElement('nav');
 		dock.id = 'eurise-dock';
 		dock.setAttribute('aria-label', t('Strumenti', 'Tools'));
@@ -964,29 +862,104 @@
 		if (same) return;
 		phone.open = tab.id;
 		button.classList.add('active');
+		// Tavola OffTelefonoGruppi: sopra la dock le pastiglie dei gruppi della scheda e, sotto, i gruppi del nastro
+		// come card che scorrono di lato; la card seguente si intravede a destra.
 		var panel = document.createElement('div');
 		panel.id = 'eurise-panel';
-		panel.className = tab.suite ? 'suite' : '';
-		panel.setAttribute('role', 'toolbar');
+		panel.className = 'groups';
+		panel.setAttribute('role', 'dialog');
 		panel.setAttribute('aria-label', tab.label);
-		tab.keys.forEach(function (key) {
-			var b = document.createElement('button');
-			b.type = 'button';
-			b.className = 'eurise-key' + (key.glyph ? ' glyph' : '');
-			b.textContent = key.glyph || key.label;
-			b.title = key.label;
-			b.setAttribute('aria-label', key.label);
-			if (typeof key.run === 'string') {
-				b.setAttribute('data-uno', key.run);
-				if (phone.states[key.run] === 'true') b.classList.add('on');
-			}
-			b.onclick = function () {
-				if (typeof key.run === 'string') uno(key.run); else key.run();
+		var pills = document.createElement('div');
+		pills.className = 'eurise-gpills';
+		pills.setAttribute('role', 'tablist');
+		pills.setAttribute('aria-label', t('Gruppi di ', 'Groups of ') + tab.label);
+		var track = document.createElement('div');
+		track.className = 'eurise-cards';
+		var cards = [];
+		function mark(index) {
+			Array.prototype.forEach.call(pills.children, function (p, i) {
+				p.classList.toggle('active', i === index);
+				p.setAttribute('aria-selected', i === index ? 'true' : 'false');
+			});
+		}
+		tab.groups.forEach(function (group, i) {
+			var card = phoneCard(group);
+			cards.push(card);
+			track.appendChild(card);
+			var pill = document.createElement('button');
+			pill.type = 'button';
+			pill.setAttribute('role', 'tab');
+			pill.className = 'eurise-gpill' + (group.suite ? ' suite' : '');
+			pill.textContent = group.label;
+			pill.onclick = function () {
+				mark(i);
+				track.scrollTo({ left: card.offsetLeft - track.firstChild.offsetLeft, behavior: 'smooth' });
 			};
-			panel.appendChild(b);
+			pills.appendChild(pill);
 		});
+		var ticking = false;
+		track.addEventListener('scroll', function () {
+			if (ticking) return;
+			ticking = true;
+			window.requestAnimationFrame(function () {
+				ticking = false;
+				var base = track.firstChild.offsetLeft;
+				var best = 0;
+				cards.forEach(function (c, i) {
+					if (Math.abs(c.offsetLeft - base - track.scrollLeft) < Math.abs(cards[best].offsetLeft - base - track.scrollLeft)) best = i;
+				});
+				// In fondo l'ultima card non arriva a sinistra: conta come scelta.
+				if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 2) best = cards.length - 1;
+				mark(best);
+			});
+		}, { passive: true });
+		if (tab.groups.length > 1) panel.appendChild(pills);
+		panel.appendChild(track);
 		document.body.appendChild(panel);
 		phone.panel = panel;
+		mark(0);
+	}
+
+	/** Un gruppo del nastro come card del telefono: tendine del carattere in alto, pulsanti da 44, etichetta in basso. */
+	function phoneCard(group) {
+		var card = document.createElement('section');
+		card.className = 'eurise-card' + (group.suite ? ' suite' : '');
+		card.setAttribute('aria-label', group.label);
+		if (group.fonts) card.appendChild(fontRow(true));
+		var keys = document.createElement('div');
+		keys.className = 'eurise-cardkeys';
+		group.items.forEach(function (item) { keys.appendChild(cardButton(item, group.suite)); });
+		card.appendChild(keys);
+		card.appendChild(groupFoot(group));
+		return card;
+	}
+
+	function cardButton(item, inSuite) {
+		var b = document.createElement('button');
+		b.type = 'button';
+		b.title = item.label;
+		b.setAttribute('aria-label', item.label);
+		var picture = item.glyph ? null : commandIcon(item.icon || item.run, 22);
+		var withLabel = item.big || (!picture && !item.glyph);
+		b.className = 'eurise-ck' + (withLabel ? ' big' : '') + (inSuite ? ' suite' : '') + (picture ? '' : ' plain');
+		if (item.glyph) {
+			var glyph = document.createElement('span');
+			glyph.className = 'eurise-glyph g-' + item.glyph.replace(/[^a-z]/gi, '');
+			glyph.textContent = item.glyph;
+			b.appendChild(glyph);
+		} else if (picture) b.appendChild(picture);
+		if (item.swatch) b.appendChild(swatch(item.swatch));
+		if (withLabel) {
+			var span = document.createElement('span');
+			span.textContent = item.label;
+			b.appendChild(span);
+		}
+		if (typeof item.run === 'string') {
+			b.setAttribute('data-uno', item.run);
+			if (phone.states[item.run] === 'true') b.classList.add('on');
+		}
+		b.onclick = function () { if (typeof item.run === 'string') uno(item.run); else item.run(); };
+		return b;
 	}
 
 	function closePanel() {
@@ -1009,6 +982,10 @@
 		}
 		if (typeof state !== 'string') return;
 		phone.states[name] = state;
+		// Carattere e dimensione mostrati nelle tendine (telefono e tablet).
+		Array.prototype.forEach.call(document.querySelectorAll('[data-state="' + name + '"]'), function (el) {
+			el.textContent = shownState(name);
+		});
 		if (phone.panel) {
 			Array.prototype.forEach.call(phone.panel.querySelectorAll('[data-uno="' + name + '"]'), function (b) {
 				b.classList.toggle('on', state === 'true');
@@ -1077,15 +1054,204 @@
 	/** Gruppo: titolo, voci, comando «altre opzioni» (facoltativo). */
 	function g(it, en, items, more) { return { label: t(it, en), items: items, more: more }; }
 
+	/** Il telefono mostra il segno (B, I, x²…) al posto dell'icona del motore. */
+	function glyph(item, text) { item.glyph = text; return item; }
+	/** Voce che esegue una funzione ma prende l'icona di un comando del motore. */
+	function ri(it, en, run, big, iconCommand) { var item = r(it, en, run, big); item.icon = iconCommand; return item; }
+
+	// --- Colori: tinte della suite, comando giusto per ciascun tipo di documento (come Widget.ColorPickerButton) ---
+	var COLORS = {
+		font: [[t('Automatico', 'Automatic'), -1], [t('Nero', 'Black'), 0x1E1D1B], [t('Grafite', 'Graphite'), 0x56564F],
+			[t('Notte', 'Night'), 0x1F2A44], [t('Blu', 'Blue'), 0x3E5C8A], [t('Verde', 'Green'), 0x3F6E52],
+			[t('Mattone', 'Brick'), 0xB4441A], [t('Vino', 'Wine'), 0x7A3440], [t('Ocra', 'Ochre'), 0x8A6A1F]],
+		back: [[t('Nessuno', 'None'), -1], [t('Sabbia', 'Sand'), 0xF2D98B], [t('Cielo', 'Sky'), 0xDDE3F0],
+			[t('Salvia', 'Sage'), 0xCFE3D6], [t('Rosa', 'Rose'), 0xF3D3D8], [t('Pesca', 'Peach'), 0xF6D9C4],
+			[t('Perla', 'Pearl'), 0xE4E3DE], [t('Lavanda', 'Lavender'), 0xE2DCF0], [t('Menta', 'Mint'), 0xD5EEE6]]
+	};
+	var lastColor = { font: 0xB4441A, back: 0xF2D98B };
+
+	function colorCommand(kind) {
+		var type = app.map.getDocType();
+		if (kind === 'back') return type === 'spreadsheet' ? '.uno:BackgroundColor' : '.uno:CharBackColor';
+		return type === 'text' ? '.uno:FontColor' : '.uno:Color';
+	}
+
+	function hex(value) { return value < 0 ? 'transparent' : '#' + ('00000' + value.toString(16)).slice(-6); }
+
+	function swatch(kind) {
+		var bar = document.createElement('span');
+		bar.className = 'eurise-swatch';
+		bar.setAttribute('data-swatch', kind);
+		bar.style.background = hex(lastColor[kind]);
+		return bar;
+	}
+
+	function pickColor(kind) {
+		return function () {
+			var box = overlay('eurise-colors');
+			var h = document.createElement('h2');
+			h.textContent = kind === 'back' ? (app.map.getDocType() === 'spreadsheet' ? t('Riempimento', 'Fill') : t('Evidenzia', 'Highlight')) : t('Colore del testo', 'Font color');
+			box.appendChild(h);
+			var grid = document.createElement('div');
+			grid.className = 'eurise-swatches';
+			COLORS[kind].forEach(function (c) {
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'eurise-sw' + (c[1] < 0 ? ' none' : '') + (c[1] === lastColor[kind] ? ' on' : '');
+				b.innerHTML = '<span></span>';
+				b.firstChild.style.background = hex(c[1]);
+				b.appendChild(document.createTextNode(c[0]));
+				b.onclick = function () {
+					closeOverlay();
+					var command = colorCommand(kind);
+					var params = {};
+					params[command.replace('.uno:', '') + '.Color'] = { type: 'long', value: c[1] };
+					uno(command, params);
+					if (c[1] >= 0) {
+						lastColor[kind] = c[1];
+						Array.prototype.forEach.call(document.querySelectorAll('[data-swatch="' + kind + '"]'), function (el) { el.style.background = hex(c[1]); });
+					}
+				};
+				grid.appendChild(b);
+			});
+			box.appendChild(grid);
+		};
+	}
+
+	function colorItem(it, en, kind, iconCommand) {
+		var item = ri(it, en, pickColor(kind), false, iconCommand);
+		item.swatch = kind;
+		return item;
+	}
+
+	// --- Carattere e dimensione: elenco dei caratteri dal motore (commandvalues), applicati come la barra di Collabora ---
+	var FONT_SIZES = ['6', '7', '8', '9', '10', '10.5', '11', '12', '13', '14', '15', '16', '18', '20', '22', '24', '26', '28',
+		'32', '36', '40', '44', '48', '54', '60', '66', '72', '80', '88', '96'];
+
+	function shownState(name) {
+		var state = phone.states[name] || '';
+		if (name === '.uno:FontHeight') return state && state !== '0' ? state.replace(/\.0$/, '') : '–';
+		return state || t('Carattere', 'Font');
+	}
+
+	function fontNames() {
+		var values = app.map.getToolbarCommandValues ? app.map.getToolbarCommandValues('.uno:CharFontName') : null;
+		if (!values || typeof values !== 'object') return [];
+		return Object.keys(values).filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
+	}
+
+	function chooseFont() {
+		var box = overlay('eurise-fonts');
+		var h = document.createElement('h2');
+		h.textContent = t('Carattere', 'Font');
+		box.appendChild(h);
+		var field = document.createElement('input');
+		field.type = 'search';
+		field.placeholder = t('Cerca un carattere', 'Search a font');
+		field.setAttribute('aria-label', field.placeholder);
+		box.appendChild(field);
+		var list = document.createElement('div');
+		list.className = 'eurise-fontlist';
+		box.appendChild(list);
+		var current = phone.states['.uno:CharFontName'] || '';
+		function render() {
+			var names = fontNames();
+			var q = fold(field.value.trim());
+			list.innerHTML = '';
+			if (!names.length) {
+				var wait = document.createElement('p');
+				wait.className = 'eurise-wait';
+				wait.textContent = t('Carico i caratteri…', 'Loading fonts…');
+				list.appendChild(wait);
+				return;
+			}
+			names.filter(function (n) { return !q || fold(n).indexOf(q) >= 0; }).slice(0, 300).forEach(function (name) {
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'eurise-row' + (name === current ? ' on' : '');
+				b.textContent = name;
+				b.onclick = function () { closeOverlay(); app.map.applyFont(name); };
+				list.appendChild(b);
+			});
+		}
+		field.oninput = render;
+		render();
+		if (!fontNames().length) {
+			app.map.once('updatetoolbarcommandvalues', render);
+			if (app.socket && app.socket.sendMessage) app.socket.sendMessage('commandvalues command=.uno:CharFontName');
+		}
+	}
+
+	function chooseSize() {
+		var box = overlay('eurise-sizes');
+		var h = document.createElement('h2');
+		h.textContent = t('Dimensione', 'Size');
+		box.appendChild(h);
+		var grid = document.createElement('div');
+		grid.className = 'eurise-sizegrid';
+		var current = shownState('.uno:FontHeight');
+		FONT_SIZES.forEach(function (size) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-size' + (size === current ? ' on' : '');
+			b.textContent = size;
+			b.onclick = function () { closeOverlay(); app.map.applyFontSize(size); };
+			grid.appendChild(b);
+		});
+		box.appendChild(grid);
+	}
+
+	function clearFormatting() {
+		var type = app.map.getDocType();
+		uno(type === 'presentation' || type === 'drawing' ? '.uno:SetDefault' : '.uno:ResetAttributes');
+	}
+
+	var DROP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>';
+
+	/** Tendine di carattere e dimensione; sul telefono anche «Togli la formattazione». */
+	function fontRow(onPhone) {
+		var row = document.createElement('div');
+		row.className = 'eurise-fontrow';
+		function drop(cls, command, label, run) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-drop ' + cls;
+			b.setAttribute('aria-label', label);
+			b.title = label;
+			b.innerHTML = '<span data-state="' + command + '"></span>' + DROP;
+			b.firstChild.textContent = shownState(command);
+			b.onclick = run;
+			row.appendChild(b);
+		}
+		drop('name', '.uno:CharFontName', t('Carattere', 'Font'), chooseFont);
+		drop('size', '.uno:FontHeight', t('Dimensione', 'Size'), chooseSize);
+		if (onPhone) {
+			var clear = document.createElement('button');
+			clear.type = 'button';
+			clear.className = 'eurise-ck';
+			clear.title = t('Togli la formattazione', 'Clear formatting');
+			clear.setAttribute('aria-label', clear.title);
+			clear.innerHTML = icon('M5 19L11 5l4 9 M15 15l5 5 M20 15l-5 5', 20);
+			clear.onclick = clearFormatting;
+			row.appendChild(clear);
+		}
+		return row;
+	}
+
 	var style = function (name) {
 		return function () { uno('.uno:StyleApply', { Style: { type: 'string', value: name }, FamilyName: { type: 'string', value: 'ParagraphStyles' } }); };
 	};
 	var APPUNTI = g('Appunti', 'Clipboard', [r('Incolla', 'Paste', '.uno:Paste', 'big'), r('Taglia', 'Cut', '.uno:Cut'),
 		r('Copia', 'Copy', '.uno:Copy'), r('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush')]);
-	var CARATTERE = g('Carattere', 'Font', [r('Grassetto', 'Bold', '.uno:Bold'), r('Corsivo', 'Italic', '.uno:Italic'),
-		r('Sottolineato', 'Underline', '.uno:Underline'), r('Barrato', 'Strikethrough', '.uno:Strikeout'),
-		r('Più grande', 'Grow', '.uno:Grow'), r('Più piccolo', 'Shrink', '.uno:Shrink'),
-		r('Colore del testo', 'Font color', '.uno:Color'), r('Evidenzia', 'Highlight', '.uno:CharBackColor')], '.uno:FontDialog');
+	var CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
+		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
+		glyph(r('Apice', 'Superscript', '.uno:SuperScript'), 'x²'), glyph(r('Pedice', 'Subscript', '.uno:SubScript'), 'x₂'),
+		colorItem('Colore del testo', 'Font color', 'font', '.uno:Color'), colorItem('Evidenzia', 'Highlight', 'back', '.uno:CharBackColor')], '.uno:FontDialog');
+	CARATTERE.fonts = true;
+	var STILI = g('Stili', 'Styles', [r('Testo', 'Text', style('Standard'), 'big'), r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'),
+		r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]);
+	var DIAPOSITIVE = g('Diapositive', 'Slides', [r('Nuova', 'New', '.uno:InsertPage', 'big'), r('Duplica', 'Duplicate', '.uno:DuplicatePage'),
+		r('Elimina', 'Delete', '.uno:DeletePage')]);
 	var PARAGRAFO = g('Paragrafo', 'Paragraph', [r('Elenco', 'Bullets', '.uno:DefaultBullet'), r('Numeri', 'Numbering', '.uno:DefaultNumbering'),
 		r('A sinistra', 'Left', '.uno:LeftPara'), r('Al centro', 'Center', '.uno:CenterPara'), r('A destra', 'Right', '.uno:RightPara'),
 		r('Giustificato', 'Justified', '.uno:JustifyPara'), r('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'),
@@ -1103,11 +1269,19 @@
 	var VISTA = g('Zoom', 'Zoom', [r('Ingrandisci', 'Zoom in', '.uno:ZoomPlus'), r('Riduci', 'Zoom out', '.uno:ZoomMinus'),
 		r('Schermo intero', 'Full screen', '.uno:FullScreen')]);
 
+	var SUITE_FOGLIO = g('Suite', 'Suite', SUITE.items.concat([
+		r('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }, 'big'),
+		r('Grafico', 'Chart', function () { actions['eurise-grafico'](); }, 'big')]));
+	SUITE_FOGLIO.suite = true;
+	var CELLE_CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
+		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
+		colorItem('Colore del testo', 'Font color', 'font', '.uno:Color'), colorItem('Riempimento', 'Fill', 'back', '.uno:BackgroundColor')], '.uno:FontDialog');
+	CELLE_CARATTERE.fonts = true;
+
 	var RIBBONS = {
 		text: [
 			{ id: 'home', label: 'Home', groups: [APPUNTI, CARATTERE, PARAGRAFO,
-				g('Stili', 'Styles', [r('Testo', 'Text', style('Standard'), 'big'), r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'),
-					r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]),
+				STILI,
 				g('Modifica', 'Editing', [r('Trova e sostituisci', 'Find & replace', '.uno:SearchDialog', 'big')])] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Tabelle e immagini', 'Tables and images', [TABELLA, IMMAGINE, r('Grafico', 'Chart', '.uno:InsertObjectChart', 'big'),
@@ -1132,8 +1306,7 @@
 		],
 		spreadsheet: [
 			{ id: 'celle', label: t('Celle', 'Cells'), groups: [APPUNTI,
-				g('Carattere', 'Font', [r('Grassetto', 'Bold', '.uno:Bold'), r('Corsivo', 'Italic', '.uno:Italic'), r('Sottolineato', 'Underline', '.uno:Underline'),
-					r('Colore del testo', 'Font color', '.uno:Color'), r('Riempimento', 'Fill', '.uno:BackgroundColor')], '.uno:FontDialog'),
+				CELLE_CARATTERE,
 				g('Allineamento', 'Alignment', [r('A sinistra', 'Left', '.uno:AlignLeft'), r('Al centro', 'Center', '.uno:AlignHorizontalCenter'),
 					r('A destra', 'Right', '.uno:AlignRight'), r('Testo a capo', 'Wrap', '.uno:WrapText'),
 					r('Unisci le celle', 'Merge', '.uno:ToggleMergeCells'), r('Bordi', 'Borders', '.uno:SetBorderStyle')], '.uno:FormatCellDialog'),
@@ -1164,14 +1337,11 @@
 			{ id: 'vista', label: t('Vista', 'View'), groups: [VISTA,
 				g('Mostra', 'Show', [r('Blocca righe e colonne', 'Freeze', '.uno:FreezePanes', 'big'), r('Griglia', 'Grid', '.uno:ToggleSheetGrid'),
 					r('Intestazioni', 'Headers', '.uno:ViewRowColumnHeaders')])] },
-			{ id: 'suite', label: 'Suite', suite: true, groups: [g('Suite', 'Suite', SUITE.items.concat([
-				r('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }, 'big'),
-				r('Grafico', 'Chart', function () { actions['eurise-grafico'](); }, 'big')]))] }
+			{ id: 'suite', label: 'Suite', suite: true, groups: [SUITE_FOGLIO] }
 		],
 		presentation: [
 			{ id: 'home', label: 'Home', groups: [APPUNTI,
-				g('Diapositive', 'Slides', [r('Nuova', 'New', '.uno:InsertPage', 'big'), r('Duplica', 'Duplicate', '.uno:DuplicatePage'),
-					r('Elimina', 'Delete', '.uno:DeletePage')]), CARATTERE, PARAGRAFO] },
+				DIAPOSITIVE, CARATTERE, PARAGRAFO] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Oggetti', 'Objects', [r('Casella di testo', 'Text box', '.uno:Text', 'big'), IMMAGINE, TABELLA,
 					r('Forma', 'Shape', '.uno:BasicShapes.rectangle', 'big'), r('Grafico', 'Chart', '.uno:InsertObjectChart', 'big')]),
@@ -1211,8 +1381,9 @@
 		b.className = 'eurise-rb' + (item.big ? ' big' : '') + (inSuite ? ' suite' : '');
 		b.title = item.label;
 		b.setAttribute('aria-label', item.label);
-		var icon = commandIcon(item.run, item.big ? 26 : 18);
+		var icon = commandIcon(item.icon || item.run, item.big ? 26 : 18);
 		if (icon) b.appendChild(icon);
+		if (item.swatch) { b.classList.add('swatched'); b.appendChild(swatch(item.swatch)); }
 		if (item.big || !icon) {
 			var span = document.createElement('span');
 			span.textContent = item.label;
@@ -1239,32 +1410,99 @@
 			sec.setAttribute('aria-label', group.label);
 			var body = document.createElement('div');
 			body.className = 'eurise-gbody';
-			var smalls = null;
-			group.items.forEach(function (item) {
-				if (item.big) { smalls = null; body.appendChild(ribbonButton(item, group.suite)); return; }
-				// Le voci piccole stanno in griglia su due righe, come nella tavola.
-				if (!smalls) { smalls = document.createElement('div'); smalls.className = 'eurise-smalls'; body.appendChild(smalls); }
-				smalls.appendChild(ribbonButton(item, group.suite));
-			});
-			sec.appendChild(body);
-			var foot = document.createElement('div');
-			foot.className = 'eurise-gfoot';
-			var label = document.createElement('span');
-			label.textContent = group.label;
-			foot.appendChild(label);
-			if (group.more) {
-				var more = document.createElement('button');
-				more.type = 'button';
-				more.className = 'eurise-gmore';
-				more.title = t('Altre opzioni di ', 'More options: ') + group.label;
-				more.setAttribute('aria-label', more.title);
-				more.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9L9 3 M5 3h4v4"></path></svg>';
-				more.onclick = function () { uno(group.more); };
-				foot.appendChild(more);
+			if (group.fonts) {
+				// Carattere: tendine sopra, una fila di pulsanti sotto (tavola OffTablet).
+				var column = document.createElement('div');
+				column.className = 'eurise-fontcol';
+				column.appendChild(fontRow(false));
+				var line = document.createElement('div');
+				line.className = 'eurise-fontline';
+				group.items.forEach(function (item) { line.appendChild(ribbonButton(item, group.suite)); });
+				column.appendChild(line);
+				body.appendChild(column);
+			} else {
+				var smalls = null;
+				group.items.forEach(function (item) {
+					if (item.big) { smalls = null; body.appendChild(ribbonButton(item, group.suite)); return; }
+					// Le voci piccole stanno in griglia su due righe, come nella tavola.
+					if (!smalls) { smalls = document.createElement('div'); smalls.className = 'eurise-smalls'; body.appendChild(smalls); }
+					smalls.appendChild(ribbonButton(item, group.suite));
+				});
 			}
-			sec.appendChild(foot);
+			sec.appendChild(body);
+			sec.appendChild(groupFoot(group));
 			el.appendChild(sec);
 		});
+	}
+
+	/** Etichetta del gruppo in basso, con «altre opzioni» se il gruppo ha un dialogo completo. */
+	function groupFoot(group) {
+		var foot = document.createElement('div');
+		foot.className = 'eurise-gfoot';
+		if (group.suite) foot.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="#B8923F" d="' + SVG.star + '"></path></svg>';
+		var label = document.createElement('span');
+		label.textContent = group.label;
+		foot.appendChild(label);
+		if (group.more) {
+			var more = document.createElement('button');
+			more.type = 'button';
+			more.className = 'eurise-gmore';
+			more.title = t('Altre opzioni di ', 'More options: ') + group.label;
+			more.setAttribute('aria-label', more.title);
+			more.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9L9 3 M5 3h4v4"></path></svg>';
+			more.onclick = function () { uno(group.more); };
+			foot.appendChild(more);
+		}
+		return foot;
+	}
+
+	// --- Telefono: le schede della dock prendono i gruppi del nastro (tavola OffTelefonoGruppi) ---------------------
+
+	function tabGroups(docType, id) {
+		var tabs = RIBBONS[docType] || RIBBONS.text;
+		for (var i = 0; i < tabs.length; i++) if (tabs[i].id === id) return tabs[i].groups;
+		return [];
+	}
+
+	var DOCUMENTO = g('Documento', 'Document', [
+		ri('Trova', 'Find', function () { dispatch('showsearchbar'); }, 'big', '.uno:SearchDialog'),
+		ri('PDF', 'PDF', function () { beforeSharing(); }, 'big', '.uno:ExportToPDF'),
+		ri('Stampa', 'Print', function () { dispatch('print'); }, 'big', '.uno:Print'),
+		ri('Salva', 'Save', function () { saveNow(false); }, 'big', '.uno:Save'),
+		r('Tutte le opzioni', 'All options', function () { dispatch('mobile_wizard'); }, 'big')]);
+
+	/** Schede della dock del telefono: ciascuna con i suoi gruppi del nastro, nell'ordine della tavola. */
+	function phoneTabs(docType) {
+		var tab = function (id, label, groups, extra) {
+			var out = { id: id, label: label, groups: groups };
+			if (extra) out[extra] = true;
+			return out;
+		};
+		if (docType === 'spreadsheet') {
+			return [
+				tab('celle', t('Celle', 'Cells'), tabGroups('spreadsheet', 'celle').filter(function (gr) { return !gr.suite; })),
+				tab('inserisci', t('Inserisci', 'Insert'), tabGroups('spreadsheet', 'inserisci')),
+				tab('dati', t('Dati', 'Data'), tabGroups('spreadsheet', 'formule').concat(tabGroups('spreadsheet', 'dati'))),
+				tab('suite', 'Suite', tabGroups('spreadsheet', 'suite'), 'suite'),
+				tab('altro', t('Altro', 'More'), tabGroups('spreadsheet', 'revisione').concat(tabGroups('spreadsheet', 'vista'), [DOCUMENTO]), 'more')
+			];
+		}
+		if (docType === 'presentation' || docType === 'drawing') {
+			return [
+				tab('diapositiva', t('Diapositiva', 'Slide'), [DIAPOSITIVE].concat(tabGroups('presentation', 'presenta'))),
+				tab('testo', t('Testo', 'Text'), [CARATTERE, PARAGRAFO, APPUNTI]),
+				tab('inserisci', t('Inserisci', 'Insert'), tabGroups('presentation', 'inserisci')),
+				tab('suite', 'Suite', tabGroups('presentation', 'suite'), 'suite'),
+				tab('altro', t('Altro', 'More'), tabGroups('presentation', 'vista').concat([DOCUMENTO]), 'more')
+			];
+		}
+		return [
+			tab('testo', t('Testo', 'Text'), [CARATTERE, PARAGRAFO, STILI, APPUNTI]),
+			tab('inserisci', t('Inserisci', 'Insert'), tabGroups('text', 'inserisci')),
+			tab('revisione', t('Revisione', 'Review'), tabGroups('text', 'revisione')),
+			tab('suite', 'Suite', tabGroups('text', 'suite'), 'suite'),
+			tab('altro', t('Altro', 'More'), tabGroups('text', 'layout').concat(tabGroups('text', 'vista'), [DOCUMENTO]), 'more')
+		];
 	}
 
 	function fileMenu() {
