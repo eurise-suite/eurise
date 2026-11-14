@@ -2298,3 +2298,12 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   sorveglianza), Mistral (API UE, 30 giorni di conservazione contro gli abusi salvo ZDR su richiesta, Large 4 a 38
   sull'indice di Artificial Analysis). Proposta: scelta fra tutte e tre col conto Eurise e l'inoltro; Lumo quando l'API
   è pubblica. Decisione del proprietario in sospeso.
+- **Alfred, AI online decisa (14 novembre)**: niente conto Eurise né inoltro. Il globo apre la **finestra AI** di Eurise
+  (WebView dell'app principale, base `WebPopupActivity`) sul servizio preferito col **suo account**: domanda già ripulita e
+  inserita nel campo da uno script, Invio all'utente, «Porta ad Alfred» per riprendere la risposta (poi in automatico, servizio
+  per servizio); ripiego: testo copiato e avviso. Servizi: Lumo (8), Euria (7), Le Chat (6, avviso sull'addestramento acceso di
+  base), «Aggiungi» da app (condivisione testo) o da indirizzo web; servizi chiusi in fondo. Google non permette l'accesso dentro
+  le WebView: chi usa Google per Le Chat entra con l'email o apre nel browser.
+- **Tavole nuove da approvare (pagina AI)**: AlfUnico (destrimano) e AlfUnicoMancino: tre tasti larghi 68 px, PC · online
+  (col preferito e la stellina) · Invio sotto il pollice; AlfScegli (pressione lunga sul globo), AlfFinestra, AlfRisposta.
+  AlfDove aggiornata (Lumo preferito). **Regola d'ergonomia** aggiunta in CLAUDE.md.

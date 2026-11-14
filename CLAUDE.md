@@ -94,6 +94,13 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - Database: indici sulle colonne filtrate; conteggi con query, non leggendo tutto; migrazioni senza perdita di dati.
 - Qualità: la logica che si può provare senza telefono (lettori, calcoli, formati) ha i suoi test.
 
+## Ergonomia (regola fissa, 14 novembre 2026)
+- I comandi usati spesso stanno dal lato della mano dominante: a destra per i destrimani, a sinistra per i mancini
+  (impostazione «mano» già usata dalla ricerca); il comando principale sotto il pollice, il più usato dopo subito accanto.
+- Tasti dello stesso gruppo della stessa larghezza.
+- Tocco breve = l'opzione preferita; pressione lunga = l'elenco delle opzioni, con la stellina per scegliere il preferito
+  e «Aggiungi» (da un'app installata o dal web) dove ha senso. Vale ovunque ci sia una scelta di servizio.
+
 ## Stile (deciso il 7 novembre 2026)
 - Tema chiaro Perla, tema scuro Notte (blu-grafite, accento azzurro).
 - Barra delle sezioni flottante e satinata con il pulsante + satinato accanto; la sezione attiva si riconosce
