@@ -43,6 +43,8 @@ cat > "$DIAG" <<'JS'
 			ribbon: !!document.getElementById('eurise-ribbon'), row: !!document.getElementById('toolbar-row'),
 			trace: window.euriseOffice ? window.euriseOffice.trace : null,
 			missingIcons: window.euriseOffice && window.euriseOffice.missingIcons ? Object.keys(window.euriseOffice.missingIcons) : null,
+			ui: window.app && window.app.UI ? Object.keys(window.app.UI) : null,
+			rulerPref: (function () { try { return window.app.map.uiManager.getBooleanDocTypePref('ShowRuler', null); } catch (e) { return String(e); } })(),
 			rulers: { v: !!document.getElementById('vertical-ruler'), vShown: !!(document.getElementById('vertical-ruler') && document.getElementById('vertical-ruler').offsetParent) },
 			modeKeys: m ? Object.keys(m).map(function (k) { return k + ':' + typeof m[k]; }) : null,
 			appKeys: window.app ? Object.keys(window.app).slice(0, 60) : null
@@ -155,6 +157,9 @@ for COOL in $(find "$FILES" -name 'bundle.js' -path '*dist*' | head -1); do
 	grep -o '.\{0,300\}short tour.\{0,300\}' "$COOL" | head -3 > "$OUT/giro-guidato.txt"
 	grep -o '.\{0,200\}[Tt]our[A-Za-z]*[Ss]een.\{0,200\}' "$COOL" | head -5 >> "$OUT/giro-guidato.txt"
 	grep -rl "short tour" "$(dirname "$COOL")" | sed "s|^$FILES||" >> "$OUT/giro-guidato.txt"
+	# Come la 26.04 colora le icone (classe icon-maskable).
+	echo "--- icon-maskable" >> "$OUT/giro-guidato.txt"
+	grep -oh '.\{0,250\}icon-maskable.\{0,350\}' "$(dirname "$COOL")"/*.css "$COOL" | head -12 >> "$OUT/giro-guidato.txt"
 done
 
 apri lettera.docx

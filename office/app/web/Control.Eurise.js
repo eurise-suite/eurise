@@ -1971,6 +1971,7 @@
 		(function tryRulers(tries) {
 			var ui = app.map.uiManager;
 			var vertical = app.UI && app.UI.verticalRuler;
+			if (ui && !vertical && tries === 20 && ui.showRuler) { trace.push('showRuler'); ui.showRuler(); }
 			if (!ui || !vertical) {
 				if (tries > 0) setTimeout(function () { tryRulers(tries - 1); }, 500);
 				return;
@@ -2032,6 +2033,8 @@
 			document.body.classList.add('eurise-desk');
 			// Il giro guidato della 26.04 parte solo se questa preferenza manca (Control.UIManager, onboardingTourSeen).
 			try { map.uiManager.setDocTypePref('onboardingTourSeen', true); } catch (e) { trace.push('tour pref ' + e); }
+			// Righelli: Collabora li crea all'apertura solo se la preferenza ShowRuler è accesa.
+			try { if (!map.uiManager.getBooleanDocTypePref('ShowRuler', false)) map.uiManager.setDocTypePref('ShowRuler', true); } catch (e) { trace.push('ruler pref ' + e); }
 			skipTour();
 		}
 		trace.push(desk ? 'desk' : 'tablet');
