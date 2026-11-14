@@ -1997,7 +1997,34 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
 - Il resto come proposto: giro guidato di Collabora spento, icone della Suite (cartella immagini della 26.04),
   interfaccia in italiano nella prova; poi il guscio nostro e il Flatpak Eurise.
 
-**Prossimo passo**: il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
+**14 novembre, pomeriggio: indicazioni applicate al prototipo del computer (nuova chat)**
+- Tutto nel codice condiviso dietro la classe `eurise-desk` (solo guscio Qt): telefono e tablet non cambiano.
+- **Una riga sola** (`#eurise-header.desk`): File, schede, poi annulla/ripeti, Cerca un comando (Ctrl K), stato con la
+  cartella («Salvato · Documents») e Condividi. Il nome del documento sta nel titolo della finestra (poi nella scheda
+  del guscio).
+- **Nastro compatto** (alto ~90 px invece di ~120, con l'intestazione ~140 px invece di ~230): voci piccole da 32×30,
+  grandi da 62; voci piccole **con il nome** dove la tavola lo mostra (`lab()`: Taglia, Copia, Formato, Trova,
+  Sostituisci, Collegamento, Da fare, Evento, Note, Viaggio, Grafico); **stili come tessere «Aa»** (Testo, Titolo 1,
+  Titolo 2 + «tutti gli stili» = pannello Stili); **gruppo Suite stretto** con icone nostre (`SUITE_ICONS`, SVG nel
+  codice: niente cartella delle immagini) e presente anche in Home (`SUITE_HOME`, solo computer). Voci e nomi diversi
+  sul computer: `deskItems`, `deskLabel`, `deskOnly`, `deskMore`.
+- **Colonna Properties di Collabora tenuta e ridisegnata** (`#sidebar-dock-wrapper` 344 px, Perla; ogni pannello
+  `.ui-expander-container` un'isola bianca; titolo «Proprietà» piccolo in maiuscoletto; tendine, campi e pulsanti come
+  il nastro). In cima, come sezioni sue (`#eurise-sidebox`, richiudibili): **Struttura** = il Navigatore del motore
+  (`#navigator-panel` spostato lì, aperto con `.uno:Navigator`; categorie vuote nascoste: titoli nel testo, fogli nel
+  foglio di calcolo), **Collegato a** (per ora «Nessun collegamento»: i dati arrivano con il guscio) e **In Eurise
+  File** (cartella del file). **Niente colonna a sinistra**, tranne le diapositive nelle presentazioni (da confermare).
+- **Giro guidato** spento con la preferenza di Collabora `onboardingTourSeen` (Control.UIManager) più il salto
+  automatico come riserva. **Italiano** nella prova (`flatpak config languages it;en`, LANG); la pagina del guscio non
+  ha un carattere senza grazie di base: lo diamo noi ai riquadri.
+- Prova: 6 schermate buone (prova 43602581077). Nella 26.04 `console.log` non arriva al registro: la diagnosi passa
+  da `app.console.log` (righe `EURISE-DIAG` ed `EURISE-DOM` con la struttura delle colonne e le altezze).
+- Riferimenti nel sorgente di Collabora: il ramo 26.04 non è pubblico; per il DOM della barra laterale e del Navigatore
+  basta il tag `coda-25.04.9.2-2` di CollaboraOnline/online (Control.SidebarBase.ts, Control.NavigatorPanel.ts,
+  jssidebar.css); il resto si legge da `bundle.js` del pacchetto Flathub (lo fa prova.sh in `giro-guidato.txt`).
+
+**Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
+Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
 `office-computer-schermate`), poi il guscio nostro e il Flatpak; al prossimo giro del motore Android provarlo su
 telefono e tablet (codice condiviso cambiato, non ancora compilato); poi motore a richiesta (OffMotore: capire se i file del
