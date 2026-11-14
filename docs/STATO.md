@@ -2459,3 +2459,8 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   volta resta la spiegazione del centro privacy. Icona di Office B in codice (bolla, icone a tema, APK di Office via
   `eurise_patch.py`); l'APK di Office con l'icona nuova è in compilazione (lavoro lungo del motore).
 - **Regola fissa nuova** (CLAUDE.md, «APK in chat»): ogni aggiornamento si consegna con gli APK mandati in chat.
+- **Eurise Office 44** (con l'icona B) mandato in chat come `Eurise-Office-44.apk`: da guardare l'icona nel cassetto (se resta
+  quella di Collabora, il manifest non è stato cambiato da `eurise_patch.py`: controllare l'avviso nel registro di office-app).
+- **Prossima tappa proposta per questa linea di lavoro** (Mappe la segue l'altra chat): la **Tastiera**, lavoro principale dopo
+  Mappe; prima le prove del proprietario su giro 539 e Office 44. Restano di Alfred: sveglia (AlfSveglia), voce in Mappe
+  (AlfMappe), voce più «da maggiordomo», il PC come cervello.
