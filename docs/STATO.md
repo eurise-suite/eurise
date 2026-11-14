@@ -1973,7 +1973,7 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   lettera.docx, conti.xlsx e slide.pptx su Xvfb 1440×900 (`--filesystem=$HOME/Documents`, Esc sul benvenuto),
   fotografa aperto e con Ctrl K, e pubblica schermate, log e riassunto in **`office-computer-schermate`**. Lo script
   `eurise-diag.js` (solo nella prova) scrive in console `EURISE-DIAG` con lo stato della nostra interfaccia e
-  `euriseOffice.trace`. Prima prova buona: giro 43596… del 14 novembre (nastro Eurise in tutti e tre i formati).
+  `euriseOffice.trace`. Prima prova buona: giro 43597390022 del 14 novembre (nastro Eurise in tutti e tre i formati).
 - Nel codice condiviso (Control.Eurise.js): nel guscio Qt (`ThisIsTheQtApp`) si accende il nastro del tablet con la
   classe `eurise-desk`, mai la dock del telefono; i messaggi `EURISE` non partono (nel guscio Qt andrebbero al motore);
   l'avvio aspetta `window.mode` pronto e usa `isSmallScreenDevice` dove `isMobile` non c'è più (Collabora 26.04).
