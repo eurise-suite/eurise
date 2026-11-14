@@ -2423,3 +2423,34 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   manovra); orizzontale **A approvata** con l'opzione specchiata (tavola MapGuidaOrizA2: colonna a sinistra, barra dei
   comandi a destra; di base segue l'impostazione «mano», si cambia nelle impostazioni). La foschia del cielo nel motore
   non convince: tre alternative da approvare (MapCieloColline, MapCieloSagome, MapCieloCurvo).
+
+## 14 novembre, sera tardi: guida nello stile della suite in codice (ramo `brand`) · Mappe 46
+- **Cielo approvato: colline lontane** (tavola MapCieloColline): la mappa in prospettiva finisce su un profilo di colline col
+  colore della stagione, taglio netto, niente foschia. Specchiata dell'orizzontale approvata.
+- **In codice (Mappe 46)**: layout nostri `maps/android/…/res/layout/layout_nav_top.xml` (scheda unica `eurise_guide_card`
+  nella tinta della strada, `EuriseGuide.tint` la colora; finestrino dentro, 196 dp) e `layout/layout_nav.xml` (menu di
+  CoMaps nascosto, `eurise_guida_card` in Compose: arrivo, strada fatta, Segnala · Sosta · Voce · Insieme · Fine, da
+  `EuriseGuidaOrizzontale.attachCard`); pulsanti della mappa in guida 156 dp più su. Tolte da `eurise_patch.py` le aggiunte
+  al layout verticale di CoMaps (ora è nostro) e la bandierina in guida. Orizzontale: finestrino 170 dp, meteo nella
+  colonna; `applySide` con l'impostazione «Comandi della guida a destra» (`eurise_guide_right`, accesa di base: barra a
+  destra, colonna a sinistra); margini della colonna con fotocamera e barre su tutti e due i lati. Barretta del finestrino
+  orizzontale in basso, si riempie avvicinandosi.
+- **Da provare sul telefono**: scheda della manovra che si allunga col finestrino e torna corta; tinta per tipo di strada;
+  scheda in basso (Voce, Sosta, Insieme, Fine fanno la cosa giusta); pulsanti della mappa non coperti; in orizzontale la
+  barra a destra e la colonna a sinistra, e spegnendo l'impostazione il contrario (dopo aver rifatto partire la guida).
+- **Cielo nel motore, analisi** (`libs/geometry/screenbase.cpp` di CoMaps): FOV 60°, angolo in auto 53° (`kCarPerspectiveAngle`,
+  massimo 55°): il bordo alto dello schermo guarda a 83°, l'orizzonte (90°) non si vede mai. Per il cielo con le colline:
+  (1) alzare l'angolo in guida a circa 66° (più tessere lontane da chiedere: provare il peso su CPU e batteria), (2) in
+  `FrontendRenderer::RenderScene` prima di `Render2dLayer` disegnare un quad a schermo sopra la linea d'orizzonte (calcolata
+  dalla matrice di prospettiva) con il gradiente del cielo dal meteo e le colline della stagione (stessi colori di
+  `EuriseLandscape`), passati da Java al motore con un messaggio nuovo (come il colore di sfondo, `SetClearColor`/
+  `RefreshBgColor`). Alternativa più leggera da discutere: non cambiare l'angolo e disegnare cielo e colline in una fascia
+  sopra la mappa solo in guida (è la «fascia» scartata per la resa).
+- **Prossimo passo**: prova di Mappe 46; poi il cielo nel motore (lavoro lungo, meglio in una chat nuova).
+
+## Punto di ripartenza (14 novembre, sera tardi)
+- Ramo `brand`. APK in apk-prova: Mappe 46 con la guida nuova (il giro dell'app principale lo pubblica l'altra chat).
+- Tela «Icone della suite», pagina Mappe: fila «Mappe in guida nello stile della suite» (VertB, OrizA approvate; OrizA2
+  approvata come opzione; MapCieloColline approvata; le altre restano come confronto).
+- Lavori aperti: cielo nel motore (sopra), «I tuoi giorni» da provare, PC come cervello di Alfred (col Ponte), suonerie
+  (l'altra chat), Office (l'altra chat).
