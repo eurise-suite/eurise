@@ -117,4 +117,19 @@ patch(manifest, '    <uses-permission android:name="android.permission.INTERNET"
       '        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>\n'
       '    </queries>\n', "il permesso INTERNET")
 
+# Icona di Eurise Office (tavola OfficeIcona, B; generata da scripts/icone.py in office/app/android/res).
+res = android / "app" / "src" / "main" / "res"
+shutil.copytree(ours / "android" / "res", res, dirs_exist_ok=True)
+manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
+if manifest.exists():
+    m = manifest.read_text()
+    m2, n = re.subn(r'(<application\b[^>]*?android:icon=")[^"]*(")', r"\g<1>@mipmap/ic_office\g<2>", m, count=1)
+    m2 = re.sub(r'(<application\b[^>]*?android:roundIcon=")[^"]*(")', r"\g<1>@mipmap/ic_office\g<2>", m2, count=1)
+    if n:
+        manifest.write_text(m2)
+    else:
+        print("eurise_patch: avviso, android:icon non trovato nel manifest: resta l'icona di Collabora")
+else:
+    print("eurise_patch: avviso, manca app/src/main/AndroidManifest.xml: resta l'icona di Collabora")
+
 print("eurise_patch: eu.eurise.office, chiave di prova della suite, guscio della Suite")

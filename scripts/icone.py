@@ -26,6 +26,8 @@ PLUM = ("#D4C1DE", "#A388B2")
 
 # Simboli (24×24): ogni voce è (tracciato, spessore); i punti hanno un tratto più grosso.
 SYMBOLS = {
+    # Office (tavola OfficeIcona, proposta B approvata il 14 novembre): pagina con righe di testo e un piccolo grafico.
+    "office": [("M6,3 h8.5 l5,5 v11.5 a1.5,1.5 0 0 1 -1.5,1.5 h-12 a1.5,1.5 0 0 1 -1.5,-1.5 v-15 a1.5,1.5 0 0 1 1.5,-1.5 z M14.5,3 v5 h5 M8,8 h3.5 M8,11.5 h8 M8.5,18 v-2.5 M12,18 v-4.5 M15.5,18 v-1.5", 2.35)],
     "clock": [("M5,13 a7,7 0 1 0 14,0 a7,7 0 1 0 -14,0 M12,9.5 v3.8 l2.5,1.6 M4,6.5 l3,-2.5 M20,6.5 l-3,-2.5 "
                "M7.5,19.5 l-1.5,2 M16.5,19.5 l1.5,2", 2.35)],
     "folder": [("M3,7 a2,2 0 0 1 2,-2 h4 l2,2.5 h8 a2,2 0 0 1 2,2 V17 a2,2 0 0 1 -2,2 H5 a2,2 0 0 1 -2,-2 z M3,10.5 h18", 2.35)],
@@ -74,6 +76,7 @@ ICONS = [
     ("password/src/main/res", "ic_password", "password", PLUM, False),
     ("keyboard/app/src/main/res", "ic_launcher", "keyboard", PLUM, True),
     ("maps/android/app/src/main/res", "ic_maps", "maps", PLUM, True),
+    ("office/app/android/res", "ic_office", "office", ROSE, False),
 ]
 
 STAR = "M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z"

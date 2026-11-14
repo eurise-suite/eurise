@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
+        <path android:pathData="M6,3 h8.5 l5,5 v11.5 a1.5,1.5 0 0 1 -1.5,1.5 h-12 a1.5,1.5 0 0 1 -1.5,-1.5 v-15 a1.5,1.5 0 0 1 1.5,-1.5 z M14.5,3 v5 h5 M8,8 h3.5 M8,11.5 h8 M8.5,18 v-2.5 M12,18 v-4.5 M15.5,18 v-1.5" android:strokeWidth="2.35"
+            android:strokeLineCap="round" android:strokeLineJoin="round">
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
+                    android:endY="21" android:startColor="#EABAC0" android:endColor="#C37F87" />
+            </aapt:attr>
+        </path>
+    </group>
+    <path android:fillColor="#D2B06A" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
+</vector>

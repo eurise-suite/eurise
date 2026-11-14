@@ -158,7 +158,8 @@ object EuriseIcons {
     fun home(stroke: Float = Stroke) = icon("home", stroke, "M4 11l8-6.5 8 6.5", "M6 9.5V20h12V9.5", "M10 20v-5h4v5")
 
     fun pdf(stroke: Float = Stroke) = icon("pdf", stroke, "M7 3.5h7l4 4v13H7z", "M14 3.5v4h4", "M10.5 12v6", "M10.5 12h2.5a1.75 1.75 0 0 1 0 3.5h-2.5")
-    fun office(stroke: Float = Stroke) = icon("office", stroke, "M4.5 4.5h15v15h-15z", "M4.5 9.5h15", "M9.5 9.5v10")
+    /** Office (tavola OfficeIcona, B): pagina con righe di testo e un piccolo grafico a barre. */
+    fun office(stroke: Float = Stroke) = icon("office", stroke, "M6,3 h8.5 l5,5 v11.5 a1.5,1.5 0 0 1 -1.5,1.5 h-12 a1.5,1.5 0 0 1 -1.5,-1.5 v-15 a1.5,1.5 0 0 1 1.5,-1.5 z M14.5,3 v5 h5", "M8,8 h3.5 M8,11.5 h8 M8.5,18 v-2.5 M12,18 v-4.5 M15.5,18 v-1.5")
     fun scanner(stroke: Float = Stroke) = icon("scanner", stroke, "M4 8V4h4", "M16 4h4v4", "M20 16v4h-4", "M8 20H4v-4", "M4 12h16")
     fun euro(stroke: Float = Stroke) = icon("euro", stroke, "M18 6.8A6.5 6.5 0 0 0 7.5 12a6.5 6.5 0 0 0 10.5 5.2", "M4.5 10.2h9", "M4.5 13.8h8")
     fun compass(stroke: Float = Stroke) = icon("compass", stroke, circle(12f, 12f, 9f), "M15.5 8.5l-2 5-5 2 2-5z")

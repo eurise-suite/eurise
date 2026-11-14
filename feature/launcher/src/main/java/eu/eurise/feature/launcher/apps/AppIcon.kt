@@ -146,6 +146,7 @@ private object SystemGlyphs {
         "foundation.e.browser" to { SuiteSymbols.browser }, "org.lineageos.jelly" to { SuiteSymbols.browser },
         "foundation.e.camera" to { EuriseIcons.camera(2.3f) }, "org.lineageos.aperture" to { EuriseIcons.camera(2.3f) },
         "com.android.camera" to { EuriseIcons.camera(2.3f) },
+        "eu.eurise.office" to { SuiteSymbols.office },
         "eu.eurise.gallery" to { SuiteSymbols.gallery }, "foundation.e.gallery" to { SuiteSymbols.gallery }, "org.lineageos.glimpse" to { SuiteSymbols.gallery },
         "com.android.gallery3d" to { SuiteSymbols.gallery },
         "com.android.settings" to { EuriseIcons.gear(2.3f) },
