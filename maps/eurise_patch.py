@@ -872,7 +872,7 @@ patch(navscreen, """    if (steps.size() > 1)
     // Eurise (MapAutoGuida): la scena dell'uscita o della rotonda nella finestrella della manovra.
     final android.graphics.Bitmap junction = app.organicmaps.eurise.EuriseJunctionScene.bitmap(
         getCarContext(),
-        app.organicmaps.eurise.EuriseJunctionScene.from(Framework.nativeGetRouteFollowingInfo(),
+        app.organicmaps.eurise.EuriseJunctionScene.from(getCarContext(), Framework.nativeGetRouteFollowingInfo(),
                                                         app.organicmaps.eurise.car.EuriseCarInfo.isFastRoad()),
         640, 360);
     if (junction != null)
@@ -909,6 +909,59 @@ patch(res / "xml" / "prefs_navigation.xml", """    app:icon="@drawable/ic_speed"
     android:summary="@string/eurise_limit_notice_summary"
     android:widgetLayout="@layout/preference_switch"
     app:singleLineTitle="false" />""")
+# Impostazioni › Navigazione: i finestrini della guida (tavola MapFinestrini). Uscite, rotonde e incroci si tolgono uno
+# per uno; quanto prima compaiono; frecce che si accendono o ferme. Le chiavi le legge EuriseJunctionScene.
+patch(res / "xml" / "prefs_navigation.xml", """    android:key="eurise_limit_notice"
+    android:title="@string/eurise_limit_notice"
+    android:summary="@string/eurise_limit_notice_summary"
+    android:widgetLayout="@layout/preference_switch"
+    app:singleLineTitle="false" />""", """    android:key="eurise_limit_notice"
+    android:title="@string/eurise_limit_notice"
+    android:summary="@string/eurise_limit_notice_summary"
+    android:widgetLayout="@layout/preference_switch"
+    app:singleLineTitle="false" />
+  <PreferenceCategory
+    android:key="eurise_windows"
+    android:title="@string/eurise_windows"
+    android:summary="@string/eurise_window_footer"
+    app:iconSpaceReserved="false">
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_window_exit"
+      android:title="@string/eurise_window_exit"
+      android:summary="@string/eurise_window_exit_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_window_roundabout"
+      android:title="@string/eurise_window_roundabout"
+      android:summary="@string/eurise_window_roundabout_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_window_turn"
+      android:title="@string/eurise_window_turn"
+      android:summary="@string/eurise_window_turn_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <ListPreference
+      android:defaultValue="1"
+      android:entries="@array/eurise_window_timing_entries"
+      android:entryValues="@array/eurise_window_timing_values"
+      android:key="eurise_window_timing"
+      android:summary="%s"
+      android:title="@string/eurise_window_timing"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
+      android:key="eurise_window_arrows"
+      android:title="@string/eurise_window_arrows"
+      android:summary="@string/eurise_window_arrows_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+  </PreferenceCategory>""")
 print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e della rotonda, anche in Android Auto)")
 
 # Passo e) della guida, seconda parte: Segnala in guida (tavole MapSegnalaGuida e MapAutoSegnala). La logica sta in

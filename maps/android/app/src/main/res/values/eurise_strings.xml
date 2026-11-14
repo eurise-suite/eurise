@@ -136,6 +136,32 @@
     <string name="eurise_pc_offline">Route calculated on the phone, without network. OpenStreetMap maps, updated when you want.</string>
     <string name="eurise_junction_exit">Exit %1$s</string>
     <string name="eurise_junction_roundabout">Exit %1$d</string>
+    <string name="eurise_junction_turn_right">Right · %1$s</string>
+    <string name="eurise_junction_turn_left">Left · %1$s</string>
+    <string name="eurise_windows">Guidance windows</string>
+    <string name="eurise_window_exit">Exits and junctions</string>
+    <string name="eurise_window_exit_summary">Exit lane and sign, 600 m before</string>
+    <string name="eurise_window_roundabout">Roundabouts</string>
+    <string name="eurise_window_roundabout_summary">Numbered exits, yours in blue</string>
+    <string name="eurise_window_turn">Intersections</string>
+    <string name="eurise_window_turn_summary">At every turn, 150 m before in town</string>
+    <string name="eurise_window_timing">Before the manoeuvre</string>
+    <string name="eurise_window_arrows">Arrows that light up</string>
+    <string name="eurise_window_arrows_summary">Off: still arrows, no motion</string>
+    <string name="eurise_window_footer">With a window off, the sign at the top keeps the arrow, distance and lanes. Also applies to Android Auto and landscape. While driving: long-press the window.</string>
+    <string name="eurise_window_hide_exit">Don\'t show exits again</string>
+    <string name="eurise_window_hide_roundabout">Don\'t show roundabouts again</string>
+    <string name="eurise_window_hide_turn">Don\'t show intersections again</string>
+    <string-array name="eurise_window_timing_entries">
+        <item>Late</item>
+        <item>Normal</item>
+        <item>Early</item>
+    </string-array>
+    <string-array name="eurise_window_timing_values" translatable="false">
+        <item>0.7</item>
+        <item>1</item>
+        <item>1.4</item>
+    </string-array>
     <string name="eurise_speed_tolerance">Speed turns red above the limit by</string>
     <string name="eurise_speed_sound">Sound when going over</string>
     <string name="eurise_limit_notice">Notice when the limit changes</string>

@@ -13,6 +13,9 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.text.TextUtils;
+import android.content.SharedPreferences;
+
+import androidx.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,10 +37,13 @@ import app.organicmaps.sdk.util.Distance;
  *   portale con il cartello dell'uscita (numero, sigla, destinazioni) che lampeggia piano.</li>
  *   <li><b>Rotonda</b>: le uscite numerate come si incontrano, quella giusta blu, il percorso con frecce dipinte ferme
  *   che si accendono nel verso di marcia e, all'uscita, frecce che scorrono dritte verso la via.</li>
+ *   <li><b>Incrocio</b> (tavola MapIncroci): la via traversa all'angolo vero ricavato dalla forma del percorso, la svolta
+ *   in blu, frecce dipinte che si accendono nel verso di marcia, il cartello della via all'angolo che lampeggia.</li>
  * </ul>
  *
- * Compare 600 m prima dell'uscita su autostrada e superstrada (300 m nelle altre strade e alle rotonde) e si chiude
- * dopo la manovra. Le frecce non girano mai.
+ * Compare 600 m prima dell'uscita su autostrada e superstrada (300 m nelle altre strade e alle rotonde, 150 m agli
+ * incroci in città, 250 m fuori) e si chiude dopo la manovra. Le frecce non girano mai. Ogni finestrino si toglie nelle
+ * impostazioni della guida (tavola MapFinestrini), che dicono anche quanto prima compare e se le frecce si muovono.
  */
 public final class EuriseJunctionScene
 {
@@ -45,7 +51,7 @@ public final class EuriseJunctionScene
   static final float W = 390f, H = 260f;
   private static final float PERIOD = 2.4f, PULSE = 1.8f;
 
-  public enum Kind { EXIT, ROUNDABOUT }
+  public enum Kind { EXIT, ROUNDABOUT, TURN }
 
   /** Ciò che serve a disegnare la scena, preso dalla guida di CoMaps. */
   public static final class Model
@@ -99,12 +105,54 @@ public final class EuriseJunctionScene
     };
   }
 
+  // Impostazioni della guida, finestrini (MapFinestrini). Chiavi delle preferenze di CoMaps (prefs_navigation.xml).
+  public static final String PREF_EXIT = "eurise_window_exit", PREF_ROUNDABOUT = "eurise_window_roundabout",
+                             PREF_TURN = "eurise_window_turn", PREF_TIMING = "eurise_window_timing",
+                             PREF_ARROWS = "eurise_window_arrows";
+
+  /** La chiave che spegne il finestrino di questo tipo. */
+  @NonNull
+  public static String prefFor(@NonNull Kind kind)
+  {
+    return switch (kind)
+    {
+      case EXIT -> PREF_EXIT;
+      case ROUNDABOUT -> PREF_ROUNDABOUT;
+      case TURN -> PREF_TURN;
+    };
+  }
+
+  /** Le frecce si accendono e scorrono (spento: ferme, nessun movimento). */
+  public static boolean animated(@NonNull Context c)
+  {
+    return PreferenceManager.getDefaultSharedPreferences(c).getBoolean(PREF_ARROWS, true);
+  }
+
+  /** La scena per questa guida secondo le impostazioni dei finestrini, o null. */
+  @Nullable
+  public static Model from(@NonNull Context c, @Nullable RoutingInfo info, boolean fastRoad)
+  {
+    final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(c);
+    float timing;
+    try
+    {
+      timing = Float.parseFloat(p.getString(PREF_TIMING, "1"));
+    }
+    catch (NumberFormatException e)
+    {
+      timing = 1f;
+    }
+    final Model m = from(info, fastRoad, timing);
+    return m != null && p.getBoolean(prefFor(m.kind), true) ? m : null;
+  }
+
   /**
-   * La scena per questa guida, o null se la manovra non ne ha una (svolta normale) o è ancora lontana. [fastRoad]: si
-   * è su autostrada o superstrada (la scena compare prima).
+   * La scena per questa guida, o null se la manovra non ne ha una (dritto, inversione) o è ancora lontana. [fastRoad]:
+   * si è su autostrada o superstrada (la scena compare prima). [timing] allunga o accorcia la distanza a cui compare
+   * (Tardi 0,7, Normale 1, Presto 1,4).
    */
   @Nullable
-  public static Model from(@Nullable RoutingInfo info, boolean fastRoad)
+  static Model from(@Nullable RoutingInfo info, boolean fastRoad, float timing)
   {
     if (info == null || info.carDirection == null)
       return null;
@@ -116,8 +164,8 @@ public final class EuriseJunctionScene
     final boolean exit = d == CarDirection.EXIT_HIGHWAY_TO_LEFT || d == CarDirection.EXIT_HIGHWAY_TO_RIGHT
                          || (info.nextIsLink && (d == CarDirection.TURN_SLIGHT_LEFT || d == CarDirection.TURN_SLIGHT_RIGHT));
     if (!roundabout && !exit)
-      return null;
-    final double show = exit && fastRoad ? 600 : 300;
+      return turn(info, m, fastRoad, timing);
+    final double show = (exit && fastRoad ? 600 : 300) * timing;
     if (m > show)
       return null;
     final float progress = (float) Math.max(0, Math.min(1, 1 - m / show));
@@ -141,6 +189,38 @@ public final class EuriseJunctionScene
                               nz(info.nextStreet), nz(info.currentStreet), fastRoad);
     e.turnDeg = (float) turn;
     return e;
+  }
+
+  /** La svolta a un incrocio normale: 150 m prima in città, 250 m fuori; null per dritto e inversioni. */
+  @Nullable
+  private static Model turn(@NonNull RoutingInfo info, double m, boolean fastRoad, float timing)
+  {
+    final CarDirection d = info.carDirection;
+    final boolean right = d == CarDirection.TURN_RIGHT || d == CarDirection.TURN_SHARP_RIGHT || d == CarDirection.TURN_SLIGHT_RIGHT;
+    final boolean left = d == CarDirection.TURN_LEFT || d == CarDirection.TURN_SHARP_LEFT || d == CarDirection.TURN_SLIGHT_LEFT;
+    if (!right && !left)
+      return null;
+    final double show = (fastRoad ? 250 : 150) * timing;
+    if (m > show)
+      return null;
+    final float progress = (float) Math.max(0, Math.min(1, 1 - m / show));
+    final Model t = new Model(Kind.TURN, left, 2, 0, progress, "", "", "", nz(info.nextStreet), nz(info.currentStreet),
+                              false);
+    // L'angolo vero della via dalla forma del percorso; senza, quello tipico della manovra di CoMaps.
+    final double g = TurnGeometry.simple(m);
+    if (!Double.isNaN(g) && Math.abs(g) >= 15 && (g < 0) == left)
+      t.turnDeg = (float) g;
+    else
+      t.turnDeg = switch (d)
+      {
+        case TURN_SLIGHT_RIGHT -> 40f;
+        case TURN_SHARP_RIGHT -> 135f;
+        case TURN_SLIGHT_LEFT -> -40f;
+        case TURN_SHARP_LEFT -> -135f;
+        case TURN_LEFT -> -90f;
+        default -> 90f;
+      };
+    return t;
   }
 
   /** Le corsie che vanno all'uscita, contate dal suo lato (non sono corsie della strada che continua). */
@@ -185,6 +265,8 @@ public final class EuriseJunctionScene
     canvas.scale(s, s);
     if (m.kind == Kind.EXIT)
       drawExit(c, canvas, m, t);
+    else if (m.kind == Kind.TURN)
+      drawTurn(c, canvas, m, t);
     else
       drawRoundabout(c, canvas, m, t);
     canvas.restore();
@@ -303,6 +385,145 @@ public final class EuriseJunctionScene
       txt.setColor(0xFFE7F0E9);
       text(k, txt, m.destination + (m.left ? "  ↖" : "  ↗"), exit.left + 9, exit.bottom - 8, exit.width() - 18);
     }
+  }
+
+  // ---- Incrocio (tavola MapIncroci) ----------------------------------------------------------------------------
+
+  /** Il centro dell'incrocio e l'orizzonte nello spazio di disegno. */
+  private static final float JX = 195, JY = 150, HORIZON = 70;
+
+  /** Palazzi pastello, a metà tra i colori di prima e quelli più vivi (correzione del 14 novembre). */
+  private static final int[] HOUSES = {0xFFE4BBA0, 0xFFE4CC90, 0xFFACD3BE, 0xFFC1B5DA};
+
+  /**
+   * Un punto sulla via all'angolo [deg] (0 = dritto, 90 = a destra, ±180 = indietro) a [dist] dal centro, in
+   * prospettiva: le vie traverse si schiacciano verso l'orizzonte.
+   */
+  @NonNull
+  private static float[] turnPoint(float deg, float dist)
+  {
+    final double r = Math.toRadians(deg);
+    final float dx = (float) Math.sin(r), dy = (float) -Math.cos(r);
+    final float squeeze = dy < 0 ? 0.32f : 0.9f;
+    return new float[] {JX + dx * dist, JY + dy * dist * squeeze};
+  }
+
+  /** Una via che parte dall'incrocio all'angolo [deg], larga [half] per lato vicino all'incrocio. */
+  @NonNull
+  private static Path branch(float deg, float half, float len)
+  {
+    final float[] a1 = turnPoint(deg - 90, half), a2 = turnPoint(deg + 90, half);
+    final float[] end = turnPoint(deg, len);
+    final float[] e1 = turnPoint(deg - 90, half * 0.7f), e2 = turnPoint(deg + 90, half * 0.7f);
+    final Path p = new Path();
+    p.moveTo(a1[0], a1[1]);
+    p.lineTo(end[0] + (e1[0] - JX), end[1] + (e1[1] - JY));
+    p.lineTo(end[0] + (e2[0] - JX), end[1] + (e2[1] - JY));
+    p.lineTo(a2[0], a2[1]);
+    p.close();
+    return p;
+  }
+
+  private static void drawTurn(@NonNull Context c, @NonNull Canvas k, @NonNull Model m, float t)
+  {
+    final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+    sky(k, p, 0xFF4FB3FF, 0xFFC9ECFF, HORIZON + 6);
+    p.setColor(0xFFEDE6F7);
+    k.drawRect(-W, HORIZON, 2 * W, 2 * H, p);
+    // I palazzi ai lati della strada, con le finestre.
+    final float[][] houses = {{-10, 24, 74, 104}, {64, 42, 112, 104}, {278, 32, 330, 104}, {330, 14, 400, 104}};
+    final Paint win = new Paint(Paint.ANTI_ALIAS_FLAG);
+    win.setColor(0x99FFFFFF);
+    for (int i = 0; i < houses.length; i++)
+    {
+      final float[] h = houses[i];
+      p.setColor(HOUSES[i]);
+      k.drawRoundRect(new RectF(h[0], h[1], h[2], h[3]), 3, 3, p);
+      for (float y = h[1] + 10; y < h[3] - 20; y += 22)
+        for (float x = h[0] + 10; x < h[2] - 14; x += 20)
+          k.drawRect(x, y, x + 10, y + 12, win);
+    }
+
+    final Shader asphalt = new LinearGradient(0, HORIZON, 0, H, 0xFF5B6478, 0xFF2C3344, Shader.TileMode.CLAMP);
+    p.setShader(asphalt);
+    // La strada su cui si è, dritta fino all'orizzonte, e la via traversa all'angolo vero (con il suo seguito dall'altra
+    // parte, come a un incrocio).
+    k.drawPath(path("M-30 262 L176 70 L214 70 L420 262 Z"), p);
+    final float turnDeg = Float.isNaN(m.turnDeg) ? (m.left ? -90 : 90) : m.turnDeg;
+    k.drawPath(branch(turnDeg, 30, 300), p);
+    k.drawPath(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), p);
+    p.setShader(null);
+
+    // Le strisce pedonali prima dell'incrocio e la mezzeria.
+    p.setColor(0xEBEDEAE2);
+    for (int i = 0; i < 7; i++)
+    {
+      final float x = 104 + i * 28;
+      k.drawRect(x, 176, x + 15, 184, p);
+    }
+    final Paint dash = stroke(Color.WHITE, 3.2f);
+    dash.setPathEffect(new DashPathEffect(new float[] {18, 14}, 0));
+    k.drawLine(195, 262, 195, 190, dash);
+
+    // Il percorso: dalla corsia giusta all'incrocio, poi nella via.
+    final float laneX = m.left ? 160 : 252;
+    final float[] near = turnPoint(turnDeg, 34), far = turnPoint(turnDeg, 260);
+    final Path route = new Path();
+    route.moveTo(laneX + (m.left ? -18 : 18), 268);
+    route.lineTo(laneX, 196);
+    route.quadTo(laneX, JY + 6, near[0], near[1]);
+    route.lineTo(far[0], far[1]);
+    final Paint band = stroke(0xFF2F7BFF, 30);
+    band.setStrokeCap(Paint.Cap.BUTT);
+    band.setAlpha((int) (255 * (0.38f + 0.24f * pulse(t, PULSE))));
+    k.drawPath(route, band);
+
+    // Frecce dipinte che si accendono una dopo l'altra nel verso di marcia, più piccole verso l'orizzonte.
+    final PathMeasure pm = new PathMeasure(route, false);
+    final float len = pm.getLength();
+    final float[] pos = new float[2], tan = new float[2];
+    for (int i = 0; i < 6; i++)
+    {
+      pm.getPosTan(len * (0.06f + i * 0.13f), pos, tan);
+      final float on = pulse(t - i * 0.3f, PULSE);
+      final float sc = 0.7f + 0.9f * Math.max(0, (pos[1] - HORIZON) / (H - HORIZON));
+      solidArrow(k, pos[0], pos[1], (float) Math.toDegrees(Math.atan2(tan[1], tan[0])) + 90, sc, 0.3f + 0.7f * on);
+    }
+
+    // Il cartello della via all'angolo, dalla parte della svolta: lampeggia piano.
+    if (!m.street.isEmpty())
+    {
+      final Paint txt = new Paint(Paint.ANTI_ALIAS_FLAG);
+      txt.setTypeface(Typeface.DEFAULT_BOLD);
+      txt.setTextSize(13);
+      txt.setColor(0xFF1E1D1B);
+      final float tw = Math.min(150, txt.measureText(m.street) + 18);
+      final float cx = m.left ? 64 : W - 64;
+      final RectF board = new RectF(cx - tw / 2, 102, cx + tw / 2, 124);
+      p.setColor(0xFF7C8598);
+      k.drawRect(cx - 1.5f, board.bottom, cx + 1.5f, board.bottom + 44, p);
+      p.setColor(Color.WHITE);
+      k.drawRoundRect(board, 4, 4, p);
+      final Paint border = stroke(0xFF10B981, 3);
+      border.setAlpha((int) (255 * (0.35f + 0.65f * pulse(t, PULSE))));
+      k.drawRoundRect(board, 4, 4, border);
+      txt.setTextAlign(Paint.Align.CENTER);
+      text(k, txt, m.street, cx, board.bottom - 6.5f, tw - 12);
+    }
+  }
+
+  /** La freccia piena dipinta sull'asfalto, ferma, che si accende con [alpha]. */
+  private static void solidArrow(@NonNull Canvas k, float x, float y, float deg, float scale, float alpha)
+  {
+    final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+    p.setColor(Color.WHITE);
+    p.setAlpha((int) (255 * Math.max(0, Math.min(1, alpha))));
+    k.save();
+    k.translate(x, y);
+    k.rotate(deg);
+    k.scale(scale, scale);
+    k.drawPath(path("M-10 6 L0 -8 L10 6 L5 6 L0 -1 L-5 6 Z"), p);
+    k.restore();
   }
 
   // ---- Rotonda ------------------------------------------------------------------------------------------------

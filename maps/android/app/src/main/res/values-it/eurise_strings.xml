@@ -136,6 +136,28 @@
     <string name="eurise_pc_offline">Percorso calcolato sul telefono, senza rete. Mappe di OpenStreetMap, aggiornate quando vuoi.</string>
     <string name="eurise_junction_exit">Uscita %1$s</string>
     <string name="eurise_junction_roundabout">%1$dª uscita</string>
+    <string name="eurise_junction_turn_right">A destra · %1$s</string>
+    <string name="eurise_junction_turn_left">A sinistra · %1$s</string>
+    <!-- Finestrini della guida (MapFinestrini): uscite, rotonde e incroci si tolgono uno per uno. -->
+    <string name="eurise_windows">Finestrini della guida</string>
+    <string name="eurise_window_exit">Uscite e svincoli</string>
+    <string name="eurise_window_exit_summary">Corsia di uscita e cartello, 600 m prima</string>
+    <string name="eurise_window_roundabout">Rotonde</string>
+    <string name="eurise_window_roundabout_summary">Uscite numerate, la tua in blu</string>
+    <string name="eurise_window_turn">Incroci</string>
+    <string name="eurise_window_turn_summary">A ogni svolta, 150 m prima in città</string>
+    <string name="eurise_window_timing">Prima della manovra</string>
+    <string name="eurise_window_arrows">Frecce che si accendono</string>
+    <string name="eurise_window_arrows_summary">Spento: frecce ferme, nessun movimento</string>
+    <string name="eurise_window_footer">Spento un finestrino, in quel punto resta il cartello in alto con la freccia, la distanza e le corsie. Vale anche in Android Auto e in orizzontale. In guida: tieni premuto il finestrino.</string>
+    <string name="eurise_window_hide_exit">Non mostrare più le uscite</string>
+    <string name="eurise_window_hide_roundabout">Non mostrare più le rotonde</string>
+    <string name="eurise_window_hide_turn">Non mostrare più gli incroci</string>
+    <string-array name="eurise_window_timing_entries">
+        <item>Tardi</item>
+        <item>Normale</item>
+        <item>Presto</item>
+    </string-array>
     <string name="eurise_speed_tolerance">Velocità in rosso oltre il limite di</string>
     <string name="eurise_speed_sound">Suono quando si supera</string>
     <string name="eurise_limit_notice">Avvisa del limite che cambia</string>
