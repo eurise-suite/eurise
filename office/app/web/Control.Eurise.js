@@ -1480,7 +1480,8 @@
 		};
 		if (docType === 'spreadsheet') {
 			return [
-				tab('celle', t('Celle', 'Cells'), tabGroups('spreadsheet', 'celle').filter(function (gr) { return !gr.suite; })),
+				// Come sul testo: prima il Carattere, gli Appunti in fondo.
+				tab('celle', t('Celle', 'Cells'), tabGroups('spreadsheet', 'celle').filter(function (gr) { return !gr.suite && gr !== APPUNTI; }).concat([APPUNTI])),
 				tab('inserisci', t('Inserisci', 'Insert'), tabGroups('spreadsheet', 'inserisci')),
 				tab('dati', t('Dati', 'Data'), tabGroups('spreadsheet', 'formule').concat(tabGroups('spreadsheet', 'dati'))),
 				tab('suite', 'Suite', tabGroups('spreadsheet', 'suite'), 'suite'),

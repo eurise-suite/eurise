@@ -722,6 +722,7 @@ body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9
 	position: relative;
 	padding: 0 12px 4px;
 	display: flex;
+	align-items: flex-end;
 	gap: 8px;
 	overflow-x: auto;
 	scroll-snap-type: x mandatory;
@@ -908,7 +909,22 @@ body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9
 	overflow-y: auto;
 	min-height: 0;
 }
-.eurise-fontlist .eurise-row.on,
+#eurise-fonts .eurise-row {
+	display: block;
+	width: 100%;
+	min-height: 48px;
+	margin: 0 !important;
+	padding: 0 14px;
+	border: 0 !important;
+	border-radius: 14px;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: var(--color-main-text);
+	font: 600 15px 'Plus Jakarta Sans', system-ui, sans-serif;
+	text-align: left;
+}
+#eurise-fonts .eurise-row:active { background: var(--color-background-dark) !important; }
+#eurise-fonts .eurise-row.on,
 .eurise-size.on {
 	background: #DDE3F0 !important;
 	color: #1F2A44;
@@ -942,5 +958,5 @@ body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9
 [data-theme='dark'] .eurise-card .eurise-ck.big.plain { background: #1B2029 !important; }
 [data-theme='dark'] .eurise-card .eurise-ck.on { background: #2B3A55 !important; color: #E6E9F0; box-shadow: inset 0 -2px 0 #A9C1F2; }
 [data-theme='dark'] .eurise-drop { background: #1B2029 !important; box-shadow: inset 0 0 0 1px #343B48 !important; color: #E6E9F0; }
-[data-theme='dark'] .eurise-fontlist .eurise-row.on,
+[data-theme='dark'] #eurise-fonts .eurise-row.on,
 [data-theme='dark'] .eurise-size.on { background: #2B3A55 !important; color: #E6E9F0; }
