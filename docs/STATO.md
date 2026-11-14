@@ -2195,3 +2195,29 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   una volta) e quasi il massimo con VPN o Tor di Murena accesi durante lo scarico (`privacyScore` ha già `hiddenIp`).
 - **Incroci**: ok alla tavola con i finestrini deselezionabili.
 
+
+## 14 novembre, mattina: lavoro della chat nuova (ramo `brand`)
+- **Risposte date**: voce ritoccata = Riccardo con frequenza dichiarata più bassa e Piper più svelto (nessun download);
+  voce d'attore = allenamento Piper su GPU con contratto: **il proprietario ha detto di lasciar perdere** → in Voce solo
+  scaricare o **caricare** altre voci. **Criteri oggettivi di privacy approvati**: VPN da 5, +1 verifica con rapporto
+  pubblico (0 se solo ai clienti), +1 app aperte, +1 account senza nome, ±1 secondo dove lavora chi accede ai server
+  (non la sede legale) → NordVPN 6 (`operations = "LT"`), Proton 8, Mullvad 9. Servizi: `privacyScore(linkable = true)`
+  −1 se chi riceve può collegare l'indirizzo ad altri dati (Google, Microsoft) → Traduzione 6 (Tor 8, NordVPN 7), Voce 6.
+- **Servizi spenti di base** (regola del 14 novembre): `PrivacyService` tutti spenti, anche per chi non aveva scelto.
+  Avviso comune `ServiceConsentSheet` (core/designsystem: cosa riceve, dove va, chi lo vede, privacy da 10 a N, come
+  tornare indietro; per Yahoo e YouTube limiti e alternative), `ServiceGate`/`ServiceOffNotice` nelle schede della
+  Scrivania (meteo scheda e riga, notizie, ricette, borsa, oroscopo, video), Meteo (meteo, allerte, pollini), Mappe
+  («Accendi e manda» per le note OSM). Controllo dei servizi: il nome del luogo del meteo mandava la posizione **esatta**
+  al Geocoder anche a meteo spento (ora arrotondata e solo acceso); User-Agent senza modello del telefono in Traduzione,
+  OCR, Chat, Email, meteo della Scrivania; Voce dichiara anche GitHub.
+- **Voce**: Riccardo, Riccardo ritoccato (cursori Velocità e Tono, file `voices/stile`), Altre voci (Paola; «Carica una
+  voce dal telefono», .zip formato sherpa-onnx in `voices/caricate/`, dati di pronuncia presi da Riccardo se mancano).
+  La voce scelta sta in `voices/scelta` (la legge il processo `:voce`).
+- **Sveglia di Alfred (AlfSveglia, in codice)**: opzione «Ti sveglia Alfred» nella sveglia, musica in un'app (solo titolo
+  e autore), brani del telefono o suoneria. Saluto (ora, meteo già sul telefono, massima, brano) sul canale della sveglia,
+  poi la musica; rete di sicurezza 8 s voce / 10 s musica → suoneria. Catalogo, disposizioni e musica di Alfred spostati
+  in `core/data/alfred` (li usano Alfred e Orologio). Manca: «classica scaricata» (servono fonti verificate e un servizio
+  nel centro privacy).
+- **Tavole**: MapIncroci e MapFinestrini (forma approvata, colori rifatti più vivi: da rivedere); OffRapporto e
+  OffRapportoVedi **approvate** → Office passa all'altra chat.
+- **Domanda aperta del proprietario**: unire Alfred ed Eurise AI e uso dell'online con la massima privacy (risposta in chat).
