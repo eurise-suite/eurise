@@ -2477,3 +2477,19 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   «Cielo e colline sopra la mappa» spento torna la vista di prima. In Android Auto il cielo c'è anche lì (l'immagine è
   fatta sulla misura del telefono: sole e nuvole possono sembrare un po' schiacciati).
 - **Da guardare**: le scritte lontane possono comparire sopra le colline; il cielo è fermo (le nuvole non scorrono).
+
+## 14 novembre, notte: Alfred più rapido e tavole di «Alfred risponde dal telefono» (ramo `brand`) · giro 543
+- **Domande libere**: con «Domande libere subito online» acceso vanno dritte al servizio preferito, senza messaggio intermedio
+  (la prima volta resta la spiegazione del centro privacy, che è il permesso dell'utente).
+- **Trascrizione più rapida** (lentezza segnalata dal proprietario): Voce ricaricava il modello a ogni frase (Alfred si
+  scollegava) e usava Small se scaricato, con la finestra intera di 30 s. Ora: Alfred si collega a Voce appena ascolta e resta
+  collegato finché il pannello è aperto (`Ear.connect`/`close`), Voce carica il modello in `onCreate` mentre si parla,
+  per i comandi usa il modello più veloce installato (`Model.forCommands`, Base) e il contesto di metà finestra
+  (`Chunker.commandCtx`, 768); fine frase dopo 700 ms di pausa (`Endpoint`, test aggiornato). APK: Eurise e Voce 543.
+- **Tavole nuove (pagina AI, da approvare)**: AlfTelefono (risposta di Eurise AI dal telefono che si scrive mentre pensa,
+  azione utile dalla risposta, «Chiedi a Lumo» a un tocco), AlfCapisce (frase libera con più azioni, «Fai tutto», memoria
+  per «Marco» e «dopo pranzo»), AlfCervello (chi risponde: prima il telefono / subito online / solo telefono; cervello
+  Rapido circa 0,8 GB o Completo circa 2,5 GB, tempi misurati sul telefono; «Alfred ricorda» con le voci cancellabili).
+  Dopo l'approvazione: servizio di Eurise AI con permesso di firma (risposta in streaming, scelta tra le azioni come
+  funzioni), scarico del modello (scegliere i modelli liberi e misurarli: l'ultima misura era 7,4 token/s in scrittura su
+  Fairphone 6), memoria locale nel backup cifrato e nel centro privacy.
