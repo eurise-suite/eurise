@@ -144,6 +144,8 @@ apri() {
 	# Il benvenuto di Collabora al primo avvio copre la pagina: Esc lo chiude.
 	[ -n "$win" ] && xdotool key Escape && sleep 2
 	shot "$name-1-aperto"
+	# Con il mouse sul documento (la 26.04 mostra alcune cose solo al passaggio).
+	[ -n "$win" ] && xdotool mousemove 520 480 && sleep 2 && shot "$name-1-mouse" 
 	# Ctrl K: «Cerca un comando» della nostra interfaccia.
 	[ -n "$win" ] && xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+k && sleep 2 && shot "$name-2-cerca" && xdotool key Escape
 	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
@@ -157,6 +159,11 @@ for COOL in $(find "$FILES" -name 'bundle.js' -path '*dist*' | head -1); do
 	grep -o '.\{0,300\}short tour.\{0,300\}' "$COOL" | head -3 > "$OUT/giro-guidato.txt"
 	grep -o '.\{0,200\}[Tt]our[A-Za-z]*[Ss]een.\{0,200\}' "$COOL" | head -5 >> "$OUT/giro-guidato.txt"
 	grep -rl "short tour" "$(dirname "$COOL")" | sed "s|^$FILES||" >> "$OUT/giro-guidato.txt"
+	# Righelli: quando li mostra la 26.04.
+	echo "--- righelli css" >> "$OUT/giro-guidato.txt"
+	grep -oh '[^}]\{0,200\}ruler[^}]\{0,250\}}' "$(dirname "$COOL")"/*.css | head -40 >> "$OUT/giro-guidato.txt"
+	echo "--- righelli js" >> "$OUT/giro-guidato.txt"
+	grep -oh '.\{0,300\}\(rulerVisib\|autoHideRuler\|ruler-hover\|showRulerOnHover\|hideRuler\).\{0,300\}' "$COOL" | head -12 >> "$OUT/giro-guidato.txt"
 	# Come la 26.04 colora le icone (classe icon-maskable).
 	echo "--- icon-maskable" >> "$OUT/giro-guidato.txt"
 	grep -oh '.\{0,250\}icon-maskable.\{0,350\}' "$(dirname "$COOL")"/*.css "$COOL" | head -12 >> "$OUT/giro-guidato.txt"
