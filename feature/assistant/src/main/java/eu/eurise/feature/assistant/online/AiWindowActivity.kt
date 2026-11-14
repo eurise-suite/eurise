@@ -74,7 +74,7 @@ import java.io.ByteArrayInputStream
 class AiWindowActivity : ComponentActivity() {
     private var web: WebView? = null
     private var notice by mutableStateOf(Notice.Filling)
-    private var progress by mutableIntStateOf(0)
+    private var loading by mutableIntStateOf(0)
     private var question = ""
     private var home = ""
     private var tries = 0
@@ -124,7 +124,7 @@ class AiWindowActivity : ComponentActivity() {
                             Text(stringResource(R.string.alfred_on_bring), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
                         }
                     }
-                    if (progress in 1..99) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp),
+                    if (loading in 1..99) LinearProgressIndicator(progress = { loading / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp),
                         color = Color(0xFFE9C77B), trackColor = Color.Transparent)
                     AndroidView(
                         factory = { ctx -> makeWebView(ctx).also { w -> web = w; w.loadUrl(url) } },
@@ -148,7 +148,7 @@ class AiWindowActivity : ComponentActivity() {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
         webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView, newProgress: Int) { this@AiWindowActivity.progress = newProgress }
+            override fun onProgressChanged(view: WebView, newProgress: Int) { this@AiWindowActivity.loading = newProgress }
         }
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
