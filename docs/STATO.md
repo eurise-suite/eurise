@@ -2167,3 +2167,19 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   di musica scelta e rete di sicurezza), Mappe f) Esplora e il resto di Attività (negozi, officine), mezzi (MapMezzi/MapLontano,
   prima le fonti), componenti comuni in `core/designsystem`, tastiera.
 
+## 14 novembre, mattina: decisioni del proprietario (da fare nella chat nuova)
+- **Office, «rapporto del problema»: sì, procedere** (prima la tavola: pulsante che mostra perché l'app si è chiusa
+  l'ultima volta e lo fa condividere a chi lo sceglie; niente esce da solo).
+- **Prezzi dei carburanti**: la codifica dei file del Ministero (accenti nei nomi) la verifica il proprietario sul telefono.
+- **Voce di Alfred: tre opzioni** in Voce: Riccardo com'è, Riccardo ritoccato (più lento e grave, «da maggiordomo»), e la
+  possibilità di aggiungere la voce di un attore (voce nostra, scaricabile come le altre).
+- **NordVPN**: il servizio è di NordVPN S.A., Panamá (nessun obbligo di conservare dati, fuori dai Five/Nine/Fourteen Eyes);
+  il gruppo è Nord Security, Amsterdam (UE, Nine Eyes); lavoro a Vilnius. Nel centro privacy mostrare entrambe le cose
+  (sede del servizio Panamá, gruppo nell'UE); valutazione proposta 6 su 10, da confermare.
+- **Borsa e Video** (Yahoo, YouTube): restano accesi di base, con l'avviso chiaro della fuga di dati (cosa esce, a chi).
+- **Traduzione**: domanda chiarita al proprietario: i modelli si scaricano una volta da un server di Google Cloud Storage (di
+  Mozilla), che vede solo l'indirizzo IP; i testi non escono mai. Proposta: 7 su 10 con questa nota. In attesa di risposta.
+- **Incroci normali: sì alla tavola** della scena (come uscite e rotonde, con l'angolo vero dalla forma del percorso). Nelle
+  impostazioni della guida i finestrini si possono **deselezionare uno per uno** (uscite, rotonde, incroci): l'utente
+  sceglie quali vedere.
+
