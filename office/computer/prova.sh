@@ -28,9 +28,14 @@ find "$FILES" -name 'cool*.html' | sed "s|^$FILES|    |" >> "$R"
 DIAG=$(mktemp)
 cat > "$DIAG" <<'JS'
 (function () {
+	// Nella 26.04 console.log non arriva al registro del guscio: passa solo app.console.
+	function say(text) {
+		if (window.app && window.app.console && window.app.console.log) window.app.console.log(text);
+		else console.log(text);
+	}
 	function report(when) {
 		var m = window.mode;
-		console.log('EURISE-DIAG ' + when + ' ' + location.href.split('?')[0] + ' ' + JSON.stringify({
+		say('EURISE-DIAG ' + when + ' ' + location.href.split('?')[0] + ' ' + JSON.stringify({
 			qt: !!window.ThisIsTheQtApp, mobileApp: !!window.ThisIsAMobileApp,
 			desktop: !!(m && m.isDesktop && m.isDesktop()), tablet: !!(m && m.isTablet && m.isTablet()),
 			ours: !!window.euriseOffice, map: !!(window.app && window.app.map), doc: !!(window.app && window.app.map && window.app.map._docLayer),
@@ -41,7 +46,7 @@ cat > "$DIAG" <<'JS'
 			appKeys: window.app ? Object.keys(window.app).slice(0, 60) : null
 		}));
 	}
-	window.addEventListener('error', function (e) { console.log('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
+	window.addEventListener('error', function (e) { say('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
 	// Struttura della colonna di destra e di quella di sinistra (per lo stile della colonna Properties).
 	function outline(el, depth, out) {
 		if (!el || out.length > 160) return out;
@@ -54,10 +59,10 @@ cat > "$DIAG" <<'JS'
 	}
 	function dom(when) {
 		['sidebar-dock-wrapper', 'navigation-sidebar'].forEach(function (id) {
-			outline(document.getElementById(id), 0, []).forEach(function (line) { console.log('EURISE-DOM ' + when + ' ' + line); });
+			outline(document.getElementById(id), 0, []).forEach(function (line) { say('EURISE-DOM ' + when + ' ' + line); });
 		});
 		Array.prototype.forEach.call(document.querySelectorAll('[class*="tour"], [id*="tour"], [class*="welcome"], [id*="welcome"], dialog[open], [role="dialog"]'), function (el) {
-			console.log('EURISE-DOM ' + when + ' finestra ' + el.tagName.toLowerCase() + '#' + el.id + '.' + el.className + ' «' + (el.textContent || '').trim().slice(0, 60) + '»');
+			say('EURISE-DOM ' + when + ' finestra ' + el.tagName.toLowerCase() + '#' + el.id + '.' + el.className + ' «' + (el.textContent || '').trim().slice(0, 60) + '»');
 		});
 	}
 	setTimeout(function () { report('5s'); }, 5000);
@@ -144,8 +149,8 @@ apri() {
 
 # Il giro guidato della 26.04: dove sta nel codice dell'interfaccia (per spegnerlo per bene).
 for COOL in $(find "$FILES" -name 'bundle.js' -path '*dist*' | head -1); do
-	grep -o '.\{300\}short tour.\{300\}' "$COOL" | head -3 > "$OUT/giro-guidato.txt"
-	grep -o '.\{200\}[Tt]our[A-Za-z]*[Ss]een.\{200\}' "$COOL" | head -5 >> "$OUT/giro-guidato.txt"
+	grep -o '.\{0,300\}short tour.\{0,300\}' "$COOL" | head -3 > "$OUT/giro-guidato.txt"
+	grep -o '.\{0,200\}[Tt]our[A-Za-z]*[Ss]een.\{0,200\}' "$COOL" | head -5 >> "$OUT/giro-guidato.txt"
 	grep -rl "short tour" "$(dirname "$COOL")" | sed "s|^$FILES||" >> "$OUT/giro-guidato.txt"
 done
 

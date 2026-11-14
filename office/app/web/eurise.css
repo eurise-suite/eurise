@@ -1002,7 +1002,8 @@ body.eurise-desk #eurise-header .eurise-hbtn {
 }
 body.eurise-desk #eurise-header .eurise-hbtn:hover { background: #ECECE7 !important; }
 #eurise-header.desk .eurise-cmdsearch {
-	width: 200px;
+	width: 210px;
+	white-space: nowrap;
 	height: 32px;
 	margin: 0 6px 0 8px !important;
 	border-radius: 16px;
@@ -1096,9 +1097,9 @@ body.eurise-desk #navigator-floating-icon {
 
 /* Colonna di destra: Perla, sezioni come isole bianche. */
 body.eurise-desk #sidebar-dock-wrapper {
-	width: 316px;
-	max-width: 316px;
-	padding: 10px 10px 14px;
+	width: 344px;
+	max-width: 344px;
+	padding: 10px 8px 14px;
 	box-sizing: border-box;
 	background: #F4F4F1;
 	border-inline-start: 0 !important;
@@ -1139,7 +1140,7 @@ body.eurise-desk #sidebar-container .sidebar.ui-expander-label {
 }
 body.eurise-desk #sidebar-container .sidebar.ui-expander-content {
 	width: 100%;
-	padding-inline: 4px;
+	padding-inline: 0;
 	box-sizing: border-box;
 	line-height: normal;
 }

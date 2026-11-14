@@ -1321,6 +1321,10 @@
 		lab(drawn(r('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }, 'big'), SUITE_ICONS.viaggio)),
 		lab(drawn(r('Grafico', 'Chart', function () { actions['eurise-grafico'](); }, 'big'), SUITE_ICONS.grafico))]));
 	SUITE_FOGLIO.suite = true;
+	// Sul computer il gruppo Suite sta anche nella scheda Home, in fondo (tavola OffComputer).
+	var SUITE_HOME = g('Suite', 'Suite', SUITE.items);
+	SUITE_HOME.suite = true;
+	SUITE_HOME.deskOnly = true;
 	var CELLE_CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
 		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
 		colorItem('Colore del testo', 'Font color', 'font', '.uno:Color'), colorItem('Riempimento', 'Fill', 'back', '.uno:BackgroundColor')], '.uno:FontDialog');
@@ -1333,7 +1337,7 @@
 				deskItems(g('Modifica', 'Editing', [r('Trova e sostituisci', 'Find & replace', '.uno:SearchDialog', 'big')]), [
 					lab(ri('Trova', 'Find', function () { dispatch('showsearchbar'); }, false, '.uno:SearchDialog')),
 					lab(r('Sostituisci', 'Replace', '.uno:SearchDialog')),
-					lab(ri('Collegamento', 'Link', function () { dispatch('hyperlinkdialog'); }, false, '.uno:HyperlinkDialog'))])] },
+					lab(ri('Collegamento', 'Link', function () { dispatch('hyperlinkdialog'); }, false, '.uno:HyperlinkDialog'))]), SUITE_HOME] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Tabelle e immagini', 'Tables and images', [TABELLA, IMMAGINE, r('Grafico', 'Chart', '.uno:InsertObjectChart', 'big'),
 					r('Forma', 'Shape', '.uno:BasicShapes.rectangle', 'big')]),
@@ -1392,7 +1396,7 @@
 		],
 		presentation: [
 			{ id: 'home', label: 'Home', groups: [APPUNTI,
-				DIAPOSITIVE, CARATTERE, PARAGRAFO] },
+				DIAPOSITIVE, CARATTERE, PARAGRAFO, SUITE_HOME] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Oggetti', 'Objects', [r('Casella di testo', 'Text box', '.uno:Text', 'big'), IMMAGINE, TABELLA,
 					r('Forma', 'Shape', '.uno:BasicShapes.rectangle', 'big'), r('Grafico', 'Chart', '.uno:InsertObjectChart', 'big')]),
@@ -1480,6 +1484,7 @@
 		var el = ribbon.el;
 		el.innerHTML = '';
 		tab.groups.forEach(function (group) {
+			if (group.deskOnly && !onDesk()) return;
 			var items = onDesk() && group.deskItems ? group.deskItems : group.items;
 			var sec = document.createElement('section');
 			sec.className = 'eurise-group' + (group.suite ? ' suite' : '');
