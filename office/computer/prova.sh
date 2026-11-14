@@ -67,6 +67,7 @@ apri() {
 	dbus-run-session -- flatpak run --user \
 		--env=QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu" \
 		--env=QT_QPA_PLATFORM=xcb \
+		--filesystem="$HOME/Documents" \
 		--env=QT_LOGGING_RULES="js=true" \
 		"$APP" "$HOME/Documents/$file" > "$OUT/$name.log" 2>&1 &
 	local pid=$!
