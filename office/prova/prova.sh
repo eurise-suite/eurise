@@ -199,6 +199,11 @@ usa_motore() { # nome scheda
 	adb shell input tap $x $y; adb shell input tap $x $y
 	sleep 3
 	adb exec-out screencap -p > "$OUT/$name-uso-2-doppio.png"
+	# Si scrive e si aspetta: sul telefono del proprietario il motore si chiudeva dopo qualche secondo di modifica.
+	adb shell input text "Eurise"
+	sleep 12
+	adb exec-out screencap -p > "$OUT/$name-uso-2-scritto.png"
+	echo "dopo aver scritto e 12 s: motore $(adb shell pidof "$MOTORE_PKG" || echo 'CHIUSO')" >> "$sum"
 	adb shell input swipe $x $y $x $y 1200
 	sleep 3
 	adb exec-out screencap -p > "$OUT/$name-uso-3-lungo.png"

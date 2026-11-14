@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import eu.eurise.core.designsystem.theme.EuriseTheme
@@ -28,7 +27,9 @@ class QuickActivity : ComponentActivity() {
     private val model: QuickModel by viewModels { QuickModel.Factory(uri, writable) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        // Niente «da bordo a bordo»: con la tastiera aperta Android ridimensiona la finestra (adjustResize), come nel
+        // motore. Su alcuni telefoni la tastiera non dichiara il suo spazio alle app da bordo a bordo e la barra di
+        // modifica finiva sotto (prova del proprietario, 14 novembre).
         super.onCreate(savedInstanceState)
         if (uri == Uri.EMPTY) { finish(); return }
         setContent {
