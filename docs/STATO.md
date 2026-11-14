@@ -1956,7 +1956,14 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   Limite: l'impaginazione è semplificata (forme in colonna dall'alto in basso, sfondi e segnaposto ereditati dal layout
   e dal master non letti): per l'aspetto vero c'è il motore.
 
-**Prossimo passo**: provare sul telefono le card dei gruppi e la vista rapida delle presentazioni; poi il computer
-(OffComputer); poi motore a richiesta (OffMotore: capire se i file del
+- Verificato sull'emulatore: prova 43586138828 (motore del giro 43583760554, telefono): card, tendina dei caratteri,
+  scorrimento e Carattere per primo nel foglio; motore vivo dopo 12 s di modifica in tutti e tre i formati. Prova
+  43583694984 (`fonte=nativo`): slide.pptx si apre in QuickActivity senza motore.
+- **Consegnati al proprietario (14 novembre, mattina)**: `eurise-office-debug.apk` (Office con la vista rapida delle
+  presentazioni, pubblicato alle 10:10 UTC dalla prova 43583694984) e `eurise-office-motore-debug.apk` (giro 43583760554,
+  card e tendine). Prima, il motore dei ritocchi del tablet (giro 43577666467).
+
+**Prossimo passo**: il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni; poi il
+computer (OffComputer); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
