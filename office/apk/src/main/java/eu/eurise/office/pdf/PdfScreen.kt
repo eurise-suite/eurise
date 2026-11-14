@@ -298,7 +298,9 @@ private fun Pages(model: PdfModel, state: PdfState, modifier: Modifier) {
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = if (model.panel) 220.dp else 96.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(state.pages.size, key = { "${state.version}-$it" }) { index ->
+                // Chiave = pagina, non versione: a ogni modifica la pagina resta e tiene il disegno vecchio finché arriva
+                // il nuovo (prima si ricreava vuota e l'evidenziazione appena fatta lampeggiava).
+                items(state.pages.size, key = { it }) { index ->
                     PageView(model, index, state.pages[index], state.version, zoom)
                 }
             }
@@ -313,16 +315,29 @@ private fun PageView(model: PdfModel, index: Int, geometry: PageGeometry, versio
     val density = LocalDensity.current
     var size by remember { mutableStateOf(IntSize.Zero) }
     val step = when { zoom < 1.4f -> 1f; zoom < 2.2f -> 2f; else -> 3f }
+    // Il segno appena fatto (evidenziazione, tratto, rettangolo) resta disegnato sopra finché non arriva la pagina
+    // ridisegnata con la modifica: niente attimo in cui sparisce.
+    var heldLines by remember { mutableStateOf<List<PdfRect>>(emptyList()) }
+    var heldFrom by remember { mutableStateOf(-1) }
+    val stroke = remember { mutableStateListOf<Offset>() }
+    var drag by remember { mutableStateOf<Pair<Offset, Offset>?>(null) }
     val bitmap by produceState<android.graphics.Bitmap?>(null, version, size.width, step) {
-        if (size.width > 0) value = model.session.render(index, (size.width * step / zoom).toInt().coerceIn(200, 2600))
+        if (size.width > 0) {
+            val fresh = model.session.render(index, (size.width * step / zoom).toInt().coerceIn(200, 2600))
+            if (fresh != null) value = fresh
+            if (heldFrom in 0 until version) {
+                heldLines = emptyList()
+                stroke.clear()
+                drag = null
+                heldFrom = -1
+            }
+        }
     }
     val text by produceState<PageText?>(null, version, model.tool) {
         if (model.tool == Tool.Highlight || model.searching) value = model.session.text(index)
     }
     val marks by produceState(emptyList<Mark>(), version) { value = model.session.marks(index) }
-    val stroke = remember { mutableStateListOf<Offset>() }
     var selection by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-    var drag by remember { mutableStateOf<Pair<Offset, Offset>?>(null) }
     var askAt by remember { mutableStateOf<ViewPoint?>(null) }
     var openMark by remember { mutableStateOf<Mark?>(null) }
 
@@ -348,6 +363,8 @@ private fun PageView(model: PdfModel, index: Int, geometry: PageGeometry, versio
                     selection = null
                     if (sel != null && t != null) {
                         val lines = t.lineBoxes(sel.first, sel.second)
+                        heldLines = lines
+                        heldFrom = version
                         model.selectedText = t.glyphs.subList(minOf(sel.first, sel.second), maxOf(sel.first, sel.second) + 1).joinToString("") { it.text }.trim()
                         model.session.edit { d -> PdfEdits.highlight(d, d.getPage(index), lines, model.color, model.underline) }
                     }
@@ -359,8 +376,12 @@ private fun PageView(model: PdfModel, index: Int, geometry: PageGeometry, versio
                 onDrag = { change, _ -> change.consume(); stroke.add(change.position) },
                 onDragEnd = {
                     val points = stroke.map { geometry.toPdf(point(it)) }
-                    stroke.clear()
-                    if (points.size > 1) model.session.edit { d -> PdfEdits.ink(d, d.getPage(index), listOf(points), model.penColor, 1.6f) }
+                    if (points.size > 1) {
+                        heldFrom = version
+                        model.session.edit { d -> PdfEdits.ink(d, d.getPage(index), listOf(points), model.penColor, 1.6f) }
+                    } else {
+                        stroke.clear()
+                    }
                 },
                 onDragCancel = { stroke.clear() },
             )
@@ -369,12 +390,17 @@ private fun PageView(model: PdfModel, index: Int, geometry: PageGeometry, versio
                 onDrag = { change, _ -> change.consume(); drag = drag?.copy(second = change.position) },
                 onDragEnd = {
                     val d0 = drag
-                    drag = null
+                    heldFrom = version
                     if (d0 != null) {
                         val (x1, y1) = geometry.toPdf(point(d0.first))
                         val (x2, y2) = geometry.toPdf(point(d0.second))
                         val r = PdfRect(minOf(x1, x2), minOf(y1, y2), maxOf(x1, x2), maxOf(y1, y2))
-                        if (r.width > 2f && r.height > 2f) model.session.edit { d -> PdfEdits.cover(d, d.getPage(index), r, white = true) }
+                        if (r.width > 2f && r.height > 2f) {
+                            model.session.edit { d -> PdfEdits.cover(d, d.getPage(index), r, white = true) }
+                        } else {
+                            drag = null
+                            heldFrom = -1
+                        }
                     }
                 },
                 onDragCancel = { drag = null },
@@ -428,9 +454,14 @@ private fun PageView(model: PdfModel, index: Int, geometry: PageGeometry, versio
             }
             val t = text
             val sel = selection
-            if (t != null && sel != null) {
-                t.lineBoxes(sel.first, sel.second).forEach { r ->
-                    val (o, s) = box(r)
+            val live = if (t != null && sel != null) t.lineBoxes(sel.first, sel.second) else heldLines
+            live.forEach { r ->
+                val (o, s) = box(r)
+                if (model.underline && sel == null) {
+                    // Come sarà disegnata: una linea sotto il testo, non il riquadro della selezione.
+                    val h = maxOf(2f, s.height * 0.08f)
+                    drawRect(Color(model.color.r * 0.55f, model.color.g * 0.55f, model.color.b * 0.55f), Offset(o.x, o.y + s.height - h), Size(s.width, h))
+                } else {
                     drawRect(Color(model.color.r, model.color.g, model.color.b, 0.55f), o, s)
                 }
             }
