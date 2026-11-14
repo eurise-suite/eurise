@@ -2222,3 +2222,27 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   OffRapportoVedi **approvate** → Office passa all'altra chat.
 - **APK in apk-prova: giro 474 e Mappe 40.**
 - **Domanda aperta del proprietario**: unire Alfred ed Eurise AI e uso dell'online con la massima privacy (risposta in chat).
+
+## Punto di ripartenza (14 novembre, tarda mattina) — da fare nella chat nuova
+- **Ramo `brand`. APK in apk-prova: giro 474 e Mappe 40.** Attenzione: il giro 474 spegne a chi aggiorna anche i servizi
+  che erano accesi (vedi punto 1): correggere per primo, prima che il proprietario lo installi.
+1. **Servizi spenti di base, correzioni del proprietario**:
+   - L'aggiornamento **non deve spegnere** ciò che l'utente aveva già acceso. Oggi `PrivacyCenter` salva solo le scelte
+     esplicite e i vecchi «accesi di base» non sono scritti: al primo avvio dopo l'aggiornamento, se l'app era già
+     installata (prima installazione ≠ ultimo aggiornamento, o il file `privacy_center` esiste), scrivere esplicitamente
+     acceso per i servizi che lo erano di base (Weather, Pollen, Alerts, News, Markets, Horoscope, Videos, MapReports),
+     solo dove non c'è già una scelta. Una volta sola (segno nelle preferenze).
+   - **Alla prima installazione**: un popup avverte che ci sono servizi attivabili, spiega cosa comporta ciascuno
+     (cosa esce, dove va, semaforo) e permette di accenderli **uno per uno**, subito. Prima la tavola, poi il codice.
+2. **Tavole di Mappe**: MapIncroci approvata coi colori nuovi, ma i **palazzi sono troppo accesi**: una via di mezzo
+   (pastello meno saturo). **MapFinestrini**: tornare ai **colori della suite** come tutte le altre impostazioni (Perla,
+   blu notte, non l'azzurro vivo). Poi il codice di incroci e finestrini.
+3. **Alfred unico (approvato tutto)**: Alfred è l'assistente, Eurise AI il motore (APK senza Internet, servizio con
+   permesso di firma). Nel campo di Alfred: **Invio** = Alfred sul telefono; **icona AI online** = la domanda a un'AI sul
+   web (prima i dati tolti sul telefono, servizio europeo senza registri, semaforo); **icona computer** = il computer
+   dell'utente come cervello, via Ponte, cifrato. Ordine: unire, azioni e memoria sul telefono, computer, cloud. Prima le
+   tavole (Alfred unico con le tre icone, «da dove risponde» col semaforo, collegamento al computer).
+   - **Il PC deve essere acceso?** Sì, acceso o in sospensione con risveglio dalla rete (Wake-on-LAN, dalla stessa rete
+     o dal Ponte); spento, l'icona computer è grigia con «Computer spento» e Alfred propone il telefono o l'online.
+     Alternativa per chi vuole il cervello sempre pronto: un piccolo computer di casa sempre acceso. Da discutere.
+4. Office: lo segue un'altra chat (le tavole OffRapporto e OffRapportoVedi sono approvate).
