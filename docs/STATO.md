@@ -2467,6 +2467,8 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   (AlfMappe), voce più «da maggiordomo», il PC come cervello.
 
 ## 14 novembre, notte: cielo e colline nel motore della mappa (ramo `brand`) · Mappe 47
+- **APK**: Mappe 47 in apk-prova (con il giro 543) e mandato in chat come `Eurise-Mappe-47.apk`. Esito della prova di Mappe 46
+  ancora da ricevere dal proprietario.
 - **Fatto in codice** (tavola MapCieloColline approvata): dettagli in `maps/EURISE.md`, «Cielo e colline in guida».
 - **Correzione dell'analisi di ieri**: alzare l'angolo a 66° non basta e anzi rompe la vista, perché CoMaps calcola la
   grandezza del piano della mappa in modo che il bordo lontano tocchi sempre il bordo alto dello schermo (oltre 60° la
