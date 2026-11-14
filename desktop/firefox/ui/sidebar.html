@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="eurise.css">
+<style>
+  body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .bar { display: flex; gap: 8px; }
+  .bar button { flex: 1; }
+  .row.link { cursor: pointer; border-radius: 10px; }
+  .row.link:hover { background: var(--soft); }
+  .empty { font-size: 12px; color: var(--sub); padding: 8px 0; }
+</style>
+</head>
+<body>
+  <h1><img src="../icons/eurise.svg" alt=""> Eurise</h1>
+  <div class="status" id="status"><i></i>…</div>
+
+  <div class="card">
+    <span class="label">Scrivi e manda</span>
+    <textarea id="text" placeholder="Una nota, o una cosa da fare come la diresti: «chiamare Anna domani alle 10»"></textarea>
+    <div class="bar" style="margin-top:8px">
+      <button id="toNote" class="strong">In Note</button>
+      <button id="toTask">Da fare</button>
+      <button id="toClip" title="Negli appunti del telefono">Appunti</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">Questa scheda</span>
+    <div class="bar" style="margin-top:8px">
+      <button id="tabPhone">Apri sul telefono</button>
+      <button id="tabNote">In Note</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">Dal telefono</span>
+    <div id="recent"><div class="empty">…</div></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <span class="note">Oggi, Calendario, Email e Dettatura arriveranno con le app Eurise per il computer e useranno questo stesso collegamento. Tutto passa diretto tra computer e telefono sulla rete di casa, cifrato.</span>
+  <script src="icons.js"></script>
+  <script src="sidebar.js"></script>
+</body>
+</html>

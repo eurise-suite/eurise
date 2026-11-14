@@ -3,6 +3,8 @@ package eu.eurise.browser
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -307,39 +309,86 @@ internal fun TabsScreen(model: BrowserModel, startSearch: Boolean, onOpenTab: ()
     }
 }
 
+/**
+ * Una scheda nella griglia (richiesta del proprietario, 15 novembre: leggere di più e riconoscerla subito): icona del
+ * sito sempre (anche delle schede non ancora caricate), titolo su due righe, sito, anteprima della pagina anche dopo un
+ * riavvio ([Thumbs]); la scheda in uso ha il bordo nell'accento, la testata colorata e l'etichetta «In uso».
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TabCard(model: BrowserModel, t: Tab, current: Boolean, onOpen: () -> Unit, onGroup: () -> Unit, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val color = groupColor(model, t.group)
     val closeLabel = stringResource(R.string.brw_close_tab)
+    val url = t.url.ifBlank { t.pending.orEmpty() }
+    val host = Links.host(url).removePrefix("www.")
+    val shape = RoundedCornerShape(16.dp)
     Column(
-        Modifier.height(150.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surface)
-            .then(if (current) Modifier.background(scheme.primary.copy(alpha = 0.08f)) else Modifier)
+        Modifier.height(196.dp)
+            .then(if (current) Modifier.shadow(6.dp, shape) else Modifier)
+            .clip(shape).background(scheme.surface)
+            .then(if (current) Modifier.border(2.5.dp, scheme.primary, shape) else Modifier.border(1.dp, scheme.onSurface.copy(alpha = 0.08f), shape))
             .combinedClickable(onClick = onOpen, onLongClick = onGroup),
     ) {
-        Box(Modifier.fillMaxWidth().height(4.dp).background(color ?: if (current) scheme.primary else Color.Transparent))
-        Row(Modifier.fillMaxWidth().padding(start = 10.dp, top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (t.private) { Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(13.dp)); Spacer(Modifier.width(4.dp)) }
-            else if (SiteIcons.get(Links.host(t.url)) != null) { SiteIcon(t.url, 14.dp) {}; Spacer(Modifier.width(5.dp)) }
-            Text(
-                t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) },
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-            )
+        Box(Modifier.fillMaxWidth().height(4.dp).background(color ?: Color.Transparent))
+        Row(
+            Modifier.fillMaxWidth().background(if (current) scheme.primary.copy(alpha = 0.10f) else Color.Transparent).padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(Modifier.padding(top = 3.dp)) {
+                if (t.private) Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(18.dp))
+                else SiteIcon(url, 18.dp) { CardInitial(host, current) }
+            }
+            Spacer(Modifier.width(7.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    t.title.ifBlank { if (url.startsWith("http")) host else stringResource(R.string.brw_new_tab) },
+                    fontSize = 12.5.sp, lineHeight = 15.sp, fontWeight = if (current) FontWeight.ExtraBold else FontWeight.Bold,
+                    color = if (current) scheme.primary else scheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (current) {
+                        Text(
+                            stringResource(R.string.brw_tab_in_use), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(scheme.primary).padding(horizontal = 5.dp, vertical = 1.dp),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                    }
+                    if (url.startsWith("http")) Text(host, fontSize = 11.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
             Box(Modifier.size(32.dp).clip(CircleShape).clickable(onClick = onClose).semantics { contentDescription = closeLabel }, contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.close(2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
             }
         }
         Box(
-            Modifier.weight(1f).fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp).clip(RoundedCornerShape(10.dp))
-                .background((color ?: scheme.primary).copy(alpha = 0.10f)),
+            Modifier.weight(1f).fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp, top = 2.dp).clip(RoundedCornerShape(10.dp))
+                .background((color ?: scheme.primary).copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center,
         ) {
-            val thumb = t.thumb
+            val thumb = t.thumb ?: if (t.private) null else Thumbs.get(url)
             if (thumb != null) Image(thumb, null, contentScale = ContentScale.Crop, alignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize())
-            else Text(Links.host(t.url).take(1).uppercase().ifBlank { "+" }, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = (color ?: scheme.primary).copy(alpha = 0.6f))
+            else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (t.private) Icon(EuriseIcons.mask(1.6f), null, tint = scheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(34.dp))
+                else SiteIcon(url, 36.dp) {
+                    Text(host.take(1).uppercase().ifBlank { "+" }, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = (color ?: scheme.primary).copy(alpha = 0.6f))
+                }
+                if (host.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(host, fontSize = 11.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 8.dp))
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun CardInitial(host: String, on: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier.size(18.dp).clip(CircleShape).background(if (on) scheme.primary.copy(alpha = 0.16f) else scheme.onSurface.copy(alpha = 0.08f)),
+        contentAlignment = Alignment.Center,
+    ) { Text(host.take(1).uppercase().ifBlank { "+" }, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (on) scheme.primary else scheme.onSurfaceVariant) }
 }
 
 @Composable

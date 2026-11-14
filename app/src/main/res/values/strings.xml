@@ -25,4 +25,7 @@
     <string name="web_only_query">A %1$s va solo ciò che cerchi</string>
     <string name="app_file">Drive</string>
     <string name="app_scanner">Scanner</string>
+    <string name="ponte_event_created">In Calendario: %1$s</string>
+    <string name="ponte_event_failed">Appuntamento dal computer non salvato: nessun calendario modificabile</string>
+    <string name="ponte_event_no_permission">Appuntamento dal computer: apri Calendario e permetti l\'accesso al calendario</string>
 </resources>

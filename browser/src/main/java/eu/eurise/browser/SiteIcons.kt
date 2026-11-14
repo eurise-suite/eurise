@@ -26,6 +26,10 @@ import org.mozilla.geckoview.WebRequest
  * qui si scarica dallo stesso sito con il motore di Gecko e senza cookie, si riduce a 64 px e si tiene sul telefono
  * (`files/icone/<sito>.png`). Nessun servizio di icone esterno; nelle schede private non si scarica né si salva nulla;
  * un sito mai aperto resta con la sua iniziale (i segnalibri non contattano siti da soli). Si rinnova dopo 30 giorni.
+ *
+ * Le schede non ancora caricate (riaperte all'avvio, aperte in fondo) non hanno ancora parlato con l'estensione: per
+ * loro [ensure] chiede `/favicon.ico` e poi `/apple-touch-icon.png` allo stesso sito della scheda, senza cookie, una
+ * volta per avvio (richiesta del proprietario, 15 novembre: «i favicon di tutte le schede, non solo di quelle aperte»).
  */
 object SiteIcons {
     private const val SIZE = 64
@@ -36,10 +40,25 @@ object SiteIcons {
     private val loaded = mutableStateMapOf<String, ImageBitmap>()
     private val missing = HashSet<String>()
     private val inFlight = HashSet<String>()
+    private val tried = HashSet<String>()
     private lateinit var dir: File
+    private lateinit var app: Context
 
     fun init(context: Context) {
+        app = context.applicationContext
         dir = File(context.filesDir, "icone").apply { mkdirs() }
+    }
+
+    /** Una scheda (non privata) mostra il sito [url]: se l'icona non è sul telefono, la si chiede al sito stesso. */
+    fun ensure(url: String, private: Boolean) {
+        if (private || !::dir.isInitialized) return
+        if (!url.startsWith("https://") && !url.startsWith("http://")) return
+        val host = Links.host(url).ifBlank { return }
+        val k = key(host)
+        if (loaded.containsKey(k) || file(host).isFile) return
+        synchronized(tried) { if (!tried.add(k)) return }
+        val origin = url.substringBefore("://") + "://" + host
+        offer(app, host, "$origin/favicon.ico", false, fallback = "$origin/apple-touch-icon.png")
     }
 
     private fun key(host: String) = host.lowercase().removePrefix("www.").replace(Regex("[^a-z0-9.-]"), "_")
@@ -60,7 +79,7 @@ object SiteIcons {
     }
 
     /** La pagina [host] dichiara l'icona [url]: si scarica se non c'è o è vecchia. */
-    fun offer(context: Context, host: String, url: String, private: Boolean) {
+    fun offer(context: Context, host: String, url: String, private: Boolean, fallback: String? = null) {
         if (private || host.isBlank() || !::dir.isInitialized) return
         if (!url.startsWith("https://") && !url.startsWith("http://")) return
         val k = key(host)
@@ -72,6 +91,7 @@ object SiteIcons {
             .getOrNull()
             ?.accept({ response ->
                 io.execute {
+                    var ok = false
                     runCatching {
                         val body = response?.body ?: return@runCatching
                         val bytes = body.use { input ->
@@ -86,10 +106,15 @@ object SiteIcons {
                         f.outputStream().use { small.compress(Bitmap.CompressFormat.PNG, 100, it) }
                         synchronized(missing) { missing.remove(k) }
                         loaded[k] = small.asImageBitmap()
+                        ok = true
                     }
                     synchronized(missing) { inFlight.remove(k) }
+                    if (!ok && fallback != null) offer(context, host, fallback, private)
                 }
-            }, { synchronized(missing) { inFlight.remove(k) } })
+            }, {
+                synchronized(missing) { inFlight.remove(k) }
+                if (fallback != null) offer(context, host, fallback, private)
+            })
             ?: synchronized(missing) { inFlight.remove(k) }
     }
 
@@ -108,8 +133,9 @@ object SiteIcons {
 
 /** L'icona del sito in un quadratino arrotondato, o [fallback] (l'iniziale) se non c'è. */
 @Composable
-internal fun SiteIcon(url: String, size: Dp, fallback: @Composable () -> Unit) {
+internal fun SiteIcon(url: String, size: Dp, private: Boolean = false, fallback: @Composable () -> Unit) {
     val host = Links.host(url)
+    androidx.compose.runtime.LaunchedEffect(host, private) { SiteIcons.ensure(url, private) }
     val icon = SiteIcons.get(host)
     if (icon != null) Image(icon, null, Modifier.size(size).clip(RoundedCornerShape(size / 4)))
     else fallback()

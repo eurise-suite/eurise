@@ -132,7 +132,7 @@ class BrowserModel(private val context: Context) {
         return true
     }
 
-    /** Una miniatura piccola della pagina in vista, per la griglia delle schede (resta in memoria, mai su disco). */
+    /** Una miniatura piccola della pagina in vista, per la griglia delle schede (schede normali: anche in [Thumbs]). */
     fun snapshot(tab: Tab) {
         if (!tab.url.startsWith("http")) return
         val view = Gecko.view ?: return
@@ -146,6 +146,7 @@ class BrowserModel(private val context: Context) {
                 // Basta la parte alta della pagina: è quella che si riconosce.
                 val crop = if (small.height > 360) android.graphics.Bitmap.createBitmap(small, 0, 0, w, 360).also { small.recycle() } else small
                 tab.thumb = crop.asImageBitmap()
+                if (!tab.private) Thumbs.save(tab.url, crop)
             }, { })
         }
     }
@@ -255,6 +256,7 @@ class BrowserModel(private val context: Context) {
             a.put(org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive).put("group", t.group ?: ""))
         }
         prefs.edit().putString("tabs", a.toString()).putLong("current", current?.id ?: -1).apply()
+        Thumbs.keepOnly(tabs.filter { !it.private }.flatMap { listOfNotNull(it.url, it.pending) })
     }
 
     /**

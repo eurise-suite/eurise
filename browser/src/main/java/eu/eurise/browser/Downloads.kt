@@ -21,6 +21,9 @@ import java.net.URLDecoder
 internal object Downloads {
     data class Saved(val uri: Uri, val name: String, val mime: String)
 
+    /** Nome, tipo e peso (se il sito lo dice) di un download, calcolati una volta sola: lo stesso nome dall'inizio alla fine. */
+    data class Info(val name: String, val mime: String, val size: Long?)
+
     /** Il tipo del file senza i parametri («text/csv; charset=utf-8» → «text/csv»); null se manca o è generico. */
     fun mime(contentType: String?): String? =
         contentType?.substringBefore(';')?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
@@ -58,14 +61,21 @@ internal object Downloads {
      * Salva il corpo della risposta in Download (cartella pubblica, senza permessi da Android 10). Da chiamare fuori dal
      * thread principale. Null se non c'è corpo o se il telefono è più vecchio di Android 10 (allora decide il chiamante).
      */
-    fun save(context: Context, response: WebResponse): Saved? {
-        val body = response.body ?: return null
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { runCatching { body.close() }; return null }
+    fun info(response: WebResponse): Info {
         val type = mime(header(response, "Content-Type"))
         val name = fileName(response.uri, header(response, "Content-Disposition"), type)
         val mime = type?.takeIf { it != "application/octet-stream" }
             ?: name.substringAfterLast('.', "").lowercase().let { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) }
             ?: "application/octet-stream"
+        return Info(name, mime, header(response, "Content-Length")?.trim()?.toLongOrNull()?.takeIf { it > 0 })
+    }
+
+    /** [onProgress] riceve i byte già scritti, al massimo ogni 256 KB. */
+    fun save(context: Context, response: WebResponse, info: Info = info(response), onProgress: (Long) -> Unit = {}): Saved? {
+        val body = response.body ?: return null
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { runCatching { body.close() }; return null }
+        val name = info.name
+        val mime = info.mime
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
@@ -75,7 +85,21 @@ internal object Downloads {
         }
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: run { body.close(); return null }
         return try {
-            body.use { input -> resolver.openOutputStream(uri)!!.use { input.copyTo(it, 64 * 1024) } }
+            body.use { input ->
+                resolver.openOutputStream(uri)!!.use { out ->
+                    val buf = ByteArray(64 * 1024)
+                    var total = 0L
+                    var told = 0L
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        out.write(buf, 0, n)
+                        total += n
+                        if (total - told >= 256 * 1024) { told = total; onProgress(total) }
+                    }
+                    onProgress(total)
+                }
+            }
             resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
             // Il nome vero, se il telefono l'ha cambiato (file con lo stesso nome già presente: «nome (1).pdf»).
             val real = resolver.query(uri, arrayOf(MediaStore.Downloads.DISPLAY_NAME), null, null, null)?.use { c ->

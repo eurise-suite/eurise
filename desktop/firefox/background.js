@@ -1,0 +1,275 @@
+/*
+ * Eurise per Firefox (tavola PcFirefox): il cuore dell'estensione.
+ * - Parla con il Ponte Eurise del computer (eurise-ponte) attraverso il native messaging: tutto ciò che va al telefono
+ *   passa da lì, cifrato sulla rete di casa. Niente server, niente servizi esterni.
+ * - Applica l'aspetto Eurise a Firefox (Perla di giorno, Notte di sera o con il tema scuro del sistema).
+ * - Mette le voci Eurise nel menu del tasto destro.
+ * Messaggi dalle pagine dell'estensione e dalle pagine web: {op: "...", ...}; risposta {ok, text, ...}.
+ */
+"use strict";
+
+const HOST = "eu.eurise.ponte";
+// Spenti di base (CLAUDE.md, 14 novembre): le proposte di password leggono i moduli delle pagine, si accendono nelle Impostazioni.
+const DEFAULTS = { theme: "auto", passwords: false, menus: true };
+
+// --- Ponte (native messaging) ---
+
+let port = null;
+let seq = 0;
+const waiting = new Map();
+let lastHello = { ok: false, running: false, devices: [], text: "" };
+
+function connect() {
+  if (port) return port;
+  try {
+    port = browser.runtime.connectNative(HOST);
+  } catch (e) {
+    port = null;
+    return null;
+  }
+  port.onMessage.addListener((m) => {
+    const w = waiting.get(m.id);
+    if (!w) return;
+    waiting.delete(m.id);
+    w.resolve(m);
+  });
+  port.onDisconnect.addListener((p) => {
+    const why = (p && p.error && p.error.message) || "Ponte non raggiungibile";
+    for (const w of waiting.values()) w.resolve({ ok: "0", lines: why, missing: "1" });
+    waiting.clear();
+    port = null;
+  });
+  return port;
+}
+
+/** Una richiesta al Ponte: t è il tipo (note, task, event, clip, handoff, file-part, pwd-ask, status…). */
+function ponte(t, fields = {}, timeoutMs = 20000) {
+  const p = connect();
+  if (!p) return Promise.resolve({ ok: "0", lines: "Ponte Eurise non installato", missing: "1" });
+  const id = String(++seq);
+  const msg = { id, t };
+  for (const [k, v] of Object.entries(fields)) if (v !== undefined && v !== null && v !== "") msg["f." + k] = String(v);
+  return new Promise((resolve) => {
+    waiting.set(id, { resolve });
+    setTimeout(() => { if (waiting.delete(id)) resolve({ ok: "0", lines: "Il Ponte non risponde" }); }, timeoutMs);
+    try { p.postMessage(msg); } catch (e) { waiting.delete(id); resolve({ ok: "0", lines: String(e) }); }
+  });
+}
+
+async function hello() {
+  const r = await ponte("hello", {}, 6000);
+  const devices = (r.devices || "").split("\n").filter(Boolean);
+  const live = (r.lines || "").split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
+  lastHello = {
+    ok: r.ok === "1", missing: r.missing === "1", running: r.running === "1", devices,
+    live: live.filter((d) => d.live === "1").map((d) => d.name), text: r.lines || "",
+  };
+  return lastHello;
+}
+
+/** Il riassunto per l'utente: «Fairphone: arrivato», «In coda…», o l'errore. */
+function said(r) {
+  if (r.missing === "1") return "Il Ponte Eurise non è installato su questo computer: vedi Impostazioni dell'estensione.";
+  return (r.lines || "").trim() || (r.ok === "1" ? "Fatto" : "Non riuscito");
+}
+
+function notify(title, text) {
+  browser.notifications.create({ type: "basic", iconUrl: browser.runtime.getURL("icons/eurise.svg"), title, message: text }).catch(() => {});
+}
+
+// --- Cosa si può mandare ---
+
+const send = {
+  tab: (tab) => ponte("handoff", { url: tab.url, title: tab.title }),
+  link: (url, title) => ponte("handoff", { url, title }),
+  note: (text, title, url) => ponte("note", { text: [title, text, url].filter(Boolean).join("\n") }),
+  task: (text) => ponte("task", { text }),
+  clip: (text) => ponte("clip", { text }),
+  event: (e) => ponte("event", e),
+};
+
+/** Un documento a pezzi da 512 KB (il Ponte lo ricompone e lo manda al telefono, che lo mette in Download/Eurise). */
+async function sendFile(name, mime, buffer) {
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length > 50 * 1024 * 1024) return { ok: "0", lines: "Il file supera 50 MB." };
+  const PART = 512 * 1024;
+  const parts = Math.max(1, Math.ceil(bytes.length / PART));
+  const fid = crypto.randomUUID();
+  let last = null;
+  for (let i = 0; i < parts; i++) {
+    const chunk = bytes.subarray(i * PART, Math.min(bytes.length, (i + 1) * PART));
+    let bin = "";
+    for (let j = 0; j < chunk.length; j += 0x8000) bin += String.fromCharCode.apply(null, chunk.subarray(j, j + 0x8000));
+    last = await ponte("file-part", { fid, part: i, parts, name, mime: mime || "application/octet-stream", data: btoa(bin) }, 60000);
+    if (last.ok !== "1") return last;
+  }
+  return last;
+}
+
+/** Un file da un link (tasto destro su un link a un PDF, un'immagine…): lo scarica Firefox, con i cookie del sito. */
+async function sendUrlAsFile(url) {
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) return { ok: "0", lines: "Il sito ha risposto " + res.status };
+  const buf = await res.arrayBuffer();
+  const cd = res.headers.get("content-disposition") || "";
+  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+  const name = decodeURIComponent((m && m[1]) || new URL(url).pathname.split("/").pop() || "documento");
+  return sendFile(name, (res.headers.get("content-type") || "").split(";")[0], buf);
+}
+
+// --- Password dal telefono (Eurise Password approva con l'impronta) ---
+
+async function askPassword(site) {
+  const ask = crypto.randomUUID();
+  const r = await ponte("pwd-ask", { site, ask });
+  if (r.ok !== "1" || !/arrivato/.test(r.lines || "")) return { ok: false, text: r.ok === "1" ? "Il telefono non è collegato: aprilo sul Wi-Fi di casa." : said(r) };
+  const until = Date.now() + 120000;
+  while (Date.now() < until) {
+    await new Promise((res) => setTimeout(res, 1500));
+    const w = await ponte("pwd-wait", { ask }, 5000);
+    const line = (w.lines || "").trim();
+    if (line) {
+      try {
+        const g = JSON.parse(line);
+        return { ok: true, username: g["username"] || "", password: g["password"] || "" };
+      } catch (e) { /* riprova */ }
+    }
+  }
+  return { ok: false, text: "Nessuna risposta dal telefono in due minuti." };
+}
+
+// --- Date nel testo scelto: «20 novembre alle 15:30», «20/11», «domani alle 9» ---
+
+const MONTHS = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+function pad(n) { return String(n).padStart(2, "0"); }
+
+/** Prima data e ora trovate nel testo (italiano), come {date: "2026-11-20", time: "15:30"|""}; null se niente. */
+function findDate(text, now = new Date()) {
+  const t = (text || "").toLowerCase();
+  let d = null;
+  let m = new RegExp("\\b(\\d{1,2})\\s+(" + MONTHS.join("|") + ")(?:\\s+(\\d{4}))?").exec(t);
+  if (m) d = new Date(m[3] ? +m[3] : now.getFullYear(), MONTHS.indexOf(m[2]), +m[1]);
+  if (!d && (m = /\b(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?!\d)/.exec(t)) && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31) {
+    const y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : now.getFullYear();
+    d = new Date(y, +m[2] - 1, +m[1]);
+  } else if (!d) m = null;
+  if (!d && /\bdopodomani\b/.test(t)) d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  else if (!d && /\bdomani\b/.test(t)) d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  else if (!d && /\boggi\b/.test(t)) d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (!d || isNaN(d)) return null;
+  // Una data già passata senza anno è dell'anno prossimo.
+  if (!m || !m[3]) { const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); if (d < today) d.setFullYear(d.getFullYear() + 1); }
+  const tm = /\b(?:alle|ore|h)\s*(\d{1,2})(?:[:.](\d{2}))?\b/.exec(t) || /\b(\d{1,2})[:.](\d{2})\b/.exec(t);
+  const time = tm && +tm[1] < 24 ? pad(+tm[1]) + ":" + pad(tm[2] ? +tm[2] : 0) : "";
+  return { date: d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()), time };
+}
+
+// --- Aspetto Eurise ---
+
+const PERLA = {
+  frame: "#EDEBE6", frame_inactive: "#F1EFEA", tab_background_text: "#56564F",
+  tab_selected: "#FFFFFF", tab_text: "#1F2A44", tab_line: "#3E5C8A", tab_loading: "#3E5C8A",
+  toolbar: "#FFFFFF", toolbar_text: "#1E1D1B", toolbar_field: "#F4F4F1", toolbar_field_text: "#1E1D1B",
+  toolbar_field_border_focus: "#3E5C8A", toolbar_field_highlight: "#D6DDE8", toolbar_top_separator: "#E2E2DC",
+  toolbar_bottom_separator: "#E2E2DC", icons: "#3A3A35", icons_attention: "#3E5C8A",
+  popup: "#FFFFFF", popup_text: "#1E1D1B", popup_border: "#E2E2DC", popup_highlight: "#EAEEF3", popup_highlight_text: "#1F2A44",
+  sidebar: "#F4F4F1", sidebar_text: "#1E1D1B", sidebar_border: "#E2E2DC", sidebar_highlight: "#3E5C8A", sidebar_highlight_text: "#FFFFFF",
+  ntp_background: "#F4F4F1", ntp_text: "#1E1D1B", button_background_hover: "#EAEEF3", button_background_active: "#D6DDE8",
+};
+const NOTTE = {
+  frame: "#141A26", frame_inactive: "#171E2B", tab_background_text: "#A9B4C8",
+  tab_selected: "#26324A", tab_text: "#FFFFFF", tab_line: "#8FB4F0", tab_loading: "#8FB4F0",
+  toolbar: "#1D2535", toolbar_text: "#E6E9F0", toolbar_field: "#141A26", toolbar_field_text: "#E6E9F0",
+  toolbar_field_border_focus: "#8FB4F0", toolbar_field_highlight: "#3E5C8A", toolbar_top_separator: "#2A3448",
+  toolbar_bottom_separator: "#2A3448", icons: "#C9D2E3", icons_attention: "#8FB4F0",
+  popup: "#1D2535", popup_text: "#E6E9F0", popup_border: "#2A3448", popup_highlight: "#2B3A5C", popup_highlight_text: "#FFFFFF",
+  sidebar: "#171E2B", sidebar_text: "#E6E9F0", sidebar_border: "#2A3448", sidebar_highlight: "#8FB4F0", sidebar_highlight_text: "#141A26",
+  ntp_background: "#141A26", ntp_text: "#E6E9F0", button_background_hover: "#2B3A5C", button_background_active: "#3E5C8A",
+};
+
+const dark = window.matchMedia("(prefers-color-scheme: dark)");
+
+async function applyTheme() {
+  const { theme } = await browser.storage.local.get(DEFAULTS);
+  if (theme === "firefox") { browser.theme.reset(); return; }
+  const night = theme === "notte" || (theme === "auto" && dark.matches);
+  browser.theme.update({ colors: night ? NOTTE : PERLA, properties: { color_scheme: night ? "dark" : "light", content_color_scheme: "auto" } });
+}
+dark.addEventListener("change", applyTheme);
+
+// --- Menu del tasto destro ---
+
+async function buildMenus() {
+  await browser.menus.removeAll();
+  const { menus } = await browser.storage.local.get(DEFAULTS);
+  if (!menus) return;
+  const icons = { "16": "icons/eurise.svg" };
+  browser.menus.create({ id: "eurise", title: "Eurise", contexts: ["page", "link", "selection", "image", "tab"], icons });
+  const add = (id, title, contexts) => browser.menus.create({ id, parentId: "eurise", title, contexts });
+  add("tab-phone", "Apri sul telefono", ["page", "tab"]);
+  add("link-phone", "Apri il link sul telefono", ["link"]);
+  add("link-file", "Manda il file al telefono", ["link", "image"]);
+  add("sel-note", "In Note", ["selection"]);
+  add("page-note", "La pagina in Note", ["page"]);
+  add("sel-task", "Da fare", ["selection"]);
+  add("sel-event", "Appuntamento in Calendario…", ["selection"]);
+  add("sel-clip", "Negli appunti del telefono", ["selection"]);
+}
+
+browser.menus.onClicked.addListener(async (info, tab) => {
+  let r = null;
+  const sel = (info.selectionText || "").trim();
+  switch (info.menuItemId) {
+    case "tab-phone": r = await send.tab(tab); break;
+    case "link-phone": r = await send.link(info.linkUrl, info.linkText); break;
+    case "link-file": r = await sendUrlAsFile(info.linkUrl || info.srcUrl).catch((e) => ({ ok: "0", lines: String(e) })); break;
+    case "sel-note": r = await send.note(sel, tab.title, tab.url); break;
+    case "page-note": r = await send.note("", tab.title, tab.url); break;
+    case "sel-task": r = await send.task(sel); break;
+    case "sel-clip": r = await send.clip(sel); break;
+    case "sel-event":
+      // Il modulo dell'appuntamento, già compilato con la frase e la data trovata.
+      await browser.storage.session.set({ draftEvent: { text: sel, title: tab.title, url: tab.url, found: findDate(sel) } }).catch(() => {});
+      browser.browserAction.openPopup().catch(() => notify("Eurise", "Apri il pulsante Eurise per completare l'appuntamento."));
+      return;
+  }
+  if (r) notify("Eurise", said(r));
+});
+
+browser.commands.onCommand.addListener(async (name) => {
+  if (name !== "send-tab") return;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab) notify("Eurise", said(await send.tab(tab)));
+});
+
+// --- Messaggi da popup, pannello, impostazioni e pagine ---
+
+browser.runtime.onMessage.addListener((m, sender) => {
+  switch (m.op) {
+    case "hello": return hello();
+    case "recent": return ponte("recent", {}, 6000);
+    case "send": {
+      const fn = send[m.what];
+      return fn ? fn(...(m.args || [])).then((r) => ({ ok: r.ok === "1", text: said(r) })) : Promise.resolve({ ok: false, text: "?" });
+    }
+    case "file": return sendFile(m.name, m.mime, m.buffer).then((r) => ({ ok: r.ok === "1", text: said(r) }));
+    case "findDate": return Promise.resolve(findDate(m.text));
+    case "draft": return browser.storage.session.get("draftEvent").then((d) => { browser.storage.session.remove("draftEvent"); return d.draftEvent || null; }).catch(() => null);
+    case "password": {
+      // Solo dalla pagina stessa, per il suo sito: mai per un altro dominio.
+      const host = sender.tab && sender.url ? new URL(sender.url).hostname : "";
+      return host ? askPassword(host) : Promise.resolve({ ok: false, text: "?" });
+    }
+    case "settings": return browser.storage.local.get(DEFAULTS);
+    case "applySettings": return applyTheme().then(buildMenus).then(() => ({ ok: true }));
+  }
+  return false;
+});
+
+browser.runtime.onInstalled.addListener(async (d) => {
+  if (d.reason === "install") browser.runtime.openOptionsPage();
+});
+
+applyTheme();
+buildMenus();

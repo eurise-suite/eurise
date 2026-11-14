@@ -150,6 +150,8 @@
             <intent-filter>
                 <action android:name="eu.eurise.action.KEYBOARD_TASK" />
                 <action android:name="eu.eurise.action.KEYBOARD_NOTE" />
+                <!-- Appuntamenti mandati dal computer (Firefox con l'estensione Eurise, attraverso il Ponte). -->
+                <action android:name="eu.eurise.action.PONTE_EVENT" />
             </intent-filter>
         </receiver>
         <!-- Segreti affidati dagli altri APK della suite (chiave di recupero della Chat): nel backup cifrato. -->

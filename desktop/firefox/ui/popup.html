@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="eurise.css">
+<style>
+  body { width: 360px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .head button { width: 34px; height: 34px; padding: 0; background: var(--card); }
+  .head button svg { width: 17px; height: 17px; fill: none; stroke: var(--sub); stroke-width: 1.9; stroke-linecap: round; }
+  form { display: flex; flex-direction: column; gap: 8px; }
+  .bar { display: flex; gap: 8px; }
+  .bar button { flex: 1; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1><img src="../icons/eurise.svg" alt=""> Eurise</h1>
+    <span class="bar" style="flex:none">
+      <button id="side" title="Pannello Eurise"><svg viewBox="0 0 24 24"><path d="M4 5 h16 v14 H4 z M14 5 v14"/></svg></button>
+      <button id="opts" title="Impostazioni"><svg viewBox="0 0 24 24"><path d="M12 9 a3 3 0 1 0 0 6 a3 3 0 1 0 0 -6 M12 3 v2.5 M12 18.5 V21 M3 12 h2.5 M18.5 12 H21 M5.6 5.6 l1.8 1.8 M16.6 16.6 l1.8 1.8 M5.6 18.4 l1.8-1.8 M16.6 7.4 l1.8-1.8"/></svg></button>
+    </span>
+  </div>
+  <div class="status" id="status"><i></i>…</div>
+
+  <div class="card" id="menu">
+    <button class="action" data-act="phone"></button>
+    <button class="action" data-act="note"></button>
+    <button class="action" data-act="task"></button>
+    <button class="action" data-act="event"></button>
+    <button class="action" data-act="file"></button>
+  </div>
+
+  <form class="card" id="taskForm" hidden>
+    <span class="label">Da fare</span>
+    <input id="taskText" placeholder="pagare l'affitto venerdì" autocomplete="off">
+    <div class="bar"><button type="button" class="back">Indietro</button><button class="strong">In Attività</button></div>
+  </form>
+
+  <form class="card" id="noteForm" hidden>
+    <span class="label">In Note</span>
+    <input id="noteTitle" placeholder="Titolo">
+    <textarea id="noteText" placeholder="Testo (la frase scelta, o scrivi qui)"></textarea>
+    <label class="status"><input type="checkbox" id="noteUrl" checked style="width:auto"> con il link della pagina</label>
+    <div class="bar"><button type="button" class="back">Indietro</button><button class="strong">In Note</button></div>
+  </form>
+
+  <form class="card" id="eventForm" hidden>
+    <span class="label">Appuntamento in Calendario</span>
+    <input id="evTitle" placeholder="Riunione con Anna" required>
+    <div class="grid2"><input id="evDate" type="date" required><label class="status"><input type="checkbox" id="evAllDay" style="width:auto"> tutto il giorno</label></div>
+    <div class="grid2" id="evTimes"><input id="evStart" type="time" value="09:00"><input id="evEnd" type="time" value="10:00"></div>
+    <input id="evPlace" placeholder="Luogo (facoltativo)">
+    <textarea id="evNotes" placeholder="Note (facoltative)"></textarea>
+    <div class="bar"><button type="button" class="back">Indietro</button><button class="strong">In Calendario</button></div>
+  </form>
+
+  <form class="card" id="fileForm" hidden>
+    <span class="label">Documento al telefono</span>
+    <input id="fileInput" type="file" multiple>
+    <span class="note">Arriva in Download/Eurise sul telefono, con una notifica per aprirlo. Fino a 50 MB.</span>
+    <div class="bar"><button type="button" class="back">Indietro</button><button class="strong">Manda</button></div>
+  </form>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="icons.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -23,6 +23,8 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ponte"))
+    // Il contratto con Eurise Password (accessi chiesti dal computer): già nella suite.
+    implementation(project(":core:suite"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

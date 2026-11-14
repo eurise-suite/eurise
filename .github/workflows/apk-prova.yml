@@ -72,6 +72,8 @@ jobs:
           # Il Ponte per il computer (Linux): la cartella del programma in un archivio (serve Java 17).
           ponte=$(find artefatti -maxdepth 1 -type d -name 'eurise-ponte-linux-*' | head -1)
           if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi
+          # Eurise per Firefox (computer): l'estensione da caricare in Firefox, accanto al Ponte.
+          find artefatti -name 'eurise-firefox.xpi' -exec cp {} apk/ \;
           ls -la apk
           gh release delete apk-prova -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           gh release create apk-prova apk/* -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \

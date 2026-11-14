@@ -104,7 +104,7 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 continue
             }
             val m = channel.open(frame, from = c.id) ?: continue
-            val said = receive(m) ?: continue
+            val said = receive(m, c) ?: continue
             val line = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()) + " · " + said
             store.lastThing = line
             show(c.name, line)
@@ -127,7 +127,7 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
     }
 
     /** Fa ciò che chiede il computer, se quel tipo è acceso. Restituisce la frase per la notifica fissa. */
-    private suspend fun receive(m: Message): String? {
+    private suspend fun receive(m: Message, from: Computer): String? {
         val ctx = applicationContext
         return when (m.kind) {
             Kind.Clipboard -> {
@@ -158,6 +158,10 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 ctx.sendBroadcast(Intent(ACTION_TASK).setPackage(ctx.packageName).putExtra(Intent.EXTRA_TEXT, text))
                 ctx.getString(R.string.ponte_got_task, text.take(40))
             }
+            Kind.Event -> PonteInbox.event(ctx, m.fields)?.let { ctx.getString(R.string.ponte_got_event, it.take(40)) }
+            // I pezzi di un file arrivano uno dopo l'altro: la notifica fissa cambia solo a file completo.
+            Kind.File -> PonteInbox.filePart(ctx, m.fields)?.let { ctx.getString(R.string.ponte_got_file, it.take(40)) }
+            Kind.PasswordAsk -> PonteInbox.passwordAsk(ctx, from.id, from.name, m.fields)?.let { ctx.getString(R.string.ponte_got_pwd, it) }
             else -> null
         }
     }

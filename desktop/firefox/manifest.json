@@ -1,0 +1,38 @@
+{
+  "manifest_version": 2,
+  "name": "Eurise",
+  "version": "0.1.0",
+  "description": "Firefox diventa Eurise: aspetto Perla e Notte, password dal telefono, e un tocco per mandare a Calendario, Note, Attività e al telefono link e documenti. Tutto passa dal Ponte Eurise sulla rete di casa.",
+  "author": "Eurise",
+  "homepage_url": "https://eurise.eu/",
+  "browser_specific_settings": {
+    "gecko": { "id": "eurise-firefox@eurise.eu", "strict_min_version": "115.0" }
+  },
+  "icons": { "48": "icons/eurise.svg", "96": "icons/eurise.svg" },
+  "browser_action": {
+    "default_title": "Eurise",
+    "default_popup": "ui/popup.html",
+    "default_icon": "icons/eurise.svg",
+    "default_area": "navbar"
+  },
+  "sidebar_action": {
+    "default_title": "Eurise",
+    "default_panel": "ui/sidebar.html",
+    "default_icon": "icons/eurise.svg",
+    "open_at_install": false
+  },
+  "options_ui": { "page": "ui/options.html", "browser_style": false },
+  "background": { "scripts": ["background.js"] },
+  "content_scripts": [
+    { "matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "run_at": "document_idle", "all_frames": false }
+  ],
+  "commands": {
+    "_execute_browser_action": { "suggested_key": { "default": "Ctrl+Shift+E" }, "description": "Apri Eurise" },
+    "_execute_sidebar_action": { "suggested_key": { "default": "Alt+Shift+E" }, "description": "Pannello Eurise" },
+    "send-tab": { "suggested_key": { "default": "Ctrl+Shift+Y" }, "description": "Manda la scheda al telefono" }
+  },
+  "permissions": [
+    "nativeMessaging", "contextMenus", "menus", "theme", "storage", "tabs", "activeTab", "notifications",
+    "http://*/*", "https://*/*"
+  ]
+}

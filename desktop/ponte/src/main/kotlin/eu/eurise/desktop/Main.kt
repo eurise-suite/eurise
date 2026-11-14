@@ -38,6 +38,10 @@ import kotlin.system.exitProcess
  *   eurise-ponte manda link <url> [titolo] «Continua qui» sul telefono
  *   eurise-ponte manda nota <testo>        una nota in Eurise Note (senza testo: legge dallo standard input)
  *   eurise-ponte manda attivita <testo>    una cosa da fare in Eurise Attività («pagare l'affitto venerdì»)
+ *   eurise-ponte manda evento <inizio> [fine] <titolo>   un appuntamento in Eurise Calendario
+ *   eurise-ponte manda file <percorso>     un documento sul telefono (fino a 50 MB), in Download/Eurise
+ *   eurise-ponte installa-firefox          collega l'estensione Eurise di Firefox a questo Ponte
+ *   eurise-ponte firefox                   (lo avvia Firefox: native messaging)
  *   eurise-ponte prova-telefono <codice>   fa finta di essere un telefono (per provare senza telefono)
  *
  * Se il telefono non è collegato, quello che si manda resta in coda e parte quando torna sulla rete di casa.
@@ -56,6 +60,8 @@ fun main(args: Array<String>) {
             println("Fatto.")
         }
         "manda" -> Send.run(home, args.drop(1))
+        "firefox" -> FirefoxHost.run(home)
+        "installa-firefox" -> FirefoxInstall.run()
         "prova-telefono" -> FakePhone.run(Pairing.parse(args.getOrNull(1) ?: fail("Manca il codice")) ?: fail("Codice non valido"), args.drop(2))
         "-h", "--help", "aiuto" -> println(HELP)
         else -> fail(HELP)
@@ -64,6 +70,8 @@ fun main(args: Array<String>) {
 
 private const val HELP = """eurise-ponte collega | ascolta | dispositivi | dimentica <nome>
 eurise-ponte manda appunti [testo] | manda link <url> [titolo] | manda nota <testo> | manda attivita <testo>
+eurise-ponte manda evento <inizio> [fine] <titolo> | manda file <percorso>
+eurise-ponte installa-firefox
 eurise-ponte prova-telefono <codice>"""
 
 private fun fail(text: String): Nothing { System.err.println(text); exitProcess(2) }
@@ -124,7 +132,11 @@ class Server(private val store: Store) {
         @Synchronized fun send(m: Message) = Wire.writeFrame(out, channel.seal(m))
     }
 
-    private val live = ConcurrentHashMap<String, Session>()
+    /**
+     * I collegamenti aperti per telefono: quello fisso e, per pochi secondi, quelli brevi con cui il telefono manda
+     * qualcosa (una password approvata). Si scrive all'ultimo aperto; chiuderne uno non tocca gli altri.
+     */
+    private val live = ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<Session>>()
 
     fun run(pairing: Boolean) {
         val socket = runCatching { ServerSocket(Wire.DEFAULT_PORT) }.getOrElse { ServerSocket(0) }
@@ -138,7 +150,7 @@ class Server(private val store: Store) {
         } else {
             println("Ponte Eurise in ascolto sulla porta ${socket.localPort}. Telefoni abbinati: ${store.devices().size}")
         }
-        Control.listen { kind, fields -> deliver(kind, fields) }
+        Control.listen(this::query) { kind, fields -> deliver(kind, fields) }
         while (true) {
             val client = socket.accept()
             val s = secret
@@ -150,10 +162,24 @@ class Server(private val store: Store) {
      * Manda a tutti i telefoni abbinati: subito a quelli collegati, in coda per gli altri. Restituisce una riga per
      * telefono («Pixel 8: arrivato», «Pixel 8: in coda»).
      */
-    fun deliver(kind: Kind, fields: Map<String, String>): List<String> = store.devices().map { d ->
-        store.outbox.put(d.id, kind, fields)
-        val sent = live[d.id]?.let { flush(it) } ?: false
-        "${d.name}: " + if (sent) "arrivato" else "in coda, parte quando il telefono torna sulla rete di casa"
+    fun deliver(kind: Kind, fields: Map<String, String>): List<String> {
+        // Un file chiesto con il percorso parte a pezzi; una password chiesta non va mai in coda (vale due minuti).
+        val items = if (kind == Kind.File) FileSend.parts(fields).ifEmpty { return listOf("errore: file mancante o oltre 50 MB") } else listOf(fields)
+        return store.devices().map { d ->
+            val now = live[d.id]?.lastOrNull()
+            if (kind == Kind.PasswordAsk && now == null) return@map "${d.name}: non collegato"
+            items.forEach { store.outbox.put(d.id, kind, it) }
+            val sent = now?.let { flush(it) } ?: false
+            "${d.name}: " + if (sent) "arrivato" else "in coda, parte quando il telefono torna sulla rete di casa"
+        }
+    }
+
+    /** Le domande di Firefox ([Control]). */
+    private fun query(t: String, fields: Map<String, String>): List<String>? = when (t) {
+        "status" -> store.devices().map { d -> Json.write(mapOf("name" to d.name, "live" to if (live[d.id].isNullOrEmpty()) "0" else "1")) }
+        "recent" -> Recent.list()
+        "pwd-wait" -> listOf(Passwords.take(fields["ask"].orEmpty())?.let { Json.write(it) } ?: "")
+        else -> null
     }
 
     /** Svuota la coda verso un telefono collegato; vero se non è rimasto niente. */
@@ -189,7 +215,7 @@ class Server(private val store: Store) {
         val channel = Channel(link, me = store.id)
         val session = Session(device, channel, output)
         session.send(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), mapOf("name" to name)))
-        live[device.id] = session
+        live.getOrPut(device.id) { java.util.concurrent.CopyOnWriteArrayList() }.add(session)
         try {
             flush(session)
             while (true) {
@@ -199,7 +225,7 @@ class Server(private val store: Store) {
                 Linux.handle(device, m)
             }
         } finally {
-            live.remove(device.id, session)
+            live[device.id]?.remove(session)
         }
     }
 
@@ -215,11 +241,20 @@ class Server(private val store: Store) {
 object Linux {
     fun handle(device: Device, m: Message) {
         when (m.kind) {
-            Kind.Clipboard -> m["text"]?.let { copy(it); notify("Appunti dal telefono", it.take(120)) }
-            Kind.Dictation -> m["text"]?.let { text -> if (!type(text)) { copy(text); notify("Dettatura", "Copiata: incollala con Ctrl V") } }
-            Kind.Handoff -> m["url"]?.let { open(it); notify("Continua qui", m["title"] ?: it) }
-            Kind.Notify -> notify(m["title"] ?: device.name, m["text"].orEmpty())
-            else -> println("${device.name}: ${m.kind.wire} ${m.fields}")
+            Kind.Clipboard -> m["text"]?.let {
+                copy(it); notify("Appunti dal telefono", it.take(120))
+                Recent.add(m.kind, if (m["sensitive"] == "1") "Appunti riservati copiati" else "Appunti copiati",
+                    if (m["sensitive"] == "1") "incolla con Ctrl V" else it.take(80) + " · incolla con Ctrl V")
+            }
+            Kind.Dictation -> m["text"]?.let { text ->
+                if (!type(text)) { copy(text); notify("Dettatura", "Copiata: incollala con Ctrl V") }
+                Recent.add(m.kind, "Dettatura", text.take(80))
+            }
+            Kind.Handoff -> m["url"]?.let { open(it); notify("Continua qui", m["title"] ?: it); Recent.add(m.kind, m["title"] ?: it, "aperto dal telefono", it) }
+            Kind.Notify -> { notify(m["title"] ?: device.name, m["text"].orEmpty()); Recent.add(m.kind, m["title"] ?: device.name, m["text"].orEmpty()) }
+            // Mai stampata né salvata: resta in memoria finché Firefox la prende (al massimo due minuti).
+            Kind.PasswordGive -> { Passwords.put(m.fields); println("${device.name} → password per ${m["site"].orEmpty()}"); return }
+            else -> println("${device.name}: ${m.kind.wire}")
         }
         println("${device.name} → ${m.kind.wire}")
     }

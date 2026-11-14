@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="eurise.css">
+<style>
+  body { padding: 24px; max-width: 680px; display: flex; flex-direction: column; gap: 14px; }
+  .opt { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+  .opt + .opt { border-top: 1px solid var(--line); }
+  .opt .t span { white-space: normal; line-height: 1.45; }
+  .switch { flex: none; width: 42px; height: 24px; border-radius: 12px; background: var(--line); position: relative; cursor: pointer; border: 0; padding: 0; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .switch[aria-checked="true"] { background: var(--accent); }
+  .switch[aria-checked="true"]::after { left: 21px; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .seg button { height: 34px; border: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: transparent; }
+  @media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { color: #141A26; } }
+  code { font: 12px ui-monospace, monospace; background: var(--bg); padding: 2px 6px; border-radius: 6px; }
+  ol { margin: 6px 0 0; padding-left: 20px; line-height: 1.7; }
+  dialog { border: 0; border-radius: 18px; background: var(--card); color: var(--text); max-width: 460px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  dialog p { line-height: 1.5; margin: 8px 0; }
+</style>
+</head>
+<body>
+  <h1><img src="../icons/eurise.svg" alt=""> Eurise per Firefox</h1>
+  <div class="status" id="status"><i></i>…</div>
+
+  <div class="card">
+    <span class="label">Aspetto</span>
+    <div class="seg" id="theme">
+      <button data-v="auto">Automatico</button><button data-v="perla">Perla</button><button data-v="notte">Notte</button><button data-v="firefox">Firefox com'è</button>
+    </div>
+    <p class="note">Automatico segue il tema chiaro o scuro di Ubuntu e Fedora. La scheda aperta ha il fondo chiaro e il tratto nell'accento.</p>
+  </div>
+
+  <div class="card">
+    <span class="label">Funzioni</span>
+    <div class="opt">
+      <div class="t"><b>Password dal telefono <span class="ticks" id="pwdTicks"></span></b>
+        <span>Sui moduli di accesso compare «Chiedi al telefono»: Eurise Password approva con l'impronta e la password si scrive qui. Spenta di base.</span></div>
+      <button class="switch" role="switch" id="passwords" aria-label="Password dal telefono"></button>
+    </div>
+    <div class="opt">
+      <div class="t"><b>Eurise nel tasto destro</b><span>Apri sul telefono, In Note, Da fare, Appuntamento, Manda il file al telefono.</span></div>
+      <button class="switch" role="switch" id="menus" aria-label="Eurise nel tasto destro"></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">Il Ponte Eurise su questo computer</span>
+    <ol>
+      <li>Scarica <code>eurise-ponte-linux.tar.gz</code> ed estrailo (serve Java 17: <code>sudo apt install openjdk-17-jre</code> su Ubuntu, <code>sudo dnf install java-17-openjdk</code> su Fedora).</li>
+      <li>Nella cartella estratta: <code>bin/eurise-ponte collega</code> e inquadra il QR con il telefono (Eurise › Telefono e computer).</li>
+      <li>Poi una volta: <code>bin/eurise-ponte installa-firefox</code>, e lascia acceso <code>bin/eurise-ponte</code>.</li>
+      <li>Sul telefono accendi «Dal computer al telefono».</li>
+    </ol>
+    <p class="note">Privacy <span class="ticks" id="ponteTicks"></span> 10 su 10: diretto tra computer e telefono sulla rete di casa, cifrato. Nessun server, nemmeno nostro.</p>
+  </div>
+
+  <dialog id="pwdExplain">
+    <h1 style="font-size:17px">Prima di accendere</h1>
+    <p><b>Cosa viene letto:</b> la pagina guarda, sul computer, se c'è un campo password. Niente del contenuto esce.</p>
+    <p><b>Dove va:</b> quando tocchi «Chiedi al telefono», solo il nome del sito va al tuo telefono, cifrato sulla rete di casa.</p>
+    <p><b>Chi lo vede:</b> solo tu. La password torna dopo l'impronta, si scrive nel campo e non viene salvata.</p>
+    <p><b>Come tornare indietro:</b> spegni qui, senza conferme.</p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button id="pwdNo">Non ora</button><button id="pwdYes" class="strong">Accendi</button></div>
+  </dialog>
+  <script src="icons.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

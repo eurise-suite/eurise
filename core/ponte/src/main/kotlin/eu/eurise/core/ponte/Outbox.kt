@@ -56,7 +56,7 @@ class Outbox(private val dir: File) {
             Kind.Dictation, Kind.PasswordAsk, Kind.PasswordGive, Kind.Ping, Kind.Hello -> 2 * MINUTE
             Kind.Notify, Kind.Reply -> 30 * MINUTE
             Kind.Handoff -> DAY
-            Kind.Note, Kind.Task, Kind.File -> 7 * DAY
+            Kind.Note, Kind.Task, Kind.File, Kind.Event -> 7 * DAY
         }
     }
 }

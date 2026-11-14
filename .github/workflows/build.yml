@@ -381,6 +381,27 @@ jobs:
           ls -la ai-model
           python3 .github/scripts/ai_quality.py ai-host/eurise_ai_test "$F" ai/src/main/res/raw/frasi_prova.txt 4
 
+  # Eurise per Firefox sul computer (desktop/firefox): controllo della sintassi e pacchetto da caricare in Firefox.
+  # Non firmato: per l'installazione stabile serve la firma di Mozilla con l'account del proprietario.
+  firefox:
+    name: Eurise per Firefox
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Controlla e impacchetta l'estensione
+        run: |
+          cd desktop/firefox
+          python3 -c "import json; json.load(open('manifest.json'))"
+          for f in background.js content.js ui/*.js; do node --check "$f"; done
+          npx --yes web-ext@8 lint --source-dir . --self-hosted || true
+          zip -qr ../../eurise-firefox.xpi . -x README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eurise-firefox-${{ github.run_number }}
+          path: eurise-firefox.xpi
+          if-no-files-found: error
+
   release:
     name: APK firmato (solo per i tag v*)
     if: startsWith(github.ref, 'refs/tags/v')

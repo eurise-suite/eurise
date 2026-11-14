@@ -88,6 +88,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         super.onCreate(savedInstanceState)
         Logins.init(this, passwordPackage)
         SiteIcons.init(this)
+        Thumbs.init(this)
         Logins.onSaveFailed = { login ->
             // Password chiusa al momento del salvataggio: la voce si apre compilata in Password, da confermare.
             eu.eurise.core.suite.PasswordContract.addIntent(this, BuildConfig.DEBUG, Uri.parse(login.origin).host.orEmpty(), login.password,
@@ -105,14 +106,15 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
             EuriseTheme {
                 Box(Modifier.fillMaxSize()) {
                     BrowserScreen(model = model, actions = this@BrowserActivity, installed = ::installed, onRunImport = ::runImport)
-                    finished?.let { done ->
-                        LaunchedEffect(done) { kotlinx.coroutines.delay(12_000); if (finished == done) finished = null }
-                        Text(
-                            getString(R.string.brw_downloaded_save, done.name), fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 96.dp, start = 16.dp, end = 16.dp)
-                                .clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.primary)
-                                .clickable { finished = null; saveIn(done) }.padding(horizontal = 18.dp, vertical = 12.dp),
+                    dl?.let { s ->
+                        if (s.failed) LaunchedEffect(s) { kotlinx.coroutines.delay(6_000); if (dl == s) dl = null }
+                        DownloadCard(
+                            s,
+                            onOpen = { openDownloaded(s) },
+                            onSaveIn = { dl = null; s.uri?.let { saveIn(Finished(it, s.name, s.mime)) } },
+                            onShowAll = { dl = null; openDownloads() },
+                            onClose = { dl = null },
+                            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 84.dp, start = 12.dp, end = 12.dp),
                         )
                     }
                 }
@@ -130,13 +132,15 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     private class Finished(val uri: Uri, val name: String, val mime: String)
 
-    private var finished by mutableStateOf<Finished?>(null)
+    /** Il download nel riquadro in basso (uno alla volta: l'ultimo partito). */
+    private var dl by mutableStateOf<DownloadState?>(null)
+    private var dlSeq = 0L
     private val mine = HashSet<Long>()
 
     private val downloadDone = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-            if (id !in mine || !model.settings.askWhereToSave) return
+            if (id !in mine) return
             val dm = getSystemService(DownloadManager::class.java)
             runCatching {
                 dm.query(DownloadManager.Query().setFilterById(id))?.use { c ->
@@ -145,7 +149,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                     val name = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE)).orEmpty().ifBlank { "download" }
                     val mime = dm.getMimeTypeForDownloadedFile(id) ?: "application/octet-stream"
                     val uri = dm.getUriForDownloadedFile(id) ?: return@use
-                    finished = Finished(uri, name, mime)
+                    dl = DownloadState(id, name, mime, null, written = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)), uri = uri)
                 }
             }
         }
@@ -213,40 +217,57 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
      * risposta senza corpo), il gestore dei download di Android, come prima.
      */
     private fun download(response: org.mozilla.geckoview.WebResponse) {
-        val shown = Downloads.fileName(response.uri, null, null)
-        runOnUiThread { toast(getString(R.string.brw_download_started, shown)) }
+        // Il nome si calcola una volta, dalle intestazioni del sito: è lo stesso nel riquadro durante e dopo.
+        val info = Downloads.info(response)
+        val id = ++dlSeq
+        runOnUiThread { dl = DownloadState(id, info.name, info.mime, info.size) }
         Thread {
-            val saved = runCatching { Downloads.save(applicationContext, response) }
+            val saved = runCatching {
+                Downloads.save(applicationContext, response, info) { bytes ->
+                    runOnUiThread { dl?.takeIf { it.id == id }?.let { dl = it.copy(written = bytes) } }
+                }
+            }
             runOnUiThread {
                 val s = saved.getOrNull()
+                val current = dl?.takeIf { it.id == id }
                 when {
                     s != null -> {
                         model.downloads = model.downloads + 1
-                        toast(getString(R.string.brw_download_done, s.name))
-                        if (model.settings.askWhereToSave) finished = Finished(s.uri, s.name, s.mime)
+                        val done = (current ?: DownloadState(id, s.name, s.mime, info.size)).copy(name = s.name, mime = s.mime, uri = s.uri)
+                        dl = done
+                        if (model.settings.askWhereToSave) { dl = null; saveIn(Finished(s.uri, s.name, s.mime)) }
                     }
-                    saved.isFailure -> toast(getString(R.string.brw_download_failed))
-                    response.uri.startsWith("http", ignoreCase = true) -> downloadByUrl(response.uri)
-                    else -> toast(getString(R.string.brw_download_failed))
+                    saved.isFailure -> dl = (current ?: DownloadState(id, info.name, info.mime, info.size)).copy(failed = true)
+                    response.uri.startsWith("http", ignoreCase = true) -> downloadByUrl(response.uri, info.name)
+                    else -> dl = (current ?: DownloadState(id, info.name, info.mime, info.size)).copy(failed = true)
                 }
             }
         }.start()
     }
 
     /** Ripiego: il gestore dei download di Android (rifà la richiesta, senza i cookie della sessione). */
-    private fun downloadByUrl(url: String) {
+    private fun downloadByUrl(url: String, known: String? = null) {
         runOnUiThread {
             runCatching {
                 val uri = Uri.parse(url)
-                val name = uri.lastPathSegment?.takeIf { it.isNotBlank() } ?: "download"
+                val name = known ?: uri.lastPathSegment?.takeIf { it.isNotBlank() } ?: "download"
                 val request = DownloadManager.Request(uri)
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
-                mine += getSystemService(DownloadManager::class.java).enqueue(request)
+                val id = getSystemService(DownloadManager::class.java).enqueue(request)
+                mine += id
                 model.downloads = model.downloads + 1
-                toast(getString(R.string.brw_download_started, name))
+                dl = DownloadState(id, name, "application/octet-stream", null)
             }.onFailure { toast(getString(R.string.brw_download_failed)) }
         }
+    }
+
+    /** Apre il file scaricato con l'app giusta; senza un'app per quel tipo, l'elenco dei download. */
+    private fun openDownloaded(s: DownloadState) {
+        val uri = s.uri ?: return
+        val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, s.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        val ok = runCatching { startActivity(view) }.isSuccess
+        if (ok) dl = null else { toast(getString(R.string.brw_dl_no_app)); openDownloads() }
     }
 
     // --- Azioni del menu e delle Impostazioni (BrowserActions) ---

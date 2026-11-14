@@ -28,6 +28,11 @@ enum class Kind(val wire: String) {
     Task("task"),
     /** Il collegamento fisso è ancora vivo; non porta niente. Chi non lo conosce lo scarta. */
     Ping("ping"),
+    /**
+     * Un appuntamento per Eurise Calendario (da Firefox sul computer, 15 novembre): `title`, `start` e `end` in ISO locale
+     * (`2026-11-20T15:30`, o solo la data per il giorno intero), facoltativi `place`, `notes`, `url`.
+     */
+    Event("event"),
     ;
 
     companion object {

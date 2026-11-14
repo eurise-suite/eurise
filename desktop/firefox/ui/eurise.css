@@ -1,0 +1,48 @@
+/* Eurise per Firefox: Perla (chiaro) e Notte (scuro), come sul telefono. Nessun carattere scaricato da Internet. */
+:root {
+  --bg: #F4F4F1; --card: #FFFFFF; --text: #1E1D1B; --sub: #56564F; --line: #E2E2DC;
+  --accent: #3E5C8A; --navy: #1F2A44; --gold: #D2B06A; --soft: #EAEEF3; --ok: #4F6B5A; --warn: #85672B; --err: #9A3B32;
+  --violet: #6B4A7A; --teal: #2E6E73;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171E2B; --card: #1D2535; --text: #E6E9F0; --sub: #A9B4C8; --line: #2A3448;
+    --accent: #8FB4F0; --navy: #8FB4F0; --soft: #2B3A5C; --ok: #8CC0A0; --warn: #D9B776; --err: #F0A49A;
+    --violet: #C8B3D4; --teal: #8FD0D4;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 13px "Plus Jakarta Sans", "Cantarell", "Inter", system-ui, sans-serif; }
+h1 { margin: 0; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+h1 img { width: 22px; height: 22px; }
+.card { background: var(--card); border-radius: 16px; padding: 10px 12px; }
+.label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.row + .row { border-top: 1px solid var(--line); }
+.dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; background: var(--soft); }
+.dot svg { width: 17px; height: 17px; fill: none; stroke: var(--accent); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.t { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.t b { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t span { font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+button, .btn { font: inherit; font-size: 12.5px; font-weight: 700; border: 0; border-radius: 20px; height: 38px; padding: 0 14px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--card); color: var(--text); }
+button.strong { background: var(--navy); color: #FFFFFF; }
+@media (prefers-color-scheme: dark) { button.strong { color: #141A26; } }
+button:disabled { opacity: .5; cursor: default; }
+button.action { width: 100%; justify-content: flex-start; height: auto; padding: 8px 10px; border-radius: 12px; background: transparent; }
+button.action:hover { background: var(--soft); }
+input, textarea, select { font: inherit; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+textarea { resize: vertical; min-height: 54px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--sub); flex: none; }
+.status.on i { background: var(--ok); } .status.wait i { background: var(--warn); } .status.off i { background: var(--err); }
+.note { font-size: 11.5px; line-height: 1.45; color: var(--sub); }
+.toast { font-size: 12px; font-weight: 700; color: var(--accent); min-height: 16px; }
+.ticks { display: inline-flex; gap: 2px; vertical-align: middle; }
+.ticks i { width: 4px; height: 10px; border-radius: 1px; background: var(--line); }
+.ticks i.g { background: #4F9A6A; } .ticks i.y { background: #D2A23A; } .ticks i.r { background: #C4553F; }
+[hidden] { display: none !important; }

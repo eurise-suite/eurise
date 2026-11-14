@@ -2,6 +2,7 @@ package eu.eurise.browser
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -77,7 +78,7 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
     val index = model.tabs.indexOf(current)
     LaunchedEffect(index, model.tabs.size) { if (index >= 0) runCatching { list.animateScrollToItem(index) } }
     Row(
-        modifier.fillMaxWidth().background(scheme.surfaceContainer).padding(horizontal = 8.dp, vertical = 5.dp),
+        modifier.fillMaxWidth().background(scheme.surfaceContainer).padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Molte schede: si stringono per starci tutte (fino alla sola icona), poi scorrono (richiesta del 13 novembre).
@@ -99,9 +100,10 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                                 // La scheda aperta resta leggibile; le altre prendono la loro parte dello spazio.
                                 if (on) Modifier.widthIn(min = 120.dp.coerceAtMost(half), max = 180.dp)
                                 else Modifier.width(share.coerceIn(narrowest, 140.dp))
-                            ).height(40.dp)
-                            .then(if (on) Modifier.shadow(2.dp, RoundedCornerShape(20.dp)) else Modifier)
-                            .clip(RoundedCornerShape(20.dp)).background(if (on) scheme.surface else Color.Transparent)
+                            ).height(32.dp)
+                            // La scheda scelta si stacca dalle altre: fondo nell'accento, bordo e titolo in accento (15 novembre).
+                            .clip(RoundedCornerShape(16.dp)).background(if (on) scheme.primary.copy(alpha = 0.16f) else Color.Transparent)
+                            .then(if (on) Modifier.border(1.5.dp, scheme.primary, RoundedCornerShape(16.dp)) else Modifier)
                             .semantics { selected = on }
                             .combinedClickable(role = Role.Tab, onClick = { model.show(t) }, onLongClick = { menu = true }),
                     ) {
@@ -109,21 +111,21 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                         Row(Modifier.weight(1f).padding(start = if (iconOnly) 0.dp else 8.dp, end = if (on) 2.dp else if (iconOnly) 0.dp else 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = if (iconOnly) androidx.compose.foundation.layout.Arrangement.Center else androidx.compose.foundation.layout.Arrangement.Start) {
-                            if (t.private) TabInitial(t, on) else SiteIcon(t.url, 20.dp) { TabInitial(t, on) }
+                            if (t.private) TabInitial(t, on) else SiteIcon(t.url.ifBlank { t.pending.orEmpty() }, 16.dp) { TabInitial(t, on) }
                             if (!iconOnly) {
-                            Spacer(Modifier.width(7.dp))
-                            Text(title, fontSize = 12.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis, color = if (on) scheme.onSurface else scheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+                            Spacer(Modifier.width(6.dp))
+                            Text(title, fontSize = 12.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Medium, maxLines = 1,
+                                overflow = TextOverflow.Ellipsis, color = if (on) scheme.primary else scheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
                             }
                             if (on) {
                                 val close = stringResource(R.string.brw_close_tab)
-                                Box(Modifier.size(28.dp).clip(CircleShape).clickable { model.close(t) }.semantics { contentDescription = close }, contentAlignment = Alignment.Center) {
-                                    Icon(EuriseIcons.close(2.4f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(11.dp))
+                                Box(Modifier.size(24.dp).clip(CircleShape).clickable { model.close(t) }.semantics { contentDescription = close }, contentAlignment = Alignment.Center) {
+                                    Icon(EuriseIcons.close(2.4f), null, tint = scheme.primary, modifier = Modifier.size(10.dp))
                                 }
                             }
                         }
                         // Il colore del gruppo sotto la scheda.
-                        Box(Modifier.padding(horizontal = 10.dp).fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(color ?: Color.Transparent))
+                        Box(Modifier.padding(horizontal = 10.dp).fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)).background(color ?: Color.Transparent))
                     }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         val i = model.tabs.indexOf(t)
@@ -140,7 +142,7 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
         }
         val add = stringResource(R.string.brw_new_tab)
         Box(
-            Modifier.size(40.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
+            Modifier.size(32.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.primary, modifier = Modifier.size(16.dp)) }
     }
@@ -151,11 +153,11 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
 private fun TabInitial(t: Tab, on: Boolean) {
     val scheme = MaterialTheme.colorScheme
     Box(
-        Modifier.size(20.dp).clip(CircleShape).background(if (on) scheme.primary.copy(alpha = 0.10f) else scheme.onSurface.copy(alpha = 0.07f)),
+        Modifier.size(16.dp).clip(CircleShape).background(if (on) scheme.primary.copy(alpha = 0.10f) else scheme.onSurface.copy(alpha = 0.07f)),
         contentAlignment = Alignment.Center,
     ) {
-        if (t.private) Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(12.dp))
-        else Text(Links.host(t.url).removePrefix("www.").take(1).uppercase().ifBlank { "+" }, fontSize = 10.5.sp,
+        if (t.private) Icon(EuriseIcons.mask(1.8f), null, tint = scheme.primary, modifier = Modifier.size(10.dp))
+        else Text(Links.host(t.url.ifBlank { t.pending.orEmpty() }).removePrefix("www.").take(1).uppercase().ifBlank { "+" }, fontSize = 9.sp,
             fontWeight = FontWeight.ExtraBold, color = if (on) scheme.primary else scheme.onSurfaceVariant)
     }
 }

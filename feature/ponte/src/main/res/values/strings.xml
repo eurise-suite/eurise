@@ -28,9 +28,9 @@
     <string name="ponte_off">Questo tipo di invio è spento: accendilo in Telefono e computer</string>
     <string name="ponte_no_speech">Il riconoscimento vocale del telefono non è disponibile</string>
     <string name="ponte_receive">Dal computer al telefono</string>
-    <string name="ponte_receive_sub">appunti, link, note e attività dal computer, sul Wi-Fi di casa</string>
+    <string name="ponte_receive_sub">appunti, link, note, attività, appuntamenti e documenti dal computer, sul Wi-Fi di casa</string>
     <string name="ponte_receive_title">Prima di accendere</string>
-    <string name="ponte_receive_explain">Cosa: appunti, link, note e cose da fare che mandi dal computer abbinato (eurise-ponte manda…).\n\nDove: diretto tra computer e telefono sulla rete di casa, cifrato. Niente passa da Internet o da server nostri.\n\nSi vede sempre: finché il telefono è collegato c\'è una notifica fissa con il nome del computer e l\'ultima cosa arrivata. Fuori casa il collegamento si chiude da solo.\n\nPer tenerlo aperto Android chiede di togliere Eurise dall\'ottimizzazione della batteria. Si spegne qui, senza conferme.</string>
+    <string name="ponte_receive_explain">Cosa: appunti, link, note, cose da fare, appuntamenti (in Calendario) e documenti (in Download/Eurise) che mandi dal computer abbinato, da Firefox con l\'estensione Eurise o con eurise-ponte manda…; le richieste di password arrivano come notifica e parte solo l\'accesso che approvi.\n\nDove: diretto tra computer e telefono sulla rete di casa, cifrato. Niente passa da Internet o da server nostri.\n\nSi vede sempre: finché il telefono è collegato c\'è una notifica fissa con il nome del computer e l\'ultima cosa arrivata. Fuori casa il collegamento si chiude da solo.\n\nPer tenerlo aperto Android chiede di togliere Eurise dall\'ottimizzazione della batteria. Si spegne qui, senza conferme.</string>
     <string name="ponte_receive_on">Accendi</string>
     <string name="ponte_receive_cancel">Non ora</string>
     <string name="ponte_channel_link">Collegamento con il computer</string>
@@ -42,4 +42,23 @@
     <string name="ponte_got_link">link: %1$s</string>
     <string name="ponte_got_note">nota in Eurise Note</string>
     <string name="ponte_got_task">da fare: %1$s</string>
+    <string name="ponte_channel_arrivals">Dal computer</string>
+    <string name="ponte_got_event">in Calendario: %1$s</string>
+    <string name="ponte_got_file">documento: %1$s</string>
+    <string name="ponte_got_pwd">password chiesta per %1$s</string>
+    <string name="ponte_file_title">Documento dal computer</string>
+    <string name="ponte_file_where">in Download/Eurise</string>
+    <string name="ponte_file_open">Apri</string>
+    <string name="ponte_pwd_title">Password per %1$s</string>
+    <string name="ponte_pwd_text">%1$s la chiede: tocca per approvare</string>
+    <string name="ponte_pwd_explain">Scegli l\'accesso da mandare a Firefox sul computer. Parte cifrato solo quello che tocchi; sul computer resta in memoria al massimo due minuti, non viene salvato.</string>
+    <string name="ponte_pwd_unlock">Sblocca Eurise Password</string>
+    <string name="ponte_pwd_none">Nessun accesso salvato per questo sito.</string>
+    <string name="ponte_pwd_missing">Eurise Password non è installata su questo telefono.</string>
+    <string name="ponte_pwd_send">Manda</string>
+    <string name="ponte_pwd_deny">Non mandare</string>
+    <string name="ponte_pwd_close">Chiudi</string>
+    <string name="ponte_pwd_sending">Mando…</string>
+    <string name="ponte_pwd_sent">Mandata a %1$s</string>
+    <string name="ponte_pwd_failed">%1$s non risponde: è acceso e sulla stessa rete?</string>
 </resources>
