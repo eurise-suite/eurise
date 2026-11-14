@@ -1907,7 +1907,21 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   Collabora). office-app ora pubblica **solo il motore**; Office lo pubblica `office-prova` con `fonte=nativo`.
   Attenzione: un push su `office/prova/**` fa partire una prova che annulla quella in corso (stesso gruppo): annullarla.
 
-**Prossimo passo**: rifinire l'interfaccia del motore (etichette italiane già nel codice: l'emulatore è in inglese),
-tablet e computer con il nastro (OffTablet, OffComputer), OffCerca; poi motore a richiesta (OffMotore: capire se i file del
+**14 novembre, mattina**
+- **Chiusura del motore durante le modifiche**: era il salvataggio automatico con `uno('.uno:Save')`. Collabora lo
+  rifiuta con un'asserzione (`DocumentBroker::forwardToChild`) e il processo muore. Ora `saveNow()` manda
+  `save dontTerminateEdit=1 dontSaveIfUnmodified=1` (come LOActivity.onPause), 8 s dopo l'ultima modifica.
+  **Mai `.uno:Save` dal nostro codice.** La prova scrive nel motore e aspetta 12 s: verificata, motore vivo.
+- Vista rapida: senza `enableEdgeToEdge` (adjustResize), sul telefono del proprietario la barra di modifica finiva
+  sotto la tastiera.
+- **Tablet**: barra a nastro Eurise (Control.Eurise.js, sezione «Tablet»; RIBBONS per testo, foglio, presentazione;
+  icone dei comandi da `app.LOUtil`), provata con `schermo=tablet` (emulatore a 1280x800). Nascosta anche `.main-nav`
+  (schede di Collabora). Mancano i menu a tendina di carattere e dimensione.
+- Ricerca (OffCerca): «Nel documento» in cima, foglio dal basso sul telefono. Chiedi all'AI resta «in arrivo».
+- Tavole nuove da approvare: **OffLetturaPresentazione** (vista rapida delle presentazioni) e **OffTelefonoGruppi**
+  (proposta del proprietario: dalla dock del telefono i gruppi del nastro come card, gli stessi di tablet e computer).
+
+**Prossimo passo**: dopo l'approvazione, i gruppi a card sul telefono (stesso codice del nastro del tablet) e la vista
+rapida delle presentazioni; menu a tendina di carattere e dimensione; computer (OffComputer); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
