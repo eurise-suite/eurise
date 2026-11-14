@@ -49,16 +49,17 @@ cat > "$DIAG" <<'JS'
 	window.addEventListener('error', function (e) { say('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
 	// Struttura della colonna di destra e di quella di sinistra (per lo stile della colonna Properties).
 	function outline(el, depth, out) {
-		if (!el || out.length > 160) return out;
+		if (!el || out.length > 220) return out;
 		var cls = typeof el.className === 'string' ? el.className.trim().split(/\s+/).slice(0, 4).join('.') : '';
 		var shown = el.offsetParent !== null || el === document.body;
+		var high = ' h' + el.offsetHeight + (getComputedStyle(el).display === 'none' ? ' none' : '');
 		out.push(new Array(depth + 1).join('  ') + el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (cls ? '.' + cls : '') +
-			(shown ? '' : ' (nascosto)') + (el.children.length ? '' : ' «' + (el.textContent || '').trim().slice(0, 30) + '»'));
-		if (depth < 7) Array.prototype.forEach.call(el.children, function (c) { outline(c, depth + 1, out); });
+			(shown ? '' : ' (nascosto)') + high + (el.children.length ? '' : ' «' + (el.textContent || '').trim().slice(0, 30) + '»'));
+		if (depth < 12) Array.prototype.forEach.call(el.children, function (c) { outline(c, depth + 1, out); });
 		return out;
 	}
 	function dom(when) {
-		['sidebar-dock-wrapper', 'navigation-sidebar'].forEach(function (id) {
+		['eurise-struttura', 'sidebar-dock-wrapper', 'navigation-sidebar'].forEach(function (id) {
 			outline(document.getElementById(id), 0, []).forEach(function (line) { say('EURISE-DOM ' + when + ' ' + line); });
 		});
 		Array.prototype.forEach.call(document.querySelectorAll('[class*="tour"], [id*="tour"], [class*="welcome"], [id*="welcome"], dialog[open], [role="dialog"]'), function (el) {

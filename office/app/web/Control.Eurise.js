@@ -1085,6 +1085,8 @@
 	function ri(it, en, run, big, iconCommand) { var item = r(it, en, run, big); item.icon = iconCommand; return item; }
 	/** Sul computer la voce piccola mostra anche il nome (Taglia, Copia… come nella tavola OffComputer). */
 	function lab(item) { item.desk = 'lab'; return item; }
+	/** Nome più corto sul computer, dove la voce mostra il nome accanto all'icona. */
+	function deskLabel(item, it, en) { item.deskLabel = t(it, en); return item; }
 	/** Icona disegnata da noi (comandi della Suite, che il motore non conosce). */
 	function drawn(item, path) { item.svg = path; return item; }
 
@@ -1287,7 +1289,7 @@
 		return function () { uno('.uno:StyleApply', { Style: { type: 'string', value: name }, FamilyName: { type: 'string', value: 'ParagraphStyles' } }); };
 	};
 	var APPUNTI = g('Appunti', 'Clipboard', [r('Incolla', 'Paste', '.uno:Paste', 'big'), lab(r('Taglia', 'Cut', '.uno:Cut')),
-		lab(r('Copia', 'Copy', '.uno:Copy')), lab(r('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush'))]);
+		lab(r('Copia', 'Copy', '.uno:Copy')), deskLabel(lab(r('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush')), 'Formato', 'Format')]);
 	var CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
 		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
 		glyph(r('Apice', 'Superscript', '.uno:SuperScript'), 'x²'), glyph(r('Pedice', 'Subscript', '.uno:SubScript'), 'x₂'),
@@ -1296,6 +1298,7 @@
 	var STILI = g('Stili', 'Styles', [r('Testo', 'Text', style('Standard'), 'big'), r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'),
 		r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]);
 	STILI.tiles = true;
+	STILI.deskItems = STILI.items.slice(0, 3);
 	STILI.deskMore = '.uno:SidebarDeck.StyleListDeck';
 	var DIAPOSITIVE = g('Diapositive', 'Slides', [r('Nuova', 'New', '.uno:InsertPage', 'big'), r('Duplica', 'Duplicate', '.uno:DuplicatePage'),
 		r('Elimina', 'Delete', '.uno:DeletePage')]);
@@ -1465,7 +1468,7 @@
 		if (item.swatch) { b.classList.add('swatched'); b.appendChild(swatch(item.swatch)); }
 		if (big || k === 'lab' || !icon) {
 			var span = document.createElement('span');
-			span.textContent = item.label;
+			span.textContent = (onDesk() && item.deskLabel) || item.label;
 			b.appendChild(span);
 		}
 		if (typeof item.run === 'string') {
@@ -1810,7 +1813,12 @@
 		var desk = !!window.ThisIsTheQtApp;
 		if (!desk && !(window.mode.isTablet() && window.ThisIsAMobileApp)) return;
 		document.body.classList.add('eurise-tablet');
-		if (desk) { document.body.classList.add('eurise-desk'); skipTour(); }
+		if (desk) {
+			document.body.classList.add('eurise-desk');
+			// Il giro guidato della 26.04 parte solo se questa preferenza manca (Control.UIManager, onboardingTourSeen).
+			try { map.uiManager.setDocTypePref('onboardingTourSeen', true); } catch (e) { trace.push('tour pref ' + e); }
+			skipTour();
+		}
 		trace.push(desk ? 'desk' : 'tablet');
 		editAtOnce(map);
 		function build() {
