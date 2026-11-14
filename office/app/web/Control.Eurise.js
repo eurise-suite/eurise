@@ -1879,19 +1879,19 @@
 		var top = document.createElement('div');
 		top.id = 'eurise-top';
 		var desk = onDesk();
-		var actionsHtml =
+		// Tablet e computer (richiesta del proprietario, 14 novembre): una riga sola. A sinistra File e le schede; a destra
+		// la pillola chiara con il nome, lo stato del salvataggio e annulla/ripeti, poi «Cerca un comando» più corto e
+		// Condividi con la sola icona. Niente più riga del titolo con lo spazio vuoto.
+		var pill =
+			'<div class="eurise-pill"><span class="eurise-doc"><span class="eurise-name"></span><span class="eurise-status"></span></span>' +
 			'<button type="button" class="eurise-hbtn" data-a="undo" aria-label="' + t('Annulla', 'Undo') + '" title="' + t('Annulla', 'Undo') + '">' + icon(SVG.undo, 18) + '</button>' +
-			'<button type="button" class="eurise-hbtn" data-a="redo" aria-label="' + t('Ripeti', 'Redo') + '" title="' + t('Ripeti', 'Redo') + '">' + icon('M15 6l5 5-5 5 M20 11H10a6 6 0 0 0 0 12', 18) + '</button>' +
-			'<button type="button" class="eurise-cmdsearch" data-a="search">' + icon(SVG.search, 16) + '<span>' + t('Cerca un comando', 'Search a command') + '</span><kbd>Ctrl K</kbd></button>' +
-			(desk ? '<span class="eurise-doc"><span class="eurise-status"></span></span>' : '') +
-			'<button type="button" class="eurise-share" data-a="share">' + icon(SVG.share, 15) + '<span>' + t('Condividi', 'Share') + '</span></button>';
-		// Computer (tavola OffComputer): una riga sola, schede a sinistra e azioni a destra; il nome del documento sta
-		// nella scheda del guscio (per ora nel titolo della finestra). Tablet: intestazione a scheda, poi le schede.
-		top.innerHTML = desk ?
-			'<div id="eurise-header" class="desk"><div id="eurise-tabs" role="tablist"></div><span class="eurise-fill"></span>' + actionsHtml + '</div><div id="eurise-ribbon"></div>' :
-			'<div id="eurise-header" class="tablet">' +
-			'<span class="eurise-doc"><span class="eurise-name"></span><span class="eurise-status"></span></span>' + actionsHtml +
-			'</div><div id="eurise-tabs" role="tablist"></div><div id="eurise-ribbon"></div>';
+			'<button type="button" class="eurise-hbtn" data-a="redo" aria-label="' + t('Ripeti', 'Redo') + '" title="' + t('Ripeti', 'Redo') + '">' + icon('M15 6l5 5-5 5 M20 11H10a6 6 0 0 0 0 12', 18) + '</button></div>';
+		var tools =
+			'<button type="button" class="eurise-cmdsearch" data-a="search" title="' + t('Cerca un comando', 'Search a command') + ' (Ctrl K)">' + icon(SVG.search, 16) +
+			'<span>' + t('Cerca un comando', 'Search a command') + '</span><kbd>Ctrl K</kbd></button>' +
+			'<button type="button" class="eurise-share icon" data-a="share" aria-label="' + t('Condividi', 'Share') + '" title="' + t('Condividi', 'Share') + '">' + icon(SVG.share, 17) + '</button>';
+		top.innerHTML = '<div id="eurise-header" class="riga' + (desk ? ' desk' : '') + '"><div id="eurise-tabs" role="tablist"></div>' +
+			'<span class="eurise-fill"></span>' + pill + tools + '</div><div id="eurise-ribbon"></div>';
 		top.querySelector('#eurise-header').onclick = function (e) {
 			var b = e.target.closest && e.target.closest('button');
 			if (!b) return;

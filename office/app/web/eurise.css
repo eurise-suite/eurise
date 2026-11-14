@@ -505,7 +505,7 @@ body.eurise-tablet .eurise-share,
 body.eurise-tablet .eurise-share span { color: #FFFFFF !important; }
 body.eurise-tablet #toolbar-row {
 	height: auto;
-	padding: 10px 14px 8px;
+	padding: 6px 14px 8px;
 	background: #F4F4F1;
 	border: 0;
 }
@@ -1006,27 +1006,88 @@ body.eurise-desk #toolbar-row {
 	padding: 0 12px 6px;
 }
 body.eurise-desk #eurise-top { gap: 0; }
-#eurise-header.desk {
-	height: 44px;
+/* Tablet e computer: una riga sola (richiesta del proprietario, 14 novembre): schede a sinistra, a destra la pillola
+   chiara con nome, stato e annulla/ripeti, «Cerca un comando» più corto, Condividi con la sola icona. */
+body.eurise-tablet #eurise-top { gap: 4px; }
+#eurise-header.riga {
+	height: 48px;
 	padding: 0;
 	border-radius: 0;
 	background: transparent;
 	display: flex;
 	align-items: center;
+	gap: 4px;
+}
+#eurise-header.riga .eurise-fill { flex: 1; min-width: 8px; }
+#eurise-header.riga #eurise-tabs { height: 48px; flex: none; }
+#eurise-header.riga #eurise-tabs .eurise-rtab { height: 44px; padding: 0 11px; font-size: 14px; }
+#eurise-header.riga #eurise-tabs .eurise-rtab.file { height: 34px; margin-right: 4px !important; }
+#eurise-header.riga .eurise-pill {
+	min-width: 0;
+	height: 42px;
+	padding: 0 4px 0 16px;
+	box-sizing: border-box;
+	border-radius: 21px;
+	background: #FFFFFF;
+	display: flex;
+	align-items: center;
 	gap: 2px;
 }
-#eurise-header.desk .eurise-fill { flex: 1; }
-#eurise-header.desk #eurise-tabs { height: 44px; }
-#eurise-header.desk #eurise-tabs .eurise-rtab {
-	height: 40px;
-	padding: 0 11px;
-	font-size: 13.5px;
+#eurise-header.riga .eurise-doc {
+	min-width: 0;
+	margin-right: 6px;
+	display: flex;
+	flex-direction: row;
+	align-items: baseline;
+	gap: 10px;
 }
-#eurise-header.desk #eurise-tabs .eurise-rtab.file {
-	height: 30px;
-	margin-right: 4px !important;
-	font-size: 13.5px;
+#eurise-header.riga .eurise-name {
+	max-width: 240px;
+	font: 800 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
+#eurise-header.riga .eurise-status {
+	font: 600 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #3F5E4B;
+	white-space: nowrap;
+}
+#eurise-header.riga .eurise-status.pending { color: #85672B; }
+body.eurise-tablet #eurise-header.riga .eurise-hbtn {
+	width: 38px;
+	height: 38px;
+	margin: 0 !important;
+	padding: 0;
+	border: 0 !important;
+	border-radius: 19px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#eurise-header.riga .eurise-cmdsearch {
+	width: 176px;
+	height: 42px;
+	margin: 0 0 0 6px !important;
+	border-radius: 21px;
+	white-space: nowrap;
+	font-size: 12px;
+}
+#eurise-header.riga .eurise-cmdsearch span { overflow: hidden; text-overflow: ellipsis; }
+#eurise-header.riga .eurise-share.icon {
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	border-radius: 21px;
+	justify-content: center;
+	flex: none;
+}
+/* Computer: stesse cose, misure da mouse. */
+#eurise-header.riga.desk { height: 44px; gap: 2px; }
+#eurise-header.riga.desk #eurise-tabs { height: 44px; }
+#eurise-header.riga.desk #eurise-tabs .eurise-rtab { height: 40px; font-size: 13.5px; }
+#eurise-header.riga.desk #eurise-tabs .eurise-rtab.file { height: 30px; }
+#eurise-header.riga.desk .eurise-pill { height: 34px; padding-left: 14px; border-radius: 17px; }
 body.eurise-desk #eurise-header .eurise-hbtn {
 	width: 32px;
 	height: 30px;
@@ -1039,28 +1100,9 @@ body.eurise-desk #eurise-header .eurise-hbtn {
 	justify-content: center;
 }
 body.eurise-desk #eurise-header .eurise-hbtn:hover { background: #ECECE7 !important; }
-#eurise-header.desk .eurise-cmdsearch {
-	width: 210px;
-	white-space: nowrap;
-	height: 32px;
-	margin: 0 6px 0 8px !important;
-	border-radius: 16px;
-}
-#eurise-header.desk .eurise-doc {
-	margin: 0 10px 0 4px;
-	display: flex;
-	align-items: center;
-}
-#eurise-header.desk .eurise-status {
-	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: #3F5E4B;
-	white-space: nowrap;
-}
-#eurise-header.desk .eurise-status.pending { color: #85672B; }
-#eurise-header.desk .eurise-share {
-	height: 32px;
-	border-radius: 16px;
-}
+#eurise-header.riga.desk .eurise-cmdsearch { width: 168px; height: 32px; border-radius: 16px; }
+#eurise-header.riga.desk .eurise-share.icon { width: 34px; height: 34px; border-radius: 17px; }
+[data-theme='dark'] #eurise-header.riga .eurise-pill { background: #222833; }
 body.eurise-desk #eurise-ribbon { gap: 6px; padding-top: 2px; }
 body.eurise-desk .eurise-group {
 	padding: 4px 6px 2px;
