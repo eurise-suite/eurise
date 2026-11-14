@@ -28,9 +28,9 @@ enum class Voice(
     /** Femminile, più ricca: per chi la preferisce. */
     Paola("alfred-paola", "it_IT-paola-medium.onnx", 60, R.string.voice_tts_paola, R.string.voice_tts_paola_d),
     /** Kokoro (Apache 2.0), maschile: più scorrevole di Piper, più pesante (richiesta del proprietario, 15 novembre). */
-    Nicola("kokoro-nicola", "model.int8.onnx", 125, R.string.voice_tts_nicola, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 36),
+    Nicola("kokoro-nicola", "model.int8.onnx", 116, R.string.voice_tts_nicola, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 36),
     /** Kokoro, femminile: stesso archivio di Nicola. */
-    Sara("kokoro-sara", "model.int8.onnx", 125, R.string.voice_tts_sara, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 35);
+    Sara("kokoro-sara", "model.int8.onnx", 116, R.string.voice_tts_sara, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 35);
 
     val url get() = "https://github.com/eurise-suite/eurise/releases/download/voci/$archive.zip"
 
