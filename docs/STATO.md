@@ -1986,7 +1986,20 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   vedono (cartella delle immagini diversa nella 26.04); interfaccia in italiano nella prova (LANG); le schede dei
   documenti in alto e «Apri da Eurise File» sono del guscio (passo successivo: guscio nostro, Flatpak Eurise).
 
+**Indicazioni del proprietario sul prototipo del computer (14 novembre, pomeriggio)**
+- **Colonna Properties di Collabora: si tiene**, con tutte le sue funzioni, ma **ridisegnata con il nostro stile** (isole
+  bianche sul Perla, etichette e controlli come il nastro, tendine come le nostre). **La nostra colonna di sinistra della
+  tavola** (Struttura, Collegato a, In Eurise File) **va dentro questa colonna a destra**, come sezioni sue: niente
+  colonna a sinistra.
+- **Nastro più compatto**: oggi ci sono «praterie» di spazio bianco inutile, brutte da vedere (gruppi larghi e alti
+  più del contenuto, intestazione e schede su due righe con molto vuoto, gruppo Suite enorme con poche voci). Stringere
+  per spazio ed estetica: una riga sola per schede e azioni (come la tavola), gruppi alti quanto serve, meno margini.
+- Il resto come proposto: giro guidato di Collabora spento, icone della Suite (cartella immagini della 26.04),
+  interfaccia in italiano nella prova; poi il guscio nostro e il Flatpak Eurise.
+
 **Prossimo passo**: il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
-OffComputer: avvicinare il prototipo alla tavola (punti qui sopra), poi il guscio nostro e il Flatpak; poi motore a richiesta (OffMotore: capire se i file del
+OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
+`office-computer-schermate`), poi il guscio nostro e il Flatpak; al prossimo giro del motore Android provarlo su
+telefono e tablet (codice condiviso cambiato, non ancora compilato); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
