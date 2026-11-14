@@ -2033,6 +2033,12 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   solo: nastro, colonna Properties, menu, dialoghi). Le icone chieste che non abbiamo restano di Collabora e la prova le
   elenca (`missingIcons` nella diagnosi: soprattutto quelle del nastro di Collabora, nascosto). Anteprima del set:
   rendering locale con rsvg-convert. `icon-maskable` della 26.04 colora le icone solo nel contrasto elevato.
+- Righelli sullo schermo virtuale della prova: compaiono al primo movimento del mouse (schermata `-1-mouse`), non nella
+  schermata senza mouse nemmeno con il `resize`; su un computer vero il puntatore c'è sempre.
+- **Verificato e consegnato (14 novembre, 15:30 UTC)**: motore del giro 43607181634 (icone nuove e codice del computer)
+  provato con `fonte=motore` su telefono (prova 43609208559) e tablet (prova 43610165572): interfaccia come prima, icone
+  nostre nei pannelli e nel nastro, motore vivo dopo 12 s di modifica in testo, foglio e presentazione. Consegnati:
+  `eurise-office-motore-debug.apk` (cambiato) ed `eurise-office-debug.apk` (Office, invariato dalle 10:10).
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
