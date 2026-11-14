@@ -2412,3 +2412,10 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   `scripts/icone.py` e icona dell'APK di Office (`eurise_patch.py`).
 - **Suonerie e sfondo di blocco**: compilati (correzioni: apostrofi nelle stringhe, ordine dei parametri del selettore).
 - **APK in apk-prova: giro 529** (Mappe 45 dall'altra chat).
+- **Tavole nuove, da approvare** (pagina Mappe, fila «Mappe in guida nello stile della suite»): MapGuidaVertA (finestrino a
+  tutta larghezza sotto intestazione e meteo), MapGuidaVertB (finestrino dentro la scheda della manovra), MapGuidaOrizA
+  (colonna a destra con finestrino alto), MapGuidaOrizB (finestrino grande in alto al centro, colonna stretta),
+  MapCieloMotore. In tutte: barra di avanzamento del finestrino orizzontale in basso (non più verticale, sembrava una
+  barra di scorrimento), arrivo e comandi (Segnala, Sosta, Voce, Insieme, Fine) in una scheda satinata, percorso blu notte.
+- **Cielo nella schermata di guida: deciso dal proprietario «quello con la resa migliore» → dentro il motore** (colore
+  di sfondo e foschia all'orizzonte in `drape_frontend` di CoMaps, palazzi 3D davanti al cielo), non la fascia sopra.
