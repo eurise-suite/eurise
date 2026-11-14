@@ -186,6 +186,10 @@ class Tab(
                 if (title != null && url.startsWith("http")) history?.let { h -> Thread { h.title(url, title) }.start() }
             }
             override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) { fullscreen = fullScreen }
+            // Il processo della pagina si è chiuso (memoria, errore del motore): senza riaprire la sessione la scheda
+            // restava nera (prova del 14 novembre). Si riapre e si ricarica la stessa pagina.
+            override fun onCrash(session: GeckoSession) = revive(context)
+            override fun onKill(session: GeckoSession) = revive(context)
             override fun onExternalResponse(session: GeckoSession, response: org.mozilla.geckoview.WebResponse) {
                 // Un'estensione di Firefox (pulsante «Aggiungi» su addons.mozilla.org): la installa il motore, che prima
                 // chiede il permesso con la scheda dei permessi (Extensions.prompt).
@@ -277,6 +281,20 @@ class Tab(
                 }
             }, "browser")
         }
+    }
+
+    /** Cresce a ogni riapertura della sessione: la vista della pagina si ricollega (GeckoHost). */
+    var revived by mutableStateOf(0)
+        private set
+
+    private fun revive(context: Context) {
+        val address = url
+        runCatching { if (session.isOpen) session.close() }
+        runCatching {
+            session.open(Gecko.runtime(context))
+            if (address.isNotBlank() && address != "about:blank") session.loadUri(address)
+        }
+        revived++
     }
 
     /** Titolo, selezione e testo della pagina, letti dall'estensione Eurise solo quando servono (In Note, Ascolta). */

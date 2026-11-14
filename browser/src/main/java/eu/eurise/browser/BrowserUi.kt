@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -326,10 +327,20 @@ fun BrowserScreen(
  */
 @Composable
 private fun GeckoHost(tab: Tab, modifier: Modifier, focused: Boolean) {
+    val background = MaterialTheme.colorScheme.background.toArgb()
     AndroidView(
-        factory = { ctx -> GeckoView(ctx).also { Gecko.views += it } },
+        factory = { ctx ->
+            GeckoView(ctx).also {
+                // Finché la pagina non si è disegnata, il colore dello sfondo e non il nero del motore.
+                it.coverUntilFirstPaint(background)
+                Gecko.views += it
+            }
+        },
         update = { view ->
-            if (view.session !== tab.session) {
+            // Dopo una riapertura della sessione (processo della pagina chiuso) la vista si ricollega.
+            val generation = tab.revived
+            if (view.session !== tab.session || view.tag != generation) {
+                view.tag = generation
                 Gecko.views.forEach { other -> if (other !== view && other.session === tab.session) other.releaseSession() }
                 view.releaseSession()
                 view.setSession(tab.session)
