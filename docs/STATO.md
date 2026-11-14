@@ -2154,12 +2154,16 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   `core/designsystem`; file molto lunghi (LauncherScreen 1734 righe, PasswordApp 1355, DriveRoute 1305) da dividere.
 
 ## Punto di ripartenza (14 novembre, mattina)
-- **Ramo `brand`. APK in apk-prova: giro 447 e Mappe 35** (poi la pulizia e Livelli: vedi l'ultimo giro riuscito).
+- **Ramo `brand`. APK in apk-prova: giro 455 e Mappe 39.** Oltre a quanto sopra: stili delle icone iOS, Android, /e/OS e
+  forma a scelta (`IconStyles.kt`); Browser che riapre la scheda se il processo della pagina si chiude (`Tab.revive`,
+  `coverUntilFirstPaint`: lo schermo nero raro); Mappe, benzinai col prezzo (`EuriseFuelData`, `EuriseFuelActivity`, da
+  «Cerca vicino»; servizio «Prezzi dei carburanti» nel centro privacy, spento di base).
 - **Da provare**: Mappe sul telefono (Avvia la navigazione, Parti ora), guida in orizzontale, auto di notte, rotonde e
   uscite, Livelli; icone nuove (APK e Scrivania); Alfred (voce, «Mi scusi?»); Browser (password, schermo nero, favicon,
   schede strette, barra in alto); tastiera (il proprietario la sta usando).
 - **Domande aperte**: rapporto del problema in Office (sì/no); voce di Alfred più «da maggiordomo» (a/b); NordVPN,
   Traduzione, Borsa e Video; tavola per gli incroci normali (scena come uscite e rotonde?).
-- **Prossimo**: Mappe f) Esplora e Attività (benzinai MIMIT), mezzi (MapMezzi/MapLontano, prima le fonti), poi i componenti
-  comuni in `core/designsystem`, sveglia di Alfred, tastiera.
+- **Prossimo**: sveglia di Alfred (AlfSveglia: voce sul canale della sveglia, catalogo musicale con commenti verificati, app
+  di musica scelta e rete di sicurezza), Mappe f) Esplora e il resto di Attività (negozi, officine), mezzi (MapMezzi/MapLontano,
+  prima le fonti), componenti comuni in `core/designsystem`, tastiera.
 
