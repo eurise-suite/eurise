@@ -1,6 +1,7 @@
-# Prototipo di Office sul computer (tavola OffComputer): Collabora Office per Linux da Flathub con la nostra interfaccia
-# web sopra, su uno schermo virtuale. Le schermate vanno nella pre-release office-computer-schermate.
-name: "Office: prova sul computer (prototipo)"
+# Office sul computer (tavola OffComputer): costruisce il Flatpak Eurise Office (prototipo, strada 1: Collabora Office per
+# Linux da Flathub con la nostra interfaccia, nome e icona dentro), lo installa e lo prova su uno schermo virtuale.
+# Il pacchetto va nella pre-release flatpak-prova-office, le schermate in office-computer-schermate.
+name: "Office: Flatpak Eurise e prova sul computer"
 
 on:
   workflow_dispatch:
@@ -22,16 +23,32 @@ permissions:
 jobs:
   prova:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 
       - name: Strumenti
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q flatpak xvfb xdotool imagemagick x11-apps dbus-x11 > /dev/null
+          sudo apt-get install -y -q flatpak xvfb xdotool imagemagick x11-apps dbus-x11 librsvg2-bin > /dev/null
 
-      - name: Collabora Office da Flathub con l'interfaccia Eurise
+      - name: Flatpak Eurise Office
+        run: bash office/computer/flatpak/costruisci.sh flatpak-eurise
+
+      - name: Installa il Flatpak Eurise
+        run: flatpak install --user -y --noninteractive --bundle flatpak-eurise/eurise-office.flatpak
+
+      - name: Il pacchetto nella pre-release flatpak-prova-office
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view flatpak-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create flatpak-prova-office -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Eurise Office per Linux (prototipo, Flatpak)" \
+              --notes "Installazione: flatpak install --user eurise-office.flatpak (il runtime arriva da Flathub). Sovrascritto a ogni giro."
+          gh release upload flatpak-prova-office flatpak-eurise/eurise-office.flatpak flatpak-eurise/versione-collabora.txt -R "${{ github.repository }}" --clobber
+
+      - name: Prova del Flatpak Eurise su uno schermo virtuale
         run: bash office/computer/prova.sh prova-computer
 
       - name: Riassunto

@@ -1836,15 +1836,30 @@
 		];
 	}
 
+	/**
+	 * Computer: comandi del guscio Qt di Collabora (Bridge.cpp) con le finestre del sistema. «Apri da Eurise File» apre la
+	 * scelta dei file finché Eurise File non c'è anche sul computer; ogni documento si apre nella sua finestra.
+	 */
+	function shellCommand(command) {
+		if (window.postMobileMessage) window.postMobileMessage('uno ' + command);
+		else uno(command);
+	}
+
 	function fileMenu() {
-		chooser(t('File', 'File'), [
+		chooser(t('File', 'File'), (onDesk() ? [
+			[t('Apri da Eurise File…', 'Open from Eurise File…'), function () { shellCommand('.uno:Open'); }],
+			[t('Nuovo documento', 'New document'), function () { shellCommand('.uno:NewDocText'); }],
+			[t('Nuovo foglio', 'New spreadsheet'), function () { shellCommand('.uno:NewDocSpreadsheet'); }],
+			[t('Nuova presentazione', 'New presentation'), function () { shellCommand('.uno:NewDocPresentation'); }],
+			[t('Salva con nome…', 'Save as…'), function () { shellCommand('.uno:SaveAs'); }]
+		] : []).concat([
 			[t('Salva', 'Save'), function () { saveNow(false); }],
 			[t('Condividi o esporta in PDF', 'Share or export to PDF'), beforeSharing],
 			[t('Stampa', 'Print'), function () { dispatch('print'); }],
 			[t('Proprietà del documento', 'Document properties'), function () { uno('.uno:SetDocumentProperties'); }]].concat(onDesk() ? [
 			[t('Colore delle icone', 'Icon colour'), chooseAccent]] : []).concat([
 			[t('Chiudi', 'Close'), function () { if (window.ThisIsAMobileApp) window.postMobileMessage('BYE'); else dispatch('closemobile'); }]
-		]), function (run) { run(); });
+		])), function (run) { run(); });
 	}
 
 	/** Computer: scelta dell'accento delle icone tra le tinte della suite; resta nella memoria del guscio. */

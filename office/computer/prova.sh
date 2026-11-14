@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Prototipo di Office sul computer (tavola OffComputer): Collabora Office per Linux da Flathub (coda-qt, stesso motore e
-# stessa interfaccia web di Collabora) con sopra la nostra interfaccia: Control.Eurise.js ed eurise.css aggiunti alla
-# sua pagina cool.html. Apre testo, foglio e presentazione su uno schermo virtuale e fotografa.
-# Uso: office/computer/prova.sh <cartella delle schermate>     (su Ubuntu, con flatpak, Xvfb, xdotool, imagemagick)
+# Prova di Office sul computer (tavola OffComputer). Di base apre il Flatpak Eurise Office (eu.eurise.Office, già installato
+# da costruisci.sh: Collabora Office per Linux con la nostra interfaccia dentro); con APP=com.collaboraoffice.Office prova
+# l'interfaccia sopra il Collabora di Flathub. Apre testo, foglio e presentazione su uno schermo virtuale e fotografa.
+# Uso: [APP=…] office/computer/prova.sh <cartella delle schermate>     (su Ubuntu, con flatpak, Xvfb, xdotool, imagemagick)
 set -u
 OUT=$(realpath -m "${1:-schermate}")
 mkdir -p "$OUT"
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 WEB="$REPO/office/app/web"
-APP=com.collaboraoffice.Office
+APP=${APP:-eu.eurise.Office}
 W=1440
 H=900
 R="$OUT/riassunto.md"
@@ -17,9 +17,12 @@ echo "# Office sul computer: prova del prototipo" > "$R"
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 # Interfaccia in italiano: si scaricano anche le traduzioni (estensioni .Locale) dell'italiano.
 flatpak config --user --set languages "it;en"
-flatpak install --user -y --noninteractive flathub "$APP" > "$OUT/installa.log" 2>&1 || { tail -30 "$OUT/installa.log"; exit 1; }
+if [ "$APP" = com.collaboraoffice.Office ]; then
+	flatpak install --user -y --noninteractive flathub "$APP" > "$OUT/installa.log" 2>&1 || { tail -30 "$OUT/installa.log"; exit 1; }
+fi
+flatpak info --user "$APP" > /dev/null || { echo "$APP non è installato" >> "$R"; exit 1; }
 VERSION=$(flatpak info --user "$APP" | sed -n 's/^ *Version: *//p')
-echo "- Collabora Office $VERSION da Flathub" >> "$R"
+echo "- $APP ${VERSION:-} (motore di Collabora Office)" >> "$R"
 
 # La pagina dell'interfaccia: WebView::load apre <dati>/browser/dist/cool.html; nel pacchetto ce ne può essere più d'una
 # (cool-qt.html è quella del guscio Qt, cool.html quella del server), quindi la nostra interfaccia va in tutte e due.
@@ -80,36 +83,11 @@ cat > "$DIAG" <<'JS'
 	setTimeout(function () { report('20s'); dom('20s'); }, 20000);
 })();
 JS
-# Copie nuove (cp poi mv): i file del pacchetto sono legami fisici con il deposito di ostree.
-put() { cp "$1" "$2.eurise" && mv -f "$2.eurise" "$2"; }
-find "$FILES" \( -name 'cool.html' -o -name 'cool-qt.html' \) | while read -r COOL; do
-	DIST=$(dirname "$COOL")
-	chmod -R u+w "$DIST"
-	put "$WEB/Control.Eurise.js" "$DIST/Control.Eurise.js"
-	put "$WEB/eurise.css" "$DIST/eurise.css"
-	put "$DIAG" "$DIST/eurise-diag.js"
-	mkdir -p "$DIST/images/dark"
-	for svg in "$WEB"/images/*.svg; do put "$svg" "$DIST/images/$(basename "$svg")"; done
-	for svg in "$WEB"/images/dark/*.svg; do [ -e "$svg" ] && put "$svg" "$DIST/images/dark/$(basename "$svg")"; done
-	python3 - "$COOL" <<'EOF2'
-import re, sys
-p = sys.argv[1]
-s = open(p, encoding='utf-8').read()
-if 'Control.Eurise.js' not in s:
-    m = re.search(r'<script[^>]*src="([^"]*)bundle\.js"[^>]*>\s*</script>', s)
-    if not m:
-        sys.exit(p + ': bundle.js non trovato')
-    tag, prefix = m.group(0), m.group(1)
-    # Stessa cartella di bundle.js e stessi attributi (defer): il nostro script parte subito dopo.
-    ours = tag.replace(prefix + 'bundle.js', prefix + 'Control.Eurise.js')
-    diag = tag.replace(prefix + 'bundle.js', prefix + 'eurise-diag.js')
-    s = s.replace(tag, tag + '\n' + ours + '\n' + diag, 1)
-    s = s.replace('</head>', '<link rel="stylesheet" href="' + prefix + 'eurise.css" />\n</head>', 1)
-open(p + '.eurise', 'w', encoding='utf-8').write(s)
-EOF2
-	mv -f "$COOL.eurise" "$COOL"
-	echo "- interfaccia Eurise in \`${COOL#"$FILES"}\`" >> "$R"
-	grep -o '<script[^>]*\(bundle\|Eurise\)[^>]*>' "$COOL" | sed 's/^/    /' >> "$R"
+# Interfaccia Eurise (già dentro il Flatpak Eurise; sopra il Collabora di Flathub la mette qui) e diagnosi della prova.
+find "$FILES" -name 'cool-qt.html' -path '*dist*' | while read -r COOL; do
+	chmod -R u+w "$(dirname "$COOL")"
+	python3 "$REPO/office/computer/inietta.py" "$(dirname "$COOL")" "$WEB" "$DIAG" | sed 's/^/- /' >> "$R"
+	grep -o '<script[^>]*\(bundle\|Eurise\|diag\)[^>]*>' "$COOL" | sed 's/^/    /' >> "$R"
 done
 
 # Schermo virtuale e sessione D-Bus (il guscio Qt parla con il portale per il tema).

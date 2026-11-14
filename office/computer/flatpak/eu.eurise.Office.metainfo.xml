@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Eurise Office per Linux (prototipo). La versione è quella del motore di Collabora Office su cui poggia. -->
+<component type="desktop-application">
+  <id>eu.eurise.Office</id>
+  <name>Eurise Office</name>
+  <summary>Documenti, fogli e presentazioni: privato, libero, europeo</summary>
+  <summary xml:lang="en">Documents, spreadsheets and presentations: private, free, European</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MPL-2.0</project_license>
+  <launchable type="desktop-id">eu.eurise.Office.desktop</launchable>
+  <description>
+    <p>L'Office della suite Eurise sul computer: la stessa interfaccia del telefono e del tablet, il motore di Collabora
+      Office, i documenti che restano tuoi.</p>
+  </description>
+  <releases>
+    <release version="@VERSIONE@" type="development"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
