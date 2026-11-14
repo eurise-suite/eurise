@@ -2515,3 +2515,17 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   Eurise); fornitore della posta o server nostro; il dominio.
 - Nessun codice in questo giro (prima le anteprime). Il primo passo dopo l'approvazione: le viste e i promemoria di Email,
   che stanno tutti sul telefono.
+
+## 15 novembre: «Alfred non capisce» (prova del proprietario) · giro 548
+- Segnalato: apriva Lumo anche per «scrivi una nota», «chiama x», «aggiungi al calendario»; il 90 % delle volte capiva una
+  cosa per un'altra; «un assistente a cui serve un assistente».
+- Cause: grammatica con regole ancorate e poche forme (niente «aggiungi al calendario», «scrivi una nota» senza testo non
+  passava); con «Domande libere subito online» tutto ciò che non passava finiva su Lumo; Voce spostata su Base (giro 543)
+  sbagliava di più.
+- Fatto: regole più larghe (CALENDAR, NOTE anche vuota, punteggiatura di Whisper), seconda lettura `Grammar.guess` (parole
+  dei comandi ovunque → scheda di conferma; domande e frasi senza parole di comando restano libere), Voce di nuovo sul
+  modello più preciso (resta il modello in memoria e il contesto di 768). Test nuovi in `GrammarTest`.
+- Strategia proposta: 1) misurare con un registro locale (frase sentita → capita) cosa sbaglia, trascrizione o comprensione;
+  2) Eurise AI come seconda lettura quando le regole non bastano (tavola AlfCapisce, da approvare); 3) voci: Kokoro
+  (sherpa-onnx, già nel progetto) ha due voci italiane, Nicola e Sara, circa 115 MB int8 + 28 MB di voci; prosodia più
+  scorrevole di Piper ma voci italiane meno curate di quelle inglesi: da provare come voce scaricabile.
