@@ -12,16 +12,30 @@ import java.util.zip.ZipInputStream
  * preparato dalla suite (`.github/workflows/voci.yml`) con il modello, i simboli e i dati di pronuncia italiani di
  * espeak-ng. Si scarica solo toccando «Scarica»: escono la richiesta del file e l'indirizzo di rete, nient'altro.
  */
-enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label: Int, val detail: Int) {
+enum class Voice(
+    val id: String,
+    val onnx: String,
+    val megabytes: Int,
+    val label: Int,
+    val detail: Int,
+    /** L'archivio da scaricare: le voci Kokoro ne condividono uno solo (modello unico, voci diverse). */
+    val archive: String = id,
+    /** Per Kokoro, il numero della voce nel modello (kokoro-multi-lang-v1_0 di sherpa-onnx); null per Piper. */
+    val kokoroSid: Int? = null,
+) {
     /** Maschile, pacata: la voce di Alfred. */
     Riccardo("alfred-riccardo", "it_IT-riccardo-x_low.onnx", 19, R.string.voice_tts_riccardo, R.string.voice_tts_riccardo_d),
     /** Femminile, più ricca: per chi la preferisce. */
-    Paola("alfred-paola", "it_IT-paola-medium.onnx", 60, R.string.voice_tts_paola, R.string.voice_tts_paola_d);
+    Paola("alfred-paola", "it_IT-paola-medium.onnx", 60, R.string.voice_tts_paola, R.string.voice_tts_paola_d),
+    /** Kokoro (Apache 2.0), maschile: più scorrevole di Piper, più pesante (richiesta del proprietario, 15 novembre). */
+    Nicola("kokoro-nicola", "model.int8.onnx", 125, R.string.voice_tts_nicola, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 36),
+    /** Kokoro, femminile: stesso archivio di Nicola. */
+    Sara("kokoro-sara", "model.int8.onnx", 125, R.string.voice_tts_sara, R.string.voice_tts_kokoro_d, archive = "alfred-kokoro", kokoroSid = 35);
 
-    val url get() = "https://github.com/eurise-suite/eurise/releases/download/voci/$id.zip"
+    val url get() = "https://github.com/eurise-suite/eurise/releases/download/voci/$archive.zip"
 
-    fun dir(context: Context) = File(File(context.filesDir, "voices"), id)
-    fun pack(context: Context) = VoicePack(id, null, dir(context), onnx)
+    fun dir(context: Context) = File(File(context.filesDir, "voices"), archive)
+    fun pack(context: Context) = VoicePack(id, null, dir(context), onnx, kokoroSid)
     fun installed(context: Context) = pack(context).installed
 }
 
@@ -29,11 +43,13 @@ enum class Voice(val id: String, val onnx: String, val megabytes: Int, val label
  * Una voce sul telefono: una delle nostre ([Voice]) o una caricata dalla persona ([name] è il nome scelto, null per le
  * nostre). Tre cose servono al motore: il modello, i simboli e i dati di pronuncia di espeak-ng.
  */
-data class VoicePack(val id: String, val name: String?, val dir: File, val onnx: String) {
+data class VoicePack(val id: String, val name: String?, val dir: File, val onnx: String, val kokoroSid: Int? = null) {
     val model get() = File(dir, onnx)
     val tokens get() = File(dir, "tokens.txt")
     val data get() = File(dir, "espeak-ng-data")
-    val installed get() = model.isFile && tokens.isFile && data.isDirectory
+    /** Kokoro: le voci di tutte le persone del modello in un file. */
+    val styles get() = File(dir, "voices.bin")
+    val installed get() = model.isFile && tokens.isFile && data.isDirectory && (kokoroSid == null || styles.isFile)
     val imported get() = name != null
 }
 
@@ -118,7 +134,7 @@ object Voices {
             val home = model.parentFile ?: return@runCatching ImportResult.NotAVoice
             if (!File(home, "tokens.txt").isFile) return@runCatching ImportResult.NotAVoice
             if (!File(home, "espeak-ng-data").isDirectory) {
-                val donor = Voice.entries.map { it.pack(context) }.firstOrNull { it.installed } ?: return@runCatching ImportResult.NeedsPronunciation
+                val donor = Voice.entries.filter { it.kokoroSid == null }.map { it.pack(context) }.firstOrNull { it.installed } ?: return@runCatching ImportResult.NeedsPronunciation
                 donor.data.copyRecursively(File(home, "espeak-ng-data"), overwrite = true)
             }
             File(home, "modello.txt").writeText(model.name)

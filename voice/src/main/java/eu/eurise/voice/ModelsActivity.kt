@@ -198,7 +198,7 @@ private fun ModelsPage(onClose: () -> Unit) {
         }
 
         Section(stringResource(R.string.voice_models_other))
-        listOf(Voice.Paola).forEach { v ->
+        listOf(Voice.Paola, Voice.Nicola, Voice.Sara).forEach { v ->
             val item = Item.Speak(v)
             val inUse = current == v.id
             ModelRow(stringResource(v.label) + if (inUse) " · " + stringResource(R.string.voice_tts_in_use) else "",

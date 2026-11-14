@@ -34,13 +34,29 @@ jobs:
             ls -l "out/$id.zip"
           done
 
+      - name: Kokoro (Nicola e Sara)
+        run: |
+          set -e
+          # Kokoro-82M (Apache 2.0) convertito da sherpa-onnx, versione int8 a più lingue: un modello, più voci (Nicola 36,
+          # Sara 35). Si tengono il modello, le voci, i simboli e i dati di espeak-ng per italiano e inglese; via i
+          # dizionari e le regole del cinese e dell'inglese (l'italiano lo pronuncia espeak-ng).
+          src=kokoro-int8-multi-lang-v1_0
+          curl -fsSL -o "$src.tar.bz2" "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/$src.tar.bz2"
+          tar xjf "$src.tar.bz2"
+          cd "$src"
+          find espeak-ng-data -maxdepth 1 -name '*_dict' ! -name it_dict ! -name en_dict -delete
+          printf 'Kokoro-82M (licenza Apache 2.0, hexgrad/Kokoro-82M), convertito da sherpa-onnx.\nVoci italiane: im_nicola (36), if_sara (35).\nDati di pronuncia: espeak-ng (GPL 3), https://github.com/espeak-ng/espeak-ng\n' > LEGGIMI.txt
+          zip -qr9 ../out/alfred-kokoro.zip model.int8.onnx voices.bin tokens.txt espeak-ng-data LICENSE LEGGIMI.txt
+          cd ..
+          ls -l out/alfred-kokoro.zip
+
       - name: Pubblica nella pre-release «voci»
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view voci -R "${{ github.repository }}" >/dev/null 2>&1 || \
             gh release create voci -R "${{ github.repository }}" --prerelease --title "Voci di Alfred" \
-              --notes "Voci neurali per Eurise Voce, scaricate a richiesta dall'app. Piper (MIT) con i dati di espeak-ng (GPL 3)."
+              --notes "Voci neurali per Eurise Voce, scaricate a richiesta dall'app. Piper (MIT) e Kokoro (Apache 2.0) con i dati di espeak-ng (GPL 3)."
           gh release upload voci out/*.zip --clobber -R "${{ github.repository }}"
           echo "### Voci pubblicate" >> "$GITHUB_STEP_SUMMARY"
           ls -l out >> "$GITHUB_STEP_SUMMARY"

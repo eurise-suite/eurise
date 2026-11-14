@@ -7,6 +7,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeechService
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsKokoroModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import eu.eurise.core.suite.SpeechText
@@ -65,7 +66,19 @@ class AlfredVoiceService : TextToSpeechService() {
         engine = runCatching {
             OfflineTts(
                 config = OfflineTtsConfig(
-                    model = OfflineTtsModelConfig(
+                    model = if (voice.kokoroSid != null) OfflineTtsModelConfig(
+                        // Kokoro: modello unico per più lingue; l'italiano lo pronuncia espeak-ng («it»).
+                        kokoro = OfflineTtsKokoroModelConfig(
+                            model = voice.model.absolutePath,
+                            voices = voice.styles.absolutePath,
+                            tokens = voice.tokens.absolutePath,
+                            dataDir = voice.data.absolutePath,
+                            lang = "it",
+                        ),
+                        numThreads = 4,
+                        debug = false,
+                        provider = "cpu",
+                    ) else OfflineTtsModelConfig(
                         vits = OfflineTtsVitsModelConfig(
                             model = voice.model.absolutePath,
                             tokens = voice.tokens.absolutePath,
@@ -102,7 +115,7 @@ class AlfredVoiceService : TextToSpeechService() {
         val ok = runCatching {
             for ((i, sentence) in sentences(text).withIndex()) {
                 if (stopped) break
-                val audio = tts.generate(sentence, 0, speed)
+                val audio = tts.generate(sentence, loaded?.kokoroSid ?: 0, speed)
                 val bytes = if (i > 0 && pause.isNotEmpty()) pause + pcm(audio.samples) else pcm(audio.samples)
                 var off = 0
                 while (off < bytes.size && !stopped) {
