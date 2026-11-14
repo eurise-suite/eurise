@@ -816,6 +816,11 @@
 		if (name && !name.textContent) name.textContent = documentName();
 		var el = document.querySelector('#eurise-header .eurise-status');
 		if (el) el.textContent = phone.saved ? t('Salvato', 'Saved') : t('Modifiche in corso…', 'Editing…');
+		// Sul computer accanto allo stato c'è la cartella (tavola OffComputer: «Salvato · Murena › Lavoro»).
+		if (el && onDesk()) {
+			var parts = documentPath().split('/').filter(Boolean);
+			if (parts.length > 1) el.textContent += ' · ' + parts[parts.length - 2];
+		}
 		if (el) el.classList.toggle('pending', !phone.saved);
 	}
 
@@ -1078,6 +1083,23 @@
 	function glyph(item, text) { item.glyph = text; return item; }
 	/** Voce che esegue una funzione ma prende l'icona di un comando del motore. */
 	function ri(it, en, run, big, iconCommand) { var item = r(it, en, run, big); item.icon = iconCommand; return item; }
+	/** Sul computer la voce piccola mostra anche il nome (Taglia, Copia… come nella tavola OffComputer). */
+	function lab(item) { item.desk = 'lab'; return item; }
+	/** Icona disegnata da noi (comandi della Suite, che il motore non conosce). */
+	function drawn(item, path) { item.svg = path; return item; }
+
+	/** Computer (guscio Linux): barra in una riga, nastro compatto, colonna Properties con le nostre sezioni. */
+	function onDesk() { return document.body.classList.contains('eurise-desk'); }
+
+	var SUITE_ICONS = {
+		detta: 'M9 4.6a3 3 0 0 1 6 0V11a3 3 0 0 1-6 0Z M5.5 11a6.5 6.5 0 0 0 13 0 M12 17.5V21',
+		traduci: 'M3 5h9 M7.5 3v2 M5 5c1 4 3.5 6.5 6.5 7.5 M10 5c-1 4-3.5 6.5-6.5 7.5 M13 21l4-9 4 9 M14.4 18h5.2',
+		dafare: 'M4 5h16v14H4z M8 12l3 3 5-6',
+		evento: 'M4 6h16v14H4z M4 10h16 M8 3v4 M16 3v4',
+		note: 'M5 4h10l4 4v12H5z M15 4v4h4 M8 13h8 M8 17h5',
+		viaggio: 'M3 17h18 M5 17l2-6h10l2 6 M8 11l1.5-4h5L16 11 M7 20a1 1 0 1 0 0 .01 M17 20a1 1 0 1 0 0 .01',
+		grafico: 'M4 20h16 M7 16v-5 M12 16V6 M17 16v-8'
+	};
 
 	// --- Colori: tinte della suite, comando giusto per ciascun tipo di documento (come Widget.ColorPickerButton) ---
 	var COLORS = {
@@ -1258,11 +1280,14 @@
 		return row;
 	}
 
+	/** Gruppo con voci diverse sul computer. */
+	function deskItems(group, items) { group.deskItems = items; return group; }
+
 	var style = function (name) {
 		return function () { uno('.uno:StyleApply', { Style: { type: 'string', value: name }, FamilyName: { type: 'string', value: 'ParagraphStyles' } }); };
 	};
-	var APPUNTI = g('Appunti', 'Clipboard', [r('Incolla', 'Paste', '.uno:Paste', 'big'), r('Taglia', 'Cut', '.uno:Cut'),
-		r('Copia', 'Copy', '.uno:Copy'), r('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush')]);
+	var APPUNTI = g('Appunti', 'Clipboard', [r('Incolla', 'Paste', '.uno:Paste', 'big'), lab(r('Taglia', 'Cut', '.uno:Cut')),
+		lab(r('Copia', 'Copy', '.uno:Copy')), lab(r('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush'))]);
 	var CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
 		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
 		glyph(r('Apice', 'Superscript', '.uno:SuperScript'), 'x²'), glyph(r('Pedice', 'Subscript', '.uno:SubScript'), 'x₂'),
@@ -1270,18 +1295,21 @@
 	CARATTERE.fonts = true;
 	var STILI = g('Stili', 'Styles', [r('Testo', 'Text', style('Standard'), 'big'), r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'),
 		r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]);
+	STILI.tiles = true;
+	STILI.deskMore = '.uno:SidebarDeck.StyleListDeck';
 	var DIAPOSITIVE = g('Diapositive', 'Slides', [r('Nuova', 'New', '.uno:InsertPage', 'big'), r('Duplica', 'Duplicate', '.uno:DuplicatePage'),
 		r('Elimina', 'Delete', '.uno:DeletePage')]);
 	var PARAGRAFO = g('Paragrafo', 'Paragraph', [r('Elenco', 'Bullets', '.uno:DefaultBullet'), r('Numeri', 'Numbering', '.uno:DefaultNumbering'),
 		r('A sinistra', 'Left', '.uno:LeftPara'), r('Al centro', 'Center', '.uno:CenterPara'), r('A destra', 'Right', '.uno:RightPara'),
 		r('Giustificato', 'Justified', '.uno:JustifyPara'), r('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'),
 		r('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent')], '.uno:ParagraphDialog');
+	// Sul computer Detta e Traduci restano grandi, le altre voci piccole con il nome (gruppo stretto, tavola OffComputer).
 	var SUITE = g('Suite', 'Suite', [
-		r('Da fare', 'To-do', function () { actions['eurise-dafare'](); }, 'big'),
-		r('Evento', 'Event', function () { actions['eurise-evento'](); }, 'big'),
-		r('Note', 'Notes', function () { actions['eurise-note'](); }, 'big'),
-		r('Traduci', 'Translate', function () { actions['eurise-traduci'](); }, 'big'),
-		r('Detta', 'Dictate', function () { actions['eurise-detta'](); }, 'big')]);
+		lab(drawn(r('Da fare', 'To-do', function () { actions['eurise-dafare'](); }, 'big'), SUITE_ICONS.dafare)),
+		lab(drawn(r('Evento', 'Event', function () { actions['eurise-evento'](); }, 'big'), SUITE_ICONS.evento)),
+		lab(drawn(r('Note', 'Notes', function () { actions['eurise-note'](); }, 'big'), SUITE_ICONS.note)),
+		drawn(r('Traduci', 'Translate', function () { actions['eurise-traduci'](); }, 'big'), SUITE_ICONS.traduci),
+		drawn(r('Detta', 'Dictate', function () { actions['eurise-detta'](); }, 'big'), SUITE_ICONS.detta)]);
 	SUITE.suite = true;
 	var COMMENTO = r('Commento', 'Comment', function () { dispatch('insertcomment'); }, 'big');
 	var IMMAGINE = r('Immagine', 'Image', function () { dispatch('localgraphic'); }, 'big');
@@ -1290,8 +1318,8 @@
 		r('Schermo intero', 'Full screen', '.uno:FullScreen')]);
 
 	var SUITE_FOGLIO = g('Suite', 'Suite', SUITE.items.concat([
-		r('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }, 'big'),
-		r('Grafico', 'Chart', function () { actions['eurise-grafico'](); }, 'big')]));
+		lab(drawn(r('Viaggio', 'Trip', function () { actions['eurise-viaggio'](); }, 'big'), SUITE_ICONS.viaggio)),
+		lab(drawn(r('Grafico', 'Chart', function () { actions['eurise-grafico'](); }, 'big'), SUITE_ICONS.grafico))]));
 	SUITE_FOGLIO.suite = true;
 	var CELLE_CARATTERE = g('Carattere', 'Font', [glyph(r('Grassetto', 'Bold', '.uno:Bold'), 'B'), glyph(r('Corsivo', 'Italic', '.uno:Italic'), 'I'),
 		glyph(r('Sottolineato', 'Underline', '.uno:Underline'), 'U'), glyph(r('Barrato', 'Strikethrough', '.uno:Strikeout'), 'S'),
@@ -1302,7 +1330,10 @@
 		text: [
 			{ id: 'home', label: 'Home', groups: [APPUNTI, CARATTERE, PARAGRAFO,
 				STILI,
-				g('Modifica', 'Editing', [r('Trova e sostituisci', 'Find & replace', '.uno:SearchDialog', 'big')])] },
+				deskItems(g('Modifica', 'Editing', [r('Trova e sostituisci', 'Find & replace', '.uno:SearchDialog', 'big')]), [
+					lab(ri('Trova', 'Find', function () { dispatch('showsearchbar'); }, false, '.uno:SearchDialog')),
+					lab(r('Sostituisci', 'Replace', '.uno:SearchDialog')),
+					lab(ri('Collegamento', 'Link', function () { dispatch('hyperlinkdialog'); }, false, '.uno:HyperlinkDialog'))])] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Tabelle e immagini', 'Tables and images', [TABELLA, IMMAGINE, r('Grafico', 'Chart', '.uno:InsertObjectChart', 'big'),
 					r('Forma', 'Shape', '.uno:BasicShapes.rectangle', 'big')]),
@@ -1395,16 +1426,40 @@
 		return null;
 	}
 
-	function ribbonButton(item, inSuite) {
+	/** Grande, piccola con il nome (solo sul computer) o piccola. */
+	function kind(item) {
+		if (onDesk() && item.desk) return item.desk;
+		return item.big ? 'big' : 'small';
+	}
+
+	function ribbonButton(item, inSuite, tile) {
 		var b = document.createElement('button');
 		b.type = 'button';
-		b.className = 'eurise-rb' + (item.big ? ' big' : '') + (inSuite ? ' suite' : '');
+		var k = kind(item);
+		var big = k === 'big';
+		b.className = 'eurise-rb' + (big ? ' big' : '') + (k === 'lab' ? ' lab' : '') + (inSuite ? ' suite' : '');
 		b.title = item.label;
 		b.setAttribute('aria-label', item.label);
-		var icon = commandIcon(item.icon || item.run, item.big ? 26 : 18);
-		if (icon) b.appendChild(icon);
+		if (tile) {
+			// Tessera di stile (tavola OffComputer): «Aa» nell'aspetto dello stile e il nome sotto.
+			b.className = 'eurise-rb tile ' + tile;
+			b.innerHTML = '<span class="aa">Aa</span>';
+			var name = document.createElement('span');
+			name.textContent = item.label;
+			b.appendChild(name);
+			b.onclick = function () { item.run(); };
+			return b;
+		}
+		var size = big ? (onDesk() ? 24 : 26) : 18;
+		var icon = item.svg && onDesk() ? null : commandIcon(item.icon || item.run, size);
+		if (item.svg && onDesk()) {
+			b.insertAdjacentHTML('beforeend', '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+				'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + item.svg + '"></path></svg>');
+			icon = b.lastChild;
+		}
+		if (icon && !icon.parentNode) b.appendChild(icon);
 		if (item.swatch) { b.classList.add('swatched'); b.appendChild(swatch(item.swatch)); }
-		if (item.big || !icon) {
+		if (big || k === 'lab' || !icon) {
 			var span = document.createElement('span');
 			span.textContent = item.label;
 			b.appendChild(span);
@@ -1425,6 +1480,7 @@
 		var el = ribbon.el;
 		el.innerHTML = '';
 		tab.groups.forEach(function (group) {
+			var items = onDesk() && group.deskItems ? group.deskItems : group.items;
 			var sec = document.createElement('section');
 			sec.className = 'eurise-group' + (group.suite ? ' suite' : '');
 			sec.setAttribute('aria-label', group.label);
@@ -1437,15 +1493,22 @@
 				column.appendChild(fontRow(false));
 				var line = document.createElement('div');
 				line.className = 'eurise-fontline';
-				group.items.forEach(function (item) { line.appendChild(ribbonButton(item, group.suite)); });
+				items.forEach(function (item) { line.appendChild(ribbonButton(item, group.suite)); });
 				column.appendChild(line);
 				body.appendChild(column);
+			} else if (group.tiles && onDesk()) {
+				items.forEach(function (item, i) { body.appendChild(ribbonButton(item, false, 'st' + i)); });
 			} else {
 				var smalls = null;
-				group.items.forEach(function (item) {
-					if (item.big) { smalls = null; body.appendChild(ribbonButton(item, group.suite)); return; }
+				// Sul computer le voci grandi vengono prima (Incolla, Detta, Traduci), poi le piccole in colonna.
+				var ordered = onDesk() ? items.filter(function (it) { return kind(it) === 'big'; })
+					.concat(items.filter(function (it) { return kind(it) !== 'big'; })) : items;
+				ordered.forEach(function (item) {
+					var k = kind(item);
+					if (k === 'big') { smalls = null; body.appendChild(ribbonButton(item, group.suite)); return; }
 					// Le voci piccole stanno in griglia su due righe, come nella tavola.
-					if (!smalls) { smalls = document.createElement('div'); smalls.className = 'eurise-smalls'; body.appendChild(smalls); }
+					var cls = 'eurise-smalls' + (k === 'lab' ? ' labs' : '');
+					if (!smalls || smalls.className !== cls) { smalls = document.createElement('div'); smalls.className = cls; body.appendChild(smalls); }
 					smalls.appendChild(ribbonButton(item, group.suite));
 				});
 			}
@@ -1463,14 +1526,15 @@
 		var label = document.createElement('span');
 		label.textContent = group.label;
 		foot.appendChild(label);
-		if (group.more) {
+		var moreCommand = (onDesk() && group.deskMore) || group.more;
+		if (moreCommand) {
 			var more = document.createElement('button');
 			more.type = 'button';
 			more.className = 'eurise-gmore';
 			more.title = t('Altre opzioni di ', 'More options: ') + group.label;
 			more.setAttribute('aria-label', more.title);
 			more.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9L9 3 M5 3h4v4"></path></svg>';
-			more.onclick = function () { uno(group.more); };
+			more.onclick = function () { uno(moreCommand); };
 			foot.appendChild(more);
 		}
 		return foot;
@@ -1542,18 +1606,25 @@
 		if (!row || document.getElementById('eurise-top')) return;
 		var top = document.createElement('div');
 		top.id = 'eurise-top';
-		top.innerHTML =
-			'<div id="eurise-header" class="tablet">' +
-			'<span class="eurise-doc"><span class="eurise-name"></span><span class="eurise-status"></span></span>' +
+		var desk = onDesk();
+		var actionsHtml =
 			'<button type="button" class="eurise-hbtn" data-a="undo" aria-label="' + t('Annulla', 'Undo') + '" title="' + t('Annulla', 'Undo') + '">' + icon(SVG.undo, 18) + '</button>' +
 			'<button type="button" class="eurise-hbtn" data-a="redo" aria-label="' + t('Ripeti', 'Redo') + '" title="' + t('Ripeti', 'Redo') + '">' + icon('M15 6l5 5-5 5 M20 11H10a6 6 0 0 0 0 12', 18) + '</button>' +
 			'<button type="button" class="eurise-cmdsearch" data-a="search">' + icon(SVG.search, 16) + '<span>' + t('Cerca un comando', 'Search a command') + '</span><kbd>Ctrl K</kbd></button>' +
-			'<button type="button" class="eurise-share" data-a="share">' + icon(SVG.share, 15) + '<span>' + t('Condividi', 'Share') + '</span></button>' +
+			(desk ? '<span class="eurise-doc"><span class="eurise-status"></span></span>' : '') +
+			'<button type="button" class="eurise-share" data-a="share">' + icon(SVG.share, 15) + '<span>' + t('Condividi', 'Share') + '</span></button>';
+		// Computer (tavola OffComputer): una riga sola, schede a sinistra e azioni a destra; il nome del documento sta
+		// nella scheda del guscio (per ora nel titolo della finestra). Tablet: intestazione a scheda, poi le schede.
+		top.innerHTML = desk ?
+			'<div id="eurise-header" class="desk"><div id="eurise-tabs" role="tablist"></div><span class="eurise-fill"></span>' + actionsHtml + '</div><div id="eurise-ribbon"></div>' :
+			'<div id="eurise-header" class="tablet">' +
+			'<span class="eurise-doc"><span class="eurise-name"></span><span class="eurise-status"></span></span>' + actionsHtml +
 			'</div><div id="eurise-tabs" role="tablist"></div><div id="eurise-ribbon"></div>';
 		top.querySelector('#eurise-header').onclick = function (e) {
 			var b = e.target.closest && e.target.closest('button');
 			if (!b) return;
 			var a = b.getAttribute('data-a');
+			if (!a) return;
 			if (a === 'undo') uno('.uno:Undo');
 			else if (a === 'redo') uno('.uno:Redo');
 			else if (a === 'search') openSearch();
@@ -1581,7 +1652,140 @@
 		ribbon.el = top.querySelector('#eurise-ribbon');
 		showRibbon(list[0]);
 		status();
+		if (desk) deskSide(docType);
 		if (app.map.invalidateSize) setTimeout(function () { app.map.invalidateSize(); }, 50);
+	}
+
+	// --- Computer: colonna Properties di Collabora con le nostre sezioni (indicazioni del proprietario, 14 novembre) ---
+	//
+	// La colonna di destra resta quella di Collabora, con tutte le sue funzioni, ridisegnata in eurise.css (isole bianche sul
+	// Perla, tendine e pulsanti come il nastro). In cima, come sezioni sue: Struttura (il Navigatore del motore, spostato
+	// qui: niente colonna a sinistra), Collegato a e In Eurise File. Nelle presentazioni le diapositive restano a sinistra.
+
+	/** Percorso del documento: nel guscio Linux arriva come file:// nelle opzioni della mappa. */
+	function documentPath() {
+		var candidates = [app.map && app.map.options && app.map.options.doc, window.wopiSrc, window.docURL];
+		try { candidates.push(new URLSearchParams(window.location.search).get('file_path')); } catch (e) { /* niente */ }
+		for (var i = 0; i < candidates.length; i++) {
+			var c = candidates[i];
+			if (typeof c !== 'string' || !c) continue;
+			try { c = decodeURIComponent(c); } catch (e) { /* già decodificato */ }
+			c = c.replace(/^file:\/\//, '').split('?')[0];
+			if (c.indexOf('/') >= 0) return c;
+		}
+		return '';
+	}
+
+	function sideSection(id, title, open) {
+		var sec = document.createElement('section');
+		sec.className = 'eurise-side' + (open ? ' open' : '');
+		sec.id = id;
+		var head = document.createElement('button');
+		head.type = 'button';
+		head.className = 'eurise-side-head';
+		head.setAttribute('aria-expanded', open ? 'true' : 'false');
+		head.innerHTML = '<span></span>' + DROP;
+		head.firstChild.textContent = title;
+		head.onclick = function () {
+			var now = !sec.classList.contains('open');
+			sec.classList.toggle('open', now);
+			head.setAttribute('aria-expanded', now ? 'true' : 'false');
+		};
+		var body = document.createElement('div');
+		body.className = 'eurise-side-body';
+		sec.appendChild(head);
+		sec.appendChild(body);
+		return sec;
+	}
+
+	function sideRow(main, sub) {
+		var row = document.createElement('div');
+		row.className = 'eurise-side-row';
+		var a = document.createElement('strong');
+		a.textContent = main;
+		row.appendChild(a);
+		if (sub) {
+			var b = document.createElement('span');
+			b.textContent = sub;
+			row.appendChild(b);
+		}
+		return row;
+	}
+
+	function deskSide(docType) {
+		var wrapper = document.getElementById('sidebar-dock-wrapper');
+		trace.push('side wrapper=' + !!wrapper);
+		document.body.classList.add('eurise-doc-' + docType);
+		if (!wrapper || document.getElementById('eurise-sidebox')) return;
+		var box = document.createElement('div');
+		box.id = 'eurise-sidebox';
+
+		// Struttura: il Navigatore del motore (titoli, tabelle, immagini…; i fogli nel foglio di calcolo).
+		if (docType !== 'presentation' && docType !== 'drawing') {
+			var structure = sideSection('eurise-struttura', t('Struttura', 'Outline'), true);
+			var panel = document.getElementById('navigator-panel');
+			if (panel) structure.lastChild.appendChild(panel);
+			var empty = document.createElement('p');
+			empty.className = 'eurise-side-empty';
+			empty.textContent = t('Titoli, tabelle e immagini del documento compaiono qui.', 'Headings, tables and images appear here.');
+			structure.lastChild.appendChild(empty);
+			box.appendChild(structure);
+			// Il Navigatore si apre una volta: lo costruisce il motore dentro #navigator-panel, che ora sta qui.
+			var opened = false;
+			var openNavigator = function () {
+				if (opened) return;
+				opened = true;
+				setTimeout(function () { uno('.uno:Navigator'); }, 300);
+			};
+			if (app.map._docLoaded) openNavigator(); else app.map.once('docloaded', openNavigator);
+			app.map.on('navigator', function () { structure.classList.add('filled'); });
+		}
+
+		// Collegato a: eventi, persone e attività della suite legati al documento (arrivano con il guscio Eurise).
+		var linked = sideSection('eurise-collegato', t('Collegato a', 'Linked to'), true);
+		linked.lastChild.appendChild(sideRow(t('Nessun collegamento', 'Nothing linked yet'),
+			t('Collega un evento, una persona o un Da fare dalla scheda Suite.', 'Link an event, a person or a to-do from the Suite tab.')));
+		box.appendChild(linked);
+
+		// In Eurise File: dove sta il documento.
+		var where = sideSection('eurise-file', t('In Eurise File', 'In Eurise File'), true);
+		var path = documentPath();
+		var parts = path.split('/').filter(Boolean);
+		var folder = parts.length > 1 ? parts.slice(Math.max(0, parts.length - 3), parts.length - 1).join(' › ') : '';
+		where.lastChild.appendChild(sideRow(folder || t('Sul computer', 'On this computer'),
+			t('Sul computer · si sincronizza con il guscio Eurise', 'On this computer · syncs with the Eurise shell')));
+		box.appendChild(where);
+
+		wrapper.insertBefore(box, wrapper.firstChild);
+		document.body.classList.add('eurise-side-on');
+	}
+
+	/**
+	 * Il giro guidato di Collabora (26.04, «Welcome to Collabora Online… This short tour») non serve: la prima volta che
+	 * compare lo si salta con il suo pulsante, così Collabora ricorda di non mostrarlo più.
+	 */
+	function skipTour() {
+		var SKIP = /^(skip|salta|ignora)$/i;
+		function check(root) {
+			if (!root || !root.querySelectorAll) return;
+			var buttons = root.querySelectorAll('button');
+			for (var i = 0; i < buttons.length; i++) {
+				var b = buttons[i];
+				if (!SKIP.test((b.textContent || '').trim())) continue;
+				var box = b.closest('[role="dialog"], dialog, .jsdialog-window, .ui-dialog, div[class*="tour"], div[id*="tour"]') || b.parentNode;
+				var text = (box && box.textContent || '').toLowerCase();
+				if (text.indexOf('tour') >= 0 || text.indexOf('giro') >= 0 || text.indexOf('welcome') >= 0 || text.indexOf('benvenut') >= 0) {
+					trace.push('tour skipped');
+					b.click();
+					return;
+				}
+			}
+		}
+		check(document.body);
+		new MutationObserver(function (records) {
+			records.forEach(function (rec) { Array.prototype.forEach.call(rec.addedNodes, check); });
+		}).observe(document.body, { childList: true, subtree: true });
+		setTimeout(function () { check(document.body); }, 4000);
 	}
 
 	function onRibbonState(e) {
@@ -1601,7 +1805,7 @@
 		var desk = !!window.ThisIsTheQtApp;
 		if (!desk && !(window.mode.isTablet() && window.ThisIsAMobileApp)) return;
 		document.body.classList.add('eurise-tablet');
-		if (desk) document.body.classList.add('eurise-desk');
+		if (desk) { document.body.classList.add('eurise-desk'); skipTour(); }
 		trace.push(desk ? 'desk' : 'tablet');
 		editAtOnce(map);
 		function build() {

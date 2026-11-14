@@ -960,3 +960,302 @@ body.eurise-tablet[data-theme='dark'] #eurise-header .eurise-hbtn { color: #E6E9
 [data-theme='dark'] .eurise-drop { background: #1B2029 !important; box-shadow: inset 0 0 0 1px #343B48 !important; color: #E6E9F0; }
 [data-theme='dark'] #eurise-fonts .eurise-row.on,
 [data-theme='dark'] .eurise-size.on { background: #2B3A55 !important; color: #E6E9F0; }
+
+/* --- Computer: barra in una riga, nastro compatto, colonna Properties nel nostro stile (tavola OffComputer) --------- */
+/* Indicazioni del proprietario (14 novembre): niente praterie di spazio vuoto, gruppi alti quanto serve, gruppo Suite
+ * stretto; la colonna Properties di Collabora resta con tutte le sue funzioni ma ridisegnata, con le nostre sezioni. */
+body.eurise-desk #toolbar-row {
+	padding: 0 12px 6px;
+}
+body.eurise-desk #eurise-top { gap: 0; }
+#eurise-header.desk {
+	height: 44px;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+#eurise-header.desk .eurise-fill { flex: 1; }
+#eurise-header.desk #eurise-tabs { height: 44px; }
+#eurise-header.desk #eurise-tabs .eurise-rtab {
+	height: 40px;
+	padding: 0 11px;
+	font-size: 13.5px;
+}
+#eurise-header.desk #eurise-tabs .eurise-rtab.file {
+	height: 30px;
+	margin-right: 4px !important;
+	font-size: 13.5px;
+}
+body.eurise-desk #eurise-header .eurise-hbtn {
+	width: 32px;
+	height: 30px;
+	margin: 0 !important;
+	padding: 0;
+	border: 0 !important;
+	border-radius: 9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+body.eurise-desk #eurise-header .eurise-hbtn:hover { background: #ECECE7 !important; }
+#eurise-header.desk .eurise-cmdsearch {
+	width: 200px;
+	height: 32px;
+	margin: 0 6px 0 8px !important;
+	border-radius: 16px;
+}
+#eurise-header.desk .eurise-doc {
+	margin: 0 10px 0 4px;
+	display: flex;
+	align-items: center;
+}
+#eurise-header.desk .eurise-status {
+	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #3F5E4B;
+	white-space: nowrap;
+}
+#eurise-header.desk .eurise-status.pending { color: #85672B; }
+#eurise-header.desk .eurise-share {
+	height: 32px;
+	border-radius: 16px;
+}
+body.eurise-desk #eurise-ribbon { gap: 6px; padding-top: 2px; }
+body.eurise-desk .eurise-group {
+	padding: 4px 6px 2px;
+	border-radius: 12px;
+	gap: 1px;
+}
+body.eurise-desk .eurise-group.suite { margin-left: 0; }
+body.eurise-desk .eurise-gbody { gap: 2px; }
+body.eurise-desk .eurise-gfoot {
+	height: 15px;
+	font-size: 9.5px;
+}
+body.eurise-desk .eurise-smalls {
+	grid-template-rows: repeat(2, 30px);
+	gap: 2px;
+}
+body.eurise-desk #eurise-ribbon .eurise-rb {
+	width: 32px;
+	height: 30px;
+}
+body.eurise-desk #eurise-ribbon .eurise-rb:hover { background: #ECECE7 !important; }
+body.eurise-desk #eurise-ribbon .eurise-rb.big {
+	min-width: 54px;
+	max-width: 76px;
+	height: 62px;
+	gap: 4px;
+	font-size: 11px;
+}
+/* Voci piccole con il nome: Taglia, Copia, Trova, Da fare… */
+body.eurise-desk .eurise-smalls.labs { grid-auto-columns: auto; }
+body.eurise-desk #eurise-ribbon .eurise-rb.lab {
+	width: auto;
+	padding: 0 8px 0 6px;
+	justify-content: flex-start;
+	gap: 6px;
+	font: 600 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	white-space: nowrap;
+}
+body.eurise-desk #eurise-ribbon .eurise-drop { height: 30px; }
+body.eurise-desk #eurise-ribbon .eurise-drop.name { width: 150px; flex: none; }
+body.eurise-desk #eurise-ribbon .eurise-drop.size { width: 56px; }
+body.eurise-desk .eurise-fontcol { gap: 2px; }
+/* Stili come tessere «Aa». */
+body.eurise-desk #eurise-ribbon .eurise-rb.tile {
+	width: 64px;
+	height: 62px;
+	padding: 6px 7px;
+	box-sizing: border-box;
+	border-radius: 10px;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: space-between;
+	font: 600 10.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #56564F;
+	white-space: nowrap;
+}
+body.eurise-desk #eurise-ribbon .eurise-rb.tile .aa {
+	font: 400 15px 'Source Serif 4', Georgia, serif;
+	color: #1E1D1B;
+}
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st1 .aa { font-size: 19px; font-weight: 700; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st2 .aa { font-size: 17px; font-weight: 700; color: #3E5C8A; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st3 .aa { font-style: italic; color: #56564F; }
+
+/* Niente colonna a sinistra: il Navigatore sta nella sezione Struttura a destra. Le diapositive restano a sinistra. */
+body.eurise-desk:not(.eurise-doc-presentation):not(.eurise-doc-drawing) #navigation-sidebar,
+body.eurise-desk #navigator-floating-icon {
+	display: none !important;
+}
+
+/* Colonna di destra: Perla, sezioni come isole bianche. */
+body.eurise-desk #sidebar-dock-wrapper {
+	width: 316px;
+	max-width: 316px;
+	padding: 10px 10px 14px;
+	box-sizing: border-box;
+	background: #F4F4F1;
+	border-inline-start: 0 !important;
+}
+body.eurise-desk #sidebar-panel,
+body.eurise-desk #sidebar-container {
+	height: auto !important;
+	background: transparent;
+}
+body.eurise-desk #sidebar-dock-wrapper .sidebar,
+body.eurise-desk #sidebar-dock-wrapper .sidebar *,
+#eurise-sidebox,
+#eurise-sidebox * {
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+body.eurise-desk #sidebar-container .ui-expander-container.sidebar,
+.eurise-side {
+	margin: 0 0 8px;
+	padding: 2px 6px 6px;
+	box-sizing: border-box;
+	border-radius: 14px;
+	background: #FFFFFF;
+	box-shadow: 0 1px 2px rgba(31, 42, 68, 0.06);
+}
+body.eurise-desk #sidebar-container .sidebar.ui-expander {
+	height: 32px;
+	padding: 0 4px;
+	border: 0;
+	background: transparent;
+}
+body.eurise-desk #sidebar-container .sidebar.ui-expander-label {
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 32px;
+	letter-spacing: 0.07em;
+	text-transform: uppercase !important;
+	color: #56564F;
+}
+body.eurise-desk #sidebar-container .sidebar.ui-expander-content {
+	width: 100%;
+	padding-inline: 4px;
+	box-sizing: border-box;
+	line-height: normal;
+}
+/* Tendine, campi e caselle come quelle del nastro. */
+body.eurise-desk #sidebar-container select,
+body.eurise-desk #sidebar-container .ui-listbox,
+body.eurise-desk #sidebar-container .ui-combobox input,
+body.eurise-desk #sidebar-container .spinfieldcontainer input,
+body.eurise-desk #sidebar-container input[type='text'],
+body.eurise-desk #sidebar-container input[type='number'] {
+	height: 30px;
+	box-sizing: border-box;
+	border: 0 !important;
+	border-radius: 9px !important;
+	background-color: #F4F4F1 !important;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	color: #1E1D1B;
+	font-size: 12.5px;
+	font-weight: 600;
+}
+body.eurise-desk #sidebar-container .ui-combobox,
+body.eurise-desk #sidebar-container .ui-listbox-container {
+	border: 0 !important;
+	background: transparent !important;
+}
+body.eurise-desk #sidebar-container .unotoolbutton button,
+body.eurise-desk #sidebar-container .unotoolbutton .unobutton,
+body.eurise-desk #sidebar-container .menubutton {
+	border: 0 !important;
+	border-radius: 9px !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+body.eurise-desk #sidebar-container .unotoolbutton button:hover,
+body.eurise-desk #sidebar-container .menubutton:hover { background: #ECECE7 !important; }
+body.eurise-desk #sidebar-container .unotoolbutton.selected button,
+body.eurise-desk #sidebar-container .unotoolbutton button.selected,
+body.eurise-desk #sidebar-container .unotoolbutton .selected {
+	background: #DDE3F0 !important;
+	box-shadow: inset 0 -2px 0 #3E5C8A !important;
+}
+body.eurise-desk #sidebar-container .ui-pushbutton {
+	border: 0 !important;
+	border-radius: 15px !important;
+	background: #DDE3F0 !important;
+	color: #1F2A44;
+	font-weight: 700;
+}
+body.eurise-desk #sidebar-container .sidebar.ui-text,
+body.eurise-desk #sidebar-container label {
+	font-size: 12px;
+	color: #56564F;
+}
+
+/* Le nostre sezioni: Struttura, Collegato a, In Eurise File. */
+.eurise-side-head {
+	width: 100%;
+	height: 32px;
+	margin: 0 !important;
+	padding: 0 4px;
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: #56564F;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font: 700 10.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+.eurise-side-head svg { transform: rotate(-90deg); transition: transform 0.15s; }
+.eurise-side.open .eurise-side-head svg { transform: none; }
+.eurise-side-body { display: none; flex-direction: column; gap: 6px; padding: 0 2px 2px; }
+.eurise-side.open .eurise-side-body { display: flex; }
+.eurise-side-row {
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: #F4F4F1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 12.5px;
+	color: #1E1D1B;
+}
+.eurise-side-row strong { font-weight: 700; }
+.eurise-side-row span { font-size: 11.5px; color: #56564F; }
+.eurise-side-empty {
+	margin: 2px 4px 4px;
+	font-size: 12px;
+	color: #56564F;
+}
+#eurise-struttura.filled .eurise-side-empty { display: none; }
+/* Il Navigatore dentro Struttura: solo l'albero, senza la sua barra e il suo titolo; alto al massimo 260 px. */
+#eurise-struttura #navigator-panel {
+	height: auto;
+	max-height: 260px;
+	overflow-y: auto;
+}
+#eurise-struttura #NavigatorPanel .ui-expander,
+#eurise-struttura #NavigatorPanel .toolbox,
+#eurise-struttura #NavigatorPanel .ui-toolbar,
+#eurise-struttura .navigation-header {
+	display: none !important;
+}
+#eurise-struttura #NavigatorPanel .ui-expander-content { width: 100%; padding: 0; }
+#eurise-struttura #NavigatorPanel .ui-treeview-cell-text { font-size: 12.5px; }
+#eurise-struttura #NavigatorPanel div.selected { background: #DDE3F0; border-radius: 8px; }
+
+[data-theme='dark'] body.eurise-desk #sidebar-dock-wrapper,
+body.eurise-desk[data-theme='dark'] #sidebar-dock-wrapper { background: #171B22; }
+[data-theme='dark'] body.eurise-desk #sidebar-container .ui-expander-container.sidebar,
+[data-theme='dark'] .eurise-side { background: #222833; }
+[data-theme='dark'] .eurise-side-row { background: #1B2029; color: #E6E9F0; }
+[data-theme='dark'] body.eurise-desk #sidebar-container select,
+[data-theme='dark'] body.eurise-desk #sidebar-container .ui-listbox,
+[data-theme='dark'] body.eurise-desk #sidebar-container input { background-color: #1B2029 !important; box-shadow: inset 0 0 0 1px #343B48 !important; color: #E6E9F0; }
+[data-theme='dark'] body.eurise-desk #eurise-ribbon .eurise-rb.tile .aa { color: #E6E9F0; }

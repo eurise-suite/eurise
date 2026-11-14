@@ -15,6 +15,8 @@ R="$OUT/riassunto.md"
 echo "# Office sul computer: prova del prototipo" > "$R"
 
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+# Interfaccia in italiano: si scaricano anche le traduzioni (estensioni .Locale) dell'italiano.
+flatpak config --user --set languages "it;en"
 flatpak install --user -y --noninteractive flathub "$APP" > "$OUT/installa.log" 2>&1 || { tail -30 "$OUT/installa.log"; exit 1; }
 VERSION=$(flatpak info --user "$APP" | sed -n 's/^ *Version: *//p')
 echo "- Collabora Office $VERSION da Flathub" >> "$R"
@@ -40,8 +42,26 @@ cat > "$DIAG" <<'JS'
 		}));
 	}
 	window.addEventListener('error', function (e) { console.log('EURISE-DIAG errore ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno); });
+	// Struttura della colonna di destra e di quella di sinistra (per lo stile della colonna Properties).
+	function outline(el, depth, out) {
+		if (!el || out.length > 160) return out;
+		var cls = typeof el.className === 'string' ? el.className.trim().split(/\s+/).slice(0, 4).join('.') : '';
+		var shown = el.offsetParent !== null || el === document.body;
+		out.push(new Array(depth + 1).join('  ') + el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (cls ? '.' + cls : '') +
+			(shown ? '' : ' (nascosto)') + (el.children.length ? '' : ' «' + (el.textContent || '').trim().slice(0, 30) + '»'));
+		if (depth < 7) Array.prototype.forEach.call(el.children, function (c) { outline(c, depth + 1, out); });
+		return out;
+	}
+	function dom(when) {
+		['sidebar-dock-wrapper', 'navigation-sidebar'].forEach(function (id) {
+			outline(document.getElementById(id), 0, []).forEach(function (line) { console.log('EURISE-DOM ' + when + ' ' + line); });
+		});
+		Array.prototype.forEach.call(document.querySelectorAll('[class*="tour"], [id*="tour"], [class*="welcome"], [id*="welcome"], dialog[open], [role="dialog"]'), function (el) {
+			console.log('EURISE-DOM ' + when + ' finestra ' + el.tagName.toLowerCase() + '#' + el.id + '.' + el.className + ' «' + (el.textContent || '').trim().slice(0, 60) + '»');
+		});
+	}
 	setTimeout(function () { report('5s'); }, 5000);
-	setTimeout(function () { report('20s'); }, 20000);
+	setTimeout(function () { report('20s'); dom('20s'); }, 20000);
 })();
 JS
 # Copie nuove (cp poi mv): i file del pacchetto sono legami fisici con il deposito di ostree.
@@ -94,6 +114,7 @@ apri() {
 		--env=QT_QPA_PLATFORM=xcb \
 		--filesystem="$HOME/Documents" \
 		--env=QT_LOGGING_RULES="js=true" \
+		--env=LANG=it_IT.UTF-8 --env=LANGUAGE=it --env=LC_ALL=it_IT.UTF-8 \
 		"$APP" "$HOME/Documents/$file" > "$OUT/$name.log" 2>&1 &
 	local pid=$!
 	local win=""
@@ -115,11 +136,18 @@ apri() {
 	shot "$name-1-aperto"
 	# Ctrl K: «Cerca un comando» della nostra interfaccia.
 	[ -n "$win" ] && xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+k && sleep 2 && shot "$name-2-cerca" && xdotool key Escape
-	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError|js:" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
+	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
 	kill "$pid" 2> /dev/null
 	pkill -f coda-qt 2> /dev/null
 	sleep 3
 }
+
+# Il giro guidato della 26.04: dove sta nel codice dell'interfaccia (per spegnerlo per bene).
+for COOL in $(find "$FILES" -name 'bundle.js' -path '*dist*' | head -1); do
+	grep -o '.\{300\}short tour.\{300\}' "$COOL" | head -3 > "$OUT/giro-guidato.txt"
+	grep -o '.\{200\}[Tt]our[A-Za-z]*[Ss]een.\{200\}' "$COOL" | head -5 >> "$OUT/giro-guidato.txt"
+	grep -rl "short tour" "$(dirname "$COOL")" | sed "s|^$FILES||" >> "$OUT/giro-guidato.txt"
+done
 
 apri lettera.docx
 apri conti.xlsx

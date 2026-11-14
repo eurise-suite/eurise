@@ -47,7 +47,7 @@ jobs:
           gh release view office-computer-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create office-computer-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
               --title "Schermate della prova di Office sul computer" --notes "Sovrascritte a ogni prova."
-          gh release upload office-computer-schermate prova-computer/*.png prova-computer/*.log prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
+          gh release upload office-computer-schermate prova-computer/*.png prova-computer/*.log prova-computer/*.txt prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
 
       - uses: actions/upload-artifact@v4
         if: always()
