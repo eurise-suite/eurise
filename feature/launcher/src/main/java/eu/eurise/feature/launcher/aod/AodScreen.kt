@@ -18,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +56,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.random.Random
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private val Bright = Color(0xFFECE9E3)
 private val Soft = Color(0xFFA4A9B2)
@@ -111,15 +111,15 @@ fun AodScreen(
         }
     }
     val today = LocalDate.now()
-    val tasks by remember(today) { data.tasks.observeDueBy(today) }.collectAsState(initial = emptyList())
+    val tasks by remember(today) { data.tasks.observeDueBy(today) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val eventsFlow = remember(today) {
         if (data.calendar.hasPermission()) data.calendar.observeEvents(today, today.plusDays(1)) else flowOf(emptyList())
     }
-    val events by eventsFlow.collectAsState(initial = emptyList())
+    val events by eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val alarm = rememberNextAlarm()
-    val messages by NotificationStore.messages.collectAsState()
-    val all by NotificationStore.all.collectAsState()
-    val playing by NotificationStore.nowPlaying.collectAsState()
+    val messages by NotificationStore.messages.collectAsStateWithLifecycle()
+    val all by NotificationStore.all.collectAsStateWithLifecycle()
+    val playing by NotificationStore.nowPlaying.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val pending = remember { arrayOfNulls<Job>(1) }
     var taps by remember { mutableIntStateOf(0) }
@@ -207,7 +207,7 @@ private fun MonthGrid(data: EuriseData, today: LocalDate, reduced: Boolean) {
     val flow = remember(month) {
         if (data.calendar.hasPermission()) data.calendar.observeEvents(month.atDay(1), month.atEndOfMonth()) else flowOf(emptyList())
     }
-    val events by flow.collectAsState(initial = emptyList())
+    val events by flow.collectAsStateWithLifecycle(initialValue = emptyList())
     val busy = remember(events) { month.atDay(1).datesUntil(month.atEndOfMonth().plusDays(1)).toList().filter { d -> events.any { it.occursOn(d) } }.toSet() }
     val text = if (reduced) Dim else Bright
     val locale = Locale.getDefault()

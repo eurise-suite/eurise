@@ -27,7 +27,6 @@
     <string name="ponte_not_sent">%1$s non risponde: è acceso e sulla stessa rete, con eurise-ponte aperto?</string>
     <string name="ponte_off">Questo tipo di invio è spento: accendilo in Telefono e computer</string>
     <string name="ponte_no_speech">Il riconoscimento vocale del telefono non è disponibile</string>
-    <string name="ponte_done">Fatto</string>
     <string name="ponte_receive">Dal computer al telefono</string>
     <string name="ponte_receive_sub">appunti, link, note e attività dal computer, sul Wi-Fi di casa</string>
     <string name="ponte_receive_title">Prima di accendere</string>

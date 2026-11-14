@@ -71,7 +71,6 @@
 
     <string name="memory_to_diary">Mettile in un diario di viaggio</string>
 
-    <string name="tools_title">Strumenti</string>
     <string name="tool_cloud">Caricamento sul cloud</string>
     <string name="tool_cloud_off">Spento: tutto resta sul telefono</string>
     <string name="tool_secure">Cartella protetta</string>
@@ -128,7 +127,6 @@
     <string name="diary_delete">Elimina il diario</string>
     <string name="diary_delete_hint">Le foto restano dove sono.</string>
     <string name="diary_choose">Metti in un diario</string>
-    <string name="diary_remove_photo">Togli dal diario</string>
 
     <string name="secure_title">Cartella protetta</string>
     <string name="secure_setup_message">Le foto escono dalla Galleria e restano solo qui, cifrate. Senza la frase o il codice di recupero nessuno può aprirle, nemmeno noi. Se disinstalli l\'app, Android chiede se tenere i dati: rispondi di sì, o le foto si perdono.</string>
@@ -155,10 +153,8 @@
 
     <string name="editor_save">Salva copia</string>
     <string name="editor_saved">Copia salvata in Pictures/Eurise</string>
-    <string name="editor_crop">Ritaglia</string>
     <string name="editor_rotate">Ruota</string>
     <string name="editor_tool_crop">Ritaglia</string>
-    <string name="editor_tool_rotate">Ruota</string>
     <string name="editor_tool_adjust">Regola</string>
     <string name="editor_tool_filters">Filtri</string>
     <string name="editor_tool_text">Testo</string>
@@ -180,7 +176,6 @@
     <string name="editor_text_tip">Trascina per spostare · tocco per scegliere · doppio tocco per cambiare il testo</string>
     <string name="editor_stroke">Tratto</string>
     <string name="editor_undo">Annulla</string>
-    <string name="editor_color">Colore %1$d</string>
     <string name="editor_light">Luce</string>
     <string name="editor_contrast">Contrasto</string>
     <string name="editor_saturation">Saturazione</string>

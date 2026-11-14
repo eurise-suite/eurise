@@ -1,6 +1,5 @@
 package eu.eurise.feature.tasks
 
-import eu.eurise.core.data.model.QuickAdd
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

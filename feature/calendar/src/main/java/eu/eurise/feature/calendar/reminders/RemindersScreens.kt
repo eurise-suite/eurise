@@ -38,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +66,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JTextStyle
 import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private val Italian = Locale.ITALIAN
 
@@ -154,7 +154,7 @@ private fun rememberNotificationAsk(): () -> Unit {
 fun ImportantDatesRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val data = remember { EuriseData.create(context) }
-    val dates by data.dates.dates.collectAsState()
+    val dates by data.dates.dates.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<ImportantDate?>(null) }
     val askNotify = rememberNotificationAsk()
     val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -344,9 +344,10 @@ private fun importBirthdays(context: android.content.Context): List<ImportantDat
 fun MedicinesRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val data = remember { EuriseData.create(context) }
-    val medicines by data.medicines.medicines.collectAsState()
+    val medicines by data.medicines.medicines.collectAsStateWithLifecycle()
     val today = LocalDate.now()
-    val todayTasks by data.tasks.observeDueBetween(today, today).collectAsState(initial = emptyList())
+    // Il flusso si crea una volta per giorno, non a ogni ridisegno (prima si riapriva la query ogni volta).
+    val todayTasks by remember(today) { data.tasks.observeDueBetween(today, today) }.collectAsStateWithLifecycle(initialValue = emptyList())
     var editing by remember { mutableStateOf<Medicine?>(null) }
     val askNotify = rememberNotificationAsk()
     val editor = editing

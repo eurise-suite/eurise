@@ -1,7 +1,5 @@
 package eu.eurise.feature.scanner
 
-import android.content.ContentValues
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -10,9 +8,6 @@ import android.graphics.Paint
 import eu.eurise.core.data.docs.ReadPage
 import eu.eurise.core.data.docs.SearchablePdf
 import android.graphics.pdf.PdfDocument
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import java.io.File
 import kotlin.math.hypot
 import kotlin.math.max
@@ -109,22 +104,4 @@ object PageProcessor {
         return true
     }
 
-    /** Mette il PDF in Documenti/[folder] (di base Documenti/Eurise/Scansioni), dove lo trovano anche le altre app. */
-    fun saveToPhone(context: Context, pdf: File, name: String, folder: String = "Eurise/Scansioni"): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-                put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/" + folder)
-            }
-            val resolver = context.contentResolver
-            val uri = resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return false
-            resolver.openOutputStream(uri)?.use { out -> pdf.inputStream().use { it.copyTo(out) } } ?: return false
-            return true
-        }
-        @Suppress("DEPRECATION")
-        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), folder).apply { mkdirs() }
-        pdf.copyTo(File(dir, name), overwrite = false)
-        return true
-    }
 }

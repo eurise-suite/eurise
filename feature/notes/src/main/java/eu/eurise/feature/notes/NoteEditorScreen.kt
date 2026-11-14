@@ -43,7 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -466,7 +465,7 @@ private fun NoteLinkPicker(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val flow = remember(query) { search(query) }
-    val results by flow.collectAsState(initial = emptyList())
+    val results by flow.collectAsStateWithLifecycle(initialValue = emptyList())
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(

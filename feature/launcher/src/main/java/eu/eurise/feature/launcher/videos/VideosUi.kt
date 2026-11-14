@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +52,7 @@ import eu.eurise.feature.launcher.home.Pill
 import eu.eurise.feature.launcher.summary.BottomSheet
 import eu.eurise.feature.launcher.summary.SwitchRow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Pillola della home: gli ultimi video dei canali preferiti, da scorrere di lato. */
 @Composable
@@ -117,7 +117,7 @@ private val Thumbs = java.util.Collections.synchronizedMap(object : LinkedHashMa
 /** Canali preferiti: importazione da NewPipe, aggiunta con l'indirizzo, interruttore per ciascuno. */
 @Composable
 fun ChannelsSheet(repository: VideosRepository, onImport: () -> Unit, onClose: () -> Unit) {
-    val channels by repository.channels.collectAsState()
+    val channels by repository.channels.collectAsStateWithLifecycle()
     var address by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }

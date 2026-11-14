@@ -656,18 +656,6 @@ private fun IconCircle(icon: ImageVector, label: String, tint: Color? = null, on
 }
 
 @Composable
-private fun BigButton(icon: ImageVector, label: String, filled: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val bg = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow
-    val fg = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-    Row(modifier.height(56.dp).clip(RoundedCornerShape(22.dp)).background(bg).clickable(role = Role.Button, onClick = onClick),
-        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = fg)
-    }
-}
-
-@Composable
 private fun Action(icon: ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
     Column(modifier.height(68.dp).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.secondaryContainer).clickable(role = Role.Button, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

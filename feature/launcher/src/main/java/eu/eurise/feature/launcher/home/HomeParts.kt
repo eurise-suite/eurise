@@ -359,47 +359,6 @@ fun AppTile(
     }
 }
 
-/**
- * Barra in basso: un'unica pillola di vetro con le categorie, il browser come voce jolly se resta posto e, in fondo,
- * la lente della ricerca universale. La categoria attiva prende il colore d'accento e una lineetta sotto.
- */
-@Composable
-fun CategoryBar(
-    categories: List<BarCategory>,
-    selected: String,
-    onSelect: (BarCategory) -> Unit,
-    onSearch: () -> Unit,
-    onBrowser: () -> Unit,
-    hazeState: HazeState,
-    modifier: Modifier = Modifier,
-    onEdit: () -> Unit = {},
-) {
-    Row(
-        modifier
-            .height(GlassDefaults.PillHeight)
-            .glass(hazeState, RoundedCornerShape(50), outline = false)
-            .padding(GlassDefaults.Padding),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        categories.forEach { c -> CategoryButton(c, c.id == selected, { onSelect(c) }, Modifier.weight(1f), onEdit) }
-        if (categories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) {
-            val label = stringResource(R.string.search_web)
-            Box(
-                Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onBrowser),
-                contentAlignment = Alignment.Center,
-            ) { Icon(EuriseIcons.globe(2.2f), label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) }
-        }
-        val search = stringResource(R.string.search)
-        Box(
-            Modifier.weight(1f).height(GlassDefaults.ItemHeight).clip(CircleShape)
-                .clickable(role = Role.Button, onClickLabel = search, onClick = onSearch),
-            contentAlignment = Alignment.Center,
-        ) {
-            BreathingSearchIcon(search, EuriseIcons.search(2.2f), 24.dp)
-        }
-    }
-}
-
 /** Una categoria della barra; tenendola premuta si apre la modifica della barra. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -463,22 +422,6 @@ private fun BreathingSearchIcon(label: String, icon: androidx.compose.ui.graphic
             scaleY = scale
         },
     )
-}
-
-/** Apre la ricerca sul web con il browser predefinito; se il browser non la gestisce, apre il browser. */
-fun android.content.Context.openWebSearch() {
-    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH)
-        .putExtra(android.app.SearchManager.QUERY, "")
-        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    val ok = runCatching { startActivity(search) }.isSuccess
-    if (!ok) {
-        runCatching {
-            startActivity(
-                android.content.Intent.makeMainSelectorActivity(android.content.Intent.ACTION_MAIN, android.content.Intent.CATEGORY_APP_BROWSER)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
-    }
 }
 
 /** Velo leggero dietro le pagine delle categorie e della ricerca, perché il testo resti leggibile. */

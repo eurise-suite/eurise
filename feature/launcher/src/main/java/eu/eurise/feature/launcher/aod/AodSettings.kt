@@ -40,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -67,6 +66,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.NotificationStore
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private val BubbleRow = 52.dp
 
@@ -79,7 +79,7 @@ fun AodSettingsScreen(onClose: () -> Unit) {
     var config by remember { mutableStateOf(store.load()) }
     var explain by remember { mutableStateOf(false) }
     var waitingOverlay by remember { mutableStateOf(false) }
-    val listening by NotificationStore.connected.collectAsState()
+    val listening by NotificationStore.connected.collectAsStateWithLifecycle()
     val hasLift = remember { AodService.findLiftSensor(context.getSystemService(android.hardware.SensorManager::class.java)) != null }
     val apply = { next: AodConfig -> config = next; store.save(next); AodService.sync(context) }
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { apply(config.copy(enabled = true)) }

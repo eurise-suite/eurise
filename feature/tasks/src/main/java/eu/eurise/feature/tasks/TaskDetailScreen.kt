@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -49,7 +48,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -84,6 +82,7 @@ import java.time.ZoneOffset
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.GroupCard
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Anticipi dell'avviso proposti, in minuti: all'ora della scadenza, 5, 15, 30 minuti, un'ora, un giorno. */
 private val REMINDER_CHOICES = listOf(0, 5, 15, 30, 60, 1440)
@@ -115,7 +114,7 @@ internal fun TaskDetailScreen(
         return
     }
     var draft by remember(original.id) { mutableStateOf(original) }
-    val steps by remember(taskId) { repository.observeSteps(taskId) }.collectAsState(initial = emptyList())
+    val steps by remember(taskId) { repository.observeSteps(taskId) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val today = LocalDate.now()
     val lists = state.lists.map { it.list }
     val list = lists.firstOrNull { it.id == draft.listId }

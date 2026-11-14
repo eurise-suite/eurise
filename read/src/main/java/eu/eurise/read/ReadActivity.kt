@@ -39,9 +39,6 @@ import eu.eurise.read.ocr.Ocr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Prototipo di Eurise Leggi: si sceglie un'immagine (scansione, foto di un documento), si legge il testo in italiano

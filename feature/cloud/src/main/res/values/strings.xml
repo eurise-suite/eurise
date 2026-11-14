@@ -24,7 +24,6 @@
     <string name="cloud_nextcloud">Nextcloud</string>
     <string name="cloud_nextcloud_hint">Qualsiasi fornitore o server tuo: l\'indirizzo, poi lo stesso accesso dal browser. Per Calendario e Contatti serve DAVx⁵.</string>
     <string name="cloud_kdrive">Infomaniak kDrive</string>
-    <string name="cloud_kdrive_hint">Email e password per le app. Serve un piano kDrive con WebDAV (non incluso in kSuite Free e Standard).</string>
     <string name="cloud_webdav">Altro server WebDAV</string>
     <string name="cloud_webdav_hint">Indirizzo, nome utente e password.</string>
     <string name="cloud_proton">Proton Drive · in attesa</string>

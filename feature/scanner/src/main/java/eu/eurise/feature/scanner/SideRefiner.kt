@@ -2,7 +2,6 @@ package eu.eurise.feature.scanner
 
 import kotlin.math.abs
 import kotlin.math.hypot
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**

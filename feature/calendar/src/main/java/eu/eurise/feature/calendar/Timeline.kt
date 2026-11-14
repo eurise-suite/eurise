@@ -47,7 +47,6 @@ import eu.eurise.core.designsystem.theme.colors
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 internal val HourHeight = 56.dp

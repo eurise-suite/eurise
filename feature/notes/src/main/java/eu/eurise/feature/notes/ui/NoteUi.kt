@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.theme.LocalEuriseColors
 import eu.eurise.core.designsystem.theme.tintTones
 import eu.eurise.feature.notes.doc.Mark

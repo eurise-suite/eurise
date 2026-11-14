@@ -76,20 +76,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.HazeState
-import eu.eurise.core.data.calendar.CalendarEvent
-import eu.eurise.core.data.model.Task
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
-import eu.eurise.core.designsystem.theme.CalendarTint
-import eu.eurise.core.designsystem.theme.colors
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.contacts.ContactAction
 import eu.eurise.feature.launcher.contacts.Person
 import eu.eurise.feature.launcher.files.RecentFile
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NowPlaying
-import eu.eurise.feature.launcher.route.Travel
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -201,14 +195,6 @@ private fun TitleAboveContent(modifier: Modifier, content: @Composable () -> Uni
             title.placeRelative(0, 0)
             rest?.placeRelative(0, title.height)
         }
-    }
-}
-
-@Composable
-private fun PillLabel(text: String, trailing: (@Composable () -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.weight(1f)) { Label(text) }
-        trailing?.invoke()
     }
 }
 

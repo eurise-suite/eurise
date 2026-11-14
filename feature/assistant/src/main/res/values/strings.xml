@@ -10,12 +10,7 @@
     <string name="alfred_hint">Trascrivo sul telefono mentre parla. Quando si ferma, le preparo la scheda da confermare.</string>
     <string name="alfred_input_hint">Oppure scriva: «sveglia alle 7»</string>
     <string name="alfred_input_label">Scriva ad Alfred</string>
-    <string name="alfred_speak">Parla</string>
-    <string name="alfred_stop">Basta così</string>
     <string name="alfred_how_to_open">Tenga premuto il tasto home, o Ricerca AI nella dock</string>
-    <string name="alfred_send">Invia</string>
-    <string name="alfred_settings">Disposizioni</string>
-    <string name="alfred_close">Chiudi</string>
 
     <string name="alfred_ex_call">Chiama Anna</string>
     <string name="alfred_ex_note">Nota: …</string>
@@ -72,11 +67,8 @@
     <string name="alfred_f_app">App</string>
     <string name="alfred_change">Cambia %1$s</string>
     <string name="alfred_from_card">%1$s (dalla scheda di %2$s)</string>
-    <string name="alfred_minutes">%1$d minuti</string>
-    <string name="alfred_one_minute">1 minuto</string>
     <string name="alfred_today">oggi</string>
     <string name="alfred_tomorrow">domani</string>
-    <string name="alfred_next_time">la prossima volta che sono le %1$s</string>
     <string name="alfred_no_time">tutto il giorno</string>
     <string name="alfred_web">Il web</string>
     <string name="alfred_suite">La suite (note, documenti, contatti)</string>
@@ -130,7 +122,6 @@
     <string name="alfred_no_calendar">Non trovo un calendario in cui scrivere. Ne creo uno sul telefono, «Eurise»: riprovi pure.</string>
     <string name="alfred_need_calendar">Mi serve il permesso del Calendario: lo chieda pure dall\'app Calendario e riprovi.</string>
     <string name="alfred_need_contacts">Per cercare le persone mi serve la Rubrica: tocchi qui per darmi il permesso.</string>
-    <string name="alfred_no_voice">Per la voce mi occorre Eurise Voce (o un riconoscimento vocale del telefono). Intanto può scrivere.</string>
 
     <!-- La prima volta: come chiamare chi usa il telefono. -->
     <string name="alfred_ask_name">Mi perdoni, non ci siamo ancora presentati: come desidera che la chiami?</string>

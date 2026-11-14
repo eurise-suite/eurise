@@ -59,7 +59,6 @@
     <string name="ch_back">Indietro</string>
     <string name="ch_room_encrypted">Cifrata end-to-end</string>
     <string name="ch_room_plain">Non cifrata: il server può leggere i messaggi</string>
-    <string name="ch_cant_send_encrypted">Questa chat è cifrata end-to-end: per non mandare messaggi in chiaro, si scrive qui quando arriva la cifratura (prossimo giro).</string>
     <string name="ch_encrypted_long">Messaggio cifrato: manca ancora la chiave. Arriva da sola dagli altri telefoni, oppure con la chiave di recupero.</string>
     <string name="ch_photo_open">Foto · tocca per aprire</string>
     <string name="ch_write">Scrivi un messaggio</string>

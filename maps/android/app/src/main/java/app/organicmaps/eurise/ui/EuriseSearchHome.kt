@@ -3,8 +3,6 @@ package app.organicmaps.eurise.ui
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.Uri
-import android.os.Bundle
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import android.view.View
@@ -59,8 +57,6 @@ import app.organicmaps.sdk.search.SearchRecents
 import app.organicmaps.sdk.util.Config
 import app.organicmaps.sdk.util.Language
 import app.organicmaps.util.ThemeUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**

@@ -2,7 +2,6 @@
 <resources>
     <string name="pwd_app_name">Password</string>
     <string name="pwd_title">Password</string>
-    <string name="pwd_search">Cerca</string>
     <string name="pwd_search_hint">Cerca tra le voci</string>
     <string name="pwd_lock_now">Blocca subito</string>
     <string name="pwd_add">Nuova voce</string>
@@ -159,8 +158,6 @@
     <string name="pwd_alias_sl_d">un alias nuovo per ogni sito · si entra con l\'account Proton</string>
     <string name="pwd_alias_addy">addy.io</string>
     <string name="pwd_alias_addy_d">un alias nuovo per ogni sito · open source</string>
-    <string name="pwd_alias_kmail">Infomaniak (kMail)</string>
-    <string name="pwd_alias_kmail_d">da 1 a 50 alias secondo il piano · indicato per chi ne ha molti</string>
     <string name="pwd_alias_key_kmail">Token API di Infomaniak (portata mail)</string>
     <string name="pwd_alias_kmail_hosting">Numero del servizio di posta</string>
     <string name="pwd_alias_kmail_box">La tua casella (nome@dominio)</string>

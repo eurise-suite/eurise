@@ -16,8 +16,6 @@
     <string name="drive_documents">Documenti</string>
     <string name="drive_downloads">Download</string>
     <string name="drive_space">Spazio</string>
-    <string name="drive_space_phone">telefono %1$s di %2$s</string>
-    <string name="drive_space_account">%1$s %2$s</string>
     <string name="drive_back">Indietro</string>
     <string name="drive_empty">Cartella vuota</string>
     <string name="drive_empty_msg">Qui non c\'è ancora nulla.</string>
@@ -26,7 +24,6 @@
     <string name="drive_empty_offline">Nessun file offline</string>
     <string name="drive_empty_offline_msg">Apri un file del cloud e accendi Disponibile senza rete.</string>
     <string name="drive_empty_trash">Cestino vuoto</string>
-    <string name="drive_empty_trash_msg">I file del telefono restano qui per 30 giorni. Quelli del cloud vanno nel cestino del servizio.</string>
     <string name="drive_new_folder">Nuova cartella</string>
     <string name="drive_name">Nome</string>
     <string name="drive_create">Crea</string>
@@ -43,7 +40,6 @@
     <string name="drive_delete_forever">Elimina per sempre</string>
     <string name="drive_offline_switch">Disponibile senza rete</string>
     <string name="drive_offline_detail">copia sul telefono, si aggiorna quando riapri il file</string>
-    <string name="drive_detail">%1$s · %2$s</string>
     <string name="drive_downloading">Scarico il file…</string>
     <string name="drive_no_app">Nessuna app sa aprire questo file.</string>
     <string name="drive_error_network">Servizio non raggiungibile.</string>
@@ -90,7 +86,6 @@
     <string name="drive_sync_action">Allinea</string>
     <string name="drive_sync_pair">Telefono ↔ %s</string>
     <string name="drive_sync_never">non ancora allineata</string>
-    <string name="drive_sync_running">allineamento in corso…</string>
     <string name="drive_sync_done">allineata il %s</string>
     <string name="drive_sync_failed">ultimo tentativo non riuscito: riprova</string>
     <string name="drive_sync_guard">fermata: troppi file spariti in una volta. Controlla prima di proseguire</string>

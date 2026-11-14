@@ -1,7 +1,6 @@
 package eu.eurise.read.translate
 
 import java.io.Closeable
-import java.io.File
 
 /** Un modello di traduzione aperto (una direzione, es. italiano → inglese). Da usare da un solo thread alla volta. */
 class Translator private constructor(private var handle: Long) : Closeable {

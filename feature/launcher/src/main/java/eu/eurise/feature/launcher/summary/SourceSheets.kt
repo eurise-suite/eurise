@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +59,7 @@ import eu.eurise.feature.launcher.news.Feed
 import eu.eurise.feature.launcher.news.FeedGroup
 import eu.eurise.feature.launcher.news.NewsRepository
 import eu.eurise.feature.launcher.news.Regions
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Foglio dal basso comune alle impostazioni delle schede. */
 @Composable
@@ -136,16 +136,16 @@ internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> U
  */
 @Composable
 fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
-    val enabled by repository.enabled.collectAsState()
-    val custom by repository.custom.collectAsState()
-    val provinces by repository.provinces.collectAsState()
+    val enabled by repository.enabled.collectAsStateWithLifecycle()
+    val custom by repository.custom.collectAsStateWithLifecycle()
+    val provinces by repository.provinces.collectAsStateWithLifecycle()
     var openRegion by remember { mutableStateOf<String?>(null) }
     val groups = listOf(
         FeedGroup.Agencies to R.string.news_group_agencies,
         FeedGroup.National to R.string.news_group_national,
         FeedGroup.Foreign to R.string.news_group_foreign,
     )
-    val photos by repository.photos.collectAsState()
+    val photos by repository.photos.collectAsStateWithLifecycle()
     BottomSheet(stringResource(R.string.news_sources_title), onClose) {
         item { SwitchRow(stringResource(R.string.news_photos), photos, { repository.setPhotos(it) }) }
         groups.forEach { (group, label) ->
@@ -199,7 +199,7 @@ fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
 /** Titoli della scheda Borsa: si tolgono con il meno e si aggiungono con il simbolo (es. ENI.MI, ^GDAXI). */
 @Composable
 fun StocksSheet(repository: MarketsRepository, onClose: () -> Unit) {
-    val symbols by repository.symbols.collectAsState()
+    val symbols by repository.symbols.collectAsStateWithLifecycle()
     BottomSheet(stringResource(R.string.stocks_title), onClose) {
         item {
             Text(stringResource(R.string.stocks_hint), fontSize = 12.5.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
@@ -223,8 +223,8 @@ fun StocksSheet(repository: MarketsRepository, onClose: () -> Unit) {
 /** Fonti di una scheda a feed (oroscopo, ricette): proposte con interruttore e feed aggiunti a mano. */
 @Composable
 fun FeedSourcesSheet(title: String, sources: eu.eurise.feature.launcher.feeds.FeedSources, onClose: () -> Unit) {
-    val enabled by sources.enabled.collectAsState()
-    val custom by sources.custom.collectAsState()
+    val enabled by sources.enabled.collectAsStateWithLifecycle()
+    val custom by sources.custom.collectAsStateWithLifecycle()
     BottomSheet(title, onClose) {
         item { Box(Modifier.padding(top = 4.dp, bottom = 2.dp)) { Label(stringResource(R.string.feeds_proposed)) } }
         items(sources.builtIn, key = { it.id }) { s -> SwitchRow(s.name, s.id in enabled, { sources.setEnabled(s.id, it) }) }

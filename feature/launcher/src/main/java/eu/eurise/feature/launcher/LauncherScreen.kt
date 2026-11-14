@@ -19,7 +19,6 @@ import eu.eurise.feature.launcher.home.MusicHalf
 import eu.eurise.feature.launcher.home.PeopleSheet
 import eu.eurise.feature.launcher.home.WorkPill
 import eu.eurise.feature.launcher.home.greeting
-import eu.eurise.feature.launcher.home.openWebSearch
 import eu.eurise.feature.launcher.summary.NewsCard
 import eu.eurise.feature.launcher.summary.NewsSourcesSheet
 import eu.eurise.feature.launcher.summary.StocksCard
@@ -32,11 +31,8 @@ import eu.eurise.feature.launcher.settings.LauncherSettings
 import eu.eurise.feature.launcher.summary.CardKind
 import eu.eurise.feature.launcher.summary.PlacedCard
 import eu.eurise.feature.launcher.summary.PinnedNotesCard
-import eu.eurise.feature.launcher.summary.SummaryBoard
 import eu.eurise.feature.launcher.summary.WeatherCard
 import android.annotation.SuppressLint
-import android.provider.AlarmClock
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.ui.draw.clipToBounds
@@ -65,7 +61,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -74,7 +69,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -82,7 +76,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -92,7 +85,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -132,7 +124,6 @@ import eu.eurise.feature.launcher.apps.launch
 import eu.eurise.feature.launcher.apps.openEurise
 import eu.eurise.feature.launcher.home.AppTile
 import eu.eurise.feature.launcher.home.searchWeb
-import eu.eurise.feature.launcher.home.CategoryBar
 import eu.eurise.feature.launcher.home.CategoryButton
 import eu.eurise.feature.launcher.home.CategoryPages
 import eu.eurise.feature.launcher.home.ClockBlock
@@ -173,10 +164,10 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
     val viewModel = viewModel { LauncherViewModel(app, data.notes, data.tasks, data.calendar, data.links) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val weather by viewModel.weather.collectAsStateWithLifecycle()
-    val badges by NotificationStore.counts.collectAsState()
-    val messages by NotificationStore.messages.collectAsState()
-    val nowPlaying by NotificationStore.nowPlaying.collectAsState()
-    val allNotifications by NotificationStore.all.collectAsState()
+    val badges by NotificationStore.counts.collectAsStateWithLifecycle()
+    val messages by NotificationStore.messages.collectAsStateWithLifecycle()
+    val nowPlaying by NotificationStore.nowPlaying.collectAsStateWithLifecycle()
+    val allNotifications by NotificationStore.all.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val newsItems by viewModel.newsItems.collectAsStateWithLifecycle()
     val quotes by viewModel.quotes.collectAsStateWithLifecycle()
@@ -254,7 +245,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         eu.eurise.feature.launcher.home.BubbleText.taskPlace(it.title) ?: eu.eurise.feature.launcher.home.BubbleText.taskPlace(it.notes)
     }
     LaunchedEffect(travelPlaces, hasLocation) { viewModel.refreshTravels(travelPlaces) }
-    val travels by viewModel.travels.collectAsState()
+    val travels by viewModel.travels.collectAsStateWithLifecycle()
     val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { viewModel.refresh() }
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         hasLocation = it
@@ -1065,7 +1056,7 @@ private fun HomeBubble(
     home: HomeBoardData,
     nextAlarm: LocalDateTime?,
 ) {
-        val players by NotificationStore.players.collectAsState()
+        val players by NotificationStore.players.collectAsStateWithLifecycle()
         when (slot.kind) {
             eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
                 now = now,
