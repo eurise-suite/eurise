@@ -34,6 +34,8 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
   come si torna indietro. Spegnerla non chiede conferme.
 - Il grado di privacy si misura con **10 tacchette piccole** a semaforo (non 3 o 4 tacche), ovunque compaia:
   servizi, destinazioni, fonti di dati (13 novembre 2026).
+- **Spenti di base** (regola fissa, 14 novembre 2026): ogni servizio che può far uscire dati è spento di base. Si accende
+  solo se l'utente lo vuole, in modo facile e visibile, con l'avviso su cosa succede e su come cambia la privacy.
 - Nessun servizio esterno senza che compaia nel centro privacy con i dati che riceve. Si invia il minimo
   (es. posizione arrotondata), mai identificativi del telefono.
 

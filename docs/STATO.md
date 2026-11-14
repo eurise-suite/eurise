@@ -2183,3 +2183,15 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   impostazioni della guida i finestrini si possono **deselezionare uno per uno** (uscite, rotonde, incroci): l'utente
   sceglie quali vedere.
 
+## 14 novembre, mattina: risposte del proprietario (seconda parte), per la chat nuova
+- **Office, rapporto del problema**: ok. **Tre voci di Alfred**: ok; nella chat nuova spiegare al proprietario come si fa
+  la voce ritoccata e quella di un attore, e se può farlo anche l'utente da solo (rispondere lì).
+- **Regola nuova (in CLAUDE.md)**: tutti i servizi che possono far uscire dati sono **spenti di base**; li accende l'utente,
+  in modo facile e visibile, con l'avviso su cosa succede e su come cambia la privacy. Da applicare a **Borsa e Video**
+  (oggi accesi di base) e da ricontrollare su tutti i servizi del centro privacy.
+- **NordVPN e Traduzione**: il proprietario chiede un **giudizio oggettivo**, non influenzato dalle valutazioni «umane».
+  Darlo nella chat nuova con criteri espliciti (chi gestisce il servizio e in che giurisdizione, cosa esce e quante volte,
+  chi lo vede, obblighi di conservazione, gruppo societario). Per la Traduzione il proprietario stima 4–5 (esce solo l'IP,
+  una volta) e quasi il massimo con VPN o Tor di Murena accesi durante lo scarico (`privacyScore` ha già `hiddenIp`).
+- **Incroci**: ok alla tavola con i finestrini deselezionabili.
+
