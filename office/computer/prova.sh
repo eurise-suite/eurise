@@ -70,6 +70,12 @@ cat > "$DIAG" <<'JS'
 			say('EURISE-DOM ' + when + ' finestra ' + el.tagName.toLowerCase() + '#' + el.id + '.' + el.className + ' «' + (el.textContent || '').trim().slice(0, 60) + '»');
 		});
 	}
+	// Nel foglio di calcolo la prova cambia l'accento delle icone in Cuoio (come dal menu File › Colore delle icone).
+	setTimeout(function () {
+		if (window.euriseOffice && window.euriseOffice.setAccent && window.app && window.app.map && window.app.map.getDocType() === 'spreadsheet') {
+			window.euriseOffice.setAccent('#7A4A2A', '#C9956B');
+		}
+	}, 12000);
 	setTimeout(function () { report('5s'); }, 5000);
 	setTimeout(function () { report('20s'); dom('20s'); }, 20000);
 })();

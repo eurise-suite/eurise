@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.office.BuildConfig
 import eu.eurise.office.R
+import eu.eurise.office.data.Appearance
 import eu.eurise.office.data.DocKind
 import eu.eurise.office.data.Engine
 import eu.eurise.office.data.EngineInstaller
@@ -42,6 +43,9 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     private var pendingFlags = 0
     private var onWifi by mutableStateOf(true)
     private var leftHanded by mutableStateOf(false)
+    /** Tinte offerte per l'accento delle icone e scelta attuale (vuota = come la Scrivania). */
+    private var accentTints by mutableStateOf<List<Appearance.Tint>>(emptyList())
+    private var accentChoice by mutableStateOf(Appearance.DESK)
     private val recents by lazy { Recents.get(this) }
 
     /** Eurise File («Apri da…»): torna con l'Uri e i permessi; senza l'app Eurise, il selettore di Android. */
@@ -60,6 +64,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         lifecycleScope.launch {
             recents.load()
             leftHanded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.leftHanded(this@OfficeActivity) }
+            accentChoice = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.accent(this@OfficeActivity) }
+            accentTints = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Appearance.palette(this@OfficeActivity) }
         }
         engineFor(intent)
         setContent {
@@ -88,6 +94,14 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                                         OfficePrefs.setLeftHanded(this@OfficeActivity, it)
                                     })
                                 }
+                                AccentChooser(
+                                    tints = accentTints,
+                                    chosen = accentChoice,
+                                    onChoose = {
+                                        accentChoice = it
+                                        OfficePrefs.setAccent(this@OfficeActivity, it)
+                                    },
+                                )
                                 Text(
                                     if (engine == EngineState.Ready) stringResource(R.string.office_about_engine, BuildConfig.VERSION_NAME, Engine.version(this@OfficeActivity).orEmpty())
                                     else stringResource(R.string.office_about_no_engine, BuildConfig.VERSION_NAME),

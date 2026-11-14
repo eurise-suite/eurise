@@ -2040,6 +2040,24 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   nostre nei pannelli e nel nastro, motore vivo dopo 12 s di modifica in testo, foglio e presentazione. Consegnati:
   `eurise-office-motore-debug.apk` (cambiato) ed `eurise-office-debug.apk` (Office, invariato dalle 10:10).
 
+**14 novembre, sera: accento delle icone come i colori della suite (richiesta del proprietario)**
+- Confermato dal proprietario: niente colonna a sinistra, tranne le miniature delle diapositive nelle presentazioni.
+- Icone: il tratto resta blu Notte, i **dettagli prendono il colore d'accento** (le otto tinte della suite senza
+  Grafite più Arancio, Viola, Cuoio, Verde inglese, Azzurro costiera della Scrivania). In Control.Eurise.js `ACCENT`,
+  `ACCENTS`, `setAccent()` (ridisegna anche le icone già sullo schermo, `ICON_OF`).
+  - **Telefono e tablet**: di base **come la Scrivania**, oppure una tinta scelta nelle impostazioni di Office
+    (`AccentChooser`, `OfficePrefs.accent`). Office la manda al motore con il documento (`Engine.open`, extra
+    `eu.eurise.extra.ACCENT_LIGHT/DARK`); l'interfaccia la chiede al guscio (`EuriseSuite.java`, azione «aspetto»).
+  - **Computer**: menu File › «Colore delle icone»; resta nella memoria del guscio (`localStorage`, `eurise-accento`).
+    Di base Blu notte.
+  - **Contratto nuovo `core/suite/AppearanceContract`** (accento della Scrivania e tinte). Il fornitore va nell'app
+    Eurise (cartella `app`, della chat del brand: qui non si tocca) — **da fare al merge**: `AppearanceProvider` sul
+    modello di `PrivacyProvider` (controllo del permesso della suite in `call`), autorità `${applicationId}.appearance`,
+    `exported`, `android:permission="${suitePermission}"`; `accent` legge `eurise_launcher`/`accent` con
+    `Accent.decode` e risponde `light`/`dark` (`color(false/true).toArgb()`) e `name` (`encode()`); `palette` risponde
+    nomi (`Accent.Suite/Extra(...).encode()`), etichette, chiari e scuri di CalendarTint (senza Grafite) ed ExtraTint.
+    Finché non c'è, Office usa Ottone (l'accento di base della Scrivania) e offre le sette tinte della suite.
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in

@@ -34,6 +34,8 @@
     <string name="office_search">Cerca</string>
     <string name="office_search_hint">Cerca tra i documenti</string>
     <string name="office_settings">Impostazioni di Office</string>
+    <string name="office_accent">Colore d\'accento delle icone</string>
+    <string name="office_accent_desk">Come la Scrivania</string>
     <string name="office_tab_files">File</string>
     <string name="office_tab_recent">Recenti</string>
     <string name="office_tab_templates">Modelli</string>

@@ -19,6 +19,9 @@ import eu.eurise.office.rapida.QuickView
  */
 object Engine {
     private const val LO_ACTIVITY = "org.libreoffice.androidlib.LOActivity"
+    /** Accento delle icone per l'interfaccia del motore (EuriseSuite.java, azione «aspetto»). */
+    const val EXTRA_ACCENT_LIGHT = "eu.eurise.extra.ACCENT_LIGHT"
+    const val EXTRA_ACCENT_DARK = "eu.eurise.extra.ACCENT_DARK"
 
     val packageName: String get() = BuildConfig.ENGINE_PACKAGE
 
@@ -47,7 +50,11 @@ object Engine {
             Intent(context, QuickActivity::class.java).setAction(Intent.ACTION_VIEW).setDataAndType(uri, QuickView.mimeOf(name, mime))
         } else {
             if (!engine) return false
+            // L'accento delle icone viaggia con il documento: l'interfaccia web lo chiede al guscio del motore.
+            val accent = Appearance.current(context)
             Intent(Intent.ACTION_VIEW).setClassName(packageName, LO_ACTIVITY).setDataAndType(uri, mime ?: mimeOf(kind))
+                .putExtra(EXTRA_ACCENT_LIGHT, Appearance.hex(accent.light))
+                .putExtra(EXTRA_ACCENT_DARK, Appearance.hex(accent.dark))
         }
         context.startActivity(intent.addFlags(grants))
         return true

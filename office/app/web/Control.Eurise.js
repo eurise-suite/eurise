@@ -167,6 +167,40 @@
 	};
 
 	var ICON_CACHE = {};
+	/** Immagine in linea → nome dell'icona: serve a ridisegnare le icone già sullo schermo quando cambia l'accento. */
+	var ICON_OF = {};
+
+	// Colore d'accento dei dettagli delle icone (richiesta del proprietario, 14 novembre): il tratto resta blu Notte, i
+	// dettagli prendono l'accento della suite. Sul telefono e sul tablet lo manda Office (come la Scrivania o la scelta
+	// nelle impostazioni di Office); sul computer si sceglie dal menu File e resta nel browser del guscio.
+	var ACCENT = { light: '#3E5C8A', dark: '#A9C1F2' };
+	// Tinte della suite (CalendarTint, senza Grafite) e quelle in più della Scrivania (ExtraTint): giorno e sera.
+	var ACCENTS = [
+		['Blu notte', 'Night blue', '#3E5C8A', '#8FA9D9'], ['Salvia', 'Sage', '#4F6B5A', '#93BBA0'],
+		['Ottone', 'Brass', '#85672B', '#D2B06A'], ['Borgogna', 'Burgundy', '#8C2F39', '#DE919A'],
+		['Petrolio', 'Petrol', '#2E6E73', '#79BCC1'], ['Prugna', 'Plum', '#6B4A7A', '#BA9BCB'],
+		['Terracotta', 'Terracotta', '#A0522D', '#DE9A72'], ['Arancio', 'Orange', '#B8621E', '#F2A866'],
+		['Viola', 'Violet', '#5A4BA0', '#B3A6F0'], ['Cuoio', 'Leather', '#7A4A2A', '#C9956B'],
+		['Verde inglese', 'British green', '#1F4D3A', '#7FB59A'], ['Azzurro costiera', 'Coast blue', '#1E78A8', '#7CC4EA']
+	];
+
+	function darkTheme() {
+		try { return !!(window.prefs && window.prefs.getBoolean && window.prefs.getBoolean('darkTheme')); } catch (e) { return false; }
+	}
+
+	/** Cambia l'accento delle icone e ridisegna quelle già sullo schermo. */
+	function setAccent(light, dark) {
+		if (!/^#[0-9a-f]{6}$/i.test(light || '')) return;
+		ACCENT = { light: light, dark: /^#[0-9a-f]{6}$/i.test(dark || '') ? dark : light };
+		ICON_CACHE = {};
+		var old = ICON_OF;
+		ICON_OF = {};
+		var night = darkTheme();
+		Array.prototype.forEach.call(document.querySelectorAll('img'), function (img) {
+			var name = old[img.getAttribute('src')];
+			if (name) img.src = euriseIcon(name, night);
+		});
+	}
 
 	/** L'icona nostra come immagine SVG in linea, oppure null se non l'abbiamo. */
 	function euriseIcon(file, dark) {
@@ -177,7 +211,7 @@
 		var cacheKey = key + (dark ? ':d' : ':l');
 		if (ICON_CACHE[cacheKey]) return ICON_CACHE[cacheKey];
 		var main = dark ? '#E6E9F0' : '#1F2A44';
-		var accent = dark ? '#A9C1F2' : '#3E5C8A';
+		var accent = dark ? ACCENT.dark : ACCENT.light;
 		var body = spec.map(function (layer) {
 			var style = layer[0];
 			if (style === 'f') return '<path d="' + layer[1] + '" fill="' + accent + '" fill-opacity="0.18" stroke="none"/>';
@@ -188,6 +222,7 @@
 		var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.7" ' +
 			'stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
 		ICON_CACHE[cacheKey] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+		ICON_OF[ICON_CACHE[cacheKey]] = key;
 		return ICON_CACHE[cacheKey];
 	}
 
@@ -203,9 +238,7 @@
 		if (util.getImageURL.eurise) return;
 		var original = util.getImageURL;
 		var ours = function (name) {
-			var dark = false;
-			try { dark = !!(window.prefs && window.prefs.getBoolean && window.prefs.getBoolean('darkTheme')); } catch (e) { dark = false; }
-			var mine = euriseIcon(name, dark);
+			var mine = euriseIcon(name, darkTheme());
 			if (mine) return mine;
 			if (/^(lc|sc)_/.test(String(name))) missingIcons[name] = true;
 			return original.apply(this, arguments);
@@ -1797,9 +1830,35 @@
 			[t('Salva', 'Save'), function () { saveNow(false); }],
 			[t('Condividi o esporta in PDF', 'Share or export to PDF'), beforeSharing],
 			[t('Stampa', 'Print'), function () { dispatch('print'); }],
-			[t('Proprietà del documento', 'Document properties'), function () { uno('.uno:SetDocumentProperties'); }],
+			[t('Proprietà del documento', 'Document properties'), function () { uno('.uno:SetDocumentProperties'); }]].concat(onDesk() ? [
+			[t('Colore delle icone', 'Icon colour'), chooseAccent]] : []).concat([
 			[t('Chiudi', 'Close'), function () { if (window.ThisIsAMobileApp) window.postMobileMessage('BYE'); else dispatch('closemobile'); }]
-		], function (run) { run(); });
+		]), function (run) { run(); });
+	}
+
+	/** Computer: scelta dell'accento delle icone tra le tinte della suite; resta nella memoria del guscio. */
+	function chooseAccent() {
+		var box = overlay('eurise-colors');
+		var h = document.createElement('h2');
+		h.textContent = t('Colore delle icone', 'Icon colour');
+		box.appendChild(h);
+		var grid = document.createElement('div');
+		grid.className = 'eurise-swatches';
+		ACCENTS.forEach(function (c) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-sw' + (c[2] === ACCENT.light ? ' on' : '');
+			b.innerHTML = '<span></span>';
+			b.firstChild.style.background = darkTheme() ? c[3] : c[2];
+			b.appendChild(document.createTextNode(t(c[0], c[1])));
+			b.onclick = function () {
+				closeOverlay();
+				setAccent(c[2], c[3]);
+				try { window.localStorage.setItem('eurise-accento', JSON.stringify({ light: c[2], dark: c[3] })); } catch (e) { /* niente memoria */ }
+			};
+			grid.appendChild(b);
+		});
+		box.appendChild(grid);
 	}
 
 	function tabletChrome(docType) {
@@ -2060,6 +2119,24 @@
 		if (tries > 0) setTimeout(function () { waitForTabletMap(tries - 1); }, 100);
 	})(300);
 
-	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice, trace: trace, missingIcons: missingIcons };
+	// Accento delle icone all'avvio: sul computer quello scelto (memoria del guscio), sul telefono e sul tablet lo chiede
+	// al guscio del motore, che l'ha ricevuto da Office.
+	(function startAccent(tries) {
+		if (window.ThisIsTheQtApp) {
+			try {
+				var saved = JSON.parse(window.localStorage.getItem('eurise-accento') || 'null');
+				if (saved) setAccent(saved.light, saved.dark);
+			} catch (e) { /* memoria non disponibile: resta l'accento di base */ }
+			return;
+		}
+		if (!window.ThisIsAMobileApp) return;
+		if (!window.postMobileMessage) {
+			if (tries > 0) setTimeout(function () { startAccent(tries - 1); }, 100);
+			return;
+		}
+		toShell({ action: 'aspetto' }, function (r) { if (r && r.light) setAccent(r.light, r.dark); });
+	})(100);
+
+	window.euriseOffice = { reply: reply, openSearch: openSearch, notice: notice, trace: trace, missingIcons: missingIcons, setAccent: setAccent };
 	if (typeof JSDialog !== 'undefined') JSDialog.EuriseSearch = openSearch;
 })();

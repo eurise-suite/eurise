@@ -146,11 +146,29 @@ final class EuriseSuite {
                 case "traduci": translate(activity, id, text, m.optString("from"), m.optString("to")); break;
                 case "cerca": search(activity, id, m.optString("where"), m.optString("query")); break;
                 case "pdf": pdf(activity, id, m.optString("how"), m.optString("name"), m.optString("options")); break;
+                case "aspetto": appearance(activity, id); break;
                 default: reply(activity, id, null, null);
             }
         } catch (JSONException e) {
             Log.w(TAG, "messaggio non valido", e);
         }
+    }
+
+    /**
+     * L'accento delle icone che Office manda con il documento (Engine.kt, extra ACCENT_LIGHT e ACCENT_DARK, «#rrggbb»):
+     * l'interfaccia web lo usa per i dettagli delle icone Eurise. Senza, risponde vuoto e restano quelle di base.
+     */
+    private static void appearance(LOActivity a, int id) {
+        JSONObject r = new JSONObject();
+        try {
+            Intent i = a.getIntent();
+            String light = i != null ? i.getStringExtra("eu.eurise.extra.ACCENT_LIGHT") : null;
+            String dark = i != null ? i.getStringExtra("eu.eurise.extra.ACCENT_DARK") : null;
+            if (light != null && light.matches("#[0-9A-Fa-f]{6}")) r.put("light", light);
+            if (dark != null && dark.matches("#[0-9A-Fa-f]{6}")) r.put("dark", dark);
+        } catch (JSONException ignored) {
+        }
+        reply(a, id, null, r);
     }
 
     private static String withSource(String text, String title) {
