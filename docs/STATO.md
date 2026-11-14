@@ -1918,10 +1918,23 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   icone dei comandi da `app.LOUtil`), provata con `schermo=tablet` (emulatore a 1280x800). Nascosta anche `.main-nav`
   (schede di Collabora). Mancano i menu a tendina di carattere e dimensione.
 - Ricerca (OffCerca): «Nel documento» in cima, foglio dal basso sul telefono. Chiedi all'AI resta «in arrivo».
-- Tavole nuove da approvare: **OffLetturaPresentazione** (vista rapida delle presentazioni) e **OffTelefonoGruppi**
-  (proposta del proprietario: dalla dock del telefono i gruppi del nastro come card, gli stessi di tablet e computer).
+- **Approvate dal proprietario (14 novembre)**: **OffTelefonoGruppi** («un grandissimo sì»: dalla dock del telefono
+  compaiono i gruppi del nastro come card, nello stile del gruppo Carattere di OffComputer: tendine di carattere e
+  dimensione, togli formattazione, B I U S, apice, pedice, colore, evidenzia, etichetta e «altre opzioni» in basso;
+  pastiglie dei gruppi della scheda sopra la card, scorrimento laterale tra le card, pulsanti da 44, card sopra la
+  dock) e **OffLetturaPresentazione** (vista rapida delle presentazioni: diapositive 16:9 una sotto l'altra, note del
+  relatore, Presenta, Completa, Condividi, ricerca).
+- Correzioni del proprietario dopo la prova sul telefono (tutte fatte, da riprovare): nel PDF solo la dock e i pannelli
+  a comparsa; evidenziatore che spariva e poi lampeggiava; barra di modifica della vista rapida sotto la tastiera;
+  motore che si chiudeva dopo qualche secondo di modifica; la nostra interfaccia anche nella modifica completa.
+  Scanner da «Pagine» di Office: si prova dopo il merge in `brand` (l'app Eurise del ramo brand non ha ancora
+  ScanForResultActivity).
+- In corso alla chiusura della chat: office-app per i ritocchi del tablet (`.main-nav` nascosta, Condividi leggibile,
+  annulla e ripeti senza cornici): provarlo con `schermo=tablet` e consegnarlo.
 
-**Prossimo passo**: dopo l'approvazione, i gruppi a card sul telefono (stesso codice del nastro del tablet) e la vista
-rapida delle presentazioni; menu a tendina di carattere e dimensione; computer (OffComputer); poi motore a richiesta (OffMotore: capire se i file del
+**Prossimo passo**: i gruppi a card sul telefono (OffTelefonoGruppi: stesso codice dei RIBBONS del tablet, card al
+posto della fila di pulsanti) con le tendine di carattere e dimensione anche sul tablet; poi la vista rapida delle
+presentazioni (OffLetturaPresentazione, modulo `rapida`: lettore pptx/odp in sola lettura); poi il computer
+(OffComputer); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
