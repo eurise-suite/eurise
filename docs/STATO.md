@@ -2091,6 +2091,12 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   dock nuova e la scelta del cloud), OffOggiCaricamento, OffOggiTablet, OffOggiComputer. Generate da
   `/home/claude/tela/gen/gen.py` con le icone di `ICONS` (non nel repository).
 
+- **Tablet e computer, una riga sola** (proposta del proprietario, sera): via la riga del titolo con lo spazio vuoto.
+  `#eurise-header.riga` (`.desk` sul computer): File e schede a sinistra; a destra la pillola chiara (`.eurise-pill`) con
+  nome, «Salvato» (sul computer con la cartella) e annulla/ripeti; «Cerca un comando» più corto (Ctrl K solo nel
+  suggerimento); Condividi con la sola icona (`.eurise-share.icon`). Verificato sul computer (prova 43626971065: ci sta
+  tutto anche nel foglio). Tavole OffOggiTablet e OffOggiComputer aggiornate.
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
