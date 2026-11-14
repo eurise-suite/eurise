@@ -2396,3 +2396,19 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   il finestrino (`sVisLeft/sVisRight` da `draw`). In verticale 8 dp sotto la riga del meteo.
 - **Da fare**: colori e interfaccia della guida nello stile della suite (detto dal proprietario: tavola prima); posizione
   del finestrino da rivedere con lui dopo questa prova; prova in auto.
+
+## 14 novembre, sera: correzioni dopo la prova di Alfred, bolla Documenti, icona di Office (ramo `brand`) · giro 529
+- **Alfred**: non parla più all'apertura né quando gli si scrive (parla solo se gli si è parlato, `voiceTurn`). Le richieste
+  libere non vanno più al prototipo di Eurise AI (l'APK non legge `EXTRA_TEXT`: «non succedeva niente»): il pulsante
+  principale della scheda è «Chiedi a <preferito>» (finestra AI, ripulita; prima volta: spiegazione del centro privacy),
+  accanto «Cerca sul web». Quando Eurise AI avrà il servizio con la risposta, la scheda tornerà a chiederla prima al telefono.
+- **Finestra AI e riquadro web**: la WebView ora è a tutta altezza (`MATCH_PARENT`); con la misura di AndroidView («quanto il
+  contenuto») Lumo restava tagliato in alto e bianco, Euria solo lo sfondo celeste. Da riprovare sul telefono.
+- **Bolla Documenti**: Office apre Eurise Office (`eu.eurise.office`, anche `.debug`) prima delle altre suite; Lettore PDF,
+  con Eurise Office installato, apre «Apri da…» di Eurise File (solo PDF) e passa il file a Eurise Office (Annota, Pagine,
+  Firma); senza Eurise Office restano le app di prima.
+- **Icona di Office, tavola OfficeIcona** (pagina Icone, **da approvare**): A Documento e tabella, B Documento con grafico,
+  C Pila a quadretti; tinta rosa borgogna. Dopo la scelta: `EuriseIcons.office`, `SuiteSymbols.office`, voce in
+  `scripts/icone.py` e icona dell'APK di Office (`eurise_patch.py`).
+- **Suonerie e sfondo di blocco**: compilati (correzioni: apostrofi nelle stringhe, ordine dei parametri del selettore).
+- **APK in apk-prova: giro 529** (Mappe 45 dall'altra chat).
