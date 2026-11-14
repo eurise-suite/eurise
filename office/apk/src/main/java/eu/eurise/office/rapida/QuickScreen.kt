@@ -97,9 +97,16 @@ private val OkBack = Color(0xFFEAF1EC)
  * del salvataggio, l'etichetta «Vista rapida» e «Aspetto esatto»; al centro il documento; in basso, vicino al pollice,
  * Correggi, Commenta, Completa, Condividi e la lente.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onFull: () -> Unit, onShare: () -> Unit) {
+    val state = model.state
+    if (state is QuickState.Slides) SlidesScreen(model, state.deck, engineReady, onBack, onFull, onShare)
+    else DocScreen(model, engineReady, onBack, onFull, onShare)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onFull: () -> Unit, onShare: () -> Unit) {
     val context = LocalContext.current
     val haze = remember { HazeState() }
     var draft by remember { mutableStateOf<Draft?>(null) }
@@ -134,6 +141,7 @@ fun QuickScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Unit, onF
                     },
                 )
                 is QuickState.Sheets -> SheetBody(model, s.doc, haze, Modifier.weight(1f))
+                is QuickState.Slides -> {}
             }
         }
 
@@ -231,7 +239,7 @@ private fun Header(model: QuickModel, onBack: () -> Unit, onExact: () -> Unit) {
 }
 
 @Composable
-private fun Message(text: String) {
+internal fun Message(text: String) {
     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
@@ -250,7 +258,7 @@ private fun Hint(text: String, action: String? = null, onAction: (() -> Unit)? =
 }
 
 @Composable
-private fun SearchField(model: QuickModel) {
+internal fun SearchField(model: QuickModel) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         val focus = remember { FocusRequester() }
         LaunchedEffect(Unit) { focus.requestFocus() }
@@ -633,7 +641,7 @@ private fun CellCard(model: QuickModel, doc: SheetDoc, at: Pair<Int, Int>, onFul
 /** Tavola OffLetturaCompleta: cosa fa il motore, se va scaricato, e l'interruttore «Apri sempre nella modifica completa». */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FullSheet(engineReady: Boolean, onDismiss: () -> Unit, onOpen: () -> Unit) {
+internal fun FullSheet(engineReady: Boolean, onDismiss: () -> Unit, onOpen: () -> Unit) {
     val context = LocalContext.current
     var always by remember { mutableStateOf(OfficePrefs.alwaysFull(context)) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {

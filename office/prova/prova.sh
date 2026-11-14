@@ -195,6 +195,20 @@ usa_motore() { # nome scheda
 	adb shell input tap $(( (18 * d / 100) + (W - 36 * d / 100) / 10 )) $(( H - 44 * d / 100 ))
 	sleep 4
 	adb exec-out screencap -p > "$OUT/$name-uso-1-scheda.png"
+	if [ "${SCHERMO:-}" != tablet ]; then
+		# Tavola OffTelefonoGruppi: la prima card (Carattere, o Diapositive) ha le tendine in alto; poi le card scorrono di
+		# lato. Pannello 84 dp sopra il fondo, card del Carattere alta circa 144 dp.
+		adb shell input tap $(( 120 * d / 100 )) $(( H - 198 * d / 100 ))
+		sleep 3
+		adb exec-out screencap -p > "$OUT/$name-uso-1-tendina.png"
+		adb shell input tap $((W / 2)) $(( 80 * d / 100 ))
+		sleep 2
+		adb shell input swipe $((W * 8 / 10)) $(( H - 160 * d / 100 )) $((W * 2 / 10)) $(( H - 160 * d / 100 )) 300
+		sleep 2
+		adb exec-out screencap -p > "$OUT/$name-uso-1-gruppi.png"
+		adb shell input tap $(( (18 * d / 100) + (W - 36 * d / 100) / 10 )) $(( H - 44 * d / 100 ))
+		sleep 2
+	fi
 	local x=$((W / 2)) y=$((H * 385 / 1000))
 	adb shell input tap $x $y; adb shell input tap $x $y
 	sleep 3

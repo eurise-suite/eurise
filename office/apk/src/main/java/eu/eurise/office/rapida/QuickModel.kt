@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -41,14 +42,22 @@ object QuickView {
         else -> null
     }
 
+    fun slides(name: String?, mime: String?): SlideFormat? = when (ext(name, mime)) {
+        "pptx" -> Pptx
+        "odp" -> Odp
+        else -> null
+    }
+
     fun supports(name: String?, mime: String?, size: Long? = null): Boolean =
-        (text(name, mime) != null || sheet(name, mime) != null) && (size == null || size <= MAX_BYTES)
+        (text(name, mime) != null || sheet(name, mime) != null || slides(name, mime) != null) && (size == null || size <= MAX_BYTES)
 
     fun mimeOf(name: String?, mime: String?): String = when (ext(name, mime)) {
         "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         "odt" -> "application/vnd.oasis.opendocument.text"
         "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         "ods" -> "application/vnd.oasis.opendocument.spreadsheet"
+        "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        "odp" -> "application/vnd.oasis.opendocument.presentation"
         else -> mime ?: "application/octet-stream"
     }
 
@@ -59,6 +68,8 @@ object QuickView {
             "application/vnd.oasis.opendocument.text" -> "odt"
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> "xlsx"
             "application/vnd.oasis.opendocument.spreadsheet" -> "ods"
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> "pptx"
+            "application/vnd.oasis.opendocument.presentation" -> "odp"
             else -> ""
         }
     }
@@ -71,6 +82,8 @@ sealed interface QuickState {
     data class Failed(val reason: Int) : QuickState
     data class Text(val doc: TextDoc) : QuickState
     data class Sheets(val doc: SheetDoc) : QuickState
+    /** Una presentazione: in sola lettura, l'impaginazione esatta e le modifiche sono del motore. */
+    data class Slides(val deck: SlideDeck) : QuickState
 }
 
 /**
@@ -113,6 +126,11 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
     private val lock = Mutex()
     private var text: TextFormat? = null
     private var sheet: SheetFormat? = null
+    private var slides: SlideFormat? = null
+
+    /** Presentazione: diapositiva mostrata a schermo intero (indice), null fuori da «Presenta». */
+    var presenting by mutableStateOf<Int?>(null)
+    private val images = object : android.util.LruCache<String, androidx.compose.ui.graphics.ImageBitmap>(24) {}
 
     init {
         viewModelScope.launch { load() }
@@ -126,6 +144,8 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
         mime = QuickView.mimeOf(info.name, context.contentResolver.getType(uri))
         text = QuickView.text(info.name, mime)
         sheet = QuickView.sheet(info.name, mime)
+        slides = QuickView.slides(info.name, mime)
+        if (slides != null) save = QuickSave.ReadOnly
         val read = withContext(Dispatchers.IO) {
             runCatching { Bundle.read(context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }) }.getOrNull()
         }
@@ -137,7 +157,8 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
     private suspend fun show(b: Bundle) {
         state = withContext(Dispatchers.Default) {
             runCatching {
-                text?.let { QuickState.Text(it.read(b)) } ?: sheet?.let { QuickState.Sheets(it.read(b)) } ?: QuickState.Failed(R.string.quick_unsupported)
+                text?.let { QuickState.Text(it.read(b)) } ?: sheet?.let { QuickState.Sheets(it.read(b)) }
+                    ?: slides?.let { QuickState.Slides(it.read(b)) } ?: QuickState.Failed(R.string.quick_unsupported)
             }.getOrElse { QuickState.Failed(R.string.quick_cannot_read) }
         }
     }
@@ -203,6 +224,24 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
         }
         save = if (ok) QuickSave.Saved else QuickSave.Failed
         if (!ok) unsaved = true
+    }
+
+    /**
+     * Un'immagine della presentazione ridotta a circa [width] pixel di larghezza (le diapositive non chiedono di più).
+     * Null se il formato non si decodifica sul telefono (EMF, WMF, SVG): allora si mostra un segnaposto.
+     */
+    suspend fun image(path: String, width: Int): androidx.compose.ui.graphics.ImageBitmap? = withContext(Dispatchers.Default) {
+        val key = "$path@$width"
+        images.get(key)?.let { return@withContext it }
+        val bytes = bundle?.get(path) ?: return@withContext null
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0) return@withContext null
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= width) sample *= 2
+        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+            ?: return@withContext null
+        bitmap.asImageBitmap().also { images.put(key, it) }
     }
 
     /** Una copia del documento com'è ora, per «Salva in…», per condividere o per il motore. */

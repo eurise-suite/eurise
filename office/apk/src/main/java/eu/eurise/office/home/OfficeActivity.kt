@@ -169,8 +169,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         }
     }
 
-    private fun start(uri: Uri, kind: DocKind, writable: Boolean, name: String?) {
-        val ok = runCatching { Engine.open(this, uri, contentResolver.getType(uri), kind, writable, name) }
+    private fun start(uri: Uri, kind: DocKind, writable: Boolean, name: String?, full: Boolean = false) {
+        val ok = runCatching { Engine.open(this, uri, contentResolver.getType(uri), kind, writable, name, full) }
         when {
             ok.isFailure -> Toast.makeText(this, R.string.office_cannot_open, Toast.LENGTH_LONG).show()
             ok.getOrDefault(false).not() -> showEngine()
@@ -217,7 +217,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                 return@launch
             }
             recents.add(created.uri, created.name, getString(R.string.office_where_documents), kind, true)
-            start(created.uri, kind, true, created.name)
+            // Una presentazione nuova si scrive: va subito nel motore (la vista rapida delle presentazioni è in lettura).
+            start(created.uri, kind, true, created.name, full = kind == DocKind.Slides)
         }
     }
 

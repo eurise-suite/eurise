@@ -203,6 +203,16 @@
     <string name="quick_not_now">Non ora</string>
     <string name="quick_full_open">Apri</string>
     <string name="quick_full_download">Scarica e apri</string>
+    <string name="slides_position">%1$s · diapositiva %2$d di %3$d</string>
+    <string name="slides_slide">Diapositiva %1$d</string>
+    <string name="slides_notes">Note:</string>
+    <string name="slides_hidden">Nascosta</string>
+    <string name="slides_image">Immagine della diapositiva</string>
+    <string name="slides_none">Questa presentazione non ha diapositive.</string>
+    <string name="slides_present">Presenta</string>
+    <string name="slides_search">Cerca nella presentazione</string>
+    <string name="slides_counter">%1$d / %2$d</string>
+    <string name="slides_close">Chiudi la presentazione</string>
     <string name="quick_full_always">Apri sempre i documenti nella modifica completa</string>
     <!-- Tavola OffMotore: il motore dei documenti (APK compagno «Eurise Office Motore»). -->
     <string name="engine_once">Una volta sola</string>
