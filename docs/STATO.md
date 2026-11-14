@@ -2419,3 +2419,7 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   barra di scorrimento), arrivo e comandi (Segnala, Sosta, Voce, Insieme, Fine) in una scheda satinata, percorso blu notte.
 - **Cielo nella schermata di guida: deciso dal proprietario «quello con la resa migliore» → dentro il motore** (colore
   di sfondo e foschia all'orizzonte in `drape_frontend` di CoMaps, palazzi 3D davanti al cielo), non la fascia sopra.
+- **Decisioni del proprietario (14 novembre, sera)**: verticale **B approvata** (finestrino dentro la scheda della
+  manovra); orizzontale **A approvata** con l'opzione specchiata (tavola MapGuidaOrizA2: colonna a sinistra, barra dei
+  comandi a destra; di base segue l'impostazione «mano», si cambia nelle impostazioni). La foschia del cielo nel motore
+  non convince: tre alternative da approvare (MapCieloColline, MapCieloSagome, MapCieloCurvo).
