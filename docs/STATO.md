@@ -1880,6 +1880,25 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   installa il motore con adb. DIAGNOSI spenta in office-app.yml: giro 43507364768 (APK in apk-prova-office), prova
   43510672834 di nuovo tutta buona.
 
-**Prossimo passo**: provare «Scarica» dal telefono (o automatizzarlo nella prova con uiautomator); poi motore a richiesta (OffMotore: capire se i file del
+**Prova sul telefono del proprietario (14 novembre, notte)**
+- «Scarica» funziona: download di 113 MB, permesso «app sconosciute», installazione, documenti e PDF si aprono; la
+  presentazione si apre veloce ma con l'interfaccia di Collabora non si riesce a selezionare né usare i comandi. Sulla
+  prova (usa_motore in prova.sh: matita, doppio tocco, tocco lungo) il motore risponde: il problema è l'interfaccia.
+- Richieste: nel PDF **solo la dock**, il pannello di una scheda compare quando la si tocca; **l'evidenziatore
+  spariva**; Scanner da «Pagine» diceva «Serve l'app Eurise»; **anche nella modifica completa la nostra interfaccia**.
+- Fatto: `PdfDisplay` (copia per lo schermo con le annotazioni stampate: il PdfRenderer di Android non le disegna;
+  il file vero le tiene come annotazioni), dock del PDF con pannello a comparsa (`PdfModel.panel`). Scanner: la porta
+  `ScanForResultActivity` c'è solo sul ramo `office`; l'app Eurise del ramo `brand` non l'ha → ora Office chiede di
+  aggiornarla (arriva con il merge).
+- Fatto: **interfaccia Eurise nel motore sul telefono** (`office/app/web/Control.Eurise.js`, sezione «Telefono», e
+  `eurise.css`): intestazione nella riga `#toolbar-row` (indietro = BYE, nome, «Salvato», ricerca, annulla, condividi),
+  dock con schede per tipo (testo, foglio, presentazione/disegno) e pannello a comparsa con lo stato dei comandi
+  (`commandstatechanged`), apertura direttamente in modifica (`setPermission` avvolto → `_switchToEditMode`),
+  salvataggio da sé 4 s dopo l'ultima modifica (`.uno:Save`). I PDF nel motore tengono l'interfaccia di Collabora.
+  Stylelint 13.7 e ESLint 7 di Collabora si possono provare in locale (npm) prima di spingere.
+- La prova rapida `fonte=nativo` ora compila e **pubblica Office** in apk-prova-office (Office non esce da «Compila
+  APK» e office-app impiega 25 minuti).
+
+**Prossimo passo**: vedere le schermate della nuova interfaccia del motore (prova `fonte=motore`), sistemarla; poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
