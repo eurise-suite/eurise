@@ -1126,8 +1126,10 @@ body.eurise-desk #sidebar-container .ui-expander-container.sidebar,
 }
 /* Titolo del pannello («Proprietà», «Stili»…) piccolo come le etichette dei gruppi. */
 body.eurise-desk #sidebar-container .ui-deck-header {
-	margin: 6px 4px;
-	padding: 0;
+	height: auto !important;
+	min-height: 0 !important;
+	margin: 4px 4px 6px;
+	padding: 0 !important;
 	border: 0;
 	background: transparent;
 }
@@ -1252,10 +1254,15 @@ body.eurise-desk #sidebar-container label {
 }
 #eurise-struttura.filled .eurise-side-empty { display: none; }
 /* Il Navigatore dentro Struttura: solo l'albero, senza la sua barra e il suo titolo; alto al massimo 260 px. */
+#eurise-struttura #navigator-panel,
+#eurise-struttura #navigator-container {
+	height: auto !important;
+	min-height: 0;
+}
 #eurise-struttura #navigator-panel {
-	height: auto;
-	max-height: 260px;
+	max-height: 280px;
 	overflow-y: auto;
+	scrollbar-width: thin;
 }
 #eurise-struttura #NavigatorPanel .ui-expander,
 #eurise-struttura #NavigatorPanel .toolbox,
@@ -1276,3 +1283,9 @@ body.eurise-desk[data-theme='dark'] #sidebar-dock-wrapper { background: #171B22;
 [data-theme='dark'] body.eurise-desk #sidebar-container .ui-listbox,
 [data-theme='dark'] body.eurise-desk #sidebar-container input { background-color: #1B2029 !important; box-shadow: inset 0 0 0 1px #343B48 !important; color: #E6E9F0; }
 [data-theme='dark'] body.eurise-desk #eurise-ribbon .eurise-rb.tile .aa { color: #E6E9F0; }
+/* Nel guscio Linux la pagina non ha un carattere senza grazie di base: lo diamo noi ai riquadri (Cerca un comando…). */
+body.eurise-desk .eurise-panel,
+body.eurise-desk .eurise-panel input,
+body.eurise-desk #eurise-notice {
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
