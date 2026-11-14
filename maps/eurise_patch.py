@@ -1037,3 +1037,22 @@ patch(nav, """    mNavMenu.update(info);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
   }""")
 print("eurise_patch: guida in orizzontale (MapOrizzontaleGuida)")
+
+# «Livelli e fonti» (tavola MapLivelli): sotto i livelli di CoMaps le voci della guida e di cosa esce dal telefono.
+patch(res / "layout" / "fragment_toggle_map_layer.xml", """    android:paddingStart="@dimen/margin_base"
+    android:paddingEnd="@dimen/margin_base" />
+</LinearLayout>""", """    android:paddingStart="@dimen/margin_base"
+    android:paddingEnd="@dimen/margin_base" />
+
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_livelli"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+</LinearLayout>""")
+layers = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "maplayer" / "ToggleMapLayerFragment.java"
+patch(layers, """    initRecycler(mRoot);
+    return mRoot;""", """    initRecycler(mRoot);
+    app.organicmaps.eurise.ui.EuriseLivelli.attach(mRoot.findViewById(R.id.eurise_livelli));
+    return mRoot;""")
+print("eurise_patch: livelli e fonti (MapLivelli)")
+

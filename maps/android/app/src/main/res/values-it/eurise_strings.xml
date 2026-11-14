@@ -199,4 +199,16 @@
   <string name="eurise_go_muted">Muto</string>
   <string name="eurise_go_together">Insieme</string>
   <string name="eurise_go_end">Fine</string>
+
+  <!-- Livelli e fonti (MapLivelli). -->
+  <string name="eurise_lv_lead">Ogni voce si spegne con un tocco. Accanto, cosa esce dal telefono.</string>
+  <string name="eurise_lv_phone">Sul telefono, niente esce</string>
+  <string name="eurise_lv_speed">Velocità e limiti</string>
+  <string name="eurise_lv_speed_sub">dal GPS e dalla mappa · avviso sopra il limite</string>
+  <string name="eurise_lv_cameras">Autovelox fissi</string>
+  <string name="eurise_lv_cameras_sub">dove la legge lo permette</string>
+  <string name="eurise_lv_network">Dalla rete, con la posizione arrotondata</string>
+  <string name="eurise_lv_weather">Meteo sul percorso</string>
+  <string name="eurise_lv_weather_sub">Open-Meteo · punti arrotondati a circa 1 km</string>
+  <string name="eurise_lv_note">Tutto compare nel centro privacy. Mai identificativi del telefono, mai il percorso intero.</string>
 </resources>

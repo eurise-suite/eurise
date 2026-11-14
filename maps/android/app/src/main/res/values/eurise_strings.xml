@@ -204,4 +204,16 @@
   <string name="eurise_go_muted">Muted</string>
   <string name="eurise_go_together">Together</string>
   <string name="eurise_go_end">End</string>
+
+  <!-- Livelli e fonti (MapLivelli). -->
+  <string name="eurise_lv_lead">Each item turns off with a tap. Next to it, what leaves the phone.</string>
+  <string name="eurise_lv_phone">On the phone, nothing leaves</string>
+  <string name="eurise_lv_speed">Speed and limits</string>
+  <string name="eurise_lv_speed_sub">from GPS and the map · warning above the limit</string>
+  <string name="eurise_lv_cameras">Fixed speed cameras</string>
+  <string name="eurise_lv_cameras_sub">where the law allows it</string>
+  <string name="eurise_lv_network">From the network, with a rounded position</string>
+  <string name="eurise_lv_weather">Weather on the route</string>
+  <string name="eurise_lv_weather_sub">Open-Meteo · points rounded to about 1 km</string>
+  <string name="eurise_lv_note">Everything appears in the privacy centre. Never phone identifiers, never the whole route.</string>
 </resources>

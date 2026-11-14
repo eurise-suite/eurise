@@ -412,6 +412,52 @@ public final class EuriseRouteWeather
     });
   }
 
+  /**
+   * Per «Livelli e fonti» (tavola MapLivelli): se il meteo sul percorso è acceso nel centro privacy. [done] riceve
+   * null se l'app Eurise non c'è (allora la voce non si mostra). Thread principale.
+   */
+  public static void status(@NonNull Context context, @NonNull java.util.function.Consumer<Boolean> done)
+  {
+    final Context app = context.getApplicationContext();
+    IO.execute(() -> {
+      final Bundle b = call(app, null, STATUS, null);
+      MAIN.post(() -> done.accept(b == null ? null : b.getBoolean(ON)));
+    });
+  }
+
+  /**
+   * Accende o spegne il meteo sul percorso da «Livelli e fonti». Accenderlo mostra prima la stessa spiegazione della
+   * guida (cosa esce, dove va, come si torna indietro); spegnerlo non chiede niente. [done] riceve lo stato vero.
+   */
+  public static void set(@NonNull Context context, boolean on, @NonNull java.util.function.Consumer<Boolean> done)
+  {
+    final Context app = context.getApplicationContext();
+    final Runnable apply = () -> IO.execute(() -> {
+      final Bundle b = call(app, null, on ? ENABLE : DISABLE, null);
+      MAIN.post(() -> {
+        if (b != null)
+        {
+          sOn = b.getBoolean(ON);
+          sResult = null;
+          sFetched = 0;
+        }
+        done.accept(b != null && b.getBoolean(ON));
+      });
+    });
+    if (!on)
+    {
+      apply.run();
+      return;
+    }
+    new MaterialAlertDialogBuilder(context)
+        .setTitle(R.string.eurise_rw_title)
+        .setMessage(R.string.eurise_rw_explain)
+        .setPositiveButton(R.string.eurise_rw_turn_on, (d, w) -> apply.run())
+        .setNegativeButton(R.string.eurise_rw_not_now, (d, w) -> done.accept(false))
+        .setOnCancelListener(d -> done.accept(false))
+        .show();
+  }
+
   /** La chiamata all'app Eurise (versione di prova prima); null se manca o non risponde. Fuori dal thread principale. */
   @Nullable
   private static Bundle call(@NonNull Context app, @Nullable String hub, @NonNull String method, @Nullable Bundle extras)
