@@ -1022,7 +1022,7 @@
 
 	function setupPhone() {
 		var map = app.map;
-		if (!map || !window.mode || !window.mode.isMobile()) return;
+		if (!map || !window.mode || !window.mode.isMobile() || window.ThisIsTheQtApp) return;
 		document.body.classList.add('eurise-tel');
 		editAtOnce(map);
 		function build() {
@@ -1585,7 +1585,8 @@
 		if (!map || !window.mode) return;
 		// Tablet nell'app Android, oppure computer nel guscio Linux di Collabora (coda-qt): stesso nastro (OffTablet,
 		// OffComputer); sul computer la classe eurise-desk regola le misure.
-		var desk = !!window.ThisIsTheQtApp && window.mode.isDesktop();
+		// Il guscio Qt è sempre sul computer (all'avvio window.mode.isDesktop() può non avere ancora la risposta giusta).
+		var desk = !!window.ThisIsTheQtApp;
 		if (!desk && !(window.mode.isTablet() && window.ThisIsAMobileApp)) return;
 		document.body.classList.add('eurise-tablet');
 		if (desk) document.body.classList.add('eurise-desk');
