@@ -920,12 +920,17 @@
 		if (el) el.classList.toggle('pending', !phone.saved);
 	}
 
-	/** Salva da sé poco dopo l'ultima modifica: il motore scrive nel file originale (LOActivity, SAVE). */
+	/**
+	 * Salva da sé poco dopo l'ultima modifica, con lo stesso messaggio del salvataggio automatico dell'app di Collabora
+	 * (LOActivity.onPause: save dontTerminateEdit=1 dontSaveIfUnmodified=1), non con il comando .uno:Save del menu.
+	 */
 	function scheduleSave() {
 		clearTimeout(phone.saveTimer);
 		phone.saveTimer = setTimeout(function () {
-			if (!phone.saved) uno('.uno:Save', { DontTerminateEdit: { type: 'boolean', value: true } });
-		}, 4000);
+			if (phone.saved) return;
+			if (app.socket && app.socket.sendMessage) app.socket.sendMessage('save dontTerminateEdit=1 dontSaveIfUnmodified=1');
+			else if (app.map.save) app.map.save(true, true);
+		}, 8000);
 	}
 
 	function phoneDock(docType) {
