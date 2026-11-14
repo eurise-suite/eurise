@@ -22,8 +22,8 @@ object IconThemes {
     /** Stessi simboli della suite su un tondo chiaro nella tinta dell'app: per chi non vuole le icone scure. */
     const val EURISE_COLOR = "eurise_color"
 
-    /** Vero per i due temi della suite (simboli nel tondo). */
-    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR
+    /** Vero per i temi disegnati dalla suite (simboli nella forma): Eurise, a colori, iOS, Android, /e/OS. */
+    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR || IconStyles.isStyle(theme)
     const val SYSTEM = "system"
 
     /** Le azioni con cui i pacchetti di icone si fanno trovare dai launcher. */
@@ -99,6 +99,6 @@ object IconThemes {
     }
 
     /** Vero se il pacchetto del tema è ancora installato. */
-    fun exists(context: Context, theme: String): Boolean = theme == EURISE || theme == SYSTEM ||
+    fun exists(context: Context, theme: String): Boolean = theme == EURISE || theme == SYSTEM || IconStyles.isStyle(theme) ||
         runCatching { context.packageManager.getApplicationInfo(theme, 0); true }.getOrDefault(false)
 }

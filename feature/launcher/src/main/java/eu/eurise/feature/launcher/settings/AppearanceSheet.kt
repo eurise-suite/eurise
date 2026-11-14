@@ -136,6 +136,7 @@ fun AppearanceSheet(
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
             }
             IconThemeChooser(settings.iconTheme) { v -> onChange { it.copy(iconTheme = v) } }
+            if (eu.eurise.feature.launcher.apps.IconThemes.isSuite(settings.iconTheme)) IconShapeChooser(settings.iconShape) { v -> onChange { it.copy(iconShape = v) } }
             if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.EURISE) Column {
                 Text(stringResource(R.string.appearance_icon_colors), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
@@ -406,6 +407,36 @@ private fun Segmented(labels: List<String>, selected: Int, onPick: (Int) -> Unit
     }
 }
 
+/** Forma delle icone (tavola IconeStili): automatica (quella dello stile) o una delle cinque, per tutte le app. */
+@Composable
+private fun IconShapeChooser(current: String, onChoose: (String) -> Unit) {
+    val choices = listOf(
+        eu.eurise.feature.launcher.apps.IconStyles.SHAPE_AUTO to R.string.appearance_icon_shape_auto,
+        "circle" to R.string.appearance_icon_shape_circle, "rounded" to R.string.appearance_icon_shape_rounded,
+        "squircle" to R.string.appearance_icon_shape_squircle, "drop" to R.string.appearance_icon_shape_drop,
+        "square" to R.string.appearance_icon_shape_square,
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.appearance_icon_shape), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            choices.forEach { (value, label) ->
+                val on = value == current
+                Box(
+                    Modifier.clip(RoundedCornerShape(50))
+                        .background(if (on) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                        .clickable(role = Role.RadioButton) { onChoose(value) }
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                ) {
+                    Text(
+                        stringResource(label), fontSize = 13.5.sp, maxLines = 1, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** Tema delle icone: i tondi della suite, le icone di sistema o un pacchetto di icone installato. */
 @Composable
 private fun IconThemeChooser(current: String, onChoose: (String) -> Unit) {
@@ -417,6 +448,9 @@ private fun IconThemeChooser(current: String, onChoose: (String) -> Unit) {
     val choices = listOf(
         eu.eurise.feature.launcher.apps.IconThemes.EURISE to stringResource(R.string.appearance_icon_theme_eurise),
         eu.eurise.feature.launcher.apps.IconThemes.EURISE_COLOR to stringResource(R.string.appearance_icon_theme_eurise_color),
+        eu.eurise.feature.launcher.apps.IconStyles.IOS to stringResource(R.string.appearance_icon_theme_ios),
+        eu.eurise.feature.launcher.apps.IconStyles.MATERIAL to stringResource(R.string.appearance_icon_theme_material),
+        eu.eurise.feature.launcher.apps.IconStyles.EOS to stringResource(R.string.appearance_icon_theme_eos),
         eu.eurise.feature.launcher.apps.IconThemes.SYSTEM to stringResource(R.string.appearance_icon_theme_system),
     ) + packs.map { it.packageName to it.label }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

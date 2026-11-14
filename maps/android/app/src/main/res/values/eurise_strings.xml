@@ -216,4 +216,30 @@
   <string name="eurise_lv_weather">Weather on the route</string>
   <string name="eurise_lv_weather_sub">Open-Meteo · points rounded to about 1 km</string>
   <string name="eurise_lv_note">Everything appears in the privacy centre. Never phone identifiers, never the whole route.</string>
+
+  <!-- Benzinai col prezzo (MapAttivita). -->
+  <string name="eurise_fuel_title">Fuel stations</string>
+  <string name="eurise_fuel_close">Close</string>
+  <string name="eurise_fuel_cheap">Cheapest</string>
+  <string name="eurise_fuel_near">Nearest</string>
+  <string name="eurise_fuel_route">On the route</string>
+  <string name="eurise_fuel_petrol">Petrol</string>
+  <string name="eurise_fuel_diesel">Diesel</string>
+  <string name="eurise_fuel_lpg">LPG</string>
+  <string name="eurise_fuel_methane">Methane</string>
+  <string name="eurise_fuel_section">%1$s · %2$s</string>
+  <string name="eurise_fuel_within">within 5 km</string>
+  <string name="eurise_fuel_on_route">on your route</string>
+  <string name="eurise_fuel_self">self service</string>
+  <string name="eurise_fuel_served">served</string>
+  <string name="eurise_fuel_unit">€/l</string>
+  <string name="eurise_fuel_off">Prices come from the public file of the Italian Ministry, the same for everyone: only the request for the file leaves the phone, never your position. The nearest, cheapest and on-route stations are worked out here. You can turn it off in the privacy centre.</string>
+  <string name="eurise_fuel_turn_on">Turn on fuel prices</string>
+  <string name="eurise_fuel_failed">The prices could not be downloaded. Try again with a connection.</string>
+  <string name="eurise_fuel_retry">Try again</string>
+  <string name="eurise_fuel_loading">Reading the prices…</string>
+  <string name="eurise_fuel_none">No station with this fuel nearby.</string>
+  <string name="eurise_fuel_source">Prices reported by the operators to the Ministry (Osservaprezzi carburanti), updated every morning on the phone.</string>
+  <string name="eurise_sh_fuel">Fuel stations with prices</string>
+  <string name="eurise_sh_fuel_sub">cheapest, nearest, on the route</string>
 </resources>

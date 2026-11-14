@@ -186,6 +186,16 @@
     <string name="appearance_icon_theme_eurise">Eurise</string>
     <string name="appearance_icon_theme_eurise_color">Eurise a colori</string>
     <string name="appearance_icon_theme_system">Sistema</string>
+    <string name="appearance_icon_theme_ios">Stile iOS</string>
+    <string name="appearance_icon_theme_material">Stile Android</string>
+    <string name="appearance_icon_theme_eos">Stile /e/OS</string>
+    <string name="appearance_icon_shape">Forma</string>
+    <string name="appearance_icon_shape_auto">Dello stile</string>
+    <string name="appearance_icon_shape_circle">Cerchio</string>
+    <string name="appearance_icon_shape_rounded">Quadrato arrotondato</string>
+    <string name="appearance_icon_shape_squircle">Squircle</string>
+    <string name="appearance_icon_shape_drop">Goccia</string>
+    <string name="appearance_icon_shape_square">Quadrato</string>
     <string name="appearance_icon_theme_hint">Per altri temi installa un pacchetto di icone per launcher (per esempio da F-Droid): comparirà qui.</string>
     <string name="apps_select">Seleziona</string>
     <string name="apps_selected">%1$d selezionate</string>

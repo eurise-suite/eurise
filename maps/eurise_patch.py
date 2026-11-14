@@ -1056,3 +1056,14 @@ patch(layers, """    initRecycler(mRoot);
     return mRoot;""")
 print("eurise_patch: livelli e fonti (MapLivelli)")
 
+# Benzinai col prezzo (tavola MapAttivita): l'elenco della suite, aperto da «Cerca vicino» (EuriseSearchHome).
+patch(manifest, """    <activity
+        android:name="app.organicmaps.eurise.EuriseReportReviewActivity\"""", """    <activity
+        android:name="app.organicmaps.eurise.ui.EuriseFuelActivity"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+        android:exported="false" />
+
+    <activity
+        android:name="app.organicmaps.eurise.EuriseReportReviewActivity\"""")
+print("eurise_patch: benzinai col prezzo (MapAttivita)")
+

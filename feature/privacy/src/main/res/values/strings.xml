@@ -64,6 +64,8 @@
     <string name="pv_s_route_weather_d">per Eurise Mappe durante la guida: fino a 8 punti della strada, arrotondati a circa 1 km, con l\'ora di passaggio</string>
     <string name="pv_s_map_search">Ricerca su OpenStreetMap (Photon, komoot · Germania)</string>
     <string name="pv_s_map_reports">Note su OpenStreetMap (OpenStreetMap Foundation · Regno Unito)</string>
+    <string name="pv_s_fuel">Prezzi dei carburanti (Ministero delle Imprese · Italia)</string>
+    <string name="pv_s_fuel_d">per Eurise Mappe, al massimo una volta al giorno quando apri i benzinai: si scarica il file pubblico dei prezzi, uguale per tutti; non esce la posizione né altro, solo la richiesta del file</string>
     <string name="pv_s_map_reports_d">per Eurise Mappe, solo quando mandi le segnalazioni a fine viaggio, dopo averle viste: riceve punto, tipo, direzione e strada di ciascuna, come nota anonima e pubblica; niente account né dati del telefono</string>
     <string name="pv_s_map_search_d">per Eurise Mappe, solo quando le mappe del telefono non trovano un luogo: riceve le parole cercate e la lingua, mai la posizione</string>
     <string name="pv_s_routes_d">riceve partenza e arrivo, solo per il tempo di viaggio degli impegni</string>

@@ -85,6 +85,7 @@ private fun PrivacyService.title() = when (this) {
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather
     PrivacyService.MapSearch -> R.string.pv_s_map_search
     PrivacyService.MapReports -> R.string.pv_s_map_reports
+    PrivacyService.FuelPrices -> R.string.pv_s_fuel
 }
 
 private fun PrivacyService.detail() = when (this) {
@@ -99,6 +100,7 @@ private fun PrivacyService.detail() = when (this) {
     PrivacyService.RouteWeather -> R.string.pv_s_route_weather_d
     PrivacyService.MapSearch -> R.string.pv_s_map_search_d
     PrivacyService.MapReports -> R.string.pv_s_map_reports_d
+    PrivacyService.FuelPrices -> R.string.pv_s_fuel_d
 }
 
 /** Dove sta chi riceve i dati del servizio (il simbolo accanto al semaforo). */
@@ -108,13 +110,15 @@ private fun PrivacyService.where() = when (this) {
     PrivacyService.Routes -> Jurisdiction.EU // server OSRM di FOSSGIS, Germania
     PrivacyService.MapSearch -> Jurisdiction.EU // Photon di komoot, Germania
     PrivacyService.MapReports -> Jurisdiction.UK // OpenStreetMap Foundation, Regno Unito
+    PrivacyService.FuelPrices -> Jurisdiction.EU // Ministero delle Imprese e del Made in Italy, Roma
     PrivacyService.News, PrivacyService.Horoscope -> Jurisdiction.Various
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
 }
 
 /** Il grado di privacy effettivo: da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
 private fun PrivacyService.score(hiddenIp: Int = 0) = when (this) {
-    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope -> privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
+    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices ->
+        privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
     PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
     else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)
 }

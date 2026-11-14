@@ -416,7 +416,7 @@ public final class EuriseRouteWeather
    * Per «Livelli e fonti» (tavola MapLivelli): se il meteo sul percorso è acceso nel centro privacy. [done] riceve
    * null se l'app Eurise non c'è (allora la voce non si mostra). Thread principale.
    */
-  public static void status(@NonNull Context context, @NonNull java.util.function.Consumer<Boolean> done)
+  public static void status(@NonNull Context context, @NonNull androidx.core.util.Consumer<Boolean> done)
   {
     final Context app = context.getApplicationContext();
     IO.execute(() -> {
@@ -429,7 +429,7 @@ public final class EuriseRouteWeather
    * Accende o spegne il meteo sul percorso da «Livelli e fonti». Accenderlo mostra prima la stessa spiegazione della
    * guida (cosa esce, dove va, come si torna indietro); spegnerlo non chiede niente. [done] riceve lo stato vero.
    */
-  public static void set(@NonNull Context context, boolean on, @NonNull java.util.function.Consumer<Boolean> done)
+  public static void set(@NonNull Context context, boolean on, @NonNull androidx.core.util.Consumer<Boolean> done)
   {
     final Context app = context.getApplicationContext();
     final Runnable apply = () -> IO.execute(() -> {

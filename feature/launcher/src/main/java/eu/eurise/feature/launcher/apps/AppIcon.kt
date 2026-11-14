@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -196,6 +195,9 @@ val LocalAppIconColors = androidx.compose.runtime.compositionLocalOf { false }
 /** Tema delle icone scelto in Griglia e icone (vedi [IconThemes]). */
 val LocalIconTheme = androidx.compose.runtime.compositionLocalOf { IconThemes.EURISE }
 
+/** Forma delle icone scelta in Griglia e icone (vedi [IconStyles.shape]). */
+val LocalIconShape = androidx.compose.runtime.compositionLocalOf { IconStyles.SHAPE_AUTO }
+
 /** Colore del simbolo secondo la categoria della barra in cui sta l'app (fornito dalla Scrivania). */
 val LocalCategoryTint = androidx.compose.runtime.compositionLocalOf<(AppEntry) -> Color?> { { null } }
 
@@ -214,7 +216,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     var image by remember(entry.key, theme) { mutableStateOf<IconImage?>(null) }
     LaunchedEffect(entry.key, theme) { image = IconLoader.load(context, entry, px, theme) }
     val colorful = theme == IconThemes.EURISE_COLOR
-    val fromApp = LocalAppIconColors.current || colorful
+    val fromApp = LocalAppIconColors.current || colorful || IconStyles.isStyle(theme)
     var appTint by remember(entry.key) { mutableStateOf(AppColors.cached(entry)) }
     if (fromApp && entry.euriseSection == null) {
         LaunchedEffect(entry.key) { if (appTint == null) appTint = AppColors.suiteTint(context, entry) }
@@ -229,11 +231,23 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     // A colori (tavola IconeColori): tondo chiaro nella tinta (un po' più sfumato in alto a sinistra), di sera il tondo
     // perde luce ma resta colorato; il simbolo va da una tinta viva a una più profonda, chiara e brillante di sera.
     // Eurise (tavola IconeStili): tondo blu notte con la sfumatura diagonale e l'alone caldo, il simbolo nella tinta.
-    val symbolBrush = if (colorful) vividSymbol(tint, dark) else listOf(lerp(tint, Color.White, 0.3f), tint)
-    val round: Brush = if (colorful) {
-        val base = if (dark) lerp(tint, IconBackgroundDark, 0.55f) else lerp(tint, Color.White, 0.80f)
-        Brush.linearGradient(listOf(lerp(base, Color.White, if (dark) 0.06f else 0.45f), base))
-    } else EuriseRound
+    // Stili iOS, Android e /e/OS: il colore più vicino della palette dello stile (tavola IconeStili).
+    val style = if (IconStyles.isStyle(theme)) IconStyles.swatch(theme, tint) else null
+    val symbolBrush = when {
+        style != null -> listOf(style.symbol, style.symbol)
+        colorful -> vividSymbol(tint, dark)
+        else -> listOf(lerp(tint, Color.White, 0.3f), tint)
+    }
+    val round: Brush = when {
+        style != null -> Brush.verticalGradient(listOf(style.top, style.bottom))
+        colorful -> {
+            val base = if (dark) lerp(tint, IconBackgroundDark, 0.55f) else lerp(tint, Color.White, 0.80f)
+            Brush.linearGradient(listOf(lerp(base, Color.White, if (dark) 0.06f else 0.45f), base))
+        }
+        else -> EuriseRound
+    }
+    val shape = IconStyles.shape(LocalIconShape.current, theme)
+    val glow = theme == IconThemes.EURISE
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         val plain = image as? IconImage.Plain
         if (plain != null) {
@@ -241,10 +255,10 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         } else Box(
             Modifier
                 .size(size)
-                .shadow(if (colorful) 3.dp else 6.dp, CircleShape)
-                .clip(CircleShape)
+                .shadow(if (colorful || style != null) 3.dp else 6.dp, shape)
+                .clip(shape)
                 .background(round)
-                .then(if (colorful) Modifier else Modifier.background(EuriseGlow)),
+                .then(if (glow) Modifier.background(EuriseGlow) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {

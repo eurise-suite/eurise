@@ -211,4 +211,30 @@
   <string name="eurise_lv_weather">Meteo sul percorso</string>
   <string name="eurise_lv_weather_sub">Open-Meteo · punti arrotondati a circa 1 km</string>
   <string name="eurise_lv_note">Tutto compare nel centro privacy. Mai identificativi del telefono, mai il percorso intero.</string>
+
+  <!-- Benzinai col prezzo (MapAttivita). -->
+  <string name="eurise_fuel_title">Benzinai</string>
+  <string name="eurise_fuel_close">Chiudi</string>
+  <string name="eurise_fuel_cheap">Più economici</string>
+  <string name="eurise_fuel_near">Più vicini</string>
+  <string name="eurise_fuel_route">Sul percorso</string>
+  <string name="eurise_fuel_petrol">Benzina</string>
+  <string name="eurise_fuel_diesel">Gasolio</string>
+  <string name="eurise_fuel_lpg">GPL</string>
+  <string name="eurise_fuel_methane">Metano</string>
+  <string name="eurise_fuel_section">%1$s · %2$s</string>
+  <string name="eurise_fuel_within">entro 5 km</string>
+  <string name="eurise_fuel_on_route">sul tuo percorso</string>
+  <string name="eurise_fuel_self">self</string>
+  <string name="eurise_fuel_served">servito</string>
+  <string name="eurise_fuel_unit">€/l</string>
+  <string name="eurise_fuel_off">I prezzi arrivano dal file pubblico del Ministero delle Imprese, uguale per tutti: esce solo la richiesta del file, mai la tua posizione. Vicini, economici e sul percorso si calcolano qui. Lo spegni quando vuoi nel centro privacy.</string>
+  <string name="eurise_fuel_turn_on">Accendi i prezzi dei carburanti</string>
+  <string name="eurise_fuel_failed">Non sono riuscito a scaricare i prezzi. Riprova con la connessione.</string>
+  <string name="eurise_fuel_retry">Riprova</string>
+  <string name="eurise_fuel_loading">Leggo i prezzi…</string>
+  <string name="eurise_fuel_none">Nessun impianto con questo carburante qui vicino.</string>
+  <string name="eurise_fuel_source">Prezzi comunicati dai gestori al Ministero (Osservaprezzi carburanti), aggiornati ogni mattina sul telefono.</string>
+  <string name="eurise_sh_fuel">Benzinai col prezzo</string>
+  <string name="eurise_sh_fuel_sub">più economici, più vicini, sul percorso</string>
 </resources>

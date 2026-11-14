@@ -93,6 +93,8 @@ data class LauncherSettings(
     val appIconColors: Boolean = true,
     /** Tema delle icone: [IconThemes.EURISE] (tondi della suite), [IconThemes.SYSTEM] (icone originali) o il pacchetto di un tema installato. */
     val iconTheme: String = eu.eurise.feature.launcher.apps.IconThemes.EURISE,
+    /** Forma delle icone: «auto» (quella dello stile) o una delle [eu.eurise.feature.launcher.apps.IconStyles.shapes]. */
+    val iconShape: String = eu.eurise.feature.launcher.apps.IconStyles.SHAPE_AUTO,
     /** Nome per il saluto della home ("Buongiorno, …!"); vuoto per il solo saluto. */
     val userName: String = "",
     val accent: Accent = Accent.Default,
@@ -191,6 +193,7 @@ class SettingsStore(context: Context) {
             .putBoolean("varied_icons", next.variedIcons)
             .putBoolean("app_icon_colors", next.appIconColors)
             .putString("icon_theme", next.iconTheme)
+            .putString("icon_shape", next.iconShape)
             .putString("user_name", next.userName)
             .putString("accent", next.accent.encode())
             .putString("cards", next.cards.encode())
@@ -231,6 +234,7 @@ class SettingsStore(context: Context) {
         variedIcons = prefs.getBoolean("varied_icons", false),
         appIconColors = prefs.getBoolean("app_icon_colors", true),
         iconTheme = prefs.getString("icon_theme", null) ?: eu.eurise.feature.launcher.apps.IconThemes.EURISE,
+        iconShape = prefs.getString("icon_shape", null) ?: eu.eurise.feature.launcher.apps.IconStyles.SHAPE_AUTO,
         userName = prefs.getString("user_name", "").orEmpty(),
         accent = Accent.decode(prefs.getString("accent", null)),
         cards = decodeCards(prefs.getString("cards", null)),

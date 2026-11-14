@@ -162,6 +162,13 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
 
         if (near.isNotEmpty()) {
             Heading(stringResource(R.string.eurise_sh_near), c)
+            // I benzinai col prezzo del Ministero (tavola MapAttivita): più economici, vicini o sul percorso.
+            Card(c) {
+                Row2(c, Badge.Fuel, stringResource(R.string.eurise_sh_fuel), stringResource(R.string.eurise_sh_fuel_sub)) {
+                    EuriseFuelActivity.open(context)
+                }
+            }
+            androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 near.forEach { (_, res) ->
                     val label = stringResource(res)
@@ -257,7 +264,7 @@ private fun openDownloader(context: Context) {
     context.startActivity(i)
 }
 
-private enum class Badge { Calendar, Person, Clock }
+private enum class Badge { Calendar, Person, Clock, Fuel }
 
 @Composable
 private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: () -> Unit) {
@@ -271,6 +278,7 @@ private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: 
             Badge.Calendar -> (if (c === Notte) Color(0xFF2E3A55) else Color(0xFFDDE3F0)) to (if (c === Notte) Color(0xFFA9C1F2) else Color(0xFF3E5C8A))
             Badge.Person -> (if (c === Notte) Color(0xFF2B3B33) else Color(0xFFDCE7DF)) to (if (c === Notte) Color(0xFF9CC3A9) else Color(0xFF4F6B5A))
             Badge.Clock -> c.chip to c.muted
+            Badge.Fuel -> (if (c === Notte) Color(0xFF2B3B33) else Color(0xFFDCE7DF)) to (if (c === Notte) Color(0xFF9CC3A9) else Color(0xFF2F6B45))
         }
         Box(
             Modifier.size(34.dp).clip(if (badge == Badge.Person) CircleShape else RoundedCornerShape(11.dp)).background(tile),
@@ -280,6 +288,7 @@ private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: 
                 Badge.Calendar -> SearchIcons.calendar
                 Badge.Person -> SearchIcons.person
                 Badge.Clock -> SearchIcons.clock
+                Badge.Fuel -> SearchIcons.fuel
             }
             androidx.compose.foundation.Image(
                 androidx.compose.ui.graphics.vector.rememberVectorPainter(icon), null, Modifier.size(16.dp),
@@ -336,6 +345,9 @@ private object SearchIcons {
                 )
             }
         }.build()
+
+    /** La pompa del carburante (benzinai col prezzo). */
+    val fuel = icon("fuel", "M5 20V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15", "M4 20h11", "M7 8h5", "M14 10h2a1 1 0 0 1 1 1v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5")
 
     val calendar = icon("calendar", "M6.5 5h11a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z", "M3.5 10h17M8 3v4M16 3v4")
     val person = icon("person", "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8z", "M4.5 20a7.5 7.5 0 0 1 15 0")
