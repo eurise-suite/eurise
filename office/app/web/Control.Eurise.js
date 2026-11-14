@@ -1022,7 +1022,7 @@
 
 	function setupPhone() {
 		var map = app.map;
-		if (!map || !window.mode || !window.mode.isMobile() || window.ThisIsTheQtApp) return;
+		if (!map || !window.mode || !smallScreen() || window.ThisIsTheQtApp) return;
 		document.body.classList.add('eurise-tel');
 		editAtOnce(map);
 		function build() {
@@ -1046,8 +1046,15 @@
 	var trace = [];
 
 	function ready() {
-		return !!(window.app && app.map && app.map.on && window.mode && typeof window.mode.isMobile === 'function' &&
-			typeof window.mode.isTablet === 'function' && typeof window.mode.isDesktop === 'function');
+		var m = window.mode;
+		return !!(window.app && app.map && app.map.on && m && (typeof m.isMobile === 'function' || typeof m.isSmallScreenDevice === 'function') &&
+			typeof m.isTablet === 'function' && typeof m.isDesktop === 'function');
+	}
+
+	/** Schermo da telefono: isMobile in Collabora 25.04, isSmallScreenDevice nella 26.04 (guscio Linux). */
+	function smallScreen() {
+		var m = window.mode;
+		return typeof m.isMobile === 'function' ? m.isMobile() : m.isSmallScreenDevice();
 	}
 
 	(function waitForMap(tries) {
