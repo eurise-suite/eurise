@@ -1963,7 +1963,30 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   presentazioni, pubblicato alle 10:10 UTC dalla prova 43583694984) e `eurise-office-motore-debug.apk` (giro 43583760554,
   card e tendine). Prima, il motore dei ritocchi del tablet (giro 43577666467).
 
-**Prossimo passo**: il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni; poi il
-computer (OffComputer); poi motore a richiesta (OffMotore: capire se i file del
+**14 novembre, primo pomeriggio: Office sul computer, prototipo (OffComputer, approvato «vai»)**
+- Strada: **Collabora Office per Linux da Flathub** (`com.collaboraoffice.Office`, coda-26.04.5.3, guscio Qt `coda-qt`
+  con QtWebEngine) **con la nostra interfaccia web sopra**: stesso motore e stessa interfaccia di Collabora, come su
+  Android. Il guscio carica `/app/share/coolwsd/browser/dist/cool-qt.html` (non `cool.html`, che è quella del server);
+  lì si aggiungono `Control.Eurise.js` (subito dopo `bundle.js`, `defer`) ed `eurise.css`.
+- Prova automatica `office-computer.yml` + `office/computer/prova.sh` (si avvia a mano o con un push su
+  `office/computer/**` o `office/app/web/**`): installa il pacchetto da Flathub, inietta la nostra interfaccia, apre
+  lettera.docx, conti.xlsx e slide.pptx su Xvfb 1440×900 (`--filesystem=$HOME/Documents`, Esc sul benvenuto),
+  fotografa aperto e con Ctrl K, e pubblica schermate, log e riassunto in **`office-computer-schermate`**. Lo script
+  `eurise-diag.js` (solo nella prova) scrive in console `EURISE-DIAG` con lo stato della nostra interfaccia e
+  `euriseOffice.trace`. Prima prova buona: giro 43596… del 14 novembre (nastro Eurise in tutti e tre i formati).
+- Nel codice condiviso (Control.Eurise.js): nel guscio Qt (`ThisIsTheQtApp`) si accende il nastro del tablet con la
+  classe `eurise-desk`, mai la dock del telefono; i messaggi `EURISE` non partono (nel guscio Qt andrebbero al motore);
+  l'avvio aspetta `window.mode` pronto e usa `isSmallScreenDevice` dove `isMobile` non c'è più (Collabora 26.04).
+  Su Android il comportamento non cambia, ma **il motore Android con queste modifiche non è stato ancora compilato
+  né provato** (giri office-app annullati): al prossimo giro del motore, prova `fonte=motore` sul telefono e sul tablet.
+- Differenze ancora da chiudere rispetto alla tavola OffComputer: una sola riga per schede, annulla/ripeti, Cerca un
+  comando, stato di salvataggio e Condividi (ora sono intestazione + schede come sul tablet); colonna a sinistra
+  Struttura / Collegato a / In Eurise File al posto del pannello Proprietà di Collabora (ora a destra) e del
+  Navigatore; il giro guidato di Collabora («Welcome to Collabora Online») da spegnere; le icone della Suite non si
+  vedono (cartella delle immagini diversa nella 26.04); interfaccia in italiano nella prova (LANG); le schede dei
+  documenti in alto e «Apri da Eurise File» sono del guscio (passo successivo: guscio nostro, Flatpak Eurise).
+
+**Prossimo passo**: il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
+OffComputer: avvicinare il prototipo alla tavola (punti qui sopra), poi il guscio nostro e il Flatpak; poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
