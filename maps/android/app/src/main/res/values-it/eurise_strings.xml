@@ -164,6 +164,8 @@
     <string name="eurise_guide_right_summary">La barra dei comandi a destra sotto il pollice e la colonna della manovra a sinistra. Spento: barra a sinistra, per chi è mancino</string>
     <string name="eurise_landscape">Cielo e stagioni</string>
     <string name="eurise_landscape_summary">Nel finestrino degli incroci, delle uscite e delle rotonde, anche in Android Auto. Tutto disegnato, niente da scaricare.</string>
+    <string name="eurise_sky_map">Cielo e colline sopra la mappa</string>
+    <string name="eurise_sky_map_summary">In guida la mappa in prospettiva finisce su colline e cielo, coi colori del momento e della stagione. Spento: la vista di prima, senza cielo</string>
     <string name="eurise_sky_weather">Cielo dal meteo</string>
     <string name="eurise_sky_weather_summary">Sette tempi, di giorno, di sera e di notte: lo stesso meteo che la guida già mostra, nessun dato in più. Spento: solo l\'ora del giorno</string>
     <string name="eurise_seasons">Stagioni</string>

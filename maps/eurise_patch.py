@@ -918,6 +918,13 @@ patch(res / "xml" / "prefs_navigation.xml", """    android:key="eurise_limit_not
     app:iconSpaceReserved="false">
     <SwitchPreferenceCompat
       android:defaultValue="true"
+      android:key="eurise_sky_map"
+      android:title="@string/eurise_sky_map"
+      android:summary="@string/eurise_sky_map_summary"
+      android:widgetLayout="@layout/preference_switch"
+      app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+      android:defaultValue="true"
       android:key="eurise_sky_weather"
       android:title="@string/eurise_sky_weather"
       android:summary="@string/eurise_sky_weather_summary"
@@ -1110,3 +1117,133 @@ patch(manifest, """    <activity
         android:name="app.organicmaps.eurise.EuriseReportReviewActivity\"""")
 print("eurise_patch: benzinai col prezzo (MapAttivita)")
 
+
+# Cielo e colline in guida (tavola MapCieloColline, approvata il 14 novembre). Il disegno sta in maps/engine/libs/
+# drape_frontend/eurise_sky.{hpp,cpp} (copiati qui sotto) e in EuriseSky.java (l'immagine, con i colori di
+# EuriseLandscape); qui gli agganci: inclinazione in guida, disegno dopo palazzi e percorso, ponte da Java.
+engine = Path(__file__).resolve().parent / "engine"
+for f in engine.rglob("*"):
+    if f.is_file():
+        dest = root / f.relative_to(engine)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(f, dest)
+patch(libs / "drape_frontend" / "CMakeLists.txt", "  screen_quad_renderer.cpp\n  screen_quad_renderer.hpp\n",
+      "  screen_quad_renderer.cpp\n  screen_quad_renderer.hpp\n  eurise_sky.cpp\n  eurise_sky.hpp\n")
+
+sb_cpp = libs / "geometry" / "screenbase.cpp"
+patch(sb_cpp, "static std::atomic<bool> g_isCarNavigationView{false};\n", """static std::atomic<bool> g_isCarNavigationView{false};
+
+// Eurise: con il cielo acceso la mappa in guida si inclina fino a 70-71° invece di 53/55°, ma il piano resta grande
+// quanto con l'inclinazione di CoMaps (CalculateScale3d): stesse tessere, stessa vista vicino all'auto, e il bordo
+// lontano scende sotto il bordo alto dello schermo, con circa il 27% di cielo come nella tavola.
+static std::atomic<bool> g_euriseSky{false};
+double constexpr kEuriseSkyCarAngle = math::pi * 70.0 / 180.0;
+double constexpr kEuriseSkyAngle = math::pi * 71.0 / 180.0;
+""")
+patch(sb_cpp, "// static\ndouble ScreenBase::CalculateAutoPerspectiveAngle(double scale)\n{",
+      "static double CoMapsAutoPerspectiveAngle(double scale)\n{")
+patch(sb_cpp, "  return kMaxPerspectiveAngle2 * 0.99;\n}\n", """  return kMaxPerspectiveAngle2 * 0.99;
+}
+
+// static
+double ScreenBase::CalculateAutoPerspectiveAngle(double scale)
+{
+  double const angle = CoMapsAutoPerspectiveAngle(scale);
+  if (!g_euriseSky || angle <= 0.0)
+    return angle;
+  // Stessa salita di CoMaps col cambiare della scala, ma fino all'angolo del cielo.
+  return g_isCarNavigationView ? angle / kCarPerspectiveAngle * kEuriseSkyCarAngle
+                               : angle / kMaxPerspectiveAngle2 * kEuriseSkyAngle;
+}
+
+// static
+void ScreenBase::SetEuriseSky(bool enabled)
+{
+  g_euriseSky = enabled;
+}
+
+// static
+bool ScreenBase::IsEuriseSky()
+{
+  return g_euriseSky;
+}
+""")
+patch(sb_cpp, "double ScreenBase::CalculateScale3d(double rotationAngle) const\n{\n",
+      """double ScreenBase::CalculateScale3d(double rotationAngle) const
+{
+  // Eurise: col cielo il piano non cresce oltre quello dell'inclinazione piena di CoMaps (vedi g_euriseSky).
+  if (g_euriseSky)
+    rotationAngle = std::min(rotationAngle, (g_isCarNavigationView ? kCarPerspectiveAngle : kMaxPerspectiveAngle2) * 0.99);
+
+""")
+patch(sb_cpp, "#include <atomic>\n", "#include <algorithm>\n#include <atomic>\n")
+patch(libs / "geometry" / "screenbase.hpp", "  static bool IsCarNavigationView();\n", """  static bool IsCarNavigationView();
+  /// Eurise: cielo e colline in guida (drape_frontend/eurise_sky): la prospettiva automatica si inclina di più.
+  static void SetEuriseSky(bool enabled);
+  static bool IsEuriseSky();
+""")
+
+fr_cpp = libs / "drape_frontend" / "frontend_renderer.cpp"
+patch(fr_cpp, '#include "drape_frontend/drape_notifier.hpp"\n',
+      '#include "drape_frontend/drape_notifier.hpp"\n#include "drape_frontend/eurise_sky.hpp"\n')
+patch(fr_cpp, """      RenderRouteLayer(modelView);
+    }
+
+    m_context->Clear(dp::ClearBits::DepthBit, dp::kClearBitsStoreAll);
+""", """      RenderRouteLayer(modelView);
+    }
+
+    // Eurise: cielo e colline sopra il bordo lontano della mappa, davanti a palazzi e percorso, sotto scritte e segni.
+    EuriseSkyRender(m_context, make_ref(m_gpuProgramManager), modelView);
+
+    m_context->Clear(dp::ClearBits::DepthBit, dp::kClearBitsStoreAll);
+""")
+t = fr_cpp.read_text()
+if t.count("  m_screenQuadRenderer.reset();\n") != 2:
+    sys.exit(f"eurise_patch: in {fr_cpp} m_screenQuadRenderer.reset() non compare due volte")
+fr_cpp.write_text(t.replace("  m_screenQuadRenderer.reset();\n", "  m_screenQuadRenderer.reset();\n  EuriseSkyReset();\n"))
+
+patch(fw_cpp, '#include "drape_frontend/user_event_stream.hpp"\n',
+      '#include "drape_frontend/eurise_sky.hpp"\n#include "drape_frontend/user_event_stream.hpp"\n')
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto""", """// Eurise: cielo e colline in guida. pixels = ARGB di Android (righe dall'alto); null = spento (vista di CoMaps).
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseSetSky(JNIEnv * env, jclass, jintArray pixels,
+                                                                              jint width, jint height)
+{
+  std::vector<uint8_t> rgba;
+  bool on = pixels != nullptr && width > 0 && height > 0 && env->GetArrayLength(pixels) >= width * height;
+  if (on)
+  {
+    rgba.resize(static_cast<size_t>(width) * height * 4);
+    jint * argb = env->GetIntArrayElements(pixels, nullptr);
+    for (size_t i = 0, n = static_cast<size_t>(width) * height; i < n; ++i)
+    {
+      auto const c = static_cast<uint32_t>(argb[i]);
+      rgba[i * 4 + 0] = static_cast<uint8_t>(c >> 16);
+      rgba[i * 4 + 1] = static_cast<uint8_t>(c >> 8);
+      rgba[i * 4 + 2] = static_cast<uint8_t>(c);
+      rgba[i * 4 + 3] = static_cast<uint8_t>(c >> 24);
+    }
+    env->ReleaseIntArrayElements(pixels, argb, JNI_ABORT);
+  }
+  df::EuriseSkySetImage(std::move(rgba), on ? width : 0, on ? height : 0);
+  ScreenBase::SetEuriseSky(on);
+  frm()->InvalidateRendering();
+}
+
+// Eurise: la strada sotto l'auto per Android Auto""")
+patch(fw_java, "  public static native void nativeResetRoadSpeedLimit();\n", """  public static native void nativeResetRoadSpeedLimit();
+  /** Eurise: immagine del cielo e delle colline in guida (ARGB, righe dall'alto); null = spento. */
+  public static native void nativeEuriseSetSky(@androidx.annotation.Nullable int[] pixels, int width, int height);
+""")
+
+patch(nav, """    if (show && !UiUtils.isVisible(mFrame))
+      collapseNavMenu();
+    UiUtils.showIf(show, mFrame);""", """    if (show && !UiUtils.isVisible(mFrame))
+      collapseNavMenu();
+    UiUtils.showIf(show, mFrame);
+    app.organicmaps.eurise.EuriseSky.guide(mFrame.getContext(), show);""")
+patch(nav, """    mNavMenu.update(info);
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);""", """    mNavMenu.update(info);
+    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
+    app.organicmaps.eurise.EuriseSky.tick(mFrame.getContext());""")
+print("eurise_patch: cielo e colline in guida (MapCieloColline)")

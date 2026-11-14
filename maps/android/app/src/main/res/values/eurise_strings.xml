@@ -167,6 +167,8 @@
     <string name="eurise_guide_right_summary">The control bar on the right under your thumb, the manoeuvre column on the left. Off: bar on the left, for left-handed people</string>
     <string name="eurise_landscape">Sky and seasons</string>
     <string name="eurise_landscape_summary">In the junction, exit and roundabout window, Android Auto too. All drawn, nothing to download.</string>
+    <string name="eurise_sky_map">Sky and hills above the map</string>
+    <string name="eurise_sky_map_summary">In guidance the 3D map ends on hills and sky, in the colours of the moment and the season. Off: the previous view, no sky</string>
     <string name="eurise_sky_weather">Sky from the weather</string>
     <string name="eurise_sky_weather_summary">Seven kinds of weather, by day, evening and night: the same weather the guidance already shows, no extra data. Off: time of day only</string>
     <string name="eurise_seasons">Seasons</string>

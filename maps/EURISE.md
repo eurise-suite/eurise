@@ -124,3 +124,18 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
 - Simboli: `res/drawable/eurise_rep_*.xml` (riquadro chiaro nella tinta, disegno della tavola), `eurise_ic_flag.xml`.
 - Non ancora: la barra in orizzontale (Segnala, Sosta, Voce, Insieme, Fine: tavola MapOrizzontaleGuida); le segnalazioni
   brevi disegnate sulla mappa (oggi solo l'avviso).
+
+## Cielo e colline in guida (14 novembre, notte; tavola MapCieloColline)
+- `geometry/screenbase.cpp` (da `eurise_patch.py`): con `ScreenBase::SetEuriseSky(true)` la prospettiva automatica sale
+  fino a 70° (Android Auto) o 71° (telefono) invece di 53°/55°, con la stessa salita al cambiare della scala; il piano
+  della mappa (`CalculateScale3d`) resta grande quanto con l'angolo pieno di CoMaps. Stesse tessere e stessa vista vicino
+  all'auto; il bordo lontano scende sotto il bordo alto dello schermo (circa il 27% di cielo). Calcoli con le matrici
+  di `SetRotationAngle`: alzare l'angolo senza fermare il piano non funziona (oltre 60° la formula del piano diverge).
+- `maps/engine/libs/drape_frontend/eurise_sky.{hpp,cpp}`: disegna l'immagine del cielo con il programma `ScreenQuad`
+  (nessuno shader nuovo), in `FrontendRenderer::RenderScene` dopo palazzi e percorso, prima di scritte e segni. Otto
+  triangoli calcolati a ogni fotogramma dagli spigoli del piano (`PtoP3d`): cielo fino al bordo, colline sotto il bordo
+  e nei due cunei ai lati dove la mappa lontana non arriva al bordo dello schermo. La riga 0,8 dell'immagine cade sul bordo.
+- `EuriseSky.java`: l'immagine (mezza risoluzione) con `EuriseLandscape` (cielo dal meteo, sole o luna, nuvole, pioggia o
+  neve, colline e alberelli della stagione, più scuro la sera); passa al motore con `Framework.nativeEuriseSetSky`.
+  Si accende con la guida (`NavigationController.show`), si rifà a ogni rotazione e ogni 5 minuti, si spegne a fine guida
+  o con l'interruttore «Cielo e colline sopra la mappa» (Navigazione › Cielo e stagioni, acceso di base: nulla esce).

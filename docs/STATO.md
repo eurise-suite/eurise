@@ -2465,3 +2465,15 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
 - **Prossima tappa proposta per questa linea di lavoro** (Mappe la segue l'altra chat): la **Tastiera**, lavoro principale dopo
   Mappe; prima le prove del proprietario su giro 539 e Office 44. Restano di Alfred: sveglia (AlfSveglia), voce in Mappe
   (AlfMappe), voce più «da maggiordomo», il PC come cervello.
+
+## 14 novembre, notte: cielo e colline nel motore della mappa (ramo `brand`) · Mappe 47
+- **Fatto in codice** (tavola MapCieloColline approvata): dettagli in `maps/EURISE.md`, «Cielo e colline in guida».
+- **Correzione dell'analisi di ieri**: alzare l'angolo a 66° non basta e anzi rompe la vista, perché CoMaps calcola la
+  grandezza del piano della mappa in modo che il bordo lontano tocchi sempre il bordo alto dello schermo (oltre 60° la
+  formula diverge). La via giusta: angolo più alto (70°/71°) **e** piano fermo alla grandezza di oggi. Così niente tessere
+  in più (né CPU né batteria), la strada vicino all'auto resta uguale, e il bordo scende al 27% dello schermo.
+- **Da provare sul telefono**: in guida, sotto la scheda della manovra, cielo e colline al posto della mappa lontana; che
+  non ci siano strisce vuote ai lati in alto; che il colore cambi la sera e col meteo; in orizzontale; con l'interruttore
+  «Cielo e colline sopra la mappa» spento torna la vista di prima. In Android Auto il cielo c'è anche lì (l'immagine è
+  fatta sulla misura del telefono: sole e nuvole possono sembrare un po' schiacciati).
+- **Da guardare**: le scritte lontane possono comparire sopra le colline; il cielo è fermo (le nuvole non scorrono).

@@ -182,6 +182,12 @@ public final class EuriseLandscape
     return P[s.tempo.ordinal()][m];
   }
 
+  /** Il colore del cielo in basso, verso l'orizzonte (per schiarire le colline lontane, EuriseSky). */
+  public static int skyBottom(@NonNull State s)
+  {
+    return palette(s)[1];
+  }
+
   /** Il prato, alto e basso: dalla stagione; la neve lo imbianca. */
   @NonNull
   public static int[] ground(@NonNull State s)
