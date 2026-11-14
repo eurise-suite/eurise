@@ -2097,6 +2097,13 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   suggerimento); Condividi con la sola icona (`.eurise-share.icon`). Verificato sul computer (prova 43626971065: ci sta
   tutto anche nel foglio). Tavole OffOggiTablet e OffOggiComputer aggiornate.
 
+- **Consegnato (14 novembre, 21:30 UTC)**: motore del giro 43627518156 (era in coda dietro il giro del ramo brand, stessa
+  coda `group: office-app`), provato su telefono (prova 43640664152) e tablet (prova 43641842529): intestazione Perla
+  senza cornici, riga unica sul tablet, motore vivo nei tre formati e nei dieci giri di lavoro lungo. Office invariato
+  (15:51). **Da rifare**: il segnaposto del cursore resta la goccia grigia di Collabora (la regola su
+  `.leaflet-cursor-handler` non lo prende: nella 25.04 Android ha un altro elemento, da trovare nel DOM); il dialogo di
+  caricamento nuovo non compare nelle schermate (la prova non fotografa durante l'apertura).
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
