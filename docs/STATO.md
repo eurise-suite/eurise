@@ -47,8 +47,8 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
   Galleria e le tavole sulla tela.
 - **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
   registrazione di «Eurise» (proprietario).
-- **Suonerie e sfondo di blocco** (richiesta del 14 novembre, sera; tavole SuoSuonerie, SuoTaglia, SuoRegole, SfoBlocco sulla
-  tela, pagina «Suonerie e sfondo», **da approvare**): vedi la sezione in fondo.
+- **Suonerie e sfondo di blocco**: tavole approvate e in codice (14 novembre, sera). Da provare sul telefono; restano: ascoltare
+  le suonerie sintetizzate e ritoccarle se serve (scripts/suoni.py), sfondo di blocco sulle ROM che lo ignorano.
 - In fondo: computer (vedi sotto), Password Famiglia, kDrive (bloccato da Infomaniak).
 
 ## Metodo concordato con il proprietario
@@ -2364,3 +2364,25 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   `EuriseLandscape.Festa` ha COMPLEANNO (tre palloncini legati al primo albero) e ANNIVERSARIO (sei cuoricini nel cielo),
   che passano davanti alle feste. Interruttore «I tuoi giorni» in Navigazione › Cielo e stagioni (acceso di base: nulla esce).
 - Da provare: segnare il proprio compleanno di oggi in Calendario › Date importanti e aprire un incrocio in guida.
+
+## 14 novembre, sera: suonerie e sfondo di blocco in codice (ramo `brand`)
+- **Approvate dal proprietario** le tavole SuoSuonerie, SuoTaglia, SuoRegole, SfoBlocco («Ok, procedi»).
+- **Dove**: Scrivania › Griglia e icone › «Suoni» e «Sfondo · Anche sulla schermata di blocco».
+- **Suoni** (`feature/launcher/.../sounds/`): `SoundLibrary` (suoni nell'APK in `assets/sounds`, pacchetto da
+  `releases/download/suoni/suoni.zip`, copia in Ringtones/Eurise via MediaStore, suoneria di sistema con WRITE_SETTINGS,
+  `CUSTOM_RINGTONE` del contatto con WRITE_CONTACTS), `SoundRules` (`SoundDecider` puro con test, `SoundStore`),
+  `SoundPlayer`/`SoundRouter` (dall'ascolto delle notifiche; suona solo se il canale dell'app è senza suono, letto da
+  `Ranking.channel`; segna in `app_sounds` chi suona ancora da sola per il tasto «Togli il suono di…»), `AudioCut` (MediaCodec,
+  AAC in `files/sounds/mine`), `Chorus` (ritornello stimato da volume e passaggi per lo zero, con test), schermate
+  `SoundsScreen`, `CutScreen`, `RulesScreen`.
+- **Suoni sintetizzati**: `scripts/suoni.py` (numpy + ffmpeg/libvorbis, CC0): 8 nell'APK (alba, vetro, campanelle, gocce,
+  bolla, campanella, avviso, lieve; 260 KB) e 13 nel pacchetto (altri 7 originali e 6 classici: Per Elisa, La primavera,
+  Il mattino, Piccola serenata notturna, Inno alla gioia, Gymnopédie n. 1). Il workflow `suoni.yml` rigenera e pubblica il
+  pacchetto quando cambia lo script; i file dell'APK vanno ricopiati a mano (`python3 scripts/suoni.py out` → `out/apk`).
+  `assets/sounds/pack.txt` è l'indice del pacchetto (per mostrare i classici prima di scaricarli).
+- **Sfondo sul blocco** (`home/LockWallpaper.kt`, `LockWallpaperScreen.kt`): `drawScene` estratta da `SceneBackground`;
+  disegno su bitmap con `CanvasDrawScope`, `WallpaperManager.setBitmap(FLAG_LOCK)` solo quando cambia la scena (hash), dalla
+  Scrivania e da `LockWallpaperWorker` ogni ora (solo se «Segue momento, meteo e feste»); «Uno diverso»: scena scelta o foto;
+  «Solo la Scrivania» rimette lo sfondo di sistema (`clear(FLAG_LOCK)`).
+- **Da guardare sul telefono**: qualità delle suonerie; che WhatsApp con il suono del canale tolto suoni con Eurise; suoneria
+  per persona con Eurise Telefono; sfondo del blocco (alcune ROM ignorano il FLAG_LOCK di terze parti).
