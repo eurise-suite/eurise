@@ -163,7 +163,18 @@
 		save: [['m', 'M5 4h11.5L19.5 7v13H5z M8 4v5h7V4'], ['a', 'M8 20v-6h8v6']],
 		undo: [['m', 'M9 5L4 10l5 5 M4 10h10.5a5 5 0 0 1 0 10H11']],
 		redo: [['m', 'M15 5l5 5-5 5 M20 10H9.5a5 5 0 0 0 0 10H13']],
-		morebutton: [['m', 'M8 16L16 8 M10 8h6v6']]
+		morebutton: [['m', 'M8 16L16 8 M10 8h6v6']],
+		// Nomi con cui Collabora chiede alcune di queste icone (iconURLAliases di LOUtil).
+		insertsymbol: 'charmapcontrol',
+		insertrowsmenu: 'insertrowsafter',
+		insertcolumnsmenu: 'insertcolumnsafter',
+		drawchart: 'insertobjectchart',
+		acceptchanges: 'accepttrackedchanges',
+		inserthyperlink: 'hyperlinkdialog',
+		fillcolor: 'backgroundcolor',
+		datefield: 'insertdatefield',
+		shownote: 'insertannotation',
+		leftindent: 'incrementindent'
 	};
 
 	var ICON_CACHE = {};
