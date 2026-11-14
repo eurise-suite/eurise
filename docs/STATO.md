@@ -15,8 +15,11 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 Quando il proprietario chiede «cosa c'è ancora da fare», in generale o su un'app, si risponde **da qui** (e dalle ultime
 sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
 - **Mappe**
-  - Passi dell'interfaccia rifatta: e) guida in orizzontale (MapOrizzontaleGuida, con la scena dell'incrocio a destra);
-    f) livelli, segnala, esplora, attività. Fatti: d) percorso, e) velocità, incrocio, rotonda, Segnala in guida.
+  - Passi dell'interfaccia rifatta: f) esplora (MapEsplora: nomi delle vie, «Monza (MB)», orizzonte col meteo), attività
+    (MapAttivita: benzinai col prezzo MIMIT, negozi), voci mancanti di Livelli (orizzonte, cartelli, carburanti, traffico).
+    Fatti: d) percorso, e) velocità, incrocio, rotonda, Segnala in guida, guida in orizzontale; f) Livelli e fonti (parte).
+  - Scene della guida: oggi solo uscite e rotonde (lato e angolo veri dalla forma del percorso); per gli incroci normali
+    non c'è una scena (solo la freccia di CoMaps): servirebbe una tavola.
   - Segnalazioni brevi (lavori, coda, pericolo) condivise con gli altri: serve un servizio comune, da decidere.
   - **Km vero su autostrade, superstrade e provinciali** («Sei su A51 · km 12,4», per soccorsi e carro attrezzi): le mappe di
     CoMaps non hanno le pietre miliari. Strada scelta (13 novembre): un **file piccolo a parte** con le pietre miliari di
@@ -37,9 +40,9 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
 - **Alfred**: sveglia di Alfred (AlfSveglia), voce di Alfred in Mappe (AlfMappe). Voce più «da maggiordomo» (domanda del
   13 novembre, notte): oggi Riccardo (Piper, italiano neutro); due strade proposte, da scegliere (vedi in fondo).
 - **Tastiera**: lavoro principale dopo Mappe.
-- **Icone** in codice: simboli nuovi, sfumatura e alone della stellina negli APK e nei temi; stili iOS, Android, /e/OS;
-  forma a scelta in «Griglia e icone»; iniziale come ripiego; «Eurise a colori» con i simboli nuovi (tavola IconeColori,
-  approvata con il papillon morbido e le icone scure, 13 novembre, sera).
+- **Icone**: fatti (14 novembre) icone degli APK (`scripts/icone.py`), simboli nuovi e sfondi nei temi «Eurise» ed «Eurise a
+  colori». Restano: stili iOS, Android, /e/OS; forma a scelta in «Griglia e icone»; iniziale come ripiego; icone di Eurise
+  (simbolo della suite), AI (provvisoria) e Office (del motore).
 - **Privacy**: semaforo a 10 tacchette con la sigla del paese in codice (13 novembre, sera); restano backup, Password,
   Galleria e le tavole sulla tela.
 - **Nomi**: verifica su TMview dei nomi scelti (la fa il proprietario); nome della Scrivania (Benvenuto, Casimiro, Larino);
@@ -2122,4 +2125,41 @@ Alfred: voci scaricate ma mute, «Ascolta una prova» chiude Voce, non capisce i
   schede private; nei segnalibri solo dei siti già aperti.
 - **Richieste nuove**: barra di ricerca del Browser spostabile (in alto/di lato, trascinabile giù col pollice): prima la
   tavola. Office: «rapporto del problema» da confermare.
+
+## 14 novembre, notte: lavoro da solo mentre il proprietario dorme (ramo `brand`) · giro 447, Mappe 35, poi pulizia
+Richiesta del proprietario: correggere quanto annotato, finire Mappe, riepilogo, revisione e pulizia di tutto il codice.
+Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ tema scuro di notte); Alfred rispondeva
+**«Mi scusi?»**; barra del Browser **in alto**, da abbassare con lo scorrimento come nelle altre schermate, **senza tavola**.
+- **Mappe**: guida in orizzontale (MapOrizzontaleGuida: barra a sinistra Segnala/Sosta/Voce/Insieme/Fine con i pulsanti di
+  CoMaps rimasti nel layout; colonna a destra con cartello, scena, corsie, arrivo; layout nostri in `res/layout-land`,
+  `-h400dp-land`, `-w1020dp-land`; `EuriseGuidaOrizzontale.kt`). Android Auto in «Automatico»: notte anche dopo il tramonto
+  (patch a `car/util/ThemeUtils`). `TurnGeometry` (ex RoundaboutTurn): angolo vero anche per le uscite (il lato della rampa
+  segue la strada). Livelli e fonti (MapLivelli, parte: velocità e limiti, autovelox, meteo sul percorso;
+  `EuriseLivelli.kt` sotto i livelli di CoMaps).
+- **Icone nuove** (IconeStili/IconeColori): `scripts/icone.py` genera primo piano, fondo, monocromatico e icona adattiva
+  di 14 icone (Orologio, File, Scanner, Voce=papillon, Browser, Email, Chat, Messaggi, Telefono, Contatti, Galleria,
+  Password, Tastiera, Mappe; prima di Android 8 a tinte piene). Scrivania: `SuiteSymbols` (core/designsystem), tema
+  «Eurise» con sfumatura e alone, «Eurise a colori» con il simbolo più vivo (`vividSymbol`).
+- **Alfred/Voce**: «Mi scusi?» era Whisper che inventa su audio debole. Voce normalizza il volume (picco 0,9, al massimo
+  ×8) e scarta le frasi fatte («Mi scusi?», «Grazie.», «Sottotitoli…» → «non ho sentito»); comandi con il contesto pieno
+  e frasi d'esempio.
+- **Browser**: Impostazioni › Barra dell'indirizzo: in basso / in alto; in alto si tira giù col pollice e torna su alla
+  pagina dopo. `browser-debug.apk` ora è in apk-prova (prima il lavoro falliva e mancava).
+- **Revisione del codice** (strumenti scritti per l'occasione, fuori dal repository; detekt non si può eseguire qui):
+  116 import non usati, 97 testi mai usati (verificati su tutto il repository), codice morto (SummaryBoard ~400 righe,
+  CategoryBar, openWebSearch, saveToPhone, BigButton, PillLabel), `collectAsStateWithLifecycle` al posto di
+  `collectAsState` (8 file), un flusso dei Farmaci che si riapriva a ogni ridisegno, `Context.activity()` in un posto solo
+  in Mappe. Nessun uso di material-icons, GlobalScope, log di debug. Debito annotato (non toccato di notte, serve la prova
+  sul telefono): componenti copiati tra le app (Chip ×12, Card ×11, Pill ×10, SwitchRow ×7, Field ×6) da portare in
+  `core/designsystem`; file molto lunghi (LauncherScreen 1734 righe, PasswordApp 1355, DriveRoute 1305) da dividere.
+
+## Punto di ripartenza (14 novembre, mattina)
+- **Ramo `brand`. APK in apk-prova: giro 447 e Mappe 35** (poi la pulizia e Livelli: vedi l'ultimo giro riuscito).
+- **Da provare**: Mappe sul telefono (Avvia la navigazione, Parti ora), guida in orizzontale, auto di notte, rotonde e
+  uscite, Livelli; icone nuove (APK e Scrivania); Alfred (voce, «Mi scusi?»); Browser (password, schermo nero, favicon,
+  schede strette, barra in alto); tastiera (il proprietario la sta usando).
+- **Domande aperte**: rapporto del problema in Office (sì/no); voce di Alfred più «da maggiordomo» (a/b); NordVPN,
+  Traduzione, Borsa e Video; tavola per gli incroci normali (scena come uscite e rotonde?).
+- **Prossimo**: Mappe f) Esplora e Attività (benzinai MIMIT), mezzi (MapMezzi/MapLontano, prima le fonti), poi i componenti
+  comuni in `core/designsystem`, sveglia di Alfred, tastiera.
 
