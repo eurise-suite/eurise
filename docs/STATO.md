@@ -2386,3 +2386,13 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   «Solo la Scrivania» rimette lo sfondo di sistema (`clear(FLAG_LOCK)`).
 - **Da guardare sul telefono**: qualità delle suonerie; che WhatsApp con il suono del canale tolto suoni con Eurise; suoneria
   per persona con Eurise Telefono; sfondo del blocco (alcune ROM ignorano il FLAG_LOCK di terze parti).
+
+## 14 novembre, sera: prova di Mappe 42 (ramo `brand`)
+- **Navigazione dal telefono**: col giro nuovo reinstallato parte (prima era installato un APK vecchio). Corretto anche
+  «Indicazioni» con un percorso già aperto: ora chiude la scheda del luogo come CoMaps (restava sopra il pannello).
+- **Finestrino, dalle foto del proprietario**: in orizzontale la striscia vuota a sinistra dell'intestazione era lo spazio
+  di CoMaps per fotocamera e barre (pensato per i riquadri a sinistra): nella colonna a destra niente spazio a sinistra,
+  margine destro della colonna con le barre. Cartello della via: senza la sigla tra parentesi (`signName`) e sempre dentro
+  il finestrino (`sVisLeft/sVisRight` da `draw`). In verticale 8 dp sotto la riga del meteo.
+- **Da fare**: colori e interfaccia della guida nello stile della suite (detto dal proprietario: tavola prima); posizione
+  del finestrino da rivedere con lui dopo questa prova; prova in auto.

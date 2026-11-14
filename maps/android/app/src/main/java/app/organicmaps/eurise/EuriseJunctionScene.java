@@ -265,6 +265,9 @@ public final class EuriseJunctionScene
   public static void draw(@NonNull Context c, @NonNull Canvas canvas, @NonNull Model m, float w, float h, float t)
   {
     final float s = Math.max(w / W, h / H);
+    // La parte della scena che si vede davvero (la scena riempie il finestrino e taglia i bordi in più).
+    sVisLeft = -((w - W * s) / 2f) / s;
+    sVisRight = W - sVisLeft;
     canvas.save();
     canvas.translate((w - W * s) / 2f, (h - H * s) / 2f);
     canvas.scale(s, s);
@@ -396,6 +399,16 @@ public final class EuriseJunctionScene
 
   /** Il centro dell'incrocio e l'orizzonte nello spazio di disegno. */
   private static final float JX = 195, JY = 150, HORIZON = 70;
+  /** I bordi della scena visibili nel finestrino, in coordinate della scena (da [draw]). */
+  private static float sVisLeft = 0, sVisRight = W;
+
+  /** «[SS7] Via Roma» → «Via Roma»: la sigla della strada è già nell'intestazione della guida. */
+  @NonNull
+  static String signName(@NonNull String street)
+  {
+    final String name = street.replaceFirst("^\\s*\\[[^\\]]*\\]\\s*", "").trim();
+    return name.isEmpty() ? street.replace("[", "").replace("]", "").trim() : name;
+  }
 
   /** Palazzi pastello, a metà tra i colori di prima e quelli più vivi (correzione del 14 novembre). */
   private static final int[] HOUSES = {0xFFE4BBA0, 0xFFE4CC90, 0xFFACD3BE, 0xFFC1B5DA};
@@ -551,15 +564,18 @@ public final class EuriseJunctionScene
     EuriseLandscape.precip(k, land, W, H, t, road);
 
     // Il cartello della via all'angolo, dalla parte della svolta: lampeggia piano.
-    if (!m.street.isEmpty())
+    final String sign = signName(m.street);
+    if (!sign.isEmpty())
     {
       // Più grande, pulsa crescendo un poco e lampeggia in verde (correzione del 14 novembre).
       final Paint txt = new Paint(Paint.ANTI_ALIAS_FLAG);
       txt.setTypeface(Typeface.DEFAULT_BOLD);
       txt.setTextSize(16);
       txt.setColor(0xFF1E1D1B);
-      final float tw = Math.min(170, txt.measureText(m.street) + 22);
-      final float cx = m.left ? 70 : W - 70;
+      final float tw = Math.min(170, txt.measureText(sign) + 22);
+      // Sempre tutto dentro il finestrino, anche quando pulsa (1,16) e quando i bordi della scena sono tagliati.
+      final float half = tw / 2 * 1.16f + 6;
+      final float cx = m.left ? Math.max(70, sVisLeft + half) : Math.min(W - 70, sVisRight - half);
       final float cy = 112;
       p.setColor(0xFF7C8598);
       k.drawRect(cx - 2, cy + 16, cx + 2, cy + 64, p);
@@ -573,7 +589,7 @@ public final class EuriseJunctionScene
       border.setAlpha((int) (255 * (0.25f + 0.75f * pulse(t, PULSE))));
       k.drawRoundRect(board, 5, 5, border);
       txt.setTextAlign(Paint.Align.CENTER);
-      text(k, txt, m.street, cx, cy + 6, tw - 14);
+      text(k, txt, sign, cx, cy + 6, tw - 14);
       k.restore();
     }
   }

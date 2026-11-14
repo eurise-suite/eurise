@@ -821,7 +821,7 @@ patch(res / "layout" / "layout_nav_top.xml", """  <app.organicmaps.widget.Curren
       android:layout_width="0dp"
       android:layout_height="210dp"
       android:layout_marginEnd="@dimen/margin_half"
-      android:layout_marginTop="@dimen/margin_quarter"
+      android:layout_marginTop="@dimen/margin_half"
       android:elevation="@dimen/nav_elevation"
       android:visibility="gone"
       app:layout_constraintEnd_toEndOf="parent"
@@ -1123,6 +1123,28 @@ patch(nav, """    mNavMenu.update(info);
   }""", """    mNavMenu.update(info);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
   }""")
+# In orizzontale la manovra sta nella colonna a destra: lo spazio che CoMaps lascia a sinistra per la fotocamera e le
+# barre di sistema (pensato per i riquadri a sinistra) diventava una striscia vuota accanto al cartello (prova del 14
+# novembre, sera). Nella colonna niente spazio a sinistra; il margine destro della colonna tiene conto delle barre.
+patch(nav, """          view.setPadding(windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).left, view.getPaddingTop(),""",
+      """          view.setPadding(topFrame.findViewById(R.id.eurise_guide_column) != null ? 0
+                          : windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).left, view.getPaddingTop(),""")
+patch(nav, """      UiUtils.setViewInsetsPaddingNoTopNoBottom(v, windowInsets);
+
+      final Insets safeDrawingInsets = windowInsets.getInsets(WindowInsetUtils.TYPE_SAFE_DRAWING);
+      nextTurnContainer.setPadding(safeDrawingInsets.left, nextTurnContainer.getPaddingTop(),""",
+      """      final View euriseColumn = topFrame.findViewById(R.id.eurise_guide_column);
+      if (euriseColumn == null)
+        UiUtils.setViewInsetsPaddingNoTopNoBottom(v, windowInsets);
+
+      final Insets safeDrawingInsets = windowInsets.getInsets(WindowInsetUtils.TYPE_SAFE_DRAWING);
+      if (euriseColumn != null)
+      {
+        final android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) euriseColumn.getLayoutParams();
+        lp.setMarginEnd(Math.round(14 * v.getResources().getDisplayMetrics().density) + safeDrawingInsets.right);
+        euriseColumn.setLayoutParams(lp);
+      }
+      nextTurnContainer.setPadding(euriseColumn != null ? 0 : safeDrawingInsets.left, nextTurnContainer.getPaddingTop(),""")
 print("eurise_patch: guida in orizzontale (MapOrizzontaleGuida)")
 
 # «Livelli e fonti» (tavola MapLivelli): sotto i livelli di CoMaps le voci della guida e di cosa esce dal telefono.
