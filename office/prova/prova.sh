@@ -231,7 +231,47 @@ usa_motore() { # nome scheda
 	adb shell am force-stop "$MOTORE_PKG"
 	sleep 2
 }
+# Lavoro lungo (il proprietario: «il documento in modifica si chiude dopo un po' da solo»): dieci giri di scrittura in un
+# OpenDocument, ognuno seguito dall'attesa del salvataggio automatico (8 s dopo l'ultima modifica); a ogni giro si guarda
+# se il motore è vivo, e alla fine si raccoglie il registro di quando e perché si è chiuso.
+lavoro_lungo() { # nome
+	local name=$1 id type W H giro pid
+	type=$(mime "$name")
+	id=$(adb shell content query --uri content://media/external/file --projection _id --where "\"_display_name='$name'\"" | sed -n 's/.*_id=\([0-9]*\).*/\1/p' | head -1)
+	[ -n "$id" ] || return 0
+	read -r W H < <(adb shell wm size | grep -oE "[0-9]+x[0-9]+" | tail -1 | tr x ' ')
+	echo "## Lavoro lungo nel motore: $name" >> "$sum"
+	adb logcat -c
+	adb shell am start -W -a android.intent.action.VIEW -t "$type" -d "'content://media/external/file/$id'" \
+		--grant-read-uri-permission --grant-write-uri-permission -n "$PKG/$LO" > /dev/null 2>&1
+	sleep 14
+	local x=$((W / 2)) y=$((H * 385 / 1000))
+	adb shell input tap $x $y; adb shell input tap $x $y
+	sleep 3
+	for giro in 1 2 3 4 5 6 7 8 9 10; do
+		adb shell input text "Giro%s${giro}%sdi%sprova%sdel%slavoro%slungo."
+		adb shell input keyevent 66
+		sleep 11
+		pid=$(adb shell pidof "$MOTORE_PKG" || true)
+		echo "giro $giro ($(date -u +%H:%M:%S)): motore ${pid:-CHIUSO}" >> "$sum"
+		if [ -z "$pid" ]; then
+			adb exec-out screencap -p > "$OUT/$name-lungo-chiuso.png"
+			break
+		fi
+	done
+	adb exec-out screencap -p > "$OUT/$name-lungo-fine.png"
+	adb logcat -d > "$OUT/$name-lungo.log"
+	{
+		echo '```'
+		grep -E "AndroidRuntime|F DEBUG|Abort message|Fatal signal|has died|lowmemorykiller|Low on memory|Kill|ANR in|BYE|Force finishing|LOActivity.*(onDestroy|finish|onBackPressed|save|Save)|EuriseDiag|signal [0-9]|tombstone|OutOfMemory|SIGSEGV|SIGABRT" "$OUT/$name-lungo.log" | cut -c1-260 | tail -60
+		echo '```'
+	} >> "$sum"
+	adb shell am force-stop "$PKG"
+	adb shell am force-stop "$MOTORE_PKG"
+	sleep 2
+}
 if [ -n "${COMPLETA:-}" ]; then
+	lavoro_lungo testo.odt
 	usa_motore slide.pptx Diapositiva
 	usa_motore lettera.docx Testo
 	usa_motore conti.xlsx Celle

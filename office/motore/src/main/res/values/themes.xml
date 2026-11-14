@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- LOActivity è un'AppCompatActivity. -->
-    <style name="Theme.EuriseOffice.Document" parent="Theme.AppCompat.DayNight.NoActionBar" />
+    <!-- LOActivity è un'AppCompatActivity. Colori della suite (Perla di giorno, Notte di sera): senza, AppCompat dà ai
+         dialoghi e alla barra di caricamento il suo verde acqua (accent_material_light). -->
+    <style name="Theme.EuriseOffice.DocumentBase" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/eurise_notte</item>
+        <item name="colorPrimaryDark">@color/eurise_sfondo</item>
+        <item name="colorAccent">@color/eurise_accento</item>
+        <item name="android:colorAccent">@color/eurise_accento</item>
+        <item name="android:windowBackground">@color/eurise_sfondo</item>
+        <item name="android:statusBarColor">@color/eurise_sfondo</item>
+        <item name="android:navigationBarColor">@color/eurise_sfondo</item>
+        <item name="android:windowLightStatusBar">@bool/eurise_barre_chiare</item>
+        <item name="android:alertDialogTheme">@style/EuriseOffice.Dialog</item>
+        <item name="alertDialogTheme">@style/EuriseOffice.Dialog</item>
+    </style>
+
+    <style name="Theme.EuriseOffice.Document" parent="Theme.EuriseOffice.DocumentBase" />
+
+    <!-- Dialoghi del motore (caricamento, uscita): isola arrotondata sul fondo della suite. -->
+    <style name="EuriseOffice.Dialog" parent="Theme.AppCompat.DayNight.Dialog.Alert">
+        <item name="colorAccent">@color/eurise_accento</item>
+        <item name="android:colorAccent">@color/eurise_accento</item>
+        <item name="android:windowBackground">@drawable/eurise_dialogo</item>
+        <item name="android:textColorPrimary">@color/eurise_testo</item>
+        <item name="android:backgroundDimAmount">0.18</item>
+    </style>
+
     <color name="office_icon_background">#1F2A44</color>
+    <color name="eurise_notte">#1F2A44</color>
+    <color name="eurise_sfondo">#F4F4F1</color>
+    <color name="eurise_superficie">#FFFFFF</color>
+    <color name="eurise_testo">#1E1D1B</color>
+    <color name="eurise_testo_tenue">#56564F</color>
+    <color name="eurise_accento">#3E5C8A</color>
+    <color name="eurise_traccia">#E4E3DE</color>
+    <bool name="eurise_barre_chiare">true</bool>
 </resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Al posto del dialogo di caricamento di Collabora (stesso nome e stessi id: le risorse dell'app vincono su quelle
+     della libreria). Icona di Office, testo della suite, barra sottile nell'accento. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingStart="28dp"
+    android:paddingTop="28dp"
+    android:paddingEnd="28dp"
+    android:paddingBottom="26dp">
+
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/eurise_icona_fondo"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_office_foreground" />
+
+    <TextView
+        android:id="@+id/progress_dialog_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingBottom="18dp"
+        android:textAlignment="center"
+        android:textColor="@color/eurise_testo"
+        android:textSize="16sp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ProgressBar
+            android:id="@+id/progress_indeterminate"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:indeterminateOnly="true"
+            android:indeterminateTint="@color/eurise_accento"
+            android:visibility="invisible" />
+
+        <ProgressBar
+            android:id="@+id/progress_determinate"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:min="0"
+            android:progressDrawable="@drawable/eurise_barra"
+            android:visibility="visible" />
+    </FrameLayout>
+
+</LinearLayout>

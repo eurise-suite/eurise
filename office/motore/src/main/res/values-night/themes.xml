@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notte: blu-grafite con l'accento azzurro. -->
+    <color name="eurise_sfondo">#12161D</color>
+    <color name="eurise_superficie">#222833</color>
+    <color name="eurise_testo">#E6E9F0</color>
+    <color name="eurise_testo_tenue">#A9AEB7</color>
+    <color name="eurise_accento">#A9C1F2</color>
+    <color name="eurise_traccia">#343B48</color>
+    <bool name="eurise_barre_chiare">false</bool>
+</resources>

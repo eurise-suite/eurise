@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="motore_app_name">Eurise Office Motore</string>
+    <string name="loading">Apro il documento…</string>
+    <string name="exiting">Chiudo il documento…</string>
 </resources>

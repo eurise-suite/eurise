@@ -371,6 +371,44 @@ body.eurise-tel #toolbar-row {
 }
 #eurise-panel::-webkit-scrollbar { display: none; }
 #eurise-panel.suite { background: #F7EEEF; }
+/* Intestazione come la tavola OffTelefono: Perla, pulsanti tondi senza fondo né cornice (Collabora dà ai pulsanti della
+   sua barra un fondo grigio con selettori più forti: si toglie con !important). */
+body.eurise-tel #toolbar-row,
+body.eurise-tel #eurise-header {
+	background: #F4F4F1 !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+body.eurise-tel #eurise-header .eurise-hbtn {
+	width: 42px !important;
+	height: 42px !important;
+	padding: 0 !important;
+	border-radius: 21px !important;
+	background: transparent !important;
+	color: #1E1D1B !important;
+}
+body.eurise-tel #eurise-header .eurise-hbtn:active { background: #ECECE7 !important; }
+body.eurise-tel #eurise-header .eurise-hbtn svg { stroke: currentColor; }
+body.eurise-tel #eurise-header .eurise-name {
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	font-size: 15px;
+	font-weight: 800;
+	line-height: 1.25;
+	color: #1E1D1B;
+}
+body.eurise-tel #eurise-header .eurise-status { line-height: 1.3; }
+[data-theme='dark'] body.eurise-tel #toolbar-row,
+[data-theme='dark'] body.eurise-tel #eurise-header { background: #12161D !important; }
+[data-theme='dark'] body.eurise-tel #eurise-header .eurise-hbtn,
+[data-theme='dark'] body.eurise-tel #eurise-header .eurise-name { color: #E6E9F0 !important; }
+
+/* Segnaposto del cursore (telefono e tablet): goccia sottile nell'accento della suite al posto di quella scura di
+   Collabora; stessa misura (30×44) e stessa punta, così resta allineato al cursore. */
+body.eurise-tel .leaflet-cursor-handler,
+body.eurise-tablet .leaflet-cursor-handler {
+	background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='44' viewBox='0 0 30 44'%3E%3Cpath d='M15 18c-3.2 3.8-7 6.6-7 11.3a7 7 0 0 0 14 0c0-4.7-3.8-7.5-7-11.3z' fill='%233E5C8A' stroke='%23FFFFFF' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center / 30px 44px !important;
+}
+
 /* Collabora dà ai pulsanti cornice, sfondo e ombra con selettori più forti: qui si tolgono. */
 #eurise-panel .eurise-key,
 #eurise-dock .eurise-tab,

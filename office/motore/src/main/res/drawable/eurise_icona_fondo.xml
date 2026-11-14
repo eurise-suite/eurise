@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo dell'icona di Office nel dialogo di caricamento (come l'icona nel cassetto). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="18dp" />
+    <solid android:color="@color/office_icon_background" />
+</shape>
