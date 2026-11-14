@@ -244,7 +244,10 @@ lavoro_lungo() { # nome
 	adb logcat -c
 	adb shell am start -W -a android.intent.action.VIEW -t "$type" -d "'content://media/external/file/$id'" \
 		--grant-read-uri-permission --grant-write-uri-permission -n "$PKG/$LO" > /dev/null 2>&1
-	sleep 14
+	# Il dialogo di caricamento del motore (nei colori della suite): si fotografa mentre il documento si apre.
+	sleep 1; adb exec-out screencap -p > "$OUT/$name-caricamento-1.png"
+	sleep 2; adb exec-out screencap -p > "$OUT/$name-caricamento-2.png"
+	sleep 11
 	local x=$((W / 2)) y=$((H * 385 / 1000))
 	adb shell input tap $x $y; adb shell input tap $x $y
 	sleep 3
