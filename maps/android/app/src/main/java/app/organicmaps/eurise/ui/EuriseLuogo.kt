@@ -1,8 +1,6 @@
 package app.organicmaps.eurise.ui
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
@@ -133,12 +131,6 @@ object EuriseLuogo {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
         runCatching { context.startActivity(Intent.createChooser(send, null)) }
     }
-}
-
-private tailrec fun Context.activity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.activity()
-    else -> null
 }
 
 /** L'impegno della suite che ha questo luogo (stesso nome o indirizzo), il più vicino nel tempo. */

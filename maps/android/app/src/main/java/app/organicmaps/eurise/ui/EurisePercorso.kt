@@ -1,8 +1,6 @@
 package app.organicmaps.eurise.ui
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -90,12 +88,6 @@ object EurisePercorso {
         if (listener != null && RoutingController.get().isPlanning) listener.onRoutingStart()
         else startButton?.performClick()
     }
-}
-
-private tailrec fun Context.activity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.activity()
-    else -> null
 }
 
 @Composable

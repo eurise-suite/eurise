@@ -1,8 +1,6 @@
 package app.organicmaps.eurise.ui
 
 import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.view.View
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -86,12 +84,6 @@ object EuriseGuidaOrizzontale {
     fun refreshVoice() {
         ttsTick.intValue++
     }
-}
-
-private tailrec fun Context.activity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.activity()
-    else -> null
 }
 
 /** Tocca un pulsante di CoMaps o della suite che resta nel layout (nascosto in orizzontale). */
