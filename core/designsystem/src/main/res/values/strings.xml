@@ -36,6 +36,23 @@
     <string name="ds_where_various_long">siti diversi scelti da te</string>
     <string name="ds_where_other_long">fuori dall\'Europa</string>
     <!-- Servizi esterni e avviso prima di accenderli (centro privacy e schede della Scrivania) -->
+    <!-- Primo avvio: i servizi che si possono accendere (tavola PrivPrimoAvvio, approvata il 14 novembre). -->
+    <string name="ds_w_kicker">Benvenuto in Eurise</string>
+    <string name="ds_w_title">Tutto resta sul telefono</string>
+    <string name="ds_w_text">Alcune funzioni hanno bisogno di un servizio su Internet: per questo sono spente. Accendi solo quelle che vuoi, una per una; tocca un nome per sapere cosa esce, dove va e come cambia la privacy.</string>
+    <string name="ds_w_now">La tua privacy adesso</string>
+    <string name="ds_w_score">%1$d su 10</string>
+    <string name="ds_w_desk">Scrivania e meteo</string>
+    <string name="ds_w_maps">Mappe</string>
+    <string name="ds_w_closed">Servizi chiusi · sconsigliati</string>
+    <string name="ds_w_turn_on">Accendi</string>
+    <string name="ds_w_footer">L'interruttore apre prima la spiegazione; spegnere non chiede conferme. Ritrovi tutto nel centro privacy, con il registro di ogni contatto. Le funzioni che lavorano solo sul telefono (Alfred, AI, voce, lettura dei documenti) non sono qui: non fanno uscire nulla.</string>
+    <string name="ds_w_done_none">Fatto</string>
+    <plurals name="ds_w_done">
+        <item quantity="one">Fatto · %1$d servizio acceso</item>
+        <item quantity="other">Fatto · %1$d servizi accesi</item>
+    </plurals>
+    <string name="ds_w_all_off">Lascia tutto spento</string>
     <string name="ds_off_line">Spento: niente esce dal telefono.</string>
     <string name="ds_off_turn_on">Accendi…</string>
     <string name="ds_on_title">Cosa cambia per la tua privacy</string>

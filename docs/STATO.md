@@ -2268,3 +2268,18 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   me lo chiede»; AI online proposta: Lumo di Proton, alternativa Mistral — **verificare che Lumo abbia un'API** prima del
   codice), AlfComputer (collegamento via Ponte, modello scelto sulla scheda video, risveglio in casa sì, fuori casa solo
   con un apparecchio sempre acceso, rimettilo a dormire dopo 20 min, spento = icona grigia, computer piccolo sempre pronto).
+
+## 14 novembre, pomeriggio (stessa chat)
+- **PrivPrimoAvvio approvata e in codice**: `core/designsystem/.../ServicesWelcome.kt`, messo in MainActivity e in
+  LauncherActivity; compare se `PrivacyCenter.welcomePending()`; «Fatto», «Lascia tutto spento» e lo scorrimento giù
+  chiudono e segnano `welcomeDone`. Le righe mostrano nome e semaforo; tocco o interruttore aprono la spiegazione con «Accendi».
+- **MapFinestrini approvata** (colori della suite). **MapIncroci rifatta, da approvare**: prospettiva (mezzeria e fascia
+  blu che si stringono, frecce schiacciate, vie laterali verso punti di fuga laterali), prato verde tenue, palazzi tenui
+  con il lato in ombra, alberelli, cielo dal meteo della guida (Tweak «meteo»: Sereno, Nuvoloso, Pioggia, Sera, Notte,
+  colori dagli sfondi della Scrivania), cartello di Via Roma più grande che pulsa (scala 1→1,16) e lampeggia in verde.
+  Asfalto invariato (approvato). Dopo l'approvazione: portare in `EuriseJunctionScene.drawTurn` (oggi è la versione piatta).
+- **Alfred**: AI online proposta ora **Euria di Infomaniak** (API compatibile OpenAI, CH, non conserva le richieste);
+  Lumo non ha ancora un'API ufficiale; Mistral alternativa. Nodo da decidere col proprietario: l'API di Infomaniak va con
+  una chiave, quindi «due tocchi» solo con un conto di Eurise e un piccolo inoltro (o la chiave dell'utente, che la
+  regola esclude). AlfComputer: opzione «Sveglialo fuori casa, col router» con guida in 4 passi (pagina del router,
+  «Wake on LAN», consenti da fuori senza aprire porte, prova coi dati mobili).

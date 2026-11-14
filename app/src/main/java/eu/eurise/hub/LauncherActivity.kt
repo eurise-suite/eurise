@@ -27,7 +27,11 @@ class LauncherActivity : ComponentActivity() {
         }
         val data = (application as EuriseApplication).data
         searchRequest = intent?.getStringExtra(EXTRA_SEARCH)
-        setContent { LauncherRoute(data, homePresses, searchRequest) { searchRequest = null } }
+        setContent {
+            LauncherRoute(data, homePresses, searchRequest) { searchRequest = null }
+            // Primo avvio: i servizi che si possono accendere (compare una volta sola, poi più).
+            eu.eurise.core.designsystem.theme.EuriseTheme { eu.eurise.core.designsystem.component.ServicesWelcome() }
+        }
     }
 
     override fun onResume() {

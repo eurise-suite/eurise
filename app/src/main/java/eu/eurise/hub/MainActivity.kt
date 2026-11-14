@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             EuriseTheme {
                 EuriseHub(data, request)
+                eu.eurise.core.designsystem.component.ServicesWelcome()
             }
         }
     }
