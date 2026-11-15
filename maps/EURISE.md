@@ -214,3 +214,12 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
 - Non ancora: prezzi (Transitous non li dà in modo affidabile: «prezzo sul sito»), aerei e pedaggi (nessuna fonte libera
   verificata), auto + treno, Cose da fare e «Il mio viaggio».
 - Livelli: accendere «Prezzi dei carburanti» mostra prima la spiegazione (regola della suite).
+
+## Km dalle pietre miliari e orari della scheda (15 novembre, sera)
+- Pietre miliari: `maps/pietre/pietre.py` (lavoro `pietre.yml`) prepara un file per paese, pubblicato nella pre-release
+  `pietre`; `eurise/EuriseMilestones.java` lo scarica (servizio «Km sulle strade», Livelli), `eurise/MilestoneKm.java`
+  calcola il km. `EuriseCarInfo` lo aggiunge a «Sei su …» (guida in Android Auto) e ai soccorsi (senza destinazione).
+- Orari: `eurise/ui/EuriseOrari.kt` (con `eurise/OpeningRows.java`) in cima a `EuriseLuogoAperta`; il riquadro degli orari di
+  CoMaps non si aggiunge più (`PlacePageView.updateOpeningHoursView`). Lo stato «Aperto · chiude alle…» in testa resta di
+  CoMaps.
+- Prove senza telefono: `maps/test/` (Java puro), lanciate da `maps-engine.yml` prima di compilare.

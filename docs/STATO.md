@@ -21,17 +21,15 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
     lontani (Transitous) con il servizio «Mezzi pubblici» nel centro privacy.
   - **Passo del proprietario prima di pubblicare Mappe**: Transitous chiede di concordare l'uso oltre 720 richieste al
     giorno in tutto (canale Matrix di Transitous) e un contatto nel User-Agent (oggi il sito del progetto).
-  - Restano: «Leggi i cartelli con la fotocamera» (serve un modello di visione scaricato a richiesta, senza ML Kit); orari
-    della scheda aperta nello stile della tavola (oggi quelli di CoMaps); prezzi di treni e aerei, pedaggi, auto + treno,
-    Cose da fare e «Il mio viaggio» nei viaggi lontani (nessuna fonte libera verificata per prezzi e pedaggi).
+  - Fatti il 15 novembre, sera: km dalle pietre miliari (vedi sotto) e orari della scheda aperta nello stile della tavola.
+  - Restano: «Leggi i cartelli con la fotocamera» (serve un modello di visione scaricato a richiesta, senza ML Kit: da
+    discutere, poi tavola); prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio viaggio» nei viaggi
+    lontani (nessuna fonte libera verificata per prezzi e pedaggi).
   - Segnalazioni brevi (lavori, coda, pericolo) condivise con gli altri: serve un servizio comune, da decidere.
-  - **Km vero su autostrade, superstrade e provinciali** («Sei su A51 · km 12,4», per soccorsi e carro attrezzi): le mappe di
-    CoMaps non hanno le pietre miliari. Strada scelta (13 novembre): un **file piccolo a parte** con le pietre miliari di
-    OpenStreetMap (`highway=milestone`: strada, km, posizione), scaricato a richiesta come le mappe; il km si calcola tra le
-    due pietre più vicine misurando la distanza lungo la strada. Solo stima dalla lunghezza della strada senza pietre: no
-    (l'inizio della strada nei dati non coincide con il km 0 e le varianti di tracciato spostano tutto di chilometri; per i
-    soccorsi un km sbagliato è peggio di nessuno). Dove mancano le pietre restano le coordinate («Soccorsi: 45.46420, 9.19003»).
-    Non ancora fatto: serve un lavoro di GitHub Actions che prepari il file da OpenStreetMap e lo pubblichi.
+  - **Km vero su autostrade, superstrade e provinciali**: in codice (15 novembre, sera). File delle pietre miliari per paese
+    dal lavoro «Pietre miliari» (`pietre.yml`, ogni mese), servizio «Km sulle strade» spento di base. Da provare in auto.
+    Passo del proprietario, se vuole: i file stanno su GitHub (Stati Uniti, tacchette basse); su un server europeo
+    (Codeberg o nostro) la valutazione sale.
   - Traffico: nessuna fonte libera nazionale; si riprende se se ne trova una.
 - **Alfred**: fatti sveglia (AlfSveglia), voce in Mappe (Voce come motore di sintesi), tre voci (Riccardo, ritoccato,
   caricate), finestra AI, domande libere subito online. **Aperto, il più importante**: Eurise AI che **risponde sul
@@ -2730,3 +2728,37 @@ così l'altra chat non le annulla.
   Note, Email, Alfred); importazione dai browser con la sua schermata (le password vanno in Eurise Password: serve un tipo
   del Ponte apposta, mai un CSV in Download); icona nella barra e avvio con la sessione; firma Mozilla (account AMO del
   proprietario); Flathub.
+
+## 15 novembre, sera: Mappe, km dalle pietre miliari e orari della scheda (ramo `brand`) · giro 639, Mappe 60
+- **Km sulle strade** (richiesta del 13 novembre, strada già decisa): lavoro **«Pietre miliari»** (`.github/workflows/pietre.yml`,
+  ogni mese il 2, a mano o quando cambia `maps/pietre/`): per 17 paesi europei scarica l'estratto di Geofabrik, tiene con
+  osmium solo `highway=milestone` e le strade con sigla (autostrade … terziarie), e `maps/pietre/pietre.py` dà a ogni pietra
+  le sigle della strada più vicina entro 40 m («A1;E35»). File `<Paese>.ekm.gz` (formato nel file Python; Italia attesa
+  82 KB) nella pre-release **`pietre`**, licenza ODbL (attribuzione a OpenStreetMap nelle note della release).
+- **Primo giro** (Pietre miliari 1): Italia 8.672 pietre (82 KB; 1.000 scartate perché senza strada con sigla entro 40 m),
+  Francia e Spagna circa 185 KB, Svizzera 26 KB; in tutto 12 paesi pubblicati. Germania, Austria, Croazia, Polonia e
+  Portogallo falliti per Geofabrik che rifiutava le connessioni: il lavoro ora riprova e scarica due paesi alla volta (il
+  giro 3, partito dal ramo `prova-computer`, li rifà). **In Italia le pietre in OpenStreetMap sono poche**: il km comparirà
+  solo dove sono mappate (soprattutto autostrade); dove mancano restano le coordinate.
+- In Mappe: `EuriseMilestones.java` scarica il file del paese (per i paesi delle mappe scaricate quando si accende, poi
+  ogni 60 giorni o entrando in un paese nuovo; un paese senza file si riprova dopo 30) solo col servizio **Milestones**
+  («Km sulle strade») acceso: nuovo `PrivacyService.Milestones` (core/suite, condiviso con Mappe, in `ServicesWelcome`;
+  GitHub = Stati Uniti, dati anonimi). Interruttore in **Livelli → Dalla rete** con la spiegazione prima di accendere.
+- Calcolo (`MilestoneKm.java`, prove `maps/test/…/MilestoneKmTest.java` lanciate dal lavoro di Mappe prima di
+  compilare): pietre della stessa sigla entro 3 km, la più vicina entro 1,5 km; si interpola tra due pietre solo se la
+  differenza di km somiglia alla distanza tra loro (0,85–1,6), la posizione è a meno di 120 m dalla linea e al massimo
+  300 m oltre le pietre. Altrimenti nessun km (meglio nessuno che sbagliato).
+- **Dove si vede**: Android Auto. In guida «Sei su A51 Tangenziale Est · km 12,4» nella bolla dell'arrivo; senza
+  destinazione «Soccorsi: km 12,4 · 45.46420, 9.19003» (le coordinate restano sempre, come chiesto). Sul telefono il km
+  non compare ancora: nessuna tavola lo prevede (si può aggiungere a «Dove sei» o alla guida, se il proprietario vuole).
+- **Orari della scheda aperta** (tavola MapLuogoAperta): `eurise/ui/EuriseOrari.kt` in cima alla scheda aperta, al posto
+  del riquadro di CoMaps (che non si aggiunge più: patch in `PlacePageView.updateOpeningHoursView`). «Oggi, venerdì» in
+  grassetto con gli orari in verde se è aperto adesso, poi i due giorni dopo («chiuso» dove serve); «Tutta la settimana» al
+  tocco; pressione lunga copia la settimana; orari uguali tutti i giorni in due righe («Tutti i giorni»); testo di OSM non
+  leggibile mostrato com'è. Calcolo in `OpeningRows.java` (prove `OpeningRowsTest`). Non ancora: «di turno il …» delle
+  farmacie (OpenStreetMap non lo dà).
+- **Da provare**: scheda di un negozio o di una farmacia (orari, tocco, pressione lunga); Livelli → «Km sulle strade»
+  (spiegazione, avviso dei paesi scaricati); in auto su autostrada il km. Il primo giro del lavoro «Pietre miliari» dice
+  nel riepilogo quante pietre ha trovato per paese. In Mappe 60 la spiegazione dice ancora «qualche MB»: corretto in
+  «di solito meno di 1 MB» (arriva con il prossimo giro di Mappe sul ramo `brand`).
+- **Prossimo**: discutere «Leggi i cartelli con la fotocamera» con il proprietario (vedi sotto, risposta in chat).
