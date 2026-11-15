@@ -35,6 +35,20 @@
   </div>
 
   <div class="card">
+    <span class="label">Impostazioni Eurise per Firefox</span>
+    <div class="opt">
+      <div class="t"><b>Protezione Eurise <span class="ticks" id="protTicks"></span></b>
+        <span>La stessa del Browser Eurise sul telefono. Trattiene i dati, non ne manda fuori: per questo è accesa di base. Spenta, Firefox torna com'era.</span>
+        <ul class="note" id="protList" style="margin:6px 0 0;padding-left:18px;line-height:1.7"></ul></div>
+      <button class="switch" role="switch" id="protection" aria-label="Protezione Eurise"></button>
+    </div>
+    <div class="opt">
+      <div class="t"><b>Motore di ricerca: Brave Search</b>
+        <span>All'installazione Firefox chiede se usarlo: decidi tu. Indice proprio, nessun profilo pubblicitario. Gli altri (Qwant, Ecosia, Startpage, DuckDuckGo) si scelgono in Firefox › Impostazioni › Ricerca.</span></div>
+    </div>
+  </div>
+
+  <div class="card">
     <span class="label">Funzioni</span>
     <div class="opt">
       <div class="t"><b>Password dal telefono <span class="ticks" id="pwdTicks"></span></b>
@@ -50,9 +64,9 @@
   <div class="card">
     <span class="label">Il Ponte Eurise su questo computer</span>
     <ol>
-      <li>Scarica <code>eurise-ponte-linux.tar.gz</code> ed estrailo (serve Java 17: <code>sudo apt install openjdk-17-jre</code> su Ubuntu, <code>sudo dnf install java-17-openjdk</code> su Fedora).</li>
-      <li>Nella cartella estratta: <code>bin/eurise-ponte collega</code> e inquadra il QR con il telefono (Eurise › Telefono e computer).</li>
-      <li>Poi una volta: <code>bin/eurise-ponte installa-firefox</code>, e lascia acceso <code>bin/eurise-ponte</code>.</li>
+      <li>Installa Eurise per il computer: <code>flatpak install --user eurise-linux.flatpak</code> (oppure estrai <code>eurise-linux.tar.gz</code>, Java è già dentro).</li>
+      <li>Apri Eurise e inquadra il QR con il telefono (Eurise › Telefono e computer › Collega un computer).</li>
+      <li>Poi una volta: <code>flatpak run eu.eurise.Eurise installa-firefox</code> (o <code>bin/eurise installa-firefox</code>).</li>
       <li>Sul telefono accendi «Dal computer al telefono».</li>
     </ol>
     <p class="note">Privacy <span class="ticks" id="ponteTicks"></span> 10 su 10: diretto tra computer e telefono sulla rete di casa, cifrato. Nessun server, nemmeno nostro.</p>

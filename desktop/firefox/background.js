@@ -10,7 +10,8 @@
 
 const HOST = "eu.eurise.ponte";
 // Spenti di base (CLAUDE.md, 14 novembre): le proposte di password leggono i moduli delle pagine, si accendono nelle Impostazioni.
-const DEFAULTS = { theme: "auto", passwords: false, menus: true };
+// La protezione non fa uscire dati (li trattiene): accesa di base, si spegne nelle Impostazioni e Firefox torna com'era.
+const DEFAULTS = { theme: "auto", passwords: false, menus: true, protection: true };
 
 // --- Ponte (native messaging) ---
 
@@ -318,7 +319,8 @@ browser.runtime.onMessage.addListener((m, sender) => {
       return host ? askPassword(host) : Promise.resolve({ ok: false, text: "?" });
     }
     case "settings": return browser.storage.local.get(DEFAULTS);
-    case "applySettings": return applyTheme().then(buildMenus).then(() => ({ ok: true }));
+    case "applySettings": return applyTheme().then(buildMenus).then(applyProtection).then(() => ({ ok: true }));
+    case "protection": return protectionState();
   }
   return false;
 });
@@ -327,5 +329,47 @@ browser.runtime.onInstalled.addListener(async (d) => {
   if (d.reason === "install") browser.runtime.openOptionsPage();
 });
 
+// --- Impostazioni Eurise per Firefox: la protezione del Browser Eurise del telefono (BrwProtezione) ---
+
+/**
+ * Le impostazioni che Eurise cambia in Firefox, con il valore Eurise. Si applicano solo quelle che questa versione di
+ * Firefox conosce; spegnendo la protezione si tolgono tutte (clear) e Firefox torna alle sue o a quelle dell'utente.
+ */
+const PROTECTION = [
+  ["websites", "trackingProtectionMode", "always", "Tracciatori bloccati anche nelle finestre normali"],
+  ["websites", "cookieConfig", { behavior: "reject_trackers_and_partition_foreign" }, "Cookie dei tracciatori rifiutati, gli altri chiusi per sito"],
+  ["network", "httpsOnlyMode", "always", "Solo HTTPS: i siti in chiaro chiedono prima di aprirsi"],
+  ["websites", "hyperlinkAuditingEnabled", false, "Niente «ping» di tracciamento sui link"],
+  ["network", "networkPredictionEnabled", false, "Niente collegamenti anticipati ai siti dei link"],
+];
+
+function setting(group, name) {
+  return browser.privacy && browser.privacy[group] && browser.privacy[group][name];
+}
+
+async function applyProtection() {
+  const { protection } = await browser.storage.local.get(DEFAULTS);
+  for (const [group, name, value] of PROTECTION) {
+    const s = setting(group, name);
+    if (!s) continue;
+    try { protection ? await s.set({ value }) : await s.clear({}); } catch (e) { console.warn("Eurise:", name, e); }
+  }
+}
+
+/** Per le Impostazioni: ogni voce con «tenuta da Eurise», «decisa da un'altra estensione» o «non disponibile». */
+async function protectionState() {
+  const out = [];
+  for (const [group, name, , label] of PROTECTION) {
+    const s = setting(group, name);
+    if (!s) { out.push({ label, state: "missing" }); continue; }
+    try {
+      const d = await s.get({});
+      out.push({ label, state: d.levelOfControl === "controlled_by_this_extension" ? "eurise" : d.levelOfControl === "controlled_by_other_extensions" ? "other" : "firefox" });
+    } catch (e) { out.push({ label, state: "missing" }); }
+  }
+  return out;
+}
+
 applyTheme();
 buildMenus();
+applyProtection();
