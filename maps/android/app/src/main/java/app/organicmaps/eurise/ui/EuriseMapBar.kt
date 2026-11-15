@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -106,6 +107,10 @@ private fun Bar(
     onReport: () -> Unit,
 ) {
     val p = if (night) BarNotte else BarPerla
+    if (androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+        Landscape(p, night, onSearch, zoom, onZoomIn, onZoomOut, onLayers, onPosition, onSaved, onMenu, onReport)
+        return
+    }
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Bottom,
@@ -139,11 +144,52 @@ private fun Bar(
     }
 }
 
+/**
+ * Il telefono in orizzontale (tavola MapOrizzontale, approvata): la barra in colonna a sinistra, vicino al pollice, con
+ * Cerca in cima e il «+» di Segnala sotto; a destra «Dove sei» e lo zoom, così la strada davanti resta libera.
+ */
+@Composable
+private fun Landscape(
+    p: Palette, night: Boolean, onSearch: () -> Unit, zoom: Boolean, onZoomIn: () -> Unit, onZoomOut: () -> Unit,
+    onLayers: () -> Unit, onPosition: () -> Unit, onSaved: () -> Unit, onMenu: () -> Unit, onReport: () -> Unit,
+) {
+    // Alta quanto serve (circa 310 dp), appoggiata in basso: entra anche nei telefoni bassi senza chiedere l'altezza al genitore.
+    Row(
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.width(68.dp)
+                    .shadow(14.dp, RoundedCornerShape(32.dp), clip = false)
+                    .clip(RoundedCornerShape(32.dp)).background(p.glass).border(1.dp, p.edge, RoundedCornerShape(32.dp))
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Item(Icons.search, R.string.eurise_bar_search, p, active = true, onSearch, compact = true)
+                Item(Icons.layers, R.string.eurise_bar_layers, p, active = false, onLayers, compact = true)
+                Item(Icons.position, R.string.eurise_bar_position, p, active = false, onPosition, compact = true)
+                Item(Icons.star, R.string.eurise_bar_saved, p, active = false, onSaved, compact = true)
+                Item(Icons.menu, R.string.eurise_bar_menu, p, active = false, onMenu, compact = true)
+            }
+            Round(Icons.report, androidx.compose.ui.res.stringResource(R.string.eurise_bar_report_short), p, p.ink, onReport, size = 56)
+        }
+        Box(Modifier.weight(1f))
+        Column(Modifier.width(320.dp), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            DoveSei(night)
+            if (zoom) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Round(Icons.minus, androidx.compose.ui.res.stringResource(R.string.eurise_bar_zoom_out), p, p.ink, onZoomOut, size = 56)
+                Round(Icons.plus, androidx.compose.ui.res.stringResource(R.string.eurise_bar_zoom_in), p, p.ink, onZoomIn, size = 56)
+            }
+        }
+    }
+}
+
 /** Un cerchio satinato da 64 dp, come la lente: lo zoom e la ricerca hanno la stessa forma. */
 @Composable
-private fun Round(icon: ImageVector, label: String, p: Palette, tint: Color, onClick: () -> Unit) {
+private fun Round(icon: ImageVector, label: String, p: Palette, tint: Color, onClick: () -> Unit, size: Int = 64) {
     Box(
-        Modifier.size(64.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(p.glass)
+        Modifier.size(size.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(p.glass)
             .border(1.dp, p.edge, CircleShape).clickable(onClick = onClick)
             .semantics { contentDescription = label; role = Role.Button },
         contentAlignment = Alignment.Center,
@@ -155,10 +201,10 @@ private fun Round(icon: ImageVector, label: String, p: Palette, tint: Color, onC
  * grassetto, senza alone, come nelle altre app della suite.
  */
 @Composable
-private fun Item(icon: ImageVector, label: Int, p: Palette, active: Boolean, onClick: () -> Unit) {
+private fun Item(icon: ImageVector, label: Int, p: Palette, active: Boolean, onClick: () -> Unit, compact: Boolean = false) {
     val text = androidx.compose.ui.res.stringResource(label)
     Column(
-        Modifier.clip(RoundedCornerShape(22.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 6.dp)
+        Modifier.clip(RoundedCornerShape(22.dp)).clickable(onClick = onClick).padding(horizontal = if (compact) 4.dp else 10.dp, vertical = if (compact) 4.dp else 6.dp)
             .semantics(mergeDescendants = true) { role = Role.Button },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),

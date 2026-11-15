@@ -311,4 +311,21 @@
     <string name="eurise_fuel_garage_query">Meccanico </string>
     <string name="eurise_fuel_pros">Professionisti</string>
     <string name="eurise_fuel_pros_sub">presto con QuiAccanto</string>
+    <string name="eurise_lo_contacts">Contatti e indirizzo</string>
+    <string name="eurise_lo_copy_hint">Tieni premuto per copiare · %1$s</string>
+    <string name="eurise_lo_copied">Copiato</string>
+    <string name="eurise_lo_contact">Aggiungi alla Rubrica</string>
+    <string name="eurise_lo_contact_sub">nome, telefono, indirizzo e posizione</string>
+    <string name="eurise_lo_suite">Nella suite</string>
+    <string name="eurise_lo_event">Nuovo impegno qui</string>
+    <string name="eurise_lo_event_sub">il luogo è già scritto nel Calendario</string>
+    <string name="eurise_lo_note">Nota del luogo</string>
+    <string name="eurise_lo_note_sub">resta sul telefono, la ritrovi in Note</string>
+    <string name="eurise_lo_no_notes">Serve l\'app Eurise per le note</string>
+    <string name="eurise_lo_more">Altro</string>
+    <string name="eurise_lo_near">Cerca qui vicino</string>
+    <string name="eurise_lo_near_sub">parcheggi, bancomat…</string>
+    <string name="eurise_lo_fix">Correggi su OSM</string>
+    <string name="eurise_lo_fix_sub">orari, nome, posizione</string>
+    <string name="eurise_lo_foot">Dati dalle mappe di OpenStreetMap sul telefono: aprire la scheda non manda niente in rete.</string>
 </resources>

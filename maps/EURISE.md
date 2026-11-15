@@ -172,3 +172,16 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
 - Livelli: in più «Orizzonte col meteo e l'ora», «Prezzi dei carburanti» (stato e interruttore del centro privacy) e
   «Traffico e cantieri» spento e non toccabile (nessuna fonte libera per ora). «Leggi i cartelli con la fotocamera»: non
   ancora (serve un modello di visione scaricato a richiesta, senza ML Kit).
+
+## Ricerca, scheda aperta, orizzontale (15 novembre; tavole MapCerca, MapLuogoAperta, MapOrizzontale approvate)
+- Ricerca: il campo di tutte le barre di ricerca di Mappe è una pillola satinata (`drawable/eurise_search_pill.xml`,
+  `toolbar_search_controls.xml` ritoccato da `eurise_patch.py`). La testata resta quella di CoMaps (blu notte).
+- Scheda aperta: `eurise/ui/EuriseLuogoAperta.kt`, sotto gli orari di CoMaps (`place_page_details.xml`): «Contatti e
+  indirizzo» (indirizzo e coordinate da copiare con pressione lunga, «Aggiungi alla Rubrica» con l'inserimento di
+  sistema), «Nella suite» (nuovo impegno qui, «Nota del luogo» con `ShareToNotesActivity` dell'app Eurise), «Altro»
+  («Cerca qui vicino» centra la mappa sul luogo e apre la ricerca, «Correggi su OSM» apre Segnala qui). Telefono, sito e
+  social restano le righe di CoMaps; orari ancora quelli di CoMaps (nei colori della suite).
+- Orizzontale esplorando: `EuriseMapBar.Landscape`, barra in colonna a sinistra (Cerca, Livelli, Posizione, Salvati,
+  Menu) con Segnala sotto; a destra «Dove sei» e lo zoom. `layout-land/map_buttons_bottom.xml` riscritto da
+  `eurise_patch.py` come quello verticale (pulsanti di CoMaps nascosti, barra Compose); scorciatoie in alto spostate dopo
+  la colonna. Le quattro varianti di `map_buttons_layout_regular.xml` hanno le scorciatoie.

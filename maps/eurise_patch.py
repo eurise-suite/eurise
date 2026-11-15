@@ -1312,7 +1312,9 @@ patch(res / "layout" / "activity_map.xml", """    <app.organicmaps.sdk.MapView
       android:layout_height="wrap_content"
       android:layout_alignParentTop="true" />
 """)
-patch(res / "layout" / "map_buttons_layout_regular.xml", """  <include
+# Tutte le varianti della schermata normale (telefoni bassi e alti, verticale e orizzontale).
+for _variant in ("layout", "layout-h400dp", "layout-land", "layout-h400dp-land"):
+    patch(res / _variant / "map_buttons_layout_regular.xml", """  <include
     layout="@layout/map_status_track_recording\"""", """  <androidx.compose.ui.platform.ComposeView
     android:id="@+id/eurise_explore_chips"
     android:layout_width="match_parent"
@@ -1320,7 +1322,70 @@ patch(res / "layout" / "map_buttons_layout_regular.xml", """  <include
     android:layout_alignParentTop="true" />
   <include
     layout="@layout/map_status_track_recording\"""")
+# In orizzontale (tavola MapOrizzontale) la barra della suite al posto dei pulsanti di CoMaps, come in verticale: i
+# pulsanti restano nel layout (MapButtonsController li cerca per id) dentro un contenitore nascosto.
+_land_bottom = res / "layout-land" / "map_buttons_bottom.xml"
+_lb = _land_bottom.read_text(encoding="utf-8")
+_head = """<androidx.constraintlayout.widget.ConstraintLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/map_buttons_bottom"
+  style="@style/MwmWidget.M3.FAB.MapButton.Bottom"
+  android:layout_width="match_parent\""""
+assert _head in _lb
+_lb = _lb.replace(_head, """<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/map_buttons_bottom"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content">
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_map_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true" />
+<androidx.constraintlayout.widget.ConstraintLayout
+  android:visibility="gone"
+  style="@style/MwmWidget.M3.FAB.MapButton.Bottom"
+  android:layout_width="match_parent\"""", 1)
+_lb = _lb.rstrip() + "\n</RelativeLayout>\n"
+_land_bottom.write_text(_lb, encoding="utf-8")
 patch(mbc, "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);\n",
       "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);\n"
       "    app.organicmaps.eurise.ui.EuriseEsplora.attach(mFrame.findViewById(R.id.eurise_explore_chips));\n")
 print("eurise_patch: orizzonte e scorciatoie mentre si esplora (MapEsplora)")
+
+# Ricerca (tavola MapCerca): il campo diventa una pillola satinata sulla testata, con un po' d'aria attorno; vale per
+# tutte le barre di ricerca di Mappe (ricerca, risultati sulla mappa), così hanno la stessa forma.
+patch(res / "layout" / "toolbar_search_controls.xml", """  android:id="@+id/search_container"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content\"""", """  android:id="@+id/search_container"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_marginTop="6dp"
+  android:layout_marginBottom="6dp"
+  android:layout_marginEnd="12dp"
+  android:background="@drawable/eurise_search_pill\"""")
+print("eurise_patch: campo di ricerca a pillola (MapCerca)")
+
+# Scheda del luogo aperta (tavola MapLuogoAperta): sotto gli orari di CoMaps, contatti e indirizzo, «Nella suite» e «Altro».
+patch(res / "layout" / "place_page_details.xml", """    <androidx.fragment.app.FragmentContainerView
+      android:id="@+id/place_page_opening_hours_fragment"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      tools:layout="@layout/place_page_opening_hours_fragment" />
+""", """    <androidx.fragment.app.FragmentContainerView
+      android:id="@+id/place_page_opening_hours_fragment"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      tools:layout="@layout/place_page_opening_hours_fragment" />
+
+    <androidx.compose.ui.platform.ComposeView
+      android:id="@+id/eurise_luogo_aperta"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content" />
+""")
+patch(pp / "PlacePageView.java", "    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));",
+      "    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));\n"
+      "    app.organicmaps.eurise.ui.EuriseLuogoAperta.attach(mFrame.findViewById(R.id.eurise_luogo_aperta));")
+print("eurise_patch: scheda del luogo aperta (MapLuogoAperta)")

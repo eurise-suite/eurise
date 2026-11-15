@@ -319,4 +319,21 @@
     <string name="eurise_fuel_garage_query">Car repair </string>
     <string name="eurise_fuel_pros">Professionals</string>
     <string name="eurise_fuel_pros_sub">coming soon with QuiAccanto</string>
+    <string name="eurise_lo_contacts">Contacts and address</string>
+    <string name="eurise_lo_copy_hint">Long press to copy · %1$s</string>
+    <string name="eurise_lo_copied">Copied</string>
+    <string name="eurise_lo_contact">Add to Contacts</string>
+    <string name="eurise_lo_contact_sub">name, phone, address and location</string>
+    <string name="eurise_lo_suite">In the suite</string>
+    <string name="eurise_lo_event">New event here</string>
+    <string name="eurise_lo_event_sub">the place is already written in the Calendar</string>
+    <string name="eurise_lo_note">Note about the place</string>
+    <string name="eurise_lo_note_sub">stays on the phone, you find it in Notes</string>
+    <string name="eurise_lo_no_notes">The Eurise app is needed for notes</string>
+    <string name="eurise_lo_more">More</string>
+    <string name="eurise_lo_near">Search nearby</string>
+    <string name="eurise_lo_near_sub">parking, ATMs…</string>
+    <string name="eurise_lo_fix">Fix on OSM</string>
+    <string name="eurise_lo_fix_sub">hours, name, position</string>
+    <string name="eurise_lo_foot">Data from the OpenStreetMap maps on the phone: opening the card sends nothing over the network.</string>
 </resources>

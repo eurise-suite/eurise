@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
@@ -74,9 +75,11 @@ private fun Chips(night: Boolean) {
     val ink = if (night) Color(0xFFE6E8EE) else Color(0xFF1F2A44)
     val glass = if (night) Color(0xF01C2333) else Color(0xF0FFFFFF)
     val soon = if (night) Color(0xFFB9A8E0) else Color(0xFF4B3A73)
+    val land = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     LazyRow(
         Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        // In orizzontale la barra sta in colonna a sinistra: le scorciatoie partono dopo.
+        contentPadding = PaddingValues(start = if (land) 96.dp else 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         items(SHORTCUTS, key = { it.label }) { s ->

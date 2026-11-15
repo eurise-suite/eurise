@@ -77,7 +77,7 @@ object EuriseLuogo {
         return v
     }
 
-    private val state = mutableStateOf<MapObject?>(null)
+    internal val state = mutableStateOf<MapObject?>(null)
 
     @JvmStatic
     fun attach(view: View?) {
