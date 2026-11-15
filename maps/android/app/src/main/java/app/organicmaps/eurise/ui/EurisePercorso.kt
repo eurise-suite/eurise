@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,6 +85,19 @@ object EurisePercorso {
      * a volte non partiva (prova del 13 novembre); resta solo come ripiego.
      */
     internal fun start(context: Context) {
+        val rc = RoutingController.get()
+        if (!rc.isBuilt) {
+            // Mai un tasto morto (prova del 15 novembre: grigio per minuti): si dice cosa succede e, se il calcolo si
+            // è fermato senza risultato, si riparte.
+            if (rc.isBuilding) {
+                android.widget.Toast.makeText(context, R.string.eurise_pc_building, android.widget.Toast.LENGTH_SHORT).show()
+            } else if (rc.isPlanning) {
+                android.widget.Toast.makeText(context, R.string.eurise_pc_rebuilding, android.widget.Toast.LENGTH_SHORT).show()
+                rc.rebuildLastRoute()
+            }
+            update()
+            return
+        }
         val listener = context.activity() as? app.organicmaps.routing.RoutingBottomMenuListener
         if (listener != null && RoutingController.get().isPlanning) listener.onRoutingStart()
         else startButton?.performClick()
@@ -91,13 +105,22 @@ object EurisePercorso {
 }
 
 @Composable
-private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
+private fun Panel(night: Boolean, version: Int) {
     val c = if (night) Notte else Perla
     val context = LocalContext.current
     val rc = RoutingController.get()
     val end: MapObject? = rc.endPoint
-    val info = rc.cachedRoutingInfo
-    val built = rc.isBuilt && info != null
+    // Lo stato del percorso si rilegge da solo mentre si pianifica: il pannello non dipende più soltanto dagli
+    // avvisi di CoMaps (se uno si perde, per esempio dopo che l'attività ha salvato lo stato, il tasto restava grigio).
+    val state by produceState(RouteState.read(), version) {
+        while (true) {
+            value = RouteState.read()
+            if (!RoutingController.get().isPlanning) break
+            delay(400)
+        }
+    }
+    val info = state.info
+    val built = state.built
     val router = rc.lastRouterType
     val destinations by produceState<Destinations?>(null, end) { value = loadDestinations(context.applicationContext) }
     if (router == Router.Ruler) return
@@ -105,7 +128,7 @@ private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
     Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Auto · Bici · A piedi (i mezzi pubblici restano nella barra in alto di CoMaps).
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            val minutes = if (built) info!!.totalTimeInSeconds else -1
+            val minutes = if (built) info?.totalTimeInSeconds ?: -1 else -1
             Mode(c, R.string.eurise_pc_car, Router.Vehicle, router, minutes, Modifier.weight(1f))
             Mode(c, R.string.eurise_pc_bike, Router.Bicycle, router, minutes, Modifier.weight(1f))
             Mode(c, R.string.eurise_pc_walk, Router.Pedestrian, router, minutes, Modifier.weight(1f))
@@ -114,7 +137,7 @@ private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
         // L'impegno con questo luogo: quando partire.
         val d = if (end != null) destinations?.items?.let { matching(it, end) } else null
         if (d != null) {
-            val seconds = if (built) info!!.totalTimeInSeconds else 0
+            val seconds = if (built) info?.totalTimeInSeconds ?: 0 else 0
             val leave = d.start - seconds * 1000L - EuriseMargin
             val fmt = DateFormat.getTimeInstance(DateFormat.SHORT)
             val now = System.currentTimeMillis()
@@ -138,7 +161,7 @@ private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Soft(c, night, stringResource(R.string.eurise_pc_send_arrival), Modifier.weight(1f), enabled = built) {
+            Soft(c, night, stringResource(R.string.eurise_pc_send_arrival), Modifier.weight(1f), enabled = built && info != null) {
                 context.activity()?.let { EuriseGuide.shareArrival(it, rc.cachedRoutingInfo) }
             }
             val saved = end?.isBookmark == true
@@ -151,12 +174,22 @@ private fun Panel(night: Boolean, @Suppress("UNUSED_PARAMETER") version: Int) {
         Box(
             Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(18.dp))
                 .background(if (built) c.accent else c.accent.copy(alpha = 0.35f))
-                .clickable(enabled = built) { EurisePercorso.start(context) }.semantics { role = Role.Button },
+                .clickable { EurisePercorso.start(context) }.semantics { role = Role.Button },
             contentAlignment = Alignment.Center,
         ) {
-            BasicText(stringResource(R.string.eurise_pc_start), style = TextStyle(color = c.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold))
+            BasicText(stringResource(if (built || !state.building) R.string.eurise_pc_start else R.string.eurise_pc_building), style = TextStyle(color = c.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold))
         }
         BasicText(stringResource(R.string.eurise_pc_offline), style = TextStyle(color = c.muted, fontSize = 11.5.sp, lineHeight = 17.sp))
+    }
+}
+
+/** Quello che il pannello legge di CoMaps, riletto ogni 400 ms mentre si pianifica. */
+private data class RouteState(val built: Boolean, val building: Boolean, val info: app.organicmaps.sdk.routing.RoutingInfo?) {
+    companion object {
+        fun read(): RouteState {
+            val rc = RoutingController.get()
+            return RouteState(rc.isBuilt, rc.isBuilding, rc.cachedRoutingInfo)
+        }
     }
 }
 

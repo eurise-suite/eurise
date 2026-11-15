@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Eurise: tema di avvio su Android 12+. Sostituisce per intero MwmTheme.Splash di CoMaps (values/themes.xml,
+         ritoccato da eurise_patch.py con gli stessi colori): blu notte della suite e icona di Eurise Mappe senza
+         cerchio, come in activity_splash.xml. -->
+    <style name="MwmTheme.Splash">
+        <item name="android:windowBackground">@color/eurise_icon_background</item>
+        <item name="android:textColorPrimary">@color/white_primary</item>
+        <item name="android:navigationBarColor">@color/eurise_icon_background</item>
+        <item name="android:statusBarColor">@color/eurise_icon_background</item>
+        <item name="android:windowSplashScreenBackground">@color/eurise_icon_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_maps_foreground</item>
+    </style>
+</resources>

@@ -127,6 +127,19 @@ patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
       '      android:icon="@mipmap/ic_maps"\n      android:roundIcon="@mipmap/ic_maps_round"\n')
 print("eurise_patch: icona di Eurise Mappe")
 
+# Avvio: icona di Eurise Mappe sul blu notte della suite al posto del logo di CoMaps (layout nostro activity_splash.xml;
+# Android 12+ in values-v31/eurise_splash.xml). Blu notte anche col tema scuro, come l'app principale.
+patch(root / "android" / "app" / "src" / "main" / "res" / "values" / "themes.xml", """  <style name="MwmTheme.Splash">
+    <item name="android:windowBackground">@color/bg_primary</item>
+    <item name="android:textColorPrimary">@color/white_primary</item>
+    <item name="android:navigationBarColor">@color/bg_primary</item>
+    <item name="android:statusBarColor">@color/bg_primary</item>""", """  <style name="MwmTheme.Splash">
+    <item name="android:windowBackground">@color/eurise_icon_background</item>
+    <item name="android:textColorPrimary">@color/white_primary</item>
+    <item name="android:navigationBarColor">@color/eurise_icon_background</item>
+    <item name="android:statusBarColor">@color/eurise_icon_background</item>""")
+print("eurise_patch: avvio con l'icona di Eurise Mappe")
+
 # Guida (tavola MapGuida): cartello colorato per tipo di strada, metri alla svolta a passi fini, «Manda l'arrivo».
 # La logica sta in maps/android/.../eurise/EuriseGuide.java; qui solo gli agganci.
 nav = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "NavigationController.java"

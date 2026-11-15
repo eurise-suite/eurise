@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eurise: avvio di Mappe con l'icona della suite sul blu notte, al posto del logo di CoMaps.
+     L'icona ha la stessa misura e posizione di quella dell'avvio di sistema (Android 12+, values-v31/eurise_splash.xml),
+     così il passaggio dall'una all'altra non si vede. Gli id restano quelli di CoMaps (root_view lo usa SplashActivity). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/eurise_icon_background">
+
+  <ImageView
+      android:id="@+id/iv__logo"
+      android:layout_width="240dp"
+      android:layout_height="240dp"
+      android:layout_gravity="center"
+      android:contentDescription="@null"
+      android:src="@drawable/ic_maps_foreground" />
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="bottom|center_horizontal"
+      android:layout_marginBottom="32dp"
+      android:gravity="center_horizontal"
+      android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tv__app_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textColor="#FFF4F4F1"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv__splash_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="32dp"
+        android:gravity="center_horizontal"
+        android:text="@string/splash_subtitle"
+        android:textColor="#B3F4F4F1"
+        android:textSize="13sp" />
+  </LinearLayout>
+
+</FrameLayout>
