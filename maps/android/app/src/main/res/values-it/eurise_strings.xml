@@ -328,4 +328,6 @@
     <string name="eurise_lo_fix">Correggi su OSM</string>
     <string name="eurise_lo_fix_sub">orari, nome, posizione</string>
     <string name="eurise_lo_foot">Dati dalle mappe di OpenStreetMap sul telefono: aprire la scheda non manda niente in rete.</string>
+    <string name="eurise_limit_guess">Limite dedotto: %1$d</string>
+    <string name="eurise_limit_next">tra %1$d m: %2$d</string>
 </resources>

@@ -194,4 +194,21 @@
     app:layout_constraintBottom_toBottomOf="@id/nav_current_speed"
     app:layout_constraintStart_toEndOf="@id/nav_current_speed"
     app:layout_constraintTop_toTopOf="@id/nav_current_speed" />
+  <!-- Eurise (MapVelocita): il limite che arriva, «tra 200 m: 70», dai tratti del percorso (EuriseSpeed). -->
+  <TextView
+    android:id="@+id/eurise_next_limit"
+    android:layout_width="wrap_content"
+    android:layout_height="30dp"
+    android:layout_marginStart="8dp"
+    android:background="@drawable/eurise_next_limit_bg"
+    android:gravity="center_vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:textColor="#FF1E1D1B"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    android:visibility="gone"
+    app:layout_constraintBottom_toBottomOf="@id/nav_speed_limit"
+    app:layout_constraintStart_toEndOf="@id/nav_speed_limit"
+    app:layout_constraintTop_toTopOf="@id/nav_speed_limit" />
 </androidx.constraintlayout.widget.ConstraintLayout>

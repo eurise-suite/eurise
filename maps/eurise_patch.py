@@ -1389,3 +1389,108 @@ patch(pp / "PlacePageView.java", "    app.organicmaps.eurise.ui.EuriseLuogo.atta
       "    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));\n"
       "    app.organicmaps.eurise.ui.EuriseLuogoAperta.attach(mFrame.findViewById(R.id.eurise_luogo_aperta));")
 print("eurise_patch: scheda del luogo aperta (MapLuogoAperta)")
+
+# Il limite che arriva (tavola MapVelocita, «tra 200 m: 70»): dai tratti del percorso in corso, il primo limite diverso
+# da quello di adesso entro aheadM metri. {km/h, metri} oppure null.
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto""", """// Eurise: il prossimo limite di velocità sul percorso (MapVelocita).
+JNIEXPORT jdoubleArray JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseNextSpeedLimit(JNIEnv * env, jclass,
+                                                                                             jdouble aheadM)
+{
+  auto const route = frm()->GetRoutingManager().RoutingSession().GetRouteForTests();
+  if (!route || !route->IsValid())
+    return nullptr;
+  auto const & segs = route->GetRouteSegments();
+  size_t const idx = route->GetFollowedPolyline().GetCurrentIter().m_ind;
+  if (segs.empty() || idx >= segs.size())
+    return nullptr;
+  auto const & cur = segs[idx].GetSpeedLimit();
+  double const here = route->GetCurrentDistanceFromBeginMeters();
+  for (size_t i = idx + 1; i < segs.size(); ++i)
+  {
+    // La distanza di un tratto è misurata alla sua fine: il tratto i comincia dove finisce i-1.
+    double const ahead = segs[i - 1].GetDistFromBeginningMeters() - here;
+    if (ahead > aheadM)
+      break;
+    auto const & next = segs[i].GetSpeedLimit();
+    if (!next.IsNumeric())
+      continue;
+    if (cur.IsNumeric() && cur.GetSpeedKmPH() == next.GetSpeedKmPH())
+      continue;
+    jdouble const out[2] = {static_cast<jdouble>(next.GetSpeedKmPH()), ahead < 0 ? 0 : ahead};
+    jdoubleArray arr = env->NewDoubleArray(2);
+    env->SetDoubleArrayRegion(arr, 0, 2, out);
+    return arr;
+  }
+  return nullptr;
+}
+
+// Eurise: la strada sotto l'auto per Android Auto""")
+patch(fw_java, "  public static native String nativeEuriseCityAt(double lat, double lon);\n",
+      """  public static native String nativeEuriseCityAt(double lat, double lon);
+  /** Eurise: il prossimo limite sul percorso entro aheadM metri, {km/h, metri}; null se non cambia. */
+  @Nullable
+  public static native double[] nativeEuriseNextSpeedLimit(double aheadM);
+""")
+print("eurise_patch: il limite che arriva (MapVelocita)")
+
+# Android Auto (tavola MapAutoCerca): «Dove devi andare» in cima alla ricerca, prima di Categorie e recenti.
+car_search = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car" / "screens" / "search" / "SearchScreen.java"
+patch(car_search, """    builder.addItem(createCategoriesItem());
+    SearchRecents.refresh();
+    final int recentsSize = Math.min(SearchRecents.getSize(), MAX_RESULTS_SIZE - 1);""", """    app.organicmaps.eurise.car.EuriseCarDestinations.addRows(getCarContext(), builder, this::onSearchSubmitted);
+    builder.addItem(createCategoriesItem());
+    SearchRecents.refresh();
+    final int recentsSize = Math.max(0, Math.min(SearchRecents.getSize(),
+        MAX_RESULTS_SIZE - 1 - app.organicmaps.eurise.car.EuriseCarDestinations.size()));""")
+patch(car_search, """    mResults = builder.build();
+    
+    return recentsSize != 0;""", """    mResults = builder.build();
+    
+    return recentsSize != 0 || app.organicmaps.eurise.car.EuriseCarDestinations.size() > 0;""")
+patch(car_search, """    onSearchSubmitted(builder.mQuery);
+""", """    onSearchSubmitted(builder.mQuery);
+    app.organicmaps.eurise.car.EuriseCarDestinations.refresh(getCarContext(), () -> {
+      if (mQuery.isEmpty())
+      {
+        mResults = null;
+        invalidate();
+      }
+    });
+""")
+print("eurise_patch: «Dove devi andare» nella ricerca di Android Auto (MapAutoCerca)")
+
+# Android Auto: la panoramica del percorso prima di partire si riadatta quando l'auto riduce la mappa (lista o scheda
+# più larghe): stesso riquadro di CoMaps (percorso × 1,5) nella parte di schermo che resta visibile.
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto""", """// Eurise: rimette tutto il percorso nella parte visibile della mappa (panoramica prima di partire).
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseShowRouteOverview(JNIEnv *, jclass)
+{
+  auto const route = frm()->GetRoutingManager().RoutingSession().GetRouteForTests();
+  if (!route || !route->IsValid())
+    return;
+  m2::RectD rect = route->GetPoly().GetLimitRect();
+  rect.Scale(1.5);
+  frm()->ShowRect(rect, -1 /* maxScale */, true /* animation */, true /* useVisibleViewport */);
+}
+
+// Eurise: la strada sotto l'auto per Android Auto""")
+patch(fw_java, "  public static native double[] nativeEuriseNextSpeedLimit(double aheadM);\n",
+      "  public static native double[] nativeEuriseNextSpeedLimit(double aheadM);\n"
+      "  /** Eurise: tutto il percorso nella parte visibile della mappa (Android Auto, prima di partire). */\n"
+      "  public static native void nativeEuriseShowRouteOverview();\n")
+car_surface = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car" / "renderer" / "SurfaceCallbackBase.java"
+patch(car_surface, """    if (!mVisibleArea.isEmpty())
+      UiThread.runLater(()
+                            -> Framework.nativeSetVisibleRect(mVisibleArea.left, mVisibleArea.top, mVisibleArea.right,
+                                                              mVisibleArea.bottom));
+  }
+""", """    if (!mVisibleArea.isEmpty())
+      UiThread.runLater(() -> {
+        Framework.nativeSetVisibleRect(mVisibleArea.left, mVisibleArea.top, mVisibleArea.right, mVisibleArea.bottom);
+        // Eurise: prima di partire, il percorso intero resta nella parte di mappa che si vede.
+        final app.organicmaps.sdk.routing.RoutingController rc = app.organicmaps.sdk.routing.RoutingController.get();
+        if (rc.isPlanning() && rc.isBuilt() && !rc.isNavigating())
+          Framework.nativeEuriseShowRouteOverview();
+      });
+  }
+""")
+print("eurise_patch: panoramica del percorso che si riadatta in Android Auto")

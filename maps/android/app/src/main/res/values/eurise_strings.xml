@@ -336,4 +336,6 @@
     <string name="eurise_lo_fix">Fix on OSM</string>
     <string name="eurise_lo_fix_sub">hours, name, position</string>
     <string name="eurise_lo_foot">Data from the OpenStreetMap maps on the phone: opening the card sends nothing over the network.</string>
+    <string name="eurise_limit_guess">Inferred limit: %1$d</string>
+    <string name="eurise_limit_next">in %1$d m: %2$d</string>
 </resources>

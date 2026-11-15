@@ -39,6 +39,9 @@ public final class EuriseCarInfo
   private static final int MOTORWAY = 1, TRUNK = 2, PRIMARY = 3, SECONDARY = 4, TERTIARY = 5;
 
   @Nullable private static Location sLookedUp;
+  /** Il paese della strada (ISO, «IT»), riletto ogni 2 km: decide i limiti dedotti. */
+  @NonNull private static String sCountry = "";
+  @Nullable private static Location sCountryAt;
   @Nullable private static Location sLast;
   private static int sClass;
   @NonNull private static String sRef = "", sName = "";
@@ -61,6 +64,11 @@ public final class EuriseCarInfo
     if (sLookedUp != null && location.distanceTo(sLookedUp) < LOOKUP_MIN_DISTANCE_M)
       return;
     sLookedUp = location;
+    if (sCountryAt == null || location.distanceTo(sCountryAt) > 2000)
+    {
+      sCountryAt = location;
+      sCountry = countryOf(location.getLatitude(), location.getLongitude());
+    }
     final boolean moving = location.hasBearing() && location.hasSpeed() && location.getSpeed() >= MIN_MOVING_SPEED_MPS;
     final String road = Framework.nativeEuriseRoadAt(location.getLatitude(), location.getLongitude(),
                                                      moving ? location.getBearing() : -1);
@@ -97,6 +105,42 @@ public final class EuriseCarInfo
   public static String roadLabel()
   {
     return join(sRef, sName);
+  }
+
+  /**
+   * Il limite «dedotto» (tavola MapVelocita) quando OpenStreetMap non lo dà: solo dove la legge lo fissa per tipo di
+   * strada e il tipo si riconosce senza dubbi. In Italia autostrada 130 e strada extraurbana principale (superstrada) 110
+   * km/h; altrove, e sulle altre strade (dipende dal centro abitato, che la mappa non dice), nessuno. 0 se non si sa.
+   */
+  public static int inferredLimitKmh()
+  {
+    if (!"IT".equals(sCountry))
+      return 0;
+    return switch (sClass)
+    {
+      case MOTORWAY -> 130;
+      case TRUNK -> 110;
+      default -> 0;
+    };
+  }
+
+  @NonNull
+  private static String countryOf(double lat, double lon)
+  {
+    try
+    {
+      final String id = app.organicmaps.sdk.downloader.MapManager.nativeFindCountry(lat, lon);
+      if (id == null || id.isEmpty())
+        return "";
+      final app.organicmaps.sdk.downloader.CountryItem item = new app.organicmaps.sdk.downloader.CountryItem(id);
+      app.organicmaps.sdk.downloader.MapManager.nativeGetAttributes(item);
+      final String top = item.topmostParentId != null && !item.topmostParentId.isEmpty() ? item.topmostParentId : id;
+      return top.startsWith("Italy") ? "IT" : top;
+    }
+    catch (Throwable e)
+    {
+      return "";
+    }
   }
 
   /** Su autostrada o superstrada: la scena dell'uscita compare prima (600 m invece di 300). */

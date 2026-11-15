@@ -185,3 +185,15 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   Menu) con Segnala sotto; a destra «Dove sei» e lo zoom. `layout-land/map_buttons_bottom.xml` riscritto da
   `eurise_patch.py` come quello verticale (pulsanti di CoMaps nascosti, barra Compose); scorciatoie in alto spostate dopo
   la colonna. Le quattro varianti di `map_buttons_layout_regular.xml` hanno le scorciatoie.
+
+## Guida e Android Auto, resto (15 novembre; tavole MapVelocita, MapAutoCerca approvate)
+- Limite che arriva: `Framework.nativeEuriseNextSpeedLimit(800)` (JNI in `eurise_patch.py`: tratti del percorso di
+  `RoutingSession::GetRouteForTests`, limite per tratto `RouteSegment::GetSpeedLimit`); `EuriseSpeed` mostra la pillola
+  «tra 200 m: 70» (`eurise_next_limit` nei tre `layout_nav_top.xml`, a passi di 50 m), con l'interruttore «Avviso
+  quando il limite cambia».
+- Limite dedotto: `EuriseCarInfo.inferredLimitKmh` (Italia: autostrada 130, superstrada 110; altrove e sulle altre strade
+  nessuno, perché dipende dal centro abitato) mostrato nel cartello con il bordo tratteggiato
+  (`drawable/eurise_limit_dashed.xml` come primo piano); non fa suonare e non colora la velocità.
+- Android Auto: `car/EuriseCarDestinations.java`, «Dove devi andare» (fino a 4 impegni con luogo) in cima alla ricerca;
+  la panoramica del percorso prima di partire si riadatta quando cambia l'area visibile
+  (`Framework.nativeEuriseShowRouteOverview` da `SurfaceCallbackBase.onVisibleAreaChanged`).

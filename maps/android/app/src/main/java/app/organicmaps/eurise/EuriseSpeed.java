@@ -62,6 +62,7 @@ public final class EuriseSpeed
     final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(c);
     final int limit = limitMps > 0 ? StringUtils.nativeFormatSpeed(limitMps) : -1;
     final int current = speedMps >= 0 ? StringUtils.nativeFormatSpeed(speedMps) : -1;
+    guessAndNext(limitSign, limit);
 
     final boolean over = isOver(limit, current, p.getString(PREF_TOLERANCE, "5"));
     speed.setAlertTextColor(0xFFFFFFFF);
@@ -89,6 +90,62 @@ public final class EuriseSpeed
       sLastLimit = limit;
     sShownLimit = limit;
     return limit;
+  }
+
+  /**
+   * Il limite «dedotto» col bordo tratteggiato quando la mappa non lo dà (solo dove la legge lo fissa per tipo di strada,
+   * {@link app.organicmaps.eurise.car.EuriseCarInfo#inferredLimitKmh}: non fa suonare né diventare rossa la velocità),
+   * e accanto al cartello il limite che arriva («tra 200 m: 70», fino a 800 m prima) dai tratti del percorso.
+   */
+  private static void guessAndNext(@NonNull View limitSign, int limit)
+  {
+    final Context c = limitSign.getContext();
+    final boolean wanted = PreferenceManager.getDefaultSharedPreferences(c).getBoolean(PREF_LIMIT_NOTICE, true);
+    if (limitSign instanceof app.organicmaps.widget.SpeedLimitView sign)
+    {
+      final int guess = limit > 0 ? 0 : app.organicmaps.eurise.car.EuriseCarInfo.inferredLimitKmh();
+      if (guess > 0)
+      {
+        sign.setSpeedLimit(StringUtils.nativeFormatSpeed(guess / 3.6), false);
+        sign.setForeground(androidx.core.content.ContextCompat.getDrawable(c, app.organicmaps.R.drawable.eurise_limit_dashed));
+        sign.setContentDescription(c.getString(app.organicmaps.R.string.eurise_limit_guess, StringUtils.nativeFormatSpeed(guess / 3.6)));
+      }
+      else if (sign.getForeground() != null)
+      {
+        sign.setForeground(null);
+        sign.setContentDescription(null);
+      }
+    }
+    final View parent = (View) limitSign.getParent();
+    final android.widget.TextView next = parent == null ? null : parent.findViewById(app.organicmaps.R.id.eurise_next_limit);
+    if (next == null)
+      return;
+    double[] n = null;
+    if (wanted)
+    {
+      try
+      {
+        n = app.organicmaps.sdk.Framework.nativeEuriseNextSpeedLimit(800);
+      }
+      catch (Throwable ignored)
+      {
+        // Motore senza la funzione (non dovrebbe succedere): niente anticipo.
+      }
+    }
+    if (n == null || n.length < 2 || n[0] <= 0)
+    {
+      next.setVisibility(View.GONE);
+      return;
+    }
+    final int value = StringUtils.nativeFormatSpeed(n[0] / 3.6);
+    if (value == limit)
+    {
+      next.setVisibility(View.GONE);
+      return;
+    }
+    final long meters = Math.max(50, Math.round(n[1] / 50.0) * 50);
+    next.setText(c.getString(app.organicmaps.R.string.eurise_limit_next, meters, value));
+    next.setVisibility(View.VISIBLE);
   }
 
   /** Il limite in mappa per la strada di adesso, nelle unità mostrate; -1 se non si sa. */
