@@ -2569,3 +2569,9 @@ da fare, documenti), partendo da Linux.
 - **Da provare**: tutto, sul telefono e su Ubuntu/Fedora (Firefox .deb/rpm, snap di Ubuntu, Flatpak).
 - **Prossimi passi**: firma dell'estensione (account AMO del proprietario); nuova scheda Eurise in Firefox; Detta dal
   telefono; Oggi nel pannello; profilo di impostazioni Eurise per Firefox (motore, protezione); Flatpak del Ponte.
+- **Voci Kokoro** (giro 564, mandato in chat): Nicola (voce 36) e Sara (35) tra le «Altre voci» di Eurise Voce, un archivio
+  solo `alfred-kokoro.zip` (116 MB, `voci.yml`, modello int8 a più lingue di sherpa-onnx, espeak-ng solo it/en), configurazione
+  Kokoro di sherpa-onnx con `lang = "it"`, 4 thread. Da sentire sul telefono: scorrevolezza, pronuncia italiana, attesa
+  della prima frase. Se convince, Nicola può diventare la voce di Alfred.
+- **Compilazioni annullate**: con due chat sullo stesso ramo i giri si annullano a vicenda (`concurrency` per ramo); per
+  avere un APK si può spingere la stessa testa su `prova-alfred` (gruppo suo) e pubblicare quel giro in `apk-prova`.
