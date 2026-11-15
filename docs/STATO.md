@@ -2211,6 +2211,12 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
     copriva la nostra): corretti, prova 43708273663 a posto. Strada 2 43708317741 riuscita, prova 43712555289
     (`pacchetto=sorgenti`, schermate in office-sorgenti-schermate) a posto; pacchetto consegnato al proprietario
     il 15 novembre alle 12:30 UTC.
+  - **15 novembre, sera – rifinitura dopo la prova del proprietario su Ubuntu** («ancora elementi del vecchio
+    Collabora», «tutto in grassetto», «poco contrasto tra fondo e bolle»): Plus Jakarta Sans vera nel guscio
+    (`office/computer/fonts/*.woff2` + `eurise-fonts.css`, inietta.py), pesi 400–600, fondo #ECEBE5 con isole e
+    pulsanti bianchi e un filo #DCDAD2; PDF con la nostra testata (scheda PDF) al posto della barra dei menu in sola
+    lettura; tasto destro nostro anche nelle tabelle; Stili con anteprime alte una riga; altre icone nostre. Prova
+    43733843891 (con un PDF) e strada 2 43733808423 + prova 43738308659 a posto; pacchetto consegnato alle 17:20 UTC.
   - **Prossimo, deciso dal proprietario (15 novembre)**: quando Office sul computer sarà completo, si pensa alla
     webapp (Office nel browser).
 
