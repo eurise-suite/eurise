@@ -2206,7 +2206,11 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
     giorno), nastro a scomparsa (doppio clic su una scheda) e Concentrazione (Vista, Esc). Proposta 10 (anteprima
     al passaggio sul documento) solo in parte: le tendine mostrano caratteri, stili e colori come sono; applicarli al
     testo al passaggio vorrebbe dire applicare e annullare nel motore, che sporca la cronologia di Annulla: da
-    rivedere con il proprietario. Prova 43706608743 in corso.
+    rivedere con il proprietario. Prova 43706608743: tasto destro e barra rapida erano ancora quelli di Collabora
+    (l'evento locontextmenu era già agganciato alla funzione originale; la barra flottante #context-toolbar della 26.04
+    copriva la nostra): corretti, prova 43708273663 a posto. Strada 2 43708317741 riuscita, prova 43712555289
+    (`pacchetto=sorgenti`, schermate in office-sorgenti-schermate) a posto; pacchetto consegnato al proprietario
+    il 15 novembre alle 12:30 UTC.
   - **Prossimo, deciso dal proprietario (15 novembre)**: quando Office sul computer sarà completo, si pensa alla
     webapp (Office nel browser).
 
