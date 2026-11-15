@@ -210,11 +210,14 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         if (readAloud && voiceTurn) speaker.value.say(line, onDone) else onDone?.invoke()
     }
 
+    /** [freeQuestion] è definita più sotto (usa understandSaid): execute la chiama da qui. */
+    lateinit var askFree: (String, Card?) -> Unit
+
     fun execute(card: Card) {
         answering = false
         ear.cancel()
         // Richiesta libera: sul telefono non c'è ancora chi risponde; va al servizio online preferito, ripulita.
-        if (card.kind == Kind.Free) { freeQuestion(card.value("text").ifBlank { heard }, null); return }
+        if (card.kind == Kind.Free) { askFree(card.value("text").ifBlank { heard }, null); return }
         scope.launch {
             val out = butler.run(card)
             phase = Phase.Said(out.line)
@@ -272,6 +275,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
             else -> { phase = Phase.Ready; askOnline(favorite) }
         }
     }
+
+    askFree = { q, c -> freeQuestion(q, c) }
 
     understandSaid = { text, spoken ->
         voiceTurn = spoken
