@@ -2690,3 +2690,39 @@ Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e
 - **Prossimo**: prove del proprietario sui passi 1 e 2; poi passo 3 (azioni nuove una per volta, con test: prima leggi e
   rispondi ai messaggi, che completa anche «chi mi ha scritto?»), 4 (ruolo assistente, riquadro, blocco, «Di' Alfred»),
   5 (registro locale).
+
+## 15 novembre, sera: Eurise sul computer (Linux) – tavole, nucleo, app, Firefox, Flatpak (ramo `brand`)
+Seguito della «richiesta del proprietario per Linux». Compilazioni anche su `prova-computer` (stessa testa di `brand`),
+così l'altra chat non le annulla.
+- **Tavole nuove, da approvare** (tela, pagina nuova «Eurise sul computer», la tela ora si apre lì): PcOggi e PcOggiNotte,
+  PcCalendario, PcNote, PcAttivita, PcEmail, PcAlfred, PcFirefoxScheda (nuova scheda Eurise in Firefox). 1440×900 su
+  Ubuntu: barra laterale con le sei sezioni, ricerca su tutta la suite (Ctrl K), Nuovo, Alfred (Ctrl Spazio), stato del
+  Ponte e centro privacy in fondo. Generatore `/home/claude/tela/gen/pc.py` (fuori dal repo: la tela resta la fonte).
+- **`core/sync`** (Kotlin JVM, senza Android; libreria nuova javax.mail 1.6.2, la stessa API di android-mail):
+  `DavHttp` (PROPFIND/REPORT/GET, PUT e DELETE condizionati), `CalDav` (home, calendari con tinta e ctag, etag, multiget,
+  create/update/delete) e `CalSync.plan` (upload, download, conflitto → LAST-MODIFIED più recente, eliminazioni mai a
+  perdere: `Restore`), `ICal` (tiene le proprietà sconosciute, UTC, righe a 75 byte), `Merge3` e `NoteDoc`/`NotesSync`
+  (stesso formato del telefono, `Eurise/Note/<id>.html`, un blocco per riga, unione a tre vie), `MailClient` IMAP/SMTP e
+  `MailText` (persona/avviso/newsletter dalle intestazioni, testo da HTML, server dei provider), `BrowserImport` (profili
+  di Chrome, Chromium, Brave, Edge, Vivaldi, Opera, Firefox anche snap/Flatpak; segnalibri JSON e jsonlz4; HTML di
+  Netscape; password Chromium v10/v11 dato il segreto del portachiavi). Test per tutto (`:core:sync:test`).
+  Da fare: la logica pura del telefono (NoteMerge, categorie di Email) potrà spostarsi qui; lettura SQLite (password e
+  cronologia dei browser, `logins.json`+`key4.db` di Firefox) quando c'è la schermata d'importazione.
+- **`desktop/app`** (Compose Desktop 1.7.3, solo con `EURISE_DESKTOP=1`): finestra con la barra laterale, Perla/Notte dal
+  tema di GNOME o KDE, Ponte dentro (QR nella finestra se non c'è un telefono abbinato), stesso programma per i comandi
+  del Ponte (`eurise firefox`, `eurise manda …`, `eurise installa-firefox`). Le sezioni dicono cosa arriverà: le
+  schermate si scrivono dopo l'approvazione delle tavole. Colori copiati da core/designsystem (Android) finché non è
+  multipiattaforma. Chiudendo la finestra il Ponte si ferma (icona nella barra: da fare).
+- **`desktop/flatpak`**: manifest `eu.eurise.Eurise` (Freedesktop 24.08) con il programma compilato da Gradle
+  (`createDistributable`, Java dentro), permessi per rete, notifiche, Download, native messaging di Firefox e profili dei
+  browser in sola lettura. Per Flathub servirà la compilazione dai sorgenti (dipendenze Maven scaricate prima).
+- **Compila**: lavori «Eurise per il computer» (prove, programma, **prova d'avvio riuscita su Ubuntu 24.04, Ubuntu 22.04 e
+  Fedora** con Xvfb, giro 1 su `prova-computer`) e «Flatpak di Eurise»; `apk-prova` pubblica anche `eurise-linux.tar.gz` e
+  `eurise-linux.flatpak`.
+- **Firefox**: «Protezione Eurise» (browser.privacy: tracciatori sempre, cookie, solo HTTPS, niente ping e prefetch),
+  accesa di base perché trattiene i dati, spenta torna a Firefox; Brave Search come motore (Firefox chiede, decide
+  l'utente); istruzioni del Ponte per l'app. La nuova scheda aspetta la tavola PcFirefoxScheda.
+- **Prossimo**: approvazione delle tavole del computer → schermate (Oggi per primo, poi Calendario e Attività su CalDAV,
+  Note, Email, Alfred); importazione dai browser con la sua schermata (le password vanno in Eurise Password: serve un tipo
+  del Ponte apposta, mai un CSV in Download); icona nella barra e avvio con la sessione; firma Mozilla (account AMO del
+  proprietario); Flathub.
