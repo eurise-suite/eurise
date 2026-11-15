@@ -132,7 +132,7 @@ class PonteApprove : ComponentActivity() {
         val computer = store.computers().firstOrNull { it.id == intent.getStringExtra(EXTRA_COMPUTER) } ?: return
         status = getString(R.string.ponte_pwd_sending)
         thread {
-            val ok = store.send(computer, Kind.PasswordGive, mapOf(
+            val ok = PonteClient(store).send(computer, Kind.PasswordGive, mapOf(
                 "ask" to intent.getStringExtra(EXTRA_ASK).orEmpty(), "site" to site, "username" to l.user, "password" to l.password,
             ))
             runOnUiThread { status = getString(if (ok) R.string.ponte_pwd_sent else R.string.ponte_pwd_failed, computer.name); if (ok) window.decorView.postDelayed({ finish() }, 1200) }
