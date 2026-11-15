@@ -32,6 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -180,8 +184,56 @@ private fun Screen(night: Boolean, onClose: () -> Unit) {
                     BasicText(stringResource(R.string.eurise_fuel_source), Modifier.padding(start = 4.dp, top = 10.dp),
                         style = TextStyle(color = c.muted, fontSize = 11.5.sp, lineHeight = 17.sp))
                 }
+                item { AlsoSearch(c, onClose) }
             }
         }
+        if (failed || list.isNullOrEmpty()) Box(Modifier.padding(horizontal = 16.dp)) { AlsoSearch(c, onClose) }
+    }
+}
+
+/** «Cerca anche» della tavola: negozi, punti di interesse, officine (ricerca per categoria sul telefono) e professionisti. */
+@Composable
+private fun AlsoSearch(c: Colors, onClose: () -> Unit) {
+    val context = LocalContext.current
+    fun go(query: String) {
+        val activity = context as? android.app.Activity ?: return
+        onClose()
+        runCatching { app.organicmaps.search.SearchActivity.start(activity, query) }
+    }
+    Column(Modifier.fillMaxWidth().padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        BasicText(stringResource(R.string.eurise_fuel_also).uppercase(), Modifier.padding(start = 4.dp),
+            style = TextStyle(color = c.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.9.sp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tile(c, stringResource(R.string.eurise_fuel_shops), stringResource(R.string.eurise_fuel_shops_sub), Modifier.weight(1f)) {
+                go(categoryQuery(context, R.string.category_shopping))
+            }
+            Tile(c, stringResource(R.string.eurise_fuel_poi), stringResource(R.string.eurise_fuel_poi_sub), Modifier.weight(1f)) {
+                go(categoryQuery(context, R.string.category_tourism))
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tile(c, stringResource(R.string.eurise_fuel_garage), stringResource(R.string.eurise_fuel_garage_sub), Modifier.weight(1f)) {
+                go(context.getString(R.string.eurise_fuel_garage_query))
+            }
+            Tile(c, stringResource(R.string.eurise_fuel_pros), stringResource(R.string.eurise_fuel_pros_sub), Modifier.weight(1f), soon = true) {
+                android.widget.Toast.makeText(context, R.string.eurise_ex_pros_soon, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+@Composable
+private fun Tile(c: Colors, title: String, sub: String, modifier: Modifier, soon: Boolean = false, onClick: () -> Unit) {
+    val night = c === Notte
+    val bg = if (!soon) c.card else if (night) Color(0xFF2E2840) else Color(0xFFEDE8F5)
+    val ink = if (!soon) c.ink else if (night) Color(0xFFCFC2EE) else Color(0xFF4B3A73)
+    Column(
+        modifier.height(56.dp).clip(RoundedCornerShape(16.dp)).background(bg).clickable(onClick = onClick)
+            .semantics { role = Role.Button }.padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        BasicText(title, maxLines = 1, style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold))
+        BasicText(sub, maxLines = 1, style = TextStyle(color = if (soon) ink else c.muted, fontSize = 11.5.sp))
     }
 }
 

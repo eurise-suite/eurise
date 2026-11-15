@@ -139,6 +139,39 @@ public final class EuriseSky
     return b;
   }
 
+  /**
+   * La fascia dell'orizzonte mentre si esplora (tavola MapEsplora): stessi pezzi della guida, su un'immagine larga quanto
+   * lo schermo (a metà risoluzione) e alta quanto la fascia; le colline occupano l'ultimo quinto. Si disegna sul lavoratore
+   * del cielo (lo stato legge «I tuoi giorni» dall'app Eurise) e torna sul thread principale con {@code done}.
+   */
+  public static void band(@NonNull Context c, int width, int height, @NonNull java.util.function.Consumer<Bitmap> done)
+  {
+    final Context app = c.getApplicationContext();
+    final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+    WORKER.execute(() -> {
+      final int bw = Math.max(64, Math.min(720, width / 2));
+      final int bh = Math.max(16, Math.round(bw * (float) height / Math.max(1, width)));
+      final Bitmap b = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888);
+      final Canvas k = new Canvas(b);
+      final float u = bw / UNITS;
+      k.scale(u, u);
+      final float hUnits = bh / u, horizon = hUnits * 0.8f;
+      final EuriseLandscape.State s = EuriseLandscape.now(app);
+      EuriseLandscape.sky(k, s, UNITS, horizon, 0f);
+      EuriseLandscape.precip(k, s, UNITS, horizon, 0f, null);
+      hills(k, s, horizon, hUnits);
+      final float shade = EuriseLandscape.shade(s);
+      if (shade > 0)
+      {
+        final Paint p = new Paint();
+        p.setColor(0xFF0E1424);
+        p.setAlpha((int) (255 * shade));
+        k.drawRect(0, 0, UNITS, hUnits, p);
+      }
+      main.post(() -> done.accept(b));
+    });
+  }
+
   /** Due profili di colline (lontano più chiaro, vicino più scuro) e quattro alberelli, come nella tavola. */
   private static void hills(@NonNull Canvas k, @NonNull EuriseLandscape.State s, float horizon, float bottom)
   {

@@ -289,4 +289,26 @@
     <string name="eurise_ds_note">Il punto al centro della mappa. Comune e via dalle mappe sul telefono; il meteo solo se acceso nel centro privacy.</string>
     <string name="eurise_lv_where">Dove sei</string>
     <string name="eurise_lv_where_sub">Comune, via e tramonto sopra la barra, sul telefono</string>
+    <string name="eurise_ex_fuel">Benzinai</string>
+    <string name="eurise_ex_pharmacy">Farmacie</string>
+    <string name="eurise_ex_eat">Mangiare</string>
+    <string name="eurise_ex_shops">Negozi</string>
+    <string name="eurise_ex_pros">Professionisti</string>
+    <string name="eurise_ex_pros_soon">Professionisti: presto con QuiAccanto</string>
+    <string name="eurise_lv_horizon">Orizzonte col meteo e l\'ora</string>
+    <string name="eurise_lv_horizon_sub">cielo, nuvole, pioggia, alba e tramonto</string>
+    <string name="eurise_lv_fuel">Prezzi dei carburanti</string>
+    <string name="eurise_lv_fuel_sub">file del Ministero, uguale per tutti · nessuna posizione</string>
+    <string name="eurise_lv_traffic">Traffico e cantieri</string>
+    <string name="eurise_lv_traffic_sub">nessuna fonte libera per ora · arriverà quando ci sarà</string>
+    <string name="eurise_fuel_also">Cerca anche</string>
+    <string name="eurise_fuel_shops">Negozi e servizi</string>
+    <string name="eurise_fuel_shops_sub">orari e telefono</string>
+    <string name="eurise_fuel_poi">Punti di interesse</string>
+    <string name="eurise_fuel_poi_sub">musei, parchi, monumenti</string>
+    <string name="eurise_fuel_garage">Officine e gommisti</string>
+    <string name="eurise_fuel_garage_sub">vicino a te</string>
+    <string name="eurise_fuel_garage_query">Meccanico </string>
+    <string name="eurise_fuel_pros">Professionisti</string>
+    <string name="eurise_fuel_pros_sub">presto con QuiAccanto</string>
 </resources>

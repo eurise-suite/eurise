@@ -158,3 +158,17 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   2025 non ci sono ancora. Paese dal paese della mappa (`MapManager.nativeFindCountry`) con il codice ISO.
 - Non ancora: nomi delle vie più leggibili (stile del motore) e cielo con l'orizzonte in esplorazione (dopo la prova del
   cielo in guida di Mappe 47).
+
+## Esplora e Attività, resto (15 novembre; tavole MapEsplora, MapAttivita, MapLivelli approvate)
+- Orizzonte esplorando: `eurise/EuriseSkyBand.java`, vista in `activity_map.xml` sopra la mappa (non prende i tocchi):
+  dietro la barra di stato e poi 112 dp (64 in orizzontale), disegnata da `EuriseSky.band` con gli stessi pezzi della
+  guida. Nascosta in percorso e guida; interruttore «Orizzonte col meteo e l'ora» in Livelli (stessa preferenza del cielo
+  in guida, `EuriseSky.PREF`).
+- Scorciatoie in alto: `eurise/ui/EuriseEsplora.kt` in `map_buttons_layout_regular.xml` (solo esplorando): Benzinai
+  (`EuriseFuelActivity`), Farmacie, Mangiare, Negozi (ricerca per categoria), Professionisti (presto con QuiAccanto).
+- Nomi delle vie: `eurise_patch.py` alza di un punto le scritte delle strade da auto in `Roads_label.mapcss` (dalle
+  autostrade alle vie di quartiere) e porta il grigio chiaro al medio; scudi e sentieri come in CoMaps.
+- Benzinai: «Cerca anche» della tavola (Negozi e servizi, Punti di interesse, Officine e gommisti, Professionisti presto).
+- Livelli: in più «Orizzonte col meteo e l'ora», «Prezzi dei carburanti» (stato e interruttore del centro privacy) e
+  «Traffico e cantieri» spento e non toccabile (nessuna fonte libera per ora). «Leggi i cartelli con la fotocamera»: non
+  ancora (serve un modello di visione scaricato a richiesta, senza ML Kit).

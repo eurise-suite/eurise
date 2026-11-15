@@ -104,7 +104,7 @@ private fun nearCategories(context: Context): List<Pair<String, Int>> {
 }
 
 /** Il testo con cui CoMaps cerca una categoria: nella lingua del telefono se il motore la conosce, se no in inglese. */
-private fun categoryQuery(context: Context, res: Int): String {
+internal fun categoryQuery(context: Context, res: Int): String {
     val supported = runCatching { DisplayedCategories.nativeIsLangSupported(Language.getDefaultLocale()) }.getOrDefault(true)
     if (supported) return context.getString(res) + " "
     val config = Configuration(context.resources.configuration).apply { setLocale(Locale("en")) }

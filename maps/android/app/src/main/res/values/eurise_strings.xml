@@ -297,4 +297,26 @@
     <string name="eurise_ds_note">The point at the centre of the map. Town and street from the maps on the phone; weather only if turned on in the privacy centre.</string>
     <string name="eurise_lv_where">Where you are</string>
     <string name="eurise_lv_where_sub">Town, street and sunset above the bar, on the phone</string>
+    <string name="eurise_ex_fuel">Fuel</string>
+    <string name="eurise_ex_pharmacy">Pharmacies</string>
+    <string name="eurise_ex_eat">Eat</string>
+    <string name="eurise_ex_shops">Shops</string>
+    <string name="eurise_ex_pros">Professionals</string>
+    <string name="eurise_ex_pros_soon">Professionals: coming soon with QuiAccanto</string>
+    <string name="eurise_lv_horizon">Horizon with weather and time</string>
+    <string name="eurise_lv_horizon_sub">sky, clouds, rain, sunrise and sunset</string>
+    <string name="eurise_lv_fuel">Fuel prices</string>
+    <string name="eurise_lv_fuel_sub">Ministry file, the same for everyone · no location</string>
+    <string name="eurise_lv_traffic">Traffic and roadworks</string>
+    <string name="eurise_lv_traffic_sub">no open source yet · it will come when there is one</string>
+    <string name="eurise_fuel_also">Also search</string>
+    <string name="eurise_fuel_shops">Shops and services</string>
+    <string name="eurise_fuel_shops_sub">hours and phone</string>
+    <string name="eurise_fuel_poi">Points of interest</string>
+    <string name="eurise_fuel_poi_sub">museums, parks, monuments</string>
+    <string name="eurise_fuel_garage">Garages and tyres</string>
+    <string name="eurise_fuel_garage_sub">near you</string>
+    <string name="eurise_fuel_garage_query">Car repair </string>
+    <string name="eurise_fuel_pros">Professionals</string>
+    <string name="eurise_fuel_pros_sub">coming soon with QuiAccanto</string>
 </resources>

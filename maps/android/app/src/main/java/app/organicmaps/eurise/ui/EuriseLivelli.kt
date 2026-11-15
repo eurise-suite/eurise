@@ -19,9 +19,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
@@ -39,9 +41,13 @@ import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import app.organicmaps.R
 import app.organicmaps.eurise.EuriseRouteWeather
+import app.organicmaps.eurise.EuriseSky
 import app.organicmaps.sdk.Framework
 import app.organicmaps.sdk.settings.SpeedCameraMode
 import app.organicmaps.util.ThemeUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * «Livelli e fonti» (tavola MapLivelli, approvata): sotto i livelli della mappa di CoMaps, le voci che cambiano cosa
@@ -58,6 +64,10 @@ object EuriseLivelli {
     }
 
     private fun prefs(c: Context) = PreferenceManager.getDefaultSharedPreferences(c)
+
+    /** L'orizzonte col meteo e l'ora: in guida nel motore, esplorando la fascia in alto (stesso interruttore). */
+    internal fun horizon(c: Context) = prefs(c).getBoolean(EuriseSky.PREF, true)
+    internal fun setHorizon(c: Context, on: Boolean) = prefs(c).edit().putBoolean(EuriseSky.PREF, on).apply()
 
     internal fun speedLimits(c: Context) = prefs(c).getBoolean(c.getString(R.string.pref_speedlimit), true)
     internal fun setSpeedLimits(c: Context, on: Boolean) =
@@ -80,6 +90,11 @@ private fun Sheet(night: Boolean) {
     var limits by remember { mutableStateOf(EuriseLivelli.speedLimits(context)) }
     var cameras by remember { mutableStateOf(EuriseLivelli.cameras(context)) }
     var where by remember { mutableStateOf(EuriseDoveSei.enabled(context)) }
+    var horizon by remember { mutableStateOf(EuriseLivelli.horizon(context)) }
+    // Prezzi dei carburanti: lo stato è nel centro privacy dell'app Eurise (null: app assente, la voce non si mostra).
+    var fuel by remember { mutableStateOf<Boolean?>(null) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { fuel = withContext(Dispatchers.IO) { EuriseFuelData.privacy(context) } }
     // null: l'app Eurise non c'è o non ha ancora risposto (la voce del meteo non si mostra).
     var weather by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { EuriseRouteWeather.status(context) { weather = it } }
@@ -88,7 +103,11 @@ private fun Sheet(night: Boolean) {
         BasicText(stringResource(R.string.eurise_lv_lead), style = TextStyle(color = c.muted, fontSize = 12.5.sp))
         Section(c, stringResource(R.string.eurise_lv_phone))
         Card(c) {
-            Toggle(c, stringResource(R.string.eurise_lv_speed), stringResource(R.string.eurise_lv_speed_sub), limits) {
+            Toggle(c, stringResource(R.string.eurise_lv_horizon), stringResource(R.string.eurise_lv_horizon_sub), horizon) {
+                horizon = it
+                EuriseLivelli.setHorizon(context, it)
+            }
+            Toggle(c, stringResource(R.string.eurise_lv_speed), stringResource(R.string.eurise_lv_speed_sub), limits, divider = true) {, stringResource(R.string.eurise_lv_speed_sub), limits) {
                 limits = it
                 EuriseLivelli.setSpeedLimits(context, it)
             }
@@ -101,12 +120,25 @@ private fun Sheet(night: Boolean) {
                 EuriseDoveSei.setEnabled(context, it)
             }
         }
-        weather?.let { on ->
+        if (weather != null || fuel != null) {
             Section(c, stringResource(R.string.eurise_lv_network))
             Card(c) {
-                Toggle(c, stringResource(R.string.eurise_lv_weather), stringResource(R.string.eurise_lv_weather_sub), on) { want ->
-                    EuriseRouteWeather.set(context, want) { weather = it }
+                weather?.let { on ->
+                    Toggle(c, stringResource(R.string.eurise_lv_weather), stringResource(R.string.eurise_lv_weather_sub), on) { want ->
+                        EuriseRouteWeather.set(context, want) { weather = it }
+                    }
                 }
+                fuel?.let { on ->
+                    Toggle(c, stringResource(R.string.eurise_lv_fuel), stringResource(R.string.eurise_lv_fuel_sub), on, divider = weather != null) { want ->
+                        scope.launch {
+                            fuel = withContext(Dispatchers.IO) {
+                                EuriseFuelData.privacy(context, if (want) "enable" else "disable") ?: EuriseFuelData.privacy(context)
+                            }
+                        }
+                    }
+                }
+                // Traffico e cantieri: nella tavola, ma una fonte libera per l'Italia non c'è ancora; la voce lo dice.
+                Toggle(c, stringResource(R.string.eurise_lv_traffic), stringResource(R.string.eurise_lv_traffic_sub), false, divider = true, enabled = false) {}
             }
         }
         BasicText(stringResource(R.string.eurise_lv_note), style = TextStyle(color = c.muted, fontSize = 11.5.sp, lineHeight = 17.sp))
@@ -125,10 +157,11 @@ private fun Card(c: Colors, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Toggle(c: Colors, title: String, sub: String, on: Boolean, divider: Boolean = false, onChange: (Boolean) -> Unit) {
+private fun Toggle(c: Colors, title: String, sub: String, on: Boolean, divider: Boolean = false, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     if (divider) Box(Modifier.fillMaxWidth().padding(vertical = 0.dp).heightIn(min = 1.dp, max = 1.dp).background(c.ink.copy(alpha = 0.07f)))
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable { onChange(!on) }
+        Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable(enabled = enabled) { onChange(!on) }
+            .alpha(if (enabled) 1f else 0.5f)
             .semantics(mergeDescendants = true) { role = Role.Switch; stateDescription = if (on) "on" else "off" },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

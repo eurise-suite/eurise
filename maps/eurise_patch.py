@@ -1282,3 +1282,45 @@ patch(fw_java, "  public static native void nativeResetRoadSpeedLimit();\n", """
   public static native String nativeEuriseCityAt(double lat, double lon);
 """)
 print("eurise_patch: «Dove sei» mentre si esplora (MapEsplora)")
+
+# Nomi delle vie più leggibili (tavola MapEsplora): nelle scritte delle strade da auto (dalle autostrade alle vie di
+# quartiere) un punto in più e il grigio chiaro portato al medio. Scudi, sentieri e piste restano come in CoMaps.
+import re as _re
+roads_label = root / "data" / "styles" / "default" / "include" / "Roads_label.mapcss"
+_txt = roads_label.read_text(encoding="utf-8")
+_a = _txt.index("/* 3.TRUNK & MOTORWAY")
+_b = _txt.index("/* Don't display names of sidewalks")
+_mid = _re.sub(r"(?<!shield-)font-size: (\d+);", lambda m: "font-size: %d;" % (int(m.group(1)) + 1), _txt[_a:_b])
+_mid = _mid.replace("text-color: @label_light;", "text-color: @label_medium;")
+assert _mid != _txt[_a:_b]
+roads_label.write_text(_txt[:_a] + _mid + _txt[_b:], encoding="utf-8")
+print("eurise_patch: nomi delle vie più leggibili")
+
+# Esplora (tavola MapEsplora): l'orizzonte col meteo in alto, sopra la mappa e sotto i pulsanti (non prende i tocchi), e
+# le scorciatoie Benzinai, Farmacie, Mangiare, Negozi, Professionisti nella schermata normale della mappa.
+patch(res / "layout" / "activity_map.xml", """    <app.organicmaps.sdk.MapView
+      android:id="@+id/map"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent" />
+""", """    <app.organicmaps.sdk.MapView
+      android:id="@+id/map"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent" />
+    <app.organicmaps.eurise.EuriseSkyBand
+      android:id="@+id/eurise_sky_band"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentTop="true" />
+""")
+patch(res / "layout" / "map_buttons_layout_regular.xml", """  <include
+    layout="@layout/map_status_track_recording\"""", """  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_explore_chips"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentTop="true" />
+  <include
+    layout="@layout/map_status_track_recording\"""")
+patch(mbc, "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);\n",
+      "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);\n"
+      "    app.organicmaps.eurise.ui.EuriseEsplora.attach(mFrame.findViewById(R.id.eurise_explore_chips));\n")
+print("eurise_patch: orizzonte e scorciatoie mentre si esplora (MapEsplora)")
