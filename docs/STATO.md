@@ -2626,3 +2626,9 @@ da fare, documenti), partendo da Linux.
 - Office: il manifest di Collabora apre già 41 tipi (doc, docx, odt, xls, xlsx, ods, ppt, pptx, odp, csv, rtf, pdf…).
 - Leggi non è un lettore di libri (è la lettura del testo dalle immagini): niente epub; un lettore epub sarebbe un lavoro
   a parte, con la sua tavola.
+- **Alfred ricorda** (giro 600, mandato in chat): `core/data/alfred/AlfredMemory` (impostazioni `eurise_alfred_memory`, nel
+  backup cifrato): persona scelta per un nome (imparata quando chiamata o messaggio partono, anche da «oppure X»: campo
+  `said` in `Command.Call`/`Message`), app abituale per persona (3 messaggi con la stessa app), «ricorda che / tieni a mente
+  che» (`Command.Remember`, scheda «Da ricordare»). Usata in `findPeople` (la persona già scelta per prima), in `message`
+  (canale abituale se non detto) e come `hints` per il cervello. In «Chi risponde»: interruttore e voci con ×.
+  Manca: la voce nel centro privacy (oggi non c'è un elenco dei dati locali dove agganciarla).
