@@ -153,8 +153,32 @@ for COOL in $(find "$FILES" -name 'bundle.js' -path '*dist*' | head -1); do
 	grep -oh '.\{0,250\}icon-maskable.\{0,350\}' "$(dirname "$COOL")"/*.css "$COOL" | head -12 >> "$OUT/giro-guidato.txt"
 done
 
+# Due documenti nella stessa finestra: il secondo arriva per D-Bus al guscio già aperto e diventa una scheda; la striscia
+# delle schede (con lo stile Eurise) compare.
+schede() {
+	echo "" >> "$R"
+	echo "## Due documenti, due schede" >> "$R"
+	local script=$OUT/schede.sh
+	cat > "$script" <<SCHEDE
+apri() { flatpak run --user --env=QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu --env=QT_QPA_PLATFORM=xcb \\
+	--filesystem=$HOME/Documents --env=LANG=it_IT.UTF-8 --env=LANGUAGE=it --env=LC_ALL=it_IT.UTF-8 $APP "\$1" >> $OUT/schede.log 2>&1 & }
+apri $HOME/Documents/lettera.docx
+sleep 30
+w=\$(xdotool search --onlyvisible --name lettera.docx 2> /dev/null | head -1)
+[ -n "\$w" ] && xdotool windowsize "\$w" $W $H windowmove "\$w" 0 0
+apri $HOME/Documents/conti.xlsx
+sleep 30
+import -window root $OUT/schede.png
+SCHEDE
+	dbus-run-session -- bash "$script" || true
+	grep -c . "$OUT/schede.log" | sed 's/^/- righe di registro: /' >> "$R"
+	pkill -f coda-qt 2> /dev/null
+	sleep 3
+}
+
 apri lettera.docx
 apri conti.xlsx
 apri slide.pptx
+schede
 echo "" >> "$R"
 ls "$OUT"/*.png 2> /dev/null | wc -l | sed 's/^/- schermate: /' >> "$R"

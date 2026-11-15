@@ -4,7 +4,8 @@
 Uso: inietta.py <cartella dist> <cartella web> [script di diagnosi]
 
 Copia Control.Eurise.js, eurise.css e le immagini nella cartella dist e aggiunge alla pagina, subito dopo bundle.js e con
-gli stessi attributi (defer), il nostro script; il foglio di stile prima di </head>. Lo usano il Flatpak Eurise
+gli stessi attributi (defer), il nostro script; il foglio di stile prima di </head>. Alla striscia delle schede del guscio
+(qtapp-tabstrip.html) aggiunge eurise-tabstrip.css. Lo usano il Flatpak Eurise
 (costruisci.sh) e la prova del computer (prova.sh, che aggiunge anche la diagnosi). Si può ripetere: non duplica nulla.
 """
 import re
@@ -34,6 +35,17 @@ def main() -> None:
             put(svg, dist / 'images' / sub / svg.name)
     if diag:
         put(diag, dist / 'eurise-diag.js')
+    # Striscia delle schede del guscio Qt (26.04): solo il nostro foglio di stile, dopo il suo.
+    strip = dist / 'qtapp-tabstrip.html'
+    if strip.exists():
+        put(Path(__file__).with_name('eurise-tabstrip.css'), dist / 'eurise-tabstrip.css')
+        s = strip.read_text(encoding='utf-8')
+        if 'eurise-tabstrip.css' not in s:
+            s = s.replace('</head>', '<link rel="stylesheet" href="eurise-tabstrip.css" />\n</head>', 1)
+            tmp = strip.with_name(strip.name + '.eurise')
+            tmp.write_text(s, encoding='utf-8')
+            tmp.replace(strip)
+        print(f'schede Eurise in {strip.name}')
     for page in [dist / 'cool-qt.html', dist / 'cool.html']:
         if not page.exists():
             continue

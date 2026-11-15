@@ -1,0 +1,12 @@
+--- a/qt/TabManager.cpp	2026-11-15 01:05:13.001018706 +0000
++++ b/qt/TabManager.cpp	2026-11-15 01:05:13.001200615 +0000
+@@ -786,7 +786,8 @@
+ 
+ void TabManager::emitTabsChangedNow()
+ {
+-    _shellView->setVisible(_tabs.size() > 1);
++    // Eurise: la striscia delle schede si vede sempre, anche con un documento solo (tavola OffComputer).
++    _shellView->setVisible(!_tabs.empty());
+     if (_tabs.size() < 2)
+         hideHoverCard();
+     emit _shellBridge->tabsChanged(currentTabsJson());
