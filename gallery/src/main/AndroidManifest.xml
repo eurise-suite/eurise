@@ -37,6 +37,49 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- «Apri con › Galleria»: foto e video da File, Email, Messaggi, browser (15 novembre). -->
+        <activity
+            android:name=".OpenActivity"
+            android:exported="true"
+            android:label="@string/gallery_app_name"
+            android:taskAffinity="eu.eurise.gallery.apri"
+            android:excludeFromRecents="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+        <!-- La Galleria tra le scelte quando un'app chiede una foto o un video («Apri da», «Scegli un'immagine»). -->
+        <activity
+            android:name=".PickActivity"
+            android:exported="true"
+            android:label="@string/gallery_app_name"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.GET_CONTENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.OPENABLE" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="media" android:pathPattern="/external/images/media" />
+            </intent-filter>
+        </activity>
         <!-- «Modifica» o «Condividi › Modifica» da un'altra app: si apre solo l'editor, in un compito a sé. -->
         <activity
             android:name=".EditActivity"

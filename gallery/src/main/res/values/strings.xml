@@ -255,4 +255,7 @@
     <string name="save_in">Salva in…</string>
     <string name="save_in_hint">In una cartella del telefono o del tuo cloud, con Eurise File</string>
     <string name="save_in_missing">Serve l\'app Eurise per «Salva in…»</string>
+    <string name="pick_title">Scegli una foto</string>
+    <string name="pick_title_video">Scegli un video</string>
+    <string name="pick_done">Scegli</string>
 </resources>

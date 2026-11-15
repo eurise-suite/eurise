@@ -28,4 +28,5 @@
     <string name="ponte_event_created">In Calendario: %1$s</string>
     <string name="ponte_event_failed">Appuntamento dal computer non salvato: nessun calendario modificabile</string>
     <string name="ponte_event_no_permission">Appuntamento dal computer: apri Calendario e permetti l\'accesso al calendario</string>
+    <string name="files_pick_label">Eurise File</string>
 </resources>

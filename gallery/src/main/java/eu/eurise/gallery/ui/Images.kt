@@ -42,7 +42,7 @@ private suspend fun loadThumb(context: Context, item: MediaItem): ImageBitmap? =
     bitmap?.asImageBitmap()
 }
 
-private suspend fun loadFull(context: Context, item: MediaItem): ImageBitmap? = withContext(Dispatchers.IO) {
+internal suspend fun loadFull(context: Context, item: MediaItem): ImageBitmap? = withContext(Dispatchers.IO) {
     runCatching {
         val bitmap: android.graphics.Bitmap = when {
             item.cloudOnly && item.isVideo -> BitmapFactory.decodeFile(GalleryStore.get(context).thumbFile(-item.id).path)

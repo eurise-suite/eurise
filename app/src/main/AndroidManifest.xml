@@ -123,6 +123,20 @@
             </intent-filter>
             <meta-data android:name="eu.eurise.section" android:value="scanner" />
         </activity-alias>
+        <!-- Eurise File tra le scelte di tutte le app quando chiedono un file (Allega, Apri da, Scegli). -->
+        <activity
+            android:name="eu.eurise.core.files.PickFileActivity"
+            android:exported="true"
+            android:label="@string/files_pick_label"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.files.scegli">
+            <intent-filter>
+                <action android:name="android.intent.action.GET_CONTENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.OPENABLE" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
         <!-- Eurise File: «Salva in…» e «Apri da…» per Office, Galleria e Browser. Solo app Eurise con la stessa firma. -->
         <activity
             android:name="eu.eurise.core.files.FilesActivity"
