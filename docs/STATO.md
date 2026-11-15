@@ -2192,7 +2192,11 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   - prova.sh: schermata `inizio.png`, `*-nastro-1..8`, `*-file`, `*-carattere`, `*-trova`, `*-finestra` (tasti F6–F9
     della diagnosi).
   - Prima prova (prototipo) 43701302013: tutto compare; corretti pulsanti grandi, icone delle tendine, Home troppo
-    lunga, Inizio schiacciato, tendine strette. Nuova prova 43702994717 e strada 2 43703060632 in corso.
+    lunga, Inizio schiacciato, tendine strette. Seconda prova 43702994717: Inizio e tendine a posto; corrette ancora le
+    icone di Maiuscole e Interlinea (argomenti scambiati), la Home (via la tessera Citazione, che resta in ↗) e i nomi
+    inglesi dei modelli. Terza prova 43704607042 e strada 2 43704685827 (con la patch 02) in corso.
+  - **Prossimo, deciso dal proprietario (15 novembre)**: quando Office sul computer sarà completo, si pensa alla
+    webapp (Office nel browser).
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
