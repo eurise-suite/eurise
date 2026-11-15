@@ -7,6 +7,25 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application>
+        <!-- «Apri con › Calendario» per i file .ics (15 novembre). -->
+        <activity
+            android:name=".importer.IcsImportActivity"
+            android:exported="true"
+            android:label="@string/ics_label"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.calendar.importa">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/x-vcalendar" />
+                <data android:mimeType="application/ics" />
+            </intent-filter>
+        </activity>
         <receiver
             android:name=".reminders.ReminderReceiver"
             android:exported="true">

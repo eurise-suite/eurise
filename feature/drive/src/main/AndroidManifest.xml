@@ -6,6 +6,22 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:requestLegacyExternalStorage="true">
+        <!-- «Apri con» per i PDF: il lettore della suite (15 novembre). -->
+        <activity
+            android:name=".PdfOpenActivity"
+            android:exported="true"
+            android:label="@string/drive_pdf_open_label"
+            android:taskAffinity="eu.eurise.pdf"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+        </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.drivefiles"

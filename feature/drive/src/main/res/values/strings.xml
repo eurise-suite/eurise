@@ -166,4 +166,5 @@
     <string name="drive_kind_archive">Archivi</string>
     <string name="drive_kind_other">Altro</string>
     <string name="drive_for_events">Per i tuoi impegni</string>
+    <string name="drive_pdf_open_label">PDF Eurise</string>
 </resources>

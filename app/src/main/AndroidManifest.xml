@@ -123,6 +123,21 @@
             </intent-filter>
             <meta-data android:name="eu.eurise.section" android:value="scanner" />
         </activity-alias>
+        <!-- «Condividi › Note»: un testo o un link da qualsiasi app diventa una nota (15 novembre). -->
+        <activity
+            android:name=".ShareToNotesActivity"
+            android:exported="true"
+            android:label="@string/share_note_label"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="eu.eurise.notes.condividi"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
         <!-- Eurise File tra le scelte di tutte le app quando chiedono un file (Allega, Apri da, Scegli). -->
         <activity
             android:name="eu.eurise.core.files.PickFileActivity"

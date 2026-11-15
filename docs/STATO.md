@@ -2619,5 +2619,10 @@ da fare, documenti), partendo da Linux.
   con Copia, Condividi, Riapri. Per ora nel Browser; da aggiungere alle altre app.
 - Galleria: `OpenActivity` (VIEW foto/video da altre app) e `PickActivity` (GET_CONTENT e PICK, una o più, sola lettura).
 - Eurise File: `PickFileActivity` (GET_CONTENT di qualsiasi file, telefono e cloud, sola lettura).
-- Ancora da fare negli «Apri con»: lettore PDF dell'app Eurise (VIEW application/pdf), .ics nel Calendario, .vcf nei
-  Contatti, testo condiviso in Note; Leggi per epub; controllare i filtri di Office nel manifest di Collabora.
+- «Apri con» completati lo stesso giorno: PDF nel lettore della suite (`PdfOpenActivity`, feature/drive, su una copia),
+  .ics nel Calendario (`Ics` in core/data con `IcsTest`, `IcsImportActivity`: scelta del calendario, spunte), .vcf nella
+  Rubrica dell'APK Telefono (`VCard` in core/contacts con `VCardTest`, `VcfImportActivity`), «Condividi › Note»
+  (`ShareToNotesActivity`, nota senza aprire Note). Schermata comune `ImportScreen` in core/designsystem.
+- Office: il manifest di Collabora apre già 41 tipi (doc, docx, odt, xls, xlsx, ods, ppt, pptx, odp, csv, rtf, pdf…).
+- Leggi non è un lettore di libri (è la lettura del testo dalle immagini): niente epub; un lettore epub sarebbe un lavoro
+  a parte, con la sua tavola.

@@ -29,4 +29,7 @@
     <string name="ponte_event_failed">Appuntamento dal computer non salvato: nessun calendario modificabile</string>
     <string name="ponte_event_no_permission">Appuntamento dal computer: apri Calendario e permetti l\'accesso al calendario</string>
     <string name="files_pick_label">Eurise File</string>
+    <string name="share_note_label">Note</string>
+    <string name="share_note_done">Salvata in Note</string>
+    <string name="share_note_failed">Non sono riuscito a salvare la nota</string>
 </resources>

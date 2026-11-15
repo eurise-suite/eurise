@@ -1234,7 +1234,7 @@ private fun PdfAnnotator(source: PdfSource, start: Int, file: File, title: Strin
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
+internal fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val source = remember(file) { runCatching { PdfSource(file) }.getOrNull() }
     DisposableEffect(source) { onDispose { source?.close() } }

@@ -63,6 +63,26 @@
                 <data android:scheme="tel" />
             </intent-filter>
         </activity>
+        <!-- «Apri con › Rubrica» per i file .vcf (15 novembre). -->
+        <activity
+            android:name=".VcfImportActivity"
+            android:exported="true"
+            android:label="@string/ph_contacts_app"
+            android:icon="@mipmap/ic_contacts"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.phone.importa">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="text/vcard" />
+                <data android:mimeType="text/x-vcard" />
+                <data android:mimeType="text/directory" />
+            </intent-filter>
+        </activity>
         <!-- Rubrica: la stessa app con la sua icona nel cassetto; apre i contatti e riceve «Aggiungi in rubrica». -->
         <activity-alias
             android:name=".ContactsAlias"

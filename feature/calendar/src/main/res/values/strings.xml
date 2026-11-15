@@ -164,4 +164,24 @@
     <string name="trip_done_text">Trovi i tratti nel Calendario, la sveglia e il fuso nell\'Orologio e il biglietto in File › Viaggi. La modalità Viaggio si accenderà da sola.</string>
     <string name="trip_close">Chiudi</string>
     <string name="trip_ok">OK</string>
+    <string name="ics_label">Calendario</string>
+    <string name="ics_title">Aggiungi al Calendario</string>
+    <string name="ics_all_day">tutto il giorno</string>
+    <string name="ics_repeats">si ripete: aggiungo la prima volta</string>
+    <string name="ics_where">In quale calendario</string>
+    <string name="ics_allow">Permetti l\'accesso al calendario</string>
+    <string name="ics_no_calendar">Nessun calendario modificabile: creane uno in Calendario.</string>
+    <string name="ics_empty">Nel file non ci sono appuntamenti</string>
+    <plurals name="ics_found">
+        <item quantity="one">%1$d appuntamento nel file</item>
+        <item quantity="other">%1$d appuntamenti nel file</item>
+    </plurals>
+    <plurals name="ics_add">
+        <item quantity="one">Aggiungi %1$d appuntamento</item>
+        <item quantity="other">Aggiungi %1$d appuntamenti</item>
+    </plurals>
+    <plurals name="ics_done">
+        <item quantity="one">%1$d appuntamento in %2$s</item>
+        <item quantity="other">%1$d appuntamenti in %2$s</item>
+    </plurals>
 </resources>

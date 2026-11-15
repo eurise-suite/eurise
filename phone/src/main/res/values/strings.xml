@@ -116,4 +116,19 @@
     <string name="ph_filter_why_foreign">sconosciuto dall\'estero</string>
     <string name="ph_filter_why_unknown">non in Rubrica</string>
     <string name="ph_filter_why_repeated">insisteva dall\'estero</string>
+    <string name="vcf_title">Aggiungi alla rubrica</string>
+    <string name="vcf_allow">Permetti l\'accesso alla rubrica</string>
+    <string name="vcf_empty">Nel file non ci sono contatti</string>
+    <plurals name="vcf_found">
+        <item quantity="one">%1$d contatto nel file</item>
+        <item quantity="other">%1$d contatti nel file</item>
+    </plurals>
+    <plurals name="vcf_add">
+        <item quantity="one">Aggiungi %1$d contatto</item>
+        <item quantity="other">Aggiungi %1$d contatti</item>
+    </plurals>
+    <plurals name="vcf_done">
+        <item quantity="one">%1$d contatto in rubrica</item>
+        <item quantity="other">%1$d contatti in rubrica</item>
+    </plurals>
 </resources>
