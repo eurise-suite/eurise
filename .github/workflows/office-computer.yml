@@ -10,6 +10,8 @@ on:
     branches: [office]
     paths:
       - office/computer/**
+      # La ricetta dai sorgenti ha il suo flusso (office-sorgenti.yml).
+      - "!office/computer/sorgenti/**"
       - office/app/web/**
       - .github/workflows/office-computer.yml
 

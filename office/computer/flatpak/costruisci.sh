@@ -37,35 +37,7 @@ done
 # 3. Nome, icona e voce nel menu: via quelle di Collabora, le nostre con l'identificativo eu.eurise.Office.
 SHARE="$WORK/app/files/share"
 ORIG_DESKTOP=$(ls "$SHARE"/applications/"$SRC".desktop 2> /dev/null | head -1 || true)
-python3 - "$ORIG_DESKTOP" "$SHARE/applications/$APP.desktop" <<'PY'
-import sys
-orig, out = sys.argv[1], sys.argv[2]
-mimes = ''
-if orig:
-    for line in open(orig, encoding='utf-8'):
-        if line.startswith('MimeType='):
-            mimes = line.strip()
-            break
-lines = [
-    '[Desktop Entry]',
-    'Type=Application',
-    'Name=Eurise Office',
-    'GenericName=Documenti, fogli e presentazioni',
-    'GenericName[en]=Documents, spreadsheets and presentations',
-    'Comment=Scrivi, calcola e presenta: privato, libero, europeo',
-    'Comment[en]=Write, calculate and present: private, free, European',
-    'Icon=eu.eurise.Office',
-    'Exec=coda-qt %U',
-    'Terminal=false',
-    'StartupNotify=true',
-    'StartupWMClass=coda-qt',
-    'Categories=Office;WordProcessor;Spreadsheet;Presentation;',
-    'Keywords=documento;foglio;presentazione;docx;xlsx;pptx;odt;ods;odp;pdf;',
-]
-if mimes:
-    lines.append(mimes)
-open(out, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-PY
+python3 "$HERE/voce.py" "${ORIG_DESKTOP:-/nessuno}" "$SHARE/applications/$APP.desktop"
 find "$SHARE" \( -name "$SRC*.desktop" -o -name "$SRC*.png" -o -name "$SRC*.svg" -o -name "$SRC*.xml" \) -delete
 mkdir -p "$SHARE/icons/hicolor/scalable/apps"
 cp "$HERE/$APP.svg" "$SHARE/icons/hicolor/scalable/apps/$APP.svg"
