@@ -1932,3 +1932,129 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 [data-theme='dark'] .eurise-pop input,
 [data-theme='dark'] #eurise-find .ef-field,
 [data-theme='dark'] .eurise-pnb { background: #1B2029 !important; color: #E6E9F0 !important; }
+
+/* =====================================================================================================================
+   Ergonomia del computer (15 novembre): barra rapida, schede che compaiono da sole, tasto destro, lettere del tasto
+   Alt, nastro a scomparsa, Concentrazione, colonna senza doppioni
+   ===================================================================================================================== */
+
+/* Barra rapida sulla selezione. */
+#eurise-mini {
+	position: fixed;
+	z-index: 2900;
+	padding: 4px;
+	border-radius: 14px;
+	background: #FFFFFF;
+	box-shadow: 0 8px 24px rgba(30, 29, 27, 0.18), 0 0 0 1px #E4E3DE;
+	display: flex;
+	align-items: center;
+	gap: 1px;
+}
+#eurise-mini .eurise-rb {
+	min-width: 30px;
+	height: 30px;
+	margin: 0 !important;
+	padding: 0 5px !important;
+	border: 0 !important;
+	border-radius: 9px;
+	background: transparent !important;
+	box-shadow: none !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font: 700 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+	cursor: pointer;
+}
+#eurise-mini .eurise-rb:hover { background: #ECECE7 !important; }
+#eurise-mini .eurise-rb.suite { color: #7A3440; }
+#eurise-mini .eurise-rb.suite svg { width: 17px; height: 17px; }
+#eurise-mini .eurise-rb.swatched { flex-direction: column; gap: 1px; }
+#eurise-mini .eurise-swatch { width: 16px; height: 3px; border-radius: 2px; }
+#eurise-mini .eurise-mini-sep { width: 1px; height: 20px; margin: 0 4px; background: #E4E3DE; }
+
+/* Scheda che compare da sola: accento e pallino. */
+#eurise-tabs .eurise-rtab.context { color: #3E5C8A; display: flex; align-items: center; gap: 6px; }
+#eurise-tabs .eurise-rtab.context i { width: 7px; height: 7px; border-radius: 4px; background: #3E5C8A; }
+
+/* Tasto destro. */
+.eurise-pop.ctx { width: 260px; }
+.eurise-pctx { display: flex; gap: 6px; padding: 2px 2px 6px; }
+.eurise-pctx .eurise-pnb { height: 50px; }
+.eurise-pi.suite { color: #7A3440 !important; }
+.eurise-pi.suite svg { color: #7A3440; }
+.eurise-pi img { flex: none; width: 17px; height: 17px; }
+
+/* Lettere del tasto Alt. */
+#eurise-tabs .eurise-rtab,
+#eurise-ribbon .eurise-rb,
+#eurise-ribbon .eurise-drop { position: relative; }
+.eurise-kt {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	z-index: 5;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 3px;
+	box-sizing: border-box;
+	border-radius: 5px;
+	background: #1F2A44;
+	color: #FFFFFF;
+	font: 800 10.5px/16px 'Plus Jakarta Sans', system-ui, sans-serif;
+	text-align: center;
+	pointer-events: none;
+}
+
+/* Nastro a scomparsa: restano le schede e la pillola; una scheda lo apre sopra il documento. */
+body.eurise-nastro-chiuso #eurise-ribbon { display: none; }
+body.eurise-nastro-chiuso.eurise-nastro-aperto #eurise-ribbon {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	z-index: 1600;
+	display: flex;
+	padding: 6px;
+	border-radius: 14px;
+	background: #F4F4F1;
+	box-shadow: 0 10px 30px rgba(30, 29, 27, 0.18);
+}
+
+/* Concentrazione: solo il documento, le schede e la pillola; la pillola «Esci» in basso. */
+body.eurise-concentrazione #eurise-ribbon,
+body.eurise-concentrazione #sidebar-dock-wrapper,
+body.eurise-concentrazione #toolbar-down,
+body.eurise-concentrazione #eurise-header .eurise-cmdsearch { display: none !important; }
+#eurise-esci {
+	position: fixed;
+	left: 50%;
+	bottom: 18px;
+	z-index: 2900;
+	transform: translateX(-50%);
+	height: 34px;
+	margin: 0;
+	padding: 0 16px;
+	border: 0;
+	border-radius: 17px;
+	background: #1F2A44;
+	color: #FFFFFF;
+	box-shadow: 0 6px 20px rgba(30, 29, 27, 0.25);
+	font: 700 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	opacity: 0.85;
+	cursor: pointer;
+}
+#eurise-esci:hover { opacity: 1; }
+
+/* Colonna di destra senza doppioni del nastro: via Stile, Carattere, Paragrafo, Allineamento e Numeri; restano le nostre
+   sezioni e le proprietà dell'oggetto scelto (immagine, forma, tabella, pagina…). */
+body.eurise-desk #sidebar-container .ui-expander-container.StylesPropertyPanel,
+body.eurise-desk #sidebar-container .ui-expander-container.TextPropertyPanel,
+body.eurise-desk #sidebar-container .ui-expander-container.ParaPropertyPanel,
+body.eurise-desk #sidebar-container .ui-expander-container.AlignmentPropertyPanel,
+body.eurise-desk #sidebar-container .ui-expander-container.NumberFormatPropertyPanel { display: none !important; }
+body.eurise-desk #PropertyDeck.deck:not(:has(.ui-expander-container:not(.StylesPropertyPanel):not(.TextPropertyPanel):not(.ParaPropertyPanel):not(.AlignmentPropertyPanel):not(.NumberFormatPropertyPanel))) .ui-deck-header { display: none; }
+
+[data-theme='dark'] #eurise-mini { background: #222833; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px #343B48; }
+[data-theme='dark'] #eurise-mini .eurise-rb { color: #E6E9F0; }
+[data-theme='dark'] body.eurise-nastro-chiuso.eurise-nastro-aperto #eurise-ribbon { background: #171B22; }

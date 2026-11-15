@@ -257,6 +257,11 @@
 		showslide: [['m', 'M3 5h18v12H3z'], ['a', 'M9 11l2 2 4-4']],
 		insert: [['m', 'M4 4h16v16H4z'], ['a', 'M12 8v8 M8 12h8']],
 		zoomreset: 'eurisezoom100',
+		euriseritaglia: [['m', 'M6 2v14h14'], ['a', 'M2 6h14v14']],
+		euriserifletti: [['m', 'M12 3v18'], ['a', 'M9 7L4 17h5z M15 7l5 10h-5z']],
+		euriselinea: [['m', 'M4 20L20 4'], ['a', 'M4 14l6 6']],
+		euriseconcentrazione: [['m', 'M4 8V4h4 M16 4h4v4 M20 16v4h-4 M8 20H4v-4'], ['a', 'M12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4']],
+		eurisenastro: [['m', 'M3 5h18v6H3z'], ['a', 'M8 16l4 4 4-4']],
 		// Nomi con cui Collabora chiede alcune di queste icone (iconURLAliases di LOUtil).
 		insertsymbol: 'charmapcontrol',
 		insertrowsmenu: 'insertrowsafter',
@@ -672,12 +677,27 @@
 				})(container.children);
 			});
 		}
+		if (onDesk()) {
+			// Sul computer anche tutte le voci dei nostri nastri, con la scheda e la scorciatoia (proposta 5).
+			Object.keys(DESK_ITEMS).forEach(function (label) {
+				var entry = DESK_ITEMS[label];
+				var key = shortcutOf(entry.item);
+				if (seen['desk:' + label]) return;
+				seen['desk:' + label] = true;
+				out.push({ label: label, command: entry.item, where: entry.where + (key ? ' · ' + key : '') });
+			});
+		}
 		if (typeof _UNO === 'function') COMMON.forEach(function (c) { add(_UNO(c, app.map.getDocType(), true), c, ''); });
 		return out;
 	}
 
 	function runCommand(command) {
 		closeOverlay();
+		if (command && typeof command === 'object') {
+			countUse(command);
+			if (typeof command.run === 'string') uno(command.run); else command.run();
+			return;
+		}
 		if (String(command).indexOf('.uno:') === 0) app.map.sendUnoCommand(command);
 		else app.dispatcher.dispatch(command);
 	}
@@ -776,8 +796,11 @@
 			list.innerHTML = '';
 			rows = [];
 			var found = commands.filter(function (c) { return !fq || fold(c.label).indexOf(fq) >= 0; });
-			found.sort(function (a, b) { return fold(a.label).indexOf(fq) - fold(b.label).indexOf(fq); });
-			if (found.length) heading(t('Comandi', 'Commands'));
+			var counts = onDesk() ? useCounts() : {};
+			found.sort(function (a, b) {
+				return (fold(a.label).indexOf(fq) - fold(b.label).indexOf(fq)) || ((counts[b.label] || 0) - (counts[a.label] || 0));
+			});
+			if (found.length) heading(!q && onDesk() && Object.keys(counts).length ? t('Più usati', 'Most used') : t('Comandi', 'Commands'));
 			found.slice(0, q ? 8 : 6).forEach(function (c) {
 				row(c.label, '', c.where, 0, function () { runCommand(c.command); });
 			});
@@ -1295,11 +1318,7 @@
 			b.setAttribute('data-uno', item.run);
 			if (phone.states[item.run] === 'true') b.classList.add('on');
 		}
-		if (item.menu) {
-			b.classList.add('has-menu');
-			b.insertAdjacentHTML('beforeend', '<svg class="eurise-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>');
-		}
-		b.onclick = function () { anchorEl = b; if (typeof item.run === 'string') uno(item.run); else item.run(); };
+		b.onclick = function () { if (typeof item.run === 'string') uno(item.run); else item.run(); };
 		return b;
 	}
 
@@ -1823,7 +1842,11 @@
 			b.classList.add('has-menu');
 			b.insertAdjacentHTML('beforeend', '<svg class="eurise-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>');
 		}
-		b.onclick = function () { anchorEl = b; if (typeof item.run === 'string') uno(item.run); else item.run(); };
+		b.onclick = function () {
+			anchorEl = b;
+			if (onDesk()) { countUse(item); peekDone(); }
+			if (typeof item.run === 'string') uno(item.run); else item.run();
+		};
 		return b;
 	}
 
@@ -1836,7 +1859,7 @@
 		el.innerHTML = '';
 		tab.groups.forEach(function (group) {
 			if (group.deskOnly && !onDesk()) return;
-			var items = onDesk() && group.deskItems ? group.deskItems : group.items;
+			var items = onDesk() && group.yours ? yourItems(group) : onDesk() && group.deskItems ? group.deskItems : group.items;
 			var sec = document.createElement('section');
 			sec.className = 'eurise-group' + (group.suite ? ' suite' : '');
 			sec.setAttribute('aria-label', group.label);
@@ -2590,12 +2613,13 @@
 	var D_LINK = ul('Collegamento', 'Link', fn('hyperlinkdialog'), '.uno:HyperlinkDialog');
 	var D_ZOOM = g('Zoom', 'Zoom', [u('Ingrandisci', 'Zoom in', fn('zoomin'), 'big', '.uno:ZoomPlus'), u('Riduci', 'Zoom out', fn('zoomout'), 'big', '.uno:ZoomMinus'),
 		ul('100%', '100%', fn('zoomreset'), '.uno:EuriseZoom100'), ul('Larghezza pagina', 'Page width', fn('fitwidthzoom'), '.uno:EuriseZoomWidth')]);
-	var D_ASPETTO = g('Aspetto', 'Appearance', [u('Tema Notte', 'Night theme', fn('toggledarktheme'), 'big', '.uno:EuriseNotte'),
-		u('Schermo intero', 'Full screen', '.uno:FullScreen', 'big')]);
+	var D_ASPETTO = g('Aspetto', 'Appearance', [u('Concentrazione', 'Focus', function () { setFocusMode(true); }, 'big', '.uno:EuriseConcentrazione'),
+		u('Tema Notte', 'Night theme', fn('toggledarktheme'), 'big', '.uno:EuriseNotte'),
+		ul('Nascondi il nastro', 'Hide the ribbon', function () { setCollapsed(true); }, '.uno:EuriseNastro'), ul('Schermo intero', 'Full screen', '.uno:FullScreen')]);
 
 	var DESK_RIBBONS = {
 		text: [
-			{ id: 'home', label: 'Home', groups: [D_APPUNTI, deskFont('text'), D_PARAGRAFO, D_STILI, D_MODIFICA, SUITE_HOME] },
+			{ id: 'home', label: 'Home', groups: [D_APPUNTI, deskFont('text'), D_PARAGRAFO, D_STILI, yours(D_MODIFICA.items), SUITE_HOME] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Pagine', 'Pages', [u('Frontespizio', 'Title page', '.uno:TitlePageDialog', 'big'), ul('Interruzione di pagina', 'Page break', '.uno:InsertPagebreak'),
 					ul('Altre interruzioni…', 'More breaks…', '.uno:InsertBreak'), ul('Sezione', 'Section', '.uno:InsertSection')]),
@@ -2609,21 +2633,20 @@
 				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:DrawText?CreateDirectly:bool=true', 'big'),
 					um(ul('Campo', 'Field', null, '.uno:InsertFieldCtrl'), FIELDS_MENU), ul('Data', 'Date', '.uno:InsertDateField'), ul('Riga per la firma', 'Signature line', '.uno:InsertSignatureLine')]),
 				g('Simboli', 'Symbols', [ul('Formula', 'Formula', '.uno:InsertObjectStarMath'), ul('Simbolo', 'Symbol', '.uno:CharmapControl'), ul('Nota a piè', 'Footnote', '.uno:InsertFootnote')])] },
-			{ id: 'progetta', label: t('Progetta', 'Design'), groups: [
-				g('Formattazione del documento', 'Document formatting', [u('Temi', 'Themes', '.uno:ThemeDialog', 'big'),
-					u('Stili', 'Styles', '.uno:SidebarDeck.StyleListDeck', 'big', '.uno:EditStyle'),
-					ul('Nuovo stile', 'New style', '.uno:StyleNewByExample'), ul('Aggiorna lo stile', 'Update style', '.uno:StyleUpdateByExample')]),
-				g('Sfondo della pagina', 'Page background', [u('Filigrana', 'Watermark', '.uno:Watermark', 'big'), u('Colore e bordi', 'Colour and borders', '.uno:PageDialog', 'big', '.uno:EurisePageColor')])] },
-			{ id: 'layout', label: 'Layout', groups: [
+			// Progetta e Layout in una scheda sola (proposta 6 del 15 novembre): tutto ciò che riguarda la pagina.
+			{ id: 'pagina', label: t('Pagina', 'Page'), groups: [
 				more(g('Imposta pagina', 'Page setup', [um(u('Margini', 'Margins', null, 'big', '.uno:EurisePageMargin'), marginsMenu),
 					um(u('Orientamento', 'Orientation', null, 'big', '.uno:Orientation'), ORIENT_MENU), um(u('Dimensioni', 'Size', null, 'big', '.uno:EurisePageSize'), sizesMenu),
 					u('Colonne', 'Columns', '.uno:FormatColumns', 'big'), ul('Interruzioni…', 'Breaks…', '.uno:InsertBreak'),
 					ul('Numeri di riga', 'Line numbers', '.uno:LineNumberingDialog'), ul('Sillabazione', 'Hyphenation', '.uno:Hyphenate')]), '.uno:PageDialog'),
+				g('Aspetto della pagina', 'Page design', [u('Temi', 'Themes', '.uno:ThemeDialog', 'big'), u('Filigrana', 'Watermark', '.uno:Watermark', 'big'),
+					ul('Colore e bordi', 'Colour and borders', '.uno:PageDialog', '.uno:EurisePageColor'), ul('Nuovo stile', 'New style', '.uno:StyleNewByExample'),
+					ul('Aggiorna lo stile', 'Update style', '.uno:StyleUpdateByExample')]),
 				g('Paragrafo', 'Paragraph', [ul('Rientri e spaziatura…', 'Indents and spacing…', '.uno:ParagraphDialog'), ul('Più spazio', 'More space', '.uno:ParaspaceIncrease'),
 					ul('Meno spazio', 'Less space', '.uno:ParaspaceDecrease')]),
 				g('Disponi', 'Arrange', [um(u('A capo', 'Wrap', null, 'big', '.uno:EuriseWrap'), WRAP_MENU), ul('Porta avanti', 'Bring forward', '.uno:ObjectForwardOne'),
 					ul('Porta indietro', 'Send backward', '.uno:ObjectBackOne'), ul('In primo piano', 'Bring to front', '.uno:BringToFront'),
-					ul('Raggruppa', 'Group', '.uno:FormatGroup'), ul('Separa', 'Ungroup', '.uno:FormatUngroup'), ul('Posizione e dimensioni', 'Position and size', '.uno:TransformDialog')])] },
+					ul('Raggruppa', 'Group', '.uno:FormatGroup'), ul('Posizione e dimensioni', 'Position and size', '.uno:TransformDialog')])] },
 			{ id: 'riferimenti', label: t('Riferimenti', 'References'), groups: [
 				g('Sommario', 'Table of contents', [u('Sommario', 'Table of contents', '.uno:InsertMultiIndex', 'big'), ul('Aggiorna il sommario', 'Update', '.uno:UpdateCurIndex'),
 					ul('Aggiorna tutto', 'Update all', '.uno:UpdateAll')]),
@@ -2665,8 +2688,7 @@
 					[t('Colonna prima', 'Column before'), '.uno:InsertColumnsBefore'], [t('Colonna dopo', 'Column after'), '.uno:InsertColumnsAfter']]),
 					um(ul('Elimina', 'Delete', null, '.uno:DeleteRows'), [[t('Righe', 'Rows'), '.uno:DeleteRows'], [t('Colonne', 'Columns'), '.uno:DeleteColumns']]),
 					ul('Formato celle…', 'Format cells…', '.uno:FormatCellDialog', '.uno:PageDialog')]),
-				g('Modifica', 'Editing', [u('Somma', 'Sum', '.uno:AutoSum', 'big'), ul('Ordina', 'Sort', '.uno:DataSort'), ul('Filtro', 'Filter', '.uno:DataFilterAutoFilter'),
-					ul('Trova', 'Find', function () { deskFind(false); }, '.uno:SearchDialog')]),
+				yours([ul('Somma', 'Sum', '.uno:AutoSum'), ul('Ordina', 'Sort', '.uno:DataSort'), ul('Filtro', 'Filter', '.uno:DataFilterAutoFilter')]),
 				SUITE_FOGLIO] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Tabelle', 'Tables', [u('Tabella pivot', 'Pivot table', '.uno:DataDataPilotRun', 'big'), u('Tabella', 'Table', '.uno:InsertCalcTable', 'big', '.uno:InsertTable')]),
@@ -2675,7 +2697,7 @@
 				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:DrawText?CreateDirectly:bool=true', 'big'), ul('Simbolo', 'Symbol', '.uno:CharmapControl'),
 					ul('Funzione…', 'Function…', '.uno:FunctionDialog')]),
 				g('Fogli', 'Sheets', [u('Nuovo foglio', 'New sheet', fn('insertsheet'), 'big', '.uno:Insert')])] },
-			{ id: 'layout', label: t('Layout di pagina', 'Page layout'), groups: [
+			{ id: 'pagina', label: t('Pagina', 'Page'), groups: [
 				more(g('Imposta pagina', 'Page setup', [um(u('Margini', 'Margins', null, 'big', '.uno:EurisePageMargin'), marginsMenu),
 					um(u('Orientamento', 'Orientation', null, 'big', '.uno:Orientation'), ORIENT_MENU), um(u('Dimensioni', 'Size', null, 'big', '.uno:EurisePageSize'), sizesMenu),
 					ul('Area di stampa', 'Print area', '.uno:DefinePrintArea'), ul('Intestazione e piè', 'Header and footer', '.uno:EditHeaderAndFooter'),
@@ -2718,7 +2740,7 @@
 						u('Giustificato', 'Justified', '.uno:JustifyPara'), um(u('Interlinea', 'Line spacing', null, false, '.uno:LineSpacing'), SPACING_MENU)]]), '.uno:ParagraphDialog'),
 				g('Disegno', 'Drawing', [D_FORME, u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'),
 					ul('In primo piano', 'Bring to front', '.uno:BringToFront'), ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'), ul('Raggruppa', 'Group', '.uno:FormatGroup')]),
-				SUITE_HOME] },
+				yours(D_MODIFICA.items), SUITE_HOME] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Diapositive', 'Slides', [u('Nuova diapositiva', 'New slide', '.uno:InsertPage', 'big', '.uno:InsertSlide'), ul('Duplica', 'Duplicate', '.uno:DuplicatePage', '.uno:DuplicateSlide')]),
 				g('Tabelle', 'Tables', [D_TABELLA]),
@@ -2727,7 +2749,7 @@
 				g('Collegamenti', 'Links', [D_LINK, D_COMMENTO]),
 				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'), ul('Intestazione e piè', 'Header and footer', '.uno:HeaderAndFooter'),
 					ul('Numero della diapositiva', 'Slide number', '.uno:InsertSlideField'), ul('Data', 'Date', '.uno:InsertDateFieldFix', '.uno:InsertDateField'), ul('Simbolo', 'Symbol', '.uno:CharmapControl')])] },
-			{ id: 'progetta', label: t('Progetta', 'Design'), groups: [
+			{ id: 'diapositiva', label: t('Diapositiva', 'Slide'), groups: [
 				g('Diapositiva', 'Slide', [u('Dimensioni', 'Size', '.uno:SlideSetup', 'big', '.uno:EurisePageSize'), u('Sfondo', 'Background', fn('selectbackground'), 'big', '.uno:EurisePageColor')]),
 				g('Schema', 'Master', [u('Schema diapositiva', 'Slide master', '.uno:SlideMasterPage', 'big', '.uno:EuriseLayout'), ul('Chiudi lo schema', 'Close master', '.uno:CloseMasterView')])] },
 			{ id: 'transizioni', label: t('Transizioni', 'Transitions'), groups: [
@@ -2749,6 +2771,443 @@
 		]
 	};
 	DESK_RIBBONS.drawing = DESK_RIBBONS.presentation;
+
+	// =================================================================================================================
+	// Ergonomia del computer (dieci proposte approvate dal proprietario il 15 novembre): i comandi vanno dove si lavora,
+	// sotto le dita e vicino al puntatore; meno schede e meno doppioni; il nastro si toglie quando serve concentrarsi.
+	// =================================================================================================================
+
+	// --- Quante volte si usa un comando: serve a «I tuoi comandi» e all'ordine di Ctrl K (proposte 5 e 8) ---------------
+
+	var USE_KEY = 'eurise-usi';
+	var DESK_ITEMS = {};
+
+	function useCounts() {
+		try { return JSON.parse(window.localStorage.getItem(USE_KEY) || '{}') || {}; } catch (e) { return {}; }
+	}
+
+	function countUse(item) {
+		if (!item || !item.label || item.menu) return;
+		var counts = useCounts();
+		counts[item.label] = (counts[item.label] || 0) + 1;
+		try { window.localStorage.setItem(USE_KEY, JSON.stringify(counts)); } catch (e) { /* niente memoria */ }
+	}
+
+	/** Tutte le voci dei nastri del computer, per nome: Ctrl K le trova anche se la scheda non è aperta. */
+	function indexDeskItems(list) {
+		DESK_ITEMS = {};
+		list.forEach(function (tab) {
+			tab.groups.forEach(function (group) {
+				var all = (group.items || []).concat(group.fontExtras || []);
+				(group.rows || []).forEach(function (r) { all = all.concat(r); });
+				all.forEach(function (item) {
+					if (item && item.label && item.run && !item.menu && !DESK_ITEMS[item.label]) DESK_ITEMS[item.label] = { item: item, where: tab.label };
+				});
+			});
+		});
+	}
+
+	/** Gruppo «I tuoi comandi»: parte dai comandi indicati e, giorno per giorno, prende quelli che usi di più. */
+	function yours(defaults) {
+		var group = g('I tuoi comandi', 'Your commands', defaults);
+		group.yours = true;
+		group.defaults = defaults;
+		return group;
+	}
+
+	function yourItems(group) {
+		var today = new Date().toISOString().slice(0, 10);
+		var key = 'eurise-tuoi-' + app.map.getDocType();
+		var snap = null;
+		try { snap = JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { snap = null; }
+		if (!snap || snap.day !== today) {
+			// Al massimo un cambio al giorno: la mano trova i pulsanti dove li ha lasciati.
+			var counts = useCounts();
+			var top = Object.keys(counts).filter(function (label) { return counts[label] >= 3 && DESK_ITEMS[label]; })
+				.sort(function (a, b) { return counts[b] - counts[a]; });
+			var labels = top.slice(0, 3);
+			group.defaults.forEach(function (d) { if (labels.length < 3 && labels.indexOf(d.label) < 0) labels.push(d.label); });
+			snap = { day: today, labels: labels };
+			try { window.localStorage.setItem(key, JSON.stringify(snap)); } catch (e) { /* niente memoria */ }
+		}
+		return snap.labels.map(function (label) {
+			var found = DESK_ITEMS[label] && DESK_ITEMS[label].item;
+			if (!found) group.defaults.forEach(function (d) { if (d.label === label) found = d; });
+			if (!found) return null;
+			// Nel gruppo sono tutte piccole con il nome, una sotto l'altra.
+			var copy = {};
+			Object.keys(found).forEach(function (k) { copy[k] = found[k]; });
+			copy.big = false;
+			copy.desk = 'lab';
+			return copy;
+		}).filter(Boolean);
+	}
+
+	var SHORTCUTS = {
+		'.uno:Bold': 'Ctrl B', '.uno:Italic': 'Ctrl I', '.uno:Underline': 'Ctrl U', '.uno:Cut': 'Ctrl X', '.uno:Copy': 'Ctrl C', '.uno:Paste': 'Ctrl V',
+		'.uno:SelectAll': 'Ctrl A', '.uno:Undo': 'Ctrl Z', '.uno:Redo': 'Ctrl Y', '.uno:InsertPagebreak': 'Ctrl Invio', '.uno:LeftPara': 'Ctrl L',
+		'.uno:CenterPara': 'Ctrl E', '.uno:RightPara': 'Ctrl R', '.uno:JustifyPara': 'Ctrl J', '.uno:SuperScript': 'Ctrl Maiusc P', '.uno:SubScript': 'Ctrl Maiusc B',
+		'.uno:Grow': 'Ctrl ]', '.uno:Shrink': 'Ctrl [', '.uno:SpellingAndGrammarDialog': 'F7', '.uno:SpellDialog': 'F7', '.uno:InsertAnnotation': 'Ctrl Alt C',
+		'.uno:FullScreen': 'Ctrl Maiusc J', '.uno:AutoSum': 'Alt =', '.uno:ControlCodes': 'Ctrl F10'
+	};
+
+	function shortcutOf(item) {
+		var command = typeof item.run === 'string' ? item.run.split('?')[0] : item.icon;
+		if (item.label === t('Trova', 'Find')) return 'Ctrl F';
+		if (item.label === t('Sostituisci', 'Replace')) return 'Ctrl H';
+		return SHORTCUTS[command] || '';
+	}
+
+	// --- Schede che compaiono da sole: Tabella, Immagine, Grafico, Forma (proposta 2) ---------------------------------
+
+	var CONTEXT_TABS = {
+		tabella: { id: 'tabella', label: t('Tabella', 'Table'), context: true, groups: [
+			g('Righe e colonne', 'Rows and columns', [ul('Riga sopra', 'Row above', '.uno:InsertRowsBefore'), ul('Riga sotto', 'Row below', '.uno:InsertRowsAfter'),
+				ul('Elimina righe', 'Delete rows', '.uno:DeleteRows'), ul('Colonna prima', 'Column before', '.uno:InsertColumnsBefore'),
+				ul('Colonna dopo', 'Column after', '.uno:InsertColumnsAfter'), ul('Elimina colonne', 'Delete columns', '.uno:DeleteColumns')]),
+			g('Celle', 'Cells', [u('Unisci', 'Merge', '.uno:MergeCells', 'big'), u('Dividi', 'Split', '.uno:SplitCell', 'big', '.uno:TextToColumns'),
+				ul('In alto', 'Top', '.uno:CellVertTop'), ul('Al centro', 'Middle', '.uno:CellVertCenter'), ul('In basso', 'Bottom', '.uno:CellVertBottom')]),
+			g('Dimensioni', 'Size', [ul('Righe uguali', 'Distribute rows', '.uno:DistributeRows', '.uno:Group'), ul('Colonne uguali', 'Distribute columns', '.uno:DistributeColumns', '.uno:TextToColumns'),
+				ul('Seleziona la tabella', 'Select table', '.uno:SelectTable', '.uno:SelectAll')]),
+			g('Tabella', 'Table', [u('Proprietà', 'Properties', '.uno:TableDialog', 'big', '.uno:InsertTable'), u('Elimina', 'Delete', '.uno:DeleteTable', 'big', '.uno:DeleteRows')])] },
+		immagine: { id: 'immagine', label: t('Immagine', 'Image'), context: true, groups: [
+			g('Sistema', 'Adjust', [u('Ritaglia', 'Crop', '.uno:Crop', 'big', '.uno:EuriseRitaglia'), ul('Rifletti in orizzontale', 'Flip horizontally', '.uno:FlipHorizontal', '.uno:EuriseRifletti'),
+				ul('Rifletti in verticale', 'Flip vertically', '.uno:FlipVertical', '.uno:EuriseRifletti'), ul('Posizione e dimensioni', 'Position and size', '.uno:TransformDialog')]),
+			g('Disponi', 'Arrange', [um(u('A capo', 'Wrap', null, 'big', '.uno:EuriseWrap'), WRAP_MENU), ul('In primo piano', 'Bring to front', '.uno:BringToFront'),
+				ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'), ul('Raggruppa', 'Group', '.uno:FormatGroup')]),
+			g('Descrivi', 'Describe', [u('Didascalia', 'Caption', '.uno:InsertCaptionDialog', 'big'), ul('Testo alternativo', 'Alt text', '.uno:ObjectTitleDescription', '.uno:AccessibilityCheck'),
+				ul('Proprietà', 'Properties', '.uno:GraphicDialog', '.uno:TransformDialog')])] },
+		grafico: { id: 'grafico', label: t('Grafico', 'Chart'), context: true, groups: [
+			g('Grafico', 'Chart', [u('Tipo', 'Type', '.uno:DiagramType', 'big', '.uno:InsertObjectChart'), u('Dati', 'Data', '.uno:DiagramData', 'big', '.uno:EuriseHighlight'),
+				ul('Intervalli dei dati', 'Data ranges', '.uno:DataRanges', '.uno:DefinePrintArea')]),
+			g('Elementi', 'Elements', [ul('Titoli', 'Titles', '.uno:InsertMenuTitles', '.uno:InsertCaptionDialog'), ul('Legenda', 'Legend', '.uno:Legend', '.uno:InsertCaptionDialog'),
+				ul('Formato della selezione', 'Format selection', '.uno:FormatSelection', '.uno:TransformDialog')])] },
+		forma: { id: 'forma', label: t('Forma', 'Shape'), context: true, groups: [
+			g('Stile', 'Style', [u('Riempimento', 'Fill', '.uno:FormatArea', 'big', '.uno:EurisePageColor'), u('Linea', 'Line', '.uno:FormatLine', 'big', '.uno:EuriseLinea'),
+				ul('Posizione e dimensioni', 'Position and size', '.uno:TransformDialog')]),
+			g('Disponi', 'Arrange', [ul('In primo piano', 'Bring to front', '.uno:BringToFront'), ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'),
+				ul('Raggruppa', 'Group', '.uno:FormatGroup'), ul('Separa', 'Ungroup', '.uno:FormatUngroup'),
+				ul('Rifletti in orizzontale', 'Flip horizontally', '.uno:FlipHorizontal', '.uno:EuriseRifletti'), ul('Rifletti in verticale', 'Flip vertically', '.uno:FlipVertical', '.uno:EuriseRifletti')])] }
+	};
+
+	var contextual = { tab: null, back: null };
+
+	function contextKey(contexts) {
+		var has = function (re) { return contexts.some(function (c) { return re.test(String(c)); }); };
+		if (has(/^Table$/)) return 'tabella';
+		if (has(/^Chart|^OLE$/)) return 'grafico';
+		if (has(/^Graphic$|^Media$/)) return 'immagine';
+		if (has(/^(Draw|DrawText|DrawLine|3DObject|Frame)$/)) return 'forma';
+		return null;
+	}
+
+	function onContextChange(e) {
+		if (!onDesk() || !ribbon.el) return;
+		var detail = e && (e.detail || e);
+		var contexts = detail.contexts || (detail.context ? [detail.context] : []);
+		var key = contextKey(contexts);
+		if (key === contextual.tab) return;
+		var tabs = document.getElementById('eurise-tabs');
+		var old = tabs && tabs.querySelector('.eurise-rtab.context');
+		if (old) old.remove();
+		var wasOn = contextual.tab && ribbon.tab === contextual.tab;
+		contextual.tab = key;
+		if (!key) {
+			if (wasOn && contextual.back) showRibbon(contextual.back);
+			return;
+		}
+		var tab = CONTEXT_TABS[key];
+		var b = document.createElement('button');
+		b.type = 'button';
+		b.setAttribute('role', 'tab');
+		b.setAttribute('data-id', tab.id);
+		b.className = 'eurise-rtab context';
+		b.innerHTML = '<i></i><span></span>';
+		b.lastChild.textContent = tab.label;
+		b.onclick = function () { showRibbon(tab); };
+		var suite = tabs.querySelector('.eurise-rtab.suite');
+		tabs.insertBefore(b, suite);
+		if (!wasOn) contextual.back = (ribbon.list || []).filter(function (x) { return x.id === ribbon.tab; })[0] || null;
+		showRibbon(tab);
+	}
+
+	// --- Barra rapida sulla selezione (proposta 1) -----------------------------------------------------------------
+
+	var mini = { el: null, x: 0, y: 0, at: 0 };
+
+	function hideMini() { if (mini.el) { mini.el.remove(); mini.el = null; } }
+
+	function showMini() {
+		hideMini();
+		var type = app.map.getDocType();
+		if (type !== 'text' && type !== 'presentation') return;
+		var bar = document.createElement('div');
+		bar.id = 'eurise-mini';
+		bar.setAttribute('role', 'toolbar');
+		bar.setAttribute('aria-label', t('Barra rapida', 'Quick bar'));
+		var add = function (item, suite) {
+			var b = ribbonButton(item, suite);
+			b.classList.remove('big', 'lab');
+			var label = b.querySelector('span');
+			if (label && !suite) label.remove();
+			bar.appendChild(b);
+		};
+		var styleMenu = um(u('Stile', 'Style', null, false, '.uno:EditStyle'), [[t('Normale', 'Normal'), style('Standard')], [t('Titolo', 'Title'), style('Title')],
+			[t('Titolo 1', 'Heading 1'), style('Heading 1')], [t('Titolo 2', 'Heading 2'), style('Heading 2')], [t('Citazione', 'Quotation'), style('Quotations')]]);
+		[u('Grassetto', 'Bold', '.uno:Bold'), u('Corsivo', 'Italic', '.uno:Italic'), u('Sottolineato', 'Underline', '.uno:Underline'),
+			colorItem('Evidenzia', 'Highlight', 'back', '.uno:CharBackColor'), colorItem('Colore del carattere', 'Font color', 'font', '.uno:Color'),
+			type === 'text' ? styleMenu : null, u('Collegamento', 'Link', fn('hyperlinkdialog'), false, '.uno:HyperlinkDialog'),
+			u('Commento', 'Comment', fn('insertcomment'), false, '.uno:InsertAnnotation')].forEach(function (item) { if (item) add(item); });
+		var sep = document.createElement('i');
+		sep.className = 'eurise-mini-sep';
+		bar.appendChild(sep);
+		SUITE.items.forEach(function (item) {
+			if (item.label === t('Da fare', 'To-do') || item.label === t('Traduci', 'Translate')) add(item, true);
+		});
+		document.body.appendChild(bar);
+		var w = bar.offsetWidth, h = bar.offsetHeight;
+		var x = Math.min(Math.max(8, mini.x - w / 2), window.innerWidth - w - 8);
+		var y = mini.y - h - 14;
+		if (y < 120) y = mini.y + 22;
+		bar.style.left = x + 'px';
+		bar.style.top = y + 'px';
+		mini.el = bar;
+	}
+
+	/** Selezione di testo nel documento: la classe TextSelections della 26.04 è globale ma non sta su window. */
+	function textSelected() {
+		/* global TextSelections */
+		try { return typeof TextSelections !== 'undefined' && !!TextSelections.isActive(); } catch (e) { return false; }
+	}
+
+	function watchSelection() {
+		document.addEventListener('mouseup', function (e) {
+			if (!e.target.closest || !e.target.closest('#document-container, #map')) return;
+			mini.x = e.clientX;
+			mini.y = e.clientY;
+			mini.at = Date.now();
+			// Il motore conferma la selezione poco dopo il rilascio del tasto.
+			setTimeout(function () {
+				var active = textSelected();
+				if (active && Date.now() - mini.at < 1500) showMini();
+			}, 250);
+		}, true);
+		document.addEventListener('mousedown', function (e) {
+			if (mini.el && !(e.target.closest && e.target.closest('#eurise-mini, #eurise-pop, .eurise-sub'))) hideMini();
+		}, true);
+		document.addEventListener('keydown', function (e) { if (mini.el && e.key !== 'Shift') hideMini(); }, true);
+		document.addEventListener('wheel', hideMini, { passive: true, capture: true });
+		app.map.on('textselectionchange', function (e) { if (!e.active) hideMini(); });
+	}
+
+	// --- Tasto destro: le azioni più probabili, poi «Tutte le voci» (proposta 3) ----------------------------------------
+
+	var lastPointer = { x: 200, y: 200 };
+	document.addEventListener('contextmenu', function (e) { lastPointer = { x: e.clientX, y: e.clientY }; }, true);
+
+	var CTX_FIRST = ['.uno:InsertAnnotation', '.uno:EditHyperlink', '.uno:HyperlinkDialog', '.uno:OpenHyperlinkOnCursor', '.uno:InsertRowsAfter',
+		'.uno:InsertColumnsAfter', '.uno:DeleteRows', '.uno:DeleteColumns', '.uno:MergeCells', '.uno:TableDialog', '.uno:Crop', '.uno:InsertCaptionDialog',
+		'.uno:GraphicDialog', '.uno:TransformDialog', '.uno:FormatArea', '.uno:FormatCellDialog', '.uno:InsertCell', '.uno:DeleteCell',
+		'.uno:SetOptimalColumnWidth', '.uno:SortAscending', '.uno:FontDialog', '.uno:ParagraphDialog', '.uno:SetDefault', '.uno:ResetAttributes',
+		'.uno:EditStyle', '.uno:AcceptTrackedChange', '.uno:RejectTrackedChange'];
+
+	function flatMenu(menu, out) {
+		(menu || []).forEach(function (m) {
+			if (!m) return;
+			if (m.command && m.type !== 'separator' && m.enabled !== 'false' && m.enabled !== false) out.push(m);
+			if (m.menu) flatMenu(m.menu, out);
+		});
+		return out;
+	}
+
+	function wrapContextMenu(tries) {
+		var ctrl = app.map && app.map._contextMenu;
+		if (!ctrl || typeof ctrl._onContextMenu !== 'function') {
+			if (tries > 0) setTimeout(function () { wrapContextMenu(tries - 1); }, 300);
+			return;
+		}
+		if (ctrl._onContextMenu.eurise) return;
+		var original = ctrl._onContextMenu;
+		var ours = function (obj) {
+			var self = this;
+			var all = flatMenu(obj && obj.menu, []);
+			var spelling = all.some(function (m) { return /SpellCheck|SpellingDialog|AutoCorrect/.test(m.command); });
+			// Da tastiera, sui suggerimenti di ortografia o senza voci: quello di Collabora com'è.
+			if (!onDesk() || !obj || obj.mouse === 'false' || spelling || !all.length) return original.call(self, obj);
+			var at = lastPointer;
+			var pop = popover({ getBoundingClientRect: function () { return { left: at.x, right: at.x, top: at.y, bottom: at.y }; } }, 'ctx');
+			var row = document.createElement('div');
+			row.className = 'eurise-pctx';
+			[['.uno:Cut', t('Taglia', 'Cut')], ['.uno:Copy', t('Copia', 'Copy')], ['.uno:Paste', t('Incolla', 'Paste')]].forEach(function (c) {
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'eurise-pnb';
+				var img = commandIcon(c[0], 18);
+				if (img) b.appendChild(img);
+				b.appendChild(document.createElement('span')).textContent = c[1];
+				b.onclick = function () { closePop(); uno(c[0]); };
+				row.appendChild(b);
+			});
+			pop.appendChild(row);
+			var picked = [];
+			CTX_FIRST.forEach(function (cmd) {
+				all.forEach(function (m) { if (picked.length < 7 && m.command.split('?')[0] === cmd && picked.indexOf(m) < 0) picked.push(m); });
+			});
+			all.forEach(function (m) {
+				if (picked.length < 5 && picked.indexOf(m) < 0 && !/^\.uno:(Cut|Copy|Paste)$/.test(m.command)) picked.push(m);
+			});
+			picked.forEach(function (m) {
+				var label = String(m.text || '').replace(/~/g, '').trim();
+				if (!label) return;
+				var item = popItem(pop, label, function () { uno(m.command); });
+				var img = commandIcon(m.command, 17);
+				if (img) item.insertBefore(img, item.firstChild);
+			});
+			popSection(pop, 'Suite');
+			SUITE.items.forEach(function (it) {
+				if (it.label === t('Da fare', 'To-do') || it.label === t('Note', 'Notes') || it.label === t('Traduci', 'Translate')) {
+					var b = popItem(pop, it.label, it.run, { svg: it.svg });
+					b.classList.add('suite');
+				}
+			});
+			popItem(pop, t('Tutte le voci…', 'All items…'), function () { original.call(self, obj); }, { svg: 'M5 12h.01 M12 12h.01 M19 12h.01' });
+			pop.place();
+		};
+		ours.eurise = true;
+		ctrl._onContextMenu = ours;
+		trace.push('context menu');
+	}
+
+	// --- Tasto Alt: una lettera su ogni scheda e pulsante (proposta 4) -------------------------------------------------
+
+	var alt = { mode: null, alone: false, map: {} };
+
+	function clearTips() {
+		Array.prototype.forEach.call(document.querySelectorAll('.eurise-kt'), function (el) { el.remove(); });
+		alt.mode = null;
+		alt.map = {};
+	}
+
+	function assignTips(buttons, labelOf) {
+		var used = {};
+		var out = {};
+		var spare = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789'.split('');
+		buttons.forEach(function (b) {
+			var letters = fold(labelOf(b)).toUpperCase().replace(/[^A-Z0-9]/g, '').split('');
+			var key = letters.filter(function (c) { return !used[c]; })[0] || spare.filter(function (c) { return !used[c]; })[0];
+			if (!key) return;
+			used[key] = true;
+			out[key] = b;
+			var tip = document.createElement('span');
+			tip.className = 'eurise-kt';
+			tip.textContent = key;
+			b.appendChild(tip);
+		});
+		return out;
+	}
+
+	function showTabTips() {
+		clearTips();
+		var buttons = Array.prototype.slice.call(document.querySelectorAll('#eurise-tabs .eurise-rtab'));
+		alt.map = assignTips(buttons, function (b) { return b.textContent; });
+		alt.mode = 'tabs';
+	}
+
+	function showButtonTips() {
+		clearTips();
+		var buttons = Array.prototype.slice.call(document.querySelectorAll('#eurise-ribbon .eurise-rb, #eurise-ribbon .eurise-drop, #eurise-ribbon .eurise-gmore'));
+		alt.map = assignTips(buttons, function (b) { return b.getAttribute('aria-label') || b.title || b.textContent; });
+		alt.mode = 'buttons';
+	}
+
+	function watchAlt() {
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Alt' && !e.ctrlKey && !e.shiftKey && !e.metaKey) { alt.alone = true; return; }
+			alt.alone = false;
+			if (!alt.mode) return;
+			if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); clearTips(); return; }
+			var key = fold(e.key || '').toUpperCase();
+			var target = alt.map[key];
+			e.preventDefault();
+			e.stopPropagation();
+			if (!target) { clearTips(); return; }
+			var wasTabs = alt.mode === 'tabs';
+			clearTips();
+			target.click();
+			if (wasTabs && target.getAttribute('data-id')) setTimeout(showButtonTips, 50);
+		}, true);
+		document.addEventListener('keyup', function (e) {
+			if (e.key !== 'Alt' || !alt.alone) return;
+			alt.alone = false;
+			e.preventDefault();
+			if (alt.mode) clearTips(); else showTabTips();
+		}, true);
+		document.addEventListener('mousedown', function () { if (alt.mode) clearTips(); }, true);
+	}
+
+	// --- Nastro a scomparsa e Concentrazione (proposta 9) --------------------------------------------------------------
+
+	function refit() { setTimeout(function () { window.dispatchEvent(new Event('resize')); if (app.map.invalidateSize) app.map.invalidateSize(); }, 60); }
+
+	function setCollapsed(on) {
+		document.body.classList.toggle('eurise-nastro-chiuso', on);
+		document.body.classList.remove('eurise-nastro-aperto');
+		try { window.localStorage.setItem('eurise-nastro-chiuso', on ? '1' : ''); } catch (e) { /* niente memoria */ }
+		refit();
+	}
+
+	/** Con il nastro chiuso, una scheda lo apre sopra il documento finché non si usa un comando o si clicca fuori. */
+	function peek() {
+		if (document.body.classList.contains('eurise-nastro-chiuso')) document.body.classList.add('eurise-nastro-aperto');
+	}
+	function peekDone() { document.body.classList.remove('eurise-nastro-aperto'); }
+
+	function setFocusMode(on) {
+		document.body.classList.toggle('eurise-concentrazione', on);
+		var pill = document.getElementById('eurise-esci');
+		if (on && !pill) {
+			pill = document.createElement('button');
+			pill.type = 'button';
+			pill.id = 'eurise-esci';
+			pill.textContent = t('Esci dalla concentrazione · Esc', 'Leave focus mode · Esc');
+			pill.onclick = function () { setFocusMode(false); };
+			document.body.appendChild(pill);
+		} else if (!on && pill) {
+			pill.remove();
+		}
+		refit();
+	}
+
+	function watchRibbonToggle() {
+		var tabs = document.getElementById('eurise-tabs');
+		if (!tabs) return;
+		tabs.addEventListener('dblclick', function (e) {
+			if (e.target.closest('.eurise-rtab[data-id]')) setCollapsed(!document.body.classList.contains('eurise-nastro-chiuso'));
+		});
+		tabs.addEventListener('click', function (e) { if (e.target.closest('.eurise-rtab[data-id]')) peek(); });
+		document.addEventListener('mousedown', function (e) {
+			if (document.body.classList.contains('eurise-nastro-aperto') && !(e.target.closest && e.target.closest('#eurise-top, #eurise-pop, .eurise-sub'))) peekDone();
+		}, true);
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && document.body.classList.contains('eurise-concentrazione') && !document.getElementById('eurise-pop') &&
+				!document.querySelector('.jsdialog-window')) setFocusMode(false);
+		}, true);
+		var saved = '';
+		try { saved = window.localStorage.getItem('eurise-nastro-chiuso') || ''; } catch (e) { saved = ''; }
+		if (saved) setCollapsed(true);
+	}
+
+	/** Messe in piedi sul computer quando il documento ha il suo nastro. */
+	function deskErgonomics(list) {
+		ribbon.list = list;
+		indexDeskItems(list.concat(Object.keys(CONTEXT_TABS).map(function (k) { return CONTEXT_TABS[k]; })));
+		app.events.on('contextchange', onContextChange);
+		watchSelection();
+		wrapContextMenu(40);
+		watchAlt();
+		watchRibbonToggle();
+	}
+
 
 	// --- Testi di Collabora rimasti in inglese nelle finestre e nella colonna (tavola OffPCFinestre) ---------------------
 
@@ -3044,6 +3503,7 @@
 			var nameEl = top.querySelector('.eurise-name');
 			nameEl.title = t('Rinomina', 'Rename');
 			nameEl.onclick = startRename;
+			deskErgonomics(list);
 			deskSide(docType);
 			deskRulers(docType);
 			// La 26.04 disegna i righelli al primo evento della pagina: un ridimensionamento li fa comparire subito.

@@ -90,6 +90,12 @@ cat > "$DIAG" <<'JS'
 		} else if (e.key === 'F7' && q('#eurise-tabs .eurise-rtab.file')) q('#eurise-tabs .eurise-rtab.file').click();
 		else if (e.key === 'F8' && q('#eurise-ribbon .eurise-drop.name')) q('#eurise-ribbon .eurise-drop.name').click();
 		else if (e.key === 'F9' && window.app && window.app.map) window.app.map.sendUnoCommand('.uno:ParagraphDialog');
+		else if (e.key === 'F10' && q('#eurise-tabs [data-id="vista"]')) {
+			q('#eurise-tabs [data-id="vista"]').click();
+			setTimeout(function () { var b = q('#eurise-ribbon [aria-label="Concentrazione"]'); if (b) b.click(); }, 200);
+		} else if (e.key === 'F11' && window.app && window.app.map) {
+			window.app.map.sendUnoCommand('.uno:InsertTable', { Columns: { type: 'long', value: 3 }, Rows: { type: 'long', value: 2 } });
+		}
 		else return;
 		e.preventDefault();
 		e.stopPropagation();
@@ -155,6 +161,15 @@ apri() {
 		xdotool key F8 && sleep 3 && shot "$name-carattere" && xdotool key Escape && sleep 1
 		xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+h && sleep 2 && shot "$name-trova" && xdotool key Escape && sleep 1
 		xdotool key F9 && sleep 4 && shot "$name-finestra" && xdotool key Escape && sleep 1
+		if [ "$name" = lettera ]; then
+			# Ergonomia (15 novembre): lettere del tasto Alt, barra rapida su una parola, tasto destro, Concentrazione,
+			# scheda Tabella che compare da sola.
+			xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key alt && sleep 1 && shot "$name-alt" && xdotool key Escape && sleep 1
+			xdotool mousemove 300 397 click --repeat 2 --delay 80 1 && sleep 2 && shot "$name-barra"
+			xdotool mousemove 300 420 click 3 && sleep 2 && shot "$name-destro" && xdotool key Escape && sleep 1
+			xdotool key F10 && sleep 2 && shot "$name-concentrazione" && xdotool key Escape && sleep 2
+			xdotool mousemove 700 600 click 1 && sleep 1 && xdotool key ctrl+End && sleep 1 && xdotool key F11 && sleep 3 && shot "$name-tabella"
+		fi
 	fi
 	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
 	kill "$pid" 2> /dev/null
