@@ -2589,3 +2589,23 @@ da fare, documenti), partendo da Linux.
   Oggi si chiede ogni due minuti solo con il pannello in vista; «Detta dal telefono» anche nel pulsante e con Alt+Maiusc+D,
   e scrive nell'ultimo campo della pagina (senza campo, nel riquadro del pannello).
 - Manca ancora: le email importanti in Oggi (l'APK Email non espone ancora un riassunto alla suite).
+
+## 15 novembre: il cervello di Alfred sul telefono (tavole AlfTelefono, AlfCapisce, AlfCervello approvate) · giro 586
+- **Eurise AI** (APK senza Internet): `BrainService` (`eu.eurise.action.BRAIN`, permesso di firma, contratto
+  `core/suite/BrainContract`): stato, installazione del GGUF passato da Eurise (copiato in `models/<nome>.gguf`), scelta,
+  rimozione, comandi (`command`: fino a tre righe `tipo|chi|testo|data|ora|canale`, grammatica GBNF, giorni scritti per
+  esteso, «cose che sai dell'utente» per la memoria), risposta libera a pezzi (`askStream`, JNI con callback). Il modello
+  si carica appena Alfred si collega.
+- **Alfred** (`feature/assistant`): `AlfredBrain` (client), `BrainCommands` (righe → comandi, con controlli fissi: date e
+  ore da QuickAdd quando la frase le ha, altrimenti tolte se la frase non ne parla; nomi, canali, testi e seconde azioni
+  inventati tolti; test in `BrainCommandsTest`), flusso: regole esatte → cervello → seconda lettura → online. Più azioni:
+  scheda «Ho capito N cose» con «Fai tutto». Domande: «Chi risponde» (prima il telefono / subito online / solo telefono,
+  `AlfredPrefs.answers`); risposta dal telefono che si scrive mentre pensa, «Chiedi a <preferito>».
+- **Cervelli** (`BrainDownload`, DownloadManager, solo Wi-Fi, da huggingface.co, nome del file Q4_K_M chiesto all'API come fa
+  la CI): Rapido = Granite 4.0 1B (IBM, Apache 2.0, `granite-4.0-1b-Q4_K_M.gguf`), Completo = Ministral 3 3B (Mistral AI,
+  Apache 2.0). Lo scarico finito si passa a Eurise AI all'apertura di Alfred o della schermata del cervello.
+- **Misure in CI** (`.github/scripts/ai_commands.py`, 15 frasi, sul computer di compilazione): Ministral 12/15, circa 5 s;
+  Granite 12/15, circa 2,9 s. Errori tipici: Ministral inventa testi e ore, Granite sbaglia date e aggiunge azioni: coperti dai
+  controlli fissi. Da misurare sul telefono.
+- **Prossimo**: prove del proprietario; memoria di Alfred («Alfred ricorda», tavola AlfCervello: voci cancellabili, nel
+  backup e nel centro privacy) passata come `hints`; azione utile proposta dalla risposta (es. «Timer 9 min»).
