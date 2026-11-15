@@ -14,12 +14,16 @@ Nota di passaggio tra una chat e l'altra: chi riprende il lavoro legge prima que
 ## Cose da fare ancora (road map aperta) – da ricordare al proprietario
 Quando il proprietario chiede «cosa c'è ancora da fare», in generale o su un'app, si risponde **da qui** (e dalle ultime
 sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
-- **Mappe**
-  - Passi dell'interfaccia rifatta: f) esplora (MapEsplora: nomi delle vie, «Monza (MB)», orizzonte col meteo), attività
-    (MapAttivita: benzinai col prezzo MIMIT, negozi), voci mancanti di Livelli (orizzonte, cartelli, carburanti, traffico).
-    Fatti: d) percorso, e) velocità, incrocio, rotonda, Segnala in guida, guida in orizzontale; f) Livelli e fonti (parte).
-  - Scene della guida: oggi solo uscite e rotonde (lato e angolo veri dalla forma del percorso); per gli incroci normali
-    non c'è una scena (solo la freccia di CoMaps): servirebbe una tavola.
+- **Mappe** (aggiornato il 15 novembre, sera: tutte le tavole di Mappe approvate e in codice, vedi `maps/EURISE.md`)
+  - Fatti il 15 novembre: Esplora (orizzonte in alto, scorciatoie, nomi delle vie, «Dove sei»), Attività (Cerca anche),
+    Livelli (orizzonte, carburanti con spiegazione, traffico spento), ricerca a pillola, scheda del luogo aperta, barra in
+    orizzontale, limite che arriva e limite dedotto, «Dove devi andare» e panoramica in Android Auto, Mezzi e viaggi
+    lontani (Transitous) con il servizio «Mezzi pubblici» nel centro privacy.
+  - **Passo del proprietario prima di pubblicare Mappe**: Transitous chiede di concordare l'uso oltre 720 richieste al
+    giorno in tutto (canale Matrix di Transitous) e un contatto nel User-Agent (oggi il sito del progetto).
+  - Restano: «Leggi i cartelli con la fotocamera» (serve un modello di visione scaricato a richiesta, senza ML Kit); orari
+    della scheda aperta nello stile della tavola (oggi quelli di CoMaps); prezzi di treni e aerei, pedaggi, auto + treno,
+    Cose da fare e «Il mio viaggio» nei viaggi lontani (nessuna fonte libera verificata per prezzi e pedaggi).
   - Segnalazioni brevi (lavori, coda, pericolo) condivise con gli altri: serve un servizio comune, da decidere.
   - **Km vero su autostrade, superstrade e provinciali** («Sei su A51 · km 12,4», per soccorsi e carro attrezzi): le mappe di
     CoMaps non hanno le pietre miliari. Strada scelta (13 novembre): un **file piccolo a parte** con le pietre miliari di
@@ -27,16 +31,8 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
     due pietre più vicine misurando la distanza lungo la strada. Solo stima dalla lunghezza della strada senza pietre: no
     (l'inizio della strada nei dati non coincide con il km 0 e le varianti di tracciato spostano tutto di chilometri; per i
     soccorsi un km sbagliato è peggio di nessuno). Dove mancano le pietre restano le coordinate («Soccorsi: 45.46420, 9.19003»).
-  - Panoramica del percorso prima di partire che si riadatta quando Android Auto riduce la mappa.
+    Non ancora fatto: serve un lavoro di GitHub Actions che prepari il file da OpenStreetMap e lo pubblichi.
   - Traffico: nessuna fonte libera nazionale; si riprende se se ne trova una.
-  - «Dove devi andare» (impegni del Calendario) anche nella ricerca di Android Auto.
-  - **Mezzi, orari e viaggi lontani** (richiesta del 13 novembre, tavole **MapMezzi**, **MapLontano**, **MapLontanoScelta**
-    approvate il 13 novembre, sera): auto di base (sempre con Android Auto), Mezzi, Bici, A piedi a un tocco con il tempo già calcolato;
-    orari di treni, metro, bus; per le mete lontane alternative anche miste (auto, treno, aereo, auto + treno) con filtri
-    (più veloce, meno caro, più comodo, senza cambi, parti dopo / arriva entro), pedaggio stimato con le tariffe pubbliche,
-    carburante col consumo dell'auto; scelta confermata → Il mio viaggio, Calendario, Cose da fare, Note. Fonti da
-    verificare prima del codice: Transitous (MOTIS, dati aperti GTFS) per gli orari, tariffe dei pedaggi, nessuna fonte
-    libera per i prezzi dei voli (solo collegamento al sito del vettore). Interruttore nel centro privacy.
 - **Alfred**: fatti sveglia (AlfSveglia), voce in Mappe (Voce come motore di sintesi), tre voci (Riccardo, ritoccato,
   caricate), finestra AI, domande libere subito online. **Aperto, il più importante**: Eurise AI che **risponde sul
   telefono** (servizio con permesso di firma: domande libere, azioni della suite come funzioni, memoria di Alfred, vedi
