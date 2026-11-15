@@ -2129,6 +2129,22 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   del caricamento Perla (niente verde; il dialogo non si vede perché il documento di prova si apre subito), dieci giri di
   lavoro lungo con il motore vivo.
 
+**15 novembre, notte: strada 2 avviata, schede dei documenti**
+- **Schede**: il guscio Qt della 26.04 le ha già (`TabManager`, `TabbedWindow`, striscia HTML `qtapp-tabstrip.html` +
+  `browser/css/qtapp-tabstrip.css` + `browser/src/qtapp/tabstrip.js`, collegata al C++ con QWebChannel); compare con più
+  di un documento (il secondo arriva per D-Bus al guscio aperto). Stile Eurise in `office/computer/eurise-tabstrip.css`
+  (fascia Notte, linguetta attiva Perla, tavola OffComputer), aggiunto da `inietta.py` in tutte e due le strade.
+  Verificato nella strada 1 (prova 43661426093, `schede.png`: lettera e foglio nella stessa finestra).
+- **Sorgenti del guscio 26.04**: solo su gerrit.collaboraoffice.com (non raggiungibile da qui, sì dalle Actions):
+  `office-guscio.yml` li mette nella pre-release `guscio-qt-sorgenti` (cartella qt/, browser/src/app, browser/html e i
+  file della striscia).
+- **Strada 2**: `office/computer/sorgenti/ricetta.py` (ricetta eu.eurise.Office dalla ricetta Flathub di Collabora,
+  fissata al commit 1718414 del 6 novembre: nome «Eurise Office», venditore «Eurise», nome D-Bus del guscio
+  eu.eurise.Office, patch del guscio da `sorgenti/patch/`, modulo Eurise in fondo), `compila.sh` e `office-sorgenti.yml`
+  (flatpak-builder a tappe di 350 minuti, ccache a pezzi nella pre-release `flatpak-sorgenti-cache`, pacchetto finito in
+  `flatpak-sorgenti-office`). Patch `01-schede-sempre`: la striscia si vede anche con un documento solo. Primo giro
+  43657518871 partito alle 00:13 UTC; il secondo (con la patch) è in coda.
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
