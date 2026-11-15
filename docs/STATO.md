@@ -2655,3 +2655,20 @@ da fare, documenti), partendo da Linux.
 - `CrashInstaller` + `CrashActivity` (core/designsystem, processo `:errore`): in tutte le app che usano il designsystem,
   dopo una chiusura improvvisa la riapertura mostra l'errore con Copia, Condividi, Riapri.
 - Browser: percentuale in grande nel riquadro del download; anche il ripiego sul gestore di Android mostra l'avanzamento.
+
+## 15 novembre, sera: richiesta del proprietario per Linux (da fare, in una chat nuova)
+«Procedi con il browser per Linux come lo abbiamo definito e l'app per le email; porta su Linux anche Oggi, Note, Cose da
+fare, Calendario e Alfred.» Riferimento: `docs/PIATTAFORME.md` (un'app «Eurise» sola per il computer, Compose Desktop,
+Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e un profilo di impostazioni Eurise).
+- **Fatto per il browser su Linux**: estensione Eurise per Firefox (tavola PcFirefox completa: aspetto, pulsante,
+  pannello con Oggi e Dal telefono, Detta dal telefono, tasto destro, password dal telefono), Ponte con native messaging.
+- **Manca del browser come definito**: nuova scheda Eurise (dalla tavola BrwNuovaSchedaPro, versione computer da
+  disegnare), profilo di impostazioni (motore di ricerca, protezione), importazione dai profili di Chrome/Brave/Edge/
+  Vivaldi/Firefox (tavola BrwImporta), firma Mozilla (account AMO del proprietario), Flatpak del Ponte.
+- **App per il computer da disegnare prima** (regola Metodo: nessuna tavola approvata per il computer): finestra «Eurise»
+  con barra laterale (Oggi, Calendario, Note, Attività, Email, Alfred), una tavola per sezione, Perla e Notte, 1440×900.
+  Riprendere da telefono: CalAgenda/DopoSettimana, NoteElenco/NoteTesto, AttElenco, MailPosta/MailLettura, AlfUnico,
+  e AlfComputer per Alfred con il computer come cervello.
+- **Nucleo da preparare** (non serve la tavola): sincronizzazione su JVM/Kotlin Multiplatform (CalDAV per Calendario e
+  Attività, WebDAV per le Note con l'unione a tre vie, IMAP/SMTP per l'Email), modulo `desktop/app` in Compose Desktop
+  che assorbe `desktop/ponte`, Flatpak e prova d'avvio su Ubuntu e Fedora in Actions.
