@@ -28,8 +28,8 @@ jobs:
           git ls-tree -r --name-only HEAD | grep -i 'tabstrip\|color-palette' | tee ../striscia.txt
           git sparse-checkout add $(xargs -n1 dirname < ../striscia.txt | sort -u)
           cd ..
-          ls -la online/browser/js/global.js; grep -n 'global' online/browser/Makefile.am | head -40
-          tar -czf guscio-qt.tar.gz -C online qt browser/src/app browser/html browser/js browser/Makefile.am browser/package.json browser/package-lock.json configure.ac $(cat striscia.txt)
+          sed -n '1060,1080p' online/browser/Makefile.am; grep -n 'terser\|esbuild\|uglify\|"node\|engines' online/browser/package.json
+          tar -czf guscio-qt.tar.gz -C online qt browser/src/app browser/html browser/js browser/Makefile.am browser/package.json configure.ac $(cat striscia.txt)
           ls -la guscio-qt.tar.gz; cat commit.txt
 
       - name: Nella pre-release guscio-qt-sorgenti
