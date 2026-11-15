@@ -2170,6 +2170,29 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   etichette sovrapposte nel nastro (Collegamento/Commento, Colonne/Interruzione). Tavole sulla tela, pagina Office,
   fila a y 9260: OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre (da approvare). Generatore in
   /home/claude/tela/gen/gen_pc.py (non nel repo).
+- **15 novembre, tarda mattinata – tavole OffPC approvate («via direttamente»), in codice** (solo sul computer, il
+  telefono e il tablet non cambiano):
+  - Inizio Eurise (`startPage` in Control.Eurise.js, con `starterMode`): Documento, Foglio, Presentazione
+    (`newdoc type=writer|calc|impress`), modelli del pacchetto (`window.CODA_TEMPLATES`), recenti
+    (`postMobileCall('GETRECENTDOCS')`, `opendoc file=`), Apri (`uno .uno:Open`); copre il backstage di Collabora.
+  - Nastri completi `DESK_RIBBONS` (documento: Home, Inserisci, Progetta, Layout, Riferimenti, Revisione, Vista, Suite;
+    foglio: Home, Inserisci, Layout di pagina, Formule, Dati, Revisione, Vista; presentazione: Home, Inserisci,
+    Progetta, Transizioni, Animazioni, Presenta, Revisione, Vista). Voci a tre righe; tendine per Margini,
+    Orientamento, Dimensioni, Forme, A capo, Interlinea, Maiuscole, Campo (comandi da Definitions.Menu.ts della 26.04).
+    Circa 80 icone nostre nuove in `ICONS`; `commandIcon` usa direttamente le nostre.
+  - Tendine attaccate al comando (`popover`): carattere (nel documento, recenti, tutti nel loro stile), dimensione
+    (anche scritta), colori, menu File (Nuovo, Apri, Recenti, Salva, Salva con nome, Rinomina F2, Esporta, Stampa,
+    Proprietà, Colore delle icone, Chiudi), con frecce, Invio ed Esc.
+  - Rinomina dalla pillola: `saveas` nella stessa cartella (il guscio riapre lì il documento) più il messaggio
+    `EURISERINOMINA`; la patch `02-rinomina.patch` (solo strada 2) toglie il file vecchio e la sua riga tra i recenti.
+  - Trova e sostituisci come barra in alto (Ctrl F, Ctrl H; `app.searchService.search`), «Altre opzioni» apre la
+    finestra di Collabora.
+  - Finestre di Collabora nello stile della suite (variabili --color-*, angoli 18 px, schede a pillola, pulsanti),
+    testi inglesi rimasti tradotti (`IT_FIX`), via il benvenuto (inietta.py toglie `welcome/*.odp`).
+  - prova.sh: schermata `inizio.png`, `*-nastro-1..8`, `*-file`, `*-carattere`, `*-trova`, `*-finestra` (tasti F6–F9
+    della diagnosi).
+  - Prima prova (prototipo) 43701302013: tutto compare; corretti pulsanti grandi, icone delle tendine, Home troppo
+    lunga, Inizio schiacciato, tendine strette. Nuova prova 43702994717 e strada 2 43703060632 in corso.
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
