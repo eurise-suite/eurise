@@ -74,6 +74,9 @@ jobs:
           if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi
           # Eurise per Firefox (computer): l'estensione da caricare in Firefox, accanto al Ponte.
           find artefatti -name 'eurise-firefox.xpi' -exec cp {} apk/ \;
+          # Eurise per il computer: il programma per Linux (con Java dentro) e il Flatpak.
+          find artefatti -name 'eurise-linux.tar.gz' -exec cp {} apk/ \;
+          find artefatti -name 'eurise-linux.flatpak' -exec cp {} apk/ \;
           ls -la apk
           gh release delete apk-prova -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           gh release create apk-prova apk/* -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \

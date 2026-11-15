@@ -434,6 +434,96 @@ jobs:
           path: eurise-firefox.xpi
           if-no-files-found: error
 
+  # Eurise per il computer (desktop/app, Compose Desktop) con il nucleo di sincronizzazione (core/sync): prove, programma
+  # per Linux con il suo Java dentro, avvio provato su Ubuntu 24.04, Ubuntu 22.04 LTS e Fedora, poi il Flatpak.
+  computer:
+    name: Eurise per il computer
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      EURISE_DESKTOP: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Prove del nucleo e programma
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon :core:sync:test :core:ponte:test :desktop:app:createDistributable 2>&1 | tee desktop.log
+      - name: Riassunto degli errori
+        if: failure()
+        run: |
+          grep -E "^e: |Could not (resolve|find)|error:|FAILED|Test.*>.*FAILED" desktop.log | head -40 | while IFS= read -r line; do echo "::error::${line}"; done
+          grep -A 12 "What went wrong" desktop.log | head -40 | grep -v "^\s*$" | while IFS= read -r line; do echo "::error::${line}"; done
+      - name: Prova d'avvio su Ubuntu e Fedora
+        run: |
+          app=desktop/app/build/compose/binaries/main/app/eurise
+          ls -la "$app" "$app/bin"
+          cat > /tmp/avvio.sh <<'SH'
+          set -e
+          export SKIKO_RENDER_API=SOFTWARE HOME=/tmp/casa
+          mkdir -p $HOME
+          Xvfb :99 -screen 0 1440x900x24 >/dev/null 2>&1 &
+          sleep 2
+          DISPLAY=:99 /app/bin/eurise > /tmp/eurise.log 2>&1 &
+          pid=$!
+          sleep 25
+          if kill -0 $pid 2>/dev/null; then echo "avvio riuscito"; kill $pid; else echo "si è chiuso:"; cat /tmp/eurise.log; exit 1; fi
+          grep -i "exception" /tmp/eurise.log && exit 1 || true
+          /app/bin/eurise dispositivi
+          SH
+          for img in ubuntu:24.04 ubuntu:22.04; do
+            echo "::group::$img"
+            docker run --rm -v "$PWD/$app:/app:ro" -v /tmp/avvio.sh:/avvio.sh:ro "$img" sh -c \
+              "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libgl1 >/dev/null && sh /avvio.sh"
+            echo "::endgroup::"
+          done
+          echo "::group::fedora:latest"
+          docker run --rm -v "$PWD/$app:/app:ro" -v /tmp/avvio.sh:/avvio.sh:ro fedora:latest sh -c \
+            "dnf install -y -q xorg-x11-server-Xvfb libXrender libXtst libXi fontconfig dejavu-sans-fonts mesa-libGL procps-ng >/dev/null && sh /avvio.sh"
+          echo "::endgroup::"
+      - name: Archivio per Linux
+        run: tar -czf eurise-linux.tar.gz -C desktop/app/build/compose/binaries/main/app eurise
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eurise-linux-${{ github.run_number }}
+          path: eurise-linux.tar.gz
+          if-no-files-found: error
+
+  flatpak:
+    name: Flatpak di Eurise
+    needs: computer
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: eurise-linux-${{ github.run_number }}
+      - name: Programma nella cartella del Flatpak
+        run: |
+          mkdir -p desktop/flatpak/app
+          tar -xzf eurise-linux.tar.gz -C /tmp
+          cp -a /tmp/eurise/. desktop/flatpak/app/
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: eurise-linux.flatpak
+          manifest-path: desktop/flatpak/eu.eurise.Eurise.yml
+          cache: false
+          upload-artifact: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eurise-flatpak-${{ github.run_number }}
+          path: eurise-linux.flatpak
+          if-no-files-found: error
+
   release:
     name: APK firmato (solo per i tag v*)
     if: startsWith(github.ref, 'refs/tags/v')

@@ -184,9 +184,14 @@ object FirefoxInstall {
     const val EXTENSION = "eurise-firefox@eurise.eu"
 
     fun run() {
-        val bin = launcher() ?: run { System.err.println("Non trovo bin/eurise-ponte: avvialo dalla cartella estratta."); exitProcess(2) }
+        // Dentro il Flatpak di Eurise Firefox avvia il Ponte con «flatpak run»; il file sta in ~/.var/app, visibile fuori.
+        val flatpak = System.getenv("FLATPAK_ID")?.takeIf { it.isNotBlank() }
+        val command = if (flatpak != null) "flatpak run --command=eurise $flatpak" else {
+            val bin = launcher() ?: run { System.err.println("Non trovo bin/eurise-ponte: avvialo dalla cartella estratta."); exitProcess(2) }
+            "\"${bin.absolutePath}\""
+        }
         val wrapper = File(dataDir(), "firefox-host").apply {
-            writeText("#!/bin/sh\n# Avviato da Firefox per l'estensione Eurise.\nexec \"${bin.absolutePath}\" firefox \"$@\"\n")
+            writeText("#!/bin/sh\n# Avviato da Firefox per l'estensione Eurise.\nexec $command firefox \"$@\"\n")
             setExecutable(true, true)
         }
         val manifest = """{"name":"$HOST","description":"Ponte Eurise per Firefox","path":"${wrapper.absolutePath}","type":"stdio","allowed_extensions":["$EXTENSION"]}"""
@@ -197,9 +202,9 @@ object FirefoxInstall {
         println("Fatto. In Firefox: l'estensione Eurise trova il Ponte da sola (lascia acceso «eurise-ponte» per il telefono).")
     }
 
-    /** bin/eurise-ponte accanto a lib/, dove sta questo jar. */
+    /** bin/eurise-ponte (o bin/eurise, l'app del computer) accanto a lib/, dove sta questo jar. */
     private fun launcher(): File? = runCatching {
         val jar = File(FirefoxInstall::class.java.protectionDomain.codeSource.location.toURI())
-        File(jar.parentFile.parentFile, "bin/eurise-ponte").takeIf { it.canExecute() }
+        listOf("bin/eurise-ponte", "bin/eurise").map { File(jar.parentFile.parentFile, it) }.firstOrNull { it.canExecute() }
     }.getOrNull()
 }

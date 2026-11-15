@@ -77,7 +77,7 @@ eurise-ponte prova-telefono <codice>"""
 private fun fail(text: String): Nothing { System.err.println(text); exitProcess(2) }
 
 /** ~/.local/share/eurise/ponte (o $XDG_DATA_HOME): chiavi e telefoni abbinati, leggibili solo dall'utente. */
-internal fun dataDir(): File {
+fun dataDir(): File {
     val base = System.getenv("XDG_DATA_HOME")?.takeIf { it.isNotBlank() }?.let(::File) ?: File(System.getProperty("user.home"), ".local/share")
     return File(base, "eurise/ponte").apply { mkdirs(); setReadable(false, false); setReadable(true, true); setExecutable(false, false); setExecutable(true, true) }
 }
@@ -138,15 +138,17 @@ class Server(private val store: Store) {
      */
     private val live = ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<Session>>()
 
-    fun run(pairing: Boolean) {
+    /**
+     * Resta in ascolto per sempre. Con [pairing] prepara un abbinamento: [show] riceve il codice da mostrare come QR
+     * (di base nel terminale; l'app Eurise del computer lo disegna nella finestra) e [paired] è chiamato a abbinamento fatto.
+     */
+    fun run(pairing: Boolean, show: (String) -> Unit = { printPairing(it) }, paired: () -> Unit = {}) {
         val socket = runCatching { ServerSocket(Wire.DEFAULT_PORT) }.getOrElse { ServerSocket(0) }
         var secret: ByteArray? = null
         if (pairing) {
             secret = Pairing.newSecret()
             val p = Pairing(store.id, name, store.identity.publicBytes, secret, lanAddress(), socket.localPort)
-            println("Inquadra con il telefono: Eurise › Telefono e computer › Collega un computer\n")
-            println(Qr.terminal(p.toUri()))
-            println("\nO incolla questo codice nel telefono:\n${p.toUri()}\n")
+            show(p.toUri())
         } else {
             println("Ponte Eurise in ascolto sulla porta ${socket.localPort}. Telefoni abbinati: ${store.devices().size}")
         }
@@ -154,9 +156,18 @@ class Server(private val store: Store) {
         while (true) {
             val client = socket.accept()
             val s = secret
-            thread(isDaemon = true) { serve(client, s) { secret = null } }
+            thread(isDaemon = true) { serve(client, s) { secret = null; paired() } }
         }
     }
+
+    private fun printPairing(uri: String) {
+        println("Inquadra con il telefono: Eurise › Telefono e computer › Collega un computer\n")
+        println(Qr.terminal(uri))
+        println("\nO incolla questo codice nel telefono:\n$uri\n")
+    }
+
+    /** I telefoni collegati in questo momento (per lo stato nella finestra dell'app). */
+    fun connected(): Set<String> = live.filterValues { it.isNotEmpty() }.keys
 
     /**
      * Manda a tutti i telefoni abbinati: subito a quelli collegati, in coda per gli altri. Restituisce una riga per

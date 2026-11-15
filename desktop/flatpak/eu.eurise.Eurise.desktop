@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Eurise
+GenericName=Agenda, note, attività ed email
+Comment=La suite Eurise sul computer, collegata al telefono
+Exec=eurise
+Icon=eu.eurise.Eurise
+Terminal=false
+Categories=Office;Calendar;Email;
+Keywords=calendario;note;attività;email;telefono;
+StartupWMClass=eu-eurise-desktop-app-MainKt

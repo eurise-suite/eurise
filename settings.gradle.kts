@@ -39,9 +39,12 @@ include(":core:links")
 include(":core:suite")
 include(":core:contacts")
 include(":core:ponte")
+include(":core:sync")
 include(":core:files")
 // Eurise per il computer (Linux): per ora il Ponte da riga di comando.
 include(":desktop:ponte")
+// App Eurise per il computer (Compose Desktop): solo nel suo lavoro, per non toccare la compilazione degli APK.
+if (System.getenv("EURISE_DESKTOP") == "1") include(":desktop:app")
 include(":feature:clock")
 include(":feature:today")
 include(":feature:notes")

@@ -1,0 +1,44 @@
+# Flatpak di Eurise per il computer (Ubuntu e Fedora di riferimento, poi Flathub).
+# Si costruisce in GitHub Actions (lavoro «Eurise per il computer» di Compila): la cartella `app/` è il programma già
+# compilato da Gradle (createDistributable, con il suo Java dentro). Per Flathub servirà la compilazione dai sorgenti
+# con le dipendenze Maven scaricate prima (flatpak-gradle-generator): passo da fare quando si pubblica.
+app-id: eu.eurise.Eurise
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: eurise
+finish-args:
+  - --share=ipc
+  - --share=network            # Ponte con il telefono, cloud scelto dall'utente (CalDAV, WebDAV, IMAP/SMTP)
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --talk-name=org.freedesktop.Notifications
+  - --filesystem=xdg-download  # documenti arrivati dal telefono
+  # Native messaging per l'estensione Eurise di Firefox (deb/rpm e Flatpak di Firefox).
+  - --filesystem=~/.mozilla/native-messaging-hosts:create
+  - --filesystem=~/.var/app/org.mozilla.firefox/.mozilla/native-messaging-hosts:create
+  # Importazione dai browser (solo lettura, solo se l'utente la chiede): profili di Chrome, Chromium, Brave, Edge,
+  # Vivaldi, Opera e Firefox.
+  - --filesystem=~/.config/google-chrome:ro
+  - --filesystem=~/.config/chromium:ro
+  - --filesystem=~/.config/BraveSoftware:ro
+  - --filesystem=~/.config/microsoft-edge:ro
+  - --filesystem=~/.config/vivaldi:ro
+  - --filesystem=~/.config/opera:ro
+  - --filesystem=~/.mozilla/firefox:ro
+  - --filesystem=~/snap/firefox/common/.mozilla/firefox:ro
+  - --env=SKIKO_RENDER_API=OPENGL
+modules:
+  - name: eurise
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/eurise /app/bin
+      - cp -a app/. /app/lib/eurise/
+      - install -Dm755 eurise.sh /app/bin/eurise
+      - install -Dm644 eu.eurise.Eurise.desktop /app/share/applications/eu.eurise.Eurise.desktop
+      - install -Dm644 eu.eurise.Eurise.metainfo.xml /app/share/metainfo/eu.eurise.Eurise.metainfo.xml
+      - install -Dm644 eurise.svg /app/share/icons/hicolor/scalable/apps/eu.eurise.Eurise.svg
+    sources:
+      - type: dir
+        path: .
