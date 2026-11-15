@@ -2609,3 +2609,15 @@ da fare, documenti), partendo da Linux.
   controlli fissi. Da misurare sul telefono.
 - **Prossimo**: prove del proprietario; memoria di Alfred («Alfred ricorda», tavola AlfCervello: voci cancellabili, nel
   backup e nel centro privacy) passata come `hints`; azione utile proposta dalla risposta (es. «Timer 9 min»).
+
+## 15 novembre: Browser che si chiudeva, «Apri con» e «Apri da» (giro 592)
+- Browser giro 586 si chiudeva all'apertura con la barra delle schede accesa: il secondo tentativo dell'icona
+  (`/apple-touch-icon.png`) partiva da un thread senza Looper e GeckoResult lanciava un'eccezione. Ora `SiteIcons.offer`
+  passa sempre dal thread principale; icone e anteprime entrano nello stato di Compose da lì. Causa trovata leggendo il
+  codice, non con il registro del telefono: da confermare con la prova.
+- `CrashGuard` (core/designsystem/crash): scrive l'errore che chiude un'app nella sua cartella e alla riapertura lo mostra
+  con Copia, Condividi, Riapri. Per ora nel Browser; da aggiungere alle altre app.
+- Galleria: `OpenActivity` (VIEW foto/video da altre app) e `PickActivity` (GET_CONTENT e PICK, una o più, sola lettura).
+- Eurise File: `PickFileActivity` (GET_CONTENT di qualsiasi file, telefono e cloud, sola lettura).
+- Ancora da fare negli «Apri con»: lettore PDF dell'app Eurise (VIEW application/pdf), .ics nel Calendario, .vcf nei
+  Contatti, testo condiviso in Note; Leggi per epub; controllare i filtri di Office nel manifest di Collabora.
