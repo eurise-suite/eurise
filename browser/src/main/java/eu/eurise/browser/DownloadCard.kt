@@ -80,7 +80,7 @@ internal fun DownloadCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(38.dp).clip(CircleShape).background(if (done) scheme.primary else scheme.primary.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                Icon(if (done) EuriseIcons.check else EuriseIcons.download, null, tint = if (done) scheme.onPrimary else scheme.primary, modifier = Modifier.size(19.dp))
+                Icon(if (done) EuriseIcons.check(2.2f) else EuriseIcons.download(2.2f), null, tint = if (done) scheme.onPrimary else scheme.primary, modifier = Modifier.size(19.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -88,7 +88,7 @@ internal fun DownloadCard(
                 Text(sub, fontSize = 12.sp, color = if (state.failed) scheme.error else scheme.onSurfaceVariant, maxLines = 1)
             }
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
-                Icon(EuriseIcons.close, stringResource(R.string.brw_login_close), tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                Icon(EuriseIcons.close(2.2f), stringResource(R.string.brw_login_close), tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
         }
         if (!done && !state.failed) {
