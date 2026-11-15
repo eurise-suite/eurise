@@ -241,6 +241,10 @@ apri lettera.docx
 inizio
 apri conti.xlsx
 apri slide.pptx
+# Un PDF (il proprietario lo apre dal cloud): testata Eurise anche in sola lettura.
+convert -size 1240x1754 xc:white -font DejaVu-Serif -pointsize 54 -annotate +120+220 "Guida di prova" \
+	-pointsize 30 -annotate +120+320 "Un PDF per la prova di Eurise Office sul computer." "$HOME/Documents/guida.pdf" 2> /dev/null \
+	&& apri guida.pdf
 schede
 echo "" >> "$R"
 ls "$OUT"/*.png 2> /dev/null | wc -l | sed 's/^/- schermate: /' >> "$R"
