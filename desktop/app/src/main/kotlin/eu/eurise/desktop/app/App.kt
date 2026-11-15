@@ -51,6 +51,7 @@ enum class Section(val label: String, val icon: String) {
     Notes("Note", Icons.NOTE),
     Tasks("Attività", Icons.TASKS),
     Mail("Email", Icons.MAIL),
+    Maps("Mappe", Icons.MAP),
     Alfred("Alfred", Icons.STAR),
 }
 
@@ -144,6 +145,7 @@ fun tintOf(s: Section): Color {
         Section.Notes -> c.ottone
         Section.Tasks -> c.salvia
         Section.Mail -> c.terracotta
+        Section.Maps -> c.petrolio
         Section.Alfred -> c.prugna
     }
 }
@@ -158,6 +160,7 @@ private fun Waiting(s: Section) {
         Section.Notes -> "Le stesse note del telefono (cartella Eurise/Note), con l'unione a tre vie."
         Section.Tasks -> "Le attività arrivano dagli elenchi CalDAV, gli stessi del telefono."
         Section.Mail -> "IMAP e SMTP pronti nel nucleo, direttamente dal computer alla tua casella."
+        Section.Maps -> "La strada per i tuoi impegni, con le stesse mappe del telefono e senza Internet; poi «Al telefono» per guidare."
         Section.Alfred -> "Alfred userà il cervello del computer, del telefono o, se lo chiedi tu, uno online."
     }
     Column(Modifier.widthIn(max = 640.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -203,6 +206,7 @@ object Icons {
     const val TASKS = "M4 6.5 l2 2 3.5-3.5 M12 7 h8 M4 13.5 l2 2 3.5-3.5 M12 14 h8 M12 19.5 h8"
     const val MAIL = "M4 6 h16 v12 H4 z M4 7 l8 6 8-6"
     const val STAR = "M12 3 L13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4 Z"
+    const val MAP = "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z M9 4v14 M15 6v14"
     const val PHONE = "M8 3 h8 a1.5 1.5 0 0 1 1.5 1.5 v15 A1.5 1.5 0 0 1 16 21 H8 a1.5 1.5 0 0 1 -1.5-1.5 v-15 A1.5 1.5 0 0 1 8 3 z M11 18 h2"
     const val SEARCH = "M4.5 11 a6.5 6.5 0 1 0 13 0 a6.5 6.5 0 1 0 -13 0 M16 16 l4.5 4.5"
 

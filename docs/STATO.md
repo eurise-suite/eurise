@@ -2695,7 +2695,11 @@ Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e
 Seguito della «richiesta del proprietario per Linux». Compilazioni anche su `prova-computer` (stessa testa di `brand`),
 così l'altra chat non le annulla.
 - **Tavole nuove, da approvare** (tela, pagina nuova «Eurise sul computer», la tela ora si apre lì): PcOggi e PcOggiNotte,
-  PcCalendario, PcNote, PcAttivita, PcEmail, PcAlfred, PcFirefoxScheda (nuova scheda Eurise in Firefox). 1440×900 su
+  PcCalendario, PcNote, PcAttivita, PcEmail, PcAlfred, PcFirefoxScheda (nuova scheda Eurise in Firefox), e **PcMappe**
+  (richiesta del proprietario: «integrarci anche le mappe, correlano strettamente»; sezione Mappe tra Email e Alfred in
+  tutte le tavole): strada per gli impegni dal Calendario, luoghi con note ed email collegate, «Al telefono, per guidare».
+  Motore da scegliere: le mappe di CoMaps (stessi file del telefono, offline; CoMaps ha già una versione desktop in Qt)
+  oppure MapLibre con tasselli vettoriali scaricati a richiesta. 1440×900 su
   Ubuntu: barra laterale con le sei sezioni, ricerca su tutta la suite (Ctrl K), Nuovo, Alfred (Ctrl Spazio), stato del
   Ponte e centro privacy in fondo. Generatore `/home/claude/tela/gen/pc.py` (fuori dal repo: la tela resta la fonte).
 - **`core/sync`** (Kotlin JVM, senza Android; libreria nuova javax.mail 1.6.2, la stessa API di android-mail):
