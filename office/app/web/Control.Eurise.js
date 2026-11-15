@@ -2564,7 +2564,7 @@
 			u('Ombra', 'Shadow', '.uno:Shadowed'), back, colorItem('Colore del carattere', 'Font color', 'font', '.uno:Color')], '.uno:FontDialog');
 		group.fonts = true;
 		group.fontExtras = [u('Ingrandisci', 'Grow', '.uno:Grow'), u('Riduci', 'Shrink', '.uno:Shrink'),
-			um(u('Maiuscole e minuscole', 'Change case', null, '.uno:ChangeCaseRotateCase'), CASE_MENU),
+			um(u('Maiuscole e minuscole', 'Change case', null, false, '.uno:ChangeCaseRotateCase'), CASE_MENU),
 			ri('Cancella formattazione', 'Clear formatting', clearFormatting, false, docType === 'text' ? '.uno:ResetAttributes' : '.uno:SetDefault')];
 		return group;
 	}
@@ -2573,10 +2573,11 @@
 			u('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'), u('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent'), u('Ordina', 'Sort', '.uno:SortDialog', false, '.uno:SortAscending'),
 			u('Mostra segni di formattazione', 'Formatting marks', '.uno:ControlCodes')],
 		[u('A sinistra', 'Left', '.uno:LeftPara'), u('Al centro', 'Center', '.uno:CenterPara'), u('A destra', 'Right', '.uno:RightPara'), u('Giustificato', 'Justified', '.uno:JustifyPara'),
-			um(u('Interlinea', 'Line spacing', null, '.uno:LineSpacing'), SPACING_MENU), u('Da sinistra a destra', 'Left to right', '.uno:ParaLeftToRight'),
+			um(u('Interlinea', 'Line spacing', null, false, '.uno:LineSpacing'), SPACING_MENU), u('Da sinistra a destra', 'Left to right', '.uno:ParaLeftToRight'),
 			u('Da destra a sinistra', 'Right to left', '.uno:ParaRightToLeft')]]), '.uno:ParagraphDialog');
 	var D_STILI = g('Stili', 'Styles', [r('Normale', 'Normal', style('Standard'), 'big'), r('Titolo', 'Title', style('Title'), 'big'),
-		r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'), r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]);
+		r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'), r('Titolo 2', 'Heading 2', style('Heading 2'), 'big')]);
+	// Citazione e gli altri stili sono in ↗ (colonna Stili): con cinque tessere la Suite non ci stava a 1440 px.
 	D_STILI.tiles = true;
 	D_STILI.deskMore = '.uno:SidebarDeck.StyleListDeck';
 	var D_MODIFICA = g('Modifica', 'Editing', [ul('Trova', 'Find', function () { deskFind(false); }, '.uno:SearchDialog'),
@@ -2714,7 +2715,7 @@
 					[u('Elenco puntato', 'Bullets', '.uno:DefaultBullet'), u('Elenco numerato', 'Numbering', '.uno:DefaultNumbering'),
 						u('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'), u('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent')],
 					[u('A sinistra', 'Left', '.uno:LeftPara'), u('Al centro', 'Center', '.uno:CenterPara'), u('A destra', 'Right', '.uno:RightPara'),
-						u('Giustificato', 'Justified', '.uno:JustifyPara'), um(u('Interlinea', 'Line spacing', null, '.uno:LineSpacing'), SPACING_MENU)]]), '.uno:ParagraphDialog'),
+						u('Giustificato', 'Justified', '.uno:JustifyPara'), um(u('Interlinea', 'Line spacing', null, false, '.uno:LineSpacing'), SPACING_MENU)]]), '.uno:ParagraphDialog'),
 				g('Disegno', 'Drawing', [D_FORME, u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'),
 					ul('In primo piano', 'Bring to front', '.uno:BringToFront'), ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'), ul('Raggruppa', 'Group', '.uno:FormatGroup')]),
 				SUITE_HOME] },
@@ -2933,7 +2934,18 @@
 		setTimeout(function () { search.focus(); }, 300);
 	}
 
-	function tr(text) { return typeof window._ === 'function' ? window._(text) : text; }
+	// Nomi dei modelli di Collabora che la pagina iniziale lascia in inglese.
+	var TEMPLATE_IT = {
+		'Business Letter': 'Lettera commerciale', 'Classic Business Letter': 'Lettera commerciale classica',
+		'Curriculum Vitae(CV)': 'Curriculum vitae', 'Curriculum Vitae (CV)': 'Curriculum vitae', 'Resume (one-page)': 'Curriculum in una pagina',
+		'Modern': 'Moderno', 'Default': 'Predefinito', 'Blank Document': 'Documento vuoto', 'Blank Spreadsheet': 'Foglio vuoto',
+		'Blank Presentation': 'Presentazione vuota', 'Untitled': 'Senza titolo'
+	};
+
+	function tr(text) {
+		var out = typeof window._ === 'function' ? window._(text) : text;
+		return IT && out === text && TEMPLATE_IT[text] ? TEMPLATE_IT[text] : out;
+	}
 
 	function templateType(e) {
 		var type = String(e.type || '').toLowerCase();
