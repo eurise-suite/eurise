@@ -19,6 +19,7 @@ internal object Thumbs {
     private val io = Executors.newSingleThreadExecutor()
     private val loaded = mutableStateMapOf<String, ImageBitmap>()
     private val asked = HashSet<String>()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var dir: File
 
     fun init(context: Context) {
@@ -36,7 +37,9 @@ internal object Thumbs {
         val k = key(url)
         loaded[k]?.let { return it }
         synchronized(asked) { if (!asked.add(k)) return null }
-        io.execute { runCatching { BitmapFactory.decodeFile(file(url).path) }.getOrNull()?.let { loaded[k] = it.asImageBitmap() } }
+        io.execute {
+            runCatching { BitmapFactory.decodeFile(file(url).path) }.getOrNull()?.asImageBitmap()?.let { image -> main.post { loaded[k] = image } }
+        }
         return null
     }
 

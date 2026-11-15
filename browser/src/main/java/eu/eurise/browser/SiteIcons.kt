@@ -41,6 +41,7 @@ object SiteIcons {
     private val missing = HashSet<String>()
     private val inFlight = HashSet<String>()
     private val tried = HashSet<String>()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var dir: File
     private lateinit var app: Context
 
@@ -80,6 +81,7 @@ object SiteIcons {
 
     /** La pagina [host] dichiara l'icona [url]: si scarica se non c'è o è vecchia. */
     fun offer(context: Context, host: String, url: String, private: Boolean, fallback: String? = null) {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) { main.post { offer(context, host, url, private, fallback) }; return }
         if (private || host.isBlank() || !::dir.isInitialized) return
         if (!url.startsWith("https://") && !url.startsWith("http://")) return
         val k = key(host)
@@ -105,15 +107,17 @@ object SiteIcons {
                         val small = Bitmap.createScaledBitmap(icon, SIZE, SIZE, true)
                         f.outputStream().use { small.compress(Bitmap.CompressFormat.PNG, 100, it) }
                         synchronized(missing) { missing.remove(k) }
-                        loaded[k] = small.asImageBitmap()
+                        val image = small.asImageBitmap()
+                        main.post { loaded[k] = image }
                         ok = true
                     }
                     synchronized(missing) { inFlight.remove(k) }
-                    if (!ok && fallback != null) offer(context, host, fallback, private)
+                    // Gecko vuole le richieste dal thread principale: da qui si chiudeva il Browser (giro 586).
+                    if (!ok && fallback != null) main.post { offer(context, host, fallback, private) }
                 }
             }, {
                 synchronized(missing) { inFlight.remove(k) }
-                if (fallback != null) offer(context, host, fallback, private)
+                if (fallback != null) main.post { offer(context, host, fallback, private) }
             })
             ?: synchronized(missing) { inFlight.remove(k) }
     }
