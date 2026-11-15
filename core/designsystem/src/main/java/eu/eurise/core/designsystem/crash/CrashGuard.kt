@@ -64,6 +64,68 @@ object CrashGuard {
     fun clear(context: Context) { File(context.filesDir, FILE).delete() }
 }
 
+/**
+ * Parte con ogni app della suite (provider senza dati, come fa androidx.startup): installa [CrashGuard] e, se l'ultima
+ * volta l'app si è chiusa da sola, al primo avvio di una schermata apre [CrashActivity] con l'errore.
+ */
+class CrashInstaller : android.content.ContentProvider() {
+    override fun onCreate(): Boolean {
+        val context = context ?: return true
+        val process = if (Build.VERSION.SDK_INT >= 28) android.app.Application.getProcessName() else ""
+        if (process.endsWith(":errore")) return true
+        val label = runCatching { context.applicationInfo.loadLabel(context.packageManager).toString() }.getOrDefault("Eurise")
+        CrashGuard.install(context, label)
+        (context.applicationContext as? android.app.Application)?.registerActivityLifecycleCallbacks(object : SimpleLifecycle() {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {
+                if (activity is CrashActivity) return
+                val report = CrashGuard.pending(activity) ?: return
+                CrashGuard.clear(activity)
+                runCatching {
+                    activity.startActivity(
+                        Intent(activity, CrashActivity::class.java).putExtra(CrashActivity.EXTRA_REPORT, report)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK),
+                    )
+                }
+            }
+        })
+        return true
+    }
+
+    override fun query(u: android.net.Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): android.database.Cursor? = null
+    override fun getType(uri: android.net.Uri): String? = null
+    override fun insert(uri: android.net.Uri, values: android.content.ContentValues?): android.net.Uri? = null
+    override fun delete(uri: android.net.Uri, s: String?, a: Array<out String>?) = 0
+    override fun update(uri: android.net.Uri, v: android.content.ContentValues?, s: String?, a: Array<out String>?) = 0
+}
+
+private open class SimpleLifecycle : android.app.Application.ActivityLifecycleCallbacks {
+    override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+    override fun onActivityStarted(activity: Activity) {}
+    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityPaused(activity: Activity) {}
+    override fun onActivityStopped(activity: Activity) {}
+    override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+    override fun onActivityDestroyed(activity: Activity) {}
+}
+
+/** «Si è chiusa da sola» in un processo a parte ([CrashInstaller]). */
+class CrashActivity : androidx.activity.ComponentActivity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        val report = intent.getStringExtra(EXTRA_REPORT) ?: run { finish(); return }
+        androidx.activity.compose.setContent(this) {
+            eu.eurise.core.designsystem.theme.EuriseTheme {
+                CrashScreen(this, report) {
+                    packageManager.getLaunchIntentForPackage(packageName)?.let { runCatching { startActivity(it) } }
+                    finish()
+                }
+            }
+        }
+    }
+
+    companion object { const val EXTRA_REPORT = "report" }
+}
+
 /** La schermata «Si è chiusa da sola»: l'errore, Copia, Condividi, Riapri. */
 @Composable
 fun CrashScreen(activity: Activity, report: String, onReopen: () -> Unit) {

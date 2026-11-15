@@ -86,19 +86,6 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        eu.eurise.core.designsystem.crash.CrashGuard.install(this, "Eurise Browser")
-        // Si era chiuso da solo: prima l'errore da mandare, senza avviare Gecko (che potrebbe richiuderlo).
-        eu.eurise.core.designsystem.crash.CrashGuard.pending(this)?.let { report ->
-            setContent {
-                EuriseTheme {
-                    eu.eurise.core.designsystem.crash.CrashScreen(this, report) {
-                        eu.eurise.core.designsystem.crash.CrashGuard.clear(this)
-                        recreate()
-                    }
-                }
-            }
-            return
-        }
         Logins.init(this, passwordPackage)
         SiteIcons.init(this)
         Thumbs.init(this)

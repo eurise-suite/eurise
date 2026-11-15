@@ -7,6 +7,28 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application>
+        <!-- «Aggiungi al calendario» e «Apri appuntamento» dalle altre app (15 novembre). -->
+        <activity
+            android:name=".importer.EventIntentActivity"
+            android:exported="true"
+            android:label="@string/ics_label"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.calendar.evento"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.dir/event" />
+                <data android:mimeType="vnd.android.cursor.item/event" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="com.android.calendar" android:pathPrefix="/events/" />
+            </intent-filter>
+        </activity>
         <!-- «Apri con › Calendario» per i file .ics (15 novembre). -->
         <activity
             android:name=".importer.IcsImportActivity"

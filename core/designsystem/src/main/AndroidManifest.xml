@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Registro degli errori di tutte le app della suite (CrashGuard, 15 novembre): parte con l'app, niente rete. -->
+        <provider
+            android:name="eu.eurise.core.designsystem.crash.CrashInstaller"
+            android:authorities="${applicationId}.crashguard"
+            android:exported="false"
+            android:initOrder="1000" />
+        <!-- L'errore dell'ultima chiusura, in un processo a parte: resta visibile anche se l'app si richiude. -->
+        <activity
+            android:name="eu.eurise.core.designsystem.crash.CrashActivity"
+            android:exported="false"
+            android:process=":errore"
+            android:taskAffinity="eu.eurise.errore"
+            android:excludeFromRecents="true" />
+    </application>
+</manifest>
