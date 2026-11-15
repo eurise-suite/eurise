@@ -22,14 +22,14 @@ jobs:
         run: |
           git clone -q --depth 1 --branch coda-26.04.5.3-1 --filter=blob:none --sparse https://gerrit.collaboraoffice.com/online online
           cd online
-          git sparse-checkout set qt browser/src/app browser/html browser/js
+          git sparse-checkout set qt browser/src browser/html browser/js browser/css browser/images/welcome browser/welcome
           git log -1 --format='%H %ci' > ../commit.txt
           # La striscia delle schede (qtapp-tabstrip.*): dovunque stia nel repository.
           git ls-tree -r --name-only HEAD | grep -i 'tabstrip\|color-palette' | tee ../striscia.txt
           git sparse-checkout add $(xargs -n1 dirname < ../striscia.txt | sort -u)
           cd ..
           sed -n '1060,1080p' online/browser/Makefile.am; grep -n 'terser\|esbuild\|uglify\|"node\|engines' online/browser/package.json
-          tar -czf guscio-qt.tar.gz -C online qt browser/src/app browser/html browser/js browser/Makefile.am browser/package.json configure.ac $(cat striscia.txt)
+          tar -czf guscio-qt.tar.gz -C online qt browser/src browser/html browser/js browser/css browser/Makefile.am browser/package.json configure.ac $(cat striscia.txt)
           ls -la guscio-qt.tar.gz; cat commit.txt
 
       - name: Nella pre-release guscio-qt-sorgenti
