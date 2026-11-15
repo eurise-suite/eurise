@@ -146,7 +146,7 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   blu notte anche col tema scuro (`eurise_patch.py`); Android 12+ in `values-v31/eurise_splash.xml` con la stessa icona
   senza cerchio, così l'avvio di sistema e quello di CoMaps coincidono.
 
-## «Dove sei» mentre si esplora, passo f) (15 novembre, Mappe 49; tavola MapEsplora)
+## «Dove sei» mentre si esplora, passo f) (15 novembre, Mappe 51; tavola MapEsplora)
 - `eurise/ui/EuriseDoveSei.kt`: scheda satinata sopra la barra (nella colonna della barra, accanto a zoom e lente):
   bandiera, «Monza (MB)», «Via Italia · Lombardia · IT»; a destra gradi e cielo (solo con il meteo acceso nel centro
   privacy, `EuriseRouteWeather.hereParts`) e tramonto o alba (calcolati, `SunTimes`). Tocco: «Salva il luogo» e «Manda
