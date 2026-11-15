@@ -149,4 +149,9 @@ class GrammarTest {
         assertTrue(p("Quanto deve cuocere un uovo sodo?") is Command.Free)
         assertTrue(p("Quando ho l'appuntamento dal dentista?") is Command.Free)
     }
+
+    @Test fun ricordaChe() {
+        assertEquals(Command.Remember("Dopo pranzo sono le 13"), p("Alfred, ricorda che dopo pranzo sono le 13"))
+        assertTrue(p("ricordami di comprare il pane") is Command.Task)
+    }
 }

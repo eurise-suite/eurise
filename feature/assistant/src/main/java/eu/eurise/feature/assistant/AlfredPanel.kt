@@ -3,6 +3,9 @@ package eu.eurise.feature.assistant
 import eu.eurise.core.data.alfred.Address
 import eu.eurise.core.data.alfred.addressSuffix
 import eu.eurise.core.data.alfred.AlfredPrefs
+import java.util.Locale
+import java.time.format.DateTimeFormatter
+import eu.eurise.core.data.alfred.AlfredMemory
 import android.Manifest
 import android.content.Intent
 import android.provider.Settings
@@ -289,7 +292,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 // Prima le regole esatte (subito); se nessuna prende la frase, la legge il cervello sul telefono (fino a
                 // tre azioni); senza cervello, la seconda lettura delle parole chiave.
                 val exact = Grammar.exact(heard, now)
-                val fromBrain = if (exact == null && brainReady) brain.command(heard, "", now.toLocalDate())?.let { BrainCommands.parse(it, now, heard) }.orEmpty() else emptyList()
+                val fromBrain = if (exact == null && brainReady) brain.command(heard, butler.memory.hints(), now.toLocalDate())?.let { BrainCommands.parse(it, now, heard) }.orEmpty() else emptyList()
                 val actions = fromBrain.filter { it !is Command.Free }
                 if (actions.size >= 2) {
                     val cards = actions.map { butler.plan(it) }
@@ -555,7 +558,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         }
                     }
                 }
-                Phase.Brain -> BrainView(prefs, brain, favorite.name, onChanged = { brainReady = brain.ready }, onBack = { phase = Phase.Settings })
+                Phase.Brain -> BrainView(prefs, brain, butler.memory, favorite.name, onChanged = { brainReady = brain.ready }, onBack = { phase = Phase.Settings })
                 Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural, favoriteName = favorite.name,
                     onReadAloud = { readAloud = it; prefs.readAloud = it },
                     onAddress = { address = addressSuffix(prefs) },
@@ -676,6 +679,7 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Search -> EuriseIcons.search(2.3f)
     Kind.Open -> EuriseIcons.grid(2.3f)
     Kind.Free -> EuriseIcons.spark(2.3f)
+    Kind.Remember -> EuriseIcons.note(2.3f)
 }
 
 @Composable
@@ -868,7 +872,7 @@ private fun ManyView(cards: List<Card>, onOpen: (Card) -> Unit) {
 
 /** Chi risponde alle domande libere e quale cervello usa Alfred sul telefono (tavola AlfCervello). */
 @Composable
-private fun BrainView(prefs: AlfredPrefs, brain: AlfredBrain, favoriteName: String, onChanged: () -> Unit, onBack: () -> Unit) {
+private fun BrainView(prefs: AlfredPrefs, brain: AlfredBrain, memory: AlfredMemory, favoriteName: String, onChanged: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var answers by remember { mutableStateOf(prefs.answers) }
@@ -942,4 +946,39 @@ private fun BrainView(prefs: AlfredPrefs, brain: AlfredBrain, favoriteName: Stri
         }
     }
     Text(note ?: stringResource(R.string.alfred_brain_where), fontSize = 12.sp, color = Color(0xFFCBD5E1))
+    MemorySection(memory)
+}
+
+/** «Alfred ricorda»: interruttore e voci, ognuna si cancella (tavola AlfCervello). */
+@Composable
+private fun MemorySection(memory: AlfredMemory) {
+    var enabled by remember { mutableStateOf(memory.enabled) }
+    var facts by remember { mutableStateOf(memory.all().sortedByDescending { it.since }) }
+    val day = remember { DateTimeFormatter.ofPattern("d MMMM", Locale.ITALIAN) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.alfred_memory_title), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFCBD5E1), modifier = Modifier.weight(1f))
+        Toggle(enabled, enabled = true) { enabled = it; memory.enabled = it }
+    }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(start = 14.dp, end = 4.dp)) {
+        val shown = facts.filter { it.kind != AlfredMemory.Kind.Channel || it.count >= 3 }
+        if (shown.isEmpty()) Text(stringResource(R.string.alfred_memory_empty), fontSize = 12.5.sp, color = InkSoft, modifier = Modifier.padding(vertical = 12.dp, horizontal = 0.dp))
+        shown.forEachIndexed { i, f ->
+            if (i > 0) Divider()
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(when (f.kind) {
+                        AlfredMemory.Kind.Person -> stringResource(R.string.alfred_memory_person, f.key.replaceFirstChar { it.uppercase() }, f.value)
+                        AlfredMemory.Kind.Channel -> stringResource(R.string.alfred_memory_channel, f.key.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } },
+                            Channel.entries.firstOrNull { it.name == f.value }?.let { c -> when (c) { Channel.Sms -> "SMS"; else -> c.name } } ?: f.value)
+                        AlfredMemory.Kind.Said -> f.value
+                    }, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+                    Text(stringResource(R.string.alfred_memory_since, f.since.format(day)), fontSize = 12.sp, color = InkSoft)
+                }
+                Box(Modifier.size(44.dp).clickable { memory.forget(f.id); facts = memory.all().sortedByDescending { it.since } }, contentAlignment = Alignment.Center) {
+                    Text("×", fontSize = 20.sp, color = InkSoft)
+                }
+            }
+        }
+    }
+    Text(stringResource(R.string.alfred_memory_where), fontSize = 12.sp, color = Color(0xFFCBD5E1))
 }

@@ -12,6 +12,7 @@ import android.provider.AlarmClock
 import eu.eurise.core.contacts.Contact
 import eu.eurise.core.contacts.Contacts
 import eu.eurise.core.contacts.Reach
+import eu.eurise.core.data.alfred.AlfredMemory
 import eu.eurise.core.data.EuriseData
 import eu.eurise.core.data.calendar.DeviceCalendar
 import eu.eurise.core.data.calendar.EventDraft
@@ -32,7 +33,7 @@ data class Field(val key: String, val label: Int, val value: String, val choices
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember }
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -66,6 +67,8 @@ private val HOUR = DateTimeFormatter.ofPattern("HH:mm")
 /** Prepara le schede e, dopo il tocco, agisce attraverso i dati e le app della suite. */
 class Butler(private val context: Context) {
     private val data by lazy { EuriseData.create(context) }
+    /** Ciò che Alfred ricorda: le persone scelte, l'app abituale, le cose dette. */
+    val memory by lazy { AlfredMemory(context) }
     private fun s(id: Int, vararg args: Any) = context.getString(id, *args)
 
     suspend fun plan(command: Command): Card = when (command) {
@@ -95,6 +98,8 @@ class Butler(private val context: Context) {
             null, s(R.string.alfred_do_search))
         is Command.Open -> open(command)
         is Command.Free -> free(command)
+        is Command.Remember -> Card(Kind.Remember, command, s(R.string.alfred_lead_remember), R.string.alfred_card_remember,
+            listOf(Field("text", R.string.alfred_f_text, command.text)), s(R.string.alfred_note_remember), s(R.string.alfred_do_remember))
     }
 
     // --- Appuntamento ---
@@ -126,7 +131,8 @@ class Butler(private val context: Context) {
     private suspend fun message(c: Command.Message): Card {
         val people = findPeople(c.who)
         val contact = people.firstOrNull()
-        val channel = c.channel ?: Channel.Sms
+        // Senza canale detto: quello che l'utente usa sempre con questa persona, se Alfred lo ha imparato.
+        val channel = c.channel ?: contact?.name?.let { memory.channel(it) }?.let { n -> Channel.entries.firstOrNull { it.name == n } } ?: Channel.Sms
         val available = Channel.entries.filter { it == Channel.Sms || channelPackage(it) != null }
         val number = contact?.phones?.firstOrNull()?.value
         val to = when {
@@ -142,7 +148,7 @@ class Butler(private val context: Context) {
         }
         val chips = buildList {
             available.filter { it != channel }.forEach { add(Chip(s(R.string.alfred_use, channelName(it)), c.copy(channel = it))) }
-            people.drop(1).take(2).forEach { add(Chip(s(R.string.alfred_or, it.name), c.copy(who = it.name))) }
+            people.drop(1).take(2).forEach { add(Chip(s(R.string.alfred_or, it.name), c.copy(who = it.name, said = c.said ?: c.who))) }
         }
         return Card(
             Kind.Message, c,
@@ -188,7 +194,7 @@ class Butler(private val context: Context) {
                 contact?.phones?.map { Contacts.format(it.value) }?.distinct()?.takeIf { it.size > 1 }.orEmpty())),
             if (canCall) null else s(R.string.alfred_note_call),
             s(R.string.alfred_do_call),
-            people.drop(1).take(3).map { Chip(s(R.string.alfred_or, it.name), c.copy(who = it.name)) },
+            people.drop(1).take(3).map { Chip(s(R.string.alfred_or, it.name), c.copy(who = it.name, said = c.said ?: c.who)) },
             number != null, contact = contact,
         )
     }
@@ -243,6 +249,15 @@ class Butler(private val context: Context) {
     /** I contatti il cui nome contiene tutte le parole dette, i preferiti per primi; con numeri e indirizzi. */
     suspend fun findPeople(spoken: String): List<Contact> {
         if (!Contacts.canRead(context)) return emptyList()
+        // Prima la persona che l'utente ha già scelto per questo nome («Marco» è Marco Ferri).
+        memory.person(spoken)?.takeIf { fold(it) != fold(spoken) }?.let { known ->
+            val first = findPeopleBy(known)
+            if (first.isNotEmpty()) return (first + findPeopleBy(spoken)).distinctBy { it.id }.take(4)
+        }
+        return findPeopleBy(spoken)
+    }
+
+    private suspend fun findPeopleBy(spoken: String): List<Contact> {
         val words = fold(spoken).split(' ').filter { it.isNotBlank() }
         if (words.isEmpty() || Reach.digits(spoken).length >= 6) return emptyList()
         val all = Contacts.all(context)
@@ -287,11 +302,25 @@ class Butler(private val context: Context) {
                 withContext(Dispatchers.IO) { data.tasks.add(card.value("what"), due = due, time = q.time ?: c.time.takeIf { due != null }) }
                 Outcome(s(R.string.alfred_done_task), true)
             }
-            Kind.Message -> sendMessage(card)
+            Kind.Message -> sendMessage(card).also { out ->
+                val c = card.command as Command.Message
+                val name = card.contact?.name
+                if (out.close && name != null) {
+                    memory.learnPerson(c.said ?: c.who, name)
+                    Channel.entries.firstOrNull { channelName(it) == card.value("via") }?.let { memory.learnChannel(name, it.name) }
+                }
+            }
             Kind.Call -> {
                 val number = card.value("number")
                 val canCall = context.checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
-                start(if (canCall) Reach.call(number) else Reach.dial(number))
+                start(if (canCall) Reach.call(number) else Reach.dial(number)).also { out ->
+                    val c = card.command as Command.Call
+                    card.contact?.name?.let { if (out.close) memory.learnPerson(c.said ?: c.who, it) }
+                }
+            }
+            Kind.Remember -> {
+                memory.remember(card.value("text"))
+                Outcome(s(if (memory.enabled) R.string.alfred_done_remember else R.string.alfred_memory_off), true)
             }
             Kind.Route -> {
                 val place = card.value("place")

@@ -7,14 +7,17 @@ import java.time.LocalTime
 
 /** Ciò che Alfred ha capito da una frase, prima di cercare persone e calendari. */
 sealed interface Command {
-    data class Call(val who: String) : Command
+    /** [said]: il nome com'era detto, quando si è scelta un'altra persona dalle proposte (per la memoria). */
+    data class Call(val who: String, val said: String? = null) : Command
     data class Note(val text: String) : Command
     data class Task(val title: String, val due: LocalDate?, val time: LocalTime?) : Command
     data class Event(val title: String, val who: String?, val day: LocalDate?, val time: LocalTime?) : Command
     data class Navigate(val place: String) : Command
     /** Una segnalazione per Eurise Mappe, segnata subito dove si è («Alfred, autovelox»). */
     data class Report(val kind: ReportKind) : Command
-    data class Message(val who: String, val text: String, val channel: Channel?) : Command
+    data class Message(val who: String, val text: String, val channel: Channel?, val said: String? = null) : Command
+    /** «Ricorda che…»: una cosa da tenere a mente (memoria di Alfred). */
+    data class Remember(val text: String) : Command
     data class Alarm(val time: LocalTime, val day: LocalDate?) : Command
     data class Timer(val minutes: Int) : Command
     data class Search(val query: String, val scope: Scope) : Command
@@ -43,6 +46,8 @@ object Grammar {
     private val POLITE_TAIL = Regex("$O[,\\s]*(?:per\\s+(?:favore|piacere)|grazie)[.!]?\\s*$")
 
     private val NOTE = Regex("$O^(?:(?:nuova\\s+)?nota|annota|prendi\\s+(?:nota|appunto)|(?:scrivi|crea|fai|aggiungi|apri)\\s+(?:una\\s+)?(?:nuova\\s+)?nota|appunta)(?![\\p{L}])\\s*(?:[:,]|che)?\\s*(.*)$")
+    /** «Ricorda che…», «tieni a mente che…», «impara che…» (non «ricordami di…», che è un promemoria). */
+    private val REMEMBER = Regex("$O^(?:ricorda|ricordati|tieni\\s+a\\s+mente|impara|sappi)\\s+che\\s+(.+)$")
     /** «Aggiungi al calendario…», «crea un evento…», «metti nel calendario…»: almeno una delle parole del calendario. */
     private val CALENDAR = Regex("$O^(?:aggiungi|metti|mettimi|inserisci|segna|segnami|crea|salva|fissa|fissami|programma)\\s+(?:(?:un|un'|l'|il|lo|nuovo)\\s*)?(?:(evento|appuntamento|impegno)\\s*)?(?:(?:in|nel|al|sul|a)\\s+(calendario|agenda))?\\s*[:,]?\\s*(.*)$")
     private val TASK = Regex("$O^(?:ricordami\\s+(?:di|che)|promemoria(?:\\s+per)?|da\\s+fare|aggiungi\\s+(?:alle\\s+cose\\s+da\\s+fare|un'?\\s*attività)|devo)(?![\\p{L}])\\s*[:,]?\\s*(.+)$")
@@ -88,6 +93,7 @@ object Grammar {
         if (text.isEmpty()) return Command.Free(sentence)
 
         REPORT.matchEntire(text)?.let { m -> return Command.Report(reportKind(m.groupValues[1].lowercase())) }
+        REMEMBER.matchEntire(text)?.let { return Command.Remember(capital(it.groupValues[1])) }
         NOTE.matchEntire(text)?.let { return Command.Note(capital(it.groupValues[1])) }
         CALENDAR.matchEntire(text)?.let { m ->
             if (m.groupValues[1].isNotEmpty() || m.groupValues[2].isNotEmpty()) return event("", m.groupValues[3], now)

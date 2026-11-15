@@ -306,4 +306,18 @@
     <string name="alfred_brain_notification">Cervello di Alfred · %1$s</string>
     <string name="alfred_brain_no_ai">Serve l\'app Eurise AI: è lei che pensa, senza Internet. Installi il suo APK e torni qui.</string>
     <string name="alfred_brain_where">Si scarica una volta da huggingface.co (vede solo l\'indirizzo del telefono), solo con il Wi-Fi; poi resta sul telefono, in Eurise AI, che non ha Internet. Licenza Apache 2.0.</string>
+    <!-- Memoria di Alfred (tavola AlfCervello, «Alfred ricorda») -->
+    <string name="alfred_lead_remember">Me lo segno nella memoria. Va bene così?</string>
+    <string name="alfred_card_remember">Da ricordare</string>
+    <string name="alfred_note_remember">Resta solo sul telefono; la trova e la cancella in «Chi risponde», «Alfred ricorda».</string>
+    <string name="alfred_do_remember">Ricordatelo</string>
+    <string name="alfred_done_remember">Me lo ricorderò.</string>
+    <string name="alfred_memory_off">La memoria è spenta: la accende in «Chi risponde».</string>
+    <string name="alfred_memory_title">Alfred ricorda</string>
+    <string name="alfred_memory_empty">Ancora niente. Impara chi intende quando dice un nome e l\'app che usa con ogni persona; e ciò che gli dice con «ricorda che…».</string>
+    <string name="alfred_memory_person">«%1$s» è %2$s</string>
+    <string name="alfred_memory_channel">Con %1$s scrive su %2$s</string>
+    <string name="alfred_memory_since">dal %1$s</string>
+    <string name="alfred_memory_forget">Dimentica</string>
+    <string name="alfred_memory_where">Resta sul telefono e nel backup cifrato; spenta, Alfred non impara e non usa nulla.</string>
 </resources>
