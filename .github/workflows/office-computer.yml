@@ -5,6 +5,10 @@ name: "Office: Flatpak Eurise e prova sul computer"
 
 on:
   workflow_dispatch:
+    inputs:
+      pacchetto:
+        description: "prototipo (strada 1, si costruisce qui) o sorgenti (strada 2, dalla pre-release flatpak-sorgenti-office)"
+        default: prototipo
   # Un workflow nuovo su un ramo che non è quello principale si avvia solo con un push.
   push:
     branches: [office]
@@ -35,12 +39,24 @@ jobs:
           sudo apt-get install -y -q flatpak xvfb xdotool imagemagick x11-apps dbus-x11 librsvg2-bin > /dev/null
 
       - name: Flatpak Eurise Office
+        if: inputs.pacchetto != 'sorgenti'
         run: bash office/computer/flatpak/costruisci.sh flatpak-eurise
+
+      - name: Flatpak Eurise Office dai sorgenti (strada 2)
+        if: inputs.pacchetto == 'sorgenti'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p flatpak-eurise
+          gh release download flatpak-sorgenti-office -R "${{ github.repository }}" -p eurise-office-sorgenti.flatpak -D flatpak-eurise
+          mv flatpak-eurise/eurise-office-sorgenti.flatpak flatpak-eurise/eurise-office.flatpak
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Installa il Flatpak Eurise
         run: flatpak install --user -y --noninteractive --bundle flatpak-eurise/eurise-office.flatpak
 
       - name: Il pacchetto nella pre-release flatpak-prova-office
+        if: inputs.pacchetto != 'sorgenti'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -51,7 +67,9 @@ jobs:
           gh release upload flatpak-prova-office flatpak-eurise/eurise-office.flatpak flatpak-eurise/versione-collabora.txt -R "${{ github.repository }}" --clobber
 
       - name: Prova del Flatpak Eurise su uno schermo virtuale
-        run: bash office/computer/prova.sh prova-computer
+        run: |
+          bash office/computer/prova.sh prova-computer
+          echo "- pacchetto: ${{ inputs.pacchetto || 'prototipo' }}" >> prova-computer/riassunto.md
 
       - name: Riassunto
         if: always()
@@ -63,6 +81,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls prova-computer/*.png > /dev/null 2>&1 || exit 0
+          [ "${{ inputs.pacchetto }}" = sorgenti ] && exit 0
           gh release view office-computer-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create office-computer-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
               --title "Schermate della prova di Office sul computer" --notes "Sovrascritte a ogni prova."
