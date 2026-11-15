@@ -12,7 +12,9 @@ enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, V
     /** Alfred che passa una domanda, ripulita sul telefono, all'AI online scelta (Lumo, Euria, Le Chat…). */
     AiOnline,
     /** Eurise Mappe: orari e viaggi coi mezzi pubblici da Transitous (partenza e arrivo arrotondati). */
-    PublicTransport;
+    PublicTransport,
+    /** Eurise Mappe: il file delle pietre miliari di un paese (il km sulle strade), uguale per tutti; nessuna posizione. */
+    Milestones;
 
     val defaultOn: Boolean get() = false
 }

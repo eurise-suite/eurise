@@ -1388,7 +1388,13 @@ patch(res / "layout" / "place_page_details.xml", """    <androidx.fragment.app.F
 patch(pp / "PlacePageView.java", "    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));",
       "    app.organicmaps.eurise.ui.EuriseLuogo.attach(mFrame.findViewById(R.id.eurise_luogo));\n"
       "    app.organicmaps.eurise.ui.EuriseLuogoAperta.attach(mFrame.findViewById(R.id.eurise_luogo_aperta));")
-print("eurise_patch: scheda del luogo aperta (MapLuogoAperta)")
+# Gli orari nello stile della tavola li disegna EuriseOrari.kt (in cima a EuriseLuogoAperta): il riquadro di CoMaps
+# non si aggiunge più. Il «Aperto · chiude alle…» in testa alla scheda resta quello di CoMaps.
+patch(pp / "PlacePageView.java", """    updateViewFragment(PlacePageOpeningHoursFragment.class, OPENING_HOURS_FRAGMENT_TAG,
+                       R.id.place_page_opening_hours_fragment, !TextUtils.isEmpty(ohStr));""",
+      """    updateViewFragment(PlacePageOpeningHoursFragment.class, OPENING_HOURS_FRAGMENT_TAG,
+                       R.id.place_page_opening_hours_fragment, false && !TextUtils.isEmpty(ohStr));""")
+print("eurise_patch: scheda del luogo aperta (MapLuogoAperta, orari della tavola)")
 
 # Il limite che arriva (tavola MapVelocita, «tra 200 m: 70»): dai tratti del percorso in corso, il primo limite diverso
 # da quello di adesso entro aheadM metri. {km/h, metri} oppure null.

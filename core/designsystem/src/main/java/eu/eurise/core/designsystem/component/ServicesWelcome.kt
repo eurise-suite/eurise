@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val DESK = listOf(PrivacyService.Weather, PrivacyService.Alerts, PrivacyService.Pollen, PrivacyService.News, PrivacyService.Horoscope)
-private val MAPS = listOf(PrivacyService.Routes, PrivacyService.RouteWeather, PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices, PrivacyService.PublicTransport)
+private val MAPS = listOf(PrivacyService.Routes, PrivacyService.RouteWeather, PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices, PrivacyService.PublicTransport, PrivacyService.Milestones)
 private val ALFRED = listOf(PrivacyService.AiOnline)
 private val CLOSED = listOf(PrivacyService.Markets, PrivacyService.Videos)
 

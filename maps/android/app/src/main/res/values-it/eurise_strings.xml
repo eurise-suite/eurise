@@ -374,4 +374,16 @@
     <string name="eurise_lv_fuel_explain">Una volta al giorno, quando apri i benzinai, Mappe scarica dal sito del Ministero delle Imprese il file pubblico dei prezzi, uguale per tutti. Non esce la posizione né altro. Si spegne quando vuoi.</string>
     <string name="eurise_lv_turn_on">Accendi</string>
     <string name="eurise_lv_cancel">Annulla</string>
+    <string name="eurise_oh_title">Orari</string>
+    <string name="eurise_oh_today">Oggi, %1$s</string>
+    <string name="eurise_oh_closed">chiuso</string>
+    <string name="eurise_oh_all_day">aperto 24 ore</string>
+    <string name="eurise_oh_every_day">Tutti i giorni</string>
+    <string name="eurise_oh_week">Tutta la settimana</string>
+    <string name="eurise_oh_less">Meno giorni</string>
+    <string name="eurise_lv_km">Km sulle strade</string>
+    <string name="eurise_lv_km_sub">pietre miliari di OpenStreetMap · file per paese, nessuna posizione</string>
+    <string name="eurise_lv_km_explain">Su autostrade, superstrade, statali e provinciali Mappe mostra il km («km 12,4»), utile per soccorsi e carro attrezzi. Viene dalle pietre miliari di OpenStreetMap: un file piccolo per paese (qualche MB), uguale per tutti, scaricato dalle pubblicazioni del progetto Eurise su GitHub (Microsoft, Stati Uniti) per i paesi delle tue mappe e aggiornato ogni due mesi. Esce solo la richiesta del file, non la posizione; il km si calcola sul telefono. Dove le pietre mancano restano le coordinate. Si spegne quando vuoi.</string>
+    <string name="eurise_lv_km_done">Pietre miliari sul telefono per %1$d paesi</string>
+    <string name="eurise_lv_km_none">Ancora nessuna pietra miliare per i paesi delle tue mappe</string>
 </resources>

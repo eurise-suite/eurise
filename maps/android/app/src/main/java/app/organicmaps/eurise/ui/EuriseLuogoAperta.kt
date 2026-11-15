@@ -48,7 +48,7 @@ import app.organicmaps.util.ThemeUtils
 import java.util.Locale
 
 /**
- * La scheda del luogo aperta (tavola MapLuogoAperta, approvata): sotto gli orari di CoMaps, «Contatti e indirizzo»
+ * La scheda del luogo aperta (tavola MapLuogoAperta, approvata): «Orari» ([Orari], al posto di quelli di CoMaps), «Contatti e indirizzo»
  * (indirizzo e coordinate da copiare con una pressione lunga, «Aggiungi alla Rubrica»), «Nella suite» (nuovo impegno qui,
  * nota del luogo in Note) e «Altro» (cerca qui vicino, correggi su OpenStreetMap). Telefono, sito e social restano le
  * righe di CoMaps, già nei colori della suite. Aprire la scheda non manda niente in rete.
@@ -117,6 +117,8 @@ private fun Open(night: Boolean, place: MapObject) {
     val c = if (night) Notte else Perla
     val context = LocalContext.current
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)) {
+        // Gli orari della tavola al posto di quelli di CoMaps (il loro riquadro non si aggiunge più, vedi eurise_patch.py).
+        Orari(c, place)
         Heading(c, stringResource(R.string.eurise_lo_contacts))
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card)) {
             Column(Modifier.padding(horizontal = 14.dp)) {
@@ -168,7 +170,7 @@ private fun Open(night: Boolean, place: MapObject) {
 }
 
 @Composable
-private fun Heading(c: Colors, text: String) {
+internal fun Heading(c: Colors, text: String) {
     BasicText(text.uppercase(), Modifier.padding(start = 4.dp, top = 16.dp, bottom = 8.dp),
         style = TextStyle(color = c.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.9.sp))
 }

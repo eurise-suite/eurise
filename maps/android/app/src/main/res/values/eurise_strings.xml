@@ -382,4 +382,16 @@
     <string name="eurise_lv_fuel_explain">Once a day, when you open the fuel list, Maps downloads the public price file from the Italian Ministry website, the same for everyone. No location or anything else goes out. Turn it off any time.</string>
     <string name="eurise_lv_turn_on">Turn on</string>
     <string name="eurise_lv_cancel">Cancel</string>
+    <string name="eurise_oh_title">Hours</string>
+    <string name="eurise_oh_today">Today, %1$s</string>
+    <string name="eurise_oh_closed">closed</string>
+    <string name="eurise_oh_all_day">open 24 hours</string>
+    <string name="eurise_oh_every_day">Every day</string>
+    <string name="eurise_oh_week">Whole week</string>
+    <string name="eurise_oh_less">Fewer days</string>
+    <string name="eurise_lv_km">Km on the roads</string>
+    <string name="eurise_lv_km_sub">OpenStreetMap milestones · file per country, no location</string>
+    <string name="eurise_lv_km_explain">On motorways, expressways, main and provincial roads Maps shows the km («km 12.4»), useful for roadside assistance. It comes from the OpenStreetMap milestones: a small file per country (a few MB), the same for everyone, downloaded from the Eurise project releases on GitHub (Microsoft, USA) for the countries of your maps and refreshed every two months. Only the request for the file goes out, not your location; the km is worked out on the phone. Where milestones are missing you get the coordinates. Turn it off any time.</string>
+    <string name="eurise_lv_km_done">Milestones on the phone for %1$d countries</string>
+    <string name="eurise_lv_km_none">No milestones yet for the countries of your maps</string>
 </resources>

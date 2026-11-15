@@ -61,6 +61,7 @@ fun PrivacyService.titleRes(): Int = when (this) {
     PrivacyService.FuelPrices -> R.string.ds_s_fuel
     PrivacyService.AiOnline -> R.string.ds_s_ai_online
     PrivacyService.PublicTransport -> R.string.ds_s_transit
+    PrivacyService.Milestones -> R.string.ds_s_milestones
 }
 
 fun PrivacyService.detailRes(): Int = when (this) {
@@ -78,6 +79,7 @@ fun PrivacyService.detailRes(): Int = when (this) {
     PrivacyService.FuelPrices -> R.string.ds_s_fuel_d
     PrivacyService.AiOnline -> R.string.ds_s_ai_online_d
     PrivacyService.PublicTransport -> R.string.ds_s_transit_d
+    PrivacyService.Milestones -> R.string.ds_s_milestones_d
 }
 
 /** I servizi chiusi: avviso su limiti e pericoli, con l'alternativa (regola del 12 novembre). */
@@ -98,11 +100,12 @@ fun PrivacyService.where(): Jurisdiction = when (this) {
     PrivacyService.PublicTransport -> Jurisdiction.EU // Transitous, comunità; server in Germania
     PrivacyService.News, PrivacyService.Horoscope, PrivacyService.AiOnline -> Jurisdiction.Various // l'AI che sceglie la persona
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
+    PrivacyService.Milestones -> Jurisdiction.US // pubblicazioni del progetto su GitHub (Microsoft)
 }
 
 /** Il grado di privacy effettivo, da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
 fun PrivacyService.score(hiddenIp: Int = 0): Int = when (this) {
-    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices ->
+    PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices, PrivacyService.Milestones ->
         privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
     PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
     else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)

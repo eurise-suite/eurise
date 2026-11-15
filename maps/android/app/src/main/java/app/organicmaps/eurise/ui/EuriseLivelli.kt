@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import app.organicmaps.R
+import app.organicmaps.eurise.EuriseMilestones
 import app.organicmaps.eurise.EuriseRouteWeather
 import app.organicmaps.eurise.EuriseSky
 import app.organicmaps.sdk.Framework
@@ -95,6 +96,9 @@ private fun Sheet(night: Boolean) {
     var fuel by remember { mutableStateOf<Boolean?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { fuel = withContext(Dispatchers.IO) { EuriseFuelData.privacy(context) } }
+    // Km sulle strade (pietre miliari): stato nel centro privacy dell'app Eurise, come i carburanti.
+    var km by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) { km = withContext(Dispatchers.IO) { EuriseMilestones.privacy(context, "status") } }
     // null: l'app Eurise non c'è o non ha ancora risposto (la voce del meteo non si mostra).
     var weather by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { EuriseRouteWeather.status(context) { weather = it } }
@@ -120,7 +124,7 @@ private fun Sheet(night: Boolean) {
                 EuriseDoveSei.setEnabled(context, it)
             }
         }
-        if (weather != null || fuel != null) {
+        if (weather != null || fuel != null || km != null) {
             Section(c, stringResource(R.string.eurise_lv_network))
             Card(c) {
                 weather?.let { on ->
@@ -140,6 +144,30 @@ private fun Sheet(night: Boolean) {
                         else android.app.AlertDialog.Builder(context)
                             .setTitle(R.string.eurise_lv_fuel)
                             .setMessage(R.string.eurise_lv_fuel_explain)
+                            .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ -> apply() }
+                            .setNegativeButton(R.string.eurise_lv_cancel, null)
+                            .show()
+                    }
+                }
+                km?.let { on ->
+                    Toggle(c, stringResource(R.string.eurise_lv_km), stringResource(R.string.eurise_lv_km_sub), on, divider = weather != null || fuel != null) { want ->
+                        fun apply() = scope.launch {
+                            km = withContext(Dispatchers.IO) {
+                                EuriseMilestones.privacy(context, if (want) "enable" else "disable") ?: EuriseMilestones.privacy(context, "status")
+                            }
+                            // Acceso: i file dei paesi delle mappe scaricate (l'elenco lo dà il motore, dal thread principale).
+                            if (want && km == true) {
+                                EuriseMilestones.downloadAll(context, EuriseMilestones.downloadedCountries()) { n ->
+                                    val text = if (n > 0) context.getString(R.string.eurise_lv_km_done, n)
+                                               else context.getString(R.string.eurise_lv_km_none)
+                                    android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                        if (!want) apply()
+                        else android.app.AlertDialog.Builder(context)
+                            .setTitle(R.string.eurise_lv_km)
+                            .setMessage(R.string.eurise_lv_km_explain)
                             .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ -> apply() }
                             .setNegativeButton(R.string.eurise_lv_cancel, null)
                             .show()

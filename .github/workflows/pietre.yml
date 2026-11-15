@@ -1,0 +1,112 @@
+name: Pietre miliari
+
+# Prepara, per ogni paese, il file delle pietre miliari che Eurise Mappe scarica a richiesta per il km sulle strade
+# («Sei su A51 · km 12,4»; maps/pietre/pietre.py, maps/android/…/eurise/EuriseMilestones.java) e lo mette nella
+# pre-release «pietre». Dati © i contributori di OpenStreetMap, licenza ODbL: il file derivato resta sotto ODbL.
+# Parte ogni mese, quando cambiano i suoi file o a mano.
+on:
+  schedule:
+    - cron: "17 3 2 * *"
+  push:
+    paths:
+      - ".github/workflows/pietre.yml"
+      - "maps/pietre/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pietre
+  cancel-in-progress: false
+
+jobs:
+  paese:
+    name: ${{ matrix.id }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      # Gentili con Geofabrik: pochi download alla volta.
+      max-parallel: 4
+      matrix:
+        include:
+          # id = paese di primo livello nelle mappe di CoMaps (data/countries.txt); src = estratto di Geofabrik.
+          - { id: "Italy", src: "europe/italy" }
+          - { id: "Switzerland", src: "europe/switzerland" }
+          - { id: "Austria", src: "europe/austria" }
+          - { id: "Slovenia", src: "europe/slovenia" }
+          - { id: "Croatia", src: "europe/croatia" }
+          - { id: "France", src: "europe/france" }
+          - { id: "Germany", src: "europe/germany" }
+          - { id: "Spain", src: "europe/spain" }
+          - { id: "Portugal", src: "europe/portugal" }
+          - { id: "Belgium", src: "europe/belgium" }
+          - { id: "Netherlands", src: "europe/netherlands" }
+          - { id: "Luxembourg", src: "europe/luxembourg" }
+          - { id: "Czech Republic", src: "europe/czech-republic" }
+          - { id: "Slovakia", src: "europe/slovakia" }
+          - { id: "Poland", src: "europe/poland" }
+          - { id: "Hungary", src: "europe/hungary" }
+          - { id: "Greece", src: "europe/greece" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti
+        timeout-minutes: 20
+        run: |
+          bash .github/scripts/apt-update.sh
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq osmium-tool >/dev/null
+          pip install -q osmium --break-system-packages
+          python3 maps/pietre/test_pietre.py
+
+      - name: Estratto di OpenStreetMap
+        run: |
+          set -e
+          curl -fsSL --retry 3 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf"
+          ls -lh in.osm.pbf
+          # Solo pietre miliari e strade con sigla; i nodi delle strade restano (servono le posizioni).
+          osmium tags-filter -o filtro.osm.pbf in.osm.pbf \
+            n/highway=milestone w/highway=motorway,trunk,primary,secondary,tertiary
+          rm in.osm.pbf
+          ls -lh filtro.osm.pbf
+
+      - name: File delle pietre
+        id: file
+        run: |
+          set -e
+          name=$(python3 -c "import re,sys; print(re.sub(r'[^A-Za-z0-9-]+','_',sys.argv[1]) + '.ekm.gz')" "${{ matrix.id }}")
+          mkdir -p out
+          python3 maps/pietre/pietre.py filtro.osm.pbf "out/$name" | tee -a "$GITHUB_STEP_SUMMARY"
+          ls -lh out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pietre-${{ strategy.job-index }}
+          path: out/*.ekm.gz
+          retention-days: 3
+
+  pubblica:
+    name: Pubblica nella pre-release «pietre»
+    needs: paese
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pietre-*
+          path: out
+          merge-multiple: true
+
+      - name: Pubblica
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          ls -lh out
+          # Un file vuoto (paese senza pietre) non si pubblica: l'app riceve 404 e riprova dopo 30 giorni.
+          find out -name '*.ekm.gz' -size -100c -print -delete
+          gh release view pietre -R "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create pietre -R "${{ github.repository }}" --prerelease --title "Pietre miliari" \
+              --notes "Pietre miliari per il km sulle strade in Eurise Mappe, un file per paese, scaricate a richiesta dall'app. Dati © i contributori di OpenStreetMap (https://www.openstreetmap.org/copyright), licenza ODbL 1.0; i file derivati sono sotto la stessa licenza. Formato descritto in maps/pietre/pietre.py."
+          gh release upload pietre out/*.ekm.gz --clobber -R "${{ github.repository }}"

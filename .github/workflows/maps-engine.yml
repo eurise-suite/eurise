@@ -32,6 +32,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prova i calcoli (km dalle pietre miliari, orari della scheda)
+        run: |
+          mkdir -p "$RUNNER_TEMP/prove"
+          src=maps/android/app/src/main/java/app/organicmaps/eurise
+          javac -d "$RUNNER_TEMP/prove" "$src/MilestoneKm.java" "$src/OpeningRows.java" maps/test/app/organicmaps/eurise/*.java
+          java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.MilestoneKmTest
+          java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.OpeningRowsTest
+
       - name: Fa spazio sul disco
         run: |
           echo "T0=$(date +%s)" >> "$GITHUB_ENV"

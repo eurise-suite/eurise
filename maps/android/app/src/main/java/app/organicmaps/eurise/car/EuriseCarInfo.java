@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.car.app.model.CarText;
 import androidx.car.app.navigation.model.MessageInfo;
 import app.organicmaps.R;
+import app.organicmaps.eurise.EuriseMilestones;
 import app.organicmaps.eurise.EuriseRouteWeather;
 import app.organicmaps.sdk.Framework;
 import app.organicmaps.sdk.location.LocationState;
@@ -21,8 +22,10 @@ import java.util.Locale;
  *   <li>«Sei su A51 Tangenziale Est»: la strada sotto l'auto, trovata come il limite di velocità (strada più vicina
  *   nella direzione di marcia) con {@code Framework.nativeEuriseRoadAt}. In guida va nella bolla dell'arrivo
  *   ({@code TravelEstimate.setTripText}); senza destinazione in un messaggio della mappa.</li>
- *   <li>Il riferimento per i soccorsi su autostrade, superstrade, statali e provinciali. Le mappe di CoMaps non hanno le
- *   pietre miliari (il km): finché non le aggiungiamo noi, il riferimento sono le coordinate, che il 112 accetta.</li>
+ *   <li>Il km dalle pietre miliari di OpenStreetMap ({@link EuriseMilestones}, servizio «Km sulle strade» in Livelli),
+ *   accanto alla strada: «Sei su A51 Tangenziale Est · km 12,4». Senza pietre vicine e coerenti nessun km.</li>
+ *   <li>Il riferimento per i soccorsi su autostrade, superstrade, statali e provinciali: le coordinate, che il 112
+ *   accetta, sempre; il km accanto quando c'è («Soccorsi: km 12,4 · 45.46420, 9.19003»).</li>
  *   <li>Il meteo qui, senza destinazione, dallo stesso interruttore del meteo sul percorso (app Eurise e centro
  *   privacy).</li>
  * </ul>
@@ -41,6 +44,11 @@ public final class EuriseCarInfo
   @Nullable private static Location sLookedUp;
   /** Il paese della strada (ISO, «IT»), riletto ogni 2 km: decide i limiti dedotti. */
   @NonNull private static String sCountry = "";
+  /** Lo stesso paese come id della mappa di CoMaps («Italy»): sceglie il file delle pietre miliari. */
+  @NonNull private static String sCountryMap = "";
+  /** Il km dell'ultima posizione su una strada con sigla, «km 12,4»; vuoto se non si sa. */
+  @NonNull private static String sKm = "";
+  @Nullable private static Context sApp;
   @Nullable private static Location sCountryAt;
   @Nullable private static Location sLast;
   private static int sClass;
@@ -60,6 +68,8 @@ public final class EuriseCarInfo
   {
     if (location == null)
       return;
+    if (sApp == null)
+      sApp = app.organicmaps.MwmApplication.sInstance;
     sLast = location;
     if (sLookedUp != null && location.distanceTo(sLookedUp) < LOOKUP_MIN_DISTANCE_M)
       return;
@@ -67,7 +77,8 @@ public final class EuriseCarInfo
     if (sCountryAt == null || location.distanceTo(sCountryAt) > 2000)
     {
       sCountryAt = location;
-      sCountry = countryOf(location.getLatitude(), location.getLongitude());
+      sCountryMap = EuriseMilestones.countryAt(location.getLatitude(), location.getLongitude());
+      sCountry = sCountryMap.startsWith("Italy") ? "IT" : sCountryMap;
     }
     final boolean moving = location.hasBearing() && location.hasSpeed() && location.getSpeed() >= MIN_MOVING_SPEED_MPS;
     final String road = Framework.nativeEuriseRoadAt(location.getLatitude(), location.getLongitude(),
@@ -79,6 +90,7 @@ public final class EuriseCarInfo
       sClass = 0;
       sRef = "";
       sName = "";
+      sKm = "";
       return;
     }
     try
@@ -91,6 +103,15 @@ public final class EuriseCarInfo
     }
     sRef = p[1];
     sName = p[2];
+    sKm = sApp == null || sRef.isEmpty() ? ""
+        : EuriseMilestones.label(sApp, sCountryMap, location.getLatitude(), location.getLongitude(), sRef);
+  }
+
+  /** «km 12,4» sulla strada sotto l'auto, dalle pietre miliari; vuoto se non si sa. */
+  @NonNull
+  public static String km()
+  {
+    return sKm;
   }
 
   /** L'ultima posizione vista in guida o in auto (per «Segnala»); null all'inizio. */
@@ -124,25 +145,6 @@ public final class EuriseCarInfo
     };
   }
 
-  @NonNull
-  private static String countryOf(double lat, double lon)
-  {
-    try
-    {
-      final String id = app.organicmaps.sdk.downloader.MapManager.nativeFindCountry(lat, lon);
-      if (id == null || id.isEmpty())
-        return "";
-      final app.organicmaps.sdk.downloader.CountryItem item = new app.organicmaps.sdk.downloader.CountryItem(id);
-      app.organicmaps.sdk.downloader.MapManager.nativeGetAttributes(item);
-      final String top = item.topmostParentId != null && !item.topmostParentId.isEmpty() ? item.topmostParentId : id;
-      return top.startsWith("Italy") ? "IT" : top;
-    }
-    catch (Throwable e)
-    {
-      return "";
-    }
-  }
-
   /** Su autostrada o superstrada: la scena dell'uscita compare prima (600 m invece di 300). */
   public static boolean isFastRoad()
   {
@@ -156,11 +158,22 @@ public final class EuriseCarInfo
     sClass = 0;
     sRef = "";
     sName = "";
+    sKm = "";
   }
 
-  /** «Sei su A51 Tangenziale Est», «Sei in Via Roma»; null se non si sa. [routeStreet]: la via della guida, se c'è. */
+  /**
+   * «Sei su A51 Tangenziale Est · km 12,4», «Sei in Via Roma»; null se non si sa. [routeStreet]: la via della guida, se
+   * c'è.
+   */
   @Nullable
   public static String where(@NonNull Context c, @Nullable String routeStreet)
+  {
+    final String where = whereNoKm(c, routeStreet);
+    return where == null ? null : join(where, sKm, " · ");
+  }
+
+  @Nullable
+  private static String whereNoKm(@NonNull Context c, @Nullable String routeStreet)
   {
     String road = join(sRef, sName);
     if (road.isEmpty() && !TextUtils.isEmpty(routeStreet))
@@ -178,8 +191,8 @@ public final class EuriseCarInfo
     final Location l = sLast;
     if (l == null || sClass < MOTORWAY || sClass > SECONDARY)
       return null;
-    return c.getString(R.string.eurise_car_rescue,
-                       String.format(Locale.ROOT, "%.5f, %.5f", l.getLatitude(), l.getLongitude()));
+    final String coords = String.format(Locale.ROOT, "%.5f, %.5f", l.getLatitude(), l.getLongitude());
+    return c.getString(R.string.eurise_car_rescue, join(sKm, coords, " · "));
   }
 
   /** Il testo nella bolla dell'arrivo, in guida: «Sei su A51 Tangenziale Est · meteo». */
@@ -192,13 +205,14 @@ public final class EuriseCarInfo
   }
 
   /**
-   * Senza destinazione: il messaggio sulla mappa con «Sei su», soccorsi e meteo qui. [changed] ridisegna la schermata
+   * Senza destinazione: il messaggio sulla mappa con «Sei su», soccorsi (km e coordinate) e meteo qui. [changed] ridisegna la schermata
    * quando arriva il meteo.
    */
   @Nullable
   public static MessageInfo freeDrive(@NonNull Context c, @NonNull Runnable changed)
   {
-    final String where = where(c, null);
+    // Il km sta nella riga dei soccorsi, accanto alle coordinate: non si ripete nel titolo.
+    final String where = whereNoKm(c, null);
     final Location l = sLast;
     final String weather = l == null ? null
                          : EuriseRouteWeather.here(c.getApplicationContext(), l.getLatitude(), l.getLongitude(), changed);
