@@ -2542,3 +2542,30 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   più leggibili e l'orizzonte col cielo anche esplorando (dopo l'esito del cielo in guida).
 - **Da provare**: Mappe 48 (avvio; «Avvia la navigazione» anche dopo essere usciti dall'app durante il calcolo), Mappe 49
   («Dove sei» spostando la mappa, in Italia e fuori). Esito della prova di Mappe 46 e 47 ancora da ricevere.
+## 15 novembre: Browser telefono (download e schede) ed Eurise per Firefox su Linux
+Richieste del proprietario: download incerti (nome diverso durante lo scaricamento, nessun avviso da toccare alla fine),
+schede più basse, favicon di tutte le schede, griglia delle schede più leggibile con anteprime, scheda scelta più evidente;
+iniziare Firefox per il computer come «nostro browser» con le funzioni della suite (password, appuntamenti, note, cose
+da fare, documenti), partendo da Linux.
+- **Telefono, Browser**: `Downloads.info` (nome, tipo, peso dalle intestazioni, una volta sola) e `DownloadCard` (riquadro in
+  basso con avanzamento; alla fine Apri, Salva in…, Download; resta finché lo si chiude). Barra delle schede 32 dp, scheda
+  scelta con fondo, bordo e titolo nell'accento. `SiteIcons.ensure`: `/favicon.ico` e poi `/apple-touch-icon.png` per le
+  schede non ancora caricate (senza cookie, mai private). Griglia: `TabCard` con titolo su due righe, sito, icona, «In uso»,
+  bordo; anteprime anche dopo un riavvio (`Thumbs`, `cache/anteprime`, solo schede normali e ancora aperte).
+- **Computer, `desktop/firefox`** (tavola PcFirefox): estensione per Firefox com'è. Aspetto Perla/Notte (automatico con il
+  tema di Ubuntu/Fedora, o fisso, o «Firefox com'è»); pulsante Eurise (Ctrl+Maiusc+E): apri sul telefono, In Note, Da fare,
+  appuntamento (data italiana trovata nel testo scelto), documento al telefono (fino a 50 MB); pannello laterale
+  (Alt+Maiusc+E): scrivi e manda, questa scheda, «Dal telefono»; tasto destro su pagina, link, immagini, testo; password dal
+  telefono, **spenta di base** con la spiegazione prima di accendere. Pacchetto `eurise-firefox.xpi` (lavoro «Eurise per
+  Firefox» di Compila, copiato in `apk-prova`), **non firmato**: si prova da `about:debugging`; per installarlo stabilmente
+  serve la firma di Mozilla con l'account AMO del proprietario. Dalla tavola manca «Detta dal telefono» (serve un tipo nuovo
+  sul telefono) e la scheda Oggi (arriva con le app Eurise per il computer).
+- **Ponte**: tipo `Event`; `FileParts` (pezzi da 512 KB, SHA-256, `Inbox`, test `FilePartsTest`); `eurise-ponte firefox`
+  (native messaging) e `eurise-ponte installa-firefox` (manifest in `~/.mozilla/native-messaging-hosts`, anche per il
+  Flatpak di Firefox); domande `status`, `recent`, `pwd-wait` sul socket locale; `manda evento|file`; più collegamenti per
+  telefono insieme (prima uno breve chiudeva quello fisso). Telefono: appuntamenti nel primo calendario modificabile
+  (`KeyboardBridgeReceiver`, `PONTE_EVENT`), documenti in Download/Eurise con notifica Apri, «Password per sito: approva»
+  (`PonteApprove`, accessi di Eurise Password sbloccata; parte solo quello toccato, sul computer resta in memoria 2 minuti).
+- **Da provare**: tutto, sul telefono e su Ubuntu/Fedora (Firefox .deb/rpm, snap di Ubuntu, Flatpak).
+- **Prossimi passi**: firma dell'estensione (account AMO del proprietario); nuova scheda Eurise in Firefox; Detta dal
+  telefono; Oggi nel pannello; profilo di impostazioni Eurise per Firefox (motore, protezione); Flatpak del Ponte.
