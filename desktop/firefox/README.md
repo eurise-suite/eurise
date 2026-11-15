@@ -8,6 +8,10 @@ Firefox così com'è, aggiornato da Mozilla e dalla distribuzione, con l'aspetto
   nella frase scelta), Documento al telefono (fino a 50 MB, in Download/Eurise).
 - **Pannello Eurise** (Alt+Maiusc+E): scrivi e manda (Note, Attività, appunti), la scheda, «Dal telefono».
 - **Tasto destro**: le stesse cose su pagina, link, immagini e testo scelto.
+- **Oggi** nel pannello: appuntamenti di oggi e cose da fare, chiesti al telefono solo con il pannello aperto (sul
+  telefono «Oggi sul computer», spento di base).
+- **Detta dal telefono** (Alt+Maiusc+D, pannello o pulsante): il telefono ascolta e il testo va nel campo della pagina
+  dove si stava scrivendo.
 - **Password dal telefono** (spenta di base): «Chiedi al telefono» sui moduli di accesso; Eurise Password approva con
   l'impronta e la password si scrive nel campo.
 

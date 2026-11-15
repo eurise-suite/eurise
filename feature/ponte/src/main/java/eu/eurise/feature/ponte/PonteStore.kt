@@ -81,7 +81,8 @@ class PonteStore(context: Context) {
         get() = prefs.getString("ultima", null)
         set(value) { prefs.edit().putString("ultima", value).apply() }
 
-    fun isOn(kind: Kind) = prefs.getBoolean("on." + kind.wire, true)
+    /** Ciò che il computer riceve dal telefono è acceso di base, tranne «Oggi sul computer» ([Kind.Today]): spento di base. */
+    fun isOn(kind: Kind) = prefs.getBoolean("on." + kind.wire, kind != Kind.Today)
     fun setOn(kind: Kind, on: Boolean) = prefs.edit().putBoolean("on." + kind.wire, on).apply()
 }
 

@@ -78,6 +78,28 @@ internal object PonteInbox {
         return title
     }
 
+    /** «Detta dal telefono» da Firefox: una notifica in evidenza; toccandola [PonteDictate] ascolta subito. */
+    fun dictationAsk(context: Context, computerId: String, computerName: String, ask: String) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(NotificationChannel(CHANNEL_NOW, context.getString(R.string.ponte_channel_now), NotificationManager.IMPORTANCE_HIGH))
+        val i = Intent(context, PonteDictate::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(PonteDictate.EXTRA_ASK, ask).putExtra(PonteDictate.EXTRA_COMPUTER, computerId)
+        val tap = PendingIntent.getActivity(context, ("d" + ask).hashCode(), i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = Notification.Builder(context, CHANNEL_NOW)
+            .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+            .setContentTitle(context.getString(R.string.ponte_dict_title))
+            .setContentText(context.getString(R.string.ponte_dict_text, computerName))
+            .setContentIntent(tap)
+            .addAction(Notification.Action.Builder(null, context.getString(R.string.ponte_dict_speak), tap).build())
+            .setTimeoutAfter(120_000)
+            .setAutoCancel(true)
+            .build()
+        runCatching { nm.notify(DICT_ID, n) }
+    }
+
+    private const val CHANNEL_NOW = "ponte-subito"
+    private const val DICT_ID = 4711
+
     /**
      * Il computer chiede un accesso per [site]: una notifica, e toccandola [PonteApprove] mostra gli accessi di Eurise
      * Password (sbloccata con l'impronta) da mandare al computer. Niente parte senza il tocco sul telefono.

@@ -52,8 +52,11 @@ object Control {
     }
 
     /** Solo i tipi che il computer può mandare al telefono. Un file si chiede con il suo percorso (`f.path`). */
-    private val allowed = setOf(Kind.Clipboard, Kind.Handoff, Kind.Note, Kind.Task, Kind.Event, Kind.File, Kind.PasswordAsk)
-    private val questions = setOf("status", "recent", "pwd-wait")
+    private val allowed = setOf(Kind.Clipboard, Kind.Handoff, Kind.Note, Kind.Task, Kind.Event, Kind.File, Kind.PasswordAsk,
+        Kind.DictationAsk, Kind.TodayAsk)
+    private val questions = setOf("status", "recent", "pwd-wait", "dict-wait", "today")
+    /** Richieste che valgono solo adesso: mai in coda, solo al telefono collegato. */
+    val liveOnly = setOf(Kind.PasswordAsk, Kind.DictationAsk, Kind.TodayAsk)
 
     private fun fields(m: Map<String, String>) = m.filterKeys { it.startsWith("f.") }.mapKeys { it.key.removePrefix("f.") }
 

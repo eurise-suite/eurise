@@ -190,6 +190,7 @@ class PonteActivity : ComponentActivity() {
                     Flow(EuriseIcons.copy(2f), R.string.ponte_flow_clip, R.string.ponte_flow_clip_sub, Kind.Clipboard)
                     Flow(EuriseIcons.mic(2f), R.string.ponte_flow_dict, R.string.ponte_flow_dict_sub, Kind.Dictation)
                     Flow(EuriseIcons.bell(2f), R.string.ponte_flow_notify, R.string.ponte_flow_notify_sub, Kind.Notify)
+                    Flow(EuriseIcons.today(2f), R.string.ponte_flow_today, R.string.ponte_flow_today_sub, Kind.Today, explain = R.string.ponte_today_explain)
                 }
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.ponte_how_home), fontSize = 12.5.sp)
@@ -255,8 +256,17 @@ class PonteActivity : ComponentActivity() {
         Text(text.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
     @Composable
-    private fun Flow(icon: ImageVector, title: Int, sub: Int, kind: Kind) {
+    private fun Flow(icon: ImageVector, title: Int, sub: Int, kind: Kind, explain: Int? = null) {
         var on by remember { mutableStateOf(store.isOn(kind)) }
+        var asking by remember { mutableStateOf(false) }
+        // Ciò che fa uscire dati dal telefono si spiega prima di accendere (CLAUDE.md, privacy); spegnere non chiede niente.
+        if (asking && explain != null) AlertDialog(
+            onDismissRequest = { asking = false },
+            title = { Text(stringResource(title)) },
+            text = { Text(stringResource(explain), fontSize = 14.sp) },
+            confirmButton = { TextButton(onClick = { asking = false; on = true; store.setOn(kind, true) }) { Text(stringResource(R.string.ponte_receive_on)) } },
+            dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.ponte_receive_cancel)) } },
+        )
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(12.dp))
@@ -264,7 +274,7 @@ class PonteActivity : ComponentActivity() {
                 Text(stringResource(title), fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
                 Text(stringResource(sub), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Switch(checked = on, onCheckedChange = { on = it; store.setOn(kind, it) })
+            Switch(checked = on, onCheckedChange = { if (it && explain != null) asking = true else { on = it; store.setOn(kind, it) } })
         }
     }
 

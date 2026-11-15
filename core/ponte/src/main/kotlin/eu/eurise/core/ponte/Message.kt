@@ -33,6 +33,20 @@ enum class Kind(val wire: String) {
      * (`2026-11-20T15:30`, o solo la data per il giorno intero), facoltativi `place`, `notes`, `url`.
      */
     Event("event"),
+    /**
+     * Il computer chiede una dettatura («Detta dal telefono» in Firefox, 15 novembre): `ask` torna nella [Dictation] di
+     * risposta, così il testo va nel campo dove si stava scrivendo invece che nella finestra in primo piano.
+     */
+    DictationAsk("dict-ask"),
+    /** Il computer chiede il riassunto di oggi (pannello Eurise di Firefox); il telefono risponde con [Today]. */
+    TodayAsk("today-ask"),
+    /**
+     * Il riassunto di oggi dal telefono, solo se l'utente lo ha acceso sul telefono («Oggi sul computer», spento di base):
+     * `events` e `tasks` sono righe separate da `\n`, ogni riga campi separati da `\t` (inizio `HH:mm` o vuoto per il
+     * giorno intero, fine, titolo, luogo; per le attività titolo e scadenza `yyyy-MM-dd` o vuota); `tasksOpen` il numero
+     * delle attività aperte; `off`=`1` se è spento sul telefono.
+     */
+    Today("today"),
     ;
 
     companion object {

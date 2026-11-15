@@ -54,10 +54,11 @@ object Recent {
 }
 
 /**
- * Le password date dal telefono a una richiesta del computer ([Kind.PasswordGive] con lo stesso `ask`): restano solo in
- * memoria e solo per due minuti, e si consegnano una volta sola a chi le ha chieste (Firefox).
+ * Le risposte del telefono a una richiesta di Firefox, con lo stesso `ask`: password ([Kind.PasswordGive]) e dettature
+ * chieste da «Detta dal telefono» ([Kind.Dictation]). Restano solo in memoria e solo per due minuti, e si consegnano
+ * una volta sola a chi le ha chieste.
  */
-object Passwords {
+object Answers {
     private class Given(val fields: Map<String, String>, val at: Long)
     private val given = ConcurrentHashMap<String, Given>()
 
@@ -81,6 +82,15 @@ object Passwords {
  * File da Firefox: pezzi `{"t":"file-part","f.fid","f.part","f.parts","f.name","f.mime","f.data"}` raccolti in
  * [Recent.tmp], poi mandati come un file solo.
  */
+/** L'ultimo «Oggi» del telefono ([Kind.Today]): solo in memoria, per il pannello di Firefox. */
+object TodayCache {
+    @Volatile private var last: Pair<Long, Map<String, String>>? = null
+    fun put(fields: Map<String, String>) { last = System.currentTimeMillis() to fields }
+    /** Il riassunto con `age` (secondi), se è arrivato negli ultimi dieci minuti. */
+    fun get(): Map<String, String>? = last?.takeIf { System.currentTimeMillis() - it.first < 600_000 }
+        ?.let { (at, f) -> f + ("age" to ((System.currentTimeMillis() - at) / 1000).toString()) }
+}
+
 object FirefoxHost {
     fun run(store: Store) {
         val input = DataInputStream(System.`in`.buffered())
@@ -105,7 +115,7 @@ object FirefoxHost {
                 return mapOf("ok" to "1", "running" to if (status != null) "1" else "0",
                     "devices" to store.devices().joinToString("\n") { it.name }, "lines" to status.orEmpty().joinToString("\n"))
             }
-            "status", "recent", "pwd-wait" -> {
+            "status", "recent", "pwd-wait", "dict-wait", "today" -> {
                 val lines = Control.query(t, fields) ?: return mapOf("ok" to "0", "running" to "0", "lines" to "")
                 return mapOf("ok" to "1", "running" to "1", "lines" to lines.joinToString("\n"))
             }
@@ -132,7 +142,7 @@ object FirefoxHost {
         val replies = Control.ask(k, f)
         if (replies != null) return mapOf("ok" to "1", "running" to "1", "lines" to replies.joinToString("\n"))
         val devices = store.devices().ifEmpty { return fail("Nessun telefono abbinato: apri un terminale e scrivi eurise-ponte collega") }
-        if (kind == Kind.PasswordAsk) return fail("Il Ponte non è acceso: la password si chiede solo con il telefono collegato.")
+        if (kind in Control.liveOnly) return fail("Il Ponte non è acceso: serve il telefono collegato adesso.")
         if (kind == Kind.File) FileSend.parts(fields).forEach { p -> devices.forEach { store.outbox.put(it.id, Kind.File, p) } }
         else devices.forEach { store.outbox.put(it.id, kind, fields) }
         return mapOf("ok" to "1", "running" to "0", "lines" to "In coda: parte quando il Ponte è acceso e il telefono è sulla rete di casa.")

@@ -138,6 +138,54 @@ async function askPassword(site) {
   return { ok: false, text: "Nessuna risposta dal telefono in due minuti." };
 }
 
+// --- Detta dal telefono: il telefono ascolta, il testo torna qui ---
+
+async function askDictation() {
+  const ask = crypto.randomUUID();
+  const r = await ponte("dict-ask", { ask });
+  if (r.ok !== "1" || !/arrivato/.test(r.lines || "")) return { ok: false, text: r.ok === "1" ? "Il telefono non è collegato: aprilo sul Wi-Fi di casa." : said(r) };
+  const until = Date.now() + 120000;
+  while (Date.now() < until) {
+    await new Promise((res) => setTimeout(res, 1200));
+    const w = await ponte("dict-wait", { ask }, 5000);
+    const line = (w.lines || "").trim();
+    if (line) { try { return { ok: true, text: JSON.parse(line)["text"] || "" }; } catch (e) { /* riprova */ } }
+  }
+  return { ok: false, text: "Nessuna dettatura dal telefono in due minuti." };
+}
+
+/** Detta e scrive nel campo dove si stava scrivendo nella scheda aperta; se non c'è un campo, restituisce il testo. */
+async function dictateIntoPage() {
+  const r = await askDictation();
+  if (!r.ok) return r;
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const put = tab ? await browser.tabs.sendMessage(tab.id, { op: "insert", text: r.text }).catch(() => false) : false;
+  return { ok: true, text: r.text, inserted: !!put };
+}
+
+// --- Oggi dal telefono ---
+
+/** Chiede al telefono il riassunto di oggi e lo legge appena arriva (al massimo 5 secondi). */
+async function today() {
+  const asked = await ponte("today-ask", {}, 6000);
+  if (asked.ok !== "1" || !/arrivato/.test(asked.lines || "")) return { ok: false, offline: true };
+  for (let i = 0; i < 8; i++) {
+    await new Promise((res) => setTimeout(res, 600));
+    const r = await ponte("today", {}, 4000);
+    const line = (r.lines || "").trim();
+    if (!line) continue;
+    try {
+      const f = JSON.parse(line);
+      if (+f.age > 10) continue;
+      if (f.off === "1") return { ok: false, off: true };
+      const events = (f.events || "").split("\n").filter(Boolean).map((l) => { const [start, end, title, place, day] = l.split("\t"); return { start, end, title, place, day }; });
+      const tasks = (f.tasks || "").split("\n").filter(Boolean).map((l) => { const [title, due] = l.split("\t"); return { title, due }; });
+      return { ok: true, events, tasks, tasksOpen: +f.tasksOpen || 0, day: f.day };
+    } catch (e) { /* riprova */ }
+  }
+  return { ok: false, offline: true };
+}
+
 // --- Date nel testo scelto: «20 novembre alle 15:30», «20/11», «domani alle 9» ---
 
 const MONTHS = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
@@ -238,6 +286,12 @@ browser.menus.onClicked.addListener(async (info, tab) => {
 });
 
 browser.commands.onCommand.addListener(async (name) => {
+  if (name === "dictate") {
+    notify("Eurise", "Parla al telefono: tocca la notifica «Detta per il computer».");
+    const r = await dictateIntoPage();
+    if (!r.ok || !r.inserted) notify("Eurise", r.ok ? "Dettatura arrivata: «" + r.text.slice(0, 80) + "» (nessun campo dove scriverla)." : r.text);
+    return;
+  }
   if (name !== "send-tab") return;
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab) notify("Eurise", said(await send.tab(tab)));
@@ -253,6 +307,8 @@ browser.runtime.onMessage.addListener((m, sender) => {
       const fn = send[m.what];
       return fn ? fn(...(m.args || [])).then((r) => ({ ok: r.ok === "1", text: said(r) })) : Promise.resolve({ ok: false, text: "?" });
     }
+    case "dictate": return m.into === "page" ? dictateIntoPage() : askDictation();
+    case "today": return today();
     case "file": return sendFile(m.name, m.mime, m.buffer).then((r) => ({ ok: r.ok === "1", text: said(r) }));
     case "findDate": return Promise.resolve(findDate(m.text));
     case "draft": return browser.storage.session.get("draftEvent").then((d) => { browser.storage.session.remove("draftEvent"); return d.draftEvent || null; }).catch(() => null);

@@ -4,10 +4,29 @@ import android.app.Application
 import eu.eurise.core.cloud.CloudSync
 import eu.eurise.core.data.EuriseData
 import eu.eurise.feature.notes.sync.NotesSyncJob
+import kotlinx.coroutines.flow.first
 
 /** Crea una sola volta l'accesso ai dati e lo condivide con tutte le schermate. */
-class EuriseApplication : Application() {
+class EuriseApplication : Application(), eu.eurise.feature.ponte.PonteToday.Source {
     val data: EuriseData by lazy { EuriseData.create(this) }
+
+    /**
+     * «Oggi sul computer» (pannello Eurise di Firefox): gli appuntamenti di oggi ancora da finire e le attività aperte.
+     * La chiama il Ponte solo se l'utente l'ha acceso sul telefono; senza il permesso del Calendario, niente appuntamenti.
+     */
+    override suspend fun ponteToday(): eu.eurise.feature.ponte.PonteToday.Summary {
+        val today = java.time.LocalDate.now()
+        val events = if (!data.calendar.hasPermission()) emptyList() else
+            runCatching { data.calendar.observeEvents(today, today).first() }.getOrDefault(emptyList())
+        val open = runCatching { data.tasks.observeOpen().first() }.getOrDefault(emptyList())
+            .filter { !it.done && it.parentId == null }
+        val todos = eu.eurise.feature.ponte.PonteToday.pickTasks(open.map { eu.eurise.feature.ponte.PonteToday.Todo(it.title, it.due) }, today)
+        return eu.eurise.feature.ponte.PonteToday.Summary(
+            events.map { eu.eurise.feature.ponte.PonteToday.Item(it.start, it.end, it.allDay, it.title, it.location) },
+            todos,
+            open.size,
+        )
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -48,5 +48,12 @@
             android:label="@string/ponte_title"
             android:taskAffinity="eu.eurise.ponte"
             android:excludeFromRecents="true" />
+        <!-- «Detta dal telefono» chiesto da Firefox: si apre solo dalla notifica del Ponte. -->
+        <activity
+            android:name=".PonteDictate"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:taskAffinity="eu.eurise.ponte"
+            android:excludeFromRecents="true" />
     </application>
 </manifest>

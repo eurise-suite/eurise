@@ -167,7 +167,7 @@ class Server(private val store: Store) {
         val items = if (kind == Kind.File) FileSend.parts(fields).ifEmpty { return listOf("errore: file mancante o oltre 50 MB") } else listOf(fields)
         return store.devices().map { d ->
             val now = live[d.id]?.lastOrNull()
-            if (kind == Kind.PasswordAsk && now == null) return@map "${d.name}: non collegato"
+            if (kind in Control.liveOnly && now == null) return@map "${d.name}: non collegato"
             items.forEach { store.outbox.put(d.id, kind, it) }
             val sent = now?.let { flush(it) } ?: false
             "${d.name}: " + if (sent) "arrivato" else "in coda, parte quando il telefono torna sulla rete di casa"
@@ -178,7 +178,8 @@ class Server(private val store: Store) {
     private fun query(t: String, fields: Map<String, String>): List<String>? = when (t) {
         "status" -> store.devices().map { d -> Json.write(mapOf("name" to d.name, "live" to if (live[d.id].isNullOrEmpty()) "0" else "1")) }
         "recent" -> Recent.list()
-        "pwd-wait" -> listOf(Passwords.take(fields["ask"].orEmpty())?.let { Json.write(it) } ?: "")
+        "pwd-wait", "dict-wait" -> listOf(Answers.take(fields["ask"].orEmpty())?.let { Json.write(it) } ?: "")
+        "today" -> listOf(TodayCache.get()?.let { Json.write(it) } ?: "")
         else -> null
     }
 
@@ -247,13 +248,16 @@ object Linux {
                     if (m["sensitive"] == "1") "incolla con Ctrl V" else it.take(80) + " · incolla con Ctrl V")
             }
             Kind.Dictation -> m["text"]?.let { text ->
+                // Chiesta da Firefox: la scrive Firefox nel campo giusto. Altrimenti nella finestra in primo piano.
+                if (!m["ask"].isNullOrBlank()) { Answers.put(m.fields); Recent.add(m.kind, "Dettatura", text.take(80)); return }
                 if (!type(text)) { copy(text); notify("Dettatura", "Copiata: incollala con Ctrl V") }
                 Recent.add(m.kind, "Dettatura", text.take(80))
             }
             Kind.Handoff -> m["url"]?.let { open(it); notify("Continua qui", m["title"] ?: it); Recent.add(m.kind, m["title"] ?: it, "aperto dal telefono", it) }
             Kind.Notify -> { notify(m["title"] ?: device.name, m["text"].orEmpty()); Recent.add(m.kind, m["title"] ?: device.name, m["text"].orEmpty()) }
             // Mai stampata né salvata: resta in memoria finché Firefox la prende (al massimo due minuti).
-            Kind.PasswordGive -> { Passwords.put(m.fields); println("${device.name} → password per ${m["site"].orEmpty()}"); return }
+            Kind.Today -> { TodayCache.put(m.fields); return }
+            Kind.PasswordGive -> { Answers.put(m.fields); println("${device.name} → password per ${m["site"].orEmpty()}"); return }
             else -> println("${device.name}: ${m.kind.wire}")
         }
         println("${device.name} → ${m.kind.wire}")

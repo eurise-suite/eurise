@@ -34,6 +34,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -104,7 +105,11 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 continue
             }
             val m = channel.open(frame, from = c.id) ?: continue
-            val said = receive(m, c) ?: continue
+            // Le risposte (Oggi) tornano sullo stesso collegamento, cifrate come tutto il resto.
+            val reply: (Kind, Map<String, String>) -> Unit = { k, f ->
+                synchronized(out) { Wire.writeFrame(out, channel.seal(Message(k, UUID.randomUUID().toString(), System.currentTimeMillis(), f))) }
+            }
+            val said = receive(m, c, reply) ?: continue
             val line = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()) + " · " + said
             store.lastThing = line
             show(c.name, line)
@@ -127,7 +132,7 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
     }
 
     /** Fa ciò che chiede il computer, se quel tipo è acceso. Restituisce la frase per la notifica fissa. */
-    private suspend fun receive(m: Message, from: Computer): String? {
+    private suspend fun receive(m: Message, from: Computer, reply: (Kind, Map<String, String>) -> Unit): String? {
         val ctx = applicationContext
         return when (m.kind) {
             Kind.Clipboard -> {
@@ -162,6 +167,18 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
             // I pezzi di un file arrivano uno dopo l'altro: la notifica fissa cambia solo a file completo.
             Kind.File -> PonteInbox.filePart(ctx, m.fields)?.let { ctx.getString(R.string.ponte_got_file, it.take(40)) }
             Kind.PasswordAsk -> PonteInbox.passwordAsk(ctx, from.id, from.name, m.fields)?.let { ctx.getString(R.string.ponte_got_pwd, it) }
+            Kind.DictationAsk -> {
+                if (!store.isOn(Kind.Dictation)) return null
+                PonteInbox.dictationAsk(ctx, from.id, from.name, m["ask"].orEmpty())
+                ctx.getString(R.string.ponte_got_dict)
+            }
+            Kind.TodayAsk -> {
+                val source = ctx.applicationContext as? PonteToday.Source
+                if (!store.isOn(Kind.Today) || source == null) { reply(Kind.Today, mapOf("off" to "1")); return null }
+                val summary = runCatching { withTimeout(4_000) { source.ponteToday() } }.getOrNull()
+                reply(Kind.Today, summary?.let { PonteToday.fields(it) } ?: mapOf("off" to "1"))
+                null
+            }
             else -> null
         }
     }

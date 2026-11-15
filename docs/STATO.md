@@ -2575,3 +2575,17 @@ da fare, documenti), partendo da Linux.
   della prima frase. Se convince, Nicola può diventare la voce di Alfred.
 - **Compilazioni annullate**: con due chat sullo stesso ramo i giri si annullano a vicenda (`concurrency` per ramo); per
   avere un APK si può spingere la stessa testa su `prova-alfred` (gruppo suo) e pubblicare quel giro in `apk-prova`.
+
+## 15 novembre: Firefox, «Detta dal telefono» e Oggi nel pannello (completano la tavola PcFirefox)
+- Ponte: tipi `DictationAsk` (`dict-ask`), `TodayAsk` (`today-ask`) e `Today` (`today`), validi solo con il telefono
+  collegato (`Control.liveOnly`, mai in coda). Sul computer `Answers` (password e dettature chieste, in memoria 2 minuti)
+  e `TodayCache` (ultimo Oggi, in memoria); domande `dict-wait` e `today` sul socket. Una dettatura con `ask` non viene
+  digitata nella finestra in primo piano: la scrive Firefox.
+- Telefono: «Detta per il computer» (notifica in evidenza → `PonteDictate`, ascolta subito, rimanda il testo con lo stesso
+  `ask`; segue l'interruttore Dettatura). «Oggi sul computer» (`PonteToday`, interruttore **spento di base** con la
+  spiegazione): appuntamenti di oggi ancora da finire (ora, titolo, luogo) e fino a cinque attività aperte, prima le
+  scadute; li dà `EuriseApplication` (`PonteToday.Source`), la risposta torna sul collegamento fisso.
+- Firefox: pannello come nella tavola (Oggi, Dal telefono, Detta dal telefono, In Note, poi Scrivi e manda e la scheda);
+  Oggi si chiede ogni due minuti solo con il pannello in vista; «Detta dal telefono» anche nel pulsante e con Alt+Maiusc+D,
+  e scrive nell'ultimo campo della pagina (senza campo, nel riquadro del pannello).
+- Manca ancora: le email importanti in Oggi (l'APK Email non espone ancora un riassunto alla suite).

@@ -17,6 +17,21 @@
   <div class="status" id="status"><i></i>…</div>
 
   <div class="card">
+    <span class="label">Oggi</span>
+    <div id="today"><div class="empty">…</div></div>
+  </div>
+
+  <div class="card">
+    <span class="label">Dal telefono</span>
+    <div id="recent"><div class="empty">…</div></div>
+  </div>
+
+  <div class="bar">
+    <button id="dictate" class="strong">Detta dal telefono</button>
+    <button id="tabNote">In Note</button>
+  </div>
+
+  <div class="card">
     <span class="label">Scrivi e manda</span>
     <textarea id="text" placeholder="Una nota, o una cosa da fare come la diresti: «chiamare Anna domani alle 10»"></textarea>
     <div class="bar" style="margin-top:8px">
@@ -30,17 +45,11 @@
     <span class="label">Questa scheda</span>
     <div class="bar" style="margin-top:8px">
       <button id="tabPhone">Apri sul telefono</button>
-      <button id="tabNote">In Note</button>
     </div>
   </div>
 
-  <div class="card">
-    <span class="label">Dal telefono</span>
-    <div id="recent"><div class="empty">…</div></div>
-  </div>
-
   <div class="toast" id="toast" role="status"></div>
-  <span class="note">Oggi, Calendario, Email e Dettatura arriveranno con le app Eurise per il computer e useranno questo stesso collegamento. Tutto passa diretto tra computer e telefono sulla rete di casa, cifrato.</span>
+  <span class="note">«Detta dal telefono» scrive nel campo dove eri nella pagina (Alt+Maiusc+D); senza un campo, il testo va qui sopra. Tutto passa diretto tra computer e telefono sulla rete di casa, cifrato.</span>
   <script src="icons.js"></script>
   <script src="sidebar.js"></script>
 </body>

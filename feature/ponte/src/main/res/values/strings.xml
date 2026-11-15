@@ -61,4 +61,14 @@
     <string name="ponte_pwd_sending">Mando…</string>
     <string name="ponte_pwd_sent">Mandata a %1$s</string>
     <string name="ponte_pwd_failed">%1$s non risponde: è acceso e sulla stessa rete?</string>
+    <string name="ponte_channel_now">Dal computer, subito</string>
+    <string name="ponte_got_dict">dettatura chiesta</string>
+    <string name="ponte_dict_title">Detta per il computer</string>
+    <string name="ponte_dict_text">%1$s aspetta: tocca e parla</string>
+    <string name="ponte_dict_speak">Parla</string>
+    <string name="ponte_dict_prompt">Parla: il testo va sul computer</string>
+    <string name="ponte_dict_sent">Scritto su %1$s</string>
+    <string name="ponte_flow_today">Oggi sul computer</string>
+    <string name="ponte_flow_today_sub">appuntamenti e cose da fare di oggi nel pannello di Firefox · spento di base</string>
+    <string name="ponte_today_explain">Cosa viene letto: i prossimi appuntamenti di oggi (ora, titolo, luogo) e fino a cinque cose da fare aperte.\n\nDove va: solo al computer abbinato, quando il pannello Eurise di Firefox lo chiede, cifrato sul Wi-Fi di casa. Sul computer resta in memoria, non viene salvato.\n\nChi lo vede: chi usa quel computer.\n\nCome tornare indietro: spegni qui; il computer non riceve più niente.</string>
 </resources>

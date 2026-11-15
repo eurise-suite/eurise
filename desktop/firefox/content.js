@@ -111,4 +111,30 @@
   }, true);
 
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }, true);
+
+  // «Detta dal telefono»: il testo va nell'ultimo campo dove si scriveva (anche dopo un clic nel pannello Eurise).
+  let lastEditable = null;
+  const editable = (el) => el && (el.isContentEditable || el instanceof HTMLTextAreaElement ||
+    (el instanceof HTMLInputElement && ["text", "search", "email", "url", "tel", ""].includes((el.type || "").toLowerCase())));
+  document.addEventListener("focusin", (e) => { if (editable(e.target)) lastEditable = e.target; }, true);
+
+  browser.runtime.onMessage.addListener((m) => {
+    if (m.op !== "insert") return;
+    const el = (editable(document.activeElement) && document.activeElement) || (lastEditable && lastEditable.isConnected && lastEditable);
+    if (!el) return Promise.resolve(false);
+    el.focus();
+    const text = m.text;
+    if (el.isContentEditable) {
+      document.execCommand("insertText", false, text);
+    } else {
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? el.value.length;
+      const before = el.value.slice(0, start);
+      const glue = before && !/\s$/.test(before) ? " " : "";
+      setValue(el, before + glue + text + el.value.slice(end));
+      const caret = (before + glue + text).length;
+      try { el.setSelectionRange(caret, caret); } catch (e) { /* campi senza selezione */ }
+    }
+    return Promise.resolve(true);
+  });
 })();

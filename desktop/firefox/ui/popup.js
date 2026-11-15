@@ -11,6 +11,7 @@ const ACTIONS = {
   task: ["task", "Da fare", "come si parla: «chiamare Anna domani alle 10»"],
   event: ["calendar", "Appuntamento", "in Eurise Calendario"],
   file: ["file", "Documento al telefono", "un file del computer, in Download/Eurise"],
+  dict: ["mic", "Detta dal telefono", "parli al telefono, il testo va nel campo della pagina"],
 };
 
 for (const b of document.querySelectorAll("[data-act]")) {
@@ -47,6 +48,13 @@ $("#menu").addEventListener("click", async (e) => {
       return showForm("taskForm");
     case "event": return openEvent({ text: selection, title: tab.title, url: tab.url, found: await browser.runtime.sendMessage({ op: "findDate", text: selection }) });
     case "file": return showForm("fileForm");
+    case "dict": {
+      toast("Guarda il telefono: tocca «Detta per il computer» e parla.");
+      const r = await browser.runtime.sendMessage({ op: "dictate", into: "page" });
+      toast(!r.ok ? r.text : r.inserted ? "Scritto nella pagina." : "Arrivato: «" + r.text.slice(0, 60) + "» (nessun campo nella pagina).");
+      if (r.ok && r.inserted) setTimeout(() => window.close(), 900);
+      return;
+    }
   }
 });
 
