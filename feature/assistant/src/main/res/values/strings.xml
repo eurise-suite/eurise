@@ -13,6 +13,7 @@
     <string name="alfred_how_to_open">Tenga premuto il tasto home, o Ricerca AI nella dock</string>
 
     <string name="alfred_ex_call">Chiama Anna</string>
+    <string name="alfred_ex_data">Cosa ho domani?</string>
     <string name="alfred_ex_note">Nota: …</string>
     <string name="alfred_ex_route">Portami ad Apice</string>
     <string name="alfred_ex_message">Manda a Marco che arrivo</string>
@@ -320,4 +321,15 @@
     <string name="alfred_memory_since">dal %1$s</string>
     <string name="alfred_memory_forget">Dimentica</string>
     <string name="alfred_memory_where">Resta sul telefono e nel backup cifrato; spenta, Alfred non impara e non usa nulla.</string>
+    <!-- Domande sui dati (tavola AlfDati) -->
+    <string name="alfred_data_card">Domanda sui tuoi dati</string>
+    <string name="alfred_data_from_phone">dal telefono</string>
+    <string name="alfred_data_where">Ho cercato in %1$s, solo sul telefono: niente è uscito. Funziona anche con «quando ho il dentista?», «chi mi ha chiamato?», «cosa avevo scritto sul cancello?».</string>
+    <string name="alfred_data_again">Rileggi</string>
+    <string name="alfred_data_open_calendar">Apri il Calendario</string>
+    <string name="alfred_data_open_notes">Apri le Note</string>
+    <string name="alfred_data_open_note">Apri la nota</string>
+    <string name="alfred_data_open_calls">Apri le chiamate</string>
+    <string name="alfred_data_need_calendar">Permetti di leggere il calendario</string>
+    <string name="alfred_data_need_calls">Permetti di leggere le chiamate</string>
 </resources>

@@ -23,6 +23,8 @@ CASES = [
     ("chi ha scritto i promessi sposi", ["domanda"], {}),
     ("venerdì alle 20 cena da Giulia e dillo ad Anna su telegram", ["evento", "messaggio"], {"ora": "20:00"}),
     ("comprare il latte", ["da_fare"], {"testo": "latte"}),
+    ("ho qualcosa venerdì pomeriggio", ["dati"], {"data": "2026-11-13"}),
+    ("quando devo portare la macchina dal meccanico", ["dati"], {"testo": "meccanico"}),
 ]
 FIELDS = ["tipo", "chi", "testo", "data", "ora", "canale"]
 

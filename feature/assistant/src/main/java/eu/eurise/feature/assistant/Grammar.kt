@@ -22,9 +22,17 @@ sealed interface Command {
     data class Timer(val minutes: Int) : Command
     data class Search(val query: String, val scope: Scope) : Command
     data class Open(val app: String) : Command
+    /**
+     * Una domanda sui dati dell'utente (tavola AlfDati): si risponde cercando sul telefono, niente esce.
+     * [day] e [days]: il giorno e quanti giorni (7 per «questa settimana»); [about]: la cosa cercata.
+     */
+    data class Ask(val kind: AskKind, val day: LocalDate? = null, val about: String = "", val days: Int = 1) : Command
     /** Nessuna regola la capisce: tocca a Eurise AI (richiesta libera). */
     data class Free(val text: String) : Command
 }
+
+/** Agenda: «cosa ho domani?»; When: «quando ho il dentista?»; Calls: «chi mi ha chiamato?»; Notes: «cosa avevo scritto sul cancello?». */
+enum class AskKind { Agenda, When, Calls, Notes }
 
 enum class Channel { WhatsApp, Sms, Telegram, Signal }
 
@@ -65,6 +73,74 @@ object Grammar {
     /** Segnala in guida (tavola MapSegnalaGuida): poche parole, senza verbo o con «segnala», «c'è». */
     private val REPORT = Regex("$O^(?:segnala(?:re)?\\s+|segnalo\\s+|c'è\\s+|c'e\\s+|ce\\s+|attenzione\\s+)?(?:una\\s+|uno\\s+|un'\\s*|un\\s+)?" +
         "(autovelox|velox|tutor|limite\\s+(?:di\\s+velocità\\s+)?(?:sbagliato|errato)|strada\\s+chiusa|lavori(?:\\s+in\\s+corso)?|cantiere|coda|traffico|incolonnamento|pericolo|ostacolo)$")
+    // --- Domande sui dati (tavola AlfDati) ---
+    /** «cosa ho domani», «che impegni ho venerdì», «ho qualcosa stasera», «com'è la mia giornata». */
+    private val ASK_AGENDA = Regex(
+        "$O^(?:(?:che\\s+)?(?:cosa|cos'|che)\\s*(?:ho|c'è|c'e|ce|devo\\s+fare)(?:\\s+(?:in\\s+(?:programma|agenda|calendario)|da\\s+fare))?" +
+            "|(?:che|quali)\\s+(?:impegni|appuntamenti|programmi)\\s+ho|ho\\s+(?:impegni|appuntamenti|qualcosa|da\\s+fare)" +
+            "|com'è\\s+(?:la\\s+)?(?:mia\\s+)?(?:giornata|agenda|settimana)|(?:la\\s+)?(?:mia\\s+)?agenda(?:\\s+di)?)(?![\\p{L}])\\s*(.*)$"
+    )
+    /** «quando ho il dentista», «quando è la riunione», «a che ora ho il pranzo con Anna». */
+    private val ASK_WHEN = Regex(
+        "$O^(?:quando|a\\s+che\\s+ora|che\\s+giorno)\\s+(?:ho|c'è|c'e|è|e'|sarà|devo\\s+andare|ho\\s+appuntamento|devo)\\s+" +
+            "(?:(?:con|da|dal|dalla|al|alla|a)\\s+)?(?:(?:il|la|lo|l'|i|gli|le|un|una|un')\\s*)?(.+)$"
+    )
+    /** «chi mi ha chiamato», «ho chiamate perse», «chiamate di oggi». */
+    private val ASK_CALLS = Regex(
+        "$O^(?:chi\\s+(?:mi\\s+)?ha\\s+(?:chiamato|telefonato|cercato)|(?:ho\\s+)?(?:delle\\s+|qualche\\s+)?chiamat[ae]\\s+pers[ae]" +
+            "|(?:le\\s+)?(?:ultime\\s+)?chiamate(?:\\s+(?:perse|ricevute))?(?=\\s|$)|mi\\s+ha\\s+chiamato\\s+qualcuno)(?![\\p{L}])\\s*(.*)$"
+    )
+    /** «cosa avevo scritto sul cancello», «qual è il codice del cancello» (si cerca nelle note). */
+    private val ASK_NOTES = Regex(
+        "$O^(?:(?:che\\s+)?(?:cosa|cos'|che)\\s*(?:avevo|ho)\\s+(?:scritto|annotato|segnato|appuntato)" +
+            "(?:\\s+(?:nelle\\s+note|nella\\s+nota))?\\s+(?:sull'|sulla|sullo|sulle|sui|sul|su|per|della|dello|del|di|riguardo\\s+(?:alla|al|a)|a\\s+proposito\\s+(?:della|del|di))(?:\\s+|(?<='))(.+)" +
+            "|(?:qual\\s+è|qual\\s+e|qual'è|quale\\s+è|com'è|cos'è)\\s+(?:il|la|l'|lo)\\s*((?:codice|numero|password|pin|combinazione|indirizzo|targa|iban)(?![\\p{L}]).*))$"
+    )
+    private val DAY_FILLER = Regex("$O^(?:per|di|in|a|ancora|oggi\\s+ancora)\\s+|\\s+(?:in\\s+(?:agenda|calendario|programma)|da\\s+fare)$")
+    private val WEEK = Regex("$O^(?:(?:per\\s+)?(?:questa|la)\\s+)?settimana(?:\\s+(prossima))?$|^(?:la\\s+)?prossima\\s+settimana$")
+
+    /** Le domande sui dati, prima di tutti i comandi: null se la frase non è una di queste. */
+    internal fun ask(text: String, now: LocalDateTime): Command.Ask? {
+        ASK_NOTES.matchEntire(text)?.let { m ->
+            val about = (m.groupValues[1].ifBlank { m.groupValues[2] }).trim().trimEnd('?')
+            if (about.isNotBlank()) return Command.Ask(AskKind.Notes, about = about)
+        }
+        ASK_CALLS.matchEntire(text)?.let { m ->
+            val rest = m.groupValues[1].trim()
+            val day = if (rest.isBlank()) null else dayOf(rest, now)?.first ?: return@let
+            return Command.Ask(AskKind.Calls, day = day)
+        }
+        ASK_AGENDA.matchEntire(text)?.let { m ->
+            val (day, days) = dayOf(m.groupValues[1], now) ?: return@let
+            return Command.Ask(AskKind.Agenda, day = day, days = days)
+        }
+        ASK_WHEN.matchEntire(text)?.let { m ->
+            val about = m.groupValues[1].trim().trimEnd('?')
+            if (about.isNotBlank()) return Command.Ask(AskKind.When, about = capital(about))
+        }
+        return null
+    }
+
+    /** Il giorno detto («domani», «venerdì», «questa settimana»; niente = oggi); null se ci sono altre parole. */
+    internal fun dayOf(rest: String, now: LocalDateTime): Pair<LocalDate, Int>? {
+        var r = rest.trim().trimEnd('?')
+        repeat(2) { r = DAY_FILLER.replace(r, "").trim() }
+        if (r.isEmpty()) return now.toLocalDate() to 1
+        WEEK.matchEntire(r)?.let { m ->
+            val today = now.toLocalDate()
+            val next = m.groupValues[1].isNotEmpty() || r.lowercase().startsWith("la prossima") || r.lowercase().startsWith("prossima")
+            return if (next) {
+                val monday = today.plusDays((8 - today.dayOfWeek.value).toLong())
+                monday to 7
+            } else today to (8 - today.dayOfWeek.value)
+        }
+        val q = QuickAdd.parse(r, now)
+        val hasDay = q.pieces.any { it.kind == QuickAdd.Kind.Date }
+        val hasTime = q.pieces.any { it.kind == QuickAdd.Kind.Time }
+        if (q.title.isNotBlank() || (!hasDay && !hasTime)) return null
+        return (q.due ?: now.toLocalDate()) to 1
+    }
+
     private val WITH = Regex("(?u)(?<![\\p{L}])[Cc]on\\s+([\\p{L}'’]+(?:\\s+\\p{Lu}[\\p{L}'’]+)?)")
 
     /** Parole dell'evento che restano nel titolo («Cena da Anna»); le altre («appuntamento») si tolgono. */
@@ -92,6 +168,7 @@ object Grammar {
         val text = POLITE_TAIL.replace(POLITE_HEAD.replace(normalize(sentence), ""), "").trim().trimStart(',', ' ').trim()
         if (text.isEmpty()) return Command.Free(sentence)
 
+        ask(text, now)?.let { return it }
         REPORT.matchEntire(text)?.let { m -> return Command.Report(reportKind(m.groupValues[1].lowercase())) }
         REMEMBER.matchEntire(text)?.let { return Command.Remember(capital(it.groupValues[1])) }
         NOTE.matchEntire(text)?.let { return Command.Note(capital(it.groupValues[1])) }

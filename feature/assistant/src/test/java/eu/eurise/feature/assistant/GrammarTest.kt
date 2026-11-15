@@ -147,7 +147,8 @@ class GrammarTest {
 
     @Test fun leDomandeRestanoLibere() {
         assertTrue(p("Quanto deve cuocere un uovo sodo?") is Command.Free)
-        assertTrue(p("Quando ho l'appuntamento dal dentista?") is Command.Free)
+        // Dal 15 novembre è una domanda sui dati (tavola AlfDati).
+        assertEquals(Command.Ask(AskKind.When, about = "Appuntamento dal dentista"), p("Quando ho l'appuntamento dal dentista?"))
     }
 
     @Test fun ricordaChe() {

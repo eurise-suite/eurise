@@ -74,11 +74,28 @@ object BrainCommands {
             "timer" -> textRaw.filter { it.isDigit() }.toIntOrNull()?.takeIf { it in 1..1440 }?.let { Command.Timer(it) }
             "naviga" -> who.ifBlank { text }.takeIf { it.isNotBlank() }?.let { Command.Navigate(it) }
             "apri" -> who.ifBlank { text }.takeIf { it.isNotBlank() }?.let { Command.Open(it) }
+            "dati" -> data(said, text, date, now)
             // La domanda com'è stata detta: il modello tende ad allungarla.
             "domanda" -> Command.Free(said.takeIf { it.isNotBlank() }?.let { _ -> "" } ?: textRaw)
             else -> null
         }
     }
+
+    /** Una domanda sui dati che le regole non hanno preso: il tipo lo dicono le parole della frase. */
+    private fun data(said: String, text: String, date: LocalDate?, now: LocalDateTime): Command.Ask {
+        val about = text.trim().trimEnd('?')
+        val onlyDay = about.isBlank() || DATE_WORDS.replace(about.lowercase(), "").isBlank()
+        return when {
+            CALLS.containsMatchIn(said) -> Command.Ask(AskKind.Calls, day = date)
+            NOTES.containsMatchIn(said) && about.isNotBlank() -> Command.Ask(AskKind.Notes, about = about)
+            !onlyDay && WHEN.containsMatchIn(said) -> Command.Ask(AskKind.When, about = about.replaceFirstChar { it.uppercase() })
+            else -> Command.Ask(AskKind.Agenda, day = date ?: now.toLocalDate())
+        }
+    }
+
+    private val CALLS = Regex("\\b(chiamat\\w*|telefonat\\w*)\\b")
+    private val NOTES = Regex("\\b(scritto|annotato|appuntato|not[ae]|codice|password)\\b")
+    private val WHEN = Regex("\\b(quando|che ora|che giorno)\\b")
 
     private fun words(s: String) = s.lowercase().split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length > 2 }
 

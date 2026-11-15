@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import eu.eurise.core.contacts.Contacts
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.component.ServiceConsentSheet
+import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyService
 import eu.eurise.feature.assistant.online.AiService
@@ -120,6 +121,8 @@ private sealed interface Phase {
     data class Many(val cards: List<Card>) : Phase
     /** Chi risponde e il cervello sul telefono (tavola AlfCervello). */
     data object Brain : Phase
+    /** La risposta a una domanda sui dati, cercata sul telefono (tavola AlfDati). */
+    data class Data(val answer: DataAnswer) : Phase
 }
 
 /**
@@ -231,6 +234,13 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
 
     lateinit var understandSaid: (String, Boolean) -> Unit
 
+    /** Cerca sul telefono e mostra la risposta; a voce la legge, se gli si è parlato. */
+    suspend fun showData(ask: Command.Ask) {
+        val answer = butler.lookup(ask)
+        phase = Phase.Data(answer)
+        say(answer.spoken)
+    }
+
     /** Dopo la scheda letta a voce, Alfred ascolta la risposta: «sì» agisce, «no» annulla, altro è una correzione. */
     fun askAnswer(card: Card) {
         if ((phase as? Phase.Confirm)?.card != card) return
@@ -293,7 +303,13 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 // tre azioni); senza cervello, la seconda lettura delle parole chiave.
                 val exact = Grammar.exact(heard, now)
                 val fromBrain = if (exact == null && brainReady) brain.command(heard, butler.memory.hints(), now.toLocalDate())?.let { BrainCommands.parse(it, now, heard) }.orEmpty() else emptyList()
-                val actions = fromBrain.filter { it !is Command.Free }
+                val actions = fromBrain.filter { it !is Command.Free && it !is Command.Ask }
+                // Domande sui dati (tavola AlfDati): si risponde subito, cercando solo sul telefono.
+                val asked = exact as? Command.Ask ?: fromBrain.firstOrNull { it is Command.Ask }?.takeIf { actions.isEmpty() } as? Command.Ask
+                if (asked != null) {
+                    showData(asked)
+                    return@launch
+                }
                 if (actions.size >= 2) {
                     val cards = actions.map { butler.plan(it) }
                     phase = Phase.Many(cards)
@@ -358,6 +374,9 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         (phase as? Phase.Confirm)?.let { c -> execute(c.card) }
     }
+    val dataPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        (phase as? Phase.Data)?.let { d -> scope.launch { phase = Phase.Data(butler.lookup(d.answer.ask)) } }
+    }
 
     // La prima volta Alfred chiede come chiamare chi usa il telefono (il nome si cambia poi dalle disposizioni).
     var askingName by remember { mutableStateOf(prefs.address == Address.Name && prefs.name.isBlank()) }
@@ -412,7 +431,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     if (heard.isNotEmpty() && p == Phase.Thinking) Quote(heard)
                     Text(stringResource(R.string.alfred_hint), fontSize = 12.sp, lineHeight = 18.sp, color = Muted)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(R.string.alfred_ex_call, R.string.alfred_ex_note, R.string.alfred_ex_route, R.string.alfred_ex_message,
+                        listOf(R.string.alfred_ex_data, R.string.alfred_ex_call, R.string.alfred_ex_note, R.string.alfred_ex_route, R.string.alfred_ex_message,
                             R.string.alfred_ex_search, R.string.alfred_ex_alarm).forEach { id ->
                             val label = stringResource(id)
                             OutlineChip(label) { if (label.endsWith("…")) typed = label.removeSuffix("…") else understand(label) }
@@ -558,6 +577,45 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         }
                     }
                 }
+                is Phase.Data -> {
+                    val a = p.answer
+                    Header(a.lead, Mood.Bow, onSettings = { phase = Phase.Settings })
+                    if (heard.isNotEmpty()) Quote(heard)
+                    if (a.rows.isNotEmpty()) DataList(a.rows) { section -> openSection(context, section) }
+                    a.needs?.let { perm ->
+                        OutlineChip(stringResource(if (perm == Manifest.permission.READ_CALL_LOG) R.string.alfred_data_need_calls else R.string.alfred_data_need_calendar)) {
+                            dataPermission.launch(
+                                if (perm == Manifest.permission.READ_CALL_LOG) arrayOf(perm)
+                                else arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
+                            )
+                        }
+                    }
+                    val chips = a.chips + if (a.empty && a.needs == null && a.ask.kind == AskKind.When) {
+                        listOf(Chip(context.getString(R.string.alfred_ask_online, favorite.name), Command.Free(heard)))
+                    } else emptyList()
+                    if (chips.isNotEmpty()) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            chips.forEach { chip ->
+                                OutlineChip(chip.label) {
+                                    if (chip.command is Command.Free) { phase = Phase.Ready; askOnline(favorite) } else replan(chip.command)
+                                }
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val openLabel = when {
+                            a.open.startsWith("note:") -> R.string.alfred_data_open_note
+                            a.open == "notes" -> R.string.alfred_data_open_notes
+                            a.open == "calls" -> R.string.alfred_data_open_calls
+                            else -> R.string.alfred_data_open_calendar
+                        }
+                        BigButton(stringResource(openLabel), primary = false, enabled = true, modifier = Modifier.weight(1f)) { openSection(context, a.open) }
+                        BigButton(stringResource(R.string.alfred_data_again), primary = false, enabled = true, modifier = Modifier.weight(1f)) {
+                            speaker.value.say(a.spoken, null)
+                        }
+                    }
+                    Text(stringResource(R.string.alfred_data_where, a.sources), fontSize = 11.5.sp, lineHeight = 16.sp, color = Muted)
+                }
                 Phase.Brain -> BrainView(prefs, brain, butler.memory, favorite.name, onChanged = { brainReady = brain.ready }, onBack = { phase = Phase.Settings })
                 Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural, favoriteName = favorite.name,
                     onReadAloud = { readAloud = it; prefs.readAloud = it },
@@ -680,6 +738,7 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Open -> EuriseIcons.grid(2.3f)
     Kind.Free -> EuriseIcons.spark(2.3f)
     Kind.Remember -> EuriseIcons.note(2.3f)
+    Kind.Ask -> EuriseIcons.search(2.3f)
 }
 
 @Composable
@@ -854,6 +913,39 @@ private fun Toggle(on: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
     ))
 }
 
+
+/** Le righe della risposta sui dati (tavola AlfDati): un tocco apre la sezione della suite. */
+@Composable
+private fun DataList(rows: List<DataRow>, onOpen: (String) -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.alfred_data_from_phone), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2F6B45),
+                modifier = Modifier.padding(end = 6.dp))
+            PrivacyMeter(10)
+        }
+        rows.forEachIndexed { i, r ->
+            if (i > 0) Divider()
+            Row(
+                Modifier.fillMaxWidth().clickable(enabled = r.open != null) { r.open?.let(onOpen) }.padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(r.title, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Ink)
+                    if (r.detail.isNotBlank()) Text(r.detail, fontSize = 12.5.sp, color = InkSoft)
+                }
+                Box(Modifier.size(8.dp).clip(CircleShape).background(Color(r.tint)))
+            }
+        }
+    }
+}
+
+/** Apre una sezione di Eurise («calendar», «note:12»…) o, per «calls», il registro delle chiamate. */
+private fun openSection(context: android.content.Context, section: String) {
+    val intent = if (section == "calls") Intent(Intent.ACTION_VIEW).setType(android.provider.CallLog.Calls.CONTENT_TYPE)
+    else Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", section)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    eu.eurise.core.contacts.Reach.open(context, intent)
+}
 
 /** Le azioni capite in una frase, una per riga: un tocco apre la scheda per correggerla (tavola AlfCapisce). */
 @Composable

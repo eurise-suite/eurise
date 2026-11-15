@@ -33,7 +33,7 @@ data class Field(val key: String, val label: Int, val value: String, val choices
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask }
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -100,7 +100,14 @@ class Butler(private val context: Context) {
         is Command.Free -> free(command)
         is Command.Remember -> Card(Kind.Remember, command, s(R.string.alfred_lead_remember), R.string.alfred_card_remember,
             listOf(Field("text", R.string.alfred_f_text, command.text)), s(R.string.alfred_note_remember), s(R.string.alfred_do_remember))
+        // Le domande sui dati non hanno scheda (si risponde con [lookup]); qui solo per l'elenco «Ho capito N cose».
+        is Command.Ask -> Card(Kind.Ask, command, s(R.string.alfred_data_card), R.string.alfred_data_card,
+            listOf(Field("text", R.string.alfred_f_text, command.about.ifBlank { command.day?.let { whenText(it, null, false, "") }.orEmpty() })),
+            null, s(R.string.alfred_data_card))
     }
+
+    /** La risposta a una domanda sui dati (tavola AlfDati): si cerca solo sul telefono. */
+    suspend fun lookup(ask: Command.Ask): DataAnswer = Records(context, data).answer(ask)
 
     // --- Appuntamento ---
 
@@ -350,6 +357,7 @@ class Butler(private val context: Context) {
             Kind.Search -> search(card.value("query"), card.value("scope") == s(R.string.alfred_web))
             Kind.Open -> start(card.app ?: return Outcome(s(R.string.alfred_failed), false))
             Kind.Free -> search(card.value("text"), web = true)
+            Kind.Ask -> Outcome(s(R.string.alfred_failed), false)
         }
     }.getOrElse { Outcome(s(R.string.alfred_failed), false) }
 

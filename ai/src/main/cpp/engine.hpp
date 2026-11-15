@@ -399,7 +399,7 @@ inline bool ask(Engine &e, const std::string &question, int max_tokens, std::str
 inline const char *COMMAND_GRAMMAR = R"(
 root   ::= azione ("\n" azione){0,2}
 azione ::= tipo "|" t? "|" t? "|" data? "|" ora? "|" canale?
-tipo   ::= "chiama" | "messaggio" | "nota" | "evento" | "da_fare" | "promemoria" | "sveglia" | "timer" | "naviga" | "apri" | "domanda"
+tipo   ::= "chiama" | "messaggio" | "nota" | "evento" | "da_fare" | "promemoria" | "sveglia" | "timer" | "naviga" | "apri" | "dati" | "domanda"
 t      ::= c{1,140}
 c      ::= [^|\x7F\x00-\x1F]
 data   ::= [0-9] [0-9] [0-9] [0-9] "-" [0-1] [0-9] "-" [0-3] [0-9]
@@ -445,6 +445,8 @@ inline std::string command_system(int y, int m, int d, const std::string &hints)
         "- timer: un conto alla rovescia (testo = i minuti, solo il numero).\n"
         "- naviga: andare in un posto (chi = il posto o l'indirizzo).\n"
         "- apri: aprire un'app (chi = il nome dell'app).\n"
+        "- dati: una domanda sui dati dell'utente nel telefono: impegni, cose da fare, note, chiamate (testo = la cosa "
+        "cercata, se c'è; data = il giorno chiesto).\n"
         "- domanda: una domanda o una richiesta che non è un'azione sul telefono (testo = la domanda com'è).\n"
         "Le ore in 24 ore (le 3 del pomeriggio = 15:00). «Dopo pranzo» = 14:00, «stasera» = 20:00, «stamattina» = "
         "09:00, se l'utente non ha detto altro.\n"
@@ -454,6 +456,8 @@ inline std::string command_system(int y, int m, int d, const std::string &hints)
         "«scrivi una nota il codice del cancello è 4512» → nota||Il codice del cancello è 4512|||\n"
         "«timer di dieci minuti» → timer||10|||\n"
         "«quanto è alto il Monte Bianco» → domanda||Quanto è alto il Monte Bianco?|||\n"
+        "«ho qualcosa venerdì sera» → dati|||<data di venerdì>||\n"
+        "«quando devo portare la macchina dal meccanico» → dati||Meccanico|||\n"
         "«domani alle 15 dentista e avvisa Luca che non ci sono» → evento||Dentista|<data di domani>|15:00|\n"
         "messaggio|Luca|Domani alle 15 non ci sono|||\n";
     if (!hints.empty()) s += "Cose che sai dell'utente:\n" + hints + "\n";
