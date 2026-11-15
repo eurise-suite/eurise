@@ -2669,7 +2669,7 @@ Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e
   Attività, WebDAV per le Note con l'unione a tre vie, IMAP/SMTP per l'Email), modulo `desktop/app` in Compose Desktop
   che assorbe `desktop/ponte`, Flatpak e prova d'avvio su Ubuntu e Fedora in Actions.
 
-## 15 novembre, sera: Alfred, passi 1 e 2 (tavole AlfDati, AlfSeguito, AlfQuale approvate) · giri 615 e 621
+## 15 novembre, sera: Alfred, passi 1 e 2 (tavole AlfDati, AlfSeguito, AlfQuale approvate) · giri 615 e 628
 - Tavole dei cinque passi **approvate** dal proprietario. Le compilazioni di Alfred vanno anche sul ramo `prova-alfred`
   (stesso codice di `brand`), così l'altra chat non le annulla; i link si pubblicano con `apk-prova.yml` (dispatch su
   `ref=brand` con `run_id`).
@@ -2681,7 +2681,7 @@ Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e
   con tinta, «dal telefono» e dieci tacchette, proposte («Sposta il dentista», «Avvisa Anna», «Strada per…», «Richiama…»),
   «Apri…» e «Rileggi»; senza permesso, la pillola per darlo. **Messaggi**: l'APK principale non ha READ_SMS, quindi «chi mi
   ha scritto?» arriva con il passo 3 (leggi e rispondi, dall'APK Messaggi).
-- **Passo 2** (giro 621): `FollowUp` (solo in memoria, due minuti) con l'ultima cosa fatta (`Done`: impegno, attività, nota,
+- **Passo 2** (giro 628): `FollowUp` (solo in memoria, due minuti) con l'ultima cosa fatta (`Done`: impegno, attività, nota,
   messaggio, chiamata, sveglia); `Grammar.follow` → `Command.Follow` (Move, Undo, AlsoTo): «spostalo alle 10», «no, alle 11»,
   «rimandalo a domani», «cancellalo», «annulla», «mandalo anche a Luca». Scheda «Sposto» con il valore di prima barrato
   (`Field.previous`). «Quale Marco chiamo?» (`Butler.doubt`, `Phase.Which`): si chiede solo se nessuno è preferito o sentito
