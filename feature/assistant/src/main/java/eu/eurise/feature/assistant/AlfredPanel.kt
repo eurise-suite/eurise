@@ -117,6 +117,8 @@ private sealed interface Phase {
     /** La risposta dell'AI online tornata in Alfred, con i dati rimessi (tavola AlfRisposta); [local]: da Eurise AI sul
      *  telefono, che scrive mentre pensa (tavola AlfTelefono), con [question] per passarla online. */
     data class Answer(val text: String, val from: String, val local: Boolean = false, val question: String = "", val done: Boolean = true) : Phase
+    /** «Quale Marco chiamo?»: più persone con lo stesso nome e nessuna chiaramente la più probabile (tavola AlfQuale). */
+    data class Which(val command: Command, val options: List<Butler.Option>, val remember: Boolean = true) : Phase
     /** Più cose da fare in una frase (tavola AlfCapisce). */
     data class Many(val cards: List<Card>) : Phase
     /** Chi risponde e il cervello sul telefono (tavola AlfCervello). */
@@ -291,17 +293,92 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
 
     askFree = { q, c -> freeQuestion(q, c) }
 
+    /** Ascolta una risposta detta e la capisce come una frase nuova (dopo «A che ora lo sposto?»). */
+    fun listenReply() {
+        answering = true
+        ear.listen(onLevel = { level = it }, onSpeech = {}, onWorking = {},
+            onText = { said -> answering = false; understandSaid(said, true) }, onFail = { answering = false })
+    }
+
+    lateinit var chooseWhich: (Phase.Which, Int) -> Unit
+
+    /** Dopo «Quale Marco?» si ascolta la scelta: «il primo», «Ferri», «quello del lavoro». */
+    fun askWhich(p: Phase.Which) {
+        answering = true
+        ear.listen(onLevel = { level = it }, onSpeech = {}, onWorking = {},
+            onText = { said ->
+                answering = false
+                val now = phase as? Phase.Which
+                if (now?.command != p.command) return@listen
+                val i = Grammar.pick(said, now.options.map { it.name to it.detail })
+                when {
+                    i != null -> chooseWhich(now, i)
+                    Grammar.answer(said) == Grammar.Answer.No -> { heard = ""; phase = Phase.Ready; say(context.getString(R.string.alfred_cancelled)) }
+                    else -> understandSaid(said, true)
+                }
+            },
+            onFail = { answering = false })
+    }
+
+    /** Prepara la scheda di un comando (o chiede quale persona, se c'è un dubbio vero) e, a voce, chiede conferma. */
+    suspend fun present(command: Command, spoken: Boolean) {
+        butler.doubt(command)?.let { options ->
+            val p = Phase.Which(command, options)
+            phase = p
+            val first = options.first().name.split(' ').first()
+            val line = context.getString(if (command is Command.Call) R.string.alfred_which_call else R.string.alfred_which_message, first)
+            if (spoken) say(line) { askWhich(p) } else say(line)
+            return
+        }
+        val card = butler.plan(command)
+        // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
+        if (card.kind == Kind.Report) { execute(card); return }
+        // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
+        // Nessun messaggio intermedio: la domanda va subito al servizio (la prima volta, la spiegazione del centro
+        // privacy chiede il permesso).
+        if (card.kind == Kind.Free) {
+            freeQuestion((command as? Command.Free)?.text?.ifBlank { heard } ?: heard, card)
+            return
+        }
+        phase = Phase.Confirm(card)
+        val canAct = card.ready && (card.kind != Kind.Call ||
+            context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
+        when {
+            spoken && readAloud && canAct -> say(card.lead + " " + context.getString(R.string.alfred_ask_confirm)) { askAnswer(card) }
+            // «A che ora lo sposto?»: la risposta detta completa la scheda.
+            spoken && card.kind == Kind.Follow && !card.ready && card.fields.isNotEmpty() -> say(card.lead) { listenReply() }
+            else -> say(card.lead)
+        }
+    }
+
+    chooseWhich = { p, i ->
+        val o = p.options[i]
+        // Con la spunta, [said] fa imparare la scelta quando la chiamata o il messaggio partono; senza, "" non insegna nulla.
+        val said = if (p.remember) null else ""
+        val next = when (val c = p.command) {
+            is Command.Call -> c.copy(who = o.name, said = said ?: c.who)
+            is Command.Message -> c.copy(who = o.name, said = said ?: c.who)
+            else -> c
+        }
+        answering = false
+        ear.cancel()
+        phase = Phase.Thinking
+        scope.launch { present(next, voiceTurn) }
+    }
+
     understandSaid = { text, spoken ->
         voiceTurn = spoken
         if (text.isNotBlank()) {
-            heard = text.trim()
+            // Le parole corrette a mano in passato si correggono da sé (tavola AlfSeguito).
+            heard = Corrections.apply(text.trim(), butler.memory.words())
             typed = ""
             phase = Phase.Thinking
             scope.launch {
                 val now = LocalDateTime.now()
                 // Prima le regole esatte (subito); se nessuna prende la frase, la legge il cervello sul telefono (fino a
                 // tre azioni); senza cervello, la seconda lettura delle parole chiave.
-                val exact = Grammar.exact(heard, now)
+                // Entro due minuti dall'ultima azione: «spostalo alle 10», «cancellalo», «mandalo anche a Luca».
+                val exact = (if (FollowUp.current() != null) Grammar.follow(heard, now) else null) ?: Grammar.exact(heard, now)
                 val fromBrain = if (exact == null && brainReady) brain.command(heard, butler.memory.hints(), now.toLocalDate())?.let { BrainCommands.parse(it, now, heard) }.orEmpty() else emptyList()
                 val actions = fromBrain.filter { it !is Command.Free && it !is Command.Ask }
                 // Domande sui dati (tavola AlfDati): si risponde subito, cercando solo sul telefono.
@@ -317,21 +394,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     return@launch
                 }
                 val command = exact ?: actions.firstOrNull() ?: fromBrain.firstOrNull() ?: Grammar.parse(heard, now)
-                val card = butler.plan(command)
-                // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
-                if (card.kind == Kind.Report) { execute(card); return@launch }
-                // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
-                // Nessun messaggio intermedio: la domanda va subito al servizio (la prima volta, la spiegazione del centro
-                // privacy chiede il permesso).
-                if (card.kind == Kind.Free) {
-                    freeQuestion((command as? Command.Free)?.text?.ifBlank { heard } ?: heard, card)
-                    return@launch
-                }
-                phase = Phase.Confirm(card)
-                val canAct = card.ready && (card.kind != Kind.Call ||
-                    context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
-                if (spoken && readAloud && canAct) say(card.lead + " " + context.getString(R.string.alfred_ask_confirm)) { askAnswer(card) }
-                else say(card.lead)
+                present(command, spoken)
             }
         }
     }
@@ -493,7 +556,12 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                             key == "via" && c is Command.Message -> {
                                 replan(c.copy(channel = Channel.entries.firstOrNull { butler.channelName(it) == value })); Phase.Thinking
                             }
-                            else -> Phase.Confirm(card.with(key, value))
+                            else -> {
+                                // Una parola capita male e corretta a mano: la prossima volta la corregge da sé.
+                                if (key == "what" || key == "text") Corrections.diff(card.value(key), value).forEach { (a, b) -> butler.memory.learnWord(a, b) }
+                                val edited = card.with(key, value)
+                                Phase.Confirm(if (card.kind == Kind.Follow && key == "when" && value.isNotBlank()) edited.copy(ready = true) else edited)
+                            }
                         }
                     })
                     if (!Contacts.canRead(context) && card.kind in setOf(Kind.Call, Kind.Message, Kind.Event)) {
@@ -575,6 +643,43 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                                 say(line)
                             }
                         }
+                    }
+                }
+                is Phase.Which -> {
+                    val first = p.options.first().name.split(' ').first()
+                    Header(stringResource(if (p.command is Command.Call) R.string.alfred_which_call else R.string.alfred_which_message, first),
+                        Mood.Attentive, onSettings = { phase = Phase.Settings })
+                    if (heard.isNotEmpty()) Quote(heard)
+                    p.options.forEachIndexed { i, o ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).clickable { chooseWhich(p, i) }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Box(Modifier.size(30.dp).clip(CircleShape).background(Color(0xFFEEF0F5)), contentAlignment = Alignment.Center) {
+                                Text("${i + 1}", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(o.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink)
+                                if (o.detail.isNotBlank()) Text(o.detail, fontSize = 12.5.sp, color = InkSoft)
+                            }
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { phase = p.copy(remember = !p.remember) }.padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Box(
+                            Modifier.size(20.dp).clip(RoundedCornerShape(6.dp))
+                                .then(if (p.remember) Modifier.background(Gold) else Modifier.border(1.5.dp, Color(0x66FFFFFF), RoundedCornerShape(6.dp))),
+                            contentAlignment = Alignment.Center,
+                        ) { if (p.remember) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Navy) }
+                        Text(stringResource(R.string.alfred_which_remember, first), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Soft)
+                    }
+                    if (answering) Text(stringResource(R.string.alfred_which_listening), fontSize = 12.sp, color = Gold)
+                    Text(stringResource(R.string.alfred_which_hint), fontSize = 12.sp, lineHeight = 17.sp, color = Muted)
+                    BigButton(stringResource(R.string.alfred_cancel), primary = false, enabled = true, modifier = Modifier.fillMaxWidth()) {
+                        answering = false; ear.cancel(); heard = ""; phase = Phase.Ready
                     }
                 }
                 is Phase.Data -> {
@@ -739,6 +844,7 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Free -> EuriseIcons.spark(2.3f)
     Kind.Remember -> EuriseIcons.note(2.3f)
     Kind.Ask -> EuriseIcons.search(2.3f)
+    Kind.Follow -> EuriseIcons.calendar(2.3f)
 }
 
 @Composable
@@ -757,6 +863,12 @@ private fun FieldRow(f: Field, onChange: (String) -> Unit) {
                 keyboardActions = KeyboardActions(onDone = { editing = false; onChange(draft) }),
                 modifier = Modifier.weight(1f).semantics { contentDescription = label },
             )
+        } else if (f.previous != null) {
+            // Il valore di prima barrato e quello nuovo in grassetto (tavola AlfSeguito).
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(f.previous, fontSize = 13.sp, color = Color(0xFF8A8A82), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                Text(f.value.ifBlank { "—" }, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Navy)
+            }
         } else {
             Text(f.value.ifBlank { "—" }, Modifier.weight(1f), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Ink)
         }
@@ -1063,6 +1175,7 @@ private fun MemorySection(memory: AlfredMemory) {
                         AlfredMemory.Kind.Channel -> stringResource(R.string.alfred_memory_channel, f.key.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } },
                             Channel.entries.firstOrNull { it.name == f.value }?.let { c -> when (c) { Channel.Sms -> "SMS"; else -> c.name } } ?: f.value)
                         AlfredMemory.Kind.Said -> f.value
+                        AlfredMemory.Kind.Word -> stringResource(R.string.alfred_memory_word, f.key, f.value)
                     }, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = Ink)
                     Text(stringResource(R.string.alfred_memory_since, f.since.format(day)), fontSize = 12.sp, color = InkSoft)
                 }

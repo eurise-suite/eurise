@@ -28,12 +28,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Una riga della scheda di conferma: [choices] non vuoto = si sceglie toccando, altrimenti si scrive. */
-data class Field(val key: String, val label: Int, val value: String, val choices: List<String> = emptyList())
+data class Field(val key: String, val label: Int, val value: String, val choices: List<String> = emptyList(), val previous: String? = null)
 
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask, Follow }
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -100,6 +100,7 @@ class Butler(private val context: Context) {
         is Command.Free -> free(command)
         is Command.Remember -> Card(Kind.Remember, command, s(R.string.alfred_lead_remember), R.string.alfred_card_remember,
             listOf(Field("text", R.string.alfred_f_text, command.text)), s(R.string.alfred_note_remember), s(R.string.alfred_do_remember))
+        is Command.Follow -> follow(command)
         // Le domande sui dati non hanno scheda (si risponde con [lookup]); qui solo per l'elenco «Ho capito N cose».
         is Command.Ask -> Card(Kind.Ask, command, s(R.string.alfred_data_card), R.string.alfred_data_card,
             listOf(Field("text", R.string.alfred_f_text, command.about.ifBlank { command.day?.let { whenText(it, null, false, "") }.orEmpty() })),
@@ -108,6 +109,212 @@ class Butler(private val context: Context) {
 
     /** La risposta a una domanda sui dati (tavola AlfDati): si cerca solo sul telefono. */
     suspend fun lookup(ask: Command.Ask): DataAnswer = Records(context, data).answer(ask)
+
+    // --- Seguito (tavola AlfSeguito) ---
+
+    private suspend fun follow(c: Command.Follow): Card {
+        val done = c.eventId?.let { id -> eventDone(id)?.also { FollowUp.remember(it) } } ?: FollowUp.current()
+            ?: return Card(Kind.Follow, c, s(R.string.alfred_follow_nothing), R.string.alfred_card_follow, emptyList(), null,
+                s(R.string.alfred_follow_move), ready = false)
+        return when (c.action) {
+            FollowAction.AlsoTo -> plan(alsoTo(done, c.who))
+            FollowAction.Undo -> undoCard(c, done)
+            FollowAction.Move -> moveCard(c, done)
+        }
+    }
+
+    /** Un impegno già in calendario, per spostarlo dalla risposta sui dati («Sposta il dentista»). */
+    private suspend fun eventDone(id: Long): Done.Event? {
+        val e = data.calendar.getForLink(id) ?: return null
+        if (e.recurring || !e.writable) return null
+        return Done.Event(id, EventDraft(id, e.calendarId, e.title, e.location, e.description, e.allDay, e.start, e.end), null)
+    }
+
+    private fun alsoTo(done: Done, who: String): Command = when (done) {
+        is Done.Message -> Command.Message(who, done.text, done.channel)
+        is Done.Event -> Command.Message(who, s(R.string.alfred_follow_event_text, done.draft.title,
+            whenShort(done.draft.start.toLocalDate(), if (done.draft.allDay) null else done.draft.start.toLocalTime())), null)
+        is Done.Task -> Command.Message(who, done.title, null)
+        is Done.Note -> Command.Message(who, done.text, null)
+        is Done.Call -> Command.Call(who)
+        is Done.Alarm -> Command.Message(who, "", null)
+    }
+
+    /** Il giorno e l'ora nuovi: quelli detti, il resto com'era. */
+    private fun target(c: Command.Follow, day: LocalDate?, time: LocalTime?): Pair<LocalDate?, LocalTime?> =
+        (c.day ?: day) to (c.time ?: time)
+
+    private fun moveCard(c: Command.Follow, done: Done): Card {
+        val chips = { day: LocalDate?, time: LocalTime?, who: String? ->
+            buildList {
+                time?.let { add(Chip(s(R.string.alfred_follow_chip_later, it.plusHours(1).format(HOUR)), c.copy(day = day, time = it.plusHours(1)))) }
+                who?.takeIf { it.isNotBlank() }?.let { add(Chip(s(R.string.alfred_follow_chip_also, it), Command.Follow(FollowAction.AlsoTo, who = it))) }
+                add(Chip(s(R.string.alfred_follow_chip_undo), Command.Follow(FollowAction.Undo)))
+            }
+        }
+        return when (done) {
+            is Done.Event -> {
+                val d = done.draft
+                val oldDay = d.start.toLocalDate()
+                val oldTime = if (d.allDay) null else d.start.toLocalTime()
+                val (day, time) = target(c, oldDay, oldTime)
+                val asked = c.day == null && c.time == null
+                val previous = if (day == oldDay && oldTime != null) oldTime.format(HOUR) else whenText(oldDay, oldTime, d.allDay, "")
+                Card(Kind.Follow, c, if (asked) s(R.string.alfred_follow_when) else s(R.string.alfred_follow_move_lead, DataWriter.article(d.title.replaceFirstChar { it.lowercase() }), moveTo(oldDay, day, time)),
+                    R.string.alfred_card_follow,
+                    listOf(Field("what", R.string.alfred_f_what, d.title),
+                        Field("when", R.string.alfred_f_when, if (asked) "" else whenText(day, time, time == null, ""), previous = previous)),
+                    s(R.string.alfred_follow_note), s(R.string.alfred_follow_move), if (asked) emptyList() else chips(day, time, done.who), ready = !asked)
+            }
+            is Done.Task -> {
+                val (day, time) = target(c, done.due, done.time)
+                Card(Kind.Follow, c, s(R.string.alfred_follow_move_lead, "«${done.title}»", moveTo(done.due, day, time)), R.string.alfred_card_follow,
+                    listOf(Field("what", R.string.alfred_f_what, done.title),
+                        Field("when", R.string.alfred_f_when, whenText(day, time, time == null, ""), previous = whenText(done.due, done.time, done.time == null, "—"))),
+                    s(R.string.alfred_follow_note), s(R.string.alfred_follow_move), chips(day, time, null))
+            }
+            is Done.Alarm -> Card(Kind.Alarm, Command.Alarm(c.time ?: done.time, c.day), s(R.string.alfred_lead_alarm), R.string.alfred_card_alarm,
+                listOf(Field("time", R.string.alfred_f_time, (c.time ?: done.time).format(HOUR), previous = done.time.format(HOUR))),
+                s(R.string.alfred_follow_alarm_note), s(R.string.alfred_do_alarm))
+            else -> Card(Kind.Follow, c, s(R.string.alfred_follow_gone), R.string.alfred_card_follow, emptyList(), null, s(R.string.alfred_follow_move), ready = false)
+        }
+    }
+
+    private fun undoCard(c: Command.Follow, done: Done): Card {
+        val (lead, fields) = when (done) {
+            is Done.Event -> s(R.string.alfred_follow_undo_event, done.draft.title) to listOf(
+                Field("what", R.string.alfred_f_what, done.draft.title),
+                Field("when", R.string.alfred_f_when, whenText(done.draft.start.toLocalDate(), if (done.draft.allDay) null else done.draft.start.toLocalTime(), done.draft.allDay, "")))
+            is Done.Task -> s(R.string.alfred_follow_undo_task, done.title) to listOf(Field("what", R.string.alfred_f_what, done.title))
+            is Done.Note -> s(R.string.alfred_follow_undo_note) to listOf(Field("text", R.string.alfred_f_text, done.text.take(80)))
+            is Done.Alarm -> return Card(Kind.Follow, c, s(R.string.alfred_follow_undo_alarm, done.time.format(HOUR)), R.string.alfred_card_follow,
+                emptyList(), null, s(R.string.alfred_follow_undo), ready = false)
+            is Done.Message, is Done.Call -> return Card(Kind.Follow, c, s(R.string.alfred_follow_gone), R.string.alfred_card_follow, emptyList(), null,
+                s(R.string.alfred_follow_undo), ready = false)
+        }
+        return Card(Kind.Follow, c, lead, R.string.alfred_card_follow_undo, fields, null, s(R.string.alfred_follow_undo))
+    }
+
+    /** «alle 10» se il giorno resta quello, altrimenti «a martedì alle 10». */
+    private fun moveTo(old: LocalDate?, day: LocalDate?, time: LocalTime?): String =
+        if (time != null && (day == null || day == old)) "alle " + (if (time.minute == 0) "${time.hour}" else time.format(HOUR))
+        else "a " + whenShort(day, time)
+
+    /** «martedì alle 10», «domani alle 9:30», «giovedì 19». */
+    private fun whenShort(day: LocalDate?, time: LocalTime?): String {
+        val today = LocalDate.now()
+        val d = when (day) {
+            null, today -> s(R.string.alfred_today).lowercase()
+            today.plusDays(1) -> s(R.string.alfred_tomorrow).lowercase()
+            else -> day.format(DateTimeFormatter.ofPattern("EEEE d", Locale.ITALIAN))
+        }
+        return if (time == null) d else d + " alle " + (if (time.minute == 0) "${time.hour}" else time.format(HOUR))
+    }
+
+    private suspend fun doFollow(card: Card): Outcome {
+        val c = card.command as Command.Follow
+        val done = FollowUp.current() ?: c.eventId?.let { eventDone(it) } ?: return Outcome(s(R.string.alfred_follow_nothing), false)
+        val edited = card.value("when").takeIf { it.isNotBlank() }?.let { QuickAdd.parse(it, LocalDateTime.now()) }
+        return when (c.action) {
+            FollowAction.Move -> when (done) {
+                is Done.Event -> {
+                    val d = done.draft
+                    val (day0, time0) = target(c, d.start.toLocalDate(), if (d.allDay) null else d.start.toLocalTime())
+                    val day = edited?.due ?: day0 ?: d.start.toLocalDate()
+                    val time = edited?.time ?: time0
+                    val length = java.time.Duration.between(d.start, d.end).takeIf { !d.allDay && !it.isNegative && !it.isZero } ?: java.time.Duration.ofHours(1)
+                    val start = if (time != null) day.atTime(time) else day.atStartOfDay()
+                    val moved = d.copy(eventId = done.id, title = card.value("what").ifBlank { d.title }, allDay = time == null, start = start,
+                        end = if (time != null) start.plus(length) else day.plusDays(1).atStartOfDay())
+                    if (data.calendar.save(moved) == null) return Outcome(s(R.string.alfred_failed), false)
+                    FollowUp.remember(done.copy(draft = moved))
+                    Outcome(s(R.string.alfred_follow_moved, whenShort(day, time)), true)
+                }
+                is Done.Task -> {
+                    val (day0, time0) = target(c, done.due, done.time)
+                    val day = edited?.due ?: day0
+                    val time = edited?.time ?: time0
+                    val task = withContext(Dispatchers.IO) { data.tasks.get(done.id) } ?: return Outcome(s(R.string.alfred_failed), false)
+                    withContext(Dispatchers.IO) { data.tasks.update(task.copy(title = card.value("what").ifBlank { task.title }, due = day ?: LocalDate.now(), time = time)) }
+                    FollowUp.remember(done.copy(due = day, time = time))
+                    Outcome(s(R.string.alfred_follow_moved, whenShort(day, time)), true)
+                }
+                else -> Outcome(s(R.string.alfred_follow_gone), false)
+            }
+            FollowAction.Undo -> {
+                when (done) {
+                    is Done.Event -> if (!data.calendar.delete(done.id)) return Outcome(s(R.string.alfred_failed), false)
+                    is Done.Task -> withContext(Dispatchers.IO) { data.tasks.delete(done.id) }
+                    is Done.Note -> withContext(Dispatchers.IO) { data.notes.trash(done.id) }
+                    else -> return Outcome(s(R.string.alfred_follow_gone), false)
+                }
+                FollowUp.clear()
+                Outcome(s(R.string.alfred_follow_undone), true)
+            }
+            FollowAction.AlsoTo -> Outcome(s(R.string.alfred_failed), false)
+        }
+    }
+
+    // --- «Quale Marco?» (tavola AlfQuale) ---
+
+    /** Una persona tra cui scegliere: il nome e ciò che la distingue («lavoro · l'ultima volta 3 giorni fa»). */
+    data class Option(val name: String, val detail: String)
+
+    /**
+     * Le persone tra cui scegliere quando un nome detto ne indica più d'una e nessuna è chiaramente la più probabile;
+     * null se non c'è un dubbio vero (una sola persona, già scelta in passato, o una preferita o chiamata di recente).
+     */
+    suspend fun doubt(c: Command): List<Option>? {
+        val spoken = when (c) {
+            is Command.Call -> c.who.takeIf { c.said == null }
+            is Command.Message -> c.who.takeIf { c.said == null }
+            else -> null
+        } ?: return null
+        if (spoken.isBlank() || Reach.digits(spoken).length >= 3 || memory.person(spoken) != null) return null
+        val people = findPeople(spoken)
+        if (people.size < 2 || people.any { fold(it.name) == fold(spoken) }) return null
+        val last = withContext(Dispatchers.IO) { lastCalls(people.map { it.name }) }
+        val today = LocalDate.now()
+        val score = people.map { p -> (if (p.starred) 2 else 0) + (if (last[p.name]?.let { it.isAfter(today.minusDays(30)) } == true) 1 else 0) }
+        val best = score.maxOrNull() ?: 0
+        if (best > 0 && score.count { it == best } == 1) return null
+        return people.take(3).map { p ->
+            val about = p.company?.takeIf { it.isNotBlank() }?.lowercase()
+                ?: p.note?.lineSequence()?.firstOrNull()?.trim()?.takeIf { it.isNotBlank() && it.length <= 24 }?.lowercase()
+                ?: p.phones.firstOrNull()?.label?.lowercase()?.takeIf { it != "cellulare" && it.isNotBlank() }
+            val ago = last[p.name]?.let { d ->
+                val n = java.time.temporal.ChronoUnit.DAYS.between(d, today)
+                when (n) {
+                    0L -> s(R.string.alfred_which_today)
+                    1L -> s(R.string.alfred_which_yesterday)
+                    else -> s(R.string.alfred_which_ago, n.toInt())
+                }
+            }
+            Option(p.name, listOfNotNull(about, ago).joinToString(" · "))
+        }
+    }
+
+    /** L'ultimo giorno in cui si è parlato al telefono con ciascun nome (negli ultimi 90 giorni). */
+    private fun lastCalls(names: List<String>): Map<String, LocalDate> {
+        if (context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) return emptyMap()
+        val since = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000
+        val out = mutableMapOf<String, LocalDate>()
+        runCatching {
+            context.contentResolver.query(
+                android.provider.CallLog.Calls.CONTENT_URI, arrayOf(android.provider.CallLog.Calls.CACHED_NAME, android.provider.CallLog.Calls.DATE),
+                "${android.provider.CallLog.Calls.DATE} >= ? AND ${android.provider.CallLog.Calls.CACHED_NAME} IS NOT NULL", arrayOf(since.toString()),
+                "${android.provider.CallLog.Calls.DATE} DESC",
+            )?.use { cur ->
+                while (cur.moveToNext() && out.size < names.size) {
+                    val name = cur.getString(0) ?: continue
+                    if (name in names && name !in out) {
+                        out[name] = java.time.Instant.ofEpochMilli(cur.getLong(1)).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                    }
+                }
+            }
+        }
+        return out
+    }
 
     // --- Appuntamento ---
 
@@ -299,14 +506,17 @@ class Butler(private val context: Context) {
             Kind.Event -> saveEvent(card)
             Kind.Note -> {
                 val text = card.value("text")
-                withContext(Dispatchers.IO) { data.notes.save(null, text.lineSequence().first().take(60), text) }
+                val id = withContext(Dispatchers.IO) { data.notes.save(null, text.lineSequence().first().take(60), text) }
+                FollowUp.remember(Done.Note(id, text))
                 Outcome(s(R.string.alfred_done_note), true)
             }
             Kind.Task -> {
                 val q = QuickAdd.parse(card.value("when"), LocalDateTime.now())
                 val c = card.command as Command.Task
                 val due = if (card.value("when").isBlank()) null else q.due ?: c.due
-                withContext(Dispatchers.IO) { data.tasks.add(card.value("what"), due = due, time = q.time ?: c.time.takeIf { due != null }) }
+                val time = q.time ?: c.time.takeIf { due != null }
+                val id = withContext(Dispatchers.IO) { data.tasks.add(card.value("what"), due = due, time = time) }
+                FollowUp.remember(Done.Task(id, card.value("what"), due, time))
                 Outcome(s(R.string.alfred_done_task), true)
             }
             Kind.Message -> sendMessage(card).also { out ->
@@ -316,6 +526,7 @@ class Butler(private val context: Context) {
                     memory.learnPerson(c.said ?: c.who, name)
                     Channel.entries.firstOrNull { channelName(it) == card.value("via") }?.let { memory.learnChannel(name, it.name) }
                 }
+                if (out.close) FollowUp.remember(Done.Message(name ?: c.who, card.value("text"), Channel.entries.firstOrNull { channelName(it) == card.value("via") }))
             }
             Kind.Call -> {
                 val number = card.value("number")
@@ -323,6 +534,7 @@ class Butler(private val context: Context) {
                 start(if (canCall) Reach.call(number) else Reach.dial(number)).also { out ->
                     val c = card.command as Command.Call
                     card.contact?.name?.let { if (out.close) memory.learnPerson(c.said ?: c.who, it) }
+                    if (out.close) FollowUp.remember(Done.Call(card.contact?.name ?: c.who))
                 }
             }
             Kind.Remember -> {
@@ -345,6 +557,7 @@ class Butler(private val context: Context) {
             }
             Kind.Alarm -> {
                 val t = LocalTime.parse(card.value("time").replace('.', ':').padStart(5, '0'))
+                FollowUp.remember(Done.Alarm(t))
                 start(Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR, t.hour).putExtra(AlarmClock.EXTRA_MINUTES, t.minute)
                     .putExtra(AlarmClock.EXTRA_SKIP_UI, true).setPackage(context.packageName), fallback = Intent(AlarmClock.ACTION_SET_ALARM)
                     .putExtra(AlarmClock.EXTRA_HOUR, t.hour).putExtra(AlarmClock.EXTRA_MINUTES, t.minute))
@@ -358,6 +571,7 @@ class Butler(private val context: Context) {
             Kind.Open -> start(card.app ?: return Outcome(s(R.string.alfred_failed), false))
             Kind.Free -> search(card.value("text"), web = true)
             Kind.Ask -> Outcome(s(R.string.alfred_failed), false)
+            Kind.Follow -> doFollow(card)
         }
     }.getOrElse { Outcome(s(R.string.alfred_failed), false) }
 
@@ -383,8 +597,9 @@ class Butler(private val context: Context) {
             location = card.value("where").substringBefore(" (dalla scheda").trim(),
             description = with?.let { "Con $it" }.orEmpty(), allDay = time == null, start = start, end = end,
         )
-        val id = data.calendar.save(draft)
-        return if (id != null) Outcome(s(R.string.alfred_done_event), true) else Outcome(s(R.string.alfred_failed), false)
+        val id = data.calendar.save(draft) ?: return Outcome(s(R.string.alfred_failed), false)
+        FollowUp.remember(Done.Event(id, draft.copy(eventId = id), with))
+        return Outcome(s(R.string.alfred_done_event), true)
     }
 
     private suspend fun sendMessage(card: Card): Outcome {

@@ -15,6 +15,8 @@ data class DataEvent(
     val color: Int,
     val eventId: Long = 0,
     val beginMillis: Long = 0,
+    /** Si può spostare con Alfred: non si ripete e il calendario si può scrivere. */
+    val movable: Boolean = false,
 )
 
 /** Una cosa da fare con il nome del suo elenco. */
@@ -143,11 +145,14 @@ object DataWriter {
 
     /** Le proposte sotto la risposta: la strada per il primo impegno con un luogo, l'avviso a chi si vede. */
     internal fun proposals(events: List<DataEvent>): List<Chip> = buildList {
-        events.firstOrNull { it.place.isNotBlank() }?.let { e ->
-            add(Chip("Strada per ${e.place.substringBefore(',').substringBefore('\n').trim()}", Command.Navigate(e.place.replace('\n', ' '))))
+        events.firstOrNull { it.movable && !it.allDay }?.let { e ->
+            add(Chip("Sposta ${article(e.title.replaceFirstChar { it.lowercase(IT) })}", Command.Follow(FollowAction.Move, eventId = e.eventId)))
         }
         events.firstNotNullOfOrNull { e -> WITH_PERSON.find(e.title)?.groupValues?.get(1) }?.let { who ->
             add(Chip("Avvisa $who", Command.Message(who, "", null)))
+        }
+        events.firstOrNull { it.place.isNotBlank() }?.let { e ->
+            add(Chip("Strada per ${e.place.substringBefore(',').substringBefore('\n').trim()}", Command.Navigate(e.place.replace('\n', ' '))))
         }
     }
 

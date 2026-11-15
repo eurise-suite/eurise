@@ -103,6 +103,6 @@ internal class Records(private val context: Context, private val data: EuriseDat
         }.getOrNull().orEmpty()
     }
 
-    private fun CalendarEvent.toData() = DataEvent(title, start, allDay, location, calendarName, color, eventId, beginMillis)
+    private fun CalendarEvent.toData() = DataEvent(title, start, allDay, location, calendarName, color, eventId, beginMillis, movable = !recurring && writable)
 }
 

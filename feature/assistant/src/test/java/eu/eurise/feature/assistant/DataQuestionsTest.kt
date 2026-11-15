@@ -66,7 +66,7 @@ class DataQuestionsTest {
     // --- Le frasi ---
 
     private fun ev(h: Int, title: String, place: String = "", day: Int = 16) =
-        DataEvent(title, LocalDateTime.of(2026, 11, day, h, 0), false, place, "Casa", 0xFF3E5C8A.toInt())
+        DataEvent(title, LocalDateTime.of(2026, 11, day, h, 0), false, place, "Casa", 0xFF3E5C8A.toInt(), eventId = h.toLong(), movable = true)
 
     @Test fun rispostaDellaTavola() {
         val a = DataWriter.agenda(
@@ -80,7 +80,7 @@ class DataQuestionsTest {
         assertEquals("Da fare · Comprare il latte", a.rows[3].title)
         assertEquals("nell'elenco Spesa", a.rows[3].detail)
         assertTrue(a.spoken.contains("Alle 9 Dentista, alle 13 Pranzo con Anna"))
-        assertEquals(listOf("Strada per Studio Bianchi", "Avvisa Anna"), a.chips.map { it.label })
+        assertEquals(listOf("Sposta il dentista", "Avvisa Anna", "Strada per Studio Bianchi"), a.chips.map { it.label })
     }
 
     @Test fun oggiRestano() {

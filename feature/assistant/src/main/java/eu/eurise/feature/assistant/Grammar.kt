@@ -27,9 +27,23 @@ sealed interface Command {
      * [day] e [days]: il giorno e quanti giorni (7 per «questa settimana»); [about]: la cosa cercata.
      */
     data class Ask(val kind: AskKind, val day: LocalDate? = null, val about: String = "", val days: Int = 1) : Command
+    /**
+     * Un seguito dell'ultima cosa fatta, entro due minuti (tavola AlfSeguito): «spostalo alle 10», «cancellalo»,
+     * «mandalo anche a Luca». [eventId]: un impegno scelto dalla risposta sui dati («Sposta il dentista»).
+     */
+    data class Follow(
+        val action: FollowAction,
+        val day: LocalDate? = null,
+        val time: LocalTime? = null,
+        val who: String = "",
+        val eventId: Long? = null,
+    ) : Command
     /** Nessuna regola la capisce: tocca a Eurise AI (richiesta libera). */
     data class Free(val text: String) : Command
 }
+
+/** Move: nuovo giorno o ora; Undo: togliere ciò che si è appena fatto; AlsoTo: mandarlo anche a qualcun altro. */
+enum class FollowAction { Move, Undo, AlsoTo }
 
 /** Agenda: «cosa ho domani?»; When: «quando ho il dentista?»; Calls: «chi mi ha chiamato?»; Notes: «cosa avevo scritto sul cancello?». */
 enum class AskKind { Agenda, When, Calls, Notes }
@@ -139,6 +153,70 @@ object Grammar {
         val hasTime = q.pieces.any { it.kind == QuickAdd.Kind.Time }
         if (q.title.isNotBlank() || (!hasDay && !hasTime)) return null
         return (q.due ?: now.toLocalDate()) to 1
+    }
+
+    // --- Seguiti (tavola AlfSeguito) e scelte (tavola AlfQuale) ---
+    private val FOLLOW_MOVE = Regex(
+        "$O^(?:(?:no|anzi|meglio|facciamo|scusa)[,]?\\s+)*(?:(?:sposta|rimanda|anticipa|posticipa|metti|porta|fa|fai|cambia)(?:lo|la|li|le|melo|mela)?(?:\\s+(?:l'ora|il\\s+giorno))?\\s+)?(.+)$"
+    )
+    private val FOLLOW_UNDO = Regex(
+        "$O^(?:(?:no|anzi)[,]?\\s+)?(?:cancella(?:lo|la|li|le)?|elimina(?:lo|la|li|le)?|togli(?:lo|la|li|le)?|annulla(?:lo|la)?(?:\\s+tutto)?" +
+            "|lascia\\s+(?:perdere|stare)|non\\s+(?:farlo|serve\\s+più|importa\\s+più)|ho\\s+sbagliato|torna\\s+indietro)$"
+    )
+    private val FOLLOW_ALSO = Regex(
+        "$O^(?:(?:e\\s+)?(?:manda|mandalo|mandala|mandaglielo|invia|invialo|inviala|avvisa|dillo|dillo|scrivilo|giralo|girala|inoltralo|inoltrala|fallo\\s+sapere)(?:\\s+anche)?" +
+            "|e\\s+anche|anche)\\s+(?:a|ad|al|alla)\\s+(.+)$"
+    )
+
+    /** Un seguito dell'ultima cosa fatta: si chiede solo quando Alfred ne ricorda una (due minuti). */
+    fun follow(sentence: String, now: LocalDateTime): Command.Follow? {
+        val text = POLITE_TAIL.replace(POLITE_HEAD.replace(normalize(sentence), ""), "").trim().trimStart(',', ' ').trim()
+        if (text.isEmpty()) return null
+        FOLLOW_UNDO.matchEntire(text)?.let { return Command.Follow(FollowAction.Undo) }
+        FOLLOW_ALSO.matchEntire(text)?.let { m ->
+            val who = m.groupValues[1].trim().replace(Regex("$O\\s+(?:su|con|via|per)\\s+\\S+$"), "")
+            if (who.isNotBlank()) return Command.Follow(FollowAction.AlsoTo, who = who)
+        }
+        FOLLOW_MOVE.matchEntire(text)?.let { m ->
+            val rest = m.groupValues[1].trim().replace(Regex("$O^(?:a|ad|per|di|in)\\s+(?=\\p{L})"), "")
+            val q = QuickAdd.parse(rest, now)
+            val day = q.pieces.any { it.kind == QuickAdd.Kind.Date }
+            val time = q.time ?: if (Regex("$O^(?:alle|per\\s+le|verso\\s+le)\\s+").containsMatchIn(rest)) bareHour(rest) else null
+            if (q.title.isBlank() && (day || time != null)) return Command.Follow(FollowAction.Move, if (day) q.due else null, time)
+            // «alle 10 e mezza» o «alle 11» che QuickAdd lascia nel titolo: basta l'ora.
+            if (time != null && Regex("$O^(?:alle|per\\s+le|verso\\s+le)\\s+[\\d.:]+(?:\\s+e\\s+mezza)?$").matches(rest)) {
+                return Command.Follow(FollowAction.Move, null, if (rest.lowercase().endsWith("mezza")) time.plusMinutes(30) else time)
+            }
+        }
+        return null
+    }
+
+    private val ORDINALS = listOf(
+        Regex("$O\\b(?:il\\s+)?(?:primo|prima|uno|1)\\b"),
+        Regex("$O\\b(?:il\\s+)?(?:secondo|seconda|due|2)\\b"),
+        Regex("$O\\b(?:il\\s+)?(?:terzo|terza|tre|3)\\b"),
+        Regex("$O\\b(?:il\\s+)?(?:quarto|quarta|quattro|4)\\b"),
+    )
+    private val PICK_STOP = setOf("quello", "quella", "del", "della", "dello", "dei", "il", "lo", "la", "di", "da", "con", "che", "sta", "chiama", "scrivi", "uno")
+
+    /**
+     * La risposta a «Quale Marco?» (tavola AlfQuale): «il primo», «Ferri», «quello del lavoro». [options] sono i nomi
+     * con il loro dettaglio; null se la risposta non sceglie nessuno, o ne sceglie più d'uno.
+     */
+    fun pick(sentence: String, options: List<Pair<String, String>>): Int? {
+        val t = POLITE_HEAD.replace(normalize(sentence).lowercase(), "").trim()
+        if (Regex("$O\\b(?:l'ultimo|l'ultima|ultimo|ultima)\\b").containsMatchIn(t)) return options.lastIndex.takeIf { it >= 0 }
+        val words = fold(t).split(' ').filter { it.length > 2 && it !in PICK_STOP }
+        val scores = options.map { (name, detail) ->
+            val n = fold(name).split(' ')
+            val d = fold(detail).split(' ')
+            words.count { w -> n.any { it.startsWith(w) } } * 2 + words.count { w -> d.any { it.startsWith(w) } }
+        }
+        val best = scores.maxOrNull() ?: 0
+        // Un nome comune a tutti («Marco») non sceglie: contano le parole che li distinguono.
+        if (best > 0 && scores.count { it == best } == 1) return scores.indexOf(best)
+        ORDINALS.forEachIndexed { i, r -> if (r.containsMatchIn(t) && i < options.size) return i }
+        return null
     }
 
     private val WITH = Regex("(?u)(?<![\\p{L}])[Cc]on\\s+([\\p{L}'’]+(?:\\s+\\p{Lu}[\\p{L}'’]+)?)")
@@ -321,4 +399,35 @@ object Grammar {
     }
 
     internal fun capital(s: String): String = s.trim().replaceFirstChar { it.uppercase() }
+
+    /** Minuscole, senza accenti né punteggiatura (come Butler.fold). */
+    internal fun fold(s: String): String =
+        java.text.Normalizer.normalize(s.lowercase(java.util.Locale.ITALIAN), java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
+            .replace(Regex("[^\\p{L}\\p{N} ]"), " ").replace(Regex("\\s+"), " ").trim()
+}
+
+/**
+ * Le correzioni a mano (tavola AlfSeguito): se nella scheda si corregge una parola che Alfred aveva capito male
+ * («dentisti» → «dentista»), la volta dopo si corregge da sé. Solo parole singole, mai frasi intere.
+ */
+object Corrections {
+    /** Le parole cambiate tra il testo capito e quello corretto, quando il resto è uguale (al massimo due). */
+    fun diff(before: String, after: String): List<Pair<String, String>> {
+        val a = before.trim().split(Regex("\\s+"))
+        val b = after.trim().split(Regex("\\s+"))
+        if (a.size != b.size || a.size > 12) return emptyList()
+        val changed = a.indices.filter { Grammar.fold(a[it]) != Grammar.fold(b[it]) }
+            .map { a[it].trim(',', '.', '!', '?', ';', ':') to b[it].trim(',', '.', '!', '?', ';', ':') }
+            .filter { (x, y) -> x.length > 1 && y.length > 1 && x.none { it.isDigit() } && y.none { it.isDigit() } }
+        return if (changed.size in 1..2) changed else emptyList()
+    }
+
+    /** Applica le correzioni imparate a una frase: parola per parola, con la maiuscola com'era. */
+    fun apply(sentence: String, fixes: Map<String, String>): String {
+        if (fixes.isEmpty()) return sentence
+        return Regex("\\p{L}+").replace(sentence) { m ->
+            val fix = fixes[Grammar.fold(m.value)] ?: return@replace m.value
+            if (m.value.first().isUpperCase()) fix.replaceFirstChar { it.uppercase() } else fix
+        }
+    }
 }

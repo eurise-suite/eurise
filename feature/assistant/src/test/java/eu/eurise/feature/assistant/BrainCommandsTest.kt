@@ -21,6 +21,14 @@ class BrainCommandsTest {
         assertEquals(listOf(Command.Free("Quanto è alto il Monte Bianco?")), BrainCommands.parse("domanda||Quanto è alto il Monte Bianco?|||", now))
     }
 
+    @Test fun domandeSuiDati() {
+        assertEquals(listOf(Command.Ask(AskKind.Agenda, LocalDate.of(2026, 11, 13))),
+            BrainCommands.parse("dati|||2026-11-13||", now, "ho qualcosa venerdì pomeriggio"))
+        assertEquals(listOf(Command.Ask(AskKind.When, about = "Meccanico")),
+            BrainCommands.parse("dati||Meccanico|||", now, "quando devo portare la macchina dal meccanico"))
+        assertEquals(AskKind.Calls, (BrainCommands.parse("dati||||", now, "mi hanno fatto delle telefonate")[0] as Command.Ask).kind)
+    }
+
     @Test fun promemoriaConOraSenzaData() {
         assertEquals(listOf(Command.Task("Chiamare il commercialista", LocalDate.of(2026, 11, 11), LocalTime.of(14, 0))),
             BrainCommands.parse("promemoria||chiamare il commercialista||14:00|", now))

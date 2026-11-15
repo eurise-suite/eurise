@@ -14,9 +14,10 @@ import java.time.LocalDate
  *   messaggio partono davvero.
  * - [Kind.Channel]: l'app con cui si scrive a una persona, quando è sempre la stessa (almeno 3 volte su 4).
  * - [Kind.Said]: una cosa detta ad Alfred («ricorda che dopo pranzo sono le 13»).
+ * - [Kind.Word]: una parola capita male e corretta a mano nella scheda («dentisti» → «dentista»), tavola AlfSeguito.
  */
 class AlfredMemory(context: Context) {
-    enum class Kind { Person, Channel, Said }
+    enum class Kind { Person, Channel, Said, Word }
 
     data class Fact(val id: String, val kind: Kind, val key: String, val value: String, val since: LocalDate, val count: Int = 1)
 
@@ -84,6 +85,17 @@ class AlfredMemory(context: Context) {
         save(list)
     }
 
+    /** Una parola corretta a mano nella scheda: la prossima volta Alfred la corregge da sé. */
+    fun learnWord(heard: String, right: String) {
+        if (!enabled || fold(heard).isBlank() || fold(right).isBlank() || fold(heard) == fold(right)) return
+        save(all().filterNot { it.kind == Kind.Word && it.key == fold(heard) } +
+            Fact(newId(), Kind.Word, fold(heard), right.trim(), LocalDate.now()))
+    }
+
+    /** Le parole corrette, da parola capita (già piegata con [fold]) a parola giusta. */
+    fun words(): Map<String, String> =
+        if (!enabled) emptyMap() else all().filter { it.kind == Kind.Word }.associate { it.key to it.value }
+
     /** «Ricorda che…»: la frase così com'è detta. */
     fun remember(text: String): Fact? {
         if (!enabled || text.isBlank()) return null
@@ -103,6 +115,7 @@ class AlfredMemory(context: Context) {
                 Kind.Person -> "- «${f.key}» è ${f.value}"
                 Kind.Channel -> if (f.count >= 3) "- a ${f.key} di solito scrive su ${f.value.lowercase()}" else ""
                 Kind.Said -> "- ${f.value}"
+                Kind.Word -> ""
             }
         }.lines().filter { it.isNotBlank() }.joinToString("\n")
     }
