@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       # Gentili con Geofabrik: pochi download alla volta.
-      max-parallel: 4
+      max-parallel: 2
       matrix:
         include:
           # id = paese di primo livello nelle mappe di CoMaps (data/countries.txt); src = estratto di Geofabrik.
@@ -63,7 +63,7 @@ jobs:
       - name: Estratto di OpenStreetMap
         run: |
           set -e
-          curl -fsSL --retry 3 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf"
+          curl -fsSL --retry 6 --retry-all-errors --retry-delay 40 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf"
           ls -lh in.osm.pbf
           # Solo pietre miliari e strade con sigla; i nodi delle strade restano (servono le posizioni).
           osmium tags-filter -o filtro.osm.pbf in.osm.pbf \

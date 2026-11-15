@@ -391,7 +391,7 @@
     <string name="eurise_oh_less">Fewer days</string>
     <string name="eurise_lv_km">Km on the roads</string>
     <string name="eurise_lv_km_sub">OpenStreetMap milestones · file per country, no location</string>
-    <string name="eurise_lv_km_explain">On motorways, expressways, main and provincial roads Maps shows the km («km 12.4»), useful for roadside assistance. It comes from the OpenStreetMap milestones: a small file per country (a few MB), the same for everyone, downloaded from the Eurise project releases on GitHub (Microsoft, USA) for the countries of your maps and refreshed every two months. Only the request for the file goes out, not your location; the km is worked out on the phone. Where milestones are missing you get the coordinates. Turn it off any time.</string>
+    <string name="eurise_lv_km_explain">On motorways, expressways, main and provincial roads Maps shows the km («km 12.4»), useful for roadside assistance. It comes from the OpenStreetMap milestones: a small file per country (usually under 1 MB), the same for everyone, downloaded from the Eurise project releases on GitHub (Microsoft, USA) for the countries of your maps and refreshed every two months. Only the request for the file goes out, not your location; the km is worked out on the phone. Where milestones are missing you get the coordinates. Turn it off any time.</string>
     <string name="eurise_lv_km_done">Milestones on the phone for %1$d countries</string>
     <string name="eurise_lv_km_none">No milestones yet for the countries of your maps</string>
 </resources>
