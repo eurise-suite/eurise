@@ -1762,6 +1762,11 @@
 		img.width = size;
 		img.height = size;
 		img.setAttribute('aria-hidden', 'true');
+		if (typeof command === 'string') {
+			// Le icone nostre si mettono direttamente: gli alias di Collabora cambiano il nome di alcuni comandi.
+			var mine = euriseIcon(command.replace(/^\.uno:/, '').split('?')[0], darkTheme());
+			if (mine) { img.src = mine; return img; }
+		}
 		if (typeof command === 'string' && app.LOUtil) {
 			var name = app.LOUtil.getIconNameOfCommand(command);
 			if (name) {
@@ -2551,7 +2556,7 @@
 		[t('Numero di pagine', 'Page count'), '.uno:InsertPageCountField'], [t('Titolo', 'Title'), '.uno:InsertTitleField'], [t('Altri campi…', 'More fields…'), '.uno:InsertField']];
 
 	var D_APPUNTI = g('Appunti', 'Clipboard', [u('Incolla', 'Paste', '.uno:Paste', 'big'), ul('Taglia', 'Cut', '.uno:Cut'), ul('Copia', 'Copy', '.uno:Copy'),
-		ul('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush'), ul('Incolla speciale', 'Paste special', '.uno:PasteSpecial', '.uno:Paste')]);
+		ul('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush')]);
 	function deskFont(docType) {
 		var back = docType === 'spreadsheet' ? colorItem('Riempimento', 'Fill', 'back', '.uno:BackgroundColor') : colorItem('Evidenzia', 'Highlight', 'back', '.uno:CharBackColor');
 		var group = g('Carattere', 'Font', [u('Grassetto', 'Bold', '.uno:Bold'), u('Corsivo', 'Italic', '.uno:Italic'), u('Sottolineato', 'Underline', '.uno:Underline'),
@@ -2712,7 +2717,7 @@
 						u('Giustificato', 'Justified', '.uno:JustifyPara'), um(u('Interlinea', 'Line spacing', null, '.uno:LineSpacing'), SPACING_MENU)]]), '.uno:ParagraphDialog'),
 				g('Disegno', 'Drawing', [D_FORME, u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'),
 					ul('In primo piano', 'Bring to front', '.uno:BringToFront'), ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'), ul('Raggruppa', 'Group', '.uno:FormatGroup')]),
-				D_MODIFICA, SUITE_HOME] },
+				SUITE_HOME] },
 			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
 				g('Diapositive', 'Slides', [u('Nuova diapositiva', 'New slide', '.uno:InsertPage', 'big', '.uno:InsertSlide'), ul('Duplica', 'Duplicate', '.uno:DuplicatePage', '.uno:DuplicateSlide')]),
 				g('Tabelle', 'Tables', [D_TABELLA]),

@@ -1138,8 +1138,11 @@ body.eurise-desk #eurise-ribbon .eurise-rb {
 }
 body.eurise-desk #eurise-ribbon .eurise-rb:hover { background: #ECECE7 !important; }
 body.eurise-desk #eurise-ribbon .eurise-rb.big {
+	width: auto;
+	flex: none;
+	padding: 0 6px;
 	min-width: 54px;
-	max-width: 84px;
+	max-width: 96px;
 	height: 74px;
 	white-space: normal;
 	line-height: 1.15;
@@ -1499,13 +1502,15 @@ body.eurise-desk #eurise-ribbon .eurise-rb.lab .eurise-caret { margin-left: 1px;
 	scrollbar-width: thin;
 }
 .eurise-pop.fonts { width: 272px; display: flex; flex-direction: column; overflow: hidden; max-height: 480px; }
-.eurise-pop.fonts .eurise-plist { overflow-y: auto; scrollbar-width: thin; min-height: 0; }
+.eurise-pop.fonts .eurise-plist { overflow: hidden auto; scrollbar-width: thin; min-height: 0; }
 .eurise-pop.sizes { width: 76px; min-width: 0; }
 .eurise-pop.colors { width: 220px; }
 .eurise-pop.file { width: 300px; border-radius: 14px; }
 .eurise-pop input {
-	width: 100%;
-	height: 30px;
+	flex: none;
+	width: 100% !important;
+	height: 30px !important;
+	min-height: 30px;
 	margin: 0 0 4px;
 	padding: 0 10px;
 	box-sizing: border-box;
@@ -1527,7 +1532,8 @@ body.eurise-desk #eurise-ribbon .eurise-rb.lab .eurise-caret { margin-left: 1px;
 	color: #56564F;
 }
 .eurise-pi {
-	width: 100%;
+	width: 100% !important;
+	height: auto !important;
 	min-height: 30px;
 	margin: 0 !important;
 	padding: 0 10px !important;
@@ -1550,7 +1556,7 @@ body.eurise-desk #eurise-ribbon .eurise-rb.lab .eurise-caret { margin-left: 1px;
 .eurise-pi.on { background: #DDE3F0 !important; font-weight: 800; }
 .eurise-pn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .eurise-pop.fonts .eurise-pn { font-size: 14px; font-weight: 400; }
-.eurise-pi kbd { font: 500 11.5px 'Plus Jakarta Sans', system-ui, sans-serif; color: #56564F; background: none; border: 0; padding: 0; }
+.eurise-pi kbd { margin-left: auto; font: 500 11.5px 'Plus Jakarta Sans', system-ui, sans-serif; color: #56564F; background: none; border: 0; padding: 0; }
 .eurise-pck { width: 14px; flex: none; display: flex; }
 .eurise-pdot { width: 12px; height: 12px; flex: none; border-radius: 4px; }
 .eurise-pgrid { display: grid; grid-template-columns: repeat(6, 26px); gap: 6px; padding: 4px 6px 8px; }
@@ -1769,8 +1775,11 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 	color: #1E1D1B;
 }
 #eurise-start button {
+	height: auto;
+	min-height: 0;
 	margin: 0;
 	border: 0;
+	line-height: normal;
 	font: inherit;
 	color: inherit;
 	cursor: pointer;
@@ -1809,6 +1818,7 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 #eurise-start .es-new { display: flex; gap: 16px; flex-wrap: wrap; }
 #eurise-start .es-card {
 	width: 224px;
+	height: 232px !important;
 	padding: 14px;
 	box-sizing: border-box;
 	border-radius: 16px;
@@ -1821,6 +1831,7 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 }
 #eurise-start .es-card:hover { box-shadow: 0 0 0 2px #3E5C8A, 0 4px 14px rgba(31, 42, 68, 0.10); }
 #eurise-start .es-pic {
+	flex: none;
 	height: 132px;
 	border-radius: 10px;
 	background: #F4F4F1;
@@ -1851,6 +1862,7 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 }
 #eurise-start .es-thumb {
 	position: relative;
+	flex: none;
 	height: 100px;
 	padding: 12px;
 	box-sizing: border-box;
@@ -1876,7 +1888,7 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 #eurise-start .es-tpl small { margin-top: -5px; font-size: 11px; color: #56564F; }
 #eurise-start .es-recent { display: flex; flex-direction: column; gap: 2px; }
 #eurise-start .es-row {
-	height: 46px;
+	height: 46px !important;
 	padding: 0 12px;
 	border-radius: 10px;
 	background: transparent;
@@ -1895,7 +1907,8 @@ body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; widt
 #eurise-start .es-flabel { margin-top: 14px; }
 #eurise-start .es-open { display: flex; flex-direction: column; gap: 10px; }
 #eurise-start .es-openbtn {
-	height: 44px;
+	width: 100%;
+	height: 44px !important;
 	padding: 0 12px;
 	border-radius: 12px;
 	background: #FFFFFF;
