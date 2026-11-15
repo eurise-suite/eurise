@@ -88,7 +88,8 @@ object Voices {
         val chosen = runCatching { flag(context, "scelta").readText().trim() }.getOrNull()
             ?: context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CHOSEN, null)
         val all = all(context)
-        return all.firstOrNull { it.id == chosen } ?: all.firstOrNull()
+        // Senza una scelta: Nicola se c'è (la voce di Alfred dal 15 novembre), altrimenti la prima sul telefono.
+        return all.firstOrNull { it.id == chosen } ?: all.firstOrNull { it.id == Voice.Nicola.id } ?: all.firstOrNull()
     }
 
     fun choose(context: Context, id: String) {

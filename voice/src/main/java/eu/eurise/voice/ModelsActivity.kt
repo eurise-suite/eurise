@@ -174,6 +174,11 @@ private fun ModelsPage(onClose: () -> Unit) {
             Voices.choose(context, voice)
             tick++
         }
+        // Nicola (Kokoro), scelto dal proprietario come voce di Alfred (15 novembre): primo, da scaricare se manca.
+        Choice(
+            stringResource(R.string.voice_opt_nicola), stringResource(R.string.voice_opt_nicola_d, Voice.Nicola.megabytes),
+            selected = current == Voice.Nicola.id, enabled = true, percent = progress[Item.Speak(Voice.Nicola)],
+        ) { pick(Voice.Nicola, null) }
         Choice(
             stringResource(R.string.voice_opt_plain), stringResource(R.string.voice_opt_plain_d, Voice.Riccardo.megabytes),
             selected = current == Voice.Riccardo.id && !tuning.retouched, enabled = true, percent = progress[Item.Speak(Voice.Riccardo)],
@@ -198,7 +203,7 @@ private fun ModelsPage(onClose: () -> Unit) {
         }
 
         Section(stringResource(R.string.voice_models_other))
-        listOf(Voice.Paola, Voice.Nicola, Voice.Sara).forEach { v ->
+        listOf(Voice.Paola, Voice.Sara).forEach { v ->
             val item = Item.Speak(v)
             val inUse = current == v.id
             ModelRow(stringResource(v.label) + if (inUse) " · " + stringResource(R.string.voice_tts_in_use) else "",

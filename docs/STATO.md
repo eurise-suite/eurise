@@ -2632,3 +2632,19 @@ da fare, documenti), partendo da Linux.
   che» (`Command.Remember`, scheda «Da ricordare»). Usata in `findPeople` (la persona già scelta per prima), in `message`
   (canale abituale se non detto) e come `hints` per il cervello. In «Chi risponde»: interruttore e voci con ×.
   Manca: la voce nel centro privacy (oggi non c'è un elenco dei dati locali dove agganciarla).
+
+## 15 novembre, pomeriggio: Nicola voce di Alfred; tavole dei cinque passi di Alfred (da approvare)
+- **Nicola** (Kokoro) è la voce di Alfred: prima scelta in «Come parla Alfred» di Eurise Voce (si scarica se manca, 116 MB) e
+  voce usata quando non c'è una scelta esplicita (`Voices.current`). Sara resta tra le altre voci.
+- **Tavole nuove, pagina AI, fila «Alfred, cinque passi» (da approvare)**: AlfDati (1, «cosa ho domani?» da Calendario,
+  Attività, Note, Telefono, Messaggi, solo sul telefono, con proposte), AlfSeguito (2, «spostalo alle 10», «annulla»,
+  contesto di due minuti, impara dalle correzioni a mano), AlfQuale (2, «Quale Marco?» con risposta a voce), AlfAzioni
+  (3, cosa sa fare: sposta/cancella impegni, spunta attività, leggi e rispondi ai messaggi, ferma timer e sveglie, torcia,
+  non disturbare, volume, modalità, musica, in guida «quanto manca»), AlfAvvio (4 e 5: tasto dell'assistente con Eurise come
+  app assistente di Android (ROLE_ASSISTANT), riquadro nella tendina, dalla schermata di blocco; «Di' Alfred» spento di base
+  con avviso sulla batteria; registro delle ultime 100 richieste spento di base, «Mandalo a chi sviluppa…», «Cancella»).
+- **Dopo l'approvazione, ordine proposto**: 1 domande sui dati (regole «cosa ho / quando ho / chi mi ha…» + tipo `domanda_dati`
+  nel cervello, ricerca nella suite con `EuriseData`, risposta a voce); 2 seguiti (ultimo comando in memoria per 2 minuti,
+  `Command.Follow`), dubbi con risposta a voce, correzioni nella memoria; 3 azioni nuove (una per volta, con test); 4 ruolo
+  assistente, riquadro, blocco; «Alfred» con il riconoscimento di parole chiave di sherpa-onnx (da misurare la batteria);
+  5 registro locale (impostazioni `eurise_alfred_log`, fuori dal backup).

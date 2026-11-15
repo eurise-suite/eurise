@@ -56,6 +56,8 @@
     <string name="voice_opt_reset">Torna al ritocco proposto</string>
     <string name="voice_opt_delete">Elimina Riccardo (%1$d MB)</string>
     <string name="voice_tts_paola">Voce femminile</string>
+    <string name="voice_opt_nicola">Nicola · la voce di Alfred</string>
+    <string name="voice_opt_nicola_d">Più scorrevole e naturale · %1$d MB da scaricare una volta, insieme a Sara</string>
     <string name="voice_tts_nicola">Nicola (Kokoro)</string>
     <string name="voice_tts_sara">Sara (Kokoro)</string>
     <string name="voice_tts_kokoro_d">%1$d MB, insieme a Sara o a Nicola · più scorrevole, più lenta a partire</string>
