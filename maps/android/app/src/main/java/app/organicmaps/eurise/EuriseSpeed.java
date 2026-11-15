@@ -101,7 +101,8 @@ public final class EuriseSpeed
   {
     final Context c = limitSign.getContext();
     final boolean wanted = PreferenceManager.getDefaultSharedPreferences(c).getBoolean(PREF_LIMIT_NOTICE, true);
-    if (limitSign instanceof app.organicmaps.widget.SpeedLimitView sign)
+    if (limitSign instanceof app.organicmaps.widget.SpeedLimitView sign
+        && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
     {
       final int guess = limit > 0 ? 0 : app.organicmaps.eurise.car.EuriseCarInfo.inferredLimitKmh();
       if (guess > 0)

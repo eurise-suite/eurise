@@ -103,12 +103,9 @@ object EuriseTransit {
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 
-    private val ISO = ThreadLocal.withInitial {
-        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT).apply { timeZone = TimeZone.getTimeZone("UTC") }
-    }
-
     private fun time(s: String?): Long = s?.takeIf { it.length >= 19 }?.let {
-        runCatching { ISO.get()!!.parse(it.substring(0, 19))!!.time }.getOrNull()
+        val f = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT).apply { timeZone = TimeZone.getTimeZone("UTC") }
+        runCatching { f.parse(it.substring(0, 19))!!.time }.getOrNull()
     } ?: 0L
 
     private fun color(s: String?): Int? = s?.trim()?.removePrefix("#")?.takeIf { it.length == 6 }?.let {

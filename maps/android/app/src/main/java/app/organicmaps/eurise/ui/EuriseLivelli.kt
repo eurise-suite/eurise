@@ -107,7 +107,7 @@ private fun Sheet(night: Boolean) {
                 horizon = it
                 EuriseLivelli.setHorizon(context, it)
             }
-            Toggle(c, stringResource(R.string.eurise_lv_speed), stringResource(R.string.eurise_lv_speed_sub), limits, divider = true) {, stringResource(R.string.eurise_lv_speed_sub), limits) {
+            Toggle(c, stringResource(R.string.eurise_lv_speed), stringResource(R.string.eurise_lv_speed_sub), limits, divider = true) {
                 limits = it
                 EuriseLivelli.setSpeedLimits(context, it)
             }

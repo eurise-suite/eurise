@@ -32,7 +32,34 @@ public final class EuriseCarDestinations
   private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
 
   /** Un impegno: titolo, luogo, inizio. */
-  private record Item(String title, String place, long start) {}
+  private static final class Item
+  {
+    final String title, place;
+    final long start;
+
+    Item(String title, String place, long start)
+    {
+      this.title = title;
+      this.place = place;
+      this.start = start;
+    }
+
+    String title() { return title; }
+    String place() { return place; }
+    long start() { return start; }
+
+    @Override
+    public boolean equals(Object o)
+    {
+      return o instanceof Item i && i.title.equals(title) && i.place.equals(place) && i.start == start;
+    }
+
+    @Override
+    public int hashCode()
+    {
+      return title.hashCode() * 31 + place.hashCode() + Long.hashCode(start);
+    }
+  }
 
   @NonNull
   private static volatile List<Item> sItems = Collections.emptyList();
