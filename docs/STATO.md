@@ -2144,6 +2144,12 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   (flatpak-builder a tappe di 350 minuti, ccache a pezzi nella pre-release `flatpak-sorgenti-cache`, pacchetto finito in
   `flatpak-sorgenti-office`). Patch `01-schede-sempre`: la striscia si vede anche con un documento solo. Primo giro
   43657518871 partito alle 00:13 UTC; il secondo (con la patch) è in coda.
+- **15 novembre, mattina – guasto e correzione**: i giri 43657518871 e 43661425886 hanno compilato tutto il motore (ccache
+  salvata, ≈3,7 GB in due pezzi) e si sono fermati nella parte web del guscio, a `dist/global.js`: esbuild-wasm 0.28.2
+  (il guscio chiede ^0.28.1) sotto Node 20 scrive il file e poi si schianta in uscita («Fatal JavaScript invalid size
+  error», crbug.com/1201626). Riprodotto qui: 0.28.1 con Node 20 e 0.28.2 con Node 22 finiscono puliti. `ricetta.py`
+  ora usa l'estensione node22 dell'SDK al posto di node20. `office-guscio.yml` mette nella pre-release anche
+  browser/Makefile.am, package.json e browser/js.
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;

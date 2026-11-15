@@ -26,6 +26,13 @@ def main() -> None:
     m.pop('app-id', None)
     # Il dettaglio dei simboli di debug della BaseApp non serve e pesa: via.
     m.pop('base-extensions', None)
+    # Node 22 al posto di 20: esbuild-wasm 0.28.2 (che il guscio prende con ^0.28.1) sotto Node 20 scrive il file e poi
+    # si schianta in uscita («Fatal JavaScript invalid size error», crbug.com/1201626), e la minificazione di
+    # dist/global.js fa fallire il make. Con Node 22 lo stesso comando finisce pulito (provato il 15 novembre).
+    m['sdk-extensions'] = [e.replace('node20', 'node22') for e in m.get('sdk-extensions', [])]
+    bo = m.setdefault('build-options', {})
+    if 'append-path' in bo:
+        bo['append-path'] = bo['append-path'].replace('/sdk/node20/', '/sdk/node22/')
 
     office = next(x for x in m['modules'] if isinstance(x, dict) and x.get('name') == 'collabora-office')
     cmds = []
