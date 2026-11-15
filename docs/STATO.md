@@ -2150,6 +2150,13 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   error», crbug.com/1201626). Riprodotto qui: 0.28.1 con Node 20 e 0.28.2 con Node 22 finiscono puliti. `ricetta.py`
   ora usa l'estensione node22 dell'SDK al posto di node20. `office-guscio.yml` mette nella pre-release anche
   browser/Makefile.am, package.json e browser/js.
+- **15 novembre, 07:28 UTC – strada 2 compilata**: giro 43686734687 riuscito, pacchetto `eurise-office-sorgenti.flatpak`
+  (296 MB) nella pre-release `flatpak-sorgenti-office`. Prova (`office-computer.yml` a mano con `pacchetto=sorgenti`,
+  giro 43690650632, schermate in `office-sorgenti-schermate`): documento, foglio e presentazione si aprono con
+  l'interfaccia Eurise e la striscia delle schede c'è anche con un documento solo (patch 01). Difetto: il secondo
+  documento si apriva in una finestra nuova perché `ricetta.py` cambiava il nome D-Bus solo in DBusService.cpp e non
+  l'interfaccia in DBusService.hpp («No such interface 'eu.eurise.Office'»). Corretto (anche nome della voce e icona
+  della finestra in coda-qt.cpp); nuovo giro lanciato.
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;

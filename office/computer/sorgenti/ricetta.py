@@ -44,7 +44,11 @@ def main() -> None:
         cmds.append(c)
     # Nome D-Bus del guscio Qt (DBusService.cpp) e patch nostre del guscio, prima di compilarlo.
     patches = sorted((repo / 'office/computer/sorgenti/patch').glob('*.patch'))
-    pre = [f"sed -i 's/\"{SRC_ID}\"/\"{APP}\"/' qt/DBusService.cpp"]
+    # Nome e interfaccia D-Bus (il secondo avvio chiama l'interfaccia col nome del servizio: vanno cambiati insieme,
+    # altrimenti il documento si apre in una finestra nuova invece che in una scheda), nome della voce e icona.
+    pre = [f"sed -i 's/\"{SRC_ID}\"/\"{APP}\"/' qt/DBusService.cpp qt/DBusService.hpp",
+           f"sed -i 's/setDesktopFileName(\"{SRC_ID}\")/setDesktopFileName(\"{APP}\")/; "
+           f"s/QIcon::fromTheme(\"{SRC_ID}.startcenter\")/QIcon::fromTheme(\"{APP}\")/' qt/coda-qt.cpp"]
     for p in patches:
         office['sources'].append({'type': 'file', 'path': str(p), 'dest': 'eurise-patch'})
         pre.append(f'patch -p1 < eurise-patch/{p.name}')
