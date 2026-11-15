@@ -81,11 +81,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls prova-computer/*.png > /dev/null 2>&1 || exit 0
-          [ "${{ inputs.pacchetto }}" = sorgenti ] && exit 0
-          gh release view office-computer-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
-            gh release create office-computer-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
-              --title "Schermate della prova di Office sul computer" --notes "Sovrascritte a ogni prova."
-          gh release upload office-computer-schermate prova-computer/*.png prova-computer/*.log prova-computer/*.txt prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
+          cat prova-computer/riassunto.md
+          tag=office-computer-schermate
+          [ "${{ inputs.pacchetto }}" = sorgenti ] && tag=office-sorgenti-schermate
+          gh release view $tag -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create $tag -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Schermate della prova di Office sul computer ($tag)" --notes "Sovrascritte a ogni prova."
+          gh release upload $tag prova-computer/*.png prova-computer/*.log prova-computer/*.txt prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
 
       - uses: actions/upload-artifact@v4
         if: always()
