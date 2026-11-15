@@ -27,6 +27,14 @@ class AlfredPrefs(context: Context) {
      * preferito, con la domanda ripulita, invece di mostrare la scheda. Acceso di base; la prima volta resta comunque la
      * spiegazione del centro privacy, perché il servizio online è spento finché non lo si accende.
      */
+    /**
+     * Chi risponde alle domande libere (tavola AlfCervello): «phone» prima Eurise AI sul telefono e, se non c'è, il
+     * servizio online; «online» subito il servizio online; «phone_only» solo il telefono.
+     */
+    var answers: String
+        get() = prefs.getString("answers", "phone") ?: "phone"
+        set(value) = prefs.edit().putString("answers", value).apply()
+
     var freeOnline: Boolean
         get() = prefs.getBoolean("free_online", true)
         set(value) = prefs.edit().putBoolean("free_online", value).apply()

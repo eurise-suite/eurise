@@ -110,8 +110,13 @@ private sealed interface Phase {
     data object Settings : Phase
     /** «Chiedi a…»: pressione lunga sul globo (tavola AlfScegli). */
     data object Choose : Phase
-    /** La risposta dell'AI online tornata in Alfred, con i dati rimessi (tavola AlfRisposta). */
-    data class Answer(val text: String, val from: String) : Phase
+    /** La risposta dell'AI online tornata in Alfred, con i dati rimessi (tavola AlfRisposta); [local]: da Eurise AI sul
+     *  telefono, che scrive mentre pensa (tavola AlfTelefono), con [question] per passarla online. */
+    data class Answer(val text: String, val from: String, val local: Boolean = false, val question: String = "", val done: Boolean = true) : Phase
+    /** Più cose da fare in una frase (tavola AlfCapisce). */
+    data class Many(val cards: List<Card>) : Phase
+    /** Chi risponde e il cervello sul telefono (tavola AlfCervello). */
+    data object Brain : Phase
 }
 
 /**
@@ -125,6 +130,15 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     val scope = rememberCoroutineScope()
     val prefs = remember { AlfredPrefs(context) }
     val butler = remember { Butler(context.applicationContext) }
+    val brain = remember { AlfredBrain(context.applicationContext) }
+    var brainReady by remember { mutableStateOf(false) }
+    // Il cervello si collega all'apertura: il modello comincia a caricarsi mentre si parla.
+    LaunchedEffect(Unit) {
+        brainReady = brain.status()
+        // Un cervello scaricato mentre Alfred era chiuso si passa a Eurise AI alla prima apertura.
+        if (BrainDownload.handOverFinished(context, brain)) brainReady = brain.ready
+    }
+    DisposableEffect(Unit) { onDispose { brain.stop(); brain.close() } }
     var address by remember { mutableStateOf("") }
     var phase by remember { mutableStateOf<Phase>(Phase.Ready) }
     var heard by remember { mutableStateOf("") }
@@ -200,7 +214,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         answering = false
         ear.cancel()
         // Richiesta libera: sul telefono non c'è ancora chi risponde; va al servizio online preferito, ripulita.
-        if (card.kind == Kind.Free) { askOnline(favorite); return }
+        if (card.kind == Kind.Free) { freeQuestion(card.value("text").ifBlank { heard }, null); return }
         scope.launch {
             val out = butler.run(card)
             phase = Phase.Said(out.line)
@@ -230,6 +244,35 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         )
     }
 
+    /** Una domanda libera: Eurise AI sul telefono, poi (o subito, se scelto) il servizio online. */
+    fun freeQuestion(question: String, card: Card?) {
+        val answers = prefs.answers
+        when {
+            brainReady && answers != "online" -> {
+                val from = context.getString(R.string.alfred_from_phone)
+                var text = ""
+                phase = Phase.Answer("", from, local = true, question = question, done = false)
+                brain.ask(question, onPiece = { piece ->
+                    text += piece
+                    if ((phase as? Phase.Answer)?.local == true) phase = Phase.Answer(text.trimStart(), from, true, question, done = false)
+                }, onDone = { ok ->
+                    if ((phase as? Phase.Answer)?.local != true) return@ask
+                    if (!ok && text.isBlank()) {
+                        if (answers == "phone_only") phase = Phase.Said(context.getString(R.string.alfred_brain_failed))
+                        else { phase = Phase.Ready; askOnline(favorite) }
+                    } else {
+                        phase = Phase.Answer(text.trim(), from, true, question, done = true)
+                        say(text.trim())
+                    }
+                })
+            }
+            answers == "phone_only" -> phase = Phase.Said(context.getString(R.string.alfred_brain_missing))
+            answers == "online" || prefs.freeOnline -> { phase = Phase.Ready; askOnline(favorite) }
+            card != null -> phase = Phase.Confirm(card)
+            else -> { phase = Phase.Ready; askOnline(favorite) }
+        }
+    }
+
     understandSaid = { text, spoken ->
         voiceTurn = spoken
         if (text.isNotBlank()) {
@@ -237,15 +280,27 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
             typed = ""
             phase = Phase.Thinking
             scope.launch {
-                val card = butler.plan(Grammar.parse(heard, LocalDateTime.now()))
+                val now = LocalDateTime.now()
+                // Prima le regole esatte (subito); se nessuna prende la frase, la legge il cervello sul telefono (fino a
+                // tre azioni); senza cervello, la seconda lettura delle parole chiave.
+                val exact = Grammar.exact(heard, now)
+                val fromBrain = if (exact == null && brainReady) brain.command(heard, "", now.toLocalDate())?.let { BrainCommands.parse(it, now) }.orEmpty() else emptyList()
+                val actions = fromBrain.filter { it !is Command.Free }
+                if (actions.size >= 2) {
+                    val cards = actions.map { butler.plan(it) }
+                    phase = Phase.Many(cards)
+                    say(context.resources.getQuantityString(R.plurals.alfred_many_lead, cards.size, cards.size))
+                    return@launch
+                }
+                val command = exact ?: actions.firstOrNull() ?: fromBrain.firstOrNull() ?: Grammar.parse(heard, now)
+                val card = butler.plan(command)
                 // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
                 if (card.kind == Kind.Report) { execute(card); return@launch }
                 // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
                 // Nessun messaggio intermedio: la domanda va subito al servizio (la prima volta, la spiegazione del centro
                 // privacy chiede il permesso).
-                if (card.kind == Kind.Free && prefs.freeOnline) {
-                    phase = Phase.Ready
-                    askOnline(favorite)
+                if (card.kind == Kind.Free) {
+                    freeQuestion((command as? Command.Free)?.text?.ifBlank { heard } ?: heard, card)
                     return@launch
                 }
                 phase = Phase.Confirm(card)
@@ -459,18 +514,48 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     onBack = { phase = Phase.Ready },
                 )
                 is Phase.Answer -> {
-                    Header(stringResource(R.string.alfred_answer_line, p.from), Mood.Bow, onSettings = { phase = Phase.Settings })
+                    Header(
+                        if (p.local) stringResource(if (p.done) R.string.alfred_answer_phone else R.string.alfred_answer_phone_writing)
+                        else stringResource(R.string.alfred_answer_line, p.from),
+                        if (p.done) Mood.Bow else Mood.Thinking, onSettings = { phase = Phase.Settings })
                     AnswerView(
-                        p.text,
+                        p.text.ifBlank { "…" },
                         onNote = { replan(Command.Note(p.text)) },
                         onTask = { replan(Command.Task(p.text.lineSequence().first { it.isNotBlank() }.take(90), null, null)) },
                         onSend = { replan(Command.Message("", p.text, null)) },
                     )
+                    if (p.local) {
+                        OutlineChip(stringResource(R.string.alfred_ask_online, favorite.name)) {
+                            brain.stop()
+                            heard = p.question
+                            typed = ""
+                            phase = Phase.Ready
+                            askOnline(favorite)
+                        }
+                    }
                 }
+                is Phase.Many -> {
+                    Header(context.resources.getQuantityString(R.plurals.alfred_many_lead, p.cards.size, p.cards.size), Mood.Attentive, onSettings = { phase = Phase.Settings })
+                    if (heard.isNotEmpty()) Quote(heard)
+                    ManyView(p.cards, onOpen = { phase = Phase.Confirm(it) })
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        BigButton(stringResource(R.string.alfred_cancel), primary = false, enabled = true, modifier = Modifier.weight(1f)) { phase = Phase.Ready }
+                        BigButton(stringResource(R.string.alfred_many_all), primary = true, enabled = p.cards.any { it.ready }, modifier = Modifier.weight(1.4f)) {
+                            scope.launch {
+                                val lines = p.cards.filter { it.ready }.map { butler.run(it).line }
+                                val line = lines.joinToString(" ")
+                                phase = Phase.Said(line)
+                                say(line)
+                            }
+                        }
+                    }
+                }
+                Phase.Brain -> BrainView(prefs, brain, favorite.name, onChanged = { brainReady = brain.ready }, onBack = { phase = Phase.Settings })
                 Phase.Settings -> SettingsView(prefs, dictation.source, readAloud, natural = speaker.isInitialized() && speaker.value.natural, favoriteName = favorite.name,
                     onReadAloud = { readAloud = it; prefs.readAloud = it },
                     onAddress = { address = addressSuffix(prefs) },
                     onTry = { understand(context.getString(R.string.alfred_try_text)) },
+                    onBrain = { phase = Phase.Brain },
                     onBack = { phase = Phase.Ready })
             }
         }
@@ -652,6 +737,7 @@ private fun SettingsView(
     onReadAloud: (Boolean) -> Unit,
     onAddress: () -> Unit,
     onTry: () -> Unit,
+    onBrain: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -710,9 +796,15 @@ private fun SettingsView(
             }
         }
         Divider()
-        var freeOnline by remember { mutableStateOf(prefs.freeOnline) }
-        SettingRow(stringResource(R.string.alfred_s_free_online), stringResource(R.string.alfred_s_free_online_d, favoriteName)) {
-            Toggle(freeOnline, enabled = true) { freeOnline = it; prefs.freeOnline = it }
+        SettingRow(stringResource(R.string.alfred_s_brain), stringResource(when (prefs.answers) {
+            "online" -> R.string.alfred_answers_online_short
+            "phone_only" -> R.string.alfred_answers_phone_only_short
+            else -> R.string.alfred_answers_phone_short
+        }, favoriteName)) {
+            Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
+                .clickable(onClick = onBrain).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.alfred_s_brain_open), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
+            }
         }
         Divider()
         SettingRow(stringResource(R.string.alfred_s_home), stringResource(R.string.alfred_s_home_d)) {
@@ -753,3 +845,96 @@ private fun Toggle(on: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
     ))
 }
 
+
+/** Le azioni capite in una frase, una per riga: un tocco apre la scheda per correggerla (tavola AlfCapisce). */
+@Composable
+private fun ManyView(cards: List<Card>, onOpen: (Card) -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        cards.forEachIndexed { i, card ->
+            if (i > 0) Divider()
+            Column(Modifier.fillMaxWidth().clickable { onOpen(card) }.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(card.title), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Ink)
+                val detail = card.fields.map { it.value }.filter { it.isNotBlank() }.joinToString(" · ")
+                Text(if (card.ready) detail else stringResource(R.string.alfred_many_todo, detail), fontSize = 12.5.sp, color = InkSoft)
+            }
+        }
+    }
+}
+
+/** Chi risponde alle domande libere e quale cervello usa Alfred sul telefono (tavola AlfCervello). */
+@Composable
+private fun BrainView(prefs: AlfredPrefs, brain: AlfredBrain, favoriteName: String, onChanged: () -> Unit, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var answers by remember { mutableStateOf(prefs.answers) }
+    var models by remember { mutableStateOf(brain.models) }
+    var current by remember { mutableStateOf(brain.model) }
+    var progress by remember { mutableStateOf(emptyMap<BrainModel, Int>()) }
+    var note by remember { mutableStateOf<String?>(null) }
+    fun refresh() { models = brain.models; current = brain.model; onChanged() }
+    LaunchedEffect(Unit) {
+        brain.status(); refresh()
+        while (true) {
+            if (BrainDownload.handOverFinished(context, brain) { note = context.getString(R.string.alfred_brain_installing) }) {
+                note = null; refresh()
+            }
+            progress = BrainModel.entries.mapNotNull { m -> BrainDownload.progress(context, m)?.let { m to it.first } }.toMap()
+            delay(1_000)
+        }
+    }
+    Header(stringResource(R.string.alfred_brain_lead), Mood.Attentive, onSettings = onBack)
+    Text(stringResource(R.string.alfred_answers_title), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFCBD5E1))
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        listOf(
+            Triple("phone", R.string.alfred_answers_phone, R.string.alfred_answers_phone_d),
+            Triple("online", R.string.alfred_answers_online, R.string.alfred_answers_online_d),
+            Triple("phone_only", R.string.alfred_answers_phone_only, R.string.alfred_answers_phone_only_d),
+        ).forEachIndexed { i, (key, title, detail) ->
+            if (i > 0) Divider()
+            Row(Modifier.fillMaxWidth().clickable { answers = key; prefs.answers = key }.padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(22.dp).clip(CircleShape).border(if (answers == key) 7.dp else 2.dp, if (answers == key) Navy else InkSoft, CircleShape))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(title), fontSize = 15.sp, fontWeight = if (answers == key) FontWeight.Bold else FontWeight.SemiBold, color = Ink)
+                    Text(stringResource(detail, favoriteName), fontSize = 12.5.sp, color = InkSoft)
+                }
+            }
+        }
+    }
+    Text(stringResource(R.string.alfred_brain_title), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFCBD5E1))
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        if (!brain.installed) {
+            Text(stringResource(R.string.alfred_brain_no_ai), fontSize = 13.sp, color = InkSoft, modifier = Modifier.padding(vertical = 12.dp))
+        } else BrainModel.entries.forEachIndexed { i, m ->
+            if (i > 0) Divider()
+            val installed = m.id in models
+            val inUse = current == m.id
+            val pct = progress[m]
+            val detail = when {
+                inUse -> stringResource(R.string.alfred_brain_in_use, stringResource(m.detail))
+                pct != null -> stringResource(R.string.alfred_brain_downloading, pct)
+                else -> stringResource(m.detail)
+            }
+            SettingRow(stringResource(m.label), detail) {
+                val (label, action) = when {
+                    pct != null -> R.string.alfred_brain_cancel to { BrainDownload.cancel(context, m) }
+                    installed && !inUse -> R.string.alfred_brain_use to { scope.launch { brain.use(m.id); refresh() }; Unit }
+                    !installed -> R.string.alfred_brain_get to {
+                        scope.launch {
+                            val url = BrainDownload.url(m)
+                            if (url == null) note = context.getString(R.string.alfred_brain_url_failed)
+                            else BrainDownload.start(context, m, url, context.getString(R.string.alfred_brain_notification, context.getString(m.label)))
+                        }
+                        Unit
+                    }
+                    else -> null to {}
+                }
+                if (label != null) Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
+                    .clickable { action() }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                    Text(stringResource(label), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
+                }
+            }
+        }
+    }
+    Text(note ?: stringResource(R.string.alfred_brain_where), fontSize = 12.sp, color = Color(0xFFCBD5E1))
+}

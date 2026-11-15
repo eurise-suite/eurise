@@ -80,7 +80,10 @@ object Grammar {
         }
     }
 
-    fun parse(sentence: String, now: LocalDateTime): Command {
+    /** Solo le regole esatte: null se nessuna prende la frase (allora la legge Eurise AI, o la seconda lettura). */
+    fun exact(sentence: String, now: LocalDateTime): Command? = parse(sentence, now, guessing = false).takeUnless { it is Command.Free }
+
+    fun parse(sentence: String, now: LocalDateTime, guessing: Boolean = true): Command {
         val text = POLITE_TAIL.replace(POLITE_HEAD.replace(normalize(sentence), ""), "").trim().trimStart(',', ' ').trim()
         if (text.isEmpty()) return Command.Free(sentence)
 
@@ -126,7 +129,7 @@ object Grammar {
         if (q.time != null && q.pieces.any { it.kind == QuickAdd.Kind.Date } && text.split(' ').size <= 10) {
             return event("", text, now)
         }
-        return guess(text, now) ?: Command.Free(sentence.trim())
+        return (if (guessing) guess(text, now) else null) ?: Command.Free(sentence.trim())
     }
 
     /** Il testo come lo scrive Whisper: apostrofi tipografici, puntini, punteggiatura in fondo. */

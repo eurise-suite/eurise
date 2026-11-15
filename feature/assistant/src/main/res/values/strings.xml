@@ -178,9 +178,6 @@
     <string name="alfred_s_dictation_d_voice">Eurise Voce, sul telefono</string>
     <string name="alfred_s_dictation_d_system">Riconoscimento vocale del telefono</string>
     <string name="alfred_s_dictation_d_none">Nessuna: installi Eurise Voce per parlarmi</string>
-    <string name="alfred_s_free_online">Domande libere subito online</string>
-    <string name="alfred_s_free_online_d">Le apro direttamente su %1$s, senza i tuoi dati. Spento: prima ti mostro la scheda</string>
-    <string name="alfred_free_going">Lo chiedo a %1$s, senza i suoi dati.</string>
     <string name="alfred_s_ai">Richieste libere con Eurise AI</string>
     <string name="alfred_s_ai_d">In arrivo: oggi le passo a Eurise AI con un tocco</string>
     <string name="alfred_s_home">Tieni premuto home</string>
@@ -269,4 +266,44 @@
     <string name="alfred_answer_task">Promemoria</string>
     <string name="alfred_answer_send">Manda a…</string>
     <string name="alfred_answer_foot">Prima di salvare o mandare le mostro la scheda di conferma, come sempre. La risposta resta sul telefono; la conversazione intera è nel suo account.</string>
+    <!-- Il cervello di Alfred sul telefono (tavole AlfTelefono, AlfCapisce, AlfCervello) -->
+    <string name="alfred_from_phone">il telefono</string>
+    <string name="alfred_answer_phone">Rispondo io, dal telefono. Niente è uscito.</string>
+    <string name="alfred_answer_phone_writing">Ci penso, dal telefono…</string>
+    <string name="alfred_brain_failed">Non sono riuscito a rispondere dal telefono. Riprovi tra un momento.</string>
+    <string name="alfred_brain_missing">Per rispondere dal telefono mi serve il cervello: lo scarica dalle disposizioni, «Chi risponde».</string>
+    <plurals name="alfred_many_lead">
+        <item quantity="one">Ho capito una cosa. La faccio?</item>
+        <item quantity="other">Ho capito %d cose. Le faccio tutte?</item>
+    </plurals>
+    <string name="alfred_many_all">Fai tutto</string>
+    <string name="alfred_many_todo">Da completare · %1$s</string>
+    <string name="alfred_s_brain">Chi risponde</string>
+    <string name="alfred_s_brain_open">Cambia</string>
+    <string name="alfred_answers_phone_short">Prima il telefono, poi %1$s</string>
+    <string name="alfred_answers_online_short">Subito %1$s</string>
+    <string name="alfred_answers_phone_only_short">Solo il telefono</string>
+    <string name="alfred_brain_lead">Chi risponde e con quale cervello</string>
+    <string name="alfred_answers_title">Domande libere</string>
+    <string name="alfred_answers_phone">Prima il telefono, poi online</string>
+    <string name="alfred_answers_phone_d">Risponde Eurise AI; se non c\'è il cervello o non basta, un tocco su %1$s</string>
+    <string name="alfred_answers_online">Subito online</string>
+    <string name="alfred_answers_online_d">La domanda va a %1$s senza fermarsi, senza i tuoi dati</string>
+    <string name="alfred_answers_phone_only">Solo il telefono</string>
+    <string name="alfred_answers_phone_only_d">Niente esce mai, anche quando la risposta è povera</string>
+    <string name="alfred_brain_title">Cervello sul telefono</string>
+    <string name="alfred_brain_fast">Rapido</string>
+    <string name="alfred_brain_fast_d">Granite 4.0 1B di IBM · circa 1 GB · comandi e domande brevi</string>
+    <string name="alfred_brain_full">Completo</string>
+    <string name="alfred_brain_full_d">Ministral 3 3B di Mistral AI · circa 2,1 GB · più preciso, più lento</string>
+    <string name="alfred_brain_in_use">In uso · %1$s</string>
+    <string name="alfred_brain_downloading">Lo scarico… %1$d%%</string>
+    <string name="alfred_brain_get">Scarica</string>
+    <string name="alfred_brain_use">Usa</string>
+    <string name="alfred_brain_cancel">Annulla</string>
+    <string name="alfred_brain_installing">Lo passo a Eurise AI…</string>
+    <string name="alfred_brain_url_failed">Non riesco a raggiungere huggingface.co: riprovi con il Wi-Fi.</string>
+    <string name="alfred_brain_notification">Cervello di Alfred · %1$s</string>
+    <string name="alfred_brain_no_ai">Serve l\'app Eurise AI: è lei che pensa, senza Internet. Installi il suo APK e torni qui.</string>
+    <string name="alfred_brain_where">Si scarica una volta da huggingface.co (vede solo l\'indirizzo del telefono), solo con il Wi-Fi; poi resta sul telefono, in Eurise AI, che non ha Internet. Licenza Apache 2.0.</string>
 </resources>
