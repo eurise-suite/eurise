@@ -2974,11 +2974,9 @@
 		mini.el = bar;
 	}
 
-	/** Selezione di testo nel documento: la classe TextSelections della 26.04 è globale ma non sta su window. */
-	function textSelected() {
-		/* global TextSelections */
-		try { return typeof TextSelections !== 'undefined' && !!TextSelections.isActive(); } catch (e) { return false; }
-	}
+	/** Selezione di testo nel documento: la dice l'evento textselectionchange della 26.04. */
+	var selectionOn = false;
+	function textSelected() { return selectionOn; }
 
 	function watchSelection() {
 		document.addEventListener('mouseup', function (e) {
@@ -2997,7 +2995,11 @@
 		}, true);
 		document.addEventListener('keydown', function (e) { if (mini.el && e.key !== 'Shift') hideMini(); }, true);
 		document.addEventListener('wheel', hideMini, { passive: true, capture: true });
-		app.map.on('textselectionchange', function (e) { if (!e.active) hideMini(); });
+		app.map.on('textselectionchange', function (e) {
+			selectionOn = !!e.active;
+			if (!e.active) hideMini();
+			else if (Date.now() - mini.at < 1500 && !mini.el) showMini();
+		});
 	}
 
 	// --- Tasto destro: le azioni più probabili, poi «Tutte le voci» (proposta 3) ----------------------------------------
@@ -3074,7 +3076,10 @@
 			pop.place();
 		};
 		ours.eurise = true;
+		// Il controllo ha già agganciato la sua funzione all'evento: si toglie quella e si mette la nostra.
+		app.map.off('locontextmenu', original, ctrl);
 		ctrl._onContextMenu = ours;
+		app.map.on('locontextmenu', ours, ctrl);
 		trace.push('context menu');
 	}
 

@@ -2058,3 +2058,5 @@ body.eurise-desk #PropertyDeck.deck:not(:has(.ui-expander-container:not(.StylesP
 [data-theme='dark'] #eurise-mini { background: #222833; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px #343B48; }
 [data-theme='dark'] #eurise-mini .eurise-rb { color: #E6E9F0; }
 [data-theme='dark'] body.eurise-nastro-chiuso.eurise-nastro-aperto #eurise-ribbon { background: #171B22; }
+/* La barra flottante di Collabora sulla selezione lascia il posto alla nostra barra rapida. */
+body.eurise-desk #context-toolbar { display: none !important; }
