@@ -2162,6 +2162,14 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   consegnato al proprietario: `flatpak install --user eurise-office-sorgenti.flatpak` (runtime KDE 6.11 e BaseApp da
   Flathub). Si rifà a mano con `office-sorgenti.yml` (≈45 minuti con la ccache), la prova con `office-computer.yml`
   e `pacchetto=sorgenti`.
+- **15 novembre, mattina – prima prova del proprietario sul computer (Ubuntu)**: funziona, ma: funzioni troppo ridotte
+  rispetto a Word; restano pezzi di Collabora (pagina iniziale viola «Collabora Office», «New», modelli inglesi,
+  benvenuto col logo, Trova e sostituisci e Stili coi testi inglesi «Find», «Highlight styles», «Filter»); titolo da
+  cambiare direttamente nella pillola; angoli tondi e stile nostro nelle finestre; le tendine a foglio centrale vanno
+  bene sul tablet ma non sul computer; si crea solo il documento di testo, mancano foglio e presentazione. Notati anche:
+  etichette sovrapposte nel nastro (Collegamento/Commento, Colonne/Interruzione). Tavole sulla tela, pagina Office,
+  fila a y 9260: OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre (da approvare). Generatore in
+  /home/claude/tela/gen/gen_pc.py (non nel repo).
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
