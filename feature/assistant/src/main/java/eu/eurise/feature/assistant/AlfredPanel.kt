@@ -289,7 +289,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 // Prima le regole esatte (subito); se nessuna prende la frase, la legge il cervello sul telefono (fino a
                 // tre azioni); senza cervello, la seconda lettura delle parole chiave.
                 val exact = Grammar.exact(heard, now)
-                val fromBrain = if (exact == null && brainReady) brain.command(heard, "", now.toLocalDate())?.let { BrainCommands.parse(it, now) }.orEmpty() else emptyList()
+                val fromBrain = if (exact == null && brainReady) brain.command(heard, "", now.toLocalDate())?.let { BrainCommands.parse(it, now, heard) }.orEmpty() else emptyList()
                 val actions = fromBrain.filter { it !is Command.Free }
                 if (actions.size >= 2) {
                     val cards = actions.map { butler.plan(it) }
