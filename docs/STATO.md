@@ -2672,3 +2672,25 @@ Flatpak, che tiene il Ponte e accoglie le app; Firefox com'è con l'estensione e
 - **Nucleo da preparare** (non serve la tavola): sincronizzazione su JVM/Kotlin Multiplatform (CalDAV per Calendario e
   Attività, WebDAV per le Note con l'unione a tre vie, IMAP/SMTP per l'Email), modulo `desktop/app` in Compose Desktop
   che assorbe `desktop/ponte`, Flatpak e prova d'avvio su Ubuntu e Fedora in Actions.
+
+## 15 novembre, sera: Alfred, passi 1 e 2 (tavole AlfDati, AlfSeguito, AlfQuale approvate) · giri 615 e 621
+- Tavole dei cinque passi **approvate** dal proprietario. Le compilazioni di Alfred vanno anche sul ramo `prova-alfred`
+  (stesso codice di `brand`), così l'altra chat non le annulla; i link si pubblicano con `apk-prova.yml` (dispatch su
+  `ref=brand` con `run_id`).
+- **Passo 1, domande sui dati** (giro 615): `Grammar.ask` prima di tutte le regole (`Command.Ask`, `AskKind` Agenda / When /
+  Calls / Notes: «cosa ho domani», «che impegni ho la settimana prossima», «quando ho il dentista», «chi mi ha chiamato
+  oggi», «cosa avevo scritto sul cancello», «qual è il codice del cancello»); tipo `dati` nella grammatica del cervello
+  (`engine.hpp`, `BrainCommands.data`) e due frasi in più in `ai_commands.py`. `Records` cerca solo sul telefono (Calendario,
+  Attività, Note, registro chiamate); `DataWriter` scrive le frasi (test `DataQuestionsTest`). Scheda come la tavola: righe
+  con tinta, «dal telefono» e dieci tacchette, proposte («Sposta il dentista», «Avvisa Anna», «Strada per…», «Richiama…»),
+  «Apri…» e «Rileggi»; senza permesso, la pillola per darlo. **Messaggi**: l'APK principale non ha READ_SMS, quindi «chi mi
+  ha scritto?» arriva con il passo 3 (leggi e rispondi, dall'APK Messaggi).
+- **Passo 2** (giro 621): `FollowUp` (solo in memoria, due minuti) con l'ultima cosa fatta (`Done`: impegno, attività, nota,
+  messaggio, chiamata, sveglia); `Grammar.follow` → `Command.Follow` (Move, Undo, AlsoTo): «spostalo alle 10», «no, alle 11»,
+  «rimandalo a domani», «cancellalo», «annulla», «mandalo anche a Luca». Scheda «Sposto» con il valore di prima barrato
+  (`Field.previous`). «Quale Marco chiamo?» (`Butler.doubt`, `Phase.Which`): si chiede solo se nessuno è preferito o sentito
+  negli ultimi 30 giorni più degli altri; risposta a voce con `Grammar.pick`; spunta «La prossima volta…». Correzioni a mano
+  di una parola → `AlfredMemory.Kind.Word`, applicate con `Corrections.apply` prima di capire la frase. Test `FollowTest`.
+- **Prossimo**: prove del proprietario sui passi 1 e 2; poi passo 3 (azioni nuove una per volta, con test: prima leggi e
+  rispondi ai messaggi, che completa anche «chi mi ha scritto?»), 4 (ruolo assistente, riquadro, blocco, «Di' Alfred»),
+  5 (registro locale).
