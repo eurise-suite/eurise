@@ -79,6 +79,21 @@ cat > "$DIAG" <<'JS'
 			window.euriseOffice.setAccent('#7A4A2A', '#C9956B');
 		}
 	}, 12000);
+	// Tasti della prova (solo con la diagnosi): F6 scheda seguente del nastro, F7 menu File, F8 tendina del carattere,
+	// F9 finestra Paragrafo; così le schermate mostrano il nastro completo, le tendine e le finestre.
+	document.addEventListener('keydown', function (e) {
+		var q = function (sel) { return document.querySelector(sel); };
+		if (e.key === 'F6') {
+			var tabs = Array.prototype.slice.call(document.querySelectorAll('#eurise-tabs .eurise-rtab[data-id]'));
+			var i = tabs.findIndex(function (b) { return b.classList.contains('active'); });
+			if (tabs.length) tabs[(i + 1) % tabs.length].click();
+		} else if (e.key === 'F7' && q('#eurise-tabs .eurise-rtab.file')) q('#eurise-tabs .eurise-rtab.file').click();
+		else if (e.key === 'F8' && q('#eurise-ribbon .eurise-drop.name')) q('#eurise-ribbon .eurise-drop.name').click();
+		else if (e.key === 'F9' && window.app && window.app.map) window.app.map.sendUnoCommand('.uno:ParagraphDialog');
+		else return;
+		e.preventDefault();
+		e.stopPropagation();
+	}, true);
 	setTimeout(function () { report('5s'); }, 5000);
 	setTimeout(function () { report('20s'); dom('20s'); }, 20000);
 })();
@@ -132,6 +147,15 @@ apri() {
 	[ -n "$win" ] && xdotool mousemove 520 480 && sleep 2 && shot "$name-1-mouse" 
 	# Ctrl K: «Cerca un comando» della nostra interfaccia.
 	[ -n "$win" ] && xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+k && sleep 2 && shot "$name-2-cerca" && xdotool key Escape
+	# Nastro completo, menu File, tendina del carattere, Trova e sostituisci, una finestra (tavole OffPC, 15 novembre).
+	if [ -n "$win" ]; then
+		xdotool mousemove 720 520 click 1 && sleep 1
+		for n in 1 2 3 4 5 6 7 8; do shot "$name-nastro-$n"; xdotool key F6; sleep 1; done
+		xdotool key F7 && sleep 2 && shot "$name-file" && xdotool key Escape && sleep 1
+		xdotool key F8 && sleep 3 && shot "$name-carattere" && xdotool key Escape && sleep 1
+		xdotool mousemove 720 520 click 1 && sleep 1 && xdotool key ctrl+h && sleep 2 && shot "$name-trova" && xdotool key Escape && sleep 1
+		xdotool key F9 && sleep 4 && shot "$name-finestra" && xdotool key Escape && sleep 1
+	fi
 	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError" "$OUT/$name.log" | head -20 | sed 's/^/    /' >> "$R"
 	kill "$pid" 2> /dev/null
 	pkill -f coda-qt 2> /dev/null
@@ -176,7 +200,30 @@ SCHEDE
 	sleep 3
 }
 
+# Inizio Eurise: il guscio aperto senza documenti (tavola OffPCInizio).
+inizio() {
+	echo "" >> "$R"
+	echo "## Inizio" >> "$R"
+	dbus-run-session -- flatpak run --user --env=QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu" --env=QT_QPA_PLATFORM=xcb \
+		--filesystem="$HOME/Documents" --env=QT_LOGGING_RULES="js=true" \
+		--env=LANG=it_IT.UTF-8 --env=LANGUAGE=it --env=LC_ALL=it_IT.UTF-8 "$APP" > "$OUT/inizio.log" 2>&1 &
+	local pid=$! win=""
+	for _ in $(seq 1 60); do
+		win=$(xdotool search --onlyvisible --name "Office" 2> /dev/null | head -1)
+		[ -n "$win" ] && break
+		sleep 1
+	done
+	[ -n "$win" ] && xdotool windowsize "$win" $W $H windowmove "$win" 0 0 2> /dev/null && echo "- finestra comparsa" >> "$R"
+	sleep 15
+	shot inizio
+	grep -E "EURISE-DIAG|Uncaught|TypeError|ReferenceError" "$OUT/inizio.log" | head -10 | sed 's/^/    /' >> "$R"
+	kill "$pid" 2> /dev/null
+	pkill -f coda-qt 2> /dev/null
+	sleep 3
+}
+
 apri lettera.docx
+inizio
 apri conti.xlsx
 apri slide.pptx
 schede

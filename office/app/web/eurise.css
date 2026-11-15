@@ -1139,13 +1139,19 @@ body.eurise-desk #eurise-ribbon .eurise-rb {
 body.eurise-desk #eurise-ribbon .eurise-rb:hover { background: #ECECE7 !important; }
 body.eurise-desk #eurise-ribbon .eurise-rb.big {
 	min-width: 54px;
-	max-width: 76px;
-	height: 62px;
+	max-width: 84px;
+	height: 74px;
+	white-space: normal;
+	line-height: 1.15;
 	gap: 4px;
 	font-size: 11px;
 }
 /* Voci piccole con il nome: Taglia, Copia, Trova, Da fare… */
-body.eurise-desk .eurise-smalls.labs { grid-auto-columns: auto; }
+body.eurise-desk .eurise-smalls.labs {
+	grid-auto-columns: auto;
+	grid-template-rows: repeat(3, 24px);
+	gap: 1px 4px;
+}
 body.eurise-desk #eurise-ribbon .eurise-rb.lab {
 	width: auto;
 	padding: 0 6px 0 4px;
@@ -1160,8 +1166,8 @@ body.eurise-desk #eurise-ribbon .eurise-drop.size { width: 56px; }
 body.eurise-desk .eurise-fontcol { gap: 2px; }
 /* Stili come tessere «Aa». */
 body.eurise-desk #eurise-ribbon .eurise-rb.tile {
-	width: 60px;
-	height: 62px;
+	width: 58px;
+	height: 68px;
 	padding: 6px 7px;
 	box-sizing: border-box;
 	border-radius: 10px;
@@ -1178,9 +1184,10 @@ body.eurise-desk #eurise-ribbon .eurise-rb.tile .aa {
 	font: 400 15px 'Source Serif 4', Georgia, serif;
 	color: #1E1D1B;
 }
-body.eurise-desk #eurise-ribbon .eurise-rb.tile.st1 .aa { font-size: 19px; font-weight: 700; }
-body.eurise-desk #eurise-ribbon .eurise-rb.tile.st2 .aa { font-size: 17px; font-weight: 700; color: #3E5C8A; }
-body.eurise-desk #eurise-ribbon .eurise-rb.tile.st3 .aa { font-style: italic; color: #56564F; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st1 .aa { font-size: 21px; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st2 .aa { font-size: 19px; font-weight: 700; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st3 .aa { font-size: 17px; font-weight: 700; color: #3E5C8A; }
+body.eurise-desk #eurise-ribbon .eurise-rb.tile.st4 .aa { font-style: italic; color: #56564F; }
 
 /* Niente colonna a sinistra: il Navigatore sta nella sezione Struttura a destra. Le diapositive restano a sinistra. */
 body.eurise-desk:not(.eurise-doc-presentation):not(.eurise-doc-drawing) #navigation-sidebar,
@@ -1403,3 +1410,511 @@ body.eurise-desk .eurise-panel input,
 body.eurise-desk #eurise-notice {
 	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
+
+/* =====================================================================================================================
+   Computer, 15 novembre (tavole OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre)
+   ===================================================================================================================== */
+
+/* Le finestre di Collabora prendono i colori, gli angoli e il carattere della suite dalle sue stesse variabili. */
+body.eurise-desk {
+	--color-primary: #3E5C8A;
+	--color-primary-dark: #1F2A44;
+	--color-primary-darker: #1F2A44;
+	--color-primary-lighter: #DDE3F0;
+	--color-primary-text: #FFFFFF;
+	--color-main-background: #F4F4F1;
+	--color-background-dark: #ECECE7;
+	--color-background-darker: #E4E3DE;
+	--color-border: #E4E3DE;
+	--color-border-dark: #D9D8D2;
+	--color-border-darker: #CFCEC8;
+	--color-toolbar-border: #E4E3DE;
+	--color-btn-primary-hover-bg: #DDE3F0;
+	--color-text-dark: #1E1D1B;
+	--doc-type: 62, 92, 138;
+	--border-radius: 10px;
+	--cool-font: 'Plus Jakarta Sans', 'Inter', 'Noto Sans', system-ui, sans-serif;
+}
+
+/* Nastro: tre righe di voci con il nome, come Word; pulsanti grandi un po' più alti. */
+body.eurise-desk #eurise-ribbon .eurise-smalls.labs .eurise-rb.lab {
+	height: 24px;
+	border-radius: 7px;
+	font-size: 11.5px;
+}
+body.eurise-desk #eurise-ribbon .eurise-smalls.labs .eurise-rb.lab img,
+body.eurise-desk #eurise-ribbon .eurise-smalls.labs .eurise-rb.lab svg { width: 16px; height: 16px; }
+body.eurise-desk .eurise-rows { gap: 3px; }
+body.eurise-desk .eurise-rows .eurise-fontline,
+body.eurise-desk .eurise-fontcol .eurise-fontline { gap: 1px; }
+body.eurise-desk .eurise-fontcol .eurise-fontrow { gap: 4px; align-items: center; }
+body.eurise-desk #eurise-ribbon .eurise-fontline .eurise-rb,
+body.eurise-desk #eurise-ribbon .eurise-fontrow .eurise-rb { width: auto; min-width: 28px; height: 28px; padding: 0 4px; }
+body.eurise-desk #eurise-ribbon .eurise-rb.has-menu { gap: 1px; }
+body.eurise-desk #eurise-ribbon .eurise-rb .eurise-caret { flex: none; color: #56564F; }
+body.eurise-desk #eurise-ribbon .eurise-rb.big .eurise-caret { margin-top: -2px; }
+body.eurise-desk #eurise-ribbon .eurise-rb.lab .eurise-caret { margin-left: 1px; }
+
+/* Pillola: il nome si cambia lì. */
+#eurise-header.riga.desk .eurise-name { cursor: text; border-radius: 7px; padding: 1px 4px; margin-left: -4px; }
+#eurise-header.riga.desk .eurise-name:not(.editing):hover { background: #ECECE7; }
+#eurise-header .eurise-name.editing {
+	display: inline-flex;
+	align-items: center;
+	height: 26px;
+	padding: 0 8px;
+	border-radius: 8px;
+	background: #FFFFFF;
+	box-shadow: inset 0 0 0 2px #3E5C8A;
+}
+#eurise-header .eurise-name.editing input {
+	width: auto;
+	min-width: 4ch;
+	height: 22px;
+	margin: 0;
+	padding: 0;
+	border: 0 !important;
+	outline: 0;
+	background: transparent !important;
+	box-shadow: none !important;
+	font: 800 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-header .eurise-name.editing .eurise-ext { font-weight: 600; color: #56564F; }
+
+/* Tendine piccole attaccate al comando. */
+.eurise-pop {
+	position: fixed;
+	z-index: 3000;
+	min-width: 180px;
+	max-height: calc(100vh - 24px);
+	padding: 6px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	border-radius: 12px;
+	background: #FFFFFF;
+	box-shadow: 0 10px 30px rgba(30, 29, 27, 0.18), 0 0 0 1px #E4E3DE;
+	font: 600 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+	scrollbar-width: thin;
+}
+.eurise-pop.fonts { width: 272px; display: flex; flex-direction: column; overflow: hidden; max-height: 480px; }
+.eurise-pop.fonts .eurise-plist { overflow-y: auto; scrollbar-width: thin; min-height: 0; }
+.eurise-pop.sizes { width: 76px; min-width: 0; }
+.eurise-pop.colors { width: 220px; }
+.eurise-pop.file { width: 300px; border-radius: 14px; }
+.eurise-pop input {
+	width: 100%;
+	height: 30px;
+	margin: 0 0 4px;
+	padding: 0 10px;
+	box-sizing: border-box;
+	border: 0 !important;
+	border-radius: 8px;
+	outline: 0;
+	background: #F4F4F1 !important;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+.eurise-pop input:focus { box-shadow: inset 0 0 0 2px #3E5C8A !important; }
+.eurise-ps {
+	padding: 8px 10px 3px;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #56564F;
+}
+.eurise-pi {
+	width: 100%;
+	min-height: 30px;
+	margin: 0 !important;
+	padding: 0 10px !important;
+	box-sizing: border-box;
+	border: 0 !important;
+	border-radius: 8px;
+	background: transparent !important;
+	box-shadow: none !important;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font: inherit;
+	color: inherit !important;
+	text-align: left;
+	cursor: pointer;
+}
+.eurise-pi svg { flex: none; color: #3E5C8A; }
+.eurise-pi:hover,
+.eurise-pi:focus-visible { background: #ECECE7 !important; outline: 0; }
+.eurise-pi.on { background: #DDE3F0 !important; font-weight: 800; }
+.eurise-pn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eurise-pop.fonts .eurise-pn { font-size: 14px; font-weight: 400; }
+.eurise-pi kbd { font: 500 11.5px 'Plus Jakarta Sans', system-ui, sans-serif; color: #56564F; background: none; border: 0; padding: 0; }
+.eurise-pck { width: 14px; flex: none; display: flex; }
+.eurise-pdot { width: 12px; height: 12px; flex: none; border-radius: 4px; }
+.eurise-pgrid { display: grid; grid-template-columns: repeat(6, 26px); gap: 6px; padding: 4px 6px 8px; }
+.eurise-pc {
+	width: 26px;
+	height: 26px;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 7px;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12) !important;
+	cursor: pointer;
+}
+.eurise-pc.on { box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #3E5C8A !important; }
+.eurise-pnew { display: flex; gap: 6px; padding: 2px 4px 6px; }
+.eurise-pnb {
+	flex: 1;
+	height: 56px;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 10px;
+	background: #F4F4F1 !important;
+	box-shadow: none !important;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font: 700 11.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B !important;
+	cursor: pointer;
+}
+.eurise-pnb:hover { background: #ECECE7 !important; }
+.eurise-pnb.doc svg { color: #3E5C8A; }
+.eurise-pnb.sheet svg { color: #3F7A55; }
+.eurise-pnb.slide svg { color: #A5532F; }
+
+/* Trova e sostituisci: barra in alto sul documento. */
+#eurise-find {
+	position: absolute;
+	top: 10px;
+	right: 24px;
+	z-index: 1500;
+	width: 440px;
+	padding: 8px;
+	box-sizing: border-box;
+	border-radius: 14px;
+	background: #FFFFFF;
+	box-shadow: 0 10px 30px rgba(30, 29, 27, 0.16), 0 0 0 1px #E4E3DE;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-find .ef-row { display: flex; align-items: center; gap: 4px; }
+#eurise-find .ef-replace { display: none; }
+#eurise-find.with-replace .ef-replace { display: flex; }
+#eurise-find .ef-field {
+	flex: 1;
+	height: 32px;
+	padding: 0 10px;
+	box-sizing: border-box;
+	border-radius: 9px;
+	background: #F4F4F1;
+	box-shadow: inset 0 0 0 1px #E4E3DE;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #56564F;
+}
+#eurise-find .ef-field:focus-within { box-shadow: inset 0 0 0 2px #3E5C8A; }
+#eurise-find input {
+	flex: 1;
+	min-width: 0;
+	height: 30px;
+	margin: 0;
+	padding: 0;
+	border: 0 !important;
+	outline: 0;
+	background: transparent !important;
+	box-shadow: none !important;
+	font: 600 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-find .eurise-fb,
+#eurise-find .ef-text,
+#eurise-find .ef-link {
+	margin: 0 !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	font: 700 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	cursor: pointer;
+}
+#eurise-find .eurise-fb {
+	width: 30px;
+	height: 30px;
+	padding: 0 !important;
+	border-radius: 9px;
+	background: transparent !important;
+	color: #3E5C8A !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#eurise-find .eurise-fb:hover { background: #ECECE7 !important; }
+#eurise-find .ef-text { height: 30px; padding: 0 12px !important; border-radius: 15px; background: #F4F4F1 !important; color: #1E1D1B !important; }
+#eurise-find .ef-text.dark { background: #1F2A44 !important; color: #FFFFFF !important; }
+#eurise-find .ef-foot { display: flex; align-items: center; padding: 0 4px; }
+#eurise-find .ef-link { padding: 0 !important; background: transparent !important; color: #3E5C8A !important; font-size: 11.5px; }
+.es-fill { flex: 1; }
+
+/* Finestre di Collabora nello stile della suite: angoli tondi, testata Perla, schede a pillola, pulsanti della suite. */
+body.eurise-desk .jsdialog-window:not(.modalpopup) .jsdialog-container:not(.snackbar),
+body.eurise-desk .jsdialog-container.ui-dialog:not(.snackbar) {
+	border: 0 !important;
+	border-radius: 18px !important;
+	overflow: hidden;
+	background: #FFFFFF !important;
+	box-shadow: 0 20px 50px rgba(30, 29, 27, 0.25) !important;
+}
+body.eurise-desk .jsdialog-container .ui-dialog-titlebar {
+	min-height: 48px;
+	padding: 0 12px 0 20px !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: #F4F4F1 !important;
+	display: flex;
+	align-items: center;
+}
+body.eurise-desk .jsdialog-container .ui-dialog-title {
+	font: 800 15px var(--cool-font) !important;
+	color: #1E1D1B !important;
+}
+body.eurise-desk .jsdialog-container .ui-dialog-content { background-color: #FFFFFF !important; font-family: var(--cool-font) !important; }
+body.eurise-desk .ui-dialog-titlebar-close {
+	width: 32px !important;
+	height: 32px !important;
+	border: 0 !important;
+	border-radius: 16px !important;
+	background: transparent !important;
+}
+body.eurise-desk .ui-dialog-titlebar-close:hover { background: #ECECE7 !important; }
+body.eurise-desk .ui-tab.jsdialog {
+	height: 30px !important;
+	padding: 0 12px !important;
+	border: 0 !important;
+	border-radius: 15px !important;
+	margin-inline-end: 6px !important;
+	font: 700 12.5px var(--cool-font) !important;
+	color: #1E1D1B !important;
+}
+body.eurise-desk .ui-tab.selected.jsdialog {
+	background-color: #1F2A44 !important;
+	color: #FFFFFF !important;
+	text-decoration: none !important;
+}
+body.eurise-desk .ui-tab.jsdialog:not(.selected):hover { background-color: #ECECE7 !important; }
+body.eurise-desk .jsdialog-container .ui-button-box {
+	margin: 0 !important;
+	padding: 10px 16px !important;
+	background: #F4F4F1;
+}
+body.eurise-desk .jsdialog-container .ui-pushbutton,
+body.eurise-desk .jsdialog-container .button,
+body.eurise-desk .jsdialog-container .button-secondary {
+	height: 34px;
+	padding: 0 16px !important;
+	border: 0 !important;
+	border-radius: 17px !important;
+	background: #ECECE7 !important;
+	color: #1E1D1B !important;
+	font: 700 13px var(--cool-font) !important;
+	line-height: 34px;
+}
+body.eurise-desk .jsdialog-container .ui-pushbutton.button-primary,
+body.eurise-desk .jsdialog-container .button-primary,
+body.eurise-desk .jsdialog-container #ok.ui-pushbutton,
+body.eurise-desk .jsdialog-container #apply.ui-pushbutton {
+	background: #1F2A44 !important;
+	color: #FFFFFF !important;
+}
+body.eurise-desk .jsdialog-container input[type='text'],
+body.eurise-desk .jsdialog-container input[type='number'],
+body.eurise-desk .jsdialog-container input[type='search'],
+body.eurise-desk .jsdialog-container select,
+body.eurise-desk .jsdialog-container .ui-listbox,
+body.eurise-desk .jsdialog-container .spinfield {
+	border: 0 !important;
+	border-radius: 9px !important;
+	background-color: #F4F4F1 !important;
+	box-shadow: inset 0 0 0 1px #E4E3DE !important;
+	font-family: var(--cool-font) !important;
+}
+body.eurise-desk .jsdialog-container .ui-treeview,
+body.eurise-desk .jsdialog-container .ui-iconview { border-radius: 10px !important; border-color: #E4E3DE !important; }
+/* Il velo dietro le finestre: Notte appena accennato. */
+body.eurise-desk .jsdialog-overlay.dimmed { background-color: rgba(31, 42, 68, 0.18) !important; }
+/* Stili nella colonna: anteprime a grandezza giusta, non gigantesche. */
+body.eurise-desk #StyleListDeck .ui-treeview-entry img,
+body.eurise-desk #StyleListPanel .ui-treeview-entry img { max-height: 26px; width: auto; }
+
+/* Inizio Eurise (tavola OffPCInizio): copre la pagina iniziale di Collabora. */
+#eurise-start {
+	position: fixed;
+	inset: 0;
+	z-index: 2500;
+	display: flex;
+	gap: 28px;
+	padding: 26px 40px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	background: #F4F4F1;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-start button {
+	margin: 0;
+	border: 0;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+#eurise-start .es-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+#eurise-start .es-head,
+#eurise-start .es-title { display: flex; align-items: baseline; gap: 12px; }
+#eurise-start .es-head { align-items: center; }
+#eurise-start h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+#eurise-start h2 { margin: 0; font-size: 15px; font-weight: 800; }
+#eurise-start .es-sub { font-size: 13px; color: #56564F; }
+#eurise-start .es-title .es-sub { font-size: 12px; }
+#eurise-start .es-search {
+	width: 320px;
+	height: 38px;
+	padding: 0 14px;
+	box-sizing: border-box;
+	border-radius: 19px;
+	background: #FFFFFF;
+	box-shadow: inset 0 0 0 1px #E4E3DE;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #56564F;
+}
+#eurise-start .es-search:focus-within { box-shadow: inset 0 0 0 2px #3E5C8A; }
+#eurise-start .es-search input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	font: 500 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #1E1D1B;
+}
+#eurise-start .es-new { display: flex; gap: 16px; flex-wrap: wrap; }
+#eurise-start .es-card {
+	width: 224px;
+	padding: 14px;
+	box-sizing: border-box;
+	border-radius: 16px;
+	background: #FFFFFF;
+	box-shadow: 0 1px 3px rgba(31, 42, 68, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	text-align: left;
+}
+#eurise-start .es-card:hover { box-shadow: 0 0 0 2px #3E5C8A, 0 4px 14px rgba(31, 42, 68, 0.10); }
+#eurise-start .es-pic {
+	height: 132px;
+	border-radius: 10px;
+	background: #F4F4F1;
+	box-shadow: inset 0 0 0 1px #E4E3DE;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#eurise-start .es-card.doc .es-pic svg { color: #3E5C8A; }
+#eurise-start .es-card.sheet .es-pic svg { color: #3F7A55; }
+#eurise-start .es-card.slide .es-pic svg { color: #A5532F; }
+#eurise-start .es-name { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 15px; }
+#eurise-start .es-name i { width: 10px; height: 10px; border-radius: 3px; }
+#eurise-start .es-card.doc .es-name i { background: #3E5C8A; }
+#eurise-start .es-card.sheet .es-name i { background: #3F7A55; }
+#eurise-start .es-card.slide .es-name i { background: #A5532F; }
+#eurise-start .es-desc { font-size: 12px; color: #56564F; }
+#eurise-start .es-all { padding: 0; background: transparent; font-size: 12.5px; font-weight: 700; color: #3E5C8A; }
+#eurise-start .es-templates { display: flex; gap: 14px; flex-wrap: wrap; }
+#eurise-start .es-tpl {
+	width: 132px;
+	padding: 0;
+	background: transparent;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	text-align: left;
+}
+#eurise-start .es-thumb {
+	position: relative;
+	height: 100px;
+	padding: 12px;
+	box-sizing: border-box;
+	overflow: hidden;
+	border-radius: 10px;
+	background: #FFFFFF;
+	box-shadow: inset 0 0 0 1px #E4E3DE;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+#eurise-start .es-tpl:hover .es-thumb { box-shadow: inset 0 0 0 2px #3E5C8A; }
+#eurise-start .es-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#eurise-start .es-thumb i { height: 4px; border-radius: 2px; background: #E2E1DC; }
+#eurise-start .es-thumb i:first-child { width: 60%; height: 6px; }
+#eurise-start .es-thumb i:nth-child(3) { width: 80%; }
+#eurise-start .es-thumb svg { position: absolute; right: 10px; bottom: 10px; }
+#eurise-start .es-tpl.doc .es-thumb i:first-child, #eurise-start .es-tpl.doc svg { background: #3E5C8A; color: #3E5C8A; }
+#eurise-start .es-tpl.sheet .es-thumb i:first-child, #eurise-start .es-tpl.sheet svg { background: #3F7A55; color: #3F7A55; }
+#eurise-start .es-tpl.slide .es-thumb i:first-child, #eurise-start .es-tpl.slide svg { background: #A5532F; color: #A5532F; }
+#eurise-start .es-tpl svg { background: transparent !important; }
+#eurise-start .es-tpl b { font-size: 12px; font-weight: 600; }
+#eurise-start .es-tpl small { margin-top: -5px; font-size: 11px; color: #56564F; }
+#eurise-start .es-recent { display: flex; flex-direction: column; gap: 2px; }
+#eurise-start .es-row {
+	height: 46px;
+	padding: 0 12px;
+	border-radius: 10px;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	text-align: left;
+}
+#eurise-start .es-row:hover { background: #FFFFFF; }
+#eurise-start .es-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+#eurise-start .es-where { width: 200px; font-size: 12px; color: #56564F; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#eurise-start .es-when { width: 90px; font-size: 12px; color: #56564F; text-align: right; }
+#eurise-start .es-empty { margin: 4px 12px; font-size: 12.5px; color: #56564F; }
+#eurise-start .es-side { width: 300px; flex: none; display: flex; flex-direction: column; gap: 10px; padding-top: 52px; }
+#eurise-start .es-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #56564F; }
+#eurise-start .es-flabel { margin-top: 14px; }
+#eurise-start .es-open { display: flex; flex-direction: column; gap: 10px; }
+#eurise-start .es-openbtn {
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: #FFFFFF;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	font-weight: 700;
+}
+#eurise-start .es-openbtn svg { color: #3E5C8A; }
+#eurise-start .es-openbtn:hover { box-shadow: inset 0 0 0 2px #3E5C8A; }
+#eurise-start .es-folder { height: 34px; padding: 0 12px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: #1E1D1B; }
+#eurise-start .es-folder svg { color: #56564F; }
+
+[data-theme='dark'] .eurise-pop,
+[data-theme='dark'] #eurise-find { background: #222833; color: #E6E9F0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px #343B48; }
+[data-theme='dark'] .eurise-pi:hover,
+[data-theme='dark'] .eurise-pi:focus-visible { background: #2C3340 !important; }
+[data-theme='dark'] .eurise-pi.on { background: #33405A !important; }
+[data-theme='dark'] .eurise-pop input,
+[data-theme='dark'] #eurise-find .ef-field,
+[data-theme='dark'] .eurise-pnb { background: #1B2029 !important; color: #E6E9F0 !important; }

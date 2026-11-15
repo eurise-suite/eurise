@@ -164,6 +164,99 @@
 		undo: [['m', 'M9 5L4 10l5 5 M4 10h10.5a5 5 0 0 1 0 10H11']],
 		redo: [['m', 'M15 5l5 5-5 5 M20 10H9.5a5 5 0 0 0 0 10H13']],
 		morebutton: [['m', 'M8 16L16 8 M10 8h6v6']],
+		// Nastro completo del computer (tavola OffPCNastro, 15 novembre)
+		titlepagedialog: [['m', 'M6 3h12v18H6z'], ['a', 'M9 8h6 M9 11h4']],
+		insertsection: [['m', 'M4 5h16 M4 19h16'], ['a', 'M4 9.5h16v5H4z']],
+		fontworkgalleryfloater: [['m', 'M4 18c4-10 12-10 16 0'], ['a', 'M8 18l4-10 4 10 M9.5 14.5h5']],
+		insertqrcode: [['m', 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z'], ['a', 'M14 14h2v2h-2z M18 18h2v2h-2z M14 18h2 M18 14h2']],
+		insertframe: [['m', 'M4 4h16v16H4z'], ['a', 'M8 8h8v8H8z']],
+		insertbookmark: [['m', 'M7 3h10v18l-5-4-5 4z'], ['a', 'M10 8h4']],
+		insertreferencefield: [['m', 'M4 4h16v16H4z M8 12h8 M8 16h4'], ['a', 'M8 8h8']],
+		insertpageheader: [['m', 'M5 3h14v18H5z'], ['a', 'M5 8h14 M8 5.5h5']],
+		insertpagefooter: [['m', 'M5 3h14v18H5z'], ['a', 'M5 16h14 M8 18.5h5']],
+		pagenumberwizard: [['m', 'M6 3h12v18H6z'], ['a', 'M11 16l1.5-1.2V19']],
+		drawtext: [['m', 'M4 5h16v14H4z'], ['a', 'M8 9h8 M12 9v7']],
+		insertfieldctrl: [['m', 'M3 7h18v10H3z'], ['a', 'M7 12h.01 M12 12h.01 M17 12h.01']],
+		insertsignatureline: [['m', 'M3 20h18'], ['a', 'M3 16c3 0 4-8 6-8s0 8 2 8 3-5 5-5 2 3 5 3']],
+		insertobjectstarmath: [['m', 'M5 5h9 M5 5l5 7-5 7h9'], ['a', 'M15 12h5 M17.5 9.5v5']],
+		themedialog: [['m', 'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1.5-3-2.5-11-7-11z'], ['a', 'M7.5 11h.01 M10 7h.01 M15 8h.01']],
+		watermark: [['m', 'M6 3h12v18H6z'], ['a', 'M9 15l6-6']],
+		eurisepagecolor: [['f', 'M6 3h12v18H6z'], ['m', 'M6 3h12v18H6z'], ['a', 'M9 6h6v12H9z']],
+		eurisepagemargin: [['m', 'M5 3h14v18H5z'], ['a', 'M8.5 3v18 M15.5 3v18']],
+		orientation: [['m', 'M7 3h10v18H7z'], ['a', 'M3 15h4 M17 9h4']],
+		eurisepagesize: [['m', 'M6 3h12v18H6z'], ['a', 'M9 7h6 M9 7l1.5-1.5 M9 7l1.5 1.5']],
+		linenumberingdialog: [['m', 'M9 6h11 M9 12h11 M9 18h11'], ['a', 'M4 6h1 M4 12h1 M4 18h1']],
+		hyphenate: [['m', 'M14 7h6 M14 12h6 M14 17h6'], ['a', 'M4 12h6']],
+		paragraphdialog: [['m', 'M13 4v16 M17 4v16 M19 4h-9a4 4 0 0 0 0 8h3']],
+		eurisewrap: [['m', 'M4 6h16 M4 18h16 M4 10h5 M4 14h5'], ['a', 'M11 10h6v4h-6z']],
+		objectforwardone: [['m', 'M4 4h10v10H4z'], ['a', 'M10 10h10v10H10z']],
+		objectbackone: [['a', 'M4 4h10v10H4z'], ['m', 'M10 10h10v10H10z']],
+		bringtofront: [['m', 'M4 4h10v10H4z'], ['f', 'M10 10h10v10H10z'], ['a', 'M10 10h10v10H10z']],
+		sendtoback: [['f', 'M4 4h10v10H4z'], ['a', 'M4 4h10v10H4z'], ['m', 'M10 10h10v10H10z']],
+		formatgroup: [['m', 'M4 4h7v7H4z M13 13h7v7h-7z'], ['a', 'M4 13h7v7H4z M13 4h7v7h-7z']],
+		formatungroup: [['m', 'M4 4h7v7H4z M13 13h7v7h-7z'], ['a', 'M15 6l4 4']],
+		transformdialog: [['m', 'M4 4h16v16H4z'], ['a', 'M9 9h6v6H9z']],
+		updatecurindex: [['m', 'M20 12a8 8 0 1 1-2.3-5.7'], ['a', 'M20 4v4h-4']],
+		updateall: [['m', 'M20 12a8 8 0 1 1-2.3-5.7 M9 12h6'], ['a', 'M20 4v4h-4']],
+		insertendnote: [['m', 'M4 5h16 M4 9h16 M4 13h10'], ['a', 'M4 19h5 M15 17l1-1v4']],
+		footnotedialog: [['m', 'M4 5h16 M4 9h16'], ['a', 'M4 15h5 M14 13l1-1v4']],
+		insertcaptiondialog: [['m', 'M4 4h16v11H4z'], ['a', 'M7 19h10']],
+		insertindexesentry: [['m', 'M5 4h11l3 3v13H5z'], ['a', 'M8 10h8 M8 14h5']],
+		thesaurusdialog: [['m', 'M3 6c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1z'], ['a', 'M12 7v13']],
+		accessibilitycheck: [['m', 'M5 9l7 1 7-1 M12 10v4l-3 6 M12 14l3 6'], ['a', 'M12 4a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3']],
+		languagemenu: [['m', 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M3 12h18'], ['a', 'M12 3c3 3 3 15 0 18 M12 3c-3 3-3 15 0 18']],
+		deleteallnotes: [['m', 'M4 5h16v11H9l-5 4z'], ['a', 'M9 8l6 5 M15 8l-6 5']],
+		showannotations: [['m', 'M4 5h16v11H9l-5 4z'], ['a', 'M8 9h8 M8 12h5']],
+		showtrackedchanges: [['m', 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z'], ['a', 'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6']],
+		previoustrackedchange: [['m', 'M4 7h16 M4 12h10 M4 17h8'], ['a', 'M17 16l2-2 2 2']],
+		nexttrackedchange: [['m', 'M4 7h16 M4 12h10 M4 17h8'], ['a', 'M17 14l2 2 2-2']],
+		acceptalltrackedchanges: [['m', 'M4 7h9 M4 12h7 M4 17h5'], ['a', 'M13 15l3 3 6-7']],
+		comparedocuments: [['m', 'M4 4h7v16H4z M13 4h7v16h-7z'], ['a', 'M7 9h1 M16 9h1 M7 13h1 M16 13h1']],
+		protecttracechangemode: [['m', 'M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z'], ['a', 'M9 12l2 2 4-4']],
+		showboundaries: [['m', 'M5 3h14v18H5z'], ['a', 'M8 6h8v12H8z']],
+		multipageview: [['m', 'M3 5h8v14H3z M13 5h8v14h-8z']],
+		sidebar: [['m', 'M3 4h18v16H3z'], ['a', 'M15 4v16']],
+		eurisezoom100: [['m', 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14 M16 16l4 4'], ['a', 'M9 9h4v4H9z']],
+		eurisezoomwidth: [['m', 'M3 12h18'], ['a', 'M6 9l-3 3 3 3 M18 9l3 3-3 3']],
+		eurisenotte: [['m', 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z']],
+		eurisereplace: [['m', 'M4 7h11 M20 17H9'], ['a', 'M12 4l3 3-3 3 M12 14l-3 3 3 3']],
+		selectall: [['m', 'M4 4h16v16H4z'], ['a', 'M8 8h8v8H8z']],
+		pastespecial: 'paste',
+		changecaserotatecase: [['m', 'M3 18l4-11 4 11 M4.5 14h5'], ['a', 'M14 12a2.5 2.5 0 1 0 5 0v6 M19 12a2.5 2.5 0 1 1-5 0']],
+		outlinebullet: [['m', 'M9 6h11 M12 12h8 M15 18h5'], ['a', 'M4 6h1 M7 12h1 M10 18h1']],
+		cellverttop: 'aligntop',
+		cellvertcenter: 'alignverticalcenter',
+		cellvertbottom: 'alignbottom',
+		insertcalctable: 'inserttable',
+		defineprintarea: [['m', 'M6 3h12v18H6z'], ['a', 'M9 7h6v8H9z']],
+		editheaderandfooter: 'insertpageheader',
+		headerandfooter: 'insertpageheader',
+		toggleprintgrid: 'togglesheetgrid',
+		calculatehard: 'calculate',
+		goalseekdialog: [['m', 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18'], ['a', 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8 M12 11.5v1']],
+		solverdialog: [['m', 'M4 6h16 M4 12h16 M4 18h16'], ['a', 'M8 4v4 M16 10v4 M11 16v4']],
+		definedbname: 'definename',
+		datafilterremovefilter: [['m', 'M4 5h16l-6 7v6l-4 2v-8z'], ['a', 'M16 16l4 4 M20 16l-4 4']],
+		texttocolumns: [['m', 'M4 4h7v16H4z M13 4h7v16h-7z'], ['a', 'M6 9h3 M15 9h3']],
+		handleduplicaterecords: [['m', 'M8 8h12v12H8z'], ['a', 'M4 4h12v4 M4 4v12h4']],
+		group: [['m', 'M4 4h16v16H4z'], ['a', 'M8 9h8 M8 13h8']],
+		ungroup: 'formatungroup',
+		showdetail: [['m', 'M4 4h16v16H4z'], ['a', 'M12 8v8 M8 12h8']],
+		hidedetail: [['m', 'M4 4h16v16H4z'], ['a', 'M8 12h8']],
+		freezepanesrow: 'freezepanes',
+		freezepanescolumn: 'freezepanes',
+		eurisehighlight: [['m', 'M4 4h16v16H4z'], ['f', 'M10 4h4v16h-4z M4 10h16v4H4z']],
+		euriselayout: [['m', 'M3 5h18v14H3z'], ['a', 'M6 8h12 M6 12h5v4H6z M14 12h4 M14 15h4']],
+		insertavmedia: [['m', 'M3 5h18v14H3z'], ['a', 'M10 9l5 3-5 3z']],
+		insertslidefield: 'insertpagenumberfield',
+		eurisetransizione: [['m', 'M3 6h8v12H3z'], ['a', 'M13 6h8v12h-8z M9 12h6']],
+		euriseanimazione: [['m', 'M12 3l2.5 6 6.5.5-5 4.5 1.5 6.5L12 17l-5.5 3.5L8 14 3 9.5 9.5 9z']],
+		eurisepresentafinestra: [['m', 'M3 4h18v14H3z'], ['a', 'M8 8h8v6H8z']],
+		euriseconsole: [['m', 'M3 4h12v10H3z M17 8h4v10h-8v-4'], ['a', 'M7 18h4']],
+		hideslide: [['m', 'M3 5h18v12H3z'], ['a', 'M4 4l16 14']],
+		showslide: [['m', 'M3 5h18v12H3z'], ['a', 'M9 11l2 2 4-4']],
+		insert: [['m', 'M4 4h16v16H4z'], ['a', 'M12 8v8 M8 12h8']],
+		zoomreset: 'eurisezoom100',
 		// Nomi con cui Collabora chiede alcune di queste icone (iconURLAliases di LOUtil).
 		insertsymbol: 'charmapcontrol',
 		insertrowsmenu: 'insertrowsafter',
@@ -1202,7 +1295,11 @@
 			b.setAttribute('data-uno', item.run);
 			if (phone.states[item.run] === 'true') b.classList.add('on');
 		}
-		b.onclick = function () { if (typeof item.run === 'string') uno(item.run); else item.run(); };
+		if (item.menu) {
+			b.classList.add('has-menu');
+			b.insertAdjacentHTML('beforeend', '<svg class="eurise-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>');
+		}
+		b.onclick = function () { anchorEl = b; if (typeof item.run === 'string') uno(item.run); else item.run(); };
 		return b;
 	}
 
@@ -1370,6 +1467,7 @@
 
 	function pickColor(kind) {
 		return function () {
+			if (onDesk()) { deskColors(kind); return; }
 			var box = overlay('eurise-colors');
 			var h = document.createElement('h2');
 			h.textContent = kind === 'back' ? (app.map.getDocType() === 'spreadsheet' ? t('Riempimento', 'Fill') : t('Evidenzia', 'Highlight')) : t('Colore del testo', 'Font color');
@@ -1423,6 +1521,7 @@
 	}
 
 	function chooseFont() {
+		if (onDesk()) { deskFonts(); return; }
 		var box = overlay('eurise-fonts');
 		var h = document.createElement('h2');
 		h.textContent = t('Carattere', 'Font');
@@ -1465,6 +1564,7 @@
 	}
 
 	function chooseSize() {
+		if (onDesk()) { deskSizes(); return; }
 		var box = overlay('eurise-sizes');
 		var h = document.createElement('h2');
 		h.textContent = t('Dimensione', 'Size');
@@ -1491,7 +1591,7 @@
 	var DROP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>';
 
 	/** Tendine di carattere e dimensione; sul telefono anche «Togli la formattazione». */
-	function fontRow(onPhone) {
+	function fontRow(onPhone, extras) {
 		var row = document.createElement('div');
 		row.className = 'eurise-fontrow';
 		function drop(cls, command, label, run) {
@@ -1502,11 +1602,12 @@
 			b.title = label;
 			b.innerHTML = '<span data-state="' + command + '"></span>' + DROP;
 			b.firstChild.textContent = shownState(command);
-			b.onclick = run;
+			b.onclick = function () { anchorEl = b; run(); };
 			row.appendChild(b);
 		}
 		drop('name', '.uno:CharFontName', t('Carattere', 'Font'), chooseFont);
 		drop('size', '.uno:FontHeight', t('Dimensione', 'Size'), chooseSize);
+		if (extras) extras.forEach(function (item) { row.appendChild(ribbonButton(item, false)); });
 		if (onPhone) {
 			var clear = document.createElement('button');
 			clear.type = 'button';
@@ -1696,7 +1797,7 @@
 			return b;
 		}
 		var size = big ? (onDesk() ? 24 : 26) : 18;
-		var icon = item.svg && onDesk() ? null : commandIcon(item.icon || item.run, size);
+		var icon = item.svg && onDesk() ? null : commandIcon(item.icon || (typeof item.run === 'string' ? item.run.split('?')[0] : item.run), size);
 		if (item.svg && onDesk()) {
 			b.insertAdjacentHTML('beforeend', '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
 				'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + item.svg + '"></path></svg>');
@@ -1713,7 +1814,11 @@
 			b.setAttribute('data-uno', item.run);
 			if (phone.states[item.run] === 'true') b.classList.add('on');
 		}
-		b.onclick = function () { if (typeof item.run === 'string') uno(item.run); else item.run(); };
+		if (item.menu) {
+			b.classList.add('has-menu');
+			b.insertAdjacentHTML('beforeend', '<svg class="eurise-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>');
+		}
+		b.onclick = function () { anchorEl = b; if (typeof item.run === 'string') uno(item.run); else item.run(); };
 		return b;
 	}
 
@@ -1736,12 +1841,22 @@
 				// Carattere: tendine sopra, una fila di pulsanti sotto (tavola OffTablet).
 				var column = document.createElement('div');
 				column.className = 'eurise-fontcol';
-				column.appendChild(fontRow(false));
+				column.appendChild(fontRow(false, onDesk() ? group.fontExtras : null));
 				var line = document.createElement('div');
 				line.className = 'eurise-fontline';
 				items.forEach(function (item) { line.appendChild(ribbonButton(item, group.suite)); });
 				column.appendChild(line);
 				body.appendChild(column);
+			} else if (group.rows && onDesk()) {
+				var stack = document.createElement('div');
+				stack.className = 'eurise-fontcol eurise-rows';
+				group.rows.forEach(function (list) {
+					var line = document.createElement('div');
+					line.className = 'eurise-fontline';
+					list.forEach(function (item) { line.appendChild(ribbonButton(item, group.suite)); });
+					stack.appendChild(line);
+				});
+				body.appendChild(stack);
 			} else if (group.tiles && onDesk()) {
 				items.forEach(function (item, i) { body.appendChild(ribbonButton(item, false, 'st' + i)); });
 			} else {
@@ -1846,6 +1961,7 @@
 	}
 
 	function fileMenu() {
+		if (onDesk()) { deskFileMenu(); return; }
 		chooser(t('File', 'File'), (onDesk() ? [
 			[t('Apri da Eurise File…', 'Open from Eurise File…'), function () { shellCommand('.uno:Open'); }],
 			[t('Nuovo documento', 'New document'), function () { shellCommand('.uno:NewDocText'); }],
@@ -1887,6 +2003,972 @@
 		box.appendChild(grid);
 	}
 
+	// =================================================================================================================
+	// Computer (guscio Linux): tavole OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre, approvate dal
+	// proprietario il 15 novembre dopo la prima prova del Flatpak («via direttamente»).
+	// =================================================================================================================
+
+	// --- Tendine piccole attaccate al comando (sul computer; i fogli grandi al centro restano per il tablet) ---------
+
+	/** Ultimo pulsante premuto: è il comando a cui si attacca la tendina che apre. */
+	var anchorEl = null;
+	document.addEventListener('mousedown', function (e) {
+		var b = e.target && e.target.closest && e.target.closest('button');
+		if (b && !b.closest('#eurise-pop, .eurise-sub')) anchorEl = b;
+	}, true);
+
+	function closePop() {
+		Array.prototype.forEach.call(document.querySelectorAll('#eurise-pop, .eurise-sub'), function (el) { el.remove(); });
+		document.removeEventListener('mousedown', popOutside, true);
+		document.removeEventListener('keydown', popKeys, true);
+		if (app.map && app.map.focus) app.map.focus();
+	}
+
+	function popOutside(e) {
+		if (e.target.closest && e.target.closest('#eurise-pop, .eurise-sub')) return;
+		closePop();
+	}
+
+	/** Frecce su e giù tra le voci, Invio le sceglie, Esc chiude, freccia a destra apre il sottomenu. */
+	function popKeys(e) {
+		var pop = document.querySelector('.eurise-sub') || document.getElementById('eurise-pop');
+		if (!pop) return;
+		if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePop(); return; }
+		var items = Array.prototype.slice.call(pop.querySelectorAll('.eurise-pi'));
+		if (!items.length) return;
+		var i = items.indexOf(document.activeElement);
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+			e.preventDefault();
+			e.stopPropagation();
+			i = e.key === 'ArrowDown' ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+			items[i].focus();
+		} else if ((e.key === 'Enter' || e.key === 'ArrowRight') && i >= 0) {
+			if (e.key === 'ArrowRight' && !items[i].classList.contains('has-sub')) return;
+			e.preventDefault();
+			e.stopPropagation();
+			items[i].click();
+		} else if (e.key === 'ArrowLeft' && pop.classList.contains('eurise-sub')) {
+			e.preventDefault();
+			pop.remove();
+		}
+	}
+
+	/** Tendina sotto il comando (o accanto, per i sottomenu); resta dentro la finestra. */
+	function popover(anchor, cls, sub) {
+		if (!sub) closePop();
+		else Array.prototype.forEach.call(document.querySelectorAll('.eurise-sub'), function (el) { el.remove(); });
+		var pop = document.createElement('div');
+		if (sub) pop.className = 'eurise-sub eurise-pop ' + (cls || '');
+		else { pop.id = 'eurise-pop'; pop.className = 'eurise-pop ' + (cls || ''); }
+		pop.setAttribute('role', 'menu');
+		document.body.appendChild(pop);
+		var place = function () {
+			var r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { left: 12, bottom: 84, right: 12, top: 84 };
+			var w = pop.offsetWidth, h = pop.offsetHeight;
+			var x = sub ? r.right + 4 : r.left, y = sub ? r.top - 6 : r.bottom + 4;
+			if (x + w > window.innerWidth - 8) x = sub ? r.left - w - 4 : window.innerWidth - w - 8;
+			if (y + h > window.innerHeight - 8) y = Math.max(8, window.innerHeight - h - 8);
+			pop.style.left = Math.max(8, x) + 'px';
+			pop.style.top = y + 'px';
+		};
+		pop.place = place;
+		setTimeout(place, 0);
+		if (!sub) {
+			setTimeout(function () {
+				document.addEventListener('mousedown', popOutside, true);
+				document.addEventListener('keydown', popKeys, true);
+			}, 0);
+		}
+		return pop;
+	}
+
+	function popSection(pop, text) {
+		var s = document.createElement('div');
+		s.className = 'eurise-ps';
+		s.textContent = text;
+		pop.appendChild(s);
+		return s;
+	}
+
+	/** Voce della tendina: nome, icona facoltativa, scorciatoia scritta accanto, segno di spunta o sottomenu. */
+	function popItem(pop, label, run, opts) {
+		opts = opts || {};
+		var b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'eurise-pi' + (opts.on ? ' on' : '') + (opts.sub ? ' has-sub' : '');
+		b.setAttribute('role', 'menuitem');
+		if (opts.svg) b.insertAdjacentHTML('beforeend', icon(opts.svg, 17));
+		else if (opts.check !== undefined) b.insertAdjacentHTML('beforeend', '<span class="eurise-pck">' + (opts.check ? icon('M5 12l5 5 9-10', 14) : '') + '</span>');
+		var name = document.createElement('span');
+		name.className = 'eurise-pn';
+		name.textContent = label;
+		if (opts.font) name.style.fontFamily = '"' + opts.font + '", ' + (/serif|georgia|times|caladea|liberation serif|dejavu serif/i.test(opts.font) ? 'serif' : 'sans-serif');
+		b.appendChild(name);
+		if (opts.key) {
+			var k = document.createElement('kbd');
+			k.textContent = opts.key;
+			b.appendChild(k);
+		}
+		if (opts.sub) b.insertAdjacentHTML('beforeend', icon('M9 6l6 6-6 6', 13));
+		b.onclick = function (e) {
+			e.stopPropagation();
+			if (opts.sub) { opts.sub(b); return; }
+			closePop();
+			if (typeof run === 'string') uno(run); else if (run) run();
+		};
+		if (opts.sub) b.onmouseenter = function () { opts.sub(b); };
+		else b.onmouseenter = function () { if (!b.closest('.eurise-sub')) Array.prototype.forEach.call(document.querySelectorAll('.eurise-sub'), function (el) { el.remove(); }); };
+		pop.appendChild(b);
+		return b;
+	}
+
+	/** Tendina di un comando del nastro con più scelte (Margini, Orientamento, Forme, A capo…). */
+	function menuOf(entries) {
+		return function () {
+			var pop = popover(anchorEl, 'menu');
+			(typeof entries === 'function' ? entries() : entries).forEach(function (e) {
+				if (typeof e === 'string') popSection(pop, e);
+				else popItem(pop, e[0], e[1], { svg: e[2] });
+			});
+			var first = pop.querySelector('.eurise-pi');
+			if (first) first.focus();
+		};
+	}
+
+	// Carattere: in cima quelli del documento e gli ultimi usati, poi tutti, ciascuno nel suo stile.
+	function recentFonts() {
+		try { return JSON.parse(window.localStorage.getItem('eurise-caratteri') || '[]'); } catch (e) { return []; }
+	}
+	function useFont(name) {
+		var list = recentFonts().filter(function (n) { return n !== name; });
+		list.unshift(name);
+		try { window.localStorage.setItem('eurise-caratteri', JSON.stringify(list.slice(0, 5))); } catch (e) { /* niente memoria */ }
+		app.map.applyFont(name);
+	}
+
+	function deskFonts() {
+		var pop = popover(anchorEl, 'fonts');
+		var field = document.createElement('input');
+		field.type = 'search';
+		field.placeholder = t('Scrivi per cercare', 'Type to search');
+		field.setAttribute('aria-label', t('Cerca un carattere', 'Search a font'));
+		pop.appendChild(field);
+		var list = document.createElement('div');
+		list.className = 'eurise-plist';
+		pop.appendChild(list);
+		var current = phone.states['.uno:CharFontName'] || '';
+		function render() {
+			var names = fontNames();
+			var q = fold(field.value.trim());
+			list.innerHTML = '';
+			if (!names.length) {
+				var wait = document.createElement('p');
+				wait.className = 'eurise-wait';
+				wait.textContent = t('Carico i caratteri…', 'Loading fonts…');
+				list.appendChild(wait);
+				return;
+			}
+			var add = function (n) { popItem(list, n, function () { useFont(n); }, { font: n, check: n === current }); };
+			if (q) {
+				names.filter(function (n) { return fold(n).indexOf(q) >= 0; }).slice(0, 200).forEach(add);
+			} else {
+				if (current) { popSection(list, t('Nel documento', 'In the document')); add(current); }
+				var recent = recentFonts().filter(function (n) { return n !== current && names.indexOf(n) >= 0; });
+				if (recent.length) { popSection(list, t('Usati di recente', 'Recently used')); recent.forEach(add); }
+				popSection(list, t('Tutti', 'All'));
+				names.slice(0, 400).forEach(add);
+			}
+			pop.place();
+		}
+		field.oninput = render;
+		field.onkeydown = function (e) {
+			if (e.key === 'Enter') {
+				var first = list.querySelector('.eurise-pi');
+				if (first) { e.preventDefault(); first.click(); }
+			} else if (e.key === 'ArrowDown') {
+				var f = list.querySelector('.eurise-pi');
+				if (f) { e.preventDefault(); f.focus(); }
+			}
+		};
+		render();
+		setTimeout(function () { field.focus(); }, 0);
+		if (!fontNames().length) {
+			app.map.once('updatetoolbarcommandvalues', render);
+			if (app.socket && app.socket.sendMessage) app.socket.sendMessage('commandvalues command=.uno:CharFontName');
+		}
+	}
+
+	var DESK_SIZES = ['8', '9', '10', '10.5', '11', '12', '14', '16', '18', '20', '24', '28', '36', '48', '72'];
+
+	function deskSizes() {
+		var pop = popover(anchorEl, 'sizes');
+		var field = document.createElement('input');
+		field.type = 'text';
+		field.inputMode = 'decimal';
+		field.placeholder = shownState('.uno:FontHeight');
+		field.setAttribute('aria-label', t('Dimensione in punti', 'Size in points'));
+		field.onkeydown = function (e) {
+			if (e.key !== 'Enter') return;
+			var v = parseFloat(String(field.value).replace(',', '.'));
+			if (v > 0 && v < 1000) { closePop(); app.map.applyFontSize(String(v)); }
+		};
+		pop.appendChild(field);
+		var current = shownState('.uno:FontHeight');
+		DESK_SIZES.forEach(function (s) {
+			popItem(pop, s, function () { app.map.applyFontSize(s); }, { on: s === current });
+		});
+		setTimeout(function () { field.focus(); }, 0);
+	}
+
+	function deskColors(kind) {
+		var pop = popover(anchorEl, 'colors');
+		popSection(pop, kind === 'back' ? (app.map.getDocType() === 'spreadsheet' ? t('Riempimento', 'Fill') : t('Evidenzia', 'Highlight')) : t('Colore del carattere', 'Font color'));
+		var grid = document.createElement('div');
+		grid.className = 'eurise-pgrid';
+		var apply = function (value) {
+			var command = colorCommand(kind);
+			var params = {};
+			params[command.replace('.uno:', '') + '.Color'] = { type: 'long', value: value };
+			uno(command, params);
+			if (value >= 0) {
+				lastColor[kind] = value;
+				Array.prototype.forEach.call(document.querySelectorAll('[data-swatch="' + kind + '"]'), function (el) { el.style.background = hex(value); });
+			}
+		};
+		var all = COLORS[kind].filter(function (c) { return c[1] >= 0; }).concat(kind === 'font' ?
+			[[t('Bianco', 'White'), 0xFFFFFF], [t('Salvia', 'Sage'), 0x4F6B5A], [t('Prugna', 'Plum'), 0x6B4A7A]] :
+			[[t('Giallo', 'Yellow'), 0xFFE36E], [t('Verde chiaro', 'Light green'), 0xB8E3A8], [t('Azzurro', 'Light blue'), 0xA9D4F2]]);
+		all.forEach(function (c) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-pc' + (c[1] === lastColor[kind] ? ' on' : '');
+			b.title = c[0];
+			b.setAttribute('aria-label', c[0]);
+			b.style.background = hex(c[1]);
+			b.onclick = function () { closePop(); apply(c[1]); };
+			grid.appendChild(b);
+		});
+		pop.appendChild(grid);
+		popItem(pop, kind === 'back' ? t('Nessuno', 'None') : t('Automatico', 'Automatic'), function () { apply(-1); }, { svg: 'M6 6l12 12 M18 6L6 18' });
+		popItem(pop, t('Altri colori…', 'More colours…'), kind === 'font' || app.map.getDocType() !== 'spreadsheet' ? '.uno:FontDialog' : '.uno:FormatCellDialog');
+	}
+
+	// --- Menu File del computer: compatto, con le scorciatoie (tavola OffPCFile) ---------------------------------------
+
+	var SVGD = {
+		doc: 'M6 3h8l4 4v14H6z M14 3v4h4 M9 12h6 M9 16h6',
+		sheet: 'M4 4h16v16H4z M4 9h16 M4 14h16 M10 4v16',
+		slide: 'M3 5h18v12H3z M12 17v3 M8 20h8',
+		folder: 'M3 6h6l2 2h10v11H3z',
+		clock: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M12 7v5l3 2',
+		pc: 'M3 4h18v12H3z M8 20h8 M12 16v4',
+		save: 'M5 4h11l3 3v13H5z M8 4v5h7V4 M8 20v-6h8v6',
+		pencil: 'M4 20h4L19 9l-4-4L4 16z M14 6l4 4',
+		export: 'M12 3v12 M7 8l5-5 5 5 M5 14v6h14v-6',
+		print: 'M7 8V3h10v5 M5 8h14v8h-3 M8 16H5v-8 M8 13h8v8H8z',
+		info: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M12 11v6 M12 7.5v.01',
+		lock: 'M6 11h12v9H6z M9 11V8a3 3 0 0 1 6 0v3',
+		color: 'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1.5-3-2.5-11-7-11z',
+		close: 'M6 6l12 12 M18 6L6 18'
+	};
+
+	function recentDocs(done) {
+		if (!window.postMobileCall) { done([]); return; }
+		Promise.resolve(window.postMobileCall('GETRECENTDOCS')).then(function (res) {
+			var list = [];
+			try { list = typeof res === 'string' ? JSON.parse(res) : (res || []); } catch (e) { list = []; }
+			done(Array.isArray(list) ? list : []);
+		}, function () { done([]); });
+	}
+
+	function docKindOf(name, doctype) {
+		if (doctype === 'calc' || /\.(xlsx?|ods|csv)$/i.test(name)) return 'sheet';
+		if (doctype === 'impress' || /\.(pptx?|odp)$/i.test(name)) return 'slide';
+		return 'doc';
+	}
+
+	function recentInfo(doc) {
+		var uri = doc.displayUri || doc.uri || '';
+		var path = uri;
+		try { path = decodeURIComponent(new URL(uri).pathname); } catch (e) { /* già un percorso */ }
+		var parts = path.split('/').filter(Boolean);
+		var stamp = doc.timestamp;
+		if (/^\d+$/.test(String(stamp || ''))) { stamp = Number(stamp); if (stamp < 1e12) stamp *= 1000; }
+		return { uri: doc.uri || uri, name: parts.pop() || uri, folder: parts.slice(-2).join(' › '), kind: docKindOf(path, doc.doctype), when: stamp };
+	}
+
+	function openRecent(uri) {
+		if (window.postMobileMessage) window.postMobileMessage('opendoc file=' + encodeURIComponent(uri));
+	}
+
+	function deskFileMenu() {
+		var pop = popover(anchorEl, 'file');
+		popSection(pop, t('Nuovo', 'New'));
+		var row = document.createElement('div');
+		row.className = 'eurise-pnew';
+		[[t('Documento', 'Document'), '.uno:NewDocText', SVGD.doc, 'doc'], [t('Foglio', 'Spreadsheet'), '.uno:NewDocSpreadsheet', SVGD.sheet, 'sheet'],
+			[t('Presentazione', 'Presentation'), '.uno:NewDocPresentation', SVGD.slide, 'slide']].forEach(function (n) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'eurise-pnb ' + n[3];
+			b.innerHTML = icon(n[2], 20) + '<span></span>';
+			b.lastChild.textContent = n[0];
+			b.onclick = function () { closePop(); shellCommand(n[1]); };
+			row.appendChild(b);
+		});
+		pop.appendChild(row);
+		popItem(pop, t('Apri da Eurise File…', 'Open from Eurise File…'), function () { shellCommand('.uno:Open'); }, { svg: SVGD.folder, key: 'Ctrl O' });
+		popItem(pop, t('Recenti', 'Recent'), null, { svg: SVGD.clock, sub: function (b) {
+			recentDocs(function (docs) {
+				var sub = popover(b, 'recent', true);
+				if (!docs.length) popSection(sub, t('Nessun documento recente', 'No recent documents'));
+				docs.slice(0, 10).forEach(function (d) {
+					var info = recentInfo(d);
+					popItem(sub, info.name, function () { openRecent(info.uri); }, { svg: SVGD[info.kind] });
+				});
+				sub.place();
+			});
+		} });
+		popSection(pop, t('Questo documento', 'This document'));
+		popItem(pop, t('Salva', 'Save'), function () { saveNow(false); }, { svg: SVGD.save, key: 'Ctrl S' });
+		popItem(pop, t('Salva con nome…', 'Save as…'), function () { shellCommand('.uno:SaveAs'); }, { svg: SVGD.save, key: 'Ctrl Maiusc S' });
+		popItem(pop, t('Rinomina', 'Rename'), startRename, { svg: SVGD.pencil, key: 'F2' });
+		popItem(pop, t('Esporta', 'Export'), null, { svg: SVGD.export, sub: function (b) {
+			var sub = popover(b, 'export', true);
+			var type = app.map.getDocType();
+			var formats = type === 'spreadsheet' ? [['Excel', 'xlsx'], ['OpenDocument', 'ods'], ['CSV', 'csv']] :
+				type === 'presentation' || type === 'drawing' ? [['PowerPoint', 'pptx'], ['OpenDocument', 'odp']] :
+				[['Word', 'docx'], ['OpenDocument', 'odt'], [t('Testo RTF', 'Rich text'), 'rtf'], ['EPUB', 'epub'], [t('Pagina web', 'Web page'), 'html']];
+			popItem(sub, 'PDF', function () { beforeSharing(); }, { key: '.pdf' });
+			formats.forEach(function (f) { popItem(sub, f[0], function () { dispatch('downloadas-' + f[1]); }, { key: '.' + f[1] }); });
+			sub.place();
+		} });
+		popItem(pop, t('Stampa…', 'Print…'), function () { dispatch('print'); }, { svg: SVGD.print, key: 'Ctrl P' });
+		popItem(pop, t('Proprietà', 'Properties'), '.uno:SetDocumentProperties', { svg: SVGD.info });
+		popSection(pop, 'Eurise');
+		popItem(pop, t('Colore delle icone', 'Icon colour'), null, { svg: SVGD.color, sub: function (b) {
+			var sub = popover(b, 'accents', true);
+			ACCENTS.forEach(function (c) {
+				var item = popItem(sub, t(c[0], c[1]), function () {
+					setAccent(c[2], c[3]);
+					try { window.localStorage.setItem('eurise-accento', JSON.stringify({ light: c[2], dark: c[3] })); } catch (e) { /* niente memoria */ }
+				}, { check: c[2] === ACCENT.light });
+				var dot = document.createElement('i');
+				dot.className = 'eurise-pdot';
+				dot.style.background = darkTheme() ? c[3] : c[2];
+				item.insertBefore(dot, item.querySelector('.eurise-pn'));
+			});
+			sub.place();
+		} });
+		popItem(pop, t('Chiudi documento', 'Close document'), function () { shellCommand('.uno:CloseWin'); }, { svg: SVGD.close, key: 'Ctrl W' });
+		var first = pop.querySelector('.eurise-pi');
+		if (first) first.focus();
+	}
+
+	// --- Trova e sostituisci del computer: una barra in alto sul documento (tavola OffPCFinestre) -----------------------
+
+	/** Comandi di SearchItem: 0 trova, 1 trova tutto, 2 sostituisci, 3 sostituisci tutto. */
+	function searchDoc(text, backward, replace, command) {
+		if (!text || !app.searchService) return;
+		app.searchService.search(text, !!backward, replace || '', command || 0);
+	}
+
+	function deskFind(withReplace) {
+		var bar = document.getElementById('eurise-find');
+		if (!bar) {
+			bar = document.createElement('div');
+			bar.id = 'eurise-find';
+			bar.setAttribute('role', 'search');
+			var btn = function (a, label, path) {
+				return '<button type="button" class="eurise-fb" data-a="' + a + '" title="' + label + '" aria-label="' + label + '">' + icon(path, 17) + '</button>';
+			};
+			bar.innerHTML =
+				'<div class="ef-row"><label class="ef-field">' + icon(SVG.search, 15) + '<input type="search" class="ef-find"></label>' +
+				btn('prev', t('Precedente', 'Previous') + ' (Maiusc Invio)', 'M6 15l6-6 6 6') + btn('next', t('Successivo', 'Next') + ' (Invio)', 'M6 9l6 6 6-6') +
+				btn('all', t('Evidenzia tutti', 'Highlight all'), 'M4 6h16 M4 12h16 M4 18h10') + btn('close', t('Chiudi', 'Close') + ' (Esc)', 'M6 6l12 12 M18 6L6 18') + '</div>' +
+				'<div class="ef-row ef-replace"><label class="ef-field">' + icon('M4 7h11 M12 4l3 3-3 3 M20 17H9 M12 14l-3 3 3 3', 15) + '<input type="text" class="ef-with"></label>' +
+				'<button type="button" class="ef-text" data-a="replace"></button><button type="button" class="ef-text dark" data-a="replaceall"></button></div>' +
+				'<div class="ef-foot"><button type="button" class="ef-link" data-a="toggle"></button><span class="es-fill"></span><button type="button" class="ef-link" data-a="dialog"></button></div>';
+			var find = bar.querySelector('.ef-find');
+			var withEl = bar.querySelector('.ef-with');
+			find.placeholder = t('Trova nel documento', 'Find in document');
+			find.setAttribute('aria-label', find.placeholder);
+			withEl.placeholder = t('Sostituisci con', 'Replace with');
+			withEl.setAttribute('aria-label', withEl.placeholder);
+			bar.querySelector('[data-a="replace"]').textContent = t('Sostituisci', 'Replace');
+			bar.querySelector('[data-a="replaceall"]').textContent = t('Tutti', 'All');
+			bar.querySelector('[data-a="dialog"]').textContent = t('Altre opzioni', 'More options');
+			var close = function () {
+				bar.remove();
+				if (app.searchService && app.searchService.resetSelection) app.searchService.resetSelection();
+				if (app.map && app.map.focus) app.map.focus();
+			};
+			var setReplace = function (on) {
+				bar.classList.toggle('with-replace', on);
+				bar.querySelector('[data-a="toggle"]').textContent = on ? t('Solo trova', 'Find only') : t('Sostituisci…', 'Replace…');
+			};
+			bar.setReplace = setReplace;
+			bar.onclick = function (e) {
+				var b = e.target.closest('button');
+				if (!b) return;
+				var a = b.getAttribute('data-a');
+				if (a === 'next') searchDoc(find.value, false);
+				else if (a === 'prev') searchDoc(find.value, true);
+				else if (a === 'all') searchDoc(find.value, false, '', 1);
+				else if (a === 'replace') searchDoc(find.value, false, withEl.value, 2);
+				else if (a === 'replaceall') searchDoc(find.value, false, withEl.value, 3);
+				else if (a === 'toggle') setReplace(!bar.classList.contains('with-replace'));
+				else if (a === 'dialog') { close(); uno('.uno:SearchDialog'); }
+				else if (a === 'close') close();
+			};
+			bar.onkeydown = function (e) {
+				e.stopPropagation();
+				if (e.key === 'Escape') { e.preventDefault(); close(); }
+				else if (e.key === 'Enter' && e.target === find) { e.preventDefault(); searchDoc(find.value, e.shiftKey); }
+				else if (e.key === 'Enter' && e.target === withEl) { e.preventDefault(); searchDoc(find.value, false, withEl.value, 2); }
+			};
+			var host = document.getElementById('document-container') || document.body;
+			host.appendChild(bar);
+		}
+		bar.setReplace(!!withReplace);
+		var input = bar.querySelector('.ef-find');
+		var picked = '';
+		try { picked = String(window.getSelection ? window.getSelection() : '').trim(); } catch (e) { picked = ''; }
+		if (picked && picked.length < 80 && !input.value) input.value = picked;
+		input.focus();
+		input.select();
+	}
+
+	// --- Titolo nella pillola: un clic e si cambia il nome (tavola OffPCTendine) ---------------------------------------
+
+	/**
+	 * Rinomina sul posto: «saveas» nella stessa cartella con il nome nuovo (il guscio poi riapre lì il documento, come
+	 * dopo Salva con nome) e il messaggio EURISERINOMINA, con cui il guscio Eurise toglie il file col nome vecchio
+	 * (patch 02 della strada 2). L'estensione resta quella del file.
+	 */
+	function startRename() {
+		var nameEl = document.querySelector('#eurise-header .eurise-name');
+		var path = documentPath();
+		if (!nameEl || !path || nameEl.querySelector('input')) return;
+		var full = path.split('/').pop();
+		var dot = full.lastIndexOf('.');
+		var base = dot > 0 ? full.slice(0, dot) : full;
+		var ext = dot > 0 ? full.slice(dot) : '';
+		nameEl.innerHTML = '';
+		nameEl.classList.add('editing');
+		var input = document.createElement('input');
+		input.type = 'text';
+		input.value = base;
+		input.setAttribute('aria-label', t('Nome del documento', 'Document name'));
+		input.size = Math.max(6, base.length + 1);
+		var tail = document.createElement('span');
+		tail.className = 'eurise-ext';
+		tail.textContent = ext;
+		nameEl.appendChild(input);
+		nameEl.appendChild(tail);
+		var done = false;
+		var finish = function (apply) {
+			if (done) return;
+			done = true;
+			var wanted = input.value.trim().replace(/[\/\\:*?"<>|]/g, '');
+			nameEl.classList.remove('editing');
+			nameEl.textContent = (apply && wanted ? wanted : base) + ext;
+			if (!apply || !wanted || wanted === base) return;
+			var target = path.slice(0, path.length - full.length) + wanted + ext;
+			if (window.postMobileMessage) window.postMobileMessage('EURISERINOMINA from=' + encodeURIComponent(path));
+			var format = ext.replace('.', '').toLowerCase();
+			if (app.socket && app.socket.sendMessage) {
+				app.socket.sendMessage('saveas url=' + encodeURI('file://' + target) + ' format=' + format + ' options=');
+				notice(t('Rinomino in ', 'Renaming to ') + wanted + ext);
+			}
+		};
+		input.oninput = function () { input.size = Math.max(6, input.value.length + 1); };
+		input.onkeydown = function (e) {
+			e.stopPropagation();
+			if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+			else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+		};
+		input.onblur = function () { finish(false); };
+		input.focus();
+		input.select();
+	}
+
+	// --- Nastri completi del computer (tavola OffPCNastro): sette schede come Word, più la Suite ------------------------
+
+	/** Voce col comando del motore (anche con parametri) e l'icona del comando indicato. */
+	function u(it, en, command, big, iconCommand) {
+		var item = r(it, en, command, big);
+		item.icon = iconCommand || String(command).split('?')[0];
+		return item;
+	}
+	/** Piccola con il nome (tre righe per gruppo, come Word). */
+	function ul(it, en, command, iconCommand) { return lab(u(it, en, command, false, iconCommand)); }
+	/** Voce che apre una tendina di scelte. */
+	function um(item, entries) { item.run = menuOf(entries); item.menu = true; return item; }
+	function rows(group, list) { group.rows = list; return group; }
+	function more(group, command) { group.deskMore = command; return group; }
+	function fn(name) { return function () { dispatch(name); }; }
+
+	var CASE_MENU = [[t('MAIUSCOLO', 'UPPERCASE'), '.uno:ChangeCaseToUpper'], [t('minuscolo', 'lowercase'), '.uno:ChangeCaseToLower'],
+		[t('Prima maiuscola nella frase', 'Sentence case'), '.uno:ChangeCaseToSentenceCase'], [t('Ogni Parola Maiuscola', 'Capitalize Every Word'), '.uno:ChangeCaseToTitleCase']];
+	var SPACING_MENU = [['1,0', '.uno:SpacePara1'], ['1,15', '.uno:SpacePara115'], ['1,5', '.uno:SpacePara15'], ['2,0', '.uno:SpacePara2'],
+		[t('Più spazio tra i paragrafi', 'More space between paragraphs'), '.uno:ParaspaceIncrease'],
+		[t('Meno spazio tra i paragrafi', 'Less space between paragraphs'), '.uno:ParaspaceDecrease'],
+		[t('Rientri e spaziatura…', 'Indents and spacing…'), '.uno:ParagraphDialog']];
+	var SHAPES_MENU = [[t('Rettangolo', 'Rectangle'), '.uno:BasicShapes.rectangle'], [t('Rettangolo arrotondato', 'Rounded rectangle'), '.uno:BasicShapes.round-rectangle'],
+		[t('Ellisse', 'Ellipse'), '.uno:BasicShapes.ellipse'], [t('Linea', 'Line'), '.uno:Line'], [t('Freccia', 'Arrow'), '.uno:ArrowShapes.right-arrow'],
+		[t('Fumetto', 'Callout'), '.uno:CalloutShapes.round-rectangular-callout'], [t('Stella', 'Star'), '.uno:StarShapes.star5']];
+	var WRAP_MENU = [[t('Nessuno', 'None'), '.uno:WrapOff'], [t('Ai lati', 'Parallel'), '.uno:WrapOn'], [t('Ottimale', 'Optimal'), '.uno:WrapIdeal'],
+		[t('A sinistra', 'Before'), '.uno:WrapLeft'], [t('A destra', 'After'), '.uno:WrapRight'], [t('Attraverso', 'Through'), '.uno:WrapThrough']];
+	function inchToHmm(v) { return Math.round(v * 2540); }
+	function marginsMenu() {
+		var calc = app.map.getDocType() === 'spreadsheet';
+		var set = function (top, side) {
+			return function () {
+				if (calc) {
+					uno('.uno:CalcPageMargin?Page.LeftMargin:long=' + inchToHmm(side) + '&Page.RightMargin=' + inchToHmm(side) +
+						'&Page.TopMargin:long=' + inchToHmm(top) + '&Page.BottomMargin=' + inchToHmm(top));
+				} else {
+					uno('.uno:PageLRMargin?Page.Left:long=' + inchToHmm(side) + '&Page.Right:long=' + inchToHmm(side));
+					uno('.uno:PageULMargin?Page.Upper:long=' + inchToHmm(top) + '&Page.Lower:long=' + inchToHmm(top));
+				}
+			};
+		};
+		return [[t('Normali · 2 cm', 'Normal · 2 cm'), set(0.79, 0.79)], [t('Stretti · 1,27 cm', 'Narrow · 1.27 cm'), set(0.5, 0.5)],
+			[t('Larghi · 2,54 / 5,08 cm', 'Wide · 2.54 / 5.08 cm'), set(1, 2)],
+			[t('Personalizzati…', 'Custom…'), calc ? '.uno:PageFormatDialog' : '.uno:PageDialog']];
+	}
+	var ORIENT_MENU = [[t('Verticale', 'Portrait'), '.uno:Orientation?isLandscape:bool=false'], [t('Orizzontale', 'Landscape'), '.uno:Orientation?isLandscape:bool=true']];
+	function sizesMenu() {
+		var calc = app.map.getDocType() === 'spreadsheet';
+		// Numeri del formato della carta come in Definitions.Menu.ts (enum Paper): A3 3, A4 4, A5 5, Letter 8, Legal 9.
+		var size = function (paper) { return calc ? '.uno:CalcPageSize?PaperFormat:long=' + paper : '.uno:AttributePageSize?PaperFormat:short=' + paper; };
+		return [['A4 · 21 × 29,7 cm', size(4)], ['A5 · 14,8 × 21 cm', size(5)], ['A3 · 29,7 × 42 cm', size(3)],
+			[t('Lettera', 'Letter') + ' · 21,6 × 27,9 cm', size(8)], [t('Legale', 'Legal') + ' · 21,6 × 35,6 cm', size(9)],
+			[t('Altre dimensioni…', 'More sizes…'), calc ? '.uno:PageFormatDialog' : '.uno:PageDialog']];
+	}
+	var FIELDS_MENU = [[t('Data', 'Date'), '.uno:InsertDateField'], [t('Ora', 'Time'), '.uno:InsertTimeField'], [t('Numero di pagina', 'Page number'), '.uno:InsertPageNumberField'],
+		[t('Numero di pagine', 'Page count'), '.uno:InsertPageCountField'], [t('Titolo', 'Title'), '.uno:InsertTitleField'], [t('Altri campi…', 'More fields…'), '.uno:InsertField']];
+
+	var D_APPUNTI = g('Appunti', 'Clipboard', [u('Incolla', 'Paste', '.uno:Paste', 'big'), ul('Taglia', 'Cut', '.uno:Cut'), ul('Copia', 'Copy', '.uno:Copy'),
+		ul('Copia formato', 'Clone formatting', '.uno:FormatPaintbrush'), ul('Incolla speciale', 'Paste special', '.uno:PasteSpecial', '.uno:Paste')]);
+	function deskFont(docType) {
+		var back = docType === 'spreadsheet' ? colorItem('Riempimento', 'Fill', 'back', '.uno:BackgroundColor') : colorItem('Evidenzia', 'Highlight', 'back', '.uno:CharBackColor');
+		var group = g('Carattere', 'Font', [u('Grassetto', 'Bold', '.uno:Bold'), u('Corsivo', 'Italic', '.uno:Italic'), u('Sottolineato', 'Underline', '.uno:Underline'),
+			u('Barrato', 'Strikethrough', '.uno:Strikeout'), u('Pedice', 'Subscript', '.uno:SubScript'), u('Apice', 'Superscript', '.uno:SuperScript'),
+			u('Ombra', 'Shadow', '.uno:Shadowed'), back, colorItem('Colore del carattere', 'Font color', 'font', '.uno:Color')], '.uno:FontDialog');
+		group.fonts = true;
+		group.fontExtras = [u('Ingrandisci', 'Grow', '.uno:Grow'), u('Riduci', 'Shrink', '.uno:Shrink'),
+			um(u('Maiuscole e minuscole', 'Change case', null, '.uno:ChangeCaseRotateCase'), CASE_MENU),
+			ri('Cancella formattazione', 'Clear formatting', clearFormatting, false, docType === 'text' ? '.uno:ResetAttributes' : '.uno:SetDefault')];
+		return group;
+	}
+	var D_PARAGRAFO = more(rows(g('Paragrafo', 'Paragraph', []), [
+		[u('Elenco puntato', 'Bullets', '.uno:DefaultBullet'), u('Elenco numerato', 'Numbering', '.uno:DefaultNumbering'), u('Elenco a più livelli', 'Outline', '.uno:OutlineBullet'),
+			u('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'), u('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent'), u('Ordina', 'Sort', '.uno:SortDialog', false, '.uno:SortAscending'),
+			u('Mostra segni di formattazione', 'Formatting marks', '.uno:ControlCodes')],
+		[u('A sinistra', 'Left', '.uno:LeftPara'), u('Al centro', 'Center', '.uno:CenterPara'), u('A destra', 'Right', '.uno:RightPara'), u('Giustificato', 'Justified', '.uno:JustifyPara'),
+			um(u('Interlinea', 'Line spacing', null, '.uno:LineSpacing'), SPACING_MENU), u('Da sinistra a destra', 'Left to right', '.uno:ParaLeftToRight'),
+			u('Da destra a sinistra', 'Right to left', '.uno:ParaRightToLeft')]]), '.uno:ParagraphDialog');
+	var D_STILI = g('Stili', 'Styles', [r('Normale', 'Normal', style('Standard'), 'big'), r('Titolo', 'Title', style('Title'), 'big'),
+		r('Titolo 1', 'Heading 1', style('Heading 1'), 'big'), r('Titolo 2', 'Heading 2', style('Heading 2'), 'big'), r('Citazione', 'Quotation', style('Quotations'), 'big')]);
+	D_STILI.tiles = true;
+	D_STILI.deskMore = '.uno:SidebarDeck.StyleListDeck';
+	var D_MODIFICA = g('Modifica', 'Editing', [ul('Trova', 'Find', function () { deskFind(false); }, '.uno:SearchDialog'),
+		ul('Sostituisci', 'Replace', function () { deskFind(true); }, '.uno:EuriseReplace'), ul('Seleziona tutto', 'Select all', '.uno:SelectAll')]);
+	var D_COMMENTO = u('Commento', 'Comment', fn('insertcomment'), 'big', '.uno:InsertAnnotation');
+	var D_IMMAGINE = u('Immagine', 'Image', fn('localgraphic'), 'big', '.uno:InsertGraphic');
+	var D_TABELLA = u('Tabella', 'Table', TABELLA.run, 'big', '.uno:InsertTable');
+	var D_FORME = um(u('Forme', 'Shapes', null, 'big', '.uno:BasicShapes'), SHAPES_MENU);
+	var D_GRAFICO = u('Grafico', 'Chart', '.uno:InsertObjectChart', 'big');
+	var D_LINK = ul('Collegamento', 'Link', fn('hyperlinkdialog'), '.uno:HyperlinkDialog');
+	var D_ZOOM = g('Zoom', 'Zoom', [u('Ingrandisci', 'Zoom in', fn('zoomin'), 'big', '.uno:ZoomPlus'), u('Riduci', 'Zoom out', fn('zoomout'), 'big', '.uno:ZoomMinus'),
+		ul('100%', '100%', fn('zoomreset'), '.uno:EuriseZoom100'), ul('Larghezza pagina', 'Page width', fn('fitwidthzoom'), '.uno:EuriseZoomWidth')]);
+	var D_ASPETTO = g('Aspetto', 'Appearance', [u('Tema Notte', 'Night theme', fn('toggledarktheme'), 'big', '.uno:EuriseNotte'),
+		u('Schermo intero', 'Full screen', '.uno:FullScreen', 'big')]);
+
+	var DESK_RIBBONS = {
+		text: [
+			{ id: 'home', label: 'Home', groups: [D_APPUNTI, deskFont('text'), D_PARAGRAFO, D_STILI, D_MODIFICA, SUITE_HOME] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
+				g('Pagine', 'Pages', [u('Frontespizio', 'Title page', '.uno:TitlePageDialog', 'big'), ul('Interruzione di pagina', 'Page break', '.uno:InsertPagebreak'),
+					ul('Altre interruzioni…', 'More breaks…', '.uno:InsertBreak'), ul('Sezione', 'Section', '.uno:InsertSection')]),
+				g('Tabelle', 'Tables', [D_TABELLA]),
+				g('Illustrazioni', 'Illustrations', [D_IMMAGINE, D_FORME, D_GRAFICO, ul('Fontwork', 'Fontwork', '.uno:FontworkGalleryFloater'),
+					ul('Codice QR', 'QR code', '.uno:InsertQrCode'), ul('Cornice', 'Frame', '.uno:InsertFrame')]),
+				g('Collegamenti', 'Links', [D_LINK, ul('Segnalibro', 'Bookmark', '.uno:InsertBookmark'), ul('Rimando', 'Cross-reference', '.uno:InsertReferenceField')]),
+				g('Commenti', 'Comments', [D_COMMENTO]),
+				g('Intestazione e piè', 'Header and footer', [ul('Intestazione', 'Header', '.uno:InsertPageHeader?On:bool=true'),
+					ul('Piè di pagina', 'Footer', '.uno:InsertPageFooter?On:bool=true'), ul('Numero di pagina', 'Page number', '.uno:PageNumberWizard')]),
+				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:DrawText?CreateDirectly:bool=true', 'big'),
+					um(ul('Campo', 'Field', null, '.uno:InsertFieldCtrl'), FIELDS_MENU), ul('Data', 'Date', '.uno:InsertDateField'), ul('Riga per la firma', 'Signature line', '.uno:InsertSignatureLine')]),
+				g('Simboli', 'Symbols', [ul('Formula', 'Formula', '.uno:InsertObjectStarMath'), ul('Simbolo', 'Symbol', '.uno:CharmapControl'), ul('Nota a piè', 'Footnote', '.uno:InsertFootnote')])] },
+			{ id: 'progetta', label: t('Progetta', 'Design'), groups: [
+				g('Formattazione del documento', 'Document formatting', [u('Temi', 'Themes', '.uno:ThemeDialog', 'big'),
+					u('Stili', 'Styles', '.uno:SidebarDeck.StyleListDeck', 'big', '.uno:EditStyle'),
+					ul('Nuovo stile', 'New style', '.uno:StyleNewByExample'), ul('Aggiorna lo stile', 'Update style', '.uno:StyleUpdateByExample')]),
+				g('Sfondo della pagina', 'Page background', [u('Filigrana', 'Watermark', '.uno:Watermark', 'big'), u('Colore e bordi', 'Colour and borders', '.uno:PageDialog', 'big', '.uno:EurisePageColor')])] },
+			{ id: 'layout', label: 'Layout', groups: [
+				more(g('Imposta pagina', 'Page setup', [um(u('Margini', 'Margins', null, 'big', '.uno:EurisePageMargin'), marginsMenu),
+					um(u('Orientamento', 'Orientation', null, 'big', '.uno:Orientation'), ORIENT_MENU), um(u('Dimensioni', 'Size', null, 'big', '.uno:EurisePageSize'), sizesMenu),
+					u('Colonne', 'Columns', '.uno:FormatColumns', 'big'), ul('Interruzioni…', 'Breaks…', '.uno:InsertBreak'),
+					ul('Numeri di riga', 'Line numbers', '.uno:LineNumberingDialog'), ul('Sillabazione', 'Hyphenation', '.uno:Hyphenate')]), '.uno:PageDialog'),
+				g('Paragrafo', 'Paragraph', [ul('Rientri e spaziatura…', 'Indents and spacing…', '.uno:ParagraphDialog'), ul('Più spazio', 'More space', '.uno:ParaspaceIncrease'),
+					ul('Meno spazio', 'Less space', '.uno:ParaspaceDecrease')]),
+				g('Disponi', 'Arrange', [um(u('A capo', 'Wrap', null, 'big', '.uno:EuriseWrap'), WRAP_MENU), ul('Porta avanti', 'Bring forward', '.uno:ObjectForwardOne'),
+					ul('Porta indietro', 'Send backward', '.uno:ObjectBackOne'), ul('In primo piano', 'Bring to front', '.uno:BringToFront'),
+					ul('Raggruppa', 'Group', '.uno:FormatGroup'), ul('Separa', 'Ungroup', '.uno:FormatUngroup'), ul('Posizione e dimensioni', 'Position and size', '.uno:TransformDialog')])] },
+			{ id: 'riferimenti', label: t('Riferimenti', 'References'), groups: [
+				g('Sommario', 'Table of contents', [u('Sommario', 'Table of contents', '.uno:InsertMultiIndex', 'big'), ul('Aggiorna il sommario', 'Update', '.uno:UpdateCurIndex'),
+					ul('Aggiorna tutto', 'Update all', '.uno:UpdateAll')]),
+				g('Note a piè di pagina', 'Footnotes', [u('Nota a piè', 'Footnote', '.uno:InsertFootnote', 'big'), ul('Nota di chiusura', 'Endnote', '.uno:InsertEndnote'),
+					ul('Impostazioni delle note', 'Footnote settings', '.uno:FootnoteDialog')]),
+				g('Didascalie', 'Captions', [u('Didascalia', 'Caption', '.uno:InsertCaptionDialog', 'big'), ul('Rimando', 'Cross-reference', '.uno:InsertReferenceField'),
+					ul('Segnalibro', 'Bookmark', '.uno:InsertBookmark')]),
+				g('Indice analitico', 'Index', [u('Segna voce', 'Mark entry', '.uno:InsertIndexesEntry', 'big'), ul('Inserisci indice', 'Insert index', '.uno:InsertMultiIndex')])] },
+			{ id: 'revisione', label: t('Revisione', 'Review'), groups: [
+				g('Strumenti di correzione', 'Proofing', [u('Ortografia e grammatica', 'Spelling and grammar', '.uno:SpellingAndGrammarDialog', 'big'),
+					ul('Sinonimi', 'Thesaurus', '.uno:ThesaurusDialog'), ul('Conteggio parole', 'Word count', '.uno:WordCountDialog'), ul('Accessibilità', 'Accessibility', '.uno:AccessibilityCheck')]),
+				g('Lingua', 'Language', [u('Lingua', 'Language', fn('languagemenu'), 'big', '.uno:LanguageMenu')]),
+				g('Commenti', 'Comments', [u('Nuovo commento', 'New comment', fn('insertcomment'), 'big', '.uno:InsertAnnotation'),
+					ul('Elimina tutti', 'Delete all', '.uno:DeleteAllNotes'), ul('Mostra commenti', 'Show comments', fn('showannotations'), '.uno:ShowAnnotations')]),
+				g('Rilevamento', 'Tracking', [u('Registra le modifiche', 'Record changes', '.uno:TrackChanges', 'big'), ul('Mostra le modifiche', 'Show changes', '.uno:ShowTrackedChanges'),
+					ul('Gestisci', 'Manage', '.uno:AcceptTrackedChanges')]),
+				g('Modifiche', 'Changes', [u('Accetta', 'Accept', '.uno:AcceptTrackedChange', 'big'), u('Rifiuta', 'Reject', '.uno:RejectTrackedChange', 'big'),
+					ul('Precedente', 'Previous', '.uno:PreviousTrackedChange'), ul('Successiva', 'Next', '.uno:NextTrackedChange'), ul('Accetta tutte', 'Accept all', '.uno:AcceptAllTrackedChanges')]),
+				g('Confronta e proteggi', 'Compare and protect', [ul('Confronta…', 'Compare…', fn('localcomparedocuments'), '.uno:CompareDocuments'),
+					ul('Proteggi le revisioni', 'Protect changes', '.uno:ProtectTraceChangeMode')])] },
+			{ id: 'vista', label: t('Vista', 'View'), groups: [
+				g('Mostra', 'Show', [ul('Righello', 'Ruler', fn('showruler'), '.uno:Ruler'), ul('Segni di formattazione', 'Formatting marks', '.uno:ControlCodes'),
+					ul('Limiti del testo', 'Text boundaries', '.uno:ShowBoundaries'), ul('Più pagine', 'Multiple pages', fn('multipageview'), '.uno:MultiPageView'),
+					ul('Barra laterale', 'Sidebar', '.uno:Sidebar')]),
+				D_ZOOM, D_ASPETTO] },
+			{ id: 'suite', label: 'Suite', suite: true, groups: [SUITE] }
+		],
+		spreadsheet: [
+			{ id: 'home', label: 'Home', groups: [D_APPUNTI, deskFont('spreadsheet'),
+				more(rows(g('Allineamento', 'Alignment', []), [
+					[u('In alto', 'Top', '.uno:CellVertTop'), u('Al centro', 'Middle', '.uno:CellVertCenter'), u('In basso', 'Bottom', '.uno:CellVertBottom'),
+						u('Testo a capo', 'Wrap text', '.uno:WrapText'), u('Unisci e centra', 'Merge and center', '.uno:ToggleMergeCells')],
+					[u('A sinistra', 'Left', '.uno:AlignLeft'), u('Al centro', 'Center', '.uno:AlignHorizontalCenter'), u('A destra', 'Right', '.uno:AlignRight'),
+						u('Giustificato', 'Justified', '.uno:AlignBlock'), u('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'), u('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent')]]), '.uno:FormatCellDialog'),
+				more(rows(g('Numeri', 'Numbers', []), [
+					[u('Valuta', 'Currency', '.uno:NumberFormatCurrency'), u('Percentuale', 'Percent', '.uno:NumberFormatPercent'), u('Separatore delle migliaia', 'Thousands', '.uno:NumberFormatThousands')],
+					[u('Data', 'Date', '.uno:NumberFormatDate'), u('Aggiungi decimale', 'Add decimal', '.uno:NumberFormatIncDecimals'), u('Togli decimale', 'Remove decimal', '.uno:NumberFormatDecDecimals')]]), '.uno:FormatCellDialog'),
+				g('Celle', 'Cells', [um(ul('Inserisci', 'Insert', null, '.uno:InsertRowsBefore'), [[t('Riga sopra', 'Row above'), '.uno:InsertRowsBefore'], [t('Riga sotto', 'Row below'), '.uno:InsertRowsAfter'],
+					[t('Colonna prima', 'Column before'), '.uno:InsertColumnsBefore'], [t('Colonna dopo', 'Column after'), '.uno:InsertColumnsAfter']]),
+					um(ul('Elimina', 'Delete', null, '.uno:DeleteRows'), [[t('Righe', 'Rows'), '.uno:DeleteRows'], [t('Colonne', 'Columns'), '.uno:DeleteColumns']]),
+					ul('Formato celle…', 'Format cells…', '.uno:FormatCellDialog', '.uno:PageDialog')]),
+				g('Modifica', 'Editing', [u('Somma', 'Sum', '.uno:AutoSum', 'big'), ul('Ordina', 'Sort', '.uno:DataSort'), ul('Filtro', 'Filter', '.uno:DataFilterAutoFilter'),
+					ul('Trova', 'Find', function () { deskFind(false); }, '.uno:SearchDialog')]),
+				SUITE_FOGLIO] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
+				g('Tabelle', 'Tables', [u('Tabella pivot', 'Pivot table', '.uno:DataDataPilotRun', 'big'), u('Tabella', 'Table', '.uno:InsertCalcTable', 'big', '.uno:InsertTable')]),
+				g('Illustrazioni', 'Illustrations', [D_IMMAGINE, D_FORME, D_GRAFICO, ul('Fontwork', 'Fontwork', '.uno:FontworkGalleryFloater')]),
+				g('Collegamenti', 'Links', [D_LINK, D_COMMENTO]),
+				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:DrawText?CreateDirectly:bool=true', 'big'), ul('Simbolo', 'Symbol', '.uno:CharmapControl'),
+					ul('Funzione…', 'Function…', '.uno:FunctionDialog')]),
+				g('Fogli', 'Sheets', [u('Nuovo foglio', 'New sheet', fn('insertsheet'), 'big', '.uno:Insert')])] },
+			{ id: 'layout', label: t('Layout di pagina', 'Page layout'), groups: [
+				more(g('Imposta pagina', 'Page setup', [um(u('Margini', 'Margins', null, 'big', '.uno:EurisePageMargin'), marginsMenu),
+					um(u('Orientamento', 'Orientation', null, 'big', '.uno:Orientation'), ORIENT_MENU), um(u('Dimensioni', 'Size', null, 'big', '.uno:EurisePageSize'), sizesMenu),
+					ul('Area di stampa', 'Print area', '.uno:DefinePrintArea'), ul('Intestazione e piè', 'Header and footer', '.uno:EditHeaderAndFooter'),
+					ul('Griglia di stampa', 'Print grid', '.uno:TogglePrintGrid')]), '.uno:PageFormatDialog')] },
+			{ id: 'formule', label: t('Formule', 'Formulas'), groups: [
+				g('Funzioni', 'Functions', [u('Somma', 'Sum', '.uno:AutoSum', 'big'), u('Funzione', 'Function', '.uno:FunctionDialog', 'big')]),
+				g('Nomi', 'Names', [ul('Definisci nome', 'Define name', '.uno:DefineName'), ul('Nome per area dati', 'Database range', '.uno:DefineDBName')]),
+				g('Calcolo', 'Calculation', [u('Ricalcola', 'Recalculate', '.uno:Calculate', 'big'), ul('Ricalcola tutto', 'Recalculate all', '.uno:CalculateHard'),
+					ul('Ricerca obiettivo', 'Goal seek', '.uno:GoalSeekDialog'), ul('Risolutore', 'Solver', '.uno:SolverDialog')])] },
+			{ id: 'dati', label: t('Dati', 'Data'), groups: [
+				g('Ordina e filtra', 'Sort and filter', [u('Ordina', 'Sort', '.uno:DataSort', 'big'), u('Filtro', 'Filter', '.uno:DataFilterAutoFilter', 'big'),
+					ul('Dalla A alla Z', 'A to Z', '.uno:SortAscending'), ul('Dalla Z alla A', 'Z to A', '.uno:SortDescending'), ul('Filtro standard', 'Standard filter', '.uno:DataFilterStandardFilter'),
+					ul('Togli il filtro', 'Remove filter', '.uno:DataFilterRemoveFilter')]),
+				g('Strumenti dei dati', 'Data tools', [ul('Testo in colonne', 'Text to columns', '.uno:TextToColumns'), ul('Doppioni', 'Duplicates', '.uno:HandleDuplicateRecords'),
+					ul('Convalida', 'Validity', '.uno:Validation'), ul('Subtotali', 'Subtotals', '.uno:DataSubTotals'), ul('Tabella pivot', 'Pivot table', '.uno:DataDataPilotRun')]),
+				g('Struttura', 'Outline', [ul('Raggruppa', 'Group', '.uno:Group'), ul('Separa', 'Ungroup', '.uno:Ungroup'), ul('Mostra dettagli', 'Show details', '.uno:ShowDetail'),
+					ul('Nascondi dettagli', 'Hide details', '.uno:HideDetail')])] },
+			{ id: 'revisione', label: t('Revisione', 'Review'), groups: [
+				g('Correzione', 'Proofing', [u('Ortografia', 'Spelling', '.uno:SpellDialog', 'big')]),
+				g('Commenti', 'Comments', [D_COMMENTO, ul('Elimina tutti', 'Delete all', '.uno:DeleteAllNotes')]),
+				g('Modifiche', 'Changes', [u('Registra', 'Record', '.uno:TraceChangeMode', 'big', '.uno:TrackChanges'), ul('Gestisci', 'Manage', '.uno:AcceptChanges')]),
+				g('Proteggi', 'Protect', [u('Proteggi il foglio', 'Protect sheet', '.uno:Protect', 'big')])] },
+			{ id: 'vista', label: t('Vista', 'View'), groups: [
+				g('Blocca', 'Freeze', [u('Blocca righe e colonne', 'Freeze panes', '.uno:FreezePanes', 'big'), ul('Prima riga', 'First row', '.uno:FreezePanesRow'),
+					ul('Prima colonna', 'First column', '.uno:FreezePanesColumn')]),
+				g('Mostra', 'Show', [ul('Griglia', 'Grid', '.uno:ToggleSheetGrid'), ul('Intestazioni', 'Headers', '.uno:ViewRowColumnHeaders'),
+					ul('Evidenzia riga e colonna', 'Highlight row and column', fn('columnrowhighlight'), '.uno:EuriseHighlight')]),
+				D_ZOOM, D_ASPETTO] },
+			{ id: 'suite', label: 'Suite', suite: true, groups: [SUITE_FOGLIO] }
+		],
+		presentation: [
+			{ id: 'home', label: 'Home', groups: [D_APPUNTI,
+				g('Diapositive', 'Slides', [u('Nuova', 'New', '.uno:InsertPage', 'big', '.uno:InsertSlide'), ul('Duplica', 'Duplicate', '.uno:DuplicatePage', '.uno:DuplicateSlide'),
+					ul('Elimina', 'Delete', '.uno:DeletePage', '.uno:DeleteSlide'), ul('Layout', 'Layout', '.uno:AssignLayout', '.uno:EuriseLayout')]),
+				deskFont('presentation'),
+				more(rows(g('Paragrafo', 'Paragraph', []), [
+					[u('Elenco puntato', 'Bullets', '.uno:DefaultBullet'), u('Elenco numerato', 'Numbering', '.uno:DefaultNumbering'),
+						u('Riduci rientro', 'Decrease indent', '.uno:DecrementIndent'), u('Aumenta rientro', 'Increase indent', '.uno:IncrementIndent')],
+					[u('A sinistra', 'Left', '.uno:LeftPara'), u('Al centro', 'Center', '.uno:CenterPara'), u('A destra', 'Right', '.uno:RightPara'),
+						u('Giustificato', 'Justified', '.uno:JustifyPara'), um(u('Interlinea', 'Line spacing', null, '.uno:LineSpacing'), SPACING_MENU)]]), '.uno:ParagraphDialog'),
+				g('Disegno', 'Drawing', [D_FORME, u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'),
+					ul('In primo piano', 'Bring to front', '.uno:BringToFront'), ul('Sullo sfondo', 'Send to back', '.uno:SendToBack'), ul('Raggruppa', 'Group', '.uno:FormatGroup')]),
+				D_MODIFICA, SUITE_HOME] },
+			{ id: 'inserisci', label: t('Inserisci', 'Insert'), groups: [
+				g('Diapositive', 'Slides', [u('Nuova diapositiva', 'New slide', '.uno:InsertPage', 'big', '.uno:InsertSlide'), ul('Duplica', 'Duplicate', '.uno:DuplicatePage', '.uno:DuplicateSlide')]),
+				g('Tabelle', 'Tables', [D_TABELLA]),
+				g('Illustrazioni', 'Illustrations', [D_IMMAGINE, D_FORME, D_GRAFICO, ul('Fontwork', 'Fontwork', '.uno:FontworkGalleryFloater'),
+					ul('Audio e video', 'Audio and video', fn('insertmultimedia'), '.uno:InsertAVMedia')]),
+				g('Collegamenti', 'Links', [D_LINK, D_COMMENTO]),
+				g('Testo', 'Text', [u('Casella di testo', 'Text box', '.uno:Text?CreateDirectly:bool=true', 'big', '.uno:Text'), ul('Intestazione e piè', 'Header and footer', '.uno:HeaderAndFooter'),
+					ul('Numero della diapositiva', 'Slide number', '.uno:InsertSlideField'), ul('Data', 'Date', '.uno:InsertDateFieldFix', '.uno:InsertDateField'), ul('Simbolo', 'Symbol', '.uno:CharmapControl')])] },
+			{ id: 'progetta', label: t('Progetta', 'Design'), groups: [
+				g('Diapositiva', 'Slide', [u('Dimensioni', 'Size', '.uno:SlideSetup', 'big', '.uno:EurisePageSize'), u('Sfondo', 'Background', fn('selectbackground'), 'big', '.uno:EurisePageColor')]),
+				g('Schema', 'Master', [u('Schema diapositiva', 'Slide master', '.uno:SlideMasterPage', 'big', '.uno:EuriseLayout'), ul('Chiudi lo schema', 'Close master', '.uno:CloseMasterView')])] },
+			{ id: 'transizioni', label: t('Transizioni', 'Transitions'), groups: [
+				g('Transizioni', 'Transitions', [u('Transizione', 'Transition', fn('transitiondeck'), 'big', '.uno:EuriseTransizione')])] },
+			{ id: 'animazioni', label: t('Animazioni', 'Animations'), groups: [
+				g('Animazioni', 'Animations', [u('Animazione', 'Animation', fn('animationdeck'), 'big', '.uno:EuriseAnimazione')])] },
+			{ id: 'presenta', label: t('Presenta', 'Present'), groups: [
+				g('Presentazione', 'Slideshow', [u('Dall\'inizio', 'From start', fn('presentation'), 'big', '.uno:Presentation'),
+					u('Dalla corrente', 'From current', fn('presentation-currentslide'), 'big', '.uno:Presentation'),
+					ul('In una finestra', 'In a window', fn('presentinwindow'), '.uno:EurisePresentaFinestra'), ul('Console del relatore', 'Presenter console', fn('presenterconsole'), '.uno:EuriseConsole')]),
+				g('Diapositive', 'Slides', [ul('Nascondi', 'Hide', fn('hideslide'), '.uno:HideSlide'), ul('Mostra', 'Show', fn('showslide'), '.uno:ShowSlide')])] },
+			{ id: 'revisione', label: t('Revisione', 'Review'), groups: [
+				g('Correzione', 'Proofing', [u('Ortografia', 'Spelling', '.uno:SpellDialog', 'big')]),
+				g('Commenti', 'Comments', [D_COMMENTO, ul('Elimina tutti', 'Delete all', '.uno:DeleteAllAnnotation', '.uno:DeleteAllNotes')])] },
+			{ id: 'vista', label: t('Vista', 'View'), groups: [
+				g('Viste', 'Views', [u('Normale', 'Normal', '.uno:NormalMultiPaneGUI', 'big'), u('Note', 'Notes', '.uno:NotesMode', 'big'), u('Sequenza', 'Slide sorter', '.uno:DiaMode', 'big')]),
+				D_ZOOM, D_ASPETTO] },
+			{ id: 'suite', label: 'Suite', suite: true, groups: [SUITE] }
+		]
+	};
+	DESK_RIBBONS.drawing = DESK_RIBBONS.presentation;
+
+	// --- Testi di Collabora rimasti in inglese nelle finestre e nella colonna (tavola OffPCFinestre) ---------------------
+
+	var IT_FIX = {
+		'Find': 'Trova', 'Replace': 'Sostituisci', 'Find All': 'Trova tutto', 'Replace All': 'Sostituisci tutto', 'Find Next': 'Trova successivo',
+		'Find Previous': 'Trova precedente', 'Match case': 'Maiuscole e minuscole', 'Whole words only': 'Solo parole intere', 'Other options': 'Altre opzioni',
+		'Highlight styles': 'Evidenzia gli stili', 'Filter': 'Filtro', 'Show previews': 'Mostra le anteprime', 'Hierarchical': 'Gerarchico',
+		'New': 'Nuovo', 'Close': 'Chiudi', 'Cancel': 'Annulla', 'Apply': 'Applica', 'Help': 'Aiuto', 'Reset': 'Ripristina',
+		'Untitled': 'Senza titolo', 'Rename': 'Rinomina', 'Save': 'Salva', 'Insert': 'Inserisci', 'Delete': 'Elimina', 'Search': 'Cerca'
+	};
+
+	var FIX_SCOPE = '.jsdialog-window, .jsdialog-container, .ui-dialog, #sidebar-dock-wrapper, #eurise-start';
+
+	function fixTexts(root) {
+		if (!IT || !root || root.nodeType !== 1) return;
+		var inside = root.closest(FIX_SCOPE) || root.querySelector(FIX_SCOPE);
+		if (!inside) return;
+		var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+		var node;
+		while ((node = walker.nextNode())) {
+			var text = node.nodeValue.trim();
+			if (text && IT_FIX[text] && node.parentNode && node.parentNode.closest(FIX_SCOPE)) node.nodeValue = node.nodeValue.replace(text, IT_FIX[text]);
+		}
+	}
+
+	function watchTexts() {
+		if (!IT || watchTexts.on) return;
+		watchTexts.on = true;
+		new MutationObserver(function (records) {
+			records.forEach(function (rec) {
+				Array.prototype.forEach.call(rec.addedNodes, function (n) { if (n.nodeType === 1) fixTexts(n); });
+			});
+		}).observe(document.body, { childList: true, subtree: true });
+	}
+
+	// --- Inizio Eurise: pagina iniziale del guscio Linux (tavola OffPCInizio) ---------------------------------------------
+
+	var KIND_COLOR = { doc: '#3E5C8A', sheet: '#3F7A55', slide: '#A5532F' };
+
+	function startPage() {
+		if (document.getElementById('eurise-start')) return;
+		document.body.classList.add('eurise-desk', 'eurise-starter');
+		watchTexts();
+		var page = document.createElement('div');
+		page.id = 'eurise-start';
+		var hour = new Date().getHours();
+		var hello = hour < 13 ? t('Buongiorno', 'Good morning') : hour < 18 ? t('Buon pomeriggio', 'Good afternoon') : t('Buonasera', 'Good evening');
+		page.innerHTML =
+			'<div class="es-main">' +
+			'<div class="es-head"><h1></h1><span class="es-sub"></span><span class="es-fill"></span>' +
+			'<label class="es-search">' + icon(SVG.search, 16) + '<input type="search"></label></div>' +
+			'<div class="es-new"></div>' +
+			'<div class="es-title"><h2></h2><span class="es-sub es-tsub"></span><span class="es-fill"></span><button type="button" class="es-all"></button></div>' +
+			'<div class="es-templates"></div>' +
+			'<div class="es-title"><h2></h2><span class="es-sub es-rsub"></span></div>' +
+			'<div class="es-recent"></div></div>' +
+			'<aside class="es-side"><span class="es-label"></span><div class="es-open"></div><span class="es-label es-flabel"></span><div class="es-folders"></div></aside>';
+		page.querySelector('h1').textContent = hello;
+		page.querySelector('.es-head .es-sub').textContent = t('cosa vuoi creare?', 'what would you like to create?');
+		var search = page.querySelector('.es-search input');
+		search.placeholder = t('Cerca tra modelli e documenti recenti', 'Search templates and recent documents');
+		search.setAttribute('aria-label', search.placeholder);
+		var titles = page.querySelectorAll('.es-title h2');
+		titles[0].textContent = t('Modelli', 'Templates');
+		titles[1].textContent = t('Recenti', 'Recent');
+		page.querySelector('.es-tsub').textContent = t('per lettere, conti, riunioni…', 'for letters, budgets, meetings…');
+		page.querySelector('.es-rsub').textContent = t('gli ultimi documenti aperti', 'the last documents you opened');
+		var allBtn = page.querySelector('.es-all');
+		allBtn.textContent = t('Tutti i modelli', 'All templates');
+		page.querySelector('.es-label').textContent = t('Apri', 'Open');
+		page.querySelector('.es-flabel').textContent = t('Cartelle recenti', 'Recent folders');
+
+		// Nuovo: Documento, Foglio, Presentazione.
+		var news = page.querySelector('.es-new');
+		[['doc', 'writer', t('Documento', 'Document'), t('Lettere, relazioni, curriculum', 'Letters, reports, CVs')],
+			['sheet', 'calc', t('Foglio', 'Spreadsheet'), t('Conti, elenchi, calcoli', 'Budgets, lists, calculations')],
+			['slide', 'impress', t('Presentazione', 'Presentation'), t('Diapositive per le riunioni', 'Slides for meetings')]].forEach(function (n) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'es-card ' + n[0];
+			b.innerHTML = '<span class="es-pic">' + icon(SVGD[n[0]], 46) + '</span><span class="es-name"><i></i><b></b></span><span class="es-desc"></span>';
+			b.querySelector('b').textContent = n[2];
+			b.querySelector('.es-desc').textContent = n[3];
+			b.onclick = function () { newFrom(n[1]); };
+			news.appendChild(b);
+		});
+
+		// Apri.
+		var open = page.querySelector('.es-open');
+		[[t('Apri da Eurise File…', 'Open from Eurise File…'), SVGD.folder], [t('Dal computer…', 'From this computer…'), SVGD.pc]].forEach(function (o) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'es-openbtn';
+			b.innerHTML = icon(o[1], 19) + '<span></span>';
+			b.lastChild.textContent = o[0];
+			b.onclick = function () { if (window.postMobileMessage) window.postMobileMessage('uno .uno:Open'); };
+			open.appendChild(b);
+		});
+
+		// Modelli: quelli del pacchetto (templates/templates.js), documento, foglio e presentazione insieme.
+		var templates = (window.CODA_TEMPLATES || []).filter(function (e) { return e && e.path && e.name && /writer|calc|impress/.test(templateType(e)); });
+		var showAll = false;
+		var tbox = page.querySelector('.es-templates');
+		var rbox = page.querySelector('.es-recent');
+		var recents = [];
+		function renderTemplates() {
+			var q = fold(search.value.trim());
+			var list = templates.filter(function (e) { return !q || fold(tr(e.name)).indexOf(q) >= 0; });
+			if (!showAll && !q) {
+				// Due per tipo, i primi della lista.
+				var per = { writer: 0, calc: 0, impress: 0 };
+				list = list.filter(function (e) { var k = templateType(e); per[k] = (per[k] || 0) + 1; return per[k] <= 2; });
+			}
+			tbox.innerHTML = '';
+			tbox.classList.toggle('all', showAll || !!q);
+			list.forEach(function (e) {
+				var kind = { writer: 'doc', calc: 'sheet', impress: 'slide' }[templateType(e)];
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'es-tpl ' + kind;
+				b.innerHTML = '<span class="es-thumb"></span><b></b><small></small>';
+				if (e.preview) {
+					var img = document.createElement('img');
+					img.alt = '';
+					img.src = String(e.preview).indexOf('/') === 0 || /^[a-z]+:/i.test(e.preview) ? e.preview : 'templates/' + e.preview;
+					img.onerror = function () { img.remove(); b.querySelector('.es-thumb').innerHTML = '<i></i><i></i><i></i>' + icon(SVGD[kind], 14); };
+					b.firstChild.appendChild(img);
+				} else {
+					b.firstChild.innerHTML = '<i></i><i></i><i></i>' + icon(SVGD[kind], 14);
+				}
+				b.querySelector('b').textContent = tr(e.name);
+				b.querySelector('small').textContent = { doc: t('Documento', 'Document'), sheet: t('Foglio', 'Spreadsheet'), slide: t('Presentazione', 'Presentation') }[kind];
+				b.onclick = function () { newFrom(templateType(e), e); };
+				tbox.appendChild(b);
+			});
+			allBtn.style.display = q ? 'none' : '';
+			allBtn.textContent = showAll ? t('Meno modelli', 'Fewer templates') : t('Tutti i modelli', 'All templates');
+		}
+		function renderRecent() {
+			var q = fold(search.value.trim());
+			rbox.innerHTML = '';
+			var list = recents.filter(function (d) { return !q || fold(d.name + ' ' + d.folder).indexOf(q) >= 0; });
+			if (!list.length) {
+				var p = document.createElement('p');
+				p.className = 'es-empty';
+				p.textContent = q ? t('Nessun documento con questo nome.', 'No document with this name.') : t('I documenti che apri compaiono qui.', 'Documents you open appear here.');
+				rbox.appendChild(p);
+			}
+			list.slice(0, 12).forEach(function (d) {
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'es-row';
+				b.innerHTML = icon(SVGD[d.kind], 20) + '<b></b><span class="es-where"></span><span class="es-when"></span>';
+				b.firstChild.style.color = KIND_COLOR[d.kind];
+				b.querySelector('b').textContent = d.name;
+				b.querySelector('.es-where').textContent = d.folder;
+				b.querySelector('.es-when').textContent = when(d.when);
+				b.onclick = function () { openRecent(d.uri); };
+				rbox.appendChild(b);
+			});
+			var folders = page.querySelector('.es-folders');
+			folders.innerHTML = '';
+			var seen = {};
+			recents.forEach(function (d) {
+				if (!d.folder || seen[d.folder] || Object.keys(seen).length >= 4) return;
+				seen[d.folder] = true;
+				var row = document.createElement('div');
+				row.className = 'es-folder';
+				row.innerHTML = icon(SVGD.folder, 17) + '<span></span>';
+				row.lastChild.textContent = d.folder;
+				folders.appendChild(row);
+			});
+			page.querySelector('.es-flabel').style.display = Object.keys(seen).length ? '' : 'none';
+		}
+		allBtn.onclick = function () { showAll = !showAll; renderTemplates(); };
+		search.oninput = function () { renderTemplates(); renderRecent(); };
+		renderTemplates();
+		renderRecent();
+		var loadRecent = function () { recentDocs(function (docs) { recents = docs.map(recentInfo); renderRecent(); }); };
+		if (!window.qtBridgeReady) window.addEventListener('qtbridgeready', loadRecent, { once: true });
+		else loadRecent();
+		document.body.appendChild(page);
+		setTimeout(function () { search.focus(); }, 300);
+	}
+
+	function tr(text) { return typeof window._ === 'function' ? window._(text) : text; }
+
+	function templateType(e) {
+		var type = String(e.type || '').toLowerCase();
+		if (/calc|spreadsheet|ots|ods/.test(type) || /\.ot[s]$/i.test(e.path)) return 'calc';
+		if (/impress|presentation|otp|odp/.test(type) || /\.otp$/i.test(e.path)) return 'impress';
+		if (/draw|otg/.test(type)) return 'draw';
+		return 'writer';
+	}
+
+	function newFrom(type, template) {
+		var params = ['type=' + type];
+		if (template && template.path) params.push('template=' + encodeURIComponent(template.path));
+		params.push('basename=' + encodeURIComponent(template && template.basename ? tr(template.basename) : t('Senza titolo', 'Untitled')));
+		if (window.postMobileMessage) window.postMobileMessage('newdoc ' + params.join(' '));
+	}
+
+	function when(stamp) {
+		if (!stamp) return '';
+		var d = new Date(stamp);
+		if (isNaN(d.getTime())) return '';
+		var now = new Date();
+		var day = 86400000;
+		var start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		if (d.getTime() >= start) return t('oggi, ', 'today, ') + d.toLocaleTimeString(IT ? 'it-IT' : undefined, { hour: '2-digit', minute: '2-digit' });
+		if (d.getTime() >= start - day) return t('ieri', 'yesterday');
+		return d.toLocaleDateString(IT ? 'it-IT' : undefined, { day: 'numeric', month: 'short' });
+	}
+
+	(function waitForStarter(tries) {
+		var starter = false;
+		try { starter = !!new URLSearchParams(window.location.search).get('starterMode'); } catch (e) { starter = false; }
+		if (!starter || !window.ThisIsTheQtApp) {
+			if (!window.ThisIsTheQtApp && tries > 0) setTimeout(function () { waitForStarter(tries - 1); }, 100);
+			return;
+		}
+		if (!document.body) { setTimeout(function () { waitForStarter(tries - 1); }, 50); return; }
+		startPage();
+	})(100);
+
+
 	function tabletChrome(docType) {
 		var row = document.getElementById('toolbar-row');
 		trace.push('chrome row=' + !!row);
@@ -1922,9 +3004,10 @@
 		file.type = 'button';
 		file.className = 'eurise-rtab file';
 		file.textContent = t('File', 'File');
-		file.onclick = fileMenu;
+		file.onclick = function () { anchorEl = file; fileMenu(); };
 		tabs.appendChild(file);
-		var list = RIBBONS[docType] || RIBBONS.text;
+		// Sul computer il nastro completo (tavola OffPCNastro); sul tablet quello compatto.
+		var list = (desk && DESK_RIBBONS[docType]) || RIBBONS[docType] || RIBBONS.text;
 		list.forEach(function (tab) {
 			var b = document.createElement('button');
 			b.type = 'button';
@@ -1940,6 +3023,10 @@
 		showRibbon(list[0]);
 		status();
 		if (desk) {
+			// Il nome nella pillola si cambia lì: un clic (o F2) e si scrive (tavola OffPCTendine).
+			var nameEl = top.querySelector('.eurise-name');
+			nameEl.title = t('Rinomina', 'Rename');
+			nameEl.onclick = startRename;
 			deskSide(docType);
 			deskRulers(docType);
 			// La 26.04 disegna i righelli al primo evento della pagina: un ridimensionamento li fa comparire subito.
@@ -2126,6 +3213,15 @@
 			// Righelli: Collabora li crea all'apertura solo se la preferenza ShowRuler è accesa.
 			try { if (!map.uiManager.getBooleanDocTypePref('ShowRuler', false)) map.uiManager.setDocTypePref('ShowRuler', true); } catch (e) { trace.push('ruler pref ' + e); }
 			skipTour();
+			watchTexts();
+			document.addEventListener('keydown', function (e) {
+				if (e.key === 'F2' && !e.ctrlKey && !e.altKey && !e.shiftKey) { e.preventDefault(); startRename(); }
+				else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'f' || e.key === 'F' || e.key === 'h' || e.key === 'H')) {
+					e.preventDefault();
+					e.stopPropagation();
+					deskFind(e.key === 'h' || e.key === 'H');
+				}
+			}, true);
 		}
 		trace.push(desk ? 'desk' : 'tablet');
 		editAtOnce(map);

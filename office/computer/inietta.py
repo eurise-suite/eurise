@@ -6,7 +6,8 @@ Uso: inietta.py <cartella dist> <cartella web> [script di diagnosi]
 Copia Control.Eurise.js, eurise.css e le immagini nella cartella dist e aggiunge alla pagina, subito dopo bundle.js e con
 gli stessi attributi (defer), il nostro script; il foglio di stile prima di </head>. Alla striscia delle schede del guscio
 (qtapp-tabstrip.html) aggiunge eurise-tabstrip.css. Lo usano il Flatpak Eurise
-(costruisci.sh) e la prova del computer (prova.sh, che aggiunge anche la diagnosi). Si può ripetere: non duplica nulla.
+(costruisci.sh) e la prova del computer (prova.sh, che aggiunge anche la diagnosi). Toglie il benvenuto di Collabora
+(welcome/*.odp). Si può ripetere: non duplica nulla.
 """
 import re
 import shutil
@@ -46,6 +47,10 @@ def main() -> None:
             tmp.write_text(s, encoding='utf-8')
             tmp.replace(strip)
         print(f'schede Eurise in {strip.name}')
+    # Il benvenuto di Collabora (diapositive col suo logo, la prima volta): il guscio lo mostra solo se il file c'è.
+    for odp in (dist / 'welcome').glob('*.odp') if (dist / 'welcome').is_dir() else []:
+        odp.unlink()
+        print(f'via il benvenuto di Collabora ({odp.name})')
     for page in [dist / 'cool-qt.html', dist / 'cool.html']:
         if not page.exists():
             continue
