@@ -2104,6 +2104,31 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   `.leaflet-cursor-handler` non lo prende: nella 25.04 Android ha un altro elemento, da trovare nel DOM); il dialogo di
   caricamento nuovo non compare nelle schermate (la prova non fotografa durante l'apertura).
 
+**15 novembre, notte: Flatpak Eurise Office (strada 1) e cursore**
+- Decisione del proprietario: **prima il prototipo veloce (strada 1), poi la compilazione dai sorgenti (strada 2)**.
+  - Strada 1: `office/computer/flatpak/costruisci.sh` copia Collabora Office per Linux già compilato da Flathub (motore,
+    guscio Qt `coda-qt`, QtWebEngine della BaseApp) in un'app nuova **`eu.eurise.Office`**: interfaccia Eurise dentro
+    (`office/computer/inietta.py`, usato anche dalla prova), nome «Eurise Office», icona (`eu.eurise.Office.svg`, la
+    stessa dell'APK su quadrato Notte), voce nel menu con i tipi di file di Collabora, metainfo, permessi e variabili dal
+    metadata di Collabora più `--own-name=com.collaboraoffice.Office` (il guscio Qt tiene un'istanza sola con quel nome,
+    DBusService.cpp). Low-level: `build-init` (runtime anche come «sdk»: niente SDK da scaricare), `build-finish`,
+    `build-export`, `build-bundle`. Esce `eurise-office.flatpak` (~300 MB) nella pre-release **`flatpak-prova-office`**;
+    si installa con `flatpak install --user eurise-office.flatpak` (il runtime org.kde.Platform 6.11 arriva da Flathub).
+  - `office-computer.yml` ora costruisce il Flatpak, lo installa e lo prova (`prova.sh`, di base `APP=eu.eurise.Office`).
+    Primo giro buono (43654401355): testo, foglio e presentazione con la nostra interfaccia, righelli visibili.
+  - Menu File sul computer: Apri da Eurise File (finestra di scelta del sistema, `uno .uno:Open` del guscio Qt),
+    Nuovo documento/foglio/presentazione, Salva con nome.
+  - Limiti della strada 1: guscio di Collabora (una finestra per documento, niente schede), «Collabora Office» ancora in
+    qualche testo del guscio (titolo, Informazioni), non pubblicabile su Flathub.
+  - Strada 2 (dopo): ricetta Flathub nostra dai sorgenti (`gerrit.collaboraoffice.com/online`, tag `coda-26.04.5.3-1`,
+    commit 9a9894e: non è sul mirror GitHub; il guscio Qt è in `qt/`, ramo `distro/collabora/coda-25.04` per leggerlo),
+    guscio con le schede dei documenti; giri di ore come il motore Android.
+- **Cursore sul telefono e sul tablet**: la 25.04 che compiliamo chiama il segnaposto `.cursor-handler`; regola rifatta con
+  la punta in alto come quella di Collabora (prima la mia aveva la punta 18 px più in basso); maniglie della selezione
+  (`.text-selection-handle-start/end`) nell'accento. Motore del giro 43653277442, prova sul telefono 43655375061: fondo
+  del caricamento Perla (niente verde; il dialogo non si vede perché il documento di prova si apre subito), dieci giri di
+  lavoro lungo con il motore vivo.
+
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
 OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
