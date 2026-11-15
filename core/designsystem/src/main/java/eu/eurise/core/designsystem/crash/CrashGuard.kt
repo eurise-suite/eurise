@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -113,7 +114,7 @@ class CrashActivity : androidx.activity.ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         val report = intent.getStringExtra(EXTRA_REPORT) ?: run { finish(); return }
-        androidx.activity.compose.setContent(this) {
+        setContent {
             eu.eurise.core.designsystem.theme.EuriseTheme {
                 CrashScreen(this, report) {
                     packageManager.getLaunchIntentForPackage(packageName)?.let { runCatching { startActivity(it) } }
