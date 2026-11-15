@@ -6,11 +6,13 @@
 - Il documento di progetto e la tela "Icone della suite" (pagina Calendario, fila "Dopo") sono il riferimento.
 - La chiave di firma delle versioni ufficiali non si chiede e non si tocca: la custodisce solo il proprietario.
 
-## APK in chat (regola fissa, 14 novembre 2026)
-- Ogni volta che si aggiorna qualcosa, appena la compilazione riesce si mandano **direttamente in chat** gli APK di ciò che è
-  cambiato (scaricati dalla pre-release `apk-prova` o dagli artefatti, con nome e giro, es. `Eurise-giro529.apk`), oltre al link.
-  Non basta il link a GitHub: il proprietario prova dal file. Se un APK richiede più tempo (Office, Mappe), si manda
-  subito quello pronto e l'altro appena arriva.
+## APK in chat (regola fissa, 14 novembre 2026; aggiornata il 15 novembre)
+- Ogni volta che si aggiorna qualcosa, appena la compilazione riesce si danno in chat i **link diretti di download** di ogni
+  APK cambiato, uno per app con nome e giro (es. «Office, giro 586: https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-office-debug.apk»),
+  presi dalla pre-release `apk-prova` (`browser_download_url`). Aperti dal browser del telefono si installano subito.
+- Non il link alla pagina della release né gli artefatti: il link diretto al file. I file mandati come allegato della chat
+  oltre ~40 MB arrivano sul telefono come archivio e non si installano (15 novembre): niente allegati per gli APK grandi.
+  Se un APK richiede più tempo (Office, Mappe), si danno subito i link di quelli pronti e gli altri appena arrivano.
 
 ## Conversazioni lunghe (regola, 8 novembre 2026)
 - Quando la chat con il proprietario diventa lunga (molti lavori, contesto riassunto più volte), avvisarlo alla
