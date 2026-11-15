@@ -2157,6 +2157,11 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
   documento si apriva in una finestra nuova perché `ricetta.py` cambiava il nome D-Bus solo in DBusService.cpp e non
   l'interfaccia in DBusService.hpp («No such interface 'eu.eurise.Office'»). Corretto (anche nome della voce e icona
   della finestra in coda-qt.cpp); nuovo giro lanciato.
+- **15 novembre, 08:41 UTC – strada 2 pronta**: giro 43691173909 riuscito; prova 43695180634 (`pacchetto=sorgenti`):
+  lettera e foglio nella stessa finestra, in due schede Eurise (`schede.png` in `office-sorgenti-schermate`). Pacchetto
+  consegnato al proprietario: `flatpak install --user eurise-office-sorgenti.flatpak` (runtime KDE 6.11 e BaseApp da
+  Flathub). Si rifà a mano con `office-sorgenti.yml` (≈45 minuti con la ccache), la prova con `office-computer.yml`
+  e `pacchetto=sorgenti`.
 
 **Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
 Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
