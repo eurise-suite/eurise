@@ -96,4 +96,6 @@
     <string name="ds_s_map_reports_d">per Eurise Mappe, solo quando mandi le segnalazioni a fine viaggio, dopo averle viste: punto, tipo, direzione e strada di ciascuna, come nota anonima e pubblica; niente account né dati del telefono</string>
     <string name="ds_s_fuel">Prezzi dei carburanti (Ministero delle Imprese · Italia)</string>
     <string name="ds_s_fuel_d">per Eurise Mappe, al massimo una volta al giorno quando apri i benzinai: la richiesta del file pubblico dei prezzi, uguale per tutti; non esce la posizione né altro</string>
+    <string name="ds_s_transit">Mezzi pubblici (Transitous · comunità, Germania)</string>
+    <string name="ds_s_transit_d">per Eurise Mappe, solo quando tocchi «Mezzi» o cerchi un viaggio lontano: partenza e arrivo arrotondati a circa 200 m e l\'ora; nessun identificativo. Orari da dati aperti delle aziende di trasporto</string>
 </resources>

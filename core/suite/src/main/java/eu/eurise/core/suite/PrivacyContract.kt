@@ -21,5 +21,5 @@ object PrivacyContract {
     const val KEY_ON = "on"
 
     /** I servizi che le altre app possono chiedere qui: nessun altro interruttore si tocca da fuori. */
-    val SHARED = setOf(PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices)
+    val SHARED = setOf(PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices, PrivacyService.PublicTransport)
 }

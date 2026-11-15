@@ -197,3 +197,20 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
 - Android Auto: `car/EuriseCarDestinations.java`, «Dove devi andare» (fino a 4 impegni con luogo) in cima alla ricerca;
   la panoramica del percorso prima di partire si riadatta quando cambia l'area visibile
   (`Framework.nativeEuriseShowRouteOverview` da `SurfaceCallbackBase.onVisibleAreaChanged`).
+
+## Mezzi pubblici e viaggi lontani (15 novembre; tavole MapMezzi, MapLontano, MapLontanoScelta approvate)
+- Fila dei mezzi nel pannello del percorso: Auto · Mezzi · Bici · A piedi su due righe; il tempo del mezzo scelto è quello
+  del percorso, gli altri una stima dalla distanza in linea d'aria × 1,3 (≈; auto 45, bici 15, a piedi 4,8 km/h).
+- `eurise/ui/EuriseTransit.kt`: Transitous (`api.transitous.org/api/v5/plan`, MOTIS 2), partenza e arrivo arrotondati a
+  0,002° (circa 200 m), User-Agent con nome e sito del progetto, cache di 2 minuti, una richiesta per gesto. Servizio
+  «Mezzi pubblici» (`PrivacyService.PublicTransport`, condiviso con Mappe) nel centro privacy dell'app Eurise, spento di base.
+  Regole di Transitous (15 novembre): solo progetti a codice aperto e non commerciali; collegamento a transitous.org/sources
+  in vista; oltre 720 richieste al giorno in tutto vanno concordate con loro (canale Matrix): passo del proprietario
+  prima della pubblicazione.
+- `eurise/ui/EuriseMezziActivity.kt`: vicino, la tratta per tratta del primo itinerario, le partenze dopo e «Guida a piedi
+  fino a <prima fermata>» (guida pedonale di Mappe); lontano (oltre 80 km), «Parti dopo» / «Arriva entro», Consigliato,
+  Più veloce, Senza cambi, una scheda per itinerario e la scelta con «Compra il biglietto» (sito dell'azienda, se
+  Transitous lo dà) e «Metti nella suite»: Calendario (evento con le tratte) e Note.
+- Non ancora: prezzi (Transitous non li dà in modo affidabile: «prezzo sul sito»), aerei e pedaggi (nessuna fonte libera
+  verificata), auto + treno, Cose da fare e «Il mio viaggio».
+- Livelli: accendere «Prezzi dei carburanti» mostra prima la spiegazione (regola della suite).

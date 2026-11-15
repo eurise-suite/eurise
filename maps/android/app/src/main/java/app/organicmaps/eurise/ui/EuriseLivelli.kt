@@ -130,11 +130,19 @@ private fun Sheet(night: Boolean) {
                 }
                 fuel?.let { on ->
                     Toggle(c, stringResource(R.string.eurise_lv_fuel), stringResource(R.string.eurise_lv_fuel_sub), on, divider = weather != null) { want ->
-                        scope.launch {
+                        fun apply() = scope.launch {
                             fuel = withContext(Dispatchers.IO) {
                                 EuriseFuelData.privacy(context, if (want) "enable" else "disable") ?: EuriseFuelData.privacy(context)
                             }
                         }
+                        // Regola della suite: accendere mostra prima cosa esce; spegnere non chiede conferme.
+                        if (!want) apply()
+                        else android.app.AlertDialog.Builder(context)
+                            .setTitle(R.string.eurise_lv_fuel)
+                            .setMessage(R.string.eurise_lv_fuel_explain)
+                            .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ -> apply() }
+                            .setNegativeButton(R.string.eurise_lv_cancel, null)
+                            .show()
                     }
                 }
                 // Traffico e cantieri: nella tavola, ma una fonte libera per l'Italia non c'è ancora; la voce lo dice.

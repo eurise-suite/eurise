@@ -1494,3 +1494,14 @@ patch(car_surface, """    if (!mVisibleArea.isEmpty())
   }
 """)
 print("eurise_patch: panoramica del percorso che si riadatta in Android Auto")
+
+# Mezzi pubblici e viaggi lontani (tavole MapMezzi, MapLontano, MapLontanoScelta): la schermata della suite.
+patch(manifest, """    <activity
+        android:name="app.organicmaps.eurise.ui.EuriseFuelActivity\"""", """    <activity
+        android:name="app.organicmaps.eurise.ui.EuriseMezziActivity"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+        android:exported="false" />
+
+    <activity
+        android:name="app.organicmaps.eurise.ui.EuriseFuelActivity\"""")
+print("eurise_patch: mezzi pubblici e viaggi lontani (MapMezzi, MapLontano)")

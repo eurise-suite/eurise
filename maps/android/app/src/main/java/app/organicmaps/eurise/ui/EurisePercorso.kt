@@ -126,12 +126,17 @@ private fun Panel(night: Boolean, version: Int) {
     if (router == Router.Ruler) return
 
     Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Auto · Bici · A piedi (i mezzi pubblici restano nella barra in alto di CoMaps).
+        // Tavola MapMezzi: Auto di base, Mezzi, Bici, A piedi; il tempo del mezzo scelto è quello del percorso, gli altri
+        // una stima dalla distanza in linea d'aria (≈). «Mezzi» apre gli orari (Transitous, dal centro privacy).
+        val start = rc.startPoint
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            val minutes = if (built) info?.totalTimeInSeconds ?: -1 else -1
-            Mode(c, R.string.eurise_pc_car, Router.Vehicle, router, minutes, Modifier.weight(1f))
-            Mode(c, R.string.eurise_pc_bike, Router.Bicycle, router, minutes, Modifier.weight(1f))
-            Mode(c, R.string.eurise_pc_walk, Router.Pedestrian, router, minutes, Modifier.weight(1f))
+            val seconds = if (built) info?.totalTimeInSeconds ?: -1 else -1
+            val km = if (start != null && end != null) kmBetween(start.lat, start.lon, end.lat, end.lon) * 1.3 else -1.0
+            Mode(c, R.string.eurise_pc_car, Router.Vehicle, router, seconds, km, 45.0, Modifier.weight(1f))
+            if (start != null && end != null && !end.isMyPosition)
+                Transit(c, Modifier.weight(1f)) { EuriseMezziActivity.open(context, start, end) }
+            Mode(c, R.string.eurise_pc_bike, Router.Bicycle, router, seconds, km, 15.0, Modifier.weight(1f))
+            Mode(c, R.string.eurise_pc_walk, Router.Pedestrian, router, seconds, km, 4.8, Modifier.weight(1f))
         }
 
         // L'impegno con questo luogo: quando partire.
@@ -197,19 +202,35 @@ private data class RouteState(val built: Boolean, val building: Boolean, val inf
 private const val EuriseMargin = 10 * 60_000L
 
 @Composable
-private fun Mode(c: Colors, label: Int, mode: Router, current: Router, seconds: Int, modifier: Modifier) {
+private fun Mode(c: Colors, label: Int, mode: Router, current: Router, seconds: Int, km: Double, kmh: Double, modifier: Modifier) {
     val on = mode == current
-    val text = stringResource(label).let { name ->
-        if (on && seconds > 0) stringResource(R.string.eurise_pc_mode_time, name, duration(seconds)) else name
+    val time = when {
+        on && seconds > 0 -> duration(seconds)
+        !on && km > 0 -> "≈ " + duration((km / kmh * 3600).toInt())
+        else -> ""
     }
-    Box(
-        modifier.height(40.dp).clip(RoundedCornerShape(14.dp)).background(if (on) c.accent else c.card)
-            .clickable(enabled = !on) { RoutingController.get().setRouterType(mode); EurisePercorso.update() }
-            .semantics { role = Role.Tab; selected = on },
-        contentAlignment = Alignment.Center,
+    ModeChip(c, stringResource(label), time, on, modifier) { RoutingController.get().setRouterType(mode); EurisePercorso.update() }
+}
+
+@Composable
+private fun Transit(c: Colors, modifier: Modifier, onClick: () -> Unit) {
+    ModeChip(c, stringResource(R.string.eurise_pc_transit), stringResource(R.string.eurise_pc_transit_sub), false, modifier, onClick)
+}
+
+/** Un mezzo nella fila della tavola: nome e tempo su due righe, stessa larghezza per tutti. */
+@Composable
+private fun ModeChip(c: Colors, name: String, time: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Column(
+        modifier.height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (on) c.accent else c.card)
+            .clickable(enabled = !on, onClick = onClick)
+            .semantics { role = Role.Tab; selected = on }.padding(horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        BasicText(text, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = TextStyle(color = if (on) c.onAccent else c.ink, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold))
+        BasicText(name, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = TextStyle(color = if (on) c.onAccent else c.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        if (time.isNotEmpty()) BasicText(time, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = TextStyle(color = if (on) c.onAccent.copy(alpha = 0.8f) else c.muted, fontSize = 11.5.sp))
     }
 }
 

@@ -10,7 +10,9 @@ import java.io.File
  */
 enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, Videos, Routes, RouteWeather, MapSearch, MapReports, FuelPrices,
     /** Alfred che passa una domanda, ripulita sul telefono, all'AI online scelta (Lumo, Euria, Le Chat…). */
-    AiOnline;
+    AiOnline,
+    /** Eurise Mappe: orari e viaggi coi mezzi pubblici da Transitous (partenza e arrivo arrotondati). */
+    PublicTransport;
 
     val defaultOn: Boolean get() = false
 }
