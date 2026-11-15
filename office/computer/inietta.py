@@ -36,13 +36,19 @@ def main() -> None:
             put(svg, dist / 'images' / sub / svg.name)
     if diag:
         put(diag, dist / 'eurise-diag.js')
+    # Il carattere della suite, che il sistema di solito non ha.
+    fonts = Path(__file__).with_name('fonts')
+    (dist / 'eurise-fonts').mkdir(exist_ok=True)
+    for woff in fonts.glob('*.woff2'):
+        put(woff, dist / 'eurise-fonts' / woff.name)
+    put(Path(__file__).with_name('eurise-fonts.css'), dist / 'eurise-fonts.css')
     # Striscia delle schede del guscio Qt (26.04): solo il nostro foglio di stile, dopo il suo.
     strip = dist / 'qtapp-tabstrip.html'
     if strip.exists():
         put(Path(__file__).with_name('eurise-tabstrip.css'), dist / 'eurise-tabstrip.css')
         s = strip.read_text(encoding='utf-8')
         if 'eurise-tabstrip.css' not in s:
-            s = s.replace('</head>', '<link rel="stylesheet" href="eurise-tabstrip.css" />\n</head>', 1)
+            s = s.replace('</head>', '<link rel="stylesheet" href="eurise-fonts.css" />\n<link rel="stylesheet" href="eurise-tabstrip.css" />\n</head>', 1)
             tmp = strip.with_name(strip.name + '.eurise')
             tmp.write_text(s, encoding='utf-8')
             tmp.replace(strip)
@@ -62,7 +68,7 @@ def main() -> None:
         added = ''
         if 'Control.Eurise.js' not in s:
             added += '\n' + tag.replace(prefix + 'bundle.js', prefix + 'Control.Eurise.js')
-            s = s.replace('</head>', f'<link rel="stylesheet" href="{prefix}eurise.css" />\n</head>', 1)
+            s = s.replace('</head>', f'<link rel="stylesheet" href="{prefix}eurise-fonts.css" />\n<link rel="stylesheet" href="{prefix}eurise.css" />\n</head>', 1)
         if diag and 'eurise-diag.js' not in s:
             added += '\n' + tag.replace(prefix + 'bundle.js', prefix + 'eurise-diag.js')
         if added:

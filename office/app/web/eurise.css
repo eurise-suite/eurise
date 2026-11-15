@@ -2060,3 +2060,106 @@ body.eurise-desk #PropertyDeck.deck:not(:has(.ui-expander-container:not(.StylesP
 [data-theme='dark'] body.eurise-nastro-chiuso.eurise-nastro-aperto #eurise-ribbon { background: #171B22; }
 /* La barra flottante di Collabora sulla selezione lascia il posto alla nostra barra rapida. */
 body.eurise-desk #context-toolbar { display: none !important; }
+
+/* =====================================================================================================================
+   Rifinitura del computer (15 novembre, sera, dopo la prova del proprietario su Ubuntu): meno grassetto, più eleganza
+   (Plus Jakarta Sans vera, da eurise-fonts.css del guscio, al posto di DejaVu Sans), più contrasto tra il fondo e le
+   isole, i pulsanti e i campi: si vede dove finisce l'uno e comincia l'altro.
+   ===================================================================================================================== */
+
+/* Fondo: un tono più scuro del Perla; isole bianche con un filo e un'ombra leggera. */
+html body.eurise-desk #toolbar-row,
+html body.eurise-desk #sidebar-dock-wrapper { background: #ECEBE5 !important; }
+html body.eurise-desk #document-container,
+html body.eurise-desk #main-document-content { background-color: #E2E1DA; }
+html body.eurise-desk #eurise-ribbon .eurise-group,
+html body.eurise-desk #sidebar-container .ui-expander-container.sidebar,
+html body.eurise-desk .eurise-side {
+	box-shadow: 0 0 0 1px #DCDAD2, 0 1px 3px rgba(31, 42, 68, 0.07) !important;
+}
+html body.eurise-desk #eurise-header .eurise-pill,
+html body.eurise-desk #eurise-header .eurise-cmdsearch {
+	background: #FFFFFF !important;
+	box-shadow: 0 0 0 1px #DCDAD2 !important;
+}
+html body.eurise-desk #eurise-ribbon .eurise-rb:hover,
+html body.eurise-desk #eurise-ribbon .eurise-drop:hover { background: #E8E7E1 !important; }
+html body.eurise-desk #eurise-ribbon .eurise-drop {
+	background: #FFFFFF !important;
+	box-shadow: inset 0 0 0 1px #D6D4CC !important;
+}
+html body.eurise-desk .eurise-side-row { background: #F1F0EB; box-shadow: inset 0 0 0 1px #E4E2DB; }
+html body.eurise-desk .eurise-pop { box-shadow: 0 12px 32px rgba(30, 29, 27, 0.20), 0 0 0 1px #D6D4CC; }
+
+/* Pesi: testo normale 400–500, titoli 600; il grassetto pieno solo dove serve davvero. */
+html body.eurise-desk #eurise-tabs .eurise-rtab { font-weight: 500 !important; letter-spacing: 0; }
+html body.eurise-desk #eurise-tabs .eurise-rtab.active { font-weight: 600 !important; }
+html body.eurise-desk #eurise-tabs .eurise-rtab.file { font-weight: 600 !important; }
+html body.eurise-desk #eurise-ribbon .eurise-rb,
+html body.eurise-desk #eurise-ribbon .eurise-rb span,
+html body.eurise-desk #eurise-ribbon .eurise-drop { font-weight: 500 !important; }
+html body.eurise-desk #eurise-ribbon .eurise-gfoot { font-weight: 600 !important; color: #6B6A63; letter-spacing: 0.06em; }
+html body.eurise-desk #eurise-ribbon .eurise-group.suite .eurise-gfoot { color: #7A3440; }
+html body.eurise-desk #eurise-header .eurise-name { font-weight: 600 !important; }
+html body.eurise-desk #eurise-header .eurise-status,
+html body.eurise-desk #eurise-header .eurise-cmdsearch span { font-weight: 500 !important; }
+html body.eurise-desk .eurise-side-head { font-weight: 600 !important; color: #6B6A63; }
+html body.eurise-desk .eurise-side-row strong { font-weight: 600; }
+html body.eurise-desk #sidebar-container .ui-pushbutton { font-weight: 600 !important; }
+html body.eurise-desk #sidebar-dock-wrapper .sidebar,
+html body.eurise-desk #sidebar-dock-wrapper .sidebar * { font-weight: 400; }
+html body.eurise-desk #sidebar-dock-wrapper .ui-expander-label,
+html body.eurise-desk #sidebar-dock-wrapper .ui-deck-header,
+html body.eurise-desk #sidebar-dock-wrapper .ui-deck-header * { font-weight: 600 !important; }
+html .eurise-pi,
+html .eurise-pnb,
+html #eurise-find,
+html #eurise-mini .eurise-rb { font-weight: 500 !important; }
+html .eurise-pi.on { font-weight: 600 !important; }
+html .eurise-ps { font-weight: 600; }
+html body.eurise-desk .jsdialog-container .ui-dialog-title { font-weight: 600 !important; }
+html body.eurise-desk .ui-tab.jsdialog { font-weight: 500 !important; }
+html body.eurise-desk .jsdialog-container .ui-pushbutton,
+html body.eurise-desk .jsdialog-container .button { font-weight: 600 !important; }
+html body.eurise-desk .jsdialog-container label,
+html body.eurise-desk .jsdialog-container .ui-text,
+html body.eurise-desk .jsdialog-container .checkbox { font-weight: 400 !important; }
+
+/* Stili nella colonna: anteprime alte quanto una riga, testi normali. */
+html body.eurise-desk #sidebar-dock-wrapper .ui-treeview img,
+html body.eurise-desk #sidebar-dock-wrapper .ui-treeview-cell img,
+html body.eurise-desk #sidebar-dock-wrapper .ui-treeview-entry img {
+	max-height: 22px !important;
+	width: auto !important;
+	max-width: 100%;
+	object-fit: contain;
+	object-position: left center;
+}
+html body.eurise-desk #sidebar-dock-wrapper .ui-treeview { border-radius: 10px; box-shadow: inset 0 0 0 1px #DCDAD2; background: #FFFFFF; }
+
+/* Inizio: fondo un tono più scuro, schede e pulsanti con il filo; pesi più leggeri. */
+html #eurise-start { background: #ECEBE5; }
+html #eurise-start h1 { font-weight: 600; letter-spacing: -0.015em; }
+html #eurise-start h2 { font-weight: 600; }
+html #eurise-start .es-card,
+html #eurise-start .es-openbtn,
+html #eurise-start .es-search { box-shadow: 0 0 0 1px #DAD8D0, 0 1px 3px rgba(31, 42, 68, 0.06); }
+html #eurise-start .es-card:hover,
+html #eurise-start .es-openbtn:hover { box-shadow: 0 0 0 2px #3E5C8A, 0 4px 14px rgba(31, 42, 68, 0.10); }
+html #eurise-start .es-search:focus-within { box-shadow: 0 0 0 2px #3E5C8A; }
+html #eurise-start .es-pic { background: #F4F3EF; box-shadow: inset 0 0 0 1px #E4E2DB; }
+html #eurise-start .es-thumb { box-shadow: 0 0 0 1px #DAD8D0; }
+html #eurise-start .es-name b { font-weight: 600; }
+html #eurise-start .es-tpl b,
+html #eurise-start .es-row b { font-weight: 500; }
+html #eurise-start .es-openbtn,
+html #eurise-start .es-folder,
+html #eurise-start .es-all { font-weight: 500; }
+html #eurise-start .es-label { font-weight: 600; }
+html #eurise-start .es-row:hover { background: #FFFFFF; box-shadow: 0 0 0 1px #DAD8D0; }
+
+/* PDF sul computer: la nostra testata al posto della barra dei menu di Collabora in sola lettura. */
+html body.eurise-desk.eurise-pdf .main-nav,
+html body.eurise-desk.eurise-pdf #main-menu { display: none !important; }
+html body.eurise-desk.eurise-pdf #toolbar-wrapper,
+html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }

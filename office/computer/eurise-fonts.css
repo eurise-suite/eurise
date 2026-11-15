@@ -1,0 +1,6 @@
+/* Plus Jakarta Sans, il carattere della suite (OFL, third_party/fonts), nel guscio Linux: senza, il sistema ripiega su
+   DejaVu Sans, largo e pesante. Pesi 400, 500, 600, 700. */
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 400; font-style: normal; font-display: swap; src: url('eurise-fonts/plus-jakarta-sans-regular.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 500; font-style: normal; font-display: swap; src: url('eurise-fonts/plus-jakarta-sans-medium.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 600; font-style: normal; font-display: swap; src: url('eurise-fonts/plus-jakarta-sans-semibold.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 700 800; font-style: normal; font-display: swap; src: url('eurise-fonts/plus-jakarta-sans-bold.woff2') format('woff2'); }

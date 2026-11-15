@@ -262,6 +262,29 @@
 		euriselinea: [['m', 'M4 20L20 4'], ['a', 'M4 14l6 6']],
 		euriseconcentrazione: [['m', 'M4 8V4h4 M16 4h4v4 M20 16v4h-4 M8 20H4v-4'], ['a', 'M12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4']],
 		eurisenastro: [['m', 'M3 5h18v6H3z'], ['a', 'M8 16l4 4 4-4']],
+		euriseinfo: [['m', 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18'], ['a', 'M12 11v6 M12 7.5v.01']],
+		setdocumentproperties: 'euriseinfo',
+		wrapoff: [['m', 'M4 5h16 M4 19h16'], ['a', 'M8 9h8v6H8z']],
+		wrapon: 'eurisewrap',
+		wrapideal: 'eurisewrap',
+		wrapleft: [['m', 'M4 6h16 M4 18h16 M13 10h7 M13 14h7'], ['a', 'M4 10h7v4H4z']],
+		wrapright: [['m', 'M4 6h16 M4 18h16 M4 10h7 M4 14h7'], ['a', 'M13 10h7v4h-7z']],
+		wrapthrough: [['m', 'M4 6h16 M4 10h16 M4 14h16 M4 18h16'], ['a', 'M8 8h8v8H8z']],
+		pagemargin: 'eurisepagemargin',
+		pagesize: 'eurisepagesize',
+		line: 'euriselinea',
+		insertfield: 'insertfieldctrl',
+		insertpagecountfield: 'pagenumberwizard',
+		inserttitlefield: 'drawtext',
+		comparechanges: 'comparedocuments',
+		searchprev: [['m', 'M6 15l6-6 6 6']],
+		searchnext: [['m', 'M6 9l6 6 6-6']],
+		prev: 'searchprev',
+		next: 'searchnext',
+		downloadas: [['m', 'M12 3v12 M7 10l5 5 5-5'], ['a', 'M5 20h14']],
+		settings: [['m', 'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6'], ['a', 'M12 2v3 M12 19v3 M4.2 4.2l2.1 2.1 M17.7 17.7l2.1 2.1 M2 12h3 M19 12h3 M4.2 19.8l2.1-2.1 M17.7 6.3l2.1-2.1']],
+		spellcheck: 'spellingandgrammardialog',
+		behindobject: 'sendtoback',
 		// Nomi con cui Collabora chiede alcune di queste icone (iconURLAliases di LOUtil).
 		insertsymbol: 'charmapcontrol',
 		insertrowsmenu: 'insertrowsafter',
@@ -2364,7 +2387,7 @@
 		popItem(pop, t('Esporta', 'Export'), null, { svg: SVGD.export, sub: function (b) {
 			var sub = popover(b, 'export', true);
 			var type = app.map.getDocType();
-			var formats = type === 'spreadsheet' ? [['Excel', 'xlsx'], ['OpenDocument', 'ods'], ['CSV', 'csv']] :
+			var formats = isPdf() ? [] : type === 'spreadsheet' ? [['Excel', 'xlsx'], ['OpenDocument', 'ods'], ['CSV', 'csv']] :
 				type === 'presentation' || type === 'drawing' ? [['PowerPoint', 'pptx'], ['OpenDocument', 'odp']] :
 				[['Word', 'docx'], ['OpenDocument', 'odt'], [t('Testo RTF', 'Rich text'), 'rtf'], ['EPUB', 'epub'], [t('Pagina web', 'Web page'), 'html']];
 			popItem(sub, 'PDF', function () { beforeSharing(); }, { key: '.pdf' });
@@ -2771,6 +2794,13 @@
 		]
 	};
 	DESK_RIBBONS.drawing = DESK_RIBBONS.presentation;
+	DESK_RIBBONS.pdf = [
+		{ id: 'pdf', label: 'PDF', groups: [
+			g('Documento', 'Document', [u('Stampa', 'Print', fn('print'), 'big', '.uno:Print'), u('Salva una copia', 'Save a copy', function () { shellCommand('.uno:SaveAs'); }, 'big', '.uno:SaveAs'),
+				ul('Trova', 'Find', function () { deskFind(false); }, '.uno:SearchDialog'), ul('Proprietà', 'Properties', '.uno:SetDocumentProperties', '.uno:EuriseInfo')]),
+			D_ZOOM, D_ASPETTO] },
+		{ id: 'suite', label: 'Suite', suite: true, groups: [SUITE] }
+	];
 
 	// =================================================================================================================
 	// Ergonomia del computer (dieci proposte approvate dal proprietario il 15 novembre): i comandi vanno dove si lavora,
@@ -2994,6 +3024,7 @@
 			if (mini.el && !(e.target.closest && e.target.closest('#eurise-mini, #eurise-pop, .eurise-sub'))) hideMini();
 		}, true);
 		document.addEventListener('keydown', function (e) { if (mini.el && e.key !== 'Shift') hideMini(); }, true);
+		document.addEventListener('contextmenu', hideMini, true);
 		document.addEventListener('wheel', hideMini, { passive: true, capture: true });
 		app.map.on('textselectionchange', function (e) {
 			selectionOn = !!e.active;
@@ -3033,7 +3064,7 @@
 		var ours = function (obj) {
 			var self = this;
 			var all = flatMenu(obj && obj.menu, []);
-			var spelling = all.some(function (m) { return /SpellCheck|SpellingDialog|AutoCorrect/.test(m.command); });
+			var spelling = all.some(function (m) { return /^\.uno:SpellCheck(ApplySuggestion|IgnoreAll|Ignore)/.test(m.command); });
 			// Da tastiera, sui suggerimenti di ortografia o senza voci: quello di Collabora com'è.
 			if (!onDesk() || !obj || obj.mouse === 'false' || spelling || !all.length) return original.call(self, obj);
 			var at = lastPointer;
@@ -3245,7 +3276,10 @@
 			records.forEach(function (rec) {
 				Array.prototype.forEach.call(rec.addedNodes, function (n) { if (n.nodeType === 1) fixTexts(n); });
 			});
-		}).observe(document.body, { childList: true, subtree: true });
+			records.forEach(function (rec) {
+				if (rec.type === 'characterData' && rec.target.parentNode) fixTexts(rec.target.parentNode);
+			});
+		}).observe(document.body, { childList: true, subtree: true, characterData: true });
 	}
 
 	// --- Inizio Eurise: pagina iniziale del guscio Linux (tavola OffPCInizio) ---------------------------------------------
@@ -3667,7 +3701,10 @@
 		check(document.body);
 		new MutationObserver(function (records) {
 			records.forEach(function (rec) { Array.prototype.forEach.call(rec.addedNodes, check); });
-		}).observe(document.body, { childList: true, subtree: true });
+			records.forEach(function (rec) {
+				if (rec.type === 'characterData' && rec.target.parentNode) fixTexts(rec.target.parentNode);
+			});
+		}).observe(document.body, { childList: true, subtree: true, characterData: true });
 		setTimeout(function () { check(document.body); }, 4000);
 	}
 
@@ -3709,8 +3746,10 @@
 		editAtOnce(map);
 		function build() {
 			trace.push('build ' + map.getDocType());
-			if (isPdf()) { document.body.classList.remove('eurise-tablet'); return; }
-			tabletChrome(map.getDocType());
+			if (isPdf() && !desk) { document.body.classList.remove('eurise-tablet'); return; }
+			// Sul computer anche il PDF ha la nostra testata (si apre in sola lettura nel motore).
+			if (isPdf()) document.body.classList.add('eurise-pdf');
+			tabletChrome(isPdf() ? 'pdf' : map.getDocType());
 		}
 		if (map._docLayer) build(); else map.on('doclayerinit', build);
 		map.on('docloaded wopiprops', status);
