@@ -207,6 +207,30 @@ public final class EuriseRouteWeather
     return Float.isNaN(r.temp[0]) ? sky : sky + " · " + Math.round(r.temp[0]) + "°";
   }
 
+  /**
+   * Per «Dove sei» (tavola MapEsplora): il tempo dell'ultima risposta di [here] diviso in glifo, parola breve («sereno»,
+   * «pioggia») e gradi (NaN se mancano). Null se il meteo è spento o non è ancora arrivato.
+   */
+  @Nullable
+  public static Object[] hereParts(@NonNull Context c)
+  {
+    final Result r = sHere;
+    if (r == null || r.code == null || r.code.length == 0)
+      return null;
+    final RouteSampler.Kind k = RouteSampler.kind(r.code[0], r.rain[0], r.gusts[0]);
+    final String word;
+    if (k != RouteSampler.Kind.CLEAR)
+      word = c.getString(label(k)).toLowerCase(java.util.Locale.getDefault());
+    else if (r.code[0] <= 1)
+      word = c.getString(R.string.eurise_ds_clear);
+    else if (r.code[0] == 2)
+      word = c.getString(R.string.eurise_ds_partly);
+    else
+      word = c.getString(R.string.eurise_ds_cloudy);
+    final String glyph = k == RouteSampler.Kind.CLEAR ? sky(r.code[0]) : glyph(k);
+    return new Object[] {glyph, word, r.temp[0]};
+  }
+
   /** La strada del percorso (punti al massimo a 1 km): si rilegge solo quando il percorso cambia. */
   private static void loadRoute()
   {

@@ -79,6 +79,7 @@ private fun Sheet(night: Boolean) {
     val context = LocalContext.current
     var limits by remember { mutableStateOf(EuriseLivelli.speedLimits(context)) }
     var cameras by remember { mutableStateOf(EuriseLivelli.cameras(context)) }
+    var where by remember { mutableStateOf(EuriseDoveSei.enabled(context)) }
     // null: l'app Eurise non c'è o non ha ancora risposto (la voce del meteo non si mostra).
     var weather by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { EuriseRouteWeather.status(context) { weather = it } }
@@ -94,6 +95,10 @@ private fun Sheet(night: Boolean) {
             Toggle(c, stringResource(R.string.eurise_lv_cameras), stringResource(R.string.eurise_lv_cameras_sub), cameras, divider = true) {
                 cameras = it
                 EuriseLivelli.setCameras(context, it)
+            }
+            Toggle(c, stringResource(R.string.eurise_lv_where), stringResource(R.string.eurise_lv_where_sub), where, divider = true) {
+                where = it
+                EuriseDoveSei.setEnabled(context, it)
             }
         }
         weather?.let { on ->

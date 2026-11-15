@@ -279,4 +279,14 @@
   <string name="eurise_fuel_source">Prezzi comunicati dai gestori al Ministero (Osservaprezzi carburanti), aggiornati ogni mattina sul telefono.</string>
   <string name="eurise_sh_fuel">Benzinai col prezzo</string>
   <string name="eurise_sh_fuel_sub">più economici, più vicini, sul percorso</string>
+    <string name="eurise_ds_clear">sereno</string>
+    <string name="eurise_ds_partly">poco nuvoloso</string>
+    <string name="eurise_ds_cloudy">nuvoloso</string>
+    <string name="eurise_ds_sunset">tramonto %1$s</string>
+    <string name="eurise_ds_sunrise">alba %1$s</string>
+    <string name="eurise_ds_save">Salva il luogo</string>
+    <string name="eurise_ds_send">Manda la posizione</string>
+    <string name="eurise_ds_note">Il punto al centro della mappa. Comune e via dalle mappe sul telefono; il meteo solo se acceso nel centro privacy.</string>
+    <string name="eurise_lv_where">Dove sei</string>
+    <string name="eurise_lv_where_sub">Comune, via e tramonto sopra la barra, sul telefono</string>
 </resources>

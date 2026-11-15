@@ -139,3 +139,22 @@ serve un modello nostro (dataset liberi piccoli), fuori da GitHub Actions.
   neve, colline e alberelli della stagione, più scuro la sera); passa al motore con `Framework.nativeEuriseSetSky`.
   Si accende con la guida (`NavigationController.show`), si rifà a ogni rotazione e ogni 5 minuti, si spegne a fine guida
   o con l'interruttore «Cielo e colline sopra la mappa» (Navigazione › Cielo e stagioni, acceso di base: nulla esce).
+
+## Avvio con l'icona della suite (15 novembre, Mappe 48)
+- `res/layout/activity_splash.xml` nostro (stessi id di CoMaps): icona di Eurise Mappe (`ic_maps_foreground`, 240 dp al
+  centro) sul blu notte della suite (`eurise_icon_background`), nome e riga di OpenStreetMap in basso. `MwmTheme.Splash`
+  blu notte anche col tema scuro (`eurise_patch.py`); Android 12+ in `values-v31/eurise_splash.xml` con la stessa icona
+  senza cerchio, così l'avvio di sistema e quello di CoMaps coincidono.
+
+## «Dove sei» mentre si esplora, passo f) (15 novembre, Mappe 49; tavola MapEsplora)
+- `eurise/ui/EuriseDoveSei.kt`: scheda satinata sopra la barra (nella colonna della barra, accanto a zoom e lente):
+  bandiera, «Monza (MB)», «Via Italia · Lombardia · IT»; a destra gradi e cielo (solo con il meteo acceso nel centro
+  privacy, `EuriseRouteWeather.hereParts`) e tramonto o alba (calcolati, `SunTimes`). Tocco: «Salva il luogo» e «Manda
+  la posizione». Il punto è il centro della mappa; si cerca quando la mappa è ferma e il centro si è spostato di 30 m
+  (una lettura al secondo, ferma in secondo piano). Nascosta durante percorso e guida; interruttore «Dove sei» in Livelli.
+- Comune: `Framework.nativeEuriseCityAt` (JNI aggiunto da `eurise_patch.py`, `search::CityFinder` con il nome locale).
+  Sigla e regione: `assets/eurise_comuni.tsv` (7904 comuni ISTAT al 1/1/2020, CC BY 4.0, da matteocontrini/comuni-json;
+  circa 50 KB compressi). Per i sei nomi doppi si sceglie con la regione della mappa di CoMaps; le province sarde del
+  2025 non ci sono ancora. Paese dal paese della mappa (`MapManager.nativeFindCountry`) con il codice ISO.
+- Non ancora: nomi delle vie più leggibili (stile del motore) e cielo con l'orizzonte in esplorazione (dopo la prova del
+  cielo in guida di Mappe 47).

@@ -2529,3 +2529,16 @@ Risposte del proprietario nella notte: il giallo in auto era **di notte** (→ t
   2) Eurise AI come seconda lettura quando le regole non bastano (tavola AlfCapisce, da approvare); 3) voci: Kokoro
   (sherpa-onnx, già nel progetto) ha due voci italiane, Nicola e Sara, circa 115 MB int8 + 28 MB di voci; prosodia più
   scorrevole di Piper ma voci italiane meno curate di quelle inglesi: da provare come voce scaricabile.
+
+## 15 novembre: avvio di Mappe, «Avvia la navigazione» grigio, passo f) «Dove sei» (ramo `brand`) · Mappe 48 e 49
+- **Avvio di Mappe** (Mappe 48): al posto del logo di CoMaps l'icona di Eurise Mappe sul blu notte della suite, anche
+  nell'avvio di sistema di Android 12+ (dettagli in `maps/EURISE.md`).
+- **«Avvia la navigazione» grigio per minuti** (segnalato dal proprietario, Mappe 47): il pannello si aggiornava solo con
+  gli avvisi di CoMaps; se uno si perdeva (per esempio app in secondo piano durante il calcolo: CoMaps salta
+  l'aggiornamento finché non riprende) il tasto restava spento. Ora (Mappe 48) lo stato si rilegge ogni 0,4 s mentre si
+  pianifica, il tasto si tocca sempre («Calcolo il percorso…» se sta calcolando; se il calcolo si è fermato lo rifà).
+- **Passo f) Esplora, prima parte** (Mappe 49): «Dove sei» sopra la barra (comune con sigla, via, regione, bandiera, meteo
+  se acceso, tramonto; Salva il luogo, Manda la posizione; interruttore in Livelli). Restano del passo f): nomi delle vie
+  più leggibili e l'orizzonte col cielo anche esplorando (dopo l'esito del cielo in guida).
+- **Da provare**: Mappe 48 (avvio; «Avvia la navigazione» anche dopo essere usciti dall'app durante il calcolo), Mappe 49
+  («Dove sei» spostando la mappa, in Italia e fuori). Esito della prova di Mappe 46 e 47 ancora da ricevere.

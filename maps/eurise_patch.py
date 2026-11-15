@@ -1260,3 +1260,25 @@ patch(nav, """    mNavMenu.update(info);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
     app.organicmaps.eurise.EuriseSky.tick(mFrame.getContext());""")
 print("eurise_patch: cielo e colline in guida (MapCieloColline)")
+
+# «Dove sei» mentre si esplora (tavola MapEsplora): il comune in un punto, dalle mappe scaricate (CityFinder del motore di
+# ricerca, lo stesso che CoMaps usa per le località; nome locale, per la sigla della provincia dalla tabella ISTAT).
+patch(fw_cpp, '#include "storage/country_info_getter.hpp"\n',
+      '#include "search/city_finder.hpp"\n\n#include "coding/string_utf8_multilang.hpp"\n\n#include "storage/country_info_getter.hpp"\n')
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto""", """// Eurise: il comune nel punto (nome locale), vuoto se lì non c'è una mappa. Thread principale, come le altre chiamate.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseCityAt(JNIEnv * env, jclass, jdouble lat,
+                                                                                 jdouble lon)
+{
+  static std::unique_ptr<search::CityFinder> finder;
+  if (!finder)
+    finder = std::make_unique<search::CityFinder>(frm()->GetDataSource());
+  return jni::ToJavaString(env, finder->GetCityName(mercator::FromLatLon(lat, lon), StringUtf8Multilang::kDefaultCode));
+}
+
+// Eurise: la strada sotto l'auto per Android Auto""")
+patch(fw_java, "  public static native void nativeResetRoadSpeedLimit();\n", """  public static native void nativeResetRoadSpeedLimit();
+  /** Eurise: il comune nel punto (nome locale), vuoto se lì non c'è una mappa scaricata. */
+  @NonNull
+  public static native String nativeEuriseCityAt(double lat, double lon);
+""")
+print("eurise_patch: «Dove sei» mentre si esplora (MapEsplora)")

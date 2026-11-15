@@ -287,4 +287,14 @@
   <string name="eurise_fuel_source">Prices reported by the operators to the Ministry (Osservaprezzi carburanti), updated every morning on the phone.</string>
   <string name="eurise_sh_fuel">Fuel stations with prices</string>
   <string name="eurise_sh_fuel_sub">cheapest, nearest, on the route</string>
+    <string name="eurise_ds_clear">clear</string>
+    <string name="eurise_ds_partly">partly cloudy</string>
+    <string name="eurise_ds_cloudy">cloudy</string>
+    <string name="eurise_ds_sunset">sunset %1$s</string>
+    <string name="eurise_ds_sunrise">sunrise %1$s</string>
+    <string name="eurise_ds_save">Save the place</string>
+    <string name="eurise_ds_send">Send the location</string>
+    <string name="eurise_ds_note">The point at the centre of the map. Town and street from the maps on the phone; weather only if turned on in the privacy centre.</string>
+    <string name="eurise_lv_where">Where you are</string>
+    <string name="eurise_lv_where_sub">Town, street and sunset above the bar, on the phone</string>
 </resources>

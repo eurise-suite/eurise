@@ -111,8 +111,11 @@ private fun Bar(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // «Dove sei» (tavola MapEsplora) sopra la barra, nello spazio libero accanto a zoom e lente.
+        Column(Modifier.weight(1f).widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        DoveSei(night)
         Row(
-            Modifier.weight(1f).widthIn(max = 420.dp).height(64.dp)
+            Modifier.fillMaxWidth().height(64.dp)
                 .shadow(14.dp, RoundedCornerShape(32.dp), clip = false)
                 .clip(RoundedCornerShape(32.dp)).background(p.glass).border(1.dp, p.edge, RoundedCornerShape(32.dp))
                 .padding(horizontal = 6.dp),
@@ -124,6 +127,7 @@ private fun Bar(
             Item(Icons.position, R.string.eurise_bar_position, p, active = false, onPosition)
             Item(Icons.star, R.string.eurise_bar_saved, p, active = false, onSaved)
             Item(Icons.menu, R.string.eurise_bar_menu, p, active = false, onMenu)
+        }
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (zoom) {
