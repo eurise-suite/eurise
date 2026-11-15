@@ -88,6 +88,8 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    // Il contratto del cervello di Alfred (costanti, nessuna dipendenza).
+    implementation(project(":core:suite"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

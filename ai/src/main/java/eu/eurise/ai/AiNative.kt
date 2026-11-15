@@ -13,6 +13,13 @@ internal object AiNative {
     @JvmStatic external fun capture(ptr: Long, sentence: String, y: Int, m: Int, d: Int): String
     @JvmStatic external fun ask(ptr: Long, question: String, maxTokens: Int): String
     @JvmStatic external fun bench(ptr: Long, nPrompt: Int, nGen: Int): String
+    /** Le azioni di Alfred dalla frase (una per riga, tipo|chi|testo|data|ora|canale), con [hints] dalla memoria. */
+    @JvmStatic external fun command(ptr: Long, sentence: String, hints: String, y: Int, m: Int, d: Int): String
+    /** Risposta libera che arriva a pezzi su [sink]. */
+    @JvmStatic external fun askStream(ptr: Long, question: String, maxTokens: Int, sink: PieceSink): String
+
+    /** Riceve la risposta man mano; false ferma la generazione. */
+    fun interface PieceSink { fun onPiece(piece: String): Boolean }
 }
 
 /** Una risposta del motore con i suoi tempi. */
@@ -45,6 +52,12 @@ class Ai private constructor(private var ptr: Long) : AutoCloseable {
     @Synchronized fun capture(sentence: String, y: Int, m: Int, d: Int) = Answer.parse(AiNative.capture(ptr, sentence, y, m, d))
 
     @Synchronized fun ask(question: String, maxTokens: Int = 200) = Answer.parse(AiNative.ask(ptr, question, maxTokens))
+
+    @Synchronized fun command(sentence: String, hints: String, y: Int, m: Int, d: Int) =
+        Answer.parse(AiNative.command(ptr, sentence, hints, y, m, d))
+
+    @Synchronized fun askStream(question: String, maxTokens: Int, onPiece: (String) -> Boolean) =
+        Answer.parse(AiNative.askStream(ptr, question, maxTokens) { onPiece(it) })
 
     @Synchronized fun bench(nPrompt: Int = 256, nGen: Int = 64) = Answer.parse(AiNative.bench(ptr, nPrompt, nGen))
 

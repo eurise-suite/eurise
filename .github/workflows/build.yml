@@ -380,6 +380,38 @@ jobs:
           [ -s "$F" ] || curl -sSL --retry 3 -o "$F" "https://huggingface.co/${{ steps.model.outputs.repo }}/resolve/main/${{ steps.model.outputs.name }}"
           ls -la ai-model
           python3 .github/scripts/ai_quality.py ai-host/eurise_ai_test "$F" ai/src/main/res/raw/frasi_prova.txt 4
+          python3 .github/scripts/ai_commands.py ai-host/eurise_ai_test "$F" 4
+
+      - name: Scegli il modello Rapido (Granite 4.0 1B di IBM, Apache 2.0, Q4_K_M)
+        id: rapido
+        continue-on-error: true
+        run: |
+          REPO=ibm-granite/granite-4.0-1b-GGUF
+          NAME=$(curl -sSL "https://huggingface.co/api/models/$REPO" | python3 -c "
+          import json, sys
+          files = [s['rfilename'] for s in json.load(sys.stdin)['siblings'] if s['rfilename'].endswith('.gguf')]
+          pick = [f for f in files if 'Q4_K_M' in f] or [f for f in files if 'Q4' in f] or files
+          print(pick[0])")
+          echo "Modello Rapido: $REPO/$NAME"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Rapido: https://huggingface.co/$REPO/resolve/main/$NAME" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/cache@v4
+        if: steps.rapido.outcome == 'success'
+        with:
+          path: ai-model-rapido
+          key: ai-model-${{ steps.rapido.outputs.name }}
+
+      - name: Comandi con il modello Rapido
+        if: steps.rapido.outcome == 'success'
+        continue-on-error: true
+        run: |
+          mkdir -p ai-model-rapido
+          F="ai-model-rapido/${{ steps.rapido.outputs.name }}"
+          [ -s "$F" ] || curl -sSL --retry 3 -o "$F" "https://huggingface.co/${{ steps.rapido.outputs.repo }}/resolve/main/${{ steps.rapido.outputs.name }}"
+          ls -la ai-model-rapido
+          python3 .github/scripts/ai_commands.py ai-host/eurise_ai_test "$F" 4
 
   # Eurise per Firefox sul computer (desktop/firefox): controllo della sintassi e pacchetto da caricare in Firefox.
   # Non firmato: per l'installazione stabile serve la firma di Mozilla con l'account del proprietario.

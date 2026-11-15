@@ -1,6 +1,7 @@
 // Prova sul computer di Eurise AI: stesso motore dell'APK. Legge le frasi da stdin (una per riga) e scrive una riga
 // JSON per ognuna, poi la misura della velocità. Uso: eurise_ai_test MODELLO THREAD [AAAA-MM-GG]
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -34,7 +35,9 @@ int main(int argc, char **argv) {
         if (line.empty()) continue;
         std::string out;
         eurise_ai::Stats st;
-        const bool ok = eurise_ai::capture(*e, line, y, m, d, out, st);
+        // EURISE_COMANDI=1: le azioni di Alfred al posto della cattura rapida.
+        const bool ok = std::getenv("EURISE_COMANDI") ? eurise_ai::command(*e, line, "", y, m, d, out, st)
+                                                      : eurise_ai::capture(*e, line, y, m, d, out, st);
         std::string r = eurise_ai::result_json(ok, out, st);
         r.insert(1, "\"frase\":\"" + eurise_ai::json_escape(line) + "\",");
         std::puts(r.c_str());

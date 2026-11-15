@@ -99,6 +99,43 @@ Java_eu_eurise_ai_AiNative_ask(JNIEnv *env, jclass, jlong ptr, jstring question,
 }
 
 JNIEXPORT jstring JNICALL
+Java_eu_eurise_ai_AiNative_command(JNIEnv *env, jclass, jlong ptr, jstring sentence, jstring hints, jint y, jint m, jint d) {
+    std::string out;
+    Stats st;
+    const bool ok = command(*(Engine *) ptr, str(env, sentence), str(env, hints), y, m, d, out, st);
+    return jstr(env, result_json(ok, out, st));
+}
+
+/** Come [ask], ma ogni pezzo di testo va subito a [sink].onPiece(String): Boolean (false ferma la risposta). */
+JNIEXPORT jstring JNICALL
+Java_eu_eurise_ai_AiNative_askStream(JNIEnv *env, jclass, jlong ptr, jstring question, jint maxTokens, jobject sink) {
+    jclass cls = env->GetObjectClass(sink);
+    jmethodID onPiece = env->GetMethodID(cls, "onPiece", "(Ljava/lang/String;)Z");
+    std::string out, pending;
+    Stats st;
+    // I pezzi possono spezzare un carattere UTF-8 a metà: si manda solo la parte già completa.
+    auto complete = [](const std::string &b) {
+        size_t n = b.size(), i = n;
+        while (i > 0 && i > n - 4 && ((unsigned char) b[i - 1] & 0xC0) == 0x80) i--;
+        if (i == 0) return (size_t) 0;
+        const unsigned char lead = (unsigned char) b[i - 1];
+        const size_t need = lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : lead >= 0xC0 ? 2 : 1;
+        return (n - (i - 1) >= need) ? n : i - 1;
+    };
+    const bool ok = ask(*(Engine *) ptr, str(env, question), maxTokens, out, st, [&](const std::string &piece) {
+        pending += piece;
+        const size_t k = complete(pending);
+        if (k == 0) return true;
+        jstring j = env->NewStringUTF(pending.substr(0, k).c_str());
+        pending.erase(0, k);
+        const jboolean go = env->CallBooleanMethod(sink, onPiece, j);
+        env->DeleteLocalRef(j);
+        return go == JNI_TRUE;
+    });
+    return jstr(env, result_json(ok, out, st));
+}
+
+JNIEXPORT jstring JNICALL
 Java_eu_eurise_ai_AiNative_bench(JNIEnv *env, jclass, jlong ptr, jint nPrompt, jint nGen) {
     return jstr(env, result_json(true, "", bench(*(Engine *) ptr, nPrompt, nGen)));
 }

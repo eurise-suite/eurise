@@ -392,6 +392,79 @@ inline bool ask(Engine &e, const std::string &question, int max_tokens, std::str
     return generate(e, chat_prompt(e, system, question), nullptr, max_tokens, out, st, on_piece);
 }
 
+/**
+ * Grammatica dei comandi di Alfred: da una a tre azioni, una per riga, campi per posizione fissa
+ * (tipo|chi o dove|testo|data|ora|canale). Il telefono traduce ogni riga in un comando della suite.
+ */
+inline const char *COMMAND_GRAMMAR = R"(
+root   ::= azione ("\n" azione){0,2}
+azione ::= tipo "|" t? "|" t? "|" data? "|" ora? "|" canale?
+tipo   ::= "chiama" | "messaggio" | "nota" | "evento" | "da_fare" | "promemoria" | "sveglia" | "timer" | "naviga" | "apri" | "domanda"
+t      ::= c{1,140}
+c      ::= [^|\x7F\x00-\x1F]
+data   ::= [0-9] [0-9] [0-9] [0-9] "-" [0-1] [0-9] "-" [0-3] [0-9]
+ora    ::= [0-2] [0-9] ":" [0-5] [0-9]
+canale ::= "whatsapp" | "telegram" | "signal" | "sms" | "email"
+)";
+
+/** I giorni da oggi a due settimane, scritti per esteso (vedi [capture_system]). */
+inline std::string days_block(const std::tm &base) {
+    std::string s = "Oggi è " + spoken(base) + " (" + iso(base) + ").\n";
+    for (int i = 1; i <= 14; i++) {
+        std::tm t = base;
+        t.tm_mday += i;
+        std::mktime(&t);
+        const char *label = i == 1 ? "domani, " : i == 2 ? "dopodomani, " : "";
+        static const char *names[] = {"domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"};
+        const std::string mark = i <= 7 ? std::string(" ← «") + names[t.tm_wday] + "»" : "";
+        s += "- " + std::string(label) + spoken(t) + " = " + iso(t) + mark + "\n";
+    }
+    return s;
+}
+
+/** Istruzioni dei comandi di Alfred per il giorno [y]-[m]-[d]; [hints] sono le cose che Alfred ricorda dell'utente. */
+inline std::string command_system(int y, int m, int d, const std::string &hints) {
+    std::tm base{};
+    base.tm_year = y - 1900;
+    base.tm_mon = m - 1;
+    base.tm_mday = d;
+    base.tm_hour = 12;
+    std::mktime(&base);
+    std::string s =
+        "Sei Alfred, il maggiordomo di Eurise sul telefono. Ricevi una richiesta detta a voce (può avere errori di "
+        "trascrizione: interpreta il senso) e scrivi le azioni da fare, una per riga, al massimo tre.\n"
+        "Ogni riga: tipo|chi o dove|testo|data|ora|canale (campi vuoti quando mancano).\n"
+        "Tipi:\n"
+        "- chiama: telefonare a qualcuno (chi = il nome).\n"
+        "- messaggio: scrivere a qualcuno (chi = il nome, testo = il messaggio in prima persona, canale se detto).\n"
+        "- nota: scrivere una nota (testo = il contenuto, anche vuoto).\n"
+        "- evento: appuntamento o impegno in calendario (testo = il titolo, data, ora; chi = il luogo se detto).\n"
+        "- da_fare: una cosa da fare o da comprare, senza ora precisa.\n"
+        "- promemoria: essere avvisati a un'ora precisa (ricordami alle…, ricordami domani…).\n"
+        "- sveglia: svegliarsi a un'ora (ora; data se è un altro giorno).\n"
+        "- timer: un conto alla rovescia (testo = i minuti, solo il numero).\n"
+        "- naviga: andare in un posto (chi = il posto o l'indirizzo).\n"
+        "- apri: aprire un'app (chi = il nome dell'app).\n"
+        "- domanda: una domanda o una richiesta che non è un'azione sul telefono (testo = la domanda com'è).\n"
+        "Le ore in 24 ore (le 3 del pomeriggio = 15:00). «Dopo pranzo» = 14:00, «stasera» = 20:00, «stamattina» = "
+        "09:00, se l'utente non ha detto altro.\n"
+        "Esempi:\n"
+        "«chiama Marco» → chiama|Marco||||\n"
+        "«di' a Anna su whatsapp che arrivo alle 8» → messaggio|Anna|Arrivo alle 8|||whatsapp\n"
+        "«scrivi una nota il codice del cancello è 4512» → nota||Il codice del cancello è 4512|||\n"
+        "«timer di dieci minuti» → timer||10|||\n"
+        "«quanto è alto il Monte Bianco» → domanda||Quanto è alto il Monte Bianco?|||\n"
+        "«domani alle 15 dentista e avvisa Luca che non ci sono» → evento||Dentista|<data di domani>|15:00|\n"
+        "messaggio|Luca|Domani alle 15 non ci sono|||\n";
+    if (!hints.empty()) s += "Cose che sai dell'utente:\n" + hints + "\n";
+    return s + days_block(base);
+}
+
+inline bool command(Engine &e, const std::string &sentence, const std::string &hints, int y, int m, int d,
+                    std::string &out, Stats &st) {
+    return generate(e, chat_prompt(e, command_system(y, m, d, hints), sentence), COMMAND_GRAMMAR, 160, out, st);
+}
+
 inline std::string json_escape(const std::string &s) {
     std::string o;
     for (unsigned char c : s) {

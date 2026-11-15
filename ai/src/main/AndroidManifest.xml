@@ -23,5 +23,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Il cervello di Alfred: solo le app della suite (permesso di firma) possono collegarsi. -->
+        <service
+            android:name=".BrainService"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.BRAIN" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
