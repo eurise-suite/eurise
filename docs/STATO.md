@@ -2195,6 +2195,18 @@ ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Ma
     lunga, Inizio schiacciato, tendine strette. Seconda prova 43702994717: Inizio e tendine a posto; corrette ancora le
     icone di Maiuscole e Interlinea (argomenti scambiati), la Home (via la tessera Citazione, che resta in ↗) e i nomi
     inglesi dei modelli. Terza prova 43704607042 e strada 2 43704685827 (con la patch 02) in corso.
+  - **Ergonomia (15 novembre, le dieci proposte tutte approvate: «Sono tutte valide. Implementiamo»)**: non una copia di
+    Word/Excel/PowerPoint ma tutte le funzioni con le schede, messe dove si lavora. In codice: barra rapida sulla
+    selezione (`showMini`, `textselectionchange` + mouseup), schede che compaiono da sole (`CONTEXT_TABS`, evento
+    `contextchange`: Tabella, Immagine, Grafico, Forma), tasto destro breve (`wrapContextMenu` avvolge
+    `app.map._contextMenu._onContextMenu`; da tastiera e sui suggerimenti di ortografia resta quello di Collabora),
+    lettere del tasto Alt (`watchAlt`), Ctrl K con tutte le voci dei nastri e i più usati (`DESK_ITEMS`, `useCounts`),
+    Progetta+Layout → «Pagina», colonna senza doppioni (CSS sui pannelli StylesPropertyPanel, TextPropertyPanel,
+    ParaPropertyPanel, AlignmentPropertyPanel, NumberFormatPropertyPanel), «I tuoi comandi» (`yours`, un cambio al
+    giorno), nastro a scomparsa (doppio clic su una scheda) e Concentrazione (Vista, Esc). Proposta 10 (anteprima
+    al passaggio sul documento) solo in parte: le tendine mostrano caratteri, stili e colori come sono; applicarli al
+    testo al passaggio vorrebbe dire applicare e annullare nel motore, che sporca la cronologia di Annulla: da
+    rivedere con il proprietario. Prova 43706608743 in corso.
   - **Prossimo, deciso dal proprietario (15 novembre)**: quando Office sul computer sarà completo, si pensa alla
     webapp (Office nel browser).
 
