@@ -87,6 +87,15 @@ internal fun DownloadCard(
                 Text(state.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(sub, fontSize = 12.sp, color = if (state.failed) scheme.error else scheme.onSurfaceVariant, maxLines = 1)
             }
+            // La percentuale in grande mentre scarica (richiesta del proprietario, 15 novembre).
+            val size = state.size
+            if (!done && !state.failed && size != null && size > 0) {
+                Text(
+                    "${(state.written * 100 / size).coerceIn(0, 100)}%",
+                    fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = scheme.primary,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClose), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.close(2.2f), stringResource(R.string.brw_login_close), tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }

@@ -259,8 +259,29 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                 mine += id
                 model.downloads = model.downloads + 1
                 dl = DownloadState(id, name, "application/octet-stream", null)
+                watchSystemDownload(id)
             }.onFailure { toast(getString(R.string.brw_download_failed)) }
         }
+    }
+
+    /** Il ripiego sul gestore dei download di Android: si legge l'avanzamento ogni mezzo secondo, per la percentuale. */
+    private fun watchSystemDownload(id: Long) {
+        val dm = getSystemService(DownloadManager::class.java)
+        val tick = object : Runnable {
+            override fun run() {
+                val s = dl?.takeIf { it.id == id && it.uri == null && !it.failed } ?: return
+                runCatching {
+                    dm.query(DownloadManager.Query().setFilterById(id))?.use { c ->
+                        if (!c.moveToFirst()) return@use
+                        val done = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                        val total = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)).takeIf { it > 0 }
+                        dl = s.copy(written = done, size = total ?: s.size)
+                    }
+                }
+                window.decorView.postDelayed(this, 500)
+            }
+        }
+        window.decorView.postDelayed(tick, 500)
     }
 
     /** Apre il file scaricato con l'app giusta; senza un'app per quel tipo, l'elenco dei download. */

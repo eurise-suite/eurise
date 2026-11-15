@@ -2648,3 +2648,10 @@ da fare, documenti), partendo da Linux.
   `Command.Follow`), dubbi con risposta a voce, correzioni nella memoria; 3 azioni nuove (una per volta, con test); 4 ruolo
   assistente, riquadro, blocco; «Alfred» con il riconoscimento di parole chiave di sherpa-onnx (da misurare la batteria);
   5 registro locale (impostazioni `eurise_alfred_log`, fuori dal backup).
+
+## 15 novembre: Calendario per le altre app, registro errori ovunque, percentuale dei download
+- `EventIntentActivity` (feature/calendar): «Aggiungi al calendario» (INSERT/EDIT con gli extra di CalendarContract) apre
+  l'editor già compilato; VIEW di `content://com.android.calendar/events/N` apre l'appuntamento.
+- `CrashInstaller` + `CrashActivity` (core/designsystem, processo `:errore`): in tutte le app che usano il designsystem,
+  dopo una chiusura improvvisa la riapertura mostra l'errore con Copia, Condividi, Riapri.
+- Browser: percentuale in grande nel riquadro del download; anche il ripiego sul gestore di Android mostra l'avanzamento.
