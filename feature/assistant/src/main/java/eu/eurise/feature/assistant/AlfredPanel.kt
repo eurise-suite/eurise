@@ -309,7 +309,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
             onText = { said ->
                 answering = false
                 val now = phase as? Phase.Which
-                if (now?.command != p.command) return@listen
+                if (now == null || now.command != p.command) return@listen
                 val i = Grammar.pick(said, now.options.map { it.name to it.detail })
                 when {
                     i != null -> chooseWhich(now, i)
