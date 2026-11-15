@@ -335,20 +335,20 @@
     <!-- Seguiti (tavola AlfSeguito) -->
     <string name="alfred_card_follow">Sposto</string>
     <string name="alfred_card_follow_undo">Tolgo</string>
-    <string name="alfred_follow_nothing">Non ricordo cosa spostare: sono passati più di due minuti dall'ultima cosa fatta.</string>
+    <string name="alfred_follow_nothing">Non ricordo cosa spostare: sono passati più di due minuti dall\'ultima cosa fatta.</string>
     <string name="alfred_follow_move">Sposta</string>
     <string name="alfred_follow_when">A che ora lo sposto?</string>
     <string name="alfred_follow_move_lead">Sposto %1$s %2$s?</string>
-    <string name="alfred_follow_note">Alfred tiene a mente l'ultima cosa fatta per due minuti: «spostalo», «cancellalo», «mandalo anche a…», «annulla». Se correggi un campo a mano, impara la correzione per la prossima volta.</string>
+    <string name="alfred_follow_note">Alfred tiene a mente l\'ultima cosa fatta per due minuti: «spostalo», «cancellalo», «mandalo anche a…», «annulla». Se correggi un campo a mano, impara la correzione per la prossima volta.</string>
     <string name="alfred_follow_chip_later">«no, alle %1$s»</string>
     <string name="alfred_follow_chip_also">«avvisa anche %1$s»</string>
     <string name="alfred_follow_chip_undo">«annulla»</string>
-    <string name="alfred_follow_alarm_note">Metto una sveglia nuova: quella di prima la spegne dall'Orologio.</string>
+    <string name="alfred_follow_alarm_note">Metto una sveglia nuova: quella di prima la spegne dall\'Orologio.</string>
     <string name="alfred_follow_gone">È già partito: non posso ritirarlo.</string>
     <string name="alfred_follow_undo_event">Tolgo «%1$s» dal calendario?</string>
     <string name="alfred_follow_undo_task">Tolgo «%1$s» dalle cose da fare?</string>
     <string name="alfred_follow_undo_note">Butto la nota nel cestino?</string>
-    <string name="alfred_follow_undo_alarm">La sveglia delle %1$s si spegne dall'Orologio.</string>
+    <string name="alfred_follow_undo_alarm">La sveglia delle %1$s si spegne dall\'Orologio.</string>
     <string name="alfred_follow_undo">Togli</string>
     <string name="alfred_follow_moved">Spostato a %1$s.</string>
     <string name="alfred_follow_undone">Tolto, come se non fosse successo.</string>
@@ -360,7 +360,7 @@
     <string name="alfred_which_listening">Sto ascoltando…</string>
     <string name="alfred_which_hint">Può rispondere a voce «Ferri», «il primo», «quello del lavoro». Alfred chiede solo quando ha un dubbio vero; se no, propone il più probabile.</string>
     <string name="alfred_which_today">sentito oggi</string>
-    <string name="alfred_which_yesterday">l'ultima volta ieri</string>
-    <string name="alfred_which_ago">l'ultima volta %1$d giorni fa</string>
+    <string name="alfred_which_yesterday">l\'ultima volta ieri</string>
+    <string name="alfred_which_ago">l\'ultima volta %1$d giorni fa</string>
     <string name="alfred_memory_word">«%1$s» si scrive «%2$s»</string>
 </resources>
