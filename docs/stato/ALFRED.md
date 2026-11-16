@@ -7,54 +7,101 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Da completare alla prima chat dell'area
-Questo file è solo l'indice. La prima chat lo completa leggendo le sezioni di `docs/STATO.md` qui sotto (le più recenti
-contano di più): **Fatto** (in breve), **Tavole** (approvate e da approvare, pagina della tela), **Prossimi passi** in
-ordine, **Come si lavora** (APK e link da dare, prove). Poi toglie questa sezione e l'indice.
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 651)
+- **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
+  ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
+  nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
+  parlato. Prima scelta di Ricerca AI nella dock della Scrivania. `AlfredPrefs` nel backup cifrato.
+- **Come capisce**: regole esatte (`Grammar`, anche `Grammar.guess` come seconda lettura con scheda di conferma) → cervello
+  sul telefono → online. Più azioni in una frase: «Ho capito N cose» con «Fai tutto». Dopo un comando a voce «Procedo?» con
+  sì/no a voce.
+- **Passo 1, domande sui dati** (giro 615): «cosa ho domani», «quando ho il dentista», «chi mi ha chiamato», «cosa avevo
+  scritto sul cancello»; cerca solo sul telefono (`Records`: Calendario, Attività, Note, chiamate), risposta scritta e a voce
+  con proposte. Mancano i messaggi (l'APK principale non ha READ_SMS: arrivano col passo 3).
+- **Passo 2, seguiti** (giro 628): «spostalo alle 10», «no, alle 11», «cancellalo», «annulla», «mandalo anche a Luca»
+  (`FollowUp`, due minuti, solo in memoria); «Quale Marco chiamo?» a voce (`Butler.doubt`); correzioni a mano delle parole
+  ricordate (`AlfredMemory.Kind.Word`).
+- **Alfred ricorda** (giro 600, `core/data/alfred/AlfredMemory`, nel backup cifrato): persona scelta per un nome, app abituale
+  per persona, «ricorda che…»; usata nella ricerca delle persone e come `hints` del cervello; voci con × in «Chi risponde».
+- **Eurise AI** (`ai/`, APK `eu.eurise.ai` **senza permesso di rete**, llama.cpp dai sorgenti in `third_party/`):
+  `BrainService` con permesso di firma (`core/suite/BrainContract`): installa il GGUF passato da Eurise, comandi con
+  grammatica GBNF (fino a tre righe `tipo|chi|testo|data|ora|canale`, tipo `dati`), risposta libera in streaming
+  (`askStream`). Cervelli scaricati solo con Wi-Fi da huggingface.co (`BrainDownload`): **Rapido** Granite 4.0 1B (circa
+  0,8 GB), **Completo** Ministral 3 3B (circa 2,5 GB), entrambi Apache 2.0. Controlli fissi dopo il cervello
+  (`BrainCommands`: date e ore da QuickAdd, niente nomi, canali, testi o azioni inventati). Misure in CI
+  (`.github/scripts/ai_commands.py`): Ministral 12/15 in circa 5 s, Granite 12/15 in circa 2,9 s. Prima misura sul
+  Fairphone 6 (prototipo): 41,9 token/s in lettura, 7,4 in scrittura.
+- **Chi risponde** (`AlfredPrefs.answers`): prima il telefono / subito online / solo telefono; risposta dal telefono che si
+  scrive mentre pensa, «Chiedi a <preferito>».
+- **AI online** (deciso il 14 novembre: niente conto Eurise né inoltro): il globo apre la **finestra AI**
+  (`online/AiWindowActivity`) sul servizio preferito col suo account, domanda ripulita dai dati personali (`Redactor`, con
+  segnaposto) e scritta nel campo, Invio all'utente, «Porta ad Alfred» riprende la risposta. Lumo (8 tacchette), Euria (7),
+  Le Chat (6, avviso sull'addestramento), «Aggiungi»; servizi chiusi in fondo. Servizio `PrivacyService.AiOnline` spento
+  di base.
+- **Alfred ovunque**: «Il punto» della giornata (`Briefing.kt`, tavole AlfGiornata e AlfSera), sveglia di Alfred
+  (AlfSveglia: saluto, frase, brano dal catalogo in `core/data/alfred`), voce di Alfred nella guida di Mappe (AlfMappe),
+  «Alfred, autovelox / c'è una coda» che segna in Mappe, microfono di Alfred in Android Auto (anche in guida e nella ricerca,
+  con «Ti ascolto» che mostra ogni passo: lavoro dell'area Mappe, 16 novembre).
+- **Voce** (`voice/`, APK separato, per l'utente «Alfred · voce e modelli»): riconoscimento con Whisper
+  (`TranscribeService`, `core/suite/VoiceContract`; Alfred registra da sé con `AlfredEar` e `Endpoint`, fine frase dopo
+  700 ms; modello tenuto in memoria mentre il pannello è aperto, contesto 768; volume normalizzato contro i «Mi scusi?»);
+  dettatura a pezzi nelle pause per la Tastiera; motore di sintesi di sistema (`AlfredVoiceService`, sherpa-onnx). Voci:
+  **Nicola (Kokoro) è la voce di Alfred** (116 MB, si scarica se manca), Sara, Riccardo e Paola (Piper), Riccardo ritoccato
+  (velocità e tono), «Carica una voce dal telefono». Senza Voce, Alfred usa il riconoscimento e la voce del telefono.
+- **Leggi** (`read/`, APK separato scaricato a richiesta): Tesseract compilato dai sorgenti (`eurise_ocr`, 99,5–99,9 % in
+  CI), `ReadService` con permesso della suite (`core/suite/ReadContract`), lingue scaricabili (italiano, inglese);
+  traduzione dentro Leggi (`TranslateService`, 14 lingue via inglese, chrF it→en 82,8). Usata da Scanner (testo, nome
+  proposto, Da fare con scadenze e importi, PDF cercabile), carte di Password (`ScanCardActivity`), Viaggi, Telefono e
+  Messaggi (Traduci). Leggi non è un lettore di libri: niente epub.
+- **Centro privacy**: voci Voce, Traduzione, Lettura dei documenti, AI online, permesso Chiamate per Alfred.
 
-## Indice delle sezioni di docs/STATO.md che riguardano l'area (numeri di riga al 16 novembre)
-- riga 451: Calcolatrice, lettore QR, lettura dei documenti (10 novembre, sera) – anteprime da approvare
-- riga 496: 11 novembre, notte: riunioni, modalità, cestino unico, viaggi, prototipo Leggi (ramo `tastiera`)
-- riga 544: 11 novembre: prova del proprietario sul telefono (APK 198) e correzioni (ramo `tastiera`)
-- riga 571: 11 novembre, sera: Tastiera AI, Galleria, icone, carte, Voce, QR e scanner, widget (ramo `tastiera`, APK 204–210)
-- riga 627: 11 novembre, notte: Eurise Leggi completa (ramo `brand`, APK 223–224) – da provare sul telefono
-- riga 696: 11 novembre: decisioni del proprietario (traduzione, scrittura a mano, punto 6)
-- riga 714: 11–12 novembre, notte: Mappe e Meteo approvate, traduzione in Leggi, Telefono, Rubrica e Messaggi (ramo `brand`, APK 237)
-- riga 858: 11 novembre, tarda mattina: richieste del proprietario dopo l'uso (ramo `brand`, APK 250–252)
-- riga 923: 11 novembre, mezzogiorno: decisioni del proprietario e tavole nuove (fine della chat del brand)
-- riga 949: 11 novembre, pomeriggio: prototipo di Eurise AI, Office a nastro (ramo `brand`, nuova chat)
-- riga 1268: 11 novembre, notte: prova del proprietario sul giro 290
-- riga 1489: 12 novembre, sera: accessi ai siti, import senza file, webapp, tastiera, bolla «Ti hanno cercato» · giro 335 (vedi sotto)
-- riga 1616: 12 novembre, notte (fine chat): scelte del proprietario
-- riga 1645: 12 novembre, sera: Alfred in codice, «Alfred ovunque» in tavola, Mappe passo a), Android Auto (ramo `brand`)
-- riga 1730: 13 novembre, notte: passo b) di Mappe, il punto di Alfred, correzioni del proprietario, filtro antispam · giro 356, Mappe 24
-- riga 1763: 13 novembre, giorno: Alfred ascolta e parla davvero, Mappe passo c), nomi delle app · giro 365, Mappe 26
-- riga 1790: 13 novembre, pomeriggio: nomi nuovi proposti dal proprietario, prova di Mappe su Android Auto
-- riga 1907: 13 novembre, sera: Android Auto, le sei correzioni in codice (ramo `brand`)
-- riga 1947: 13 novembre, pomeriggio tardi: Android Auto, percorso, mezzi e icone (ramo `brand`) — punto di ripartenza
-- riga 1967: 13 novembre, sera: approvazioni e semaforo della privacy in codice (ramo `brand`)
-- riga 2022: Punto di ripartenza (13 novembre, sera tardi)
-- riga 2040: 13 novembre, notte: Mappe passo e), seconda parte, Segnala in guida (ramo `brand`) · giro 430, Mappe 31
-- riga 2062: 13 novembre, notte: correzioni dopo la prova del proprietario (giro 411, Mappe 30) · ramo `brand`
-- riga 2085: Punto di ripartenza (13 novembre, notte)
-- riga 2098: 14 novembre, notte: correzioni dopo la prova del giro 434 e di Mappe 32 · ramo `brand`
-- riga 2126: 14 novembre, notte: lavoro da solo mentre il proprietario dorme (ramo `brand`) · giro 447, Mappe 35, poi pulizia
-- riga 2153: Punto di ripartenza (14 novembre, mattina)
-- riga 2196: 14 novembre, mattina: lavoro della chat nuova (ramo `brand`)
-- riga 2223: Punto di ripartenza (14 novembre, tarda mattina) — da fare nella chat nuova
-- riga 2247: 14 novembre, tarda mattina: chat nuova (ramo `brand`)
-- riga 2269: 14 novembre, pomeriggio (stessa chat)
-- riga 2308: Punto di ripartenza (14 novembre, sera)
-- riga 2395: 14 novembre, sera: correzioni dopo la prova di Alfred, bolla Documenti, icona di Office (ramo `brand`) · giro 529
-- riga 2422: 14 novembre, sera tardi: guida nello stile della suite in codice (ramo `brand`) · Mappe 46
-- riga 2446: Punto di ripartenza (14 novembre, sera tardi)
-- riga 2477: 14 novembre, notte: Alfred più rapido e tavole di «Alfred risponde dal telefono» (ramo `brand`) · giro 543
-- riga 2513: 15 novembre: «Alfred non capisce» (prova del proprietario) · giro 548
-- riga 2539: 15 novembre: Browser telefono (download e schede) ed Eurise per Firefox su Linux
-- riga 2587: 15 novembre: il cervello di Alfred sul telefono (tavole AlfTelefono, AlfCapisce, AlfCervello approvate) · giro 586
-- riga 2607: 15 novembre: Browser che si chiudeva, «Apri con» e «Apri da» (giro 592)
-- riga 2630: 15 novembre, pomeriggio: Nicola voce di Alfred; tavole dei cinque passi di Alfred (da approvare)
-- riga 2653: 15 novembre, sera: richiesta del proprietario per Linux (da fare, in una chat nuova)
-- riga 2670: 15 novembre, sera: Alfred, passi 1 e 2 (tavole AlfDati, AlfSeguito, AlfQuale approvate) · giri 615 e 628
-- riga 2692: 15 novembre, sera: Eurise sul computer (Linux) – tavole, nucleo, app, Firefox, Flatpak (ramo `brand`)
-- riga 2766: 16 novembre: icone nuove degli APK (serie colorata approvata)
+## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
+- **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
+  AstImpostazioni (nella voce di Alfred); AlfGiornata, AlfSera, AlfSveglia, AlfMappe; AlfUnico, AlfUnicoMancino, AlfScegli,
+  AlfFinestra, AlfRisposta, AlfDove; AlfTelefono, AlfCapisce, AlfCervello; AlfDati, AlfSeguito, AlfQuale.
+- **Approvate, codice da fare**: AlfAzioni (passo 3), AlfAvvio (passi 4 e 5); **PcAlfred** (Alfred sul computer,
+  approvata il 16 novembre con le tavole del computer).
+- **Da confermare**: AlfComputer (il PC come cervello via Ponte, 14 novembre): l'idea è approvata («Alfred unico»), ma il
+  diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
+
+## Prossimi passi, in ordine
+1. **Prove del proprietario sul giro 651** (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+   «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
+   ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
+   cosa per un'altra»).
+2. **Passo 3, azioni nuove** (tavola AlfAzioni), una per volta e con test: prima leggi e rispondi ai messaggi dall'APK
+   Messaggi (completa «chi mi ha scritto?»); poi sposta/cancella impegni, spunta attività, ferma timer e sveglie, torcia,
+   non disturbare, volume, modalità, musica, «quanto manca» in guida.
+3. **Passo 4** (AlfAvvio): Eurise come app assistente di Android (ROLE_ASSISTANT), riquadro nella tendina, dalla schermata
+   di blocco; «Di' Alfred» con le parole chiave di sherpa-onnx, spento di base con l'avviso sulla batteria (misurarla).
+4. **Passo 5**: registro locale delle ultime 100 richieste (`eurise_alfred_log`, fuori dal backup, spento di base, «Mandalo
+   a chi sviluppa…», «Cancella»): serve anche a capire se sbaglia l'ascolto o la comprensione.
+5. Dalla tavola AlfTelefono: azione utile proposta dalla risposta libera (es. «Timer 9 min»).
+6. Alfred ricorda nel centro privacy (serve prima un elenco dei dati locali dove agganciarlo).
+7. **Il PC come cervello** (AlfComputer, PcAlfred): col Ponte, modello scelto sulla scheda video, risveglio dalla rete;
+   insieme all'area Computer (`docs/stato/COMPUTER.md`).
+8. In attesa: Lumo con l'API ufficiale quando esce (oggi la finestra AI col suo account); musica classica scaricata per la
+   sveglia (servono fonti verificate); icona di Eurise AI (provvisoria).
+
+## Come si lavora
+- Codice: Alfred in `feature/assistant` (e `app/…/alfred/`), Eurise AI in `ai/` (llama.cpp in `third_party/`), Voce in
+  `voice/`, Leggi in `read/` (Tesseract e traduzione in `read/src/main/cpp`), contratti in `core/suite` (`BrainContract`,
+  `VoiceContract`, `ReadContract`, `TranslateContract`), memoria e catalogo in `core/data/alfred`.
+- Prove senza telefono: `GrammarTest`, `BrainCommandsTest`, `FollowTest`, `DataQuestionsTest`, `Endpoint`; misura del
+  cervello in CI con `.github/scripts/ai_commands.py` (frasi → comandi, ogni frase nuova va aggiunta lì); qualità di Leggi
+  con `.github/scripts/ocr_quality.py`.
+- Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
+  (altre chat lavorano sullo stesso ramo); poi si spinge la stessa testa anche su `prova-alfred`, così i giri delle altre
+  chat non lo annullano, e si pubblica quel giro: `gh workflow run apk-prova.yml --ref brand -f run_id=<id del giro su
+  prova-alfred>`.
+- In chat sempre i link diretti degli APK cambiati, con nome e giro:
+  - Eurise (Alfred): https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
+  - Eurise AI: https://github.com/eurise-suite/eurise/releases/download/apk-prova/ai-debug.apk
+  - Voce: https://github.com/eurise-suite/eurise/releases/download/apk-prova/voice-debug.apk
+  - Leggi: https://github.com/eurise-suite/eurise/releases/download/apk-prova/read-debug.apk
+- Voci e modelli si scaricano a richiesta (pre-release `voci`, lavoro `voci.yml`; cervelli da huggingface.co), mai dentro
+  l'APK. Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy.
+- Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
+  scrive qui.
+- A ogni consegna: aggiornare questo file e una sola riga in `docs/STATO.md`.
+- Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 16 novembre (Eurise AI, Assistente/Alfred, Voce, Leggi).
