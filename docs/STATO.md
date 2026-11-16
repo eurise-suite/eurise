@@ -2796,3 +2796,4 @@ così l'altra chat non le annulla.
 - 16 novembre, Alfred e AI: stato dell'area completato → `docs/stato/ALFRED.md`.
 - 16 novembre, Computer: COMPUTER.md completato; Oggi sul computer dalle tavole PcOggi e PcOggiNotte → `docs/stato/COMPUTER.md`.
 - 16 novembre, Organizzazione: file di stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/ORGANIZZAZIONE.md`.
+- 16 novembre, Comunicazione: stato dell'area completato → `docs/stato/COMUNICAZIONE.md`.

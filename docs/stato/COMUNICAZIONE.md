@@ -5,42 +5,102 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 `docs/PIATTAFORME.md`. Ramo `brand`; giri propri su `prova-comunicazione`.
 
 ## Cosa comprende
-Email, Chat (Matrix), Messaggi (SMS), Telefono, Rubrica.
+Email, Chat (Matrix), Messaggi (SMS), Telefono, Rubrica, anche da lavoro. Collegati, ma di altre aree: la bolla «Ti hanno
+cercato» e le suonerie (Scrivania, area Organizzazione), «leggi e rispondi ai messaggi» di Alfred (area Alfred), Email sul
+computer (area Computer, tavola PcEmail).
 
-## Da completare alla prima chat dell'area
-Questo file è solo l'indice. La prima chat lo completa leggendo le sezioni di `docs/STATO.md` qui sotto (le più recenti
-contano di più): **Fatto** (in breve), **Tavole** (approvate e da approvare, pagina della tela), **Prossimi passi** in
-ordine, **Come si lavora** (APK e link da dare, prove). Poi toglie questa sezione e l'indice.
+## Fatto (in breve, al 16 novembre)
+- **Telefono** (`phone/`, `eu.eurise.phone`, giro 237, poi TelPillola al giro 342): ruolo Telefono proposto al primo avvio;
+  Recenti con «Da richiamare», preferiti, tastierino con ricerca per nome (T9), numeri bloccati, togli dai recenti.
+  Chiamata: «Prima di rispondere» con gli impegni dal Calendario, nota della chiamata che va in Note (`HubBridge`), muto,
+  tasti, vivavoce, attesa, scambia e unisci, rifiuta con un messaggio, prossimità, schermo intero per quelle in arrivo.
+  Pillola satinata (`EuriseDock`): Tastierino, Preferiti, Recenti (con la carrellata dei preferiti in cima), Rubrica, «+»
+  per un contatto nuovo; la nota della chiamata ha lo stile di «Prima di rispondere».
+- **Rubrica**: seconda icona dello stesso APK (`ContactsAlias`), riceve «Aggiungi in rubrica» dalle altre app; scheda con
+  Chiama, SMS, WhatsApp, WhatsApp Business (distinti), Telegram, Email, impegni insieme, editor, elimina, blocca. È la
+  rubrica di sistema. Comune con Messaggi: `core/contacts` (`Reach`, `Avatar`, `DefaultApps`).
+- **Messaggi** (`messages/`, `eu.eurise.messages`): ruolo SMS; elenco Persone / Codici e consegne / Avvisi, codice in alto
+  da copiare che si cancella dopo 10 minuti; «Capito sul telefono» (appuntamento → Crea l'evento, in evidenza quando
+  l'altro conferma; numero → Chiama/SMS/WhatsApp/Telegram/Aggiungi; indirizzo → Mappe; Da fare; Note; Traduci con Leggi;
+  messaggi sospetti segnalati). MMS con foto (codice AOSP in `third_party/aosp-mms`), invio programmato, notifiche con
+  Rispondi/Letto/Copia il codice, risposta rapida durante le chiamate. Logica pura con test: `core/data/messages`
+  (`MessageInsights`).
+- **Email** (`mail/`, `eu.eurise.mail`, dal giro 310): caselle con indirizzo e password, server trovati da soli
+  (`Providers.kt`, poi autoconfig di Thunderbird), password nel Keystore, posta unificata Persone/Avvisi/Newsletter,
+  lettura senza JavaScript e senza rete finché non tocchi «Mostra», controllo ogni 15 minuti con notifica solo per le
+  persone. Servizi chiusi (Gmail, iCloud, Yahoo) per ultimi con password per le app e avviso; Outlook aspetta l'OAuth;
+  Proton/Tuta spiegati (serve il Bridge); Infomaniak con la verifica in due passi spiegata. Con la suite: proposte da
+  `MessageInsights` (Calendario, Da fare, Note, Rubrica, Mappe, avviso truffa), allegati Apri / Salva in Drive, Scrivi con
+  allegati da Drive, condivisione da ogni app, «Tienila anche in Eurise Password». Lettura con la pillola satinata
+  (Rispondi, Inoltra, Archivia, Sposta in…, Elimina, Spam).
+- **Chat** (`chat/`, `eu.eurise.chat`): Matrix con client HTTP nostro (`ChatClient`), accesso SSO dal browser o password,
+  elenco, inviti, conversazione, gruppi, notifiche ogni 15 minuti. Cifratura end-to-end con crypto-android
+  (matrix-sdk-crypto, come Element), APK solo arm64. Chiave di recupero compatibile con Element (`SecretStorage`), chiavi di
+  firma, copia cifrata delle chiavi sul server, chiave nel backup della suite (`SecretsContract`), in Eurise Password
+  (`PasswordContract`) o su carta con QR. Verifica a figure (SAS) di un proprio dispositivo e di una persona dalla chat,
+  elenco dei dispositivi con «Esci».
+- **Suonerie per persona e per app** (approvate e in codice il 14 novembre, nella Scrivania › Griglia e icone › Suoni):
+  suoneria del contatto (`CUSTOM_RINGTONE`), suono al posto di WhatsApp/Telegram tramite l'ascolto delle notifiche.
+- **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
+- **Ultimo APK pubblicato** in `apk-prova` per mail, chat, messages, phone: 16 novembre, 11:31 UTC (ricompilati con le
+  icone nuove).
 
-## Indice delle sezioni di docs/STATO.md che riguardano l'area (numeri di riga al 16 novembre)
-- riga 666: 11 novembre, notte: punto 6, Messaggi, Telefono e Mappe – anteprime da approvare (tela, pagina «Mappe, Messaggi e Telefono»)
-- riga 696: 11 novembre: decisioni del proprietario (traduzione, scrittura a mano, punto 6)
-- riga 714: 11–12 novembre, notte: Mappe e Meteo approvate, traduzione in Leggi, Telefono, Rubrica e Messaggi (ramo `brand`, APK 237)
-- riga 858: 11 novembre, tarda mattina: richieste del proprietario dopo l'uso (ramo `brand`, APK 250–252)
-- riga 949: 11 novembre, pomeriggio: prototipo di Eurise AI, Office a nastro (ramo `brand`, nuova chat)
-- riga 1122: 11 novembre, sera tardi: Office Suite, scanner, tastiera, bolle (ramo `brand`, nuova chat)
-- riga 1165: 11 novembre, notte: tavole nuove, Actions (ramo `brand`, nuova chat)
-- riga 1268: 11 novembre, notte: prova del proprietario sul giro 290
-- riga 1289: 11 novembre, notte fonda: giro 305 consegnato, tavole nuove
-- riga 1307: 12 novembre, notte: giro 310, Browser completo, Email, Mappe in stile suite, Office «Apri da…»
-- riga 1342: 12 novembre, notte (seconda parte): servizi chiusi, Email integrata, Chat cifrata, Drive come sulla tela
-- riga 1364: 12 novembre, mattina: Browser (BrwStrumenti, BrwSessioni), guida di Mappe, Drive «Riordina», tavole della Chat
-- riga 1403: 12 novembre, tarda mattina: Chat (ChatRecupero, ChatVerifica) e barra delle schede del Browser · giro 324
-- riga 1430: 12 novembre, pomeriggio: verifica di una persona, QR sulla carta, Password dalla suite, meteo sul percorso · giro 328
-- riga 1467: 12 novembre, pomeriggio (seconda parte): «Dove devi andare», frase d'arrivo, schede affiancate · giro 331
-- riga 1489: 12 novembre, sera: accessi ai siti, import senza file, webapp, tastiera, bolla «Ti hanno cercato» · giro 335 (vedi sotto)
-- riga 1555: 12 novembre, notte: tavole approvate dal proprietario (con le sue correzioni)
-- riga 1572: 12 novembre, notte: tavole approvate in codice, pillole, ricerca di Mappe, tavola dell'Assistente · giro 342, Mappe 16
-- riga 1616: 12 novembre, notte (fine chat): scelte del proprietario
-- riga 1645: 12 novembre, sera: Alfred in codice, «Alfred ovunque» in tavola, Mappe passo a), Android Auto (ramo `brand`)
-- riga 1763: 13 novembre, giorno: Alfred ascolta e parla davvero, Mappe passo c), nomi delle app · giro 365, Mappe 26
-- riga 1790: 13 novembre, pomeriggio: nomi nuovi proposti dal proprietario, prova di Mappe su Android Auto
-- riga 2269: 14 novembre, pomeriggio (stessa chat)
-- riga 2328: 14 novembre, sera: suonerie per persona e per app, sfondo sul blocco – tavole da approvare (ramo `brand`)
-- riga 2493: 14 novembre, notte: Mail e Chat da lavoro (richiesta del proprietario, solo tavole e documento)
-- riga 2539: 15 novembre: Browser telefono (download e schede) ed Eurise per Firefox su Linux
-- riga 2573: 15 novembre: Firefox, «Detta dal telefono» e Oggi nel pannello (completano la tavola PcFirefox)
-- riga 2653: 15 novembre, sera: richiesta del proprietario per Linux (da fare, in una chat nuova)
-- riga 2670: 15 novembre, sera: Alfred, passi 1 e 2 (tavole AlfDati, AlfSeguito, AlfQuale approvate) · giri 615 e 628
-- riga 2692: 15 novembre, sera: Eurise sul computer (Linux) – tavole, nucleo, app, Firefox, Flatpak (ramo `brand`)
-- riga 2766: 16 novembre: icone nuove degli APK (serie colorata approvata)
+## Tavole
+Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
+- **Approvate e in codice**
+  - pagina «Mappe, Messaggi e Telefono»: MsgElenco, MsgConversazione, TelRecenti, TelChiamata (11 novembre, con le aggiunte
+    del proprietario), TelPillola (12 novembre, con le due correzioni).
+  - pagina «Chat ed Email»: MailPosta, MailLettura, MailScrivi, MailCaselle; ChatElenco, ChatConversazione, ChatGruppo,
+    ChatAccesso; ChatRecupero, ChatVerifica (12 novembre).
+  - Scrivania (area Organizzazione): BolRispondi, BolAllega, BolComunica, BolComunicaApp; pagina «Suonerie e sfondo»:
+    SuoSuonerie, SuoTaglia, SuoRegole.
+- **Approvate, codice da fare**: ChatChiamata (chiamate e videochiamate: nel codice non c'è nulla), ChatAllega (oggi la
+  Chat mostra immagini e file ricevuti ma non li manda); MsgConversazione per la parte «Disponibilità e posizione» nella barra; **PcEmail** (pagina «Eurise sul
+  computer», approvata il 16 novembre: schermate da scrivere insieme all'area Computer, IMAP/SMTP già in `core/sync`).
+- **Da approvare** (pagina «Chat ed Email», 14 novembre, notte): fila «Chat al lavoro» con **ChatLavoro**, **ChatVideo**,
+  **ChatCondividi**; fila «Email da lavoro» con **MailSmart**, **MailInsieme**, **MailScriviLavoro**. Documento collegato
+  «Mail e Chat da lavoro · proposta, guida KMail, posta nostra»: https://claude.ai/artifact/F7uLSEo2KPWyaYBFtNCWJe
+
+## Prossimi passi, in ordine
+1. **Decisioni del proprietario sul lavoro**: approvare le sei tavole da lavoro; dove stanno gli strumenti del gruppo
+   (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
+   Continuwuity + LiveKit); il dominio.
+2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto
+   del mattino, risposte in un tocco, promemoria «se non risponde», invio all'ora giusta (MailSmart, MailScriviLavoro).
+3. **Email, cose rimaste**: «Da fare» e scadenze trovate (bolletta), In breve, ricerca sul server, inoltro con gli
+   allegati, MX per i domini personali (es. mx.infomaniak.ch); riassunto delle email importanti per la suite (serve a «Oggi»
+   sul telefono, nel pannello di Firefox e sul computer). OAuth per Gmail/Outlook: passo una tantum del proprietario.
+4. **Messaggi**: contratto per Alfred «leggi e rispondi» (passo 3 di Alfred, completa «chi mi ha scritto?»; l'APK
+   principale non ha READ_SMS), Disponibilità e posizione nella barra, ricerca in tutto il testo, doppia SIM, MMS di gruppo.
+5. **Chat**: invio di allegati (ChatAllega), chiamate (ChatChiamata, poi ChatVideo con MatrixRTC e LiveKit), UnifiedPush al posto del controllo ogni 15
+   minuti, gruppi di lavoro (ChatLavoro, ChatCondividi, commenti della squadra alle email in una stanza legata al
+   Message-ID), server Eurise se deciso.
+6. **Email sul computer** (PcEmail) con l'area Computer.
+7. **Nomi** (in attesa della verifica TMview/EUIPO, per ora in interfaccia restano i nomi dei servizi): Ciarly (Chat),
+   Fidippo o Omodeo (Email, consigliato Fidippo), Bisbi (Messaggi), Chiara (Telefono), Rubens (Contatti).
+
+Prove sul telefono mai tornate (da chiedere al proprietario quando prova): Telefono e Messaggi come app predefinite,
+chiamata in arrivo a schermo spento, nota della chiamata in Note, rifiuta con messaggio, OTP, MMS con foto, «Crea l'evento»
+dopo una conferma, Traduci; Email con una casella Murena/Libero; Chat con Element sull'altro telefono (cifratura, chiave di
+recupero, verifica di una persona, QR stampato letto con lo Scanner); suoneria per persona con Eurise Telefono e WhatsApp
+che suona con Eurise.
+
+## Come si lavora
+- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts`, `core/data/messages`
+  (`MessageInsights`, con test), contratti in `core/suite`; per il computer `core/sync` (`MailClient`, `MailText`).
+- Prima le tavole sulla tela (pagine «Chat ed Email» e «Mappe, Messaggi e Telefono»), poi il codice dopo l'approvazione.
+- Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
+  (altre chat lavorano sullo stesso ramo); poi la stessa testa anche su `prova-comunicazione`, così i giri delle altre
+  chat non lo annullano, e si pubblica quel giro: `gh workflow run apk-prova.yml --ref brand -f run_id=<id del giro su
+  prova-comunicazione>`.
+- In chat sempre i link diretti degli APK cambiati, con nome e giro (mai la pagina della release né allegati):
+  - Email: https://github.com/eurise-suite/eurise/releases/download/apk-prova/mail-debug.apk
+  - Chat: https://github.com/eurise-suite/eurise/releases/download/apk-prova/chat-debug.apk
+  - Messaggi: https://github.com/eurise-suite/eurise/releases/download/apk-prova/messages-debug.apk
+  - Telefono e Rubrica: https://github.com/eurise-suite/eurise/releases/download/apk-prova/phone-debug.apk
+- Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy; servizi chiusi per ultimi con avviso.
+- Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
+  scrive qui.
+- A ogni consegna: aggiornare questo file e una sola riga in `docs/STATO.md`.
+- Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 16 novembre (Telefono, Rubrica e Messaggi dall'APK 237;
+  Email dal giro 310; Chat dal giro 316; Chat e Mail da lavoro il 14 novembre, notte).
