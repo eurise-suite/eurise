@@ -437,4 +437,24 @@
     <string name="eurise_lv_km_explain">On motorways, expressways, main and provincial roads Maps shows the km («km 12.4»), useful for roadside assistance. It comes from the OpenStreetMap milestones: a small file per country (usually under 1 MB), the same for everyone, downloaded from the Eurise project releases on GitHub (Microsoft, USA) for the countries of your maps and refreshed every two months. Only the request for the file goes out, not your location; the km is worked out on the phone. Where milestones are missing you get the coordinates. Turn it off any time.</string>
     <string name="eurise_lv_km_done">Milestones on the phone for %1$d countries</string>
     <string name="eurise_lv_km_none">No milestones yet for the countries of your maps</string>
+    <string name="eurise_np_from">from %1$s</string>
+    <string name="eurise_np_remaining">%1$s · %2$s</string>
+    <string name="eurise_np_calling">%1$s is calling…</string>
+    <string name="eurise_np_incoming">incoming</string>
+    <string name="eurise_np_ongoing">ongoing</string>
+    <string name="eurise_np_together">Next plan together: %1$s</string>
+    <string name="eurise_np_together_today">%1$s, today at %2$s</string>
+    <string name="eurise_np_together_tomorrow">%1$s, tomorrow at %2$s</string>
+    <string name="eurise_np_route_car">car audio</string>
+    <string name="eurise_np_route_speaker">on speaker</string>
+    <string name="eurise_np_route_headset">headset</string>
+    <string name="eurise_np_hidden">Hidden for this trip</string>
+    <string name="eurise_lv_media">Music and calls while driving</string>
+    <string name="eurise_lv_media_sub">bubble on the right with what is playing or who is calling · reads notifications</string>
+    <string name="eurise_lv_media_explain">While you drive, on the phone and in Android Auto, a bubble on the right shows what is playing (cover, title, artist, album and year when the app gives them, time played and left) or who is on the phone (name, duration, a plan you share). To know this Maps needs access to notifications, which you grant in the phone settings on the next screen: it only reads the music sessions and the call notification, the others are discarded unread. Nothing leaves the phone. To turn it off use this switch; to remove the access, the same phone settings.</string>
+    <string name="eurise_lv_media_access">Allow access</string>
+    <string name="eurise_lv_media_needs">Turned on: notification access is still missing</string>
+    <string name="eurise_lv_lyrics">Song lyrics</string>
+    <string name="eurise_lv_lyrics_sub">LRCLIB, free archive · title, artist, album and duration</string>
+    <string name="eurise_lv_lyrics_explain">The music bubble can show the line being sung. Spotify and other apps do not hand lyrics to other apps, so they come from LRCLIB (lrclib.net), a free archive of synced lyrics run by an independent project. For each new song only title, artist, album and duration go out, never your location or anything that identifies the phone. Found lyrics stay in memory for the last 40 songs. Turn it off any time.</string>
 </resources>

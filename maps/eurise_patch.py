@@ -1765,3 +1765,31 @@ patch(search, """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlacehold
       """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));
     app.organicmaps.eurise.ui.EuriseSearchHome.bottomField(root);""")
 print("eurise_patch: ricerca col campo in basso (MapViaggio2Dove)")
+
+# La bolla della musica e delle chiamate in guida (tavole MapBollaAuto, MapBollaAutoChiamata, MapBollaTelefono, approvate
+# il 16 novembre): codice in eurise/EuriseNowPlaying*.java, EuriseMediaBubble.java, EuriseLyrics.java; qui l'accesso alle
+# notifiche (lo dà la persona nelle impostazioni del telefono; con l'interruttore di Livelli spento non si legge nulla) e
+# gli agganci nella guida del telefono e sullo schermo dell'auto.
+patch(manifest, """    <service
+        android:name="app.organicmaps.car.CarAppService\"""", """    <service
+        android:name="app.organicmaps.eurise.EuriseNowPlayingService"
+        android:exported="true"
+        android:label="@string/eurise_lv_media"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+    <service
+        android:name="app.organicmaps.car.CarAppService\"""")
+navc = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "NavigationController.java"
+patch(navc, """    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachArrival(topFrame.findViewById(R.id.eurise_guida_arrivo));
+""", """    app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.attachArrival(topFrame.findViewById(R.id.eurise_guida_arrivo));
+    app.organicmaps.eurise.EuriseMediaBubble.attachPhone(mFrame);
+""")
+patch(car_sc, """    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarSplitInfo.create(mCarContext));
+""", """    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarSplitInfo.create(mCarContext));
+    mPillOverlay.addView(app.organicmaps.eurise.EuriseMediaBubble.car(
+        mCarContext, () -> app.organicmaps.car.util.ThemeUtils.isNightMode(mCarContext)));
+""")
+print("eurise_patch: bolla della musica e delle chiamate in guida, sul telefono e in Android Auto")

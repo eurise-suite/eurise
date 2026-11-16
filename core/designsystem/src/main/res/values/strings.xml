@@ -98,6 +98,8 @@
     <string name="ds_s_fuel_d">per Eurise Mappe, al massimo una volta al giorno quando apri i benzinai: la richiesta del file pubblico dei prezzi, uguale per tutti; non esce la posizione né altro</string>
     <string name="ds_s_transit">Mezzi pubblici (Transitous · comunità, Germania)</string>
     <string name="ds_s_milestones">Km sulle strade (pietre miliari di OpenStreetMap · GitHub, Stati Uniti)</string>
+    <string name="ds_s_lyrics">Testi delle canzoni (LRCLIB, archivio libero · sede non dichiarata)</string>
+    <string name="ds_s_lyrics_d">per Eurise Mappe, in guida e solo per le canzoni nuove: titolo, autore, album e durata della canzone che suona, per trovarne il testo sincronizzato. Non escono la posizione né identificativi del telefono; i testi restano in memoria</string>
     <string name="ds_s_office_engine">Motore dei documenti di Office (pubblicazioni del progetto su GitHub, Stati Uniti)</string>
     <string name="ds_s_office_engine_d">per Eurise Office, una volta sola e quando lo chiedi tu: il download del motore dei documenti, uguale per tutti, dalle pubblicazioni del progetto su GitHub. I tuoi documenti non escono: il motore lavora sul telefono, senza Internet</string>
     <string name="ds_s_milestones_d">per Eurise Mappe, ogni due mesi o quando entri in un paese: la richiesta del file delle pietre miliari del paese, uguale per tutti, dalle pubblicazioni del progetto su GitHub; non esce la posizione né altro. Il km si calcola sul telefono</string>

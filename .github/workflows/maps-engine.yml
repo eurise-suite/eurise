@@ -36,9 +36,10 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/prove"
           src=maps/android/app/src/main/java/app/organicmaps/eurise
-          javac -d "$RUNNER_TEMP/prove" "$src/MilestoneKm.java" "$src/OpeningRows.java" maps/test/app/organicmaps/eurise/*.java
+          javac -d "$RUNNER_TEMP/prove" "$src/MilestoneKm.java" "$src/OpeningRows.java" "$src/NowPlayingText.java" maps/test/app/organicmaps/eurise/*.java
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.MilestoneKmTest
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.OpeningRowsTest
+          java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.NowPlayingTextTest
 
       - name: Fa spazio sul disco
         run: |

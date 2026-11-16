@@ -27,13 +27,9 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - **MapViaggio 2-6** (fila «Mappe dall'apertura alla partenza») in codice dal 16 novembre, 13:03 (commit 579b305, giro
   **Mappe 69**); MapViaggio1 è com'era l'app prima.
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
-- **Da approvare** (16 novembre, sera; pagina «comunicazione», riga sotto MapViaggio): **MapBollaAuto** (Android Auto in
-  guida, bolla allungata a destra con la musica: copertina e app, titolo, autore, album e anno, tempo passato, che manca e
-  durata, riga del testo), **MapBollaAutoChiamata** (la stessa bolla durante una chiamata: nome o numero, tipo, durata,
-  vivavoce, impegno in comune), **MapBollaTelefono** (guida sul telefono, bolla a destra sotto la manovra). Scelte proposte:
-  dati dall'accesso alle notifiche (interruttore «Musica e chiamate in guida» in Livelli, spento di base, nulla esce);
-  testi da LRCLIB con il servizio «Testi delle canzoni» a parte, spento di base (Spotify non dà i testi alle altre app).
-
+- **MapBollaAuto, MapBollaAutoChiamata, MapBollaTelefono** (pagina «comunicazione», riga sotto MapViaggio): approvate il
+  16 novembre, sera, e in codice (vedi sotto).
+- Da approvare: nessuna tavola di Mappe in attesa.
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
@@ -111,15 +107,31 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Regola per i prossimi giri: prima di aggiungere un pulsante in Android Auto contare quelli che ci sono (fila della
   guida e della mappa: 4; ricerca: 2; intestazione: 2).
 
+## 16 novembre, sera: bolla della musica e delle chiamate in guida (tavole MapBolla approvate)
+- `eurise/EuriseNowPlaying.java`: musica (sessioni multimediali: titolo, autore, album, anno se c'è, durata, posizione,
+  copertina ridotta, app) e chiamata (notifica di categoria chiamata: nome o numero, testo, inizio, in arrivo, foto,
+  impegno in comune dagli impegni dell'app Eurise con il nome di chi chiama, da dove passa la voce). Arriva tutto
+  dall'accesso alle notifiche (`EuriseNowPlayingService`, nel manifesto con la patch); interruttore «Musica e chiamate in
+  guida» in Livelli › Sul telefono, spento di base, con la spiegazione e poi le impostazioni del telefono per l'accesso.
+- `eurise/EuriseMediaBubble.java`: la stessa vista sul telefono (`NavigationController`: sotto cartello, corsie e meteo;
+  in orizzontale accanto a ciò che sta a destra) e in auto (`SurfaceCallback.initSpeedPill`: in alto a destra dell'area
+  libera). Solo in guida; in pausa sparisce dopo 10 s; la chiamata prende il posto della musica e dopo 5 s torna la
+  musica. Sul telefono tocco = apre l'app o la chiamata, pressione lunga = nascosta per il viaggio.
+- Testi: `eurise/EuriseLyrics.java` da LRCLIB (titolo, autore, album, durata) con il servizio nuovo
+  **`PrivacyService.Lyrics`** («Testi delle canzoni», spento di base, interruttore in Livelli › Dalla rete). Calcoli in
+  `NowPlayingText.java` con le prove `maps/test/…/NowPlayingTextTest.java` (aggiunte al lavoro di Mappe).
+- **Parti comuni toccate**: `core/suite` (PrivacyCenter, PrivacyContract.SHARED), `core/designsystem` (ServiceConsent,
+  ServicesWelcome, `ds_s_lyrics`). Serve anche l'APK di Eurise nuovo perché la voce dei testi compaia.
+- Da provare: guida con Spotify e con un'altra app; chiamata in arrivo e in corso (anche in auto); pausa; telefono in
+  orizzontale; testi accesi.
+
 ## Prossimi passi, in ordine
-0. **Tavole MapBolla** (musica e chiamate in guida): approvazione del proprietario, poi il codice.
+0. **Bolla della musica e delle chiamate**: prova del proprietario dopo il giro.
 1. **Prova del giro con la correzione** (avvio della navigazione in auto, poi):
    Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
    dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
    («di solito meno di 1 MB»).
-2. **Prove rimaste senza esito**: Mappe 60 (orari della scheda aperta; Livelli → «Km sulle strade»; km in auto su
-   autostrada), Mappe 48 e 51 («Avvia la navigazione» dopo essere usciti durante il calcolo, «Dove sei»), Mappe 65
-   (correzioni dopo Mappe 58).
+2. Prove di Mappe 48, 51, 58, 60 e 65: fatte dal proprietario (16 novembre); i problemi trovati sono quelli già corretti.
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).

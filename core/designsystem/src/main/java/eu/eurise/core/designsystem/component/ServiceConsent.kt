@@ -62,6 +62,7 @@ fun PrivacyService.titleRes(): Int = when (this) {
     PrivacyService.AiOnline -> R.string.ds_s_ai_online
     PrivacyService.PublicTransport -> R.string.ds_s_transit
     PrivacyService.Milestones -> R.string.ds_s_milestones
+    PrivacyService.Lyrics -> R.string.ds_s_lyrics
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine
 }
 
@@ -81,6 +82,7 @@ fun PrivacyService.detailRes(): Int = when (this) {
     PrivacyService.AiOnline -> R.string.ds_s_ai_online_d
     PrivacyService.PublicTransport -> R.string.ds_s_transit_d
     PrivacyService.Milestones -> R.string.ds_s_milestones_d
+    PrivacyService.Lyrics -> R.string.ds_s_lyrics_d
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine_d
 }
 
@@ -103,6 +105,7 @@ fun PrivacyService.where(): Jurisdiction = when (this) {
     PrivacyService.News, PrivacyService.Horoscope, PrivacyService.AiOnline -> Jurisdiction.Various // l'AI che sceglie la persona
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
     PrivacyService.Milestones, PrivacyService.OfficeEngine -> Jurisdiction.US // pubblicazioni del progetto su GitHub (Microsoft)
+    PrivacyService.Lyrics -> Jurisdiction.Other // LRCLIB, progetto indipendente: sede dei server non dichiarata
 }
 
 /** Il grado di privacy effettivo, da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */

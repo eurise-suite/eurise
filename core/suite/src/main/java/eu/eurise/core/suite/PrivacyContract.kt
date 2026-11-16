@@ -22,5 +22,5 @@ object PrivacyContract {
 
     /** I servizi che le altre app possono chiedere qui: nessun altro interruttore si tocca da fuori. */
     val SHARED = setOf(PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices, PrivacyService.PublicTransport,
-        PrivacyService.Milestones, PrivacyService.OfficeEngine)
+        PrivacyService.Milestones, PrivacyService.Lyrics, PrivacyService.OfficeEngine)
 }

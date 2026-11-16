@@ -15,6 +15,8 @@ enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, V
     PublicTransport,
     /** Eurise Mappe: il file delle pietre miliari di un paese (il km sulle strade), uguale per tutti; nessuna posizione. */
     Milestones,
+    /** Eurise Mappe: il testo della canzone che suona in guida, da LRCLIB (titolo, autore, album e durata). */
+    Lyrics,
     /** Eurise Office: il download del motore dei documenti (APK compagno, uguale per tutti); i documenti non escono. */
     OfficeEngine;
 

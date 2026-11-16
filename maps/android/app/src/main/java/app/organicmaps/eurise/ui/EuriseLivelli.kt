@@ -99,6 +99,12 @@ private fun Sheet(night: Boolean) {
     // Km sulle strade (pietre miliari): stato nel centro privacy dell'app Eurise, come i carburanti.
     var km by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { km = withContext(Dispatchers.IO) { EuriseMilestones.privacy(context, "status") } }
+    // Testi delle canzoni (LRCLIB) per la bolla della musica: stato nel centro privacy dell'app Eurise.
+    var lyrics by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) { lyrics = withContext(Dispatchers.IO) { app.organicmaps.eurise.EuriseLyrics.privacy(context, "status") } }
+    // Musica e chiamate in guida: interruttore nostro più l'accesso alle notifiche dato nelle impostazioni del telefono.
+    var media by remember { mutableStateOf(app.organicmaps.eurise.EuriseNowPlaying.wanted(context)) }
+    val mediaAccess = app.organicmaps.eurise.EuriseNowPlaying.access(context)
     // null: l'app Eurise non c'è o non ha ancora risposto (la voce del meteo non si mostra).
     var weather by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { EuriseRouteWeather.status(context) { weather = it } }
@@ -123,8 +129,30 @@ private fun Sheet(night: Boolean) {
                 where = it
                 EuriseDoveSei.setEnabled(context, it)
             }
+            Toggle(c, stringResource(R.string.eurise_lv_media),
+                stringResource(if (media && !mediaAccess) R.string.eurise_lv_media_needs else R.string.eurise_lv_media_sub),
+                media, divider = true) { want ->
+                fun openAccess() = runCatching {
+                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                // Regola della suite: accendere mostra prima cosa si legge; spegnere non chiede conferme.
+                if (!want) {
+                    media = false
+                    app.organicmaps.eurise.EuriseNowPlaying.setWanted(context, false)
+                } else android.app.AlertDialog.Builder(context)
+                    .setTitle(R.string.eurise_lv_media)
+                    .setMessage(R.string.eurise_lv_media_explain)
+                    .setPositiveButton(if (mediaAccess) R.string.eurise_lv_turn_on else R.string.eurise_lv_media_access) { _, _ ->
+                        media = true
+                        app.organicmaps.eurise.EuriseNowPlaying.setWanted(context, true)
+                        if (!mediaAccess) openAccess()
+                    }
+                    .setNegativeButton(R.string.eurise_lv_cancel, null)
+                    .show()
+            }
         }
-        if (weather != null || fuel != null || km != null) {
+        if (weather != null || fuel != null || km != null || lyrics != null) {
             Section(c, stringResource(R.string.eurise_lv_network))
             Card(c) {
                 weather?.let { on ->
@@ -168,6 +196,24 @@ private fun Sheet(night: Boolean) {
                         else android.app.AlertDialog.Builder(context)
                             .setTitle(R.string.eurise_lv_km)
                             .setMessage(R.string.eurise_lv_km_explain)
+                            .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ -> apply() }
+                            .setNegativeButton(R.string.eurise_lv_cancel, null)
+                            .show()
+                    }
+                }
+                lyrics?.let { on ->
+                    Toggle(c, stringResource(R.string.eurise_lv_lyrics), stringResource(R.string.eurise_lv_lyrics_sub), on,
+                        divider = weather != null || fuel != null || km != null) { want ->
+                        fun apply() = scope.launch {
+                            lyrics = withContext(Dispatchers.IO) {
+                                app.organicmaps.eurise.EuriseLyrics.privacy(context, if (want) "enable" else "disable")
+                                    ?: app.organicmaps.eurise.EuriseLyrics.privacy(context, "status")
+                            }
+                        }
+                        if (!want) apply()
+                        else android.app.AlertDialog.Builder(context)
+                            .setTitle(R.string.eurise_lv_lyrics)
+                            .setMessage(R.string.eurise_lv_lyrics_explain)
                             .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ -> apply() }
                             .setNegativeButton(R.string.eurise_lv_cancel, null)
                             .show()

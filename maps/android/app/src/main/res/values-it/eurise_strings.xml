@@ -429,4 +429,24 @@
     <string name="eurise_lv_km_explain">Su autostrade, superstrade, statali e provinciali Mappe mostra il km («km 12,4»), utile per soccorsi e carro attrezzi. Viene dalle pietre miliari di OpenStreetMap: un file piccolo per paese (di solito meno di 1 MB), uguale per tutti, scaricato dalle pubblicazioni del progetto Eurise su GitHub (Microsoft, Stati Uniti) per i paesi delle tue mappe e aggiornato ogni due mesi. Esce solo la richiesta del file, non la posizione; il km si calcola sul telefono. Dove le pietre mancano restano le coordinate. Si spegne quando vuoi.</string>
     <string name="eurise_lv_km_done">Pietre miliari sul telefono per %1$d paesi</string>
     <string name="eurise_lv_km_none">Ancora nessuna pietra miliare per i paesi delle tue mappe</string>
+    <string name="eurise_np_from">da %1$s</string>
+    <string name="eurise_np_remaining">%1$s · %2$s</string>
+    <string name="eurise_np_calling">Chiama %1$s…</string>
+    <string name="eurise_np_incoming">in arrivo</string>
+    <string name="eurise_np_ongoing">in corso</string>
+    <string name="eurise_np_together">Prossimo impegno insieme: %1$s</string>
+    <string name="eurise_np_together_today">%1$s, oggi alle %2$s</string>
+    <string name="eurise_np_together_tomorrow">%1$s, domani alle %2$s</string>
+    <string name="eurise_np_route_car">audio dell\'auto</string>
+    <string name="eurise_np_route_speaker">in vivavoce</string>
+    <string name="eurise_np_route_headset">auricolare</string>
+    <string name="eurise_np_hidden">Nascosta per questo viaggio</string>
+    <string name="eurise_lv_media">Musica e chiamate in guida</string>
+    <string name="eurise_lv_media_sub">bolla a destra con cosa suona o chi chiama · legge le notifiche</string>
+    <string name="eurise_lv_media_explain">In guida, sul telefono e in Android Auto, una bolla a destra mostra cosa suona (copertina, titolo, autore, album e anno quando l\'app li dà, tempo passato e che manca) o chi è al telefono (nome, durata, un impegno in comune). Per saperlo Mappe ha bisogno dell\'accesso alle notifiche, che dai nelle impostazioni del telefono alla schermata seguente: legge solo le sessioni della musica e la notifica della chiamata, le altre si scartano senza guardarle. Nulla esce dal telefono. Si spegne con questo interruttore; l\'accesso si toglie dalle stesse impostazioni del telefono.</string>
+    <string name="eurise_lv_media_access">Dai l\'accesso</string>
+    <string name="eurise_lv_media_needs">Acceso: manca ancora l\'accesso alle notifiche</string>
+    <string name="eurise_lv_lyrics">Testi delle canzoni</string>
+    <string name="eurise_lv_lyrics_sub">LRCLIB, archivio libero · titolo, autore, album e durata</string>
+    <string name="eurise_lv_lyrics_explain">La bolla della musica può mostrare la riga che si canta. Spotify e le altre app non danno il testo alle altre app, quindi viene da LRCLIB (lrclib.net), archivio libero di testi sincronizzati tenuto da un progetto indipendente. Per ogni canzone nuova escono solo titolo, autore, album e durata, mai la posizione né qualcosa che identifichi il telefono. I testi trovati restano in memoria per le ultime 40 canzoni. Si spegne quando vuoi.</string>
 </resources>
