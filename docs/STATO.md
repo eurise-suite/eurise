@@ -2803,3 +2803,4 @@ così l'altra chat non le annulla.
 - 16 novembre, sera, Tastiera: modello del tocco per tasto, correzioni col dizionario che ne tengono conto, parole imparate nel backup della suite · giro 663 → `docs/stato/PICCOLE.md`.
 - 16 novembre, sera, Organizzazione: icone di Calendario, Attività e Note nel cassetto, `SwitchRow` comune in core/designsystem, Scrivania e Drive divisi in più file, tavole NoteBlocca/NoteBloccata/NoteVocale da approvare · giro 661 → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, Browser: download multipli, niente doppioni con «Salva in…», ✕ in fondo alla scheda aperta → `docs/stato/BROWSER.md`.
+- 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
