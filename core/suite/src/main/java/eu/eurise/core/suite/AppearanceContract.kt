@@ -14,6 +14,9 @@ object AppearanceContract {
     const val METHOD_ACCENT = "accent"
     /** Le tinte da offrire: [KEY_NAMES] (nomi salvati), [KEY_LABELS], [KEY_LIGHTS] e [KEY_DARKS] (ARGB), stesso ordine. */
     const val METHOD_PALETTE = "palette"
+    /** La mano dominante scelta sulla Scrivania: risposta [KEY_LEFT] (true per i mancini). La usa il Browser per le barre. */
+    const val METHOD_HAND = "hand"
+    const val KEY_LEFT = "left"
 
     const val KEY_LIGHT = "light"
     const val KEY_DARK = "dark"

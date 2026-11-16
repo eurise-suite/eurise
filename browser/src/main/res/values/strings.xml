@@ -13,6 +13,7 @@
     <string name="brw_back">Indietro</string>
     <string name="brw_forward">Avanti</string>
     <string name="brw_reload">Ricarica</string>
+    <string name="brw_stop">Ferma</string>
     <string name="brw_listen">Ascolta</string>
     <string name="brw_listen_empty">Niente da leggere in questa pagina</string>
     <string name="brw_share">Condividi</string>

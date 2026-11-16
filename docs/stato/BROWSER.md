@@ -45,15 +45,19 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   `<select>`, avvisi e conferme, testo, data e ora, colore, accesso HTTP, «lasciare la pagina?», «rimandare il modulo?»
   e senza risposta le chiudeva: **gli upload non funzionavano** (prova del proprietario: una foto). Ora il selettore di
   Android (uno o più file, tipi della pagina) e finestre Material per il resto; anche nelle web app.
+- Telefono, **schede e indirizzo compatti come Vivaldi** (17 novembre, tavola BrwCompatta approvata, la proposta centrale;
+  il proprietario ha scartato colori del sito e barre che si nascondono): `TopBar.kt` (fila di 46 dp: scudo, sito con il
+  percorso in grigio sfumato, Ricarica/Ferma dentro il campo; menu Eurise a destra, a sinistra per i mancini; numero
+  delle schede solo senza la fila delle schede) e `TabStrip.kt` (40 dp, schede squadrate uguali, la aperta bianca con la
+  ✕ in fondo; con molte schede la aperta resta di 136 dp e le altre scendono fino all'icona). Da 112 a 86 dp prima della
+  pagina. La mano arriva dall'app Eurise: **parte comune toccata**, `AppearanceContract.METHOD_HAND` in `core/suite` e
+  la risposta in `app/.../AppearanceProvider.kt`.
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
 
 ## Prossimi passi (in ordine)
-1. **Tavola BrwCompatta** (pagina Browser, da approvare, 16 novembre; toccato `canvas.json` della tela per aggiungerla):
-   schede e indirizzo compatti come Vivaldi (da 112 a 86 dp prima della pagina, barre che si nascondono scorrendo, colore
-   del sito nella fila delle schede). Dopo l'approvazione: `TabStrip.kt` e la barra in alto di `BrowserUi.kt`.
-2. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
+1. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
 2. **Importazione dai browser nell'app del computer**: schermata (serve la tavola, partire da BrwImporta del telefono);
    lettura SQLite (password `Login Data`, cronologia; Firefox `logins.json` + `key4.db`); le password vanno in Eurise
    Password con un tipo del Ponte apposta, mai un CSV in Download.

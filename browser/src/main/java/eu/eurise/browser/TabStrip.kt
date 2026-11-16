@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,9 +66,11 @@ internal fun stripPlace(setting: String): StripPlace = when (setting) {
 }
 
 /**
- * La barra delle schede sulla pagina (tavola BrwBarraSchede), come sul computer e su Vivaldi: le schede in fila con il
- * colore del gruppo sotto, quella aperta in evidenza con la sua ✕, il «+» in fondo. Si scorre; tieni premuto una
- * scheda per spostarla, metterla in un gruppo o chiuderla.
+ * La barra delle schede sulla pagina (tavola BrwBarraSchede, rifatta come Vivaldi con la tavola BrwCompatta, approvata il
+ * 17 novembre): schede squadrate della stessa larghezza, la scheda aperta in bianco con la ✕ in fondo, titoli che
+ * sfumano. Con molte schede le altre si stringono fino alla sola icona, poi la fila scorre; la scheda aperta resta
+ * larga abbastanza da leggere il titolo. Il colore del gruppo è il filo sotto la scheda. Tieni premuto una scheda per
+ * spostarla, metterla in un gruppo o chiuderla.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -78,75 +82,78 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
     val index = model.tabs.indexOf(current)
     LaunchedEffect(index, model.tabs.size) { if (index >= 0) runCatching { list.animateScrollToItem(index) } }
     Row(
-        modifier.fillMaxWidth().background(scheme.surfaceContainer).padding(horizontal = 6.dp, vertical = 3.dp),
+        Modifier.fillMaxWidth().background(scheme.surfaceContainer).then(modifier).height(40.dp).padding(start = 6.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Molte schede: si stringono per starci tutte (fino alla sola icona), poi scorrono (richiesta del 13 novembre).
         BoxWithConstraints(Modifier.weight(1f)) {
-        val count = model.tabs.size.coerceAtLeast(1)
-        val share: Dp = (maxWidth - 4.dp) / count
-        val narrowest = 40.dp
-        val half = maxWidth / 2
-        LazyRow(state = list, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(end = 4.dp)) {
-            items(model.tabs, key = { it.id }) { t ->
-                var menu by remember { mutableStateOf(false) }
-                val on = t === current
-                val color = groupColor(model, t.group)
-                val title = t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) }
-                Box {
-                    Column(
-                        Modifier.padding(horizontal = 1.dp)
-                            .then(
-                                // La scheda aperta resta leggibile; le altre prendono la loro parte dello spazio.
-                                if (on) Modifier.widthIn(min = 120.dp.coerceAtMost(half), max = 180.dp)
-                                else Modifier.width(share.coerceIn(narrowest, 140.dp))
-                            ).height(32.dp)
-                            // La scheda scelta si stacca dalle altre: fondo nell'accento, bordo e titolo in accento (15 novembre).
-                            .clip(RoundedCornerShape(16.dp)).background(if (on) scheme.primary.copy(alpha = 0.16f) else Color.Transparent)
-                            .then(if (on) Modifier.border(1.5.dp, scheme.primary, RoundedCornerShape(16.dp)) else Modifier)
-                            .semantics { selected = on }
-                            .combinedClickable(role = Role.Tab, onClick = { model.show(t) }, onLongClick = { menu = true }),
-                    ) {
-                        val iconOnly = !on && share < 76.dp
-                        Row(Modifier.weight(1f).padding(start = if (iconOnly) 0.dp else 8.dp, end = if (on) 2.dp else if (iconOnly) 0.dp else 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = if (iconOnly) androidx.compose.foundation.layout.Arrangement.Center else androidx.compose.foundation.layout.Arrangement.Start) {
-                            if (t.private) TabInitial(t, on) else SiteIcon(t.url.ifBlank { t.pending.orEmpty() }, 16.dp) { TabInitial(t, on) }
-                            if (!iconOnly) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(title, fontSize = 12.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Medium, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis, color = if (on) scheme.primary else scheme.onSurfaceVariant,
-                                // Nella scheda aperta il titolo prende tutto lo spazio: la ✕ sta in fondo alla scheda, non dopo la parola (16 novembre).
-                                modifier = Modifier.weight(1f, fill = on))
-                            }
-                            if (on) {
-                                val close = stringResource(R.string.brw_close_tab)
-                                Box(Modifier.size(24.dp).clip(CircleShape).clickable { model.close(t) }.semantics { contentDescription = close }, contentAlignment = Alignment.Center) {
-                                    Icon(EuriseIcons.close(2.4f), null, tint = scheme.primary, modifier = Modifier.size(10.dp))
+            val gap = 4.dp
+            val count = model.tabs.size.coerceAtLeast(1)
+            val share: Dp = (maxWidth - gap * (count - 1)) / count
+            // Tutte uguali finché il titolo si legge; poi la scheda aperta tiene la sua larghezza e le altre si stringono.
+            val roomy = share >= 96.dp
+            val openWidth: Dp = if (roomy) share.coerceAtMost(220.dp) else 136.dp.coerceAtMost(maxWidth / 2)
+            val otherWidth: Dp = if (roomy) openWidth
+                else ((maxWidth - openWidth - gap * (count - 1)) / (count - 1).coerceAtLeast(1)).coerceIn(40.dp, 96.dp)
+            LazyRow(state = list, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                items(model.tabs, key = { it.id }) { t ->
+                    var menu by remember { mutableStateOf(false) }
+                    val on = t === current
+                    val color = groupColor(model, t.group)
+                    val title = t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) }
+                    val width = if (on) openWidth else otherWidth
+                    val iconOnly = !on && width < 76.dp
+                    Box {
+                        Box(
+                            Modifier.width(width).height(32.dp)
+                                .then(if (on) Modifier.shadow(1.5.dp, RoundedCornerShape(8.dp)) else Modifier)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (on) scheme.surface else scheme.onSurface.copy(alpha = 0.06f))
+                                .semantics { selected = on }
+                                .combinedClickable(role = Role.Tab, onClick = { model.show(t) }, onLongClick = { menu = true }),
+                        ) {
+                            Row(
+                                Modifier.fillMaxSize().padding(start = if (iconOnly) 0.dp else 8.dp, end = if (on) 0.dp else if (iconOnly) 0.dp else 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = if (iconOnly) Arrangement.Center else Arrangement.Start,
+                            ) {
+                                if (t.private) TabInitial(t, on) else SiteIcon(t.url.ifBlank { t.pending.orEmpty() }, 16.dp) { TabInitial(t, on) }
+                                if (!iconOnly) {
+                                    Spacer(Modifier.width(7.dp))
+                                    Text(
+                                        title, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium, maxLines = 1, softWrap = false,
+                                        overflow = TextOverflow.Clip, color = if (on) scheme.onSurface else scheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f).fadeEnd(),
+                                    )
+                                }
+                                if (on) {
+                                    // La ✕ in fondo alla scheda, non dopo il titolo (16 novembre).
+                                    val close = stringResource(R.string.brw_close_tab)
+                                    Box(Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).clickable { model.close(t) }.semantics { contentDescription = close }, contentAlignment = Alignment.Center) {
+                                        Icon(EuriseIcons.close(2.4f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(11.dp))
+                                    }
                                 }
                             }
+                            // Il colore del gruppo: un filo in fondo alla scheda.
+                            if (color != null) Box(Modifier.align(Alignment.BottomCenter).padding(horizontal = 8.dp).fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)).background(color))
                         }
-                        // Il colore del gruppo sotto la scheda.
-                        Box(Modifier.padding(horizontal = 10.dp).fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)).background(color ?: Color.Transparent))
-                    }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        val i = model.tabs.indexOf(t)
-                        if (i > 0) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_left)) }, onClick = { menu = false; model.move(t, -1) })
-                        if (i < model.tabs.size - 1) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_right)) }, onClick = { menu = false; model.move(t, 1) })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.brw_group_put)) }, onClick = { menu = false; model.show(t); onGroups() })
-                        // Sul tablet: affianca questa scheda a quella che stai usando (tavola BrwSessioni).
-                        if (wide && t !== model.current) DropdownMenuItem(text = { Text(stringResource(R.string.brw_split_with)) }, onClick = { menu = false; model.splitWith(t) })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.brw_close_tab)) }, onClick = { menu = false; model.close(t) })
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            val i = model.tabs.indexOf(t)
+                            if (i > 0) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_left)) }, onClick = { menu = false; model.move(t, -1) })
+                            if (i < model.tabs.size - 1) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_right)) }, onClick = { menu = false; model.move(t, 1) })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.brw_group_put)) }, onClick = { menu = false; model.show(t); onGroups() })
+                            // Sul tablet: affianca questa scheda a quella che stai usando (tavola BrwSessioni).
+                            if (wide && t !== model.current) DropdownMenuItem(text = { Text(stringResource(R.string.brw_split_with)) }, onClick = { menu = false; model.splitWith(t) })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.brw_close_tab)) }, onClick = { menu = false; model.close(t) })
+                        }
                     }
                 }
             }
         }
-        }
         val add = stringResource(R.string.brw_new_tab)
         Box(
-            Modifier.size(32.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
+            Modifier.size(width = 40.dp, height = 32.dp).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
             contentAlignment = Alignment.Center,
-        ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.primary, modifier = Modifier.size(16.dp)) }
+        ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.onSurface, modifier = Modifier.size(17.dp)) }
     }
 }
 

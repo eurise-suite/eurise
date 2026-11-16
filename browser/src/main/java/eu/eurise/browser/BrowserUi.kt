@@ -180,7 +180,20 @@ fun BrowserScreen(
     LaunchedEffect(tab?.url) { barPulledDown = false }
     val barAtTop = barTopSetting && !barPulledDown && !editing && !finding && tab?.fullscreen != true
     val bar: @Composable (Boolean) -> Unit = { top ->
-        BottomBar(
+        if (top) TopBar(
+            tab, model.tabs.size,
+            showTabs = strip == StripPlace.None,
+            leftHanded = model.leftHanded,
+            barAction = MenuItem.byId(model.settings.barAction)?.takeIf { !it.needsPage || tab?.url?.startsWith("http") == true },
+            onBarAction = ::run,
+            onSwipe = { step: Int -> model.neighbour(step); Unit }.takeIf { model.settings.swipeTabs },
+            onShield = { sheet = Sheet.Protection },
+            onAddress = { if (tab?.url?.startsWith("http") == true) sheet = Sheet.Address else editing = true },
+            onEditAddress = { editing = true },
+            onTabs = { model.current?.let(model::snapshot); model.tabsSearch = false; model.tabsOpen = true },
+            onMenu = { sheet = Sheet.Menu },
+            onPull = { down -> barPulledDown = down },
+        ) else BottomBar(
             tab, model.tabs.size,
             barAction = MenuItem.byId(model.settings.barAction)?.takeIf { !it.needsPage || tab?.url?.startsWith("http") == true },
             onBarAction = ::run,
@@ -197,7 +210,7 @@ fun BrowserScreen(
     }
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
         if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
-        if (barAtTop) Box(if (strip == StripPlace.Top) Modifier else Modifier.statusBarsPadding()) { bar(true) }
+        if (barAtTop) Box(if (strip == StripPlace.Top) Modifier else Modifier.background(scheme.surface).statusBarsPadding()) { bar(true) }
         Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top || barAtTop) Modifier else Modifier.statusBarsPadding())) {
             if (tab != null) Panes(model, tab)
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {

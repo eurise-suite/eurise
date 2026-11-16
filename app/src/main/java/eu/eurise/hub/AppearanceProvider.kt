@@ -29,6 +29,9 @@ class AppearanceProvider : ContentProvider() {
         return when (method) {
             C.METHOD_ACCENT -> accent(context)
             C.METHOD_PALETTE -> palette()
+            C.METHOD_HAND -> Bundle().apply {
+                putBoolean(C.KEY_LEFT, context.getSharedPreferences("eurise_launcher", Context.MODE_PRIVATE).getBoolean("left_handed", false))
+            }
             else -> null
         }
     }

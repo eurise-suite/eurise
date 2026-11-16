@@ -41,6 +41,9 @@ class BrowserModel(private val context: Context) {
     var notice by mutableStateOf<String?>(null)
     /** Download partiti in questa sessione (il numero nel menu). */
     var downloads by mutableIntStateOf(0)
+    /** Mancino (scelta della Scrivania, dall'app Eurise): il menu della barra va a sinistra. */
+    var leftHanded by mutableStateOf(false)
+        private set
     /** Dove vanno i download di tutte le schede (lo fissa l'attività). */
     var onDownload: (org.mozilla.geckoview.WebResponse) -> Unit = {}
     /** «Scegli un file» delle pagine di tutte le schede (lo fissa l'attività). */
@@ -58,6 +61,15 @@ class BrowserModel(private val context: Context) {
         sessionStore.load().let { d -> groups.addAll(d.groups); sessions.addAll(d.sessions); closed.addAll(d.closed) }
         later.addAll(laterStore.load())
         Gecko.onBlocked = ::countBlocked
+        Thread {
+            val left = runCatching {
+                context.contentResolver.call(
+                    android.net.Uri.parse("content://" + eu.eurise.core.suite.AppearanceContract.authority(BuildConfig.HUB_PACKAGE)),
+                    eu.eurise.core.suite.AppearanceContract.METHOD_HAND, null, null,
+                )?.getBoolean(eu.eurise.core.suite.AppearanceContract.KEY_LEFT, false)
+            }.getOrNull() ?: false
+            android.os.Handler(android.os.Looper.getMainLooper()).post { leftHanded = left }
+        }.start()
     }
 
     private fun saveSessions() {
