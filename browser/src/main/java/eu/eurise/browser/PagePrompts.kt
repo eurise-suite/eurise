@@ -75,7 +75,7 @@ class FilePicker(private val activity: ComponentActivity) {
             if (isEmpty()) data?.data?.let(::add)
         }
         val p = ask.prompt as P.FilePrompt
-        if (r.resultCode != ComponentActivity.RESULT_OK || uris.isEmpty()) { ask.cancel(); return@registerForActivityResult }
+        if (r.resultCode != android.app.Activity.RESULT_OK || uris.isEmpty()) { ask.cancel(); return@registerForActivityResult }
         ask.reply { if (uris.size == 1 || p.type != P.FilePrompt.Type.MULTIPLE) p.confirm(activity, uris[0]) else p.confirm(activity, uris.toTypedArray()) }
     }
 
@@ -94,7 +94,7 @@ class FilePicker(private val activity: ComponentActivity) {
     }
 
     companion object {
-        /** «image/*», «.pdf», «image/png» della pagina in tipi di Android; vuoto = qualsiasi file. */
+        /** I tipi accettati dalla pagina (`image/` con l'asterisco, «.pdf», «image/png») in tipi di Android; vuoto = qualsiasi file. */
         fun mimes(accept: Array<String>?): List<String> = accept.orEmpty().mapNotNull { a ->
             val t = a.trim().lowercase()
             when {

@@ -50,7 +50,10 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   password di Chromium v10/v11 dato il segreto del portachiavi.
 
 ## Prossimi passi (in ordine)
-1. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
+1. **Tavola BrwCompatta** (pagina Browser, da approvare, 16 novembre; toccato `canvas.json` della tela per aggiungerla):
+   schede e indirizzo compatti come Vivaldi (da 112 a 86 dp prima della pagina, barre che si nascondono scorrendo, colore
+   del sito nella fila delle schede). Dopo l'approvazione: `TabStrip.kt` e la barra in alto di `BrowserUi.kt`.
+2. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
 2. **Importazione dai browser nell'app del computer**: schermata (serve la tavola, partire da BrwImporta del telefono);
    lettura SQLite (password `Login Data`, cronologia; Firefox `logins.json` + `key4.db`); le password vanno in Eurise
    Password con un tipo del Ponte apposta, mai un CSV in Download.
