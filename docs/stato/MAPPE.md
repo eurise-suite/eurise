@@ -61,7 +61,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
     (`car/EuriseCarSplitInfo.java`), solo quando la mappa è stretta rispetto allo schermo dell'auto. **Da verificare in
     auto**: il riconoscimento dello schermo diviso è una stima (superficie sotto l'80% della larghezza dell'auto o area
     visibile sotto il 55%).
-- **Dettatura in Android Auto che non funziona**: affrontata nel giro delle 13:03 (vedi sopra).
+- **Dettatura in Android Auto che non funziona**: affrontata nel giro delle 13:03 (vedi sopra); in guida il microfono è
+  nella schermata della bandierina dalla sera del 16.
 - **Tavole nuove** (pagina Mappe della tela, fila «Mappe dall'apertura alla partenza», poi in codice alle 13:03): MapViaggio1Apertura
   (com'è oggi), 2 Dove devi andare (campo in basso con la dettatura), 3 Luogo (Indicazioni coi minuti, Parti ora),
   4 Percorso (partenza e arrivo in vetro al posto della barra di CoMaps con i tipi di percorso; Evita e + Tappa in
@@ -93,8 +94,19 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   telefono, microfono dell'auto che non manda audio entro 3 s, Eurise Voce assente o senza modello) e «Riprova»; il
   microfono c'è anche in guida e nella ricerca. Un ascolto rimasto appeso non blocca più i tocchi dopo.
 
+## 16 novembre, sera: Mappe 69 si chiudeva all'avvio della navigazione in Android Auto
+- Prova del proprietario: avviando la navigazione in auto compare un errore e Mappe si chiude anche sul telefono.
+- Causa: il giro delle 13:03 aveva messo il microfono nella fila in alto della guida (`NavigationScreen.createActionStrip`),
+  che con voce, impostazioni, bandierina e stop arrivava a cinque pulsanti; l'auto ne accetta al massimo quattro e la
+  schermata della guida lanciava un errore, che chiude tutto il processo (auto e telefono).
+- Correzione (commit 960cd74, giro su `prova-mappe`): il microfono in guida sta in alto nella schermata della bandierina
+  (`EuriseCarReportScreen.micAction`); «autovelox», «c'è una coda»… segnano, ogni altra frase cerca il luogo. La fila
+  della guida torna a quattro. Nella ricerca dell'auto restano due pulsanti (microfono e «Mostra sulla mappa»), il massimo.
+- Regola per i prossimi giri: prima di aggiungere un pulsante in Android Auto contare quelli che ci sono (fila della
+  guida e della mappa: 4; ricerca: 2; intestazione: 2).
+
 ## Prossimi passi, in ordine
-1. **Prova di Mappe 69** (link dato in chat il 16 novembre):
+1. **Prova del giro con la correzione** (avvio della navigazione in auto, poi):
    Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
    dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
    («di solito meno di 1 MB»).
@@ -103,11 +115,10 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
    (correzioni dopo Mappe 58).
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
-   autostrada. Scelta del proprietario: spostare i file su un server europeo (Codeberg o nostro) per più tacchette.
+   autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
 4. Passo f) di Esplora, parte che resta: nomi delle vie più leggibili; orizzonte col cielo anche esplorando.
-5. Km anche sul telefono («Dove sei» o guida), solo se il proprietario lo vuole: serve una riga nella tavola.
-6. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
-7. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
+5. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
+6. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
    traffico (nessuna fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da
    fare e «Il mio viaggio» (nessuna fonte libera verificata).
 - **Passo del proprietario prima di pubblicare Mappe**: con Transitous concordare l'uso oltre 720 richieste al giorno
@@ -123,6 +134,9 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   = ultimo riuscito su `brand`); poi in chat i link diretti, per esempio
   https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-mappe-debug.apk e, se cambia il centro
   privacy, anche https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk.
+- Giri propri (istruzioni del progetto): commit su `brand` con `[skip ci]` in testa, la stessa testa su `prova-mappe` per
+  compilare; finito il giro, l'artefatto `eurise-mappe-debug-<n>` si scarica e si carica a mano in `apk-prova`
+  (`gh release upload apk-prova eurise-mappe-debug.apk --clobber`), perché `apk-prova.yml` prende Mappe solo da `brand`.
 - Servizi nuovi che fanno uscire dati: `PrivacyService` in core/suite (con `SHARED` in `PrivacyContract`), testi in
   `ServiceConsent`, interruttore in Livelli con la spiegazione prima di accendere; servono APK di Eurise e di Mappe nuovi.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 15 novembre (Mappe, Android Auto, guida).
