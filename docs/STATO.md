@@ -3324,3 +3324,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Mappe: tavole delle otto aggiunte alla bolla (MapBollaPodcast…Arrivo, MapBollaAutoStati) sulla tela, da approvare → `docs/stato/MAPPE.md`.
 - 17 novembre, Comunicazione: idee per famiglia, amici e lavoro approvate; 25 tavole nuove (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi) da approvare → `docs/stato/COMUNICAZIONE.md`.
 - 16 novembre, notte, Office: Office e motore nel giro 692 di `apk-prova`; testata nostra verificata sull'emulatore a schermo grande → `docs/stato/OFFICE.md`.
+- 17 novembre, primissime ore, Organizzazione: tavole tutte approvate; Drive come nelle tavole (cassetto, spazio, Scanner, Oggi sotto le cartelle), «Condividi con…» per file e cartelle del cloud, invitati negli appuntamenti · giro 701 → `docs/stato/ORGANIZZAZIONE.md`.

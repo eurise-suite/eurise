@@ -145,6 +145,25 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   unisce; poi il codice si fa insieme a Comunicazione, una sola versione.
 - Giro 688 (Compila 43973959364 su `prova-organizzazione`) pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
 
+## 17 novembre, primissime ore: tutte le tavole approvate, Drive in codice, prime funzioni di collaborazione
+- **Approvate dal proprietario** (17 novembre): tutte le tavole del 16 notte, cioè Rubrica arricchita, Drive (DriveCartelle,
+  DriveCassetto, DriveCloud), le Coll* (pagina Collaborazione) e, dalla stessa frase, le Ins* di Comunicazione. Il codice
+  della collaborazione si divide (vedi `COMUNICAZIONE.md`, decisione del 17 novembre): a Comunicazione il trasporto in
+  Chat ed Email (stessa scheda nei due), a noi Calendario, Attività, Note e Drive.
+- **Drive in codice**: testata con cassetto dei posti (`DrivePlaces.kt`: `PlacesDrawer`, `SpaceCard`, `SpaceBar`,
+  `ScannerButton`, `placePrivacy` con `privacyScore`), nome del telefono (`Settings.Global.DEVICE_NAME`), pulsante
+  Scanner; panoramica: spazio usato su totale, tipi di file, cartelle del telefono in griglia (8, poi «Tutte le N»), sotto
+  «Oggi» (Scansiona/Carica/Cartella, Per i tuoi impegni, Riordina, Recenti a schede: Tutti, Documenti, Scansioni, Foto,
+  Dal cloud). In cima a un cloud: tacchette e spazio (`DriveData.cloudSpace`, quota WebDAV). Tolta la fila delle pillole.
+- **«Condividi con…» per file e cartelle del cloud** (`ShareWith.kt`, voce «Con…» nel foglio del file, solo Nextcloud e
+  Murena): email (il server manda il link personale) o nome utente dello stesso server, Vede/Modifica, chi c'è già con
+  cambio e rimozione, tacchette. `core/cloud` `WebDav.shareWith/sharesOf/setShareEdit/removeShare` (API di condivisione
+  OCS, la stessa dei link). È la base della «cartella di squadra»; manca «cosa è cambiato da ieri».
+- **Invitati negli appuntamenti** («Condividi con…» di un appuntamento): `CalendarRepository.invite/uninvite` (Attendees
+  del Calendar Provider; DAVx⁵ e il server mandano inviti e disdette), sezione Invitati nell'editor con i contatti che
+  hanno un'email (`core/links` `searchEmails`, `MailContact`); avviso per il calendario solo sul telefono.
+- Giro 701 (Compila 43978824089 su `prova-organizzazione`) pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -159,25 +178,25 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
 - **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
   NoteVocale in codice (giri 671 e 673).
-- **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica, tavole arricchite il 16 novembre: da
-  riguardare col proprietario, poi il codice con l'area Comunicazione).
-- **Da approvare**: IcoColoreBolle; DriveCartelle, DriveCassetto e DriveCloud (rifatte con Scanner, spazio usato e la
-  parte di oggi sotto le cartelle); le otto tavole Coll* della collaborazione (da confrontare con le Ins* di Comunicazione).
+- **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
+  codice con l'area Comunicazione); le otto Coll* (e le Ins* di Comunicazione), in parte in codice (sotto).
+- **Approvate e in codice dal 17 novembre**: DriveCartelle, DriveCassetto, DriveCloud; «Condividi con…» per Drive e per
+  gli appuntamenti (invitati).
+- **Da approvare**: IcoColoreBolle.
 
 ## Prossimi passi, in ordine
-1. **Il proprietario guarda** le tavole arricchite (Rubrica), quelle rifatte (Drive) e le Coll* accanto alle Ins* di
-   Comunicazione; prova l'Agenda e i contatti suggeriti (giro 688).
-2. **Codice di Drive** dopo l'approvazione: Scanner in alto, spazio usato su totale (telefono: `StatFs`; cloud: quota
-   WebDAV `quota-used-bytes`/`quota-available-bytes`), la parte di oggi sotto le cartelle, DriveCloud.
-3. **Collaborazione**: scelta tra Coll* e Ins*, poi il codice con l'area Comunicazione, nell'ordine: Condividi con…
-   (CalDAV/WebDAV di Murena e Nextcloud), Affida a…, Elenchi condivisi, Disponibilità in un link, Nota della riunione,
-   Agenda con l'assistente, Passa la palla, Cartella di squadra.
-4. **Codice della Rubrica** con l'area Comunicazione (campi in `core/contacts`, vCard 4); «Dove lo salvo?» con gli account
-   del telefono (Murena e Nextcloud via DAVx5/CardDAV, solo telefono, Google per ultimo con l'avviso).
-5. **Agenda, rifiniture possibili**: nome dell'utente nel saluto (preso dall'Accoglienza della Scrivania), invitati anche
-   da aggiungere all'appuntamento quando la persona scelta ha un'email.
-6. **Prove del proprietario** sui giri 671, 673 e 688.
-7. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
+1. **Prove del proprietario** sul giro 701: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto, spazio, Oggi sotto le
+   cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena (arriva l'invito?).
+2. **Collaborazione, la nostra parte, in ordine**: elenchi condivisi (condivisione del calendario delle attività su
+   CalDAV di Nextcloud/Murena, «preso da» e «fatto da»); «Affida a…» nelle Attività (persona, scadenza, stato) con il
+   trasporto di Comunicazione (Chat o email, stessa scheda); nota della riunione condivisa (cose da fare → attività
+   assegnate); cartella di squadra (cosa è cambiato da ieri: attività di Nextcloud); agenda con l'assistente (calendario
+   condiviso «Proposte»); disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena).
+3. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
+   etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
+   personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.
+4. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
+5. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
