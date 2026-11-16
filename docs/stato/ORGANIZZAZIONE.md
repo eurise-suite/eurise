@@ -91,6 +91,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Murena (DriveCartelle, DriveCassetto, pagina Drive e Scanner, dalle foto del proprietario).
 - Giri: 671 (Note) pubblicato; il secondo (Calendario, icone, Drive) è il giro 673, pubblicato in `apk-prova`.
 
+## 16 novembre, notte tarda: decisioni del proprietario (da fare nella prossima chat)
+- **Approvate**: pagina Agenda (AgeGiorno, AgeScrivi) e pagina Rubrica (RubElenco, RubNuovo, RubScheda), **con le
+  aggiunte qui sotto**. Approvate anche **tutte** le otto idee di collaborazione rapida (sotto): prima le tavole.
+- **Rubrica, campi che mancano** (le tavole vanno completate e arricchite, poi il codice): titolo (Dott., Ing., Avv.,
+  Prof.… prima del nome), soprannome, più numeri con l'etichetta (cellulare, casa, lavoro, fax, altro), email **e PEC**
+  (separata, con il suo segno), indirizzi (casa, lavoro, altro) con via, CAP, città, provincia, paese; poi tutto ciò che
+  hanno le rubriche migliori: azienda, reparto e ruolo, codice fiscale e partita IVA, compleanno e anniversario, sito e
+  profili, relazioni (coniuge, figli, assistente…), nota, etichette, suoneria della persona, foto. Va fatta con l'area
+  Comunicazione (la Rubrica sta nell'APK Telefono; `core/contacts` è comune).
+- **Drive** (DriveCartelle, DriveCassetto da ridisegnare con queste aggiunte, poi il codice): un'icona per lo Scanner in
+  alto; per il telefono e per ogni cloud lo **spazio usato su spazio totale** (barra e «86 GB su 256»), nel cassetto e in
+  testa a ogni posto; la parte di oggi della nostra Drive (foto del proprietario in `docs/stato/foto/drive-oggi-16nov.jpg`: pulsanti Scansiona, Carica, Cartella;
+  «Per i tuoi impegni»; «Riordina»; «Recenti» a schede) va **sotto le cartelle**, nella stessa pagina.
+- **Idee di collaborazione rapida, tutte approvate** (tavole prima del codice, sui cloud scelti: Murena, Nextcloud; tacchette
+  della privacy): 1) «Condividi con…» su appuntamenti, note, cose da fare, cartelle, con vede/modifica; 2) «Affida a…» una
+  cosa da fare con scadenza e avviso quando è fatta; 3) agenda condivisa con l'assistente che propone appuntamenti da
+  confermare; 4) elenchi condivisi (spesa, casa, ufficio) con chi l'ha preso e chi l'ha fatto; 5) nota della riunione
+  condivisa, le cose da fare diventano attività assegnate; 6) disponibilità in un link, l'appuntamento nasce in tutti e due
+  i calendari; 7) «Passa la palla»: inoltro di email, messaggio o documento con una riga sul da farsi e lo stato; 8) cartella
+  di squadra in Drive con chi c'è e cosa è cambiato da ieri. Toccano anche Chat, Email (area Comunicazione) e Drive.
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -103,28 +124,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Scrivania come temi «(nuove)» accanto ai vecchi; Calendario, Attività e Note non hanno ancora un'icona di sistema loro.
 - **Approvate, sul computer (le segue l'area Computer, `COMPUTER.md`)**: PcOggi e PcOggiNotte in codice dal 16 novembre
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
-- **Da approvare**: AgeGiorno, AgeScrivi, RubElenco, RubNuovo, RubScheda, IcoColoreBolle, DriveCartelle, DriveCassetto (16 novembre, notte). NoteBlocca, NoteBloccata, NoteVocale approvate e in codice.
+- **Approvate, codice da scrivere**: AgeGiorno, AgeScrivi (Agenda); RubElenco, RubNuovo, RubScheda (Rubrica, da arricchire
+  prima con i campi decisi il 16 novembre). NoteBlocca, NoteBloccata, NoteVocale approvate e in codice (giri 671 e 673).
+- **Da approvare**: IcoColoreBolle; DriveCartelle e DriveCassetto (da ridisegnare con Scanner, spazio usato e la parte di
+  oggi sotto le cartelle); le tavole della collaborazione rapida (da fare).
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario rimaste senza esito** (giro 651 in `apk-prova` o il prossimo): temi delle icone «(nuove)» nella
-   Scrivania e decisione se togliere i temi vecchi; suonerie (qualità dei suoni sintetizzati, WhatsApp col canale
-   silenziato, suoneria per persona con Eurise Telefono); sfondo del blocco (alcune ROM ignorano `FLAG_LOCK`); foglio del
-   primo avvio; «Salva in…» / «Apri da…»; editor dello scanner (confronto con kDrive); «Aggiungi al calendario» e .ics dalle
-   altre app; registro errori; «I tuoi giorni» (compleanno di oggi in Date importanti → incrocio in Mappe).
-2. **Approvazione delle tavole del 16 novembre notte**, poi il codice: Agenda al posto di Oggi (con contatti suggeriti
-   anche nel nuovo appuntamento e con @ nelle Attività), Rubrica (con l'area Comunicazione, che ha la Rubrica
-   dell'APK Telefono), icone che seguono il colore delle bolle, Drive a cartelle con il cassetto.
-   Poi: file audio delle note vocali nel cloud (`Eurise/Note/<id>/`); i simboli nuovi nei temi «Eurise» ed «Eurise a colori».
-   Idee di collaborazione rapida proposte in chat (da scegliere).
-3. **Pulizia che resta**: Chip, Card, Pill e Field copiati tra le app hanno forme diverse da caso a caso: unificarli solo
-   dove sono davvero uguali (come `SwitchRow`).
-4. **Rimasti aperti delle app**: foto e scansioni nelle Note; colori dei calendari con «Il tuo
-   colore» e nella Scrivania; voce «dati sul telefono» nel centro privacy (serve per la memoria di Alfred e per il Ponte);
-   timer dalle ricette della Scrivania; il widget nella bolla che segua l'altezza scelta.
-5. **Schermate del computer** (PcCalendario, PcNote, PcAttivita) su `core/sync`, insieme all'area Computer.
-- **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino: Desco e Domenico sono occupati) e verifica
-  TMview dei nomi dell'area (Agenore, Brigida, Scribò, Rubens, Orazio, Stipet, Copisto, Tommaso); finché non sono verificati
-  in interfaccia restano i nomi dei servizi.
+1. **Tavole da completare subito**: Rubrica arricchita (RubNuovo e RubScheda con titolo, soprannome, più numeri, PEC,
+   indirizzi completi e il resto; eventuale tavola dei campi) e Drive ridisegnata (Scanner, spazio usato/totale per
+   telefono e ogni cloud, la parte di oggi sotto le cartelle). Poi far vedere al proprietario.
+2. **Codice dell'Agenda** (approvata): Oggi diventa «Agenda» con la sua icona; saluto e meteo, appuntamenti con la strada
+   (Mappe), cose da fare, persone del giorno dagli impegni, massima del giorno (raccolta libera nell'APK, piccola), campo in
+   basso per nota o cosa da fare, scorrimento ai giorni prima e dopo; contatti suggeriti mentre si scrive nel nuovo
+   appuntamento e con @ nelle Attività (lettura dei contatti sul telefono).
+3. **Tavole della collaborazione rapida** (le otto idee approvate), poi il codice in ordine con l'area Comunicazione.
+4. **Codice della Rubrica** dopo le tavole arricchite, con l'area Comunicazione; scelta «Dove lo salvo?» con gli account del
+   telefono (Murena e Nextcloud via DAVx5/CardDAV, solo telefono, Google per ultimo con l'avviso).
+5. **Prove del proprietario** sui giri 671 e 673 (note bloccate e vocali, blocchi, cursore, Calendario compatto, icone,
+   selezione multipla in Drive) e su quelle rimaste aperte dal giro 651.
+6. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
+   colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
+- **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
 ## Come si lavora
 - Ramo `brand`, con altre chat in parallelo: prima di ogni push `git fetch origin brand` e `git rebase origin/brand`. Per un
