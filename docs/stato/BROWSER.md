@@ -1,0 +1,50 @@
+# Stato del Browser Eurise (telefono e computer)
+
+File di stato dell'area Browser, tenuto dalle chat dedicate al Browser (dal 16 novembre 2026). `docs/STATO.md` resta il
+diario generale: lì le chat del Browser scrivono solo una riga per consegna che rimanda qui. Le regole sono quelle di
+`CLAUDE.md`; l'architettura per i sistemi in `docs/PIATTAFORME.md`.
+
+## Cosa comprende
+- **Telefono**: APK separato `browser` (`browser/src/main/java/eu/eurise/browser`, GeckoView), file
+  `browser-debug.apk` in `apk-prova`. Tavole: pagina «Browser» della tela (tutte approvate; le ultime: nuova scheda rifatta,
+  menu dell'indirizzo, segnalibri dalla barra, estensioni, barra delle schede).
+- **Computer**: Firefox com'è con l'estensione Eurise (`desktop/firefox`, `eurise-firefox.xpi`, non firmata: si prova da
+  `about:debugging`; per installarla stabilmente serve la firma con l'account AMO del proprietario). Tavole: PcFirefox
+  (pagina Browser) e **PcFirefoxScheda** (pagina «Eurise sul computer», approvata il 16 novembre, da scrivere).
+- **In comune**: il Ponte telefono–computer (`core/ponte`, `desktop/ponte`, ora anche dentro l'app `desktop/app`), la
+  sincronizzazione del Browser (tavola BrwSincro), l'importazione dai browser (`core/sync` `BrowserImport`).
+
+## Fatto (in breve, dettagli nei giorni di STATO.md)
+- Telefono: motore GeckoView; nuova scheda, menu, impostazioni, importa password/segnalibri/cronologia (da file), strumenti
+  (lettura con voce, trova, traduci, cattura), sessioni e gruppi, barra delle schede, download con `DownloadCard`, favicon
+  e anteprime delle schede, «Apri con», `CrashGuard` (giro 592: il Browser non si chiude più all'apertura). Motore di ricerca
+  di base Brave Search (`Links.kt`), gli altri nella scelta con la stellina.
+- Firefox (15–16 novembre): aspetto Perla/Notte; pulsante Eurise (apri sul telefono, In Note, Da fare, appuntamento,
+  documento al telefono, Detta dal telefono); pannello laterale con Oggi e «Dal telefono»; tasto destro; password dal
+  telefono (spenta di base); **Protezione Eurise** (browser.privacy: tracciatori sempre, cookie dei tracciatori rifiutati,
+  solo HTTPS, niente ping e prefetch) **accesa di base, con l'interruttore in vista nella finestrella del pulsante Eurise**
+  per spegnerla con un tocco (decisione del proprietario, 16 novembre), anche nelle Impostazioni con lo stato voce per
+  voce; Brave Search come motore (`chrome_settings_overrides`, Firefox chiede all'utente).
+- Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
+  Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
+  password di Chromium v10/v11 dato il segreto del portachiavi.
+
+## Prossimi passi (in ordine)
+1. **Nuova scheda Eurise in Firefox** dalla tavola PcFirefoxScheda (approvata): `chrome_url_overrides.newtab`; ricerca con
+   Cerca / Chiedi all'AI / Nella cronologia, «Riprendi da dove eri» (dal telefono via Ponte, leggi dopo, download), otto
+   siti fissati, «Per oggi, dalla suite» (dal `TodayCache` del Ponte), pulsanti Traduci, Password, Detta, In Note, riga dei
+   tracciatori fermati.
+2. **Importazione dai browser nell'app del computer**: schermata (serve la tavola, partire da BrwImporta del telefono);
+   lettura SQLite (password `Login Data`, cronologia; Firefox `logins.json` + `key4.db`); le password vanno in Eurise
+   Password con un tipo del Ponte apposta, mai un CSV in Download.
+3. **Sincronizzazione Browser telefono–computer** (BrwSincro): segnalibri, schede aperte, leggi dopo, cifrati dal cloud
+   scelto o via Ponte.
+4. Firma dell'estensione su AMO (passo del proprietario), poi pubblicazione.
+5. Telefono: ciò che il proprietario segnala provando l'APK.
+
+## Come si lavora in quest'area
+- Ramo `brand` come le altre chat; per avere un giro tutto proprio spingere la stessa testa su `prova-browser` (la
+  `concurrency` è per ramo: due chat sullo stesso ramo si annullano i giri) e pubblicare quel giro con `apk-prova`
+  (`gh workflow run apk-prova.yml --ref brand -f run_id=<giro>`).
+- Link da dare a ogni consegna: `browser-debug.apk` (Browser, giro N) e, se cambiato, `eurise-firefox.xpi`.
+- Firefox: `node --check` sui file JS prima del commit; il lavoro «Eurise per Firefox» di Compila fa il pacchetto.

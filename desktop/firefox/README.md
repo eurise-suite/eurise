@@ -14,7 +14,7 @@ Firefox così com'è, aggiornato da Mozilla e dalla distribuzione, con l'aspetto
   dove si stava scrivendo.
 - **Impostazioni Eurise per Firefox**: protezione del Browser Eurise (tracciatori bloccati ovunque, cookie dei tracciatori
   rifiutati e gli altri chiusi per sito, solo HTTPS, niente ping e collegamenti anticipati) con `browser.privacy`, accesa
-  di base perché trattiene i dati; spenta, ogni impostazione torna a Firefox (`clear`). Brave Search come motore
+  di base con l'interruttore in vista nella finestrella del pulsante Eurise (un tocco la spegne); spenta, ogni impostazione torna a Firefox (`clear`). Brave Search come motore
   (`chrome_settings_overrides`): Firefox chiede all'installazione, decide l'utente.
 - **Password dal telefono** (spenta di base): «Chiedi al telefono» sui moduli di accesso; Eurise Password approva con
   l'impronta e la password si scrive nel campo.

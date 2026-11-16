@@ -2784,3 +2784,11 @@ così l'altra chat non le annulla.
   colori della tela); `SuiteIcons.kt` sceglie il disegno (sezioni di Eurise per nome, app separate per pacchetto) e
   disegna bolla e disegno; le app non della suite tengono il loro simbolo nella stessa bolla. Vetro senza sfocatura reale
   (bianco o grafite opaco con luce e bordo), come le bolle senza Haze.
+
+## 16 novembre: decisioni del proprietario sul computer; aree con stato proprio
+- **Tavole «Eurise sul computer» tutte approvate** (Oggi, Oggi Notte, Calendario, Note, Attività, Email, Mappe, Alfred,
+  nuova scheda di Firefox). Mappe sul computer con **CoMaps** (gli stessi file del telefono, offline).
+- **Protezione Eurise in Firefox: accesa di base con un interruttore rapido e in vista** per spegnerla (fatto: nella
+  finestrella del pulsante Eurise, oltre che nelle Impostazioni).
+- Da qui le chat lavorano per area, ognuna con il suo file di stato in `docs/stato/` (qui solo una riga per consegna che
+  rimanda lì). Prima area: **Browser** (telefono e computer) → `docs/stato/BROWSER.md`.

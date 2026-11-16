@@ -114,3 +114,17 @@ $("#opts").addEventListener("click", () => { browser.runtime.openOptionsPage(); 
   if (draft) openEvent(draft);
   statusLine($("#status"), await browser.runtime.sendMessage({ op: "hello" }));
 })();
+
+// Protezione Eurise: accesa di base, si spegne qui con un tocco (e si riaccende uguale); Firefox torna com'era.
+async function showProtection() {
+  const { protection } = await browser.storage.local.get({ protection: true });
+  $("#protection").setAttribute("aria-checked", String(protection));
+  $("#protSub").textContent = protection ? "tracciatori bloccati, solo HTTPS" : "spenta: Firefox com'era";
+}
+$("#protection").addEventListener("click", async () => {
+  const { protection } = await browser.storage.local.get({ protection: true });
+  await browser.storage.local.set({ protection: !protection });
+  await browser.runtime.sendMessage({ op: "applySettings" });
+  showProtection();
+});
+showProtection();
