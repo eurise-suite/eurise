@@ -25,11 +25,11 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Tutte le tavole di Mappe sulla tela (pagina Mappe: `Map*`, comprese MapAutoGuida, MapLuogoAperta, MapLivelli, MapMezzi,
   MapCieli) sono **approvate e in codice**.
 - **MapViaggio 2-6** (fila «Mappe dall'apertura alla partenza») in codice dal 16 novembre, 13:03 (commit 579b305, giro
-  **Mappe 67**); MapViaggio1 è com'era l'app prima.
+  **Mappe 69**); MapViaggio1 è com'era l'app prima.
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
 - Da approvare: nessuna tavola di Mappe in attesa.
 
-## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 67)
+## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
   riassunto (tempo, distanza, arrivo, scelte attive, dislivello in bici e a piedi, impegno).
@@ -41,7 +41,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Android Auto, dettatura: «Ti ascolto» in una schermata che mostra ogni passo e ogni errore (`car/EuriseCarListenScreen.java`;
   prima sembrava non succedere nulla), controllo del microfono che non manda audio, microfono di Alfred anche in guida e
   nella ricerca.
-- Compilazione: Mappe 67 in coda dietro Mappe 66 (ramo `prova-browser`), Compila APK 655 in corso.
+- Compilazione: **Mappe 69** riuscito (commit 51ab924; Mappe 67 non è arrivato), pubblicato in `apk-prova` alle 13:43:
+  https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-mappe-debug.apk
 
 ## 16 novembre: correzioni dopo la prova di Mappe 58 (Mappe 65)
 - Prova del proprietario: «va molto bene». Correzioni chieste e fatte:
@@ -93,7 +94,7 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   microfono c'è anche in guida e nella ricerca. Un ascolto rimasto appeso non blocca più i tocchi dopo.
 
 ## Prossimi passi, in ordine
-1. **Mappe 67**: quando la compilazione riesce, `apk-prova.yml` e link diretti in chat. Poi prova del proprietario:
+1. **Prova di Mappe 69** (link dato in chat il 16 novembre):
    Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
    dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
    («di solito meno di 1 MB»).
