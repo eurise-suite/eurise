@@ -227,7 +227,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         else {
             newLayoutDirection = if (isRtlLanguage) LAYOUT_DIRECTION_RTL else LAYOUT_DIRECTION_LTR
             direction = if (isRtlLanguage) -1 else 1
-            toolbarExpandKey.scaleX = (if (toolbarContainer.visibility != VISIBLE) 1f else -1f) * direction * keySide
+            toolbarExpandKey.scaleX = if (euriseOwnsTools) 1f else (if (toolbarContainer.visibility != VISIBLE) 1f else -1f) * direction * keySide
         }
         layoutDirection = newLayoutDirection
         suggestionsStrip.layoutDirection = newLayoutDirection
@@ -252,7 +252,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             }
         }
 
-        toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction * keySide
+        toolbarExpandKey.scaleX = if (euriseOwnsTools) 1f else (if (toolbarVisible) -1f else 1f) * direction * keySide
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
@@ -534,6 +534,15 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
 
         toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable || euriseOwnsTools) null else this)
+        // Eurise (tavole TastComparsa): con la barra di Eurise accesa questo tasto è la stella che apre il riquadro.
+        if (euriseOwnsTools) {
+            toolbarExpandKey.isVisible = true
+            toolbarExpandKey.setOnClickListener {
+                AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+                eu.eurise.keyboard.EuriseBar.toggleFromStrip()
+            }
+            eu.eurise.keyboard.EuriseBar.decorateFromStrip(toolbarExpandKey)
+        }
         pinnedKeys.visibility = if (euriseOwnsTools) GONE else suggestionsStrip.visibility
         isExternalSuggestionVisible = false
     }

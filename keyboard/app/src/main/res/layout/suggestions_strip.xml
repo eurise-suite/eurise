@@ -45,6 +45,14 @@
              We just need to ignore the system's audio and haptic feedback settings. -->
         <!-- todo: sth is fishy with that maxwidth
                check what is going on in the layout helper? -->
+        <!-- Eurise: la prima proposta di Eurise (Crea attività, calcolo, @persona…) prima delle parole (tavola TastComparsaProposta). -->
+        <LinearLayout
+            android:id="@+id/eurise_proposal"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:visibility="gone" />
         <LinearLayout
             android:id="@+id/suggestions_strip"
             android:orientation="horizontal"

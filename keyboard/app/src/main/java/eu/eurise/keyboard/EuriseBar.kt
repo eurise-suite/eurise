@@ -20,16 +20,25 @@ import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.Constants
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.keyboard.internal.KeyboardIconsSet
+import helium314.keyboard.latin.utils.ToolbarKey
 import helium314.keyboard.latin.utils.createToolbarKey
 import helium314.keyboard.latin.utils.getEnabledToolbarKeys
 import helium314.keyboard.latin.utils.onClickToolbarKey
+import helium314.keyboard.latin.utils.onLongClickToolbarKey
 import helium314.keyboard.latin.utils.prefs
 import java.time.format.DateTimeFormatter
 
 /**
- * La barra di Eurise sopra i tasti: i quattro comandi (Disponibilità, File, Persona, Codici), le proposte del momento
- * (calcolo, contatto citato con @, abbreviazione, frase da trasformare in attività, cosa appena copiata) e, a richiesta,
- * la fila degli strumenti separata dai suggerimenti. I pannelli si aprono al posto dei tasti.
+ * Eurise nella tastiera (tavole TastComparsa, approvate il 16 novembre). Sopra i tasti resta solo la fila delle parole:
+ * - il tasto con la stella, in fondo alla fila delle parole dal lato della mano, apre un riquadro sopra le parole con i
+ *   comandi di Eurise (Calcola, Codici, File, Persona, Libero, Traduci, Cerca) e gli strumenti della tastiera (Appunti,
+ *   Emoji, Cursore, Una mano, Annulla, Voce, Opzioni), tutti fatti allo stesso modo. Il riquadro si chiude scegliendo,
+ *   ritoccando la stella o riprendendo a scrivere; sta sopra l'app senza spostarla;
+ * - le proposte del momento (calcolo, contatto citato con @, abbreviazione, «Crea attività», «arrivo alle…») entrano tra
+ *   le parole come prima voce; se ce n'è più d'una, un pallino sulla stella e le altre in cima al riquadro.
+ * I pannelli (Calcola, Codici…) si aprono al posto dei tasti. Questa vista resta nella colonna della tastiera solo per i
+ * pannelli e, a richiesta, la vecchia fila degli strumenti separata.
  */
 class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
 
@@ -41,28 +50,35 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         private set
 
     private val toolsRow = LinearLayout(context)
-    private val commandsRow = LinearLayout(context)
-    private val chipsScroll = HorizontalScrollView(context)
-    private val chips = LinearLayout(context)
-    private val buttons = LinearLayout(context)
+    /** Il riquadro a comparsa: proposte in più, comandi di Eurise, strumenti della tastiera. */
+    private val menu = LinearLayout(context)
+    private val menuChips = LinearLayout(context)
+    private val menuChipsScroll = HorizontalScrollView(context)
+    private val euriseRow = LinearLayout(context)
+    private val toolsMenuRow = LinearLayout(context)
     private val panelHost = FrameLayout(context)
     private var panel: Panel? = null
+    private var chipsNow: List<Chip> = emptyList()
+    /** Dove va la prima proposta: dentro la fila delle parole, prima delle parole. */
+    private var stripSlot: LinearLayout? = null
+    private var stripKey: android.widget.ImageButton? = null
+    val menuOpen get() = menu.parent != null && menu.isVisible
 
     init {
         orientation = VERTICAL
-        chips.orientation = HORIZONTAL
-        chipsScroll.isHorizontalScrollBarEnabled = false
-        chipsScroll.addView(chips)
-        commandsRow.orientation = HORIZONTAL
-        commandsRow.gravity = Gravity.CENTER_VERTICAL
-        commandsRow.setPadding(context.dp(6), context.dp(4), context.dp(6), context.dp(6))
-        commandsRow.contentDescription = context.getString(R.string.eurise_bar_description)
-        commandsRow.addView(chipsScroll.lp(0, LayoutParams.WRAP_CONTENT, 0f))
-        commandsRow.addView(buttons.lp(0, LayoutParams.WRAP_CONTENT, 1f))
         toolsRow.orientation = HORIZONTAL
         addView(toolsRow.lp(h = context.dp(40)))
-        addView(commandsRow.lp())
         panelHost.isVisible = false
+        menu.orientation = VERTICAL
+        menu.isVisible = false
+        menu.isClickable = true // i tocchi sul riquadro non passano all'app sotto
+        menu.contentDescription = context.getString(R.string.eurise_bar_description)
+        menu.setPadding(context.dp(8), context.dp(10), context.dp(8), context.dp(8))
+        menuChips.orientation = HORIZONTAL
+        menuChipsScroll.isHorizontalScrollBarEnabled = false
+        menuChipsScroll.addView(menuChips)
+        euriseRow.orientation = HORIZONTAL
+        toolsMenuRow.orientation = HORIZONTAL
     }
 
     /** Collega la barra alla tastiera: la chiama LatinIME quando crea la sua vista. */
@@ -72,6 +88,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         arrange()
         refreshLook()
         current = java.lang.ref.WeakReference(this)
+        post { installMenu() }
         // Ricevitore e ascolto degli appunti si registrano una volta sola per processo: la vista della tastiera
         // si ricrea spesso (tema, lingua) e una barra vecchia non deve inserire testo.
         if (!registered) {
@@ -105,6 +122,100 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         frame.addView(this, if (prefs.getBoolean(BAR_ON_TOP, true)) at else at + 1)
     }
 
+    /**
+     * Il riquadro sta nella finestra della tastiera, sopra la fila delle parole, come i tasti a comparsa di HeliBoard:
+     * così copre l'app senza farla rimpicciolire. La prima proposta va in uno spazio della fila delle parole.
+     */
+    private fun installMenu() {
+        val frame = parent as? ViewGroup ?: return
+        stripSlot = frame.findViewById(R.id.eurise_proposal)
+        stripKey = frame.findViewById(R.id.suggestions_strip_toolbar_key)
+        val content = rootView?.findViewById<ViewGroup>(android.R.id.content) ?: return
+        (menu.parent as? ViewGroup)?.removeView(menu)
+        // Una tastiera ricreata (tema, lingua) lascerebbe il riquadro vecchio nella finestra.
+        (0 until content.childCount).map { content.getChildAt(it) }.filter { it.tag == MENU_TAG }.forEach { content.removeView(it) }
+        menu.tag = MENU_TAG
+        content.addView(menu, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM).apply {
+            leftMargin = context.dp(6); rightMargin = context.dp(6)
+        })
+        decorateKey()
+    }
+
+    /** La stella nella fila delle parole: accesa col riquadro aperto, pallino se ci sono altre proposte. */
+    fun decorateKey(key: android.widget.ImageButton? = stripKey) {
+        key ?: return
+        stripKey = key
+        val open = menuOpen
+        val star = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.eurise_ic_star)?.mutate()?.apply { setTint(if (open) p.onAccent else p.accent) }
+        val icon = if (chipsNow.size > 1 && !open && star != null) {
+            val dot = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(DOT); setSize(context.dp(8), context.dp(8)) }
+            android.graphics.drawable.LayerDrawable(arrayOf(star, dot)).apply {
+                setLayerInset(1, context.dp(17), 0, 0, context.dp(17))
+            }
+        } else star
+        key.setImageDrawable(icon)
+        key.background = rounded(if (open) p.accent else p.surface, context.dp(12).toFloat(), p.faint)
+        key.contentDescription = context.getString(if (open) R.string.eurise_menu_close else R.string.eurise_menu_open)
+        key.scaleX = 1f
+    }
+
+    /** Il tasto con la stella. */
+    fun toggleMenu() { if (menuOpen) closeMenu() else openMenu() }
+
+    private fun openMenu() {
+        if (panel != null) close()
+        if (menu.parent == null) installMenu()
+        val content = menu.parent as? ViewGroup ?: return
+        buildMenu()
+        // Il riquadro poggia sopra la fila delle parole, ovunque sia la tastiera nella finestra.
+        val strip = (parent as? ViewGroup)?.findViewById<View>(R.id.strip_container) ?: return
+        val a = IntArray(2).also { strip.getLocationInWindow(it) }
+        val b = IntArray(2).also { content.getLocationInWindow(it) }
+        (menu.layoutParams as FrameLayout.LayoutParams).bottomMargin = (b[1] + content.height) - a[1] + context.dp(4)
+        menu.background = rounded(p.background, context.dp(20).toFloat()).also { menu.elevation = context.dp(8).toFloat() }
+        menu.isVisible = true
+        menu.requestLayout()
+        decorateKey()
+    }
+
+    fun closeMenu() {
+        if (!menu.isVisible) return
+        menu.isVisible = false
+        decorateKey()
+    }
+
+    /** Dove comincia il riquadro, rispetto a [view] (per l'area toccabile della tastiera); -1 se è chiuso. */
+    fun menuTop(view: View): Int {
+        if (!menuOpen || menu.height == 0) return -1
+        val a = IntArray(2).also { menu.getLocationInWindow(it) }
+        val b = IntArray(2).also { view.getLocationInWindow(it) }
+        return a[1] - b[1]
+    }
+
+    private fun section(title: Int) = context.label(context.getString(title).uppercase(), p, size = 11f, bold = true, muted = true).apply {
+        setPadding(context.dp(4), 0, 0, context.dp(6))
+    }
+
+    private fun buildMenu() {
+        menu.removeAllViews()
+        if (chipsNow.size > 1) {
+            menuChips.removeAllViews()
+            chipsNow.drop(1).forEach { c ->
+                menuChips.addView(context.pill(c.label, p, icon = c.icon) { closeMenu(); c.action() }.lp(LayoutParams.WRAP_CONTENT, context.dp(40)).apply {
+                    (layoutParams as LayoutParams).marginEnd = context.dp(5)
+                })
+            }
+            menu.addView(menuChipsScroll.lp(h = LayoutParams.WRAP_CONTENT).apply { setPadding(0, 0, 0, context.dp(8)) })
+        }
+        menu.addView(section(R.string.eurise_menu_eurise))
+        buildButtons()
+        menu.addView(euriseRow.lp())
+        menu.addView(View(context).apply { setBackgroundColor(p.faint) }.lp(h = 1, top = context.dp(8)))
+        menu.addView(section(R.string.eurise_menu_keyboard).apply { setPadding(context.dp(4), context.dp(8), 0, context.dp(6)) })
+        buildKeyboardTools()
+        menu.addView(toolsMenuRow.lp())
+    }
+
     private val prefs get() = context.prefs()
     private val enabled get() = prefs.getBoolean(Settings.PREF_EURISE_BAR, Defaults.PREF_EURISE_BAR)
 
@@ -112,9 +223,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     fun refreshLook() {
         p = Palette()
         setBackgroundColor(p.background)
-        isVisible = enabled || prefs.getBoolean(SEPARATE_TOOLS, false)
-        commandsRow.isVisible = enabled
+        isVisible = prefs.getBoolean(SEPARATE_TOOLS, false)
         buildTools()
+        closeMenu()
         showChips(emptyList())
     }
 
@@ -133,13 +244,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         }
     }
 
-    /**
-     * I comandi (tavola TastRighe): Calcola, Codici, File, Persona, Libero, Traduci, Cerca e Altro. Sempre interi: icona
-     * sopra l'etichetta; con le proposte presenti restano solo le icone. Cerca: tocco = ricerca rapida (Web o AI nel
-     * pannello), pressione lunga = motore, browser o assistente. Altro = gli strumenti della tastiera.
-     */
-    private fun buildButtons(compact: Boolean) {
-        buttons.removeAllViews()
+    /** I comandi di Eurise nel riquadro (tavola TastComparsaAperta). Cerca: pressione lunga = motore e browser. */
+    private fun buildButtons() {
+        euriseRow.removeAllViews()
         listOf(
             Command(R.string.eurise_calc, R.drawable.eurise_ic_calc) { open(CalcPanel(this)) },
             Command(R.string.eurise_codes, R.drawable.eurise_ic_key) { open(CodesPanel(this)) },
@@ -147,41 +254,65 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             Command(R.string.eurise_person, R.drawable.eurise_ic_person) { open(PersonPanel(this)) },
             Command(R.string.eurise_free, R.drawable.eurise_ic_calendar) { open(CalendarPanel(this)) },
             Command(R.string.eurise_translate, R.drawable.eurise_ic_translate) { open(TranslatePanel(this)) },
-            // Browser e AI insieme (tavola TastRighe): nel pannello si sceglie Web o AI; pressione lunga = motore e browser.
             Command(R.string.eurise_search, R.drawable.eurise_ic_globe) { openSearch(ai = false) },
-            // Gli strumenti di HeliBoard (appunti, emoji, una mano, impostazioni…): non più nella fila dei suggerimenti.
-            Command(R.string.eurise_more, R.drawable.eurise_ic_more) { open(ToolsPanel(this)) },
         ).forEachIndexed { i, (label, icon, action) ->
             val text = context.getString(label)
-            val active = panel?.title == label || (label == R.string.eurise_free && panel?.title == R.string.eurise_availability) ||
-                (label == R.string.eurise_search && panel is SearchPanel)
-            val b = command(if (compact) "" else text, icon, active) { if (active) close() else action() }
-            if (label == R.string.eurise_search) b.setOnLongClickListener { open(BrowserPanel(this)); true }
-            buttons.addView(b.lp(0, context.dp(if (compact) 40 else 46), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(4) })
+            val drawable = androidx.core.content.ContextCompat.getDrawable(context, icon)?.mutate()?.apply { setTint(p.accent) }
+            val b = command(text, drawable) { closeMenu(); action() }
+            if (label == R.string.eurise_search) b.setOnLongClickListener { closeMenu(); open(BrowserPanel(this)); true }
+            euriseRow.addView(b.cell(i))
         }
     }
 
-    /** Un comando: icona e, sotto, l'etichetta piccola. */
-    private fun command(label: String, icon: Int, on: Boolean, onClick: () -> Unit) = LinearLayout(context).apply {
+    /**
+     * Gli strumenti della tastiera nel riquadro, fatti come i comandi di Eurise (richiesta del proprietario, 16 novembre):
+     * Appunti, Emoji, Cursore, Una mano, Annulla, Voce, Opzioni. Pressione lunga = quella di HeliBoard.
+     */
+    private fun buildKeyboardTools() {
+        toolsMenuRow.removeAllViews()
+        listOf(
+            ToolbarKey.CLIPBOARD to R.string.eurise_tool_clipboard,
+            ToolbarKey.EMOJI to R.string.eurise_tool_emoji,
+            ToolbarKey.DPAD to R.string.eurise_tool_cursor,
+            ToolbarKey.ONE_HANDED to R.string.eurise_tool_one_hand,
+            ToolbarKey.UNDO to R.string.eurise_tool_undo,
+            ToolbarKey.VOICE to R.string.eurise_tool_voice,
+            ToolbarKey.SETTINGS to R.string.eurise_tool_settings,
+        ).forEachIndexed { i, (key, label) ->
+            val drawable = KeyboardIconsSet.instance.getNewDrawable(key.name, context)?.mutate()?.apply { setTint(p.accent) }
+            val b = command(context.getString(label), drawable) {}
+            b.tag = key
+            b.setOnClickListener { v -> closeMenu(); onClickToolbarKey(v) { code -> input(code) } }
+            b.setOnLongClickListener { v -> closeMenu(); onLongClickToolbarKey(v) { code, _ -> input(code) }; true }
+            toolsMenuRow.addView(b.cell(i))
+        }
+    }
+
+    private fun input(code: Int) = ime.onCodeInput(code, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false)
+
+    private fun View.cell(i: Int) = lp(0, context.dp(54), 1f).apply { (layoutParams as LayoutParams).marginStart = if (i == 0) 0 else context.dp(4) }
+
+    /** Un comando: icona e, sotto, l'etichetta piccola; tutti uguali (tasti dello stesso gruppo, stessa larghezza). */
+    private fun command(label: String, icon: android.graphics.drawable.Drawable?, onClick: () -> Unit) = LinearLayout(context).apply {
         orientation = VERTICAL
         gravity = Gravity.CENTER
-        background = rounded(if (on) p.accent else p.surface, context.dp(12).toFloat(), p.faint)
+        background = rounded(p.surface, context.dp(13).toFloat(), p.faint)
         isClickable = true
         contentDescription = label
         setOnClickListener { onClick() }
         addView(android.widget.ImageView(context).apply {
-            setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, icon)?.mutate()?.apply { setTint(if (on) p.onAccent else p.accent) })
-            layoutParams = LayoutParams(context.dp(18), context.dp(18))
+            setImageDrawable(icon)
+            layoutParams = LayoutParams(context.dp(19), context.dp(19))
         })
-        if (label.isNotEmpty()) addView(android.widget.TextView(context).apply {
+        addView(android.widget.TextView(context).apply {
             text = label
             textSize = 10f
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(if (on) p.onAccent else p.text)
+            setTextColor(p.text)
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
             gravity = Gravity.CENTER
-            setPadding(context.dp(2), context.dp(2), context.dp(2), 0)
+            setPadding(context.dp(2), context.dp(3), context.dp(2), 0)
         })
     }
 
@@ -220,6 +351,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         panelHost.addView(next.view(), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height))
         panelHost.isVisible = true
         keyboardArea.isVisible = false
+        closeMenu()
         showChips(emptyList())
     }
 
@@ -305,7 +437,9 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     }
 
     fun onFinishInput() {
-        if (::ime.isInitialized && panel != null) close()
+        if (!::ime.isInitialized) return
+        closeMenu()
+        if (panel != null) close()
     }
 
     private val check = Runnable { computeChips() }
@@ -313,6 +447,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     /** Il testo è cambiato: le proposte si ricalcolano poco dopo, non a ogni lettera. */
     fun onTextChanged() {
         if (!::ime.isInitialized || !enabled || panel != null) return
+        closeMenu() // si riprende a scrivere: il riquadro si chiude
         handler.removeCallbacks(check)
         handler.postDelayed(check, 150)
     }
@@ -405,20 +540,37 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
         }
     }
 
-    /** Con proposte presenti i quattro comandi restano come sole icone, così la barra non cambia altezza. */
+    /** La prima proposta tra le parole (tavola TastComparsaProposta); le altre nel riquadro, col pallino sulla stella. */
     private fun showChips(list: List<Chip>) {
-        chips.removeAllViews()
-        list.forEachIndexed { i, c ->
-            val v = context.pill(c.label, p, on = i == 0, icon = c.icon) { c.action() }
-            chips.addView(v.lp(LayoutParams.WRAP_CONTENT, context.dp(40)).apply { (layoutParams as LayoutParams).marginEnd = context.dp(5) })
+        chipsNow = if (enabled) list else emptyList()
+        val slot = stripSlot
+        if (slot != null) {
+            slot.removeAllViews()
+            chipsNow.firstOrNull()?.let { c ->
+                slot.addView(context.pill(c.label, p, on = true, icon = c.icon) { c.action() }.apply {
+                    minimumHeight = context.dp(32)
+                }.lp(LayoutParams.WRAP_CONTENT, context.dp(32)).apply {
+                    (layoutParams as LayoutParams).gravity = Gravity.CENTER_VERTICAL
+                    (layoutParams as LayoutParams).marginStart = context.dp(4)
+                    (layoutParams as LayoutParams).marginEnd = context.dp(4)
+                })
+            }
+            slot.isVisible = chipsNow.isNotEmpty()
         }
-        val has = list.isNotEmpty()
-        chipsScroll.layoutParams = LayoutParams(if (has) 0 else 0, LayoutParams.WRAP_CONTENT, if (has) 2.2f else 0f)
-        chipsScroll.isVisible = has
-        buildButtons(compact = has)
+        decorateKey()
     }
 
     companion object {
+        /** Il pallino sulla stella: arancio della suite, si vede su Perla e su Notte. */
+        private const val DOT = 0xFFC2662D.toInt()
+        private const val MENU_TAG = "eurise_menu"
+
+        /** Dalla fila delle parole (SuggestionStripView): la stella. */
+        @JvmStatic fun toggleFromStrip() { current?.get()?.toggleMenu() }
+
+        /** Dalla fila delle parole, quando ridisegna il suo tasto: lo veste da stella. */
+        @JvmStatic fun decorateFromStrip(key: android.widget.ImageButton) { current?.get()?.decorateKey(key) }
+
         const val SEPARATE_TOOLS = "eurise_separate_tools"
         /** Barra di Eurise sopra i suggerimenti (di base sì). */
         const val BAR_ON_TOP = "eurise_bar_on_top"
