@@ -163,7 +163,7 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   compila con «Prototipo di Eurise Mappe» (`maps-engine.yml`, circa 30 minuti, un giro alla volta per tutti i rami).
 - Prove senza telefono in `maps/test/` (Java puro) e `maps/pietre/test_pietre.py`, lanciate dai lavori prima di compilare.
 - APK: dopo «Compila APK» e Mappe riusciti, `gh workflow run apk-prova.yml --ref brand -f run_id=<id di Compila>` (Mappe
-  = ultimo riuscito su `brand`); poi in chat i link diretti, per esempio
+  = ultimo riuscito tra `prova-mappe` e `brand`); poi in chat i link diretti, per esempio
   https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-mappe-debug.apk e, se cambia il centro
   privacy, anche https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk.
 - Giri propri (istruzioni del progetto): commit su `brand` con `[skip ci]` in testa, la stessa testa su `prova-mappe` per
