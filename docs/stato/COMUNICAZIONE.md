@@ -92,6 +92,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - **Spazi**: SpaSpazi, SpaFuoriOrario, SpaTraduci.
   Ordine proposto per il codice: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita,
   Fuori orario; poi il resto. Ognuna in Chat e in Email.
+- **Richiesta nuova (17 novembre): comunicare con i pazienti** (appuntamenti, richieste di farmaci, invio di referti),
+  in Chat, Email e SMS. Proposta in chat, tavole dopo le risposte del proprietario (medico di medicina generale o
+  specialista; gestionale usato). Vincoli trovati: NRE della ricetta dematerializzata via email, SMS o app (stabilizzato
+  dal Milleproroghe); referti online facoltativi, con consenso, accesso protetto, al massimo 45 giorni e cancellabili
+  dal paziente (linee guida del Garante 2009 e FAQ); compendio del Garante 2024 sulle piattaforme medico-paziente.
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
