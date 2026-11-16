@@ -105,6 +105,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   numero dell'ASL da inserire; segreteria senza referti), StuAgopuntura (sedute, ricevuta sanitaria, dati per il
   Sistema TS a chi li invia), StuMillewin (promemoria PDF in una cartella del cloud dello studio, letto e abbinato).
   Da fare prima di usarlo con i pazienti: informativa e consenso controllati da un esperto; server Matrix dello studio in UE.
+  **Fila Studio approvata (17 novembre).** Note tecniche: i pazienti possono usare anche Element X, che vuole dal server
+  il Simplified Sliding Sync (Synapse 1.114 e successivi) e accesso con password o OIDC nativo (non il vecchio SSO); i 45
+  giorni dei referti: regola di conservazione per stanza su Synapse più cancellazione (redaction) dal nostro client. La
+  cifratura protegge il contenuto, non i metadati (chi parla con chi, quando, nomi): per questo gli account dei pazienti
+  vanno sul server dello studio (invito con QR), federazione chiusa o limitata per lo spazio Studio.
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
