@@ -142,7 +142,7 @@
     <string name="drive_scan_short">Scansiona</string>
     <string name="drive_upload">Carica</string>
     <string name="drive_new_folder_short">Cartella</string>
-    <string name="drive_space_of">%1$s di %2$s</string>
+    <string name="drive_space_of">%1$s su %2$s</string>
     <string name="drive_tidy_title">Riordina</string>
     <string name="drive_tidy_docs">%1$d documenti (PDF, testi, fogli) andrebbero in Documenti</string>
     <string name="drive_tidy_move">Sposta</string>
@@ -175,4 +175,38 @@
     <string name="drive_pick_cancel">Annulla la selezione</string>
     <string name="drive_pick_trash_title">Eliminare %1$d elementi?</string>
     <string name="drive_pick_trash_text">Quelli del telefono vanno nel Cestino di Eurise per 30 giorni; quelli del cloud nel cestino del servizio.</string>
+    <!-- Drive come nelle tavole DriveCartelle, DriveCassetto e DriveCloud (17 novembre). -->
+    <string name="drive_scanner">Scanner</string>
+    <string name="drive_places">Apri i posti: recenti, tipi di file, telefono, cloud</string>
+    <string name="drive_space_unknown">Il servizio non dice quanto spazio hai.</string>
+    <string name="drive_space_on">su %1$s</string>
+    <string name="drive_space_free">%1$s liberi</string>
+    <string name="drive_kind_images">Immagini</string>
+    <string name="drive_kind_video">Video</string>
+    <string name="drive_kind_audio">Audio</string>
+    <string name="drive_cloud_section">Cloud</string>
+    <string name="drive_connect_cloud">Collega un cloud</string>
+    <string name="drive_today">Oggi</string>
+    <string name="drive_folders_count">Cartelle · %1$d</string>
+    <string name="drive_all_folders">Tutte le %1$d cartelle</string>
+    <string name="drive_fewer_folders">Meno cartelle</string>
+    <string name="drive_recent_all">Tutti</string>
+    <string name="drive_recent_docs">Documenti</string>
+    <string name="drive_recent_scans">Scansioni</string>
+    <string name="drive_recent_photos">Foto</string>
+    <string name="drive_recent_cloud">Dal cloud</string>
+    <!-- Condividi con… (collaborazione rapida, 17 novembre). -->
+    <string name="drive_share_with">Condividi con…</string>
+    <string name="drive_share_with_short">Con…</string>
+    <string name="drive_share_who">Email o nome utente</string>
+    <string name="drive_share_by_email">Riceve dal tuo cloud un\'email con il suo link personale.</string>
+    <string name="drive_share_by_user">Una persona dello stesso cloud: la trova tra i suoi file.</string>
+    <string name="drive_share_do">Condividi</string>
+    <string name="drive_share_view">Vede</string>
+    <string name="drive_share_edit">Modifica</string>
+    <string name="drive_share_already">Con chi è già condiviso · %1$d</string>
+    <string name="drive_share_kind_email">per email</string>
+    <string name="drive_share_kind_user">nel suo cloud</string>
+    <string name="drive_share_remove">Non condividere più con %1$s</string>
+    <string name="drive_share_privacy">Si condivide dal tuo %1$s; Eurise non vede nulla. Togli una persona e non vede più niente.</string>
 </resources>

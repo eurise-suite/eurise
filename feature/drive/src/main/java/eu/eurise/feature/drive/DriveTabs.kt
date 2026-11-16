@@ -144,9 +144,9 @@ internal fun FilesTab(
     var menu by remember { mutableStateOf(false) }
     var creating by remember { mutableStateOf(false) }
     val places = remember(refresh) { data.places }
-    val vaults = remember(refresh) { data.vaultPlaces }
-    val trees = remember(refresh) { data.treePlaces }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    var drawer by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).hazeSource(haze)) {
@@ -167,18 +167,26 @@ internal fun FilesTab(
             } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock, onMoveAll, onTrashAll)
         }
 
-        Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false, solid = true).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false, solid = true).statusBarsPadding().padding(top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (searching) {
                 Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(query, { query = it }, singleLine = true, placeholder = { Text(stringResource(R.string.drive_search_hint)) }, modifier = Modifier.weight(1f))
                     IconButton(onClick = { searching = false; query = "" }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.drive_cancel)) }
                 }
             } else {
-                Row(Modifier.padding(start = 20.dp, end = 12.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(start = 4.dp, end = 8.dp).height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (folder != null && folder.path.isNotEmpty()) {
                         IconButton(onClick = { onFolder(folder.copy(path = folder.path.substringBeforeLast('/', ""))) }) { Icon(EuriseIcons.chevronLeft(), contentDescription = stringResource(R.string.drive_back)) }
+                    } else {
+                        IconButton(onClick = { drawer = true }) { Icon(EuriseIcons.lists(), contentDescription = stringResource(R.string.drive_places)) }
                     }
-                    Text(folder?.path?.substringAfterLast('/')?.ifEmpty { null } ?: stringResource(R.string.drive_title), fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    val title = when {
+                        folder == null -> phoneName(context)
+                        folder.path.isEmpty() -> if (folder.place.account == null && !folder.place.isTree && folder.place.vaultRoot == null) phoneName(context) else folder.place.label
+                        else -> folder.path.substringAfterLast('/')
+                    }
+                    Text(title, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 4.dp))
+                    if (folder == null || folder.path.isEmpty()) ScannerButton(onScan)
                     if (folder != null) {
                         if (folder.place.vaultRoot != null) {
                             IconButton(onClick = { onAddFiles(folder) }) { Icon(EuriseIcons.upload(), contentDescription = stringResource(R.string.drive_vault_add)) }
@@ -186,30 +194,45 @@ internal fun FilesTab(
                         } else if (folder.place.isTree) {
                             IconButton(onClick = { onAddFiles(folder) }) { Icon(EuriseIcons.upload(), contentDescription = stringResource(R.string.drive_vault_add)) }
                             if (folder.path.isEmpty()) IconButton(onClick = { onRemoveTree(folder.place) }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.drive_tree_remove)) }
-                        } else if (folder.place.account != null) {
+                        } else if (folder.place.account != null && folder.path.isNotEmpty()) {
                             IconButton(onClick = { onNewVault(folder) }) { Icon(EuriseIcons.lock(), contentDescription = stringResource(R.string.drive_vault_new)) }
                         }
-                        IconButton(onClick = { creating = true }) { Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.drive_new_folder)) }
+                        if (folder.path.isNotEmpty()) IconButton(onClick = { creating = true }) { Icon(EuriseIcons.plus(), contentDescription = stringResource(R.string.drive_new_folder)) }
                         IconButton(onClick = { searching = true }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_search)) }
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(EuriseIcons.sort(), contentDescription = stringResource(R.string.drive_sort)) }
                             DropdownMenu(menu, { menu = false }) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.drive_sort_name)) }, onClick = { sort = Sort.Name; menu = false })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.drive_sort_size)) }, onClick = { sort = Sort.Size; menu = false })
+                                if (folder.path.isEmpty() && folder.place.account != null) {
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.drive_new_folder)) }, onClick = { menu = false; creating = true })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.drive_vault_new)) }, onClick = { menu = false; onNewVault(folder) })
+                                }
                             }
                         }
                     }
                 }
-            }
-            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterPill(stringResource(R.string.drive_all), dot = null, selected = scope == null) { onScope(null) }
-                FilterPill(stringResource(R.string.drive_phone), dot = scheme.onSurfaceVariant, selected = scope == data.phone) { onScope(data.phone) }
-                places.forEach { p -> FilterPill(p.label, dot = scheme.primary, selected = scope == p) { onScope(p) } }
-                trees.forEach { p -> FilterPill(p.label, dot = scheme.secondary, selected = scope == p) { onScope(p) } }
-                FilterPill(stringResource(R.string.drive_tree_add), dot = null, selected = false) { onAddTree() }
-                vaults.forEach { p -> FilterPill(stringResource(R.string.drive_vault_pill, p.label), dot = scheme.tertiary, selected = scope == p) { if (data.isOpen(p)) onScope(p) else onUnlock(p) } }
+                if (folder != null && folder.path.isNotEmpty()) {
+                    Text(
+                        (if (folder.place.account == null && !folder.place.isTree && folder.place.vaultRoot == null) phoneName(context) else folder.place.label) +
+                            " › " + folder.path.replace("/", " › "),
+                        fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = scheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+                }
             }
         }
+        PlacesDrawer(
+            open = drawer, data = data, refresh = refresh, current = scope,
+            onClose = { drawer = false },
+            onScan = onScan,
+            onOverview = { onScope(null) },
+            onFolder = { onFolder(it) },
+            onPlace = { onScope(it) },
+            onCloud = onCloud,
+            onAddTree = onAddTree,
+            onVault = { p -> if (data.isOpen(p)) onScope(p) else onUnlock(p) },
+        )
     }
     if (creating) {
         // Dalla panoramica la cartella nuova va in Documenti del telefono.
@@ -298,7 +321,6 @@ private fun Overview(
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val recents = remember(refresh) { data.recents() }
-    val spaces by produceState(emptyList<Space>(), refresh, access) { value = if (access) data.spaces() else emptyList() }
     val tidy by produceState<Tidy?>(null, refresh, access) {
         value = if (access) runCatching {
             val downloads = data.list(data.phone, Environment.DIRECTORY_DOWNLOADS)
@@ -320,7 +342,48 @@ private fun Overview(
             filesForEvents(events, files).take(3)
         }.getOrDefault(emptyList())
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val phoneSpace by produceState<Space?>(null, refresh) { value = runCatching { data.phoneSpace() }.getOrNull() }
+    val roots by produceState(emptyList<DriveItem>(), refresh, access) { value = if (access) data.phoneFolders() else emptyList() }
+    var allFolders by remember { mutableStateOf(false) }
+    var recentKind by remember { mutableStateOf(RecentKind.All) }
+    val recentKinds = remember(recents) { RecentKind.entries.filter { k -> k == RecentKind.All || recents.any { k.matches(it) } } }
+    // Come nelle tavole DriveCartelle: spazio, tipi, cartelle del telefono; sotto, la parte di oggi.
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 72.dp, bottom = bottomSpace), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item(key = "space") { SpaceCard(phoneSpace) }
+        item(key = "kinds") {
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                KindPill(EuriseIcons.image(), Color(0xFF4F6B5A), stringResource(R.string.drive_kind_images)) { if (access) onFolder(Folder(data.phone, Environment.DIRECTORY_PICTURES)) else onAccess() }
+                KindPill(EuriseIcons.music(), Color(0xFFA8742A), stringResource(R.string.drive_kind_audio)) { if (access) onFolder(Folder(data.phone, Environment.DIRECTORY_MUSIC)) else onAccess() }
+                KindPill(EuriseIcons.video(), Color(0xFF8C2F39), stringResource(R.string.drive_kind_video)) { if (access) onFolder(Folder(data.phone, Environment.DIRECTORY_MOVIES)) else onAccess() }
+                KindPill(EuriseIcons.document(), Color(0xFF5B6FA8), stringResource(R.string.drive_documents)) { if (access) onFolder(Folder(data.phone, Environment.DIRECTORY_DOCUMENTS)) else onAccess() }
+            }
+        }
+        if (!access) {
+            item(key = "access") {
+                Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
+                    FolderRow(stringResource(R.string.drive_phone), stringResource(R.string.drive_access_grant), onClick = onAccess)
+                }
+            }
+        } else if (roots.isNotEmpty()) {
+            item(key = "l-f") { SectionLabel(stringResource(R.string.drive_folders_count, roots.size)) }
+            item(key = "folders") {
+                val shown = if (allFolders) roots else roots.take(8)
+                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    shown.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { f -> FolderTile(f.name, Modifier.weight(1f)) { onFolder(Folder(data.phone, f.path)) } }
+                            if (pair.size == 1) Box(Modifier.weight(1f))
+                        }
+                    }
+                    if (roots.size > 8) {
+                        TextButton(onClick = { allFolders = !allFolders }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            Text(if (allFolders) stringResource(R.string.drive_fewer_folders) else stringResource(R.string.drive_all_folders, roots.size))
+                        }
+                    }
+                }
+            }
+        }
+        item(key = "l-today") { SectionLabel(stringResource(R.string.drive_today)) }
         item(key = "quick") { QuickActions(onScan, onUpload, onNewFolder) }
         if (forEvents.isNotEmpty()) item(key = "events") { ForEventsCard(forEvents, onOpen) }
         tidy?.takeIf { !it.isEmpty }?.let { t ->
@@ -336,25 +399,15 @@ private fun Overview(
         }
         if (recents.isNotEmpty()) {
             item(key = "l-r") { SectionLabel(stringResource(R.string.drive_recent)) }
-            item(key = "recents") {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(recents, key = { it.key }) { RecentCard(it) { onOpen(it) } }
+            if (recentKinds.size > 2) item(key = "recent-kinds") {
+                Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    recentKinds.forEach { k -> FilterPill(stringResource(k.label), dot = null, selected = recentKind == k) { recentKind = k } }
                 }
             }
-        }
-        item(key = "l-f") { SectionLabel(stringResource(R.string.drive_folders)) }
-        item(key = "folders") {
-            Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
-                if (access) {
-                    FolderRow(stringResource(R.string.drive_documents), stringResource(R.string.drive_phone)) { onFolder(Folder(data.phone, Environment.DIRECTORY_DOCUMENTS)) }
-                    CardDivider()
-                    FolderRow(stringResource(R.string.drive_downloads), stringResource(R.string.drive_phone)) { onFolder(Folder(data.phone, Environment.DIRECTORY_DOWNLOADS)) }
-                } else {
-                    FolderRow(stringResource(R.string.drive_phone), stringResource(R.string.drive_access_grant), onClick = onAccess)
-                }
-                places.forEach { p ->
-                    CardDivider()
-                    FolderRow(p.label, stringResource(R.string.drive_title), p) { onFolder(Folder(p, "")) }
+            item(key = "recents") {
+                val list = recents.filter { recentKind.matches(it) }
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(list, key = { it.key }) { RecentCard(it) { onOpen(it) } }
                 }
             }
         }
@@ -378,10 +431,46 @@ private fun Overview(
                 }
             }
         }
-        if (spaces.isNotEmpty()) {
-            item(key = "l-space") { SectionLabel(stringResource(R.string.drive_space)) }
-            item(key = "space") { SpaceBars(spaces) }
-        }
+    }
+}
+
+/** I filtri dei recenti (Recenti a schede, tavola DriveCartelle). */
+private enum class RecentKind(val label: Int) {
+    All(R.string.drive_recent_all), Docs(R.string.drive_recent_docs), Scans(R.string.drive_recent_scans),
+    Photos(R.string.drive_recent_photos), Cloud(R.string.drive_recent_cloud);
+
+    fun matches(item: DriveItem): Boolean = when (this) {
+        All -> true
+        Docs -> Kind.of(item.extension) in setOf(Kind.Pdf, Kind.Doc, Kind.Sheet, Kind.Slides)
+        Scans -> item.name.contains("scansion", ignoreCase = true) || item.path.contains("Scansioni", ignoreCase = true) || item.name.startsWith("Scan", ignoreCase = true)
+        Photos -> Kind.of(item.extension) == Kind.Image
+        Cloud -> item.place.account != null
+    }
+}
+
+@Composable
+private fun KindPill(icon: ImageVector, tint: Color, label: String, onClick: () -> Unit) {
+    Row(
+        Modifier.height(38.dp).clip(RoundedCornerShape(19.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick).padding(start = 10.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
+        Text(label, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun FolderTile(name: String, modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier.height(56.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick).padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        FolderGlyph(null, Modifier.size(26.dp, 22.dp))
+        Text(name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -473,6 +562,9 @@ private fun FolderList(
         value = try { data.list(folder.place, folder.path) } catch (e: java.io.IOException) { failed = true; emptyList() } catch (e: DavException) { failed = true; emptyList() }
     }
     val current = items
+    val cloudSpace by produceState<Space?>(null, folder, refresh) {
+        value = if (folder.path.isEmpty() && folder.place.account != null) data.cloudSpace(folder.place) else null
+    }
     var kind by remember(folder) { mutableStateOf<Kind?>(null) }
     val shown = remember(current, query, sort, kind) {
         current.orEmpty().filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
@@ -515,7 +607,18 @@ private fun FolderList(
         dismissButton = { TextButton(onClick = { confirmTrash = false }) { Text(stringResource(android.R.string.cancel)) } },
     )
     Box(Modifier.fillMaxSize()) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace + if (selecting) 72.dp else 0.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 92.dp, bottom = bottomSpace + if (selecting) 72.dp else 0.dp)) {
+        // In cima a un cloud: le tacchette e lo spazio usato su totale (tavola DriveCloud).
+        if (folder.path.isEmpty() && folder.place.account != null && !folder.place.isTree && folder.place.vaultRoot == null) item(key = "cloud-head") {
+            Column(Modifier.padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val (score, where) = placePrivacy(data.kindOf(folder.place))
+                Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.drive_cloud_section), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    eu.eurise.core.designsystem.component.PrivacyMeter(score, where)
+                }
+                SpaceCard(cloudSpace)
+            }
+        }
         if (folder.place.account != null && !folder.place.isTree && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
             Row(
                 Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow)
@@ -617,6 +720,7 @@ internal fun ItemSheet(
     onMove: (String) -> Unit, onFail: (Exception) -> Unit, onRefresh: () -> Unit, onSync: () -> Unit,
 ) {
     var linking by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     var moving by remember { mutableStateOf(false) }
     var showVersions by remember { mutableStateOf(false) }
     val cloudExtras = remember(item) { data.supportsLinks(item.place) }
@@ -651,6 +755,7 @@ internal fun ItemSheet(
                     SheetAction(EuriseIcons.refresh(), stringResource(R.string.drive_sync_action), Modifier.weight(1f), onSync)
                 }
                 if (cloudExtras) {
+                    SheetAction(EuriseIcons.person(), stringResource(R.string.drive_share_with_short), Modifier.weight(1f)) { sharing = true }
                     SheetAction(EuriseIcons.link(), stringResource(R.string.drive_link), Modifier.weight(1f)) { linking = true }
                     if (!item.folder) SheetAction(EuriseIcons.clock(), stringResource(R.string.drive_versions), Modifier.weight(1f)) { showVersions = true }
                 }
@@ -671,6 +776,7 @@ internal fun ItemSheet(
         }
     }
     if (linking) LinkDialog(data, item, onClose = { linking = false; onRefresh() }, onFail = onFail)
+    if (sharing) ShareWithSheet(data, item, onClose = { sharing = false; onRefresh() }, onFail = onFail)
     if (moving) MoveDialog(data, item, onClose = { moving = false }, onMove = onMove)
     if (showVersions) VersionsDialog(data, item, onClose = { showVersions = false; onRefresh() }, onFail = onFail)
     if (renaming) NameDialog(stringResource(R.string.drive_rename), item.name, stringResource(R.string.drive_save), { renaming = false }, onRename)

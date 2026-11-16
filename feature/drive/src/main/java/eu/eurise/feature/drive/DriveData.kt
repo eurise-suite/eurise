@@ -28,7 +28,8 @@ data class DriveItem(val place: Place, val path: String, val name: String, val f
 
 data class TrashItem(val id: String, val name: String, val original: String, val at: Long, val size: Long)
 
-data class Space(val label: String, val used: Long, val total: Long?)
+/** Spazio usato su totale di un posto ([place] nullo: il telefono). */
+data class Space(val label: String, val used: Long, val total: Long?, val place: Place? = null)
 
 /** Accesso unico a telefono e cloud; il navigatore non sa dove sta davvero un file. */
 class DriveData(private val context: Context) {
@@ -269,6 +270,19 @@ class DriveData(private val context: Context) {
 
     suspend fun removeLink(place: Place, share: DavShare) = dav(place).removeLink(share.id)
 
+    // --- Condividi con… (collaborazione rapida, 17 novembre): persone, dal cloud dell'utente ---
+
+    suspend fun peopleOf(item: DriveItem): List<eu.eurise.core.cloud.DavPersonShare> = dav(item.place).sharesOf(item.path)
+
+    /** Con un'email il server manda il link personale; senza chiocciola è un utente dello stesso server. */
+    suspend fun shareWith(item: DriveItem, with: String, edit: Boolean) =
+        dav(item.place).shareWith(item.path, with.trim(), byEmail = '@' in with, edit = edit, folder = item.folder)
+
+    suspend fun setShareEdit(item: DriveItem, share: eu.eurise.core.cloud.DavPersonShare, edit: Boolean) =
+        dav(item.place).setShareEdit(share.id, edit, item.folder)
+
+    suspend fun unshare(item: DriveItem, share: eu.eurise.core.cloud.DavPersonShare) = dav(item.place).removeShare(share.id)
+
     // --- Offline ---
 
     private fun offlineList(): JSONArray = JSONArray(prefs.getString(KEY_OFFLINE, "[]"))
@@ -387,14 +401,27 @@ class DriveData(private val context: Context) {
     }
 
     suspend fun spaces(): List<Space> = withContext(Dispatchers.IO) {
+        listOf(phoneSpace()) + places.mapNotNull { cloudSpace(it) }
+    }
+
+    /** Lo spazio del telefono (memoria interna). */
+    fun phoneSpace(): Space {
         val stat = StatFs(root.path)
-        val out = arrayListOf(Space(phone.label, stat.totalBytes - stat.availableBytes, stat.totalBytes))
-        places.forEach { p ->
-            runCatching { dav(p).quota() }.getOrNull()?.let { q ->
-                out += Space(p.label, q.used ?: 0, q.available?.let { a -> (q.used ?: 0) + a })
-            }
-        }
-        out
+        return Space(phone.label, stat.totalBytes - stat.availableBytes, stat.totalBytes, null)
+    }
+
+    /** Lo spazio di un cloud, se il server lo dice (quota WebDAV). */
+    suspend fun cloudSpace(p: Place): Space? = withContext(Dispatchers.IO) {
+        if (p.account == null || p.isTree || p.vaultRoot != null) return@withContext null
+        runCatching { dav(p).quota() }.getOrNull()?.let { q -> Space(p.label, q.used ?: 0, q.available?.let { a -> (q.used ?: 0) + a }, p) }
+    }
+
+    /** Che servizio è un cloud collegato (per le tacchette della privacy). */
+    fun kindOf(p: Place): eu.eurise.core.cloud.CloudKind? = accounts.get(p.account)?.kind
+
+    /** Le cartelle in cima alla memoria del telefono, senza quelle nascoste. */
+    suspend fun phoneFolders(): List<DriveItem> = withContext(Dispatchers.IO) {
+        runCatching { list(phone, "") }.getOrDefault(emptyList()).filter { it.folder && !it.name.startsWith(".") }.sortedBy { it.name.lowercase() }
     }
 
     companion object {

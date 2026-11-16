@@ -30,6 +30,12 @@ class DavException(val code: Int, message: String) : Exception(message)
 /** Un link pubblico; [path] è relativo alla cartella principale dell'utente. */
 data class DavShare(val id: String, val path: String, val url: String, val expires: String?)
 
+/**
+ * Una condivisione con una persona («Condividi con…», collaborazione rapida): [with] è l'utente del server o l'email,
+ * [edit] se può modificare, [name] come la mostra il server.
+ */
+data class DavPersonShare(val id: String, val path: String, val with: String, val name: String, val byEmail: Boolean, val edit: Boolean)
+
 /** Una versione precedente di un file; [modified] è la data nel formato del server. */
 data class DavVersion(val href: String, val modified: String, val size: Long?)
 
@@ -262,6 +268,46 @@ class WebDav(
         call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "unshare: ${res.code}") }
     }
 
+    /**
+     * Condivide [path] con una persona: un utente dello stesso server o, se [byEmail], un indirizzo email che riceve
+     * il link personale dal server. [edit]: può modificare (per una cartella anche aggiungere ed eliminare).
+     */
+    suspend fun shareWith(path: String, with: String, byEmail: Boolean, edit: Boolean, folder: Boolean) {
+        val type = if (byEmail) "4" else "0"
+        val form = okhttp3.FormBody.Builder().add("path", "/" + path.trim('/')).add("shareType", type).add("shareWith", with.trim())
+            .add("permissions", permissions(edit, folder).toString())
+        val req = request("$sharesUrl?format=json".toHttpUrl()).header("OCS-APIRequest", "true").post(form.build()).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "share with: ${res.code}") }
+    }
+
+    /** Le persone con cui è condiviso [path] (utenti, federati, email), senza i link pubblici. */
+    suspend fun sharesOf(path: String): List<DavPersonShare> {
+        val url = "$sharesUrl?format=json&reshares=true&path=" + java.net.URLEncoder.encode("/" + path.trim('/'), "UTF-8")
+        val req = request(url.toHttpUrl()).header("OCS-APIRequest", "true").get().build()
+        return call(req) { res ->
+            if (res.code == 404) return@call emptyList()
+            if (!res.isSuccessful) throw DavException(res.code, "shares of: ${res.code}")
+            val data = org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").optJSONArray("data") ?: return@call emptyList()
+            (0 until data.length()).map { data.getJSONObject(it) }.filter { it.optInt("share_type") in PERSON_TYPES }.map {
+                DavPersonShare(
+                    id = it.getString("id"), path = it.optString("path").trimStart('/'), with = it.optString("share_with"),
+                    name = it.optString("share_with_displayname").ifBlank { it.optString("share_with") },
+                    byEmail = it.optInt("share_type") == 4, edit = (it.optInt("permissions") and 2) != 0,
+                )
+            }
+        }
+    }
+
+    /** Cambia «vede» / «modifica» di una condivisione. */
+    suspend fun setShareEdit(id: String, edit: Boolean, folder: Boolean) {
+        val form = okhttp3.FormBody.Builder().add("permissions", permissions(edit, folder).toString()).build()
+        val req = request("$sharesUrl/$id?format=json".toHttpUrl()).header("OCS-APIRequest", "true").put(form).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "share update: ${res.code}") }
+    }
+
+    /** Toglie una condivisione (persona o link): da quel momento non vede più nulla. */
+    suspend fun removeShare(id: String) = removeLink(id)
+
     /** Le versioni precedenti di un file, dalla più recente. */
     suspend fun versions(path: String): List<DavVersion> {
         val idReq = request(url(path)).header("Depth", "0").method("PROPFIND", FILEID_BODY.toRequestBody(XML)).build()
@@ -367,7 +413,15 @@ class WebDav(
     private fun parseXml(xml: String) = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
         .newDocumentBuilder().parse(xml.byteInputStream())
 
+    private fun permissions(edit: Boolean, folder: Boolean): Int = when {
+        !edit -> 1                 // lettura
+        folder -> 1 or 2 or 4 or 8 // lettura, modifica, aggiunta, eliminazione
+        else -> 1 or 2             // lettura e modifica
+    }
+
     companion object {
+        /** Utente (0), email (4), federato (6): le condivisioni con una persona. */
+        private val PERSON_TYPES = setOf(0, 4, 6)
         const val USER_AGENT = "Eurise (Android)"
         private const val DAV_NS = "DAV:"
         private const val CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
