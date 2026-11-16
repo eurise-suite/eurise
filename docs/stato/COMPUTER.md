@@ -78,7 +78,7 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 
 ## Giorni
 
-### 16 novembre: Oggi dalle tavole PcOggi e PcOggiNotte
+### 16 novembre: Oggi dalle tavole PcOggi e PcOggiNotte · giro 657 (prova-computer, in apk-prova)
 - `desktop/app`: `TodayScreen.kt` come la tavola (data, saluto con il nome dal sistema e «Oggi hai 4 impegni, il primo
   alle 11», «Scrivi come parli» con Evento/Da fare/Nota, tre colonne di schede, riga della privacy), Perla e Notte con lo
   stesso codice (riquadri delle icone = tinta stemperata nella scheda). Barra in alto con **Nuovo** (Ctrl N: Oggi con il
