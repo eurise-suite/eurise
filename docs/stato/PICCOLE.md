@@ -84,7 +84,7 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - Da provare sul telefono: posizione del riquadro sopra le parole (anche con una mano e tastiera flottante), tocchi sul
   riquadro, pallino, Voce e Cursore dal riquadro.
 
-## 17 novembre: niente tendina sulle parole sbagliate (giro in corso)
+## 17 novembre: niente tendina sulle parole sbagliate (giro 704, in apk-prova)
 - Il proprietario: toccando una parola sottolineata, l'app (Vivaldi) apriva la tendina delle proposte del controllo
   ortografico, nascondeva la tastiera e obbligava a scegliere o cancellare la parola. Ora di base il controllo ortografico
   della Tastiera sottolinea soltanto (`PREF_SPELLCHECK_SUGGEST` spento di base, `RESULT_ATTR_DONT_SHOW_UI_FOR_SUGGESTIONS`,

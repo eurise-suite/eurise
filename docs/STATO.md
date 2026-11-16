@@ -3325,3 +3325,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Comunicazione: idee per famiglia, amici e lavoro approvate; 25 tavole nuove (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi) da approvare → `docs/stato/COMUNICAZIONE.md`.
 - 16 novembre, notte, Office: Office e motore nel giro 692 di `apk-prova`; testata nostra verificata sull'emulatore a schermo grande → `docs/stato/OFFICE.md`.
 - 17 novembre, primissime ore, Organizzazione: tavole tutte approvate; Drive come nelle tavole (cassetto, spazio, Scanner, Oggi sotto le cartelle), «Condividi con…» per file e cartelle del cloud, invitati negli appuntamenti · giro 701 → `docs/stato/ORGANIZZAZIONE.md`.
+- 17 novembre, Tastiera: parole sbagliate solo sottolineate, niente tendina delle app · giro 704 → `docs/stato/PICCOLE.md`.
