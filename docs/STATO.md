@@ -3317,3 +3317,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, notte, Mappe: Mappe 75 in `apk-prova` (chiusura in Android Auto corretta); `apk-prova.yml` prende Mappe anche da `prova-mappe` → `docs/stato/MAPPE.md`.
 - 16 novembre, Comunicazione: tavole «Lavorare insieme» (9) e «Spese di gruppo» (3) sulla tela, da approvare → `docs/stato/COMUNICAZIONE.md`.
 - 16 novembre, sera, Mappe: bolla della musica e delle chiamate in guida (telefono e Android Auto), servizio «Testi delle canzoni» (core/suite, core/designsystem) → `docs/stato/MAPPE.md`.
+- 16 novembre, notte, Mappe: Mappe 76 (bolla della musica e delle chiamate) ed Eurise 681 in `apk-prova`; prossimo: le otto aggiunte alla bolla, in una chat nuova → `docs/stato/MAPPE.md`.

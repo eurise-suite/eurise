@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul computer.
 
-## Fatto (in breve, al 16 novembre, 13:03)
+## Fatto (in breve, al 16 novembre, notte)
 - **Mappe in stile suite** su CoMaps (patch in `maps/eurise_patch.py`, codice in `maps/android/…/eurise/`, guida in
   `maps/EURISE.md`): Esplora (orizzonte col meteo in alto, scorciatoie, «Dove sei»), Attività e Cerca, ricerca a pillola,
   Livelli e fonti, scheda del luogo e scheda aperta (con gli **orari nello stile della tavola**), barra in orizzontale,
@@ -122,16 +122,29 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   `NowPlayingText.java` con le prove `maps/test/…/NowPlayingTextTest.java` (aggiunte al lavoro di Mappe).
 - **Parti comuni toccate**: `core/suite` (PrivacyCenter, PrivacyContract.SHARED), `core/designsystem` (ServiceConsent,
   ServicesWelcome, `ds_s_lyrics`). Serve anche l'APK di Eurise nuovo perché la voce dei testi compaia.
+- **Pubblicati** il 16 novembre alle 22:41: **Mappe 76** (bolla e correzione di Android Auto) ed **Eurise 681** (servizio dei
+  testi nel centro privacy; nello stesso giro è fallito solo il Flatpak per Linux, errore del disco del runner).
 - Da provare: guida con Spotify e con un'altra app; chiamata in arrivo e in corso (anche in auto); pausa; telefono in
   orizzontale; testi accesi.
 
 ## Prossimi passi, in ordine
-0. **Bolla della musica e delle chiamate**: prova del proprietario dopo il giro.
-1. **Prova del giro con la correzione** (avvio della navigazione in auto, poi):
-   Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
-   dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
-   («di solito meno di 1 MB»).
-2. Prove di Mappe 48, 51, 58, 60 e 65: fatte dal proprietario (16 novembre); i problemi trovati sono quelli già corretti.
+1. **Prova del proprietario di Mappe 76 ed Eurise 681**: avvio della navigazione in auto (non deve più chiudersi; microfono
+   nella schermata della bandierina); bolla in guida (Livelli › Musica e chiamate in guida, poi l'accesso alle notifiche)
+   con Spotify e un'altra app, chiamata in arrivo e in corso, pausa, telefono in orizzontale, auto; Livelli › Dalla rete ›
+   Testi delle canzoni.
+2. **Bolla, otto aggiunte chieste dal proprietario il 16 novembre («implementa tutto»)**: prima gli stati nuovi sulla tela
+   (riga MapBolla, pagina «comunicazione») da mostrare, poi il codice:
+   a) podcast e audiolibri: capitolo e «all'arrivo mancheranno 8 min» (o «finisce prima dell'arrivo»);
+   b) brano successivo «Dopo: …» dalla coda dell'app (`MediaController.getQueue`, quando c'è);
+   c) radio: stazione e programma in onda (dai metadati della sessione);
+   d) chiamata persa in guida: «Hai perso Giulia · Richiama all'arrivo» e promemoria in Attività (app Eurise);
+   e) ritardo: quando chiama chi ha un impegno con te, «Avvisa: arrivo alle 9:54» con un tocco, tramite Messaggi;
+   f) messaggi in arrivo: «Messaggio da Marco», un tocco e Alfred lo legge a voce;
+   g) impegni e Orologio: «Riunione tra 20 min · arrivi 4 min dopo», timer e sveglie che stanno per suonare;
+   h) arrivo condiviso: «Giulia vede il tuo arrivo» finché la condivisione è attiva.
+   Le d), e), f), g) passano dall'app Eurise e da Messaggi (fornitori di contenuti della suite, permessi di firma): parti
+   comuni da toccare solo se serve, scritte qui. In auto le azioni (Richiama, Avvisa, Leggi) solo dove i modelli di
+   Android Auto lo permettono (massimo 4 pulsanti nella fila della guida: oggi sono 4).
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
