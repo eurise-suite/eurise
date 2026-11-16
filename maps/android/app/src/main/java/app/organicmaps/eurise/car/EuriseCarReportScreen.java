@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleOwner;
 import app.organicmaps.R;
 import app.organicmaps.car.renderer.Renderer;
 import app.organicmaps.car.screens.base.BaseMapScreen;
+import app.organicmaps.car.screens.search.SearchScreen;
 import app.organicmaps.car.util.UiHelpers;
 import app.organicmaps.eurise.EuriseGuideReports;
 import app.organicmaps.eurise.EuriseGuideReports.Kind;
@@ -74,8 +75,30 @@ public class EuriseCarReportScreen extends BaseMapScreen
     final Header header = new Header.Builder()
                               .setStartHeaderAction(Action.BACK)
                               .setTitle(c.getString(R.string.eurise_guide_title))
+                              .addEndHeaderAction(micAction())
                               .build();
     return new GridTemplate.Builder().setHeader(header).setSingleList(list.build()).build();
+  }
+
+  /**
+   * Il microfono di Alfred in guida. Sta qui e non nella fila in alto della guida, che ha già quattro pulsanti, il
+   * massimo per l'auto. «Autovelox», «c'è una coda»… segnano come il tocco sulla griglia; ogni altra frase cerca il luogo.
+   */
+  @NonNull
+  private Action micAction()
+  {
+    final CarContext c = getCarContext();
+    return new Action.Builder()
+        .setIcon(new CarIcon.Builder(IconCompat.createWithResource(c, R.drawable.eurise_ic_mic)).build())
+        .setOnClickListener(() -> getScreenManager().push(new EuriseCarListenScreen(c, text -> {
+          final Kind kind = Kind.fromWords(text);
+          if (kind != null)
+            report(kind);
+          else
+            getScreenManager().push(
+                new SearchScreen.Builder(c, getSurfaceRenderer()).setQuery(text).build());
+        })))
+        .build();
   }
 
   @NonNull

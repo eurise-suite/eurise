@@ -1658,34 +1658,10 @@ patch(car_sc, """    mPillOverlay.setLayoutParams(getOverlayLayoutParams());
   }""")
 print("eurise_patch: velocità, via e meteo con lo schermo diviso in Android Auto")
 
-# Il microfono di Alfred anche in guida e nella ricerca di Android Auto (prova del 16 novembre: la dettatura della
-# tastiera dell'auto non funziona senza i servizi Google, e in guida il microfono non c'era). In guida una frase come
-# «autovelox» o «c'è una coda» segna la segnalazione; altrimenti si cerca il luogo. Nella ricerca la frase diventa il
-# testo cercato.
-patch(navscreen, """    final ActionStrip.Builder builder = new ActionStrip.Builder();
-    builder.addAction(createTtsAction());""", """    final ActionStrip.Builder builder = new ActionStrip.Builder();
-    builder.addAction(new Action.Builder()
-        .setIcon(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(), R.drawable.eurise_ic_mic)).build())
-        .setOnClickListener(() -> getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(
-            getCarContext(), text -> {
-              final app.organicmaps.eurise.EuriseGuideReports.Kind kind =
-                  app.organicmaps.eurise.EuriseGuideReports.Kind.fromWords(text);
-              if (kind != null)
-              {
-                final app.organicmaps.eurise.EuriseGuideReports.Report r =
-                    app.organicmaps.eurise.EuriseGuideReports.add(getCarContext(), kind);
-                CarToast.makeText(getCarContext(),
-                    r == null ? getCarContext().getString(R.string.eurise_guide_no_position)
-                              : getCarContext().getString(kind.label) + " "
-                                + app.organicmaps.eurise.EuriseGuideReports.placed(getCarContext(), r),
-                    CarToast.LENGTH_LONG).show();
-              }
-              else
-                getScreenManager().push(new app.organicmaps.car.screens.search.SearchScreen.Builder(
-                    getCarContext(), getSurfaceRenderer()).setQuery(text).build());
-            })))
-        .build());
-    builder.addAction(createTtsAction());""")
+# Il microfono di Alfred anche nella ricerca di Android Auto (prova del 16 novembre: la dettatura della tastiera dell'auto
+# non funziona senza i servizi Google): la frase diventa il testo cercato. In guida il microfono sta nella schermata della
+# bandierina (EuriseCarReportScreen), non nella fila in alto: lì ci sono già voce, impostazioni, bandierina e stop, e
+# l'auto ne accetta al massimo quattro (con il quinto Mappe 69 si chiudeva all'avvio della navigazione).
 patch(car_search, """    if (!mQuery.isEmpty() && mResults != null && !mResults.getItems().isEmpty())
       builder.setActionStrip(createActionStrip());""", """    // Eurise: il microfono di Alfred sempre qui (la dettatura della tastiera dell'auto non va senza Google), e
     // «Mostra sulla mappa» quando ci sono risultati.
