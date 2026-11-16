@@ -123,6 +123,10 @@ class Tab(
     /** Bolla «Accedi come…» (più accessi per il sito) e bolla «Salvo l'accesso?»: le risposte vanno a Gecko. */
     var loginChoice by mutableStateOf<LoginChoice?>(null)
     var loginSave by mutableStateOf<LoginSave?>(null)
+    /** La richiesta della pagina in corso (avviso, conferma, menu a tendina, data…): la mostra [PagePromptDialog]. */
+    var pagePrompt by mutableStateOf<PageAsk?>(null)
+    /** «Scegli un file» della pagina: lo apre l'attività ([FilePicker]). */
+    var onFiles: (PageAsk) -> Unit = { it.cancel() }
     /** Un file da scaricare (risposta che Gecko non mostra): si salva la risposta già ricevuta (vedi [Downloads]). */
     var onDownload: (org.mozilla.geckoview.WebResponse) -> Unit = {}
     /** «Sito PC»: la versione per il computer di questo sito. */
@@ -220,6 +224,26 @@ class Tab(
         })
         // Accessi ai siti: quale accesso usare e se salvarne uno nuovo (bolle sopra la barra; Logins per i dati).
         session.promptDelegate = object : GeckoSession.PromptDelegate {
+            private fun ask(p: GeckoSession.PromptDelegate.BasePrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                pagePrompt?.cancel()
+                pagePrompt = PageAsk(p, result).also { a -> a.onGone { if (pagePrompt === a) pagePrompt = null } }
+                return result
+            }
+            override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt) = ask(prompt)
+            override fun onButtonPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ButtonPrompt) = ask(prompt)
+            override fun onTextPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.TextPrompt) = ask(prompt)
+            override fun onChoicePrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ChoicePrompt) = ask(prompt)
+            override fun onDateTimePrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.DateTimePrompt) = ask(prompt)
+            override fun onColorPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ColorPrompt) = ask(prompt)
+            override fun onAuthPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AuthPrompt) = ask(prompt)
+            override fun onBeforeUnloadPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt) = ask(prompt)
+            override fun onRepostConfirmPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt) = ask(prompt)
+            override fun onFilePrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.FilePrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                onFiles(PageAsk(prompt, result))
+                return result
+            }
             override fun onLoginSelect(
                 session: GeckoSession,
                 request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>,

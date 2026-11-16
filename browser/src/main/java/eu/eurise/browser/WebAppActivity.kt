@@ -52,6 +52,7 @@ class WebAppActivity : ComponentActivity() {
         tab = Tab(this, System.currentTimeMillis(), private = false, onNewTab = { link ->
             runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClass(this, BrowserActivity::class.java)) }
         })
+        tab.onFiles = files::pick
         tab.load(url)
         setContent {
             EuriseTheme {
@@ -65,12 +66,15 @@ class WebAppActivity : ComponentActivity() {
                     }
                     if (!tab.fullscreen) {
                         LoginBubbles(tab, onUnlock = ::unlock)
+                        PagePromptDialog(tab)
                         Box(Modifier.navigationBarsPadding())
                     }
                 }
             }
         }
     }
+
+    private val files = FilePicker(this)
 
     private val unlockResult = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
         if (r.resultCode == RESULT_OK) { Logins.lockedDomain = null; tab.session.reload() }

@@ -3310,3 +3310,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
 - 16 novembre, notte, Organizzazione: Note bloccate e vocali, blocchi con menu, cursore in vista, Calendario compatto, icone col colore originale, Drive con selezione multipla; tavole Agenda, Rubrica, icone, Drive da approvare · giro 671 → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, Office: ramo `office` unito in `brand` (Office leggero da Compila, motore da office-app su `prova-office`, AppearanceProvider, motore nel centro privacy) → `docs/stato/OFFICE.md`.
+- 16 novembre, Browser: upload dei file, menu a tendina, avvisi e date delle pagine (il motore li chiudeva senza risposta) → `docs/stato/BROWSER.md`.

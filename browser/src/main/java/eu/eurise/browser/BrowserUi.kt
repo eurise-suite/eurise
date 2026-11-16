@@ -219,6 +219,7 @@ fun BrowserScreen(
             }
         }
         if (tab != null && !editing && tab.fullscreen != true) LoginBubbles(tab, onUnlock = actions::unlockPassword)
+        if (tab != null) PagePromptDialog(tab)
         if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })

@@ -43,6 +43,8 @@ class BrowserModel(private val context: Context) {
     var downloads by mutableIntStateOf(0)
     /** Dove vanno i download di tutte le schede (lo fissa l'attività). */
     var onDownload: (org.mozilla.geckoview.WebResponse) -> Unit = {}
+    /** «Scegli un file» delle pagine di tutte le schede (lo fissa l'attività). */
+    var onFiles: (PageAsk) -> Unit = { it.cancel() }
     var current by mutableStateOf<Tab?>(null)
         private set
     /** La schermata delle schede è aperta; [tabsSearch]: con la ricerca (Ctrl+K). */
@@ -81,6 +83,7 @@ class BrowserModel(private val context: Context) {
         val tab = Tab(context, nextId++, private, onNewTab = { uri -> val g = current?.group; open(uri, private).group = g },
             history = if (private) null else history, dark = { settings.darkPages }, images = { settings.images })
         tab.onDownload = { onDownload(it) }
+        tab.onFiles = { onFiles(it) }
         return tab
     }
 

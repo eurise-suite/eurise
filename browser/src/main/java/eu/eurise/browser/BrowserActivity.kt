@@ -101,6 +101,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         model = BrowserModel(this)
         Logins.currentUrl = { model.current?.url }
         model.onDownload = ::download
+        model.onFiles = files::pick
         model.restoreTabs()
         handle(intent)
         androidx.core.content.ContextCompat.registerReceiver(
@@ -146,6 +147,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     /** I download nei riquadri in basso, nell'ordine in cui sono partiti. I nostri hanno numeri negativi, quelli di Android positivi. */
     private val dls = mutableStateListOf<DownloadState>()
+    private val files = FilePicker(this)
     private var dlSeq = 0L
     private val mine = HashSet<Long>()
 

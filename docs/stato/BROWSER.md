@@ -41,6 +41,10 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   (con «Chiedi dove salvare» il file andava in Download e in più nella cartella scelta: ora, quando Eurise File risponde
   che l'ha salvato, la copia in Download si toglie; se si annulla resta in Download con l'avviso; i «Salva in…» vanno in
   fila uno alla volta); nella barra delle schede la **✕ della scheda aperta sta in fondo alla scheda**, non dopo il titolo.
+- Telefono, **richieste delle pagine** (16 novembre, `PagePrompts.kt`): il motore passava al browser «scegli un file»,
+  `<select>`, avvisi e conferme, testo, data e ora, colore, accesso HTTP, «lasciare la pagina?», «rimandare il modulo?»
+  e senza risposta le chiudeva: **gli upload non funzionavano** (prova del proprietario: una foto). Ora il selettore di
+  Android (uno o più file, tipi della pagina) e finestre Material per il resto; anche nelle web app.
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
