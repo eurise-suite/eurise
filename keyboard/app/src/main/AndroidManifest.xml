@@ -149,6 +149,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:exported="false">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/eurise_pick_paths" />
         </provider>
+        <!-- Eurise: quello che la tastiera ha imparato, per il backup cifrato della suite. Solo app Eurise con la stessa firma. -->
+        <provider
+            android:name="eu.eurise.keyboard.BackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <!-- Eurise: la Scrivania dice se le sue bolle sono scure. Solo app Eurise con la stessa firma. -->
         <receiver
             android:name="eu.eurise.keyboard.HomeThemeReceiver"

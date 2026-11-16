@@ -12,8 +12,8 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…) e le impostazioni delle app
- * (Scrivania, bolle, Orologio, farmaci, date…). Restano fuori le cache, gli account cloud e le chiavi del
+ * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
+ * (Scrivania, bolle, Orologio, farmaci, date…) e quello che ha imparato Eurise Tastiera ([KeyboardBackup]). Restano fuori le cache, gli account cloud e le chiavi del
  * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano.
  */
 object BackupArchive {
@@ -43,6 +43,11 @@ object BackupArchive {
                     f.inputStream().use { it.copyTo(zip) }
                     zip.closeEntry()
                 }
+            KeyboardBackup.export(context)?.let { bytes ->
+                zip.putNextEntry(ZipEntry(KeyboardBackup.ENTRY))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
         }
         return out.toByteArray()
     }
@@ -81,7 +86,7 @@ object BackupArchive {
             while (true) {
                 val e = zip.nextEntry ?: break
                 val name = e.name
-                val ok = name == "databases/$DB" || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
+                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
                 if (!ok || e.isDirectory) continue
                 val target = File(dir, name).apply { parentFile?.mkdirs() }
@@ -112,6 +117,7 @@ object BackupArchive {
             File(dir, "shared_prefs").listFiles().orEmpty().forEach { f ->
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
             }
+            File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it) }
         }
         dir.deleteRecursively()
     }

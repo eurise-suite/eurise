@@ -1941,6 +1941,7 @@ public final class InputLogic {
      * @param inputTransaction The transaction in progress.
      */
     private void revertCommit(final InputTransaction inputTransaction) {
+        eu.eurise.keyboard.TouchModel.reverted(); // Eurise: correzione annullata, non si impara
         final CharSequence originallyTypedWord = mLastComposedWord.mTypedWord;
         final CharSequence committedWord = mLastComposedWord.mCommittedWord;
         final String committedWordString = committedWord.toString();
@@ -2497,6 +2498,10 @@ public final class InputLogic {
         // what user typed. Note: currently this is done much later in
         // LastComposedWord#didCommitTypedWord by string equality of the remembered
         // strings.
+        // Eurise: la parola lasciata insegna al modello del tocco dove la persona tocca ogni lettera (TouchModel).
+        eu.eurise.keyboard.TouchModel.wordCommitted(mWordComposer.getTypedWord(), chosenWord,
+                mWordComposer.getInputPointers(), mWordComposer.isBatchMode(),
+                commitType == LastComposedWord.COMMIT_TYPE_DECIDED_WORD && !chosenWord.equals(mWordComposer.getTypedWord()));
         mLastComposedWord = mWordComposer.commitWord(commitType, chosenWord, separatorString, ngramContext);
         if (DebugFlags.DEBUG_ENABLED) {
             long runTimeMillis = SystemClock.elapsedRealtime() - startTimeMillis;

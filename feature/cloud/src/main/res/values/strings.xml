@@ -135,7 +135,7 @@
     <string name="backup_turn_off">Spegni il backup</string>
     <string name="backup_turn_off_hint">Niente più backup automatici; quelli già fatti restano dove sono</string>
     <string name="backup_explain_title">Backup cifrato</string>
-    <string name="backup_explain_read">Cosa viene letto: i dati di Eurise su questo telefono (note, attività, collegamenti, impostazioni, home, sveglie). Le foto restano fuori.</string>
+    <string name="backup_explain_read">Cosa viene letto: i dati di Eurise su questo telefono (note, attività, collegamenti, impostazioni, home, sveglie) e quello che ha imparato Eurise Tastiera (parole, dizionario personale, modo di toccare i tasti). Le foto restano fuori.</string>
     <string name="backup_explain_where">Dove va: nella destinazione che scegli tu (un cloud o una cartella), già cifrato con AES-256 sul telefono.</string>
     <string name="backup_explain_who">Chi lo vede: nessuno. Il servizio vede solo un file illeggibile, con data e dimensione; noi non abbiamo modo di aprirlo.</string>
     <string name="backup_explain_back">Come tornare indietro: «Spegni il backup», senza conferme. I file già fatti li cancelli tu dalla destinazione.</string>

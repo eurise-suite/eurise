@@ -774,6 +774,7 @@ public class LatinIME extends InputMethodService implements
         mInputView = view;
         eu.eurise.keyboard.TouchFix.INSTANCE.init(this);
         eu.eurise.keyboard.TouchOffset.INSTANCE.init(this);
+        eu.eurise.keyboard.TouchModel.INSTANCE.init(this);
         mEuriseBar = view.findViewById(R.id.eurise_bar);
         if (mEuriseBar != null) mEuriseBar.attach(this, view);
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
@@ -1139,6 +1140,7 @@ public class LatinIME extends InputMethodService implements
         super.onFinishInputView(finishingInput);
         Log.i(TAG, "onFinishInputView");
         cleanupInternalStateForFinishInput();
+        eu.eurise.keyboard.TouchModel.finishInput(); // Eurise: salva il modello del tocco
     }
 
     private void cleanupInternalStateForFinishInput() {
@@ -1519,6 +1521,7 @@ public class LatinIME extends InputMethodService implements
         // Eurise: impara dalle correzioni «lettera → cancella → spazio» (TouchFix).
         eu.eurise.keyboard.TouchFix.INSTANCE.committed(event.getKeyCode() != Event.NOT_A_KEY_CODE ? event.getKeyCode() : event.getCodePoint());
         eu.eurise.keyboard.TouchOffset.INSTANCE.committed(event.getKeyCode() != Event.NOT_A_KEY_CODE ? event.getKeyCode() : event.getCodePoint());
+        eu.eurise.keyboard.TouchModel.committed(event.getKeyCode() != Event.NOT_A_KEY_CODE ? event.getKeyCode() : event.getCodePoint());
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             // Eurise: prima la dettatura di Eurise Voce (sul telefono); se non c'è, quella scelta nel sistema.
             if (mEuriseBar == null || !mEuriseBar.startDictation()) mRichImm.switchToShortcutIme(this);

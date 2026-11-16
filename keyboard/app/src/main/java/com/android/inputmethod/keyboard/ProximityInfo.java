@@ -206,6 +206,32 @@ public class ProximityInfo {
                 }
                 infoIndex++;
             }
+        } else if (eu.eurise.keyboard.TouchModel.isReady()) {
+            // Eurise: il modello del tocco per tasto (TouchModel) dà al motore il punto preferito e il raggio di ogni
+            // lettera, imparati da come scrive la persona; gli altri tasti hanno i valori di AOSP.
+            sweetSpotCenterXs = new float[keyCount];
+            sweetSpotCenterYs = new float[keyCount];
+            sweetSpotRadii = new float[keyCount];
+            final float defaultRadius = DEFAULT_TOUCH_POSITION_CORRECTION_RADIUS
+                    * (float)Math.hypot(mMostCommonKeyWidth, mMostCommonKeyHeight);
+            for (int infoIndex = 0, keyIndex = 0; keyIndex < sortedKeys.size(); keyIndex++) {
+                final Key key = sortedKeys.get(keyIndex);
+                if (!needsProximityInfo(key)) {
+                    continue;
+                }
+                final float[] spot = eu.eurise.keyboard.TouchModel.sweetSpot(key);
+                if (spot != null) {
+                    sweetSpotCenterXs[infoIndex] = spot[0];
+                    sweetSpotCenterYs[infoIndex] = spot[1];
+                    sweetSpotRadii[infoIndex] = spot[2];
+                } else {
+                    final Rect hitBox = key.getHitBox();
+                    sweetSpotCenterXs[infoIndex] = hitBox.exactCenterX();
+                    sweetSpotCenterYs[infoIndex] = hitBox.exactCenterY();
+                    sweetSpotRadii[infoIndex] = defaultRadius;
+                }
+                infoIndex++;
+            }
         } else {
             sweetSpotCenterXs = sweetSpotCenterYs = sweetSpotRadii = null;
             if (DEBUG) {

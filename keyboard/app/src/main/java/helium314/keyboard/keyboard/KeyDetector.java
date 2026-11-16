@@ -104,9 +104,12 @@ public class KeyDetector {
                 primaryKey = key;
             }
         }
+        // Eurise: sul bordo tra due lettere decide il modello del tocco per tasto, se conosce bene entrambe (TouchModel).
+        final Key byModel = eu.eurise.keyboard.TouchModel.choose(mKeyboard, primaryKey, rawX, rawY);
         // Eurise: la parte bassa dei tasti sopra la barra spaziatrice conta come spazio (TouchFix).
-        final Key chosen = eu.eurise.keyboard.TouchFix.INSTANCE.adjust(mKeyboard, primaryKey, touchX, touchY);
+        final Key chosen = eu.eurise.keyboard.TouchFix.INSTANCE.adjust(mKeyboard, byModel, touchX, touchY);
         eu.eurise.keyboard.TouchOffset.INSTANCE.touched(chosen, rawX, rawY);
+        eu.eurise.keyboard.TouchModel.touched(chosen, rawX, rawY);
         return chosen;
     }
 }
