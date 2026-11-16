@@ -84,6 +84,14 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - Da provare sul telefono: posizione del riquadro sopra le parole (anche con una mano e tastiera flottante), tocchi sul
   riquadro, pallino, Voce e Cursore dal riquadro.
 
+## 17 novembre: niente tendina sulle parole sbagliate (giro in corso)
+- Il proprietario: toccando una parola sottolineata, l'app (Vivaldi) apriva la tendina delle proposte del controllo
+  ortografico, nascondeva la tastiera e obbligava a scegliere o cancellare la parola. Ora di base il controllo ortografico
+  della Tastiera sottolinea soltanto (`PREF_SPELLCHECK_SUGGEST` spento di base, `RESULT_ATTR_DONT_SHOW_UI_FOR_SUGGESTIONS`,
+  Android 12 e oltre); si riaccende in Correzione del testo. Le correzioni restano nella fila delle parole.
+- Se la tendina restasse, il controllo ortografico di sistema non è quello di Eurise (Impostazioni di Android › Lingue e
+  immissione › Controllo ortografico).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:

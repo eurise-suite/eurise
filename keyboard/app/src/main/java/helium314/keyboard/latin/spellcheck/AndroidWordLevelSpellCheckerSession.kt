@@ -221,6 +221,9 @@ abstract class AndroidWordLevelSpellCheckerSession(private val mService: Android
                 }
             }
             if (allWordsAreValid && !periodOnlyAtLastIndex) {
+                // Eurise: senza proposte nelle app, anche qui solo la sottolineatura (niente tendina).
+                if (!mService.prefs().getBoolean(Settings.PREF_SPELLCHECK_SUGGEST, Defaults.PREF_SPELLCHECK_SUGGEST))
+                    return AndroidSpellCheckerService.getTypoNoUiSuggestions()
                 return SuggestionsInfo(
                     SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO or SuggestionsInfo.RESULT_ATTR_HAS_RECOMMENDED_SUGGESTIONS,
                     arrayOf<String?>(TextUtils.join(Constants.STRING_SPACE, splitText))

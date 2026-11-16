@@ -207,6 +207,11 @@ object Defaults {
     const val PREF_USER_MORE_COLORS = 0
     const val PREF_USER_ALL_COLORS = ""
     const val PREF_SAVE_SUBTYPE_PER_APP = false
-    const val PREF_SPELLCHECK_SUGGEST = true
+    /**
+     * Eurise (17 novembre): di base la parola sbagliata resta solo sottolineata. Con le proposte accese le app aprono la
+     * loro tendina quando la si tocca, nascondono la tastiera e obbligano a scegliere o cancellare tutta la parola;
+     * le correzioni sono già nella fila delle parole.
+     */
+    const val PREF_SPELLCHECK_SUGGEST = false
     const val PREF_SHOW_ONLY_TOOLBAR_WITH_HARDWARE_KEYBOARD = true // Eurise: con la tastiera del tablet restano solo le barre
 }
