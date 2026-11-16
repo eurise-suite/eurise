@@ -53,6 +53,18 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - **Frasi abituali**: già attive in HeliBoard (parole imparate fino a quattro di fila, previsioni della parola dopo). Una
   proposta di frase intera nella fila dei suggerimenti sarebbe un'aggiunta all'interfaccia: prima una tavola.
 
+## 16 novembre, notte: zoom nell'editor della Galleria, tavola della barra a comparsa
+- **Galleria, editor**: con due dita si ingrandisce (fino a 6 volte) e si sposta la foto mentre la si modifica; un dito
+  resta per ritagliare, scrivere e disegnare (i gesti degli strumenti lavorano nelle coordinate della foto, quindi non
+  cambiano). Tornando sotto 1,05 la foto torna intera. Richiesta del proprietario, senza tavola (è un gesto).
+- **Tastiera, impressione del proprietario sul giro 663**: «migliorata notevolmente»; la precisione si può spingere ancora.
+- **Tavola nuova, da approvare** (pagina Integrazioni, fila a y 4200; toccato `canvas.json` della tela): la barra di Eurise
+  non sta più sempre sopra le parole. Un tasto con la stella sulla fila delle parole (lato della mano dominante) apre sopra
+  le parole un riquadro con i comandi di Eurise (Calcola, Codici, File, Persona, Libero, Traduci, Cerca) e gli strumenti
+  della tastiera (Appunti, Emoji, Cursore, Una mano, Annulla, Dettatura, Impostazioni); le proposte (Crea attività, codici,
+  abbreviazioni) entrano tra le parole come prima voce e un pallino sul tasto avvisa. Tavole: TastComparsaChiusa,
+  TastComparsaAperta, TastComparsaProposta. Proposta del proprietario.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -64,10 +76,13 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
     11 novembre: scritte in codice subito, su richiesta del proprietario di non aspettare le conferme).
   - Senza tavola, nello stile della suite: Luoghi, Cerca, diario, cartella protetta, pulizia della Galleria; importazione di
     Password.
-- **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
+- **Da approvare**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta (barra di Eurise a comparsa, 16 novembre).
+  PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
+0. **Barra di Eurise a comparsa**: appena approvate le tre tavole, codice in `EuriseBar` (la fila dei comandi diventa un
+   riquadro sopra le parole, il tasto con la stella nella fila delle parole di HeliBoard, «Altro» sparisce).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
    gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200
    esempi, a fine scrittura). Dire se le lettere accanto escono ancora, se le correzioni sono migliori o peggiori, e
@@ -106,7 +121,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Tastiera: https://github.com/eurise-suite/eurise/releases/download/apk-prova/EuriseTastiera-debug.apk
   - Galleria: https://github.com/eurise-suite/eurise/releases/download/apk-prova/gallery-debug.apk
   - Se cambia `core/suite`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
-- Parti comuni toccate: `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
+- Parti comuni toccate: `canvas.json` della tela (fila TastComparsa) il 16 novembre, notte; `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
 - Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy; servizi chiusi per ultimi con avviso.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
   scrive qui.

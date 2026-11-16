@@ -11,6 +11,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -66,9 +69,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -118,6 +123,9 @@ import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.roundToInt
+
+/** Ingrandimento massimo con due dita nell'editor. */
+private const val MAX_ZOOM = 6f
 
 private enum class Tool(val label: Int) {
     Crop(R.string.editor_tool_crop),
@@ -224,7 +232,47 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
             ) { Text(stringResource(R.string.editor_save), color = if (busy) Muted else OnAccent, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold) }
         }
 
-        Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).onSizeChanged { boxSize = it }, contentAlignment = Alignment.TopStart) {
+        // Zoom con due dita: ingrandisce e sposta la foto mentre la si modifica (un dito resta per ritagliare,
+        // scrivere e disegnare). Le coordinate dei gesti restano quelle della foto, quindi gli strumenti non cambiano.
+        var zoom by remember { mutableFloatStateOf(1f) }
+        var pan by remember { mutableStateOf(Offset.Zero) }
+        fun clampPan(p: Offset, z: Float) = Offset(
+            p.x.coerceIn(boxSize.width * (1 - z), 0f),
+            p.y.coerceIn(boxSize.height * (1 - z), 0f),
+        )
+        Box(
+            Modifier.weight(1f).fillMaxWidth().clipToBounds().padding(horizontal = 20.dp, vertical = 12.dp).onSizeChanged { boxSize = it }
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        do {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.changes.count { it.pressed } >= 2) {
+                                val factor = event.calculateZoom()
+                                val moved = event.calculatePan()
+                                val centroid = event.calculateCentroid(useCurrent = true)
+                                if (factor != 1f || moved != Offset.Zero) {
+                                    val next = (zoom * factor).coerceIn(1f, MAX_ZOOM)
+                                    val anchor = (centroid - moved - pan) / zoom
+                                    pan = clampPan(centroid - anchor * next, next)
+                                    zoom = next
+                                }
+                                // Con due dita si ingrandisce soltanto: gli strumenti sotto non ricevono il gesto.
+                                event.changes.forEach { it.consume() }
+                            }
+                        } while (event.changes.any { it.pressed })
+                        if (zoom < 1.05f) { zoom = 1f; pan = Offset.Zero }
+                    }
+                },
+            contentAlignment = Alignment.TopStart,
+        ) {
+          Box(Modifier.fillMaxSize().graphicsLayer {
+              scaleX = zoom
+              scaleY = zoom
+              translationX = pan.x
+              translationY = pan.y
+              transformOrigin = TransformOrigin(0f, 0f)
+          }) {
             val bitmap = shown
             if (bitmap != null && boxSize != IntSize.Zero) {
                 val fit = min(boxSize.width.toFloat() / bitmap.width, boxSize.height.toFloat() / bitmap.height)
@@ -360,6 +408,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
             } else if (source == null) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center), color = Accent)
             }
+          }
         }
 
         Column(Modifier.fillMaxWidth().heightIn(min = 150.dp).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
