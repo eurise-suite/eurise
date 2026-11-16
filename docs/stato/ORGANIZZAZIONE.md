@@ -68,6 +68,29 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   erano già approvate.
 - **Giro 661** (Compila 43928299330 su `prova-organizzazione`) riuscito e pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
 
+## 16 novembre, notte: Note bloccate e vocali, correzioni chieste dal proprietario
+- **Note bloccate** (NoteBlocca, NoteBloccata, approvate): `LockedBlock` nel formato della nota (`<section data-eurise-lock>`),
+  contenuto e titolo cifrati AES-GCM (`feature/notes/lock/NoteLock.kt`); chiave in `core/cloud/lock/LockKeys.kt`, sigillata
+  dal portachiavi di Android, portata dal backup cifrato della suite (voce `lock/notes.key` in `BackupArchive`); sblocco
+  con `BiometricPrompt` di sistema (Android 8: schermata del sistema), si richiude dopo 5 minuti o uscendo dall'app;
+  ricerca, Alfred, Scrivania e cloud vedono solo il titolo (o niente, se nascosto). Senza blocco schermo non si blocca.
+- **Note vocali** (NoteVocale, approvata): `AudioBlock` (`<figure data-eurise="voice">`), registrazione `AudioRecord` 16 kHz
+  in AAC .m4a con MediaCodec (`voice/VoiceRecorder.kt`, file in `files/note-vocali/`), testo da Eurise Voce a pezzi
+  mentre si parla (`voice/VoiceTranscriber.kt`, `VoiceContract`), «Metti il testo nella nota», «Da fare» trovato.
+  **Manca**: i file audio non vanno ancora nel cloud (sul telefono nuovo resta il testo).
+- **Blocchi delle Note**: menu sempre visibile (Sposta su/giù, Duplica, Elimina) per tabella, disegno, linea, nota vocale;
+  tabella con linee tra le colonne e + / − di righe e colonne.
+- **Cursore sempre in vista**: `core/designsystem/component/CaretInView.kt` (parte comune), usato in Note, Attività,
+  Calendario; le altre aree possono usarlo per i loro editor.
+- **Calendario**: testata compatta, via l'Agenda dalle viste, icona col numero di oggi; ogni appuntamento la sua casella.
+- **Icone di altre app**: simbolo nel colore del disegno originale (`LogoMask.glyphColor`), se leggibile sulla bolla.
+- **Drive**: selezione multipla (pressione lunga; Tutti, Sposta, Elimina); `glass(solid = true)` in core/designsystem ha un
+  fondo quasi opaco (testata e dock di Drive non più trasparenti; vale per tutte le parti «solid»).
+- **Tavole nuove da approvare**: pagina Agenda (AgeGiorno, AgeScrivi: Oggi diventa Agenda, contatti suggeriti mentre si
+  scrive), pagina Rubrica (RubElenco, RubNuovo con «Dove lo salvo?», RubScheda), IcoColoreBolle (pagina Icone), Drive come
+  Murena (DriveCartelle, DriveCassetto, pagina Drive e Scanner, dalle foto del proprietario).
+- Giri: 671 (Note) pubblicato; il secondo (Calendario, icone, Drive) è Compila 43961822438.
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -80,7 +103,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Scrivania come temi «(nuove)» accanto ai vecchi; Calendario, Attività e Note non hanno ancora un'icona di sistema loro.
 - **Approvate, sul computer (le segue l'area Computer, `COMPUTER.md`)**: PcOggi e PcOggiNotte in codice dal 16 novembre
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
-- **Da approvare**: NoteBlocca, NoteBloccata, NoteVocale (pagina Note, 16 novembre).
+- **Da approvare**: AgeGiorno, AgeScrivi, RubElenco, RubNuovo, RubScheda, IcoColoreBolle, DriveCartelle, DriveCassetto (16 novembre, notte). NoteBlocca, NoteBloccata, NoteVocale approvate e in codice.
 
 ## Prossimi passi, in ordine
 1. **Prove del proprietario rimaste senza esito** (giro 651 in `apk-prova` o il prossimo): temi delle icone «(nuove)» nella
@@ -88,10 +111,11 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
    silenziato, suoneria per persona con Eurise Telefono); sfondo del blocco (alcune ROM ignorano `FLAG_LOCK`); foglio del
    primo avvio; «Salva in…» / «Apri da…»; editor dello scanner (confronto con kDrive); «Aggiungi al calendario» e .ics dalle
    altre app; registro errori; «I tuoi giorni» (compleanno di oggi in Date importanti → incrocio in Mappe).
-2. **Approvazione di NoteBlocca, NoteBloccata, NoteVocale**, poi il codice (cifratura con chiave nel Keystore e sblocco
-   biometrico; registrazione con `AudioRecord` e trascrizione da `TranscribeService` di Eurise Voce; audio in
-   `Eurise/Note/<id>/` per la sincronizzazione). Poi i simboli nuovi al posto di quelli a tratto nei temi «Eurise» ed
-   «Eurise a colori».
+2. **Approvazione delle tavole del 16 novembre notte**, poi il codice: Agenda al posto di Oggi (con contatti suggeriti
+   anche nel nuovo appuntamento e con @ nelle Attività), Rubrica (con l'area Comunicazione, che ha la Rubrica
+   dell'APK Telefono), icone che seguono il colore delle bolle, Drive a cartelle con il cassetto.
+   Poi: file audio delle note vocali nel cloud (`Eurise/Note/<id>/`); i simboli nuovi nei temi «Eurise» ed «Eurise a colori».
+   Idee di collaborazione rapida proposte in chat (da scegliere).
 3. **Pulizia che resta**: Chip, Card, Pill e Field copiati tra le app hanno forme diverse da caso a caso: unificarli solo
    dove sono davvero uguali (come `SwitchRow`).
 4. **Rimasti aperti delle app**: foto e scansioni nelle Note; colori dei calendari con «Il tuo

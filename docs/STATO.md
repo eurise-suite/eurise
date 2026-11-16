@@ -2804,3 +2804,4 @@ così l'altra chat non le annulla.
 - 16 novembre, sera, Organizzazione: icone di Calendario, Attività e Note nel cassetto, `SwitchRow` comune in core/designsystem, Scrivania e Drive divisi in più file, tavole NoteBlocca/NoteBloccata/NoteVocale da approvare · giro 661 → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, Browser: download multipli, niente doppioni con «Salva in…», ✕ in fondo alla scheda aperta → `docs/stato/BROWSER.md`.
 - 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
+- 16 novembre, notte, Organizzazione: Note bloccate e vocali, blocchi con menu, cursore in vista, Calendario compatto, icone col colore originale, Drive con selezione multipla; tavole Agenda, Rubrica, icone, Drive da approvare · giro 671 → `docs/stato/ORGANIZZAZIONE.md`.
