@@ -27,7 +27,12 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - **MapViaggio 2-6** (fila «Mappe dall'apertura alla partenza») in codice dal 16 novembre, 13:03 (commit 579b305, giro
   **Mappe 69**); MapViaggio1 è com'era l'app prima.
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
-- Da approvare: nessuna tavola di Mappe in attesa.
+- **Da approvare** (16 novembre, sera; pagina «comunicazione», riga sotto MapViaggio): **MapBollaAuto** (Android Auto in
+  guida, bolla allungata a destra con la musica: copertina e app, titolo, autore, album e anno, tempo passato, che manca e
+  durata, riga del testo), **MapBollaAutoChiamata** (la stessa bolla durante una chiamata: nome o numero, tipo, durata,
+  vivavoce, impegno in comune), **MapBollaTelefono** (guida sul telefono, bolla a destra sotto la manovra). Scelte proposte:
+  dati dall'accesso alle notifiche (interruttore «Musica e chiamate in guida» in Livelli, spento di base, nulla esce);
+  testi da LRCLIB con il servizio «Testi delle canzoni» a parte, spento di base (Spotify non dà i testi alle altre app).
 
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
@@ -99,13 +104,15 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Causa: il giro delle 13:03 aveva messo il microfono nella fila in alto della guida (`NavigationScreen.createActionStrip`),
   che con voce, impostazioni, bandierina e stop arrivava a cinque pulsanti; l'auto ne accetta al massimo quattro e la
   schermata della guida lanciava un errore, che chiude tutto il processo (auto e telefono).
-- Correzione (commit 960cd74, giro su `prova-mappe`): il microfono in guida sta in alto nella schermata della bandierina
+- Correzione (commit 960cd74, giro Mappe 75 su `prova-mappe`; Mappe 70 fallito per Gradle che non trovava il plugin
+  Kotlin, errore di rete): il microfono in guida sta in alto nella schermata della bandierina
   (`EuriseCarReportScreen.micAction`); «autovelox», «c'è una coda»… segnano, ogni altra frase cerca il luogo. La fila
   della guida torna a quattro. Nella ricerca dell'auto restano due pulsanti (microfono e «Mostra sulla mappa»), il massimo.
 - Regola per i prossimi giri: prima di aggiungere un pulsante in Android Auto contare quelli che ci sono (fila della
   guida e della mappa: 4; ricerca: 2; intestazione: 2).
 
 ## Prossimi passi, in ordine
+0. **Tavole MapBolla** (musica e chiamate in guida): approvazione del proprietario, poi il codice.
 1. **Prova del giro con la correzione** (avvio della navigazione in auto, poi):
    Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
    dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
