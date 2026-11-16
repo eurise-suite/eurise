@@ -68,6 +68,30 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   dislivello, scelte). Oggi in alto nel percorso c'è ancora la barra di CoMaps (indietro, auto/pedone/mezzi/bici/righello,
   opzioni): adattata nel giro delle 13:03.
 
+## 16 novembre, pomeriggio: le schermate come le tavole MapViaggio (approvate) e Alfred in Android Auto (Mappe 69)
+- Il proprietario approva le tavole MapViaggio 1-6 e chiede che l'app sia davvero così (in Mappe 65 restavano pezzi di
+  CoMaps). Fatto:
+  - **Percorso** (4 e 6): `eurise/ui/EuriseViaggio.kt` in alto (`routing_plan.xml`, agganciata in
+    `RoutingPlanController`): scheda di vetro con partenza, tappe, arrivo e scambia; pillole «Evita …» del mezzo (solo
+    quelle che il motore sa fare: auto pedaggi, autostrade, traghetti; bici sterrati, scale, traghetti; a piedi scale,
+    sterrati) e «+ Tappa». La barra di CoMaps e il suo riquadro delle opzioni restano nel layout, nascosti. In basso
+    `EurisePercorso`: mezzi con simbolo e tempo, riassunto (tempo, distanza, arrivo, scelte attive, dislivello col grafico
+    del motore in bici e a piedi, impegno) al posto delle righe di CoMaps (nascoste a ogni aggiornamento).
+    Non fatte perché il motore non le ha: «km su pista ciclabile» e le scelte «più piste / meno salita / più breve».
+  - **Tappe** (5): foglio dal basso (`EuriseViaggio.showStops`): righe da trascinare tenendo premuto, togli, «lungo la
+    strada» (benzinaio, bar, parcheggio, farmacia: ricerca della categoria, il luogo scelto entra come tappa), aggiungi
+    una tappa, Fatto (stesso ordine dei punti di «Pianifica» di CoMaps).
+  - **Luogo** (3): impegno in cima, «Indicazioni · ≈ N min» (stima dalla linea d'aria), la barra dei pulsanti di CoMaps
+    sparisce quando non si pianifica.
+  - **Ricerca** (2): titolo grande, Dal Calendario, Sempre a portata (Casa e Lavoro = preferiti chiamati «Casa»/«Lavoro»,
+    contatto, benzinai), recenti, poi Cerca vicino e mappe; campo di CoMaps spostato in basso sopra la tastiera
+    (`EuriseSearchHome.bottomField`, `fragment_search.xml`).
+- **Dettatura in Android Auto**: il proprietario dice che né il nostro microfono né quello della tastiera dell'auto fanno
+  nulla. Quello della tastiera è dell'auto (Assistente Google): senza i servizi Google non va e non possiamo cambiarlo.
+  Il nostro ora apre «Ti ascolto» (`car/EuriseCarListenScreen.java`) con ogni passo e ogni errore in vista (permesso sul
+  telefono, microfono dell'auto che non manda audio entro 3 s, Eurise Voce assente o senza modello) e «Riprova»; il
+  microfono c'è anche in guida e nella ricerca. Un ascolto rimasto appeso non blocca più i tocchi dopo.
+
 ## Prossimi passi, in ordine
 1. **Mappe 67**: quando la compilazione riesce, `apk-prova.yml` e link diretti in chat. Poi prova del proprietario:
    Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
