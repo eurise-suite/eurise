@@ -60,6 +60,8 @@ motore (`eurise-office-motore-debug.apk`); `apk-prova.yml` mette insieme i due (
   `eurise_patch.py`); `CrashGuard` in `core/designsystem/crash` (per ora solo nel Browser); «Apri con» PDF nell'APK
   principale (`PdfOpenActivity`, 15 novembre).
 
+- **16 novembre, giro 692** (`apk-prova`): Office leggero 17 MB e motore 113 MB (primo giro di office-app su
+  `prova-office`, 1 h 46 senza ccache). `CrashGuard` è già dentro Office leggero (fornitore di `core/designsystem`).
 - **16 novembre, unione in `brand`**: un solo «Apri con» per i PDF (quello di File, con «Modifica in Office»);
   `AppearanceProvider` nell'app Eurise (accento della Scrivania per le icone di Office); centro privacy: servizio
   «Motore dei documenti di Office» (GitHub, Stati Uniti), acceso e annotato da Office quando si scarica; icona colorata
@@ -82,12 +84,13 @@ OffOggiCaricamento, OffOggiTablet, OffOggiComputer, 14 novembre).
 approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la tela.
 
 ## Prossimi passi (in ordine)
-1. **Motore su `prova-office`**: il primo giro di office-app sul ramo nuovo riparte senza ccache (la cache di Actions
-   non passa da un ramo all'altro): circa 2–3 ore. Poi `apk-prova` con Office e motore insieme, e prova sull'emulatore
-   con `schermo=grande`.
-2. **Testata in stile Collabora sul telefono** (segnalata il 16 novembre aprendo «Aspetto esatto»): sull'emulatore la
-   testata è la nostra; probabile che sul telefono ci fosse Office 57 (la vecchia app di Collabora, pubblicata in
-   `apk-prova` il 16 novembre con lo stesso pacchetto). Verificare con la prova «grande» e con la foto del proprietario.
+1. **Testata in stile Collabora sul telefono** (segnalata il 16 novembre aprendo «Aspetto esatto»): con Office e motore
+   del giro 692 la prova sull'emulatore a schermo grande (prova 43977581784, `schermo=grande`, 1080×1920) mostra la
+   nostra testata (indietro, nome, Salvato, ricerca, annulla, condividi) e la dock. Quasi certamente sul telefono c'era
+   Office 57 (vecchia app di Collabora, stesso pacchetto). Aspettare la conferma del proprietario; se resta, chiedere una foto.
+2. **Pubblicazione condivisa**: `apk-prova` la rifanno tutte le aree. Un'area che pubblica da un ramo senza l'unione del 16
+   novembre lascia `apk-prova` senza Office (è successo con il giro 667): si ripubblica da `prova-office` portato alla
+   testa di `brand`. Dal giro 692 Compila carica sempre Office e `apk-prova` prende il motore da office-app.
 3. **Prova del proprietario sul telefono**: «Scarica» del motore, vista rapida (anche presentazioni), card dei gruppi,
    PDF con «Inserisci da Scanner» (ora l'app Eurise ha `ScanForResultActivity`), accento delle icone dalla Scrivania.
 4. **OffRapporto e OffRapportoVedi in codice** con `CrashGuard` (in Office e nel processo del motore).

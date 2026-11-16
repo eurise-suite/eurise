@@ -3323,3 +3323,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, notte, Tastiera: strumenti del riquadro nell'ordine scelto dal proprietario · giro 690 → `docs/stato/PICCOLE.md`.
 - 17 novembre, Mappe: tavole delle otto aggiunte alla bolla (MapBollaPodcast…Arrivo, MapBollaAutoStati) sulla tela, da approvare → `docs/stato/MAPPE.md`.
 - 17 novembre, Comunicazione: idee per famiglia, amici e lavoro approvate; 25 tavole nuove (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi) da approvare → `docs/stato/COMUNICAZIONE.md`.
+- 16 novembre, notte, Office: Office e motore nel giro 692 di `apk-prova`; testata nostra verificata sull'emulatore a schermo grande → `docs/stato/OFFICE.md`.
