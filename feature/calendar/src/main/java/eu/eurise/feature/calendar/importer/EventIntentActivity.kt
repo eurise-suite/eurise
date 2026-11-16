@@ -100,7 +100,7 @@ class EventIntentActivity : ComponentActivity() {
             onEndDate = vm::onEndDate,
             onEndTime = vm::onEndTime,
             onCreateLocal = { vm.createLocalCalendar(localName, CalendarTint.BluNotte.light.toArgb()) },
-            onSave = { vm.save { setResult(RESULT_OK); finish() } },
+            onSave = { vm.save(onSaved = { setResult(RESULT_OK); finish() }) },
             onDelete = { finish() },
             onClose = { finish() },
         )
