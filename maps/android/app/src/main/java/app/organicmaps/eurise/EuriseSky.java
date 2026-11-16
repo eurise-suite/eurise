@@ -219,7 +219,15 @@ public final class EuriseSky
       case INVERNO -> new int[] {0xFFB4B8AE, 0xFFA0A59A};
       default -> new int[] {0xFFB9A889, 0xFFA89878}; // autunno, come la tavola
     };
-    return new int[] {mix(base[0], EuriseLandscape.skyBottom(s), 0.35f), base[1]};
+    final int[] day = {mix(base[0], EuriseLandscape.skyBottom(s), 0.35f), base[1]};
+    // Di sera e di notte le colline prendono i toni del cielo (blu-grafite della suite): il velo scuro sopra un colore
+    // di giorno lasciava un marrone strano sull'orizzonte (prova di Mappe 58).
+    return switch (s.momento)
+    {
+      case NOTTE -> new int[] {mix(day[0], 0xFF2B3554, 0.8f), mix(day[1], 0xFF1F2A44, 0.85f)};
+      case SERA -> new int[] {mix(day[0], 0xFF6A6585, 0.45f), mix(day[1], 0xFF4A4660, 0.45f)};
+      default -> day;
+    };
   }
 
   private static int mix(int a, int b, float t)

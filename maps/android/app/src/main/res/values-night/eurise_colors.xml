@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="eurise_guide_column">#1C2027</color>
+    <color name="eurise_glass">#E61C2333</color>
+    <color name="eurise_glass_edge">#29FFFFFF</color>
+    <color name="eurise_guide_ink">#E8ECF4</color>
+    <color name="eurise_guide_ink_dim">#59E8ECF4</color>
 </resources>

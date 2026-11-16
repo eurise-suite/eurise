@@ -2,6 +2,12 @@
 <resources>
     <!-- Fondo blu notte delle icone della suite (docs/brand/android/README.md). -->
     <color name="eurise_icon_background">#1F2A44</color>
-    <!-- Colonna della manovra in orizzontale: Perla (Notte in values-night). -->
-    <color name="eurise_guide_column">#F4F4F1</color>
+    <!-- Vetro satinato della guida, come le bolle della suite (barra di Mappe): Perla di giorno, Notte in values-night.
+         Il giorno e la notte li decide CoMaps con l'ora del tramonto (tema notte dell'app). -->
+    <color name="eurise_glass">#E6FFFFFF</color>
+    <color name="eurise_glass_edge">#1F1E1D1B</color>
+    <color name="eurise_guide_ink">#1F2A44</color>
+    <color name="eurise_guide_ink_dim">#591F2A44</color>
+    <!-- Colonna della manovra in orizzontale: lo stesso vetro. -->
+    <color name="eurise_guide_column">@color/eurise_glass</color>
 </resources>

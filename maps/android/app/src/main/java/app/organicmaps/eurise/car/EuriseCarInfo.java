@@ -71,6 +71,8 @@ public final class EuriseCarInfo
     if (sApp == null)
       sApp = app.organicmaps.MwmApplication.sInstance;
     sLast = location;
+    // Schermo diviso in Android Auto: la pillola con velocità, via e meteo (EuriseCarSplitInfo) si aggiorna qui.
+    EuriseCarSplitInfo.refresh();
     if (sLookedUp != null && location.distanceTo(sLookedUp) < LOOKUP_MIN_DISTANCE_M)
       return;
     sLookedUp = location;

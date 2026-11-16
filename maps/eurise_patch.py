@@ -1511,3 +1511,148 @@ patch(manifest, """    <activity
     <activity
         android:name="app.organicmaps.eurise.ui.EuriseFuelActivity\"""")
 print("eurise_patch: mezzi pubblici e viaggi lontani (MapMezzi, MapLontano)")
+
+# Tendina delle notifiche: l'icona piccola è quella di Eurise Mappe (res/drawable/ic_logo_small.xml in maps/android, al
+# posto del logo di CoMaps) e la notifica della guida prende il blu notte della suite invece del verde di CoMaps.
+patch(res / "values" / "colors.xml", """  <color name="notification">@color/base_accent</color>""",
+      """  <color name="notification">#FF1F2A44</color>""")
+print("eurise_patch: icona e colore di Eurise Mappe nella tendina delle notifiche")
+
+# Scritte e segni lontani che sporgevano oltre l'orizzonte nel cielo (prova di Mappe 58): si disegnano solo sotto le
+# colline (drape_frontend/eurise_sky.cpp, EuriseSkyClipLabels), poi il taglio dello schermo torna pieno.
+patch(fr_cpp, """    {
+      StencilWriterGuard guard(make_ref(m_postprocessRenderer), m_context);
+      RenderOverlayLayer(modelView);
+    }
+""", """    {
+      StencilWriterGuard guard(make_ref(m_postprocessRenderer), m_context);
+      bool const euriseClip = EuriseSkyClipLabels(m_context, m_viewport);
+      RenderOverlayLayer(modelView);
+      if (euriseClip)
+        m_viewport.Apply(m_context);
+    }
+""")
+print("eurise_patch: niente scritte nel cielo oltre l'orizzonte")
+
+# Il finestrino della svolta con l'incrocio vero (prova di Mappe 58: a un incrocio a T non si disegna la strada dritta):
+# le direzioni di tutte le strade da auto che partono dall'incrocio più vicino al punto, dal grafo stradale di CoMaps.
+patch(rm_hpp, "  std::string EuriseRoadAt(double lat, double lon, double bearingDeg);\n",
+      """  std::string EuriseRoadAt(double lat, double lon, double bearingDeg);
+  /// Eurise: le direzioni (gradi da nord, in senso orario, separate da «;») delle strade da auto che partono
+  /// dall'incrocio più vicino al punto (entro 15 m); vuota se non c'è un incrocio vicino.
+  std::string EuriseJunctionArms(double lat, double lon);
+""")
+patch(rm_cpp, "void RoutingManager::ResetRoadSpeedLimitCache()\n", """std::string RoutingManager::EuriseJunctionArms(double lat, double lon)
+{
+  double constexpr kSearchM = 40.0, kNodeM = 15.0, kSameDeg = 12.0;
+
+  if (!m_roadSpeedLimit)
+    m_roadSpeedLimit = std::make_unique<RoadSpeedLimitState>(m_callbacks.m_dataSourceGetter(),
+                                                             m_callbacks.m_countryParentNameGetterFn);
+  auto & s = *m_roadSpeedLimit;
+
+  m2::PointD const point = mercator::FromLatLon(lat, lon);
+  std::vector<std::pair<routing::Edge, geometry::PointWithAltitude>> candidates;
+  s.m_graph.FindClosestEdges(mercator::RectByCenterXYAndSizeInMeters(point, kSearchM), 12, candidates);
+
+  // Il nodo del grafo più vicino al punto: un capo di uno dei tratti vicini.
+  geometry::PointWithAltitude node;
+  double best = std::numeric_limits<double>::max();
+  for (auto const & c : candidates)
+  {
+    if (c.first.IsFake())
+      continue;
+    for (auto const & j : {c.first.GetStartJunction(), c.first.GetEndJunction()})
+    {
+      double const d = mercator::DistanceOnEarth(point, j.GetPoint());
+      if (d < best)
+      {
+        best = d;
+        node = j;
+      }
+    }
+  }
+  if (best > kNodeM)
+    return {};
+
+  routing::IRoadGraph::EdgeListT out, in;
+  s.m_graph.GetOutgoingEdges(node, out);
+  s.m_graph.GetIngoingEdges(node, in);
+  std::vector<double> arms;
+  auto const add = [&](m2::PointD const & dir)
+  {
+    if (dir.Length() < 1e-12)
+      return;
+    double deg = std::atan2(dir.x, dir.y) * 180.0 / std::numbers::pi;
+    if (deg < 0)
+      deg += 360.0;
+    for (double a : arms)
+    {
+      double diff = std::fabs(a - deg);
+      diff = std::min(diff, 360.0 - diff);
+      if (diff < kSameDeg)
+        return;
+    }
+    arms.push_back(deg);
+  };
+  for (auto const & e : out)
+    if (!e.IsFake())
+      add(e.GetEndPoint() - e.GetStartPoint());
+  for (auto const & e : in)
+    if (!e.IsFake())
+      add(e.GetStartPoint() - e.GetEndPoint());
+
+  std::string res;
+  for (double a : arms)
+  {
+    if (!res.empty())
+      res += ';';
+    res += std::to_string(static_cast<int>(std::lround(a)) % 360);
+  }
+  return res;
+}
+
+void RoutingManager::ResetRoadSpeedLimitCache()
+""")
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto («Sei su …»), vedi RoutingManager::EuriseRoadAt.""",
+      """// Eurise: le strade che partono da un incrocio (finestrino della svolta), vedi RoutingManager::EuriseJunctionArms.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseJunctionArms(JNIEnv * env, jclass, jdouble lat,
+                                                                                     jdouble lon)
+{
+  return jni::ToJavaString(env, frm()->GetRoutingManager().EuriseJunctionArms(lat, lon));
+}
+
+// Eurise: la strada sotto l'auto per Android Auto («Sei su …»), vedi RoutingManager::EuriseRoadAt.""")
+patch(fw_java, "  public static native String nativeEuriseRoadAt(double lat, double lon, double bearingDeg);\n",
+      """  public static native String nativeEuriseRoadAt(double lat, double lon, double bearingDeg);
+  /** Eurise: direzioni (gradi da nord, «;») delle strade da auto che partono dall'incrocio vicino; vuota se non c'è. */
+  public static native String nativeEuriseJunctionArms(double lat, double lon);
+""")
+print("eurise_patch: le strade vere dell'incrocio per il finestrino della svolta")
+
+# Android Auto con lo schermo diviso (mappa accanto ad altre app): la scheda dell'auto con «Sei su …» e meteo sparisce,
+# quindi una pillola nostra sopra la mappa con velocità, via e meteo (eurise/car/EuriseCarSplitInfo.java).
+car_sc = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car" / "renderer" / "SurfaceCallback.java"
+patch(car_sc, """    mPillOverlay.addView(mSpeedPill, pillParams);
+  }""", """    mPillOverlay.addView(mSpeedPill, pillParams);
+    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarSplitInfo.create(mCarContext));
+  }""")
+patch(car_sc, """    if (mVirtualDisplay == null)
+    {
+      Logger.e(TAG, "Invalid virtual display, aborting.");
+      return;
+    }
+""", """    if (mVirtualDisplay == null)
+    {
+      Logger.e(TAG, "Invalid virtual display, aborting.");
+      return;
+    }
+    app.organicmaps.eurise.car.EuriseCarSplitInfo.onSurface(surfaceContainer.getWidth(), surfaceContainer.getHeight());
+""")
+patch(car_sc, """    mPillOverlay.setLayoutParams(getOverlayLayoutParams());
+    updatePillSize();
+  }""", """    mPillOverlay.setLayoutParams(getOverlayLayoutParams());
+    updatePillSize();
+    app.organicmaps.eurise.car.EuriseCarSplitInfo.onVisibleArea(visibleArea);
+  }""")
+print("eurise_patch: velocità, via e meteo con lo schermo diviso in Android Auto")

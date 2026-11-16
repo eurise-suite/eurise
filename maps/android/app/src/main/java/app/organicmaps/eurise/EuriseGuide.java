@@ -8,7 +8,6 @@ import android.text.TextUtils;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
 import app.organicmaps.R;
 import app.organicmaps.sdk.routing.RoutingInfo;
 import app.organicmaps.sdk.routing.roadshield.RoadShield;
@@ -81,20 +80,32 @@ public final class EuriseGuide
     }
   }
 
-  /** Colora il cartello della svolta e la striscia della via con il tipo della strada dove si gira. */
+  /**
+   * La scheda della manovra è di vetro satinato (chiaro di giorno, scuro di notte, richiesta del 16 novembre): il tipo
+   * della strada dove si gira colora la freccia, in una versione più chiara di notte perché si legga sul vetro scuro.
+   */
   public static void tint(@Nullable View turnFrame, @Nullable View streetFrame, @NonNull RoutingInfo info, boolean pedestrian)
   {
-    final ColorStateList c = pedestrian ? ColorStateList.valueOf(SUITE)
-                                        : ColorStateList.valueOf(color(road(info.nextRef, info.nextStreetRoadShields)));
-    if (turnFrame != null)
-      ViewCompat.setBackgroundTintList(turnFrame, c);
-    if (streetFrame != null)
+    if (turnFrame == null)
+      return;
+    final boolean night = app.organicmaps.util.ThemeUtils.isNightTheme();
+    final int color = pedestrian ? (night ? 0xFFE8ECF4 : SUITE) : arrowColor(road(info.nextRef, info.nextStreetRoadShields), night);
+    final View arrow = turnFrame.findViewById(R.id.turn);
+    if (arrow instanceof android.widget.ImageView)
+      androidx.core.widget.ImageViewCompat.setImageTintList((android.widget.ImageView) arrow, ColorStateList.valueOf(color));
+  }
+
+  /** Il colore della freccia sul vetro: le tinte della suite di giorno, le loro versioni chiare di notte. */
+  public static int arrowColor(@NonNull Road road, boolean night)
+  {
+    if (!night)
+      return color(road);
+    switch (road)
     {
-      ViewCompat.setBackgroundTintList(streetFrame, c);
-      // In verticale (tavola MapGuidaVertB) la scheda intera, dietro il finestrino, ha la stessa tinta.
-      final View card = streetFrame.getRootView().findViewById(app.organicmaps.R.id.eurise_guide_card);
-      if (card != null)
-        ViewCompat.setBackgroundTintList(card, c);
+    case MOTORWAY: return 0xFF9CC3A9;
+    case MAIN: return 0xFFA9C1F2;
+    case PROVINCIAL: return 0xFF8FCFD3;
+    default: return 0xFFE8ECF4;
     }
   }
 

@@ -11,6 +11,7 @@
 #include "drape/mesh_object.hpp"
 #include "drape/render_state.hpp"
 #include "drape/texture.hpp"
+#include "drape/viewport.hpp"
 
 #include "geometry/screenbase.hpp"
 
@@ -62,6 +63,9 @@ struct Gpu
   drape_ptr<dp::MeshObject> m_mesh;
   uint64_t m_version = 0;
   std::vector<float> m_vertices;
+  /// Dove finiscono le colline in questo fotogramma (pixel dall'alto) e l'altezza dello schermo; -1 = niente cielo.
+  double m_clipY = -1.0;
+  double m_clipH = 0.0;
 };
 
 Gpu & GetGpu()
@@ -125,6 +129,7 @@ void EuriseSkySetImage(std::vector<uint8_t> && rgba, uint32_t width, uint32_t he
 
 void EuriseSkyRender(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramManager> mng, ScreenBase const & screen)
 {
+  GetGpu().m_clipY = -1.0;
   if (!screen.isPerspective() || !SyncTexture(context))
     return;
 
@@ -190,6 +195,8 @@ void EuriseSkyRender(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramM
   tri(w, edge, w, br, xr, low);
 
   auto & gpu = GetGpu();
+  gpu.m_clipY = low;
+  gpu.m_clipH = h;
   if (!gpu.m_mesh)
   {
     gpu.m_mesh = make_unique_dp<dp::MeshObject>(context, dp::MeshObject::DrawPrimitive::Triangles, "EuriseSky");
@@ -215,6 +222,22 @@ void EuriseSkyRender(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramM
 
   auto program = mng->GetProgram(gpu::Program::ScreenQuad);
   gpu.m_mesh->Render(context, program, state, mng->GetParamsSetter(), params);
+}
+
+bool EuriseSkyClipLabels(ref_ptr<dp::GraphicsContext> context, dp::Viewport const & viewport)
+{
+  auto const & gpu = GetGpu();
+  if (gpu.m_clipY < 0.0 || gpu.m_clipH <= 1.0)
+    return false;
+  double const scale = viewport.GetHeight() / gpu.m_clipH;
+  auto const top = static_cast<uint32_t>(std::clamp(gpu.m_clipY * scale, 0.0, double(viewport.GetHeight())));
+  uint32_t const height = viewport.GetHeight() - top;
+  // OpenGL conta le righe dal basso, Vulkan dall'alto.
+  if (context->GetApiVersion() == dp::ApiVersion::Vulkan)
+    context->SetScissor(viewport.GetX0(), viewport.GetY0() + top, viewport.GetWidth(), height);
+  else
+    context->SetScissor(viewport.GetX0(), viewport.GetY0(), viewport.GetWidth(), height);
+  return true;
 }
 
 void EuriseSkyReset()

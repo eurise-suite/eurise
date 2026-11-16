@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- La scheda della manovra in verticale (tavola MapGuidaVertB): la tinta del tipo di strada arriva da EuriseGuide.tint. -->
+<!-- La scheda della manovra in verticale: vetro satinato della suite (richiesta del proprietario, 16 novembre), chiaro di
+     giorno e scuro di notte; il tipo di strada colora la freccia (EuriseGuide.tint). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-  <solid android:color="@android:color/white" />
+  <solid android:color="@color/eurise_glass" />
+  <stroke android:width="1dp" android:color="@color/eurise_glass_edge" />
   <corners android:radius="24dp" />
 </shape>

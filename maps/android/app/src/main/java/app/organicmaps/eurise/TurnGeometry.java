@@ -52,6 +52,70 @@ final class TurnGeometry
 
   private static final double SIDE_M = 40;
 
+  /** Ultimo incrocio chiesto al motore: si chiede una volta per incrocio, non a ogni posizione. */
+  private static double sArmsLat = Double.NaN, sArmsLon = Double.NaN;
+  @Nullable private static double[] sArms;
+
+  /**
+   * Le strade dell'incrocio della svolta (prova di Mappe 58: a un incrocio a T non va disegnata la strada dritta): gradi
+   * rispetto alla direzione d'arrivo (0 dritto, + a destra), senza la strada da cui si arriva. Dal grafo stradale di
+   * CoMaps ({@code Framework.nativeEuriseJunctionArms}); null se non si sa (allora la scena è quella di sempre).
+   */
+  @Nullable
+  static float[] arms(double distToTurn)
+  {
+    final Location loc = EuriseCarInfo.last();
+    final RouteGeometry g = RoutingController.get().getRouteGeometry();
+    final JunctionInfo[] p = g.mJunctions;
+    if (loc == null || p.length < 2 || distToTurn < 0)
+      return null;
+    final int near = nearest(p, loc, g.mRevision);
+    final double[] turn = along(p, near, loc.getLatitude(), loc.getLongitude(), distToTurn);
+    final double[] before = along(p, near, loc.getLatitude(), loc.getLongitude(), Math.max(0, distToTurn - SIDE_M));
+    if (turn == null || before == null || meters(before[0], before[1], turn[0], turn[1]) < 5)
+      return null;
+    if (Double.isNaN(sArmsLat) || meters(turn[0], turn[1], sArmsLat, sArmsLon) > 20)
+    {
+      sArmsLat = turn[0];
+      sArmsLon = turn[1];
+      sArms = null;
+      try
+      {
+        final String s = app.organicmaps.sdk.Framework.nativeEuriseJunctionArms(turn[0], turn[1]);
+        if (s != null && !s.isEmpty())
+        {
+          final String[] parts = s.split(";");
+          sArms = new double[parts.length];
+          for (int i = 0; i < parts.length; i++)
+            sArms[i] = Double.parseDouble(parts[i]);
+        }
+      }
+      catch (Throwable ignored)
+      {
+        sArms = null;
+      }
+    }
+    if (sArms == null)
+      return null;
+    final double in = bearing(before[0], before[1], turn[0], turn[1]);
+    return relativeArms(sArms, in);
+  }
+
+  /** Le direzioni [absolute] (gradi da nord) rispetto all'arrivo [in], senza la strada da cui si arriva. */
+  static float[] relativeArms(@NonNull double[] absolute, double in)
+  {
+    final float[] tmp = new float[absolute.length];
+    int n = 0;
+    for (double a : absolute)
+    {
+      final double rel = normalize(a - in);
+      if (Math.abs(rel) > 150)
+        continue; // la strada da cui si arriva
+      tmp[n++] = (float) rel;
+    }
+    return java.util.Arrays.copyOf(tmp, n);
+  }
+
   private static double normalize(double turn)
   {
     while (turn > 180)

@@ -28,7 +28,7 @@
     android:layout_marginBottom="14dp"
     android:background="@drawable/eurise_guide_column"
     android:clipToOutline="true"
-    android:elevation="@dimen/nav_elevation"
+    android:elevation="3dp"
     android:orientation="vertical"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
@@ -64,7 +64,7 @@
               android:layout_width="44dp"
               android:layout_height="44dp"
               android:theme="?navigationTheme"
-              app:tint="@android:color/white" />
+              app:tint="@color/eurise_guide_ink" />
 
             <com.google.android.material.textview.MaterialTextView
               android:id="@+id/circle_exit"
@@ -72,7 +72,7 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_gravity="center"
-              android:textColor="@android:color/white" />
+              android:textColor="@color/eurise_guide_ink" />
           </FrameLayout>
 
           <com.google.android.material.textview.MaterialTextView
@@ -82,7 +82,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:gravity="center_horizontal"
-            android:textColor="@android:color/white"
+            android:textColor="@color/eurise_guide_ink"
             android:textSize="20sp"
             android:textStyle="bold" />
         </LinearLayout>
@@ -126,7 +126,7 @@
             android:maxLines="3"
             android:paddingStart="4dp"
             android:paddingEnd="12dp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/eurise_guide_ink"
             android:textStyle="bold" />
         </RelativeLayout>
       </LinearLayout>
@@ -144,11 +144,11 @@
       android:layout_height="44dp"
       android:padding="6dp"
       android:visibility="gone"
-      app:lanesActiveLaneTintColor="@android:color/white"
-      app:lanesBackgroundColor="#1F2A44"
+      app:lanesActiveLaneTintColor="@color/eurise_guide_ink"
+      app:lanesBackgroundColor="@android:color/transparent"
       app:lanesCornerRadius="0dp"
       app:lanesEditModeLanesCount="10"
-      app:lanesInactiveLaneTintColor="#59FFFFFF" />
+      app:lanesInactiveLaneTintColor="@color/eurise_guide_ink_dim" />
 
     <Space
       android:layout_width="match_parent"

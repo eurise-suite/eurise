@@ -70,6 +70,11 @@ public final class EuriseJunctionScene
      * percorso ([TurnGeometry]). Rotonda: tra l'entrata e l'uscita (NaN: uscite a ventaglio); uscita: la rampa.
      */
     public float turnDeg = Float.NaN;
+    /**
+     * Incrocio: le strade che ci sono davvero, in gradi rispetto all'arrivo (0 dritto, + a destra), senza quella da cui
+     * si arriva ([TurnGeometry.arms]); null se non si sa: allora l'incrocio a croce di sempre.
+     */
+    @Nullable public float[] arms;
     /** Il paesaggio di adesso: cielo dal meteo, stagione, feste (tavola MapCieli). */
     @NonNull public EuriseLandscape.State land = new EuriseLandscape.State();
 
@@ -225,6 +230,7 @@ public final class EuriseJunctionScene
         case TURN_LEFT -> -90f;
         default -> 90f;
       };
+    t.arms = TurnGeometry.arms(m);
     return t;
   }
 
@@ -470,17 +476,14 @@ public final class EuriseJunctionScene
 
     final Shader asphalt = new LinearGradient(0, HORIZON, 0, H, 0xFF5B6478, 0xFF2C3344, Shader.TileMode.CLAMP);
     p.setShader(asphalt);
-    // La strada su cui si è, dritta fino all'orizzonte, e la via traversa all'angolo vero (con il suo seguito dall'altra
-    // parte, come a un incrocio).
-    k.drawPath(path("M-30 262 L176 70 L214 70 L420 262 Z"), p);
+    // Le strade dell'incrocio come sono davvero (prova di Mappe 58): la strada su cui si è prosegue fino all'orizzonte
+    // solo se l'incrocio ha una strada dritta; la via in cui si gira all'angolo vero; le altre vie dove ci sono. Senza
+    // dati dal motore, l'incrocio a croce di sempre.
     final float turnDeg = Float.isNaN(m.turnDeg) ? (m.left ? -90 : 90) : m.turnDeg;
-    k.drawPath(branch(turnDeg, 30, 300), p);
-    k.drawPath(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), p);
+    final Path road = shape(m.arms, turnDeg);
+    k.drawPath(road, p);
     p.setShader(null);
-    // Tutta la strada in un pezzo solo: la pioggia, la neve e la grandine non ci cadono mai sopra.
-    final Path road = path("M-30 262 L176 70 L214 70 L420 262 Z");
-    road.op(branch(turnDeg, 30, 300), Path.Op.UNION);
-    road.op(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), Path.Op.UNION);
+    final boolean straight = hasStraight(m.arms);
 
     // Sera, notte e maltempo scuriscono la scena; segnaletica, percorso e cartello restano chiari.
     final float shade = EuriseLandscape.shade(land);
@@ -510,8 +513,9 @@ public final class EuriseJunctionScene
     p.setColor(Color.WHITE);
     for (float z = 0.95f; HORIZON + 192 / z > 190; z += 0.62f)
       dash(k, p, z, Math.min(z + 0.32f, 192f / (190 - HORIZON)));
-    for (float z = 3.2f; z < 30; z += 0.62f * z / 1.8f)
-      dash(k, p, z, z + 0.3f * z / 1.8f);
+    if (straight)
+      for (float z = 3.2f; z < 30; z += 0.62f * z / 1.8f)
+        dash(k, p, z, z + 0.3f * z / 1.8f);
 
     // Il percorso: dalla corsia giusta all'incrocio, poi nella via.
     final float laneX = m.left ? 160 : 252;
@@ -592,6 +596,54 @@ public final class EuriseJunctionScene
       text(k, txt, sign, cx, cy + 6, tw - 14);
       k.restore();
     }
+  }
+
+  /** Una strada dritta oltre l'incrocio (entro 35°); senza dati sì, come la scena di sempre. */
+  static boolean hasStraight(@Nullable float[] arms)
+  {
+    if (arms == null)
+      return true;
+    for (float a : arms)
+      if (Math.abs(a) < 35)
+        return true;
+    return false;
+  }
+
+  /**
+   * L'asfalto dell'incrocio in un pezzo solo (la pioggia non ci cade sopra): la strada d'arrivo, fino all'orizzonte se
+   * c'è la strada dritta e altrimenti fino al lato lontano della traversa, la via della svolta e le altre vie vere.
+   */
+  @NonNull
+  private static Path shape(@Nullable float[] arms, float turnDeg)
+  {
+    final Path road;
+    if (hasStraight(arms))
+      road = path("M-30 262 L176 70 L214 70 L420 262 Z");
+    else
+    {
+      // Il bordo della strada d'arrivo, dalla base (−30 e 420 a y 262) al punto di fuga (176 e 214 a y 70).
+      final float y = JY - 16, f = (262 - y) / 192f;
+      road = new Path();
+      road.moveTo(-30, 262);
+      road.lineTo(-30 + 206 * f, y);
+      road.lineTo(420 - 206 * f, y);
+      road.lineTo(420, 262);
+      road.close();
+    }
+    road.op(branch(turnDeg, 30, 300), Path.Op.UNION);
+    if (arms == null)
+    {
+      road.op(branch(turnDeg + (turnDeg > 0 ? -180 : 180), 30, 300), Path.Op.UNION);
+      return road;
+    }
+    for (float a : arms)
+    {
+      // La strada dritta c'è già; la via della svolta pure.
+      if (Math.abs(a) < 35 || Math.abs(a - turnDeg) < 30)
+        continue;
+      road.op(branch(a, 30, 300), Path.Op.UNION);
+    }
+    return road;
   }
 
   /** Un tratto della mezzeria tra le profondità [z1] e [z2] (1 = in basso), largo e lungo vicino, sottile lontano. */

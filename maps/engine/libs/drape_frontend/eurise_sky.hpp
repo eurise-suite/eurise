@@ -21,6 +21,7 @@ class ScreenBase;
 namespace dp
 {
 class GraphicsContext;
+class Viewport;
 }  // namespace dp
 
 namespace gpu
@@ -40,6 +41,11 @@ void EuriseSkySetImage(std::vector<uint8_t> && rgba, uint32_t width, uint32_t he
 /// Disegna cielo e colline sopra il bordo lontano della mappa, se c'è un'immagine e la mappa è in prospettiva con il
 /// bordo dentro lo schermo. Solo dal thread del disegno (FrontendRenderer::RenderScene).
 void EuriseSkyRender(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramManager> mng, ScreenBase const & screen);
+
+/// Scritte e segni della mappa solo sotto l'orizzonte: lontano, al bordo del piano, CoMaps ne disegna ancora qualcuno che
+/// sporgerebbe nel cielo. Se il cielo c'è (fotogramma in corso) restringe il taglio dello schermo alla parte sotto le
+/// colline e dice true; dopo il disegno delle scritte si rimette il taglio pieno con viewport.Apply(context).
+bool EuriseSkyClipLabels(ref_ptr<dp::GraphicsContext> context, dp::Viewport const & viewport);
 
 /// Il contesto grafico se ne va: texture e vertici si rifanno al prossimo disegno.
 void EuriseSkyReset();
