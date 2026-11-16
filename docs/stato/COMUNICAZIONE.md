@@ -76,6 +76,10 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
     IBAN o link di pagamento, «Segna come pagato»).
   - Generatore delle tavole: `/home/claude/tela/gen/ins.py` (fuori dal repo, la tela resta la fonte). Toccato `canvas.json`
     della tela solo per aggiungere le due file e i titoli.
+- **Decisione del proprietario (17 novembre)**: queste funzioni ci sono **sia in Email sia in Chat**, con la stessa scheda
+  (stesso modulo comune, cambia solo il trasporto: stanza Matrix o email con il link). La Chat deve diventare uno strumento
+  di lavoro potentissimo e anche di organizzazione della famiglia e degli amici. Le tavole Ins* sono disegnate in un'app
+  sola: prima del codice vanno mostrate anche nell'altra (Email ↔ Chat).
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
