@@ -51,6 +51,23 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 16 novembre, sera: icone nel cassetto, pulizia, tavole delle Note
+- **Calendario, Attività e Note con un'icona propria** tra le app di Android (activity-alias `.CalendarApp`, `.TasksApp`,
+  `.NotesApp` → `SectionShortcutActivity`, come File e Scanner), disegni della serie colorata (`scripts/icone.py`:
+  `ic_calendar_app`, `ic_tasks_app`, `ic_notes_app`); la Scrivania le riconosce (`SuiteIcons`).
+- **Parte comune toccata**: `core/designsystem/component/SwitchRow.kt` al posto di sette copie (Orologio, Cloud,
+  Attività, Scrivania: fonti, modalità, sfondo di blocco, suoni). Tutta la riga si tocca; titolo in grassetto con la
+  spiegazione sotto (`hint`/`strong`), `enabled`, `trailing`. Le altre aree possono usarlo al posto delle loro copie.
+- **File divisi** (solo spostamenti, `private` → `internal` dove serve): `LauncherScreen.kt` (1783 righe) in
+  `LauncherScreen`, `LauncherPhone`, `LauncherTablet`; `DriveRoute.kt` (1305) in `DriveRoute`, `DriveTabs`, `DrivePdf`
+  (il lettore PDF della suite ora sta in un file suo).
+- **Tavole nuove, da approvare** (pagina Note, seconda fila): NoteBlocca (cifrata sul telefono, impronta o PIN, nel cloud
+  solo cifrata, fuori dalla nota solo il titolo, chiave nel backup cifrato della suite), NoteBloccata (sblocco, si
+  richiude dopo 5 minuti, nell'elenco testo nascosto), NoteVocale (testo che compare mentre parli con Eurise Voce, audio e
+  trascrizione nella nota, cose da fare trovate). Le entrate (lucchetto in NoteTesto, «Nota vocale» in NoteInserisci)
+  erano già approvate.
+- **Giro 661** (Compila 43928299330 su `prova-organizzazione`) riuscito e pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -63,8 +80,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Scrivania come temi «(nuove)» accanto ai vecchi; Calendario, Attività e Note non hanno ancora un'icona di sistema loro.
 - **Approvate, sul computer (le segue l'area Computer, `COMPUTER.md`)**: PcOggi e PcOggiNotte in codice dal 16 novembre
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
-- **Da approvare**: nessuna tavola dell'area risulta in attesa in `docs/STATO.md` (da riconfermare sulla tela alla prima
-  tavola nuova).
+- **Da approvare**: NoteBlocca, NoteBloccata, NoteVocale (pagina Note, 16 novembre).
 
 ## Prossimi passi, in ordine
 1. **Prove del proprietario rimaste senza esito** (giro 651 in `apk-prova` o il prossimo): temi delle icone «(nuove)» nella
@@ -72,12 +88,13 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
    silenziato, suoneria per persona con Eurise Telefono); sfondo del blocco (alcune ROM ignorano `FLAG_LOCK`); foglio del
    primo avvio; «Salva in…» / «Apri da…»; editor dello scanner (confronto con kDrive); «Aggiungi al calendario» e .ics dalle
    altre app; registro errori; «I tuoi giorni» (compleanno di oggi in Date importanti → incrocio in Mappe).
-2. **Icone di sistema per Calendario, Attività e Note** con i disegni nuovi della serie colorata (alias come File e
-   Scanner), poi i simboli nuovi al posto di quelli a tratto nei temi «Eurise» ed «Eurise a colori».
-3. **Pulizia rimasta dalla revisione del 14 novembre**: componenti copiati tra le app (Chip ×12, Card ×11, Pill ×10,
-   SwitchRow ×7, Field ×6) da portare in `core/designsystem` (parte comune: scriverlo qui e avvisare), file troppo lunghi
-   da dividere (`LauncherScreen` 1734 righe, `DriveRoute` 1305).
-4. **Rimasti aperti delle app**: Note bloccate, foto e scansioni nelle Note, note vocali; colori dei calendari con «Il tuo
+2. **Approvazione di NoteBlocca, NoteBloccata, NoteVocale**, poi il codice (cifratura con chiave nel Keystore e sblocco
+   biometrico; registrazione con `AudioRecord` e trascrizione da `TranscribeService` di Eurise Voce; audio in
+   `Eurise/Note/<id>/` per la sincronizzazione). Poi i simboli nuovi al posto di quelli a tratto nei temi «Eurise» ed
+   «Eurise a colori».
+3. **Pulizia che resta**: Chip, Card, Pill e Field copiati tra le app hanno forme diverse da caso a caso: unificarli solo
+   dove sono davvero uguali (come `SwitchRow`).
+4. **Rimasti aperti delle app**: foto e scansioni nelle Note; colori dei calendari con «Il tuo
    colore» e nella Scrivania; voce «dati sul telefono» nel centro privacy (serve per la memoria di Alfred e per il Ponte);
    timer dalle ricette della Scrivania; il widget nella bolla che segua l'altezza scelta.
 5. **Schermate del computer** (PcCalendario, PcNote, PcAttivita) su `core/sync`, insieme all'area Computer.
