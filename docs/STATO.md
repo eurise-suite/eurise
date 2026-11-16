@@ -2794,3 +2794,4 @@ così l'altra chat non le annulla.
 - 16 novembre: area Mappe con stato proprio in `docs/stato/MAPPE.md` (completato); cartelli con la fotocamera messi da parte.
 - 16 novembre, Browser: nuova scheda Eurise in Firefox dalla tavola PcFirefoxScheda (estensione 0.2.0, con Leggi dopo sul computer) → `docs/stato/BROWSER.md`.
 - 16 novembre, Alfred e AI: stato dell'area completato → `docs/stato/ALFRED.md`.
+- 16 novembre, Computer: COMPUTER.md completato; Oggi sul computer dalle tavole PcOggi e PcOggiNotte → `docs/stato/COMPUTER.md`.

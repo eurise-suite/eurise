@@ -453,7 +453,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon :core:sync:test :core:ponte:test :desktop:app:createDistributable 2>&1 | tee desktop.log
+          ./gradlew --no-daemon :core:sync:test :core:ponte:test :desktop:app:test :desktop:app:createDistributable 2>&1 | tee desktop.log
       - name: Riassunto degli errori
         if: failure()
         run: |

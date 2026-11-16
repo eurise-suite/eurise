@@ -5,41 +5,94 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 `docs/PIATTAFORME.md`. Ramo `brand`; giri propri su `prova-computer`.
 
 ## Cosa comprende
-app Eurise per Linux (desktop/app), core/sync, Ponte sul computer, Flatpak e Flathub; le schermate per area arrivano dai progetti delle aree o da qui.
+L'app Eurise per Linux (`desktop/app`, Compose Desktop) con Oggi, Calendario, Note, Attività, Email, Mappe e Alfred;
+`core/sync` (sincronizzazione su JVM); il Ponte sul computer (`desktop/ponte`, dentro l'app); Flatpak
+(`desktop/flatpak`) e Flathub. Firefox con l'estensione Eurise è dell'area Browser (`docs/stato/BROWSER.md`); Office per
+Linux dell'area Office. Le schermate per area arrivano dai progetti delle aree o da qui.
 
-## Già noto (16 novembre)
-- Tavole «Eurise sul computer» tutte **approvate** (Oggi, Oggi Notte, Calendario, Note, Attività, Email, Mappe, Alfred,
-  nuova scheda di Firefox); Mappe con **CoMaps** (stessi file del telefono, offline).
-- `core/sync` (CalDAV, WebDAV note con unione a tre vie, IMAP/SMTP, importazione dai browser) con i test; `desktop/app`
-  scheletro Compose Desktop 1.7.3 (solo con `EURISE_DESKTOP=1`) con il Ponte dentro e le sezioni vuote; Flatpak
-  `eu.eurise.Eurise`; avvio provato in Actions su Ubuntu 24.04, 22.04 e Fedora. File: `eurise-linux.flatpak`,
-  `eurise-linux.tar.gz` in `apk-prova`.
-- Prossimo: schermate dalle tavole, Oggi per primo, poi Calendario e Attività su CalDAV, Note, Email, Mappe (CoMaps per
-  Linux), Alfred; icona nella barra e avvio con la sessione; Flathub (compilazione dai sorgenti).
+Riferimento: Ubuntu e Fedora (si prova sull'ultima Ubuntu LTS, l'ultima Ubuntu e l'ultima Fedora; GNOME, poi KDE);
+Flatpak su Flathub. Un'app «Eurise» sola per il computer che tiene il Ponte e accoglie le sezioni (PIATTAFORME.md).
 
-## Da completare alla prima chat dell'area
-Questo file è solo l'indice. La prima chat lo completa leggendo le sezioni di `docs/STATO.md` qui sotto (le più recenti
-contano di più): **Fatto** (in breve), **Tavole** (approvate e da approvare, pagina della tela), **Prossimi passi** in
-ordine, **Come si lavora** (APK e link da dare, prove). Poi toglie questa sezione e l'indice.
+## Fatto (in breve, dettagli nei giorni di STATO.md)
+- **Ponte** (11–15 novembre): `core/ponte` (Kotlin puro, identità EC P-256, ECDH + HKDF, test) e `desktop/ponte`
+  (`eurise-ponte`): abbinamento con il QR, telefono → computer (link, appunti, dettatura), computer → telefono con il
+  collegamento fisso solo sul Wi-Fi di casa e la notifica che dice sempre cosa passa (decisione del proprietario);
+  `Outbox` per i telefoni non collegati; socket locale `$XDG_RUNTIME_DIR/eurise-ponte.sock` (righe JSON, permessi 600);
+  `eurise manda appunti|link|nota|attivita|evento|file`; file a pezzi da 512 KB con SHA-256 (`FileParts`); native
+  messaging per Firefox (`eurise firefox`, `eurise installa-firefox`, anche per il Flatpak di Firefox); password dal
+  telefono (approva sul telefono, in memoria 2 minuti); `DictationAsk`, `TodayAsk`/`Today` (`TodayCache`: l'ultimo Oggi
+  dal telefono, solo con il telefono collegato; sul telefono «Oggi sul computer» **spento di base**: appuntamenti di oggi
+  ancora da finire e fino a cinque attività aperte, prima le scadute).
+- **`core/sync`** (15 novembre, con test `:core:sync:test`): `DavHttp`, `CalDav` + `CalSync.plan` (conflitto → più recente,
+  eliminazioni mai a perdere), `ICal`, `Merge3` e `NoteDoc`/`NotesSync` (stesso formato delle note del telefono, unione a
+  tre vie), `MailClient` IMAP/SMTP e `MailText` (persona/avviso/newsletter), `BrowserImport`.
+- **`desktop/app`** (15 novembre, scheletro): Compose Desktop 1.7.3, solo con `EURISE_DESKTOP=1`; finestra con la barra
+  laterale e le sezioni vuote, Perla/Notte dal tema di GNOME o KDE, Ponte dentro (QR nella finestra se non c'è un telefono
+  abbinato), stesso programma per i comandi del Ponte. Colori copiati da `core/designsystem` finché non è multipiattaforma.
+  Chiudendo la finestra il Ponte si ferma.
+- **Flatpak** `eu.eurise.Eurise` (Freedesktop 24.08) con il programma compilato da Gradle (Java dentro); permessi per rete,
+  notifiche, Download, native messaging di Firefox, profili dei browser in sola lettura.
+- **Compila**: lavori «Eurise per il computer» (prove di `core/sync` e `core/ponte`, `createDistributable`, prova d'avvio
+  con Xvfb su Ubuntu 24.04, Ubuntu 22.04 e Fedora) e «Flatpak di Eurise»; `apk-prova` pubblica `eurise-linux.tar.gz` e
+  `eurise-linux.flatpak`.
 
-## Indice delle sezioni di docs/STATO.md che riguardano l'area (numeri di riga al 16 novembre)
-- riga 14: Cose da fare ancora (road map aperta) – da ricordare al proprietario
-- riga 405: In fondo alla road map: computer (10 novembre) – si parte solo con l'ok esplicito del proprietario
-- riga 533: Aspetto Eurise per Linux (10 novembre, deciso dal proprietario) – ultimo passo della chat del brand
-- riga 651: 11 novembre, notte: punto 4, prototipo della traduzione (ramo `brand`, APK 226) e scrittura a mano
-- riga 949: 11 novembre, pomeriggio: prototipo di Eurise AI, Office a nastro (ramo `brand`, nuova chat)
-- riga 1010: 11 novembre, primo pomeriggio: editor da altre app, icone sulla tela, peso di Mappe, sistemi (ramo `brand`)
-- riga 1043: 11 novembre, pomeriggio: approvazioni, simboli delle segnalazioni, telefono e computer (ramo `brand`)
-- riga 1060: 11 novembre, sera: tutto approvato, codice (ramo `brand`)
-- riga 1122: 11 novembre, sera tardi: Office Suite, scanner, tastiera, bolle (ramo `brand`, nuova chat)
-- riga 1165: 11 novembre, notte: tavole nuove, Actions (ramo `brand`, nuova chat)
-- riga 1209: 11 novembre, sera: tavole approvate, tastiera (ramo `brand`)
-- riga 1489: 12 novembre, sera: accessi ai siti, import senza file, webapp, tastiera, bolla «Ti hanno cercato» · giro 335 (vedi sotto)
-- riga 1572: 12 novembre, notte: tavole approvate in codice, pillole, ricerca di Mappe, tavola dell'Assistente · giro 342, Mappe 16
-- riga 2223: Punto di ripartenza (14 novembre, tarda mattina) — da fare nella chat nuova
-- riga 2247: 14 novembre, tarda mattina: chat nuova (ramo `brand`)
-- riga 2539: 15 novembre: Browser telefono (download e schede) ed Eurise per Firefox su Linux
-- riga 2573: 15 novembre: Firefox, «Detta dal telefono» e Oggi nel pannello (completano la tavola PcFirefox)
-- riga 2653: 15 novembre, sera: richiesta del proprietario per Linux (da fare, in una chat nuova)
-- riga 2692: 15 novembre, sera: Eurise sul computer (Linux) – tavole, nucleo, app, Firefox, Flatpak (ramo `brand`)
-- riga 2788: 16 novembre: decisioni del proprietario sul computer; aree con stato proprio
+## Tavole
+Tela (https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo), pagina **«Eurise sul computer»**, 1440×900 su Ubuntu: barra
+laterale con le sezioni (Oggi, Calendario, Note, Attività, Email, Mappe, Alfred), ricerca su tutta la suite (Ctrl K),
+Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
+- **Approvate il 16 novembre** (tutte): PcOggi, PcOggiNotte, PcCalendario, PcNote, PcAttivita, PcEmail, PcMappe (con
+  CoMaps: gli stessi file del telefono, offline), PcAlfred, PcFirefoxScheda (dell'area Browser, già scritta).
+- Pagina Browser: PcFirefox (approvata, scritta), Ponte (approvata). Pagina AI: AlfComputer (Alfred con il computer come
+  cervello).
+- Da disegnare quando servono: importazione dai browser nell'app (partire da BrwImporta), icona nella barra.
+
+## Prossimi passi (in ordine)
+1. **Oggi**: provare la schermata (16 novembre, sotto) e correggere ciò che segnala il proprietario. Restano: spuntare
+   un'attività dal computer (serve un tipo del Ponte «fatta»), meteo (servizio da scegliere, spento di base), note
+   recenti ed email importanti (con le loro sezioni), proposte di Alfred, ricerca Ctrl K, Impostazioni.
+2. **Calendario e Attività** su CalDAV (`core/sync`), con il collegamento in due tocchi dal browser.
+3. **Note** su WebDAV con l'unione a tre vie.
+4. **Email** (IMAP/SMTP, `MailClient`).
+5. **Mappe** con CoMaps per Linux (versione desktop in Qt: da capire come integrarla nella finestra o accanto).
+6. **Alfred** (PcAlfred, poi AlfComputer: il computer come cervello via Ponte).
+7. Icona nella barra (il Ponte resta acceso a finestra chiusa) e avvio con la sessione.
+8. Flathub: compilazione dai sorgenti (dipendenze Maven scaricate prima), metainfo e schermate.
+9. Spostare in comune ciò che serve a entrambi (colori di `core/designsystem`, NoteMerge, categorie dell'Email) quando
+   diventa multipiattaforma, scrivendolo qui.
+
+## Come si lavora
+- Ramo `brand` come le altre chat: prima di ogni push `git fetch` e rebase su `origin/brand`. Per un giro tutto proprio
+  si spinge la stessa testa anche su `prova-computer` (la `concurrency` di «Compila APK» è per ramo), poi si pubblica quel
+  giro: `gh workflow run apk-prova.yml --ref brand -f run_id=<giro di prova-computer>`.
+- Si compila solo su GitHub Actions; l'app desktop entra nella compilazione solo con `EURISE_DESKTOP=1` (il lavoro
+  «Eurise per il computer» lo imposta). Prove: `:core:sync:test`, `:core:ponte:test`, prova d'avvio su Ubuntu 24.04,
+  22.04 e Fedora (si chiude o scrive un'eccezione → il giro fallisce).
+- Link da dare a ogni consegna (diretti, dalla pre-release `apk-prova`):
+  https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-linux.flatpak e
+  https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-linux.tar.gz; più l'APK del telefono
+  (`app-debug.apk`) se è cambiato anche lì.
+- Provare: Flatpak con `flatpak install --user eurise-linux.flatpak` e `flatpak run eu.eurise.Eurise`; archivio:
+  estrarre e lanciare `eurise/bin/eurise`.
+- Parti comuni (core/designsystem, core/ponte, CLAUDE.md, canvas.json della tela) si toccano solo se serve, e si scrive qui.
+- A ogni consegna: aggiornare questo file e scrivere una riga in `docs/STATO.md`.
+
+## Giorni
+
+### 16 novembre: Oggi dalle tavole PcOggi e PcOggiNotte
+- `desktop/app`: `TodayScreen.kt` come la tavola (data, saluto con il nome dal sistema e «Oggi hai 4 impegni, il primo
+  alle 11», «Scrivi come parli» con Evento/Da fare/Nota, tre colonne di schede, riga della privacy), Perla e Notte con lo
+  stesso codice (riquadri delle icone = tinta stemperata nella scheda). Barra in alto con **Nuovo** (Ctrl N: Oggi con il
+  cursore nel campo) e **Alfred** (Ctrl Spazio); Ctrl 1…7 per le sezioni; nella barra laterale il numero delle cose da
+  fare oggi su Attività, «<telefono> collegato» e il Centro privacy con le dieci tacchette (solo indicazione per ora).
+- Dati (`TodayFeed.kt`, `TodayData.kt` con `TodayDataTest`): dal socket locale del Ponte, come Firefox. Appuntamenti e
+  cose da fare dal riassunto del telefono (`today-ask` al massimo ogni 2 minuti e solo con Oggi in vista; l'ultimo resta
+  in memoria 6 ore, mai su disco); «Dal telefono» dalle ultime cose passate (`recent`; un link si riapre con un clic,
+  «Continua qui»). Telefono senza «Oggi sul computer» acceso o fuori casa: lo si dice nella scheda.
+- «Scrivi come parli»: Invio manda al telefono con il Ponte (in coda se non è in casa). Evento: giorno e ora letti con la
+  stessa `QuickAdd` del telefono (compilata da core/data così com'è, `quickAddSources` in `desktop/app/build.gradle.kts`,
+  più `TaskStub.kt` con le tre costanti), anteprima sotto il campo; senza ora è tutto il giorno, con l'ora dura un'ora. Da
+  fare e Nota: il testo com'è (il telefono lo legge come sempre).
+- Non ancora, scritto nella schermata senza dati inventati: note recenti, email importanti; meteo e proposta di Alfred
+  tolti finché non c'è una fonte. Le caselle delle attività si vedono ma non si spuntano. Finestra con le decorazioni
+  del sistema (i tre pulsanti della tavola li disegna GNOME).
+- Compila: il lavoro «Eurise per il computer» lancia anche `:desktop:app:test`.

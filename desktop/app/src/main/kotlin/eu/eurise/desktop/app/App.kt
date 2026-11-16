@@ -37,7 +37,16 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.sp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -55,26 +64,60 @@ enum class Section(val label: String, val icon: String) {
     Alfred("Alfred", Icons.STAR),
 }
 
+/** Dove si trova la finestra: la sezione aperta e il campo «Scrivi come parli» (per «Nuovo» e Ctrl N). */
+class Nav {
+    var section by mutableStateOf(Section.Today)
+    val input = FocusRequester()
+    private var focusAsked by mutableStateOf(0)
+
+    /** «Nuovo»: Oggi con il cursore nel campo. */
+    fun new() { section = Section.Today; focusAsked++ }
+
+    @Composable
+    fun FocusWhenAsked() {
+        LaunchedEffect(focusAsked) { if (focusAsked > 0) { delay(50); runCatching { input.requestFocus() } } }
+    }
+
+    /** Tasti della finestra: Ctrl N nuovo, Ctrl Spazio Alfred, Ctrl 1…7 le sezioni. */
+    fun key(e: KeyEvent): Boolean {
+        if (e.type != KeyEventType.KeyDown || !e.isCtrlPressed) return false
+        when (e.key) {
+            Key.N -> new()
+            Key.Spacebar -> section = Section.Alfred
+            else -> {
+                val i = listOf(Key.One, Key.Two, Key.Three, Key.Four, Key.Five, Key.Six, Key.Seven).indexOf(e.key)
+                if (i < 0) return false
+                section = Section.entries[i]
+            }
+        }
+        return true
+    }
+}
+
 @Composable
-fun EuriseApp(ponte: PonteState) {
+fun EuriseApp(ponte: PonteState, today: TodayFeed, nav: Nav) {
     val c = LocalEurise.current
-    var section by remember { mutableStateOf(Section.Today) }
+    nav.FocusWhenAsked()
     Column(Modifier.fillMaxSize().background(c.background)) {
-        TopBar()
+        TopBar(nav)
         Row(Modifier.fillMaxSize()) {
-            Sidebar(section, ponte) { section = it }
-            Box(Modifier.fillMaxSize().padding(28.dp)) {
-                if (ponte.pairingCode != null) Pairing(ponte.pairingCode!!) else Waiting(section)
+            Sidebar(nav.section, ponte, today) { nav.section = it }
+            Box(Modifier.fillMaxSize()) {
+                when {
+                    ponte.pairingCode != null -> Box(Modifier.padding(28.dp)) { Pairing(ponte.pairingCode!!) }
+                    nav.section == Section.Today -> TodayScreen(today, nav.input)
+                    else -> Box(Modifier.padding(28.dp)) { Waiting(nav.section) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TopBar() {
+private fun TopBar(nav: Nav) {
     val c = LocalEurise.current
     Row(
-        Modifier.fillMaxWidth().height(52.dp).background(c.bar).padding(horizontal = 18.dp),
+        Modifier.fillMaxWidth().height(52.dp).background(c.bar).padding(start = 18.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -84,7 +127,7 @@ private fun TopBar() {
             Text("Eurise", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
         }
         Row(
-            Modifier.widthIn(max = 560.dp).fillMaxWidth().height(36.dp).clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp),
+            Modifier.weight(3f, fill = false).widthIn(max = 560.dp).fillMaxWidth().height(36.dp).clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.vector(Icons.SEARCH), null, tint = c.soft, modifier = Modifier.size(16.dp))
@@ -92,13 +135,31 @@ private fun TopBar() {
             Text("Cerca in tutta la suite", color = c.soft, fontSize = 13.5.sp, modifier = Modifier.weight(1f))
             Text("Ctrl K", color = c.soft, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
+        Spacer(Modifier.weight(1f))
+        Pill(Icons.PLUS, "Nuovo", null, c.onAccent, c.accent, c.onAccent) { nav.new() }
+        Pill(Icons.MIC, "Alfred", "Ctrl Spazio", c.prugna, c.card, c.text) { nav.section = Section.Alfred }
     }
 }
 
 @Composable
-private fun Sidebar(active: Section, ponte: PonteState, onPick: (Section) -> Unit) {
+private fun Pill(icon: String, label: String, keys: String?, iconTint: Color, bg: Color, fg: Color, onClick: () -> Unit) {
     val c = LocalEurise.current
-    Column(Modifier.width(216.dp).fillMaxHeight().background(c.sidebar).padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        Modifier.height(36.dp).clip(RoundedCornerShape(18.dp)).background(bg).clickable(onClick = onClick).padding(start = 10.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Icon(Icons.vector(icon, width = 2.1f), null, tint = iconTint, modifier = Modifier.size(16.dp))
+        Text(label, color = fg, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+        if (keys != null) Text(keys, color = c.soft, fontSize = 10.5.sp)
+    }
+}
+
+@Composable
+private fun Sidebar(active: Section, ponte: PonteState, today: TodayFeed, onPick: (Section) -> Unit) {
+    val c = LocalEurise.current
+    val tasksToday = today.summary?.let { TodayData.dueToday(it, java.time.LocalDate.now()).size } ?: 0
+    Column(Modifier.width(216.dp).fillMaxHeight().background(c.sidebar).padding(horizontal = 12.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         for (s in Section.entries) {
             val on = s == active
             val tint = tintOf(s)
@@ -107,9 +168,10 @@ private fun Sidebar(active: Section, ponte: PonteState, onPick: (Section) -> Uni
                     .background(if (on) c.selected else Color.Transparent).clickable { onPick(s) }.padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.vector(s.icon, fill = s == Section.Alfred), s.label, tint = if (on) tint else c.soft, modifier = Modifier.size(18.dp))
+                Icon(Icons.vector(s.icon, width = if (on) 2.2f else 1.9f), s.label, tint = if (on) tint else c.soft, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(12.dp))
-                Text(s.label, color = if (on) tint else c.text, fontSize = 14.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold)
+                Text(s.label, color = if (on) tint else c.text, fontSize = 14.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                if (s == Section.Tasks && tasksToday > 0) Badge(tasksToday)
             }
         }
         Spacer(Modifier.weight(1f))
@@ -122,7 +184,7 @@ private fun Sidebar(active: Section, ponte: PonteState, onPick: (Section) -> Uni
             Icon(Icons.vector(Icons.PHONE), null, tint = if (live) c.salvia else c.soft, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(10.dp))
             Column {
-                Text(phone?.name ?: "Nessun telefono", color = c.text, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                Text(phone?.let { if (live) "${it.name} collegato" else it.name } ?: "Nessun telefono", color = c.text, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                 Text(
                     when {
                         phone == null -> "collega dal telefono"
@@ -133,6 +195,21 @@ private fun Sidebar(active: Section, ponte: PonteState, onPick: (Section) -> Uni
                 )
             }
         }
+        // Il centro privacy del computer arriverà con le sue tavole; per ora il livello: tutto resta qui e sul telefono.
+        Row(Modifier.fillMaxWidth().height(36.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.vector(Icons.SHIELD), null, tint = c.salvia, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("Centro privacy", color = c.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            PrivacyBars(10)
+        }
+    }
+}
+
+@Composable
+private fun Badge(n: Int) {
+    val c = LocalEurise.current
+    Box(Modifier.height(20.dp).widthIn(min = 20.dp).clip(RoundedCornerShape(10.dp)).background(c.background).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
+        Text(n.toString(), color = c.soft, fontSize = 11.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -209,16 +286,21 @@ object Icons {
     const val MAP = "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z M9 4v14 M15 6v14"
     const val PHONE = "M8 3 h8 a1.5 1.5 0 0 1 1.5 1.5 v15 A1.5 1.5 0 0 1 16 21 H8 a1.5 1.5 0 0 1 -1.5-1.5 v-15 A1.5 1.5 0 0 1 8 3 z M11 18 h2"
     const val SEARCH = "M4.5 11 a6.5 6.5 0 1 0 13 0 a6.5 6.5 0 1 0 -13 0 M16 16 l4.5 4.5"
+    const val PLUS = "M12 5v14M5 12h14"
+    const val MIC = "M9 4.6 a3 3 0 0 1 6 0 V11 a3 3 0 0 1 -6 0 Z M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21"
+    const val BELL = "M6 16 V11 a6 6 0 0 1 12 0 v5 l1.5 2 h-15 z M10 20.5 h4"
+    const val HANDOFF = "M4 7 h11 v11 H4 z M8 4 h12 v11"
+    const val SHIELD = "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"
 
-    private val cache = HashMap<Pair<String, Boolean>, ImageVector>()
+    private val cache = HashMap<Triple<String, Boolean, Float>, ImageVector>()
 
-    fun vector(path: String, fill: Boolean = false): ImageVector = cache.getOrPut(path to fill) {
+    fun vector(path: String, fill: Boolean = false, width: Float = 1.9f): ImageVector = cache.getOrPut(Triple(path, fill, width)) {
         ImageVector.Builder(defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
             if (fill) addPath(pathData = addPathNodes(path), fill = SolidColor(Color.Black))
             else addPath(
                 pathData = addPathNodes(path),
                 stroke = SolidColor(Color.Black),
-                strokeLineWidth = 1.9f,
+                strokeLineWidth = width,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             )

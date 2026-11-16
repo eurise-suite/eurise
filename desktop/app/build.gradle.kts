@@ -14,6 +14,17 @@ plugins {
  */
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
+/**
+ * La lettura delle frasi «come si parla» del telefono (`QuickAdd`, con `Recurrence`) è Kotlin puro ma vive in core/data,
+ * che è una libreria Android: i due file si compilano anche qui così come sono, senza copiarli nel repository
+ * (`TaskStub.kt` dà le tre costanti di `Task` che usano). Quando core/data diventerà multipiattaforma, questo sparisce.
+ */
+val quickAdd = tasks.register<Sync>("quickAddSources") {
+    from(rootProject.file("core/data/src/main/java/eu/eurise/core/data/model")) { include("QuickAdd.kt", "Recurrence.kt") }
+    into(layout.buildDirectory.dir("generated/quickadd/eu/eurise/core/data/model"))
+}
+kotlin.sourceSets["main"].kotlin.srcDir(files(layout.buildDirectory.dir("generated/quickadd")).builtBy(quickAdd))
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -26,6 +37,7 @@ dependencies {
     implementation(project(":core:ponte"))
     implementation(project(":core:sync"))
     implementation(libs.zxing.core)
+    testImplementation(libs.junit)
 }
 
 compose.desktop {
