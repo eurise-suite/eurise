@@ -14,6 +14,9 @@ on:
       run_id:
         description: "Id del giro di Compila (vuoto = ultimo riuscito sul ramo brand)"
         required: false
+      mappe_run:
+        description: "Id del giro di Eurise Mappe (vuoto = ultimo riuscito su prova-mappe o brand)"
+        required: false
 
 permissions:
   contents: write
@@ -34,7 +37,12 @@ jobs:
           fi
           num=$(gh api "repos/${{ github.repository }}/actions/runs/$id" --jq '.run_number')
           echo "id=$id" >> "$GITHUB_OUTPUT"
-          mappe=$(gh api "repos/${{ github.repository }}/actions/workflows/maps-engine.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          # Eurise Mappe: il giro scelto, altrimenti l'ultimo riuscito su prova-mappe (giri propri dell'area) o brand.
+          mappe="${{ github.event.inputs.mappe_run }}"
+          if [ -z "$mappe" ]; then
+            mappe=$(gh api "repos/${{ github.repository }}/actions/workflows/maps-engine.yml/runs?status=success&per_page=30" \
+              --jq '[.workflow_runs[] | select(.head_branch == "prova-mappe" or .head_branch == "brand")][0].id // empty')
+          fi
           echo "mappe=$mappe" >> "$GITHUB_OUTPUT"
           # Motore di Office (APK compagno): l'ultimo giro riuscito di office-app su prova-office o brand.
           office=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?status=success&per_page=30" \
