@@ -35,6 +35,24 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   vignetta, Automatico, filtri, scritte, pennarello; «Il tuo colore» comune in `core/designsystem`. «Salva in…» di File dal
   foglio Condividi. Icona nuova colorata (16 novembre).
 
+## 16 novembre, sera: modello del tocco per tasto e parole imparate nel backup (giro 663, in apk-prova)
+- **Modello del tocco per tasto** (`keyboard/.../KeyModel.kt`, logica pura con `KeyModelTest`; `TouchModel.kt` la collega
+  alla tastiera): per ogni lettera punto medio e dispersione dei tocchi, in quote del tasto. Impara da parole tenute, parole
+  corrette della stessa lunghezza (proposta scelta o correzione automatica non annullata: il tocco sbagliato insegna la
+  lettera giusta) e «lettera, cancella, lettera vicina». Con pochi esempi resta prudente (media di tutti i tasti, limiti
+  0,15 in larghezza e 0,20 in altezza). Salvato in `eurise_touch` (`key_model_1`).
+- **Correzioni con il dizionario**: da 150 esempi il motore di HeliBoard riceve punto preferito e raggio di ogni lettera
+  (`ProximityInfo`; prima la correzione della posizione era spenta), così proposte e correzione automatica col dizionario
+  italiano tengono conto di come scrive la persona. Le tastiere si ricostruiscono ogni 200 esempi nuovi, a fine scrittura.
+- **Scelta del tasto sul bordo** (`KeyDetector`): il modello cambia la lettera solo se conosce bene entrambi i tasti
+  (40 esempi l'uno) e quella accanto spiega il tocco circa tre volte meglio. `TouchOffset` e `TouchFix` restano come prima.
+- **Backup**: `BackupProvider` della Tastiera (permesso della suite) dà le parole imparate (UserHistoryDictionary), il
+  dizionario personale e il modo di toccare; l'app Eurise li mette nel backup cifrato (`core/cloud` `KeyboardBackup`,
+  voce `apps/keyboard.zip`) e al ripristino li riconsegna, anche se la Tastiera si installa dopo. Testo «Cosa viene letto»
+  del backup aggiornato. **Tocca anche l'app Eurise**: serve `app-debug.apk` nuovo.
+- **Frasi abituali**: già attive in HeliBoard (parole imparate fino a quattro di fila, previsioni della parola dopo). Una
+  proposta di frase intera nella fila dei suggerimenti sarebbe un'aggiunta all'interfaccia: prima una tavola.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -50,22 +68,24 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-1. **Tastiera, lavoro principale** (approvato il 12 novembre; road map: «il proprietario la sta usando: sentire cosa non
-   va»). Prima chiedere al proprietario com'è la tastiera oggi (ultime correzioni non ancora confermate: `TouchOffset`,
-   migrazioni saltate, spazio 0,7). Poi: modello del tocco per tasto (come FUTO, senza il suo codice), correzioni con le
-   lettere vicine e il dizionario italiano, suggerimenti dalle frasi abituali, dizionario personale e apprendimento nel
-   backup cifrato (oggi il backup copre solo l'app Eurise: la Tastiera va aggiunta col permesso della suite).
+1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
+   gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200
+   esempi, a fine scrittura). Dire se le lettere accanto escono ancora, se le correzioni sono migliori o peggiori, e
+   provare un backup con la Tastiera installata. Ultime correzioni ancora senza esito: `TouchOffset`, migrazioni saltate,
+   spazio tra i tasti.
 2. **Password → Tastiera, «Compila · account» in linea** (TastPassword approvata): Password non dà ancora
    `InlinePresentation` nella compilazione automatica, quindi la fila della Tastiera nei campi password resta vuota.
-3. **Tastiera fuori stile**: schermate delle impostazioni ancora di HeliBoard (tavola prima del codice).
-4. **Privacy di quest'area**: semaforo a 10 tacchette in Password (Have I Been Pwned, alias, Murena) e Galleria
+3. **Tastiera fuori stile**: schermate delle impostazioni ancora di HeliBoard (tavola prima del codice). Con l'occasione
+   «Ricomincia» per il modo di toccare (`TouchModel.reset`, oggi senza pulsante).
+4. **Frase intera nella fila dei suggerimenti** (frasi abituali visibili): tavola sulla pagina Integrazioni, poi codice.
+5. **Privacy di quest'area**: semaforo a 10 tacchette in Password (Have I Been Pwned, alias, Murena) e Galleria
    (OpenStreetMap per i luoghi, caricamento); Password e Galleria comandabili dal centro privacy e nel cestino unico
    (serve il permesso di firma con l'app Eurise; tocca anche `app-debug.apk`).
-5. **Galleria, resti**: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario,
+6. **Galleria, resti**: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario,
    «Apri da…» di File.
-6. **Pulizia del codice**: `PasswordApp` (1355 righe) da dividere; componenti copiati (Chip, Card, Pill, SwitchRow) da
+7. **Pulizia del codice**: `PasswordApp` (1355 righe) da dividere; componenti copiati (Chip, Card, Pill, SwitchRow) da
    portare in `core/designsystem` (parte comune: scriverlo qui).
-7. **In fondo**: Password Famiglia (tavole da approvare); kMail tra gli alias (API non verificata); kDrive (bloccato da
+8. **In fondo**: Password Famiglia (tavole da approvare); kMail tra gli alias (API non verificata); kDrive (bloccato da
    Infomaniak); scrittura a mano nella Tastiera (rimandata: nessun modello libero).
 - **Da provare sul telefono, senza esito scritto**: carte con NFC e fotocamera, I miei dati che compilano i moduli,
   accessi istantanei nel Browser, video ed editor della Galleria, caricamento su Murena.
@@ -76,7 +96,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   `app/src/main/java/eu/eurise/keyboard/`, agganci elencati in `keyboard/EURISE.md`). Contratti con la suite in
   `core/suite` (`PasswordContract`, `CardContract`, `FilesContract`): se cambiano, cambia anche `app-debug.apk`.
 - Prima le tavole sulla tela (pagine Password, Integrazioni, Galleria), poi il codice dopo l'approvazione.
-- Prove senza telefono: `KdbxTest`, `EmvTest` in Password (più la riapertura con pykeepass in `build.yml`); `GalleryLogicTest`,
+- Prove senza telefono: `KeyModelTest` e le altre `eu.eurise.*` della Tastiera; `KdbxTest`, `EmvTest` in Password (più la riapertura con pykeepass in `build.yml`); `GalleryLogicTest`,
   `TimelineTest`, `EditToolsTest`, `VideoTimeTest` in Galleria; prove di HeliBoard nella Tastiera.
 - Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
   (altre chat lavorano sullo stesso ramo); poi la stessa testa anche su `prova-piccole` e si pubblica quel giro:
@@ -86,6 +106,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Tastiera: https://github.com/eurise-suite/eurise/releases/download/apk-prova/EuriseTastiera-debug.apk
   - Galleria: https://github.com/eurise-suite/eurise/releases/download/apk-prova/gallery-debug.apk
   - Se cambia `core/suite`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
+- Parti comuni toccate: `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
 - Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy; servizi chiusi per ultimi con avviso.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
   scrive qui.

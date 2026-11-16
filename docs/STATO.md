@@ -2800,3 +2800,4 @@ così l'altra chat non le annulla.
 - 16 novembre, Office: OFFICE.md completato; il lavoro del 13–15 novembre è ancora sul ramo `office`, da unire a `brand` (primo passo) → `docs/stato/OFFICE.md`.
 - 16 novembre, Password, Tastiera, Galleria: stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/PICCOLE.md`.
 - 16 novembre, Mappe: tavole MapViaggio 1-6 e dettatura in Android Auto in Mappe 69 (in `apk-prova`) → `docs/stato/MAPPE.md`.
+- 16 novembre, sera, Tastiera: modello del tocco per tasto, correzioni col dizionario che ne tengono conto, parole imparate nel backup della suite · giro 663 → `docs/stato/PICCOLE.md`.
