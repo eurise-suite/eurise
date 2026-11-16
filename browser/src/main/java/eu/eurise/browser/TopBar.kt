@@ -59,6 +59,7 @@ internal fun Modifier.fadeEnd(from: Float = 0.72f): Modifier =
  * Ricarica (Ferma mentre carica); fuori il menu Eurise, a destra o a sinistra per i mancini. Il numero delle schede c'è
  * solo se la fila delle schede è spenta. Scorrere giù la porta sotto il pollice, come prima.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 internal fun TopBar(
     tab: Tab?,
