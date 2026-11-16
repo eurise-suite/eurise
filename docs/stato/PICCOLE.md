@@ -79,7 +79,8 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   pallino arancio sulla stella se ce n'è più d'una. «Altro» (`ToolsPanel`) non è più nei comandi; tolta dalle impostazioni
   la voce «barra sopra i suggerimenti».
 - Prova del proprietario sul giro 675: «funziona tutto». Poi, da una foto, nuovo ordine della riga Tastiera: Opzioni,
-  Una mano, Emoji, Cursore, Annulla, Voce, Appunti (fatto anche sulla tavola TastComparsaAperta).
+  Una mano, Emoji, Cursore, Annulla, Voce, Appunti (giro 690, in apk-prova; fatto anche sulla tavola TastComparsaAperta). Nel giro 690 è fallito
+  il Flatpak di Eurise, che non dipende da quest'area.
 - Da provare sul telefono: posizione del riquadro sopra le parole (anche con una mano e tastiera flottante), tocchi sul
   riquadro, pallino, Voce e Cursore dal riquadro.
 
