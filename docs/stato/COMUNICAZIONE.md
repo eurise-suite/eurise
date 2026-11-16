@@ -97,6 +97,14 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   specialista; gestionale usato). Vincoli trovati: NRE della ricetta dematerializzata via email, SMS o app (stabilizzato
   dal Milleproroghe); referti online facoltativi, con consenso, accesso protetto, al massimo 45 giorni e cancellabili
   dal paziente (linee guida del Garante 2009 e FAQ); compendio del Garante 2024 sulle piattaforme medico-paziente.
+  Il proprietario è **MMG e agopuntore (privato)**, usa **Millewin** (in attesa di MilleWeb o di **Bussola MMG**, il
+  gestionale nostro). Tavole da approvare, fila «Studio medico» (generatore `gen/ins3.py`): StuSpazio (coda di
+  ricette, appuntamenti, referti, messaggi; urgenze in cima), StuAppuntamento, StuRicette (Eurise non fa la ricetta:
+  raccoglie le richieste e rimanda il NRE), StuReferto (Chat cifrata a tempo 45 giorni o email con link e codice per SMS;
+  consenso), StuPaziente (verifica con QR, consensi, terapia abituale), StuRegole (fuori orario con 112 e guardia medica,
+  numero dell'ASL da inserire; segreteria senza referti), StuAgopuntura (sedute, ricevuta sanitaria, dati per il
+  Sistema TS a chi li invia), StuMillewin (promemoria PDF in una cartella del cloud dello studio, letto e abbinato).
+  Da fare prima di usarlo con i pazienti: informativa e consenso controllati da un esperto; server Matrix dello studio in UE.
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
