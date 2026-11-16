@@ -7,11 +7,12 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul computer.
 
-## Fatto (in breve, al 16 novembre)
+## Fatto (in breve, al 16 novembre, 13:03)
 - **Mappe in stile suite** su CoMaps (patch in `maps/eurise_patch.py`, codice in `maps/android/…/eurise/`, guida in
   `maps/EURISE.md`): Esplora (orizzonte col meteo in alto, scorciatoie, «Dove sei»), Attività e Cerca, ricerca a pillola,
   Livelli e fonti, scheda del luogo e scheda aperta (con gli **orari nello stile della tavola**), barra in orizzontale,
-  avvio con l'icona di Eurise Mappe.
+  avvio con l'icona di Eurise Mappe. **Dall'apertura alla partenza** come le tavole MapViaggio 2-6 (ricerca, luogo,
+  percorso e tappe nello stile della suite, senza la barra di CoMaps).
 - **Guida**: guida nello stile della suite, limite che arriva e limite dedotto, avvisi sopra il limite, autovelox fissi,
   meteo sul percorso, «I tuoi giorni» nel paesaggio, cielo e colline nel motore, voce di Alfred, Segnala in guida.
 - **Android Auto**: guida, «Dove devi andare», panoramica, ricerca, segnalazioni, «Sei su … · km», soccorsi con km e
@@ -23,7 +24,24 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 ## Tavole
 - Tutte le tavole di Mappe sulla tela (pagina Mappe: `Map*`, comprese MapAutoGuida, MapLuogoAperta, MapLivelli, MapMezzi,
   MapCieli) sono **approvate e in codice**.
+- **MapViaggio 2-6** (fila «Mappe dall'apertura alla partenza») in codice dal 16 novembre, 13:03 (commit 579b305, giro
+  **Mappe 67**); MapViaggio1 è com'era l'app prima.
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
+- Da approvare: nessuna tavola di Mappe in attesa.
+
+## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 67)
+- Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
+  pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
+  riassunto (tempo, distanza, arrivo, scelte attive, dislivello in bici e a piedi, impegno).
+- Tappe (tavola 5, `EuriseViaggio.kt`): foglio con partenza, tappe e arrivo da trascinare, togli, «lungo la strada»,
+  aggiungi, Fatto.
+- Luogo (tavola 3, `EuriseLuogo.kt`): impegno in cima, «Indicazioni · ≈ N min»; niente barra di CoMaps se non si pianifica.
+- Ricerca (tavola 2, `EuriseSearchHome.kt`): titolo grande, Dal Calendario, Sempre a portata (Casa e Lavoro dai preferiti,
+  contatto, benzinai), recenti; campo in basso sopra la tastiera.
+- Android Auto, dettatura: «Ti ascolto» in una schermata che mostra ogni passo e ogni errore (`car/EuriseCarListenScreen.java`;
+  prima sembrava non succedere nulla), controllo del microfono che non manda audio, microfono di Alfred anche in guida e
+  nella ricerca.
+- Compilazione: Mappe 67 in coda dietro Mappe 66 (ramo `prova-browser`), Compila APK 655 in corso.
 
 ## 16 novembre: correzioni dopo la prova di Mappe 58 (Mappe 65)
 - Prova del proprietario: «va molto bene». Correzioni chieste e fatte:
@@ -42,20 +60,22 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
     (`car/EuriseCarSplitInfo.java`), solo quando la mappa è stretta rispetto allo schermo dell'auto. **Da verificare in
     auto**: il riconoscimento dello schermo diviso è una stima (superficie sotto l'80% della larghezza dell'auto o area
     visibile sotto il 55%).
-- **Dettatura in Android Auto che non funziona**: chiesto al proprietario quale microfono (il tasto di Alfred nostro o
-  quello della tastiera dell'auto nella ricerca) e cosa compare.
-- **Tavole nuove** (pagina Mappe della tela, fila «Mappe dall'apertura alla partenza», da discutere): MapViaggio1Apertura
+- **Dettatura in Android Auto che non funziona**: affrontata nel giro delle 13:03 (vedi sopra).
+- **Tavole nuove** (pagina Mappe della tela, fila «Mappe dall'apertura alla partenza», poi in codice alle 13:03): MapViaggio1Apertura
   (com'è oggi), 2 Dove devi andare (campo in basso con la dettatura), 3 Luogo (Indicazioni coi minuti, Parti ora),
   4 Percorso (partenza e arrivo in vetro al posto della barra di CoMaps con i tipi di percorso; Evita e + Tappa in
   pillole; mezzi coi minuti), 5 Tappe (si trascinano, benzinaio e bar lungo la strada), 6 Bici e a piedi (piste,
   dislivello, scelte). Oggi in alto nel percorso c'è ancora la barra di CoMaps (indietro, auto/pedone/mezzi/bici/righello,
-  opzioni): è la parte da adattare.
+  opzioni): adattata nel giro delle 13:03.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario**: Mappe 60 (orari della scheda aperta; Livelli → «Km sulle strade»; km in auto su autostrada).
-   Restano senza esito Mappe 48 e 51 («Avvia la navigazione» dopo essere usciti durante il calcolo, «Dove sei») e Mappe 58.
-2. Prossimo giro di Mappe su `brand`: porta la spiegazione corretta del km («di solito meno di 1 MB»; Mappe 60 dice
-   «qualche MB»).
+1. **Mappe 67**: quando la compilazione riesce, `apk-prova.yml` e link diretti in chat. Poi prova del proprietario:
+   Dove devi andare, Luogo, Percorso al posto della barra di CoMaps, Tappe da trascinare, bici e a piedi; in auto la
+   dettatura («Ti ascolto» e i suoi messaggi), anche con lo schermo diviso. Porta anche la spiegazione corretta del km
+   («di solito meno di 1 MB»).
+2. **Prove rimaste senza esito**: Mappe 60 (orari della scheda aperta; Livelli → «Km sulle strade»; km in auto su
+   autostrada), Mappe 48 e 51 («Avvia la navigazione» dopo essere usciti durante il calcolo, «Dove sei»), Mappe 65
+   (correzioni dopo Mappe 58).
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. Scelta del proprietario: spostare i file su un server europeo (Codeberg o nostro) per più tacchette.
