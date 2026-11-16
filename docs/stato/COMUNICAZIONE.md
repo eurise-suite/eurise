@@ -61,6 +61,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   **ChatCondividi**; fila «Email da lavoro» con **MailSmart**, **MailInsieme**, **MailScriviLavoro**. Documento collegato
   «Mail e Chat da lavoro · proposta, guida KMail, posta nostra»: https://claude.ai/artifact/F7uLSEo2KPWyaYBFtNCWJe
 - **Da approvare** (pagina «Chat ed Email», 16 novembre, sera; richiesta del proprietario):
+  - le otto idee sono già **approvate come idee** dal proprietario (nella chat Organizzazione, 16 novembre, notte tarda);
+    qui si approvano le tavole. Il codice si divide con l'area Organizzazione (Calendario, Attività, Note, Drive);
   - fila «Lavorare insieme»: **InsRuoli** (persone e ruoli: capo, segreteria, collaboratori, colleghi, famiglia, amici, con
     cosa vede ognuno di base; da qui partono le proposte), **InsCondividi** («Condividi con…» per appuntamento, nota, cosa da
     fare, elenco, cartella: Vede/Modifica, arriva in Chat o per email, dal tuo cloud), **InsAffida** («Affida a…» con

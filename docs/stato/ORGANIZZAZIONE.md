@@ -138,6 +138,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
    basso per nota o cosa da fare, scorrimento ai giorni prima e dopo; contatti suggeriti mentre si scrive nel nuovo
    appuntamento e con @ nelle Attività (lettura dei contatti sul telefono).
 3. **Tavole della collaborazione rapida** (le otto idee approvate), poi il codice in ordine con l'area Comunicazione.
+   Fatte dall'area Comunicazione il 16 novembre, sera: tela, pagina «Chat ed Email», fila «Lavorare insieme» (InsRuoli,
+   InsCondividi, InsAffida, InsAssistente, InsElenchi, InsRiunione, InsDisponibilita, InsPalla, InsSquadra): non rifarle,
+   vedi `docs/stato/COMUNICAZIONE.md`.
 4. **Codice della Rubrica** dopo le tavole arricchite, con l'area Comunicazione; scelta «Dove lo salvo?» con gli account del
    telefono (Murena e Nextcloud via DAVx5/CardDAV, solo telefono, Google per ultimo con l'avviso).
 5. **Prove del proprietario** sui giri 671 e 673 (note bloccate e vocali, blocchi, cursore, Calendario compatto, icone,
