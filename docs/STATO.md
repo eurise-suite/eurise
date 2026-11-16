@@ -2778,3 +2778,9 @@ così l'altra chat non le annulla.
 - Non ancora: le icone dentro la Scrivania (temi «Eurise» ed «Eurise a colori», `SuiteSymbols`, bolle chiare e scure)
   usano ancora i simboli a tratto; Calendario, Attività, Note, Leggi, Meteo, Calcolatrice, Traduttore non hanno un APK
   o un'icona di sistema loro, quindi per ora il disegno nuovo vive solo sulla tela.
+- **Temi di icone nuovi nella Scrivania (16 novembre, in prova)**: in Griglia e icone › Tema delle icone ci sono
+  «Bolle chiare (nuove)», «Bolle scure (nuove)», «Colorate (nuove)» accanto ai temi di prima (che restano finché il
+  proprietario non decide di toglierli). `SuiteDrawings.kt` è generato da `scripts/icone_kotlin.py` (stessi disegni e
+  colori della tela); `SuiteIcons.kt` sceglie il disegno (sezioni di Eurise per nome, app separate per pacchetto) e
+  disegna bolla e disegno; le app non della suite tengono il loro simbolo nella stessa bolla. Vetro senza sfocatura reale
+  (bianco o grafite opaco con luce e bordo), come le bolle senza Haze.

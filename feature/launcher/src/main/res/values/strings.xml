@@ -186,6 +186,9 @@
     <string name="appearance_icon_theme">Tema delle icone</string>
     <string name="appearance_icon_theme_eurise">Eurise</string>
     <string name="appearance_icon_theme_eurise_color">Eurise a colori</string>
+    <string name="appearance_icon_theme_glass_light">Bolle chiare (nuove)</string>
+    <string name="appearance_icon_theme_glass_dark">Bolle scure (nuove)</string>
+    <string name="appearance_icon_theme_vivid">Colorate (nuove)</string>
     <string name="appearance_icon_theme_system">Sistema</string>
     <string name="appearance_icon_theme_ios">Stile iOS</string>
     <string name="appearance_icon_theme_material">Stile Android</string>

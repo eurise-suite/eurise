@@ -217,7 +217,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     var image by remember(entry.key, theme) { mutableStateOf<IconImage?>(null) }
     LaunchedEffect(entry.key, theme) { image = IconLoader.load(context, entry, px, theme) }
     val colorful = theme == IconThemes.EURISE_COLOR
-    val fromApp = LocalAppIconColors.current || colorful || IconStyles.isStyle(theme)
+    val fromApp = LocalAppIconColors.current || colorful || IconStyles.isStyle(theme) || IconThemes.isNewSeries(theme)
     var appTint by remember(entry.key) { mutableStateOf(AppColors.cached(entry)) }
     if (fromApp && entry.euriseSection == null) {
         LaunchedEffect(entry.key) { if (appTint == null) appTint = AppColors.suiteTint(context, entry) }
@@ -228,6 +228,33 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         eu.eurise.feature.launcher.settings.IconPalette[Math.floorMod(entry.packageName.hashCode() + entry.label.hashCode(), eu.eurise.feature.launcher.settings.IconPalette.size)]
     } else {
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark
+    }
+    // Serie nuove (tela, pagina Icone, 16 novembre 2026): le app della suite hanno il loro disegno; le altre il loro
+    // simbolo nella stessa bolla, nella loro tinta (chiara sul vetro scuro, piena sul vetro chiaro, crema sul colorato).
+    SuiteIcons.series(theme)?.let { series ->
+        val drawing = remember(entry.key) { SuiteIcons.drawingFor(entry) }
+        val round = drawing?.round ?: SuiteIcons.roundFor(tint)
+        val glow = drawing?.glow ?: lerp(tint, Color.White, 0.32f)
+        val brush = when (series) {
+            SuiteIcons.Series.Light -> vividSymbol(tint, false)
+            SuiteIcons.Series.Dark -> vividSymbol(tint, true)
+            SuiteIcons.Series.Color -> listOf(Color(0xFFFFFDF8), Color(0xFFEFDDBF))
+        }
+        Box(modifier.size(size), contentAlignment = Alignment.Center) {
+            SuiteBubble(series, size, IconStyles.shape(LocalIconShape.current, theme), round, glow) {
+                if (drawing != null) {
+                    SuiteDrawingCanvas(drawing, series, Modifier.size(size))
+                } else when (val img = image) {
+                    is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(brush))
+                    is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.86f))
+                    is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
+                    is IconImage.Plain -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
+                    null -> Icon(sectionIcon(entry), contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
+                }
+            }
+            if (badge > 0) Badge(badge, dark, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-3).dp))
+        }
+        return
     }
     // A colori (tavola IconeColori): tondo chiaro nella tinta (un po' più sfumato in alto a sinistra), di sera il tondo
     // perde luce ma resta colorato; il simbolo va da una tinta viva a una più profonda, chiara e brillante di sera.

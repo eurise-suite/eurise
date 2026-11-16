@@ -22,8 +22,16 @@ object IconThemes {
     /** Stessi simboli della suite su un tondo chiaro nella tinta dell'app: per chi non vuole le icone scure. */
     const val EURISE_COLOR = "eurise_color"
 
+    /** Serie nuove (tela, pagina Icone, 16 novembre 2026), in prova accanto alle vecchie: bolle chiare, bolle scure, colorate. */
+    const val GLASS_LIGHT = "eurise_glass_light"
+    const val GLASS_DARK = "eurise_glass_dark"
+    const val VIVID = "eurise_vivid"
+
+    /** Vero per le tre serie nuove. */
+    fun isNewSeries(theme: String) = theme == GLASS_LIGHT || theme == GLASS_DARK || theme == VIVID
+
     /** Vero per i temi disegnati dalla suite (simboli nella forma): Eurise, a colori, iOS, Android, /e/OS. */
-    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR || IconStyles.isStyle(theme)
+    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR || isNewSeries(theme) || IconStyles.isStyle(theme)
     const val SYSTEM = "system"
 
     /** Le azioni con cui i pacchetti di icone si fanno trovare dai launcher. */
@@ -99,6 +107,6 @@ object IconThemes {
     }
 
     /** Vero se il pacchetto del tema è ancora installato. */
-    fun exists(context: Context, theme: String): Boolean = theme == EURISE || theme == SYSTEM || IconStyles.isStyle(theme) ||
+    fun exists(context: Context, theme: String): Boolean = theme == EURISE || theme == EURISE_COLOR || theme == SYSTEM || isNewSeries(theme) || IconStyles.isStyle(theme) ||
         runCatching { context.packageManager.getApplicationInfo(theme, 0); true }.getOrDefault(false)
 }
