@@ -2784,27 +2784,6 @@ così l'altra chat non le annulla.
   disegna bolla e disegno; le app non della suite tengono il loro simbolo nella stessa bolla. Vetro senza sfocatura reale
   (bianco o grafite opaco con luce e bordo), come le bolle senza Haze.
 
-## 16 novembre: decisioni del proprietario sul computer; aree con stato proprio
-- **Tavole «Eurise sul computer» tutte approvate** (Oggi, Oggi Notte, Calendario, Note, Attività, Email, Mappe, Alfred,
-  nuova scheda di Firefox). Mappe sul computer con **CoMaps** (gli stessi file del telefono, offline).
-- **Protezione Eurise in Firefox: accesa di base con un interruttore rapido e in vista** per spegnerla (fatto: nella
-  finestrella del pulsante Eurise, oltre che nelle Impostazioni).
-- Da qui le chat lavorano per area, ognuna con il suo file di stato in `docs/stato/` (qui solo una riga per consegna che
-  rimanda lì). Prima area: **Browser** (telefono e computer) → `docs/stato/BROWSER.md`.
-- 16 novembre: area Mappe con stato proprio in `docs/stato/MAPPE.md` (completato); cartelli con la fotocamera messi da parte.
-- 16 novembre, Browser: nuova scheda Eurise in Firefox dalla tavola PcFirefoxScheda (estensione 0.2.0, con Leggi dopo sul computer) → `docs/stato/BROWSER.md`.
-- 16 novembre, Alfred e AI: stato dell'area completato → `docs/stato/ALFRED.md`.
-- 16 novembre, Computer: COMPUTER.md completato; Oggi sul computer dalle tavole PcOggi e PcOggiNotte → `docs/stato/COMPUTER.md`.
-- 16 novembre, Organizzazione: file di stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/ORGANIZZAZIONE.md`.
-- 16 novembre, Comunicazione: stato dell'area completato → `docs/stato/COMUNICAZIONE.md`.
-- 16 novembre, Office: OFFICE.md completato; il lavoro del 13–15 novembre è ancora sul ramo `office`, da unire a `brand` (primo passo) → `docs/stato/OFFICE.md`.
-- 16 novembre, Password, Tastiera, Galleria: stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/PICCOLE.md`.
-- 16 novembre, Mappe: tavole MapViaggio 1-6 e dettatura in Android Auto in Mappe 69 (in `apk-prova`) → `docs/stato/MAPPE.md`.
-- 16 novembre, sera, Tastiera: modello del tocco per tasto, correzioni col dizionario che ne tengono conto, parole imparate nel backup della suite · giro 663 → `docs/stato/PICCOLE.md`.
-- 16 novembre, sera, Organizzazione: icone di Calendario, Attività e Note nel cassetto, `SwitchRow` comune in core/designsystem, Scrivania e Drive divisi in più file, tavole NoteBlocca/NoteBloccata/NoteVocale da approvare · giro 661 → `docs/stato/ORGANIZZAZIONE.md`.
-- 16 novembre, Browser: download multipli, niente doppioni con «Salva in…», ✕ in fondo alla scheda aperta → `docs/stato/BROWSER.md`.
-- 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
-<<<<<<< HEAD
 
 ## Office (ramo `office`, chat dedicata dal 13 novembre)
 Ramo `office` creato da `brand` (b858da8). Si toccano solo `office/`, il lettore PDF e lo Scanner dell'app principale e i
@@ -3308,7 +3287,26 @@ OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-comp
 telefono e tablet (codice condiviso cambiato, non ancora compilato); poi motore a richiesta (OffMotore: capire se i file del
 motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
 Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).
-=======
+
+## 16 novembre: decisioni del proprietario sul computer; aree con stato proprio
+- **Tavole «Eurise sul computer» tutte approvate** (Oggi, Oggi Notte, Calendario, Note, Attività, Email, Mappe, Alfred,
+  nuova scheda di Firefox). Mappe sul computer con **CoMaps** (gli stessi file del telefono, offline).
+- **Protezione Eurise in Firefox: accesa di base con un interruttore rapido e in vista** per spegnerla (fatto: nella
+  finestrella del pulsante Eurise, oltre che nelle Impostazioni).
+- Da qui le chat lavorano per area, ognuna con il suo file di stato in `docs/stato/` (qui solo una riga per consegna che
+  rimanda lì). Prima area: **Browser** (telefono e computer) → `docs/stato/BROWSER.md`.
+- 16 novembre: area Mappe con stato proprio in `docs/stato/MAPPE.md` (completato); cartelli con la fotocamera messi da parte.
+- 16 novembre, Browser: nuova scheda Eurise in Firefox dalla tavola PcFirefoxScheda (estensione 0.2.0, con Leggi dopo sul computer) → `docs/stato/BROWSER.md`.
+- 16 novembre, Alfred e AI: stato dell'area completato → `docs/stato/ALFRED.md`.
+- 16 novembre, Computer: COMPUTER.md completato; Oggi sul computer dalle tavole PcOggi e PcOggiNotte → `docs/stato/COMPUTER.md`.
+- 16 novembre, Organizzazione: file di stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/ORGANIZZAZIONE.md`.
+- 16 novembre, Comunicazione: stato dell'area completato → `docs/stato/COMUNICAZIONE.md`.
+- 16 novembre, Office: OFFICE.md completato; il lavoro del 13–15 novembre è ancora sul ramo `office`, da unire a `brand` (primo passo) → `docs/stato/OFFICE.md`.
+- 16 novembre, Password, Tastiera, Galleria: stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/PICCOLE.md`.
+- 16 novembre, Mappe: tavole MapViaggio 1-6 e dettatura in Android Auto in Mappe 69 (in `apk-prova`) → `docs/stato/MAPPE.md`.
+- 16 novembre, sera, Tastiera: modello del tocco per tasto, correzioni col dizionario che ne tengono conto, parole imparate nel backup della suite · giro 663 → `docs/stato/PICCOLE.md`.
+- 16 novembre, sera, Organizzazione: icone di Calendario, Attività e Note nel cassetto, `SwitchRow` comune in core/designsystem, Scrivania e Drive divisi in più file, tavole NoteBlocca/NoteBloccata/NoteVocale da approvare · giro 661 → `docs/stato/ORGANIZZAZIONE.md`.
+- 16 novembre, Browser: download multipli, niente doppioni con «Salva in…», ✕ in fondo alla scheda aperta → `docs/stato/BROWSER.md`.
+- 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
 - 16 novembre, notte, Organizzazione: Note bloccate e vocali, blocchi con menu, cursore in vista, Calendario compatto, icone col colore originale, Drive con selezione multipla; tavole Agenda, Rubrica, icone, Drive da approvare · giro 671 → `docs/stato/ORGANIZZAZIONE.md`.
->>>>>>> origin/brand
 - 16 novembre, Office: ramo `office` unito in `brand` (Office leggero da Compila, motore da office-app su `prova-office`, AppearanceProvider, motore nel centro privacy) → `docs/stato/OFFICE.md`.
