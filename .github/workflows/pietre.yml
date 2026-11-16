@@ -63,7 +63,9 @@ jobs:
       - name: Estratto di OpenStreetMap
         run: |
           set -e
-          curl -fsSL --retry 6 --retry-all-errors --retry-delay 40 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf"
+          # Geofabrik a volte rifiuta i runner di GitHub dopo i primi download: allora lo specchio di openstreetmap.fr.
+          curl -fsSL --retry 3 --retry-all-errors --retry-delay 30 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf" \
+            || curl -fsSL --retry 3 --retry-all-errors --retry-delay 30 -o in.osm.pbf "https://download.openstreetmap.fr/extracts/${{ matrix.src }}-latest.osm.pbf"
           ls -lh in.osm.pbf
           # Solo pietre miliari e strade con sigla; i nodi delle strade restano (servono le posizioni).
           osmium tags-filter -o filtro.osm.pbf in.osm.pbf \

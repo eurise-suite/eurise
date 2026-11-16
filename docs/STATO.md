@@ -22,8 +22,7 @@ sezioni datate in fondo al file). Ogni voce resta finché non è fatta.
   - **Passo del proprietario prima di pubblicare Mappe**: Transitous chiede di concordare l'uso oltre 720 richieste al
     giorno in tutto (canale Matrix di Transitous) e un contatto nel User-Agent (oggi il sito del progetto).
   - Fatti il 15 novembre, sera: km dalle pietre miliari (vedi sotto) e orari della scheda aperta nello stile della tavola.
-  - Restano: «Leggi i cartelli con la fotocamera» (serve un modello di visione scaricato a richiesta, senza ML Kit: da
-    discutere, poi tavola); prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio viaggio» nei viaggi
+  - Messo da parte il 16 novembre: «Leggi i cartelli con la fotocamera» (forse tra qualche anno). Restano: prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio viaggio» nei viaggi
     lontani (nessuna fonte libera verificata per prezzi e pedaggi).
   - Segnalazioni brevi (lavori, coda, pericolo) condivise con gli altri: serve un servizio comune, da decidere.
   - **Km vero su autostrade, superstrade e provinciali**: in codice (15 novembre, sera). File delle pietre miliari per paese
@@ -2792,3 +2791,4 @@ così l'altra chat non le annulla.
   finestrella del pulsante Eurise, oltre che nelle Impostazioni).
 - Da qui le chat lavorano per area, ognuna con il suo file di stato in `docs/stato/` (qui solo una riga per consegna che
   rimanda lì). Prima area: **Browser** (telefono e computer) → `docs/stato/BROWSER.md`.
+- 16 novembre: area Mappe con stato proprio in `docs/stato/MAPPE.md` (completato); cartelli con la fotocamera messi da parte.
