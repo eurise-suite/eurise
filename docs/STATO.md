@@ -3318,3 +3318,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, Comunicazione: tavole «Lavorare insieme» (9) e «Spese di gruppo» (3) sulla tela, da approvare → `docs/stato/COMUNICAZIONE.md`.
 - 16 novembre, sera, Mappe: bolla della musica e delle chiamate in guida (telefono e Android Auto), servizio «Testi delle canzoni» (core/suite, core/designsystem) → `docs/stato/MAPPE.md`.
 - 16 novembre, notte, Mappe: Mappe 76 (bolla della musica e delle chiamate) ed Eurise 681 in `apk-prova`; prossimo: le otto aggiunte alla bolla, in una chat nuova → `docs/stato/MAPPE.md`.
+- 16 novembre, notte fonda, Organizzazione: Agenda al posto di Oggi (icona propria) e contatti suggeriti con @ in Agenda, appuntamenti e Attività; tavole Rubrica arricchite, Drive rifatte, collaborazione (Coll*, da confrontare con le Ins* di Comunicazione) · giro 688 → `docs/stato/ORGANIZZAZIONE.md`.

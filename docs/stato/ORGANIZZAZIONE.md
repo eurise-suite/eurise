@@ -5,7 +5,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 `docs/PIATTAFORME.md`. Ramo `brand`; giri propri su `prova-organizzazione`.
 
 ## Cosa comprende
-Scrivania, Oggi, Calendario, Attività, Note, Contatti, Cloud, Orologio, File, Scanner, lettore PDF, bolle, suonerie e sfondi.
+Scrivania, Agenda (prima Oggi), Calendario, Attività, Note, Contatti, Cloud, Orologio, File, Scanner, lettore PDF, bolle, suonerie e sfondi.
 Fuori dall'area, anche se stanno nell'APK principale: Alfred (`docs/stato/ALFRED.md`), Meteo (`MAPPE.md`), Rubrica
 dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`).
 
@@ -112,6 +112,39 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   i calendari; 7) «Passa la palla»: inoltro di email, messaggio o documento con una riga sul da farsi e lo stato; 8) cartella
   di squadra in Drive con chi c'è e cosa è cambiato da ieri. Toccano anche Chat, Email (area Comunicazione) e Drive.
 
+## 16 novembre, notte fonda: tavole arricchite, Agenda in codice, collaborazione
+- **Rubrica, tavole arricchite** (pagina Rubrica, da riguardare col proprietario): RubNuovo (390×2760) con titolo a pillole
+  (Dott., Dott.ssa, Avv., Ing., Prof., Arch.…), secondo nome, soprannome, numeri con etichetta (cellulare, lavoro, fax, +
+  casa/altro), email ed **email PEC a parte col sigillo**, indirizzo con via, CAP, città, provincia, paese, azienda/reparto/
+  ruolo, codice fiscale e P.IVA, compleanno e anniversario (Date importanti), sito e profili, persone legate, etichette,
+  nota, suoneria, «Dove lo salvo?»; RubScheda (390×2100) con gli stessi campi in lettura, ultima ricevuta PEC, «Portami».
+  Il codice della Rubrica va fatto con l'area Comunicazione (vCard 4 per titolo, PEC, relazioni).
+- **Drive, tavole rifatte** (pagina Drive e Scanner, da approvare): DriveCartelle (Scanner in alto, «86 GB su 256» con la
+  barra, cartelle, sotto la parte di oggi come nella foto: Scansiona/Carica/Cartella, Per i tuoi impegni, Riordina,
+  Recenti a schede), DriveCassetto (telefono e ogni cloud con «x GB su y» e tacchette), DriveCloud nuova (Murena aperto).
+- **Agenda in codice** (AgeGiorno e AgeScrivi approvate): `feature/today` riscritto (`AgendaScreen`, `AgendaViewModel`,
+  `AgendaText` con i test, `DayPeople`, `Maxims`, raccolta di 34 massime nell'APK). Oggi si chiama «Agenda» (sezione
+  della barra con il simbolo `EuriseIcons.agenda`, alias `.AgendaApp` con l'icona `ic_agenda_app` della serie colorata,
+  «Agenda» nella Scrivania e nei temi nuovi). Giorno con saluto, settimana e meteo (Open-Meteo, solo se acceso), si scorre
+  ai giorni prima e dopo (frecce, tocco sul titolo torna a oggi); appuntamenti con «Parti alle… · N min in auto» (Strada,
+  solo se accesa); cose da fare con le persone come pillole; persone del giorno (collegate agli impegni e alle cose da fare,
+  invitati in rubrica) con Chiama e Scrivi; massima del giorno; campo in basso: + crea una cosa da fare per il giorno
+  mostrato, il foglio una nota, una frase da appuntamento («domani alle 10 dentista») apre il + unico già scritto.
+  Le note recenti non sono più in Agenda (stanno in Note).
+- **Contatti suggeriti mentre si scrive** (`core/links`: `ContactSuggestions`, `MentionQuery` con i test, `PickedPeople`):
+  con «@» ovunque, e nel nuovo appuntamento anche scrivendo il nome dopo «con»; la persona scelta si collega a ciò che
+  nasce (la si ritrova nella sua scheda). In Agenda, nuovo appuntamento (`EventEditorScreen`) e aggiunta rapida delle
+  Attività (`QuickAddSheet`, resta «@Nome» nel titolo). Senza permesso della rubrica compare una riga per darlo.
+- **Parti comuni toccate**: `core/designsystem` (solo il simbolo `EuriseIcons.agenda`), `core/data` (`RouteRepository`
+  spostato da `feature/launcher/route` a `core/data/route`, stesso codice), `canvas.json` della tela (pagina nuova
+  «Collaborazione», titoli di Rubrica, Drive e Agenda), `scripts/icone_disegni.json` (disegno «Agenda», Corallo vivo).
+- **Collaborazione rapida, tavole** (pagina nuova «Collaborazione», da approvare): CollCondividi, CollAffida,
+  CollAssistente, CollElenchi, CollRiunione, CollDisponibilita, CollPassaPalla, CollSquadra. **Attenzione**: nello stesso
+  momento l'area Comunicazione ha disegnato le stesse idee (Ins* nella pagina «Chat ed Email», più InsRuoli e le Spe* delle
+  spese di gruppo). Le Coll* sono la seconda proposta, vista da Agenda, Attività, Note e Drive: il proprietario sceglie o
+  unisce; poi il codice si fa insieme a Comunicazione, una sola versione.
+- Giro 688 (Compila 43973959364 su `prova-organizzazione`) pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -124,28 +157,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Scrivania come temi «(nuove)» accanto ai vecchi; Calendario, Attività e Note non hanno ancora un'icona di sistema loro.
 - **Approvate, sul computer (le segue l'area Computer, `COMPUTER.md`)**: PcOggi e PcOggiNotte in codice dal 16 novembre
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
-- **Approvate, codice da scrivere**: AgeGiorno, AgeScrivi (Agenda); RubElenco, RubNuovo, RubScheda (Rubrica, da arricchire
-  prima con i campi decisi il 16 novembre). NoteBlocca, NoteBloccata, NoteVocale approvate e in codice (giri 671 e 673).
-- **Da approvare**: IcoColoreBolle; DriveCartelle e DriveCassetto (da ridisegnare con Scanner, spazio usato e la parte di
-  oggi sotto le cartelle); le tavole della collaborazione rapida (da fare).
+- **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
+  NoteVocale in codice (giri 671 e 673).
+- **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica, tavole arricchite il 16 novembre: da
+  riguardare col proprietario, poi il codice con l'area Comunicazione).
+- **Da approvare**: IcoColoreBolle; DriveCartelle, DriveCassetto e DriveCloud (rifatte con Scanner, spazio usato e la
+  parte di oggi sotto le cartelle); le otto tavole Coll* della collaborazione (da confrontare con le Ins* di Comunicazione).
 
 ## Prossimi passi, in ordine
-1. **Tavole da completare subito**: Rubrica arricchita (RubNuovo e RubScheda con titolo, soprannome, più numeri, PEC,
-   indirizzi completi e il resto; eventuale tavola dei campi) e Drive ridisegnata (Scanner, spazio usato/totale per
-   telefono e ogni cloud, la parte di oggi sotto le cartelle). Poi far vedere al proprietario.
-2. **Codice dell'Agenda** (approvata): Oggi diventa «Agenda» con la sua icona; saluto e meteo, appuntamenti con la strada
-   (Mappe), cose da fare, persone del giorno dagli impegni, massima del giorno (raccolta libera nell'APK, piccola), campo in
-   basso per nota o cosa da fare, scorrimento ai giorni prima e dopo; contatti suggeriti mentre si scrive nel nuovo
-   appuntamento e con @ nelle Attività (lettura dei contatti sul telefono).
-3. **Tavole della collaborazione rapida** (le otto idee approvate), poi il codice in ordine con l'area Comunicazione.
-   Fatte dall'area Comunicazione il 16 novembre, sera: tela, pagina «Chat ed Email», fila «Lavorare insieme» (InsRuoli,
-   InsCondividi, InsAffida, InsAssistente, InsElenchi, InsRiunione, InsDisponibilita, InsPalla, InsSquadra): non rifarle,
-   vedi `docs/stato/COMUNICAZIONE.md`.
-4. **Codice della Rubrica** dopo le tavole arricchite, con l'area Comunicazione; scelta «Dove lo salvo?» con gli account del
-   telefono (Murena e Nextcloud via DAVx5/CardDAV, solo telefono, Google per ultimo con l'avviso).
-5. **Prove del proprietario** sui giri 671 e 673 (note bloccate e vocali, blocchi, cursore, Calendario compatto, icone,
-   selezione multipla in Drive) e su quelle rimaste aperte dal giro 651.
-6. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
+1. **Il proprietario guarda** le tavole arricchite (Rubrica), quelle rifatte (Drive) e le Coll* accanto alle Ins* di
+   Comunicazione; prova l'Agenda e i contatti suggeriti (giro 688).
+2. **Codice di Drive** dopo l'approvazione: Scanner in alto, spazio usato su totale (telefono: `StatFs`; cloud: quota
+   WebDAV `quota-used-bytes`/`quota-available-bytes`), la parte di oggi sotto le cartelle, DriveCloud.
+3. **Collaborazione**: scelta tra Coll* e Ins*, poi il codice con l'area Comunicazione, nell'ordine: Condividi con…
+   (CalDAV/WebDAV di Murena e Nextcloud), Affida a…, Elenchi condivisi, Disponibilità in un link, Nota della riunione,
+   Agenda con l'assistente, Passa la palla, Cartella di squadra.
+4. **Codice della Rubrica** con l'area Comunicazione (campi in `core/contacts`, vCard 4); «Dove lo salvo?» con gli account
+   del telefono (Murena e Nextcloud via DAVx5/CardDAV, solo telefono, Google per ultimo con l'avviso).
+5. **Agenda, rifiniture possibili**: nome dell'utente nel saluto (preso dall'Accoglienza della Scrivania), invitati anche
+   da aggiungere all'appuntamento quando la persona scelta ha un'email.
+6. **Prove del proprietario** sui giri 671, 673 e 688.
+7. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
@@ -160,7 +192,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Si compila solo su GitHub Actions (qui Maven non si raggiunge); i test unitari (`core/data`, `feature/*`, `core/files`)
   girano nella compilazione. Negli `strings.xml` controllare gli apostrofi dopo ogni scrittura.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela) solo se serve, scrivendolo qui.
-- Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Scrivania, Calendario, Note, Attività, Cloud, Drive e
-  Scanner, Orologio, Bolle, Icone, «Suonerie e sfondo»).
+- Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Agenda, Rubrica, Collaborazione, Scrivania, Calendario,
+  Note, Attività, Cloud, Drive e Scanner, Orologio, Bolle, Icone, «Suonerie e sfondo»).
 - Storia completa: le sezioni datate di `docs/STATO.md` dall'8 al 16 novembre (in cima anche la descrizione di Scrivania,
   Calendario, Note, Cloud e Attività come erano l'8 novembre).
