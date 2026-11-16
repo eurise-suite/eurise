@@ -29,7 +29,13 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
 - **MapBollaAuto, MapBollaAutoChiamata, MapBollaTelefono** (pagina «comunicazione», riga sotto MapViaggio): approvate il
   16 novembre, sera, e in codice (vedi sotto).
-- Da approvare: nessuna tavola di Mappe in attesa.
+- **Da approvare (17 novembre)**: riga MapBolla (pagina «comunicazione», a destra di MapBollaTelefono) con le otto aggiunte
+  alla bolla: **MapBollaPodcast** (a), **MapBollaDopo** (b), **MapBollaRadio** (c), **MapBollaPersa** (d),
+  **MapBollaRitardo** (e), **MapBollaMessaggio** (f), **MapBollaImpegni** (g), **MapBollaArrivo** (h) e
+  **MapBollaAutoStati** (Android Auto: le azioni passano dagli avvisi dell'auto, `AppManager.showAlert`, max 2 pulsanti;
+  la fila della guida resta a 4). Scelte proposte: messaggi senza testo in vista, risposta con la risposta rapida della
+  notifica; arrivo condiviso per SMS da Eurise Messaggi (niente server, mai la posizione continua). Generatore:
+  `/home/claude/tela/gen/bolla.py` (fuori dal repo). **Parte comune toccata**: `canvas.json` della tela, solo per le nove voci.
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
@@ -132,8 +138,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
    nella schermata della bandierina); bolla in guida (Livelli › Musica e chiamate in guida, poi l'accesso alle notifiche)
    con Spotify e un'altra app, chiamata in arrivo e in corso, pausa, telefono in orizzontale, auto; Livelli › Dalla rete ›
    Testi delle canzoni.
-2. **Bolla, otto aggiunte chieste dal proprietario il 16 novembre («implementa tutto»)**: prima gli stati nuovi sulla tela
-   (riga MapBolla, pagina «comunicazione») da mostrare, poi il codice:
+2. **Bolla, otto aggiunte chieste dal proprietario il 16 novembre («implementa tutto»)**: tavole disegnate il 17 novembre
+   (riga MapBolla, da approvare), poi il codice:
    a) podcast e audiolibri: capitolo e «all'arrivo mancheranno 8 min» (o «finisce prima dell'arrivo»);
    b) brano successivo «Dopo: …» dalla coda dell'app (`MediaController.getQueue`, quando c'è);
    c) radio: stazione e programma in onda (dai metadati della sessione);

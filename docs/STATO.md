@@ -3321,3 +3321,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, notte fonda, Organizzazione: Agenda al posto di Oggi (icona propria) e contatti suggeriti con @ in Agenda, appuntamenti e Attività; tavole Rubrica arricchite, Drive rifatte, collaborazione (Coll*, da confrontare con le Ins* di Comunicazione) · giro 688 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Browser: schede e indirizzo compatti come Vivaldi (tavola BrwCompatta); toccati core/suite AppearanceContract e AppearanceProvider per la mano → `docs/stato/BROWSER.md`.
 - 16 novembre, notte, Tastiera: strumenti del riquadro nell'ordine scelto dal proprietario · giro 690 → `docs/stato/PICCOLE.md`.
+- 17 novembre, Mappe: tavole delle otto aggiunte alla bolla (MapBollaPodcast…Arrivo, MapBollaAutoStati) sulla tela, da approvare → `docs/stato/MAPPE.md`.
