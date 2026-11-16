@@ -14,8 +14,11 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.app.AlarmManager;
+import android.media.MediaDescription;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
+import android.media.session.MediaSession;
 import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.net.Uri;
@@ -33,8 +36,13 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.PreferenceManager;
 import app.organicmaps.R;
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -67,6 +75,12 @@ public final class EuriseNowPlaying
     @Nullable public final Drawable appIcon;
     /** Quando è andata in pausa (orologio di {@link SystemClock#elapsedRealtime}), 0 se suona. */
     public final long pausedAt;
+    /** «Titolo · Autore» del brano dopo, dalla coda che l'app condivide (null se non la condivide). */
+    @Nullable public String next;
+    /** Numero della traccia e quante sono (capitoli di un audiolibro, puntate), 0 se l'app non li dà. */
+    public long track, tracks;
+    /** Podcast o audiolibro (riga d'arrivo); radio o diretta (senza durata). */
+    public boolean spoken, live;
 
     Media(String pkg, String title, @Nullable String artist, @Nullable String album, @Nullable String year,
           @Nullable String appName, long durationMs, long positionMs, long updatedAt, float speed, boolean playing,
@@ -113,6 +127,10 @@ public final class EuriseNowPlaying
     @Nullable public final PendingIntent open;
     /** «Pranzo, oggi alle 13:00»: il prossimo impegno con questa persona nel Calendario della suite. */
     @Nullable public volatile String together;
+    /** Il numero, quando la notifica lo dà (persona della chiamata con «tel:»). */
+    @Nullable public String number;
+    /** Già risposta almeno una volta (per distinguere la chiamata persa da quella finita). */
+    boolean answered;
 
     Call(String name, @Nullable String detail, long start, boolean incoming, @Nullable Bitmap photo,
          @Nullable PendingIntent open)
@@ -125,6 +143,74 @@ public final class EuriseNowPlaying
       this.open = open;
     }
   }
+
+  /** Un messaggio arrivato in guida (tavola MapBollaMessaggio): resta solo in memoria, fino alla fine del viaggio. */
+  public static final class Msg
+  {
+    public final String key, pkg, sender;
+    @Nullable public final String text, app, group;
+    public final long at;
+    /** La risposta rapida della notifica (azione con campo di testo), null se l'app non la offre. */
+    @Nullable public final Notification.Action reply;
+    @Nullable public final PendingIntent open;
+
+    Msg(String key, String pkg, String sender, @Nullable String text, @Nullable String app, @Nullable String group,
+        long at, @Nullable Notification.Action reply, @Nullable PendingIntent open)
+    {
+      this.key = key;
+      this.pkg = pkg;
+      this.sender = sender;
+      this.text = text;
+      this.app = app;
+      this.group = group;
+      this.at = at;
+      this.reply = reply;
+      this.open = open;
+    }
+  }
+
+  /** Un timer che scorre (notifica con il conto alla rovescia, per esempio dell'Orologio di Eurise). */
+  public static final class Timer
+  {
+    public final String title;
+    /** Quando suona (orologio di {@link System#currentTimeMillis}). */
+    public final long endsAt;
+
+    Timer(String title, long endsAt)
+    {
+      this.title = title;
+      this.endsAt = endsAt;
+    }
+  }
+
+  /** Un impegno dei prossimi minuti dall'app Eurise. */
+  public static final class Event
+  {
+    public final String title;
+    public final long start;
+
+    Event(String title, long start)
+    {
+      this.title = title;
+      this.start = start;
+    }
+  }
+
+  /** Interruttore «Messaggi in guida» in Livelli, spento di base (legge chi scrive e il testo, solo in guida). */
+  public static final String PREF_MESSAGES = "eurise_bubble_messages";
+
+  /** App di podcast e audiolibri: la riga d'arrivo anche per le puntate brevi. */
+  private static final Set<String> SPOKEN_APPS = new HashSet<>(Arrays.asList(
+      "de.danoeh.antennapod", "de.ph1b.audiobook", "com.audiobookshelf.app", "au.com.shiftyjelly.pocketcasts",
+      "com.bambuna.podcastaddict", "com.google.android.apps.podcasts", "fm.castbox.audiobook.radio.podcast",
+      "com.podcast.podcasts", "app.grapheneos.podcasts", "org.kde.kasts", "com.github.ashutoshgngwr.noice",
+      "net.programmierecke.radiodroid2.podcast"));
+
+  private static final LinkedHashMap<String, Msg> MESSAGES = new LinkedHashMap<>();
+  private static final LinkedHashMap<String, Timer> TIMERS = new LinkedHashMap<>();
+  private static volatile List<Event> sEvents = new ArrayList<>();
+  private static long sEventsAt;
+  private static long sLastMissedAt;
 
   private static final Handler MAIN = new Handler(Looper.getMainLooper());
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
@@ -196,6 +282,78 @@ public final class EuriseNowPlaying
     return sCall;
   }
 
+  /** I messaggi arrivati in guida, dal più vecchio. */
+  @NonNull
+  public static List<Msg> messages()
+  {
+    return new ArrayList<>(MESSAGES.values());
+  }
+
+  /** Dimentica i messaggi (fine del viaggio o «Dopo» quando si sono letti). */
+  public static void forgetMessages()
+  {
+    MESSAGES.clear();
+  }
+
+  /** Il timer che suona per primo, se c'è. */
+  @Nullable
+  public static Timer timer()
+  {
+    Timer best = null;
+    final long now = System.currentTimeMillis();
+    for (Timer t : TIMERS.values())
+      if (t.endsAt > now && (best == null || t.endsAt < best.endsAt))
+        best = t;
+    return best;
+  }
+
+  /** La prossima sveglia che il telefono sa (anche di altre app), in millisecondi; 0 se nessuna. */
+  public static long nextAlarm(@NonNull Context c)
+  {
+    final AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+    final AlarmManager.AlarmClockInfo info = am == null ? null : am.getNextAlarmClock();
+    return info == null ? 0 : info.getTriggerTime();
+  }
+
+  public static boolean messagesWanted(@NonNull Context c)
+  {
+    return PreferenceManager.getDefaultSharedPreferences(c).getBoolean(PREF_MESSAGES, false);
+  }
+
+  public static void setMessagesWanted(@NonNull Context c, boolean on)
+  {
+    PreferenceManager.getDefaultSharedPreferences(c).edit().putBoolean(PREF_MESSAGES, on).apply();
+    if (!on)
+      forgetMessages();
+  }
+
+  /**
+   * Gli impegni delle prossime ore dall'app Eurise (anche senza luogo), letti al massimo ogni 3 minuti fuori dal
+   * thread principale; intanto torna l'ultima lettura.
+   */
+  @NonNull
+  public static List<Event> events(@NonNull Context c)
+  {
+    final long now = SystemClock.elapsedRealtime();
+    if (sEventsAt == 0 || now - sEventsAt > 3 * 60_000L)
+    {
+      sEventsAt = now;
+      final Context app = c.getApplicationContext();
+      IO.execute(() -> {
+        final List<Event> list = readEvents(app);
+        if (list != null)
+          MAIN.post(() -> {
+            sEvents = list;
+            // Arrivati gli impegni durante una chiamata: si guarda subito se chi chiama ti aspetta.
+            if (sCall != null)
+              EuriseTrip.onCall(app, sCall);
+            changed();
+          });
+      });
+    }
+    return sEvents;
+  }
+
   /** «in vivavoce», «audio dell'auto», «al telefono»: da dove passa la voce della chiamata. */
   @Nullable
   public static String route(@NonNull Context c)
@@ -217,6 +375,12 @@ public final class EuriseNowPlaying
     if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET || type == AudioDeviceInfo.TYPE_BLE_HEADSET)
       return c.getString(R.string.eurise_np_route_headset);
     return null;
+  }
+
+  /** Qualcosa del viaggio è cambiato ({@link EuriseTrip}): la bolla si ridisegna. */
+  static void poke()
+  {
+    changed();
   }
 
   private static void changed()
@@ -278,6 +442,8 @@ public final class EuriseNowPlaying
     sController = null;
     sMedia = null;
     sCall = null;
+    MESSAGES.clear();
+    TIMERS.clear();
     changed();
   }
 
@@ -288,12 +454,34 @@ public final class EuriseNowPlaying
     if (c == null || !wanted(c))
       return;
     final Notification n = sbn.getNotification();
-    if (n == null || !Notification.CATEGORY_CALL.equals(n.category))
+    if (n == null || c.getPackageName().equals(sbn.getPackageName()))
       return;
+    if ("missed_call".equals(n.category))
+    {
+      // Solo quelle appena arrivate: rileggendo le notifiche all'avvio non tornano le chiamate perse di ieri.
+      if (!removed && System.currentTimeMillis() - sbn.getPostTime() < 2 * 60_000L)
+        onMissedNotification(c, n);
+      return;
+    }
+    if (!Notification.CATEGORY_CALL.equals(n.category))
+    {
+      if (onTimer(sbn, n, removed) || !messagesWanted(c))
+        return;
+      onMessage(c, sbn, n, removed);
+      return;
+    }
     if (removed)
     {
+      final Call gone = sCall;
       sCall = null;
+      // Squillava e nessuno ha risposto: chiamata persa (tavola MapBollaPersa).
+      if (gone != null && gone.incoming && !gone.answered)
+      {
+        sLastMissedAt = System.currentTimeMillis();
+        EuriseTrip.onMissed(c, gone.name, gone.number, gone.photo);
+      }
       changed();
+      EuriseTrip.onCall(c, null);
       return;
     }
     final Bundle x = n.extras;
@@ -327,10 +515,19 @@ public final class EuriseNowPlaying
     }
     final Bitmap photo = Build.VERSION.SDK_INT >= 23 ? bitmap(c, n.getLargeIcon(), 160) : null;
     final Call call = new Call(name.trim(), text == null ? null : text.toString(), start, incoming, photo, n.contentIntent);
+    call.number = number(x);
     final Call old = sCall;
     if (old != null && old.name.equals(call.name))
+    {
       call.together = old.together;
+      call.answered = old.answered;
+      if (call.number == null)
+        call.number = old.number;
+    }
+    if (!incoming)
+      call.answered = true;
     sCall = call;
+    EuriseTrip.onCall(c, call);
     if (old == null || !old.name.equals(call.name))
     {
       final long seen = ++sCallSeen;
@@ -347,6 +544,162 @@ public final class EuriseNowPlaying
       });
     }
     changed();
+  }
+
+  /** Il numero dalla persona della notifica («tel:…»), se c'è. */
+  @Nullable
+  private static String number(@NonNull Bundle x)
+  {
+    if (Build.VERSION.SDK_INT < 28)
+      return null;
+    final List<android.app.Person> people = new ArrayList<>();
+    if (Build.VERSION.SDK_INT >= 31)
+    {
+      @SuppressWarnings("deprecation") final Object o = x.getParcelable(Notification.EXTRA_CALL_PERSON);
+      if (o instanceof android.app.Person)
+        people.add((android.app.Person) o);
+    }
+    @SuppressWarnings("deprecation") final ArrayList<?> list = x.getParcelableArrayList(Notification.EXTRA_PEOPLE_LIST);
+    if (list != null)
+      for (Object o : list)
+        if (o instanceof android.app.Person)
+          people.add((android.app.Person) o);
+    for (android.app.Person p : people)
+    {
+      final String n = NowPlayingText.phone(p.getUri());
+      if (n != null)
+        return n;
+    }
+    return null;
+  }
+
+  /** La notifica «chiamata persa» del telefono, se non l'abbiamo già vista sparire squillando. */
+  private static void onMissedNotification(@NonNull Context c, @NonNull Notification n)
+  {
+    if (System.currentTimeMillis() - sLastMissedAt < 3 * 60_000L)
+      return;
+    final Bundle x = n.extras;
+    String name = null;
+    if (Build.VERSION.SDK_INT >= 28)
+    {
+      @SuppressWarnings("deprecation") final ArrayList<?> list = x.getParcelableArrayList(Notification.EXTRA_PEOPLE_LIST);
+      if (list != null && !list.isEmpty() && list.get(0) instanceof android.app.Person
+          && ((android.app.Person) list.get(0)).getName() != null)
+        name = ((android.app.Person) list.get(0)).getName().toString();
+    }
+    final CharSequence text = x.getCharSequence(Notification.EXTRA_TEXT);
+    final CharSequence title = x.getCharSequence(Notification.EXTRA_TITLE);
+    if (name == null)
+      name = text != null ? text.toString() : title != null ? title.toString() : null;
+    if (name == null || name.trim().isEmpty())
+      return;
+    sLastMissedAt = System.currentTimeMillis();
+    final Bitmap photo = Build.VERSION.SDK_INT >= 23 ? bitmap(c, n.getLargeIcon(), 160) : null;
+    EuriseTrip.onMissed(c, name.trim(), number(x), photo);
+  }
+
+  /** Timer con il conto alla rovescia (tavola MapBollaImpegni). Vero se la notifica era un timer. */
+  private static boolean onTimer(@NonNull StatusBarNotification sbn, @NonNull Notification n, boolean removed)
+  {
+    final Bundle x = n.extras;
+    if (removed)
+    {
+      if (TIMERS.remove(sbn.getKey()) != null)
+      {
+        changed();
+        return true;
+      }
+      return false;
+    }
+    final boolean countdown = x.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
+                              && x.getBoolean("android.chronometerCountDown");
+    if (!countdown || n.when <= System.currentTimeMillis())
+    {
+      if (TIMERS.remove(sbn.getKey()) != null)
+        changed();
+      return countdown;
+    }
+    final CharSequence title = x.getCharSequence(Notification.EXTRA_TITLE);
+    TIMERS.put(sbn.getKey(), new Timer(title == null ? "" : title.toString().trim(), n.when));
+    changed();
+    return true;
+  }
+
+  /**
+   * Un messaggio (tavola MapBollaMessaggio), solo in guida e con «Messaggi in guida» acceso: chi scrive, il testo
+   * (tenuto in memoria per Alfred, mai mostrato in guida) e la risposta rapida della notifica.
+   */
+  private static void onMessage(@NonNull Context c, @NonNull StatusBarNotification sbn, @NonNull Notification n,
+                                boolean removed)
+  {
+    if (removed)
+    {
+      if (MESSAGES.remove(sbn.getKey()) != null)
+        changed();
+      return;
+    }
+    if ((n.flags & (Notification.FLAG_GROUP_SUMMARY | Notification.FLAG_ONGOING_EVENT)) != 0
+        || !app.organicmaps.sdk.routing.RoutingController.get().isNavigating())
+      return;
+    final androidx.core.app.NotificationCompat.MessagingStyle style =
+        androidx.core.app.NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n);
+    if (style == null && !Notification.CATEGORY_MESSAGE.equals(n.category))
+      return;
+    String sender = null, text = null, group = null;
+    if (style != null && !style.getMessages().isEmpty())
+    {
+      final androidx.core.app.NotificationCompat.MessagingStyle.Message last =
+          style.getMessages().get(style.getMessages().size() - 1);
+      if (last.getPerson() != null && last.getPerson().getName() != null)
+        sender = last.getPerson().getName().toString();
+      if (last.getText() != null)
+        text = last.getText().toString();
+      if (style.isGroupConversation() && style.getConversationTitle() != null)
+        group = style.getConversationTitle().toString();
+    }
+    final Bundle x = n.extras;
+    if (sender == null)
+    {
+      final CharSequence t = x.getCharSequence(Notification.EXTRA_TITLE);
+      sender = t == null ? null : t.toString();
+    }
+    if (text == null)
+    {
+      final CharSequence t = x.getCharSequence(Notification.EXTRA_TEXT);
+      text = t == null ? null : t.toString();
+    }
+    if (sender == null || sender.trim().isEmpty())
+      return;
+    final Msg old = MESSAGES.get(sbn.getKey());
+    if (old != null && old.sender.equals(sender.trim()) && java.util.Objects.equals(old.text, text))
+      return;
+    Notification.Action reply = null;
+    if (n.actions != null)
+      for (Notification.Action a : n.actions)
+      {
+        final android.app.RemoteInput[] in = a.getRemoteInputs();
+        if (in != null && in.length > 0 && in[0].getAllowFreeFormInput() && a.actionIntent != null)
+        {
+          reply = a;
+          break;
+        }
+      }
+    String app = null;
+    try
+    {
+      final PackageManager pm = c.getPackageManager();
+      app = pm.getApplicationLabel(pm.getApplicationInfo(sbn.getPackageName(), 0)).toString();
+    }
+    catch (PackageManager.NameNotFoundException ignored)
+    {
+      // App senza nome: si dice solo chi scrive.
+    }
+    final Msg m = new Msg(sbn.getKey(), sbn.getPackageName(), sender.trim(), text, app, group,
+                          sbn.getPostTime(), reply, n.contentIntent);
+    MESSAGES.remove(sbn.getKey());
+    MESSAGES.put(sbn.getKey(), m);
+    changed();
+    EuriseTrip.onMessage(c, m);
   }
 
   /** Una sola istanza, perché si possa anche togliere. */
@@ -483,9 +836,79 @@ public final class EuriseNowPlaying
                        ps == null ? 0 : Math.max(0, ps.getPosition()),
                        ps == null ? 0 : ps.getLastPositionUpdateTime(),
                        ps == null ? 1f : ps.getPlaybackSpeed(), playing, art, appIcon, pausedAt);
+    sMedia.next = next(m, ps);
+    sMedia.track = md.getLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER);
+    sMedia.tracks = md.getLong(MediaMetadata.METADATA_KEY_NUM_TRACKS);
+    sMedia.live = NowPlayingText.live(sMedia.durationMs);
+    sMedia.spoken = !sMedia.live && NowPlayingText.spoken(sMedia.durationMs, SPOKEN_APPS.contains(m.getPackageName()));
     if (!same)
       EuriseLyrics.onTrack(c, sMedia);
     changed();
+  }
+
+  /** Il brano dopo quello che suona, dalla coda condivisa dall'app (tavola MapBollaDopo). */
+  @Nullable
+  private static String next(@NonNull MediaController m, @Nullable PlaybackState ps)
+  {
+    if (ps == null || ps.getActiveQueueItemId() == MediaSession.QueueItem.UNKNOWN_ID)
+      return null;
+    try
+    {
+      final List<MediaSession.QueueItem> q = m.getQueue();
+      if (q == null)
+        return null;
+      for (int i = 0; i < q.size() - 1; i++)
+      {
+        if (q.get(i).getQueueId() != ps.getActiveQueueItemId())
+          continue;
+        final MediaDescription d = q.get(i + 1).getDescription();
+        if (d.getTitle() == null || d.getTitle().toString().trim().isEmpty())
+          return null;
+        final String t = d.getTitle().toString().trim();
+        return d.getSubtitle() == null || d.getSubtitle().toString().trim().isEmpty()
+               ? t : t + " · " + d.getSubtitle().toString().trim();
+      }
+    }
+    catch (RuntimeException ignored)
+    {
+      // Coda troppo grande o sessione chiusa nel frattempo.
+    }
+    return null;
+  }
+
+  /** Impegni delle prossime 3 ore («soon»), o quelli con un luogo se l'app Eurise è di prima. Fuori dal thread principale. */
+  @Nullable
+  private static List<Event> readEvents(@NonNull Context c)
+  {
+    Bundle b = null;
+    for (String h : HUBS)
+    {
+      for (String method : new String[] {"soon", "list"})
+      {
+        try
+        {
+          b = c.getContentResolver().call(Uri.parse("content://" + h + ".destinations"), method, null, null);
+        }
+        catch (Exception ignored)
+        {
+          b = null;
+        }
+        if (b != null && b.getStringArray("title") != null)
+          break;
+      }
+      if (b != null)
+        break;
+    }
+    if (b == null)
+      return null;
+    final String[] titles = b.getStringArray("title");
+    final long[] starts = b.getLongArray("start");
+    final List<Event> out = new ArrayList<>();
+    if (titles != null && starts != null)
+      for (int i = 0; i < Math.min(titles.length, starts.length); i++)
+        if (titles[i] != null && !titles[i].trim().isEmpty())
+          out.add(new Event(titles[i].trim(), starts[i]));
+    return out;
   }
 
   @Nullable

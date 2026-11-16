@@ -76,6 +76,7 @@ public class EuriseCarReportScreen extends BaseMapScreen
                               .setStartHeaderAction(Action.BACK)
                               .setTitle(c.getString(R.string.eurise_guide_title))
                               .addEndHeaderAction(micAction())
+                              .addEndHeaderAction(shareAction())
                               .build();
     return new GridTemplate.Builder().setHeader(header).setSingleList(list.build()).build();
   }
@@ -98,6 +99,20 @@ public class EuriseCarReportScreen extends BaseMapScreen
             getScreenManager().push(
                 new SearchScreen.Builder(c, getSurfaceRenderer()).setQuery(text).build());
         })))
+        .build();
+  }
+
+  /**
+   * «Condividi l'arrivo» (tavola MapBollaArrivo): il secondo pulsante dell'intestazione, accanto al microfono (l'auto ne
+   * accetta due). Apre l'elenco delle persone, o «Smetti» se si sta già condividendo.
+   */
+  @NonNull
+  private Action shareAction()
+  {
+    final CarContext c = getCarContext();
+    return new Action.Builder()
+        .setIcon(new CarIcon.Builder(IconCompat.createWithResource(c, R.drawable.eurise_np_pin)).build())
+        .setOnClickListener(() -> getScreenManager().push(new EuriseCarShareScreen(c, getSurfaceRenderer())))
         .build();
   }
 

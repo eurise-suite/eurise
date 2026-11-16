@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eurise Mappe: simbolo delle righe della bolla in guida (bianco: lo tinge la bolla). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="M4,9 V15 H8 L13,19 V5 L8,9 Z M16,8.5 A5,5 0 0,1 16,15.5" />
+</vector>

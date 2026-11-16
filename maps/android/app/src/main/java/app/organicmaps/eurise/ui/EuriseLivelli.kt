@@ -105,6 +105,8 @@ private fun Sheet(night: Boolean) {
     // Musica e chiamate in guida: interruttore nostro più l'accesso alle notifiche dato nelle impostazioni del telefono.
     var media by remember { mutableStateOf(app.organicmaps.eurise.EuriseNowPlaying.wanted(context)) }
     val mediaAccess = app.organicmaps.eurise.EuriseNowPlaying.access(context)
+    // Messaggi in guida (tavola MapBollaMessaggio): un interruttore a parte, perché legge anche il testo dei messaggi.
+    var messages by remember { mutableStateOf(app.organicmaps.eurise.EuriseNowPlaying.messagesWanted(context)) }
     // null: l'app Eurise non c'è o non ha ancora risposto (la voce del meteo non si mostra).
     var weather by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { EuriseRouteWeather.status(context) { weather = it } }
@@ -150,6 +152,23 @@ private fun Sheet(night: Boolean) {
                     }
                     .setNegativeButton(R.string.eurise_lv_cancel, null)
                     .show()
+            }
+            if (media) {
+                Toggle(c, stringResource(R.string.eurise_lv_messages), stringResource(R.string.eurise_lv_messages_sub),
+                    messages, divider = true) { want ->
+                    if (!want) {
+                        messages = false
+                        app.organicmaps.eurise.EuriseNowPlaying.setMessagesWanted(context, false)
+                    } else android.app.AlertDialog.Builder(context)
+                        .setTitle(R.string.eurise_lv_messages)
+                        .setMessage(R.string.eurise_lv_messages_explain)
+                        .setPositiveButton(R.string.eurise_lv_turn_on) { _, _ ->
+                            messages = true
+                            app.organicmaps.eurise.EuriseNowPlaying.setMessagesWanted(context, true)
+                        }
+                        .setNegativeButton(R.string.eurise_lv_cancel, null)
+                        .show()
+                }
             }
         }
         if (weather != null || fuel != null || km != null || lyrics != null) {

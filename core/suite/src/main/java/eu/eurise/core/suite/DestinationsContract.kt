@@ -9,6 +9,12 @@ object DestinationsContract {
     fun authority(hubPackage: String) = "$hubPackage.destinations"
 
     const val METHOD_LIST = "list"
+    /**
+     * Gli impegni delle prossime [SOON_HOURS] ore anche senza luogo (bolla di Mappe in guida: «Riunione tra 20 min»,
+     * «Avvisa» quando chiama chi ti aspetta; tavole MapBollaImpegni e MapBollaRitardo). Stesse chiavi di [METHOD_LIST].
+     */
+    const val METHOD_SOON = "soon"
+    const val SOON_HOURS = 3
     /** Array di String: titolo dell'impegno. */
     const val KEY_TITLE = "title"
     /** Array di String: il luogo come è scritto nell'evento. */

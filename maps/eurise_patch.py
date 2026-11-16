@@ -1793,3 +1793,21 @@ patch(car_sc, """    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarSp
         mCarContext, () -> app.organicmaps.car.util.ThemeUtils.isNightMode(mCarContext)));
 """)
 print("eurise_patch: bolla della musica e delle chiamate in guida, sul telefono e in Android Auto")
+
+# Le otto aggiunte alla bolla (tavole MapBollaPodcast…MapBollaArrivo e MapBollaAutoStati, approvate il 17 novembre):
+# codice in eurise/EuriseTrip.java, EuriseSms.java, EuriseSpeak.java, EuriseReplyActivity.java, car/EuriseCarAlerts.java,
+# car/EuriseCarShareScreen.java. Qui l'attività trasparente (risposta a voce, scelta dalla Rubrica) e la visibilità di
+# Eurise Messaggi, che manda gli SMS di «Avvisa» e dell'arrivo condiviso.
+patch(manifest, """    <service
+        android:name="app.organicmaps.eurise.EuriseNowPlayingService\"""", """    <activity
+        android:name="app.organicmaps.eurise.EuriseReplyActivity"
+        android:exported="false"
+        android:excludeFromRecents="true"
+        android:noHistory="false"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    <service
+        android:name="app.organicmaps.eurise.EuriseNowPlayingService\"""")
+patch(manifest, """    <package android:name="eu.eurise.voice.debug"/>""", """    <package android:name="eu.eurise.voice.debug"/>
+    <package android:name="eu.eurise.messages"/>
+    <package android:name="eu.eurise.messages.debug"/>""")
+print("eurise_patch: bolla, otto aggiunte (avvisi, messaggi, arrivo condiviso)")

@@ -85,6 +85,15 @@
                 <data android:mimeType="application/vnd.wap.mms-message" />
             </intent-filter>
         </receiver>
+        <!-- SMS chiesti da Eurise Mappe («Avvisa», arrivo condiviso): solo app della suite, stessa firma. -->
+        <receiver
+            android:name=".system.SuiteSmsReceiver"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SEND_SMS" />
+            </intent-filter>
+        </receiver>
         <receiver android:name=".system.MmsDownloadedReceiver" android:exported="false" />
         <receiver android:name=".system.SentReceiver" android:exported="false" />
         <receiver android:name=".system.NotificationActionReceiver" android:exported="false" />

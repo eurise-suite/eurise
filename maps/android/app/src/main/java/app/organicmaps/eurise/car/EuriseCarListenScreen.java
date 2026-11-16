@@ -27,15 +27,27 @@ public final class EuriseCarListenScreen extends Screen implements EuriseCarVoic
   private boolean mRetry;
   private boolean mDone;
 
+  private final boolean mRaw;
+
   public EuriseCarListenScreen(@NonNull CarContext car, @NonNull EuriseCarVoice.Callback result)
+  {
+    this(car, result, false);
+  }
+
+  /** [raw]: la frase arriva intera, senza togliere «portami a»… (risposte ai messaggi). */
+  public EuriseCarListenScreen(@NonNull CarContext car, @NonNull EuriseCarVoice.Callback result, boolean raw)
   {
     super(car);
     mResult = result;
+    mRaw = raw;
     getLifecycle().addObserver(new DefaultLifecycleObserver() {
       @Override
       public void onCreate(@NonNull LifecycleOwner owner)
       {
-        EuriseCarVoice.listen(getCarContext(), EuriseCarListenScreen.this);
+        if (mRaw)
+          EuriseCarVoice.listenRaw(getCarContext(), EuriseCarListenScreen.this);
+        else
+          EuriseCarVoice.listen(getCarContext(), EuriseCarListenScreen.this);
       }
 
       @Override
@@ -65,7 +77,10 @@ public final class EuriseCarListenScreen extends Screen implements EuriseCarVoic
                         mRetry = false;
                         mMessage = R.string.eurise_car_voice_listening;
                         invalidate();
-                        EuriseCarVoice.listen(getCarContext(), this);
+                        if (mRaw)
+                          EuriseCarVoice.listenRaw(getCarContext(), this);
+                        else
+                          EuriseCarVoice.listen(getCarContext(), this);
                       })
                       .build());
     b.addAction(new Action.Builder()

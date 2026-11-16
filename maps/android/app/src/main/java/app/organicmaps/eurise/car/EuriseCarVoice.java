@@ -74,8 +74,27 @@ public final class EuriseCarVoice
 
   private EuriseCarVoice() {}
 
+  /**
+   * Frase intera, senza togliere le parole di comando: per la risposta a voce a un messaggio (tavola MapBollaMessaggio),
+   * dove «vai pure» o «a dopo» vanno mandati come sono. Una sola frase alla volta: vale per l'ascolto in corso.
+   */
+  private static volatile boolean sRaw;
+
+  /** Come {@link #listen(CarContext, Listener)}, ma la frase arriva intera (risposte ai messaggi). */
+  public static void listenRaw(@NonNull CarContext car, @NonNull Listener callback)
+  {
+    sRaw = true;
+    listenAny(car, callback);
+  }
+
   /** Il tocco sul microfono (thread principale), dalla schermata «Ti ascolto». */
   public static void listen(@NonNull CarContext car, @NonNull Listener callback)
+  {
+    sRaw = false;
+    listenAny(car, callback);
+  }
+
+  private static void listenAny(@NonNull CarContext car, @NonNull Listener callback)
   {
     // Un ascolto rimasto appeso (l'auto non mandava audio) non blocca più i tocchi successivi.
     cancel();
@@ -254,7 +273,7 @@ public final class EuriseCarVoice
       final String text = msg.getData().getString(KEY_TEXT);
       if (text != null && !text.trim().isEmpty())
       {
-        final String place = place(text);
+        final String place = sRaw ? text.trim().replaceAll("\\s+", " ") : place(text);
         if (place.isEmpty())
           callback.onStatus(R.string.eurise_car_voice_nothing, true, false);
         else

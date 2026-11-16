@@ -37,6 +37,30 @@ public final class NowPlayingTextTest
     eq(true, NowPlayingText.parseLrc(null).isEmpty(), "testo assente");
     eq(true, NowPlayingText.parseLrc("solo parole senza tempi").isEmpty(), "testo non sincronizzato");
 
+    eq(true, NowPlayingText.spoken(25 * 60_000L, false), "puntata lunga");
+    eq(false, NowPlayingText.spoken(4 * 60_000L, false), "canzone");
+    eq(true, NowPlayingText.spoken(4 * 60_000L, true), "app di podcast");
+    eq(true, NowPlayingText.live(0), "radio senza durata");
+    eq(600_000L, NowPlayingText.leftAtArrival(0, 1_440_000, 1f, 840_000), "mancheranno 10 min");
+    eq(-60_000L, NowPlayingText.leftAtArrival(0, 960_000, 1.2f, 860_000), "finisce prima, più veloce");
+    eq(10, NowPlayingText.minutesUp(540_001), "minuti per eccesso");
+    eq(1, NowPlayingText.minutesUp(0), "almeno un minuto");
+    eq("1,2×", NowPlayingText.speed(1.2f), "velocità");
+    eq("2×", NowPlayingText.speed(2f), "velocità intera");
+    eq("", NowPlayingText.speed(1f), "velocità normale");
+    eq(false, NowPlayingText.shareUpdate(0, 0, 4 * 60_000L, 20 * 60_000L), "arrivo quasi uguale");
+    eq(true, NowPlayingText.shareUpdate(0, 0, 6 * 60_000L, 20 * 60_000L), "arrivo spostato");
+    eq(false, NowPlayingText.shareUpdate(0, 0, 6 * 60_000L, 5 * 60_000L), "troppo presto");
+    eq(true, NowPlayingText.soon(20 * 60_000L, 0, 30 * 60_000L), "tra 20 min");
+    eq(false, NowPlayingText.soon(40 * 60_000L, 0, 30 * 60_000L), "tra 40 min");
+    eq(true, NowPlayingText.nameIn("Pranzo con Giulia", "Giulia Rossi"), "nome nell'impegno");
+    eq(false, NowPlayingText.nameIn("Giuliano in ufficio", "Giulia"), "parola intera");
+    eq(false, NowPlayingText.nameIn("Riunione", "Al"), "nome troppo corto");
+    eq(9, NowPlayingText.lateMinutes(9 * 60_000L, 0), "ritardo");
+    eq(0, NowPlayingText.lateMinutes(0, 9 * 60_000L), "in anticipo");
+    eq("+393331234567", NowPlayingText.phone("tel:+39%20333%20123%204567"), "numero dal tel:");
+    eq(null, NowPlayingText.phone("mailto:a@b.it"), "non è un numero");
+
     if (sFailed > 0)
     {
       System.out.println("NowPlayingTextTest: " + sFailed + " prove fallite");

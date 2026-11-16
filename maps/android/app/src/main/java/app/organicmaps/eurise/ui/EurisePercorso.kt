@@ -195,7 +195,16 @@ private fun Panel(night: Boolean, version: Int) {
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Soft(c, night, stringResource(R.string.eurise_pc_send_arrival), Modifier.weight(1f), enabled = built && info != null) {
-                context.activity()?.let { EuriseGuide.shareArrival(it, rc.cachedRoutingInfo) }
+                // Una volta con un'app a scelta (com'era), oppure per SMS fino all'arrivo (tavola MapBollaArrivo).
+                context.activity()?.let { a ->
+                    android.app.AlertDialog.Builder(a)
+                        .setTitle(R.string.eurise_pc_send_arrival)
+                        .setItems(arrayOf<CharSequence>(a.getString(R.string.eurise_trip_send_once), a.getString(R.string.eurise_trip_share_until))) { _, which ->
+                            if (which == 0) EuriseGuide.shareArrival(a, rc.cachedRoutingInfo)
+                            else app.organicmaps.eurise.EuriseReplyActivity.pickForShare(a)
+                        }
+                        .show()
+                }
             }
             val saved = end?.isBookmark == true
             Soft(c, night, stringResource(if (saved) R.string.eurise_pl_saved else R.string.eurise_pc_save_place), Modifier.weight(1f),

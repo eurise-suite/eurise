@@ -104,6 +104,7 @@ public class EuriseGuideReportActivity extends Activity
     sheet.addView(caption(getString(R.string.eurise_guide_group_short), muted), lp(dp(12)));
     sheet.addView(grid(SHORT, card), lp(dp(8)));
 
+    sheet.addView(shareRow(card, dark), lp(dp(12)));
     sheet.addView(undoBar(), lp(dp(10)));
 
     final TextView foot = text(getString(R.string.eurise_guide_foot), 11.5f, false, muted);
@@ -124,6 +125,30 @@ public class EuriseGuideReportActivity extends Activity
   {
     mMain.removeCallbacksAndMessages(null);
     super.onDestroy();
+  }
+
+  /**
+   * «Condividi l'arrivo» (tavola MapBollaArrivo): sceglie una persona dalla Rubrica e le manda l'arrivo per SMS con Eurise
+   * Messaggi (adesso, se cambia di 5 minuti, all'arrivo). Se si sta già condividendo, «Smetti».
+   */
+  @NonNull
+  private View shareRow(int card, boolean dark)
+  {
+    final String now = EuriseTrip.shareName();
+    final TextView row = text(now == null ? getString(R.string.eurise_trip_share_action)
+                                          : getString(R.string.eurise_trip_stop_share, now), 15, true,
+                              dark ? 0xFF9CC3A9 : 0xFF2F6B45);
+    row.setGravity(Gravity.CENTER);
+    row.setMinHeight(dp(48));
+    row.setBackground(rounded(card, dp(16)));
+    row.setOnClickListener(v -> {
+      if (EuriseTrip.shareName() != null)
+        EuriseTrip.stopShare();
+      else
+        EuriseReplyActivity.pickForShare(this);
+      finish();
+    });
+    return row;
   }
 
   @NonNull

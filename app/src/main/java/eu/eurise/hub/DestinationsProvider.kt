@@ -11,7 +11,8 @@ import eu.eurise.core.suite.DestinationsContract as C
 import kotlinx.coroutines.runBlocking
 
 /**
- * «Dove devi andare» per Eurise Mappe ([C]): impegni dei prossimi giorni con un luogo, dal Calendario. Solo per le app
+ * «Dove devi andare» per Eurise Mappe ([C]): impegni dei prossimi giorni con un luogo, dal Calendario; con «soon» quelli
+ * delle prossime ore anche senza luogo, per la bolla in guida. Solo per le app
  * della suite; nulla esce dal telefono. `call` arriva su un thread del Binder: leggere il Calendario qui è lecito.
  */
 class DestinationsProvider : ContentProvider() {
@@ -22,12 +23,14 @@ class DestinationsProvider : ContentProvider() {
         if (PERMISSIONS.none { context.checkCallingPermission(it) == PackageManager.PERMISSION_GRANTED }) {
             throw SecurityException("Eurise: solo le app della suite")
         }
-        if (method != C.METHOD_LIST) return null
+        if (method != C.METHOD_LIST && method != C.METHOD_SOON) return null
+        val soon = method == C.METHOD_SOON
         val calendar = EuriseData.create(context).calendar
         val now = System.currentTimeMillis()
+        val until = if (soon) now + C.SOON_HOURS * 3_600_000L else now + C.DAYS * 86_400_000L
         val events = if (calendar.hasPermission()) runBlocking {
-            calendar.startingBetween(now - 30 * 60_000L, now + C.DAYS * 86_400_000L)
-        }.filter { it.location.isNotBlank() }.distinctBy { it.title + it.location + it.beginMillis }.take(C.MAX) else emptyList()
+            calendar.startingBetween(now - 30 * 60_000L, until)
+        }.filter { soon || it.location.isNotBlank() }.distinctBy { it.title + it.location + it.beginMillis }.take(C.MAX) else emptyList()
         return Bundle().apply {
             putBoolean(C.KEY_CALENDAR, calendar.hasPermission())
             putStringArray(C.KEY_TITLE, events.map { it.title }.toTypedArray())
