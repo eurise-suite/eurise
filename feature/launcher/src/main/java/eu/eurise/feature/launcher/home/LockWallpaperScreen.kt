@@ -58,6 +58,7 @@ import eu.eurise.feature.launcher.R
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import eu.eurise.core.designsystem.component.SwitchRow
 
 /** Sfondo anche sulla schermata di blocco (tavola SfoBlocco). [homeScene] è la scena della Scrivania di adesso. */
 @Composable
@@ -168,10 +169,10 @@ fun LockWallpaperScreen(homeScene: Scene, onClose: () -> Unit) {
         }
         if (o.mode != LockWallpaper.Mode.Off) {
             Section(stringResource(R.string.lock_wp_on_lock)) {
-                SwitchRow(stringResource(R.string.lock_wp_dim), stringResource(R.string.lock_wp_dim_hint), o.dim) { apply(o.copy(dim = it)) }
+                SwitchRow(stringResource(R.string.lock_wp_dim), o.dim, hint = stringResource(R.string.lock_wp_dim_hint)) { apply(o.copy(dim = it)) }
                 if (o.other != LockWallpaper.PHOTO || o.mode == LockWallpaper.Mode.Same) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    SwitchRow(stringResource(R.string.lock_wp_follow), stringResource(R.string.lock_wp_follow_hint), o.follow) { apply(o.copy(follow = it)) }
+                    SwitchRow(stringResource(R.string.lock_wp_follow), o.follow, hint = stringResource(R.string.lock_wp_follow_hint)) { apply(o.copy(follow = it)) }
                 }
             }
         }
@@ -198,13 +199,3 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
-@Composable
-private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Text(hint, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Switch(checked, onCheckedChange = onChange)
-    }
-}

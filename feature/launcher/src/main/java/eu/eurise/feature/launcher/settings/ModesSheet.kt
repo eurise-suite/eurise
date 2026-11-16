@@ -65,6 +65,7 @@ import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
+import eu.eurise.core.designsystem.component.SwitchRow
 
 /** Simbolo e nome di una modalità, comuni al Pannello e alle impostazioni. */
 fun Mode.icon(): ImageVector = when (this) {
@@ -251,13 +252,6 @@ private fun Section(text: String) =
 private fun Hint(text: String) =
     Text(text, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-@Composable
-private fun SwitchRow(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { onChange(!on) }, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        Switch(checked = on, onCheckedChange = onChange)
-    }
-}
 
 @Composable
 private fun CheckRow(label: String, on: Boolean, onChange: (Boolean) -> Unit) {

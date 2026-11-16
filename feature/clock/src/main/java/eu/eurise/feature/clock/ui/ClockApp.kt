@@ -140,21 +140,6 @@ internal fun ScreenList(title: String, content: LazyListScope.() -> Unit) {
     }
 }
 
-/** Riga con interruttore e una riga di spiegazione. */
-@Composable
-internal fun SwitchRow(title: String, sub: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Switch) { onChange(!checked) }.padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            if (!sub.isNullOrBlank()) Text(sub, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(Modifier.padding(4.dp))
-        Switch(checked = checked, onCheckedChange = null)
-    }
-}
 
 /** Pulsantino a capsula: pieno per l'azione principale. */
 @Composable

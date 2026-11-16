@@ -50,7 +50,7 @@ import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.feeds.FeedReader
 import eu.eurise.feature.launcher.home.Pill
 import eu.eurise.feature.launcher.summary.BottomSheet
-import eu.eurise.feature.launcher.summary.SwitchRow
+import eu.eurise.core.designsystem.component.SwitchRow
 import eu.eurise.core.designsystem.component.ServiceGate
 import eu.eurise.core.suite.PrivacyService
 import kotlinx.coroutines.launch
@@ -170,7 +170,7 @@ fun ChannelsSheet(repository: VideosRepository, onImport: () -> Unit, onClose: (
         if (error) item { Text(stringResource(R.string.videos_address_error), fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
         items(channels, key = { it.id }) { ch ->
             Column(Modifier.heightIn(min = 48.dp)) {
-                SwitchRow(ch.name, ch.enabled, { repository.setEnabled(ch.id, it) }, trailing = {
+                SwitchRow(ch.name, ch.enabled, onChange = { repository.setEnabled(ch.id, it) }, trailing = {
                     Text(
                         stringResource(R.string.news_remove), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { repository.remove(ch.id) }.padding(horizontal = 8.dp, vertical = 4.dp),

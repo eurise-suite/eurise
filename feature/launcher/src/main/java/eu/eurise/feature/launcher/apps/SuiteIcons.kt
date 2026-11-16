@@ -78,6 +78,9 @@ internal object SuiteIcons {
             pkg.startsWith("eu.eurise.translate") -> "Traduttore"
             cls.endsWith(".FileApp") -> "Drive"
             cls.endsWith(".ScannerApp") -> "Scanner"
+            cls.endsWith(".CalendarApp") -> "Calendario"
+            cls.endsWith(".TasksApp") -> "Attività"
+            cls.endsWith(".NotesApp") -> "Note"
             else -> null
         }
     }

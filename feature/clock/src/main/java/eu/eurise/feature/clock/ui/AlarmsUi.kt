@@ -77,6 +77,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import eu.eurise.core.designsystem.component.SwitchRow
 
 private val Time = DateTimeFormatter.ofPattern("H:mm")
 private val DayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)
@@ -129,7 +130,7 @@ fun AlarmsScreen(adding: Boolean, onAdded: () -> Unit) {
             // Spegnere la lettura del calendario non chiede conferme (regola della privacy).
             GroupCard {
                 Column(Modifier.padding(horizontal = 4.dp)) {
-                    SwitchRow(stringResource(R.string.use_calendar), stringResource(R.string.use_calendar_sub), true) {
+                    SwitchRow(stringResource(R.string.use_calendar), true, hint = stringResource(R.string.use_calendar_sub)) {
                         store.updateSettings { s -> s.copy(useCalendar = false) }
                         store.vacationDays = emptySet()
                         Scheduler.rescheduleAll(context)
@@ -248,7 +249,7 @@ private fun SleepDialog(minutes: Int, reminder: Boolean, onDone: (Int, Boolean) 
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     (12..18).map { it * 30 }.forEach { v -> Chip(sleepLabel(v), filled = v == m) { m = v } }
                 }
-                SwitchRow(stringResource(R.string.bedtime_reminder), stringResource(R.string.bedtime_reminder_sub), r) { r = it }
+                SwitchRow(stringResource(R.string.bedtime_reminder), r, hint = stringResource(R.string.bedtime_reminder_sub)) { r = it }
             }
         },
         confirmButton = { TextButton(onClick = { onDone(m, r) }) { Text(stringResource(R.string.clock_save), fontWeight = FontWeight.Bold) } },
@@ -327,15 +328,16 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
                     val nextHoliday = ItalianHolidays.next(LocalDate.now())
                     SwitchRow(
                         stringResource(R.string.opt_holidays),
-                        nextHoliday?.let { stringResource(R.string.opt_holidays_sub, it.format(DayFormat), ItalianHolidays.name(it).orEmpty()) },
                         a.skipHolidays,
+                        hint = nextHoliday?.let { stringResource(R.string.opt_holidays_sub, it.format(DayFormat), ItalianHolidays.name(it).orEmpty()) },
+                        strong = true,
                     ) { a = a.copy(skipHolidays = it) }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_vacation), stringResource(R.string.opt_vacation_sub), a.skipVacation) { on ->
+                    SwitchRow(stringResource(R.string.opt_vacation), a.skipVacation, hint = stringResource(R.string.opt_vacation_sub)) { on ->
                         if (on) withCalendar { it.copy(skipVacation = true) } else a = a.copy(skipVacation = false)
                     }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_earlier), stringResource(R.string.opt_earlier_sub), a.earlier) { on ->
+                    SwitchRow(stringResource(R.string.opt_earlier), a.earlier, hint = stringResource(R.string.opt_earlier_sub)) { on ->
                         if (on) withCalendar { it.copy(earlier = true) } else a = a.copy(earlier = false)
                     }
                 }
@@ -363,7 +365,7 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
                         }
                     }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_ramp), stringResource(R.string.opt_ramp_sub), a.rampSeconds > 0) { a = a.copy(rampSeconds = if (it) 60 else 0) }
+                    SwitchRow(stringResource(R.string.opt_ramp), a.rampSeconds > 0, hint = stringResource(R.string.opt_ramp_sub)) { a = a.copy(rampSeconds = if (it) 60 else 0) }
                     CardDivider()
                     Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.opt_snooze), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -374,11 +376,11 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
                         if (a.maxSnoozes > 0) Text(stringResource(R.string.opt_snooze_sub, a.snoozeMinutes, a.maxSnoozes), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_vibrate), null, a.vibrate) { a = a.copy(vibrate = it) }
+                    SwitchRow(stringResource(R.string.opt_vibrate), a.vibrate, strong = true) { a = a.copy(vibrate = it) }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_challenge), stringResource(R.string.opt_challenge_sub), a.challenge) { a = a.copy(challenge = it) }
+                    SwitchRow(stringResource(R.string.opt_challenge), a.challenge, hint = stringResource(R.string.opt_challenge_sub)) { a = a.copy(challenge = it) }
                     CardDivider()
-                    SwitchRow(stringResource(R.string.opt_routine), stringResource(R.string.opt_routine_sub), a.routine) { a = a.copy(routine = it) }
+                    SwitchRow(stringResource(R.string.opt_routine), a.routine, hint = stringResource(R.string.opt_routine_sub)) { a = a.copy(routine = it) }
                 }
             }
 
@@ -386,7 +388,7 @@ private fun AlarmEditor(initial: Alarm, onSave: (Alarm) -> Unit, onDelete: () ->
             SectionLabel(stringResource(R.string.section_alfred))
             GroupCard {
                 Column(Modifier.padding(horizontal = 4.dp)) {
-                    SwitchRow(stringResource(R.string.opt_alfred), stringResource(R.string.opt_alfred_sub), a.alfred) { on ->
+                    SwitchRow(stringResource(R.string.opt_alfred), a.alfred, hint = stringResource(R.string.opt_alfred_sub)) { on ->
                         a = a.copy(alfred = on, routine = if (on) false else a.routine)
                     }
                     if (a.alfred) {

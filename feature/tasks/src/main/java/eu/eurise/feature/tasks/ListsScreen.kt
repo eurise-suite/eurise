@@ -51,6 +51,7 @@ import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.GroupCard
+import eu.eurise.core.designsystem.component.SwitchRow
 
 /**
  * Gli elenchi delle attività: quelli che vanno nel cloud, quelli automatici (Farmaci e Date importanti, di base
@@ -161,9 +162,9 @@ internal fun ListsScreen(
             )
 
             GroupCard(Modifier.padding(top = 6.dp)) {
-                SwitchRow(stringResource(R.string.tasks_setting_show_done), state.showDone, viewModel::setShowDone)
+                SwitchRow(stringResource(R.string.tasks_setting_show_done), state.showDone, Modifier.padding(start = 4.dp, end = 14.dp), onChange = viewModel::setShowDone)
                 CardDivider()
-                SwitchRow(stringResource(R.string.tasks_setting_in_calendar), state.inCalendar, viewModel::setShowInCalendar)
+                SwitchRow(stringResource(R.string.tasks_setting_in_calendar), state.inCalendar, Modifier.padding(start = 4.dp, end = 14.dp), onChange = viewModel::setShowInCalendar)
             }
         }
     }
@@ -213,16 +214,6 @@ private fun ListRow(list: TaskList, count: Int, subtitle: String?, onClick: () -
     }
 }
 
-@Composable
-private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 54.dp).clickable(role = Role.Switch) { onChange(!checked) }.padding(start = 4.dp, end = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = null)
-    }
-}
 
 /**
  * Avviso prima di sincronizzare un elenco automatico: sono dati sulla salute o sulla vita privata.

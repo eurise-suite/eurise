@@ -65,6 +65,7 @@ import eu.eurise.feature.launcher.notifications.NotificationStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import eu.eurise.core.designsystem.component.SwitchRow
 
 private data class AppChoice(val pkg: String, val label: String)
 
@@ -275,7 +276,7 @@ private fun PersonEditor(p: PersonRule, title: (String?) -> String?, onDismiss: 
                 SndDivider()
                 SoundLine(stringResource(R.string.rules_email), title(draft.email)) { picking = SoundUse.Email }
                 SndDivider()
-                SndSwitchRow(stringResource(R.string.rules_break_dnd), null, draft.breakDnd) { draft = draft.copy(breakDnd = it) }
+                SwitchRow(stringResource(R.string.rules_break_dnd), draft.breakDnd, strong = true) { draft = draft.copy(breakDnd = it) }
             }
         },
         confirmButton = { TextButton(onClick = { onSave(draft) }) { Text(stringResource(R.string.rules_save)) } },
@@ -307,7 +308,7 @@ private fun AppEditor(a: AppRule, title: (String?) -> String?, onDismiss: () -> 
                 SoundLine(stringResource(R.string.rules_group_sound), draft.groups?.let(title) ?: stringResource(R.string.rules_same_sound)) { picking = 2 }
                 SndDivider()
                 val hours = draft.fromHour != null && draft.toHour != null
-                SndSwitchRow(stringResource(R.string.rules_only_hours), null, hours) { on ->
+                SwitchRow(stringResource(R.string.rules_only_hours), hours, strong = true) { on ->
                     draft = if (on) draft.copy(fromHour = 9, toHour = 18) else draft.copy(fromHour = null, toHour = null)
                 }
                 if (hours) {

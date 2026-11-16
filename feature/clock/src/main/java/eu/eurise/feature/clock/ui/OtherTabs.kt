@@ -51,6 +51,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import eu.eurise.core.designsystem.component.SwitchRow
 
 private val Hm = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -118,7 +119,7 @@ fun TimersScreen(adding: Boolean, onAdded: () -> Unit) {
                     }
                     CardDivider()
                     val nm = context.getSystemService(NotificationManager::class.java)
-                    SwitchRow(stringResource(R.string.pomodoro_quiet), stringResource(R.string.pomodoro_quiet_sub), quiet) { on ->
+                    SwitchRow(stringResource(R.string.pomodoro_quiet), quiet, hint = stringResource(R.string.pomodoro_quiet_sub)) { on ->
                         if (on && nm?.isNotificationPolicyAccessGranted != true) {
                             runCatching { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
                         }

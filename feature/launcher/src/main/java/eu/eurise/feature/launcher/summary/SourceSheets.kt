@@ -60,6 +60,7 @@ import eu.eurise.feature.launcher.news.FeedGroup
 import eu.eurise.feature.launcher.news.NewsRepository
 import eu.eurise.feature.launcher.news.Regions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eu.eurise.core.designsystem.component.SwitchRow
 
 /** Foglio dal basso comune alle impostazioni delle schede. */
 @Composable
@@ -121,14 +122,6 @@ private fun AddField(hint: String, keyboard: KeyboardType, onAdd: (String) -> Un
     }
 }
 
-@Composable
-internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, trailing: (@Composable () -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onChange(!checked) }, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
-        trailing?.invoke()
-        Switch(checked = checked, onCheckedChange = onChange)
-    }
-}
 
 /**
  * Fonti delle notizie: agenzie, testate nazionali ed estere, feed della propria regione con le province da
@@ -147,11 +140,11 @@ fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
     )
     val photos by repository.photos.collectAsStateWithLifecycle()
     BottomSheet(stringResource(R.string.news_sources_title), onClose) {
-        item { SwitchRow(stringResource(R.string.news_photos), photos, { repository.setPhotos(it) }) }
+        item { SwitchRow(stringResource(R.string.news_photos), photos) { repository.setPhotos(it) } }
         groups.forEach { (group, label) ->
             item { Box(Modifier.padding(top = 12.dp, bottom = 2.dp)) { Label(stringResource(label)) } }
             items(BuiltInFeeds.filter { it.group == group }, key = { it.id }) { feed ->
-                SwitchRow(feed.name, feed.id in enabled, { repository.setEnabled(feed.id, it) })
+                SwitchRow(feed.name, feed.id in enabled) { repository.setEnabled(feed.id, it) }
             }
         }
         item {
@@ -164,7 +157,7 @@ fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
             Column {
                 val followed = region.provinces.count { it in provinces }
                 SwitchRow(
-                    region.name, region.feed.id in enabled, { repository.setEnabled(region.feed.id, it) },
+                    region.name, region.feed.id in enabled, onChange = { repository.setEnabled(region.feed.id, it) },
                     trailing = {
                         Text(
                             if (followed > 0) stringResource(R.string.news_provinces_count, followed) else stringResource(R.string.news_provinces),
@@ -177,14 +170,14 @@ fun NewsSourcesSheet(repository: NewsRepository, onClose: () -> Unit) {
                 )
                 if (openRegion == region.id) {
                     Column(Modifier.padding(start = 16.dp)) {
-                        region.provinces.forEach { p -> SwitchRow(p, p in provinces, { repository.setProvince(p, it) }) }
+                        region.provinces.forEach { p -> SwitchRow(p, p in provinces) { repository.setProvince(p, it) } }
                     }
                 }
             }
         }
         item { Box(Modifier.padding(top = 12.dp, bottom = 6.dp)) { Label(stringResource(R.string.news_group_custom)) } }
         items(custom, key = { it.id }) { feed: Feed ->
-            SwitchRow(feed.name, feed.id in enabled, { repository.setEnabled(feed.id, it) }, trailing = {
+            SwitchRow(feed.name, feed.id in enabled, onChange = { repository.setEnabled(feed.id, it) }, trailing = {
                 Text(
                     stringResource(R.string.news_remove), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { repository.removeCustom(feed) }.padding(8.dp),
@@ -227,10 +220,10 @@ fun FeedSourcesSheet(title: String, sources: eu.eurise.feature.launcher.feeds.Fe
     val custom by sources.custom.collectAsStateWithLifecycle()
     BottomSheet(title, onClose) {
         item { Box(Modifier.padding(top = 4.dp, bottom = 2.dp)) { Label(stringResource(R.string.feeds_proposed)) } }
-        items(sources.builtIn, key = { it.id }) { s -> SwitchRow(s.name, s.id in enabled, { sources.setEnabled(s.id, it) }) }
+        items(sources.builtIn, key = { it.id }) { s -> SwitchRow(s.name, s.id in enabled) { sources.setEnabled(s.id, it) } }
         item { Box(Modifier.padding(top = 12.dp, bottom = 6.dp)) { Label(stringResource(R.string.news_group_custom)) } }
         items(custom, key = { it.id }) { s ->
-            SwitchRow(s.name, s.id in enabled, { sources.setEnabled(s.id, it) }, trailing = {
+            SwitchRow(s.name, s.id in enabled, onChange = { sources.setEnabled(s.id, it) }, trailing = {
                 Text(
                     stringResource(R.string.news_remove), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { sources.removeCustom(s) }.padding(8.dp),

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_notes_app_background" />
+    <foreground android:drawable="@drawable/ic_notes_app_foreground" />
+    <monochrome android:drawable="@drawable/ic_notes_app_monochrome" />
+</adaptive-icon>

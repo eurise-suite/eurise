@@ -70,16 +70,6 @@ internal fun SndSection(title: String, note: String? = null, action: (@Composabl
 @Composable
 internal fun SndDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-@Composable
-internal fun SndSwitchRow(title: String, hint: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            if (hint != null) Text(hint, fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Switch(checked, onCheckedChange = onChange)
-    }
-}
 
 @Composable
 internal fun SndChip(text: String, strong: Boolean = true) {

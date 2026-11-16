@@ -92,7 +92,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- File e Scanner con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
+        <!-- File, Scanner, Calendario, Attività e Note con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
         <activity
             android:name=".SectionShortcutActivity"
             android:exported="false"
@@ -122,6 +122,42 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <meta-data android:name="eu.eurise.section" android:value="scanner" />
+        </activity-alias>
+        <activity-alias
+            android:name=".CalendarApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_calendar_app"
+            android:label="@string/app_calendar"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="calendar" />
+        </activity-alias>
+        <activity-alias
+            android:name=".TasksApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_tasks_app"
+            android:label="@string/app_tasks"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="tasks" />
+        </activity-alias>
+        <activity-alias
+            android:name=".NotesApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_notes_app"
+            android:label="@string/app_notes"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="notes" />
         </activity-alias>
         <!-- «Condividi › Note»: un testo o un link da qualsiasi app diventa una nota (15 novembre). -->
         <activity

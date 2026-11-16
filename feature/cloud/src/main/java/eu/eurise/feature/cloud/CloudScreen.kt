@@ -74,6 +74,7 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.theme.CalendarTint
 import eu.eurise.core.designsystem.theme.LocalEuriseColors
 import java.util.Locale
+import eu.eurise.core.designsystem.component.SwitchRow
 
 private enum class Page { Accounts, Sync }
 
@@ -233,25 +234,33 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
                 Group {
                     SwitchRow(
                         stringResource(R.string.cloud_app_notes),
-                        accounts.firstOrNull { it.id == settings.notesAccount }?.let { stringResource(R.string.cloud_app_notes_hint, kindLabel(it.kind)) }
-                            ?: stringResource(R.string.cloud_only_phone),
                         settings.notesEnabled,
-                        viewModel::setNotesEnabled,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        hint = accounts.firstOrNull { it.id == settings.notesAccount }?.let { stringResource(R.string.cloud_app_notes_hint, kindLabel(it.kind)) }
+                            ?: stringResource(R.string.cloud_only_phone),
+                        onChange = viewModel::setNotesEnabled,
                     )
                     Divider()
                     SwitchRow(
                         stringResource(R.string.cloud_app_tasks),
-                        accounts.firstOrNull { it.id == settings.notesAccount }?.let { stringResource(R.string.cloud_app_tasks_on, kindLabel(it.kind)) }
-                            ?: stringResource(R.string.cloud_app_tasks_hint),
                         settings.tasksEnabled,
-                        if (accounts.any { it.id == settings.notesAccount }) { on -> if (on) askTasks = true else viewModel.setTasksEnabled(false) } else null,
-                    )
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        hint = accounts.firstOrNull { it.id == settings.notesAccount }?.let { stringResource(R.string.cloud_app_tasks_on, kindLabel(it.kind)) }
+                            ?: stringResource(R.string.cloud_app_tasks_hint),
+                        enabled = accounts.any { it.id == settings.notesAccount },
+                    ) { on -> if (on) askTasks = true else viewModel.setTasksEnabled(false) }
                 }
             }
             item("h-how") { Label(stringResource(R.string.cloud_how)) }
             item("how") {
                 Group {
-                    SwitchRow(stringResource(R.string.cloud_wifi), stringResource(R.string.cloud_wifi_hint), settings.wifiOnly, viewModel::setWifiOnly)
+                    SwitchRow(
+                        stringResource(R.string.cloud_wifi),
+                        settings.wifiOnly,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        hint = stringResource(R.string.cloud_wifi_hint),
+                        onChange = viewModel::setWifiOnly,
+                    )
                 }
             }
             if (events.isNotEmpty()) {
@@ -682,17 +691,3 @@ internal fun WhereRow(title: String, hint: String, value: String, onClick: (() -
     }
 }
 
-@Composable
-internal fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: ((Boolean) -> Unit)?) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (onChange == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-            Text(hint, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Switch(checked = checked, onCheckedChange = onChange, enabled = onChange != null)
-    }
-}

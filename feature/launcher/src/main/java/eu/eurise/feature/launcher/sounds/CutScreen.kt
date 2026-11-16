@@ -63,6 +63,7 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.launcher.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import eu.eurise.core.designsystem.component.SwitchRow
 
 /** Prendi il pezzo (tavola SuoTaglia): una canzone dell'utente, il tratto scelto, le dissolvenze, a chi va. */
 @Composable
@@ -192,9 +193,9 @@ internal fun CutScreen(uri: Uri, onClose: () -> Unit, onPerson: (String) -> Unit
                 }
             }
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
-                SndSwitchRow(stringResource(R.string.cut_fade_in), stringResource(R.string.cut_fade_in_hint), fadeIn) { fadeIn = it }
+                SwitchRow(stringResource(R.string.cut_fade_in), fadeIn, hint = stringResource(R.string.cut_fade_in_hint)) { fadeIn = it }
                 SndDivider()
-                SndSwitchRow(stringResource(R.string.cut_seamless), stringResource(R.string.cut_seamless_hint), seamless) { seamless = it }
+                SwitchRow(stringResource(R.string.cut_seamless), seamless, hint = stringResource(R.string.cut_seamless_hint)) { seamless = it }
             }
             Text(stringResource(R.string.cut_note), fontSize = 12.5.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
         }

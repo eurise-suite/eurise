@@ -6,7 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 
 /**
- * Le icone di File e Scanner tra le app di Android (anche con un altro launcher): ogni icona è un activity-alias con la
+ * Le icone di File, Scanner, Calendario, Attività e Note tra le app di Android (anche con un altro launcher): ogni icona è un activity-alias con la
  * sezione nei meta-data; qui si apre l'app Eurise su quella sezione e basta.
  */
 class SectionShortcutActivity : Activity() {
