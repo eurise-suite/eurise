@@ -47,10 +47,12 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.core.designsystem.icon.SuiteSymbols
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.graphics.luminance
 
 /** L'immagine di un'icona: il simbolo monocromatico dell'app (da colorare) oppure l'icona originale. */
 sealed interface IconImage {
-    data class Mono(val bitmap: ImageBitmap) : IconImage
+    /** Sagoma del simbolo; [color] è il colore del disegno nell'icona originale, se si è potuto leggere. */
+    data class Mono(val bitmap: ImageBitmap, val color: Color? = null) : IconImage
     data class Full(val bitmap: ImageBitmap) : IconImage
     /** Simbolo della suite per le app di sistema che non hanno un simbolo monocromatico. */
     data class Glyph(val vector: ImageVector) : IconImage
@@ -96,7 +98,13 @@ object IconLoader {
     private fun officialMono(drawable: Drawable, px: Int): IconImage? {
         if (Build.VERSION.SDK_INT < 33 || drawable !is AdaptiveIconDrawable) return null
         val mono = drawable.monochrome ?: return null
-        return IconImage.Mono(cropCenter(mono.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888)).asImageBitmap())
+        // Il colore del disegno si legge dal primo piano a colori, che ha la stessa forma.
+        val color = drawable.foreground?.let { fg ->
+            val b = cropCenter(fg.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888))
+            val pixels = IntArray(b.width * b.height).also { b.getPixels(it, 0, b.width, 0, 0, b.width, b.height) }
+            LogoMask.glyphColor(pixels) { (pixels[it] ushr 24) > 200 }
+        }
+        return IconImage.Mono(cropCenter(mono.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888)).asImageBitmap(), color?.let { Color(it) })
     }
 
     /**
@@ -111,7 +119,8 @@ object IconLoader {
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         val coverage = pixels.count { (it ushr 24) > 128 }.toFloat() / pixels.size
         if (coverage < 0.04f || coverage > 0.42f) return null
-        return IconImage.Mono(bitmap.extractAlpha().asImageBitmap())
+        val color = LogoMask.glyphColor(pixels) { (pixels[it] ushr 24) > 200 }
+        return IconImage.Mono(bitmap.extractAlpha().asImageBitmap(), color?.let { Color(it) })
     }
 
     /**
@@ -124,7 +133,10 @@ object IconLoader {
         val bitmap = if (drawable is AdaptiveIconDrawable) cropCenter(drawable.toBitmap(size, size, Bitmap.Config.ARGB_8888))
         else drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888)
         val mask = LogoMask.of(bitmap) ?: return null
-        return IconImage.Mono(mask.asImageBitmap())
+        val pixels = IntArray(bitmap.width * bitmap.height).also { bitmap.getPixels(it, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height) }
+        val alpha = IntArray(mask.width * mask.height).also { mask.getPixels(it, 0, mask.width, 0, 0, mask.width, mask.height) }
+        val color = LogoMask.glyphColor(pixels) { (alpha[it] ushr 24) > 200 }
+        return IconImage.Mono(mask.asImageBitmap(), color?.let { Color(it) })
     }
 
     /** Le icone adattive stanno in un'area di 108 dp di cui si vedono i 72 centrali. */
@@ -245,7 +257,11 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
                 if (drawing != null) {
                     SuiteDrawingCanvas(drawing, series, Modifier.size(size))
                 } else when (val img = image) {
-                    is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(brush))
+                    is IconImage.Mono -> Image(
+                        img.bitmap,
+                        contentDescription = null,
+                        modifier = Modifier.size(size * 0.8f).softTint(glyphBrush(img.color, series != SuiteIcons.Series.Light, brush)),
+                    )
                     is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.86f))
                     is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
                     is IconImage.Plain -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
@@ -290,7 +306,11 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
             contentAlignment = Alignment.Center,
         ) {
             when (val img = image) {
-                is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(symbolBrush))
+                is IconImage.Mono -> Image(
+                    img.bitmap,
+                    contentDescription = null,
+                    modifier = Modifier.size(size * 0.8f).softTint(if (style != null) symbolBrush else glyphBrush(img.color, !colorful || dark, symbolBrush)),
+                )
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
                 is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.72f).softTint(symbolBrush))
                 is IconImage.Plain -> Unit
@@ -310,6 +330,17 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
  * Colora il disegno con una sfumatura diagonale: [colors] dall'alto a sinistra al basso a destra. Il disegno sotto conta
  * solo per la forma (alfa).
  */
+/**
+ * Il simbolo di un'app non nostra nel colore del suo disegno originale ([glyph]); se quel colore non si leggerebbe sulla
+ * bolla (bianco su bolla chiara, nero su bolla scura) resta [fallback], la tinta presa dal fondo dell'icona.
+ */
+private fun glyphBrush(glyph: Color?, darkBubble: Boolean, fallback: List<Color>): List<Color> {
+    val c = glyph ?: return fallback
+    val l = c.luminance()
+    if (darkBubble && l < 0.18f || !darkBubble && l > 0.82f) return fallback
+    return listOf(lerp(c, Color.White, 0.12f), c)
+}
+
 private fun Modifier.softTint(colors: List<Color>): Modifier = this
     .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
     .drawWithContent {
