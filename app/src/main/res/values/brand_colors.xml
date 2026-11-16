@@ -2,4 +2,6 @@
 <!-- Colori del marchio Eurise (approvati il 10 novembre 2026): blu notte e oro d'alba. -->
 <resources>
     <color name="eurise_brand_gold">#D2B06A</color>
+    <!-- Le stelle nell'icona di Eurise: oro più vivo (serie colorata, 16 novembre 2026). -->
+    <color name="eurise_icon_star">#FFC21A</color>
 </resources>

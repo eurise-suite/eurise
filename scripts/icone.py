@@ -1,149 +1,137 @@
 #!/usr/bin/env python3
-"""Icone degli APK della suite, stile «Eurise» (tavola IconeStili, approvata il 13 novembre 2026).
+"""Icone degli APK della suite: serie «colorata» approvata il 16 novembre 2026 (tela «Icone della suite», pagina Icone,
+tavola IcoColorate).
 
-Tondo blu notte piatto con sfumatura diagonale dal lato della stellina (#3A4D80 → #222D4D al 55 % → #121828) e alone
-caldo attorno alla stella (centro 77,35, raggio 26, #E4C27A al 42 %); simbolo del servizio a scala 2,15 e tratto 2,35,
-con il tratto che va dalla tinta chiara alla tinta piena; stellina d'oro #D2B06A in alto a destra.
+Ogni app ha un colore suo, vivo e cangiante (una tinta che scivola verso la vicina), e un disegno pieno e morbido
+color crema con la stellina della suite dentro il disegno. I disegni e i colori stanno in `scripts/icone_disegni.json`,
+esportato dalla tela: per cambiarne uno si cambia lì e si rilancia. Su una griglia di 48 le parti sono:
+  t  campitura tenue (bianco al 20 %)      s  tratto sfumato crema          S  tratto pieno più spesso
+  p  pieno sfumato crema                   h  tratto nel colore del fondo  hf pieno nel colore del fondo (incavi)
 
-Scrive per ogni icona, nel modulo che la usa: il primo piano (simbolo e stellina), il fondo, il livello monocromatico
-(icone a tema di Android 13+) e l'icona adattiva; per i moduli che girano anche prima di Android 8 (Tastiera, Mappe)
-anche la versione vettoriale intera. Uso: python3 scripts/icone.py (dalla cartella del repository). Il disegno dei
-simboli è quello della tela: per cambiarne uno si cambia qui e si rilancia.
+Scrive per ogni icona, nel modulo che la usa: primo piano, fondo (sfumatura del colore con la luce in alto a sinistra),
+livello monocromatico (icone a tema di Android 13+, solo la sagoma) e icona adattiva; per i moduli che girano anche
+prima di Android 8 (Tastiera, Mappe) anche la versione vettoriale intera, a tinte piene.
+Uso: python3 scripts/icone.py (dalla cartella del repository).
 """
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+DATA = json.loads((ROOT / "scripts" / "icone_disegni.json").read_text())
 
-# Tinte del tratto (chiara → piena), come nella tavola.
-GOLD = ("#EBD7A8", "#C9A04B")
-ROSE = ("#EABAC0", "#C37F87")
-SAGE = ("#BCD4C4", "#81A48C")
-SKY = ("#C9D8F6", "#94A9D4")
-TEAL = ("#ABD5D8", "#6AA5A9")
-CLAY = ("#EAC0A7", "#C38764")
-STEEL = ("#B9C9E7", "#7D94BE")
-PLUM = ("#D4C1DE", "#A388B2")
-
-# Simboli (24×24): ogni voce è (tracciato, spessore); i punti hanno un tratto più grosso.
-SYMBOLS = {
-    # Office (tavola OfficeIcona, proposta B approvata il 14 novembre): pagina con righe di testo e un piccolo grafico.
-    "office": [("M6,3 h8.5 l5,5 v11.5 a1.5,1.5 0 0 1 -1.5,1.5 h-12 a1.5,1.5 0 0 1 -1.5,-1.5 v-15 a1.5,1.5 0 0 1 1.5,-1.5 z M14.5,3 v5 h5 M8,8 h3.5 M8,11.5 h8 M8.5,18 v-2.5 M12,18 v-4.5 M15.5,18 v-1.5", 2.35)],
-    "clock": [("M5,13 a7,7 0 1 0 14,0 a7,7 0 1 0 -14,0 M12,9.5 v3.8 l2.5,1.6 M4,6.5 l3,-2.5 M20,6.5 l-3,-2.5 "
-               "M7.5,19.5 l-1.5,2 M16.5,19.5 l1.5,2", 2.35)],
-    "folder": [("M3,7 a2,2 0 0 1 2,-2 h4 l2,2.5 h8 a2,2 0 0 1 2,2 V17 a2,2 0 0 1 -2,2 H5 a2,2 0 0 1 -2,-2 z M3,10.5 h18", 2.35)],
-    "scanner": [("M4,8 V5 a1,1 0 0 1 1,-1 h3 M16,4 h3 a1,1 0 0 1 1,1 v3 M20,16 v3 a1,1 0 0 1 -1,1 h-3 M8,20 H5 "
-                 "a1,1 0 0 1 -1,-1 v-3 M3,12 h18", 2.35)],
-    "chat": [("M3.5,4 h11 a1.5,1.5 0 0 1 1.5,1.5 v6 a1.5,1.5 0 0 1 -1.5,1.5 H8 l-4.5,3.5 z M19,8.5 h0.5 "
-              "a1.5,1.5 0 0 1 1.5,1.5 v9.5 l-3.5,-2.5 H11 a1.5,1.5 0 0 1 -1.5,-1.5 v-1", 2.35)],
-    "messages": [("M4,5 h16 v11 H9 l-5,4 z", 2.35), ("M8.5,10.5 h0.01 M12,10.5 h0.01 M15.5,10.5 h0.01", 3.35)],
-    "phone": [("M6.6,3.5 h2.6 l1.5,4 -2,1.3 a11,11 0 0 0 6.5,6.5 l1.3,-2 4,1.5 v2.6 a2,2 0 0 1 -2.2,2 "
-               "A17,17 0 0 1 4.6,5.7 a2,2 0 0 1 2,-2.2 z M14.5,3 a6.5,6.5 0 0 1 6.5,6.5 M14.5,6.5 a3,3 0 0 1 3,3", 2.35)],
-    "contacts": [("M6.5,3 H17 a2,2 0 0 1 2,2 V19 a2,2 0 0 1 -2,2 H6.5 Z M4.5,7.5 h3 M4.5,12 h3 M4.5,16.5 h3 "
-                  "M10.5,10 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 M9.2,17 a3.6,3.6 0 0 1 7.2,0", 2.35)],
-    "mail": [("M4,5.5 h16 a1,1 0 0 1 1,1 v11 a1,1 0 0 1 -1,1 H4 a1,1 0 0 1 -1,-1 v-11 a1,1 0 0 1 1,-1 z "
-              "M3.5,6.5 l8.5,6.5 l8.5,-6.5", 2.35)],
-    "gallery": [("M6.2,4.5 H17.8 A3.2,3.2 0 0 1 21,7.7 V16.3 A3.2,3.2 0 0 1 17.8,19.5 H6.2 A3.2,3.2 0 0 1 3,16.3 "
-                 "V7.7 A3.2,3.2 0 0 1 6.2,4.5 Z M14.1,9.2 a1.7,1.7 0 1 0 3.4,0 a1.7,1.7 0 1 0 -3.4,0 "
-                 "M3.6,17.2 L8.6,12.3 l4,3.9 l2.6,-2.5 l5.2,4.9", 2.35)],
-    "password": [("M3,12 a4.5,4.5 0 1 0 9,0 a4.5,4.5 0 1 0 -9,0 M12,12 H21 M18.3,12 v3.2 M15.4,12 v2.4", 2.35),
-                 ("M7.5,12 h0.01", 2.95)],
-    "keyboard": [("M5.5,6 H18.5 A3,3 0 0 1 21.5,9 V15.5 A3,3 0 0 1 18.5,18.5 H5.5 A3,3 0 0 1 2.5,15.5 V9 "
-                  "A3,3 0 0 1 5.5,6 Z M9,15.3 h6", 2.35),
-                 ("M6.6,9.8 h0.01 M10.2,9.8 h0.01 M13.8,9.8 h0.01 M17.4,9.8 h0.01 M6.6,12.8 h0.01 M17.4,12.8 h0.01", 2.95)],
-    "maps": [("M3.5,6.5 l5,-2 l7,2.5 l5,-2 v13 l-5,2 l-7,-2.5 l-5,2 z M8.5,4.5 v13.5 M15.5,7 v13.5", 2.35)],
-    "browser": [("M3.4,12 a8.6,8.6 0 1 0 17.2,0 a8.6,8.6 0 1 0 -17.2,0 M15.6,8.4 l-2.2,5 l-5,2.2 l2.2,-5 z "
-                 "M12,3.4 v1.6 M12,19 v1.6", 2.35)],
-    # Il papillon morbido di Alfred (lo stesso di EuriseIcons.bowtie): la voce di Alfred è Eurise Voce.
-    "alfred": [("M10,10.4 C8.1,8.6 6.2,7.4 4.8,7.6 C3.5,7.8 3,9.5 3,12 s0.5,4.2 1.8,4.4 c1.4,0.2 3.3,-1 5.2,-2.8 "
-                "M14,10.4 c1.9,-1.8 3.8,-3 5.2,-2.8 c1.3,0.2 1.8,1.9 1.8,4.4 s-0.5,4.2 -1.8,4.4 "
-                "c-1.4,0.2 -3.3,-1 -5.2,-2.8 M11.7,9.7 h0.6 a1.7,1.7 0 0 1 1.7,1.7 v1.2 a1.7,1.7 0 0 1 -1.7,1.7 h-0.6 "
-                "a1.7,1.7 0 0 1 -1.7,-1.7 v-1.2 a1.7,1.7 0 0 1 1.7,-1.7 z", 2.35)],
-}
-
-# (modulo res, nome dell'icona, simbolo, tinta, versione per Android prima dell'8)
+# (modulo res, nome dell'icona, app nella tela, versione per Android prima dell'8)
 ICONS = [
-    ("feature/clock/src/main/res", "ic_clock", "clock", SKY, False),
-    ("app/src/main/res", "ic_file", "folder", TEAL, False),
-    ("app/src/main/res", "ic_scanner", "scanner", CLAY, False),
-    ("voice/src/main/res", "ic_voice", "alfred", ROSE, False),
-    ("browser/src/main/res", "ic_browser", "browser", TEAL, False),
-    ("mail/src/main/res", "ic_mail", "mail", STEEL, False),
-    ("chat/src/main/res", "ic_chat", "chat", SKY, False),
-    ("messages/src/main/res", "ic_messages", "messages", SKY, False),
-    ("phone/src/main/res", "ic_phone", "phone", SAGE, False),
-    ("phone/src/main/res", "ic_contacts", "contacts", SAGE, False),
-    ("gallery/src/main/res", "ic_gallery", "gallery", CLAY, False),
-    ("password/src/main/res", "ic_password", "password", PLUM, False),
-    ("keyboard/app/src/main/res", "ic_launcher", "keyboard", PLUM, True),
-    ("maps/android/app/src/main/res", "ic_maps", "maps", PLUM, True),
-    ("office/app/android/res", "ic_office", "office", ROSE, False),
+    ("feature/clock/src/main/res", "ic_clock", "Orologio", False),
+    ("app/src/main/res", "ic_file", "Drive", False),
+    ("app/src/main/res", "ic_scanner", "Scanner", False),
+    ("voice/src/main/res", "ic_voice", "Alfred", False),
+    ("browser/src/main/res", "ic_browser", "Browser", False),
+    ("mail/src/main/res", "ic_mail", "Email", False),
+    ("chat/src/main/res", "ic_chat", "Chat", False),
+    ("messages/src/main/res", "ic_messages", "Messaggi", False),
+    ("phone/src/main/res", "ic_phone", "Telefono", False),
+    ("phone/src/main/res", "ic_contacts", "Contatti", False),
+    ("gallery/src/main/res", "ic_gallery", "Galleria", False),
+    ("password/src/main/res", "ic_password", "Password", False),
+    ("keyboard/app/src/main/res", "ic_launcher", "Tastiera", True),
+    ("maps/android/app/src/main/res", "ic_maps", "Mappe", True),
+    ("office/app/android/res", "ic_office", "Office", False),
 ]
 
-STAR = "M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z"
-HEAD = '<?xml version="1.0" encoding="utf-8"?>\n<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->\n'
+CREAM = ("#FFFDF8", "#F4E6CC")       # tratto
+CREAM_FILL = ("#FFFDF8", "#EFDDBF")  # pieni
+STROKE = 2.4
+# La griglia del disegno (48, con un margine: da -7,5 a 55,5) occupa i 72 dp visibili dell'icona adattiva da 108:
+# il disegno vero (da 6 a 42) resta dentro la zona sicura di 66 dp.
+SCALE = 72 / 63
+SHIFT = 54 - 24 * SCALE
+HEAD = ('<?xml version="1.0" encoding="utf-8"?>\n'
+        '<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->\n')
+VEC = ('<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+       '    xmlns:aapt="http://schemas.android.com/aapt"\n'
+       '    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">\n')
 
 
-def symbol_paths(symbol: str, tint, mono: bool, indent: str) -> str:
-    out = []
-    for d, width in SYMBOLS[symbol]:
+def argb(c: str, alpha: float = 1.0) -> str:
+    return "#%02X%s" % (round(alpha * 255), c.lstrip("#").upper())
+
+
+def grad(attr: str, colors, indent: str) -> str:
+    return (f'{indent}<aapt:attr name="{attr}">\n'
+            f'{indent}    <gradient android:type="linear" android:startX="10" android:startY="6" android:endX="38"\n'
+            f'{indent}        android:endY="42" android:startColor="{colors[0]}" android:endColor="{colors[1]}" />\n'
+            f'{indent}</aapt:attr>\n')
+
+
+def part(kind: str, d: str, hole: str, mono: bool, flat: bool, indent: str) -> str:
+    """Una parte del disegno come tracciato di VectorDrawable."""
+    cap = 'android:strokeLineCap="round" android:strokeLineJoin="round"'
+    white = "#FFFFFFFF"
+    if kind == "t":
         if mono:
-            out.append(f'{indent}<path android:pathData="{d}" android:strokeColor="#FFFFFFFF" android:strokeWidth="{width}"\n'
-                       f'{indent}    android:strokeLineCap="round" android:strokeLineJoin="round" />')
-        else:
-            out.append(
-                f'{indent}<path android:pathData="{d}" android:strokeWidth="{width}"\n'
-                f'{indent}    android:strokeLineCap="round" android:strokeLineJoin="round">\n'
-                f'{indent}    <aapt:attr name="android:strokeColor">\n'
-                f'{indent}        <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"\n'
-                f'{indent}            android:endY="21" android:startColor="{tint[0]}" android:endColor="{tint[1]}" />\n'
-                f'{indent}    </aapt:attr>\n'
-                f'{indent}</path>')
-    return "\n".join(out)
+            return ""
+        return f'{indent}<path android:pathData="{d}" android:fillColor="#33FFFFFF" />\n'
+    if kind in ("s", "S"):
+        width = STROKE + (1.7 if kind == "S" else 0)
+        colors = CREAM if kind == "s" else CREAM_FILL
+        if mono or flat:
+            col = white if mono else colors[0]
+            return f'{indent}<path android:pathData="{d}" android:strokeColor="{col}" android:strokeWidth="{width}" {cap} />\n'
+        return (f'{indent}<path android:pathData="{d}" android:strokeWidth="{width}" {cap}>\n'
+                + grad("android:strokeColor", colors, indent + "    ") + f'{indent}</path>\n')
+    if kind == "p":
+        if mono or flat:
+            col = white if mono else CREAM_FILL[0]
+            return f'{indent}<path android:pathData="{d}" android:fillColor="{col}" />\n'
+        return (f'{indent}<path android:pathData="{d}">\n'
+                + grad("android:fillColor", CREAM_FILL, indent + "    ") + f'{indent}</path>\n')
+    # Incavi: nel livello monocromatico non si possono scavare, quindi restano fuori (resta la sagoma).
+    if mono:
+        return ""
+    if kind == "h":
+        return f'{indent}<path android:pathData="{d}" android:strokeColor="{hole}" android:strokeWidth="{STROKE}" {cap} />\n'
+    if kind == "hf":
+        return f'{indent}<path android:pathData="{d}" android:fillColor="{hole}" />\n'
+    raise ValueError(kind)
 
 
-def foreground(symbol: str, tint, mono: bool) -> str:
-    star = "#FFFFFFFF" if mono else "#D2B06A"
-    return (HEAD +
-            '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
-            '    xmlns:aapt="http://schemas.android.com/aapt"\n'
-            '    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">\n'
-            '    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">\n'
-            + symbol_paths(symbol, tint, mono, "        ") + "\n"
-            '    </group>\n'
-            f'    <path android:fillColor="{star}" android:pathData="{STAR}" />\n'
-            '</vector>\n')
+def drawing(app: dict, mono: bool, flat: bool, indent: str) -> str:
+    return "".join(part(k, d, app["incavo"], mono, flat, indent) for k, d in app["parti"])
 
 
-def background_items(shape: str, indent: str) -> str:
-    """Il fondo: sfumatura diagonale dal lato della stellina e alone caldo, su [shape]."""
+def foreground(app: dict, mono: bool) -> str:
+    return (HEAD + VEC +
+            f'    <group android:translateX="{SHIFT:.3f}" android:translateY="{SHIFT:.3f}" '
+            f'android:scaleX="{SCALE:.4f}" android:scaleY="{SCALE:.4f}">\n'
+            + drawing(app, mono, False, "        ") +
+            '    </group>\n</vector>\n')
+
+
+def background_items(app: dict, shape: str, indent: str) -> str:
+    """Il fondo: sfumatura del colore dell'app (dall'alto a sinistra in basso a destra) e luce in alto a sinistra."""
+    a, b, c = app["fondo"]
     return (
         f'{indent}<path android:pathData="{shape}">\n'
         f'{indent}    <aapt:attr name="android:fillColor">\n'
-        f'{indent}        <gradient android:type="linear" android:startX="90" android:startY="18" android:endX="18" android:endY="90">\n'
-        f'{indent}            <item android:offset="0" android:color="#3A4D80" />\n'
-        f'{indent}            <item android:offset="0.55" android:color="#222D4D" />\n'
-        f'{indent}            <item android:offset="1" android:color="#121828" />\n'
+        f'{indent}        <gradient android:type="linear" android:startX="40" android:startY="18" android:endX="68" android:endY="92">\n'
+        f'{indent}            <item android:offset="0" android:color="{a}" />\n'
+        f'{indent}            <item android:offset="0.45" android:color="{b}" />\n'
+        f'{indent}            <item android:offset="1" android:color="{c}" />\n'
         f'{indent}        </gradient>\n'
         f'{indent}    </aapt:attr>\n'
         f'{indent}</path>\n'
         f'{indent}<path android:pathData="{shape}">\n'
         f'{indent}    <aapt:attr name="android:fillColor">\n'
-        f'{indent}        <gradient android:type="radial" android:centerX="77" android:centerY="35" android:gradientRadius="26">\n'
-        f'{indent}            <item android:offset="0" android:color="#6BE4C27A" />\n'
-        f'{indent}            <item android:offset="0.5" android:color="#24C9A45A" />\n'
-        f'{indent}            <item android:offset="1" android:color="#00C9A45A" />\n'
+        f'{indent}        <gradient android:type="radial" android:centerX="39.6" android:centerY="33.8" android:gradientRadius="40">\n'
+        f'{indent}            <item android:offset="0" android:color="{argb(app["luce"], 1.0)}" />\n'
+        f'{indent}            <item android:offset="1" android:color="{argb(app["luce"], 0.0)}" />\n'
         f'{indent}        </gradient>\n'
         f'{indent}    </aapt:attr>\n'
         f'{indent}</path>\n')
 
 
-def background() -> str:
-    return (HEAD +
-            '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
-            '    xmlns:aapt="http://schemas.android.com/aapt"\n'
-            '    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">\n'
-            + background_items("M0,0 H108 V108 H0 Z", "    ") +
-            '</vector>\n')
+def background(app: dict) -> str:
+    return HEAD + VEC + background_items(app, "M0,0 H108 V108 H0 Z", "    ") + '</vector>\n'
 
 
 def adaptive(name: str) -> str:
@@ -155,23 +143,18 @@ def adaptive(name: str) -> str:
             '</adaptive-icon>\n')
 
 
-def legacy(symbol: str, tint) -> str:
-    """Prima di Android 8: il tondo intero in un vettore, a tinte piene (le sfumature nei vettori arrivano con Android 7,
-    e la Tastiera parte da Android 5): fondo blu notte, simbolo nella tinta piena, stellina d'oro."""
+def legacy(app: dict) -> str:
+    """Prima di Android 8: il tondo intero in un vettore, a tinte piene (la Tastiera parte da Android 5)."""
     circle = "M18,54 a36,36 0 1,0 72,0 a36,36 0 1,0 -72,0"
-    paths = "\n".join(
-        f'            <path android:pathData="{d}" android:strokeColor="{tint[0]}" android:strokeWidth="{w}"\n'
-        f'                android:strokeLineCap="round" android:strokeLineJoin="round" />'
-        for d, w in SYMBOLS[symbol])
     return (HEAD +
             '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
             '    android:width="48dp" android:height="48dp" android:viewportWidth="72" android:viewportHeight="72">\n'
             '    <group android:translateX="-18" android:translateY="-18">\n'
-            f'        <path android:fillColor="#222D4D" android:pathData="{circle}" />\n'
-            '        <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">\n'
-            + paths + "\n"
+            f'        <path android:fillColor="{app["c"]}" android:pathData="{circle}" />\n'
+            f'        <group android:translateX="{SHIFT:.3f}" android:translateY="{SHIFT:.3f}" '
+            f'android:scaleX="{SCALE:.4f}" android:scaleY="{SCALE:.4f}">\n'
+            + drawing(app, False, True, "            ") +
             '        </group>\n'
-            f'        <path android:fillColor="#D2B06A" android:pathData="{STAR}" />\n'
             '    </group>\n'
             '</vector>\n')
 
@@ -182,20 +165,20 @@ def write(path: Path, text: str) -> None:
 
 
 def main() -> None:
-    for res, name, symbol, tint, old in ICONS:
+    for res, name, key, old in ICONS:
+        app = DATA[key]
         r = ROOT / res
-        write(r / "drawable" / f"{name}_foreground.xml", foreground(symbol, tint, mono=False))
-        write(r / "drawable" / f"{name}_monochrome.xml", foreground(symbol, tint, mono=True))
-        write(r / "drawable" / f"{name}_background.xml", background())
+        write(r / "drawable" / f"{name}_foreground.xml", foreground(app, mono=False))
+        write(r / "drawable" / f"{name}_monochrome.xml", foreground(app, mono=True))
+        write(r / "drawable" / f"{name}_background.xml", background(app))
         write(r / "mipmap-anydpi-v26" / f"{name}.xml", adaptive(name))
-        round_icon = r / "mipmap-anydpi-v26" / f"{name}_round.xml"
-        if round_icon.exists():
-            write(round_icon, adaptive(name))
+        if (r / "mipmap-anydpi-v26" / f"{name}_round.xml").exists():
+            write(r / "mipmap-anydpi-v26" / f"{name}_round.xml", adaptive(name))
         if old:
-            write(r / "mipmap-anydpi" / f"{name}.xml", legacy(symbol, tint))
+            write(r / "mipmap-anydpi" / f"{name}.xml", legacy(app))
             if (r / "mipmap-anydpi" / f"{name}_round.xml").exists():
-                write(r / "mipmap-anydpi" / f"{name}_round.xml", legacy(symbol, tint))
-        print(f"icone: {res}/{name} ({symbol})")
+                write(r / "mipmap-anydpi" / f"{name}_round.xml", legacy(app))
+        print(f"icone: {res}/{name} ({key}, {app['colore']})")
 
 
 if __name__ == "__main__":

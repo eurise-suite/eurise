@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
+<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
-        <path android:pathData="M3.5,4 h11 a1.5,1.5 0 0 1 1.5,1.5 v6 a1.5,1.5 0 0 1 -1.5,1.5 H8 l-4.5,3.5 z M19,8.5 h0.5 a1.5,1.5 0 0 1 1.5,1.5 v9.5 l-3.5,-2.5 H11 a1.5,1.5 0 0 1 -1.5,-1.5 v-1" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.35"
-            android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
+        <path android:pathData="M19 8 H25 Q29 8 29 12 V16 Q29 20 25 20 H24.5 L22 23.2 L19.5 20 H19 Q15 20 15 16 V12 Q15 8 19 8 Z" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M22 10.6 Q22.41 13.59 25.4 14 Q22.41 14.41 22 17.4 Q21.59 14.41 18.6 14 Q21.59 13.59 22 10.6 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M10.5 26 H33.5 V29 C33.5 35.5 28.5 40 22 40 C15.5 40 10.5 35.5 10.5 29 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M33.5 28 C37.2 28 39 30.1 38.4 32.5 C37.8 34.9 35.4 35.4 32.6 34.5" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
     </group>
-    <path android:fillColor="#FFFFFFFF" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
 </vector>

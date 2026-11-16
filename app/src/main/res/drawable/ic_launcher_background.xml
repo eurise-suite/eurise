@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo dell'icona di Eurise (serie colorata, 16 novembre 2026): blu notte cangiante, dal blu al viola,
+     con un riflesso azzurro in alto a sinistra e uno viola in basso a destra. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="36" android:startY="18" android:endX="72" android:endY="90">
+                <item android:offset="0" android:color="#2F57B5" />
+                <item android:offset="0.45" android:color="#24357A" />
+                <item android:offset="1" android:color="#3B2A78" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="38" android:centerY="32" android:gradientRadius="36">
+                <item android:offset="0" android:color="#7378C8E6" />
+                <item android:offset="1" android:color="#0078C8E6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="76" android:centerY="80" android:gradientRadius="40">
+                <item android:offset="0" android:color="#8CAA5AC8" />
+                <item android:offset="1" android:color="#00AA5AC8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

@@ -2762,3 +2762,19 @@ così l'altra chat non le annulla.
   nel riepilogo quante pietre ha trovato per paese. In Mappe 60 la spiegazione dice ancora «qualche MB»: corretto in
   «di solito meno di 1 MB» (arriva con il prossimo giro di Mappe sul ramo `brand`).
 - **Prossimo**: discutere «Leggi i cartelli con la fotocamera» con il proprietario (vedi sotto, risposta in chat).
+
+## 16 novembre: icone nuove degli APK (serie colorata approvata)
+- Tela «Icone della suite», pagina **Icone**: approvate le tre serie (IcoBolleChiare, IcoBolleScure, IcoColorate) con 23
+  icone, un colore vivo e cangiante per app, disegni pieni e morbidi con la stellina dentro il disegno. Animali adottati:
+  Browser gufo (ceruleo), Traduttore pappagallo con ideogramma, Password riccio-chiave, Mappe piccione viaggiatore
+  (cobalto → smeraldo), Alfred pinguino col papillon (magenta → viola). Office viola intenso → magenta, Messaggi oltremare,
+  Calendario acquamarina → azzurro, Chat smeraldo, Drive rame acceso, Scanner fiordaliso, Note zafferano → arancio.
+  Esperimenti a parte sulla stessa pagina: IcoAnimali, IcoMappeColori, IcoMappeColori2.
+- Codice: `scripts/icone.py` riscritto, legge `scripts/icone_disegni.json` (esportato dalla tela) e scrive le icone
+  adattive di Orologio, Drive, Scanner, Alfred (Voce), Browser, Email, Chat, Messaggi, Telefono, Contatti, Galleria,
+  Password, Tastiera, Mappe, Office: fondo sfumato nel colore dell'app con la luce in alto a sinistra, disegno crema,
+  livello monocromatico con la sola sagoma (gli incavi non si possono scavare). Eurise: fondo cangiante blu → viola
+  (`ic_launcher_background`) e stelle in oro vivo (`eurise_icon_star` #FFC21A).
+- Non ancora: le icone dentro la Scrivania (temi «Eurise» ed «Eurise a colori», `SuiteSymbols`, bolle chiare e scure)
+  usano ancora i simboli a tratto; Calendario, Attività, Note, Leggi, Meteo, Calcolatrice, Traduttore non hanno un APK
+  o un'icona di sistema loro, quindi per ora il disegno nuovo vive solo sulla tela.

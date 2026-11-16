@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
+<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
-        <path android:pathData="M5.5,6 H18.5 A3,3 0 0 1 21.5,9 V15.5 A3,3 0 0 1 18.5,18.5 H5.5 A3,3 0 0 1 2.5,15.5 V9 A3,3 0 0 1 5.5,6 Z M9,15.3 h6" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.35"
-            android:strokeLineCap="round" android:strokeLineJoin="round" />
-        <path android:pathData="M6.6,9.8 h0.01 M10.2,9.8 h0.01 M13.8,9.8 h0.01 M17.4,9.8 h0.01 M6.6,12.8 h0.01 M17.4,12.8 h0.01" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.95"
-            android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
+        <path android:pathData="M12 8 H18.5 Q22.5 8 22.5 12 V18.5 Q22.5 22.5 18.5 22.5 H12 Q8 22.5 8 18.5 V12 Q8 8 12 8 Z M29.5 8 H36.0 Q40.0 8 40.0 12 V18.5 Q40.0 22.5 36.0 22.5 H29.5 Q25.5 22.5 25.5 18.5 V12 Q25.5 8 29.5 8 Z M12 25.5 H18.5 Q22.5 25.5 22.5 29.5 V36.0 Q22.5 40.0 18.5 40.0 H12 Q8 40.0 8 36.0 V29.5 Q8 25.5 12 25.5 Z" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M29.5 25.5 H36.0 Q40.0 25.5 40.0 29.5 V36.0 Q40.0 40.0 36.0 40.0 H29.5 Q25.5 40.0 25.5 36.0 V29.5 Q25.5 25.5 29.5 25.5 Z" android:fillColor="#FFFFFFFF" />
     </group>
-    <path android:fillColor="#FFFFFFFF" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
 </vector>

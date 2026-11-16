@@ -1,23 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generato da scripts/icone.py (tavola IconeStili, stile «Eurise»): non modificare a mano. -->
+<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="28.2" android:translateY="28.2" android:scaleX="2.15" android:scaleY="2.15">
-        <path android:pathData="M4,5 h16 v11 H9 l-5,4 z" android:strokeWidth="2.35"
-            android:strokeLineCap="round" android:strokeLineJoin="round">
-            <aapt:attr name="android:strokeColor">
-                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
-                    android:endY="21" android:startColor="#C9D8F6" android:endColor="#94A9D4" />
+    <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
+        <path android:pathData="M24 9 C34 9 41 15 41 23 C41 31 34 37 24 37 C21.5 37 19 36.6 17 35.8 L9 40 L11 33 C8.5 30.2 7 26.8 7 23 C7 15 14 9 24 9 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="10" android:startY="6" android:endX="38"
+                    android:endY="42" android:startColor="#FFFDF8" android:endColor="#EFDDBF" />
             </aapt:attr>
         </path>
-        <path android:pathData="M8.5,10.5 h0.01 M12,10.5 h0.01 M15.5,10.5 h0.01" android:strokeWidth="3.35"
-            android:strokeLineCap="round" android:strokeLineJoin="round">
-            <aapt:attr name="android:strokeColor">
-                <gradient android:type="linear" android:startX="3" android:startY="3" android:endX="21"
-                    android:endY="21" android:startColor="#C9D8F6" android:endColor="#94A9D4" />
-            </aapt:attr>
-        </path>
+        <path android:pathData="M14.5 20 C17.5 17 20.5 23 23.5 20 S29.5 17 33 20 M14.5 27 C17.5 24 20.5 30 23.5 27" android:strokeColor="#234AB6" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M31 23.4 Q31.43 26.57 34.6 27 Q31.43 27.43 31 30.6 Q30.57 27.43 27.4 27 Q30.57 26.57 31 23.4 Z" android:fillColor="#234AB6" />
     </group>
-    <path android:fillColor="#D2B06A" android:pathData="M77,30.32 Q77.47,34.53 81.68,35 Q77.47,35.47 77,39.68 Q76.53,35.47 72.32,35 Q76.53,34.53 77,30.32 Z" />
 </vector>
