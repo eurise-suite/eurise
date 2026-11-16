@@ -18,7 +18,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.OpenableColumns;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,7 +35,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.Locale;
 
 final class EuriseSuite {
@@ -69,6 +74,86 @@ final class EuriseSuite {
     private static boolean it() { return Locale.getDefault().getLanguage().equals("it"); }
     private static String t(String it, String en) { return it() ? it : en; }
 
+    /**
+     * I file di configurazione del motore nascono con il pacchetto dell'app di Collabora
+     * (/data/data/org.libreoffice.androidapp): fontconfig non trova la sua cache e lo scrive su stderr. Qui si rimettono
+     * le cartelle vere di Office prima di avviare il motore.
+     */
+    static void fixPaths(Context c, String dataDir) {
+        File conf = new File(dataDir, "etc/fonts/fonts.conf");
+        if (!conf.isFile())
+            return;
+        try {
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            try (java.io.InputStream in = new java.io.FileInputStream(conf)) {
+                byte[] buffer = new byte[8192];
+                int n;
+                while ((n = in.read(buffer)) > 0)
+                    bytes.write(buffer, 0, n);
+            }
+            String text = bytes.toString("UTF-8");
+            String fixed = text.replace("/data/data/org.libreoffice.androidapp", dataDir);
+            if (!fixed.equals(text)) {
+                try (java.io.OutputStream out = new java.io.FileOutputStream(conf)) {
+                    out.write(fixed.getBytes("UTF-8"));
+                }
+                Log.i(TAG, "fonts.conf: cartelle di Office");
+            }
+        } catch (IOException | RuntimeException e) {
+            Log.w(TAG, "fonts.conf non aggiornato: " + e);
+        }
+    }
+
+    /**
+     * Copia di lavoro di un documento arrivato come content://: stesso nome del file, in una cartella unica della cache
+     * (due documenti con lo stesso nome non si pestano). Senza un nome leggibile resta il file temporaneo di Collabora.
+     */
+    static File workingCopy(Context c, Uri uri, String suffix) throws IOException {
+        String name = null;
+        try (Cursor cursor = c.getContentResolver().query(uri, new String[] { OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst())
+                name = cursor.getString(0);
+        } catch (RuntimeException e) {
+            Log.i(TAG, "nome del documento non leggibile: " + e);
+        }
+        if (name != null)
+            name = name.replaceAll("[/\\\\:*?\"<>|\\p{Cntrl}]", "_").trim();
+        if (name == null || name.isEmpty() || name.startsWith("."))
+            return File.createTempFile("LibreOffice", suffix, c.getCacheDir());
+        if (suffix != null && !name.toLowerCase(Locale.ROOT).endsWith(suffix))
+            name = name + suffix;
+        File dir = new File(new File(c.getCacheDir(), "documenti"), UUID.randomUUID().toString());
+        if (!dir.mkdirs())
+            return File.createTempFile("LibreOffice", suffix, c.getCacheDir());
+        return new File(dir, name);
+    }
+
+    /**
+     * Android ha chiuso il processo che disegna la pagina (di solito per liberare memoria, a volte per un errore): la
+     * WebView non si può più usare. Invece di far cadere tutto il motore (comportamento di base di WebView), si avvisa e
+     * si chiude il documento in ordine: il salvataggio automatico (8 s dopo l'ultima modifica) l'ha già scritto.
+     */
+    static boolean renderGone(android.webkit.WebView view, android.webkit.RenderProcessGoneDetail detail) {
+        boolean crashed = Build.VERSION.SDK_INT >= 26 && detail != null && detail.didCrash();
+        Log.e(TAG, "pagina chiusa da Android: " + (crashed ? "errore del disegno" : "memoria") + "; il motore resta in piedi");
+        Context c = view.getContext();
+        while (c instanceof android.content.ContextWrapper && !(c instanceof LOActivity))
+            c = ((android.content.ContextWrapper) c).getBaseContext();
+        if (c instanceof LOActivity) {
+            final LOActivity a = (LOActivity) c;
+            a.runOnUiThread(() -> {
+                android.widget.Toast.makeText(a, crashed
+                        ? t("La pagina del documento si è interrotta. Il documento era salvato: riaprilo da Office.",
+                            "The document page stopped. The document was saved: open it again from Office.")
+                        : t("Android ha chiuso la pagina per liberare memoria. Il documento era salvato: riaprilo da Office.",
+                            "Android closed the page to free memory. The document was saved: open it again from Office."),
+                        android.widget.Toast.LENGTH_LONG).show();
+                a.finish();
+            });
+        }
+        return true;
+    }
+
     static void handle(LOActivity activity, String json) {
         try {
             JSONObject m = new JSONObject(json);
@@ -87,11 +172,29 @@ final class EuriseSuite {
                 case "traduci": translate(activity, id, text, m.optString("from"), m.optString("to")); break;
                 case "cerca": search(activity, id, m.optString("where"), m.optString("query")); break;
                 case "pdf": pdf(activity, id, m.optString("how"), m.optString("name"), m.optString("options")); break;
+                case "aspetto": appearance(activity, id); break;
                 default: reply(activity, id, null, null);
             }
         } catch (JSONException e) {
             Log.w(TAG, "messaggio non valido", e);
         }
+    }
+
+    /**
+     * L'accento delle icone che Office manda con il documento (Engine.kt, extra ACCENT_LIGHT e ACCENT_DARK, «#rrggbb»):
+     * l'interfaccia web lo usa per i dettagli delle icone Eurise. Senza, risponde vuoto e restano quelle di base.
+     */
+    private static void appearance(LOActivity a, int id) {
+        JSONObject r = new JSONObject();
+        try {
+            Intent i = a.getIntent();
+            String light = i != null ? i.getStringExtra("eu.eurise.extra.ACCENT_LIGHT") : null;
+            String dark = i != null ? i.getStringExtra("eu.eurise.extra.ACCENT_DARK") : null;
+            if (light != null && light.matches("#[0-9A-Fa-f]{6}")) r.put("light", light);
+            if (dark != null && dark.matches("#[0-9A-Fa-f]{6}")) r.put("dark", dark);
+        } catch (JSONException ignored) {
+        }
+        reply(a, id, null, r);
     }
 
     private static String withSource(String text, String title) {

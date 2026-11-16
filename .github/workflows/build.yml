@@ -54,6 +54,19 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # Eurise Office (leggero: schermata iniziale, vista rapida, PDF; il motore è l'APK compagno di office-app.yml).
+      - name: Prepara l'APK di Office
+        run: |
+          mkdir -p office-apk
+          cp office/apk/build/outputs/apk/debug/*.apk office-apk/eurise-office-debug.apk
+
+      - name: Carica l'APK di Office
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurise-office-debug-${{ github.run_number }}
+          path: office-apk/eurise-office-debug.apk
+          if-no-files-found: error
+
       - name: Carica il Ponte per il computer (Linux)
         uses: actions/upload-artifact@v4
         with:

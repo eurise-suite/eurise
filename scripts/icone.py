@@ -39,6 +39,8 @@ ICONS = [
     ("keyboard/app/src/main/res", "ic_launcher", "Tastiera", True),
     ("maps/android/app/src/main/res", "ic_maps", "Mappe", True),
     ("office/app/android/res", "ic_office", "Office", False),
+    ("office/apk/src/main/res", "ic_office", "Office", False),
+    ("office/motore/src/main/res", "ic_office", "Office", False),
 ]
 
 CREAM = ("#FFFDF8", "#F4E6CC")       # tratto

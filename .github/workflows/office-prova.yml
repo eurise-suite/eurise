@@ -1,0 +1,161 @@
+name: "Office: prova sull'emulatore"
+
+# Apre i campioni di office/prova/campioni (docx, xlsx, pptx, odt, ods, pdf) con Eurise Office su un emulatore Android
+# x86_64 con traduzione ARM (l'APK è solo arm64), da Uri content:// come «Apri con» e da file://, e carica registro e
+# schermate. Serve a vedere perché un documento non si apre senza dover chiedere il registro al telefono.
+# APK: l'ultimo giro riuscito di office-app.yml sul ramo del push; se non c'è, quello della pre-release apk-prova.
+on:
+  workflow_dispatch:
+    inputs:
+      fonte:
+        description: "motore = APK di office-app (con LibreOffice); nativo = Office compilato qui senza motore (vista rapida, PDF)"
+        type: choice
+        options: [motore, nativo, collabora]
+        default: motore
+      versione:
+        description: "Con fonte collabora: inizio della versione da provare (per esempio 25.04); vuoto = la più recente"
+        default: ""
+      schermo:
+        description: "telefono (piccolo), grande (1080×2400, 420 dpi, come un telefono vero) o tablet (1280×800, 160 dpi)"
+        type: choice
+        options: [telefono, grande, tablet]
+        default: telefono
+  push:
+    branches: [prova-office]
+    paths:
+      - ".github/workflows/office-prova.yml"
+      - "office/prova/**"
+
+env:
+  # Campioni da aprire (vuoto = tutti), per esempio «lettera.docx».
+  SOLO: ""
+  # «collabora»: prova di controllo (approvata dal proprietario il 13 novembre) con l'app ufficiale di Collabora da
+  # F-Droid al posto della nostra; solo sull'emulatore di Actions, non si distribuisce.
+  RIFERIMENTO: ""
+  # Attività da aprire: vuote = quelle di Eurise Office (DocumentActivity, OfficeActivity). Per un APK con la vecchia
+  # app di Collabora: org.libreoffice.androidlib.LOActivity e org.libreoffice.androidapp.ui.LibreOfficeUIActivity.
+  LO: ""
+  HOME_ACTIVITY: ""
+
+permissions:
+  # write: le schermate vanno nella pre-release office-prova-schermate (si guardano anche da dove gli artefatti non arrivano).
+  contents: write
+  actions: read
+
+concurrency:
+  group: office-prova-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prova:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        if: inputs.fonte == 'nativo'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: inputs.fonte == 'nativo'
+
+      # Office è sempre leggero (strada A): si compila qui in pochi minuti, senza il lavoro del motore. Si prova con il
+      # motore già pubblicato in apk-prova-office.
+      - name: Compila Office
+        if: inputs.fonte == 'nativo'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./gradlew --no-daemon :office:apk:assembleDebug
+          mkdir -p apk && cp office/apk/build/outputs/apk/debug/*.apk apk/office.apk
+          ls -la apk/office.apk
+          gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-motore-debug.apk -O apk/motore.apk || \
+            gh release download apk-prova-office -R "${{ github.repository }}" -p eurise-office-motore-debug.apk -O apk/motore.apk || true
+
+      # Office del ramo, da provare sul telefono (il motore resta quello pubblicato da office-app).
+      - name: Pubblica Office in apk-prova-office
+        if: inputs.fonte == 'nativo' && github.ref_name == 'office'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apk/office.apk apk/eurise-office-debug.apk
+          gh release upload apk-prova-office apk/eurise-office-debug.apk -R "${{ github.repository }}" --clobber
+
+      - name: Prende l'APK di Office
+        if: inputs.fonte != 'nativo'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apk
+          branch="${GITHUB_REF_NAME}"
+          run=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=$branch&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          if [ -n "$run" ]; then
+            gh run download "$run" -R "${{ github.repository }}" -D apk/art
+            # Strada A: Office e, a parte, «Eurise Office Motore».
+            o=$(find apk/art -name 'eurise-office-debug.apk' | head -1); [ -n "$o" ] && cp "$o" apk/office.apk
+            m=$(find apk/art -name 'eurise-office-motore-debug.apk' | head -1); [ -n "$m" ] && cp "$m" apk/motore.apk && ls -la apk/motore.apk
+            d=$(dirname "$(find apk/art -name liblo-native-code.so | head -1)"); [ "$d" != . ] && mv "$d" apk/simboli && ls -la apk/simboli
+            echo "APK dal giro $run di office-app ($branch)"
+          fi
+          if [ ! -f apk/office.apk ]; then
+            gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-debug.apk -O apk/office.apk
+            echo "APK dalla pre-release apk-prova"
+          fi
+          if [ "$RIFERIMENTO" = collabora ] || [ "${{ inputs.fonte }}" = collabora ]; then
+            # Repository F-Droid di Collabora (non è nel catalogo principale): l'APK arm64 più recente.
+            repo=https://www.collaboraonline.com/downloads/fdroid/repo
+            curl -sfL "$repo/index-v1.json" -o apk/index.json || echo "::warning::indice F-Droid di Collabora non raggiungibile"
+            want="${{ inputs.versione }}"
+            jq -r '.packages["com.collabora.libreoffice"][] | "\(.versionName) \(.versionCode) \(.nativecode // [] | join(","))"' apk/index.json 2>/dev/null | head -40
+            name=$(jq -r --arg v "$want" '.packages["com.collabora.libreoffice"] | map(select(((.nativecode // []) | index("arm64-v8a")) and (.versionName | startswith($v)))) | max_by(.versionCode) | .apkName' apk/index.json 2>/dev/null)
+            echo "APK di riferimento: $name"
+            if [ -n "$name" ] && [ "$name" != null ] && curl -sfL -o apk/ref.apk "$repo/$name"; then
+              mv apk/ref.apk apk/office.apk
+              { echo "PKG=com.collabora.libreoffice"; echo "LO=org.libreoffice.androidlib.LOActivity"
+                echo "HOME_ACTIVITY=org.libreoffice.androidapp.ui.LibreOfficeUIActivity"; } >> "$GITHUB_ENV"
+            fi
+          fi
+          ls -la apk/office.apk
+
+      - name: Abilita KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulatore e prova
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: LO="${{ env.LO }}" HOME_ACTIVITY="${{ env.HOME_ACTIVITY }}" SIMBOLI="${{ github.workspace }}/apk/simboli" PKG="${{ env.PKG }}" SOLO="${{ env.SOLO }}" MOTORE_APK="${{ github.workspace }}/apk/motore.apk" COMPLETA="${{ inputs.fonte == 'motore' && '1' || '' }}" SCHERMO="${{ inputs.schermo }}" bash office/prova/prova.sh apk/office.apk prova-office
+
+      - name: Riassunto
+        if: always()
+        run: cat prova-office/riassunto.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Schermate nella pre-release office-prova-schermate
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls prova-office/*.png > /dev/null 2>&1 || exit 0
+          gh release view office-prova-schermate -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create office-prova-schermate -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Schermate della prova di Office" --notes "Sovrascritte a ogni prova sull'emulatore."
+          gh release upload office-prova-schermate prova-office/*.png prova-office/riassunto.md -R "${{ github.repository }}" --clobber
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-prova-${{ github.run_number }}
+          path: prova-office/
+          retention-days: 14

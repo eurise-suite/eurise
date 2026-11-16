@@ -1,0 +1,42 @@
+# Sorgenti del guscio Qt di Collabora Office 26.04 (cartella qt/ del tag coda-26.04.5.3-1) per scrivere le patch di Eurise
+# (schede dei documenti, office/computer/sorgenti/patch). Stanno solo su gerrit.collaboraoffice.com, che le Actions
+# raggiungono: qui si scaricano e si mettono nella pre-release guscio-qt-sorgenti. Parte quando cambia questo file.
+name: "Office: sorgenti del guscio Qt"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [prova-office]
+    paths:
+      - .github/workflows/office-guscio.yml
+
+permissions:
+  contents: write
+
+jobs:
+  guscio:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Scarica qt/ dal tag coda-26.04.5.3-1
+        run: |
+          git clone -q --depth 1 --branch coda-26.04.5.3-1 --filter=blob:none --sparse https://gerrit.collaboraoffice.com/online online
+          cd online
+          git sparse-checkout set qt browser/src browser/html browser/js browser/css browser/images/welcome browser/welcome
+          git log -1 --format='%H %ci' > ../commit.txt
+          # La striscia delle schede (qtapp-tabstrip.*): dovunque stia nel repository.
+          git ls-tree -r --name-only HEAD | grep -i 'tabstrip\|color-palette' | tee ../striscia.txt
+          git sparse-checkout add $(xargs -n1 dirname < ../striscia.txt | sort -u)
+          cd ..
+          sed -n '1060,1080p' online/browser/Makefile.am; grep -n 'terser\|esbuild\|uglify\|"node\|engines' online/browser/package.json
+          tar -czf guscio-qt.tar.gz -C online qt browser/src browser/html browser/js browser/css browser/Makefile.am browser/package.json configure.ac $(cat striscia.txt)
+          ls -la guscio-qt.tar.gz; cat commit.txt
+
+      - name: Nella pre-release guscio-qt-sorgenti
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view guscio-qt-sorgenti -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create guscio-qt-sorgenti -R "${{ github.repository }}" --prerelease --target office \
+              --title "Sorgenti del guscio Qt di Collabora Office 26.04" --notes "Solo da leggere per scrivere le patch di Eurise."
+          gh release upload guscio-qt-sorgenti guscio-qt.tar.gz commit.txt striscia.txt -R "${{ github.repository }}" --clobber

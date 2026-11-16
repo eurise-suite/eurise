@@ -1,0 +1,45 @@
+--- a/qt/Bridge.cpp
++++ b/qt/Bridge.cpp
+@@ -814,6 +814,21 @@
+         // Update the file URL
+         _document._fileURL = Poco::URI(newFileUrl);
+ 
++        // Eurise: dopo una rinomina (saveas con il nome nuovo nella stessa cartella) il file col nome vecchio non
++        // serve più: si toglie, e con lui la sua riga tra i recenti.
++        const QString euriseRenameFrom = property("euriseRenameFrom").toString();
++        if (!euriseRenameFrom.isEmpty())
++        {
++            setProperty("euriseRenameFrom", QVariant());
++            const QString renamedTo = QString::fromStdString(_document._fileURL.getPath());
++            if (euriseRenameFrom != renamedTo && QFileInfo::exists(renamedTo))
++            {
++                if (QFile::remove(euriseRenameFrom))
++                    LOG_INF("Eurise: renamed " << euriseRenameFrom.toStdString() << " to " << renamedTo.toStdString());
++                Application::getRecentFiles().remove(previousUri);
++            }
++        }
++
+         LOG_TRC_NOFILE("loaddocument: created new appDocId=" << _document._appDocId);
+ 
+         // Connect to COOLWSD
+@@ -852,6 +867,20 @@
+         LOG_TRC_NOFILE("loaddocument: sent initial message with new appDocId");
+         return {};
+     }
++    else if (tokens.equals(0, "EURISERINOMINA"))
++    {
++        // Eurise: la pagina sta per rinominare il documento (saveas con il nome nuovo); il file da togliere dopo è
++        // quello aperto ora, e solo quello.
++        std::string from;
++        if (COOLProtocol::getTokenString(tokens, "from", from))
++        {
++            std::string decoded;
++            Poco::URI::decode(from, decoded);
++            if (decoded == _document._fileURL.getPath())
++                setProperty("euriseRenameFrom", QString::fromStdString(decoded));
++        }
++        return {};
++    }
+     else if (tokens.equals(0, "WELCOME"))
+     {
+ #if ENABLE_DEBUG

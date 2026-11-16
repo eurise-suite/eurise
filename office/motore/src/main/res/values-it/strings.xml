@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Testi del caricamento al posto di quelli di Collabora (le risorse dell'app vincono su quelle della libreria, anche
+         nelle lingue: per questo stanno qui e in values-en). -->
+    <string name="loading">Apro il documento…</string>
+    <string name="exiting">Chiudo il documento…</string>
+</resources>

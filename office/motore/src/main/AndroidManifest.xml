@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Solo le app della suite firmate con la stessa chiave aprono il motore; il motore parla con loro allo stesso modo. -->
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <uses-permission android:name="${suitePermission}" />
+    <!-- Nessun permesso INTERNET: il motore lavora solo sul telefono. -->
+
+    <queries>
+        <package android:name="eu.eurise.hub" />
+        <package android:name="eu.eurise.hub.debug" />
+        <package android:name="eu.eurise.office" />
+        <package android:name="eu.eurise.office.debug" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_office"
+        android:label="@string/motore_app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EuriseOffice.Document">
+
+        <!-- Nessuna icona nel cassetto: ci si arriva solo da Eurise Office (intent esplicito e permesso della suite). -->
+        <activity
+            android:name="org.libreoffice.androidlib.LOActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:permission="${suitePermission}"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="org.libreoffice.androidlib.SlideShowActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape" />
+
+        <!-- Copie in PDF da condividere (guscio della Suite, EuriseSuite.pdf). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/motore_paths" />
+        </provider>
+    </application>
+</manifest>

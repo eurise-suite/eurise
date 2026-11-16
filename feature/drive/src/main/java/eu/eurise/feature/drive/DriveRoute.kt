@@ -207,7 +207,7 @@ fun DriveRoute(onBack: () -> Unit, onScan: () -> Unit, onCloud: () -> Unit, onNe
 
     pdf?.let { (file, title) ->
         BackHandler { pdf = null }
-        PdfViewer(file, title) { pdf = null }
+        PdfViewer(file, title, onEdit = officeEdit(context, file)) { pdf = null }
         return
     }
 
@@ -389,13 +389,26 @@ private fun uriOf(context: Context, file: File): Uri = FileProvider.getUriForFil
 private fun mime(file: File): String =
     MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase(Locale.ROOT)) ?: "*/*"
 
+/**
+ * Apre [file] con l'app scelta. I file del telefono sono quelli veri: l'app (Office) può anche salvarli. Le copie di
+ * file del cloud o della cartella cifrata restano in sola lettura, perché una modifica lì non tornerebbe al suo posto.
+ */
 private fun viewExternally(context: Context, file: File) {
-    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uriOf(context, file), mime(file)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val writable = file.absolutePath.startsWith(Environment.getExternalStorageDirectory().absolutePath + "/")
+    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or (if (writable) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
+    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uriOf(context, file), mime(file)).addFlags(flags)
     try {
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, R.string.drive_no_app, Toast.LENGTH_SHORT).show()
     }
+}
+
+/** «Modifica in Office» per un PDF di Eurise File, o null se Office non è installata. */
+private fun officeEdit(context: Context, file: File): (() -> Unit)? {
+    val writable = file.absolutePath.startsWith(Environment.getExternalStorageDirectory().absolutePath + "/")
+    val intent = eu.eurise.core.suite.OfficeContract.editIntent(context, uriOf(context, file), "application/pdf", writable) ?: return null
+    return { context.startActivity(intent) }
 }
 
 internal fun share(context: Context, file: File) {

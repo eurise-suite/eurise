@@ -1,0 +1,97 @@
+# Office sul computer (tavola OffComputer): costruisce il Flatpak Eurise Office (prototipo, strada 1: Collabora Office per
+# Linux da Flathub con la nostra interfaccia, nome e icona dentro), lo installa e lo prova su uno schermo virtuale.
+# Il pacchetto va nella pre-release flatpak-prova-office, le schermate in office-computer-schermate.
+name: "Office: Flatpak Eurise e prova sul computer"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pacchetto:
+        description: "prototipo (strada 1, si costruisce qui) o sorgenti (strada 2, dalla pre-release flatpak-sorgenti-office)"
+        default: prototipo
+  # Un workflow nuovo su un ramo che non è quello principale si avvia solo con un push.
+  push:
+    branches: [prova-office]
+    paths:
+      - office/computer/**
+      # La ricetta dai sorgenti ha il suo flusso (office-sorgenti.yml).
+      - "!office/computer/sorgenti/**"
+      - office/app/web/**
+      - .github/workflows/office-computer.yml
+
+concurrency:
+  group: office-computer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  prova:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q flatpak xvfb xdotool imagemagick x11-apps dbus-x11 librsvg2-bin > /dev/null
+
+      - name: Flatpak Eurise Office
+        if: inputs.pacchetto != 'sorgenti'
+        run: bash office/computer/flatpak/costruisci.sh flatpak-eurise
+
+      - name: Flatpak Eurise Office dai sorgenti (strada 2)
+        if: inputs.pacchetto == 'sorgenti'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p flatpak-eurise
+          gh release download flatpak-sorgenti-office -R "${{ github.repository }}" -p eurise-office-sorgenti.flatpak -D flatpak-eurise
+          mv flatpak-eurise/eurise-office-sorgenti.flatpak flatpak-eurise/eurise-office.flatpak
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Installa il Flatpak Eurise
+        run: flatpak install --user -y --noninteractive --bundle flatpak-eurise/eurise-office.flatpak
+
+      - name: Il pacchetto nella pre-release flatpak-prova-office
+        if: inputs.pacchetto != 'sorgenti'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view flatpak-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create flatpak-prova-office -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Eurise Office per Linux (prototipo, Flatpak)" \
+              --notes "Installazione: flatpak install --user eurise-office.flatpak (il runtime arriva da Flathub). Sovrascritto a ogni giro."
+          gh release upload flatpak-prova-office flatpak-eurise/eurise-office.flatpak flatpak-eurise/versione-collabora.txt -R "${{ github.repository }}" --clobber
+
+      - name: Prova del Flatpak Eurise su uno schermo virtuale
+        run: |
+          bash office/computer/prova.sh prova-computer
+          echo "- pacchetto: ${{ inputs.pacchetto || 'prototipo' }}" >> prova-computer/riassunto.md
+
+      - name: Riassunto
+        if: always()
+        run: cat prova-computer/riassunto.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Schermate nella pre-release office-computer-schermate
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls prova-computer/*.png > /dev/null 2>&1 || exit 0
+          cat prova-computer/riassunto.md
+          tag=office-computer-schermate
+          [ "${{ inputs.pacchetto }}" = sorgenti ] && tag=office-sorgenti-schermate
+          gh release view $tag -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create $tag -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Schermate della prova di Office sul computer ($tag)" --notes "Sovrascritte a ogni prova."
+          gh release upload $tag prova-computer/*.png prova-computer/*.log prova-computer/*.txt prova-computer/riassunto.md -R "${{ github.repository }}" --clobber
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-computer-${{ github.run_number }}
+          path: prova-computer/
+          retention-days: 14

@@ -1,0 +1,92 @@
+# Eurise Office per Linux dai sorgenti (strada 2, decisa dal proprietario il 15 novembre): la ricetta Flathub nostra
+# (office/computer/sorgenti), compilata a tappe di quasi sei ore con la ccache salvata nelle release. Quando arriva in
+# fondo: eurise-office-sorgenti.flatpak nella pre-release flatpak-sorgenti-office. Lavoro lungo: a mano o quando cambia la
+# ricetta; ogni giro riparte dalla cache del precedente.
+name: "Office: Flatpak Eurise dai sorgenti"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [prova-office]
+    paths:
+      - office/computer/sorgenti/**
+      - .github/workflows/office-sorgenti.yml
+
+concurrency:
+  group: office-sorgenti
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  JOB_MINUTES: 350
+
+jobs:
+  compila:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fa spazio sul disco
+        run: |
+          echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache /usr/local/share/powershell /usr/local/share/chromium /opt/microsoft /opt/google \
+            /usr/local/julia* /opt/az /usr/local/lib/android || true
+          sudo docker image prune -a -f > /dev/null 2>&1 || true
+          root_free=$(df --output=avail -B1 / | tail -1)
+          mnt_free=$(df --output=avail -B1 /mnt 2> /dev/null | tail -1 || echo 0)
+          if [ "${mnt_free:-0}" -gt "$root_free" ]; then WORK=/mnt/eurise; else WORK=$HOME/eurise; fi
+          sudo mkdir -p "$WORK" && sudo chown "$USER" "$WORK"
+          echo "WORK=$WORK" >> "$GITHUB_ENV"
+          df -h / /mnt || true
+
+      - name: Strumenti
+        timeout-minutes: 20
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q flatpak flatpak-builder zstd > /dev/null
+          flatpak --version; flatpak-builder --version
+
+      - name: Compila (finché c'è tempo)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          used=$(( ($(date +%s) - JOB_START) / 60 ))
+          # Restano 40 minuti per la cache, il pacchetto e il caricamento.
+          minutes=$(( JOB_MINUTES - used - 40 ))
+          bash office/computer/sorgenti/compila.sh "$WORK/lavoro" uscita "$minutes"
+
+      - name: Pacchetto nella pre-release flatpak-sorgenti-office
+        if: hashFiles('uscita/eurise-office-sorgenti.flatpak') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view flatpak-sorgenti-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create flatpak-sorgenti-office -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
+              --title "Eurise Office per Linux dai sorgenti (Flatpak)" \
+              --notes "Installazione: flatpak install --user eurise-office-sorgenti.flatpak (il runtime arriva da Flathub). Sovrascritto a ogni giro riuscito."
+          gh release upload flatpak-sorgenti-office uscita/eurise-office-sorgenti.flatpak -R "${{ github.repository }}" --clobber
+
+      - name: Riassunto
+        if: always()
+        run: |
+          {
+            echo "## Eurise Office per Linux dai sorgenti"
+            echo "- flatpak-builder: $(cat uscita/esito.txt 2> /dev/null || echo 'non arrivato') (0 = finito; 124 o 130 = tempo scaduto, si riprende al giro dopo)"
+            echo '```'
+            tail -30 uscita/compila.log 2> /dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-sorgenti-${{ github.run_number }}
+          path: |
+            uscita/compila.log
+            uscita/esito.txt
+            uscita/eu.eurise.Office.json
+          retention-days: 14

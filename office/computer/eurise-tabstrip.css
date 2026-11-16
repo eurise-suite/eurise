@@ -1,0 +1,55 @@
+/* Striscia delle schede del guscio Qt (qtapp-tabstrip.html di Collabora Office 26.04) nello stile della tavola OffComputer:
+   fascia Notte, il documento attivo in una linguetta Perla che continua nella barra sotto, gli altri in azzurro chiaro.
+   Si aggiunge dopo qtapp-tabstrip.css (inietta.py), quindi qui bastano i colori e il carattere. */
+body {
+	--strip-background: #1F2A44;
+	--strip-hover: #2A3756;
+	--color-border: rgba(201, 211, 234, 0.28);
+	--color-background-hover: #2A3756;
+	--color-text-lighter: #C9D3EA;
+	--color-main-text: #FFFFFF;
+	color: #C9D3EA;
+	font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+	font-size: 13px;
+}
+.tab .title {
+	font-weight: 600;
+}
+.tab.active {
+	background: #F4F4F1;
+	color: #1E1D1B;
+	--close-color: #F4F4F1;
+}
+.tab.active .title {
+	font-weight: 700;
+	color: #1E1D1B;
+}
+.tab.active .close {
+	color: #56564F;
+}
+.tab.active .close:hover {
+	background: #ECECE7;
+	color: #1E1D1B;
+}
+.tab:hover:not(.active) .title {
+	color: #FFFFFF;
+}
+#new-tab {
+	color: #C9D3EA;
+}
+#new-tab:hover {
+	color: #FFFFFF;
+}
+[data-theme='dark'] body {
+	--strip-background: #0B0E13;
+	--strip-hover: #1B2029;
+	--color-background-hover: #1B2029;
+}
+[data-theme='dark'] .tab.active {
+	background: #12161D;
+	color: #E6E9F0;
+	--close-color: #12161D;
+}
+[data-theme='dark'] .tab.active .title {
+	color: #E6E9F0;
+}

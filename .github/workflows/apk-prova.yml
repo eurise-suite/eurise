@@ -3,7 +3,8 @@ name: APK di prova in una pre-release
 # Copia gli APK di prova di un giro di «Compila» nella pre-release «apk-prova» (sempre la stessa, sovrascritta), così si
 # scaricano con un link diretto anche da dove gli artefatti di Actions non arrivano. Parte a mano con il numero del giro
 # (solo dal ramo predefinito) o quando cambia questo file (ultimo giro riuscito sul ramo brand). Aggiunge anche l'ultimo
-# APK riuscito di Eurise Mappe (lavoro a parte, «Prototipo di Eurise Mappe»). Ultima pubblicazione: giro 645 (tre temi di icone nuovi nella Scrivania) e Office 57.
+# APK riuscito di Eurise Mappe (lavoro a parte, «Prototipo di Eurise Mappe»). Ultima pubblicazione: giro 645 (tre temi di icone nuovi nella Scrivania) e Office 57. Dal 16 novembre Office
+# leggero arriva da Compila e il motore da office-app (prova-office o brand).
 on:
   push:
     paths:
@@ -35,7 +36,9 @@ jobs:
           echo "id=$id" >> "$GITHUB_OUTPUT"
           mappe=$(gh api "repos/${{ github.repository }}/actions/workflows/maps-engine.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
           echo "mappe=$mappe" >> "$GITHUB_OUTPUT"
-          office=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          # Motore di Office (APK compagno): l'ultimo giro riuscito di office-app su prova-office o brand.
+          office=$(gh api "repos/${{ github.repository }}/actions/workflows/office-app.yml/runs?status=success&per_page=30" \
+            --jq '[.workflow_runs[] | select(.head_branch == "prova-office" or .head_branch == "brand")][0].id // empty')
           echo "office=$office" >> "$GITHUB_OUTPUT"
           echo "num=$num" >> "$GITHUB_OUTPUT"
 
@@ -52,8 +55,8 @@ jobs:
           github-token: ${{ github.token }}
           path: artefatti/mappe
 
-      # Eurise Office per Android (lavoro a parte, molto lungo): l'ultimo riuscito, fuori da artefatti/ per non
-      # confondere il suo APK con quelli della suite.
+      # «Eurise Office Motore» (lavoro a parte, molto lungo): l'ultimo riuscito, fuori da artefatti/. Office (leggero)
+      # arriva invece dal giro di Compila, con gli altri APK.
       - uses: actions/download-artifact@v4
         if: steps.giro.outputs.office != ''
         with:
@@ -67,8 +70,8 @@ jobs:
         run: |
           mkdir apk
           find artefatti -name '*.apk' -exec cp {} apk/ \;
-          office=$(find office -name '*.apk' 2>/dev/null | head -1)
-          if [ -n "$office" ]; then cp "$office" apk/eurise-office-debug.apk; fi
+          motore=$(find office -name 'eurise-office-motore-debug.apk' 2>/dev/null | head -1)
+          if [ -n "$motore" ]; then cp "$motore" apk/; fi
           # Il Ponte per il computer (Linux): la cartella del programma in un archivio (serve Java 17).
           ponte=$(find artefatti -maxdepth 1 -type d -name 'eurise-ponte-linux-*' | head -1)
           if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi

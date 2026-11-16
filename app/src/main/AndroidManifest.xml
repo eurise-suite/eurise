@@ -33,6 +33,16 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+        <!-- Scanner per le altre app della suite (Office): le pagine tornano come PDF. Solo app con la stessa firma. -->
+        <activity
+            android:name=".ScanForResultActivity"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SCAN_PAGES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".AodActivity"
             android:exported="false"
@@ -253,6 +263,12 @@
         <provider
             android:name=".PrivacyProvider"
             android:authorities="${applicationId}.privacy"
+            android:exported="true"
+            android:permission="${suitePermission}" />
+        <!-- Aspetto della suite per le altre app (accento della Scrivania per le icone di Eurise Office). -->
+        <provider
+            android:name=".AppearanceProvider"
+            android:authorities="${applicationId}.appearance"
             android:exported="true"
             android:permission="${suitePermission}" />
     </application>

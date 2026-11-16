@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Da Android 8.1 anche la barra di navigazione chiara di giorno. -->
+    <style name="Theme.EuriseOffice.Document" parent="Theme.EuriseOffice.DocumentBase">
+        <item name="android:windowLightNavigationBar">@bool/eurise_barre_chiare</item>
+    </style>
+</resources>

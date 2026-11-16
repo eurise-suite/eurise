@@ -14,7 +14,9 @@ enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, V
     /** Eurise Mappe: orari e viaggi coi mezzi pubblici da Transitous (partenza e arrivo arrotondati). */
     PublicTransport,
     /** Eurise Mappe: il file delle pietre miliari di un paese (il km sulle strade), uguale per tutti; nessuna posizione. */
-    Milestones;
+    Milestones,
+    /** Eurise Office: il download del motore dei documenti (APK compagno, uguale per tutti); i documenti non escono. */
+    OfficeEngine;
 
     val defaultOn: Boolean get() = false
 }

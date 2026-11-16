@@ -2804,3 +2804,506 @@ così l'altra chat non le annulla.
 - 16 novembre, sera, Organizzazione: icone di Calendario, Attività e Note nel cassetto, `SwitchRow` comune in core/designsystem, Scrivania e Drive divisi in più file, tavole NoteBlocca/NoteBloccata/NoteVocale da approvare · giro 661 → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, Browser: download multipli, niente doppioni con «Salva in…», ✕ in fondo alla scheda aperta → `docs/stato/BROWSER.md`.
 - 16 novembre, notte, Galleria e Tastiera: zoom con due dita nell'editor (giro 665); tavola da approvare della barra di Eurise a comparsa → `docs/stato/PICCOLE.md`.
+
+## Office (ramo `office`, chat dedicata dal 13 novembre)
+Ramo `office` creato da `brand` (b858da8). Si toccano solo `office/`, il lettore PDF e lo Scanner dell'app principale e i
+contratti di `core/` che servono; alla fine merge in `brand`. Ultimo APK di Office provato: `eurise-office-debug.apk` di
+`apk-prova` (giro 43118307755 di office-app, 249 MB).
+
+**Perché documenti e PDF non si aprono (13 novembre, trovato)**
+- Prova automatica nuova: `.github/workflows/office-prova.yml` + `office/prova/` (emulatore x86_64 Android 14 con
+  traduzione ARM, sei campioni docx/xlsx/pptx/odt/ods/pdf aperti con VIEW e Uri `content://` come «Apri con»; registro e
+  schermate). Si lancia da sola quando cambia `office/prova/**`; `SOLO` nel file sceglie i campioni.
+- Esito: per **tutti i formati** il file viene copiato bene (`Success copying … bytes`), l'interfaccia web parte, il
+  motore crea la sessione e poi **si chiude con SIGABRT nel thread `kitbroker_001`** circa 0,2 s dopo («New session [001]
+  created», prima di «Loading url»). L'app sparisce: è il «non si apre» del telefono. Non è un problema di permessi né di
+  Uri, né dell'interfaccia Eurise (in Chrome parte senza errori), né di librerie mancanti (simboli tutti risolti).
+- Sotto traduzione ARM la pila non ha nomi; nessun «Abort message», nessun messaggio di libc++abi. Indiziati, in ordine:
+  POCO 1.14.2 compilato da noi (Collabora usa il ramo master con la sua configurazione), differenze della configurazione
+  del core (`--disable-sal-log`, `--with-lang=en-US it`, NDK 28), un'eccezione C++ non presa nel kit.
+- Altri difetti trovati: con `file://` Collabora non apre nemmeno la pagina (serve la copia temporanea); Eurise File
+  passa i documenti a Office **solo in lettura** (`viewExternally` con il solo FLAG_GRANT_READ); il documento si chiama
+  `LibreOffice….tmp` (nome perso: titolo sbagliato e `isPdf()` che sbaglia); l'app principale non si offre per «Apri con»
+  sui PDF (solo ACTION_SEND per i biglietti); `apk-prova.yml` prende Office solo dal ramo `brand`.
+- Peso: `liblo-native-code.so` 191 MB già senza simboli (52 MB compresso xz), memorizzato non compresso nell'APK.
+
+**Decisioni del proprietario (13 novembre)**: sì a tutto: ordine 1) apertura 2) PDF 3) Office sulle tavole 4) motore
+a richiesta; editor PDF **nativo con PdfBox-Android** al posto di Draw; prova di controllo con l'app di Collabora;
+correzione in Eurise File; tavola OffHome. Approvate: **OffHome** (con PDF e Nota tra i «Nuovo» e il Calendario in alto)
+e le tavole **RicTira / RicTiraDestra / RicTiraSinistra** (ricerca che si tira giù, mano dominante, Aggiorna come
+pulsante): regola «Ergonomia» in CLAUDE.md. Tela riordinata: stati «approvata» allineati allo STATO, ScrDock e TelPillola
+ridisegnate come il codice, prima pagina «App e launcher» segnata superata (Mappe e nomi lasciati alla chat di brand).
+
+**Fatto (13 novembre, pomeriggio)**
+- Controllo: sull'emulatore l'app ufficiale di Collabora 26.04.4.2 (repository F-Droid di Collabora) apre lettera.docx.
+  **La chiusura del motore è della nostra compilazione.** Diagnosi in corso: `office/app/diag/eurise_diag.cpp` (con
+  `DIAGNOSI=1` in office-app.yml) scrive nel logcat pila al segnale, eccezioni non prese e stderr; le librerie non
+  ripulite vanno nell'artefatto office-simboli e office-prova traduce la pila.
+- LOActivity: copia di lavoro con il **nome vero** (`EuriseSuite.workingCopy`), `file://` apribile; Eurise File passa i
+  file del telefono **anche in scrittura** (copie di cloud e cartella cifrata restano in sola lettura).
+- **Office nativo, modulo `office/apk`** (Kotlin/Compose, `eu.eurise.office`): schermata iniziale OffHome, DocumentActivity
+  per «Apri con», editor PDF completo (Annota, Modifica, Pagine, Suite, Altro, Prima di condividere) con PdfBox-Android;
+  test `PdfLogicTest`. Compila in «Compila APK». office-app.yml ora costruisce l'APK di Office da questo modulo con dentro
+  l'AAR della libreria di Collabora (l'app di Collabora non c'è più). L'APK di prova va nella pre-release
+  **apk-prova-office** (apk-prova resta del ramo brand).
+- Limiti noti: «I miei dati» nei moduli manca (serve un contratto con Eurise Password); «Link dal cloud» non c'è ancora;
+  la mano dominante è un'impostazione di Office finché l'app Eurise non la offre a tutta la suite; ricerca che si tira
+  giù da fare come componente comune in core/designsystem.
+
+**Fatto (13 novembre, sera)**
+- Il motore non partiva sull'emulatore per l'impacchettamento: `libandroidx.graphics.path.so` portava le cartelle x86/x86_64
+  e il sistema sceglieva x86_64, dove `libandroidapp.so` non c'è (UnsatisfiedLinkError in `Engine.available`). Ora
+  `office/apk` con il motore dentro tiene solo arm64-v8a. ccache: basedir, compilercheck content, sloppiness e
+  `--disable-pch` per riusarla tra i giri. La prova sull'emulatore prova tutti e sei i campioni.
+- **Decisione (proprietario, 13 novembre): via di mezzo, in due tempi.** Non si riscrive un Office da zero. Prima il motore
+  LibreOffice deve aprire e modificare tutti i formati; poi davanti al motore una **vista rapida nativa** (Word, Excel,
+  PowerPoint): apre subito senza motore, permette correzioni piccole (un paragrafo, una cella con somme e formule semplici,
+  un commento) cambiando **solo quel pezzo del file**, il resto resta identico; «Modifica completa» apre lo stesso
+  documento nel motore alla stessa pagina (il motore si scarica lì la prima volta). Tavole OffLettura, OffLetturaCorreggi,
+  OffLetturaFoglio, OffLetturaCompleta sulla pagina Office (da approvare).
+
+- **Lettore PDF dell'APK principale**: si apre con «Apri con» da qualsiasi app (`PdfOpenActivity`, copia in cache);
+  «Modifica in Office» (anche da Eurise File) passa l'originale a Office, con la scrittura se c'era (`OfficeContract`).
+  Senza Office resta l'annotazione su copia.
+- **Scansiona e restituisci**: `ScannerContract` + `ScanForResultActivity` (permesso della suite); in Office «Inserisci da
+  Scanner» riceve le pagine e le inserisce dopo la selezione. Lo Scanner, chiamato così, mostra «Aggiungi al documento».
+
+**Fatto (13 novembre, notte)**
+- **Vista rapida (tavole OffLettura… approvate)**, `office/apk/.../rapida/`: .docx, .odt, .xlsx, .ods si aprono subito
+  senza motore. Correzione di un paragrafo con diff sui soli pezzi di testo toccati (formattazione intorno intatta, il
+  paragrafo torna nel file al suo posto), Invio = paragrafo nuovo, G C S su Word, commenti (Word e ODT), celle con
+  ricalcolo di SUM/AVERAGE/MIN/MAX/COUNT/PRODUCT/ROUND/ABS e + − × ÷ nello stesso foglio; il resto chiede il ricalcolo
+  all'apertura (fullCalcOnLoad, via calcChain). Paragrafi con immagini, campi, note o revisioni: solo modifica completa.
+  Salva sul file dopo ogni correzione, Annulla fino a 20 passi, «Salva in…» in sola lettura. Nessuna libreria nuova.
+  Test JVM (17) e prova sull'emulatore: tocca, scrive, Fatto, rilegge il file del telefono (docx e odt verificati).
+- `Engine.open` manda testi e fogli alla vista rapida (salvo «Apri sempre nella modifica completa»); testi e fogli nuovi
+  si creano anche senza motore. Presentazioni: motore.
+- office-prova: `fonte` = motore | nativo (Office compilato senza motore, gira sull'x86 senza traduzione e si pubblica
+  come `eurise-office-leggero-debug.apk` in apk-prova-office) | collabora (+ `versione`).
+- **Motore**: si carica (solo arm64), ma si chiude con SIGABRT nel thread kitbroker ~100 ms dopo «New session created»,
+  per tutti i formati. Collabora 25.04 ufficiale apre tutti i campioni sullo stesso emulatore: il ramo va bene, è la
+  nostra compilazione. La pila di sistema sotto traduzione ARM non dice nulla; il gestore di EuriseDiag veniva sostituito.
+  Nuova diagnosi in compilazione (giro 43484238959): svuota stderr al segnale, rimette i gestori; fonts.conf con le
+  cartelle di Office.
+
+**Per ripartire (13 novembre, sera)**
+- **Consegna degli APK (richiesta del proprietario, 14 novembre)**: a ogni consegna l'APK da provare si allega
+  direttamente nella chat (scaricato dalla pre-release e mandato come file), senza aspettare che lo chieda.
+- Ramo `office` (da `brand`; merge in `brand` alla fine). Tocca solo `office/`, lettore PDF e Scanner dell'app
+  principale, contratti in `core/suite` (OfficeContract, ScannerContract).
+- APK di prova: pre-release `apk-prova-office`: `eurise-office-debug.apk` (Office, leggero) e
+  `eurise-office-motore-debug.apk` (il motore, si installa anche da Office con «Scarica»). Il proprietario prova gli APK da
+  un'altra chat. Le modifiche all'app principale sono solo sul ramo `office`.
+- Motore corretto e diviso in APK compagno (strada A), verificato sull'emulatore (vedi sotto). Per riprovare:
+  `gh workflow run office-prova.yml --ref office -f fonte=motore`, poi `riassunto.md` e le schermate della pre-release
+  `office-prova-schermate` (scaricarle con `gh api .../releases/assets/ID`, `gh release download` passa da GraphQL).
+- Strumenti: test JVM della vista rapida in locale con kotlinc scaricato da GitHub (Maven non raggiungibile; junit in
+  /opt/gradle-*/lib); prova sull'emulatore: `office-prova.yml` con `fonte` motore | nativo | collabora (+ `versione`).
+
+- **Motore a richiesta, cosa si è capito** (core co-25.04, `sal/android/libreofficekit-jni.c`, `sal/osl/unx/file.cxx`):
+  il motore legge `/assets/…` con l'AssetManager di Android e mappa in memoria il file passato come `apkFile`
+  (`lo_apkentry`, voci non compresse); l'interfaccia web viene da `file:///android_asset/dist`. Un AssetManager su un
+  file qualsiasi chiede API nascoste, quindi due strade: **A** APK compagno «Eurise Office Motore» firmato con la stessa
+  chiave (Office prende AssetManager, percorso e librerie da `createPackageContext`, controlla la firma; su F-Droid due
+  pacchetti, nessuna patch al core); **B** zip scaricato dentro Office (patch a `file.cxx` per leggere gli asset con
+  `lo_apkentry`, interfaccia web da file, librerie con `System.load` dalla cartella dell'app; un solo pacchetto, serve
+  un posto da cui scaricarlo e una voce nel centro privacy). Da decidere con il proprietario.
+
+**Fatto (13 novembre, sera tardi): causa della chiusura del motore trovata**
+- La diagnosi (giro 43484238959, prova 43495166402) mostra che non è un SIGABRT ma un **SIGSEGV in `UnitKit::get()`**,
+  chiamata da `Document::drainQueue()` subito dopo «New session created». Su mobile `UnitWSD::init` non viene mai
+  chiamata (in `COOLWSD::innerInitialize` sta dentro `#if !MOBILEAPP`), la tabella dei test resta vuota e `get()` legge
+  `GlobalArray[-1]`. Le altre chiamate del kit sono già protette con `if (!Util::isMobileApp())`, quella di `drainQueue`
+  no (anche in cima al ramo co-25.04: l'app ufficiale viene da una versione precedente).
+- Correzione: `office/app/eurise_online.py` (dopo il checkout di online): `drainQueue` salta il filtro su mobile, e
+  `UnitKit::get()` su mobile restituisce un UnitKit vuoto se la tabella è vuota. La diagnosi non riempie più il registro
+  con «gestore rimesso» (libsigchain lo fa sembrare sempre cambiato).
+- **Decisione (proprietario, 13 novembre): motore a richiesta con la strada A**, app compagna «Eurise Office Motore»
+  firmata con la stessa chiave; nessuna patch al core per gli asset.
+
+**Fatto (13 novembre, notte): motore a richiesta, strada A (da provare)**
+- Modulo nuovo `office/motore` → APK **«Eurise Office Motore»** (`eu.eurise.office.motore`, `.debug` in prova): contiene
+  l'AAR di Collabora e dichiara LOActivity (esportata ma protetta dal permesso di firma della suite), SlideShowActivity e
+  il FileProvider `.fileprovider` del guscio della Suite. Nessuna icona nel cassetto, **nessun permesso INTERNET**.
+  Librerie native compresse nell'APK (`useLegacyPackaging = true`) per scaricare meno: misure nel riepilogo di office-app.
+  Esiste solo dentro office-app.yml (settings lo include con `EURISE_OFFICE_AAR`).
+- Il motore gira **nel suo processo e legge i suoi asset dal suo APK**, come l'app di Collabora: Office lo apre con un
+  intent esplicito (`setClassName(motore, LOActivity)`) passando l'Uri con i permessi di lettura/scrittura. Nessun
+  `createPackageContext`, nessuna patch al core.
+- `office/apk` ora è **sempre leggero** (niente AAR, niente appcompat). `Engine.available(context)` = motore installato e
+  `checkSignatures` uguale a Office. `EngineInstaller`: scarica da `BuildConfig.ENGINE_URL` (debug: pre-release
+  `apk-prova-office/eurise-office-motore-debug.apk`; ufficiale: `releases/latest/download/eurise-office-motore.apk`),
+  segue i rimandi solo in https, **controlla pacchetto e firme dell'APK prima di installarlo** (altrimenti lo cancella),
+  installa con PackageInstaller (Android chiede conferma; serve REQUEST_INSTALL_PACKAGES, INTERNET solo per questo).
+- Tavola **OffMotore** in Compose (`home/EngineSheet.kt`), con gli stati non disegnati nello stesso foglio: rete a
+  consumo («Scarica con la rete mobile»), avanzamento con Annulla, conferma di Android, errore (rete, firma, installazione,
+  annullata), pronto con «Apri il documento»: il documento arrivato con «Apri con» aspetta con i suoi permessi e si apre
+  nella modifica completa appena il motore c'è. Pesi nei testi (70 MB / 270 MB) da correggere con le misure vere.
+- office-app.yml pubblica `eurise-office-debug.apk` (Office) e `eurise-office-motore-debug.apk` in apk-prova-office e
+  toglie `eurise-office-leggero-debug.apk`. office-prova installa entrambi; con `fonte=motore` imposta «Apri sempre nella
+  modifica completa» (`COMPLETA=1`), così tutti i formati passano dal motore.
+- **Da fare al merge in `brand`**: `apk-prova.yml` prende da office-app il primo `*.apk` dell'artefatto: va presa
+  `eurise-office-debug.apk` e aggiunta `eurise-office-motore-debug.apk`. **Centro privacy**: il download del motore va
+  aggiunto come servizio (PrivacyService + PrivacyRoute in feature/privacy, file della chat del brand: si fa al merge).
+  F-Droid: il motore va pubblicato come secondo pacchetto (se F-Droid firma con la sua chiave, Office lo deve sapere).
+
+**Verificato sull'emulatore (13 novembre, notte)**
+- Prova 43501850496 (APK unico del giro 43497554743, tutti i formati nella modifica completa): docx, xlsx, pptx, odt, ods
+  si aprono e si disegnano nel motore, nessuna chiusura. **Il motore funziona.**
+- Prova 43506139456 (due APK del giro 43499114301): Office passa il documento al processo di
+  `eu.eurise.office.motore.debug`, che apre e disegna tutti e cinque i formati; il PDF resta nell'editor nativo.
+- Misure: Office 17 MB (debug); **Motore 113 MB da scaricare, circa 315 MB sul telefono** (191 MB di
+  `liblo-native-code.so` estratta). I 66 MB della tavola venivano da xz: testi del foglio corretti (115/320 MB).
+  Per scendere: librerie non compresse nell'APK (niente estrazione, ma download ~200 MB), oppure togliere dal core
+  quello che non serve (lingue, filtri rari): da valutare.
+- Non ancora provato: il percorso «Scarica» dentro Office (download, controllo firme, conferma di Android). La prova
+  installa il motore con adb. DIAGNOSI spenta in office-app.yml: giro 43507364768 (APK in apk-prova-office), prova
+  43510672834 di nuovo tutta buona.
+
+**Prova sul telefono del proprietario (14 novembre, notte)**
+- «Scarica» funziona: download di 113 MB, permesso «app sconosciute», installazione, documenti e PDF si aprono; la
+  presentazione si apre veloce ma con l'interfaccia di Collabora non si riesce a selezionare né usare i comandi. Sulla
+  prova (usa_motore in prova.sh: matita, doppio tocco, tocco lungo) il motore risponde: il problema è l'interfaccia.
+- Richieste: nel PDF **solo la dock**, il pannello di una scheda compare quando la si tocca; **l'evidenziatore
+  spariva**; Scanner da «Pagine» diceva «Serve l'app Eurise»; **anche nella modifica completa la nostra interfaccia**.
+- Fatto: `PdfDisplay` (copia per lo schermo con le annotazioni stampate: il PdfRenderer di Android non le disegna;
+  il file vero le tiene come annotazioni), dock del PDF con pannello a comparsa (`PdfModel.panel`). Scanner: la porta
+  `ScanForResultActivity` c'è solo sul ramo `office`; l'app Eurise del ramo `brand` non l'ha → ora Office chiede di
+  aggiornarla (arriva con il merge).
+- Fatto: **interfaccia Eurise nel motore sul telefono** (`office/app/web/Control.Eurise.js`, sezione «Telefono», e
+  `eurise.css`): intestazione nella riga `#toolbar-row` (indietro = BYE, nome, «Salvato», ricerca, annulla, condividi),
+  dock con schede per tipo (testo, foglio, presentazione/disegno) e pannello a comparsa con lo stato dei comandi
+  (`commandstatechanged`), apertura direttamente in modifica (`setPermission` avvolto → `_switchToEditMode`),
+  salvataggio da sé 4 s dopo l'ultima modifica (`.uno:Save`). I PDF nel motore tengono l'interfaccia di Collabora.
+  Stylelint 13.7 e ESLint 7 di Collabora si possono provare in locale (npm) prima di spingere.
+- La prova rapida `fonte=nativo` ora compila e **pubblica Office** in apk-prova-office (Office non esce da «Compila
+  APK» e office-app impiega 25 minuti).
+
+- Verificato sull'emulatore (prova 43539935216, motore del giro 43537001256): dock e pannelli per tipo, doppio tocco
+  entra nel testo della diapositiva con tastiera, tocco lungo apre Taglia/Copia/Incolla, schede dei fogli e miniature
+  sopra la dock, nessuna chiusura. Consegnati al proprietario: Office (lampo dell'evidenziatore tolto: chiave delle
+  pagine = indice, segno tenuto finché arriva il ridisegno) e il motore con l'interfaccia Eurise.
+- In corso: giro office-app per il commit cb2179c (nome del documento da `file_path`, pulsanti senza cornici di
+  Collabora). office-app ora pubblica **solo il motore**; Office lo pubblica `office-prova` con `fonte=nativo`.
+  Attenzione: un push su `office/prova/**` fa partire una prova che annulla quella in corso (stesso gruppo): annullarla.
+
+**14 novembre, mattina**
+- **Chiusura del motore durante le modifiche**: era il salvataggio automatico con `uno('.uno:Save')`. Collabora lo
+  rifiuta con un'asserzione (`DocumentBroker::forwardToChild`) e il processo muore. Ora `saveNow()` manda
+  `save dontTerminateEdit=1 dontSaveIfUnmodified=1` (come LOActivity.onPause), 8 s dopo l'ultima modifica.
+  **Mai `.uno:Save` dal nostro codice.** La prova scrive nel motore e aspetta 12 s: verificata, motore vivo.
+- Vista rapida: senza `enableEdgeToEdge` (adjustResize), sul telefono del proprietario la barra di modifica finiva
+  sotto la tastiera.
+- **Tablet**: barra a nastro Eurise (Control.Eurise.js, sezione «Tablet»; RIBBONS per testo, foglio, presentazione;
+  icone dei comandi da `app.LOUtil`), provata con `schermo=tablet` (emulatore a 1280x800). Nascosta anche `.main-nav`
+  (schede di Collabora). Mancano i menu a tendina di carattere e dimensione.
+- Ricerca (OffCerca): «Nel documento» in cima, foglio dal basso sul telefono. Chiedi all'AI resta «in arrivo».
+- **Approvate dal proprietario (14 novembre)**: **OffTelefonoGruppi** («un grandissimo sì»: dalla dock del telefono
+  compaiono i gruppi del nastro come card, nello stile del gruppo Carattere di OffComputer: tendine di carattere e
+  dimensione, togli formattazione, B I U S, apice, pedice, colore, evidenzia, etichetta e «altre opzioni» in basso;
+  pastiglie dei gruppi della scheda sopra la card, scorrimento laterale tra le card, pulsanti da 44, card sopra la
+  dock) e **OffLetturaPresentazione** (vista rapida delle presentazioni: diapositive 16:9 una sotto l'altra, note del
+  relatore, Presenta, Completa, Condividi, ricerca).
+- Correzioni del proprietario dopo la prova sul telefono (tutte fatte, da riprovare): nel PDF solo la dock e i pannelli
+  a comparsa; evidenziatore che spariva e poi lampeggiava; barra di modifica della vista rapida sotto la tastiera;
+  motore che si chiudeva dopo qualche secondo di modifica; la nostra interfaccia anche nella modifica completa.
+  Scanner da «Pagine» di Office: si prova dopo il merge in `brand` (l'app Eurise del ramo brand non ha ancora
+  ScanForResultActivity).
+- Sulla pagina Office della tela sono comparse, da un'altra chat, **OffRapporto** e **OffRapportoVedi** (rapporto
+  quando Office si è chiuso, da approvare): chiedere al proprietario chi le porta avanti prima di toccarle.
+- Ritocchi del tablet (`.main-nav` nascosta, Condividi leggibile, annulla e ripeti senza cornici): provati con
+  `schermo=tablet` (prova 43580487360, motore del giro 43577666467) e consegnati.
+
+**14 novembre, tarda mattina (nuova chat)**
+- **OffTelefonoGruppi in codice** (Control.Eurise.js, eurise.css): le schede della dock del telefono prendono i gruppi dai
+  RIBBONS del tablet (`phoneTabs`): testo = Testo (Carattere, Paragrafo, Stili, Appunti), Inserisci, Revisione, Suite,
+  Altro (Layout, Vista, Documento); foglio = Celle, Inserisci, Dati (Formule + Dati), Suite, Altro (Revisione, Vista,
+  Documento); presentazione = Diapositiva (Diapositive, Presentazione), Testo, Inserisci, Suite, Altro. Toccando una
+  scheda: pastiglie dei gruppi sopra, card larghe min(330 px, schermo − 52) che scorrono di lato (scroll-snap, la
+  pastiglia segue lo scorrimento), pulsanti da 44, B I U S x² x₂ come segni, etichetta e «altre opzioni» in basso.
+  Gruppo Carattere con **tendine di carattere** (elenco dei caratteri del motore, `getToolbarCommandValues`, con ricerca;
+  si applica con `map.applyFont`) **e dimensione** (`applyFontSize`), anche sul nastro del tablet; togli formattazione
+  (`.uno:ResetAttributes`, `.uno:SetDefault` nelle presentazioni); colore ed evidenzia con le tinte della suite
+  (`.uno:FontColor`/`.uno:Color` e `.uno:CharBackColor`/`.uno:BackgroundColor` con il parametro `X.Color`, come
+  Widget.ColorPickerButton di Collabora). Provato in locale con eslint 7 e stylelint 13.7 (regole di Collabora).
+  La prova sul telefono fotografa anche `-uso-1-tendina` e `-uso-1-gruppi`.
+- **OffLetturaPresentazione in codice** (`rapida/Slides.kt`, `rapida/SlidesView.kt`): pptx e odp si aprono nella vista
+  rapida in sola lettura: diapositive nelle loro proporzioni (sldSz / page-layout), titolo, sottotitolo, testi con
+  elenchi e livelli, tabelle, immagini (decodificate ridotte, segnaposto per EMF/WMF/SVG), sfondo pieno se dichiarato
+  dalla diapositiva, note del relatore, diapositive nascoste segnate; «diapositiva N di M», ricerca con evidenziazione;
+  **Presenta** a schermo intero in orizzontale (tocco a destra/sinistra, scorrimento, salta le nascoste). Completa e
+  Aspetto esatto aprono il motore. Le presentazioni **nuove** vanno sempre nel motore. Test JVM `SlidesTest` (4).
+  Limite: l'impaginazione è semplificata (forme in colonna dall'alto in basso, sfondi e segnaposto ereditati dal layout
+  e dal master non letti): per l'aspetto vero c'è il motore.
+
+- Verificato sull'emulatore: prova 43586138828 (motore del giro 43583760554, telefono): card, tendina dei caratteri,
+  scorrimento e Carattere per primo nel foglio; motore vivo dopo 12 s di modifica in tutti e tre i formati. Prova
+  43583694984 (`fonte=nativo`): slide.pptx si apre in QuickActivity senza motore.
+- **Consegnati al proprietario (14 novembre, mattina)**: `eurise-office-debug.apk` (Office con la vista rapida delle
+  presentazioni, pubblicato alle 10:10 UTC dalla prova 43583694984) e `eurise-office-motore-debug.apk` (giro 43583760554,
+  card e tendine). Prima, il motore dei ritocchi del tablet (giro 43577666467).
+
+**14 novembre, primo pomeriggio: Office sul computer, prototipo (OffComputer, approvato «vai»)**
+- Strada: **Collabora Office per Linux da Flathub** (`com.collaboraoffice.Office`, coda-26.04.5.3, guscio Qt `coda-qt`
+  con QtWebEngine) **con la nostra interfaccia web sopra**: stesso motore e stessa interfaccia di Collabora, come su
+  Android. Il guscio carica `/app/share/coolwsd/browser/dist/cool-qt.html` (non `cool.html`, che è quella del server);
+  lì si aggiungono `Control.Eurise.js` (subito dopo `bundle.js`, `defer`) ed `eurise.css`.
+- Prova automatica `office-computer.yml` + `office/computer/prova.sh` (si avvia a mano o con un push su
+  `office/computer/**` o `office/app/web/**`): installa il pacchetto da Flathub, inietta la nostra interfaccia, apre
+  lettera.docx, conti.xlsx e slide.pptx su Xvfb 1440×900 (`--filesystem=$HOME/Documents`, Esc sul benvenuto),
+  fotografa aperto e con Ctrl K, e pubblica schermate, log e riassunto in **`office-computer-schermate`**. Lo script
+  `eurise-diag.js` (solo nella prova) scrive in console `EURISE-DIAG` con lo stato della nostra interfaccia e
+  `euriseOffice.trace`. Prima prova buona: giro 43597390022 del 14 novembre (nastro Eurise in tutti e tre i formati).
+- Nel codice condiviso (Control.Eurise.js): nel guscio Qt (`ThisIsTheQtApp`) si accende il nastro del tablet con la
+  classe `eurise-desk`, mai la dock del telefono; i messaggi `EURISE` non partono (nel guscio Qt andrebbero al motore);
+  l'avvio aspetta `window.mode` pronto e usa `isSmallScreenDevice` dove `isMobile` non c'è più (Collabora 26.04).
+  Su Android il comportamento non cambia, ma **il motore Android con queste modifiche non è stato ancora compilato
+  né provato** (giri office-app annullati): al prossimo giro del motore, prova `fonte=motore` sul telefono e sul tablet.
+- Differenze ancora da chiudere rispetto alla tavola OffComputer: una sola riga per schede, annulla/ripeti, Cerca un
+  comando, stato di salvataggio e Condividi (ora sono intestazione + schede come sul tablet); colonna a sinistra
+  Struttura / Collegato a / In Eurise File al posto del pannello Proprietà di Collabora (ora a destra) e del
+  Navigatore; il giro guidato di Collabora («Welcome to Collabora Online») da spegnere; le icone della Suite non si
+  vedono (cartella delle immagini diversa nella 26.04); interfaccia in italiano nella prova (LANG); le schede dei
+  documenti in alto e «Apri da Eurise File» sono del guscio (passo successivo: guscio nostro, Flatpak Eurise).
+
+**Indicazioni del proprietario sul prototipo del computer (14 novembre, pomeriggio)**
+- **Colonna Properties di Collabora: si tiene**, con tutte le sue funzioni, ma **ridisegnata con il nostro stile** (isole
+  bianche sul Perla, etichette e controlli come il nastro, tendine come le nostre). **La nostra colonna di sinistra della
+  tavola** (Struttura, Collegato a, In Eurise File) **va dentro questa colonna a destra**, come sezioni sue: niente
+  colonna a sinistra.
+- **Nastro più compatto**: oggi ci sono «praterie» di spazio bianco inutile, brutte da vedere (gruppi larghi e alti
+  più del contenuto, intestazione e schede su due righe con molto vuoto, gruppo Suite enorme con poche voci). Stringere
+  per spazio ed estetica: una riga sola per schede e azioni (come la tavola), gruppi alti quanto serve, meno margini.
+- Il resto come proposto: giro guidato di Collabora spento, icone della Suite (cartella immagini della 26.04),
+  interfaccia in italiano nella prova; poi il guscio nostro e il Flatpak Eurise.
+
+**14 novembre, pomeriggio: indicazioni applicate al prototipo del computer (nuova chat)**
+- Tutto nel codice condiviso dietro la classe `eurise-desk` (solo guscio Qt): telefono e tablet non cambiano.
+- **Una riga sola** (`#eurise-header.desk`): File, schede, poi annulla/ripeti, Cerca un comando (Ctrl K), stato con la
+  cartella («Salvato · Documents») e Condividi. Il nome del documento sta nel titolo della finestra (poi nella scheda
+  del guscio).
+- **Nastro compatto** (alto ~90 px invece di ~120, con l'intestazione ~140 px invece di ~230): voci piccole da 32×30,
+  grandi da 62; voci piccole **con il nome** dove la tavola lo mostra (`lab()`: Taglia, Copia, Formato, Trova,
+  Sostituisci, Collegamento, Da fare, Evento, Note, Viaggio, Grafico); **stili come tessere «Aa»** (Testo, Titolo 1,
+  Titolo 2 + «tutti gli stili» = pannello Stili); **gruppo Suite stretto** con icone nostre (`SUITE_ICONS`, SVG nel
+  codice: niente cartella delle immagini) e presente anche in Home (`SUITE_HOME`, solo computer). Voci e nomi diversi
+  sul computer: `deskItems`, `deskLabel`, `deskOnly`, `deskMore`.
+- **Colonna Properties di Collabora tenuta e ridisegnata** (`#sidebar-dock-wrapper` 344 px, Perla; ogni pannello
+  `.ui-expander-container` un'isola bianca; titolo «Proprietà» piccolo in maiuscoletto; tendine, campi e pulsanti come
+  il nastro). In cima, come sezioni sue (`#eurise-sidebox`, richiudibili): **Struttura** = il Navigatore del motore
+  (`#navigator-panel` spostato lì, aperto con `.uno:Navigator`; categorie vuote nascoste: titoli nel testo, fogli nel
+  foglio di calcolo), **Collegato a** (per ora «Nessun collegamento»: i dati arrivano con il guscio) e **In Eurise
+  File** (cartella del file). **Niente colonna a sinistra**, tranne le diapositive nelle presentazioni (da confermare).
+- **Giro guidato** spento con la preferenza di Collabora `onboardingTourSeen` (Control.UIManager) più il salto
+  automatico come riserva. **Italiano** nella prova (`flatpak config languages it;en`, LANG); la pagina del guscio non
+  ha un carattere senza grazie di base: lo diamo noi ai riquadri.
+- Prova: 6 schermate buone (prova 43602581077). Nella 26.04 `console.log` non arriva al registro: la diagnosi passa
+  da `app.console.log` (righe `EURISE-DIAG` ed `EURISE-DOM` con la struttura delle colonne e le altezze).
+- Riferimenti nel sorgente di Collabora: il ramo 26.04 non è pubblico; per il DOM della barra laterale e del Navigatore
+  basta il tag `coda-25.04.9.2-2` di CollaboraOnline/online (Control.SidebarBase.ts, Control.NavigatorPanel.ts,
+  jssidebar.css); il resto si legge da `bundle.js` del pacchetto Flathub (lo fa prova.sh in `giro-guidato.txt`).
+
+**14 novembre, pomeriggio: righello verticale e icone Eurise (richieste del proprietario)**
+- **Righelli** sempre accesi nei testi sul computer: preferenza `ShowRuler` impostata prima dell'apertura (Collabora crea i
+  righelli solo se è accesa) più `uiManager.showRuler()`; la 26.04 li disegna al primo evento della pagina, quindi un
+  `resize` dopo l'apertura (schermata `-1-mouse` della prova: righello verticale e orizzontale visibili).
+- **Icone Eurise al posto di quelle di Collabora, su computer, tablet e telefono** (codice condiviso): `ICONS` in
+  Control.Eurise.js, 110 icone disegnate (24×24, tratto 1,7 Notte, dettagli azzurro, campiture leggere, tinte della suite
+  per colore del testo ed evidenzia, variante per il tema scuro), servite avvolgendo `app.LOUtil.getImageURL` (un punto
+  solo: nastro, colonna Properties, menu, dialoghi). Le icone chieste che non abbiamo restano di Collabora e la prova le
+  elenca (`missingIcons` nella diagnosi: soprattutto quelle del nastro di Collabora, nascosto). Anteprima del set:
+  rendering locale con rsvg-convert. `icon-maskable` della 26.04 colora le icone solo nel contrasto elevato.
+- Righelli sullo schermo virtuale della prova: compaiono al primo movimento del mouse (schermata `-1-mouse`), non nella
+  schermata senza mouse nemmeno con il `resize`; su un computer vero il puntatore c'è sempre.
+- **Verificato e consegnato (14 novembre, 15:30 UTC)**: motore del giro 43607181634 (icone nuove e codice del computer)
+  provato con `fonte=motore` su telefono (prova 43609208559) e tablet (prova 43610165572): interfaccia come prima, icone
+  nostre nei pannelli e nel nastro, motore vivo dopo 12 s di modifica in testo, foglio e presentazione. Consegnati:
+  `eurise-office-motore-debug.apk` (cambiato) ed `eurise-office-debug.apk` (Office, invariato dalle 10:10).
+
+**14 novembre, sera: accento delle icone come i colori della suite (richiesta del proprietario)**
+- Confermato dal proprietario: niente colonna a sinistra, tranne le miniature delle diapositive nelle presentazioni.
+- Icone: il tratto resta blu Notte, i **dettagli prendono il colore d'accento** (le otto tinte della suite senza
+  Grafite più Arancio, Viola, Cuoio, Verde inglese, Azzurro costiera della Scrivania). In Control.Eurise.js `ACCENT`,
+  `ACCENTS`, `setAccent()` (ridisegna anche le icone già sullo schermo, `ICON_OF`).
+  - **Telefono e tablet**: di base **come la Scrivania**, oppure una tinta scelta nelle impostazioni di Office
+    (`AccentChooser`, `OfficePrefs.accent`). Office la manda al motore con il documento (`Engine.open`, extra
+    `eu.eurise.extra.ACCENT_LIGHT/DARK`); l'interfaccia la chiede al guscio (`EuriseSuite.java`, azione «aspetto»).
+  - **Computer**: menu File › «Colore delle icone»; resta nella memoria del guscio (`localStorage`, `eurise-accento`).
+    Di base Blu notte.
+  - **Contratto nuovo `core/suite/AppearanceContract`** (accento della Scrivania e tinte). Il fornitore va nell'app
+    Eurise (cartella `app`, della chat del brand: qui non si tocca) — **da fare al merge**: `AppearanceProvider` sul
+    modello di `PrivacyProvider` (controllo del permesso della suite in `call`), autorità `${applicationId}.appearance`,
+    `exported`, `android:permission="${suitePermission}"`; `accent` legge `eurise_launcher`/`accent` con
+    `Accent.decode` e risponde `light`/`dark` (`color(false/true).toArgb()`) e `name` (`encode()`); `palette` risponde
+    nomi (`Accent.Suite/Extra(...).encode()`), etichette, chiari e scuri di CalendarTint (senza Grafite) ed ExtraTint.
+    Finché non c'è, Office usa Ottone (l'accento di base della Scrivania) e offre le sette tinte della suite.
+  - Alias: Collabora chiede alcune icone con altri nomi (`iconURLAliases` di LOUtil: incrementindent → leftindent,
+    backgroundcolor → fillcolor, hyperlinkdialog → inserthyperlink…): sono in `ICONS` come rimandi.
+  - Verificato: computer (prova 43613483354; nel foglio la prova passa a Cuoio: barretta della U marrone, nel testo
+    azzurra); telefono con il motore del giro 43613483349 (prova 43616215650): dettagli in Ottone (l'emulatore non ha
+    l'app Eurise), motore vivo dopo 12 s nei tre formati. Consegnati (14 novembre, 16:45 UTC): Office (prova
+    43612114571, con «Colore d'accento delle icone» nelle impostazioni) e motore, **cambiati tutti e due**. Il tablet il
+    proprietario lo prova quando arriva il Volla.
+
+**14 novembre, sera: richieste del proprietario dopo la prova sul telefono (foto del documento nel motore)**
+- **Dock della schermata iniziale** (Recenti, File dal telefono, File dal cloud: tocco = cartella del cloud di riferimento,
+  tocco lungo = scelta con la stellina del preferito; Eurise File con le cartelle sincronizzate se c'è, altrimenti l'app
+  del cloud): **la fa un'altra chat**, conferma del proprietario. I suoi file non salvati (`Clouds.kt`, `CloudSheet.kt`,
+  `HomeScreen.kt`, `Suite.kt`, `OfficePrefs.kt`, `FilesContract.kt`) sono nella stessa copia del repository: in questa
+  chat si salvano solo i propri file, uno per uno, mai `git add -A`.
+- **Caricamento del motore nei nostri colori** (`office/motore/src/main/res`): il verde era l'accento di base di AppCompat
+  (`accent_material_light`, il tema non ne dichiarava uno). Tema Perla/Notte con accento azzurro, barre di sistema dello
+  stesso colore, dialoghi come isole arrotondate, e `lolib_dialog_loading` sostituito (le risorse dell'app vincono su
+  quelle della libreria): icona di Office, «Apro il documento…», barra sottile nell'accento; testi anche in `values-it`
+  (altrimenti vince il `values-it` di Collabora).
+- **Intestazione del telefono come OffTelefono**: Collabora dava ai pulsanti della sua riga un fondo grigio con selettori
+  più forti; ora `!important` su fondo, misura e raggio, Perla/Notte, nome e stato nel nostro carattere. Il segnaposto del
+  cursore (`.leaflet-cursor-handler`, la goccia scura) è una goccia sottile nell'accento, stessa misura e punta.
+- **Chiusura durante la modifica**: la prova nuova di lavoro lungo (`lavoro_lungo` in office/prova/prova.sh: dieci giri di
+  scrittura in testo.odt, ognuno con il salvataggio automatico) sull'emulatore **non** la riproduce (prova 43621698180:
+  motore vivo, dieci salvataggi riusciti). Il salvataggio verso l'originale (`copyTempBackToIntent`) prende tutte le
+  eccezioni. Punto scoperto trovato: nessuno gestiva `onRenderProcessGone` (né Collabora né noi), e WebView in quel caso
+  fa cadere tutta l'app; sui telefoni veri Android chiude il processo che disegna la pagina quando manca memoria. Ora
+  `COWebViewClient` lo gestisce (`eurise_patch.py` → `EuriseSuite.renderGone`): avviso e chiusura in ordine, il documento
+  è già salvato. **Ipotesi da confermare**: se si chiude ancora, serve il registro del telefono (rapporto OffRapporto,
+  approvato, o adb logcat).
+- **Tavole aggiornate** sulla pagina Office, fila «Eurise Office com'è oggi» (y 7900): OffOggiTelefono, OffOggiHome (con la
+  dock nuova e la scelta del cloud), OffOggiCaricamento, OffOggiTablet, OffOggiComputer. Generate da
+  `/home/claude/tela/gen/gen.py` con le icone di `ICONS` (non nel repository).
+
+- **Tablet e computer, una riga sola** (proposta del proprietario, sera): via la riga del titolo con lo spazio vuoto.
+  `#eurise-header.riga` (`.desk` sul computer): File e schede a sinistra; a destra la pillola chiara (`.eurise-pill`) con
+  nome, «Salvato» (sul computer con la cartella) e annulla/ripeti; «Cerca un comando» più corto (Ctrl K solo nel
+  suggerimento); Condividi con la sola icona (`.eurise-share.icon`). Verificato sul computer (prova 43626971065: ci sta
+  tutto anche nel foglio). Tavole OffOggiTablet e OffOggiComputer aggiornate.
+
+- **Consegnato (14 novembre, 21:30 UTC)**: motore del giro 43627518156 (era in coda dietro il giro del ramo brand, stessa
+  coda `group: office-app`), provato su telefono (prova 43640664152) e tablet (prova 43641842529): intestazione Perla
+  senza cornici, riga unica sul tablet, motore vivo nei tre formati e nei dieci giri di lavoro lungo. Office invariato
+  (15:51). **Da rifare**: il segnaposto del cursore resta la goccia grigia di Collabora (la regola su
+  `.leaflet-cursor-handler` non lo prende: nella 25.04 Android ha un altro elemento, da trovare nel DOM); il dialogo di
+  caricamento nuovo non compare nelle schermate (la prova non fotografa durante l'apertura).
+
+**15 novembre, notte: Flatpak Eurise Office (strada 1) e cursore**
+- Decisione del proprietario: **prima il prototipo veloce (strada 1), poi la compilazione dai sorgenti (strada 2)**.
+  - Strada 1: `office/computer/flatpak/costruisci.sh` copia Collabora Office per Linux già compilato da Flathub (motore,
+    guscio Qt `coda-qt`, QtWebEngine della BaseApp) in un'app nuova **`eu.eurise.Office`**: interfaccia Eurise dentro
+    (`office/computer/inietta.py`, usato anche dalla prova), nome «Eurise Office», icona (`eu.eurise.Office.svg`, la
+    stessa dell'APK su quadrato Notte), voce nel menu con i tipi di file di Collabora, metainfo, permessi e variabili dal
+    metadata di Collabora più `--own-name=com.collaboraoffice.Office` (il guscio Qt tiene un'istanza sola con quel nome,
+    DBusService.cpp). Low-level: `build-init` (runtime anche come «sdk»: niente SDK da scaricare), `build-finish`,
+    `build-export`, `build-bundle`. Esce `eurise-office.flatpak` (~300 MB) nella pre-release **`flatpak-prova-office`**;
+    si installa con `flatpak install --user eurise-office.flatpak` (il runtime org.kde.Platform 6.11 arriva da Flathub).
+  - `office-computer.yml` ora costruisce il Flatpak, lo installa e lo prova (`prova.sh`, di base `APP=eu.eurise.Office`).
+    Primo giro buono (43654401355): testo, foglio e presentazione con la nostra interfaccia, righelli visibili.
+  - Menu File sul computer: Apri da Eurise File (finestra di scelta del sistema, `uno .uno:Open` del guscio Qt),
+    Nuovo documento/foglio/presentazione, Salva con nome.
+  - Limiti della strada 1: guscio di Collabora (una finestra per documento, niente schede), «Collabora Office» ancora in
+    qualche testo del guscio (titolo, Informazioni), non pubblicabile su Flathub.
+  - Strada 2 (dopo): ricetta Flathub nostra dai sorgenti (`gerrit.collaboraoffice.com/online`, tag `coda-26.04.5.3-1`,
+    commit 9a9894e: non è sul mirror GitHub; il guscio Qt è in `qt/`, ramo `distro/collabora/coda-25.04` per leggerlo),
+    guscio con le schede dei documenti; giri di ore come il motore Android.
+- **Cursore sul telefono e sul tablet**: la 25.04 che compiliamo chiama il segnaposto `.cursor-handler`; regola rifatta con
+  la punta in alto come quella di Collabora (prima la mia aveva la punta 18 px più in basso); maniglie della selezione
+  (`.text-selection-handle-start/end`) nell'accento. Motore del giro 43653277442, prova sul telefono 43655375061: fondo
+  del caricamento Perla (niente verde; il dialogo non si vede perché il documento di prova si apre subito), dieci giri di
+  lavoro lungo con il motore vivo.
+
+**15 novembre, notte: strada 2 avviata, schede dei documenti**
+- **Schede**: il guscio Qt della 26.04 le ha già (`TabManager`, `TabbedWindow`, striscia HTML `qtapp-tabstrip.html` +
+  `browser/css/qtapp-tabstrip.css` + `browser/src/qtapp/tabstrip.js`, collegata al C++ con QWebChannel); compare con più
+  di un documento (il secondo arriva per D-Bus al guscio aperto). Stile Eurise in `office/computer/eurise-tabstrip.css`
+  (fascia Notte, linguetta attiva Perla, tavola OffComputer), aggiunto da `inietta.py` in tutte e due le strade.
+  Verificato nella strada 1 (prova 43661426093, `schede.png`: lettera e foglio nella stessa finestra).
+- **Sorgenti del guscio 26.04**: solo su gerrit.collaboraoffice.com (non raggiungibile da qui, sì dalle Actions):
+  `office-guscio.yml` li mette nella pre-release `guscio-qt-sorgenti` (cartella qt/, browser/src/app, browser/html e i
+  file della striscia).
+- **Strada 2**: `office/computer/sorgenti/ricetta.py` (ricetta eu.eurise.Office dalla ricetta Flathub di Collabora,
+  fissata al commit 1718414 del 6 novembre: nome «Eurise Office», venditore «Eurise», nome D-Bus del guscio
+  eu.eurise.Office, patch del guscio da `sorgenti/patch/`, modulo Eurise in fondo), `compila.sh` e `office-sorgenti.yml`
+  (flatpak-builder a tappe di 350 minuti, ccache a pezzi nella pre-release `flatpak-sorgenti-cache`, pacchetto finito in
+  `flatpak-sorgenti-office`). Patch `01-schede-sempre`: la striscia si vede anche con un documento solo. Primo giro
+  43657518871 partito alle 00:13 UTC; il secondo (con la patch) è in coda.
+- **15 novembre, mattina – guasto e correzione**: i giri 43657518871 e 43661425886 hanno compilato tutto il motore (ccache
+  salvata, ≈3,7 GB in due pezzi) e si sono fermati nella parte web del guscio, a `dist/global.js`: esbuild-wasm 0.28.2
+  (il guscio chiede ^0.28.1) sotto Node 20 scrive il file e poi si schianta in uscita («Fatal JavaScript invalid size
+  error», crbug.com/1201626). Riprodotto qui: 0.28.1 con Node 20 e 0.28.2 con Node 22 finiscono puliti. `ricetta.py`
+  ora usa l'estensione node22 dell'SDK al posto di node20. `office-guscio.yml` mette nella pre-release anche
+  browser/Makefile.am, package.json e browser/js.
+- **15 novembre, 07:28 UTC – strada 2 compilata**: giro 43686734687 riuscito, pacchetto `eurise-office-sorgenti.flatpak`
+  (296 MB) nella pre-release `flatpak-sorgenti-office`. Prova (`office-computer.yml` a mano con `pacchetto=sorgenti`,
+  giro 43690650632, schermate in `office-sorgenti-schermate`): documento, foglio e presentazione si aprono con
+  l'interfaccia Eurise e la striscia delle schede c'è anche con un documento solo (patch 01). Difetto: il secondo
+  documento si apriva in una finestra nuova perché `ricetta.py` cambiava il nome D-Bus solo in DBusService.cpp e non
+  l'interfaccia in DBusService.hpp («No such interface 'eu.eurise.Office'»). Corretto (anche nome della voce e icona
+  della finestra in coda-qt.cpp); nuovo giro lanciato.
+- **15 novembre, 08:41 UTC – strada 2 pronta**: giro 43691173909 riuscito; prova 43695180634 (`pacchetto=sorgenti`):
+  lettera e foglio nella stessa finestra, in due schede Eurise (`schede.png` in `office-sorgenti-schermate`). Pacchetto
+  consegnato al proprietario: `flatpak install --user eurise-office-sorgenti.flatpak` (runtime KDE 6.11 e BaseApp da
+  Flathub). Si rifà a mano con `office-sorgenti.yml` (≈45 minuti con la ccache), la prova con `office-computer.yml`
+  e `pacchetto=sorgenti`.
+- **15 novembre, mattina – prima prova del proprietario sul computer (Ubuntu)**: funziona, ma: funzioni troppo ridotte
+  rispetto a Word; restano pezzi di Collabora (pagina iniziale viola «Collabora Office», «New», modelli inglesi,
+  benvenuto col logo, Trova e sostituisci e Stili coi testi inglesi «Find», «Highlight styles», «Filter»); titolo da
+  cambiare direttamente nella pillola; angoli tondi e stile nostro nelle finestre; le tendine a foglio centrale vanno
+  bene sul tablet ma non sul computer; si crea solo il documento di testo, mancano foglio e presentazione. Notati anche:
+  etichette sovrapposte nel nastro (Collegamento/Commento, Colonne/Interruzione). Tavole sulla tela, pagina Office,
+  fila a y 9260: OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre (da approvare). Generatore in
+  /home/claude/tela/gen/gen_pc.py (non nel repo).
+- **15 novembre, tarda mattinata – tavole OffPC approvate («via direttamente»), in codice** (solo sul computer, il
+  telefono e il tablet non cambiano):
+  - Inizio Eurise (`startPage` in Control.Eurise.js, con `starterMode`): Documento, Foglio, Presentazione
+    (`newdoc type=writer|calc|impress`), modelli del pacchetto (`window.CODA_TEMPLATES`), recenti
+    (`postMobileCall('GETRECENTDOCS')`, `opendoc file=`), Apri (`uno .uno:Open`); copre il backstage di Collabora.
+  - Nastri completi `DESK_RIBBONS` (documento: Home, Inserisci, Progetta, Layout, Riferimenti, Revisione, Vista, Suite;
+    foglio: Home, Inserisci, Layout di pagina, Formule, Dati, Revisione, Vista; presentazione: Home, Inserisci,
+    Progetta, Transizioni, Animazioni, Presenta, Revisione, Vista). Voci a tre righe; tendine per Margini,
+    Orientamento, Dimensioni, Forme, A capo, Interlinea, Maiuscole, Campo (comandi da Definitions.Menu.ts della 26.04).
+    Circa 80 icone nostre nuove in `ICONS`; `commandIcon` usa direttamente le nostre.
+  - Tendine attaccate al comando (`popover`): carattere (nel documento, recenti, tutti nel loro stile), dimensione
+    (anche scritta), colori, menu File (Nuovo, Apri, Recenti, Salva, Salva con nome, Rinomina F2, Esporta, Stampa,
+    Proprietà, Colore delle icone, Chiudi), con frecce, Invio ed Esc.
+  - Rinomina dalla pillola: `saveas` nella stessa cartella (il guscio riapre lì il documento) più il messaggio
+    `EURISERINOMINA`; la patch `02-rinomina.patch` (solo strada 2) toglie il file vecchio e la sua riga tra i recenti.
+  - Trova e sostituisci come barra in alto (Ctrl F, Ctrl H; `app.searchService.search`), «Altre opzioni» apre la
+    finestra di Collabora.
+  - Finestre di Collabora nello stile della suite (variabili --color-*, angoli 18 px, schede a pillola, pulsanti),
+    testi inglesi rimasti tradotti (`IT_FIX`), via il benvenuto (inietta.py toglie `welcome/*.odp`).
+  - prova.sh: schermata `inizio.png`, `*-nastro-1..8`, `*-file`, `*-carattere`, `*-trova`, `*-finestra` (tasti F6–F9
+    della diagnosi).
+  - Prima prova (prototipo) 43701302013: tutto compare; corretti pulsanti grandi, icone delle tendine, Home troppo
+    lunga, Inizio schiacciato, tendine strette. Seconda prova 43702994717: Inizio e tendine a posto; corrette ancora le
+    icone di Maiuscole e Interlinea (argomenti scambiati), la Home (via la tessera Citazione, che resta in ↗) e i nomi
+    inglesi dei modelli. Terza prova 43704607042 e strada 2 43704685827 (con la patch 02) in corso.
+  - **Ergonomia (15 novembre, le dieci proposte tutte approvate: «Sono tutte valide. Implementiamo»)**: non una copia di
+    Word/Excel/PowerPoint ma tutte le funzioni con le schede, messe dove si lavora. In codice: barra rapida sulla
+    selezione (`showMini`, `textselectionchange` + mouseup), schede che compaiono da sole (`CONTEXT_TABS`, evento
+    `contextchange`: Tabella, Immagine, Grafico, Forma), tasto destro breve (`wrapContextMenu` avvolge
+    `app.map._contextMenu._onContextMenu`; da tastiera e sui suggerimenti di ortografia resta quello di Collabora),
+    lettere del tasto Alt (`watchAlt`), Ctrl K con tutte le voci dei nastri e i più usati (`DESK_ITEMS`, `useCounts`),
+    Progetta+Layout → «Pagina», colonna senza doppioni (CSS sui pannelli StylesPropertyPanel, TextPropertyPanel,
+    ParaPropertyPanel, AlignmentPropertyPanel, NumberFormatPropertyPanel), «I tuoi comandi» (`yours`, un cambio al
+    giorno), nastro a scomparsa (doppio clic su una scheda) e Concentrazione (Vista, Esc). Proposta 10 (anteprima
+    al passaggio sul documento) solo in parte: le tendine mostrano caratteri, stili e colori come sono; applicarli al
+    testo al passaggio vorrebbe dire applicare e annullare nel motore, che sporca la cronologia di Annulla: da
+    rivedere con il proprietario. Prova 43706608743: tasto destro e barra rapida erano ancora quelli di Collabora
+    (l'evento locontextmenu era già agganciato alla funzione originale; la barra flottante #context-toolbar della 26.04
+    copriva la nostra): corretti, prova 43708273663 a posto. Strada 2 43708317741 riuscita, prova 43712555289
+    (`pacchetto=sorgenti`, schermate in office-sorgenti-schermate) a posto; pacchetto consegnato al proprietario
+    il 15 novembre alle 12:30 UTC.
+  - **15 novembre, sera – rifinitura dopo la prova del proprietario su Ubuntu** («ancora elementi del vecchio
+    Collabora», «tutto in grassetto», «poco contrasto tra fondo e bolle»): Plus Jakarta Sans vera nel guscio
+    (`office/computer/fonts/*.woff2` + `eurise-fonts.css`, inietta.py), pesi 400–600, fondo #ECEBE5 con isole e
+    pulsanti bianchi e un filo #DCDAD2; PDF con la nostra testata (scheda PDF) al posto della barra dei menu in sola
+    lettura; tasto destro nostro anche nelle tabelle; Stili con anteprime alte una riga; altre icone nostre. Prova
+    43733843891 (con un PDF) e strada 2 43733808423 + prova 43738308659 a posto; pacchetto consegnato alle 17:20 UTC.
+  - **Prossimo, deciso dal proprietario (15 novembre)**: quando Office sul computer sarà completo, si pensa alla
+    webapp (Office nel browser).
+
+**Prossimo passo**: il proprietario guarda le schermate del computer; poi il guscio nostro per Linux e il Flatpak
+Eurise (schede dei documenti, «Apri da Eurise File»). Il proprietario prova sul telefono le card dei gruppi e la vista rapida delle presentazioni;
+OffComputer: applicare le indicazioni qui sopra al prototipo (prova `office-computer.yml`, schermate in
+`office-computer-schermate`), poi il guscio nostro e il Flatpak; al prossimo giro del motore Android provarlo su
+telefono e tablet (codice condiviso cambiato, non ancora compilato); poi motore a richiesta (OffMotore: capire se i file del
+motore possono stare fuori dall'APK, cartella scaricata o APK compagno firmato con la stessa chiave), barra a nastro e
+Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista rapida (sola lettura).

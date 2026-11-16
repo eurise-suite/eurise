@@ -7,14 +7,17 @@ name: Eurise Office per Android (prototipo dell'app)
 # scaricato a richiesta. Lavoro lungo e a mano (Actions → Eurise Office per Android → Run workflow) o quando cambia.
 on:
   workflow_dispatch:
+  # Solo da prova-office (16 novembre): la stessa testa va anche su brand, e due giri da ore si metterebbero in coda.
   push:
+    branches: [prova-office]
     paths:
       - ".github/workflows/office-app.yml"
       - ".github/scripts/apt-update.sh"
       - "office/app/**"
 
 permissions:
-  contents: read
+  # write: pubblica l'APK nella pre-release apk-prova-office (Office si prova da lì, senza toccare apk-prova del ramo brand).
+  contents: write
 
 # Gruppo proprio (12 novembre): un giro fantasma del gruppo office-engine, rimasto «in coda» senza lavori, bloccava
 # l'app e non si poteva annullare. Il motore resta nel suo gruppo; i due lavori non si toccano.
@@ -32,6 +35,10 @@ env:
   POCO_TAG: poco-1.14.2-release
   ZSTD_TAG: v1.5.6
   JOB_MINUTES: 355
+  # 1 = build di prova con la diagnosi del motore (office/app/eurise_diag.py): pila ed eccezioni nel logcat, registro
+  # «trace», librerie non ripulite nell'artefatto office-simboli. Acceso il 13 novembre per trovare la chiusura del motore,
+  # spento la sera stessa quando la causa è stata corretta (office/app/eurise_online.py).
+  DIAGNOSI: "0"
 
 jobs:
   app:
@@ -58,6 +65,12 @@ jobs:
           sudo mkdir -p "$WORK" && sudo chown "$USER" "$WORK"
           echo "WORK=$WORK" >> "$GITHUB_ENV"
           echo "CCACHE_DIR=$WORK/ccache" >> "$GITHUB_ENV"
+          # 13 novembre: tra un giro e l'altro la ccache dava il 3-8% di colpi. I sorgenti appena scaricati sono «nuovi» e gli
+          # header precompilati cambiano a ogni giro: hash sul contenuto, percorsi relativi, niente PCH (vedi Configura).
+          echo "CCACHE_BASEDIR=$WORK" >> "$GITHUB_ENV"
+          echo "CCACHE_COMPILERCHECK=content" >> "$GITHUB_ENV"
+          echo "CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime,file_stat_matches" >> "$GITHUB_ENV"
+          echo "CCACHE_NOHASHDIR=1" >> "$GITHUB_ENV"
           echo "LO_TARBALLS=$WORK/tarballs" >> "$GITHUB_ENV"
           mkdir -p "$WORK/tarballs" "$WORK/ccache"
           df -h / /mnt || true
@@ -123,6 +136,7 @@ jobs:
           echo "NDK: $NDK"
           sed -e "s|@NDK@|$NDK|" -e "s|@SDK@|$SDK|" -e "s|@JDK@|$JAVA_HOME_17_X64|" -e "s|@TARBALLS@|$LO_TARBALLS|" \
             -e 's|^--with-lang=en-US$|--with-lang=en-US it|' \
+            -e '$a --disable-pch' \
             office/engine/autogen.input.in | grep -v '^#' > "$WORK/core/autogen.input"
           cat "$WORK/core/autogen.input"
           cd "$WORK/core"
@@ -203,6 +217,7 @@ jobs:
           git remote add origin "$ONLINE_REPO"
           git fetch -q --depth 1 origin "$ONLINE_COMMIT" && git checkout -q FETCH_HEAD
           git log -1 --format='%H %ci %s'
+          python3 "$GITHUB_WORKSPACE/office/app/eurise_online.py" .
           python3 "$GITHUB_WORKSPACE/office/app/eurise_web.py" .
           ./autogen.sh > /dev/null
           set -o pipefail
@@ -228,31 +243,71 @@ jobs:
           t0=$(date +%s)
           cd "$WORK/online/android"
           python3 "$GITHUB_WORKSPACE/office/app/eurise_patch.py" . "$GITHUB_WORKSPACE/app/debug-key/eurise-debug.keystore"
+          if [ "$DIAGNOSI" = 1 ]; then python3 "$GITHUB_WORKSPACE/office/app/eurise_diag.py" .; fi
           chmod +x gradlew 2>/dev/null || true
           set -o pipefail
           GRADLE=./gradlew; [ -x "$GRADLE" ] || GRADLE=gradle
           $GRADLE --no-daemon assembleDebug > "$WORK/gradle.log" 2>&1 || { grep -E "error:|FAILED|What went wrong" -A3 "$WORK/gradle.log" | head -60; exit 1; }
+          echo "apk-collabora $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
+
+      # Strada A (13 novembre): due APK. «Eurise Office Motore» (:office:motore) porta la libreria android/lib di Collabora
+      # (AAR: LOActivity, motore, interfaccia web) e si scarica a richiesta; Eurise Office (:office:apk) resta leggero.
+      - name: Eurise Office e il motore (moduli office/apk e office/motore)
+        run: |
+          t0=$(date +%s)
+          aar=$(find "$WORK/online/android" -path '*outputs/aar*' -name '*.aar' | grep -i debug | head -1)
+          [ -n "$aar" ] || { echo "::error::AAR della libreria di Collabora non trovato"; exit 1; }
+          echo "AAR: $aar ($(du -m "$aar" | cut -f1) MB)"
+          cd "$GITHUB_WORKSPACE"
+          set -o pipefail
+          EURISE_OFFICE_AAR="$aar" ./gradlew --no-daemon :office:motore:assembleDebug :office:apk:assembleDebug > "$WORK/office-apk.log" 2>&1 || {
+            grep -E "^e: |error:|FAILED|What went wrong" -A3 "$WORK/office-apk.log" | head -60; exit 1; }
           echo "apk $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
       - name: Misura e carica
         if: always()
         run: |
           mkdir -p "$WORK/out"
-          apk=$(find "$WORK/online/android" -path '*outputs/apk*' -name '*.apk' 2>/dev/null | head -1)
+          apk=$(find "$GITHUB_WORKSPACE/office/apk/build/outputs/apk/debug" -name '*.apk' 2>/dev/null | head -1)
+          motore=$(find "$GITHUB_WORKSPACE/office/motore/build/outputs/apk/debug" -name '*.apk' 2>/dev/null | head -1)
           {
             echo "## Eurise Office per Android (prototipo)"
             echo
             echo "| Fase | Minuti |"; echo "|---|---|"
             while read -r name secs; do echo "| $name | $(( secs / 60 )) |"; done < "$RUNNER_TEMP/tempi.txt"
-            if [ -n "$apk" ]; then
+            if [ -n "$apk" ] && [ -n "$motore" ]; then
               cp "$apk" "$WORK/out/eurise-office-debug.apk"
-              echo; echo "APK: **$(du -m "$apk" | cut -f1) MB**"
+              cp "$motore" "$WORK/out/eurise-office-motore-debug.apk"
+              echo; echo "Office: **$(du -m "$apk" | cut -f1) MB** · Motore: **$(du -m "$motore" | cut -f1) MB** da scaricare"
+              # Quanto occupa sul telefono: l'APK più le librerie estratte all'installazione.
+              libs=$(unzip -l "$motore" 'lib/*' | tail -1 | awk '{print int($1/1048576)}')
+              echo "Motore installato: circa **$(( $(du -m "$motore" | cut -f1) + libs )) MB** (librerie estratte: $libs MB)"
             else
               echo; echo "APK non prodotto: vedi i registri nell'artefatto."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY" > "$WORK/out/misure.md"
-          for f in online-make.log gradle.log poco.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
+          for f in online-make.log gradle.log poco.log office-apk.log; do [ -f "$WORK/$f" ] && gzip -c "$WORK/$f" > "$WORK/out/$f.gz"; done
           true
+
+      - name: Librerie non ripulite (per tradurre la pila)
+        if: always() && env.DIAGNOSI == '1'
+        run: |
+          mkdir -p "$WORK/simboli"
+          # La copia più grande di ogni libreria è quella con la tabella dei simboli.
+          for lib in libandroidapp.so liblo-native-code.so; do
+            f=$(find "$WORK/online" "$WORK/core" -name "$lib" -type f -printf '%s %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+            [ -n "$f" ] && cp "$f" "$WORK/simboli/" && echo "$lib: $f ($(du -m "$f" | cut -f1) MB)"
+          done
+          true
+
+      - name: Carica le librerie non ripulite
+        if: always() && env.DIAGNOSI == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-simboli-${{ github.run_number }}
+          path: ${{ env.WORK }}/simboli/
+          retention-days: 7
+          compression-level: 6
 
       - name: Carica l'APK e i registri
         if: always()
@@ -261,3 +316,21 @@ jobs:
           name: eurise-office-app-${{ github.run_number }}
           path: ${{ env.WORK }}/out/
           retention-days: 14
+
+      - name: Pubblica nella pre-release apk-prova-office
+        if: success() && github.ref_name == 'office'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          f="$WORK/out/eurise-office-debug.apk"
+          m="$WORK/out/eurise-office-motore-debug.apk"
+          [ -f "$f" ] && [ -f "$m" ] || exit 0
+          notes="Eurise Office di prova dal ramo office (giro ${{ github.run_number }}, $(git -C "$GITHUB_WORKSPACE" log -1 --format=%h)). Si sovrascrive a ogni giro."
+          gh release view apk-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create apk-prova-office -R "${{ github.repository }}" --prerelease --target office --title "APK di prova di Office" --notes "$notes"
+          gh release edit apk-prova-office -R "${{ github.repository }}" --notes "$notes"
+          # Solo il motore: Office lo pubblica la prova rapida (office-prova, fonte=nativo), che segue ogni commit di
+          # office/apk in pochi minuti; da qui arriverebbe un Office più vecchio sopra quello nuovo.
+          gh release upload apk-prova-office "$m" -R "${{ github.repository }}" --clobber
+          # Office leggero non serve più a parte: Office è sempre leggero, il motore è l'altro APK.
+          gh release delete-asset apk-prova-office eurise-office-leggero-debug.apk -R "${{ github.repository }}" -y 2>/dev/null || true

@@ -79,8 +79,39 @@ patch(lo, '    /** True if the App is running under ChromeOS. */\n',
       '        });\n'
       '    }\n\n'
       '    /** True if the App is running under ChromeOS. */\n', "il commento di isChromeOS")
+# Il processo che disegna la pagina (renderer della WebView) può essere chiuso da Android quando manca memoria, sui
+# telefoni veri più che sull'emulatore: senza onRenderProcessGone WebView porta giù tutto il motore («il documento in
+# modifica si chiude da solo», proprietario, 14 novembre). Ora il motore resta in piedi e lo dice (EuriseSuite.renderGone).
+client = androidlib / "COWebViewClient.java"
+patch(client, '    @Nullable\n    @Override\n    public WebResourceResponse shouldInterceptRequest(',
+      '    /** Eurise: la pagina chiusa da Android non porta giù il motore (EuriseSuite.renderGone). */\n'
+      '    @Override\n'
+      '    public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {\n'
+      '        return EuriseSuite.renderGone(view, detail);\n'
+      '    }\n\n'
+      '    @Nullable\n    @Override\n    public WebResourceResponse shouldInterceptRequest(', "shouldInterceptRequest in COWebViewClient")
 patch(lo, '    protected void onDestroy() {\n',
       '    protected void onDestroy() {\n        EuriseSuite.detach(this);\n', "onDestroy")
+
+# Il documento tiene il suo nome: la copia di lavoro di un Uri content:// si chiama come il file (in una cartella
+# unica della cache) invece di «LibreOffice123.tmp». Titolo, tipo e riconoscimento dei PDF tornano giusti.
+patch(lo, '                        mTempFile = File.createTempFile("LibreOffice", suffix, mActivity.getCacheDir());\n',
+      '                        mTempFile = EuriseSuite.workingCopy(mActivity, uri, suffix);\n',
+      "la copia temporanea del documento")
+# Uri file:// (gestori di file vecchi): Collabora non apriva nemmeno la pagina perché mancava la copia di lavoro;
+# il file stesso fa da copia, e si salva lì.
+patch(lo, '                urlToLoad = getIntent().getData().toString();\n'
+          '                Log.d(TAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());\n',
+      '                urlToLoad = getIntent().getData().toString();\n'
+      '                mTempFile = new File(getIntent().getData().getPath());\n'
+      '                Log.d(TAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());\n',
+      "il ramo SCHEME_FILE")
+
+# Le cartelle del motore (fonts.conf) puntano al pacchetto di Collabora: si correggono prima di avviarlo.
+patch(lo, '        createCOOLWSD(dataDir, cacheDir, apkFile, assetManager, urlToLoad, uiMode, userName);\n',
+      '        EuriseSuite.fixPaths(this, dataDir);\n'
+      '        createCOOLWSD(dataDir, cacheDir, apkFile, assetManager, urlToLoad, uiMode, userName);\n',
+      "l'avvio di COOLWSD")
 
 # «Apri da…»: il pulsante Apri della schermata iniziale passa da Eurise File (cartelle della suite, server, cloud);
 # senza l'app Eurise resta il selettore di sistema. Gli Uri di Eurise File non sono persistenti: niente eccezione.

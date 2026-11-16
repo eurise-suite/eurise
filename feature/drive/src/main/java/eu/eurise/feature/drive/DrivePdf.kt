@@ -292,7 +292,7 @@ private fun PdfAnnotator(source: PdfSource, start: Int, file: File, title: Strin
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-internal fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
+internal fun PdfViewer(file: File, title: String, onEdit: (() -> Unit)? = null, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val source = remember(file) { runCatching { PdfSource(file) }.getOrNull() }
     DisposableEffect(source) { onDispose { source?.close() } }
@@ -317,7 +317,12 @@ internal fun PdfViewer(file: File, title: String, onClose: () -> Unit) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (source != null) {
                 if (canSearch) IconButton(onClick = { searching = !searching; results = null }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_pdf_search)) }
-                IconButton(onClick = { annotating = true }) { Icon(EuriseIcons.pen(), contentDescription = stringResource(R.string.drive_pdf_annotate)) }
+                if (onEdit != null) {
+                    // Office c'è: annotare, firmare e lavorare sulle pagine si fa lì, sul file stesso.
+                    TextButton(onClick = onEdit) { Text(stringResource(R.string.drive_pdf_office), fontWeight = FontWeight.SemiBold) }
+                } else {
+                    IconButton(onClick = { annotating = true }) { Icon(EuriseIcons.pen(), contentDescription = stringResource(R.string.drive_pdf_annotate)) }
+                }
             }
         }
         if (source == null) {
