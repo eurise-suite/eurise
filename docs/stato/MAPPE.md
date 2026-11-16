@@ -25,6 +25,32 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   MapCieli) sono **approvate e in codice**.
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
 
+## 16 novembre: correzioni dopo la prova di Mappe 58 (Mappe 65)
+- Prova del proprietario: «va molto bene». Correzioni chieste e fatte:
+  - logo di CoMaps nella tendina: icona piccola di Eurise Mappe (`res/drawable/ic_logo_small.xml`) e notifica della guida
+    blu notte;
+  - cartelli oltre l'orizzonte: le scritte e i segni si disegnano solo sotto le colline (`EuriseSkyClipLabels` in
+    `drape_frontend/eurise_sky.cpp`, taglio dello schermo attorno a `RenderOverlayLayer`);
+  - colline di notte marroni: di sera e di notte prendono i toni del cielo (`EuriseSky.hillColors`);
+  - riquadri della guida scuri: scheda della manovra, colonna in orizzontale e corsie in vetro satinato della suite,
+    chiaro di giorno e scuro di notte (`res/values*/eurise_colors.xml`, tema notte di CoMaps col tramonto); il tipo di
+    strada colora solo la freccia (`EuriseGuide.tint`, versioni chiare di notte);
+  - finestrino della svolta con l'incrocio vero: `RoutingManager::EuriseJunctionArms` (grafo stradale da auto, nodo entro
+    15 m) → `TurnGeometry.arms` → `EuriseJunctionScene.shape`: la strada dritta oltre l'incrocio solo se c'è, le altre
+    vie dove sono; senza dati la scena di prima;
+  - Android Auto con lo schermo diviso: pillola di vetro in basso a sinistra con velocità, via (e km) e meteo
+    (`car/EuriseCarSplitInfo.java`), solo quando la mappa è stretta rispetto allo schermo dell'auto. **Da verificare in
+    auto**: il riconoscimento dello schermo diviso è una stima (superficie sotto l'80% della larghezza dell'auto o area
+    visibile sotto il 55%).
+- **Dettatura in Android Auto che non funziona**: chiesto al proprietario quale microfono (il tasto di Alfred nostro o
+  quello della tastiera dell'auto nella ricerca) e cosa compare.
+- **Tavole nuove** (pagina Mappe della tela, fila «Mappe dall'apertura alla partenza», da discutere): MapViaggio1Apertura
+  (com'è oggi), 2 Dove devi andare (campo in basso con la dettatura), 3 Luogo (Indicazioni coi minuti, Parti ora),
+  4 Percorso (partenza e arrivo in vetro al posto della barra di CoMaps con i tipi di percorso; Evita e + Tappa in
+  pillole; mezzi coi minuti), 5 Tappe (si trascinano, benzinaio e bar lungo la strada), 6 Bici e a piedi (piste,
+  dislivello, scelte). Oggi in alto nel percorso c'è ancora la barra di CoMaps (indietro, auto/pedone/mezzi/bici/righello,
+  opzioni): è la parte da adattare.
+
 ## Prossimi passi, in ordine
 1. **Prove del proprietario**: Mappe 60 (orari della scheda aperta; Livelli → «Km sulle strade»; km in auto su autostrada).
    Restano senza esito Mappe 48 e 51 («Avvia la navigazione» dopo essere usciti durante il calcolo, «Dove sei») e Mappe 58.
