@@ -14,7 +14,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.eurise.EuriseRouteWeather;
-import app.organicmaps.util.ThemeUtils;
+import androidx.car.app.CarContext;
+import app.organicmaps.car.util.ThemeUtils;
 
 /**
  * Android Auto con lo schermo diviso (la mappa accanto alla musica o al telefono): l'auto non mostra più la scheda con
@@ -32,7 +33,7 @@ public final class EuriseCarSplitInfo
   private static final float SPLIT_VISIBLE = 0.55f;
 
   @Nullable private static TextView sView;
-  @Nullable private static Context sCar;
+  @Nullable private static CarContext sCar;
   private static int sSurfaceW, sSurfaceH;
   @NonNull private static final Rect sVisible = new Rect();
 
@@ -40,7 +41,7 @@ public final class EuriseCarSplitInfo
 
   /** La pillola, da aggiungere sopra la mappa dell'auto (SurfaceCallback.initSpeedPill). */
   @NonNull
-  public static View create(@NonNull Context car)
+  public static View create(@NonNull CarContext car)
   {
     sCar = car;
     final TextView t = new TextView(car);
@@ -89,7 +90,7 @@ public final class EuriseCarSplitInfo
   public static void refresh()
   {
     final TextView t = sView;
-    final Context c = sCar;
+    final CarContext c = sCar;
     if (t == null || c == null)
       return;
     if (!split())
