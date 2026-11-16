@@ -61,8 +61,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Icone (IconeStili, IconeColori).
 - **Approvate, codice in prova o da finire**: Icone (IcoBolleChiare, IcoBolleScure, IcoColorate): APK in codice, nella
   Scrivania come temi «(nuove)» accanto ai vecchi; Calendario, Attività e Note non hanno ancora un'icona di sistema loro.
-- **Approvate, codice da scrivere con l'area Computer**: pagina «Eurise sul computer», PcOggi, PcOggiNotte, PcCalendario,
-  PcNote, PcAttivita.
+- **Approvate, sul computer (le segue l'area Computer, `COMPUTER.md`)**: PcOggi e PcOggiNotte in codice dal 16 novembre
+  (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
 - **Da approvare**: nessuna tavola dell'area risulta in attesa in `docs/STATO.md` (da riconfermare sulla tela alla prima
   tavola nuova).
 
@@ -80,7 +80,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 4. **Rimasti aperti delle app**: Note bloccate, foto e scansioni nelle Note, note vocali; colori dei calendari con «Il tuo
    colore» e nella Scrivania; voce «dati sul telefono» nel centro privacy (serve per la memoria di Alfred e per il Ponte);
    timer dalle ricette della Scrivania; il widget nella bolla che segua l'altezza scelta.
-5. **Schermate del computer** (PcOggi, PcCalendario, PcNote, PcAttivita) su `core/sync`, insieme all'area Computer.
+5. **Schermate del computer** (PcCalendario, PcNote, PcAttivita) su `core/sync`, insieme all'area Computer.
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino: Desco e Domenico sono occupati) e verifica
   TMview dei nomi dell'area (Agenore, Brigida, Scribò, Rubens, Orazio, Stipet, Copisto, Tommaso); finché non sono verificati
   in interfaccia restano i nomi dei servizi.
