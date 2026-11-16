@@ -2798,3 +2798,4 @@ così l'altra chat non le annulla.
 - 16 novembre, Organizzazione: file di stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, Comunicazione: stato dell'area completato → `docs/stato/COMUNICAZIONE.md`.
 - 16 novembre, Office: OFFICE.md completato; il lavoro del 13–15 novembre è ancora sul ramo `office`, da unire a `brand` (primo passo) → `docs/stato/OFFICE.md`.
+- 16 novembre, Password, Tastiera, Galleria: stato dell'area completato (fatto, tavole, prossimi passi, come si lavora) → `docs/stato/PICCOLE.md`.
