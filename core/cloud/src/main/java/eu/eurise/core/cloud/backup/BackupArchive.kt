@@ -10,6 +10,7 @@ import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import eu.eurise.core.cloud.lock.LockKeys
 
 /**
  * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
@@ -46,6 +47,11 @@ object BackupArchive {
             KeyboardBackup.export(context)?.let { bytes ->
                 zip.putNextEntry(ZipEntry(KeyboardBackup.ENTRY))
                 zip.write(bytes)
+                zip.closeEntry()
+            }
+            LockKeys.exportForBackup(context)?.let { key ->
+                zip.putNextEntry(ZipEntry(LockKeys.BACKUP_ENTRY))
+                zip.write(key)
                 zip.closeEntry()
             }
         }
@@ -86,7 +92,7 @@ object BackupArchive {
             while (true) {
                 val e = zip.nextEntry ?: break
                 val name = e.name
-                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
+                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
                 if (!ok || e.isDirectory) continue
                 val target = File(dir, name).apply { parentFile?.mkdirs() }
@@ -118,6 +124,7 @@ object BackupArchive {
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
             }
             File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it) }
+            File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
         }
         dir.deleteRecursively()
     }

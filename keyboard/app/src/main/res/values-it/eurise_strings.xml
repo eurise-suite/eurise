@@ -111,4 +111,16 @@
     <string name="eurise_more">Altro</string>
     <string name="eurise_tools_title">Strumenti</string>
     <string name="eurise_paste_prefix">Incolla</string>
+    <!-- Riquadro a comparsa (tavole TastComparsa, 16 novembre) -->
+    <string name="eurise_menu_open">Apri Eurise e gli strumenti della tastiera</string>
+    <string name="eurise_menu_close">Chiudi Eurise e gli strumenti della tastiera</string>
+    <string name="eurise_menu_eurise">Eurise</string>
+    <string name="eurise_menu_keyboard">Tastiera</string>
+    <string name="eurise_tool_clipboard">Appunti</string>
+    <string name="eurise_tool_emoji">Emoji</string>
+    <string name="eurise_tool_cursor">Cursore</string>
+    <string name="eurise_tool_one_hand">Una mano</string>
+    <string name="eurise_tool_undo">Annulla</string>
+    <string name="eurise_tool_voice">Voce</string>
+    <string name="eurise_tool_settings">Opzioni</string>
 </resources>

@@ -45,6 +45,14 @@
     <string name="notes_table_add_row">+ Riga</string>
     <string name="notes_table_add_column">+ Colonna</string>
     <string name="notes_table_remove">Elimina tabella</string>
+    <string name="notes_table_remove_row">− Riga</string>
+    <string name="notes_table_remove_column">− Colonna</string>
+    <string name="notes_block_menu">Comandi del blocco</string>
+    <string name="notes_block_up">Sposta su</string>
+    <string name="notes_block_down">Sposta giù</string>
+    <string name="notes_block_duplicate">Duplica</string>
+    <string name="notes_divider_delete">Elimina linea</string>
+    <string name="notes_drawing_edit">Modifica il disegno</string>
 
     <!-- Barra di formattazione -->
     <string name="notes_format_style">Stile del paragrafo</string>
@@ -68,7 +76,7 @@
     <string name="notes_insert_link">Altra nota</string>
     <string name="notes_insert_divider">Linea</string>
     <string name="notes_insert_drawing">Disegno</string>
-    <string name="notes_insert_soon">Foto, scansioni e note vocali arrivano con le prossime versioni.</string>
+    <string name="notes_insert_soon">Foto e scansioni arrivano con le prossime versioni.</string>
 
     <!-- Disegno -->
     <string name="notes_drawing_open">Disegno: tocca per modificarlo</string>
@@ -183,4 +191,57 @@
     <string name="meeting_end_confirm">Crea le attività</string>
     <string name="meeting_end_confirm_empty">Chiudi</string>
     <string name="meeting_task_note">Dalla riunione «%1$s»</string>
+    <string name="notes_lock_menu">Blocca la nota</string>
+    <string name="notes_lock_close_now">Richiudi la nota</string>
+    <string name="notes_lock_remove">Togli il blocco</string>
+    <string name="notes_lock_title">Blocca questa nota</string>
+    <string name="notes_lock_sub">Per codici, conti e cose solo tue</string>
+    <string name="notes_lock_point_phone">Il testo si cifra sul telefono</string>
+    <string name="notes_lock_point_phone_sub">La chiave sta nel portachiavi protetto del telefono, non nell\'app.</string>
+    <string name="notes_lock_point_open">Si apre con l\'impronta o il PIN</string>
+    <string name="notes_lock_point_open_sub">Gli stessi che usi per sbloccare il telefono. Si richiude quando esci dall\'app o dopo 5 minuti.</string>
+    <string name="notes_lock_point_cloud">Nel cloud va solo cifrata</string>
+    <string name="notes_lock_point_cloud_sub">Murena o Nextcloud ricevono un file che non possono leggere.</string>
+    <string name="notes_lock_point_title">Fuori dalla nota si vede solo il titolo</string>
+    <string name="notes_lock_point_title_sub">Ricerca, Alfred, Scrivania e Ponte non leggono il testo.</string>
+    <string name="notes_lock_point_backup">Cambi telefono?</string>
+    <string name="notes_lock_point_backup_sub">La chiave viaggia nel backup cifrato della suite, con la tua frase segreta.</string>
+    <string name="notes_lock_show_title">Mostra il titolo nell\'elenco</string>
+    <string name="notes_lock_show_title_sub">Spento: «Nota bloccata» anche nel titolo</string>
+    <string name="notes_lock_privacy">Resta sul telefono · 10 su 10</string>
+    <string name="notes_lock_not_now">Non ora</string>
+    <string name="notes_lock_do">Blocca</string>
+    <string name="notes_lock_needs_screen_lock">Per bloccare una nota serve un blocco schermo sul telefono (PIN, sequenza, password o impronta). Impostalo e torna qui.</string>
+    <string name="notes_lock_open_settings">Imposta il blocco schermo</string>
+    <string name="notes_locked">Nota bloccata</string>
+    <string name="notes_locked_hint">Appoggia il dito per leggerla. Si richiude quando esci dall\'app o dopo 5 minuti senza tocchi.</string>
+    <string name="notes_locked_missing_key">La chiave di questa nota non è su questo telefono. Si recupera ripristinando il backup della suite fatto sul telefono di prima.</string>
+    <string name="notes_locked_status">Bloccata · cifrata</string>
+    <string name="notes_locked_preview">Testo nascosto · tocca e sblocca</string>
+    <string name="notes_unlock">Sblocca</string>
+    <string name="notes_unlock_pin">Usa il PIN del telefono</string>
+    <string name="notes_unlock_prompt">Apri la nota</string>
+    <string name="notes_unlock_prompt_sub">Impronta o PIN del telefono</string>
+    <string name="notes_insert_voice">Nota vocale</string>
+    <string name="notes_voice_recording">Registro · %1$s</string>
+    <string name="notes_voice_paused">In pausa · %1$s</string>
+    <string name="notes_voice_on_phone">sul telefono</string>
+    <string name="notes_voice_cancel">Annulla</string>
+    <string name="notes_voice_pause">Pausa</string>
+    <string name="notes_voice_resume">Riprendi</string>
+    <string name="notes_voice_done">Fine</string>
+    <string name="notes_voice_hint">Il testo compare mentre parli. Registrazione e trascrizione avvengono sul telefono.</string>
+    <string name="notes_voice_no_voice">Senza Eurise Voce si registra solo l\'audio: la trascrizione arriva quando la installi.</string>
+    <string name="notes_voice_no_model">Per il testo serve il modello di Eurise Voce, che si scarica una volta.</string>
+    <string name="notes_voice_get_voice">Apri Eurise Voce</string>
+    <string name="notes_voice_failed">Il microfono non risponde: forse lo sta usando un\'altra app.</string>
+    <string name="notes_voice_finishing">Finisco di scrivere il testo…</string>
+    <string name="notes_voice_play">Ascolta la nota vocale</string>
+    <string name="notes_voice_stop">Metti in pausa</string>
+    <string name="notes_voice_missing">L\'audio è rimasto sull\'altro telefono: qui c\'è solo il testo.</string>
+    <string name="notes_voice_task">Da fare: %1$s</string>
+    <string name="notes_voice_to_text">Metti il testo nella nota</string>
+    <string name="notes_voice_by_voice">Trascritta sul telefono da Eurise Voce</string>
+    <string name="notes_voice_task_done">Aggiunta alle Attività</string>
+    <string name="notes_voice_delete">Elimina la nota vocale</string>
 </resources>

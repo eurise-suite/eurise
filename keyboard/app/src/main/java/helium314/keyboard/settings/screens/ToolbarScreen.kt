@@ -48,7 +48,6 @@ fun ToolbarScreen(
         || !prefs.getBoolean(Settings.PREF_TOOLBAR_HIDING_GLOBAL, Defaults.PREF_TOOLBAR_HIDING_GLOBAL)
     val items = listOf(
         Settings.PREF_EURISE_BAR,
-        eu.eurise.keyboard.EuriseBar.BAR_ON_TOP,
         Settings.PREF_TOOLBAR_KEY_LEFT,
         eu.eurise.keyboard.EuriseBar.SEPARATE_TOOLS,
         eu.eurise.keyboard.EuriseBar.ABBREVIATIONS,

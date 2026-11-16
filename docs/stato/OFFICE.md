@@ -13,13 +13,12 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 - **Vista rapida** (`office/apk/.../rapida`): docx, odt, xlsx, ods, pptx, odp aperti subito senza motore.
 - **PDF**: editor nativo in Office (PdfBox-Android) e lettore PDF dell'APK principale (`feature/drive`, «Modifica in Office»).
 
-## ⚠️ Dove sta il lavoro (16 novembre)
-Quasi tutto il lavoro dal 13 al 15 novembre è sul **ramo `office`** (≈150 commit da `b858da8`, 123 file, mai unito a
-`brand`); il diario completo è nella sezione «Office (ramo `office`…)» di `docs/STATO.md` **su quel ramo**. Su `brand`
-c'è ancora la vecchia app di Collabora con il motore dentro (`office-app.yml` → «Office 57», 237–249 MB, documenti che
-non si aprono): è quella che `apk-prova` pubblica oggi come `eurise-office-debug.apk`. Gli APK buoni sono nella
-pre-release `apk-prova-office`. Prova di unione fatta qui: conflitti solo in `CLAUDE.md`, `docs/STATO.md` e
-`feature/drive/.../DriveRoute.kt` (anche `brand` il 15 novembre ha fatto il suo `PdfOpenActivity`).
+## Dove sta il lavoro
+Dal 16 novembre (sera) tutto è su `brand`: il ramo `office` (13–15 novembre) è stato unito; il suo diario sta in fondo a
+`docs/STATO.md` («Office (ramo `office`…)»). Il ramo `office` e la pre-release `apk-prova-office` restano solo come archivio.
+Pubblicazione: **Compila** carica `eurise-office-debug.apk` (Office leggero) con gli altri APK; **office-app** fa il
+motore (`eurise-office-motore-debug.apk`); `apk-prova.yml` mette insieme i due (motore dall'ultimo office-app riuscito su
+`prova-office` o `brand`). I lavori lunghi di Office partono dal push solo su `prova-office`.
 
 ## Fatto (in breve, dettagli nei giorni di STATO.md)
 - **Motore** (9–11 novembre): LibreOffice core `distro/collabora/co-25.04` compilato su GitHub Actions (`office-engine.yml`,
@@ -61,6 +60,11 @@ pre-release `apk-prova-office`. Prova di unione fatta qui: conflitti solo in `CL
   `eurise_patch.py`); `CrashGuard` in `core/designsystem/crash` (per ora solo nel Browser); «Apri con» PDF nell'APK
   principale (`PdfOpenActivity`, 15 novembre).
 
+- **16 novembre, unione in `brand`**: un solo «Apri con» per i PDF (quello di File, con «Modifica in Office»);
+  `AppearanceProvider` nell'app Eurise (accento della Scrivania per le icone di Office); centro privacy: servizio
+  «Motore dei documenti di Office» (GitHub, Stati Uniti), acceso e annotato da Office quando si scarica; icona colorata
+  anche in Office leggero e nel motore; prova sull'emulatore con schermo «grande» (1080×2400, 420 dpi).
+
 ## Tavole (tela, pagina «Office»)
 **Approvate**
 - 11 novembre: OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer (in codice, tranne «Chiedi all'AI» ancora «in
@@ -78,28 +82,21 @@ OffOggiCaricamento, OffOggiTablet, OffOggiComputer, 14 novembre).
 approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la tela.
 
 ## Prossimi passi (in ordine)
-1. **Unire `office` in `brand`** (sciogliere i tre conflitti; per i PDF tenere un solo «Apri con» con «Modifica in
-   Office»). Al merge, come scritto sul ramo `office`:
-   - `apk-prova.yml` pubblica `eurise-office-debug.apk` (Office leggero) **e** `eurise-office-motore-debug.apk`, presi dal
-     giro di `prova-office`; la vecchia app di Collabora non si pubblica più;
-   - `office-computer.yml`, `office-sorgenti.yml`, `office-guscio.yml` partono oggi solo dal ramo `office`: aggiungere
-     `brand` e `prova-office`;
-   - `ENGINE_URL` di prova verso `apk-prova` invece di `apk-prova-office`;
-   - icona colorata nuova anche in `office/apk` e nel caricamento del motore;
-   - nell'app Eurise: `AppearanceProvider` (accento della Scrivania per Office) e la voce **«Download del motore di
-     Office»** nel centro privacy (parti comuni: scriverlo qui).
-2. **Giro su `prova-office` e prova del proprietario sul telefono**: «Scarica» del motore, vista rapida (anche
-   presentazioni), card dei gruppi, PDF con «Inserisci da Scanner» (arriva con il merge), chiusure durante la modifica.
-3. **OffRapporto e OffRapportoVedi in codice** con `CrashGuard` (in Office e nel processo del motore): serve per
-   capire le chiusure che l'emulatore non riproduce.
-4. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
-   (Ponte, socket `eurise-ponte.sock`), proposta 10 da rivedere con il proprietario, verso Flathub. Quando Office sul
-   computer è completo: la webapp (Office nel browser), decisa il 15 novembre.
-5. **Peso del motore** (113/315 MB): provare librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
-6. **Mancanze note**: «I miei dati» nei moduli PDF (contratto con Password), «Link dal cloud», «Salva in…» per ogni
-   documento con l'origine scritta, «Chiedi all'AI», mano dominante presa dalla suite; tablet vero (Volla) appena arriva.
-7. **Dock della schermata iniziale** (OffOggiHome: Recenti, Telefono, Cloud con la stellina): la faceva un'altra chat e i
-   suoi file (`Clouds.kt`, `CloudSheet.kt`…) **non sono nel repository**: chiedere al proprietario se rifarla qui.
+1. **Motore su `prova-office`**: il primo giro di office-app sul ramo nuovo riparte senza ccache (la cache di Actions
+   non passa da un ramo all'altro): circa 2–3 ore. Poi `apk-prova` con Office e motore insieme, e prova sull'emulatore
+   con `schermo=grande`.
+2. **Testata in stile Collabora sul telefono** (segnalata il 16 novembre aprendo «Aspetto esatto»): sull'emulatore la
+   testata è la nostra; probabile che sul telefono ci fosse Office 57 (la vecchia app di Collabora, pubblicata in
+   `apk-prova` il 16 novembre con lo stesso pacchetto). Verificare con la prova «grande» e con la foto del proprietario.
+3. **Prova del proprietario sul telefono**: «Scarica» del motore, vista rapida (anche presentazioni), card dei gruppi,
+   PDF con «Inserisci da Scanner» (ora l'app Eurise ha `ScanForResultActivity`), accento delle icone dalla Scrivania.
+4. **OffRapporto e OffRapportoVedi in codice** con `CrashGuard` (in Office e nel processo del motore).
+5. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
+   (Ponte), proposta 10 da rivedere, verso Flathub; poi la webapp (decisa il 15 novembre).
+6. **Peso del motore** (113/315 MB): librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
+7. **Mancanze note**: «I miei dati» nei moduli PDF, «Link dal cloud», «Salva in…» per ogni documento, «Chiedi all'AI»,
+   mano dominante presa dalla suite; tablet vero (Volla) appena arriva.
+8. **Dock della schermata iniziale** (OffOggiHome): i file dell'altra chat non sono nel repository; chiedere se rifarla.
 
 ## Come si lavora
 - Inizio di ogni chat: `CLAUDE.md`, questo file; di `docs/STATO.md` solo le parti citate qui. Prima di ogni push
@@ -126,8 +123,7 @@ approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la t
   «Motore di Office, giro N: …/apk-prova/eurise-office-motore-debug.apk». Il Flatpak: link diretto al `.flatpak` della
   sua pre-release, si installa con `flatpak install --user <file>` (runtime KDE 6.11 da Flathub). A ogni consegna:
   aggiornare questo file e una sola riga in `docs/STATO.md`.
-- **APK di oggi da provare** (finché il merge non è fatto): Office 14 novembre
-  https://github.com/eurise-suite/eurise/releases/download/apk-prova-office/eurise-office-debug.apk · Motore 14 novembre
-  https://github.com/eurise-suite/eurise/releases/download/apk-prova-office/eurise-office-motore-debug.apk · Computer
-  (strada 2, 15 novembre)
+- Attenzione: un push che **crea** `prova-office` fa partire tutti i lavori del repository (i filtri dei percorsi non
+  valgono per un ramo nuovo): annullare quelli che non servono (Mappe, Pietre miliari, Voci, Suonerie, apk-prova).
+- Computer (strada 2, 15 novembre):
   https://github.com/eurise-suite/eurise/releases/download/flatpak-sorgenti-office/eurise-office-sorgenti.flatpak

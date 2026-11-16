@@ -89,6 +89,9 @@ fun Modifier.glass(state: HazeState, shape: Shape, elevation: Dp = 10.dp, outlin
     return this
         .shadow(if (strong) maxOf(elevation, 3.dp) else elevation, shape, ambientColor = shadowColor, spotColor = shadowColor)
         .clip(shape)
+        // Il vetro pieno ha sotto un fondo quasi opaco: se la sfocatura non trova lo sfondo (succedeva in Drive, 16
+        // novembre) la testata e la dock restano piene, mai trasparenti.
+        .then(if (solid) Modifier.background(tint.copy(alpha = 0.96f)) else Modifier)
         .hazeEffect(state = state, style = style)
         .then(
             when {

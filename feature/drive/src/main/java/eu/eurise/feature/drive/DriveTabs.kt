@@ -118,6 +118,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 
 // Schede, righe e finestre di Drive (File, Offline, Condivisi), staccate da DriveRoute.kt.
 
@@ -161,7 +164,7 @@ internal fun FilesTab(
                     EmptyState(EuriseIcons.folder(), stringResource(R.string.drive_phone), stringResource(R.string.drive_access_title))
                     TextButton(onClick = onAccess) { Text(stringResource(R.string.drive_access_grant)) }
                 }
-            } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock)
+            } else FolderList(data, folder, refresh, query, sort, top, onFolder, onOpen, onMore, onUnlock, onMoveAll, onTrashAll)
         }
 
         Column(Modifier.fillMaxWidth().glass(haze, RectangleShape, elevation = 0.dp, outline = false, solid = true).statusBarsPadding().padding(top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -418,11 +421,28 @@ private fun FolderRow(title: String, detail: String, place: Place? = null, onCli
     }
 }
 
+/**
+ * Una riga di file o cartella. [picked] non nullo: si sta selezionando (tocco = metti o togli dalla selezione); la
+ * pressione lunga ([onLongClick]) comincia a selezionare.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?) {
+private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?, picked: Boolean? = null, onLongClick: (() -> Unit)? = null) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
-    Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 60.dp).combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (picked != null) {
+            Box(
+                Modifier.size(24.dp).clip(CircleShape)
+                    .background(if (picked) scheme.primary else Color.Transparent)
+                    .border(2.dp, if (picked) scheme.primary else scheme.onSurfaceVariant, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { if (picked) Icon(EuriseIcons.check(3f), contentDescription = null, tint = scheme.onPrimary, modifier = Modifier.size(14.dp)) }
+        }
         if (item.folder) FolderGlyph(item.place, Modifier.size(34.dp, 29.dp))
         else KindTile(item.extension, 36.dp, 36.dp, 9.dp, 10)
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
@@ -430,7 +450,7 @@ private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?)
             val detail = listOfNotNull(item.place.label, item.size?.let { Formatter.formatShortFileSize(context, it) }).joinToString(" · ")
             Text(detail, fontSize = 12.sp, color = scheme.onSurfaceVariant, maxLines = 1)
         }
-        if (onMore != null) IconButton(onClick = onMore) { Icon(EuriseIcons.more(), contentDescription = item.name, tint = scheme.onSurfaceVariant) }
+        if (onMore != null && picked == null) IconButton(onClick = onMore) { Icon(EuriseIcons.more(), contentDescription = item.name, tint = scheme.onSurfaceVariant) }
     }
 }
 
@@ -438,9 +458,17 @@ private fun ItemRow(item: DriveItem, onClick: () -> Unit, onMore: (() -> Unit)?)
 private fun FolderList(
     data: DriveData, folder: Folder, refresh: Int, query: String, sort: Sort, top: androidx.compose.ui.unit.Dp,
     onFolder: (Folder?) -> Unit, onOpen: (DriveItem) -> Unit, onMore: (DriveItem) -> Unit, onUnlock: (Place) -> Unit,
+    onMoveAll: (List<DriveItem>, String) -> Unit = { _, _ -> }, onTrashAll: (List<DriveItem>) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     var failed by remember(folder) { mutableStateOf(false) }
+    // Selezione di più file e cartelle (16 novembre): pressione lunga per cominciare, poi un tocco per ognuno.
+    val picked = remember(folder) { androidx.compose.runtime.mutableStateListOf<String>() }
+    val selecting = picked.isNotEmpty()
+    var moving by remember(folder) { mutableStateOf(false) }
+    var confirmTrash by remember(folder) { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(enabled = selecting) { picked.clear() }
+    fun toggle(item: DriveItem) { if (item.key in picked) picked.remove(item.key) else picked.add(item.key) }
     val items by produceState<List<DriveItem>?>(null, folder, refresh) {
         value = try { data.list(folder.place, folder.path) } catch (e: java.io.IOException) { failed = true; emptyList() } catch (e: DavException) { failed = true; emptyList() }
     }
@@ -469,7 +497,25 @@ private fun FolderList(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         return
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace)) {
+    val chosen = current.filter { it.key in picked }
+    if (moving && chosen.isNotEmpty()) MoveDialog(data, chosen.first(), onClose = { moving = false }) { to ->
+        moving = false
+        onMoveAll(chosen, to)
+        picked.clear()
+    }
+    if (confirmTrash) AlertDialog(
+        onDismissRequest = { confirmTrash = false },
+        title = { Text(stringResource(R.string.drive_pick_trash_title, chosen.size)) },
+        text = { Text(stringResource(R.string.drive_pick_trash_text)) },
+        confirmButton = {
+            TextButton(onClick = { confirmTrash = false; onTrashAll(chosen); picked.clear() }) {
+                Text(stringResource(R.string.drive_pick_trash), color = scheme.error, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = { TextButton(onClick = { confirmTrash = false }) { Text(stringResource(android.R.string.cancel)) } },
+    )
+    Box(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = top + 118.dp, bottom = bottomSpace + if (selecting) 72.dp else 0.dp)) {
         if (folder.place.account != null && !folder.place.isTree && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
             Row(
                 Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow)
@@ -492,7 +538,13 @@ private fun FolderList(
             val bot = if (i == shown.size - 1) 18.dp else 0.dp
             Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(top2, top2, bot, bot)).background(scheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
                 if (i > 0) CardDivider()
-                ItemRow(item, onClick = { if (item.folder) onFolder(folder.copy(path = item.path)) else onOpen(item) }, onMore = { onMore(item) })
+                ItemRow(
+                    item,
+                    onClick = { if (selecting) toggle(item) else if (item.folder) onFolder(folder.copy(path = item.path)) else onOpen(item) },
+                    onMore = { onMore(item) },
+                    picked = if (selecting) item.key in picked else null,
+                    onLongClick = { toggle(item) },
+                )
             }
         }
         if (inText.isNotEmpty()) {
@@ -508,6 +560,28 @@ private fun FolderList(
                 }
             }
         }
+    }
+    if (selecting) {
+        Row(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(start = 12.dp, end = 12.dp, bottom = bottomSpace - 8.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(scheme.surfaceContainerHigh)
+                .border(1.dp, scheme.outlineVariant, RoundedCornerShape(24.dp))
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = { picked.clear() }) { Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.drive_pick_cancel)) }
+            Text(stringResource(R.string.drive_pick_count, picked.size), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = { val all = shown.map { it.key }; if (picked.containsAll(all)) picked.clear() else { picked.clear(); picked.addAll(all) } }) {
+                Text(stringResource(R.string.drive_pick_all), fontWeight = FontWeight.SemiBold)
+            }
+            IconButton(onClick = { moving = true }) { Icon(EuriseIcons.folder(), contentDescription = stringResource(R.string.drive_pick_move)) }
+            IconButton(onClick = { confirmTrash = true }) { Icon(EuriseIcons.trash(), contentDescription = stringResource(R.string.drive_pick_trash), tint = scheme.error) }
+        }
+    }
     }
 }
 

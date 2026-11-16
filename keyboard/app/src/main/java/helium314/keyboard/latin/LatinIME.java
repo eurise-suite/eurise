@@ -1318,6 +1318,9 @@ public class LatinIME extends InputMethodService implements
         if (visibleKeyboardView.isShown()) {
             int touchLeft = 0;
             int touchTop = mKeyboardSwitcher.isShowingPopupKeysPanel() ? 0 : visibleTopY;
+            // Eurise: il riquadro a comparsa sopra le parole copre l'app senza spostarla, ma si deve poter toccare.
+            final int euriseMenuTop = mEuriseBar != null ? mEuriseBar.menuTop(mInputView) : -1;
+            if (euriseMenuTop >= 0) touchTop = Math.min(touchTop, euriseMenuTop);
             int touchRight = visibleKeyboardView.getWidth();
             int touchBottom = inputHeight + EXTENDED_TOUCHABLE_REGION_HEIGHT; // Extend touchable region below the keyboard.
             if (mSettings.getCurrent().mIsFloatingKeyboard) {

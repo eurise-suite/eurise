@@ -67,6 +67,11 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.runtime.remember
+import eu.eurise.core.designsystem.component.rememberCaretInView
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 
 /**
  * Nuovo appuntamento o modifica di uno esistente.
@@ -382,15 +387,22 @@ private fun PlainField(
     singleLine: Boolean = true,
 ) {
     val color = MaterialTheme.colorScheme.onSurface
+    // Il cursore resta in vista sopra la tastiera anche quando il testo si allunga.
+    var field by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
+    val shown = if (field.text == value) field else TextFieldValue(value, TextRange(value.length))
+    val caret = rememberCaretInView()
+    var focused by remember { mutableStateOf(false) }
+    caret.Follow(focused, shown.text, shown.selection.end)
     BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = shown,
+        onValueChange = { field = it; if (it.text != value) onValueChange(it.text) },
         enabled = enabled,
         singleLine = singleLine,
         textStyle = style.copy(color = color),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-        modifier = modifier.fillMaxWidth(),
+        onTextLayout = caret::onLayout,
+        modifier = modifier.fillMaxWidth().then(caret.modifier).onFocusChanged { focused = it.isFocused },
         decorationBox = { inner ->
             if (value.isEmpty()) Text(placeholder, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
             inner()

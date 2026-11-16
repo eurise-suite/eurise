@@ -93,15 +93,17 @@ private data class Placed(val group: EventGroup, val startMin: Int, val endMin: 
 
 /**
  * Dispone gli eventi di un giorno. I turni iniziati il giorno prima non entrano nella griglia (li riassume
- * l'etichetta "Dalla notte"); quelli con lo stesso orario e calendario diventano un unico blocco; i blocchi
- * che si sovrappongono si dividono la larghezza in colonne.
+ * l'etichetta "Dalla notte"); ogni evento ha il suo blocco e i blocchi che si sovrappongono si dividono la
+ * larghezza in colonne.
  */
 private fun layoutDay(day: LocalDate, events: List<CalendarEvent>): List<Placed> {
     val dayStart = day.atStartOfDay()
     val endOfDay = dayStart.plusDays(1)
     val segments = events
         .filter { !it.allDay && it.occursOn(day) && !it.continuesInto(day) }
-        .groupBy { Triple(it.start, it.end, it.calendarId) }
+        // Ogni appuntamento ha la sua casella, anche se ha lo stesso orario di un altro (16 novembre: due persone, due
+        // caselle affiancate); quelli sovrapposti si dividono la larghezza in colonne.
+        .groupBy { it.eventId to it.beginMillis }
         .values
         .map { list ->
             val g = EventGroup(list.sortedBy { it.title.lowercase() })

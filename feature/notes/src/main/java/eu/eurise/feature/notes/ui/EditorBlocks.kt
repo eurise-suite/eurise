@@ -60,11 +60,24 @@ import eu.eurise.feature.notes.FocusRequest
 import eu.eurise.feature.notes.R
 import eu.eurise.feature.notes.doc.Block
 import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.LockedBlock
+import eu.eurise.feature.notes.doc.AudioBlock
 import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.TableBlock
 import eu.eurise.feature.notes.doc.TextBlock
 import eu.eurise.feature.notes.doc.TextKind
+import eu.eurise.core.designsystem.component.rememberCaretInView
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.unit.Dp
+import androidx.annotation.StringRes
 
 /**
  * Carattere invisibile messo davanti al testo di ogni blocco: quando la tastiera lo cancella sappiamo che
@@ -94,6 +107,7 @@ internal fun TextBlockField(
 ) {
     val ink = inkColors()
     val requester = remember { FocusRequester() }
+    val caret = rememberCaretInView()
     LaunchedEffect(focusRequest) {
         if (focusRequest?.blockId == block.id) runCatching { requester.requestFocus() }
     }
@@ -141,8 +155,10 @@ internal fun TextBlockField(
                 textStyle = style,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                onTextLayout = caret::onLayout,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(caret.modifier)
                     .then(if (block.kind == TextKind.Check) Modifier.heightIn(min = 32.dp).padding(vertical = 4.dp) else Modifier)
                     .focusRequester(requester)
                     .onFocusChanged { if (it.isFocused) actions.onFocus(block.id) },
@@ -153,6 +169,7 @@ internal fun TextBlockField(
                     }
                 },
             )
+            caret.Follow(focused, text, value.selection.end)
             if (block.kind == TextKind.Check && block.taskId != null) {
                 Text(
                     stringResource(R.string.notes_check_in_tasks),
@@ -239,6 +256,8 @@ internal fun SelectableBlocks(title: String, blocks: List<Block>) {
                     }
                     is NoteLinkBlock -> Text(block.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 6.dp))
                     is DividerBlock -> DividerView()
+                    is LockedBlock -> Unit
+                    is AudioBlock -> if (block.transcript.isNotBlank()) Text(block.transcript, fontSize = 14.sp, color = base, modifier = Modifier.padding(vertical = 6.dp))
                     is DrawingBlock -> DisableSelection { DrawingPreview(block, onOpen = {}, modifier = Modifier.padding(vertical = 8.dp)) }
                 }
             }
@@ -271,61 +290,171 @@ private fun CheckBox(checked: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** Tabella di testo semplice; i comandi per righe e colonne compaiono quando una cella ha il cursore. */
+/** Comandi comuni dei blocchi che non sono testo: sposta, duplica, elimina. [onUp]/[onDown] nulli in cima o in fondo. */
+internal class BlockMenu(
+    val onUp: (() -> Unit)?,
+    val onDown: (() -> Unit)?,
+    val onDuplicate: () -> Unit,
+    val onDelete: () -> Unit,
+    @StringRes val deleteLabel: Int,
+)
+
+/**
+ * Cornice di un blocco (tabella, disegno, linea): il tondo con i puntini in alto a destra è sempre visibile e apre il
+ * menu del blocco; [extra] aggiunge in cima le voci proprie del blocco (per esempio «Modifica il disegno»).
+ */
 @Composable
-internal fun TableBlockView(
-    block: TableBlock,
-    onCell: (Int, Int, String) -> Unit,
-    onAddRow: () -> Unit,
-    onAddColumn: () -> Unit,
-    onRemove: () -> Unit,
-    onFocus: (Long?) -> Unit,
+internal fun BlockFrame(
+    menu: BlockMenu,
+    modifier: Modifier = Modifier,
+    minHeight: Dp = 0.dp,
+    extra: @Composable (close: () -> Unit) -> Unit = {},
+    content: @Composable () -> Unit,
 ) {
-    val focusedCells = remember { mutableStateMapOf<Int, Boolean>() }
-    val outline = MaterialTheme.colorScheme.surfaceContainer
+    var open by remember { mutableStateOf(false) }
+    val label = stringResource(R.string.notes_block_menu)
+    Box(modifier.fillMaxWidth().heightIn(min = minHeight), contentAlignment = Alignment.CenterStart) {
+        content()
+        Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+            Box(
+                Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    .clickable(role = Role.Button) { open = true }
+                    .semantics { contentDescription = label },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(EuriseIcons.more(), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+            }
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                extra { open = false }
+                menu.onUp?.let { up ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.notes_block_up)) },
+                        leadingIcon = { Icon(EuriseIcons.chevronUp(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        onClick = { open = false; up() },
+                    )
+                }
+                menu.onDown?.let { down ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.notes_block_down)) },
+                        leadingIcon = { Icon(EuriseIcons.chevronDown(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        onClick = { open = false; down() },
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.notes_block_duplicate)) },
+                    leadingIcon = { Icon(EuriseIcons.copy(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    onClick = { open = false; menu.onDuplicate() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(menu.deleteLabel), color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(EuriseIcons.trash(), contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp)) },
+                    onClick = { open = false; menu.onDelete() },
+                )
+            }
+        }
+    }
+}
+
+/** Comandi della tabella che agiscono sulla cella col cursore. */
+internal class TableActions(
+    val onCell: (row: Int, column: Int, text: String) -> Unit,
+    val onInsertRow: (at: Int) -> Unit,
+    val onInsertColumn: (at: Int) -> Unit,
+    val onRemoveRow: (row: Int) -> Unit,
+    val onRemoveColumn: (column: Int) -> Unit,
+    val onFocus: (Long?) -> Unit,
+)
+
+/**
+ * Tabella di testo semplice, con linee tra righe e tra colonne. Con il cursore in una cella compaiono i comandi per
+ * aggiungere una riga sotto o una colonna a destra e per togliere quella riga o quella colonna; il resto (sposta, duplica,
+ * elimina) sta nel menu del blocco.
+ */
+@Composable
+internal fun TableBlockView(block: TableBlock, menu: BlockMenu, actions: TableActions) {
+    var focus by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    val line = MaterialTheme.colorScheme.outlineVariant
+    val header = MaterialTheme.colorScheme.surfaceContainer
     Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow),
-        ) {
-            block.rows.forEachIndexed { r, row ->
-                if (r > 0) HorizontalDivider(color = outline)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .then(if (r == 0) Modifier.background(outline) else Modifier),
-                ) {
-                    row.forEachIndexed { c, cell ->
-                        BasicTextField(
-                            value = cell,
-                            onValueChange = { onCell(r, c, it) },
-                            textStyle = TextStyle(
-                                fontSize = if (r == 0) 12.sp else 14.sp,
-                                fontWeight = if (r == 0) FontWeight.Bold else FontWeight.Normal,
-                                color = if (r == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 12.dp, vertical = 10.dp)
-                                .onFocusChanged {
-                                    focusedCells[r * 100 + c] = it.isFocused
-                                    if (it.isFocused) onFocus(block.id)
-                                },
-                        )
+        BlockFrame(menu) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, line, RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
+            ) {
+                block.rows.forEachIndexed { r, row ->
+                    if (r > 0) HorizontalDivider(color = line)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min)
+                            .then(if (r == 0) Modifier.background(header) else Modifier),
+                    ) {
+                        row.forEachIndexed { c, cell ->
+                            if (c > 0) VerticalDivider(color = line)
+                            val here = focus == (r to c)
+                            BasicTextField(
+                                value = cell,
+                                onValueChange = { actions.onCell(r, c, it) },
+                                textStyle = TextStyle(
+                                    fontSize = if (r == 0) 12.sp else 14.sp,
+                                    fontWeight = if (r == 0) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (r == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .then(if (here) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)) else Modifier)
+                                    // Nell'intestazione l'ultima cella lascia spazio al tondo del menu.
+                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = if (r == 0 && c == row.lastIndex) 40.dp else 12.dp)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            focus = r to c
+                                            actions.onFocus(block.id)
+                                        } else if (focus == (r to c)) focus = null
+                                    },
+                            )
+                        }
                     }
                 }
             }
         }
-        if (focusedCells.values.any { it }) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = onAddRow) { Text(stringResource(R.string.notes_table_add_row)) }
-                TextButton(onClick = onAddColumn) { Text(stringResource(R.string.notes_table_add_column)) }
-                TextButton(onClick = onRemove) { Text(stringResource(R.string.notes_table_remove), color = MaterialTheme.colorScheme.error) }
+        focus?.let { (r, c) ->
+            Row(
+                Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                TableChip(stringResource(R.string.notes_table_add_row)) { actions.onInsertRow(r + 1) }
+                TableChip(stringResource(R.string.notes_table_add_column)) { actions.onInsertColumn(c + 1) }
+                TableChip(stringResource(R.string.notes_table_remove_row), danger = true) { focus = null; actions.onRemoveRow(r) }
+                TableChip(stringResource(R.string.notes_table_remove_column), danger = true) { focus = null; actions.onRemoveColumn(c) }
             }
         }
+    }
+}
+
+@Composable
+private fun TableChip(text: String, danger: Boolean = false, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier
+            .height(36.dp)
+            .clip(CircleShape)
+            .background(if (danger) scheme.errorContainer.copy(alpha = 0.55f) else scheme.primaryContainer)
+            // Il tocco non deve togliere il cursore dalla cella.
+            .focusProperties { canFocus = false }
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (danger) scheme.error else scheme.onPrimaryContainer)
     }
 }
 

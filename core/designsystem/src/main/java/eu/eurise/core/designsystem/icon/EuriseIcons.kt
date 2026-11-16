@@ -34,6 +34,8 @@ object EuriseIcons {
     fun chevronLeft(stroke: Float = 2.4f) = icon("left", stroke, "M15 6l-6 6 6 6")
 
     fun chevronRight(stroke: Float = 2.4f) = icon("right", stroke, "M9 6l6 6-6 6")
+    fun chevronUp(stroke: Float = 2.4f) = icon("up", stroke, "M6 15l6-6 6 6")
+    fun chevronDown(stroke: Float = 2.4f) = icon("down", stroke, "M6 9l6 6 6-6")
 
     fun pen(stroke: Float = Stroke) = icon("pen", stroke, "M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z")
 

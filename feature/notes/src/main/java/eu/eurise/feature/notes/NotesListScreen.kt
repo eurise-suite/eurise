@@ -81,6 +81,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.SectionLabel
+import eu.eurise.feature.notes.lock.NoteLock
 
 /**
  * Elenco delle note con taccuini, ricerca e note fissate in alto.
@@ -360,13 +361,14 @@ private fun PinnedCard(note: Note, book: NotebookSummary?, selected: Boolean, on
             }
         }
         Text(
-            note.heading().ifBlank { stringResource(R.string.notes_untitled) },
+            note.heading().ifBlank { stringResource(if (NoteLock.isLocked(note)) R.string.notes_locked else R.string.notes_untitled) },
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             lineHeight = 20.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+        if (NoteLock.isLocked(note)) LockedLine()
         val snippet = note.snippet()
         if (snippet.isNotEmpty()) {
             Text(snippet, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
@@ -380,6 +382,16 @@ private fun PinnedCard(note: Note, book: NotebookSummary?, selected: Boolean, on
         drawing?.let { DrawingThumbnail(it) }
         if (note.hasConflict) ConflictBadge()
         checklistProgress(note)?.let { (done, total) -> Progress(done, total) }
+    }
+}
+
+/** Riga delle note bloccate nell'elenco: lucchetto e «Testo nascosto». */
+@Composable
+private fun LockedLine() {
+    val color = MaterialTheme.colorScheme.primary
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Icon(EuriseIcons.lock(), contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Text(stringResource(R.string.notes_locked_preview), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
     }
 }
 
@@ -415,7 +427,7 @@ private fun NoteRow(note: Note, book: NotebookSummary?, today: LocalDate, select
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (note.pinned) Icon(EuriseIcons.pin(), contentDescription = stringResource(R.string.notes_pinned), modifier = Modifier.size(14.dp).padding(end = 2.dp))
                 Text(
-                    note.heading().ifBlank { stringResource(R.string.notes_untitled) },
+                    note.heading().ifBlank { stringResource(if (NoteLock.isLocked(note)) R.string.notes_locked else R.string.notes_untitled) },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -425,6 +437,7 @@ private fun NoteRow(note: Note, book: NotebookSummary?, today: LocalDate, select
                 Spacer(Modifier.width(8.dp))
                 Text(shortTime(note.updatedAt, today), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (NoteLock.isLocked(note)) LockedLine()
             val snippet = note.snippet()
             if (snippet.isNotEmpty()) {
                 Text(snippet, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)

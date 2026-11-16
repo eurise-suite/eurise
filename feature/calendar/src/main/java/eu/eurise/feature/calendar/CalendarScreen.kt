@@ -187,25 +187,26 @@ internal fun CalendarScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(top = 12.dp, bottom = 10.dp),
+                .padding(top = 2.dp, bottom = 6.dp),
         ) {
-            TitleRow(state.anchor, onStep, onToday, onDates, onMedicines)
-            Spacer(Modifier.height(14.dp))
+            // Testata compatta (16 novembre): una riga per mese e comandi, una per le viste; l'Agenda non c'è più,
+            // la fa la sezione Oggi.
+            TitleRow(state.anchor, state.today, state.days.contains(state.today), onStep, onToday, onDates, onMedicines)
+            Spacer(Modifier.height(4.dp))
             GlassSegmented(
                 options = listOf(
-                    stringResource(R.string.cal_view_agenda),
                     stringResource(R.string.cal_view_day),
                     stringResource(R.string.cal_view_three),
                     stringResource(R.string.cal_view_week),
                     stringResource(R.string.cal_view_month),
                 ),
-                selected = state.view.ordinal,
-                onSelect = { onViewChange(CalendarView.entries[it]) },
+                selected = (state.view.ordinal - 1).coerceAtLeast(0),
+                onSelect = { onViewChange(CalendarView.entries[it + 1]) },
                 hazeState = headerHaze,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
             if (timeline && state.hasPermission) {
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
                 DayHeads(state.days, state.today, onClick = { onOpenDay(it, state.view != CalendarView.Day) })
                 AllDayRow(
                     state = state,
@@ -283,38 +284,61 @@ internal fun CalendarScreen(
 }
 
 @Composable
-private fun TitleRow(anchor: LocalDate, onStep: (Boolean) -> Unit, onToday: () -> Unit, onDates: () -> Unit, onMedicines: () -> Unit) {
+private fun TitleRow(
+    anchor: LocalDate,
+    today: LocalDate,
+    showingToday: Boolean,
+    onStep: (Boolean) -> Unit,
+    onToday: () -> Unit,
+    onDates: () -> Unit,
+    onMedicines: () -> Unit,
+) {
     val month = anchor.format(DateTimeFormatter.ofPattern("LLLL", Locale.ITALIAN)).replaceFirstChar { it.titlecase(Locale.ITALIAN) }
-    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+    val scheme = MaterialTheme.colorScheme
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         // Frecce piccole, area di tocco piena: servono anche a TalkBack, che non può scorrere.
         Chevron(EuriseIcons.chevronLeft(), stringResource(R.string.cal_previous)) { onStep(false) }
         Text(
             buildString { append(month); append(' ') },
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.semantics { heading() },
         )
-        Text("${anchor.year}", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${anchor.year}", style = MaterialTheme.typography.titleLarge, color = scheme.onSurfaceVariant)
         Chevron(EuriseIcons.chevronRight(), stringResource(R.string.cal_next)) { onStep(true) }
         Spacer(Modifier.weight(1f))
         // Date importanti e Farmaci: due moduli del Calendario.
         Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.dates_title), onClick = onDates), contentAlignment = Alignment.Center) {
-            Icon(EuriseIcons.star(), stringResource(R.string.dates_title), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Icon(EuriseIcons.star(), stringResource(R.string.dates_title), tint = scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
         Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.meds_title), onClick = onMedicines), contentAlignment = Alignment.Center) {
-            Icon(EuriseIcons.heart(), stringResource(R.string.meds_title), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Icon(EuriseIcons.heart(), stringResource(R.string.meds_title), tint = scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.width(6.dp))
-        Surface(
-            onClick = onToday,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        // Oggi: un piccolo calendario con il numero del giorno; pieno se oggi è già in vista.
+        val label = stringResource(R.string.cal_today)
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .clickable(onClickLabel = label, onClick = onToday)
+                .semantics { contentDescription = label },
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                stringResource(R.string.cal_today),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-            )
+            Box(
+                Modifier
+                    .size(width = 26.dp, height = 26.dp)
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(if (showingToday) scheme.surfaceContainerHigh else scheme.primary)
+                    .border(1.5.dp, if (showingToday) scheme.onSurfaceVariant else scheme.primary, RoundedCornerShape(7.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "${today.dayOfMonth}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (showingToday) scheme.onSurface else scheme.onPrimary,
+                )
+            }
         }
     }
 }

@@ -20,6 +20,25 @@ internal object LogoMask {
     }
 
     /**
+     * Il colore del disegno nell'icona originale (16 novembre: il simbolo delle app non nostre tiene il colore del loro
+     * disegno): il colore più frequente tra i pixel del disegno ([inGlyph] dice quali sono), raggruppati a 16 livelli per
+     * canale, poi la media di quel gruppo. Null se il disegno non ha pixel.
+     */
+    fun glyphColor(pixels: IntArray, inGlyph: (Int) -> Boolean): Int? {
+        val counts = HashMap<Int, IntArray>()
+        for (i in pixels.indices) {
+            if (!inGlyph(i)) continue
+            val p = pixels[i]
+            val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
+            val key = (r shr 4 shl 8) or (g shr 4 shl 4) or (b shr 4)
+            val acc = counts.getOrPut(key) { IntArray(4) }
+            acc[0]++; acc[1] += r; acc[2] += g; acc[3] += b
+        }
+        val best = counts.values.maxByOrNull { it[0] } ?: return null
+        return Color.rgb(best[1] / best[0], best[2] / best[0], best[3] / best[0])
+    }
+
+    /**
      * Alfa della sagoma (0–255 per pixel) oppure null. Il fondo è la media dei pixel del bordo (il 6% esterno); se il
      * bordo è trasparente si usa l'alfa del disegno. Un pixel è del logo quando si stacca dal fondo di almeno
      * [THRESHOLD] (somma delle differenze RGB), con un passaggio morbido per i bordi del logo.
