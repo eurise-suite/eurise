@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Eurise",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Firefox diventa Eurise: aspetto Perla e Notte, password dal telefono, e un tocco per mandare a Calendario, Note, Attività e al telefono link e documenti. Tutto passa dal Ponte Eurise sulla rete di casa.",
   "author": "Eurise",
   "homepage_url": "https://eurise.eu/",
@@ -30,6 +30,9 @@
   "options_ui": {
     "page": "ui/options.html",
     "browser_style": false
+  },
+  "chrome_url_overrides": {
+    "newtab": "ui/newtab.html"
   },
   "chrome_settings_overrides": {
     "search_provider": {
@@ -96,6 +99,12 @@
     "tabs",
     "activeTab",
     "notifications",
+    "history",
+    "downloads",
+    "downloads.open",
+    "search",
+    "webRequest",
+    "clipboardWrite",
     "http://*/*",
     "https://*/*"
   ]

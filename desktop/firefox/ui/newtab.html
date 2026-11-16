@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Nuova scheda</title>
+<link rel="icon" href="../icons/eurise.svg">
+<link rel="stylesheet" href="eurise.css">
+<link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+<main>
+  <p class="hello"><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4 Z"/></svg><span id="hello"></span></p>
+
+  <form id="search" class="search" role="search" autocomplete="off">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11 a6.5 6.5 0 1 0 13 0 a6.5 6.5 0 1 0 -13 0 M16 16 l4.5 4.5"/></svg>
+    <input id="q" type="search" aria-label="Cerca o scrivi un indirizzo" placeholder="Cerca o scrivi un indirizzo" autofocus>
+    <div class="modes" role="group" aria-label="Dove cercare">
+      <button type="button" data-mode="web" aria-pressed="true">Cerca</button>
+      <button type="button" data-mode="ai" aria-pressed="false" title="Tieni premuto o tasto destro per scegliere l'AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3.5l1.8 5.2 5.2 1.8-5.2 1.8L11 17.5l-1.8-5.2L4 10.5l5.2-1.8z M18.5 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>Chiedi all’AI</button>
+      <button type="button" data-mode="history" aria-pressed="false">Nella cronologia</button>
+    </div>
+  </form>
+  <ul id="results" class="results" hidden></ul>
+
+  <div id="aiPick" class="card aipick" hidden>
+    <span class="label">Quale AI?</span>
+    <p class="note">La domanda va solo al servizio che scegli, solo quando premi Invio. Le europee e le anonime prima; i servizi chiusi in fondo, conservano le conversazioni.</p>
+    <div id="aiList"></div>
+  </div>
+
+  <div id="resume" class="resume"></div>
+
+  <h2>Siti fissati</h2>
+  <div id="pins" class="pins"></div>
+  <form id="pinForm" class="card pinform" hidden>
+    <input id="pinUrl" type="text" placeholder="Indirizzo, es. eurise.eu" aria-label="Indirizzo del sito">
+    <input id="pinName" type="text" placeholder="Nome (facoltativo)" aria-label="Nome del sito">
+    <button type="submit" class="strong">Fissa</button>
+    <button type="button" id="pinCancel">Annulla</button>
+  </form>
+
+  <h2>Per oggi, dalla suite</h2>
+  <ul id="today" class="today"><li class="empty">…</li></ul>
+
+  <div id="pwd" class="card pwd" hidden>
+    <form id="pwdForm" class="pwdrow">
+      <input id="pwdSite" type="text" placeholder="Il sito, es. agenziaentrate.gov.it" aria-label="Sito della password">
+      <button type="submit" class="strong">Chiedi al telefono</button>
+      <button type="button" id="pwdClose">Chiudi</button>
+    </form>
+    <div id="pwdOut" class="pwdrow" hidden></div>
+  </div>
+
+  <div class="tools">
+    <button type="button" id="translate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 5c.8 3 3 5.5 6 7M11 5c-.8 3-3 5.5-6.5 7.5 M13 20l4-9 4 9M14.3 17h5.4"/></svg>Traduci</button>
+    <button type="button" id="password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 9.5a4 4 0 1 0-3.4 3.9L13 15.5h2v2h2v2h3v-3l-5.6-5.6 M8.5 8.5h.01"/></svg>Password</button>
+    <button type="button" id="dictate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.6 a3 3 0 0 1 6 0 V11 a3 3 0 0 1 -6 0 Z M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21"/></svg>Detta dal telefono</button>
+    <button type="button" id="toNote"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5 h8 l4 4 v11 a2 2 0 0 1 -2 2 h-10 a2 2 0 0 1 -2-2 v-13 a2 2 0 0 1 2-2 z M8 11 h8 M8 14.5 h8"/></svg>In Note</button>
+    <span class="grow"></span>
+    <span id="trackers" class="trackers" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg><span></span></span>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</main>
+<script src="icons.js"></script>
+<script src="ai.js"></script>
+<script src="newtab.js"></script>
+</body>
+</html>

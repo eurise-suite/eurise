@@ -1,0 +1,85 @@
+/* Nuova scheda Eurise in Firefox (tavola PcFirefoxScheda): colonna di 860 px, Perla di giorno e Notte di sera. */
+body { min-height: 100vh; display: flex; justify-content: center; padding: 44px 24px 32px; }
+main { width: 860px; max-width: 100%; display: flex; flex-direction: column; gap: 14px; }
+svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.hello { margin: 0; font-size: 14px; font-weight: 700; color: var(--sub); display: flex; align-items: center; gap: 8px; }
+.hello .star { width: 18px; height: 18px; fill: var(--warn); stroke: none; }
+
+.search { height: 60px; padding: 0 10px 0 22px; border-radius: 30px; background: var(--card); box-shadow: 0 6px 22px rgba(30,29,27,.08);
+  display: flex; align-items: center; gap: 12px; }
+.search > svg { width: 20px; height: 20px; color: var(--sub); stroke-width: 2.2; }
+.search input { flex: 1; border: 0; outline: none; background: transparent; padding: 0; font-size: 17px; }
+.search input:focus { outline: none; }
+.modes { display: flex; gap: 6px; }
+.modes button { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 12px; font-weight: 600; background: var(--bg); }
+.modes button svg { width: 14px; height: 14px; stroke-width: 1.9; color: var(--violet); }
+.modes button[aria-pressed="true"] { background: var(--navy); color: #FFFFFF; font-weight: 700; }
+.modes button[aria-pressed="true"] svg { color: currentColor; }
+@media (prefers-color-scheme: dark) { .modes button[aria-pressed="true"] { color: #141A26; } }
+
+.results { list-style: none; margin: -6px 0 0; padding: 6px; border-radius: 20px; background: var(--card); }
+.results li a { display: flex; flex-direction: column; gap: 1px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: var(--text); }
+.results li a:hover, .results li a:focus { background: var(--soft); outline: none; }
+.results b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.results span { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.results .empty { padding: 8px 12px; font-size: 12.5px; color: var(--sub); }
+
+.aipick .note { margin: 4px 0 8px; }
+.aipick button.action { display: flex; align-items: center; gap: 10px; }
+.aipick button.action .t { text-align: left; }
+.aipick .star2 { color: var(--warn); font-size: 15px; width: 16px; }
+
+.resume { display: flex; gap: 12px; }
+.resume:empty { display: none; }
+.resume a { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 18px; background: var(--card); text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.resume a:hover { background: var(--soft); }
+.resume small { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--sub); }
+.resume small svg { width: 14px; height: 14px; stroke-width: 1.9; }
+.resume b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+h2 { margin: 6px 0 0; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+
+.pins { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .pins { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.pins a, .pins .add { position: relative; height: 96px; border-radius: 20px; background: var(--card); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px; text-decoration: none; color: var(--text); font-size: 12.5px; font-weight: 600; padding: 0 6px; }
+.pins a:hover { background: var(--soft); }
+.pins a > span:last-of-type { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pins .letter { width: 40px; height: 40px; border-radius: 20px; background: var(--tb); color: var(--tf); display: flex; align-items: center;
+  justify-content: center; font-weight: 800; font-size: 15px; }
+@media (prefers-color-scheme: dark) { .pins .letter { background: color-mix(in srgb, var(--tf) 45%, var(--card)); color: var(--tb); } }
+.pins .x { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; border-radius: 11px; font-size: 13px; color: var(--sub);
+  background: var(--bg); opacity: 0; }
+.pins a:hover .x, .pins a:focus-within .x { opacity: 1; }
+.pins .add { border: 1.5px dashed var(--line); background: transparent; color: var(--sub); height: 96px; }
+.pins .add svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.pinform { display: flex; gap: 8px; align-items: center; }
+.pinform input { flex: 1; }
+
+.today { list-style: none; margin: 0; padding: 0 16px; border-radius: 20px; background: var(--card); }
+.today li { min-height: 54px; padding: 8px 0; display: flex; align-items: center; gap: 12px; }
+.today li + li { border-top: 1px solid var(--line); }
+.today li.empty { font-size: 12.5px; color: var(--sub); }
+.today a { color: inherit; text-decoration: none; display: contents; }
+.today .ic { flex: none; width: 32px; height: 32px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+.today .ic svg { width: 16px; height: 16px; }
+.today .ic.cal { background: #DDE3F0; color: #3E5C8A; }
+.today .ic.task { background: #DCE7DF; color: #4F6B5A; }
+@media (prefers-color-scheme: dark) { .today .ic.cal { background: #2B3A5C; color: #8FB4F0; } .today .ic.task { background: #24372C; color: #8CC0A0; } }
+.today .t b { font-size: 13.5px; }
+.today .t span { font-size: 12px; }
+.today .when { flex: none; font-size: 12px; font-weight: 700; color: var(--accent); }
+
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tools button { flex: none; height: 36px; border-radius: 18px; }
+.tools button:hover { background: var(--soft); }
+.grow { flex: 1; }
+.trackers { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ok); }
+
+.pwd .pwdrow { display: flex; gap: 8px; align-items: center; }
+.pwd .pwdrow + .pwdrow { margin-top: 8px; }
+.pwd .pwdrow input { flex: 1; }
+.pwd .who { flex: 1; font-size: 13px; }
+.toast { text-align: center; }

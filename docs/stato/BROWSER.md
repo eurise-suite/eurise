@@ -10,7 +10,7 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   menu dell'indirizzo, segnalibri dalla barra, estensioni, barra delle schede).
 - **Computer**: Firefox com'è con l'estensione Eurise (`desktop/firefox`, `eurise-firefox.xpi`, non firmata: si prova da
   `about:debugging`; per installarla stabilmente serve la firma con l'account AMO del proprietario). Tavole: PcFirefox
-  (pagina Browser) e **PcFirefoxScheda** (pagina «Eurise sul computer», approvata il 16 novembre, da scrivere).
+  (pagina Browser) e **PcFirefoxScheda** (pagina «Eurise sul computer», approvata il 16 novembre, scritta il 16 novembre).
 - **In comune**: il Ponte telefono–computer (`core/ponte`, `desktop/ponte`, ora anche dentro l'app `desktop/app`), la
   sincronizzazione del Browser (tavola BrwSincro), l'importazione dai browser (`core/sync` `BrowserImport`).
 
@@ -25,15 +25,23 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   solo HTTPS, niente ping e prefetch) **accesa di base, con l'interruttore in vista nella finestrella del pulsante Eurise**
   per spegnerla con un tocco (decisione del proprietario, 16 novembre), anche nelle Impostazioni con lo stato voce per
   voce; Brave Search come motore (`chrome_settings_overrides`, Firefox chiede all'utente).
+- Firefox, **nuova scheda Eurise** (16 novembre, estensione 0.2.0; `ui/newtab.*`, `ui/ai.js`): dalla tavola PcFirefoxScheda.
+  Cerca (motore di Firefox, `browser.search`), Chiedi all'AI (elenco del telefono, nessuna di base, spiegazione prima di
+  accenderla, servizi chiusi con conferma), Nella cronologia (`history`); Riprendi (ultimo handoff dal Ponte nelle 24 ore,
+  **Leggi dopo** nuovo sul computer in `storage.local` con voce nel pulsante e nel tasto destro, ultimo download); siti
+  fissati (fino a 8, lettera nella tinta); Per oggi (`todayNewTab`: TodayCache del Ponte, poi al telefono al massimo ogni
+  2 minuti, l'ultimo resta nella sessione); Traduci (`about:translations`, **da verificare** che Firefox lo lasci aprire:
+  altrimenti un avviso); Password (`pwdFor`, solo dalle pagine dell'estensione e solo se «Password dal telefono» è
+  accesa; copia e svuota gli appunti dopo 30 s); Detta (nel campo di ricerca); In Note (il testo del campo); tracciatori
+  fermati contati da `webRequest.onErrorOccurred` (NS_ERROR_TRACKING_URI e simili), per settimana. Permessi nuovi:
+  history, downloads, downloads.open, search, webRequest, clipboardWrite (Firefox li chiede aggiornando). Il saluto non ha
+  il nome (il Ponte non lo dà).
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
 
 ## Prossimi passi (in ordine)
-1. **Nuova scheda Eurise in Firefox** dalla tavola PcFirefoxScheda (approvata): `chrome_url_overrides.newtab`; ricerca con
-   Cerca / Chiedi all'AI / Nella cronologia, «Riprendi da dove eri» (dal telefono via Ponte, leggi dopo, download), otto
-   siti fissati, «Per oggi, dalla suite» (dal `TodayCache` del Ponte), pulsanti Traduci, Password, Detta, In Note, riga dei
-   tracciatori fermati.
+1. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
 2. **Importazione dai browser nell'app del computer**: schermata (serve la tavola, partire da BrwImporta del telefono);
    lettura SQLite (password `Login Data`, cronologia; Firefox `logins.json` + `key4.db`); le password vanno in Eurise
    Password con un tipo del Ponte apposta, mai un CSV in Download.

@@ -6,6 +6,14 @@ Firefox così com'è, aggiornato da Mozilla e dalla distribuzione, con l'aspetto
 - **Aspetto**: Perla e Notte su finestra, schede (quella aperta ben distinta), barra degli indirizzi, menu e pannello.
 - **Pulsante Eurise** (Ctrl+Maiusc+E): apri sul telefono, In Note, Da fare, Appuntamento in Calendario (data trovata
   nella frase scelta), Documento al telefono (fino a 50 MB, in Download/Eurise).
+- **Nuova scheda Eurise** (tavola PcFirefoxScheda, `chrome_url_overrides`; Firefox chiede se tenerla): ricerca con Cerca (il
+  motore scelto in Firefox), Chiedi all'AI (nessuna di base; tasto destro o pressione lunga per sceglierla, servizi chiusi in
+  fondo) e Nella cronologia; «Riprendi da dove eri» (ultimo link dal telefono, Leggi dopo, ultimo download); otto siti
+  fissati con la lettera nella tinta della suite (nessuna icona scaricata); «Per oggi, dalla suite» dal telefono via Ponte
+  (al telefono al massimo ogni due minuti); Traduci (la traduzione locale di Firefox), Password (dal telefono, si copia e
+  dopo 30 secondi si toglie dagli appunti), Detta, In Note; i tracciatori fermati da Firefox questa settimana. Mentre si
+  scrive non esce nulla: niente suggerimenti dal motore.
+- **Leggi dopo** (pulsante Eurise e tasto destro): pagine da riprendere, sul computer.
 - **Pannello Eurise** (Alt+Maiusc+E): scrivi e manda (Note, Attività, appunti), la scheda, «Dal telefono».
 - **Tasto destro**: le stesse cose su pagina, link, immagini e testo scelto.
 - **Oggi** nel pannello: appuntamenti di oggi e cose da fare, chiesti al telefono solo con il pannello aperto (sul

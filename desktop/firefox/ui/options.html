@@ -51,8 +51,14 @@
         <span>Sui moduli di accesso compare «Chiedi al telefono»: Eurise Password approva con l'impronta e la password si scrive qui. Spenta di base.</span></div>
       <button class="switch" role="switch" id="passwords" aria-label="Password dal telefono"></button>
     </div>
+    <div class="opt" id="ai">
+      <div class="t"><b>Chiedi all'AI nella nuova scheda</b>
+        <span>La domanda va al servizio scelto solo quando premi Invio. Nessuna di base. Le europee e le anonime prima; i servizi chiusi in fondo.</span>
+        <div class="seg" id="aiSeg"></div>
+        <span class="note" id="aiNote"></span></div>
+    </div>
     <div class="opt">
-      <div class="t"><b>Eurise nel tasto destro</b><span>Apri sul telefono, In Note, Da fare, Appuntamento, Manda il file al telefono.</span></div>
+      <div class="t"><b>Eurise nel tasto destro</b><span>Apri sul telefono, Leggi dopo, In Note, Da fare, Appuntamento, Manda il file al telefono.</span></div>
       <button class="switch" role="switch" id="menus" aria-label="Eurise nel tasto destro"></button>
     </div>
   </div>
@@ -68,6 +74,15 @@
     <p class="note">Privacy <span class="ticks" id="ponteTicks"></span> 10 su 10: diretto tra computer e telefono sulla rete di casa, cifrato. Nessun server, nemmeno nostro.</p>
   </div>
 
+  <dialog id="aiExplain">
+    <h1 style="font-size:17px" id="aiTitle"></h1>
+    <p><b>Cosa esce:</b> solo la domanda che scrivi nella nuova scheda con «Chiedi all'AI», quando premi Invio. Nient'altro.</p>
+    <p><b>Dove va:</b> <span id="aiWhere"></span></p>
+    <p id="aiClosed" hidden><b>Attenzione:</b> è un servizio chiuso negli Stati Uniti: le conversazioni restano sui suoi server e possono servire ad addestrare i modelli. Le alternative: Le Chat (Mistral, UE) o Duck.ai (anonima).</p>
+    <p><b>Come tornare indietro:</b> scegli «Nessuna», qui o tenendo premuto «Chiedi all'AI», senza conferme.</p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button id="aiNo">Non ora</button><button id="aiYes" class="strong">Usa questa</button></div>
+  </dialog>
+
   <dialog id="pwdExplain">
     <h1 style="font-size:17px">Prima di accendere</h1>
     <p><b>Cosa viene letto:</b> la pagina guarda, sul computer, se c'è un campo password. Niente del contenuto esce.</p>
@@ -77,6 +92,7 @@
     <div style="display:flex;gap:8px;margin-top:12px"><button id="pwdNo">Non ora</button><button id="pwdYes" class="strong">Accendi</button></div>
   </dialog>
   <script src="icons.js"></script>
+  <script src="ai.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

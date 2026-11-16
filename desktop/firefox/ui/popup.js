@@ -7,6 +7,7 @@ let selection = "";
 
 const ACTIONS = {
   phone: ["phone", "Apri sul telefono", "questa scheda, in Eurise Browser"],
+  later: ["later", "Leggi dopo", "la ritrovi nella nuova scheda"],
   note: ["note", "In Note", "la pagina o la frase scelta"],
   task: ["task", "Da fare", "come si parla: «chiamare Anna domani alle 10»"],
   event: ["calendar", "Appuntamento", "in Eurise Calendario"],
@@ -39,6 +40,12 @@ $("#menu").addEventListener("click", async (e) => {
   if (!b) return;
   switch (b.dataset.act) {
     case "phone": return send("tab", { url: tab.url, title: tab.title });
+    case "later": {
+      const r = await browser.runtime.sendMessage({ op: "laterAdd", url: tab.url, title: tab.title });
+      toast(r.text);
+      if (r.ok) setTimeout(() => window.close(), 1200);
+      return;
+    }
     case "note":
       $("#noteTitle").value = tab.title || "";
       $("#noteText").value = selection;

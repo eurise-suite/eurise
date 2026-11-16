@@ -11,7 +11,8 @@
 const HOST = "eu.eurise.ponte";
 // Spenti di base (CLAUDE.md, 14 novembre): le proposte di password leggono i moduli delle pagine, si accendono nelle Impostazioni.
 // La protezione non fa uscire dati (li trattiene): accesa di base, si spegne nelle Impostazioni e Firefox torna com'era.
-const DEFAULTS = { theme: "auto", passwords: false, menus: true, protection: true };
+// L'AI della nuova scheda: nessuna di base (la domanda esce solo verso il servizio scelto, solo quando la si fa).
+const DEFAULTS = { theme: "auto", passwords: false, menus: true, protection: true, ai: "" };
 
 // --- Ponte (native messaging) ---
 
@@ -166,26 +167,101 @@ async function dictateIntoPage() {
 
 // --- Oggi dal telefono ---
 
+/** Una riga «today» del Ponte in {age, events, tasks…}; null se illeggibile. */
+function parseToday(line) {
+  try {
+    const f = JSON.parse(line);
+    if (f.off === "1") return { ok: false, off: true, age: +f.age || 0 };
+    const events = (f.events || "").split("\n").filter(Boolean).map((l) => { const [start, end, title, place, day] = l.split("\t"); return { start, end, title, place, day }; });
+    const tasks = (f.tasks || "").split("\n").filter(Boolean).map((l) => { const [title, due] = l.split("\t"); return { title, due }; });
+    return { ok: true, events, tasks, tasksOpen: +f.tasksOpen || 0, day: f.day, age: +f.age || 0 };
+  } catch (e) { return null; }
+}
+
 /** Chiede al telefono il riassunto di oggi e lo legge appena arriva (al massimo 5 secondi). */
 async function today() {
   const asked = await ponte("today-ask", {}, 6000);
   if (asked.ok !== "1" || !/arrivato/.test(asked.lines || "")) return { ok: false, offline: true };
+  lastTodayAsk = Date.now();
   for (let i = 0; i < 8; i++) {
     await new Promise((res) => setTimeout(res, 600));
     const r = await ponte("today", {}, 4000);
-    const line = (r.lines || "").trim();
-    if (!line) continue;
-    try {
-      const f = JSON.parse(line);
-      if (+f.age > 10) continue;
-      if (f.off === "1") return { ok: false, off: true };
-      const events = (f.events || "").split("\n").filter(Boolean).map((l) => { const [start, end, title, place, day] = l.split("\t"); return { start, end, title, place, day }; });
-      const tasks = (f.tasks || "").split("\n").filter(Boolean).map((l) => { const [title, due] = l.split("\t"); return { title, due }; });
-      return { ok: true, events, tasks, tasksOpen: +f.tasksOpen || 0, day: f.day };
-    } catch (e) { /* riprova */ }
+    const t = parseToday((r.lines || "").trim());
+    if (!t || t.age > 10) continue;
+    if (t.ok) todayMemo = { at: Date.now(), t };
+    return t;
   }
   return { ok: false, offline: true };
 }
+
+let lastTodayAsk = 0;
+let todayMemo = null;
+
+/**
+ * Per la nuova scheda: prima l'ultimo «Oggi» rimasto nel Ponte (TodayCache, dieci minuti) o in memoria; al telefono si
+ * richiede al massimo ogni due minuti, così aprire tante schede non lo sveglia ogni volta.
+ */
+async function todayForNewTab() {
+  const r = await ponte("today", {}, 4000);
+  const cached = parseToday((r.lines || "").trim());
+  if (cached && cached.ok) todayMemo = { at: Date.now() - cached.age * 1000, t: cached };
+  if (cached && cached.age <= 120) return cached;
+  if (Date.now() - lastTodayAsk < 120000) return todayMemo ? todayMemo.t : cached || { ok: false, offline: true };
+  lastTodayAsk = Date.now();
+  const fresh = await today();
+  return fresh.ok || fresh.off ? fresh : (todayMemo && Date.now() - todayMemo.at < 6 * 3600000 ? todayMemo.t : fresh);
+}
+
+// --- Leggi dopo (sul computer, come sul telefono): pagine da riprendere dalla nuova scheda ---
+
+async function laterList() { return (await browser.storage.local.get({ later: [] })).later; }
+
+async function laterAdd(url, title) {
+  if (!/^https?:/.test(url || "")) return { ok: false, text: "Questa pagina non si può salvare." };
+  const later = (await laterList()).filter((x) => x.url !== url);
+  later.unshift({ url, title: title || url, at: Date.now() });
+  await browser.storage.local.set({ later: later.slice(0, 100) });
+  return { ok: true, text: "In Leggi dopo: la ritrovi nella nuova scheda." };
+}
+
+/** Apre il primo «Leggi dopo» nella scheda data e lo toglie dall'elenco (letto). */
+async function laterTake(url) {
+  const later = await laterList();
+  await browser.storage.local.set({ later: later.filter((x) => x.url !== url) });
+}
+
+// --- Tracciatori fermati: si contano quelli che Firefox ferma (NS_ERROR_TRACKING_URI e simili), per settimana ---
+
+const trackers = { week: "", n: 0, dirty: false };
+
+/** Il lunedì della settimana, «2026-11-16»: la chiave del conteggio. */
+function weekKey(d = new Date()) {
+  const m = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+  return m.getFullYear() + "-" + pad(m.getMonth() + 1) + "-" + pad(m.getDate());
+}
+
+browser.storage.local.get({ trackers: { week: "", n: 0 } }).then(({ trackers: t }) => {
+  // Quelli contati prima che il disco rispondesse si sommano a quelli salvati.
+  if (t.week !== weekKey()) return;
+  if (trackers.week !== t.week) { trackers.week = t.week; trackers.n = 0; }
+  trackers.n += t.n;
+});
+
+if (browser.webRequest) {
+  browser.webRequest.onErrorOccurred.addListener((d) => {
+    if (!/TRACKING|FINGERPRINTING|CRYPTOMINING/.test(d.error || "")) return;
+    const w = weekKey();
+    if (trackers.week !== w) { trackers.week = w; trackers.n = 0; }
+    trackers.n++;
+    trackers.dirty = true;
+  }, { urls: ["<all_urls>"] });
+}
+// Si scrive su disco al massimo ogni 30 secondi, non a ogni richiesta fermata.
+setInterval(() => {
+  if (!trackers.dirty) return;
+  trackers.dirty = false;
+  browser.storage.local.set({ trackers: { week: trackers.week, n: trackers.n } });
+}, 30000);
 
 // --- Date nel testo scelto: «20 novembre alle 15:30», «20/11», «domani alle 9» ---
 
@@ -257,6 +333,8 @@ async function buildMenus() {
   browser.menus.create({ id: "eurise", title: "Eurise", contexts: ["page", "link", "selection", "image", "tab"], icons });
   const add = (id, title, contexts) => browser.menus.create({ id, parentId: "eurise", title, contexts });
   add("tab-phone", "Apri sul telefono", ["page", "tab"]);
+  add("page-later", "Leggi dopo", ["page", "tab"]);
+  add("link-later", "Il link in Leggi dopo", ["link"]);
   add("link-phone", "Apri il link sul telefono", ["link"]);
   add("link-file", "Manda il file al telefono", ["link", "image"]);
   add("sel-note", "In Note", ["selection"]);
@@ -271,6 +349,8 @@ browser.menus.onClicked.addListener(async (info, tab) => {
   const sel = (info.selectionText || "").trim();
   switch (info.menuItemId) {
     case "tab-phone": r = await send.tab(tab); break;
+    case "page-later": notify("Eurise", (await laterAdd(tab.url, tab.title)).text); return;
+    case "link-later": notify("Eurise", (await laterAdd(info.linkUrl, info.linkText)).text); return;
     case "link-phone": r = await send.link(info.linkUrl, info.linkText); break;
     case "link-file": r = await sendUrlAsFile(info.linkUrl || info.srcUrl).catch((e) => ({ ok: "0", lines: String(e) })); break;
     case "sel-note": r = await send.note(sel, tab.title, tab.url); break;
@@ -310,6 +390,16 @@ browser.runtime.onMessage.addListener((m, sender) => {
     }
     case "dictate": return m.into === "page" ? dictateIntoPage() : askDictation();
     case "today": return today();
+    case "todayNewTab": return todayForNewTab();
+    case "later": return laterList();
+    case "laterAdd": return laterAdd(m.url, m.title);
+    case "laterTake": return laterTake(m.url);
+    case "trackers": return Promise.resolve(trackers.week === weekKey() ? trackers.n : 0);
+    case "pwdFor": {
+      // Solo dalle pagine dell'estensione (la nuova scheda), mai dagli script nelle pagine web, e solo se acceso.
+      if (!sender.url || !sender.url.startsWith(browser.runtime.getURL(""))) return Promise.resolve({ ok: false, text: "?" });
+      return browser.storage.local.get(DEFAULTS).then((s) => s.passwords ? askPassword(m.site) : { ok: false, off: true, text: "Password dal telefono è spenta: si accende nelle Impostazioni di Eurise." });
+    }
     case "file": return sendFile(m.name, m.mime, m.buffer).then((r) => ({ ok: r.ok === "1", text: said(r) }));
     case "findDate": return Promise.resolve(findDate(m.text));
     case "draft": return browser.storage.session.get("draftEvent").then((d) => { browser.storage.session.remove("draftEvent"); return d.draftEvent || null; }).catch(() => null);

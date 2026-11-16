@@ -2792,3 +2792,4 @@ così l'altra chat non le annulla.
 - Da qui le chat lavorano per area, ognuna con il suo file di stato in `docs/stato/` (qui solo una riga per consegna che
   rimanda lì). Prima area: **Browser** (telefono e computer) → `docs/stato/BROWSER.md`.
 - 16 novembre: area Mappe con stato proprio in `docs/stato/MAPPE.md` (completato); cartelli con la fotocamera messi da parte.
+- 16 novembre, Browser: nuova scheda Eurise in Firefox dalla tavola PcFirefoxScheda (estensione 0.2.0, con Leggi dopo sul computer) → `docs/stato/BROWSER.md`.
