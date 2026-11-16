@@ -80,6 +80,18 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   (stesso modulo comune, cambia solo il trasporto: stanza Matrix o email con il link). La Chat deve diventare uno strumento
   di lavoro potentissimo e anche di organizzazione della famiglia e degli amici. Le tavole Ins* sono disegnate in un'app
   sola: prima del codice vanno mostrate anche nell'altra (Email ↔ Chat).
+- **Idee approvate dal proprietario (17 novembre), tavole da approvare** (pagina «Chat ed Email», cinque file sotto le
+  Spese di gruppo; generatore `/home/claude/tela/gen/ins2.py` con `lib.py`, fuori dal repo):
+  - **Email ↔ Chat**: InsStessaScheda (la scheda viva in Chat; mail con pulsanti e risposta «fatto» per chi non usa
+    Eurise), InsPallaChat, InsDisponibilitaMail, SpeEmail;
+  - **Famiglia**: FamFaccende (a turno), FamScadenze (da email o Scanner: promemoria in Attività o Calendario, documento
+    conservato in Drive, chi paga, spese di casa; anche garanzie, ricevute e contratti con la data di fine), FamCena,
+    FamScuola, FamArrivato, FamGenitori, FamDocumenti;
+  - **Amici**: AmiUscita, AmiViaggio, AmiRegalo;
+  - **Lavoro**: LavApprova, LavNoteSpese, LavStato, LavDecisioni, LavRiassunto, LavOspiti, LavRapporto, LavRicordami;
+  - **Spazi**: SpaSpazi, SpaFuoriOrario, SpaTraduci.
+  Ordine proposto per il codice: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita,
+  Fuori orario; poi il resto. Ognuna in Chat e in Email.
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
@@ -93,8 +105,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-1. **Decisioni del proprietario sul lavoro**: approvare le sei tavole da lavoro del 14 novembre e le dodici del 16
-   (Lavorare insieme, Spese di gruppo); quali funzioni vengono prima; dove stanno gli strumenti del gruppo
+1. **Approvazione delle tavole**: le sei da lavoro del 14 novembre, le dodici del 16 (Lavorare insieme, Spese di gruppo)
+   e le venticinque del 17 (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi). Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
 2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto

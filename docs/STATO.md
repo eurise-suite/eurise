@@ -3322,3 +3322,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Browser: schede e indirizzo compatti come Vivaldi (tavola BrwCompatta); toccati core/suite AppearanceContract e AppearanceProvider per la mano → `docs/stato/BROWSER.md`.
 - 16 novembre, notte, Tastiera: strumenti del riquadro nell'ordine scelto dal proprietario · giro 690 → `docs/stato/PICCOLE.md`.
 - 17 novembre, Mappe: tavole delle otto aggiunte alla bolla (MapBollaPodcast…Arrivo, MapBollaAutoStati) sulla tela, da approvare → `docs/stato/MAPPE.md`.
+- 17 novembre, Comunicazione: idee per famiglia, amici e lavoro approvate; 25 tavole nuove (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi) da approvare → `docs/stato/COMUNICAZIONE.md`.
