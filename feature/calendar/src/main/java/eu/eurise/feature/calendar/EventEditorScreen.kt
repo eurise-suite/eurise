@@ -121,6 +121,8 @@ fun EventEditorRoute(
         linked = { if (eventId != null) linked(eventId, state.title) },
         onMeeting = if (eventId != null && beginMillis != null && onMeeting != null) ({ onMeeting(eventId, beginMillis) }) else null,
         picked = picked,
+        onInvite = viewModel::addInvitee,
+        onUninvite = viewModel::removeInvitee,
     )
 }
 
@@ -146,6 +148,8 @@ internal fun EventEditorScreen(
     linked: @Composable () -> Unit = {},
     onMeeting: (() -> Unit)? = null,
     picked: eu.eurise.core.links.PickedPeople? = null,
+    onInvite: (String, String) -> Unit = { _, _ -> },
+    onUninvite: (String) -> Unit = {},
 ) {
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -273,6 +277,8 @@ internal fun EventEditorScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).heightIn(min = 48.dp),
                 )
             }
+
+            Invitees(state, editable, onInvite, onUninvite)
 
             if (!state.isNew && !state.allDay && onMeeting != null) {
                 OutlinedButton(onClick = onMeeting, modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
@@ -459,3 +465,75 @@ private fun TimeDialog(initial: LocalTime, onPick: (LocalTime) -> Unit, onDismis
     )
 }
 
+
+/**
+ * Gli invitati dell'appuntamento («Condividi con…», collaborazione rapida): si scrive un nome o un'email, i contatti del
+ * telefono con un'email si propongono; il calendario sincronizzato (Murena, Nextcloud) manda l'invito e l'appuntamento
+ * nasce nel loro calendario. In un calendario solo sul telefono gli inviti non partono: lo si dice.
+ */
+@Composable
+private fun Invitees(state: EventEditorState, editable: Boolean, onInvite: (String, String) -> Unit, onUninvite: (String) -> Unit) {
+    if (!editable && state.invitees.isEmpty()) return
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scheme = MaterialTheme.colorScheme
+    var who by rememberSaveable { mutableStateOf("") }
+    var hints by remember { mutableStateOf(emptyList<eu.eurise.core.links.MailContact>()) }
+    androidx.compose.runtime.LaunchedEffect(who) {
+        kotlinx.coroutines.delay(200)
+        hints = eu.eurise.core.links.searchEmails(context, who)
+    }
+    val local = state.selectedCalendar?.local == true
+    FieldCard {
+        Text(
+            stringResource(R.string.cal_invitees),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+        )
+        state.invitees.forEach { a ->
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp).heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(a.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                    Text(a.email, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, maxLines = 1)
+                }
+                if (editable && !a.organizer) IconButton(onClick = { onUninvite(a.email) }) {
+                    Icon(EuriseIcons.close(), contentDescription = stringResource(R.string.cal_invite_remove, a.name), modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+        if (editable) {
+            HorizontalDivider(color = scheme.outlineVariant)
+            PlainField(
+                value = who,
+                onValueChange = { who = it },
+                placeholder = stringResource(R.string.cal_invite_hint),
+                style = MaterialTheme.typography.bodyLarge,
+                enabled = true,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            )
+            hints.forEach { h ->
+                Row(
+                    Modifier.fillMaxWidth().clickable { onInvite(h.name, h.email); who = ""; hints = emptyList() }.padding(horizontal = 16.dp).heightIn(min = 52.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(h.name.ifBlank { h.email }, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                        Text(h.email, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, maxLines = 1)
+                    }
+                    Icon(EuriseIcons.plus(), contentDescription = null, tint = scheme.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+            val typed = who.trim()
+            if ('@' in typed && '.' in typed.substringAfter('@') && hints.none { it.email.equals(typed, true) }) {
+                TextButton(onClick = { onInvite("", typed); who = "" }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.cal_invite_add, typed))
+                }
+            }
+            Text(
+                stringResource(if (local) R.string.cal_invite_local else R.string.cal_invite_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (local) scheme.error else scheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+            )
+        }
+    }
+}

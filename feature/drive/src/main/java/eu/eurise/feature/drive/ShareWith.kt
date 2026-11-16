@@ -1,10 +1,5 @@
 package eu.eurise.feature.drive
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.ContactsContract
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,28 +50,8 @@ import androidx.compose.ui.unit.sp
 import eu.eurise.core.cloud.DavPersonShare
 import eu.eurise.core.designsystem.component.PrivacyMeter
 import eu.eurise.core.designsystem.icon.EuriseIcons
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-/** Un contatto con email, proposto mentre si scrive. */
-private data class MailContact(val name: String, val email: String)
-
-/** I contatti del telefono con un'email che somiglia a [query]: si leggono sul telefono, non escono. */
-private suspend fun mailContacts(context: Context, query: String): List<MailContact> = withContext(Dispatchers.IO) {
-    if (query.trim().length < 2 || context.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-        return@withContext emptyList()
-    }
-    runCatching {
-        context.contentResolver.query(
-            Uri.withAppendedPath(ContactsContract.CommonDataKinds.Email.CONTENT_FILTER_URI, Uri.encode(query.trim())),
-            arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY, ContactsContract.CommonDataKinds.Email.ADDRESS),
-            null, null, null,
-        )?.use { c -> buildList { while (c.moveToNext() && size < 3) add(MailContact(c.getString(0).orEmpty(), c.getString(1).orEmpty())) } }.orEmpty()
-            .filter { it.email.isNotBlank() }.distinctBy { it.email.lowercase() }
-    }.getOrDefault(emptyList())
-}
 
 /**
  * «Condividi con…» un file o una cartella del cloud (collaborazione rapida, tavole CollCondividi e InsCondividi): una
@@ -95,10 +70,10 @@ internal fun ShareWithSheet(data: DriveData, item: DriveItem, onClose: () -> Uni
     val people by produceState<List<DavPersonShare>?>(null, reload) {
         value = try { data.peopleOf(item) } catch (e: Exception) { onFail(e); emptyList() }
     }
-    var hints by remember { mutableStateOf(emptyList<MailContact>()) }
+    var hints by remember { mutableStateOf(emptyList<eu.eurise.core.links.MailContact>()) }
     LaunchedEffect(who) {
         delay(200)
-        hints = mailContacts(context, who).filter { !it.email.equals(who.trim(), ignoreCase = true) }
+        hints = eu.eurise.core.links.searchEmails(context, who).filter { !it.email.equals(who.trim(), ignoreCase = true) }
     }
     val (score, where) = placePrivacy(data.kindOf(item.place))
 

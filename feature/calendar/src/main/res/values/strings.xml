@@ -184,4 +184,11 @@
         <item quantity="one">%1$d appuntamento in %2$s</item>
         <item quantity="other">%1$d appuntamenti in %2$s</item>
     </plurals>
+    <!-- Invitati: «Condividi con…» di un appuntamento (collaborazione rapida, 17 novembre). -->
+    <string name="cal_invitees">Invitati</string>
+    <string name="cal_invite_hint">Invita: nome o email</string>
+    <string name="cal_invite_add">Invita %1$s</string>
+    <string name="cal_invite_remove">Togli %1$s</string>
+    <string name="cal_invite_note">Al salvataggio il tuo calendario manda l\'invito: l\'appuntamento compare nel loro calendario.</string>
+    <string name="cal_invite_local">Questo calendario è solo sul telefono: gli inviti non partono. Scegli un calendario di Murena o Nextcloud.</string>
 </resources>

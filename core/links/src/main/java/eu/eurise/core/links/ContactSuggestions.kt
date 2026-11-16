@@ -97,6 +97,25 @@ suspend fun searchPeople(context: Context, query: String, limit: Int = 3): List<
     }.getOrDefault(emptyList())
 }
 
+/** Un contatto con un indirizzo email (per invitare o condividere). */
+data class MailContact(val name: String, val email: String)
+
+/** I contatti del telefono con un'email che somiglia a [query] (nome o indirizzo). Vuoto senza il permesso. */
+suspend fun searchEmails(context: Context, query: String, limit: Int = 3): List<MailContact> = withContext(Dispatchers.IO) {
+    val q = query.trim()
+    if (q.length < 2 || context.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+        return@withContext emptyList()
+    }
+    runCatching {
+        context.contentResolver.query(
+            Uri.withAppendedPath(ContactsContract.CommonDataKinds.Email.CONTENT_FILTER_URI, Uri.encode(q)),
+            arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY, ContactsContract.CommonDataKinds.Email.ADDRESS),
+            null, null, null,
+        )?.use { c -> buildList { while (c.moveToNext() && size < limit * 2) add(MailContact(c.getString(0).orEmpty(), c.getString(1).orEmpty())) } }
+            .orEmpty().filter { it.email.isNotBlank() }.distinctBy { it.email.lowercase() }.take(limit)
+    }.getOrDefault(emptyList())
+}
+
 private fun detailOf(context: Context, id: Long): String {
     var company = ""
     var phone = ""

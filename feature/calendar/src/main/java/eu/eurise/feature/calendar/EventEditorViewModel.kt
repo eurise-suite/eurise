@@ -37,6 +37,8 @@ data class EventEditorState(
     val calendars: List<DeviceCalendar> = emptyList(),
     val error: EditorError? = null,
     val busy: Boolean = false,
+    /** Gli invitati (senza chi usa il telefono): «Condividi con…» di un appuntamento. */
+    val invitees: List<eu.eurise.core.data.calendar.Attendee> = emptyList(),
 ) {
     val selectedCalendar: DeviceCalendar? get() = calendars.firstOrNull { it.id == calendarId }
 }
@@ -58,6 +60,9 @@ class EventEditorViewModel(
 
     private val _state = MutableStateFlow(EventEditorState(isNew = eventId == null))
     val state: StateFlow<EventEditorState> = _state.asStateFlow()
+
+    /** Gli indirizzi invitati quando l'appuntamento è stato aperto: al salvataggio si confronta con questi. */
+    private var original: Set<String> = emptySet()
 
     init {
         viewModelScope.launch {
@@ -81,7 +86,9 @@ class EventEditorViewModel(
                         endTime = e.end.toLocalTime(),
                         calendarId = e.calendarId,
                         calendars = calendars,
+                        invitees = repository.attendees(eventId).filter { !it.self && it.email.isNotBlank() },
                     )
+                    original = _state.value.invitees.map { it.email.lowercase() }.toSet()
                     return@launch
                 }
             }
@@ -99,6 +106,14 @@ class EventEditorViewModel(
             )
         }
     }
+
+    fun addInvitee(name: String, email: String) = _state.update { s ->
+        val clean = email.trim()
+        if (clean.isEmpty() || s.invitees.any { it.email.equals(clean, ignoreCase = true) }) s
+        else s.copy(invitees = s.invitees + eu.eurise.core.data.calendar.Attendee(name.trim().ifBlank { clean.substringBefore('@') }, clean, organizer = false, self = false))
+    }
+
+    fun removeInvitee(email: String) = _state.update { s -> s.copy(invitees = s.invitees.filterNot { it.email.equals(email, ignoreCase = true) }) }
 
     fun onTitle(value: String) = _state.update { it.copy(title = value, error = null) }
     fun onLocation(value: String) = _state.update { it.copy(location = value) }
@@ -143,6 +158,10 @@ class EventEditorViewModel(
         viewModelScope.launch {
             val id = repository.save(EventDraft(eventId, calendarId, s.title, s.location, s.description, s.allDay, start, end), zone)
             if (id != null) {
+                // Invitati: si aggiungono i nuovi e si tolgono quelli levati; il calendario sincronizzato manda gli inviti.
+                val now = s.invitees.associateBy { it.email.lowercase() }
+                now.keys.filter { it !in original }.forEach { k -> now[k]?.let { repository.invite(id, it.name, it.email) } }
+                original.filter { it !in now }.forEach { repository.uninvite(id, it) }
                 runCatching { afterSave(id) }
                 onSaved()
             } else {

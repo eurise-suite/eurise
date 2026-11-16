@@ -187,6 +187,48 @@ class CalendarRepository internal constructor(context: Context) {
         }.getOrNull()
     }
 
+    /**
+     * Invita una persona a un appuntamento («Condividi con…», collaborazione rapida): il calendario sincronizzato
+     * (Murena, Nextcloud con DAVx⁵) manda l'invito e l'appuntamento compare nel suo calendario. Chi usa il telefono
+     * diventa l'organizzatore, se non c'è già. Un calendario solo sul telefono non può mandare inviti.
+     */
+    suspend fun invite(eventId: Long, name: String, email: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val event = ContentUris.withAppendedId(Events.CONTENT_URI, eventId)
+            val (owner, organizer) = resolver.query(event, arrayOf(Events.OWNER_ACCOUNT, Events.ORGANIZER), null, null, null)
+                ?.use { c -> if (c.moveToFirst()) c.getString(0) to c.getString(1) else null } ?: return@runCatching false
+            if (organizer.isNullOrBlank() && !owner.isNullOrBlank()) {
+                resolver.update(event, ContentValues().apply { put(Events.ORGANIZER, owner); put(Events.HAS_ATTENDEE_DATA, 1) }, null, null)
+            }
+            val already = resolver.query(
+                CalendarContract.Attendees.CONTENT_URI, arrayOf(CalendarContract.Attendees._ID),
+                "${CalendarContract.Attendees.EVENT_ID} = ? AND lower(${CalendarContract.Attendees.ATTENDEE_EMAIL}) = ?",
+                arrayOf(eventId.toString(), email.trim().lowercase()), null,
+            )?.use { it.count > 0 } ?: false
+            if (already) return@runCatching true
+            val values = ContentValues().apply {
+                put(CalendarContract.Attendees.EVENT_ID, eventId)
+                put(CalendarContract.Attendees.ATTENDEE_NAME, name.trim())
+                put(CalendarContract.Attendees.ATTENDEE_EMAIL, email.trim())
+                put(CalendarContract.Attendees.ATTENDEE_RELATIONSHIP, CalendarContract.Attendees.RELATIONSHIP_ATTENDEE)
+                put(CalendarContract.Attendees.ATTENDEE_TYPE, CalendarContract.Attendees.TYPE_REQUIRED)
+                put(CalendarContract.Attendees.ATTENDEE_STATUS, CalendarContract.Attendees.ATTENDEE_STATUS_INVITED)
+            }
+            resolver.insert(CalendarContract.Attendees.CONTENT_URI, values) != null
+        }.getOrDefault(false)
+    }
+
+    /** Toglie un invitato: il calendario sincronizzato gli manda la disdetta. */
+    suspend fun uninvite(eventId: Long, email: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            resolver.delete(
+                CalendarContract.Attendees.CONTENT_URI,
+                "${CalendarContract.Attendees.EVENT_ID} = ? AND lower(${CalendarContract.Attendees.ATTENDEE_EMAIL}) = ?",
+                arrayOf(eventId.toString(), email.trim().lowercase()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
     suspend fun delete(eventId: Long): Boolean = withContext(Dispatchers.IO) {
         runCatching { resolver.delete(ContentUris.withAppendedId(Events.CONTENT_URI, eventId), null, null) > 0 }
             .getOrDefault(false)
