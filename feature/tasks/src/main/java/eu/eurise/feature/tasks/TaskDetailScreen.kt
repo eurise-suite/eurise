@@ -83,6 +83,10 @@ import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.GroupCard
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eu.eurise.core.designsystem.component.rememberCaretInView
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 
 /** Anticipi dell'avviso proposti, in minuti: all'ora della scadenza, 5, 15, 30 minuti, un'ora, un giorno. */
 private val REMINDER_CHOICES = listOf(0, 5, 15, 30, 60, 1440)
@@ -352,13 +356,20 @@ internal fun TaskDetailScreen(
                 GroupCard {
                     Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp, end = 14.dp)) {
                         if (draft.notes.isEmpty()) Text(stringResource(R.string.tasks_field_notes), fontSize = 15.sp, color = scheme.onSurfaceVariant)
+                        // Il cursore resta in vista sopra la tastiera e la barra anche quando le note si allungano.
+                        var notesField by remember { mutableStateOf(TextFieldValue(draft.notes, TextRange(draft.notes.length))) }
+                        val shownNotes = if (notesField.text == draft.notes) notesField else TextFieldValue(draft.notes, TextRange(draft.notes.length))
+                        val caret = rememberCaretInView(below = LocalDockClearance.current + 24.dp)
+                        var notesFocused by remember { mutableStateOf(false) }
+                        caret.Follow(notesFocused, shownNotes.text, shownNotes.selection.end)
                         BasicTextField(
-                            value = draft.notes,
-                            onValueChange = { draft = draft.copy(notes = it) },
+                            value = shownNotes,
+                            onValueChange = { notesField = it; if (it.text != draft.notes) draft = draft.copy(notes = it.text) },
                             textStyle = TextStyle(fontSize = 15.sp, lineHeight = 23.sp, color = scheme.onSurface),
                             cursorBrush = SolidColor(scheme.primary),
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                            onTextLayout = caret::onLayout,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).then(caret.modifier).onFocusChanged { notesFocused = it.isFocused },
                         )
                     }
                     draft.noteId?.let { noteId ->

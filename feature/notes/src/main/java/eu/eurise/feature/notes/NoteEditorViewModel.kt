@@ -11,6 +11,8 @@ import eu.eurise.core.data.model.Note
 import eu.eurise.core.data.model.NotebookSummary
 import eu.eurise.feature.notes.doc.Block
 import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.LockedBlock
+import eu.eurise.feature.notes.doc.AudioBlock
 import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.Mark
 import eu.eurise.feature.notes.doc.MergeChoice
@@ -41,6 +43,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import eu.eurise.feature.notes.lock.NoteLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import android.content.Context
 
 /** Richiesta di portare il cursore in un blocco; [serial] distingue due richieste uguali. */
 data class FocusRequest(val blockId: Long, val cursor: Int, val serial: Long)
@@ -65,7 +71,18 @@ data class NoteEditorState(
     val drawingId: Long? = null,
     /** Nota cambiata in due posti: le scelte da fare prima di continuare. */
     val conflict: ConflictUi? = null,
+    /** Nota bloccata: sul telefono e nel cloud si salva cifrata. */
+    val locked: Boolean = false,
+    /** Nota bloccata ma aperta con l'impronta o il PIN (si richiude dopo [NoteLock.OPEN_MS] senza tocchi). */
+    val unlocked: Boolean = true,
+    /** Nota bloccata con il titolo nascosto anche nell'elenco. */
+    val hideTitle: Boolean = false,
+    /** La chiave delle note bloccate non c'è (telefono nuovo senza backup): la nota non si apre. */
+    val lockMissingKey: Boolean = false,
 ) {
+    /** Vero se il contenuto non si deve vedere: nota bloccata e non ancora aperta. */
+    val hidden: Boolean get() = locked && !unlocked
+
     val focusedText: TextBlock? get() = blocks.firstOrNull { it.id == focusedId } as? TextBlock
 
     /** Stili attivi dove si trova il cursore: accendono i pulsanti della barra. */
@@ -112,6 +129,7 @@ class NoteEditorViewModel(
     private val tasks: TaskRepository,
     noteId: Long?,
     newNotebookId: Long?,
+    private val appContext: Context,
 ) : ViewModel() {
 
     private var id: Long? = noteId
@@ -146,6 +164,20 @@ class NoteEditorViewModel(
                 id = null
                 val first = TextBlock(newId(), TextKind.Paragraph, RichText())
                 _state.value = NoteEditorState(loaded = true, blocks = listOf(first), notebookId = newNotebookId)
+            } else if (NoteLock.isLocked(note)) {
+                val sealed = load(note).filterIsInstance<LockedBlock>().firstOrNull()
+                _state.value = NoteEditorState(
+                    loaded = true,
+                    title = note.title,
+                    blocks = listOfNotNull(sealed),
+                    pinned = note.pinned,
+                    saved = true,
+                    notebookId = note.notebookId,
+                    updatedAt = note.updatedAt,
+                    locked = true,
+                    unlocked = false,
+                    hideTitle = note.title.isBlank(),
+                )
             } else {
                 val blocks = load(note)
                 _state.value = NoteEditorState(
@@ -325,6 +357,7 @@ class NoteEditorViewModel(
 
     /** Porta il cursore alla fine dell'ultimo blocco di testo; se in fondo c'è altro, aggiunge un paragrafo. */
     fun focusEnd() {
+        if (_state.value.hidden) return
         val s = _state.value
         val last = s.blocks.lastOrNull()
         if (last is TextBlock) {
@@ -423,6 +456,31 @@ class NoteEditorViewModel(
 
     fun insertNoteLink(noteId: Long, title: String) = insert(NoteLinkBlock(newId(), noteId, title))
 
+    /** Mette nella nota una nota vocale appena registrata. */
+    fun insertAudio(block: AudioBlock) = insert(block.copy(id = newId()))
+
+    /** Copia la trascrizione di una nota vocale in un paragrafo subito sotto. */
+    fun audioToText(blockId: Long) {
+        val blocks = _state.value.blocks
+        val index = blocks.indexOfFirst { it.id == blockId }
+        val audio = blocks.getOrNull(index) as? AudioBlock ?: return
+        if (audio.transcript.isBlank()) return
+        remember(coalesce = false)
+        val paragraph = TextBlock(newId(), TextKind.Paragraph, RichText(audio.transcript))
+        _state.update { it.copy(blocks = blocks.take(index + 1) + paragraph + blocks.drop(index + 1)) }
+        scheduleSave()
+    }
+
+    /** Crea un'attività dalla cosa da fare trovata nella trascrizione, legata a questa nota. */
+    fun audioToTask(text: String, onCreated: () -> Unit) {
+        viewModelScope.launch {
+            saveNow(force = true)
+            val noteId = id ?: return@launch
+            tasks.add(text, noteId = noteId)
+            onCreated()
+        }
+    }
+
     fun insertKind(kind: TextKind) {
         val focused = _state.value.focusedText
         if (focused != null && focused.text.text.isEmpty()) setKind(kind)
@@ -508,6 +566,71 @@ class NoteEditorViewModel(
         replaceBlock(table.copy(rows = table.rows.map { it + "" }))
     }
 
+    /** Inserisce una riga vuota alla posizione [at] (0 = in cima, sotto l'intestazione resta la riga 1). */
+    fun insertRow(blockId: Long, at: Int) {
+        val table = _state.value.blocks.firstOrNull { it.id == blockId } as? TableBlock ?: return
+        remember(coalesce = false)
+        val i = at.coerceIn(0, table.rows.size)
+        replaceBlock(table.copy(rows = table.rows.take(i) + listOf(List(table.columns) { "" }) + table.rows.drop(i)))
+    }
+
+    /** Inserisce una colonna vuota alla posizione [at]. */
+    fun insertColumn(blockId: Long, at: Int) {
+        val table = _state.value.blocks.firstOrNull { it.id == blockId } as? TableBlock ?: return
+        if (table.columns >= MAX_COLUMNS) return
+        remember(coalesce = false)
+        val i = at.coerceIn(0, table.columns)
+        replaceBlock(table.copy(rows = table.rows.map { it.take(i) + "" + it.drop(i) }))
+    }
+
+    /** Toglie la riga [row]; l'ultima riga rimasta toglie la tabella. */
+    fun removeRow(blockId: Long, row: Int) {
+        val table = _state.value.blocks.firstOrNull { it.id == blockId } as? TableBlock ?: return
+        if (table.rows.size <= 1) return removeBlock(blockId)
+        remember(coalesce = false)
+        replaceBlock(table.copy(rows = table.rows.filterIndexed { r, _ -> r != row }))
+    }
+
+    /** Toglie la colonna [column]; l'ultima colonna rimasta toglie la tabella. */
+    fun removeColumn(blockId: Long, column: Int) {
+        val table = _state.value.blocks.firstOrNull { it.id == blockId } as? TableBlock ?: return
+        if (table.columns <= 1) return removeBlock(blockId)
+        remember(coalesce = false)
+        replaceBlock(table.copy(rows = table.rows.map { cells -> cells.filterIndexed { c, _ -> c != column } }))
+    }
+
+    /** Sposta un blocco di un posto in su ([delta] = -1) o in giù (+1). */
+    fun moveBlock(blockId: Long, delta: Int) {
+        val blocks = _state.value.blocks
+        val from = blocks.indexOfFirst { it.id == blockId }
+        val to = from + delta
+        if (from < 0 || to !in blocks.indices) return
+        remember(coalesce = false)
+        val list = blocks.toMutableList()
+        list.add(to, list.removeAt(from))
+        _state.update { it.copy(blocks = list) }
+        scheduleSave()
+    }
+
+    /** Duplica un blocco subito sotto di sé. */
+    fun duplicateBlock(blockId: Long) {
+        val blocks = _state.value.blocks
+        val index = blocks.indexOfFirst { it.id == blockId }
+        val copy = when (val b = blocks.getOrNull(index)) {
+            is TableBlock -> b.copy(id = newId())
+            is DrawingBlock -> b.copy(id = newId())
+            is NoteLinkBlock -> b.copy(id = newId())
+            is DividerBlock -> b.copy(id = newId())
+            is LockedBlock -> return
+            is AudioBlock -> b.copy(id = newId())
+            is TextBlock -> b.copy(id = newId(), taskId = null)
+            null -> return
+        }
+        remember(coalesce = false)
+        _state.update { it.copy(blocks = blocks.take(index + 1) + copy + blocks.drop(index + 1)) }
+        scheduleSave()
+    }
+
     private fun replaceBlock(block: Block) {
         _state.update { s -> s.copy(blocks = s.blocks.map { if (it.id == block.id) block else it }) }
         scheduleSave()
@@ -539,6 +662,78 @@ class NoteEditorViewModel(
             it.copy(title = snap.title, blocks = snap.blocks, typing = null, focusedId = null, canUndo = history.isNotEmpty())
         }
         scheduleSave()
+    }
+
+    // Nota bloccata
+
+    private var relockJob: Job? = null
+
+    /** Rimette il conto alla rovescia dei 5 minuti dopo i quali la nota si richiude. */
+    private fun touchLock() {
+        if (!_state.value.locked || !_state.value.unlocked) return
+        relockJob?.cancel()
+        relockJob = viewModelScope.launch {
+            delay(NoteLock.OPEN_MS)
+            relock()
+        }
+    }
+
+    /** Blocca la nota: da ora si salva cifrata. [hideTitle] nasconde anche il titolo nell'elenco. */
+    fun lock(hideTitle: Boolean) {
+        _state.update { it.copy(locked = true, unlocked = true, hideTitle = hideTitle) }
+        dirty = true
+        viewModelScope.launch { saveNow(force = true) }
+        touchLock()
+    }
+
+    /** Apre la nota dopo l'impronta o il PIN. */
+    fun unlock() {
+        val s = _state.value
+        val sealed = s.blocks.firstOrNull() as? LockedBlock ?: return
+        viewModelScope.launch {
+            val opened = withContext(Dispatchers.Default) { NoteLock.open(appContext, sealed, newId) }
+            if (opened == null) {
+                _state.update { it.copy(lockMissingKey = true) }
+                return@launch
+            }
+            val (title, blocks) = opened
+            _state.update {
+                it.copy(
+                    title = title.ifBlank { it.title },
+                    blocks = blocks.ifEmpty { listOf(TextBlock(newId(), TextKind.Paragraph, RichText())) },
+                    unlocked = true,
+                    lockMissingKey = false,
+                )
+            }
+            touchLock()
+        }
+    }
+
+    /** Richiude la nota (dopo 5 minuti, o uscendo dall'app): salva cifrata e nasconde il testo. */
+    fun relock() {
+        val s = _state.value
+        if (!s.locked || !s.unlocked) return
+        relockJob?.cancel()
+        viewModelScope.launch {
+            pendingSave?.cancel()
+            dirty = true
+            saveNow(force = true)
+            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(appContext, _state.value.title.trim(), _state.value.blocks) }
+            history.clear()
+            _state.update {
+                it.copy(blocks = listOf(sealed.copy(id = newId())), unlocked = false, focusedId = null, canUndo = false, drawingId = null)
+            }
+        }
+    }
+
+    /** Toglie il blocco: la nota torna normale, leggibile anche da ricerca e cloud. */
+    fun unlockForever() {
+        val s = _state.value
+        if (!s.locked || !s.unlocked) return
+        relockJob?.cancel()
+        _state.update { it.copy(locked = false, hideTitle = false) }
+        dirty = true
+        viewModelScope.launch { saveNow(force = true) }
     }
 
     // Nota
@@ -604,11 +799,13 @@ class NoteEditorViewModel(
 
     private fun isEmpty(): Boolean {
         val s = _state.value
+        if (s.locked) return false
         return s.title.isBlank() && NoteHtml.plainText(s.blocks).isBlank() && s.blocks.none { it !is TextBlock }
     }
 
     private fun scheduleSave() {
         dirty = true
+        touchLock()
         pendingSave?.cancel()
         pendingSave = viewModelScope.launch {
             delay(SAVE_DELAY_MS)
@@ -621,8 +818,14 @@ class NoteEditorViewModel(
         if (isEmpty() && !force) return@withLock
         val s = _state.value
         if (isEmpty() && id == null) return@withLock
+        if (s.hidden) return@withLock // ancora cifrata: niente da riscrivere
         dirty = false
-        id = notes.saveRich(id, s.title.trim(), NoteHtml.plainText(s.blocks), NoteHtml.write(s.blocks), s.notebookId)
+        id = if (s.locked) {
+            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(appContext, s.title.trim(), s.blocks) }
+            notes.saveRich(id, if (s.hideTitle) "" else s.title.trim(), "", NoteHtml.write(listOf(sealed)), s.notebookId)
+        } else {
+            notes.saveRich(id, s.title.trim(), NoteHtml.plainText(s.blocks), NoteHtml.write(s.blocks), s.notebookId)
+        }
         _state.update { it.copy(saved = true, updatedAt = System.currentTimeMillis()) }
         syncTaskTitles(s.blocks)
     }

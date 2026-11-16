@@ -75,6 +75,8 @@ import eu.eurise.core.data.TaskRepository
 import eu.eurise.core.data.model.Note
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.feature.notes.doc.DividerBlock
+import eu.eurise.feature.notes.doc.LockedBlock
+import eu.eurise.feature.notes.doc.AudioBlock
 import eu.eurise.feature.notes.doc.DrawingBlock
 import eu.eurise.feature.notes.doc.NoteLinkBlock
 import eu.eurise.feature.notes.doc.TableBlock
@@ -91,6 +93,9 @@ import eu.eurise.feature.notes.ui.NoteLinkView
 import eu.eurise.feature.notes.ui.NotebookPickerSheet
 import eu.eurise.feature.notes.ui.SelectableBlocks
 import eu.eurise.feature.notes.ui.TableBlockView
+import eu.eurise.feature.notes.ui.TableActions
+import eu.eurise.feature.notes.ui.BlockFrame
+import eu.eurise.feature.notes.ui.BlockMenu
 import eu.eurise.feature.notes.ui.TextBlockActions
 import eu.eurise.feature.notes.ui.TextBlockField
 import eu.eurise.feature.notes.ui.ToolbarActions
@@ -100,6 +105,17 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import eu.eurise.core.designsystem.component.bleed
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
+import androidx.compose.runtime.DisposableEffect
+import eu.eurise.feature.notes.lock.rememberDeviceAuth
+import eu.eurise.feature.notes.lock.LockedNoteView
+import eu.eurise.feature.notes.lock.LockSheet
+import eu.eurise.feature.notes.voice.AudioActions
+import eu.eurise.feature.notes.voice.AudioBlockView
+import eu.eurise.feature.notes.voice.VoiceRecordPanel
+import android.widget.Toast
 
 /**
  * Editor di una nota; [noteId] nullo crea una nota nuova (nel taccuino [notebookId], se c'è).
@@ -116,10 +132,10 @@ fun NoteEditorRoute(
     onOpenNote: (Long) -> Unit,
     linked: @Composable (noteId: Long, title: String) -> Unit = { _, _ -> },
 ) {
-    val viewModel = viewModel { NoteEditorViewModel(notes, notebooks, tasks, noteId, notebookId) }
+    val context = LocalContext.current
+    val viewModel = viewModel { NoteEditorViewModel(notes, notebooks, tasks, noteId, notebookId, context.applicationContext) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val books by viewModel.notebooks.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     // Chiusa la nota, il cloud la riceve dopo pochi secondi (se è collegato).
     val closeAndSync = { CloudSync.get(context).requestSoon(); onClose() }
     BackHandler { viewModel.close(closeAndSync) }
@@ -178,6 +194,24 @@ private fun NoteEditorScreen(
     var insertSheet by rememberSaveable { mutableStateOf(false) }
     var pickNotebook by rememberSaveable { mutableStateOf(false) }
     var pickLink by rememberSaveable { mutableStateOf(false) }
+    var lockSheet by rememberSaveable { mutableStateOf(false) }
+    var recordingVoice by rememberSaveable { mutableStateOf(false) }
+    val screenContext = LocalContext.current
+    val taskAdded = stringResource(R.string.notes_voice_task_done)
+    val askUnlock = rememberDeviceAuth(
+        stringResource(R.string.notes_unlock_prompt),
+        stringResource(R.string.notes_unlock_prompt_sub),
+        onSuccess = viewModel::unlock,
+    )
+    // Uscendo dall'app la nota bloccata si richiude subito.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) viewModel.relock() }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    // Aprendo una nota bloccata, la richiesta dell'impronta parte da sola.
+    LaunchedEffect(state.loaded, state.hidden) { if (state.loaded && state.hidden && !state.lockMissingKey) askUnlock() }
     val focusManager = LocalFocusManager.current
     val clipboard = LocalClipboardManager.current
     BackHandler(enabled = selecting) { selecting = false }
@@ -205,7 +239,21 @@ private fun NoteEditorScreen(
                 .padding(horizontal = 22.dp)
                 .padding(top = statusTop + 64.dp, bottom = 120.dp + navBottom),
         ) {
-            if (selecting) {
+            if (state.hidden) {
+                Text(
+                    state.title.ifBlank { stringResource(R.string.notes_locked) },
+                    fontSize = 28.sp,
+                    lineHeight = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    metaLine(state.updatedAt, notebookName) + " · " + stringResource(R.string.notes_locked_status),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 14.dp),
+                )
+                LockedNoteView(missingKey = state.lockMissingKey, onUnlock = askUnlock)
+            } else if (selecting) {
                 SelectableBlocks(state.title, state.blocks)
             } else {
             BasicTextField(
@@ -251,15 +299,45 @@ private fun NoteEditorScreen(
                     }
                     is TableBlock -> TableBlockView(
                         block = block,
-                        onCell = { r, c, t -> viewModel.updateCell(block.id, r, c, t) },
-                        onAddRow = { viewModel.addRow(block.id) },
-                        onAddColumn = { viewModel.addColumn(block.id) },
-                        onRemove = { viewModel.removeBlock(block.id) },
-                        onFocus = viewModel::onFocus,
+                        menu = blockMenu(viewModel, block.id, index, state.blocks.lastIndex, R.string.notes_table_remove),
+                        actions = TableActions(
+                            onCell = { r, c, t -> viewModel.updateCell(block.id, r, c, t) },
+                            onInsertRow = { viewModel.insertRow(block.id, it) },
+                            onInsertColumn = { viewModel.insertColumn(block.id, it) },
+                            onRemoveRow = { viewModel.removeRow(block.id, it) },
+                            onRemoveColumn = { viewModel.removeColumn(block.id, it) },
+                            onFocus = viewModel::onFocus,
+                        ),
                     )
                     is NoteLinkBlock -> NoteLinkView(block, onOpen = { onOpenNote(block.noteId) }, onRemove = { viewModel.removeBlock(block.id) })
-                    is DividerBlock -> DividerView()
-                    is DrawingBlock -> DrawingPreview(block, onOpen = { viewModel.openDrawing(block.id) }, modifier = Modifier.padding(vertical = 8.dp))
+                    is LockedBlock -> Unit
+                    is AudioBlock -> BlockFrame(
+                        menu = blockMenu(viewModel, block.id, index, state.blocks.lastIndex, R.string.notes_voice_delete),
+                        modifier = Modifier.padding(vertical = 6.dp),
+                    ) {
+                        AudioBlockView(
+                            block,
+                            AudioActions(
+                                onToText = { viewModel.audioToText(block.id) },
+                                onTask = { task -> viewModel.audioToTask(task) { Toast.makeText(screenContext, taskAdded, Toast.LENGTH_SHORT).show() } },
+                            ),
+                        )
+                    }
+                    is DividerBlock -> BlockFrame(
+                        menu = blockMenu(viewModel, block.id, index, state.blocks.lastIndex, R.string.notes_divider_delete),
+                        minHeight = 38.dp,
+                    ) { Box(Modifier.padding(end = 40.dp)) { DividerView() } }
+                    is DrawingBlock -> BlockFrame(
+                        menu = blockMenu(viewModel, block.id, index, state.blocks.lastIndex, R.string.notes_drawing_delete),
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        extra = { close ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.notes_drawing_edit)) },
+                                leadingIcon = { Icon(EuriseIcons.pen(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                onClick = { close(); viewModel.openDrawing(block.id) },
+                            )
+                        },
+                    ) { DrawingPreview(block, onOpen = { viewModel.openDrawing(block.id) }) }
                 }
                 if (block !is TextBlock) number = 0
             }
@@ -315,9 +393,17 @@ private fun NoteEditorScreen(
                 TextButton(onClick = { clipboard.setText(AnnotatedString(viewModel.shareText())) }) {
                     Text(stringResource(R.string.notes_copy_all), fontWeight = FontWeight.SemiBold)
                 }
-            } else {
+            } else if (!state.hidden) {
             IconButton(onClick = viewModel::undo, enabled = state.canUndo) {
                 Icon(EuriseIcons.undo(), contentDescription = stringResource(R.string.notes_undo), modifier = Modifier.size(20.dp))
+            }
+            IconButton(onClick = { if (state.locked) viewModel.relock() else { focusManager.clearFocus(); lockSheet = true } }) {
+                Icon(
+                    EuriseIcons.lock(),
+                    contentDescription = stringResource(if (state.locked) R.string.notes_lock_close_now else R.string.notes_lock_menu),
+                    tint = if (state.locked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             Box {
                 IconButton(onClick = { menu = true }) {
@@ -338,6 +424,11 @@ private fun NoteEditorScreen(
                         text = { Text(stringResource(R.string.notes_select_text)) },
                         leadingIcon = { Icon(EuriseIcons.note(), contentDescription = null, modifier = Modifier.size(20.dp)) },
                         onClick = { menu = false; focusManager.clearFocus(); selecting = true },
+                    )
+                    if (state.locked) DropdownMenuItem(
+                        text = { Text(stringResource(R.string.notes_lock_remove)) },
+                        leadingIcon = { Icon(EuriseIcons.lock(), contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        onClick = { menu = false; viewModel.unlockForever() },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.notes_share)) },
@@ -360,7 +451,15 @@ private fun NoteEditorScreen(
 
         // Barra di formattazione: segue la tastiera.
         val focused = state.focusedText
-        if (!selecting) FormatToolbar(
+        if (recordingVoice) VoiceRecordPanel(
+            onDone = { audio -> recordingVoice = false; viewModel.insertAudio(audio) },
+            onCancel = { recordingVoice = false },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 12.dp, vertical = 16.dp),
+        ) else if (!selecting && !state.hidden) FormatToolbar(
             active = state.activeMarks,
             kind = focused?.kind,
             enabled = focused != null,
@@ -414,6 +513,7 @@ private fun NoteEditorScreen(
                         InsertOption(R.string.notes_kind_check, { EuriseIcons.checklist() }) { insertSheet = false; viewModel.insertKind(TextKind.Check) },
                         InsertOption(R.string.notes_kind_bullet, { EuriseIcons.bullets() }) { insertSheet = false; viewModel.insertKind(TextKind.Bullet) },
                         InsertOption(R.string.notes_kind_numbered, { EuriseIcons.numbers() }) { insertSheet = false; viewModel.insertKind(TextKind.Numbered) },
+                        InsertOption(R.string.notes_insert_voice, { EuriseIcons.mic() }) { insertSheet = false; focusManager.clearFocus(); recordingVoice = true },
                         InsertOption(R.string.notes_insert_drawing, { EuriseIcons.pen() }) { insertSheet = false; viewModel.insertDrawing() },
                         InsertOption(R.string.notes_insert_table, { EuriseIcons.table() }) { insertSheet = false; viewModel.insertTable() },
                         InsertOption(R.string.notes_insert_link, { EuriseIcons.link() }) { insertSheet = false; pickLink = true },
@@ -434,7 +534,17 @@ private fun NoteEditorScreen(
     }
     if (pickNotebook) notebookPicker { pickNotebook = false }
     if (pickLink) linkPicker { pickLink = false }
+    if (lockSheet) LockSheet(onLock = { hide -> lockSheet = false; viewModel.lock(hide) }, onDismiss = { lockSheet = false })
 }
+
+/** Menu di un blocco alla posizione [index] di [last]+1 blocchi: niente «Sposta su» in cima, niente «Sposta giù» in fondo. */
+private fun blockMenu(viewModel: NoteEditorViewModel, id: Long, index: Int, last: Int, deleteLabel: Int) = BlockMenu(
+    onUp = if (index > 0) ({ viewModel.moveBlock(id, -1) }) else null,
+    onDown = if (index < last) ({ viewModel.moveBlock(id, 1) }) else null,
+    onDuplicate = { viewModel.duplicateBlock(id) },
+    onDelete = { viewModel.removeBlock(id) },
+    deleteLabel = deleteLabel,
+)
 
 /** "Modificata alle 8:31 · Casa", oppure "Modificata il 4 nov" se non è di oggi. */
 @Composable

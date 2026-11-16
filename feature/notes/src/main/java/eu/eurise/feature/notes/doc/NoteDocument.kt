@@ -37,6 +37,18 @@ data class NoteLinkBlock(override val id: Long, val noteId: Long, val title: Str
 /** Linea di separazione. */
 data class DividerBlock(override val id: Long) : Block
 
+/**
+ * Nota vocale: il file audio [file] (nome nella cartella delle note vocali del telefono), la durata e il testo trascritto
+ * sul telefono da Eurise Voce (vuoto se Voce non c'è).
+ */
+data class AudioBlock(override val id: Long, val file: String, val durationMs: Long, val transcript: String = "") : Block
+
+/**
+ * Tutto il contenuto di una nota bloccata, cifrato sul telefono ([NoteLock]): [sealed] è l'HTML dei blocchi, cifrato
+ * con AES-GCM e scritto in Base64. Una nota bloccata ha solo questo blocco; il cloud e la ricerca non lo leggono.
+ */
+data class LockedBlock(override val id: Long, val sealed: String) : Block
+
 /** Stili in linea. Colore ed evidenziatore portano il nome di una tinta della suite (per esempio "Salvia"). */
 sealed interface Mark {
     data object Bold : Mark

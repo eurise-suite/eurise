@@ -83,6 +83,11 @@ object NoteHtml {
                     .append(escape(block.title)).append("</a></p>\n")
                 is DividerBlock -> append("<hr>\n")
                 is DrawingBlock -> append(drawingSvg(block, drawingIndex++))
+                is AudioBlock -> append("<figure class=\"voice\" data-eurise=\"voice\" data-file=\"").append(escape(block.file))
+                    .append("\" data-duration=\"").append(block.durationMs).append("\">")
+                    .append("<audio controls src=\"audio/").append(escape(block.file)).append("\"></audio>")
+                    .append("<figcaption>").append(escape(block.transcript)).append("</figcaption></figure>\n")
+                is LockedBlock -> append("<section class=\"locked\" data-eurise-lock=\"v1\">\n").append(block.sealed).append("\n</section>\n")
             }
         }
         closeList()
@@ -235,7 +240,8 @@ object NoteHtml {
             is TextBlock -> block.text.text
             is TableBlock -> block.rows.joinToString("\n") { it.joinToString(" · ") }
             is NoteLinkBlock -> block.title
-            is DividerBlock, is DrawingBlock -> ""
+            is AudioBlock -> block.transcript
+            is DividerBlock, is DrawingBlock, is LockedBlock -> ""
         }
     }.trim('\n')
 
@@ -264,6 +270,13 @@ object NoteHtml {
 
         // Disegno in costruzione.
         private var drawing: DrawingBlock? = null
+
+        // Nota vocale in lettura: il testo della didascalia è la trascrizione.
+        private var audio: AudioBlock? = null
+        private var audioText: StringBuilder? = null
+
+        // Contenuto cifrato di una nota bloccata, in lettura.
+        private var lockText: StringBuilder? = null
 
         // Collegamento a una nota in costruzione.
         private var linkNote: Long? = null
@@ -294,6 +307,8 @@ object NoteHtml {
 
         private fun onText(raw: String) {
             if (skipDepth > 0 || !inBody || drawing != null) return
+            lockText?.let { it.append(raw.trim()); return }
+            if (audio != null) { audioText?.append(raw); return }
             cell?.let { it.append(raw.collapse()); return }
             if (table != null) return
             if (linkNote != null) { linkText.append(raw); return }
@@ -324,6 +339,29 @@ object NoteHtml {
             if (!inBody) return
             if (drawing != null) {
                 onDrawingTag(tag)
+                return
+            }
+            if (n == "figure" && (tag.attrs["data-eurise"] == "voice" || audio != null)) {
+                if (!tag.closing) {
+                    finishText()
+                    audio = AudioBlock(ids(), tag.attrs["data-file"].orEmpty(), tag.attrs["data-duration"]?.toLongOrNull() ?: 0L)
+                    audioText = null
+                } else audio?.let { a ->
+                    if (a.file.isNotBlank()) blocks += a.copy(transcript = audioText?.toString()?.trim().orEmpty())
+                    audio = null
+                    audioText = null
+                }
+                return
+            }
+            if (audio != null) {
+                if (tag.name == "figcaption") audioText = if (tag.closing) audioText else StringBuilder()
+                return
+            }
+            if (n == "section" && (tag.attrs.containsKey("data-eurise-lock") || lockText != null)) {
+                if (!tag.closing) { finishText(); lockText = StringBuilder() } else lockText?.let { sealed ->
+                    if (sealed.isNotBlank()) blocks += LockedBlock(ids(), sealed.toString())
+                    lockText = null
+                }
                 return
             }
             when (n) {

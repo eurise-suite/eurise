@@ -50,6 +50,8 @@ class NoteDocumentTest {
             is NoteLinkBlock -> it.copy(id = 0)
             is DividerBlock -> it.copy(id = 0)
             is DrawingBlock -> it.copy(id = 0)
+            is LockedBlock -> it.copy(id = 0)
+            is AudioBlock -> it.copy(id = 0)
         }
     }
 
