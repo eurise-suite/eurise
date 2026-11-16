@@ -20,7 +20,6 @@ import android.os.ParcelFileDescriptor;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
-import androidx.car.app.CarToast;
 import androidx.car.app.media.CarAudioRecord;
 import androidx.core.content.ContextCompat;
 import app.organicmaps.R;
@@ -46,6 +45,22 @@ public final class EuriseCarVoice
     void onText(@NonNull String text);
   }
 
+  /**
+   * Lo stato dell'ascolto, per la schermata «Ti ascolto» ({@link EuriseCarListenScreen}): ogni passo e ogni errore si
+   * vede sullo schermo dell'auto (prova del 16 novembre: toccando il microfono non succedeva nulla, senza un perché).
+   */
+  public interface Listener extends Callback
+  {
+    /** [message]: testo da mostrare; [retry]: si può riprovare (errore o silenzio); [busy]: sta lavorando. */
+    void onStatus(int message, boolean retry, boolean busy);
+  }
+
+  /** Quanto si aspetta il primo pezzo d'audio dall'auto prima di dire che il microfono non risponde. */
+  private static final long FIRST_AUDIO_MS = 3_000;
+  @Nullable private static volatile CarAudioRecord sRecord;
+  private static volatile boolean sCancelled;
+  private static volatile long sBytes;
+
   // Stessi nomi di core/suite VoiceContract (Mappe non dipende dai moduli Kotlin della suite).
   private static final String ACTION_TRANSCRIBE = "eu.eurise.action.TRANSCRIBE";
   private static final String[] VOICE_PACKAGES = {"eu.eurise.voice", "eu.eurise.voice.debug"};
@@ -59,34 +74,69 @@ public final class EuriseCarVoice
 
   private EuriseCarVoice() {}
 
-  /** Il tocco sul microfono (thread principale). Un secondo tocco mentre ascolta non fa nulla. */
-  public static void listen(@NonNull CarContext car, @NonNull Callback callback)
+  /** Il tocco sul microfono (thread principale), dalla schermata «Ti ascolto». */
+  public static void listen(@NonNull CarContext car, @NonNull Listener callback)
   {
-    if (sBusy)
-      return;
+    // Un ascolto rimasto appeso (l'auto non mandava audio) non blocca più i tocchi successivi.
+    cancel();
+    sCancelled = false;
     final String voice = voicePackage(car);
     if (voice == null)
     {
-      toast(car, R.string.eurise_car_voice_missing);
+      callback.onStatus(R.string.eurise_car_voice_missing, false, false);
       return;
     }
     if (ContextCompat.checkSelfPermission(car, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
     {
       // Android mostra la richiesta sul telefono; se la persona accetta, si ascolta subito.
+      callback.onStatus(R.string.eurise_car_voice_permission, true, true);
       car.requestPermissions(Collections.singletonList(Manifest.permission.RECORD_AUDIO), (granted, rejected) -> {
+        if (sCancelled)
+          return;
         if (granted.contains(Manifest.permission.RECORD_AUDIO))
           listen(car, callback);
         else
-          toast(car, R.string.eurise_car_voice_mic);
+          callback.onStatus(R.string.eurise_car_voice_mic, true, false);
       });
       return;
     }
     sBusy = true;
-    toast(car, R.string.eurise_car_voice_listening);
+    sBytes = 0;
+    callback.onStatus(R.string.eurise_car_voice_listening, false, true);
     new Thread(() -> record(car, voice, callback), "eurise-car-ear").start();
+    // L'auto a volte non manda nulla (microfono occupato, auto che non lo permette): dopo 3 s si dice e si chiude.
+    MAIN.postDelayed(() -> {
+      if (sBusy && sBytes == 0 && sRecord != null && !sCancelled)
+      {
+        stopRecord();
+        callback.onStatus(R.string.eurise_car_voice_no_audio, true, false);
+      }
+    }, FIRST_AUDIO_MS);
   }
 
-  private static void record(@NonNull CarContext car, @NonNull String voice, @NonNull Callback callback)
+  /** Si chiude la schermata «Ti ascolto» o si riprova: si ferma tutto. */
+  public static void cancel()
+  {
+    sCancelled = true;
+    stopRecord();
+    sBusy = false;
+  }
+
+  private static void stopRecord()
+  {
+    final CarAudioRecord r = sRecord;
+    sRecord = null;
+    if (r != null)
+    {
+      try
+      {
+        r.stopRecording();
+      }
+      catch (Throwable ignored) {}
+    }
+  }
+
+  private static void record(@NonNull CarContext car, @NonNull String voice, @NonNull Listener callback)
   {
     final AudioManager am = ContextCompat.getSystemService(car, AudioManager.class);
     AudioFocusRequest focus = null;
@@ -107,6 +157,7 @@ public final class EuriseCarVoice
     try
     {
       final CarAudioRecord rec = CarAudioRecord.create(car);
+      sRecord = rec;
       rec.startRecording();
       final byte[] buf = new byte[CarAudioRecord.AUDIO_CONTENT_BUFFER_SIZE];
       final int blockBytes = RATE / 10 * 2; // 100 ms
@@ -116,8 +167,9 @@ public final class EuriseCarVoice
       while (go)
       {
         final int n = rec.read(buf, 0, buf.length);
-        if (n < 0)
-          break; // la persona ha chiuso il microfono sullo schermo dell'auto
+        if (n < 0 || sCancelled || sRecord != rec)
+          break; // microfono chiuso sullo schermo dell'auto, schermata chiusa o nessun audio
+        sBytes += n;
         pcm.write(buf, 0, n);
         for (int i = 0; i + 1 < n; i += 2)
         {
@@ -143,18 +195,22 @@ public final class EuriseCarVoice
           }
         }
       }
-      rec.stopRecording();
+      if (sRecord == rec)
+        stopRecord();
     }
     catch (Throwable e)
     {
       done(am, focus);
-      MAIN.post(() -> toast(car, R.string.eurise_car_voice_mic));
+      if (!sCancelled)
+        MAIN.post(() -> callback.onStatus(R.string.eurise_car_voice_mic_car, true, false));
       return;
     }
     done(am, focus);
+    if (sCancelled || sBytes == 0)
+      return; // chiusa, o già detto «il microfono non risponde»
     if (silent || !heard)
     {
-      MAIN.post(() -> toast(car, R.string.eurise_car_voice_nothing));
+      MAIN.post(() -> callback.onStatus(R.string.eurise_car_voice_nothing, true, false));
       return;
     }
     sBusy = true;
@@ -171,7 +227,7 @@ public final class EuriseCarVoice
 
   /** L'audio va a Voce in un tubo; la risposta torna con un Messenger (come AlfredEar nella suite). */
   private static void transcribe(@NonNull CarContext car, @NonNull String voice, @NonNull byte[] audio,
-                                 @NonNull Callback callback)
+                                 @NonNull Listener callback)
   {
     final Context app = car.getApplicationContext();
     final ServiceConnection[] conn = new ServiceConnection[1];
@@ -193,18 +249,21 @@ public final class EuriseCarVoice
       finished[0] = true;
       sBusy = false;
       unbind.run();
+      if (sCancelled)
+        return true;
       final String text = msg.getData().getString(KEY_TEXT);
       if (text != null && !text.trim().isEmpty())
       {
         final String place = place(text);
         if (place.isEmpty())
-          toast(car, R.string.eurise_car_voice_nothing);
+          callback.onStatus(R.string.eurise_car_voice_nothing, true, false);
         else
           callback.onText(place);
       }
       else
-        toast(car, ERROR_NO_MODEL.equals(msg.getData().getString(KEY_ERROR)) ? R.string.eurise_car_voice_model
-                                                                             : R.string.eurise_car_voice_nothing);
+        callback.onStatus(ERROR_NO_MODEL.equals(msg.getData().getString(KEY_ERROR)) ? R.string.eurise_car_voice_model
+                                                                                    : R.string.eurise_car_voice_nothing,
+                          true, false);
       return true;
     }));
     conn[0] = new ServiceConnection() {
@@ -249,7 +308,8 @@ public final class EuriseCarVoice
         finished[0] = true;
         sBusy = false;
         unbind.run();
-        toast(car, R.string.eurise_car_voice_failed);
+        if (!sCancelled)
+          callback.onStatus(R.string.eurise_car_voice_failed, true, false);
       }
     };
     boolean bound;
@@ -265,11 +325,11 @@ public final class EuriseCarVoice
     {
       conn[0] = null;
       sBusy = false;
-      toast(car, R.string.eurise_car_voice_failed);
+      callback.onStatus(R.string.eurise_car_voice_failed, true, false);
       return;
     }
     sBusy = true;
-    toast(car, R.string.eurise_car_voice_working);
+    callback.onStatus(R.string.eurise_car_voice_working, false, true);
     // Whisper sul telefono impiega qualche secondo; oltre il minuto qualcosa non va.
     MAIN.postDelayed(() -> {
       if (finished[0])
@@ -277,7 +337,8 @@ public final class EuriseCarVoice
       finished[0] = true;
       sBusy = false;
       unbind.run();
-      toast(car, R.string.eurise_car_voice_failed);
+      if (!sCancelled)
+        callback.onStatus(R.string.eurise_car_voice_failed, true, false);
     }, 60_000);
   }
 
@@ -339,11 +400,6 @@ public final class EuriseCarVoice
       catch (Exception ignored) {}
     }
     return null;
-  }
-
-  private static void toast(@NonNull CarContext car, int res)
-  {
-    CarToast.makeText(car, car.getString(res), CarToast.LENGTH_SHORT).show();
   }
 
   /** La fine della frase, come {@code eu.eurise.core.suite.Endpoint} (blocchi da 100 ms). */

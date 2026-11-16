@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -137,6 +138,17 @@ object EuriseLuogo {
     }
 }
 
+/**
+ * I minuti in auto fin qui, stimati dalla distanza in linea d'aria (× 1,3 per le curve, 40 km/h di media): il percorso
+ * vero si calcola solo toccando «Indicazioni». 0 se la posizione non si sa o il luogo è a meno di 200 m.
+ */
+internal fun estimateMinutes(context: Context, place: MapObject): Int {
+    val here = runCatching { app.organicmaps.MwmApplication.from(context).locationHelper.savedLocation }.getOrNull() ?: return 0
+    val km = kmBetween(here.latitude, here.longitude, place.lat, place.lon) * 1.3
+    if (km < 0.2) return 0
+    return maxOf(1, (km / 40.0 * 60).toInt())
+}
+
 /** L'impegno della suite che ha questo luogo (stesso nome o indirizzo), il più vicino nel tempo. */
 internal fun matching(items: List<Destination>, place: MapObject): Destination? {
     val keys = listOf(place.title, place.address).mapNotNull { it?.trim()?.lowercase(Locale.getDefault())?.takeIf { k -> k.length >= 4 } }
@@ -154,6 +166,25 @@ private fun Head(night: Boolean, place: MapObject) {
     val destinations by produceState<Destinations?>(null, place) { value = loadDestinations(context.applicationContext) }
     val number = EuriseLuogo.phone(place)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Tavola MapViaggio3Luogo: prima l'impegno che c'è qui, poi Indicazioni e Parti ora, poi le quattro azioni.
+        destinations?.items?.let { matching(it, place) }?.let { d ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(if (night) Color(0xFF2E3A55) else Color(0xFFDDE3F0)), contentAlignment = Alignment.Center) {
+                    Image(rememberVectorPainter(LuogoIcons.calendar), null, Modifier.size(16.dp),
+                        colorFilter = ColorFilter.tint(if (night) Color(0xFFA9C1F2) else Color(0xFF3E5C8A)))
+                }
+                Column(Modifier.weight(1f)) {
+                    val time = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(d.start))
+                    BasicText(d.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                    BasicText(stringResource(R.string.eurise_pl_event_here, time), style = TextStyle(color = c.muted, fontSize = 12.sp))
+                }
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
                 Modifier.weight(2f).height(52.dp).clip(RoundedCornerShape(18.dp)).background(c.accent)
@@ -162,7 +193,9 @@ private fun Head(night: Boolean, place: MapObject) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Image(rememberVectorPainter(LuogoIcons.go), null, Modifier.size(18.dp), colorFilter = ColorFilter.tint(c.onAccent))
-                    BasicText(stringResource(R.string.eurise_pl_directions), style = TextStyle(color = c.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold))
+                    val minutes = remember(place) { estimateMinutes(context, place) }
+                    BasicText(if (minutes > 0) stringResource(R.string.eurise_pl_directions_min, minutes) else stringResource(R.string.eurise_pl_directions),
+                        style = TextStyle(color = c.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold))
                 }
             }
             Box(
@@ -182,24 +215,6 @@ private fun Head(night: Boolean, place: MapObject) {
             }
             Action(c, LuogoIcons.calendar, stringResource(R.string.eurise_pl_event), Modifier.weight(1f)) { EuriseLuogo.event(context, place) }
             Action(c, LuogoIcons.share, stringResource(R.string.eurise_pl_share), Modifier.weight(1f)) { EuriseLuogo.share(context, place) }
-        }
-        destinations?.items?.let { matching(it, place) }?.let { d ->
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(if (night) Color(0xFF2E3A55) else Color(0xFFDDE3F0)), contentAlignment = Alignment.Center) {
-                    Image(rememberVectorPainter(LuogoIcons.calendar), null, Modifier.size(16.dp),
-                        colorFilter = ColorFilter.tint(if (night) Color(0xFFA9C1F2) else Color(0xFF3E5C8A)))
-                }
-                Column(Modifier.weight(1f)) {
-                    val time = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(d.start))
-                    BasicText(d.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Bold))
-                    BasicText(stringResource(R.string.eurise_pl_event_here, time), style = TextStyle(color = c.muted, fontSize = 12.sp))
-                }
-            }
         }
     }
 }

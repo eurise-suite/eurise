@@ -93,6 +93,10 @@
     <!-- Search page before typing (EuriseSearchHome, step b) -->
     <string name="eurise_sh_hint">Address, place, appointment, pharmacy</string>
     <string name="eurise_sh_loading">Looking at your appointments…</string>
+    <string name="eurise_sh_from_calendar">From the Calendar</string>
+    <string name="eurise_sh_always">Always at hand</string>
+    <string name="eurise_sh_home_work">Home and Work</string>
+    <string name="eurise_sh_home_work_sub">Save a place named «Home» or «Work»: you will find it here, with the minutes</string>
     <string name="eurise_sh_contact">A contact\'s address</string>
     <string name="eurise_sh_contact_sub">From the address book, searched on the maps on this phone</string>
     <string name="eurise_sh_near">Search nearby</string>
@@ -103,6 +107,7 @@
     <string name="eurise_sh_map_ready">Ready</string>
     <string name="eurise_sh_map_update">Update</string>
     <string name="eurise_pl_directions">Directions</string>
+    <string name="eurise_pl_directions_min">Directions · ≈ %1$d min</string>
     <string name="eurise_pl_go_now">Go now</string>
     <string name="eurise_pl_save">Save</string>
     <string name="eurise_pl_saved">Saved</string>
@@ -122,6 +127,12 @@
     <string name="eurise_car_voice_model">Eurise Voice has no listening model yet: download it on the phone</string>
     <string name="eurise_car_voice_mic">The microphone won\'t open: allow it on the phone</string>
     <string name="eurise_car_voice_failed">Eurise Voice is not responding, try again</string>
+    <string name="eurise_car_voice_title">Alfred</string>
+    <string name="eurise_car_voice_permission">Allow the microphone on the phone: Android is asking there</string>
+    <string name="eurise_car_voice_no_audio">The car microphone is not sending any sound. Check that no call or other app is using it, then try again</string>
+    <string name="eurise_car_voice_mic_car">The car microphone did not open: try again</string>
+    <string name="eurise_car_voice_retry">Try again</string>
+    <string name="eurise_car_voice_cancel">Close</string>
     <!-- Route (MapPercorso board) -->
     <string name="eurise_pc_car">Car</string>
     <string name="eurise_pc_bike">Bike</string>
@@ -382,6 +393,38 @@
     <string name="eurise_lv_fuel_explain">Once a day, when you open the fuel list, Maps downloads the public price file from the Italian Ministry website, the same for everyone. No location or anything else goes out. Turn it off any time.</string>
     <string name="eurise_lv_turn_on">Turn on</string>
     <string name="eurise_lv_cancel">Cancel</string>
+    <string name="eurise_tr_choose">Choose the point</string>
+    <string name="eurise_tr_my_position">Your location</string>
+    <string name="eurise_tr_point">Point on the map</string>
+    <string name="eurise_tr_back">Back</string>
+    <string name="eurise_tr_swap">Swap start and destination</string>
+    <plurals name="eurise_tr_stops">
+        <item quantity="one">%1$d stop</item>
+        <item quantity="other">%1$d stops</item>
+    </plurals>
+    <string name="eurise_tr_avoid_toll">Avoid tolls</string>
+    <string name="eurise_tr_avoid_motorway">Avoid motorways</string>
+    <string name="eurise_tr_avoid_ferry">Avoid ferries</string>
+    <string name="eurise_tr_avoid_dirty">Avoid unpaved</string>
+    <string name="eurise_tr_avoid_steps">Avoid steps</string>
+    <string name="eurise_tr_add_stop">+ Stop</string>
+    <string name="eurise_tr_add_stop_long">+ Add a stop</string>
+    <string name="eurise_tr_stops_title">Start, stops, destination</string>
+    <string name="eurise_tr_remove">Remove %1$s</string>
+    <string name="eurise_tr_along">ALONG THE WAY, ONE TAP</string>
+    <string name="eurise_tr_along_fuel">Fuel</string>
+    <string name="eurise_tr_along_eat">Food and drinks</string>
+    <string name="eurise_tr_along_parking">Parking</string>
+    <string name="eurise_tr_along_pharmacy">Pharmacy</string>
+    <string name="eurise_tr_done">Done</string>
+    <string name="eurise_tr_stops_note">Press and hold a row, then drag it to change the order. Change start and destination by tapping them in the card at the top.</string>
+    <string name="eurise_pc_summary">%1$s · %2$s · arrive at %3$s</string>
+    <string name="eurise_pc_no_toll">no tolls</string>
+    <string name="eurise_pc_no_motorway">no motorways</string>
+    <string name="eurise_pc_no_ferry">no ferries</string>
+    <string name="eurise_pc_no_dirty">no unpaved roads</string>
+    <string name="eurise_pc_no_steps">no steps</string>
+    <string name="eurise_pc_altitude">up %1$s, down %2$s</string>
     <string name="eurise_oh_title">Hours</string>
     <string name="eurise_oh_today">Today, %1$s</string>
     <string name="eurise_oh_closed">closed</string>

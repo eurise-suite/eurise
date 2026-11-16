@@ -542,11 +542,12 @@ patch(mapscreen, """    builder.setMapActionStrip(UiHelpers.createMapActionStrip
   {
     if (getScreenManager().getTop() != this)
       return;
-    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
+    // «Ti ascolto» in una schermata sua, con ogni passo e ogni errore in vista (prova del 16 novembre).
+    getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(getCarContext(), text -> {
       if (getScreenManager().getTop() == this)
         getScreenManager().push(
             new SearchScreen.Builder(getCarContext(), getSurfaceRenderer()).setQuery(text).build());
-    });
+    }));
   }""")
 
 # 4) In guida «Sei su …» e il meteo sul percorso nella bolla dell'arrivo (TravelEstimate.setTripText).
@@ -1044,8 +1045,8 @@ patch(navscreen, """    mNavigationManager.updateTrip(mTrip);
       CarToast.makeText(getCarContext(), euriseWarning, CarToast.LENGTH_LONG).show();
 """)
 # Il microfono di Alfred in auto: «autovelox», «c'è una coda» segnano qui invece di cercare.
-patch(mapscreen, """    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
-      if (getScreenManager().getTop() == this)""", """    app.organicmaps.eurise.car.EuriseCarVoice.listen(getCarContext(), text -> {
+patch(mapscreen, """    getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(getCarContext(), text -> {
+      if (getScreenManager().getTop() == this)""", """    getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(getCarContext(), text -> {
       final app.organicmaps.eurise.EuriseGuideReports.Kind euriseKind =
           app.organicmaps.eurise.EuriseGuideReports.Kind.fromWords(text);
       if (euriseKind != null)
@@ -1656,3 +1657,135 @@ patch(car_sc, """    mPillOverlay.setLayoutParams(getOverlayLayoutParams());
     app.organicmaps.eurise.car.EuriseCarSplitInfo.onVisibleArea(visibleArea);
   }""")
 print("eurise_patch: velocità, via e meteo con lo schermo diviso in Android Auto")
+
+# Il microfono di Alfred anche in guida e nella ricerca di Android Auto (prova del 16 novembre: la dettatura della
+# tastiera dell'auto non funziona senza i servizi Google, e in guida il microfono non c'era). In guida una frase come
+# «autovelox» o «c'è una coda» segna la segnalazione; altrimenti si cerca il luogo. Nella ricerca la frase diventa il
+# testo cercato.
+patch(navscreen, """    final ActionStrip.Builder builder = new ActionStrip.Builder();
+    builder.addAction(createTtsAction());""", """    final ActionStrip.Builder builder = new ActionStrip.Builder();
+    builder.addAction(new Action.Builder()
+        .setIcon(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(), R.drawable.eurise_ic_mic)).build())
+        .setOnClickListener(() -> getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(
+            getCarContext(), text -> {
+              final app.organicmaps.eurise.EuriseGuideReports.Kind kind =
+                  app.organicmaps.eurise.EuriseGuideReports.Kind.fromWords(text);
+              if (kind != null)
+              {
+                final app.organicmaps.eurise.EuriseGuideReports.Report r =
+                    app.organicmaps.eurise.EuriseGuideReports.add(getCarContext(), kind);
+                CarToast.makeText(getCarContext(),
+                    r == null ? getCarContext().getString(R.string.eurise_guide_no_position)
+                              : getCarContext().getString(kind.label) + " "
+                                + app.organicmaps.eurise.EuriseGuideReports.placed(getCarContext(), r),
+                    CarToast.LENGTH_LONG).show();
+              }
+              else
+                getScreenManager().push(new app.organicmaps.car.screens.search.SearchScreen.Builder(
+                    getCarContext(), getSurfaceRenderer()).setQuery(text).build());
+            })))
+        .build());
+    builder.addAction(createTtsAction());""")
+patch(car_search, """    if (!mQuery.isEmpty() && mResults != null && !mResults.getItems().isEmpty())
+      builder.setActionStrip(createActionStrip());""", """    // Eurise: il microfono di Alfred sempre qui (la dettatura della tastiera dell'auto non va senza Google), e
+    // «Mostra sulla mappa» quando ci sono risultati.
+    builder.setActionStrip(euriseActionStrip(!mQuery.isEmpty() && mResults != null && !mResults.getItems().isEmpty()));""")
+patch(car_search, """  @NonNull
+  private ActionStrip createActionStrip()
+  {""", """  @NonNull
+  private ActionStrip euriseActionStrip(boolean withMap)
+  {
+    final ActionStrip.Builder strip = new ActionStrip.Builder();
+    strip.addAction(new Action.Builder()
+        .setIcon(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(), R.drawable.eurise_ic_mic)).build())
+        .setOnClickListener(() -> getScreenManager().push(new app.organicmaps.eurise.car.EuriseCarListenScreen(
+            getCarContext(), this::onSearchSubmitted)))
+        .build());
+    if (withMap)
+      strip.addAction(createActionStrip().getActions().get(0));
+    return strip.build();
+  }
+
+  @NonNull
+  private ActionStrip createActionStrip()
+  {""")
+print("eurise_patch: microfono di Alfred in guida e nella ricerca di Android Auto, schermata «Ti ascolto»")
+
+# Il percorso come nelle tavole MapViaggio4Percorso e MapViaggio6Bici (approvate il 16 novembre): in alto la scheda di
+# vetro con partenza, tappe e arrivo e le pillole «Evita …» e «+ Tappa» (eurise/ui/EuriseViaggio.kt) al posto della barra
+# di CoMaps con i cinque tipi di percorso e delle sue opzioni, che restano nel layout ma nascoste (il controllore le usa).
+patch(res / "layout" / "routing_plan.xml", """  android:orientation="vertical"
+  android:clipToPadding="false">
+  <FrameLayout android:layout_width="match_parent\"""", """  android:orientation="vertical"
+  android:clipToPadding="false">
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_viaggio_top"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+  <FrameLayout android:layout_width="match_parent\"""")
+rpc = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "routing" / "RoutingPlanController.java"
+patch(rpc, """    onTurnPreviewChanged(RoutingController.get().isPreviewingTurn());
+  }""", """    onTurnPreviewChanged(RoutingController.get().isPreviewingTurn());
+    // Eurise (MapViaggio4Percorso): la scheda di vetro al posto della barra e delle opzioni di CoMaps.
+    app.organicmaps.eurise.ui.EuriseViaggio.attachTop(mFrame.findViewById(R.id.eurise_viaggio_top), getToolbar(),
+                                                      mRoutingOptionsBanner);
+  }""")
+patch(rpc, """  public void showRoutingOptionsView()
+  {
+""", """  public void showRoutingOptionsView()
+  {
+    // Eurise: le scelte attive sono pillole nella scheda di vetro; il riquadro di CoMaps non si mostra.
+    if (app.organicmaps.eurise.ui.EuriseViaggio.getAttached())
+    {
+      UiUtils.hide(mRoutingOptionsBanner);
+      return;
+    }
+""")
+print("eurise_patch: percorso con la scheda di vetro, le pillole e le tappe (MapViaggio4Percorso, 5, 6)")
+
+# La scheda del luogo come nella tavola MapViaggio3Luogo: le azioni sono tutte nella scheda (Indicazioni, Parti ora,
+# Salva, Chiama, Impegno, Condividi); la barra dei pulsanti di CoMaps in basso sparisce quando non si pianifica (prima
+# restavano «Parti da qui» e «Segnala»), e torna con le sue voci di percorso mentre si pianifica o si guida.
+patch(pp / "PlacePageController.java", """        buttons.remove(PlacePageButtons.ButtonType.ROUTE_TO);
+      }""", """        buttons.remove(PlacePageButtons.ButtonType.ROUTE_TO);
+        buttons.remove(PlacePageButtons.ButtonType.ROUTE_FROM);
+        buttons.remove(PlacePageButtons.ButtonType.EURISE_REPORT);
+      }""")
+patch(pp / "PlacePageButtons.java", """  public void onChanged(List<ButtonType> buttonTypes)
+  {
+    createButtons(buttonTypes);
+  }""", """  public void onChanged(List<ButtonType> buttonTypes)
+  {
+    createButtons(buttonTypes);
+    // Eurise: senza pulsanti la barra non occupa spazio (scheda del luogo della tavola MapViaggio3Luogo).
+    if (getView() != null)
+      getView().setVisibility(buttonTypes == null || buttonTypes.isEmpty() ? View.GONE : View.VISIBLE);
+  }""")
+print("eurise_patch: scheda del luogo senza la barra di CoMaps (MapViaggio3Luogo)")
+
+# La ricerca come nella tavola MapViaggio2Dove: titolo grande, impegni, Casa e Lavoro, recenti, e il campo in basso sotto
+# il pollice, sopra la tastiera (eurise/ui/EuriseSearchHome.kt, bottomField). La barra di CoMaps è la stessa, spostata.
+patch(search_layout, """      android:background="?colorPrimary"
+      android:elevation="@dimen/dp_0"
+      app:elevation="@dimen/dp_0">""", """      android:layout_gravity="bottom"
+      android:background="@android:color/transparent"
+      android:elevation="@dimen/dp_0"
+      app:elevation="@dimen/dp_0">""")
+patch(search_layout, """          android:layout_height="wrap_content"
+          app:layout_scrollFlags="scroll|enterAlways"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <FrameLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      app:layout_behavior="@string/appbar_scrolling_view_behavior">""", """          android:layout_height="wrap_content"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <FrameLayout
+      android:id="@+id/eurise_search_content"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">""")
+patch(search, """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));""",
+      """    ViewCompat.setOnApplyWindowInsetsListener(mResultsPlaceholder, new WindowInsetUtils.ScrollableContentInsetsListener(mResultsPlaceholder, mOpenContactPicker));
+    app.organicmaps.eurise.ui.EuriseSearchHome.bottomField(root);""")
+print("eurise_patch: ricerca col campo in basso (MapViaggio2Dove)")

@@ -72,6 +72,46 @@ object EuriseSearchHome {
         fun query(text: String, category: Boolean)
     }
 
+    /**
+     * Il campo di ricerca in basso, sotto il pollice (tavola MapViaggio2Dove): la barra di CoMaps passa dalla testata al
+     * fondo, sopra la tastiera; la pagina sopra prende lo spazio della barra di stato e lascia posto al campo.
+     */
+    @JvmStatic
+    fun bottomField(root: View?) {
+        val appBar = root?.findViewById<View>(R.id.app_bar) ?: return
+        val content = root.findViewById<View>(R.id.eurise_search_content) ?: return
+        val toolbar = appBar.findViewById<View>(R.id.toolbar)
+        val fab = root.findViewById<View>(R.id.show_on_map_fab)
+        appBar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        toolbar?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        toolbar?.let {
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(it) { v, insets ->
+                v.setPadding(v.paddingLeft, 0, v.paddingRight, 0)
+                insets
+            }
+        }
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(appBar) { v, insets ->
+            val bottom = insets.getInsets(
+                androidx.core.view.WindowInsetsCompat.Type.navigationBars() or androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+            v.setPadding(0, 0, 0, bottom)
+            insets
+        }
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
+            val top = insets.getInsets(
+                androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.displayCutout()).top
+            v.setPadding(v.paddingLeft, top, v.paddingRight, v.paddingBottom)
+            insets
+        }
+        appBar.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+            val lp = content.layoutParams as? android.view.ViewGroup.MarginLayoutParams ?: return@addOnLayoutChangeListener
+            if (lp.bottomMargin != v.height) {
+                lp.bottomMargin = v.height
+                content.post { content.layoutParams = lp }
+            }
+            fab?.translationY = -v.height.toFloat()
+        }
+    }
+
     @JvmStatic
     fun attach(view: View?, host: Host, contactPicker: Runnable?) {
         val compose = view as? ComposeView ?: return
@@ -124,17 +164,23 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
             .getOrDefault(emptyList())
     }
 
+    val habitual = remember { habitualPlaces(context) }
     Column(
         Modifier.fillMaxSize().background(c.bg).verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 24.dp).navigationBarsPadding(),
+            .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp),
     ) {
-        Heading(stringResource(R.string.eurise_go_title), c)
+        // Tavola MapViaggio2Dove: il titolo grande, poi i tuoi impegni, i posti di sempre, i recenti.
+        BasicText(
+            stringResource(R.string.eurise_go_title), Modifier.padding(start = 4.dp, top = 8.dp).semantics { heading() },
+            style = TextStyle(color = c.ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
+        )
+        Heading(stringResource(R.string.eurise_sh_from_calendar), c)
         val d = destinations
         when {
             d == null -> Note(stringResource(R.string.eurise_sh_loading), c)
             !d.hub -> Note(stringResource(R.string.eurise_go_no_hub), c)
             !d.calendar -> Note(stringResource(R.string.eurise_go_no_calendar), c)
-            d.items.isEmpty() && contactPicker == null -> Note(stringResource(R.string.eurise_go_empty), c)
+            d.items.isEmpty() -> Note(stringResource(R.string.eurise_go_empty), c)
             else -> Card(c) {
                 d.items.forEachIndexed { i, item ->
                     if (i > 0) Divider(c)
@@ -142,43 +188,37 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
                         context, item.start,
                         DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_WEEKDAY,
                     )
-                    Row2(
-                        c, Badge.Calendar, "${item.title} · ${item.place}",
-                        stringResource(R.string.eurise_go_from_calendar, whenText),
-                    ) {
+                    Row2(c, Badge.Calendar, item.title, "$whenText · ${item.place}") {
                         EuriseArrival.remember(context, item.title, item.start)
                         host.query(item.place, false)
-                    }
-                }
-                if (d.items.isEmpty()) Note(stringResource(R.string.eurise_go_empty), c)
-                if (contactPicker != null) {
-                    if (d.items.isNotEmpty()) Divider(c)
-                    Row2(c, Badge.Person, stringResource(R.string.eurise_sh_contact), stringResource(R.string.eurise_sh_contact_sub)) {
-                        contactPicker.run()
                     }
                 }
             }
         }
 
-        if (near.isNotEmpty()) {
-            Heading(stringResource(R.string.eurise_sh_near), c)
-            // I benzinai col prezzo del Ministero (tavola MapAttivita): più economici, vicini o sul percorso.
-            Card(c) {
-                Row2(c, Badge.Fuel, stringResource(R.string.eurise_sh_fuel), stringResource(R.string.eurise_sh_fuel_sub)) {
-                    EuriseFuelActivity.open(context)
+        Heading(stringResource(R.string.eurise_sh_always), c)
+        Card(c) {
+            // Casa e Lavoro: i luoghi salvati con quel nome, coi minuti stimati in auto.
+            if (habitual.isEmpty())
+                Row2(c, Badge.Home, stringResource(R.string.eurise_sh_home_work), stringResource(R.string.eurise_sh_home_work_sub)) {}
+            habitual.forEachIndexed { i, h ->
+                if (i > 0) Divider(c)
+                val minutes = estimateMinutes(context, h)
+                Row2(c, Badge.Home, h.title, h.subtitle.takeIf { it.isNotBlank() },
+                    right = if (minutes > 0) "≈ $minutes min" else null) {
+                    EuriseLuogo.route(context, h, now = false)
                 }
             }
-            androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                near.forEach { (_, res) ->
-                    val label = stringResource(res)
-                    Box(
-                        Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp)).background(c.card)
-                            .clickable { host.query(categoryQuery(context, res), true) }
-                            .semantics { role = Role.Button }.padding(horizontal = 14.dp, vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { BasicText(label, style = TextStyle(color = c.ink, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)) }
+            if (contactPicker != null) {
+                Divider(c)
+                Row2(c, Badge.Person, stringResource(R.string.eurise_sh_contact), stringResource(R.string.eurise_sh_contact_sub)) {
+                    contactPicker.run()
                 }
+            }
+            Divider(c)
+            // I benzinai col prezzo del Ministero (tavola MapAttivita): più economici, vicini o sul percorso.
+            Row2(c, Badge.Fuel, stringResource(R.string.eurise_sh_fuel), stringResource(R.string.eurise_sh_fuel_sub)) {
+                EuriseFuelActivity.open(context)
             }
         }
 
@@ -188,6 +228,21 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
                 recents.forEachIndexed { i, q ->
                     if (i > 0) Divider(c)
                     Row2(c, Badge.Clock, q.trim(), null) { host.query(q, false) }
+                }
+            }
+        }
+
+        if (near.isNotEmpty()) {
+            Heading(stringResource(R.string.eurise_sh_near), c)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                near.forEach { (_, res) ->
+                    val label = stringResource(res)
+                    Box(
+                        Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp)).background(c.card)
+                            .clickable { host.query(categoryQuery(context, res), true) }
+                            .semantics { role = Role.Button }.padding(horizontal = 14.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { BasicText(label, style = TextStyle(color = c.ink, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)) }
                 }
             }
         }
@@ -219,6 +274,31 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
             style = TextStyle(color = c.muted, fontSize = 12.sp, lineHeight = 18.sp),
         )
     }
+}
+
+/**
+ * Casa e Lavoro: i luoghi salvati (preferiti di Mappe) che si chiamano «Casa», «Home», «Lavoro», «Ufficio» o «Work»,
+ * al massimo uno per tipo. La suite non ha ancora i luoghi abituali in comune: finché non ci sono, valgono questi.
+ */
+private fun habitualPlaces(context: Context): List<app.organicmaps.sdk.bookmarks.data.MapObject> {
+    val wanted = listOf(setOf("casa", "home"), setOf("lavoro", "ufficio", "work", "office"))
+    val found = arrayOfNulls<app.organicmaps.sdk.bookmarks.data.MapObject>(wanted.size)
+    runCatching {
+        val bm = app.organicmaps.sdk.bookmarks.data.BookmarkManager.INSTANCE
+        for (cat in bm.categories) {
+            for (pos in 0 until cat.bookmarksCount) {
+                val info = bm.getBookmarkInfo(bm.getBookmarkIdByPosition(cat.id, pos)) ?: continue
+                val name = info.name?.trim()?.lowercase(Locale.getDefault()) ?: continue
+                wanted.forEachIndexed { i, names ->
+                    if (found[i] == null && name in names)
+                        found[i] = app.organicmaps.sdk.bookmarks.data.MapObject.createMapObject(
+                            app.organicmaps.sdk.bookmarks.data.FeatureId.EMPTY, app.organicmaps.sdk.bookmarks.data.MapObject.API_POINT,
+                            info.name, info.address ?: "", info.lat, info.lon)
+                }
+            }
+        }
+    }
+    return found.filterNotNull()
 }
 
 @Composable
@@ -264,10 +344,10 @@ private fun openDownloader(context: Context) {
     context.startActivity(i)
 }
 
-private enum class Badge { Calendar, Person, Clock, Fuel }
+private enum class Badge { Calendar, Person, Clock, Fuel, Home }
 
 @Composable
-private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: () -> Unit) {
+private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, right: String? = null, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable(onClick = onClick)
             .semantics(mergeDescendants = true) { role = Role.Button }.padding(vertical = 8.dp),
@@ -278,7 +358,8 @@ private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: 
             Badge.Calendar -> (if (c === Notte) Color(0xFF2E3A55) else Color(0xFFDDE3F0)) to (if (c === Notte) Color(0xFFA9C1F2) else Color(0xFF3E5C8A))
             Badge.Person -> (if (c === Notte) Color(0xFF2B3B33) else Color(0xFFDCE7DF)) to (if (c === Notte) Color(0xFF9CC3A9) else Color(0xFF4F6B5A))
             Badge.Clock -> c.chip to c.muted
-            Badge.Fuel -> (if (c === Notte) Color(0xFF2B3B33) else Color(0xFFDCE7DF)) to (if (c === Notte) Color(0xFF9CC3A9) else Color(0xFF2F6B45))
+            Badge.Fuel -> (if (c === Notte) Color(0xFF3A3324) else Color(0xFFF2E6CC)) to (if (c === Notte) Color(0xFFE0C489) else Color(0xFF85672B))
+            Badge.Home -> (if (c === Notte) Color(0xFF2B3B33) else Color(0xFFDCE7DF)) to (if (c === Notte) Color(0xFF9CC3A9) else Color(0xFF4F6B5A))
         }
         Box(
             Modifier.size(34.dp).clip(if (badge == Badge.Person) CircleShape else RoundedCornerShape(11.dp)).background(tile),
@@ -289,6 +370,7 @@ private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: 
                 Badge.Person -> SearchIcons.person
                 Badge.Clock -> SearchIcons.clock
                 Badge.Fuel -> SearchIcons.fuel
+                Badge.Home -> SearchIcons.home
             }
             androidx.compose.foundation.Image(
                 androidx.compose.ui.graphics.vector.rememberVectorPainter(icon), null, Modifier.size(16.dp),
@@ -302,6 +384,7 @@ private fun Row2(c: Colors, badge: Badge, title: String, sub: String?, onClick: 
             )
             if (sub != null) BasicText(sub, style = TextStyle(color = c.muted, fontSize = 12.sp))
         }
+        if (right != null) BasicText(right, style = TextStyle(color = c.accent, fontSize = 12.5.sp, fontWeight = FontWeight.Bold))
     }
 }
 
@@ -351,5 +434,6 @@ private object SearchIcons {
 
     val calendar = icon("calendar", "M6.5 5h11a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z", "M3.5 10h17M8 3v4M16 3v4")
     val person = icon("person", "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8z", "M4.5 20a7.5 7.5 0 0 1 15 0")
+    val home = icon("home", "M4 11l8-7 8 7v9H4z", "M10 20v-6h4v6")
     val clock = icon("clock", "M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16z", "M12 8v4l3 2")
 }

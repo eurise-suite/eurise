@@ -93,6 +93,10 @@
     <!-- Ricerca prima di scrivere (EuriseSearchHome, passo b) -->
     <string name="eurise_sh_hint">Indirizzo, luogo, impegno, farmacia</string>
     <string name="eurise_sh_loading">Guardo i tuoi impegni…</string>
+    <string name="eurise_sh_from_calendar">Dal Calendario</string>
+    <string name="eurise_sh_always">Sempre a portata</string>
+    <string name="eurise_sh_home_work">Casa e Lavoro</string>
+    <string name="eurise_sh_home_work_sub">Salva un luogo col nome «Casa» o «Lavoro»: lo trovi qui, coi minuti</string>
     <string name="eurise_sh_contact">L\'indirizzo di un contatto</string>
     <string name="eurise_sh_contact_sub">Dalla Rubrica, cercato sulle mappe del telefono</string>
     <string name="eurise_sh_near">Cerca vicino</string>
@@ -103,6 +107,7 @@
     <string name="eurise_sh_map_ready">Pronta</string>
     <string name="eurise_sh_map_update">Aggiorna</string>
     <string name="eurise_pl_directions">Indicazioni</string>
+    <string name="eurise_pl_directions_min">Indicazioni · ≈ %1$d min</string>
     <string name="eurise_pl_go_now">Parti ora</string>
     <string name="eurise_pl_save">Salva</string>
     <string name="eurise_pl_saved">Salvato</string>
@@ -122,6 +127,12 @@
     <string name="eurise_car_voice_model">In Eurise Voce manca il modello per ascoltare: scaricalo dal telefono</string>
     <string name="eurise_car_voice_mic">Il microfono non si apre: concedi il permesso sul telefono</string>
     <string name="eurise_car_voice_failed">Eurise Voce non risponde, riprova</string>
+    <string name="eurise_car_voice_title">Alfred</string>
+    <string name="eurise_car_voice_permission">Concedi il microfono sul telefono: Android te lo sta chiedendo lì</string>
+    <string name="eurise_car_voice_no_audio">Dal microfono dell\'auto non arriva nessun suono. Controlla che non lo stia usando una chiamata o un\'altra app, poi riprova</string>
+    <string name="eurise_car_voice_mic_car">Il microfono dell\'auto non si è aperto: riprova</string>
+    <string name="eurise_car_voice_retry">Riprova</string>
+    <string name="eurise_car_voice_cancel">Chiudi</string>
     <!-- Percorso (tavola MapPercorso) -->
     <string name="eurise_pc_car">Auto</string>
     <string name="eurise_pc_bike">Bici</string>
@@ -374,6 +385,38 @@
     <string name="eurise_lv_fuel_explain">Una volta al giorno, quando apri i benzinai, Mappe scarica dal sito del Ministero delle Imprese il file pubblico dei prezzi, uguale per tutti. Non esce la posizione né altro. Si spegne quando vuoi.</string>
     <string name="eurise_lv_turn_on">Accendi</string>
     <string name="eurise_lv_cancel">Annulla</string>
+    <string name="eurise_tr_choose">Scegli il punto</string>
+    <string name="eurise_tr_my_position">La tua posizione</string>
+    <string name="eurise_tr_point">Punto sulla mappa</string>
+    <string name="eurise_tr_back">Indietro</string>
+    <string name="eurise_tr_swap">Scambia partenza e arrivo</string>
+    <plurals name="eurise_tr_stops">
+        <item quantity="one">%1$d tappa</item>
+        <item quantity="other">%1$d tappe</item>
+    </plurals>
+    <string name="eurise_tr_avoid_toll">Evita pedaggi</string>
+    <string name="eurise_tr_avoid_motorway">Evita autostrade</string>
+    <string name="eurise_tr_avoid_ferry">Evita traghetti</string>
+    <string name="eurise_tr_avoid_dirty">Evita sterrati</string>
+    <string name="eurise_tr_avoid_steps">Evita scale</string>
+    <string name="eurise_tr_add_stop">+ Tappa</string>
+    <string name="eurise_tr_add_stop_long">+ Aggiungi una tappa</string>
+    <string name="eurise_tr_stops_title">Partenza, tappe, arrivo</string>
+    <string name="eurise_tr_remove">Togli %1$s</string>
+    <string name="eurise_tr_along">LUNGO LA STRADA, A UN TOCCO</string>
+    <string name="eurise_tr_along_fuel">Benzinaio</string>
+    <string name="eurise_tr_along_eat">Bar e ristoranti</string>
+    <string name="eurise_tr_along_parking">Parcheggio</string>
+    <string name="eurise_tr_along_pharmacy">Farmacia</string>
+    <string name="eurise_tr_done">Fatto</string>
+    <string name="eurise_tr_stops_note">Tieni premuta una riga e trascinala per cambiare l\'ordine. Partenza e arrivo si cambiano toccandoli nella scheda in alto.</string>
+    <string name="eurise_pc_summary">%1$s · %2$s · arrivi alle %3$s</string>
+    <string name="eurise_pc_no_toll">senza pedaggi</string>
+    <string name="eurise_pc_no_motorway">senza autostrade</string>
+    <string name="eurise_pc_no_ferry">senza traghetti</string>
+    <string name="eurise_pc_no_dirty">senza sterrati</string>
+    <string name="eurise_pc_no_steps">senza scale</string>
+    <string name="eurise_pc_altitude">salita %1$s, discesa %2$s</string>
     <string name="eurise_oh_title">Orari</string>
     <string name="eurise_oh_today">Oggi, %1$s</string>
     <string name="eurise_oh_closed">chiuso</string>

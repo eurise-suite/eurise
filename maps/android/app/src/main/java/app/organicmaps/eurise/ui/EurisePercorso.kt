@@ -42,6 +42,10 @@ import app.organicmaps.sdk.Router
 import app.organicmaps.sdk.bookmarks.data.MapObject
 import app.organicmaps.sdk.routing.RoutingController
 import app.organicmaps.util.ThemeUtils
+import app.organicmaps.sdk.Framework
+import app.organicmaps.sdk.routing.RoutingOptions
+import app.organicmaps.sdk.settings.RoadType
+import androidx.compose.ui.graphics.asImageBitmap
 import java.text.DateFormat
 import java.util.Date
 
@@ -60,11 +64,21 @@ object EurisePercorso {
     var attached = false
         private set
 
+    /** Le righe di CoMaps nel pannello (tempo e dislivello, grafico con «Inizia», pulsanti): nascoste, c'è il riassunto. */
+    private var comapsRows: List<View> = emptyList()
+
     @JvmStatic
     fun attach(view: View?, start: View?) {
         val compose = view as? ComposeView ?: return
         startButton = start
         attached = true
+        val panel = compose.parent as? View
+        comapsRows = listOfNotNull(
+            panel?.findViewById(R.id.time_elevation_line),
+            start?.parent as? View,
+            panel?.findViewById<View>(R.id.btn__manage_route)?.parent as? View,
+        )
+        hideComaps()
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
             // Il numero del giro entra come parametro: senza, Compose saltava il pannello (parametri uguali) e restava
@@ -77,7 +91,12 @@ object EurisePercorso {
     @JvmStatic
     fun update() {
         tick.intValue++
+        hideComaps()
+        // CoMaps rimette in vista le sue righe dopo aver aggiornato il pannello: si nascondono anche al giro dopo.
+        comapsRows.firstOrNull()?.post { hideComaps() }
     }
+
+    private fun hideComaps() = comapsRows.forEach { it.visibility = View.GONE }
 
     /**
      * «Avvia la navigazione»: lo stesso percorso di «Inizia» di CoMaps (MwmActivity.onRoutingStart: punto di partenza,
@@ -126,42 +145,51 @@ private fun Panel(night: Boolean, version: Int) {
     if (router == Router.Ruler) return
 
     Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Tavola MapMezzi: Auto di base, Mezzi, Bici, A piedi; il tempo del mezzo scelto è quello del percorso, gli altri
-        // una stima dalla distanza in linea d'aria (≈). «Mezzi» apre gli orari (Transitous, dal centro privacy).
+        // Tavole MapMezzi e MapViaggio4Percorso: Auto di base, Mezzi, Bici, A piedi con simbolo e tempo; il tempo del
+        // mezzo scelto è quello del percorso, gli altri una stima dalla distanza in linea d'aria (≈). «Mezzi» apre gli
+        // orari (Transitous, dal centro privacy).
         val start = rc.startPoint
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             val seconds = if (built) info?.totalTimeInSeconds ?: -1 else -1
             val km = if (start != null && end != null) kmBetween(start.lat, start.lon, end.lat, end.lon) * 1.3 else -1.0
-            Mode(c, R.string.eurise_pc_car, Router.Vehicle, router, seconds, km, 45.0, Modifier.weight(1f))
+            Mode(c, TripIcons.car, R.string.eurise_pc_car, Router.Vehicle, router, seconds, km, 45.0, Modifier.weight(1f))
             if (start != null && end != null && !end.isMyPosition)
                 Transit(c, Modifier.weight(1f)) { EuriseMezziActivity.open(context, start, end) }
-            Mode(c, R.string.eurise_pc_bike, Router.Bicycle, router, seconds, km, 15.0, Modifier.weight(1f))
-            Mode(c, R.string.eurise_pc_walk, Router.Pedestrian, router, seconds, km, 4.8, Modifier.weight(1f))
+            Mode(c, TripIcons.bike, R.string.eurise_pc_bike, Router.Bicycle, router, seconds, km, 15.0, Modifier.weight(1f))
+            Mode(c, TripIcons.walk, R.string.eurise_pc_walk, Router.Pedestrian, router, seconds, km, 4.8, Modifier.weight(1f))
         }
 
-        // L'impegno con questo luogo: quando partire.
+        // Il riassunto del percorso (tavole 4 e 6): tempo, distanza e arrivo; le scelte attive o il dislivello; l'impegno
+        // della suite con questo luogo e quando partire. Al posto delle righe di CoMaps (tempo, grafico, pulsanti).
         val d = if (end != null) destinations?.items?.let { matching(it, end) } else null
-        if (d != null) {
-            val seconds = if (built) info?.totalTimeInSeconds ?: 0 else 0
-            val leave = d.start - seconds * 1000L - EuriseMargin
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             val fmt = DateFormat.getTimeInstance(DateFormat.SHORT)
             val now = System.currentTimeMillis()
-            val line = when {
-                !built -> stringResource(R.string.eurise_pc_event_at, DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(d.start)))
-                leave > now -> stringResource(R.string.eurise_pc_leave_by, fmt.format(Date(leave)))
-                else -> stringResource(R.string.eurise_pc_leave_now, fmt.format(Date(now + seconds * 1000L)))
+            if (built && info != null) {
+                val arrive = fmt.format(Date(now + info.totalTimeInSeconds * 1000L))
+                BasicText(stringResource(R.string.eurise_pc_summary, tripDuration(info.totalTimeInSeconds), info.distToTarget.toString(context), arrive),
+                    style = TextStyle(color = c.ink, fontSize = 15.5.sp, fontWeight = FontWeight.ExtraBold))
+            } else {
+                BasicText(stringResource(R.string.eurise_pc_building), style = TextStyle(color = c.ink, fontSize = 15.5.sp, fontWeight = FontWeight.ExtraBold))
             }
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(if (night) Color(0xFF2E3A55) else Color(0xFFDDE3F0)))
-                Column(Modifier.weight(1f)) {
-                    BasicText(d.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(color = c.ink, fontSize = 14.5.sp, fontWeight = FontWeight.Bold))
-                    BasicText(line, style = TextStyle(color = c.muted, fontSize = 12.sp))
+            val avoid = runCatching { RoutingOptions.getActiveRoadTypes(router) }.getOrDefault(emptySet())
+            val avoidText = avoid.mapNotNull { avoidLabel(it) }.map { stringResource(it) }
+            if (avoidText.isNotEmpty())
+                BasicText(avoidText.joinToString(" · "), style = TextStyle(color = c.muted, fontSize = 12.5.sp))
+            if (built && (router == Router.Bicycle || router == Router.Pedestrian)) Altitude(c, state.version)
+            if (d != null) {
+                val seconds = if (built) info?.totalTimeInSeconds ?: 0 else 0
+                val leave = d.start - seconds * 1000L - EuriseMargin
+                val line = when {
+                    !built -> stringResource(R.string.eurise_pc_event_at, DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(d.start)))
+                    leave > now -> stringResource(R.string.eurise_pc_leave_by, fmt.format(Date(leave)))
+                    else -> stringResource(R.string.eurise_pc_leave_now, fmt.format(Date(now + seconds * 1000L)))
                 }
+                BasicText(d.title + " · " + line, Modifier.padding(top = 4.dp), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(color = if (night) Color(0xFFA9C1F2) else Color(0xFF3E5C8A), fontSize = 12.5.sp, fontWeight = FontWeight.Bold))
             }
         }
 
@@ -190,6 +218,9 @@ private fun Panel(night: Boolean, version: Int) {
 
 /** Quello che il pannello legge di CoMaps, riletto ogni 400 ms mentre si pianifica. */
 private data class RouteState(val built: Boolean, val building: Boolean, val info: app.organicmaps.sdk.routing.RoutingInfo?) {
+    /** Cambia quando cambia il percorso: il grafico del dislivello si ridisegna solo allora. */
+    val version: Int get() = (info?.totalTimeInSeconds ?: 0) * 31 + (if (built) 1 else 0)
+
     companion object {
         fun read(): RouteState {
             val rc = RoutingController.get()
@@ -198,35 +229,66 @@ private data class RouteState(val built: Boolean, val building: Boolean, val inf
     }
 }
 
+/** «Senza pedaggi», «senza sterrati»…: le scelte attive del mezzo, dette nel riassunto. */
+private fun avoidLabel(t: RoadType): Int? = when (t) {
+    RoadType.Toll -> R.string.eurise_pc_no_toll
+    RoadType.Motorway -> R.string.eurise_pc_no_motorway
+    RoadType.Ferry -> R.string.eurise_pc_no_ferry
+    RoadType.Dirty -> R.string.eurise_pc_no_dirty
+    RoadType.Steps -> R.string.eurise_pc_no_steps
+    else -> null
+}
+
+/** Il dislivello in bici e a piedi (tavola MapViaggio6Bici): salita, discesa e il profilo disegnato dal motore. */
+@Composable
+private fun Altitude(c: Colors, version: Int) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val w = with(density) { 300.dp.roundToPx() }
+    val h = with(density) { 56.dp.roundToPx() }
+    val chart = androidx.compose.runtime.remember(version) {
+        val limits = Framework.RouteAltitudeLimits()
+        val bmp = runCatching { Framework.generateRouteAltitudeChart(w, h, limits) }.getOrNull()
+        bmp to limits
+    }
+    val (bmp, limits) = chart
+    if (bmp == null) return
+    BasicText(stringResource(R.string.eurise_pc_altitude, limits.totalAscentString ?: "", limits.totalDescentString ?: ""),
+        style = TextStyle(color = c.muted, fontSize = 12.5.sp))
+    androidx.compose.foundation.Image(bmp.asImageBitmap(), null, Modifier.fillMaxWidth().height(56.dp).padding(top = 4.dp),
+        contentScale = androidx.compose.ui.layout.ContentScale.FillBounds)
+}
+
 /** Margine prima dell'impegno: si arriva qualche minuto prima. */
 private const val EuriseMargin = 10 * 60_000L
 
 @Composable
-private fun Mode(c: Colors, label: Int, mode: Router, current: Router, seconds: Int, km: Double, kmh: Double, modifier: Modifier) {
+private fun Mode(c: Colors, icon: androidx.compose.ui.graphics.vector.ImageVector, label: Int, mode: Router, current: Router, seconds: Int, km: Double, kmh: Double, modifier: Modifier) {
     val on = mode == current
     val time = when {
-        on && seconds > 0 -> duration(seconds)
-        !on && km > 0 -> "≈ " + duration((km / kmh * 3600).toInt())
+        on && seconds > 0 -> tripDuration(seconds)
+        !on && km > 0 -> "≈ " + tripDuration((km / kmh * 3600).toInt())
         else -> ""
     }
-    ModeChip(c, stringResource(label), time, on, modifier) { RoutingController.get().setRouterType(mode); EurisePercorso.update() }
+    ModeChip(c, icon, stringResource(label), time, on, modifier) { RoutingController.get().setRouterType(mode); EurisePercorso.update() }
 }
 
 @Composable
 private fun Transit(c: Colors, modifier: Modifier, onClick: () -> Unit) {
-    ModeChip(c, stringResource(R.string.eurise_pc_transit), stringResource(R.string.eurise_pc_transit_sub), false, modifier, onClick)
+    ModeChip(c, TripIcons.bus, stringResource(R.string.eurise_pc_transit), stringResource(R.string.eurise_pc_transit_sub), false, modifier, onClick)
 }
 
-/** Un mezzo nella fila della tavola: nome e tempo su due righe, stessa larghezza per tutti. */
+/** Un mezzo nella fila della tavola: simbolo, nome e tempo, stessa larghezza per tutti. */
 @Composable
-private fun ModeChip(c: Colors, name: String, time: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun ModeChip(c: Colors, icon: androidx.compose.ui.graphics.vector.ImageVector, name: String, time: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Column(
-        modifier.height(52.dp).clip(RoundedCornerShape(16.dp)).background(if (on) c.accent else c.card)
+        modifier.height(62.dp).clip(RoundedCornerShape(16.dp)).background(if (on) c.accent else c.card)
             .clickable(enabled = !on, onClick = onClick)
             .semantics { role = Role.Tab; selected = on }.padding(horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically),
     ) {
+        androidx.compose.foundation.Image(androidx.compose.ui.graphics.vector.rememberVectorPainter(icon), null, Modifier.size(18.dp),
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(if (on) c.onAccent else c.ink))
         BasicText(name, maxLines = 1, overflow = TextOverflow.Ellipsis,
             style = TextStyle(color = if (on) c.onAccent else c.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold))
         if (time.isNotEmpty()) BasicText(time, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -247,8 +309,3 @@ private fun Soft(c: Colors, night: Boolean, label: String, modifier: Modifier, e
     }
 }
 
-/** «18 min», «1 h 5 min». */
-private fun duration(seconds: Int): String {
-    val m = (seconds + 30) / 60
-    return if (m < 60) "$m min" else if (m % 60 == 0) "${m / 60} h" else "${m / 60} h ${m % 60} min"
-}
