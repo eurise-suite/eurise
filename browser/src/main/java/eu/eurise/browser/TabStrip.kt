@@ -115,7 +115,9 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                             if (!iconOnly) {
                             Spacer(Modifier.width(6.dp))
                             Text(title, fontSize = 12.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Medium, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis, color = if (on) scheme.primary else scheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+                                overflow = TextOverflow.Ellipsis, color = if (on) scheme.primary else scheme.onSurfaceVariant,
+                                // Nella scheda aperta il titolo prende tutto lo spazio: la ✕ sta in fondo alla scheda, non dopo la parola (16 novembre).
+                                modifier = Modifier.weight(1f, fill = on))
                             }
                             if (on) {
                                 val close = stringResource(R.string.brw_close_tab)

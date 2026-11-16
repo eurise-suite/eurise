@@ -411,6 +411,7 @@
     <string name="brw_dl_progress">%1$s di %2$s</string>
     <string name="brw_dl_progress_unknown">%1$s scaricati…</string>
     <string name="brw_dl_ready">Pronto · %1$s · tocca per aprire</string>
+    <string name="brw_dl_kept">%1$s resta in Download</string>
     <string name="brw_dl_open">Apri</string>
     <string name="brw_dl_save_in">Salva in…</string>
     <string name="brw_dl_all">Download</string>

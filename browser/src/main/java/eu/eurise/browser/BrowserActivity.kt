@@ -32,6 +32,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.key
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,16 +110,22 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
             EuriseTheme {
                 Box(Modifier.fillMaxSize()) {
                     BrowserScreen(model = model, actions = this@BrowserActivity, installed = ::installed, onRunImport = ::runImport)
-                    dl?.let { s ->
-                        if (s.failed) LaunchedEffect(s) { kotlinx.coroutines.delay(6_000); if (dl == s) dl = null }
-                        DownloadCard(
-                            s,
-                            onOpen = { openDownloaded(s) },
-                            onSaveIn = { dl = null; s.uri?.let { saveIn(Finished(it, s.name, s.mime)) } },
-                            onShowAll = { dl = null; openDownloads() },
-                            onClose = { dl = null },
-                            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 84.dp, start = 12.dp, end = 12.dp),
-                        )
+                    // Un riquadro per download, uno sopra l'altro, il più recente in basso (prova del 16 novembre: con più
+                    // file insieme il riquadro mostrava solo l'ultimo e quello finito prima lo sostituiva).
+                    if (dls.isNotEmpty()) Column(
+                        Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 84.dp, start = 12.dp, end = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        for (s in dls.takeLast(4)) key(s.id) {
+                            if (s.failed) LaunchedEffect(s) { kotlinx.coroutines.delay(6_000); dropDl(s.id) }
+                            DownloadCard(
+                                s,
+                                onOpen = { openDownloaded(s) },
+                                onSaveIn = { dropDl(s.id); s.uri?.let { saveIn(Finished(it, s.name, s.mime, moveFromDownloads = true)) } },
+                                onShowAll = { dls.clear(); openDownloads() },
+                                onClose = { dropDl(s.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -131,12 +141,31 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     // --- Download finiti: «Salva in…» di Eurise File (tavola FileSalvaIn) ---
 
-    private class Finished(val uri: Uri, val name: String, val mime: String)
+    /** [moveFromDownloads]: salvato altrove, il file in Download si toglie (altrimenti restavano due copie, 16 novembre). */
+    private class Finished(val uri: Uri, val name: String, val mime: String, val moveFromDownloads: Boolean = false)
 
-    /** Il download nel riquadro in basso (uno alla volta: l'ultimo partito). */
-    private var dl by mutableStateOf<DownloadState?>(null)
+    /** I download nei riquadri in basso, nell'ordine in cui sono partiti. I nostri hanno numeri negativi, quelli di Android positivi. */
+    private val dls = mutableStateListOf<DownloadState>()
     private var dlSeq = 0L
     private val mine = HashSet<Long>()
+
+    private fun dlOf(id: Long) = dls.firstOrNull { it.id == id }
+    private fun putDl(s: DownloadState) { val i = dls.indexOfFirst { it.id == s.id }; if (i >= 0) dls[i] = s else dls.add(s) }
+    private fun dropDl(id: Long) { dls.removeAll { it.id == id } }
+
+    /** «Salva in…» uno alla volta: con più download finiti insieme le richieste aspettano in fila. */
+    private val saveQueue = ArrayDeque<Finished>()
+    private var saving: Finished? = null
+    private val saveInResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        val done = saving
+        saving = null
+        // Salvato dove ha scelto l'utente: la copia in Download non serve più. Annullato: il file resta in Download.
+        if (done != null && done.moveFromDownloads) {
+            if (r.resultCode == RESULT_OK) runCatching { contentResolver.delete(done.uri, null, null) }
+            else toast(getString(R.string.brw_dl_kept, done.name))
+        }
+        saveQueue.removeFirstOrNull()?.let { saveIn(it) }
+    }
 
     private val downloadDone = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -150,7 +179,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                     val name = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE)).orEmpty().ifBlank { "download" }
                     val mime = dm.getMimeTypeForDownloadedFile(id) ?: "application/octet-stream"
                     val uri = dm.getUriForDownloadedFile(id) ?: return@use
-                    dl = DownloadState(id, name, mime, null, written = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)), uri = uri)
+                    putDl(DownloadState(id, name, mime, null, written = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)), uri = uri))
                 }
             }
         }
@@ -158,21 +187,26 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
 
     /** Una copia del file scaricato passa all'app Eurise, che la mette nella cartella scelta (telefono o cloud). */
     private fun saveIn(done: Finished) {
+        if (saving != null) { saveQueue.addLast(done); return }
         runCatching {
             val file = File(freshDir(), done.name.replace('/', '-'))
             contentResolver.openInputStream(done.uri)!!.use { input -> file.outputStream().use { input.copyTo(it) } }
-            offer(file, done.mime, "download")
+            offer(file, done.mime, "download", done)
         }.onFailure { toast(getString(R.string.brw_save_in_missing)) }
+        // Senza Eurise File (foglio di condivisione) non arriva risposta: si passa subito al prossimo.
+        if (saving == null) saveQueue.removeFirstOrNull()?.let { saveIn(it) }
     }
 
     /** La cartella delle copie da passare alle altre app, vuotata a ogni uso. */
     private fun freshDir(): File = File(cacheDir, "salva").apply { deleteRecursively(); mkdirs() }
 
     /** Passa un file a «Salva in…» di Eurise File; senza l'app Eurise, al foglio di condivisione. */
-    private fun offer(file: File, mime: String, kind: String) {
+    private fun offer(file: File, mime: String, kind: String, from: Finished? = null) {
         val uri = FileProvider.getUriForFile(this, "$packageName.salva", file)
         val save = FilesContract.saveIn(BuildConfig.HUB_PACKAGE, uri, mime, file.name, kind, getString(R.string.brw_app_name))
-        val ok = runCatching { startActivity(save) }.isSuccess
+        // Si aspetta la risposta di Eurise File per sapere se il file è stato salvato (e togliere la copia in Download).
+        val ok = runCatching { if (from != null) { saving = from; saveInResult.launch(save) } else startActivity(save) }
+            .onFailure { if (from != null) saving = null }.isSuccess
         if (!ok) {
             val send = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).also { it.clipData = ClipData.newRawUri(file.name, uri) }
@@ -220,27 +254,26 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     private fun download(response: org.mozilla.geckoview.WebResponse) {
         // Il nome si calcola una volta, dalle intestazioni del sito: è lo stesso nel riquadro durante e dopo.
         val info = Downloads.info(response)
-        val id = ++dlSeq
-        runOnUiThread { dl = DownloadState(id, info.name, info.mime, info.size) }
+        val id = -(++dlSeq)
+        runOnUiThread { putDl(DownloadState(id, info.name, info.mime, info.size)) }
         Thread {
             val saved = runCatching {
                 Downloads.save(applicationContext, response, info) { bytes ->
-                    runOnUiThread { dl?.takeIf { it.id == id }?.let { dl = it.copy(written = bytes) } }
+                    runOnUiThread { dlOf(id)?.let { putDl(it.copy(written = bytes)) } }
                 }
             }
             runOnUiThread {
                 val s = saved.getOrNull()
-                val current = dl?.takeIf { it.id == id }
+                val current = dlOf(id) ?: DownloadState(id, info.name, info.mime, info.size)
                 when {
                     s != null -> {
                         model.downloads = model.downloads + 1
-                        val done = (current ?: DownloadState(id, s.name, s.mime, info.size)).copy(name = s.name, mime = s.mime, uri = s.uri)
-                        dl = done
-                        if (model.settings.askWhereToSave) { dl = null; saveIn(Finished(s.uri, s.name, s.mime)) }
+                        if (model.settings.askWhereToSave) { dropDl(id); saveIn(Finished(s.uri, s.name, s.mime, moveFromDownloads = true)) }
+                        else putDl(current.copy(name = s.name, mime = s.mime, uri = s.uri))
                     }
-                    saved.isFailure -> dl = (current ?: DownloadState(id, info.name, info.mime, info.size)).copy(failed = true)
-                    response.uri.startsWith("http", ignoreCase = true) -> downloadByUrl(response.uri, info.name)
-                    else -> dl = (current ?: DownloadState(id, info.name, info.mime, info.size)).copy(failed = true)
+                    saved.isFailure -> putDl(current.copy(failed = true))
+                    response.uri.startsWith("http", ignoreCase = true) -> { dropDl(id); downloadByUrl(response.uri, info.name) }
+                    else -> putDl(current.copy(failed = true))
                 }
             }
         }.start()
@@ -258,7 +291,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                 val id = getSystemService(DownloadManager::class.java).enqueue(request)
                 mine += id
                 model.downloads = model.downloads + 1
-                dl = DownloadState(id, name, "application/octet-stream", null)
+                putDl(DownloadState(id, name, "application/octet-stream", null))
                 watchSystemDownload(id)
             }.onFailure { toast(getString(R.string.brw_download_failed)) }
         }
@@ -269,13 +302,13 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         val dm = getSystemService(DownloadManager::class.java)
         val tick = object : Runnable {
             override fun run() {
-                val s = dl?.takeIf { it.id == id && it.uri == null && !it.failed } ?: return
+                val s = dlOf(id)?.takeIf { it.uri == null && !it.failed } ?: return
                 runCatching {
                     dm.query(DownloadManager.Query().setFilterById(id))?.use { c ->
                         if (!c.moveToFirst()) return@use
                         val done = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                         val total = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)).takeIf { it > 0 }
-                        dl = s.copy(written = done, size = total ?: s.size)
+                        putDl(s.copy(written = done, size = total ?: s.size))
                     }
                 }
                 window.decorView.postDelayed(this, 500)
@@ -289,7 +322,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         val uri = s.uri ?: return
         val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, s.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         val ok = runCatching { startActivity(view) }.isSuccess
-        if (ok) dl = null else { toast(getString(R.string.brw_dl_no_app)); openDownloads() }
+        if (ok) dropDl(s.id) else { toast(getString(R.string.brw_dl_no_app)); openDownloads() }
     }
 
     // --- Azioni del menu e delle Impostazioni (BrowserActions) ---

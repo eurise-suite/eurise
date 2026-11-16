@@ -36,6 +36,11 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   fermati contati da `webRequest.onErrorOccurred` (NS_ERROR_TRACKING_URI e simili), per settimana. Permessi nuovi:
   history, downloads, downloads.open, search, webRequest, clipboardWrite (Firefox li chiede aggiornando). Il saluto non ha
   il nome (il Ponte non lo dà).
+- Telefono, correzioni dalla prova del 16 novembre: **download multipli** (un riquadro per download, fino a quattro uno
+  sopra l'altro; prima il riquadro unico mostrava solo l'ultimo e quello finito prima lo sostituiva); **niente doppioni**
+  (con «Chiedi dove salvare» il file andava in Download e in più nella cartella scelta: ora, quando Eurise File risponde
+  che l'ha salvato, la copia in Download si toglie; se si annulla resta in Download con l'avviso; i «Salva in…» vanno in
+  fila uno alla volta); nella barra delle schede la **✕ della scheda aperta sta in fondo alla scheda**, non dopo il titolo.
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
