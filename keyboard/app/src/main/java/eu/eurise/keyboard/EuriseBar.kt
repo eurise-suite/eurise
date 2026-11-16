@@ -265,19 +265,20 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
     }
 
     /**
-     * Gli strumenti della tastiera nel riquadro, fatti come i comandi di Eurise (richiesta del proprietario, 16 novembre):
-     * Appunti, Emoji, Cursore, Una mano, Annulla, Voce, Opzioni. Pressione lunga = quella di HeliBoard.
+     * Gli strumenti della tastiera nel riquadro, fatti come i comandi di Eurise (richiesta del proprietario, 16 novembre),
+     * nell'ordine scelto dal proprietario: Opzioni, Una mano, Emoji, Cursore, Annulla, Voce, Appunti (i più usati a destra,
+     * sotto il pollice). Pressione lunga = quella di HeliBoard.
      */
     private fun buildKeyboardTools() {
         toolsMenuRow.removeAllViews()
         listOf(
-            ToolbarKey.CLIPBOARD to R.string.eurise_tool_clipboard,
+            ToolbarKey.SETTINGS to R.string.eurise_tool_settings,
+            ToolbarKey.ONE_HANDED to R.string.eurise_tool_one_hand,
             ToolbarKey.EMOJI to R.string.eurise_tool_emoji,
             ToolbarKey.DPAD to R.string.eurise_tool_cursor,
-            ToolbarKey.ONE_HANDED to R.string.eurise_tool_one_hand,
             ToolbarKey.UNDO to R.string.eurise_tool_undo,
             ToolbarKey.VOICE to R.string.eurise_tool_voice,
-            ToolbarKey.SETTINGS to R.string.eurise_tool_settings,
+            ToolbarKey.CLIPBOARD to R.string.eurise_tool_clipboard,
         ).forEachIndexed { i, (key, label) ->
             val drawable = KeyboardIconsSet.instance.getNewDrawable(key.name, context)?.mutate()?.apply { setTint(p.accent) }
             val b = command(context.getString(label), drawable) {}

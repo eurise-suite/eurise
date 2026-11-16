@@ -78,6 +78,8 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - Proposte: la prima nella fila delle parole (`eurise_proposal` in `suggestions_strip.xml`), le altre in cima al riquadro;
   pallino arancio sulla stella se ce n'è più d'una. «Altro» (`ToolsPanel`) non è più nei comandi; tolta dalle impostazioni
   la voce «barra sopra i suggerimenti».
+- Prova del proprietario sul giro 675: «funziona tutto». Poi, da una foto, nuovo ordine della riga Tastiera: Opzioni,
+  Una mano, Emoji, Cursore, Annulla, Voce, Appunti (fatto anche sulla tavola TastComparsaAperta).
 - Da provare sul telefono: posizione del riquadro sopra le parole (anche con una mano e tastiera flottante), tocchi sul
   riquadro, pallino, Voce e Cursore dal riquadro.
 
