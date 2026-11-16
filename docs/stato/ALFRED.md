@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 651)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 659)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -65,7 +65,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario sul giro 651** (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+1. **Prove del proprietario sul giro 659** (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
    «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
    ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
    cosa per un'altra»).
@@ -99,6 +99,9 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   - Eurise AI: https://github.com/eurise-suite/eurise/releases/download/apk-prova/ai-debug.apk
   - Voce: https://github.com/eurise-suite/eurise/releases/download/apk-prova/voice-debug.apk
   - Leggi: https://github.com/eurise-suite/eurise/releases/download/apk-prova/read-debug.apk
+- `apk-prova` pubblica solo gli APK riusciti nel giro scelto: se un lavoro fallisce (es. «Eurise Leggi» al giro 659 per il
+  plugin KSP non scaricato, errore di rete), il suo APK sparisce dai link (404). Si rilancia solo quel lavoro
+  (`gh api -X POST repos/eurise-suite/eurise/actions/runs/<id>/rerun-failed-jobs`) e si ripubblica lo stesso giro.
 - Voci e modelli si scaricano a richiesta (pre-release `voci`, lavoro `voci.yml`; cervelli da huggingface.co), mai dentro
   l'APK. Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
