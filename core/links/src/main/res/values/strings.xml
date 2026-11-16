@@ -62,4 +62,7 @@
     <string name="quick_save_event_at">Salva %1$s · %2$s</string>
     <string name="quick_month_before">Mese prima</string>
     <string name="quick_month_after">Mese dopo</string>
+    <!-- Contatti suggeriti mentre si scrive (tavola AgeScrivi). -->
+    <string name="people_from_phone">Dalla rubrica del telefono · %1$s</string>
+    <string name="people_allow">Mostra qui i contatti del telefono (restano sul telefono)</string>
 </resources>

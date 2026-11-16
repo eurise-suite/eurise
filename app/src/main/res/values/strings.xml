@@ -4,7 +4,7 @@
     <string name="launcher_label">Eurise Scrivania</string>
     <string name="alfred_label">Alfred</string>
     <string name="share_trip">Prepara il viaggio</string>
-    <string name="section_today">Oggi</string>
+    <string name="section_today">Agenda</string>
     <string name="section_calendar">Calendario</string>
     <string name="section_clock">Orologio</string>
     <string name="action_new_clock">Nuovo</string>
@@ -26,6 +26,7 @@
     <string name="app_file">Drive</string>
     <string name="app_scanner">Scanner</string>
     <string name="app_calendar">Calendario</string>
+    <string name="app_agenda">Agenda</string>
     <string name="app_tasks">Attività</string>
     <string name="app_notes">Note</string>
     <string name="ponte_event_created">In Calendario: %1$s</string>

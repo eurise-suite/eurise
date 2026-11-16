@@ -95,6 +95,8 @@ fun EventEditorRoute(
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val localName = stringResource(R.string.cal_local_name)
+    // Le persone scelte dai suggerimenti mentre si scrive il titolo: si collegano all'appuntamento quando si salva.
+    val picked = eu.eurise.core.links.rememberPickedPeople()
     BackHandler(onBack = onClose)
     EventEditorScreen(
         state = state,
@@ -108,11 +110,17 @@ fun EventEditorRoute(
         onEndDate = viewModel::onEndDate,
         onEndTime = viewModel::onEndTime,
         onCreateLocal = { viewModel.createLocalCalendar(localName, CalendarTint.BluNotte.light.toArgb()) },
-        onSave = { viewModel.save(onClose) },
+        onSave = {
+            val title = state.title
+            viewModel.save(onClose) { id ->
+                picked.linkAll(eu.eurise.core.data.EuriseData.create(context).links, eu.eurise.core.data.model.LinkRef.event(id), title)
+            }
+        },
         onDelete = { viewModel.delete(onClose) },
         onClose = onClose,
         linked = { if (eventId != null) linked(eventId, state.title) },
         onMeeting = if (eventId != null && beginMillis != null && onMeeting != null) ({ onMeeting(eventId, beginMillis) }) else null,
+        picked = picked,
     )
 }
 
@@ -137,6 +145,7 @@ internal fun EventEditorScreen(
     onClose: () -> Unit,
     linked: @Composable () -> Unit = {},
     onMeeting: (() -> Unit)? = null,
+    picked: eu.eurise.core.links.PickedPeople? = null,
 ) {
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -189,6 +198,18 @@ internal fun EventEditorScreen(
                 enabled = editable,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
             )
+            // Scrivendo «con Ma» o «@Ma» compaiono i contatti del telefono (tavola AgeScrivi).
+            if (editable && picked != null) {
+                eu.eurise.core.links.ContactSuggestions(
+                    text = state.title,
+                    caret = state.title.length,
+                    onText = { text, _ -> onTitle(text) },
+                    picked = picked,
+                    keepAt = false,
+                    byName = true,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
             state.error?.let { err ->
                 Text(
                     stringResource(

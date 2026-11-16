@@ -104,7 +104,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- File, Scanner, Calendario, Attività e Note con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
+        <!-- File, Scanner, Agenda, Calendario, Attività e Note con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
         <activity
             android:name=".SectionShortcutActivity"
             android:exported="false"
@@ -134,6 +134,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <meta-data android:name="eu.eurise.section" android:value="scanner" />
+        </activity-alias>
+        <!-- L'Agenda (prima «Oggi», 16 novembre) con la sua icona. -->
+        <activity-alias
+            android:name=".AgendaApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_agenda_app"
+            android:label="@string/app_agenda"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="today" />
         </activity-alias>
         <activity-alias
             android:name=".CalendarApp"

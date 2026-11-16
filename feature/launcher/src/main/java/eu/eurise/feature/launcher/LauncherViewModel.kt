@@ -26,8 +26,8 @@ import eu.eurise.feature.launcher.feeds.Sign
 import eu.eurise.feature.launcher.files.RecentFile
 import eu.eurise.feature.launcher.files.RecentFilesRepository
 import eu.eurise.feature.launcher.notifications.NotificationStore
-import eu.eurise.feature.launcher.route.RouteRepository
-import eu.eurise.feature.launcher.route.Travel
+import eu.eurise.core.data.route.RouteRepository
+import eu.eurise.core.data.route.Travel
 import eu.eurise.feature.launcher.markets.MarketsRepository
 import eu.eurise.feature.launcher.markets.Quote
 import eu.eurise.feature.launcher.news.NewsItem

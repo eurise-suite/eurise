@@ -1,4 +1,4 @@
-package eu.eurise.feature.launcher.route
+package eu.eurise.core.data.route
 
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyService
@@ -69,7 +69,7 @@ class RouteRepository(private val context: Context) {
             connectTimeout = 8_000
             readTimeout = 8_000
             // Nominatim chiede un nome dell'applicazione; nessun dato personale.
-            setRequestProperty("User-Agent", "Eurise/1.0 (launcher open source)")
+            setRequestProperty("User-Agent", "Eurise/1.0 (open source)")
         }
         return try { connection.inputStream.bufferedReader().readText() } finally { connection.disconnect() }
     }

@@ -96,7 +96,7 @@ class AppsRepository(private val context: Context) {
 
     /** Le sezioni dell'app Eurise compaiono come app a sé nelle loro categorie. */
     private fun euriseSections(own: String) = listOf(
-        AppEntry("eurise:today", "Oggi", own, null, Category.Work, "today"),
+        AppEntry("eurise:today", "Agenda", own, null, Category.Work, "today"),
         AppEntry("eurise:calendar", "Calendario", own, null, Category.Work, "calendar"),
         AppEntry("eurise:clock", "Orologio", own, null, Category.Tools, "clock"),
         AppEntry("eurise:drive", "File", own, null, Category.Tools, "drive"),

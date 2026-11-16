@@ -48,6 +48,7 @@ internal object SuiteIcons {
     internal fun keyFor(entry: AppEntry): String? {
         entry.euriseSection?.let { section ->
             return when (section) {
+                "today" -> "Agenda"
                 "calendar" -> "Calendario"
                 "notes" -> "Note"
                 "tasks" -> "Attività"
@@ -78,6 +79,7 @@ internal object SuiteIcons {
             pkg.startsWith("eu.eurise.translate") -> "Traduttore"
             cls.endsWith(".FileApp") -> "Drive"
             cls.endsWith(".ScannerApp") -> "Scanner"
+            cls.endsWith(".AgendaApp") -> "Agenda"
             cls.endsWith(".CalendarApp") -> "Calendario"
             cls.endsWith(".TasksApp") -> "Attività"
             cls.endsWith(".NotesApp") -> "Note"

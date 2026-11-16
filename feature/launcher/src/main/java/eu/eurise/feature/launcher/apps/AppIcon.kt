@@ -390,7 +390,7 @@ private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
     "qr" -> EuriseIcons.scan(SuiteSymbols.Stroke)
     "privacy" -> EuriseIcons.shield(SuiteSymbols.Stroke)
     "ponte" -> EuriseIcons.work(SuiteSymbols.Stroke)
-    "today" -> EuriseIcons.today(SuiteSymbols.Stroke)
+    "today" -> EuriseIcons.agenda(SuiteSymbols.Stroke)
     "alfred" -> SuiteSymbols.alfred
     else -> entry.category.icon(SuiteSymbols.Stroke)
 }

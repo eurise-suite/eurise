@@ -85,7 +85,7 @@ fun TasksRoute(
     linked: @Composable (taskId: Long, title: String) -> Unit = { _, _ -> },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val viewModel = viewModel { TasksViewModel(repository, eu.eurise.core.data.EuriseData.create(context).trash) }
+    val viewModel = viewModel { eu.eurise.core.data.EuriseData.create(context).let { TasksViewModel(repository, it.trash, it.links) } }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showLists by rememberSaveable { mutableStateOf(false) }
@@ -146,8 +146,8 @@ fun TasksRoute(
         QuickAddSheet(
             lists = state.lists.map { it.list },
             now = viewModel.now(),
-            onAdd = { parsed, details ->
-                viewModel.add(parsed, viewModel.currentList()) { id -> if (details) detailId = id }
+            onAdd = { parsed, details, people ->
+                viewModel.add(parsed, viewModel.currentList(), people) { id -> if (details) detailId = id }
             },
             onDismiss = { quickAdd = false },
         )

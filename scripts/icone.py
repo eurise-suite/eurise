@@ -27,6 +27,7 @@ ICONS = [
     ("app/src/main/res", "ic_calendar_app", "Calendario", False),
     ("app/src/main/res", "ic_tasks_app", "Attività", False),
     ("app/src/main/res", "ic_notes_app", "Note", False),
+    ("app/src/main/res", "ic_agenda_app", "Agenda", False),
     ("voice/src/main/res", "ic_voice", "Alfred", False),
     ("browser/src/main/res", "ic_browser", "Browser", False),
     ("mail/src/main/res", "ic_mail", "Email", False),

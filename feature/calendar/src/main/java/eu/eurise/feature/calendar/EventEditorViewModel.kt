@@ -130,7 +130,8 @@ class EventEditorViewModel(
         }
     }
 
-    fun save(onSaved: () -> Unit) {
+    /** Salva; [afterSave] riceve l'id dell'evento prima di chiudere (per esempio per collegarci le persone). */
+    fun save(onSaved: () -> Unit, afterSave: suspend (Long) -> Unit = {}) {
         val s = _state.value
         if (s.readOnly || s.busy) return
         val calendarId = s.calendarId ?: return
@@ -141,7 +142,12 @@ class EventEditorViewModel(
         _state.update { it.copy(busy = true) }
         viewModelScope.launch {
             val id = repository.save(EventDraft(eventId, calendarId, s.title, s.location, s.description, s.allDay, start, end), zone)
-            if (id != null) onSaved() else _state.update { it.copy(busy = false, error = EditorError.Save) }
+            if (id != null) {
+                runCatching { afterSave(id) }
+                onSaved()
+            } else {
+                _state.update { it.copy(busy = false, error = EditorError.Save) }
+            }
         }
     }
 

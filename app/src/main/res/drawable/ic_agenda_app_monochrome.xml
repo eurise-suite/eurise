@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da scripts/icone.py (tela «Icone della suite», serie colorata): non modificare a mano. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
+        <path android:pathData="M15 8 H35 Q39 8 39 12 V36 Q39 40 35 40 H15 Q11 40 11 36 V12 Q11 8 15 8 Z" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M7.5 15 H14 M7.5 22 H14 M7.5 29 H14" android:strokeColor="#FFFFFFFF" android:strokeWidth="4.1" android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M30 8 V16 L32.5 13.8 L35 16 V8 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M25 15 Q25.96 22.04 33 23 Q25.96 23.96 25 31 Q24.04 23.96 17 23 Q24.04 22.04 25 15 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M18.5 35 H31.5" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    </group>
+</vector>

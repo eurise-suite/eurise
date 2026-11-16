@@ -166,10 +166,10 @@ internal class DailyData(
 
 /** Dati e azioni dell'accoglienza della home. */
 internal class WelcomeData(
-    val travel: eu.eurise.feature.launcher.route.Travel?,
+    val travel: eu.eurise.core.data.route.Travel?,
     val destination: String?,
     val destinations: List<eu.eurise.core.data.calendar.CalendarEvent>,
-    val travels: Map<String, eu.eurise.feature.launcher.route.Travel>,
+    val travels: Map<String, eu.eurise.core.data.route.Travel>,
     val messages: List<MessageItem>,
     val notificationsOn: Boolean,
     val nowPlaying: eu.eurise.feature.launcher.notifications.NowPlaying?,

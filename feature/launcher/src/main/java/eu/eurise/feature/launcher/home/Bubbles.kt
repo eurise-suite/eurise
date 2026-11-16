@@ -74,7 +74,7 @@ import eu.eurise.feature.launcher.apps.openAlfredBriefing
 import eu.eurise.feature.launcher.R
 import eu.eurise.feature.launcher.notifications.MessageItem
 import eu.eurise.feature.launcher.notifications.NotificationStore
-import eu.eurise.feature.launcher.route.Travel
+import eu.eurise.core.data.route.Travel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.produceState

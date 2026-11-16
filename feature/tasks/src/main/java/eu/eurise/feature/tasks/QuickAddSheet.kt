@@ -70,11 +70,16 @@ import java.time.LocalDateTime
 internal fun QuickAddSheet(
     lists: List<TaskList>,
     now: LocalDateTime,
-    onAdd: (QuickAdd.Result, Boolean) -> Unit,
+    onAdd: (QuickAdd.Result, Boolean, List<eu.eurise.core.data.model.LinkRef>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var text by rememberSaveable { mutableStateOf("") }
+    var field by rememberSaveable(stateSaver = androidx.compose.ui.text.input.TextFieldValue.Saver) {
+        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(""))
+    }
+    val text = field.text
+    // Con «@» compaiono i contatti del telefono: la persona scelta si collega all'attività (tavola AgeScrivi).
+    val picked = eu.eurise.core.links.rememberPickedPeople()
     val parsed = remember(text, lists) { QuickAdd.parse(text, now, lists.map { it.name }) }
     val focus = remember { FocusRequester() }
     val scheme = MaterialTheme.colorScheme
@@ -83,7 +88,7 @@ internal fun QuickAddSheet(
     val listTint = tintColor(lists.firstOrNull { it.name == parsed.listName }?.tint)
     val submit = { details: Boolean ->
         if (parsed.title.isNotBlank()) {
-            onAdd(parsed, details)
+            onAdd(parsed, details, picked.refsIn(text))
             onDismiss()
         }
     }
@@ -95,8 +100,8 @@ internal fun QuickAddSheet(
         ) {
             Text(stringResource(R.string.tasks_quick_hint), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                value = field,
+                onValueChange = { field = it },
                 placeholder = { Text(stringResource(R.string.tasks_quick_placeholder)) },
                 visualTransformation = { original ->
                     // I pezzi riconosciuti si vedono evidenziati nel testo stesso.
@@ -123,6 +128,14 @@ internal fun QuickAddSheet(
                 ),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+
+            eu.eurise.core.links.ContactSuggestions(
+                text = text,
+                caret = field.selection.end,
+                onText = { t, at -> field = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(at)) },
+                picked = picked,
+                keepAt = true,
             )
 
             if (parsed.pieces.isNotEmpty()) {
@@ -152,7 +165,8 @@ internal fun QuickAddSheet(
                             dot = if (piece.kind == QuickAdd.Kind.List) listTint else null,
                             removeLabel = stringResource(R.string.tasks_quick_remove, label),
                         ) {
-                            text = (text.substring(0, piece.start) + text.substring(piece.end)).replace(Regex("\\s{2,}"), " ").trim()
+                            val cut = (text.substring(0, piece.start) + text.substring(piece.end)).replace(Regex("\\s{2,}"), " ").trim()
+                            field = androidx.compose.ui.text.input.TextFieldValue(cut, androidx.compose.ui.text.TextRange(cut.length))
                         }
                     }
                     if (parsed.time != null) {

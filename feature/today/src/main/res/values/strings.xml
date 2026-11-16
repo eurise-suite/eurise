@@ -1,28 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Agenda (prima «Oggi»): tavole AgeGiorno e AgeScrivi, 16 novembre 2026. -->
     <string name="today_good_morning">Buongiorno</string>
     <string name="today_good_afternoon">Buon pomeriggio</string>
     <string name="today_good_evening">Buonasera</string>
-    <string name="today_capture_placeholder">Scrivi un\'idea o una cosa da fare…</string>
     <string name="today_capture_note">Salva come nota</string>
-    <string name="today_capture_task">Aggiungi a da fare oggi</string>
-    <string name="today_section_tasks">Da fare oggi</string>
-    <string name="today_all_tasks">Tutte</string>
-    <string name="today_tasks_empty">Niente in scadenza oggi.</string>
-    <string name="today_section_notes">Note recenti</string>
-    <string name="today_all_notes">Tutte</string>
-    <string name="today_notes_empty">Le note che scrivi compaiono qui.</string>
-    <string name="today_section_later">Più tardi</string>
-    <string name="today_section_events">Appuntamenti</string>
-    <string name="today_show_calendar">Calendario</string>
-    <string name="today_next_label">Prossimo</string>
-    <string name="today_now_label">In corso</string>
-    <string name="today_in_minutes">tra %1$d min</string>
-    <string name="today_in_hours">tra %1$d h %2$d min</string>
-    <string name="today_at">alle %1$s</string>
-    <string name="today_running_until">fino alle %1$s</string>
-    <string name="today_until">fino alle %1$s</string>
     <string name="today_all_day">Tutto il giorno</string>
     <string name="today_connect_title">Collega il calendario</string>
-    <string name="today_connect_message">Per vedere qui gli appuntamenti di oggi.</string>
+    <string name="today_connect_message">Per vedere qui gli appuntamenti del giorno.</string>
+    <string name="agenda_tomorrow">Domani</string>
+    <string name="agenda_yesterday">Ieri</string>
+    <string name="agenda_week">settimana %1$d</string>
+    <string name="agenda_back_today">tocca per tornare a oggi</string>
+    <string name="agenda_prev_day">Giorno prima</string>
+    <string name="agenda_next_day">Giorno dopo</string>
+    <string name="agenda_events">Appuntamenti</string>
+    <string name="agenda_no_events">Nessun appuntamento.</string>
+    <string name="agenda_tasks">Cose da fare</string>
+    <string name="agenda_done_of">%1$d di %2$d</string>
+    <string name="agenda_no_tasks">Niente da fare per questo giorno.</string>
+    <string name="agenda_late">in ritardo</string>
+    <string name="agenda_people">Persone del giorno</string>
+    <string name="agenda_people_from">dagli impegni</string>
+    <string name="agenda_maxim">Massima del giorno · %1$s</string>
+    <string name="agenda_leave_at">Parti alle %1$s · %2$d min in auto</string>
+    <string name="agenda_call">Chiama %1$s</string>
+    <string name="agenda_write">Scrivi a %1$s</string>
+    <string name="agenda_add">Aggiungi</string>
+    <string name="agenda_write_placeholder">Scrivi: «domani alle 10 dentista», una cosa da fare, una nota…</string>
 </resources>

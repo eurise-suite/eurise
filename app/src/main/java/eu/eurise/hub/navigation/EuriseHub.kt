@@ -49,7 +49,6 @@ import eu.eurise.feature.notes.NotesListRoute
 import eu.eurise.feature.notes.OrganizeRoute
 import eu.eurise.feature.notes.TrashRoute
 import eu.eurise.feature.tasks.TasksRoute
-import eu.eurise.feature.today.TodayRoute
 import eu.eurise.hub.R
 import eu.eurise.core.data.model.LinkRef
 import eu.eurise.core.links.LinkItem
@@ -57,7 +56,7 @@ import eu.eurise.core.links.LinkedSection
 
 /** Le sezioni dell'hub nella barra in basso (al massimo quattro, come da design system). */
 private enum class Section(val route: String, @StringRes val label: Int, val icon: (Float) -> ImageVector, @StringRes val action: Int?) {
-    Today("today", R.string.section_today, { EuriseIcons.today(it) }, R.string.action_quick_add),
+    Today("today", R.string.section_today, { EuriseIcons.agenda(it) }, R.string.action_quick_add),
     Calendar("calendar", R.string.section_calendar, { EuriseIcons.calendar(it) }, R.string.action_new_event),
     Clock("clock", R.string.section_clock, { EuriseIcons.clock(it) }, R.string.action_new_clock),
     Notes("notes", R.string.section_notes, { EuriseIcons.note(it) }, R.string.action_new_note),
@@ -188,15 +187,14 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 modifier = Modifier.fillMaxSize().hazeSource(hazeState),
             ) {
                 composable(Section.Today.route) {
-                    TodayRoute(
-                        notes = data.notes,
-                        tasks = data.tasks,
-                        calendar = data.calendar,
-                        onOpenNote = { navController.openNote(it) },
+                    eu.eurise.feature.today.AgendaRoute(
+                        data = data,
                         onOpenEvent = { id, begin -> navController.openEvent(id, begin, null) },
                         onShowCalendar = { goTo(Section.Calendar) },
-                        onShowNotes = { goTo(Section.Notes) },
                         onShowTasks = { goTo(Section.Tasks) },
+                        onOpenPerson = { navController.openPerson(it) },
+                        onOpenWeather = { navController.navigate("weather") { launchSingleTop = true } },
+                        onCapture = { capture = it },
                     )
                 }
                 composable(Section.Calendar.route) {

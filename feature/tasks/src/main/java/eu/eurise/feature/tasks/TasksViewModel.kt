@@ -42,6 +42,7 @@ private data class Inputs(val filter: TasksFilter, val query: String, val tasks:
 class TasksViewModel(
     private val repository: TaskRepository,
     private val trash: eu.eurise.core.data.trash.TrashRepository? = null,
+    private val links: eu.eurise.core.data.LinkRepository? = null,
 ) : ViewModel() {
 
     private val filter = MutableStateFlow<TasksFilter>(TasksFilter.Today)
@@ -76,7 +77,12 @@ class TasksViewModel(
     }
 
     /** Aggiunge l'attività letta dall'aggiunta rapida; [then] riceve l'id (per aprirne la scheda). */
-    internal fun add(parsed: QuickAdd.Result, fallbackList: Long, then: (Long) -> Unit = {}) {
+    internal fun add(
+        parsed: QuickAdd.Result,
+        fallbackList: Long,
+        people: List<eu.eurise.core.data.model.LinkRef> = emptyList(),
+        then: (Long) -> Unit = {},
+    ) {
         if (parsed.title.isBlank()) return
         val listId = state.value.lists.firstOrNull { it.list.name == parsed.listName }?.list?.id ?: fallbackList
         viewModelScope.launch {
@@ -85,6 +91,8 @@ class TasksViewModel(
                 repeat = parsed.repeat, priority = parsed.priority,
                 remindBefore = if (parsed.time != null) 0 else null,
             )
+            // Le persone scelte con «@» si ritrovano nella loro scheda.
+            links?.let { l -> people.forEach { runCatching { l.link(eu.eurise.core.data.model.LinkRef.task(id), it) } } }
             then(id)
         }
     }

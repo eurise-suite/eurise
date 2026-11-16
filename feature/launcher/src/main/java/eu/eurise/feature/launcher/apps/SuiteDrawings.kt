@@ -20,6 +20,21 @@ internal object SuiteDrawings {
     class Drawing(val parts: List<Part>, val light: Palette, val dark: Palette, val color: Palette, val round: List<Color>, val glow: Color)
 
     val all: Map<String, Drawing> = mapOf(
+        "Agenda" to Drawing(
+            listOf(
+            Part("t", "M15 8 H35 Q39 8 39 12 V36 Q39 40 35 40 H15 Q11 40 11 36 V12 Q11 8 15 8 Z"),
+            Part("s", "M15 8 H35 Q39 8 39 12 V36 Q39 40 35 40 H15 Q11 40 11 36 V12 Q11 8 15 8 Z"),
+            Part("S", "M7.5 15 H14 M7.5 22 H14 M7.5 29 H14"),
+            Part("p", "M30 8 V16 L32.5 13.8 L35 16 V8 Z"),
+            Part("p", "M25 15 Q25.96 22.04 33 23 Q25.96 23.96 25 31 Q24.04 23.96 17 23 Q24.04 22.04 25 15 Z"),
+            Part("s", "M18.5 35 H31.5"),
+            ),
+            light = Palette(Color(0xFFEF6658), Color(0xFF9D3258), Color(0xFFF57A6E), Color(0xFFAF3862), Color(0x29F4685A), Color(0xFFF6F5F1), 2.3f),
+            dark = Palette(Color(0xFFFBC6C0), Color(0xFFE97FA5), Color(0xFFFABBB5), Color(0xFFE66D98), Color(0x2BF8A49C), Color(0xFF262A33), 2.3f),
+            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFFDE5048), 2.4f),
+            round = listOf(Color(0xFFF67C6E), Color(0xFFF4685A), Color(0xFFC93A72)),
+            glow = Color(0xFFF89A8E),
+        ),
         "Alfred" to Drawing(
             listOf(
             Part("p", "M24 4.5 C31.5 4.5 36 10.5 36 18.5 C36 26 39 32.5 38 38 C37 41.8 31.5 43.5 24 43.5 C16.5 43.5 11 41.8 10 38 C9 32.5 12 26 12 18.5 C12 10.5 16.5 4.5 24 4.5 Z M12.5 24 C9.5 27 7 31 6.5 35 C9.5 33.5 11.5 31 12.5 28.5 Z M35.5 24 C38.5 27 41 31 41.5 35 C38.5 33.5 36.5 31 35.5 28.5 Z"),

@@ -20,6 +20,11 @@ object EuriseIcons {
         circle(12f, 12f, 4f),
         "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4")
 
+    /** L'Agenda (prima «Oggi»): il quaderno ad anelli col segnalibro (16 novembre). */
+    fun agenda(stroke: Float = Stroke) = icon("agenda", stroke,
+        "M8 3.5h10a2.5 2.5 0 0 1 2.5 2.5v12a2.5 2.5 0 0 1-2.5 2.5H8A2.5 2.5 0 0 1 5.5 18V6A2.5 2.5 0 0 1 8 3.5z",
+        "M3.5 8h4M3.5 12h4M3.5 16h4M14.5 3.5v5l1.75-1.4 1.75 1.4v-5M10 13h6M10 16.5h4")
+
     fun calendar(stroke: Float = Stroke) = icon("calendar", stroke,
         "M6.5 5h11a3 3 0 0 1 3 3v9.5a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z",
         "M3.5 10h17M8 3v4M16 3v4")
