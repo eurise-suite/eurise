@@ -104,7 +104,7 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Causa: il giro delle 13:03 aveva messo il microfono nella fila in alto della guida (`NavigationScreen.createActionStrip`),
   che con voce, impostazioni, bandierina e stop arrivava a cinque pulsanti; l'auto ne accetta al massimo quattro e la
   schermata della guida lanciava un errore, che chiude tutto il processo (auto e telefono).
-- Correzione (commit 960cd74, giro Mappe 75 su `prova-mappe`; Mappe 70 fallito per Gradle che non trovava il plugin
+- Correzione (commit 960cd74, **Mappe 75 pubblicato** in `apk-prova` il 16 novembre alle 22:40; Mappe 70 fallito per Gradle che non trovava il plugin
   Kotlin, errore di rete): il microfono in guida sta in alto nella schermata della bandierina
   (`EuriseCarReportScreen.micAction`); «autovelox», «c'è una coda»… segnano, ogni altra frase cerca il luogo. La fila
   della guida torna a quattro. Nella ricerca dell'auto restano due pulsanti (microfono e «Mostra sulla mappa»), il massimo.
@@ -142,8 +142,9 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-mappe-debug.apk e, se cambia il centro
   privacy, anche https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk.
 - Giri propri (istruzioni del progetto): commit su `brand` con `[skip ci]` in testa, la stessa testa su `prova-mappe` per
-  compilare; finito il giro, l'artefatto `eurise-mappe-debug-<n>` si scarica e si carica a mano in `apk-prova`
-  (`gh release upload apk-prova eurise-mappe-debug.apk --clobber`), perché `apk-prova.yml` prende Mappe solo da `brand`.
+  compilare. `apk-prova.yml` prende Mappe dall'ultimo giro riuscito tra `prova-mappe` e `brand` (o da `mappe_run`): dopo un
+  giro di Mappe basta `gh workflow run apk-prova.yml --ref brand` (con `-f run_id=` se serve anche un giro di Compila).
+  Gli artefatti non si scaricano dall'ambiente di Claude (archivio di Azure bloccato).
 - Servizi nuovi che fanno uscire dati: `PrivacyService` in core/suite (con `SHARED` in `PrivacyContract`), testi in
   `ServiceConsent`, interruttore in Livelli con la spiegazione prima di accendere; servono APK di Eurise e di Mappe nuovi.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 15 novembre (Mappe, Android Auto, guida).
