@@ -80,7 +80,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   (stesso modulo comune, cambia solo il trasporto: stanza Matrix o email con il link). La Chat deve diventare uno strumento
   di lavoro potentissimo e anche di organizzazione della famiglia e degli amici. Le tavole Ins* sono disegnate in un'app
   sola: prima del codice vanno mostrate anche nell'altra (Email ↔ Chat).
-- **Idee approvate dal proprietario (17 novembre), tavole da approvare** (pagina «Chat ed Email», cinque file sotto le
+- **Idee e tavole approvate dal proprietario (17 novembre)** (pagina «Chat ed Email», cinque file sotto le
   Spese di gruppo; generatore `/home/claude/tela/gen/ins2.py` con `lib.py`, fuori dal repo):
   - **Email ↔ Chat**: InsStessaScheda (la scheda viva in Chat; mail con pulsanti e risposta «fatto» per chi non usa
     Eurise), InsPallaChat, InsDisponibilitaMail, SpeEmail;
@@ -105,8 +105,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-1. **Approvazione delle tavole**: le sei da lavoro del 14 novembre, le dodici del 16 (Lavorare insieme, Spese di gruppo)
-   e le venticinque del 17 (Email ↔ Chat, Famiglia, Amici, Lavoro, Spazi). Decisioni ancora aperte: dove stanno gli strumenti del gruppo
+1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
+   Codice nell'ordine: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
+   poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
 2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto
