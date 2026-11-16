@@ -3315,3 +3315,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 16 novembre, notte, Tastiera: barra di Eurise a comparsa dalla fila delle parole (tavole TastComparsa approvate) · giro 675 → `docs/stato/PICCOLE.md`.
 - 16 novembre, notte tarda, Organizzazione: approvate Agenda, Rubrica (da arricchire) e le otto idee di collaborazione; Drive da ridisegnare (Scanner, spazio usato, la parte di oggi sotto le cartelle; foto in `docs/stato/foto/`) → `docs/stato/ORGANIZZAZIONE.md`.
 - 16 novembre, notte, Mappe: Mappe 75 in `apk-prova` (chiusura in Android Auto corretta); `apk-prova.yml` prende Mappe anche da `prova-mappe` → `docs/stato/MAPPE.md`.
+- 16 novembre, Comunicazione: tavole «Lavorare insieme» (9) e «Spese di gruppo» (3) sulla tela, da approvare → `docs/stato/COMUNICAZIONE.md`.

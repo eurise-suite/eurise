@@ -60,9 +60,35 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 - **Da approvare** (pagina «Chat ed Email», 14 novembre, notte): fila «Chat al lavoro» con **ChatLavoro**, **ChatVideo**,
   **ChatCondividi**; fila «Email da lavoro» con **MailSmart**, **MailInsieme**, **MailScriviLavoro**. Documento collegato
   «Mail e Chat da lavoro · proposta, guida KMail, posta nostra»: https://claude.ai/artifact/F7uLSEo2KPWyaYBFtNCWJe
+- **Da approvare** (pagina «Chat ed Email», 16 novembre, sera; richiesta del proprietario):
+  - fila «Lavorare insieme»: **InsRuoli** (persone e ruoli: capo, segreteria, collaboratori, colleghi, famiglia, amici, con
+    cosa vede ognuno di base; da qui partono le proposte), **InsCondividi** («Condividi con…» per appuntamento, nota, cosa da
+    fare, elenco, cartella: Vede/Modifica, arriva in Chat o per email, dal tuo cloud), **InsAffida** («Affida a…» con
+    scadenza, una riga, ritorno se non risponde, avviso a fatta), **InsAssistente** (agenda con la segreteria: vede i liberi o
+    i titoli di lavoro, mai il personale; propone, confermi con un tocco), **InsElenchi** (spesa, casa, ufficio: chi lo
+    prende, chi l'ha fatto), **InsRiunione** (nota condivisa, @persona → attività assegnata), **InsDisponibilita**
+    (orari liberi in un link, l'appuntamento nasce nei due calendari), **InsPalla** («Passa la palla» da email, messaggio o
+    documento, con lo stato), **InsSquadra** (cartella di squadra in Drive: chi c'è, cosa è cambiato da ieri);
+  - fila «Spese di gruppo in Chat»: **SpeGruppo** (totale, quota, saldo di ognuno), **SpeAggiungi** (scontrino letto,
+    chi ha pagato, divisione uguale/quote/importi/%), **SpeSaldi** (chi deve a chi con i pagamenti ridotti al minimo,
+    IBAN o link di pagamento, «Segna come pagato»).
+  - Generatore delle tavole: `/home/claude/tela/gen/ins.py` (fuori dal repo, la tela resta la fonte). Toccato `canvas.json`
+    della tela solo per aggiungere le due file e i titoli.
+- **Come si farebbe (proposta, da confermare con le tavole)**:
+  - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
+    calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;
+  - ruoli in Rubrica (etichetta della suite sul contatto) con i permessi di base in `core`, cambiabili persona per persona;
+  - «Affida a», «Passa la palla», stato (affidata, vista, fatta) e spese come eventi strutturati nella stanza Matrix cifrata
+    con la persona o il gruppo (email come ripiego); scadenze e ritorno con WorkManager;
+  - segreteria: calendario Lavoro condiviso (liberi o titoli) e un calendario «Proposte» dove scrive lei; confermare sposta
+    l'evento nel tuo;
+  - disponibilità in un link: serve una pagina pubblica; verificare se Murena offre la prenotazione di Nextcloud Calendar
+    («Appuntamenti»), altrimenti servizio piccolo nostro (spento di base, nel centro privacy);
+  - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-1. **Decisioni del proprietario sul lavoro**: approvare le sei tavole da lavoro; dove stanno gli strumenti del gruppo
+1. **Decisioni del proprietario sul lavoro**: approvare le sei tavole da lavoro del 14 novembre e le dodici del 16
+   (Lavorare insieme, Spese di gruppo); quali funzioni vengono prima; dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
 2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto
