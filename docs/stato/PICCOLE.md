@@ -65,6 +65,22 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   abbreviazioni) entrano tra le parole come prima voce e un pallino sul tasto avvisa. Tavole: TastComparsaChiusa,
   TastComparsaAperta, TastComparsaProposta. Proposta del proprietario.
 
+## 16 novembre, notte: barra di Eurise a comparsa (giro 675, in apk-prova)
+- Tavole TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta **approvate**; il proprietario ha chiesto gli
+  strumenti della tastiera fatti come i comandi di Eurise (icona sopra, etichetta sotto, stessa larghezza): fatto anche
+  sulla tavola (etichette corte: Voce, Opzioni).
+- Codice (`EuriseBar.kt`): la fila dei comandi non c'è più; il tasto della fila delle parole di HeliBoard
+  (`suggestions_strip_toolbar_key`, lato della mano) diventa la stella (`eurise_ic_star`) e apre il riquadro, messo nella
+  finestra della tastiera (`android.R.id.content`, come i tasti a comparsa) così copre l'app senza spostarla; `LatinIME.
+  onComputeInsets` allarga l'area toccabile solo mentre è aperto. Due righe: comandi di Eurise e strumenti (CLIPBOARD,
+  EMOJI, DPAD, ONE_HANDED, UNDO, VOICE, SETTINGS di HeliBoard; pressione lunga come in HeliBoard). Si chiude scegliendo,
+  ritoccando la stella, scrivendo, cambiando campo.
+- Proposte: la prima nella fila delle parole (`eurise_proposal` in `suggestions_strip.xml`), le altre in cima al riquadro;
+  pallino arancio sulla stella se ce n'è più d'una. «Altro» (`ToolsPanel`) non è più nei comandi; tolta dalle impostazioni
+  la voce «barra sopra i suggerimenti».
+- Da provare sul telefono: posizione del riquadro sopra le parole (anche con una mano e tastiera flottante), tocchi sul
+  riquadro, pallino, Voce e Cursore dal riquadro.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -76,13 +92,12 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
     11 novembre: scritte in codice subito, su richiesta del proprietario di non aspettare le conferme).
   - Senza tavola, nello stile della suite: Luoghi, Cerca, diario, cartella protetta, pulizia della Galleria; importazione di
     Password.
-- **Da approvare**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta (barra di Eurise a comparsa, 16 novembre).
-  PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
+- **Approvate il 16 novembre, notte, e in codice**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta.
+- **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Barra di Eurise a comparsa**: appena approvate le tre tavole, codice in `EuriseBar` (la fila dei comandi diventa un
-   riquadro sopra le parole, il tasto con la stella nella fila delle parole di HeliBoard, «Altro» sparisce).
+0. **Prova del proprietario sul giro 675** (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
    gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200
    esempi, a fine scrittura). Dire se le lettere accanto escono ancora, se le correzioni sono migliori o peggiori, e
