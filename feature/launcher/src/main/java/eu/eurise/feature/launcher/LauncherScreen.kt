@@ -3,6 +3,7 @@ package eu.eurise.feature.launcher
 import eu.eurise.feature.launcher.home.DeskPage as HD
 import eu.eurise.feature.launcher.home.PagesHelper as HP
 import eu.eurise.feature.launcher.home.deskCarryTracker
+import eu.eurise.feature.launcher.home.DeskCarryLayer
 import android.Manifest
 import eu.eurise.feature.launcher.home.HealthPill
 import eu.eurise.feature.launcher.home.openOnSwipe
@@ -1152,7 +1153,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                 }
             }
             if ((carry.active || carry.peek) && LocalConfiguration.current.smallestScreenWidthDp < TabletSmallestWidth) {
-                eu.eurise.feature.launcher.home.DeskCarryLayer(
+                DeskCarryLayer(
                     carry, deskPages, homePager.currentPage, hazeState, settings.iconSize.dp, scene.themeDark,
                     appOf = { key -> state.apps.firstOrNull { it.key == key } },
                     canGo = { (homePager.currentPage + it) in deskPages.indices },
