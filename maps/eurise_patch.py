@@ -1850,8 +1850,15 @@ print("eurise_patch: bolla, otto aggiunte (avvisi, messaggi, arrivo condiviso)")
 # Android Auto: il riquadro della manovra nel verde della suite come nelle tavole approvate (MapAutoGuida, MapBollaAuto),
 # non nel nero dell'auto. Il colore lo applica l'auto: può tenerne uno più scuro se il contrasto col testo bianco non basta.
 # Il riquadro dell'arrivo (tempo e km) non ha un colore che l'app possa scegliere.
-patch(navscreen, """    builder.setNavigationInfo(getNavigationInfo());
-    return builder.build();""", """    builder.setNavigationInfo(getNavigationInfo());
-    builder.setBackgroundColor(androidx.car.app.model.CarColor.createCustom(0xFF2F6B45, 0xFF2F6B45));
-    return builder.build();""")
-print("eurise_patch: Android Auto, riquadro della manovra verde")
+# Riquadri della suite in auto (tavole MapAutoSuiteGiorno e MapAutoSuiteNotte, approvate il 17 novembre): la manovra e
+# l'arrivo li disegna Mappe (eurise/car/EuriseCarGuide.java) nel vetro della suite; al modello di guida dell'auto non si
+# passano più, così l'auto non disegna i suoi riquadri neri. La guida va ancora all'auto (NavigationManager.updateTrip).
+patch(navscreen, """    final TravelEstimate destinationTravelEstimate = getDestinationTravelEstimate();
+    if (destinationTravelEstimate != null)
+      builder.setDestinationTravelEstimate(destinationTravelEstimate);
+
+    builder.setNavigationInfo(getNavigationInfo());
+    return builder.build();""", """    return builder.build();""")
+patch(car_sc, """    mPillOverlay.addView(app.organicmaps.eurise.EuriseMediaBubble.car(""", """    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarGuide.create(mCarContext));
+    mPillOverlay.addView(app.organicmaps.eurise.EuriseMediaBubble.car(""")
+print("eurise_patch: Android Auto, riquadri della suite disegnati da Mappe (MapAutoSuite)")

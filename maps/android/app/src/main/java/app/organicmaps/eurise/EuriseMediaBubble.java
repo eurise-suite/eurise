@@ -435,9 +435,17 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
       return;
     final ViewGroup parent = (ViewGroup) getParent();
     int bottom = dp(10);
+    int left = dp(12);
     for (int i = 0; i < parent.getChildCount(); i++)
     {
       final View v = parent.getChildAt(i);
+      // I riquadri della guida disegnati da Mappe (MapAutoSuite): la bolla sta accanto all'arrivo, in basso.
+      if (v instanceof app.organicmaps.eurise.car.EuriseCarGuide)
+      {
+        left = Math.max(left, ((app.organicmaps.eurise.car.EuriseCarGuide) v).columnRight() + dp(12));
+        bottom = Math.max(bottom, dp(12));
+        continue;
+      }
       if (v == this || v.getVisibility() != VISIBLE || !(v.getLayoutParams() instanceof FrameLayout.LayoutParams))
         continue;
       final FrameLayout.LayoutParams o = (FrameLayout.LayoutParams) v.getLayoutParams();
@@ -446,9 +454,10 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
         bottom = Math.max(bottom, o.bottomMargin + v.getHeight() + dp(8));
     }
     final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
-    if (lp.bottomMargin != bottom)
+    if (lp.bottomMargin != bottom || lp.leftMargin != left)
     {
       lp.bottomMargin = bottom;
+      lp.leftMargin = left;
       setLayoutParams(lp);
     }
   }
