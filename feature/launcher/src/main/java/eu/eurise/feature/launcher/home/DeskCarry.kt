@@ -73,6 +73,9 @@ data class CarryItem(
     val from: String? = null,
     val fromFavorites: Boolean = false,
     val entry: AppEntry? = null,
+    /** Se parte da «Tutte le app» della dock: la categoria aperta lì. Finché il dito resta sul pannello si può lasciare
+     * su un'altra categoria (l'app si sposta) o su un'altra app (nasce una cartella). */
+    val category: String? = null,
 )
 
 /** Dove va a finire: la pagina, il posto tra le sue bolle (-1 in fondo) o i preferiti della home. */
@@ -114,6 +117,15 @@ class DeskCarry {
     val chips = HashMap<String, Rect>()
     var favoritesArea: Rect? = null
 
+    /** Il pannello «Tutte le app» aperto sotto il dito: dove sta, le sue categorie e le sue app (e cartelle). */
+    var panel: Rect? = null
+    val panelCats = HashMap<String, Rect>()
+    val panelApps = HashMap<String, Rect>()
+    /** Il dito è sul pannello; sopra quale categoria o quale app (chiave) cadrebbe. */
+    var inPanel by mutableStateOf(false)
+    var dropCategory by mutableStateOf<String?>(null)
+    var dropOnApp by mutableStateOf<String?>(null)
+
     val active: Boolean get() = item != null && moved
 
     /**
@@ -134,6 +146,9 @@ class DeskCarry {
     }
 
     fun end() {
+        inPanel = false
+        dropCategory = null
+        dropOnApp = null
         item = null
         moved = false
         chip = null
@@ -164,7 +179,7 @@ class DeskCarry {
         val carried = item ?: return slots
         if (!moved) return slots
         val rest = slots.filter { it.key != carried.slot.key }
-        return if (page == pageId && chip == null && !favorites) rest.placing(hole(carried.slot), index) else rest
+        return if (page == pageId && chip == null && !favorites && !inPanel) rest.placing(hole(carried.slot), index) else rest
     }
 
     internal fun track(at: Offset, pressed: Boolean, slop: Float, onDrop: () -> Unit): Boolean {

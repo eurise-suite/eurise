@@ -325,6 +325,10 @@ internal fun HomeBubble(
 private fun PageApp(slot: eu.eurise.feature.launcher.home.HomeSlot, home: HomeBoardData, actions: LauncherActions, mod: Modifier) {
     val entry = home.apps[slot.app]
     val onSurface = MaterialTheme.colorScheme.onBackground
+    val slotMenu = eu.eurise.feature.launcher.home.LocalSlotMenu.current
+    val appMenu = eu.eurise.feature.launcher.home.LocalAppMenu.current
+    // Un'app che non c'è più non ha menu: si va dritti alla modifica, per toglierla.
+    if (slotMenu?.open == true && (entry == null || appMenu == null)) androidx.compose.runtime.LaunchedEffect(Unit) { slotMenu?.edit?.invoke() }
     Box(mod, contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.clip(RoundedCornerShape(16.dp))
@@ -346,6 +350,12 @@ private fun PageApp(slot: eu.eurise.feature.launcher.home.HomeSlot, home: HomeBo
                     modifier = Modifier.widthIn(max = home.iconSize + 24.dp),
                 )
             }
+        }
+        if (entry != null && appMenu != null && slotMenu != null) {
+            eu.eurise.feature.launcher.home.AppMenuFor(
+                entry, appMenu, slotMenu.open, slotMenu.close,
+                onEditPage = slotMenu.edit, onRemoveFromPage = slotMenu.remove,
+            )
         }
     }
 }

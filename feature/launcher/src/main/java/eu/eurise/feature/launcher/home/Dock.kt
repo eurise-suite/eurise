@@ -46,6 +46,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -279,15 +283,19 @@ fun AllAppsPanel(
     bottom: Dp,
     onOpen: (AppEntry, BarCategory) -> Unit,
     onPage: (BarCategory) -> Unit,
-    /** Pressione lunga su un'app: «Aggiungi alla Scrivania…» (tavola ScrPagAggiungi). */
-    onHold: ((AppEntry) -> Unit)? = null,
     onAddCategory: (() -> Unit)?,
     onClose: () -> Unit,
+    /** Le cartelle: quelle della categoria aperta vengono prima, e le loro app non si ripetono. */
+    folders: List<eu.eurise.feature.launcher.folders.AppFolder> = emptyList(),
+    onOpenFolder: (eu.eurise.feature.launcher.folders.AppFolder) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     var current by remember { mutableIntStateOf(categories.indexOf(start).coerceAtLeast(0)) }
     val cat = categories.getOrNull(current) ?: return
     val height = (LocalConfiguration.current.screenHeightDp * 0.56f).dp.coerceIn(320.dp, 560.dp)
+    val carry = LocalDeskCarry.current
+    val menu = LocalAppMenu.current
+    var menuKey by remember { mutableStateOf<String?>(null) }
     DockSheet(hazeState, bottom, onClose) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(cat.label, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -296,25 +304,62 @@ fun AllAppsPanel(
                 modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button) { onPage(cat) }.padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
-        Row(Modifier.fillMaxWidth().height(height)) {
+        Row(
+            Modifier.fillMaxWidth().height(height)
+                .then(if (carry != null) Modifier.onGloballyPositioned { carry.panel = it.boundsInRoot() } else Modifier),
+        ) {
             val column: @Composable () -> Unit = {
-                CategoryColumn(categories, current, onAddCategory, Modifier.width(78.dp).fillMaxHeight()) { current = it }
+                CategoryColumn(categories, current, onAddCategory, Modifier.width(78.dp).fillMaxHeight(), carry) { current = it }
             }
             if (leftHanded) { column(); Spacer(Modifier.width(10.dp)) }
-            val apps = remember(cat, appsOf) { appsOf(cat) }
+            val here = remember(cat, folders) {
+                when {
+                    cat.isAll -> emptyList()
+                    cat.isFavorites -> folders.filter { it.place == eu.eurise.feature.launcher.folders.AppFolder.HOME }
+                    else -> folders.filter { it.place == cat.id }
+                }
+            }
+            val apps = remember(cat, appsOf, here) {
+                val inFolders = here.flatMap { it.keys }.toSet()
+                appsOf(cat).filter { it.key !in inFolders }
+            }
+            val all = remember(appsOf) { categories.firstOrNull { it.isAll }?.let(appsOf).orEmpty().associateBy { it.key } }
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                if (apps.isEmpty()) Text(stringResource(R.string.dock_empty_category), fontSize = 13.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                if (apps.isEmpty() && here.isEmpty()) Text(stringResource(R.string.dock_empty_category), fontSize = 13.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
                 LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(apps, key = { it.key }) { app ->
-                        Column(
-                            Modifier.clip(RoundedCornerShape(16.dp))
-                                .combinedClickable(onClick = { onOpen(app, cat) }, onLongClick = onHold?.let { h -> { h(app) } })
-                                .padding(vertical = 4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                    items(here, key = { it.key }) { folder ->
+                        val target = carry?.dropOnApp == folder.key
+                        Box(
+                            Modifier.clip(RoundedCornerShape(16.dp)).background(if (target) scheme.primary.copy(alpha = 0.18f) else Color.Transparent)
+                                .then(if (carry != null) Modifier.onGloballyPositioned { carry.panelApps[folder.key] = it.boundsInRoot() } else Modifier),
+                            contentAlignment = Alignment.TopCenter,
                         ) {
-                            AppIcon(app, 48.dp, dark, badges[app.packageName] ?: 0)
-                            Spacer(Modifier.height(5.dp))
-                            Text(app.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                            eu.eurise.feature.launcher.folders.FolderTile(folder, folder.keys.mapNotNull { all[it] }, dark, 48.dp, true, onOpen = { onOpenFolder(folder) })
+                        }
+                    }
+                    items(apps, key = { it.key }) { app ->
+                        val target = carry?.dropOnApp == app.key
+                        val lifted = carry != null && carry.active && carry.item?.slot?.app == app.key
+                        Box(contentAlignment = Alignment.TopCenter) {
+                            Column(
+                                Modifier.clip(RoundedCornerShape(16.dp))
+                                    .background(if (target) scheme.primary.copy(alpha = 0.18f) else Color.Transparent)
+                                    .then(if (carry != null) Modifier.onGloballyPositioned { carry.panelApps[app.key] = it.boundsInRoot() } else Modifier)
+                                    // Tenuta ferma: il menu dell'app. Trascinata: su un'altra categoria la sposta, su un'altra app
+                                    // fa una cartella, fuori dal pannello va sulla Scrivania (tavola ScrPagTrascina).
+                                    .combinedClickable(onClick = { onOpen(app, cat) }, onLongClick = {
+                                        if (carry != null) carry.start(CarryItem(appSlot(app.key), entry = app, category = cat.id), onStill = { menuKey = app.key })
+                                        else menuKey = app.key
+                                    })
+                                    .padding(vertical = 4.dp)
+                                    .graphicsLayer { alpha = if (lifted) 0.35f else 1f },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                AppIcon(app, 48.dp, dark, badges[app.packageName] ?: 0)
+                                Spacer(Modifier.height(5.dp))
+                                Text(app.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                            }
+                            if (menu != null) AppMenuFor(app, menu, menuKey == app.key, { menuKey = null }, from = cat.takeIf { it.holdsApps })
                         }
                     }
                 }
@@ -327,7 +372,7 @@ fun AllAppsPanel(
 
 /** La colonna delle categorie: il dito che scorre sopra sceglie quella da mostrare, senza staccarsi. */
 @Composable
-private fun CategoryColumn(categories: List<BarCategory>, current: Int, onAdd: (() -> Unit)?, modifier: Modifier, onPick: (Int) -> Unit) {
+private fun CategoryColumn(categories: List<BarCategory>, current: Int, onAdd: (() -> Unit)?, modifier: Modifier, carry: DeskCarry?, onPick: (Int) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val count = categories.size + if (onAdd != null) 1 else 0
     BoxWithConstraints(modifier) {
@@ -349,9 +394,13 @@ private fun CategoryColumn(categories: List<BarCategory>, current: Int, onAdd: (
                 },
         ) {
             categories.forEachIndexed { i, c ->
-                val on = i == current
+                // Un'app trascinata qui sopra si sposta in questa categoria.
+                val drop = carry?.dropCategory == c.id
+                val on = i == current || drop
                 Column(
-                    Modifier.fillMaxWidth().height(item).clip(RoundedCornerShape(16.dp)).background(if (on) scheme.primary.copy(alpha = 0.16f) else Color.Transparent)
+                    Modifier.fillMaxWidth().height(item).clip(RoundedCornerShape(16.dp))
+                        .background(if (drop) scheme.primary.copy(alpha = 0.32f) else if (on) scheme.primary.copy(alpha = 0.16f) else Color.Transparent)
+                        .then(if (carry != null) Modifier.onGloballyPositioned { carry.panelCats[c.id] = it.boundsInRoot() } else Modifier)
                         .semantics { contentDescription = c.label },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                 ) {

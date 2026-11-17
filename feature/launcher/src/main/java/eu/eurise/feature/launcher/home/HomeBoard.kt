@@ -179,6 +179,11 @@ fun homeRows(slots: List<HomeSlot>): List<List<Int>> {
     return rows
 }
 
+/** Il menu dell'app di una pagina: aperto o no, e come chiuderlo, entrare in modifica o toglierla. */
+class SlotMenu(val open: Boolean, val close: () -> Unit, val edit: () -> Unit, val remove: () -> Unit)
+
+val LocalSlotMenu = compositionLocalOf<SlotMenu?> { null }
+
 /** Vero se la bolla ha un'altezza scelta: allora scorre tutta insieme e gli elenchi interni non hanno una barra propria. */
 val LocalBubbleFixedHeight = compositionLocalOf { false }
 
@@ -215,6 +220,8 @@ fun HomeBoard(
     val carry = LocalDeskCarry.current
     val deskPage = LocalDeskPage.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    // L'app di una pagina tenuta ferma apre il suo menu (non la modifica della pagina, che sta nel menu).
+    var menuFor by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val density = LocalDensity.current
     val latest by rememberUpdatedState(slots)
@@ -283,6 +290,12 @@ fun HomeBoard(
                                 androidx.compose.runtime.CompositionLocalProvider(
                                     LocalPillMeasure provides { h -> if (naturals[slot.key] != h) naturals[slot.key] = h },
                                     LocalBubbleFixedHeight provides (slot.height > 0 || (index in linked && chosen != null)),
+                                    LocalSlotMenu provides SlotMenu(
+                                        open = menuFor == slot.key,
+                                        close = { menuFor = null },
+                                        edit = { menuFor = null; onEditingChange(true) },
+                                        remove = { menuFor = null; onChange(latest.filterNot { it.key == slot.key }) },
+                                    ),
                                 ) {
                                     content(
                                         slot,
@@ -293,7 +306,9 @@ fun HomeBoard(
                                                 else Modifier.longPressToEdit {
                                                     if (carry != null && deskPage != null) {
                                                         haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                                        carry.start(CarryItem(heldSlot, from = deskPage), index = heldIndex, onStill = { onEditingChange(true) })
+                                                        carry.start(CarryItem(heldSlot, from = deskPage), index = heldIndex, onStill = {
+                                                            if (heldSlot.kind == HomeKind.App) menuFor = heldSlot.key else onEditingChange(true)
+                                                        })
                                                     } else onEditingChange(true)
                                                 },
                                             ),

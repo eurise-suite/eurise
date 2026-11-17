@@ -290,7 +290,6 @@ fun AppTile(
     /** «Aggiungi alla Scrivania…»: apre la scelta della pagina; nullo per non mostrare la voce. */
     onAddToPage: (() -> Unit)? = null,
 ) {
-    var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(menuRequest) { if (menuRequest) { menu = true; onMenuClosed() } }
     Box(modifier) {
@@ -319,28 +318,61 @@ fun AppTile(
             )
             }
         }
-        DropdownMenu(expanded = menu && moving, onDismissRequest = { menu = false; moving = false }) {
+        AppMenu(
+            entry = entry, expanded = menu, onDismiss = { menu = false }, favorite = favorite,
+            onToggleFavorite = onToggleFavorite, onInfo = onInfo, onMove = onMove, moveTargets = moveTargets, onMoveTo = onMoveTo,
+            onCreateFolder = onCreateFolder, onSelect = onSelect, onAddToPage = onAddToPage,
+        )
+    }
+}
+
+/**
+ * Il menu di un'app (pressione lunga): crea cartella, scegli più app, sposta in un'altra categoria, preferita, aggiungi
+ * alla Scrivania, prima/dopo tra i preferiti, informazioni. Le voci con la funzione nulla non compaiono. Lo usano le
+ * categorie, la home e «Tutte le app» della dock.
+ */
+@Composable
+fun AppMenu(
+    entry: AppEntry,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    favorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    onInfo: (() -> Unit)?,
+    onMove: ((Int) -> Unit)? = null,
+    moveTargets: List<BarCategory> = emptyList(),
+    onMoveTo: (BarCategory) -> Unit = {},
+    onCreateFolder: (() -> Unit)? = null,
+    onSelect: (() -> Unit)? = null,
+    onAddToPage: (() -> Unit)? = null,
+    /** Per un'app su una pagina: entra nella modifica della pagina (allargare, spostare) e la toglie dalla pagina. */
+    onEditPage: (() -> Unit)? = null,
+    onRemoveFromPage: (() -> Unit)? = null,
+) {
+    var moving by remember { mutableStateOf(false) }
+    val close = { moving = false; onDismiss() }
+        DropdownMenu(expanded = expanded && moving, onDismissRequest = close) {
             moveTargets.forEach { target ->
                 DropdownMenuItem(
                     text = { Text(target.label) },
                     leadingIcon = { Icon(target.iconVector(2f), null) },
-                    onClick = { menu = false; moving = false; onMoveTo(target) },
+                    onClick = { close(); onMoveTo(target) },
                 )
             }
         }
-        DropdownMenu(expanded = menu && !moving, onDismissRequest = { menu = false }) {
+        DropdownMenu(expanded = expanded && !moving, onDismissRequest = close) {
             if (onCreateFolder != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.folder_create)) },
                     leadingIcon = { Icon(EuriseIcons.grid(), null) },
-                    onClick = { menu = false; onCreateFolder() },
+                    onClick = { close(); onCreateFolder() },
                 )
             }
             if (onSelect != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.apps_select)) },
                     leadingIcon = { Icon(EuriseIcons.check(), null) },
-                    onClick = { menu = false; onSelect() },
+                    onClick = { close(); onSelect() },
                 )
             }
             if (moveTargets.isNotEmpty()) {
@@ -353,36 +385,87 @@ fun AppTile(
             DropdownMenuItem(
                 text = { Text(stringResource(if (favorite) R.string.favorite_remove else R.string.favorite_add)) },
                 leadingIcon = { Icon(EuriseIcons.star(), null) },
-                onClick = { menu = false; onToggleFavorite() },
+                onClick = { close(); onToggleFavorite() },
             )
             if (onAddToPage != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.pages_add_menu)) },
                     leadingIcon = { Icon(EuriseIcons.grid(), null) },
-                    onClick = { menu = false; onAddToPage() },
+                    onClick = { close(); onAddToPage() },
+                )
+            }
+            if (onEditPage != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.page_app_edit)) },
+                    leadingIcon = { Icon(EuriseIcons.pen(), null) },
+                    onClick = { close(); onEditPage() },
+                )
+            }
+            if (onRemoveFromPage != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.page_app_remove)) },
+                    leadingIcon = { Icon(EuriseIcons.minus(), null) },
+                    onClick = { close(); onRemoveFromPage() },
                 )
             }
             if (onMove != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.favorite_move_before)) },
                     leadingIcon = { Icon(EuriseIcons.chevronLeft(), null) },
-                    onClick = { menu = false; onMove(-1) },
+                    onClick = { close(); onMove(-1) },
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.favorite_move_after)) },
                     leadingIcon = { Icon(EuriseIcons.chevronRight(), null) },
-                    onClick = { menu = false; onMove(1) },
+                    onClick = { close(); onMove(1) },
                 )
             }
             if (onInfo != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(if (entry.shortcut != null) R.string.webapp_remove else R.string.app_info)) },
                     leadingIcon = { Icon(EuriseIcons.tools(), null) },
-                    onClick = { menu = false; onInfo() },
+                    onClick = { close(); onInfo() },
                 )
             }
         }
-    }
+}
+
+/**
+ * Quello che il menu di un'app sa fare fuori dalle categorie (app delle pagine, «Tutte le app» della dock). [createFolder]
+ * riceve la categoria da cui si parte, se c'è: la cartella nasce lì, altrimenti nella categoria dell'app.
+ */
+class AppMenuActions(
+    val isFavorite: (AppEntry) -> Boolean,
+    val toggleFavorite: (AppEntry) -> Unit,
+    val info: (AppEntry) -> Unit,
+    val moveTargets: (AppEntry) -> List<BarCategory>,
+    val moveTo: (AppEntry, BarCategory) -> Unit,
+    val createFolder: (AppEntry, BarCategory?) -> Unit,
+    val addToPage: (AppEntry) -> Unit,
+)
+
+val LocalAppMenu = androidx.compose.runtime.staticCompositionLocalOf<AppMenuActions?> { null }
+
+/** Il menu di un'app con le azioni di [actions]; [extra] aggiunge quelle della pagina. */
+@Composable
+fun AppMenuFor(
+    entry: AppEntry,
+    actions: AppMenuActions,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    from: BarCategory? = null,
+    onEditPage: (() -> Unit)? = null,
+    onRemoveFromPage: (() -> Unit)? = null,
+) {
+    AppMenu(
+        entry = entry, expanded = expanded, onDismiss = onDismiss,
+        favorite = actions.isFavorite(entry), onToggleFavorite = { actions.toggleFavorite(entry) },
+        onInfo = if (entry.component != null || entry.shortcut != null) ({ actions.info(entry) }) else null,
+        moveTargets = actions.moveTargets(entry), onMoveTo = { actions.moveTo(entry, it) },
+        onCreateFolder = { actions.createFolder(entry, from) },
+        onAddToPage = { actions.addToPage(entry) },
+        onEditPage = onEditPage, onRemoveFromPage = onRemoveFromPage,
+    )
 }
 
 /** Una categoria della barra; tenendola premuta si apre la modifica della barra. */

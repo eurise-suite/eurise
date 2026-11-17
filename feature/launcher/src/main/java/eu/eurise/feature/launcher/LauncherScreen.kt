@@ -590,6 +590,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         val clearance = GlassDefaults.PillHeight + GlassDefaults.BottomMargin * 2 + navBottom
 
         val carryPages by androidx.compose.runtime.rememberUpdatedState(deskPages)
+        val carryBar by androidx.compose.runtime.rememberUpdatedState(barCategories)
         val carrySettings by androidx.compose.runtime.rememberUpdatedState(settings)
         val carryHaptics = androidx.compose.ui.platform.LocalHapticFeedback.current
         val carryEdge = with(LocalDensity.current) { 28.dp.toPx() }
@@ -598,12 +599,32 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         LaunchedEffect(carry.active) {
             if (!carry.active) return@LaunchedEffect
             category = HomePageId
-            dockPanel = null
+            // Da «Tutte le app» il pannello resta aperto finché il dito ci sta sopra.
+            if (carry.item?.category == null) dockPanel = null
             var side = 0
             var since = 0L
             while (carry.active) {
                 delay(CarryTick)
                 val p = carry.pointer
+                if (dockPanel != null) {
+                    if (carry.item?.category != null && carry.panel?.contains(p) == true) {
+                        val key = carry.item?.slot?.app
+                        val cat = carry.panelCats.entries.firstOrNull { (id, r) -> r.contains(p) && carryBar.any { it.id == id && it.holdsApps } }?.key
+                        val app = if (cat == null) carry.panelApps.entries.firstOrNull { (k, r) -> r.contains(p) && k != key }?.key else null
+                        if ((cat != null && cat != carry.dropCategory) || (app != null && app != carry.dropOnApp)) {
+                            carryHaptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        }
+                        carry.inPanel = true
+                        carry.dropCategory = cat
+                        carry.dropOnApp = app
+                        carry.chip = null
+                        continue
+                    }
+                    dockPanel = null
+                }
+                carry.inPanel = false
+                carry.dropCategory = null
+                carry.dropOnApp = null
                 val pages = carryPages
                 val chip = carry.chips.entries.firstOrNull { (id, r) -> r.contains(p) && (id == eu.eurise.feature.launcher.home.DeskCarry.NEW || pages.any { it.id == id }) }?.key
                 if (chip != carry.chip && chip != null) carryHaptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
@@ -636,17 +657,54 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         }
         val dropCarry: () -> Unit = drop@{
             val item = carry.item ?: return@drop
+            if (carry.inPanel) {
+                // Sul pannello «Tutte le app»: su una categoria l'app ci si sposta, su un'app nasce una cartella (su una
+                // cartella ci entra); altrove non succede niente.
+                val app = item.entry ?: return@drop
+                val toCategory = barCategories.firstOrNull { it.id == carry.dropCategory }
+                if (toCategory != null) {
+                    if (categoryOf(app)?.id != toCategory.id) viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to toCategory.id)) }
+                    return@drop
+                }
+                val onKey = carry.dropOnApp ?: return@drop
+                val folder = settings.folders.firstOrNull { it.key == onKey }
+                if (folder != null) {
+                    if (app.key !in folder.keys) viewModel.setFolderApps(folder, folder.keys + app.key)
+                    return@drop
+                }
+                val other = state.apps.firstOrNull { it.key == onKey } ?: return@drop
+                val from = barCategories.firstOrNull { it.id == item.category }?.takeIf { it.holdsApps }
+                val place = from ?: categoryOf(other) ?: return@drop
+                // L'app portata va nella stessa categoria della cartella, così la si trova lì.
+                if (categoryOf(app)?.id != place.id) viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to place.id)) }
+                viewModel.createFolder(listOf(other, app), place.id, context.getString(R.string.folder_default_name))
+                return@drop
+            }
             val currentId = deskPages.getOrNull(homePager.currentPage)?.id ?: HD.HOME
             val landed = viewModel.carryTo(item, carry.target(currentId))
             if (landed != currentId) goToPage = landed
         }
 
         val dropNow by androidx.compose.runtime.rememberUpdatedState(dropCarry)
+        // Il menu di un'app fuori dalle categorie (app delle pagine, «Tutte le app»): le stesse voci delle categorie.
+        val appMenu = eu.eurise.feature.launcher.home.AppMenuActions(
+            isFavorite = viewModel::isFavorite,
+            toggleFavorite = viewModel::toggleFavorite,
+            info = actions.appInfo,
+            moveTargets = { app -> barCategories.filter { it.holdsApps && it.id != categoryOf(app)?.id } },
+            moveTo = { app, target -> viewModel.updateSettings { it.copy(categoryOverrides = it.categoryOverrides + (app.key to target.id)) } },
+            createFolder = { app, from ->
+                val place = from ?: categoryOf(app)
+                if (place != null) folderPicker = FolderRequest(null, place.id, app.key)
+            },
+            addToPage = { pagePicker = it },
+        )
 
         androidx.compose.runtime.CompositionLocalProvider(
             eu.eurise.feature.launcher.home.LocalCommsApps provides { dockPanel = eu.eurise.feature.launcher.home.DockPanel.Comms },
             // Sul tablet la Scrivania è una sola pagina: niente trascinamento tra pagine.
             eu.eurise.feature.launcher.home.LocalDeskCarry provides carry.takeIf { LocalConfiguration.current.smallestScreenWidthDp < TabletSmallestWidth },
+            eu.eurise.feature.launcher.home.LocalAppMenu provides appMenu,
         ) {
         Box(Modifier.fillMaxSize().deskCarryTracker(carry) { dropNow() }) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))
@@ -1120,13 +1178,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         appsOf = { c -> eu.eurise.feature.launcher.home.categoryApps(c, state.apps, state.favorites, categoryOf, settings.appOrder[c.id]) },
                         badges = badges, dark = scene.themeDark, leftHanded = settings.leftHanded, hazeState = hazeState, bottom = dockBottom,
                         onOpen = { app, c -> dockPrefs.countOpen(c.id); close(); actions.openApp(app) },
-                        // Tenuta e lasciata ferma: «Dove metto…?»; tenuta e trascinata: si porta sulla Scrivania.
-                        onHold = { app ->
-                            carry.start(
-                                eu.eurise.feature.launcher.home.CarryItem(eu.eurise.feature.launcher.home.appSlot(app.key), entry = app),
-                                onStill = { pagePicker = app },
-                            )
-                        },
+                        folders = settings.folders,
+                        onOpenFolder = { openFolder = it.id },
                         onPage = { c -> dockPrefs.countOpen(c.id); close(); select(c) },
                         onAddCategory = if (barCategories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) ({ close(); categoryEditor = true }) else null,
                         onClose = close,
