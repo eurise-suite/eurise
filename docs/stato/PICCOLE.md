@@ -94,6 +94,19 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   sceglie in Impostazioni › Lingue e immissione › Controllo ortografico › Controllo ortografico predefinito, oppure spegne
   «Usa il controllo ortografico» (nessuna sottolineatura, nessuna tendina). La tastiera non può cambiarlo da sola.
 
+## 17 novembre: editor completo della Galleria, tavole da approvare
+- Richiesta del proprietario: nell'editor tutte le funzioni che si trovano in Snapseed. Sono funzioni comuni degli editor
+  fotografici: si rifanno con disegno e codice nostri, nello stile della suite. Sei tavole nuove sulla pagina Galleria,
+  fila a y 2488 (toccato `canvas.json` della tela): GalRegolaTutto (Luce, Colore con bilanciamento del bianco e
+  contagocce, Dettagli con struttura e nitidezza, Curve, Automatico), GalCurve, GalRitocca (Selettivo a punti, Pennello,
+  Correttivo, Ritratto), GalProspettiva (Ruota, Prospettiva, Espandi con bordi riempiti), GalEffetti (HDR, Drammatico,
+  Bagliore, Contrasto tonale, Vintage, Grana, Retrò, Grunge, Bianco e nero, Noir, Sfocatura, Doppia esposizione,
+  Ritratto, Cornici), GalModifiche (pila dei passi: riapri, togli, pennello per passo, salva come look, copia su altre foto).
+  Barra in basso: Ritaglia, Regola, Ritocca, Effetti, Testo, Disegna.
+- Fuori: «posa della testa» (serve un modello AI del viso); Ritratto usa il riconoscimento dei volti di Android
+  (`android.media.FaceDetector`, senza librerie Google). Correttivo e «Riempi in modo intelligente» con un algoritmo nostro
+  sul telefono (riempimento a toppe), senza modelli scaricati.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -106,7 +119,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Senza tavola, nello stile della suite: Luoghi, Cerca, diario, cartella protetta, pulizia della Galleria; importazione di
     Password.
 - **Approvate il 16 novembre, notte, e in codice**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta.
-- **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
+- **Da approvare**: GalRegolaTutto, GalCurve, GalRitocca, GalProspettiva, GalEffetti, GalModifiche (editor completo, 17 novembre).
+  PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
@@ -149,7 +163,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Tastiera: https://github.com/eurise-suite/eurise/releases/download/apk-prova/EuriseTastiera-debug.apk
   - Galleria: https://github.com/eurise-suite/eurise/releases/download/apk-prova/gallery-debug.apk
   - Se cambia `core/suite`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
-- Parti comuni toccate: `canvas.json` della tela (fila TastComparsa) il 16 novembre, notte; `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
+- Parti comuni toccate: `canvas.json` della tela (fila dell'editor sulla pagina Galleria) il 17 novembre; `canvas.json` (fila TastComparsa) il 16 novembre, notte; `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
 - Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy; servizi chiusi per ultimi con avviso.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
   scrive qui.
