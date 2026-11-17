@@ -58,33 +58,37 @@ elif engine == "serena":
         add(i, f"Serena {q} (Piper)", a, sr, time.time() - t)
 
 elif engine == "pocket":
-    # Pesi di Kyutai (CC BY 4.0) in ONNX, pacchetto italiano, con il motore pockettts di phoonnx (OpenVoiceOS).
-    from huggingface_hub import HfApi
-    repo = "OpenVoiceOS/phoonnx-pocket-tts"
-    files = HfApi().list_repo_files(repo)
-    voices = sorted(Path(f).stem for f in files if f.startswith("italian/") and f.endswith(".safetensors"))
-    print("file italiani:", [f for f in files if f.startswith("italian/")], flush=True)
-    from phoonnx.model_manager import TTSModelManager
-    manager = TTSModelManager()
+    # Pesi di Kyutai (CC BY 4.0) in ONNX, pacchetto italiano a 6 strati (mirror OpenVoiceOS), letti col runtime ONNX della
+    # comunità (KevinAHM/pocket-tts-onnx, clonato dal lavoro in /tmp/ptts; approvato dal proprietario il 17 novembre).
+    from huggingface_hub import snapshot_download
+    weights = Path(snapshot_download("OpenVoiceOS/phoonnx-pocket-tts", allow_patterns=["italian/*", "italian/voices/*"]))
+    voices = sorted(p.stem for p in (weights / "italian").rglob("*.safetensors"))
+    runtime = Path("/tmp/ptts")
+    src = next((p for p in runtime.rglob("*.py") if "class PocketTTSOnnx" in p.read_text(errors="ignore")), None)
+    if src is None:
+        raise SystemExit("runtime non trovato: " + str(sorted(str(p) for p in runtime.rglob("*.py"))[:40]))
+    print("runtime:", src, flush=True)
+    models = Path("/tmp/ptts-models")
+    models.mkdir(exist_ok=True)
+    if not (models / "italian").exists():
+        (models / "italian").symlink_to(weights / "italian")
+    sys.path.insert(0, str(src.parent))
+    mod = __import__(src.stem)
+    import inspect
+    print(inspect.signature(mod.PocketTTSOnnx.__init__), inspect.signature(mod.PocketTTSOnnx.generate), flush=True)
+    os.chdir(src.parent)
+    try:
+        tts = mod.PocketTTSOnnx(models_dir=str(models), language="italian")
+    except TypeError:
+        tts = mod.PocketTTSOnnx(models_dir=str(models / "italian"))
+    sr = getattr(tts, "sample_rate", None) or getattr(tts, "SAMPLE_RATE", None) or 24000
     for i, v in enumerate(voices, 1):
-        voice = None
-        for vid in (f"pockettts/it/{v}", f"pockettts/it-IT/{v}", f"pockettts/italian/{v}"):
-            try:
-                voice = manager.download_voice_by_id(vid).load()
-                break
-            except Exception as e:  # noqa: BLE001
-                print("  no", vid, e, flush=True)
-        if voice is None:
-            continue
         t = time.time()
-        wav = out / f"p{i}.wav"
-        a = voice.synthesize_wav(f"Voce {i}. " + TEXT)
-        if isinstance(a, (str, Path)):
-            a, sr = sf.read(a, dtype="float32")
-        elif hasattr(a, "readframes") or hasattr(a, "getbuffer"):
-            raise SystemExit("formato inatteso da synthesize_wav")
-        else:
-            sr = getattr(voice, "sample_rate", 24000)
+        try:
+            a = tts.generate(f"Voce {i}. " + TEXT, voice=v)
+        except Exception as e:  # noqa: BLE001
+            print("  voce", v, "per nome no:", e, flush=True)
+            a = tts.generate(f"Voce {i}. " + TEXT, voice=str(next((weights / "italian").rglob(v + ".safetensors"))))
         add(i, v, a, sr, time.time() - t)
 else:
     raise SystemExit("motore sconosciuto: " + engine)
