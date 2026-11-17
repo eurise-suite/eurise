@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 659)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 739)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -55,6 +55,23 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   Messaggi (Traduci). Leggi non è un lettore di libri: niente epub.
 - **Centro privacy**: voci Voce, Traduzione, Lettura dei documenti, AI online, permesso Chiamate per Alfred.
 
+## 17 novembre: Alfred più svelto (giro 739)
+- Prova del proprietario: Nicola più naturale ma «estremamente lento nel parlare»; Alfred deve far prima, non far
+  aspettare che parli. Fatto:
+  - **Dice solo l'essenziale**: conferme in una domanda sola (`Butler.spokenConfirm`: «Chiamo Marco?», «Lo annoto?»,
+    «Sveglia alle 7:00?», stringhe `alfred_say_*`) al posto di frase della scheda + «Procedo?»; dopo un'azione solo l'esito
+    (`Outcome.spoken`), la battuta resta scritta; risposte del cervello e domande sui dati a voce solo nelle prime due frasi
+    (`SpokenText.brief`, test `SpokenTextTest`), «Rileggi» legge tutto. Il pannello si chiude prima (al massimo 2,5 s).
+  - **Mai in attesa della voce**: toccare la scheda la zittisce; la voce si apre appena si comincia a parlare, così in
+    Eurise Voce il modello è già caricato e scaldato (frase di prova all'avvio del motore) quando serve.
+  - **Nicola più svelto**: Kokoro al passo 1,15 (prima 0,95, `KOKORO_PACE`, vale anche per la guida di Mappe); il primo
+    pezzo si taglia alla prima virgola (`SpeechChunks`, test `SpeechChunksTest`), così la prima parola arriva prima e il
+    resto si genera mentre parla.
+- **Da provare**: tempo dalla fine della frase detta alla prima parola di Alfred; il passo di Nicola (se ancora lento o
+  troppo svelto si ritocca `KOKORO_PACE`, o si dà il cursore Velocità anche a Nicola in Voce, oggi solo per Riccardo).
+- Se Kokoro resta lento a generare sul telefono: proposta di usare Riccardo (Piper, molto più leggero) per le conferme
+  brevi e Nicola per le risposte lunghe, oppure ridurre i thread o provare il modello Kokoro solo italiano/inglese.
+
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
 - **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
   AstImpostazioni (nella voce di Alfred); AlfGiornata, AlfSera, AlfSveglia, AlfMappe; AlfUnico, AlfUnicoMancino, AlfScegli,
@@ -65,7 +82,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario sul giro 659** (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+1. **Prove del proprietario sul giro 739** (prima Alfred più svelto, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
    «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
    ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
    cosa per un'altra»).
