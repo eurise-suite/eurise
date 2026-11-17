@@ -555,6 +555,50 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     fun sendSettlement(roomId: String, s: Expenses.Settlement, body: String, failed: () -> Unit) =
         sendContent(roomId, Expenses.content(s, body), Event.Kind.Settlement, failed)
 
+    // --- Turni del gruppo (tavole ChatTurni e ChatTurniCrea; funzioni di Bussola CA) ---
+
+    private fun shiftEvents(roomId: String) = timeline(roomId).filter { it.kind == Event.Kind.Shift && it.data != null }
+        .mapNotNull { e -> runCatching { JSONObject(e.data!!) }.getOrNull()?.let { e to it } }
+
+    /** Chi coordina: chi ha mandato per primo il piano. Solo le sue versioni valgono. */
+    fun shiftCoordinator(roomId: String): String? =
+        shiftEvents(roomId).firstOrNull { (_, c) -> c.optString("msgtype") == Shifts.PLAN }?.first?.sender
+
+    fun shiftPlan(roomId: String): Shifts.Plan? {
+        val boss = shiftCoordinator(roomId) ?: return null
+        return shiftEvents(roomId).filter { (e, c) -> e.sender == boss && c.optString("msgtype") == Shifts.PLAN }
+            .mapNotNull { (e, c) -> Shifts.plan(c, e.time) }.maxByOrNull { it.time }
+    }
+
+    /** Disponibilità e preferenze: l'ultima di ogni persona, valida solo se l'ha mandata lei. */
+    fun shiftAvail(roomId: String): Map<String, Shifts.Avail> =
+        shiftEvents(roomId).filter { (_, c) -> c.optString("msgtype") == Shifts.AVAIL }
+            .mapNotNull { (e, c) -> Shifts.avail(c, e.sender, e.time) }.groupBy { it.person }.mapValues { (_, v) -> v.maxBy { it.time } }
+
+    fun shiftEffective(roomId: String): Shifts.Effective? {
+        val plan = shiftPlan(roomId) ?: return null
+        val ev = shiftEvents(roomId)
+        val changes = ev.filter { (_, c) -> c.optString("msgtype") == Shifts.CHANGE }.mapNotNull { (e, c) -> Shifts.change(c, e.sender, e.time) }
+            .distinctBy { it.id }
+        val replies = ev.filter { (_, c) -> c.optString("msgtype") == Shifts.REPLY }.mapNotNull { (e, c) -> Shifts.reply(c, e.sender, e.time) }
+        return Shifts.effective(plan, changes, replies, shiftCoordinator(roomId))
+    }
+
+    fun sendShift(roomId: String, content: JSONObject, failed: () -> Unit) = sendContent(roomId, content, Event.Kind.Shift, failed)
+
+    /** Riscrive i propri turni del gruppo nel calendario «Turni» del telefono, se acceso. */
+    fun syncShiftCalendar(roomId: String) {
+        val plan = shiftPlan(roomId) ?: return
+        val eff = shiftEffective(roomId) ?: return
+        val me = session?.userId ?: return
+        val group = room(roomId)?.name.orEmpty()
+        val names = members[roomId].orEmpty().associateWith { nameOf(it) }
+        scope.launch(Dispatchers.IO) {
+            ShiftCalendar.sync(context, roomId, group, plan, eff.entries, me, { names[it] ?: nameOf(it) },
+                context.getString(R.string.sh_calendar_name), plan.reminder)
+        }
+    }
+
     fun send(roomId: String, text: String, failed: () -> Unit) =
         sendContent(roomId, JSONObject().put("msgtype", "m.text").put("body", text), Event.Kind.Text, failed)
 

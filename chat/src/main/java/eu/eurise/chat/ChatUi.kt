@@ -91,6 +91,10 @@ interface ChatActions {
     fun pickFile(mimes: Array<String>, done: (android.net.Uri?) -> Unit)
     /** Una cartella da leggere anche dopo (i promemoria di Millewin): il permesso resta. */
     fun pickFolder(done: (android.net.Uri?) -> Unit)
+    /** Il permesso del calendario, per il calendario «Turni» sul telefono; true se c'è. */
+    fun askCalendar(done: (Boolean) -> Unit)
+    /** Condivide un testo (riepilogo dei turni per chi non usa la Chat) con l'app che sceglie l'utente. */
+    fun shareText(text: String)
 }
 
 /** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */
@@ -534,13 +538,18 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         if (group) Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
             Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
+            // Turni del gruppo (tavola ChatTurni): la settimana sempre a portata, chi è in turno ora, scambi controllati.
+            Chip(stringResource(R.string.sh_tab), selected = tab == 2) { tab = 2 }
         }
         if (group && tab == 1) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ExpensesPane(model, actions, roomId) }
+        } else if (group && tab == 2) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
         } else {
             LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
                 items(events.asReversed(), key = { it.id }) { e ->
                     if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = e.sender == me)
+                    else if (e.kind == Event.Kind.Shift) ShiftBubble(model, actions, roomId, e, mine = e.sender == me)
                     else Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
                 }
             }

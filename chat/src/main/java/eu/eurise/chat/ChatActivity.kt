@@ -22,6 +22,22 @@ class ChatActivity : ComponentActivity(), ChatActions {
     private lateinit var model: ChatModel
     private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     /** Chi aspetta il file o la cartella scelti (un selettore alla volta). */
+    private var calendarDone: ((Boolean) -> Unit)? = null
+    private val calendar = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        calendarDone?.invoke(r.values.all { it }); calendarDone = null
+    }
+
+    override fun askCalendar(done: (Boolean) -> Unit) {
+        if (ShiftCalendar.allowed(this)) { done(true); return }
+        calendarDone = done
+        calendar.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
+    }
+
+    override fun shareText(text: String) {
+        runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)) }
+            .onFailure { toast(getString(R.string.st_no_app)) }
+    }
+
     private var picked: ((Uri?) -> Unit)? = null
     private val openFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> picked?.invoke(uri); picked = null }
     private val openFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
