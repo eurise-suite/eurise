@@ -61,6 +61,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     private val client get() = session?.let(::ChatClient)
 
     val rooms = mutableStateListOf<Room>()
+    /** «Una persona, tutti i canali»: la vista Persone e il filo di una persona con SMS, chiamate ed email. */
+    val uni by lazy { Uni(context, scope, this) }
     private val data = HashMap<String, RoomState>()
     private val timelines = HashMap<String, SnapshotStateList<Event>>()
     /** Nomi delle persone (per i messaggi dei gruppi). */
@@ -470,6 +472,11 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     fun open(roomId: String?) {
         openRoom = roomId
         roomId ?: return
+        markRead(roomId)
+    }
+
+    /** Segna letta la stanza fino all'ultimo messaggio (anche dal filo di una persona, senza aprire la chat). */
+    fun markRead(roomId: String) {
         val last = timeline(roomId).lastOrNull { !it.id.startsWith("local:") } ?: return
         val c = client ?: return
         data[roomId]?.unread = 0

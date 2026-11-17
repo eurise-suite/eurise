@@ -60,18 +60,9 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         prefs.edit().putBoolean("block_images", on).apply()
     }
 
-    private fun cacheFile(id: String) = File(context.cacheDir, "posta_$id.json")
+    private fun cacheFile(id: String) = MailCache.file(context, id)
 
-    private fun readCache(id: String): List<Summary> = runCatching {
-        val a = JSONArray(cacheFile(id).readText())
-        (0 until a.length()).map { i ->
-            val o = a.getJSONObject(i)
-            Summary(
-                id, o.getLong("uid"), o.optString("fn"), o.optString("fa"), o.optString("s"), o.getLong("d"),
-                o.optBoolean("seen"), runCatching { Kind.valueOf(o.optString("k")) }.getOrDefault(Kind.People), o.optBoolean("ans"),
-            )
-        }
-    }.getOrDefault(emptyList())
+    private fun readCache(id: String): List<Summary> = MailCache.read(context, id)
 
     private fun writeCache(id: String, list: List<Summary>) {
         val a = JSONArray()
@@ -272,4 +263,20 @@ internal fun offerToStudio(context: Context, known: StudioContract.Known, list: 
     list.filter { !it.seen && known.email(it.fromAddress) }.forEach { m ->
         StudioContract.offer(context, Channel.Email, m.fromAddress, m.subject.ifBlank { "—" }, studioRef(m), m.date)
     }
+}
+
+/** La posta ricevuta tenuta sul telefono (solo intestazioni), per l'elenco e per la Chat («Una persona, tutti i canali»). */
+object MailCache {
+    fun file(context: Context, id: String) = File(context.cacheDir, "posta_$id.json")
+
+    fun read(context: Context, id: String): List<Summary> = runCatching {
+        val a = JSONArray(file(context, id).readText())
+        (0 until a.length()).map { i ->
+            val o = a.getJSONObject(i)
+            Summary(
+                id, o.getLong("uid"), o.optString("fn"), o.optString("fa"), o.optString("s"), o.getLong("d"),
+                o.optBoolean("seen"), runCatching { Kind.valueOf(o.optString("k")) }.getOrDefault(Kind.People), o.optBoolean("ans"),
+            )
+        }
+    }.getOrDefault(emptyList())
 }

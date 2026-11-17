@@ -104,6 +104,23 @@
                 <data android:mimeType="vnd.android.cursor.dir/contact" />
             </intent-filter>
         </activity-alias>
+        <!-- «Una persona, tutti i canali»: dalla Chat si chiama con un tocco. Solo app della suite (permesso di firma). -->
+        <activity-alias
+            android:name=".SuiteCall"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:targetActivity=".PhoneActivity">
+            <intent-filter>
+                <action android:name="eu.eurise.action.SUITE_CALL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity-alias>
+        <!-- Chiamate con la nota e Rubrica per la Chat, solo app della suite (controllato in call()). -->
+        <provider
+            android:name=".data.PeopleProvider"
+            android:authorities="${applicationId}.persone"
+            android:exported="true" />
         <activity
             android:name=".call.CallActivity"
             android:exported="false"

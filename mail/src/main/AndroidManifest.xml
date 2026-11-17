@@ -58,6 +58,11 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <!-- «Una persona, tutti i canali»: le email di una persona per la Chat, solo app della suite (controllato in call()). -->
+        <provider
+            android:name=".PeopleProvider"
+            android:authorities="${applicationId}.persone"
+            android:exported="true" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.allegati"

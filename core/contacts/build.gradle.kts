@@ -20,6 +20,8 @@ android {
 // raggiungere una persona (chiamata, SMS, WhatsApp, Telegram, email) e l'avatar con le iniziali. Tutto sul telefono.
 dependencies {
     implementation(project(":core:designsystem"))
+    // Le risposte della Rubrica per «Una persona, tutti i canali» (PeopleContract).
+    implementation(project(":core:suite"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)

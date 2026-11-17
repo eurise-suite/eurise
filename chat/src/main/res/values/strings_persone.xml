@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- «Una persona, tutti i canali» (tavole UniPersone, UniConversazione, UniCanale). -->
+<resources>
+    <string name="pe_view_people">Persone</string>
+    <string name="pe_view_chat">Solo Chat</string>
+    <string name="pe_view_unread">Non lette</string>
+    <string name="pe_view_unread_n">Non lette · %1$d</string>
+    <string name="pe_note">Una riga per persona, non per app: Chat, SMS, email e chiamate della stessa persona stanno insieme. Tutto unito sul telefono, nessun server in mezzo; il lavoro resta nell\'account di lavoro.</string>
+
+    <string name="pe_ch_chat">Chat</string>
+    <string name="pe_ch_chat_ciarly">Chat · Ciarly</string>
+    <string name="pe_ch_sms">SMS</string>
+    <string name="pe_ch_email">Email</string>
+    <string name="pe_ch_call">Chiama</string>
+    <string name="pe_chat_encrypted">Chat, cifrata</string>
+    <string name="pe_f_all">Tutto</string>
+    <string name="pe_f_calls">Chiamate</string>
+
+    <string name="pe_prev_email">Email: %1$s</string>
+    <string name="pe_prev_call_note">Chiamata · nota: %1$s</string>
+    <string name="pe_call_missed">Chiamata persa</string>
+    <string name="pe_call_min">Chiamata · %1$d min</string>
+    <string name="pe_call_in">Chiamata ricevuta · %1$d min</string>
+    <string name="pe_call_out">Chiamata fatta · %1$d min</string>
+    <string name="pe_call_back">Richiama</string>
+    <string name="pe_note_quote">Nota: «%1$s»</string>
+    <string name="pe_email_from">Email · %1$s</string>
+    <string name="pe_no_subject">(senza oggetto)</string>
+    <string name="pe_open_email">Apri l\'email</string>
+    <string name="pe_today">oggi</string>
+    <string name="pe_yesterday">ieri</string>
+
+    <string name="pe_together">Chat, SMS, email e chiamate, insieme</string>
+    <string name="pe_open_chat">Apri solo la Chat</string>
+    <string name="pe_empty_thread">Ancora niente con questa persona. Scrivi qui sotto: il canale si sceglie a sinistra.</string>
+    <string name="pe_hint_where">Rispondi dove ti ha scritto: %1$s. Per cambiare, tocca il canale a sinistra o tieni premuto Invia.</string>
+    <string name="pe_pick_channel">Canale: %1$s. Tocca per cambiare</string>
+    <string name="pe_no_channel">Nessun canale</string>
+    <string name="pe_write_to">Scrivi a %1$s</string>
+    <string name="pe_sms_failed">SMS non partito da Eurise Messaggi: si apre l\'app degli SMS</string>
+    <string name="pe_no_mail">Per aprire l\'email serve Eurise Email</string>
+
+    <string name="pe_sheet_title">Scrivi a %1$s con…</string>
+    <string name="pe_sheet_sub">Tocco breve su Invia: il canale con la stellina. Pressione lunga: questo elenco.</string>
+    <string name="pe_sub_chat">cifrata da un capo all\'altro, gratis, anche foto e file</string>
+    <string name="pe_sub_chat_plain">sul server della Chat, non cifrata in questa stanza</string>
+    <string name="pe_sub_chat_missing">non è ancora sulla Chat</string>
+    <string name="pe_sub_sms">%1$s, dal tuo operatore; corto, arriva senza internet</string>
+    <string name="pe_sub_email">%1$s; con oggetto, per allegati e cose lunghe</string>
+    <string name="pe_sub_call">voce, come sempre; la nota della chiamata resta qui</string>
+    <string name="pe_sub_no_number">nessun numero in Rubrica</string>
+    <string name="pe_sub_no_email">nessuna email in Rubrica</string>
+    <string name="pe_star">Preferito</string>
+    <string name="pe_auto_title">Scelta automatica</string>
+    <string name="pe_auto_where">Rispondi dove ti ha scritto</string>
+    <string name="pe_auto_rules">Con un testo lungo: email. Per tutto il resto: dove ti ha scritto per ultimo, poi la stellina.</string>
+
+    <string name="pe_link">Unisci al contatto della Rubrica</string>
+    <string name="pe_link_title">Chi è in Rubrica?</string>
+    <string name="pe_link_sub">Scegli il contatto di %1$s: da qui in poi SMS, chiamate ed email arrivano nello stesso filo. Resta solo su questo telefono.</string>
+    <string name="pe_link_search">Cerca in Rubrica</string>
+    <string name="pe_link_hint">Scrivi un nome.</string>
+    <string name="pe_link_none">Nessun contatto con questo nome (serve Eurise Telefono con il permesso della Rubrica).</string>
+</resources>

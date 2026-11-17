@@ -93,6 +93,8 @@ class ChatActivity : ComponentActivity(), ChatActions {
     override fun onStart() {
         super.onStart()
         model.start()
+        // Tornando nella Chat (magari da Messaggi o dal Telefono): il filo aperto si rilegge.
+        if (model.uni.who != null) model.uni.loadThread()
     }
 
     override fun onStop() {

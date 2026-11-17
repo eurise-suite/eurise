@@ -104,8 +104,8 @@ private enum class SecurityPage { Recovery, Verify }
 
 private val VERIFIED = Color(0xFF4F6B5A)
 private val TINTS = listOf(0xFF3E5C8A, 0xFF4F6B5A, 0xFF6B4A7A, 0xFF85672B, 0xFF2E6E73, 0xFFA0522D, 0xFF8C2F39, 0xFF55585E)
-private fun tintFor(key: String) = Color(TINTS[(key.hashCode() and 0x7fffffff) % TINTS.size])
-private fun initials(name: String): String {
+internal fun tintFor(key: String) = Color(TINTS[(key.hashCode() and 0x7fffffff) % TINTS.size])
+internal fun initials(name: String): String {
     val w = name.split(Regex("[\\s._\\-@:]+")).filter { it.isNotEmpty() && it.first().isLetterOrDigit() }
     return (if (w.size >= 2) "${w[0].first()}${w[1].first()}" else w.firstOrNull()?.take(2) ?: "?").uppercase()
 }
@@ -123,6 +123,8 @@ fun ChatApp(model: ChatModel, actions: ChatActions) {
             page == SecurityPage.Recovery -> RecoveryScreen(model, actions, onClose = { page = null })
             page == SecurityPage.Verify -> VerifyScreen(model, actions, onClose = { if (model.verify !is Verify.Incoming) model.cancelVerify(false); page = null })
             open != null -> Conversation(model, actions, open, onVerify = { page = SecurityPage.Verify })
+            // Il filo di una persona con Chat, SMS, email e chiamate (tavola UniConversazione).
+            model.uni.who != null -> PersonScreen(model, actions)
             model.studioPage != null -> StudioScreen(model, actions)
             else -> RoomList(model, actions, onRecovery = { page = SecurityPage.Recovery }, onVerify = { page = SecurityPage.Verify })
         }
@@ -242,6 +244,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     val studio by StudioRepo.state.collectAsStateWithLifecycle()
     val q = query.trim().lowercase()
     val shown = model.rooms.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
+    if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -263,6 +266,8 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
+            // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
+            ViewChips(model)
             // Senza chiave di recupero l'avviso invita a crearla (cambiando telefono i messaggi cifrati non si riaprirebbero).
             val safe = model.security?.backup == true
             Row(
@@ -278,10 +283,11 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         if (!model.ready) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
         model.error?.let { Text(it, fontSize = 12.5.sp, color = scheme.error, modifier = Modifier.padding(horizontal = 20.dp)) }
         Box(Modifier.weight(1f)) {
-            if (model.ready && shown.isEmpty()) Text(stringResource(R.string.ch_empty), fontSize = 14.sp, lineHeight = 20.sp,
+            if (model.ready && shown.isEmpty() && model.uni.view == Uni.View.Chat) Text(stringResource(R.string.ch_empty), fontSize = 14.sp, lineHeight = 20.sp,
                 color = scheme.onSurfaceVariant, modifier = Modifier.padding(24.dp))
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                items(shown, key = { it.id }) { r -> RoomRow(model, r) }
+                if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) }
+                else peopleItems(model, query, unreadOnly = model.uni.view == Uni.View.Unread)
                 item { Spacer(Modifier.height(100.dp)) }
             }
             if (model.otherSession != null) AccountBar(model, Modifier.align(Alignment.BottomCenter)) { creating = true }
@@ -395,7 +401,7 @@ private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
 
 /** Le 10 tacchette di privacy a semaforo (regola della suite). */
 @Composable
-private fun Ticks(n: Int) {
+internal fun Ticks(n: Int) {
     val on = when { n >= 8 -> Color(0xFF4F8A5B); n >= 5 -> Color(0xFFC9A227); else -> Color(0xFFA4502E) }
     Row(horizontalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.semantics { contentDescription = "$n/10" }) {
         repeat(10) { i -> Box(Modifier.width(4.dp).height(12.dp).clip(RoundedCornerShape(1.dp)).background(if (i < n) on else Color(0xFFDADAD3))) }
@@ -403,7 +409,7 @@ private fun Ticks(n: Int) {
 }
 
 @Composable
-private fun RoomRow(model: ChatModel, r: Room) {
+internal fun RoomRow(model: ChatModel, r: Room) {
     val scheme = MaterialTheme.colorScheme
     val tint = tintFor(r.id)
     Column {
@@ -440,7 +446,7 @@ private fun RoomRow(model: ChatModel, r: Room) {
     }
 }
 
-private fun shortTime(t: Long): String {
+internal fun shortTime(t: Long): String {
     val c = Calendar.getInstance().apply { timeInMillis = t }
     val now = Calendar.getInstance()
     return if (c.get(Calendar.YEAR) == now.get(Calendar.YEAR) && c.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR))

@@ -119,6 +119,13 @@ class PhoneActivity : ComponentActivity() {
             return
         }
         val data = intent.data ?: return
+        // Dalla Chat («Una persona, tutti i canali»): l'ingresso ha il permesso di firma, quindi si chiama subito.
+        if (intent.action == eu.eurise.core.suite.PeopleContract.ACTION_CALL && intent.component?.className?.endsWith("SuiteCall") == true &&
+            data.scheme == "tel"
+        ) {
+            call(data.schemeSpecificPart.orEmpty())
+            return
+        }
         if (data.scheme == "tel") dialNumber.value = data.schemeSpecificPart.orEmpty()
     }
 

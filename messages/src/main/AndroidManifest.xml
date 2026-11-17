@@ -113,6 +113,11 @@
                 <data android:scheme="mmsto" />
             </intent-filter>
         </service>
+        <!-- «Una persona, tutti i canali»: gli SMS di una persona per la Chat, solo app della suite (controllato in call()). -->
+        <provider
+            android:name=".system.PeopleProvider"
+            android:authorities="${applicationId}.persone"
+            android:exported="true" />
         <!-- File degli MMS passati al servizio MMS del sistema, uno alla volta, con permesso temporaneo. -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -239,6 +239,8 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
                 val time = java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM, HH:mm", Locale.ITALIAN))
                 HubBridge.send(context, BuildConfig.HUB_PACKAGE, permission(), HubBridge.ACTION_NOTE,
                     context.getString(R.string.ph_note_title, who, time) + "\n" + note.trim())
+                // Anche sul telefono, per il filo della persona nella Chat («Una persona, tutti i canali»).
+                eu.eurise.phone.data.CallNotes.add(context, lastNumber, System.currentTimeMillis(), note)
             }
             onEnd()
         } else if (calls.isEmpty() && lastNumber.isEmpty()) onEnd()

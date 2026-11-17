@@ -37,7 +37,24 @@ class MailActivity : ComponentActivity(), MailActions {
         model = MailModel(applicationContext, lifecycleScope)
         if (model.accounts.isNotEmpty()) SyncWorker.schedule(this)
         val draft = draftFrom(intent)
+        openFrom(intent)
         setContent { EuriseTheme { MailApp(model, this, draft) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        openFrom(intent)
+    }
+
+    /** Dalla Chat («Una persona, tutti i canali»): si apre l'email toccata nel filo della persona («casella:uid»). */
+    private fun openFrom(intent: Intent?) {
+        if (intent?.action != eu.eurise.core.suite.PeopleContract.ACTION_OPEN_MAIL) return
+        val ref = intent.getStringExtra(eu.eurise.core.suite.PeopleContract.EXTRA_REF) ?: return
+        val account = ref.substringBeforeLast(':')
+        val uid = ref.substringAfterLast(':').toLongOrNull() ?: return
+        if (model.account(account) == null) return
+        val s = model.messages.firstOrNull { it.accountId == account && it.uid == uid } ?: Summary(account, uid, "", "", "", 0L, true, Kind.People)
+        model.open(s)
     }
 
     /** «mailto:», «Invia email» e «Condividi» delle altre app: si apre Scrivi già compilato. */

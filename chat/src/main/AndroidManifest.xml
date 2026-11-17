@@ -16,6 +16,21 @@
         <package android:name="eu.eurise.hub.debug" />
         <package android:name="eu.eurise.password" />
         <package android:name="eu.eurise.password.debug" />
+        <!-- «Una persona, tutti i canali»: SMS, chiamate con la nota, Rubrica ed email delle app della suite. -->
+        <package android:name="eu.eurise.messages" />
+        <package android:name="eu.eurise.messages.debug" />
+        <package android:name="eu.eurise.phone" />
+        <package android:name="eu.eurise.phone.debug" />
+        <package android:name="eu.eurise.mail" />
+        <package android:name="eu.eurise.mail.debug" />
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
     </queries>
 
     <application
