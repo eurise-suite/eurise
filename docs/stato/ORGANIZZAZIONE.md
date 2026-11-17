@@ -239,6 +239,13 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   azzurro) con una sfumatura dal più chiaro al più intenso (`shimmer`). Il tema di prima resta come «Colore d'accento».
 - Giro 731 (Compila 44052844574 su `prova-organizzazione`).
 
+## 17 novembre, fine mattina: tavola IcoCeruleo (da scegliere)
+- Il proprietario: la sfumatura del Ceruleo va bene e resta; **dove l'accento è pieno deve tendere al blu intenso**, non
+  al chiaro. Tavola **IcoCeruleo** (pagina Bolle della home, in alto): sette blu pieni da A #1298DF (oggi) a G #003AC7,
+  ciascuno su pulsante, giorno di oggi, interruttore, numero, testo, con il contrasto del testo bianco (A 3,2:1 non
+  basta; da C #0B74D8 in su va bene). Toccato `canvas.json` della tela (una voce in `boards` e in `order`). Dopo la scelta:
+  `ExtraTint.Ceruleo.light` (e un `dark` coerente), la sfumatura non cambia.
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
