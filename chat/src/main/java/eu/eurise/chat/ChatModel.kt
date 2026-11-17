@@ -213,6 +213,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     /** Fuori orario il lavoro tace (impostazione del foglio degli account). */
+    @set:JvmName("assignWorkQuiet")
     var workQuiet by mutableStateOf(ChatAccounts.workQuiet(context))
         private set
 

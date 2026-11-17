@@ -252,6 +252,38 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Parte non nostra toccata: `chat/src/main/res/values/bussola_strings.xml`, apostrofo non protetto in `bu_rep_type`
   («un'immagine») che fermava la compilazione di tutti (giro 734); corretto con `\'`.
 
+## 17 novembre, pomeriggio: agenda con l'assistente (CollAssistente, InsAssistente)
+- **Prove del proprietario sul 735**: l'esito non è ancora arrivato (la chat del 17 pomeriggio non l'ha ricevuto).
+- **Come funziona**: sul cloud dell'utente (Murena o Nextcloud; l'account delle note se sa condividere, altrimenti il primo
+  dei due) nasce il calendario di appuntamenti **«Proposte»** (`eurise-proposte`), condiviso **in modifica** con chi aiuta
+  (email o nome utente dello stesso server). Lei ci scrive le proposte con qualunque app di calendario (anche Eurise: con
+  DAVx⁵ le compare «Proposte (Mario)» tra i calendari dell'editor); la prima riga della descrizione è il perché. I
+  calendari scelti in «Cosa vede» le si condividono in sola lettura («Titoli»); gli appuntamenti privati (CLASS
+  confidenziale) Nextcloud li mostra come «Occupato». «Libero/occupato» per un calendario intero non c'è: Nextcloud non
+  ha questa condivisione (la tavola InsAssistente lo prevedeva per Personale; ora è «Non vede»).
+- **Schermo** «Agenda con Laura» (`feature/calendar/assistant/AssistantScreen.kt`, rotta `calendar/assistant`): settimana
+  con i punti (grigi le proposte), «Da confermare · N», schede con «Laura propone · perché», Conferma / Altra ora (giorno e
+  ora, stessa durata) / ✕, «Conferma tutte e N» in basso a destra, «Le confermate vanno in» (calendario del telefono, di
+  base quello con lo stesso nome del primo calendario che lei vede), «Cosa vede Laura», tacchette, «Smetti di condividere».
+  Senza assistente lo stesso schermo serve a condividere (persona tra i contatti con email, calendari di lavoro già scelti).
+- **Confermata**: nasce nel calendario scelto (Calendar Provider, poi DAVx⁵ la porta sul server, dove lei la vede se ha
+  quel calendario) e la proposta si cancella dal server. **Rifiutata**: resta su «Proposte» con `STATUS:CANCELLED` (lei la
+  vede barrata); le annullate passate e le proposte passate da più di un giorno si tolgono da sole.
+- **Nel Calendario**: proposte in grigio nelle viste (se il calendario «Proposte» non è già sul telefono; se c'è, i suoi
+  appuntamenti diventano grigi), un tocco apre l'agenda condivisa; striscia «Agenda con Laura · N da confermare» sotto le
+  viste. **Avviso** delle proposte nuove (canale «Agenda con l'assistente») dal lavoro `AssistantSyncJob` nella
+  sincronizzazione del cloud (ogni 30 minuti); tocco → sezione `proposals`. Voce «Agenda con l'assistente» in Cloud.
+- Codice: `core/cloud` `Proposals` (nuovo; `CloudSync` sincronizza anche con la sola agenda attiva), `WebDav.calendarObjects`
+  (REPORT con `calendar-data`), `mkCalendar(…, events = true)`, `DavCalendar.events`; `core/data` `Ics.Event` con `uid`,
+  `status`, `organizer` e `Ics.withStatus` (test in `IcsTest`); `feature/calendar` dipende ora da `core/cloud`. Parti comuni
+  dell'elenco: nessuna.
+- **Manca**: le proposte nell'Agenda (sezione Oggi); «Altra ora» che torna all'assistente come controproposta (ora decide
+  l'utente e l'appuntamento nasce a quell'ora); proporre da Eurise con un pulsante «Proponi a Mario» invece di scegliere il
+  calendario «Proposte (Mario)».
+- **Da provare** con due account Murena: condividere l'agenda, scrivere una proposta dal secondo account (anche dal web di
+  Murena), vederla arrivare con l'avviso, confermarla, rifiutarne una e controllare che dall'altra parte risulti annullata.
+- Giro 745 (Compila 44117375095 su `prova-organizzazione`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -266,8 +298,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   (`desktop/app`, dati dal telefono col Ponte); PcCalendario, PcNote, PcAttivita da scrivere.
 - **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
   NoteVocale in codice (giri 671 e 673).
+- **Approvate e in codice dal 17 novembre (pomeriggio)**: CollAssistente, InsAssistente (agenda con l'assistente).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
-  codice con l'area Comunicazione); CollAssistente, CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
+  codice con l'area Comunicazione); CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
   Comunicazione.
 - **Approvate e in codice dal 17 novembre**: DriveCartelle, DriveCassetto, DriveCloud; «Condividi con…» per Drive e per
   gli appuntamenti (invitati).
@@ -275,7 +308,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 735: Ceruleo pieno (E di giorno, F di sera) e cangiante; app recenti senza il
+1. **Prove del proprietario** sul giro 745 (contiene il 735; esito del 735 ancora da ricevere), più l'agenda con
+   l'assistente (vedi la sezione del 17 pomeriggio): Ceruleo pieno (E di giorno, F di sera) e cangiante; app recenti senza il
    vecchio sfondo; icone «Sfondo delle bolle» (WhatsApp, Spotify, Telegram nei loro colori); Agenda (giorni, «@», «Parti
    alle…»); Drive (cassetto, spazio, Oggi sotto le cartelle, «Cambiato da ieri» in una cartella condivisa); «Condividi
    con…» su una cartella di Murena; invitati in un appuntamento di Murena; elenchi condivisi e «Affida a…» con un secondo
@@ -283,8 +317,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 2. **kDrive e posta di Infomaniak**: verificato (sezione del 17 novembre, tarda mattina). Serve una **decisione del
    proprietario**: piano kDrive con WebDAV, oppure richiesta a Infomaniak dello scope «drive» per l'app OAuth; la posta si
    prova in Email (Comunicazione) con una password per le app.
-3. **Collaborazione, la nostra parte, in ordine**: agenda con l'assistente (calendario condiviso «Proposte»);
-   disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena); nota della riunione scritta a più
+3. **Collaborazione, la nostra parte, in ordine**: (agenda con l'assistente fatta nel giro 745: da provare, poi le
+   proposte anche nell'Agenda) disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena); nota della riunione scritta a più
    mani (Note che ricevono le note condivise); «Affida a…» con il trasporto di Comunicazione al posto dell'email a mano.
 4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
