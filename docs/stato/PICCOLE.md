@@ -146,6 +146,19 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   salvare. Scelte ricordate tranne Sostituisci. Logica in `logic/Save.kt` (`SaveTest`).
 - Giro 728 fallito per gli apostrofi non protetti nei testi nuovi (corretto: `\'`).
 
+## 17 novembre, sera: Tastiera precisa da subito (giro 758, in apk-prova)
+- Proprietario: tasti della grandezza giusta; errori meno di prima ma gli stessi (lettera vicina, lettera al posto dello
+  spazio e viceversa); serve precisione alta dal primo uso. Proposta sua: la lettera premuta in un piccolo riquadro.
+- `CharModel.kt` (puro, `CharModelTest`): probabilità di lettera o spazio dopo le due precedenti, dal dizionario
+  principale della lingua (`BinaryDictionary.getNextWordProperty`, parole pesate per frequenza), calcolata una volta in un
+  thread a parte e salvata in `files/charmodel_<lingua>.bin`.
+- `KeyModel.chooseWith`: sul bordo tra tasti, o tra lettera e spazio, decide tocco + lettere precedenti (peso 0,8,
+  vantaggio richiesto 0,35); al centro vince sempre il tocco; lo spazio conta per l'altezza. Attivo dal primo tocco
+  (forma prudente dei tasti finché non impara), solo nei campi di testo non password; in quei campi sostituisce
+  `TouchFix`. Le lettere della parola in corso: `TouchModel.word` (anche dal testo prima del cursore, Android 11+).
+- La lettera premuta compare sopra il dito di base su tutti i telefoni (`Defaults.PREF_POPUP_ON = true`).
+- Nel giro 758 è fallito solo il Flatpak di Eurise (non di quest'area).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -164,7 +177,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Editor della Galleria, giri successivi**: Copia e incolla delle modifiche su altre foto, modalità col codice QR o come
+0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
+   `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
+   **Editor della Galleria, giri successivi**: Copia e incolla delle modifiche su altre foto, modalità col codice QR o come
    testo (zxing-core, già nel catalogo della suite) e dati della foto; poi Ritocca (con il pennello per passo); poi Effetti. Prova del proprietario sui giri 722 (Regola, Curve, le tue
    modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
