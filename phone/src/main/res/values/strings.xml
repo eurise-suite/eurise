@@ -135,4 +135,7 @@
     <string name="ph_bubble">Bolla</string>
     <string name="ph_unmute">Microfono</string>
     <string name="ph_back_to_call">Torna alla chiamata</string>
+    <!-- Invito sulla Chat dalla scheda (tavola ChatInvita). -->
+    <string name="ph_invite">Invita</string>
+    <string name="ph_invite_text">%1$s non è ancora sulla Chat: mandale l'invito per SMS o email, con il link a una chat cifrata con te.</string>
 </resources>

@@ -127,6 +127,27 @@ object People {
     /** Il canale dell'ultima cosa scritta dalla persona (le chiamate non contano). */
     fun lastIncoming(entries: List<Entry>): Channel? = entries.lastOrNull { it.incoming && it.channel != Channel.Call }?.channel
 
+    /**
+     * Chi invitare sulla Chat (tavola ChatInvitaElenco): persone della Rubrica con cui si scrive o si parla, ma non sulla
+     * Chat, nell'ordine dell'elenco (le più recenti prima).
+     */
+    fun inviteCandidates(rows: List<Row>): List<Row> = rows.filter { r ->
+        !r.group && r.who.contact && Channel.Chat !in r.channels && r.who.roomId == null && r.who.matrix.isEmpty() &&
+            (r.who.phones.isNotEmpty() || r.who.emails.isNotEmpty())
+    }
+
+    /** Il canale dell'invito: quello che si usa già con la persona (SMS o email), altrimenti SMS se c'è un numero. */
+    fun inviteChannel(who: Who, used: Set<Channel>): Channel? = when {
+        who.phones.isNotEmpty() && (Channel.Sms in used || Channel.Call in used) -> Channel.Sms
+        who.emails.isNotEmpty() && Channel.Email in used -> Channel.Email
+        who.phones.isNotEmpty() -> Channel.Sms
+        who.emails.isNotEmpty() -> Channel.Email
+        else -> null
+    }
+
+    /** Il link dell'invito: apre una chat con me in qualunque app Matrix (matrix.to, nessun server nostro in mezzo). */
+    fun inviteLink(userId: String) = "https://matrix.to/#/$userId"
+
     /** Privacy su dieci tacchette: la Chat cifrata da un capo all'altro, l'email, la voce dell'operatore, l'SMS. */
     fun privacy(channel: Channel, encrypted: Boolean): Int = when (channel) {
         Channel.Chat -> if (encrypted) 9 else 6

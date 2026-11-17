@@ -23,6 +23,9 @@
     <queries>
         <package android:name="eu.eurise.hub" />
         <package android:name="eu.eurise.hub.debug" />
+        <!-- «Invita sulla Chat» dalla scheda della Rubrica. -->
+        <package android:name="eu.eurise.chat" />
+        <package android:name="eu.eurise.chat.debug" />
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
         <package android:name="org.telegram.messenger" />

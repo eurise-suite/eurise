@@ -28,6 +28,16 @@ object PeopleContract {
     /** Manda un SMS (Messaggi). */
     const val METHOD_SEND = "send"
 
+    /** Chat: chi sono io sulla Chat (per il link dell'invito) e se un contatto è già unito a una persona della Chat. */
+    const val METHOD_ME = "me"
+    const val METHOD_KNOWS = "knows"
+    /** Chat: apre «Invita sulla Chat» per un contatto della Rubrica (tavola ChatInvita). */
+    const val ACTION_INVITE = "eu.eurise.action.CHAT_INVITE"
+    private const val CHAT_ACTIVITY = "eu.eurise.chat.ChatActivity"
+    const val EXTRA_NAME = "name"
+    const val EXTRA_KEY = "key"
+    const val EXTRA_USER = "user"
+
     /** Telefono: chiama subito questo numero (solo dalle app della suite, attraverso un ingresso col permesso di firma). */
     const val ACTION_CALL = "eu.eurise.action.SUITE_CALL"
     private const val CALL_ALIAS = "eu.eurise.phone.SuiteCall"
@@ -164,6 +174,26 @@ object PeopleContract {
     // --- Lato Chat ---
 
     private fun debug(context: Context) = context.packageName.endsWith(".debug")
+    private fun chatPackage(context: Context) = "eu.eurise.chat" + if (debug(context)) ".debug" else ""
+
+    /** Il mio utente della Chat (es. «@mario:matrix.org»), o null se la Chat non c'è o non è collegata. */
+    fun chatUser(context: Context): String? = runCatching {
+        context.contentResolver.call(Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_ME, null, null)?.getString(EXTRA_USER)
+    }.getOrNull()
+
+    /** Vero se nella Chat questo contatto ([key] della Rubrica) è già unito a una persona della Chat. */
+    fun chatKnows(context: Context, key: String): Boolean = runCatching {
+        context.contentResolver.call(Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_KNOWS, key, null)?.getBoolean(EXTRA_RESULT) == true
+    }.getOrDefault(false)
+
+    /** Apre nella Chat l'invito per un contatto, con nome, numeri ed email già scelti; null se la Chat non c'è. */
+    fun inviteIntent(context: Context, key: String, name: String, phones: List<String>, emails: List<String>): Intent? {
+        val intent = Intent(ACTION_INVITE).setComponent(ComponentName(chatPackage(context), CHAT_ACTIVITY))
+            .putExtra(EXTRA_KEY, key).putExtra(EXTRA_NAME, name)
+            .putExtra(EXTRA_PHONES, phones.toTypedArray()).putExtra(EXTRA_EMAILS, emails.toTypedArray())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return intent.takeIf { context.packageManager.resolveActivity(it, 0) != null }
+    }
     fun packageOf(context: Context, app: App) = app.base + if (debug(context)) ".debug" else ""
     private fun uri(context: Context, app: App) = Uri.parse("content://" + packageOf(context, app) + ".persone")
 
@@ -228,9 +258,11 @@ object PeopleContract {
     }
 
     /** Scrivi un'email con Eurise Email (o l'app di posta scelta) a [to], con il testo già scritto. */
-    fun composeMailIntent(context: Context, to: String, body: String): Intent {
-        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(to))).putExtra(Intent.EXTRA_TEXT, body)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    fun composeMailIntent(context: Context, to: String, body: String, subject: String = ""): Intent {
+        // Oggetto e testo vanno nel link «mailto:» (li legge Email) e negli extra (li leggono le altre app di posta).
+        val query = listOfNotNull(subject.takeIf { it.isNotBlank() }?.let { "subject=" + Uri.encode(it) }, "body=" + Uri.encode(body)).joinToString("&")
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(to) + "?" + query)).putExtra(Intent.EXTRA_TEXT, body)
+            .putExtra(Intent.EXTRA_SUBJECT, subject).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val ours = Intent(intent).setPackage(packageOf(context, App.Mail))
         return if (context.packageManager.resolveActivity(ours, 0) != null) ours else intent
     }

@@ -8,7 +8,7 @@
     <string name="pe_note">Una riga per persona, non per app: Chat, SMS, email e chiamate della stessa persona stanno insieme. Tutto unito sul telefono, nessun server in mezzo; il lavoro resta nell\'account di lavoro.</string>
 
     <string name="pe_ch_chat">Chat</string>
-    <string name="pe_ch_chat_ciarly">Chat · Ciarly</string>
+    <string name="pe_ch_chat_ciarly">Chat</string>
     <string name="pe_ch_sms">SMS</string>
     <string name="pe_ch_email">Email</string>
     <string name="pe_ch_call">Chiama</string>
@@ -44,7 +44,7 @@
     <string name="pe_sheet_sub">Tocco breve su Invia: il canale con la stellina. Pressione lunga: questo elenco.</string>
     <string name="pe_sub_chat">cifrata da un capo all\'altro, gratis, anche foto e file</string>
     <string name="pe_sub_chat_plain">sul server della Chat, non cifrata in questa stanza</string>
-    <string name="pe_sub_chat_missing">non è ancora sulla Chat</string>
+    <string name="pe_sub_chat_missing">non è ancora sulla Chat: tocca per invitarla</string>
     <string name="pe_sub_sms">%1$s, dal tuo operatore; corto, arriva senza internet</string>
     <string name="pe_sub_email">%1$s; con oggetto, per allegati e cose lunghe</string>
     <string name="pe_sub_call">voce, come sempre; la nota della chiamata resta qui</string>
@@ -61,4 +61,34 @@
     <string name="pe_link_search">Cerca in Rubrica</string>
     <string name="pe_link_hint">Scrivi un nome.</string>
     <string name="pe_link_none">Nessun contatto con questo nome (serve Eurise Telefono con il permesso della Rubrica).</string>
+
+    <!-- Invito sulla Chat (tavole ChatInvita e ChatInvitaElenco). Il nome «Ciarly» aspetta la verifica del marchio. -->
+    <string name="inv_title">Invita sulla Chat</string>
+    <string name="inv_not_yet">Non è ancora sulla Chat</string>
+    <string name="inv_already">Invito mandato il %1$s</string>
+    <string name="inv_by_sms">SMS · %1$s</string>
+    <string name="inv_by_email">Email · %1$s</string>
+    <string name="inv_text">Ciao %1$s, ti scrivo dalla Chat di Eurise: una chat cifrata e libera (Matrix). Da questo link mi trovi lì, con Eurise o con un'altra app Matrix come Element: %2$s</string>
+    <string name="inv_subject">Scriviamoci sulla Chat</string>
+    <string name="inv_how">Il link apre una chat con te in qualunque app Matrix. Parte dal tuo telefono, come un SMS o un'email normale: nessun server nostro in mezzo.</string>
+    <string name="inv_send">Manda l'invito</string>
+    <string name="inv_sent">Invito mandato a %1$s</string>
+    <string name="inv_meanwhile">Intanto</string>
+    <string name="inv_meanwhile_text">Scrivile per SMS dallo stesso filo: quando entra nella Chat, la chat cifrata prende il suo posto e lo storico resta lì.</string>
+    <string name="inv_no_account">Per invitare serve un account della Chat collegato.</string>
+    <string name="inv_no_address">In Rubrica non ci sono né un numero né un'email: aggiungili e torna qui.</string>
+    <string name="inv_list_sub">Le persone con cui scrivi di più e non sono sulla Chat</string>
+    <string name="inv_list_empty">Tutte le persone con cui scrivi di recente sono già sulla Chat (o non sono in Rubrica).</string>
+    <string name="inv_list_note">Ognuno riceve l'invito sul canale che usate già (SMS o email), dal tuo telefono. La Rubrica non va su nessun server: chi è già sulla Chat lo sai dalle chat che avete.</string>
+    <string name="inv_why_sms">SMS · scrivete per SMS</string>
+    <string name="inv_why_calls">SMS · vi sentite al telefono</string>
+    <string name="inv_why_email">Email</string>
+    <string name="inv_why_email_only">Email · solo email negli ultimi mesi</string>
+    <string name="inv_send_n">Invita %1$d persone</string>
+    <string name="inv_send_one">Invita 1 persona</string>
+    <string name="inv_sent_n">Inviti mandati per SMS: %1$d</string>
+    <string name="inv_mail_left">Da mandare per email, una alla volta</string>
+    <string name="inv_open_mail">Apri l'email</string>
+    <string name="inv_menu">Invita sulla Chat</string>
+    <string name="inv_row">Invita sulla Chat chi ti scrive per SMS o email</string>
 </resources>

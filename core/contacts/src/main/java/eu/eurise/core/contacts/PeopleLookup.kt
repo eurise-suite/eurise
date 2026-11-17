@@ -79,6 +79,9 @@ object PeopleLookup {
         )?.use { c -> if (c.count == 1 && c.moveToFirst()) c.getLong(0) else null }
     }
 
+    /** Il contatto [id] con numeri, email e utenti della Chat scritti nel contatto (bloccante). */
+    fun forContact(context: Context, id: Long): PeopleContract.Person? = if (Contacts.canRead(context)) runCatching { person(context, id) }.getOrNull() else null
+
     private fun person(context: Context, id: Long): PeopleContract.Person? {
         val base = context.contentResolver.query(
             Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, id.toString()),

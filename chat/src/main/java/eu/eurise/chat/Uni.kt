@@ -232,7 +232,52 @@ class Uni(private val context: Context, private val scope: CoroutineScope, priva
         actions.launch(PeopleContract.callIntent(context, n) ?: Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", n, null)))
     }
 
+    // --- Invito sulla Chat (tavole ChatInvita e ChatInvitaElenco) ---
+
+    /** L'invito per una persona sola (dalla scheda della Rubrica o dal filo), e l'elenco di chi invitare. */
+    var invite by mutableStateOf<People.Who?>(null)
+        private set
+    var inviteUsed by mutableStateOf<Set<Channel>>(emptySet())
+        private set
+    var inviteList by mutableStateOf(false)
+        private set
+
+    fun openInvite(who: People.Who, used: Set<Channel> = emptySet()) { invite = who; inviteUsed = used }
+    fun closeInvite() { invite = null }
+    fun openInviteList(on: Boolean) { inviteList = on }
+
+    /** Il link alla chat con me (account aperto), o null se non si è collegati. */
+    fun inviteLink(): String? = model.session?.userId?.let(People::inviteLink)
+
+    /** Quando è stata invitata questa persona (per non riproporla), o null. */
+    fun invited(key: String): Long? = prefs.getLong("inv_$key", 0L).takeIf { it > 0 }
+
+    /** Manda l'invito: per SMS da Messaggi (o l'app degli SMS se non parte), per email aprendo Scrivi già compilato. */
+    fun sendInvite(who: People.Who, channel: Channel, address: String, text: String, actions: ChatActions, done: (Boolean) -> Unit) {
+        val mark = { prefs.edit().putLong("inv_${who.key}", System.currentTimeMillis()).apply(); preferredTick++ }
+        when (channel) {
+            Channel.Sms -> scope.launch {
+                val ok = withContext(Dispatchers.IO) { PeopleContract.sendSms(context, address, text) }
+                if (!ok) actions.launch(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(address))).putExtra("sms_body", text))
+                mark()
+                done(ok)
+            }
+            Channel.Email -> {
+                actions.launch(PeopleContract.composeMailIntent(context, address, text, actions.text(R.string.inv_subject)))
+                mark()
+                done(true)
+            }
+            else -> done(false)
+        }
+    }
+
     fun openMail(ref: String, actions: ChatActions) {
         PeopleContract.openMailIntent(context, ref)?.let(actions::launch) ?: actions.toast(actions.text(R.string.pe_no_mail))
+    }
+
+    companion object {
+        /** I contatti della Rubrica già uniti a una persona della Chat (per la scheda della Rubrica). */
+        fun linkedKeys(context: Context): Set<String> = context.getSharedPreferences("persone", Context.MODE_PRIVATE).all
+            .filterKeys { it.startsWith("link_") }.values.mapNotNull { v -> runCatching { JSONObject(v as String).getString("key") }.getOrNull() }.toSet()
     }
 }

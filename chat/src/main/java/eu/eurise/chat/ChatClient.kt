@@ -305,6 +305,9 @@ class SessionStore(context: Context, account: Account = Account.Personal) {
         return Session(hs, prefs.getString("user", "").orEmpty(), prefs.getString("device", "").orEmpty(), token)
     }
 
+    /** Chi è l'utente, senza aprire la chiave (per l'invito dalla Rubrica); null se non è collegato. */
+    fun userId(): String? = prefs.getString("user", null)?.takeIf { it.isNotBlank() && prefs.contains("token") }
+
     fun save(s: Session) {
         prefs.edit().putString("hs", s.homeserver).putString("user", s.userId).putString("device", s.deviceId)
             .putString("token", seal(s.token)).remove("since").apply()

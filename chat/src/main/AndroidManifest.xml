@@ -59,6 +59,11 @@
             </intent-filter>
         </activity>
         <!-- Lo Studio medico per Email e Messaggi: solo app della suite (permesso di firma, controllato in call()). -->
+        <!-- Per la Rubrica: chi sono sulla Chat (link dell'invito). Solo app della suite (controllato in call()). -->
+        <provider
+            android:name=".ChatPeopleProvider"
+            android:authorities="${applicationId}.persone"
+            android:exported="true" />
         <provider
             android:name=".StudioProvider"
             android:authorities="${applicationId}.studio"

@@ -84,6 +84,17 @@ class ChatActivity : ComponentActivity(), ChatActions {
             model.studioOpen(intent.getStringExtra(eu.eurise.core.studio.StudioContract.EXTRA_PATIENT))
             return
         }
+        // Dalla scheda della Rubrica: «Invita sulla Chat» (tavola ChatInvita).
+        if (intent?.action == eu.eurise.core.suite.PeopleContract.ACTION_INVITE) {
+            val P = eu.eurise.core.suite.PeopleContract
+            val who = People.Who(
+                intent.getStringExtra(P.EXTRA_KEY).orEmpty(), intent.getStringExtra(P.EXTRA_NAME).orEmpty(),
+                phones = intent.getStringArrayExtra(P.EXTRA_PHONES)?.toList().orEmpty(),
+                emails = intent.getStringArrayExtra(P.EXTRA_EMAILS)?.toList().orEmpty(), contact = true,
+            )
+            if (who.name.isNotBlank()) model.uni.openInvite(who)
+            return
+        }
         val data = intent?.data ?: return
         if (data.scheme != "eurisechat") return
         val token = data.getQueryParameter("loginToken") ?: return

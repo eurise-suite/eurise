@@ -387,9 +387,18 @@ private fun PersonScreen(id: Long, onBack: () -> Unit, onCall: (String) -> Unit,
     var version by remember { mutableStateOf(0) }
     var confirmDelete by remember { mutableStateOf(false) }
     var engagements by remember { mutableStateOf<List<eu.eurise.phone.data.Engagement>>(emptyList()) }
+    // «Invita sulla Chat» (tavola ChatInvita): solo se la Chat è collegata e il contatto non ci è già.
+    var invite by remember { mutableStateOf(false) }
     LaunchedEffect(id, version) {
         contact = Contacts.detail(context, id)
         engagements = contact?.let { PhoneData.engagements(context, it.name, it.emails.map { e -> e.value }) }.orEmpty()
+        invite = contact?.let { c ->
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                (c.phones.isNotEmpty() || c.emails.isNotEmpty()) && eu.eurise.core.suite.PeopleContract.chatUser(context) != null &&
+                    eu.eurise.core.contacts.PeopleLookup.forContact(context, c.id)?.matrix.isNullOrEmpty() &&
+                    !eu.eurise.core.suite.PeopleContract.chatKnows(context, c.lookupKey)
+            }
+        } ?: false
     }
     val c = contact ?: run { Column(Modifier.fillMaxSize()) { TopBar("", onBack) {} }; return }
     val number = c.phones.firstOrNull()?.value
@@ -422,6 +431,12 @@ private fun PersonScreen(id: Long, onBack: () -> Unit, onCall: (String) -> Unit,
                     Reach.telegram(context, number)?.let { i -> Action(EuriseIcons.send(), "Telegram", Modifier.weight(1f)) { Reach.open(context, i) } }
                 }
                 c.emails.firstOrNull()?.let { e -> Action(EuriseIcons.mail(), stringResource(R.string.ph_email), Modifier.weight(1f)) { Reach.open(context, Reach.email(e.value)) } }
+            }
+        }
+        if (invite) item(key = "invite") {
+            Banner(stringResource(R.string.ph_invite_text, c.name.substringBefore(' ')), stringResource(R.string.ph_invite)) {
+                eu.eurise.core.suite.PeopleContract.inviteIntent(context, c.lookupKey, c.name, c.phones.map { it.value }, c.emails.map { it.value })
+                    ?.let { i -> runCatching { context.startActivity(i) } }
             }
         }
         if (engagements.isNotEmpty()) {

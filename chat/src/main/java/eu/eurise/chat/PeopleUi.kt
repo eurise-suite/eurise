@@ -137,6 +137,18 @@ internal fun LazyListScope.peopleItems(model: ChatModel, query: String, unreadOn
             is Mix.Group -> RoomRow(model, m.room)
         }
     }
+    if (!unreadOnly && q.isEmpty() && People.inviteCandidates(model.uni.rows).isNotEmpty()) item(key = "invite") {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(SAGE.copy(alpha = 0.12f))
+                .clickable(role = Role.Button) { model.uni.openInviteList(true) }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.send(2.2f), null, tint = SAGE, modifier = Modifier.size(17.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.inv_row), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Icon(EuriseIcons.chevronRight(2.2f), null, tint = SAGE, modifier = Modifier.size(15.dp))
+        }
+    }
     item(key = "note") {
         Text(stringResource(R.string.pe_note), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 14.dp))
@@ -450,9 +462,15 @@ private fun ChannelSheet(
                     Channel.Email -> who.emails.firstOrNull()?.let { stringResource(R.string.pe_sub_email, it) } ?: stringResource(R.string.pe_sub_no_email)
                     Channel.Call -> if (can) stringResource(R.string.pe_sub_call) else stringResource(R.string.pe_sub_no_number)
                 }
+                // Chi non è ancora sulla Chat: la riga della Chat apre l'invito (tavola ChatInvita).
+                val invite = c == Channel.Chat && !can && (who.phones.isNotEmpty() || who.emails.isNotEmpty())
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 62.dp).clickable(enabled = can, role = Role.Button) {
-                        if (c == Channel.Call) { onClose(); uni.call(actions) } else onPick(c)
+                    Modifier.fillMaxWidth().heightIn(min = 62.dp).clickable(enabled = can || invite, role = Role.Button) {
+                        when {
+                            invite -> { onClose(); uni.openInvite(who, uni.rows.firstOrNull { it.who.key == who.key }?.channels.orEmpty()) }
+                            c == Channel.Call -> { onClose(); uni.call(actions) }
+                            else -> onPick(c)
+                        }
                     }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

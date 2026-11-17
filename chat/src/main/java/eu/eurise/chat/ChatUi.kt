@@ -122,6 +122,9 @@ fun ChatApp(model: ChatModel, actions: ChatActions) {
             model.session == null -> Access(model, actions)
             page == SecurityPage.Recovery -> RecoveryScreen(model, actions, onClose = { page = null })
             page == SecurityPage.Verify -> VerifyScreen(model, actions, onClose = { if (model.verify !is Verify.Incoming) model.cancelVerify(false); page = null })
+            // Invito sulla Chat (tavole ChatInvita e ChatInvitaElenco).
+            model.uni.invite != null -> InviteScreen(model, actions)
+            model.uni.inviteList -> InviteListScreen(model, actions)
             open != null -> Conversation(model, actions, open, onVerify = { page = SecurityPage.Verify })
             // Il filo di una persona con Chat, SMS, email e chiamate (tavola UniConversazione).
             model.uni.who != null -> PersonScreen(model, actions)
@@ -307,6 +310,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         AccountsPanel(model) { account = false }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
+        Pill(stringResource(R.string.inv_menu), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.uni.openInviteList(true) }
         Pill(stringResource(R.string.st_title), EuriseIcons.medical(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.studioOpen() }
         Pill(stringResource(R.string.ch_logout), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.logout() }
     }

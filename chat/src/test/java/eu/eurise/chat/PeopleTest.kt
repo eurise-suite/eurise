@@ -81,4 +81,18 @@ class PeopleTest {
         assertEquals(listOf(Channel.Sms), People.writable(Who("k", "Luca", phones = listOf("3330001111"))))
         assertEquals(Channel.Email, People.lastIncoming(listOf(e("1", Channel.Email, 1), e("2", Channel.Call, 2), e("3", Channel.Sms, 3, incoming = false))))
     }
+
+    @Test fun chiInvitareESuQualeCanale() {
+        val lucia = People.Row(Who("lk-l", "Lucia Verdi", phones = listOf("3330001148"), contact = true), e("s", Channel.Sms, 5), 0, setOf(Channel.Sms))
+        val giorgio = People.Row(Who("lk-g", "Giorgio Pace", emails = listOf("g@pace.it"), contact = true), e("m", Channel.Email, 4), 0, setOf(Channel.Email))
+        val anna = People.Row(Who("lk-a", "Anna", phones = listOf("1"), matrix = listOf("@anna:x.org"), roomId = "!r", contact = true), e("c", Channel.Chat, 3), 0, setOf(Channel.Chat))
+        val sconosciuto = People.Row(Who("tel:333", "333"), e("x", Channel.Sms, 2), 0, setOf(Channel.Sms))
+        assertEquals(listOf("lk-l", "lk-g"), People.inviteCandidates(listOf(lucia, giorgio, anna, sconosciuto)).map { it.who.key })
+        assertEquals(Channel.Sms, People.inviteChannel(lucia.who, lucia.channels))
+        assertEquals(Channel.Email, People.inviteChannel(giorgio.who, giorgio.channels))
+        // Con numero ed email ma solo email negli ultimi mesi: l'invito va per email.
+        assertEquals(Channel.Email, People.inviteChannel(Who("k", "M", listOf("1"), listOf("m@x.it")), setOf(Channel.Email)))
+        assertNull(People.inviteChannel(Who("k", "Nessuno"), emptySet()))
+        assertEquals("https://matrix.to/#/@mario:matrix.org", People.inviteLink("@mario:matrix.org"))
+    }
 }
