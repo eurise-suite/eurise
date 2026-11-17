@@ -58,6 +58,9 @@ data class Card(
     fun with(key: String, value: String) = copy(fields = fields.map { if (it.key == key) it.copy(value = value) else it })
 }
 
+/** Le ultime battute dette, per non ripeterle (valgono finché il processo vive, tra un'apertura e l'altra). */
+private val recentQuips = ArrayDeque<String>()
+
 /**
  * Com'è andata: la frase di Alfred e se il pannello si chiude da sé. [spoken] è ciò che dice a voce: solo l'essenziale
  * («Annotato.»), la battuta resta scritta (prova del 17 novembre: aspettare che parli rallenta).
@@ -487,9 +490,9 @@ class Butler(private val context: Context) {
 
     // --- Azione, solo dopo il tocco ---
 
-    /** Dopo un'azione riuscita, una volta su tre, una massima o un detto adatto (mai nelle schede incomplete). */
+    /** Dopo un'azione riuscita, una volta su due, una massima o un detto adatto (mai nelle schede incomplete). */
     private fun withMaxim(card: Card, out: Outcome): Outcome {
-        if (!out.close || kotlin.random.Random.nextInt(3) != 0) return out
+        if (!out.close || kotlin.random.Random.nextInt(2) != 0) return out
         val array = when (card.kind) {
             Kind.Event -> R.array.alfred_maxims_event
             Kind.Note -> R.array.alfred_maxims_note
@@ -498,10 +501,15 @@ class Butler(private val context: Context) {
             Kind.Route -> R.array.alfred_maxims_route
             Kind.Alarm -> R.array.alfred_maxims_alarm
             Kind.Timer -> R.array.alfred_maxims_timer
+            Kind.Remember -> R.array.alfred_maxims_remember
+            Kind.Follow -> R.array.alfred_maxims_follow
             else -> return out
         }
-        // Battute brevi, dette anche a voce: l'ironia resta, senza far aspettare.
-        val quip = context.resources.getStringArray(array).random()
+        // Battute brevi, dette anche a voce: l'ironia resta, senza far aspettare. Mai la stessa due volte di fila.
+        val all = context.resources.getStringArray(array)
+        val quip = all.filter { it !in recentQuips }.ifEmpty { all.toList() }.random()
+        recentQuips.addLast(quip)
+        if (recentQuips.size > 6) recentQuips.removeFirst()
         return out.copy(line = out.line + " " + quip, spoken = out.spoken + " " + quip)
     }
 
@@ -513,22 +521,23 @@ class Butler(private val context: Context) {
      */
     fun spokenConfirm(card: Card): String {
         val wit = kotlin.random.Random.nextInt(3) == 0
-        fun pick(plain: Int, witty: Int, vararg args: Any) = s(if (wit) witty else plain, *args)
+        fun pick(plain: Int, witty: Int, vararg args: Any) =
+            if (wit) context.resources.getStringArray(witty).random().format(*args) else s(plain, *args)
         fun first(name: String?) = name.orEmpty().trim().split(' ').firstOrNull().orEmpty()
         val who = first(card.contact?.name ?: (card.command as? Command.Call)?.who ?: (card.command as? Command.Message)?.who)
         val plain = SpokenText.brief(card.lead, sentences = 1) + " " + s(R.string.alfred_ask_confirm)
         return when (card.kind) {
-            Kind.Call -> if (who.isBlank()) plain else pick(R.string.alfred_say_call, R.string.alfred_say_call_wit, who)
-            Kind.Message -> if (who.isBlank()) plain else pick(R.string.alfred_say_message, R.string.alfred_say_message_wit, who)
-            Kind.Event -> pick(R.string.alfred_say_event, R.string.alfred_say_event_wit)
-            Kind.Note -> pick(R.string.alfred_say_note, R.string.alfred_say_note_wit)
-            Kind.Task -> pick(R.string.alfred_say_task, R.string.alfred_say_task_wit)
-            Kind.Route -> pick(R.string.alfred_say_route, R.string.alfred_say_route_wit)
-            Kind.Alarm -> pick(R.string.alfred_say_alarm, R.string.alfred_say_alarm_wit, card.value("time"))
-            Kind.Timer -> pick(R.string.alfred_say_timer, R.string.alfred_say_timer_wit, card.value("minutes"))
+            Kind.Call -> if (who.isBlank()) plain else pick(R.string.alfred_say_call, R.array.alfred_say_wit_call, who)
+            Kind.Message -> if (who.isBlank()) plain else pick(R.string.alfred_say_message, R.array.alfred_say_wit_message, who)
+            Kind.Event -> pick(R.string.alfred_say_event, R.array.alfred_say_wit_event)
+            Kind.Note -> pick(R.string.alfred_say_note, R.array.alfred_say_wit_note)
+            Kind.Task -> pick(R.string.alfred_say_task, R.array.alfred_say_wit_task)
+            Kind.Route -> pick(R.string.alfred_say_route, R.array.alfred_say_wit_route)
+            Kind.Alarm -> pick(R.string.alfred_say_alarm, R.array.alfred_say_wit_alarm, card.value("time"))
+            Kind.Timer -> pick(R.string.alfred_say_timer, R.array.alfred_say_wit_timer, card.value("minutes"))
             Kind.Search -> s(R.string.alfred_say_search)
             Kind.Open -> s(R.string.alfred_say_open)
-            Kind.Remember -> pick(R.string.alfred_say_remember, R.string.alfred_say_remember_wit)
+            Kind.Remember -> pick(R.string.alfred_say_remember, R.array.alfred_say_wit_remember)
             else -> plain
         }
     }

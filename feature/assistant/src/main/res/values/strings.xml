@@ -132,39 +132,114 @@
 
     <!-- Massime e battute, una volta su tre dopo un'azione riuscita: ironia britannica alla Groucho Marx e Woody Allen,
          secca e autoironica; quasi sempre sue, citazioni solo brevi e dichiarate. Mai nelle conferme, mai alla guida. -->
-    <!-- Battute dopo un'azione (una volta su tre): brevi, perché si dicono anche a voce (17 novembre). -->
+    <!-- Battute dopo un'azione (una volta su tre, mai la stessa di fila): proverbi, motti, citazioni e ironia da
+         maggiordomo, brevi perché si dicono anche a voce. Spassose ma professionali: sempre il Lei (17 novembre). -->
     <string-array name="alfred_maxims_event">
         <item>Al resto penso io.</item>
         <item>Sarò puntuale io per entrambi.</item>
         <item>Un altro impegno. Che vita mondana.</item>
+        <item>Patti chiari, agenda lunga.</item>
+        <item>Chi ha tempo non aspetti tempo. Lei non ha aspettato.</item>
+        <item>La puntualità è la cortesia dei re. Luigi XVIII, credo.</item>
+        <item>Ogni promessa è debito. Questo è segnato.</item>
+        <item>Tempus fugit. Io, per fortuna, prendo appunti.</item>
+        <item>Le ricorderò l\'ora. Il buon umore lo porti Lei.</item>
+        <item>Agenda piena, vita piena. O almeno così si dice.</item>
+        <item>Segnato con l\'inchiostro. Metaforicamente.</item>
+        <item>Meglio un appuntamento in agenda che due nella memoria.</item>
+        <item>Se tarda, avrò già pronta una scusa elegante.</item>
     </string-array>
     <string-array name="alfred_maxims_note">
         <item>Carta canta.</item>
         <item>Ottima memoria la mia: scrivo tutto.</item>
-        <item>Scripta manent. Anche le sue.</item>
+        <item>Verba volant, scripta manent.</item>
+        <item>Agli atti.</item>
+        <item>Un\'idea scritta vale due ricordate.</item>
+        <item>L\'inchiostro più sbiadito batte la memoria migliore. Dicono i cinesi.</item>
+        <item>Custodito con discrezione. È il mio mestiere.</item>
+        <item>Nero su bianco, come si conviene.</item>
+        <item>Ne farò buon uso. Cioè nessuno, finché non me lo chiede.</item>
+        <item>Annotato. Le grandi idee arrivano sempre all\'ora sbagliata.</item>
+        <item>Repetita iuvant, ma una volta scritta basta.</item>
+        <item>Lo ritroverà dove l\'ha lasciato. Raro, di questi tempi.</item>
     </string-array>
     <string-array name="alfred_maxims_task">
         <item>Non lo farò io, ma glielo ricorderò.</item>
         <item>Rimandare è un\'arte. Io tengo il conto.</item>
         <item>Insisterò con garbo. E con costanza.</item>
+        <item>Chi ben comincia è a metà dell\'opera. Lei ha cominciato.</item>
+        <item>Non rimandi a domani. Domani avrà altro da fare.</item>
+        <item>Chi dorme non piglia pesci. Né spunta attività.</item>
+        <item>Un passo alla volta, diceva il saggio. Io conto i passi.</item>
+        <item>Il dovere chiama. Io faccio solo da centralino.</item>
+        <item>Il lavoro nobilita. La lista, almeno, ordina.</item>
+        <item>Lo spunteremo insieme. Lei fa, io applaudo.</item>
+        <item>Festina lente: affrettati con calma.</item>
+        <item>Segnato. Il senso di colpa lo aggiungo gratis.</item>
     </string-array>
     <string-array name="alfred_maxims_message">
         <item>A Lei l\'onore, a me il merito.</item>
         <item>Breve e arguto. Come piace a me.</item>
         <item>Spedito. Le risposte non sono affar mio.</item>
+        <item>La brevità è l\'anima dell\'arguzia. Shakespeare approverebbe.</item>
+        <item>Partito. Indietro non torna, come le parole.</item>
+        <item>Recapitato con la discrezione di un piccione viaggiatore.</item>
+        <item>Uomo avvisato, mezzo salvato.</item>
+        <item>Consegnato. Il postino suona sempre due volte, io una.</item>
+        <item>Fatto. Le virgole le ho lasciate dov\'erano.</item>
+        <item>Chi tace acconsente. Vedremo se risponde.</item>
+        <item>Inviato. Ora si attende, con dignità.</item>
     </string-array>
     <string-array name="alfred_maxims_route">
         <item>Se ci perdiamo, almeno in un bel posto.</item>
         <item>Niente strade sbagliate: solo scorciatoie lunghe.</item>
+        <item>Tutte le strade portano a Roma. Questa porta dove vuole Lei.</item>
+        <item>Chi va piano va sano e va lontano. Non troppo piano, però.</item>
+        <item>Il viaggio è la meta, dicono. Io preferisco arrivare.</item>
+        <item>Buon viaggio. Le cinture sono un consiglio caloroso.</item>
+        <item>Chi lascia la strada vecchia per la nuova… prende la mia.</item>
+        <item>Le indicherò ogni curva. Le buche, purtroppo, le trova da sé.</item>
+        <item>In marcia. Il navigatore sono io, il pilota resta Lei.</item>
+        <item>Meglio tardi che mai. Ma meglio puntuali, se possibile.</item>
     </string-array>
     <string-array name="alfred_maxims_alarm">
         <item>Domattina sarò io il primo a pentirmene.</item>
         <item>Il mattino ha l\'oro in bocca. Io, le buone maniere.</item>
         <item>Caricata. Non me ne voglia, domani.</item>
+        <item>Chi dorme non piglia pesci. Ma riposa benissimo.</item>
+        <item>La sveglierò con garbo. La seconda volta un po\' meno.</item>
+        <item>Carpe diem. Prima, però, il caffè.</item>
+        <item>Domani sarà un altro giorno. Puntuale, per giunta.</item>
+        <item>Dorma sereno. Io veglio, è il mio mestiere.</item>
+        <item>Il primo ad alzarsi governa la giornata. Lei, domani.</item>
+        <item>Fissata. Il pulsante «rimanda» lo consideri un\'opinione.</item>
     </string-array>
     <string-array name="alfred_maxims_timer">
         <item>Il tempo vola. Io lo conto.</item>
         <item>Tic tac. Con discrezione.</item>
+        <item>Tempus fugit. Io lo cronometro.</item>
+        <item>Il tempo è denaro, diceva Franklin. Questo è ben speso.</item>
+        <item>Avviato. La pazienza è la virtù dei forti.</item>
+        <item>La avviserò. Nel frattempo, nessuna fretta.</item>
+        <item>Conto alla rovescia in corso. Con eleganza.</item>
+        <item>Chi aspetta può tutto. Per qualche minuto, almeno.</item>
+    </string-array>
+    <string-array name="alfred_maxims_remember">
+        <item>Me ne ricorderò. È il mio lavoro.</item>
+        <item>Custodito. Un maggiordomo non dimentica.</item>
+        <item>Elefanti e maggiordomi: memoria lunga, poche parole.</item>
+        <item>Lo terrò a mente, con discrezione.</item>
+        <item>Segreto professionale.</item>
+        <item>Meglio saperlo io che dimenticarlo Lei.</item>
+    </string-array>
+    <string-array name="alfred_maxims_follow">
+        <item>Cambiare idea è segno d\'intelligenza.</item>
+        <item>Ripensarci è un lusso. Me ne occupo io.</item>
+        <item>Solo gli sciocchi non cambiano mai idea.</item>
+        <item>Rettificato, come se nulla fosse.</item>
+        <item>Fatto. Nessuno se ne accorgerà.</item>
+        <item>Errare è umano. Correggere, mio compito.</item>
+        <item>Aggiustato. La perfezione richiede qualche tentativo.</item>
     </string-array>
 
     <!-- Disposizioni. -->
@@ -229,15 +304,58 @@
     <string name="alfred_say_open">Apro?</string>
     <string name="alfred_say_remember">Me lo segno?</string>
     <!-- Le stesse domande con un filo d'ironia, una volta su tre (17 novembre: «Mi raccomando, l'ironia!»). -->
-    <string name="alfred_say_call_wit">Disturbo %1$s?</string>
-    <string name="alfred_say_message_wit">Lo recapito a %1$s?</string>
-    <string name="alfred_say_event_wit">Un altro impegno. Lo segno?</string>
-    <string name="alfred_say_note_wit">Lo metto agli atti?</string>
-    <string name="alfred_say_task_wit">Un altro dovere. Lo segno?</string>
-    <string name="alfred_say_route_wit">Si parte? Io sono pronto.</string>
-    <string name="alfred_say_alarm_wit">Sveglia alle %1$s? Coraggioso.</string>
-    <string name="alfred_say_timer_wit">%1$s minuti. Conto io?</string>
-    <string name="alfred_say_remember_wit">Lo custodisco io?</string>
+    <string-array name="alfred_say_wit_call">
+        <item>Disturbo %1$s?</item>
+        <item>Chiamo %1$s? Spero sia di buon umore.</item>
+        <item>Squillo a %1$s?</item>
+        <item>%1$s attende, pur non sapendolo. Chiamo?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_message">
+        <item>Lo recapito a %1$s?</item>
+        <item>Piccione viaggiatore pronto per %1$s. Parto?</item>
+        <item>Lo mando a %1$s, con garbo?</item>
+        <item>Spedisco a %1$s?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_event">
+        <item>Un altro impegno. Lo segno?</item>
+        <item>Che vita mondana. Lo metto in agenda?</item>
+        <item>Lo scolpisco in agenda?</item>
+        <item>Lo segno, così non lo dimentichiamo in due?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_note">
+        <item>Lo metto agli atti?</item>
+        <item>Nero su bianco?</item>
+        <item>Lo affido alla carta?</item>
+        <item>Verba volant. Lo scrivo?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_task">
+        <item>Un altro dovere. Lo segno?</item>
+        <item>Lo aggiungo all\'elenco delle buone intenzioni?</item>
+        <item>Lo metto in lista, senza fretta?</item>
+        <item>Glielo ricorderò con insistenza. Procedo?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_route">
+        <item>Si parte? Io sono pronto.</item>
+        <item>Accendo il navigatore?</item>
+        <item>In marcia?</item>
+        <item>Le preparo la strada più elegante?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_alarm">
+        <item>Sveglia alle %1$s? Coraggioso.</item>
+        <item>Alle %1$s? Il mattino ha l\'oro in bocca. Carico?</item>
+        <item>Sveglia alle %1$s, senza pietà?</item>
+        <item>Alle %1$s. Ne è proprio sicuro?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_timer">
+        <item>%1$s minuti. Conto io?</item>
+        <item>Tic tac, %1$s minuti. Parto?</item>
+        <item>%1$s minuti cronometrati. Via?</item>
+    </string-array>
+    <string-array name="alfred_say_wit_remember">
+        <item>Lo custodisco io?</item>
+        <item>Me lo segno, con discrezione?</item>
+        <item>Segreto professionale. Lo tengo a mente?</item>
+    </string-array>
     <string name="alfred_answer_hint">Risponda «sì» o «no», oppure tocchi.</string>
     <string name="alfred_cancelled">Come non detto.</string>
     <string name="alfred_p_nothing">Non ho sentito nulla%1$s. Riproviamo?</string>
