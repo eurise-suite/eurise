@@ -285,6 +285,23 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Giro 748 (Compila 44118965229 su `prova-organizzazione`; il 745 si era fermato su `chat/.../ChatModel.kt`: setter di
   `workQuiet` con lo stesso nome JVM di `setWorkQuiet`, corretto con `@set:JvmName("assignWorkQuiet")`, parte non nostra).
 
+## 17 novembre, sera: pagine della Scrivania a piacere (tavole da approvare)
+- **Chiesto dal proprietario**: mettere le app delle categorie in qualunque pagina della Scrivania, **aggiungere tutte le
+  pagine che vuole e farci quello che vuole**. Oggi nel codice le pagine sono tre fisse (bacheca a sinistra, home, riepilogo
+  a destra) e un'app va solo nei Preferiti della home («Aggiungi alla home», `LauncherViewModel.toggleFavorite`, un elenco
+  solo, al massimo colonne × righe).
+- **Tavole nuove** (pagina Scrivania, fila «Pagine della Scrivania a piacere», y 12400): **ScrPagAggiungi** (pressione lunga
+  su un'app: «Aggiungi alla Scrivania» con le miniature delle pagine, tocco breve = la pagina con la stella, «Nuova» crea una
+  pagina con l'app; anche in «Seleziona più app › Sposta in… › Scrivania»), **ScrPagTrascina** (trascinare app, bolle,
+  cartelle e widget: al bordo si passa alla pagina accanto, sulla fila delle pagine si salta, sul «+» nasce una pagina),
+  **ScrPagGestisci** («Le tue pagine»: miniature da riordinare, ⋯ con Rinomina e simbolo, Sfondo, Apri da qui, Duplica,
+  Quando si vede, Elimina con 30 giorni nel Cestino; ci si arriva pizzicando o da un punto vuoto › Pagine),
+  **ScrPagNuova** (nome, simbolo, parti da Vuota / App e bolle / Solo bolle / Copia, solo in una modalità, sfondo, apri da
+  qui), **ScrPagLibera** (una pagina tua in modifica: griglia 4 × 7 con app, cartella, bolla, widget di un'altra app e
+  appunto, ognuno spostabile e con la misura che vuoi; barra App, Bolla, Widget, Cartella, Testo, Fatto).
+- Bacheca e riepilogo diventano pagine come le altre (si possono riordinare, nascondere, riempire di app).
+- **Parte comune toccata**: `canvas.json` della tela (cinque voci in `boards` e `order`, nota `t-pagine`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -327,6 +344,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 5. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
 6. Poi: audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
+- **Pagine della Scrivania a piacere**: tavole ScrPag* da approvare (sezione del 17 novembre, sera); dopo l'approvazione il
+  codice (pagine in `LauncherSettings`, griglia libera per pagina con app, cartelle, bolle e widget, migrazione dei
+  Preferiti nella home).
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
 ## Come si lavora
