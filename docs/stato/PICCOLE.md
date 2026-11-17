@@ -159,6 +159,16 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - La lettera premuta compare sopra il dito di base su tutti i telefoni (`Defaults.PREF_POPUP_ON = true`).
 - Nel giro 758 è fallito solo il Flatpak di Eurise (non di quest'area).
 
+## 17 novembre, notte: editor, quarto giro (giro 773, in apk-prova)
+- Copia modifiche nella pila (`GalleryStore.copiedEdit`, l'effetto complessivo come `Adjust`); nella Galleria, con più
+  foto scelte, «Incolla modifiche» salva una copia modificata di ognuna con le ultime scelte del foglio Salva.
+- Modalità tue condivise: `LookShare` (`eurise-look:` + base64 delle sole regolazioni, test in `DevelopTest`); codice QR
+  con zxing-core (`Files.qrBitmap`), «Manda come testo»; «Ricevi» tra i filtri: da una foto o schermata col codice
+  (`Files.readQr`, sul telefono) o dagli appunti.
+- Dati della foto nel visore (`Files.photoInfo`): quando, nome, grandezza, peso, fotocamera, scatto, posizione arrotondata.
+- Giri 767 e 769 falliti: un campo EXIF che esiste solo in androidx (corretto) e poi un errore della Scrivania su
+  `brand`, corretto da quella chat.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -179,8 +189,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 ## Prossimi passi, in ordine
 0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
    `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
-   **Editor della Galleria, giri successivi**: Copia e incolla delle modifiche su altre foto, modalità col codice QR o come
-   testo (zxing-core, già nel catalogo della suite) e dati della foto; poi Ritocca (con il pennello per passo); poi Effetti. Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   **Editor della Galleria, giri successivi**: Ritocca (Selettivo, Pennello, Correttivo, Ritratto, con il pennello per
+   passo nella pila); poi Effetti (con Vignettatura con centro e grandezza). Prova del proprietario sui giri 722 (Regola, Curve, le tue
    modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
