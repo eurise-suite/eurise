@@ -197,6 +197,16 @@
     <string name="drive_recent_cloud">Dal cloud</string>
     <!-- Condividi con… (collaborazione rapida, 17 novembre). -->
     <string name="drive_share_with">Condividi con…</string>
+    <string name="drive_team_people">%1$d persone</string>
+    <string name="drive_team_edit">%1$s modificano</string>
+    <string name="drive_team_view">%1$s vedono</string>
+    <string name="drive_team_edit_one">%1$s modifica</string>
+    <string name="drive_team_view_one">%1$s vede</string>
+    <string name="drive_team_and">" e "</string>
+    <string name="drive_team_manage">Gestisci</string>
+    <string name="drive_team_changes">Cambiato da ieri · %1$d</string>
+    <string name="drive_team_today">oggi %1$s</string>
+    <string name="drive_team_yesterday">ieri %1$s</string>
     <string name="drive_share_with_short">Con…</string>
     <string name="drive_share_who">Email o nome utente</string>
     <string name="drive_share_by_email">Riceve dal tuo cloud un\'email con il suo link personale.</string>

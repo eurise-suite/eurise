@@ -189,6 +189,16 @@
     <string name="meeting_end_message">Queste righe diventano attività collegate all\'evento e alla nota. Togli la spunta a quelle che non servono.</string>
     <string name="meeting_end_none">Negli appunti non ci sono righe con @persona e una data: la nota resta così com\'è.</string>
     <string name="meeting_end_confirm">Crea le attività</string>
+    <string name="meeting_assign_all">Assegna a tutti</string>
+    <string name="meeting_assign_hint">Ognuno trova la sua nelle Attività, con la nota collegata; tu vedi qui come va. Con Murena o Nextcloud l\'elenco di ciascuno si condivide solo con lui.</string>
+    <string name="meeting_to_person">a %1$s</string>
+    <string name="meeting_to_you">a te</string>
+    <string name="meeting_person_list">Con %1$s</string>
+    <string name="meeting_assigned_state">a %1$s · %2$s</string>
+    <string name="meeting_step_assigned">affidata</string>
+    <string name="meeting_step_seen">vista</string>
+    <string name="meeting_step_started">iniziata</string>
+    <string name="meeting_step_done">fatta</string>
     <string name="meeting_end_confirm_empty">Chiudi</string>
     <string name="meeting_task_note">Dalla riunione «%1$s»</string>
     <string name="notes_lock_menu">Blocca la nota</string>

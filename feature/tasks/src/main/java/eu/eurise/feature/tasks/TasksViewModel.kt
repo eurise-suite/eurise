@@ -92,9 +92,7 @@ class TasksViewModel(
      */
     internal fun personList(listName: String, then: (Long) -> Unit) {
         viewModelScope.launch {
-            val id = state.value.lists.firstOrNull { it.list.name.equals(listName, ignoreCase = true) && it.list.kind == TaskList.KIND_USER }?.list?.id
-                ?: repository.addList(listName, eu.eurise.core.designsystem.theme.CalendarTint.Prugna.name)
-            then(id)
+            then(repository.personList(listName))
         }
     }
 

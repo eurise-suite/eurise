@@ -493,6 +493,14 @@ class TaskRepository internal constructor(
         onChanged?.invoke()
     }
 
+    /**
+     * L'elenco dell'utente che si chiama [name] («Con Laura Neri»: le cose affidate a una persona), creato la prima volta;
+     * restituisce l'id.
+     */
+    suspend fun personList(name: String): Long =
+        lists.all().firstOrNull { it.kind == TaskList.KIND_USER && it.name.equals(name.trim(), ignoreCase = true) }?.id
+            ?: addList(name, "Prugna")
+
     /** Un elenco condiviso da [owner], arrivato dal server; restituisce l'id. */
     suspend fun addSharedList(name: String, owner: String?): Long =
         lists.upsert(TaskListEntity(0, name.trim(), "Salvia", TaskList.KIND_SHARED, sync = true, position = lists.maxUserPosition() + 1, owner = owner))

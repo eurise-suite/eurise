@@ -26,6 +26,9 @@ data class DriveItem(val place: Place, val path: String, val name: String, val f
     val extension get() = name.substringAfterLast('.', "").lowercase()
 }
 
+/** Una cartella di squadra: chi c'è e cosa è cambiato da ieri. */
+data class Team(val people: List<eu.eurise.core.cloud.DavPersonShare>, val changes: List<eu.eurise.core.cloud.DavActivity>)
+
 data class TrashItem(val id: String, val name: String, val original: String, val at: Long, val size: Long)
 
 /** Spazio usato su totale di un posto ([place] nullo: il telefono). */
@@ -282,6 +285,19 @@ class DriveData(private val context: Context) {
         dav(item.place).setShareEdit(share.id, edit, item.folder)
 
     suspend fun unshare(item: DriveItem, share: eu.eurise.core.cloud.DavPersonShare) = dav(item.place).removeShare(share.id)
+
+    /**
+     * Cartella di squadra (tavola CollSquadra): le persone con cui è condivisa e i cambi da ieri alle 0:00. Null se la
+     * cartella non è condivisa con nessuno o il posto non è un Nextcloud.
+     */
+    suspend fun team(place: Place, path: String): Team? = withContext(Dispatchers.IO) {
+        if (path.isEmpty() || !supportsLinks(place)) return@withContext null
+        val dav = dav(place)
+        val people = runCatching { dav.sharesOf(path) }.getOrDefault(emptyList())
+        if (people.isEmpty()) return@withContext null
+        val since = java.time.LocalDate.now().minusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        Team(people, runCatching { dav.activity(path, since) }.getOrDefault(emptyList()))
+    }
 
     // --- Offline ---
 

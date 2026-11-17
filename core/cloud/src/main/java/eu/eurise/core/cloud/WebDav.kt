@@ -36,6 +36,12 @@ data class DavShare(val id: String, val path: String, val url: String, val expir
  */
 data class DavPersonShare(val id: String, val path: String, val with: String, val name: String, val byEmail: Boolean, val edit: Boolean)
 
+/**
+ * Un cambio in una cartella (app Attività di Nextcloud, tavola CollSquadra): [user] chi l'ha fatto (nome utente),
+ * [subject] la frase del server («Laura ha modificato Preventivo v3.pdf»), [path] il file, [at] il momento in millisecondi.
+ */
+data class DavActivity(val user: String, val subject: String, val path: String, val type: String, val at: Long)
+
 /** Una versione precedente di un file; [modified] è la data nel formato del server. */
 data class DavVersion(val href: String, val modified: String, val size: Long?)
 
@@ -372,6 +378,34 @@ class WebDav(
         val form = okhttp3.FormBody.Builder().add("permissions", permissions(edit, folder).toString()).build()
         val req = request("$sharesUrl/$id?format=json".toHttpUrl()).header("OCS-APIRequest", "true").put(form).build()
         call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "share update: ${res.code}") }
+    }
+
+    /**
+     * I cambi ai file dentro [folder] dal momento [since] (millisecondi), i più recenti prima, dall'app Attività di
+     * Nextcloud. Lista vuota se l'app non c'è o fuori da Nextcloud.
+     */
+    suspend fun activity(folder: String, since: Long, limit: Int = 200): List<DavActivity> {
+        if (!isNextcloud) return emptyList()
+        val url = "$serverRoot/ocs/v2.php/apps/activity/api/v2/activity/files?format=json&limit=$limit"
+        val req = request(url.toHttpUrl()).header("OCS-APIRequest", "true").get().build()
+        val prefix = "/" + folder.trim('/') + "/"
+        return call(req) { res ->
+            // 304: nessuna attività; 404/503: app spenta sul server.
+            if (!res.isSuccessful) return@call emptyList()
+            val data = runCatching { org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").optJSONArray("data") }.getOrNull()
+                ?: return@call emptyList()
+            (0 until data.length()).map { data.getJSONObject(it) }.mapNotNull { a ->
+                val at = runCatching { java.time.OffsetDateTime.parse(a.optString("datetime")).toInstant().toEpochMilli() }.getOrNull() ?: return@mapNotNull null
+                val objects = a.optJSONObject("objects")
+                val paths = buildList {
+                    add(a.optString("object_name"))
+                    objects?.keys()?.forEach { k -> add(objects.optString(k)) }
+                }.filter { it.isNotBlank() }
+                val path = paths.firstOrNull { it.startsWith(prefix) } ?: return@mapNotNull null
+                if (at < since) return@mapNotNull null
+                DavActivity(a.optString("user"), a.optString("subject"), path, a.optString("type"), at)
+            }.sortedByDescending { it.at }
+        }
     }
 
     /** Toglie una condivisione (persona o link): da quel momento non vede più nulla. */

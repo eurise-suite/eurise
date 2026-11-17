@@ -84,7 +84,12 @@ fun MeetingRoute(
         actions = stringResource(R.string.meeting_actions),
     )
     val viewModel = viewModel(key = "meeting:$eventId:$beginMillis") {
-        MeetingViewModel(data, MeetingStore(context), labels, eventId, beginMillis) { title -> context.getString(R.string.meeting_task_note, title) }
+        MeetingViewModel(
+            data, MeetingStore(context), labels, eventId, beginMillis,
+            taskNote = { title -> context.getString(R.string.meeting_task_note, title) },
+            personList = { name -> context.getString(R.string.meeting_person_list, name) },
+            appContext = context.applicationContext,
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val close = { viewModel.flush(onClose) }
@@ -100,6 +105,7 @@ fun MeetingRoute(
         onRemoveAgenda = viewModel::removeAgenda,
         onNotes = viewModel::onNotes,
         onCloseMeeting = { chosen -> viewModel.close(chosen) },
+        assigneeFor = { viewModel.assigneeFor(it)?.let { a -> a.name.ifBlank { a.email } } },
         onShare = {
             val send = Intent(Intent.ACTION_SEND).setType("text/plain")
                 .putExtra(Intent.EXTRA_SUBJECT, state.title)
@@ -127,6 +133,7 @@ internal fun MeetingScreen(
     onCloseMeeting: (List<MeetingActions.Action>) -> Unit,
     onShare: () -> Unit,
     onOpenNote: () -> Unit,
+    assigneeFor: (MeetingActions.Action) -> String? = { null },
 ) {
     var menu by remember { mutableStateOf(false) }
     var closing by rememberSaveable { mutableStateOf(false) }
@@ -237,7 +244,23 @@ internal fun MeetingScreen(
 
             if (content.actions.isNotEmpty()) {
                 SectionTitle(stringResource(R.string.meeting_actions))
-                content.actions.forEach { Text("– " + it.title, style = MaterialTheme.typography.bodyLarge) }
+                // Per ciascuna: a chi è affidata e come va (tavola CollRiunione), dalle Attività.
+                content.actions.forEach { action ->
+                    val task = action.taskId?.let { state.tasks[it] }
+                    val c = task?.collab
+                    Column {
+                        Text("– " + action.title, style = MaterialTheme.typography.bodyLarge)
+                        if (task != null && c != null && c.assigned) {
+                            val step = c.step(task.done) ?: eu.eurise.core.data.model.Handoff.Assigned
+                            Text(
+                                stringResource(R.string.meeting_assigned_state, (c.assignee ?: c.assigneeEmail.orEmpty()).substringBefore(' '), stringResource(stepText(step))),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.size(4.dp))
@@ -255,6 +278,7 @@ internal fun MeetingScreen(
 
     if (closing) {
         CloseSheet(
+            assigneeFor = assigneeFor,
             pending = state.pending,
             onDismiss = { closing = false },
             onConfirm = { chosen -> closing = false; onCloseMeeting(chosen) },
@@ -266,6 +290,7 @@ internal fun MeetingScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CloseSheet(
+    assigneeFor: (MeetingActions.Action) -> String?,
     pending: List<MeetingActions.Action>,
     onDismiss: () -> Unit,
     onConfirm: (List<MeetingActions.Action>) -> Unit,
@@ -285,7 +310,9 @@ private fun CloseSheet(
                         Checkbox(checked = on, onCheckedChange = { if (on) skipped += action.line else skipped -= action.line })
                         Column {
                             Text(action.title, style = MaterialTheme.typography.bodyLarge)
-                            val due = action.due.format(DueFormat) + (action.time?.let { " · $it" } ?: "")
+                            val to = assigneeFor(action)?.substringBefore(' ')
+                            val due = action.due.format(DueFormat) + (action.time?.let { " · $it" } ?: "") +
+                                " · " + (to?.let { stringResource(R.string.meeting_to_person, it) } ?: stringResource(R.string.meeting_to_you))
                             Text(due, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -294,12 +321,25 @@ private fun CloseSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onShare) { Text(stringResource(R.string.meeting_share)) }
                 Spacer(Modifier.weight(1f))
+                val assigning = pending.any { it.line !in skipped && assigneeFor(it) != null }
                 Button(onClick = { onConfirm(pending.filter { it.line !in skipped }) }) {
-                    Text(stringResource(if (pending.isEmpty()) R.string.meeting_end_confirm_empty else R.string.meeting_end_confirm))
+                    Text(stringResource(when {
+                        pending.isEmpty() -> R.string.meeting_end_confirm_empty
+                        assigning -> R.string.meeting_assign_all
+                        else -> R.string.meeting_end_confirm
+                    }))
                 }
             }
+            if (pending.any { assigneeFor(it) != null }) Hint(stringResource(R.string.meeting_assign_hint))
         }
     }
+}
+
+private fun stepText(step: eu.eurise.core.data.model.Handoff): Int = when (step) {
+    eu.eurise.core.data.model.Handoff.Assigned -> R.string.meeting_step_assigned
+    eu.eurise.core.data.model.Handoff.Seen -> R.string.meeting_step_seen
+    eu.eurise.core.data.model.Handoff.Started -> R.string.meeting_step_started
+    eu.eurise.core.data.model.Handoff.Done -> R.string.meeting_step_done
 }
 
 @Composable

@@ -34,6 +34,10 @@ data class MeetingState(
     val closed: Boolean = false,
     /** Azioni trovate negli appunti e non ancora diventate attività. */
     val pending: List<MeetingActions.Action> = emptyList(),
+    /** Gli invitati con un'email, a cui si possono affidare le azioni (tavola CollRiunione). */
+    val invitees: List<eu.eurise.core.data.calendar.Attendee> = emptyList(),
+    /** Le attività nate dalla riunione, per mostrare a chi sono affidate e come vanno. */
+    val tasks: Map<Long, eu.eurise.core.data.model.Task> = emptyMap(),
 )
 
 /**
@@ -47,6 +51,9 @@ class MeetingViewModel(
     private val eventId: Long,
     private val beginMillis: Long,
     private val taskNote: (String) -> String,
+    /** Il nome dell'elenco delle cose affidate a una persona («Con Laura Neri»). */
+    private val personList: (String) -> String = { "Con $it" },
+    private val appContext: android.content.Context? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MeetingState())
@@ -66,10 +73,33 @@ class MeetingViewModel(
             }
             val noteId = store.noteFor(eventId, beginMillis)?.takeIf { data.notes.get(it)?.trashedAt == null }
             val content = noteId?.let { id -> data.notes.get(id)?.let { readNote(it.content, it.body) } } ?: fresh(event)
+            val invitees = data.calendar.attendees(eventId).filter { !it.self && it.email.contains('@') }
             _state.value = MeetingState(
                 loaded = true, title = event.title, event = event, content = content, noteId = noteId,
-                closed = store.isClosed(eventId, beginMillis),
+                closed = store.isClosed(eventId, beginMillis), invitees = invitees,
             ).withPending()
+            refreshTasks()
+        }
+    }
+
+    /** Rilegge le attività della riunione (stato degli affidamenti). */
+    fun refreshTasks() {
+        viewModelScope.launch {
+            val ids = _state.value.content.actions.mapNotNull { it.taskId }
+            if (ids.isEmpty()) return@launch
+            val tasks = data.tasks.getAll(ids).associateBy { it.id }
+            _state.update { it.copy(tasks = tasks) }
+        }
+    }
+
+    /**
+     * A chi va l'azione (tavola CollRiunione): il primo «@nome» che corrisponde a un invitato con un'email (nome, cognome
+     * o inizio dell'indirizzo). Null se è per te o per qualcuno che non era invitato.
+     */
+    fun assigneeFor(action: MeetingActions.Action): eu.eurise.core.data.calendar.Attendee? = action.people.firstNotNullOfOrNull { mention ->
+        val m = mention.trim().lowercase()
+        _state.value.invitees.firstOrNull { a ->
+            a.name.lowercase().split(' ').any { it == m } || a.name.lowercase() == m || a.email.lowercase().substringBefore('@').startsWith(m)
         }
     }
 
@@ -138,10 +168,27 @@ class MeetingViewModel(
             val noteId = ensureNote()
             val event = LinkRef.event(eventId)
             val made = chosen.map { action ->
+                // Affidata a un invitato: va nel suo elenco «Con …», condiviso solo con lei (come «Affida a…»).
+                val to = assigneeFor(action)
+                val ctx = appContext
+                val listId = to?.let { data.tasks.personList(personList(it.name.ifBlank { it.email })) }
                 val id = data.tasks.add(
                     title = action.title, due = action.due, time = action.time,
                     notes = taskNote(_state.value.title), noteId = noteId,
+                    listId = listId ?: eu.eurise.core.data.model.TaskList.MAIN,
                 )
+                if (to != null && listId != null) {
+                    val me = ctx?.let { eu.eurise.core.cloud.TaskSharing.me(it) }
+                    data.tasks.setCollab(id, eu.eurise.core.data.model.TaskCollab(
+                        assignee = to.name.ifBlank { null }, assigneeEmail = to.email,
+                        handoff = eu.eurise.core.data.model.Handoff.Assigned,
+                        assignedAt = eu.eurise.core.data.model.TaskCollab.stamp(System.currentTimeMillis()),
+                        owner = me?.first, ownerEmail = me?.second, notify = true,
+                    ))
+                    if (ctx != null && eu.eurise.core.cloud.TaskSharing.cloudKind(ctx) != null) {
+                        runCatching { eu.eurise.core.cloud.TaskSharing.share(ctx, listId, to.email, edit = true) }
+                    }
+                }
                 data.links.link(LinkRef.task(id), event)
                 MeetingAction(action.title, id, false)
             }
@@ -149,6 +196,7 @@ class MeetingViewModel(
             _state.update { it.copy(content = it.content.copy(actions = it.content.actions + made), closed = true).withPending() }
             dirty = true
             save()
+            refreshTasks()
             onDone()
         }
     }

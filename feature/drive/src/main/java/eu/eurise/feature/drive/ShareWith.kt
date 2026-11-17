@@ -192,7 +192,7 @@ private fun Segmented(edit: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun Initial(name: String) {
+internal fun Initial(name: String) {
     val tints = listOf(Color(0xFF4F6B5A), Color(0xFFA8742A), Color(0xFF5B6FA8), Color(0xFF8C2F39), Color(0xFF6D4AA8))
     val letters = name.split(' ', '.', '@').filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
     Box(Modifier.size(34.dp).clip(CircleShape).background(tints[(name.hashCode() and 0x7fffffff) % tints.size]), contentAlignment = Alignment.Center) {

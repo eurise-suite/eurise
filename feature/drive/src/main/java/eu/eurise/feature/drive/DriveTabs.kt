@@ -565,6 +565,11 @@ private fun FolderList(
     val cloudSpace by produceState<Space?>(null, folder, refresh) {
         value = if (folder.path.isEmpty() && folder.place.account != null) data.cloudSpace(folder.place) else null
     }
+    // Cartella di squadra (tavola CollSquadra): chi c'è e cosa è cambiato da ieri, solo se condivisa con qualcuno.
+    val team by produceState<Team?>(null, folder, refresh) {
+        value = runCatching { data.team(folder.place, folder.path) }.getOrNull()
+    }
+    var managing by remember(folder) { mutableStateOf(false) }
     var kind by remember(folder) { mutableStateOf<Kind?>(null) }
     val shown = remember(current, query, sort, kind) {
         current.orEmpty().filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
@@ -619,6 +624,14 @@ private fun FolderList(
                 SpaceCard(cloudSpace)
             }
         }
+        team?.let { t ->
+            item(key = "team") {
+                TeamCard(t, onManage = { managing = true }) { p ->
+                    val clean = p.trim('/')
+                    onOpen(DriveItem(folder.place, clean, clean.substringAfterLast('/'), folder = false, size = null, modified = null))
+                }
+            }
+        }
         if (folder.place.account != null && !folder.place.isTree && folder.place.vaultRoot == null && current.any { it.name == Cryptomator.CONFIG_FILE }) item(key = "vault") {
             Row(
                 Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surfaceContainerLow)
@@ -664,6 +677,10 @@ private fun FolderList(
             }
         }
     }
+    if (managing) ShareWithSheet(
+        data, DriveItem(folder.place, folder.path, folder.path.substringAfterLast('/'), folder = true, size = null, modified = null),
+        onClose = { managing = false }, onFail = {},
+    )
     if (selecting) {
         Row(
             Modifier
