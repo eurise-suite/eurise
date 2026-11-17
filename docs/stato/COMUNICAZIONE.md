@@ -144,7 +144,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 - **Approvate, codice da fare**: ChatChiamata (chiamate e videochiamate: nel codice non c'è nulla), ChatAllega (oggi la
   Chat mostra immagini e file ricevuti ma non li manda); MsgConversazione per la parte «Disponibilità e posizione» nella barra; **PcEmail** (pagina «Eurise sul
   computer», approvata il 16 novembre: schermate da scrivere insieme all'area Computer, IMAP/SMTP già in `core/sync`).
-- **Due account (approvate, codice fatto, 17 novembre, pomeriggio)**: ChatDueAccount e ChatAccountAggiungi. `Accounts.kt`
+- **Turni in Chat** (17 novembre, sera; richiesta del proprietario; da approvare, fila y 21278): **ChatTurni** (la
+  settimana in cima al gruppo, chi è in turno ora, scambi controllati sulle 11 ore di riposo che cambiano i calendari) e
+  **ChatTurniCrea** (+ › Turni: chi, che turni, come girano; nel calendario «Turni» di ognuno, promemoria la sera prima).
+  Da legare alle tavole Turni* già sulla tela (TurniFoglio, TurniOra, TurniProposta, area Organizzazione).
+- **Due account (approvate, codice fatto, 17 novembre, pomeriggio; giro 750, solo chat)**: ChatDueAccount e ChatAccountAggiungi. `Accounts.kt`
   (Personal con le preferenze di sempre `chat_session`, Work `chat_session_work`; `Quiet` con fuori orario 19-8 e weekend,
   dominio dall'email, tacchette del server; test `AccountsTest`), `SessionStore` per account, `ChatModel.switchTo`,
   `ChatClient.unreadTotal` (non lette dell'altro ogni 2 minuti senza spostarne il punto di sincronizzazione), barra in
