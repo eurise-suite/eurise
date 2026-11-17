@@ -52,6 +52,15 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   ✕ in fondo; con molte schede la aperta resta di 136 dp e le altre scendono fino all'icona). Da 112 a 86 dp prima della
   pagina. La mano arriva dall'app Eurise: **parte comune toccata**, `AppearanceContract.METHOD_HAND` in `core/suite` e
   la risposta in `app/.../AppearanceProvider.kt`.
+- Telefono, **più svelto** (18 novembre, giro 789, richiesta del proprietario): l'APK di prova (`browser-debug.apk`) è
+  ora compilato come quello ufficiale (R8 con `-dontobfuscate`, non «debuggable», profili di avvio di Compose), stesso id e
+  chiave di prova: si aggiorna sopra; da 95,3 a 80,1 MB. I pacchetti `.debug` delle altre app li sceglie
+  `BuildConfig.SUITE_DEBUG` (non più `BuildConfig.DEBUG`, che segue «debuggable»); lint vital spento per il Browser.
+  Le schede che non si vedono vanno **a riposo** nel motore (`Tab.setVisible`: `setActive`, `setPriorityHint`; 800 ms dopo
+  il cambio, per lasciar finire la miniatura); quella in vista ha priorità alta. Le schede riaperte all'avvio e quelle delle
+  sessioni salvate **aprono la sessione Gecko solo quando vanno in vista** (`ensureOpen`). Chiusa la scheda in uso, la
+  successiva passa da `show()`. Fuori dal thread principale: «Nella cronologia» della nuova scheda e le miniature.
+  In `build.yml` il riassunto degli errori del Browser mostra anche quelli di R8.
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
@@ -64,7 +73,8 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
 3. **Sincronizzazione Browser telefono–computer** (BrwSincro): segnalibri, schede aperte, leggi dopo, cifrati dal cloud
    scelto o via Ponte.
 4. Firma dell'estensione su AMO (passo del proprietario), poi pubblicazione.
-5. Telefono: ciò che il proprietario segnala provando l'APK.
+5. Telefono: ciò che il proprietario segnala provando l'APK; dire se il giro 789 è più svelto (avvio, cambio scheda,
+   pagine). Possibili passi dopo: profilo di avvio proprio del Browser (Baseline Profile), GeckoView più recente.
 
 ## Come si lavora in quest'area
 - Ramo `brand` come le altre chat; per avere un giro tutto proprio spingere la stessa testa su `prova-browser` (la
