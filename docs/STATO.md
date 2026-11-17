@@ -3330,3 +3330,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Mappe: le otto aggiunte alla bolla in guida (Mappe 81, Eurise e Messaggi 707); toccati messages (SuiteSmsReceiver), app (DestinationsProvider «soon»), core/suite → `docs/stato/MAPPE.md`.
 - 17 novembre, Tastiera: controllo ortografico di Eurise riacceso, solo sottolineatura (da scegliere in Android al posto di AOSP) · giro 711 → `docs/stato/PICCOLE.md`.
 - 17 novembre, Comunicazione: Spese di gruppo in Chat (giro 713, chat-debug.apk); piano dello Studio e opzioni di server → `docs/stato/COMUNICAZIONE.md`.
+- 17 novembre, mattina, Organizzazione: icone «Come le bolle» (IcoColoreBolle, di base), elenchi condivisi con «preso da» e «fatto da», «Affida a…» nelle Attività; da risolvere l'accesso a kDrive e alla posta Infomaniak · giro 717 → `docs/stato/ORGANIZZAZIONE.md`.

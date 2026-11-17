@@ -164,6 +164,34 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   hanno un'email (`core/links` `searchEmails`, `MailContact`); avviso per il calendario solo sul telefono.
 - Giro 701 (Compila 43978824089 su `prova-organizzazione`) pubblicato in `apk-prova`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
 
+## 17 novembre, mattina: icone «Come le bolle», elenchi condivisi, «Affida a…»
+- **IcoColoreBolle approvata e in codice** (tema delle icone «Come le bolle», `IconThemes.BUBBLES`, **ora di base** per chi
+  non ha mai scelto un tema): la bolla dell'icona prende il colore d'accento della Scrivania (il «colore delle bolle»: non
+  c'era un colore delle bolle a parte, si cambia con il colore d'accento), di sera verso il blu notte; simbolo crema, o scuro
+  se il colore è chiaro; le app non nostre tengono il colore del loro disegno se si legge. Con questo tema le bolle della
+  Scrivania prendono un velo della stessa tinta (`launcherGlass(…, bubbleTint)`). Codice in `AppIcon.kt`.
+- **Elenchi condivisi** (CollElenchi): un elenco delle Attività è un calendario di attività CalDAV; «Condividi l'elenco»
+  (icona di condivisione in Elenchi, o la fascia in cima all'elenco) lo condivide sul server con email o nome utente dello
+  stesso Murena/Nextcloud, Vede/Modifica, chi c'è con cambio e rimozione (`WebDav.shareCalendar/unshareCalendar`, API
+  `oc:share` di Nextcloud; persone e proprietario letti con `oc:invite`, `oc:owner-principal`, `nc:owner-displayname`).
+  Gli elenchi che altri condividono con te arrivano da soli (`TaskList.KIND_SHARED`). Negli elenchi condivisi un tocco
+  **prende** la cosa da fare, il secondo la segna **fatta**; sotto il titolo «preso da Marta · 10:12» / «fatto da Luca ·
+  ieri» con il tondo della persona. Nel VTODO: `STATUS:IN-PROCESS`, `X-EURISE-TAKEN-BY/-TAKEN-AT/-DONE-BY`.
+- **«Affida a…»** (CollAffida), nella scheda dell'attività: persona tra i contatti con un'email, entro (oggi, domani, tra 7
+  giorni), «Avvisami quando è fatta» (e se il giorno della scadenza alle 9 non è partita), una riga per lei. La cosa passa
+  nell'elenco **«Con <persona>»**, condiviso solo con lei (vede solo ciò che le affidi). Nel VTODO: `ATTENDEE` con
+  `PARTSTAT` (affidata NEEDS-ACTION, vista ACCEPTED, iniziata IN-PROCESS, fatta COMPLETED), `ORGANIZER`,
+  `X-EURISE-HANDOFF` (ore dei passi), `-MESSAGE`, `-NOTIFY`: le altre app capiscono lo stato. «Come va» con i quattro passi;
+  chi la riceve la segna vista aprendola e ha «Ho iniziato»; chi la affida ha «Scrivile un'email» (app di posta, finché il
+  trasporto di Chat ed Email non c'è) e «Riprendi». Avvisi (canale «Attività condivise e affidate») quando arriva una cosa
+  affidata, quando è fatta, e alle 9 del giorno di scadenza se non è partita. Gli invitati messi da altre app restano loro.
+- Dati: `core/data` `TaskCollab` (test in `TaskCollabTest`), colonne `tasks.collab`, `task_lists.owner/members`
+  (**migrazione 7→8**), `TaskRepository.takeOrDone/setCollab/addSharedList/setListPeople`; `WebDav.me()` per nome ed
+  email dell'account (tenuti in `tasks_sync`). Parti comuni: nessuna di quelle elencate (solo `core/data` e `core/cloud`).
+- **Da provare** con due account Murena: condividere un elenco, prendere e spuntare dai due telefoni, affidare una cosa e
+  vedere arrivare l'avviso; verificare che Murena accetti la condivisione per email (`mailto:`) e non solo per nome utente.
+- Giro 717 (Compila 43991645566 su `prova-organizzazione`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -179,24 +207,31 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
   NoteVocale in codice (giri 671 e 673).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
-  codice con l'area Comunicazione); le otto Coll* (e le Ins* di Comunicazione), in parte in codice (sotto).
+  codice con l'area Comunicazione); le altre Coll* (Riunione, Squadra, Assistente, Disponibilità; Condividi in parte) e le
+  Ins* di Comunicazione.
 - **Approvate e in codice dal 17 novembre**: DriveCartelle, DriveCassetto, DriveCloud; «Condividi con…» per Drive e per
   gli appuntamenti (invitati).
-- **Da approvare**: IcoColoreBolle.
+- **Approvate e in codice dal 17 novembre (mattina)**: IcoColoreBolle (tema «Come le bolle», di base), CollElenchi,
+  CollAffida.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 701: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto, spazio, Oggi sotto le
-   cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena (arriva l'invito?).
-2. **Collaborazione, la nostra parte, in ordine**: elenchi condivisi (condivisione del calendario delle attività su
-   CalDAV di Nextcloud/Murena, «preso da» e «fatto da»); «Affida a…» nelle Attività (persona, scadenza, stato) con il
-   trasporto di Comunicazione (Chat o email, stessa scheda); nota della riunione condivisa (cose da fare → attività
-   assegnate); cartella di squadra (cosa è cambiato da ieri: attività di Nextcloud); agenda con l'assistente (calendario
-   condiviso «Proposte»); disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena).
-3. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
+1. **Prove del proprietario** sul giro 717 (contiene anche il 701): Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
+   spazio, Oggi sotto le cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena;
+   icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena.
+2. **Accesso a kDrive e alla posta di Infomaniak** (chiesto dal proprietario il 17 novembre, da risolvere): kDrive è fermo
+   perché Infomaniak non concede lo scope OAuth «drive» e il WebDAV risponde 403 sul piano my kSuite+ (`STATO.md`, 9
+   novembre); la posta Infomaniak in Eurise Email (area Comunicazione) richiede la verifica in due passi e una password per le
+   app. Da fare: rileggere le condizioni attuali di Infomaniak (WebDAV, API kDrive, OAuth), riprovare con il proprietario e,
+   per la posta, concordare con l'area Comunicazione.
+3. **Collaborazione, la nostra parte, in ordine**: «Affida a…» con il trasporto di Comunicazione (Chat o email, stessa
+   scheda) al posto dell'email a mano; nota della riunione condivisa (cose da fare → attività assegnate); cartella di
+   squadra (cosa è cambiato da ieri: attività di Nextcloud); agenda con l'assistente (calendario condiviso «Proposte»);
+   disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena).
+4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
    personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.
-4. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
-5. Poi: IcoColoreBolle dopo l'approvazione; audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
+5. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
+6. Poi: audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
