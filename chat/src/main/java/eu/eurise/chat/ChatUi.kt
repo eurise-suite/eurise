@@ -369,32 +369,43 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 }
             }
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
-            items(events.asReversed(), key = { it.id }) { e ->
-                Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
-            }
+        // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
+        val group = room != null && !room.direct && peer == null
+        var tab by remember(roomId) { mutableStateOf(0) }
+        if (group) Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
+            Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
         }
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                if (draft.isEmpty()) Text(stringResource(R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
-                BasicTextField(value = draft, onValueChange = { draft = it }, maxLines = 6,
-                    textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
-                    modifier = Modifier.fillMaxWidth())
+        if (group && tab == 1) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { ExpensesPane(model, actions, roomId) }
+        } else {
+            LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
+                items(events.asReversed(), key = { it.id }) { e ->
+                    Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
+                }
             }
-            Spacer(Modifier.width(8.dp))
-            val send = stringResource(R.string.ch_send)
-            Box(
-                Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) scheme.primary.copy(alpha = 0.4f) else scheme.primary)
-                    .clickable(enabled = draft.isNotBlank(), role = Role.Button) {
-                        val text = draft.trim()
-                        draft = ""
-                        model.send(roomId, text) { actions.toast(failed) }
-                    }.semantics { contentDescription = send },
-                contentAlignment = Alignment.Center,
-            ) { Icon(EuriseIcons.send(2.2f), null, tint = scheme.onPrimary, modifier = Modifier.size(19.dp)) }
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    if (draft.isEmpty()) Text(stringResource(R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
+                    BasicTextField(value = draft, onValueChange = { draft = it }, maxLines = 6,
+                        textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
+                        modifier = Modifier.fillMaxWidth())
+                }
+                Spacer(Modifier.width(8.dp))
+                val send = stringResource(R.string.ch_send)
+                Box(
+                    Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) scheme.primary.copy(alpha = 0.4f) else scheme.primary)
+                        .clickable(enabled = draft.isNotBlank(), role = Role.Button) {
+                            val text = draft.trim()
+                            draft = ""
+                            model.send(roomId, text) { actions.toast(failed) }
+                        }.semantics { contentDescription = send },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(EuriseIcons.send(2.2f), null, tint = scheme.onPrimary, modifier = Modifier.size(19.dp)) }
+            }
         }
     }
 }
@@ -402,6 +413,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
 @Composable
 private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    if (e.kind == Event.Kind.Expense || e.kind == Event.Kind.Settlement) { ExpenseBubble(model, e, mine); return }
     if (e.kind == Event.Kind.State) {
         val (what, who) = e.text.split(':', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
         val label = when (what) {

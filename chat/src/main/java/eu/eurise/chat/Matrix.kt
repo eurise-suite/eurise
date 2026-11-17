@@ -25,8 +25,10 @@ data class Event(
     val time: Long,
     val kind: Kind,
     val mediaUrl: String? = null,
+    /** Per spese e pagamenti del gruppo: il contenuto del messaggio (JSON), letto da [Expenses]. */
+    val data: String? = null,
 ) {
-    enum class Kind { Text, Notice, Image, File, Encrypted, State }
+    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement }
 }
 
 /**
@@ -71,6 +73,8 @@ object Matrix {
                     "m.image" -> Event(id, sender, body, time, Event.Kind.Image, content.optString("url").ifEmpty { null })
                     "m.file", "m.video", "m.audio" -> Event(id, sender, body, time, Event.Kind.File, content.optString("url").ifEmpty { null })
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice)
+                    Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
+                    Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())
                     // La richiesta di verifica di una persona: una riga al centro, non un messaggio.
                     "m.key.verification.request" -> Event(id, sender, "verify:" + (names[sender] ?: localpart(sender)), time, Event.Kind.State)
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)

@@ -161,4 +161,47 @@
     <string name="ch_dev_logout">Esci</string>
     <string name="ch_dev_failed">Non è riuscito a far uscire il dispositivo</string>
     <string name="ch_dev_note">«Esci» chiude l\'accesso di quel dispositivo: non riceve più messaggi né chiavi. La verifica di una persona dalla sua chat arriva dopo.</string>
+    <!-- Spese di gruppo (tavole SpeGruppo, SpeAggiungi, SpeSaldi) -->
+    <string name="ex_tab_messages">Messaggi</string>
+    <string name="ex_tab_expenses">Spese</string>
+    <string name="ex_you">te</string>
+    <string name="ex_total">Totale del gruppo</string>
+    <string name="ex_your_share">La tua parte</string>
+    <string name="ex_owed_you">Hai speso %1$s: ti devono %2$s</string>
+    <string name="ex_you_owe">Hai speso %1$s: devi %2$s</string>
+    <string name="ex_even">Sei in pari</string>
+    <string name="ex_who_spent">CHI HA SPESO · IL SALDO A DESTRA</string>
+    <string name="ex_spent_share">ha speso %1$s · la sua parte %2$s</string>
+    <string name="ex_latest">ULTIME SPESE</string>
+    <string name="ex_empty">Ancora nessuna spesa. Con «+ Spesa» la scrivi qui: ognuno vede quanto ha speso, la sua parte e il saldo.</string>
+    <string name="ex_untitled">Spesa</string>
+    <string name="ex_paid_by_in">pagata da %1$s · in %2$d</string>
+    <string name="ex_settle">Salda</string>
+    <string name="ex_add">Spesa</string>
+    <string name="ex_new">Nuova spesa</string>
+    <string name="ex_amount">Importo in euro</string>
+    <string name="ex_what">Per cosa (es. Cena da Gesuino)</string>
+    <string name="ex_paid_by">HA PAGATO</string>
+    <string name="ex_how">COME SI DIVIDE</string>
+    <string name="ex_equal">Uguale</string>
+    <string name="ex_shares">Quote</string>
+    <string name="ex_amounts">Importi</string>
+    <string name="ex_percent" formatted="false">%</string>
+    <string name="ex_err_amounts">La somma degli importi deve essere uguale al totale.</string>
+    <string name="ex_err_percent">Le percentuali devono fare 100.</string>
+    <string name="ex_err_people">Scegli almeno una persona.</string>
+    <string name="ex_add_go">Aggiungi</string>
+    <string name="ex_body">Spesa: %1$s · %2$s, pagata da %3$s, divisa tra %4$d</string>
+    <string name="ex_settle_title">Chi deve a chi</string>
+    <string name="ex_settle_none">Siete tutti in pari.</string>
+    <string name="ex_settle_count">Bastano %1$d pagamenti: i debiti si compensano tra loro.</string>
+    <string name="ex_arrow">%1$s → %2$s</string>
+    <string name="ex_remind">Ricorda</string>
+    <string name="ex_reminded">Promemoria mandato nel gruppo</string>
+    <string name="ex_mark_paid">Pagato</string>
+    <string name="ex_paid_body">Pagamento: %1$s ha dato %2$s a %3$s</string>
+    <string name="ex_remind_body">Promemoria spese: %1$s deve %2$s a %3$s</string>
+    <string name="ex_settle_note">«Pagato» lo segna chi ha dato o chi ha ricevuto i soldi, e lo vede tutto il gruppo. Il conto si fa sul telefono di ognuno, dai messaggi cifrati della chat.</string>
+    <string name="ex_settled_line">%1$s ha dato %2$s a %3$s</string>
+    <string name="ex_removed">Spesa tolta</string>
 </resources>

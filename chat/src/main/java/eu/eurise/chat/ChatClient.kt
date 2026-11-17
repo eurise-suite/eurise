@@ -59,6 +59,10 @@ class ChatClient(val session: Session) {
         return put("/_matrix/client/v3/rooms/${enc(roomId)}/send/m.room.message/$txn", body).optString("event_id")
     }
 
+    /** Un messaggio con un contenuto qualsiasi (spese, pagamenti) in una stanza non cifrata. */
+    fun sendMessage(roomId: String, content: JSONObject): String =
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/send/m.room.message/${UUID.randomUUID()}", content).optString("event_id")
+
     fun read(roomId: String, eventId: String) {
         runCatching { post("/_matrix/client/v3/rooms/${enc(roomId)}/receipt/m.read/${enc(eventId)}", JSONObject()) }
     }

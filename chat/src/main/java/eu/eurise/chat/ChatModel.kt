@@ -262,32 +262,92 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     /** I messaggi più vecchi, quando si arriva in cima. */
     fun older(roomId: String) {
-        val s = data[roomId] ?: return
-        val from = s.prevBatch ?: return
-        val c = client ?: return
+        scope.launch { fetchOlder(roomId) }
+    }
+
+    /** Una pagina di messaggi più vecchi; falso quando non ce ne sono altri (o la richiesta è già in corso). */
+    private suspend fun fetchOlder(roomId: String): Boolean {
+        val s = data[roomId] ?: return false
+        val from = s.prevBatch ?: return false
+        val c = client ?: return false
         s.prevBatch = null
-        scope.launch {
-            val r = withContext(Dispatchers.IO) {
-                runCatching { c.messages(roomId, from) }.getOrNull()?.also { r ->
-                    val a = r.optJSONArray("chunk") ?: return@also
-                    val cr = cryptoFor(c.session) ?: return@also
-                    for (i in 0 until a.length()) {
-                        val e = a.getJSONObject(i)
-                        if (e.optString("type") == "m.room.encrypted") cr.decrypt(e, roomId)?.let { a.put(i, it) }
-                    }
+        val r = withContext(Dispatchers.IO) {
+            runCatching { c.messages(roomId, from) }.getOrNull()?.also { r ->
+                val a = r.optJSONArray("chunk") ?: return@also
+                val cr = cryptoFor(c.session) ?: return@also
+                for (i in 0 until a.length()) {
+                    val e = a.getJSONObject(i)
+                    if (e.optString("type") == "m.room.encrypted") cr.decrypt(e, roomId)?.let { a.put(i, it) }
                 }
-            } ?: run { s.prevBatch = from; return@launch }
-            val chunk = Matrix.events(r.optJSONArray("chunk"), s.names).reversed()
-            val list = timeline(roomId)
-            list.addAll(0, chunk.filter { e -> list.none { it.id == e.id } })
-            s.prevBatch = r.optString("end").ifEmpty { null }
+            }
+        } ?: run { s.prevBatch = from; return false }
+        val chunk = Matrix.events(r.optJSONArray("chunk"), s.names).reversed()
+        val list = timeline(roomId)
+        list.addAll(0, chunk.filter { e -> list.none { it.id == e.id } })
+        s.prevBatch = r.optString("end").ifEmpty { null }
+        return s.prevBatch != null
+    }
+
+    // --- Spese di gruppo (tavole SpeGruppo, SpeAggiungi, SpeSaldi) ---
+
+    /** Chi è nella stanza, per chi ha pagato e tra chi si divide. */
+    val members = mutableStateMapOf<String, List<String>>()
+    /** Stanze di cui si sta leggendo tutta la storia per fare i conti. */
+    val loadingHistory = mutableStateMapOf<String, Boolean>()
+
+    /**
+     * Per i conti servono tutte le spese, anche le più vecchie: si scorre la storia fino all'inizio (al massimo
+     * [MAX_PAGES] pagine da 30 messaggi) e si leggono i membri.
+     */
+    fun loadExpenses(roomId: String) {
+        val c = client ?: return
+        if (loadingHistory[roomId] == true) return
+        loadingHistory[roomId] = true
+        scope.launch {
+            withContext(Dispatchers.IO) { runCatching { c.joinedMembers(roomId) }.getOrNull() }?.let { members[roomId] = it.sorted() }
+            var pages = 0
+            while (pages < MAX_PAGES && fetchOlder(roomId)) pages++
+            loadingHistory[roomId] = false
         }
     }
 
-    fun send(roomId: String, text: String, failed: () -> Unit) {
+    fun expenses(roomId: String): List<Expenses.Expense> =
+        Expenses.current(timeline(roomId).filter { it.kind == Event.Kind.Expense }.mapNotNull { e ->
+            e.data?.let { runCatching { Expenses.expense(JSONObject(it), e.time) }.getOrNull() }?.let { x ->
+                // Una spesa la corregge o la toglie solo chi l'ha scritta.
+                x.takeIf { firstAuthor(roomId, x.id) in listOf(null, e.sender) }
+            }
+        })
+
+    fun settlements(roomId: String): List<Expenses.Settlement> =
+        timeline(roomId).filter { it.kind == Event.Kind.Settlement }.mapNotNull { e ->
+            e.data?.let { runCatching { Expenses.settlement(JSONObject(it), e.time) }.getOrNull() }
+                // Un pagamento lo segna chi l'ha fatto o chi l'ha ricevuto.
+                ?.takeIf { it.from == e.sender || it.to == e.sender }
+        }
+
+    private fun firstAuthor(roomId: String, expenseId: String): String? =
+        timeline(roomId).firstOrNull { e ->
+            e.kind == Event.Kind.Expense &&
+                e.data?.let { runCatching { JSONObject(it).getJSONObject(Expenses.EXPENSE).optString("id") }.getOrNull() } == expenseId
+        }?.sender
+
+    fun sendExpense(roomId: String, e: Expenses.Expense, body: String, failed: () -> Unit) =
+        sendContent(roomId, Expenses.content(e, body), Event.Kind.Expense, failed)
+
+    fun sendSettlement(roomId: String, s: Expenses.Settlement, body: String, failed: () -> Unit) =
+        sendContent(roomId, Expenses.content(s, body), Event.Kind.Settlement, failed)
+
+    fun send(roomId: String, text: String, failed: () -> Unit) =
+        sendContent(roomId, JSONObject().put("msgtype", "m.text").put("body", text), Event.Kind.Text, failed)
+
+    /** Un messaggio qualsiasi (testo, spesa, pagamento): eco locale subito, cifrato se la stanza lo è. */
+    private fun sendContent(roomId: String, content: JSONObject, kind: Event.Kind, failed: () -> Unit) {
         val c = client ?: return
         val me = session?.userId.orEmpty()
-        val local = Event("local:" + System.nanoTime(), me, text, System.currentTimeMillis(), Event.Kind.Text)
+        val text = content.optString("body")
+        val local = Event("local:" + System.nanoTime(), me, text, System.currentTimeMillis(), kind,
+            data = if (kind == Event.Kind.Text) null else content.toString())
         timeline(roomId).add(local)
         val encrypted = data[roomId]?.encrypted == true
         scope.launch {
@@ -295,9 +355,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 runCatching {
                     if (encrypted) {
                         val cr = cryptoFor(c.session) ?: error("crypto")
-                        val content = JSONObject().put("msgtype", "m.text").put("body", text)
                         c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), "m.room.message", content))
-                    } else c.sendText(roomId, text)
+                    } else c.sendMessage(roomId, content)
                 }.isSuccess
             }
             if (!ok) { timeline(roomId).remove(local); failed() }
@@ -612,6 +671,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     companion object {
         const val REDIRECT = "eurisechat://login"
+        /** Pagine di storia lette al massimo per i conti delle spese (30 messaggi l'una). */
+        const val MAX_PAGES = 200
         /** Il nome della chiave di recupero tra i segreti affidati all'app Eurise. */
         const val SUITE_SECRET = "chat.recovery_key"
         /** La Chat è aperta e sincronizza da sé: il lavoro in background non tocca le chiavi nello stesso momento. */
