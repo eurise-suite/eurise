@@ -82,7 +82,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
     è proprio sicuro?»).
   - Il pannello si chiude dopo la battuta (al massimo 2,5 s in più), così non la tronca.
 - Regola per chi aggiunge battute: Lei sempre, niente volgarità, al massimo una decina di parole, citazioni solo se
-  l'attribuzione è sicura (altrimenti come proverbio). Alla guida restano escluse (in Android Auto Alfred non le dice).
+  l'attribuzione è sicura (altrimenti come proverbio). «Mai alla guida» (regola di Alfred unico): da verificare che `withMaxim` non scatti nel percorso di Android Auto.
 - Da provare: se una su due è troppo (o troppo poco); `withMaxim` in `Plan.kt`.
 
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
