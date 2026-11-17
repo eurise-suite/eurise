@@ -207,6 +207,18 @@
     <string name="alfred_listen_hint">Parli pure: quando si ferma capisco da me che ha finito. Se ha fretta, tocchi il microfono.</string>
     <string name="alfred_working">Ho capito, trascrivo.</string>
     <string name="alfred_ask_confirm">Procedo?</string>
+    <!-- Conferme dette, brevi: una domanda sola; il resto è nella scheda (17 novembre). -->
+    <string name="alfred_say_call">Chiamo %1$s?</string>
+    <string name="alfred_say_message">Lo mando a %1$s?</string>
+    <string name="alfred_say_event">Lo segno in agenda?</string>
+    <string name="alfred_say_note">Lo annoto?</string>
+    <string name="alfred_say_task">Lo metto tra le cose da fare?</string>
+    <string name="alfred_say_route">Le preparo la strada?</string>
+    <string name="alfred_say_alarm">Sveglia alle %1$s?</string>
+    <string name="alfred_say_timer">%1$s minuti, parto?</string>
+    <string name="alfred_say_search">Cerco?</string>
+    <string name="alfred_say_open">Apro?</string>
+    <string name="alfred_say_remember">Me lo segno?</string>
     <string name="alfred_answer_hint">Risponda «sì» o «no», oppure tocchi.</string>
     <string name="alfred_cancelled">Come non detto.</string>
     <string name="alfred_p_nothing">Non ho sentito nulla%1$s. Riproviamo?</string>

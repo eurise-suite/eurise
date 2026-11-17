@@ -58,8 +58,11 @@ data class Card(
     fun with(key: String, value: String) = copy(fields = fields.map { if (it.key == key) it.copy(value = value) else it })
 }
 
-/** Com'è andata: la frase di Alfred e se il pannello si chiude da sé. */
-data class Outcome(val line: String, val close: Boolean)
+/**
+ * Com'è andata: la frase di Alfred e se il pannello si chiude da sé. [spoken] è ciò che dice a voce: solo l'essenziale
+ * («Annotato.»), la battuta resta scritta (prova del 17 novembre: aspettare che parli rallenta).
+ */
+data class Outcome(val line: String, val close: Boolean, val spoken: String = line)
 
 private val DAY = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)
 private val HOUR = DateTimeFormatter.ofPattern("HH:mm")
@@ -496,10 +499,34 @@ class Butler(private val context: Context) {
             Kind.Alarm -> R.array.alfred_maxims_alarm
             else -> return out
         }
-        return out.copy(line = out.line + " " + context.resources.getStringArray(array).random())
+        return out.copy(line = out.line + " " + context.resources.getStringArray(array).random(), spoken = out.spoken)
     }
 
     suspend fun run(card: Card): Outcome = withMaxim(card, act(card))
+
+    /**
+     * La conferma detta, breve: una domanda sola al posto della frase della scheda più «Procedo?» («Chiamo Marco?»,
+     * «Lo annoto?»). Il resto lo mostra la scheda.
+     */
+    fun spokenConfirm(card: Card): String {
+        fun first(name: String?) = name.orEmpty().trim().split(' ').firstOrNull().orEmpty()
+        val who = first(card.contact?.name ?: (card.command as? Command.Call)?.who ?: (card.command as? Command.Message)?.who)
+        val plain = SpokenText.brief(card.lead, sentences = 1) + " " + s(R.string.alfred_ask_confirm)
+        return when (card.kind) {
+            Kind.Call -> if (who.isBlank()) plain else s(R.string.alfred_say_call, who)
+            Kind.Message -> if (who.isBlank()) plain else s(R.string.alfred_say_message, who)
+            Kind.Event -> s(R.string.alfred_say_event)
+            Kind.Note -> s(R.string.alfred_say_note)
+            Kind.Task -> s(R.string.alfred_say_task)
+            Kind.Route -> s(R.string.alfred_say_route)
+            Kind.Alarm -> s(R.string.alfred_say_alarm, card.value("time"))
+            Kind.Timer -> s(R.string.alfred_say_timer, card.value("minutes"))
+            Kind.Search -> s(R.string.alfred_say_search)
+            Kind.Open -> s(R.string.alfred_say_open)
+            Kind.Remember -> s(R.string.alfred_say_remember)
+            else -> plain
+        }
+    }
 
     private suspend fun act(card: Card): Outcome = runCatching {
         when (card.kind) {

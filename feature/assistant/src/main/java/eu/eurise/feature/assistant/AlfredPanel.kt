@@ -224,13 +224,15 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     fun execute(card: Card) {
         answering = false
         ear.cancel()
+        if (speaker.isInitialized()) speaker.value.stop()
         // Richiesta libera: sul telefono non c'è ancora chi risponde; va al servizio online preferito, ripulita.
         if (card.kind == Kind.Free) { askFree(card.value("text").ifBlank { heard }, null); return }
         scope.launch {
             val out = butler.run(card)
             phase = Phase.Said(out.line)
-            say(out.line)
-            if (out.close) { delay(900L + out.line.length * 35L); onClose() }
+            say(out.spoken)
+            // Il tempo di leggere la riga, non di più: la battuta è un di più, non deve trattenere.
+            if (out.close) { delay(700L + (out.line.length * 25L).coerceAtMost(1800L)); onClose() }
         }
     }
 
@@ -240,7 +242,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     suspend fun showData(ask: Command.Ask) {
         val answer = butler.lookup(ask)
         phase = Phase.Data(answer)
-        say(answer.spoken)
+        say(SpokenText.brief(answer.spoken))
     }
 
     /** Dopo la scheda letta a voce, Alfred ascolta la risposta: «sì» agisce, «no» annulla, altro è una correzione. */
@@ -280,7 +282,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         else { phase = Phase.Ready; askOnline(favorite) }
                     } else {
                         phase = Phase.Answer(text.trim(), from, true, question, done = true)
-                        say(text.trim())
+                        // A voce le prime due frasi: il resto è scritto, e si legge prima di quanto si ascolta.
+                        say(SpokenText.brief(text.trim()))
                     }
                 })
             }
@@ -344,10 +347,10 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         val canAct = card.ready && (card.kind != Kind.Call ||
             context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
         when {
-            spoken && readAloud && canAct -> say(card.lead + " " + context.getString(R.string.alfred_ask_confirm)) { askAnswer(card) }
+            spoken && readAloud && canAct -> say(butler.spokenConfirm(card)) { askAnswer(card) }
             // «A che ora lo sposto?»: la risposta detta completa la scheda.
-            spoken && card.kind == Kind.Follow && !card.ready && card.fields.isNotEmpty() -> say(card.lead) { listenReply() }
-            else -> say(card.lead)
+            spoken && card.kind == Kind.Follow && !card.ready && card.fields.isNotEmpty() -> say(SpokenText.brief(card.lead, 1)) { listenReply() }
+            else -> say(SpokenText.brief(card.lead, 1))
         }
     }
 
@@ -409,7 +412,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
 
     /** Un tocco e Alfred ascolta; quando si smette di parlare capisce da sé che si è finito e risponde. */
     fun listenNow() {
-        if (speaker.isInitialized()) speaker.value.stop()
+        // La voce si prepara mentre si parla (modello caricato e scaldato in Eurise Voce), così risponde senza attesa.
+        if (readAloud) speaker.value.stop()
         speaking = false
         answering = false
         level = 0f

@@ -91,6 +91,9 @@ class AlfredVoiceService : TextToSpeechService() {
                 ),
             )
         }.getOrNull()
+        // La prima frase di un modello ONNX appena caricato è molto più lenta delle altre: la si fa adesso (Alfred apre
+        // la voce mentre si parla), così la risposta vera parte subito.
+        engine?.let { e -> runCatching { e.generate("Sì.", voice.kokoroSid ?: 0, 1f) } }
         Voices.speakingEnd(this)
         loaded = voice
         return engine
@@ -107,13 +110,15 @@ class AlfredVoiceService : TextToSpeechService() {
         val rate = (tts.sampleRate() * tuning.pitch).toInt()
         if (callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return
         if (text.isBlank()) { callback.done(); return }
-        // La velocità del telefono (100 = normale); Alfred parla un filo più piano.
-        val speed = (request.speechRate / 100f).coerceIn(0.5f, 2.5f) * 0.95f * tuning.speed / tuning.pitch
+        // La velocità del telefono (100 = normale). Kokoro in italiano è lento di suo: Nicola e Sara un po' più svelti
+        // (prova del 17 novembre: «estremamente lento nel parlare»); Piper com'era.
+        val pace = if (loaded?.kokoroSid != null) KOKORO_PACE else 0.95f
+        val speed = (request.speechRate / 100f).coerceIn(0.5f, 2.5f) * pace * tuning.speed / tuning.pitch
         val pause = ByteArray(rate * tuning.pauseMs / 1000 * 2)
         val max = callback.maxBufferSize.coerceAtLeast(1024)
         Voices.speakingStart(this)
         val ok = runCatching {
-            for ((i, sentence) in sentences(text).withIndex()) {
+            for ((i, sentence) in SpeechChunks.split(text).withIndex()) {
                 if (stopped) break
                 val audio = tts.generate(sentence, loaded?.kokoroSid ?: 0, speed)
                 val bytes = if (i > 0 && pause.isNotEmpty()) pause + pcm(audio.samples) else pcm(audio.samples)
@@ -139,7 +144,8 @@ class AlfredVoiceService : TextToSpeechService() {
         return bytes
     }
 
-    /** Frasi brevi: la prima si sente subito, senza aspettare tutto il testo. */
-    private fun sentences(text: String): List<String> =
-        text.split(Regex("(?<=[.!?;:])\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
+    private companion object {
+        /** Passo di Kokoro rispetto al suo normale: deciso a orecchio, da ritoccare dopo la prova. */
+        const val KOKORO_PACE = 1.15f
+    }
 }
