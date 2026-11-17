@@ -133,6 +133,36 @@ class KeyModel {
         return best
     }
 
+    /**
+     * Scelta del tasto con le lettere precedenti (17 novembre): per ogni tasto vicino, quanto il tocco gli somiglia
+     * ([score], con i valori prudenti finché non ha imparato) più quanto quella lettera ha senso dopo le precedenti
+     * ([lm], logaritmo; null = tasto che non è una lettera né lo spazio). Il tasto sotto il dito vince salvo che un
+     * altro sia nettamente più probabile: al centro di un tasto la distanza pesa troppo perché una lettera la ribalti,
+     * sul bordo decide la lingua. Vale anche tra lettere e spazio.
+     */
+    fun chooseWith(hit: KeyBox, near: List<KeyBox>, px: Float, py: Float, lm: (Int) -> Float?): Int {
+        val hitLm = lm(hit.code) ?: return hit.code
+        // La larghezza di un tasto normale: lo spazio, molto più largo, si tocca in un punto qualsiasi della sua
+        // larghezza, quindi per lui conta solo quanto il tocco è vicino in altezza.
+        val unit = (near.map { it.w } + hit.w).min()
+        fun geo(k: KeyBox): Float =
+            if (k.w > 2.5f * unit) score(KeyBox(k.code, (px - unit / 2f).toInt(), k.y, unit, k.h), px, py) else score(k, px, py)
+        val hitScore = geo(hit) + LM_WEIGHT * hitLm
+        var best = hit.code
+        var bestScore = hitScore + LM_MARGIN
+        for (k in near) {
+            if (k.code == hit.code) continue
+            val l = lm(k.code) ?: continue
+            // Solo tasti davvero accanto al tocco.
+            if (abs(py - k.cy) > 0.95f * k.h) continue
+            if (k.w > 2.5f * unit) { if (px < k.x - 0.3f * unit || px > k.x + k.w + 0.3f * unit) continue }
+            else if (abs(px - k.cx) > 0.95f * k.w) continue
+            val s = geo(k) + LM_WEIGHT * l
+            if (s > bestScore) { best = k.code; bestScore = s }
+        }
+        return best
+    }
+
     @Synchronized
     fun clear() { keys.clear(); all.n = 0f; all.mx = 0f; all.my = 0f; all.vx = 0f; all.vy = 0f; learned = 0 }
 
@@ -189,5 +219,9 @@ class KeyModel {
         const val MIN_N = 40f
         /** Vantaggio richiesto (logaritmo): il tasto accanto deve essere almeno ~3 volte più probabile. */
         const val MARGIN = 1.1f
+        /** Peso delle lettere precedenti rispetto al tocco. */
+        const val LM_WEIGHT = 0.8f
+        /** Vantaggio richiesto per cambiare il tasto sotto il dito con le lettere precedenti. */
+        const val LM_MARGIN = 0.35f
     }
 }

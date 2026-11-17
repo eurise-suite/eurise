@@ -46,12 +46,97 @@ object TouchModel {
         return keyboard.getKey(code) ?: keyboard.getKey(lower) ?: keyboard.getKey(Character.toUpperCase(lower))
     }
 
+    // --- Lettere precedenti (17 novembre: precisione alta fin dall'inizio) ---
+
+    @Volatile private var charModel: CharModel? = null
+    @Volatile private var charLocale: String? = null
+    @Volatile private var lmOn = false
+    private val word = StringBuilder()
+
+    /** Le lettere precedenti contano solo scrivendo testo normale (non password, numeri, codici). */
+    @JvmStatic
+    fun lmActive() = lmOn && charModel != null
+
+    /**
+     * Inizio della scrittura in un campo (LatinIME.onStartInputView): si decide se usare le lettere precedenti, si
+     * riprendono le ultime lettere prima del cursore e, la prima volta per una lingua, si prepara il modello delle lettere
+     * dal dizionario principale (in un thread a parte; poi resta in un file e si apre subito).
+     */
+    @JvmStatic
+    fun startInput(context: Context, editorInfo: android.view.inputmethod.EditorInfo?) {
+        val type = editorInfo?.inputType ?: 0
+        val cls = type and android.text.InputType.TYPE_MASK_CLASS
+        val variation = type and android.text.InputType.TYPE_MASK_VARIATION
+        val password = variation == android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+            variation == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+            variation == android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+        lmOn = cls == android.text.InputType.TYPE_CLASS_TEXT && !password
+        word.setLength(0)
+        if (lmOn && android.os.Build.VERSION.SDK_INT >= 30) {
+            editorInfo?.getInitialTextBeforeCursor(24, 0)?.toString()?.takeLastWhile { it.isLetter() }?.let { word.append(it.lowercase()) }
+        }
+        val locale = helium314.keyboard.latin.RichInputMethodManager.getInstance().currentSubtypeLocale
+        val tag = locale.language
+        if (charLocale == tag) return
+        charLocale = tag
+        charModel = null
+        Thread {
+            val file = java.io.File(context.filesDir, "charmodel_$tag.bin")
+            val model = (if (file.exists()) file.inputStream().use { CharModel.read(it) } else null)
+                ?: buildCharModel(context, locale)?.also { m -> runCatching { file.outputStream().use { m.write(it) } } }
+            if (charLocale == tag) charModel = model
+        }.apply { priority = Thread.MIN_PRIORITY }.start()
+    }
+
+    /** Il modello delle lettere dal dizionario principale della lingua (tutte le parole, pesate per frequenza). */
+    private fun buildCharModel(context: Context, locale: java.util.Locale): CharModel? = runCatching {
+        val (cached, assets) = helium314.keyboard.latin.dictionary.DictionaryFactory.getAvailableDictsForLocale(locale, context, false)
+        val file = cached.firstOrNull { it.name.startsWith("main") }
+            ?: assets.firstOrNull { it.startsWith("main") }?.let { helium314.keyboard.latin.utils.DictionaryInfoUtils.extractAssetsDictionary(it, locale, context) }
+            ?: return null
+        val dict = com.android.inputmethod.latin.BinaryDictionary(file.absolutePath, 0, file.length(), false, locale, "main", false)
+        if (!dict.isValidDictionary) { dict.close(); return null }
+        val builder = CharModel.Builder()
+        var token = 0
+        var count = 0
+        do {
+            val r = dict.getNextWordProperty(token)
+            val wp = r.mWordProperty
+            if (wp != null && !wp.mIsNotAWord && wp.mWord.isNotEmpty()) { builder.add(wp.mWord, 20f * CharModel.weightOf(wp.probability)); count++ }
+            token = r.mNextToken
+        } while (token != 0 && count < 2_000_000)
+        dict.close()
+        if (count < 100) null else builder.build()
+    }.getOrNull()
+
+    private fun lmFor(code: Int): Float? {
+        val m = charModel ?: return null
+        val c = when {
+            code == ' '.code -> CharModel.BOUNDARY
+            Character.isLetter(code) -> Character.toLowerCase(code).toChar()
+            else -> return null
+        }
+        val n = word.length
+        val p1 = if (n >= 1) word[n - 1] else CharModel.BOUNDARY
+        val p2 = if (n >= 2) word[n - 2] else CharModel.BOUNDARY
+        return m.logProb(p2, p1, c)
+    }
+
     // --- Scelta del tasto (KeyDetector) ---
 
     /** Il tasto da scrivere per un tocco in ([rawX], [rawY]) (coordinate senza correzioni) finito su [hit]. */
     @JvmStatic
     fun choose(keyboard: Keyboard, hit: Key?, rawX: Int, rawY: Int): Key? {
-        if (hit == null || !Character.isLetter(hit.code) || !model.ready) return hit
+        if (hit == null) return hit
+        if (lmActive() && (Character.isLetter(hit.code) || hit.code == ' '.code) && keyboard.mId.element.isAlphabet) {
+            // Tocco e lettere precedenti insieme: lettere vicine e spazio sono candidati.
+            val near = keyboard.getNearestKeys(rawX, rawY).filter { (Character.isLetter(it.code) || it.code == ' '.code) && it !== hit }
+            if (near.isEmpty()) return hit
+            val code = model.chooseWith(box(hit), near.map(::box), rawX.toFloat(), rawY.toFloat(), ::lmFor)
+            if (code == Character.toLowerCase(hit.code)) return hit
+            return near.firstOrNull { Character.toLowerCase(it.code) == code } ?: hit
+        }
+        if (!Character.isLetter(hit.code) || !model.ready) return hit
         val near = keyboard.getNearestKeys(rawX, rawY).filter { Character.isLetter(it.code) && it !== hit }
         if (near.isEmpty()) return hit
         val code = model.choose(box(hit), near.map(::box), rawX.toFloat(), rawY.toFloat())
@@ -86,6 +171,11 @@ object TouchModel {
     /** Ogni tasto davvero scritto (LatinIME.onEvent). */
     @JvmStatic
     fun committed(code: Int) {
+        when {
+            code == KeyCode.DELETE -> if (word.isNotEmpty()) word.setLength(word.length - 1)
+            Character.isLetter(code) -> { word.appendCodePoint(Character.toLowerCase(code)); if (word.length > 32) word.delete(0, word.length - 32) }
+            else -> word.setLength(0)
+        }
         val now = SystemClock.uptimeMillis()
         if (code == KeyCode.DELETE) {
             deletedTap = lastTap?.takeIf { now - it.at < 2_000 }
@@ -117,6 +207,7 @@ object TouchModel {
     @JvmStatic
     fun wordCommitted(typed: String?, chosen: String?, pointers: InputPointers?, batch: Boolean, autoCorrected: Boolean) {
         flushPending()
+        word.setLength(0)
         if (batch || typed.isNullOrEmpty() || chosen.isNullOrEmpty() || pointers == null) return
         val t = codePoints(typed)
         val c = codePoints(chosen)

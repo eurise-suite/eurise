@@ -955,6 +955,7 @@ public class LatinIME extends InputMethodService implements
 
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInputView(editorInfo, restarting);
+        eu.eurise.keyboard.TouchModel.startInput(this, editorInfo); // Eurise: lettere precedenti per la scelta del tasto
 
         setGestureDataGatheringMode(editorInfo, restarting);
 

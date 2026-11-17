@@ -23,7 +23,9 @@ object Defaults {
         PREF_GESTURE_DYNAMIC_PREVIEW_FOLLOW_SYSTEM = getTransitionAnimationScale(context) != 0.0f
         val dm = context.resources.displayMetrics
         val px600 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 600f, dm)
-        PREF_POPUP_ON = dm.widthPixels >= px600 || dm.heightPixels >= px600
+        // Eurise (17 novembre): la lettera premuta compare sempre sopra il dito, anche sui telefoni piccoli: si vede
+        // subito se è quella giusta.
+        PREF_POPUP_ON = true
     }
 
     // must correspond to a file name
