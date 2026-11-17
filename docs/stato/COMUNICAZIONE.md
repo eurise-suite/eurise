@@ -137,6 +137,26 @@ computer (area Computer, tavola PcEmail).
   Non ancora (da Bussola CA): moduli ASL di fine mese e fogli firme, registro attività, import dei turni da PDF, «Da foglio o
   foto» della tavola, riepilogo per SMS/email a chi non usa la Chat (oggi «Condividi»), turni nel calendario di chi usa
   Element (link .ics), notifiche di promemoria dalla Chat stessa.
+- **Turni generici, da importare ed esportare** (17 novembre, notte; precisazione del proprietario: «le funzioni di Bussola
+  CA per fare i turni, importarli, esportarli; funzioni generiche declinabili per molti contesti»; giro 759, solo chat):
+  modelli pronti **Reparto M P N**, **Giorno e notte 12 h**, **Negozio** (apertura e chiusura, lunedì–sabato), **Continuità
+  assistenziale**, **Da zero**; regole regolabili nel piano (`rest`: nessuno, 8, 11, 12 h; `in_a_row`: 5, 6, 7, 14 giorni);
+  **intestazione dei documenti** (`title`); **persone senza Chat** (id `ext:Nome`, aggiunte a mano o dall'importazione).
+  **Importa** (`ShiftsIO`, con `ShiftsIOTest`): PDF con testo (`core/pdf`), CSV (punto e virgola, virgola, tabulazione,
+  anche Windows-1252), **XLSX** e **ODS** letti senza librerie (zip e XML), testo incollato; riconosce da sé **righe per
+  persona** (intestazione con i giorni: «1 2 3», «lun 2», date, numeri di serie di Excel), **colonne per turno** (Mattina,
+  Notte… con i nomi sotto), **righe per giorno** («17/11 M Rossi N Bianchi», «Rossi M, Bianchi N», solo nomi assegnati ai
+  turni del giorno in ordine, come i calendari dei presidi) ed **elenchi** «persona; data; turno». Nomi e sigle sconosciuti
+  si abbinano una volta (a una persona, «Persona senza Chat», «Ignora»; sigla → turno o riposo) e restano ricordati per il
+  gruppo sul telefono; anteprima con i turni a testa; «Sostituisci i turni del periodo» o «Aggiungi»; le caselle importate
+  sono fissate a mano. Anche da «Fai i turni › Come girano › Da un file» (tavola ChatTurniCrea, «Da foglio o foto»).
+  **Esporta** (programmati o effettivi, mese scelto, «Solo i miei turni»): **prospetto del mese PDF** (persone × giorni,
+  sigle colorate, festivi in grigio, ore, legenda, più pagine; `ShiftPdf` con `PdfDocument`), **fogli presenze PDF** (una
+  pagina per persona: giorno, turno, entrata, uscita, ore, straordinario e motivo, totali, «Firma» e «Visto»), **prospetto
+  CSV** per Excel e LibreOffice, **elenco CSV** con ore, telefono e straordinari, **calendario .ics** (UTC, identificativi
+  stabili, righe piegate), testo. File nella cache della Chat, condivisi con l'app scelta (`ChatActions.shareFile`).
+  Non ancora: «da foto» (OCR: servirebbe Eurise Leggi), XLS vecchio formato, firma disegnata sul foglio presenze, moduli
+  già impaginati di un ente (si usano intestazione e PDF generici).
 - **Telefono: chiamata sempre raggiungibile e bolla** (17 novembre, richiesta del proprietario; senza tavola, descritta da
   lui): la chiamata in corso è un **servizio in primo piano** con lo stile «chiamata in corso» (pillola verde nella barra
   di stato da Android 12; se il sistema non lo concede resta la notifica, ora a importanza normale: canale nuovo
@@ -149,8 +169,8 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 755 (17 novembre, sera: turni nei gruppi); mail, messages e phone
-  giro 737.
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 759 (17 novembre, notte: turni generici con importa ed esporta);
+  mail, messages e phone giro 737.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -302,7 +322,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    di una persona da provider protetti dal permesso di firma in Messaggi, Telefono ed Email, come `StudioProvider`; la persona
    si riconosce dal contatto della Rubrica; tutto unito sul telefono), **invito a Ciarly** (ChatInvita, ChatInvitaElenco),
    poi le 13 tavole Chat* (ChatBasi per prima), poi le tavole della seconda fila di La mia Bussola.
-   Turni: fatti al giro 755 (vedi «Fatto»); prove da chiedere: un gruppo con due telefoni, Fai i turni con Genera, scambio
+   Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
+   proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.
 0. **La mia Bussola in Chat**: prima parte, referti e promemoria di Millewin fatti (vedi «Fatto»). Prossimo: tavole della
    seconda fila; regola di conservazione a 45 giorni sul server dello studio; referti per email (link e codice per SMS).
