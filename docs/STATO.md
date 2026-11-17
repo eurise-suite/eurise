@@ -3339,3 +3339,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, notte, Mappe: tasto 3D esplorando (MapEsploraInclinata) e Calendario in fondo a «Dove devi andare» · Mappe 88 → `docs/stato/MAPPE.md`.
 - 17 novembre, notte, Comunicazione: La mia Bussola in Chat, prima parte (rinnovi, NRE, inviti, orari, 118, notifiche neutre) · giro 724 (chat, mail, messages) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Office: dock Recenti/Telefono/Cloud e rapporto del problema (OffOggiHome, OffRapporto) · giro 718, motore nel giro 724 → `docs/stato/OFFICE.md`.
+- 17 novembre, Galleria: editor, secondo giro (Prospettiva, Espandi) · giro 726; tavole da approvare GalEsporta e GalLookQR → `docs/stato/PICCOLE.md`.

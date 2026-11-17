@@ -122,6 +122,18 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   Filtri: «Salva la tua» prima di tutto, poi le tue, poi quelle della suite; pressione lunga: rinomina, elimina.
   La barra in basso resta quella di oggi finché non arrivano Ritocca ed Effetti.
 
+## 17 novembre, mattina: editor, secondo giro (giro 726, in apk-prova) e tavole in più
+- Ritaglia ha tre parti: Ritaglia (Ruota, Specchia, Raddrizza, proporzioni), Prospettiva (Verticale e Orizzontale coi
+  cursori, oppure Libera trascinando i quattro angoli sulla foto non raddrizzata), Espandi (Quanto; Continua la foto,
+  Sfocato, Bianco, Nero). Logica in `logic/Frame.kt` (`FrameTest`); `Files.perspective` (setPolyToPoly) dopo rotazione e
+  specchio, `Files.expanded` alla fine dopo il ritaglio. Nell'anteprima Espandi è calcolato su una copia piccola attorno
+  alla foto intera (col ritaglio attivo la copia salvata ha i bordi attorno alla parte ritagliata).
+- Richiesta del proprietario: ogni altra funzione dell'editor di riferimento. Già sulle tavole quasi tutte; in più due
+  tavole da approvare: GalEsporta (Salva: copia nuova o Sostituisci con l'originale tenuto 30 giorni; formato JPEG, PNG,
+  WebP; qualità; dimensione; togli la posizione, di base acceso; togli i dati della fotocamera) e GalLookQR (una tua
+  modalità condivisa con un codice QR o come testo: solo regolazioni, nessun dato; dati della foto). Resta fuori solo
+  la posa della testa (serve un modello AI del viso).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -135,12 +147,14 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
     Password.
 - **Approvate il 16 novembre, notte, e in codice**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta.
 - **Approvate il 17 novembre**: GalRegolaTutto, GalCurve (in codice), GalRitocca, GalProspettiva, GalEffetti, GalModifiche.
+- **Da approvare**: GalEsporta, GalLookQR (17 novembre, mattina).
 - **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Editor della Galleria, giri successivi**: Ritaglia (Ruota, Prospettiva, Espandi), poi pila delle Modifiche, Ritocca,
-   Effetti. Prova del proprietario sul giro 722 (Regola, Curve, le tue modalità).
+0. **Editor della Galleria, giri successivi**: pila delle Modifiche, Ritocca, Effetti, poi Salva ed Esporta e le modalità
+   col QR (dopo l'approvazione di GalEsporta e GalLookQR). Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   modalità) e 726 (Prospettiva, Espandi).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
    gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200
