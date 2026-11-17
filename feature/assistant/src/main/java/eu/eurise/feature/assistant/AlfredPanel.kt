@@ -230,9 +230,15 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         scope.launch {
             val out = butler.run(card)
             phase = Phase.Said(out.line)
-            say(out.spoken)
-            // Il tempo di leggere la riga, non di più: la battuta è un di più, non deve trattenere.
-            if (out.close) { delay(700L + (out.line.length * 25L).coerceAtMost(1800L)); onClose() }
+            // Si chiude quando ha finito di dire la battuta (non la si tronca) o dopo il tempo di leggerla, al massimo 5 s;
+            // l'azione è già fatta, quindi non si aspetta nulla per lavorare.
+            val spoken = kotlinx.coroutines.CompletableDeferred<Unit>()
+            say(out.spoken) { spoken.complete(Unit) }
+            if (out.close) {
+                delay(700L + (out.line.length * 25L).coerceAtMost(1800L))
+                kotlinx.coroutines.withTimeoutOrNull(2500L) { spoken.await() }
+                onClose()
+            }
         }
     }
 

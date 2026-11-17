@@ -132,30 +132,39 @@
 
     <!-- Massime e battute, una volta su tre dopo un'azione riuscita: ironia britannica alla Groucho Marx e Woody Allen,
          secca e autoironica; quasi sempre sue, citazioni solo brevi e dichiarate. Mai nelle conferme, mai alla guida. -->
+    <!-- Battute dopo un'azione (una volta su tre): brevi, perché si dicono anche a voce (17 novembre). -->
     <string-array name="alfred_maxims_event">
-        <item>L\'ottanta per cento del successo è farsi vedere, diceva Woody Allen. Al restante venti penso io.</item>
-        <item>Segnato. Il commercialista la aspetta; i suoi soldi, temo, li aspetta da più tempo.</item>
-        <item>In agenda. Sarò puntuale io per entrambi, se crede.</item>
+        <item>Al resto penso io.</item>
+        <item>Sarò puntuale io per entrambi.</item>
+        <item>Un altro impegno. Che vita mondana.</item>
     </string-array>
     <string-array name="alfred_maxims_note">
-        <item>Ho un\'ottima memoria: è per questo che scrivo tutto.</item>
-        <item>Verba volant, scripta manent. Da me, anche le note restano ferme dove le lascio.</item>
+        <item>Carta canta.</item>
+        <item>Ottima memoria la mia: scrivo tutto.</item>
+        <item>Scripta manent. Anche le sue.</item>
     </string-array>
     <string-array name="alfred_maxims_task">
-        <item>Non lo farò io, ma glielo ricorderò con un\'insistenza degna di miglior causa.</item>
-        <item>Rimandare a domani è un\'arte. Io mi limito a tenere il conto.</item>
+        <item>Non lo farò io, ma glielo ricorderò.</item>
+        <item>Rimandare è un\'arte. Io tengo il conto.</item>
+        <item>Insisterò con garbo. E con costanza.</item>
     </string-array>
     <string-array name="alfred_maxims_message">
-        <item>A Lei l\'onore del tasto Invia. Io mi tengo il merito.</item>
-        <item>La brevità è l\'anima dell\'arguzia, diceva Shakespeare. Oggi ha fatto centro.</item>
+        <item>A Lei l\'onore, a me il merito.</item>
+        <item>Breve e arguto. Come piace a me.</item>
+        <item>Spedito. Le risposte non sono affar mio.</item>
     </string-array>
     <string-array name="alfred_maxims_route">
-        <item>Se ci perdiamo, faremo almeno in modo che sia in un bel posto.</item>
-        <item>Non ho mai sbagliato strada: ho solo scoperto scorciatoie piuttosto lunghe.</item>
+        <item>Se ci perdiamo, almeno in un bel posto.</item>
+        <item>Niente strade sbagliate: solo scorciatoie lunghe.</item>
     </string-array>
     <string-array name="alfred_maxims_alarm">
-        <item>Sveglia caricata. Domattina sarò io il primo a pentirmene.</item>
-        <item>Il mattino ha l\'oro in bocca. Io, a quell\'ora, ho soltanto buone maniere.</item>
+        <item>Domattina sarò io il primo a pentirmene.</item>
+        <item>Il mattino ha l\'oro in bocca. Io, le buone maniere.</item>
+        <item>Caricata. Non me ne voglia, domani.</item>
+    </string-array>
+    <string-array name="alfred_maxims_timer">
+        <item>Il tempo vola. Io lo conto.</item>
+        <item>Tic tac. Con discrezione.</item>
     </string-array>
 
     <!-- Disposizioni. -->
@@ -219,6 +228,16 @@
     <string name="alfred_say_search">Cerco?</string>
     <string name="alfred_say_open">Apro?</string>
     <string name="alfred_say_remember">Me lo segno?</string>
+    <!-- Le stesse domande con un filo d'ironia, una volta su tre (17 novembre: «Mi raccomando, l'ironia!»). -->
+    <string name="alfred_say_call_wit">Disturbo %1$s?</string>
+    <string name="alfred_say_message_wit">Lo recapito a %1$s?</string>
+    <string name="alfred_say_event_wit">Un altro impegno. Lo segno?</string>
+    <string name="alfred_say_note_wit">Lo metto agli atti?</string>
+    <string name="alfred_say_task_wit">Un altro dovere. Lo segno?</string>
+    <string name="alfred_say_route_wit">Si parte? Io sono pronto.</string>
+    <string name="alfred_say_alarm_wit">Sveglia alle %1$s? Coraggioso.</string>
+    <string name="alfred_say_timer_wit">%1$s minuti. Conto io?</string>
+    <string name="alfred_say_remember_wit">Lo custodisco io?</string>
     <string name="alfred_answer_hint">Risponda «sì» o «no», oppure tocchi.</string>
     <string name="alfred_cancelled">Come non detto.</string>
     <string name="alfred_p_nothing">Non ho sentito nulla%1$s. Riproviamo?</string>
