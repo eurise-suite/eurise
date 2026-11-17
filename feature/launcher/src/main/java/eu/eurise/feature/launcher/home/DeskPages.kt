@@ -115,3 +115,13 @@ object PagesHelper {
         else -> PageSymbol.Star.id
     }
 }
+
+/**
+ * La pagina con [slot] al posto [index] (-1 = in fondo), contato tra le bolle senza di lei: se c'era già (stessa
+ * chiave) si sposta, non si ripete.
+ */
+fun List<HomeSlot>.placing(slot: HomeSlot, index: Int): List<HomeSlot> {
+    val rest = filter { it.key != slot.key }
+    val at = if (index < 0) rest.size else index.coerceAtMost(rest.size)
+    return rest.take(at) + slot + rest.drop(at)
+}

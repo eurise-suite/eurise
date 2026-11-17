@@ -1,6 +1,9 @@
 package eu.eurise.feature.launcher
 
 import android.Manifest
+import eu.eurise.feature.launcher.home.carryBounds
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import eu.eurise.feature.launcher.home.HealthPill
 import eu.eurise.feature.launcher.home.openOnSwipe
 import eu.eurise.feature.launcher.home.PersonalDays
@@ -233,6 +236,13 @@ internal fun HomeBubble(
     home: HomeBoardData,
     nextAlarm: LocalDateTime?,
 ) {
+        // Durante il trascinamento tra le pagine si sa dove sta ogni bolla; il buco segna dove cadrà quella portata.
+        val carry = eu.eurise.feature.launcher.home.LocalDeskCarry.current
+        val mod = mod.then(Modifier.carryBounds(carry, eu.eurise.feature.launcher.home.LocalDeskPage.current, slot.key))
+        if (slot.kind == eu.eurise.feature.launcher.home.HomeKind.App && slot.app == eu.eurise.feature.launcher.home.DeskCarry.HOLE) {
+            eu.eurise.feature.launcher.home.CarryHole(slot, home.iconSize, mod)
+            return
+        }
         val players by NotificationStore.players.collectAsStateWithLifecycle()
         when (slot.kind) {
             eu.eurise.feature.launcher.home.HomeKind.Agenda -> AgendaPill(
@@ -470,9 +480,13 @@ internal fun PhoneHome(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides home.bubbles) {
+                val carry = eu.eurise.feature.launcher.home.LocalDeskCarry.current
+                androidx.compose.runtime.CompositionLocalProvider(
+                    eu.eurise.feature.launcher.home.LocalBubbleActions provides home.bubbles,
+                    eu.eurise.feature.launcher.home.LocalDeskPage provides eu.eurise.feature.launcher.home.DeskPage.HOME,
+                ) {
                 eu.eurise.feature.launcher.home.HomeBoard(
-                    slots = settings.homeSlots,
+                    slots = carry?.preview(eu.eurise.feature.launcher.home.DeskPage.HOME, settings.homeSlots) ?: settings.homeSlots,
                     editing = home.editing,
                     onEditingChange = home.onEditing,
                     onChange = home.onChange,
@@ -490,8 +504,17 @@ internal fun PhoneHome(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 )
             } else if (!imeOpen) {
+                val carry = eu.eurise.feature.launcher.home.LocalDeskCarry.current
                 // Griglia dei preferiti: colonne e righe scelte in Griglia e icone. Con la tastiera aperta si
                 // toglie, per non restare appoggiata sopra i tasti e lasciare spazio alla bolla in cui si scrive.
+                Box(
+                    Modifier
+                        .then(if (carry != null) Modifier.onGloballyPositioned { carry.favoritesArea = it.boundsInRoot() } else Modifier)
+                        .then(
+                            // Un'app portata qui sopra entra tra i preferiti: la griglia si accende.
+                            if (carry?.favorites == true) Modifier.clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.22f)) else Modifier,
+                        ),
+                ) {
                 eu.eurise.feature.launcher.home.FavoritesGrid(
                     favorites = state.favorites.take(settings.maxFavorites),
                     columns = settings.columns,
@@ -522,6 +545,7 @@ internal fun PhoneHome(
                                         onMenuClosed = onMenuClosed,
                                     )
                                 }
+                }
                 }
             }
             // Poco spazio tra i preferiti e i puntini delle pagine.

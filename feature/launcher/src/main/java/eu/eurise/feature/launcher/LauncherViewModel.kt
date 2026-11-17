@@ -21,6 +21,7 @@ import eu.eurise.feature.launcher.health.HealthState
 import eu.eurise.feature.launcher.health.HealthToday
 import eu.eurise.feature.launcher.weather.SunTimes
 import eu.eurise.feature.launcher.folders.AppFolder
+import eu.eurise.feature.launcher.home.placing
 import eu.eurise.feature.launcher.feeds.FeedEntry
 import eu.eurise.feature.launcher.feeds.Sign
 import eu.eurise.feature.launcher.files.RecentFile
@@ -376,6 +377,39 @@ class LauncherViewModel(
             )
         }
         return id
+    }
+
+    /**
+     * Trascinamento tra le pagine (tavola ScrPagTrascina): [item] lasciato su [target]. Esce dalla pagina da cui veniva (o
+     * dai preferiti) ed entra al posto scelto; nei preferiti della home solo un'app e solo se c'è posto, altrimenti tra le
+     * bolle della home. Con [CarryTarget.newPage] nasce una pagina nuova dopo quella vista, con dentro l'oggetto.
+     * Restituisce la pagina in cui è finito.
+     */
+    fun carryTo(item: eu.eurise.feature.launcher.home.CarryItem, target: eu.eurise.feature.launcher.home.CarryTarget): String {
+        val home = eu.eurise.feature.launcher.home.DeskPage.HOME
+        val slot = item.slot
+        val page = if (target.newPage) {
+            createPage("", eu.eurise.feature.launcher.home.PageSymbol.Star.id, null, eu.eurise.feature.launcher.home.PageStart.Empty, after = target.page)
+        } else target.page
+        val app = slot.app.takeIf { slot.kind == eu.eurise.feature.launcher.home.HomeKind.App }
+        val favs = favoriteKeys.value
+        val toFavorites = target.favorites && page == home && app != null &&
+            (app in favs || favs.size < settings.value.maxFavorites)
+        if (toFavorites) {
+            if (app != null && app !in favs) saveFavorites(favs + app)
+        } else if (item.fromFavorites && app != null) {
+            saveFavorites(favs - app)
+        }
+        updateSettings { s ->
+            var n = s
+            item.from?.let { from -> if (from != page || toFavorites) n = n.withSlots(from, n.slotsOf(from).filterNot { it.key == slot.key }) }
+            if (!toFavorites) {
+                val index = if (target.newPage) -1 else target.index
+                n = n.withSlots(page, n.slotsOf(page).placing(slot, index))
+            }
+            n
+        }
+        return page
     }
 
     /** Toglie una pagina dell'utente (o la bacheca, o il riepilogo); la home resta. Le app restano nelle categorie. */

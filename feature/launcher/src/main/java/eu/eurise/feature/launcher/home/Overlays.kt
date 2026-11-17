@@ -178,6 +178,7 @@ fun CategoryPages(
     val currentByKey by rememberUpdatedState(byKey)
     val moveTo by rememberUpdatedState(onMoveTo)
     val reorder by rememberUpdatedState(onReorder)
+    val carry = LocalDeskCarry.current
 
     fun tileAt(page: Int, pointer: Offset): LazyGridItemInfo? {
         val state = grids[page] ?: return null
@@ -239,6 +240,16 @@ fun CategoryPages(
                             d.pointer += amount
                             d.travelled += amount.getDistance()
                             if (d.travelled > slop && !d.locked) d.moved = true
+                            // Portata sulla fila delle pagine in alto, l'app passa sulla Scrivania (tavola ScrPagTrascina).
+                            if (d.travelled > slop && carry != null) {
+                                carry.peek = true
+                                val root = d.pointer + rootOrigin
+                                if (carry.inRow(root)) {
+                                    carry.start(CarryItem(appSlot(d.entry.key), entry = d.entry), at = root, lifted = true)
+                                    drag = null
+                                    return@detectDragGesturesAfterLongPress
+                                }
+                            }
                             val order = d.order
                             if (d.moved && order != null) {
                                 val over = tileAt(pager.currentPage, d.pointer)?.key as? String
@@ -254,6 +265,7 @@ fun CategoryPages(
                     onDragEnd = {
                         val d = drag
                         drag = null
+                        carry?.peek = false
                         if (d != null) {
                             if (!d.moved) {
                                 menuKey = d.entry.key
@@ -267,7 +279,7 @@ fun CategoryPages(
                             }
                         }
                     },
-                    onDragCancel = { drag = null },
+                    onDragCancel = { drag = null; carry?.peek = false },
                 )
             },
     ) {

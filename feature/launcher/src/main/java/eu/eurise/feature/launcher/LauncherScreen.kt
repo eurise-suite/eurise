@@ -2,6 +2,7 @@ package eu.eurise.feature.launcher
 
 import eu.eurise.feature.launcher.home.DeskPage as HD
 import eu.eurise.feature.launcher.home.PagesHelper as HP
+import eu.eurise.feature.launcher.home.deskCarryTracker
 import android.Manifest
 import eu.eurise.feature.launcher.home.HealthPill
 import eu.eurise.feature.launcher.home.openOnSwipe
@@ -151,6 +152,9 @@ import java.time.LocalDateTime
 
 /** Lato corto da cui il dispositivo è un tablet: un telefono in orizzontale resta un telefono. */
 private const val TabletSmallestWidth = 600
+/** Ogni quanto si guarda dove sta il dito durante il trascinamento, e quanto tenerlo sul bordo per girare pagina. */
+private const val CarryTick = 50L
+private const val CarryEdgeDwell = 550L
 
 /**
  * La Scrivania di Eurise: home con orario, meteo, Oggi e Preferiti; pagina Riepilogo; pagine delle categorie;
@@ -501,6 +505,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         var newPageFor by remember { mutableStateOf<String?>(null) }
         var pagePicker by remember { mutableStateOf<eu.eurise.feature.launcher.apps.AppEntry?>(null) }
         var goToPage by remember { mutableStateOf<String?>(null) }
+        // Trascinamento tra le pagine (tavola ScrPagTrascina).
+        val carry = remember { eu.eurise.feature.launcher.home.DeskCarry() }
         LaunchedEffect(goToPage, deskPages) {
             val target = goToPage ?: return@LaunchedEffect
             val i = deskPages.indexOfFirst { it.id == target }
@@ -582,8 +588,66 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val clearance = GlassDefaults.PillHeight + GlassDefaults.BottomMargin * 2 + navBottom
 
-        androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalCommsApps provides { dockPanel = eu.eurise.feature.launcher.home.DockPanel.Comms }) {
-        Box(Modifier.fillMaxSize()) {
+        val carryPages by androidx.compose.runtime.rememberUpdatedState(deskPages)
+        val carrySettings by androidx.compose.runtime.rememberUpdatedState(settings)
+        val carryHaptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+        val carryEdge = with(LocalDensity.current) { 28.dp.toPx() }
+        // Mentre si porta qualcosa: categorie e pannelli si chiudono, la fila delle pagine fa saltare, i bordi girano pagina,
+        // e sulla pagina vista si cerca il posto dove cadrà.
+        LaunchedEffect(carry.active) {
+            if (!carry.active) return@LaunchedEffect
+            category = HomePageId
+            dockPanel = null
+            var side = 0
+            var since = 0L
+            while (carry.active) {
+                delay(CarryTick)
+                val p = carry.pointer
+                val pages = carryPages
+                val chip = carry.chips.entries.firstOrNull { (id, r) -> r.contains(p) && (id == eu.eurise.feature.launcher.home.DeskCarry.NEW || pages.any { it.id == id }) }?.key
+                if (chip != carry.chip && chip != null) carryHaptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                carry.chip = chip
+                if (chip != null && chip != eu.eurise.feature.launcher.home.DeskCarry.NEW) {
+                    val i = pages.indexOfFirst { it.id == chip }
+                    if (i >= 0 && i != homePager.currentPage && !homePager.isScrollInProgress) homePager.animateScrollToPage(i)
+                }
+                val now = if (chip == null && carry.atEdge(p, carryEdge)) (if (p.x < carryEdge) -1 else 1) else 0
+                if (now != side) { side = now; since = 0L } else if (side != 0) since += CarryTick
+                val next = homePager.currentPage + side
+                if (side != 0 && since >= CarryEdgeDwell && next in pages.indices && !homePager.isScrollInProgress) {
+                    carryHaptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    homePager.animateScrollToPage(next)
+                    since = 0L
+                }
+                val item = carry.item ?: break
+                val pageId = pages.getOrNull(homePager.currentPage)?.id ?: HD.HOME
+                if (carry.page != pageId) { carry.page = pageId; carry.index = -1 }
+                carry.favorites = pageId == HD.HOME && item.slot.kind == eu.eurise.feature.launcher.home.HomeKind.App &&
+                    carry.favoritesArea?.contains(p) == true
+                if (chip == null && !carry.favorites) {
+                    val base = carrySettings.slotsOf(pageId).filter { it.key != item.slot.key }
+                    val rects = carry.bounds[pageId].orEmpty()
+                    carry.index = eu.eurise.feature.launcher.home.carryIndex(
+                        base, rects, p, carry.index, rects[eu.eurise.feature.launcher.home.DeskCarry.hole(item.slot).key],
+                    )
+                }
+            }
+        }
+        val dropCarry: () -> Unit = drop@{
+            val item = carry.item ?: return@drop
+            val currentId = deskPages.getOrNull(homePager.currentPage)?.id ?: HD.HOME
+            val landed = viewModel.carryTo(item, carry.target(currentId))
+            if (landed != currentId) goToPage = landed
+        }
+
+        val dropNow by androidx.compose.runtime.rememberUpdatedState(dropCarry)
+
+        androidx.compose.runtime.CompositionLocalProvider(
+            eu.eurise.feature.launcher.home.LocalCommsApps provides { dockPanel = eu.eurise.feature.launcher.home.DockPanel.Comms },
+            // Sul tablet la Scrivania è una sola pagina: niente trascinamento tra pagine.
+            eu.eurise.feature.launcher.home.LocalDeskCarry provides carry.takeIf { LocalConfiguration.current.smallestScreenWidthDp < TabletSmallestWidth },
+        ) {
+        Box(Modifier.fillMaxSize().deskCarryTracker(carry) { dropNow() }) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))
 
             // Da ogni pagina: in su ricerca e app, in giù il Pannello Eurise (non mentre si modifica o c'è un foglio aperto).
@@ -635,8 +699,9 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     val sideAlarm = rememberNextAlarm()
+                    androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalDeskPage provides pageId) {
                     SidePage(
-                        slots = settings.slotsOf(pageId),
+                        slots = carry.preview(pageId, settings.slotsOf(pageId)),
                         editing = editingCards,
                         onEditingChange = { editingCards = it },
                         onChange = { slots -> viewModel.updateSettings { it.withSlots(pageId, slots) } },
@@ -646,6 +711,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         clearance = clearance,
                         modifier = modifier,
                     ) { slot, mod -> HomeBubble(slot, mod, now, state, welcome, hazeState, false, actions, homeData, sideAlarm) }
+                    }
                     }
                     }
                 }
@@ -661,7 +727,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                             clearance = clearance, summary = summary, onWeather = openWeather,
                         )
                     } else {
-                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards && !editingHome, key = { deskPages.getOrNull(it)?.id ?: it }) { index ->
+                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards && !editingHome && !carry.active, key = { deskPages.getOrNull(it)?.id ?: it }) { index ->
                             val pageId = deskPages.getOrNull(index)?.id ?: HD.HOME
                             if (pageId != HD.HOME) {
                                 board(pageId, Modifier.fillMaxSize())
@@ -688,7 +754,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                                 )
                             }
                         }
-                        if (!editingCards && !editingHome) PageDots(
+                        if (!editingCards && !editingHome && !carry.active && !carry.peek) PageDots(
                             homePager.currentPage, deskPages.size,
                             Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 20.dp),
                             onClick = { pagesSheet = true },
@@ -731,7 +797,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GlassDefaults.SideMargin, vertical = GlassDefaults.BottomMargin)
-                if (searching || panelOpen || editingCards || editingHome || categoryEditor) {
+                if (searching || panelOpen || editingCards || editingHome || categoryEditor || carry.active) {
                     // nessuna barra
                 } else if (tablet) {
                     TabletDock(
@@ -1053,7 +1119,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         appsOf = { c -> eu.eurise.feature.launcher.home.categoryApps(c, state.apps, state.favorites, categoryOf, settings.appOrder[c.id]) },
                         badges = badges, dark = scene.themeDark, leftHanded = settings.leftHanded, hazeState = hazeState, bottom = dockBottom,
                         onOpen = { app, c -> dockPrefs.countOpen(c.id); close(); actions.openApp(app) },
-                        onHold = { app -> pagePicker = app },
+                        // Tenuta e lasciata ferma: «Dove metto…?»; tenuta e trascinata: si porta sulla Scrivania.
+                        onHold = { app ->
+                            carry.start(
+                                eu.eurise.feature.launcher.home.CarryItem(eu.eurise.feature.launcher.home.appSlot(app.key), entry = app),
+                                onStill = { pagePicker = app },
+                            )
+                        },
                         onPage = { c -> dockPrefs.countOpen(c.id); close(); select(c) },
                         onAddCategory = if (barCategories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) ({ close(); categoryEditor = true }) else null,
                         onClose = close,
@@ -1078,6 +1150,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         onOpen = { close(); actions.openApp(it) }, onClose = close,
                     )
                 }
+            }
+            if ((carry.active || carry.peek) && LocalConfiguration.current.smallestScreenWidthDp < TabletSmallestWidth) {
+                eu.eurise.feature.launcher.home.DeskCarryLayer(
+                    carry, deskPages, homePager.currentPage, hazeState, settings.iconSize.dp, scene.themeDark,
+                    appOf = { key -> state.apps.firstOrNull { it.key == key } },
+                    canGo = { (homePager.currentPage + it) in deskPages.indices },
+                )
             }
         }
         }

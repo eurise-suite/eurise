@@ -62,6 +62,8 @@ fun FavoritesGrid(
     val haptics = LocalHapticFeedback.current
     val current by rememberUpdatedState(favorites)
     val reorder by rememberUpdatedState(onReorder)
+    val carry = LocalDeskCarry.current
+    val edgePx = with(LocalDensity.current) { 28.dp.toPx() }
     val byKey = favorites.associateBy { it.key }
 
     fun keyAt(p: Offset): String? {
@@ -91,6 +93,16 @@ fun FavoritesGrid(
                         d.pointer += amount
                         d.travelled += amount.getDistance()
                         if (d.travelled > slop) d.moved = true
+                        // Sulla fila delle pagine o ai bordi, il preferito esce dalla griglia e si porta su un'altra pagina.
+                        if (d.moved && carry != null) {
+                            carry.peek = true
+                            val root = d.pointer + origin
+                            if (carry.inRow(root) || carry.atEdge(root, edgePx)) {
+                                carry.start(CarryItem(appSlot(d.entry.key), fromFavorites = true, entry = d.entry), at = root, lifted = true)
+                                drag = null
+                                return@detectDragGesturesAfterLongPress
+                            }
+                        }
                         if (d.moved) {
                             val over = keyAt(d.pointer)
                             if (over != null && over != d.entry.key) {
@@ -104,11 +116,12 @@ fun FavoritesGrid(
                     onDragEnd = {
                         val d = drag
                         drag = null
+                        carry?.peek = false
                         if (d != null) {
                             if (!d.moved) menuKey = d.entry.key else reorder(d.order)
                         }
                     },
-                    onDragCancel = { drag = null },
+                    onDragCancel = { drag = null; carry?.peek = false },
                 )
             },
     ) {

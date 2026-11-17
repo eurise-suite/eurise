@@ -617,7 +617,7 @@
     <string name="dock_browser">Browser</string>
     <string name="dock_open_page">Apri la pagina</string>
     <string name="dock_empty_category">Ancora nessuna app qui: spostale tenendole premute nella pagina della categoria.</string>
-    <string name="dock_all_hint">Scorri il dito sulle categorie: le loro app compaiono accanto. Con «La tua» ne crei una e scegli tu le app.</string>
+    <string name="dock_all_hint">Scorri il dito sulle categorie: le loro app compaiono accanto. Con «La tua» ne crei una e scegli tu le app. Tieni premuta un\'app e trascinala per portarla su una pagina della Scrivania.</string>
     <string name="dock_your_category">La tua</string>
     <string name="dock_star_title">Le tue app</string>
     <string name="dock_add">Aggiungi</string>
@@ -791,7 +791,8 @@
     <string name="pages_create">Crea la pagina</string>
     <string name="pages_save">Salva</string>
     <string name="pages_add_title">Dove metto %1$s?</string>
-    <string name="pages_add_hint">Un tocco su una pagina e l\'app ci va, in fondo. «Nuova» crea una pagina con dentro quest\'app. Tieni premuta una pagina per darle la stella: è quella proposta per prima. Sulla pagina tieni premuta l\'app per spostarla, allargarla o toglierla.</string>
+    <string name="pages_add_hint">Un tocco su una pagina e l\'app ci va, in fondo. «Nuova» crea una pagina con dentro quest\'app. Tieni premuta una pagina per darle la stella: è quella proposta per prima. Sulla Scrivania tieni premuta un\'app o una bolla e trascinala: ai bordi passa alla pagina accanto, sulla fila delle pagine in alto salta a quella che vuoi, sul «+» nasce una pagina nuova. Lasciata ferma, si allarga o si toglie.</string>
     <string name="pages_add_menu">Aggiungi alla Scrivania…</string>
     <string name="pages_added">%1$s è sulla Scrivania</string>
+    <string name="carry_here">qui</string>
 </resources>

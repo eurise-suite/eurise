@@ -212,6 +212,9 @@ fun HomeBoard(
     content: @Composable (HomeSlot, Modifier) -> Unit,
 ) {
     val naturals = remember { mutableStateMapOf<String, Int>() }
+    val carry = LocalDeskCarry.current
+    val deskPage = LocalDeskPage.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     val context = androidx.compose.ui.platform.LocalContext.current
     val density = LocalDensity.current
     val latest by rememberUpdatedState(slots)
@@ -262,6 +265,8 @@ fun HomeBoard(
                                 else -> Modifier
                             }
                             val lifted = dragging == slot.key
+                            val heldSlot by rememberUpdatedState(slot)
+                            val heldIndex by rememberUpdatedState(index)
                             Box(
                                 Modifier.weight(slot.width)
                                     .onGloballyPositioned { if (dragging != slot.key) bounds[slot.key] = it.boundsInRoot() }
@@ -282,7 +287,16 @@ fun HomeBoard(
                                     content(
                                         slot,
                                         Modifier.fillMaxWidth().then(heightMod)
-                                            .then(if (!editing) Modifier.longPressToEdit { onEditingChange(true) } else Modifier),
+                                            .then(
+                                                if (editing) Modifier
+                                                // Tenuta ferma entra in modifica; tenuta e trascinata va dove la porti (tavola ScrPagTrascina).
+                                                else Modifier.longPressToEdit {
+                                                    if (carry != null && deskPage != null) {
+                                                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                                        carry.start(CarryItem(heldSlot, from = deskPage), index = heldIndex, onStill = { onEditingChange(true) })
+                                                    } else onEditingChange(true)
+                                                },
+                                            ),
                                     )
                                 }
                                 if (editing) {
