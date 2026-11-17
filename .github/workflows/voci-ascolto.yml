@@ -32,7 +32,7 @@ jobs:
           case "${{ matrix.motore }}" in
             supertonic) pip install -q supertonic ;;
             serena) pip install -q piper-tts ;;
-            pocket) pip install -q tokenizers ;;
+            pocket) pip install -q phoonnx ;;
           esac
       - name: Campioni
         run: python .github/scripts/voci_ascolto.py "${{ matrix.motore }}" out
