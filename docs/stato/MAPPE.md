@@ -210,6 +210,20 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   strumenti). Restano dell'auto la barra a sinistra e i tasti tondi. Cambia la tavola approvata MapAutoGuida («cornice
   del sistema»).
 
+## 17 novembre, sera: riquadri della suite in auto e bolla in alto a destra (Mappe 96, pubblicato alle 15:04 UTC)
+- Tavole **MapAutoSuiteGiorno/Notte approvate** e in codice: `eurise/car/EuriseCarGuide.java` (manovra con freccia nel
+  colore della strada, distanza, sigla e via, corsie, scena dell'uscita o della rotonda, «Poi …»; meteo sul percorso;
+  arrivo con ora, minuti, km, avanzamento e «Sei su»), nello strato dell'area libera (SurfaceCallback). Il modello di
+  guida non riceve più `NavigationInfo` né la stima d'arrivo (patch in `NavigationScreen`), così l'auto non disegna i
+  suoi riquadri; `updateTrip` resta. Il limite resta la pillola di CoMaps in basso a destra (non a sinistra come nella
+  tavola).
+- Prova del proprietario con Mappe 93 (dopo aver dato l'accesso alle notifiche: la bolla compare): bolla «molto
+  piccolina» e da rimettere in alto a destra. Ora in auto è più grande (fino a 480 dp, metà dell'area libera,
+  copertina 64 dp, testi più grandi) e sta in alto a destra **dentro l'area stabile** (`onStableAreaChanged`, patch in
+  `SurfaceCallbackBase`): sotto i 4 tasti tondi, che compaiono e scompaiono senza coprirla.
+- Da provare: riquadri della suite (giorno e notte, rotonde, corsie, scena dell'uscita), bolla in alto a destra con i
+  tasti visibili e nascosti, schermo diviso.
+
 ## Prossimi passi, in ordine
 1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
    da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono

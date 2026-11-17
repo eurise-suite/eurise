@@ -3348,3 +3348,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Organizzazione: Ceruleo pieno più intenso (E #0552DC di giorno, F #85A4F1 di sera); corretto un apostrofo in Chat che fermava la compilazione · giro 735 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Alfred e AI: Alfred più svelto (dice l'essenziale, Nicola più rapido), giro 739 → `docs/stato/ALFRED.md`.
 - 17 novembre, Mappe 93: bolla in Android Auto in basso a sinistra (la coprivano i tasti dell'auto); tavole MapAutoSuite da approvare → `docs/stato/MAPPE.md`.
+- 17 novembre, Mappe 96: in Android Auto riquadri della suite disegnati da Mappe (MapAutoSuite) e bolla più grande in alto a destra nell'area stabile → `docs/stato/MAPPE.md`.
