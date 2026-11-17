@@ -29,13 +29,16 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - **PcMappe** (Mappe sul computer, con CoMaps) approvata il 16 novembre: codice ancora da scrivere (con l'area Computer).
 - **MapBollaAuto, MapBollaAutoChiamata, MapBollaTelefono** (pagina «comunicazione», riga sotto MapViaggio): approvate il
   16 novembre, sera, e in codice (vedi sotto).
-- **Da approvare (17 novembre)**: riga MapBolla (pagina «comunicazione», a destra di MapBollaTelefono) con le otto aggiunte
+- **Approvate il 17 novembre e in codice (Mappe 81)**: riga MapBolla (pagina «comunicazione», a destra di MapBollaTelefono) con le otto aggiunte
   alla bolla: **MapBollaPodcast** (a), **MapBollaDopo** (b), **MapBollaRadio** (c), **MapBollaPersa** (d),
   **MapBollaRitardo** (e), **MapBollaMessaggio** (f), **MapBollaImpegni** (g), **MapBollaArrivo** (h) e
   **MapBollaAutoStati** (Android Auto: le azioni passano dagli avvisi dell'auto, `AppManager.showAlert`, max 2 pulsanti;
   la fila della guida resta a 4). Scelte proposte: messaggi senza testo in vista, risposta con la risposta rapida della
   notifica; arrivo condiviso per SMS da Eurise Messaggi (niente server, mai la posizione continua). Generatore:
   `/home/claude/tela/gen/bolla.py` (fuori dal repo). **Parte comune toccata**: `canvas.json` della tela, solo per le nove voci.
+  Richiesta del proprietario all'approvazione: in auto spostare più in basso e rimpicciolire i 4 tasti tondi. Non si può
+  (li disegna Android Auto); la bolla in auto è diventata più stretta e bassa, appoggiata ai tasti (MapBollaAutoStati
+  aggiornata).
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
@@ -133,28 +136,53 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Da provare: guida con Spotify e con un'altra app; chiamata in arrivo e in corso (anche in auto); pausa; telefono in
   orizzontale; testi accesi.
 
+## 17 novembre: le otto aggiunte alla bolla in guida (Mappe 81, Eurise 707, Messaggi 707)
+- Codice: `eurise/EuriseNowPlaying.java` (coda «Dopo», capitolo e numero della traccia, podcast/audiolibri e radio,
+  numero di chi chiama, chiamata persa = squillo finito senza risposta o notifica «missed_call» recente, messaggi con
+  MessagingStyle e risposta rapida, timer con conto alla rovescia, sveglia da `AlarmManager.getNextAlarmClock`, impegni
+  delle prossime 3 ore), `EuriseTrip.java` (avvisi con due pulsanti e scadenza, «Richiama all'arrivo» = attività
+  nell'app Eurise con il ricevitore della Tastiera + promemoria a fine guida come notifica «Chiama», «Avvisa: arrivo
+  alle…» con Annulla 5 s, lettura di Alfred e risposta a voce riletta, arrivo condiviso per SMS: alla partenza, se cambia
+  di 5 min e non prima di 10 min dall'ultimo, all'arrivo; da sola si spegne se la guida non parte entro 2 ore),
+  `EuriseSms.java`, `EuriseSpeak.java` (sintesi del telefono, musica abbassata), `EuriseReplyActivity.java` (riconoscimento
+  vocale del telefono e scelta dalla Rubrica, trasparente), `EuriseMediaBubble.java` (righe e pulsanti),
+  `car/EuriseCarAlerts.java` (avvisi di Android Auto, livello 5; prima un messaggio breve), `car/EuriseCarShareScreen.java`
+  e secondo pulsante nell'intestazione della bandierina in auto; «Ti ascolto» con la frase intera per le risposte.
+  Ingressi dell'arrivo condiviso: bandierina sul telefono, «Manda l'arrivo» nel percorso (una volta / per SMS fino
+  all'arrivo), bandierina in auto (persone già usate). Calcoli in `NowPlayingText` con le prove.
+- Interruttore nuovo **«Messaggi in guida»** in Livelli (sotto la bolla, spento di base, spiegazione prima di accendere):
+  legge chi scrive e il testo solo in guida, in memoria. Spiegazione della bolla aggiornata (chiamate perse, timer).
+- **Parti comuni toccate**: Messaggi (`system/SuiteSmsReceiver.kt`, ricevitore con il permesso della suite: numero o nome
+  da cercare in Rubrica, invio come app predefinita o con il permesso SMS); app Eurise (`DestinationsProvider` metodo
+  «soon», `core/suite/DestinationsContract.METHOD_SOON`).
+- In auto: bolla 360 dp invece di 440, copertina 48, una riga sola per le righe nuove (al posto dell'album), niente
+  «riga dopo» del testo della canzone; margine 2 dp dai tasti. **Non provato**: la bolla sotto i tasti (l'auto decide
+  dove stanno; serve una prova in auto prima di provarci).
+- Non fatto (detto nella tavola g): «Avvisa» per un impegno vicino senza chiamata (servirebbero i partecipanti
+  dell'evento); capitoli veri dei podcast (Android non li passa: si usa il numero della traccia, se l'app lo dà).
+- Pubblicati il 17 novembre, 00:01 (UTC): Mappe 81, Eurise e Messaggi dal giro 707.
+- **Da provare**: Livelli › Messaggi in guida; guida con podcast (AntennaPod), musica con coda (Spotify), radio; chiamata
+  persa in guida → Richiama all'arrivo → attività in Attività e notifica a fine guida; chiamata di chi ha un impegno
+  con te mentre sei in ritardo → Avvisa (Messaggi installato); messaggio → Leggi → Rispondi a voce; timer dell'Orologio;
+  bandierina › Condividi l'arrivo; tutto anche in Android Auto (avvisi con i pulsanti).
+- Passo f) di Esplora: i **nomi delle vie più leggibili sono già in codice** (patch su `Roads_label.mapcss`: un punto in
+  più e grigio medio). Resta l'orizzonte col cielo esplorando: il motore disegna il cielo solo con la mappa inclinata
+  oltre l'orizzonte, e in esplorazione l'inclinazione di CoMaps non ci arriva; serve una scelta del proprietario (vedi
+  Prossimi passi).
+
 ## Prossimi passi, in ordine
-1. **Prova del proprietario di Mappe 76 ed Eurise 681**: avvio della navigazione in auto (non deve più chiudersi; microfono
+1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
+   da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono
    nella schermata della bandierina); bolla in guida (Livelli › Musica e chiamate in guida, poi l'accesso alle notifiche)
    con Spotify e un'altra app, chiamata in arrivo e in corso, pausa, telefono in orizzontale, auto; Livelli › Dalla rete ›
    Testi delle canzoni.
-2. **Bolla, otto aggiunte chieste dal proprietario il 16 novembre («implementa tutto»)**: tavole disegnate il 17 novembre
-   (riga MapBolla, da approvare), poi il codice:
-   a) podcast e audiolibri: capitolo e «all'arrivo mancheranno 8 min» (o «finisce prima dell'arrivo»);
-   b) brano successivo «Dopo: …» dalla coda dell'app (`MediaController.getQueue`, quando c'è);
-   c) radio: stazione e programma in onda (dai metadati della sessione);
-   d) chiamata persa in guida: «Hai perso Giulia · Richiama all'arrivo» e promemoria in Attività (app Eurise);
-   e) ritardo: quando chiama chi ha un impegno con te, «Avvisa: arrivo alle 9:54» con un tocco, tramite Messaggi;
-   f) messaggi in arrivo: «Messaggio da Marco», un tocco e Alfred lo legge a voce;
-   g) impegni e Orologio: «Riunione tra 20 min · arrivi 4 min dopo», timer e sveglie che stanno per suonare;
-   h) arrivo condiviso: «Giulia vede il tuo arrivo» finché la condivisione è attiva.
-   Le d), e), f), g) passano dall'app Eurise e da Messaggi (fornitori di contenuti della suite, permessi di firma): parti
-   comuni da toccare solo se serve, scritte qui. In auto le azioni (Richiama, Avvisa, Leggi) solo dove i modelli di
-   Android Auto lo permettono (massimo 4 pulsanti nella fila della guida: oggi sono 4).
+2. Bolla, dopo la prova: «Avvisa» anche per l'impegno vicino senza chiamata, se il proprietario lo vuole (partecipanti).
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
-4. Passo f) di Esplora, parte che resta: nomi delle vie più leggibili; orizzonte col cielo anche esplorando.
+4. Passo f) di Esplora, parte che resta: orizzonte col cielo anche esplorando. Proposta: quando si inclina la mappa con due
+   dita, l'inclinazione arriva fino al cielo (come in guida) e la fascia di MapEsplora sparisce; serve l'ok del
+   proprietario e una tavola (cambia il gesto di CoMaps).
 5. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
 6. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
    traffico (nessuna fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da

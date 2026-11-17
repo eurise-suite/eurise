@@ -3327,3 +3327,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, primissime ore, Organizzazione: tavole tutte approvate; Drive come nelle tavole (cassetto, spazio, Scanner, Oggi sotto le cartelle), «Condividi con…» per file e cartelle del cloud, invitati negli appuntamenti · giro 701 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Tastiera: parole sbagliate solo sottolineate, niente tendina delle app · giro 704 → `docs/stato/PICCOLE.md`.
 - 17 novembre, Comunicazione: tavole di Chat ed Email approvate; fila «Studio medico» (8 tavole, pazienti) da approvare → `docs/stato/COMUNICAZIONE.md`.
+- 17 novembre, Mappe: le otto aggiunte alla bolla in guida (Mappe 81, Eurise e Messaggi 707); toccati messages (SuiteSmsReceiver), app (DestinationsProvider «soon»), core/suite → `docs/stato/MAPPE.md`.
