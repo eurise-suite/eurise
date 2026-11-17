@@ -534,4 +534,8 @@
         <item quantity="one">%1$d new message</item>
         <item quantity="other">%1$d new messages</item>
     </plurals>
+    <string name="eurise_tilt_3d">3D</string>
+    <string name="eurise_tilt_flat">2D</string>
+    <string name="eurise_tilt_3d_desc">Tilt the map up to the sky</string>
+    <string name="eurise_tilt_flat_desc">Back to the flat map</string>
 </resources>

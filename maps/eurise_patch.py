@@ -1260,6 +1260,29 @@ patch(nav, """    mNavMenu.update(info);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);""", """    mNavMenu.update(info);
     app.organicmaps.eurise.ui.EuriseGuidaOrizzontale.update(info);
     app.organicmaps.eurise.EuriseSky.tick(mFrame.getContext());""")
+# Esplorando, tasto «3D»/«2D» (tavola MapEsploraInclinata, approvata il 17 novembre): la prospettiva automatica della
+# guida anche fuori dalla guida, con lo stesso cielo. CoMaps non ha un messaggio per spegnerla: EnablePerspective legge
+# il desiderio messo da nativeEuriseSetExplore3d (vero di base, così l'inizio della guida resta com'era).
+patch(fr_cpp, """  case Message::Type::EnablePerspective:
+  {
+    AddUserEvent(make_unique_dp<SetAutoPerspectiveEvent>(true /* isAutoPerspective */));""", """  case Message::Type::EnablePerspective:
+  {
+    AddUserEvent(make_unique_dp<SetAutoPerspectiveEvent>(EuriseTakePerspectiveWish()));""")
+patch(fw_cpp, """// Eurise: la strada sotto l'auto per Android Auto""", """// Eurise: esplorando, mappa inclinata fino al cielo («3D») o piatta («2D»), tavola MapEsploraInclinata.
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeEuriseSetExplore3d(JNIEnv *, jclass, jboolean on)
+{
+  auto engine = frm()->GetDrapeEngine();
+  if (engine == nullptr)
+    return;
+  df::EuriseSetPerspectiveWish(on);
+  engine->EnablePerspective();
+}
+
+// Eurise: la strada sotto l'auto per Android Auto""")
+patch(fw_java, "  public static native void nativeResetRoadSpeedLimit();\n", """  public static native void nativeResetRoadSpeedLimit();
+  /** Eurise: esplorando, prospettiva automatica accesa («3D», fino al cielo) o spenta («2D»). */
+  public static native void nativeEuriseSetExplore3d(boolean on);
+""")
 print("eurise_patch: cielo e colline in guida (MapCieloColline)")
 
 # «Dove sei» mentre si esplora (tavola MapEsplora): il comune in un punto, dalle mappe scaricate (CityFinder del motore di
@@ -1355,6 +1378,18 @@ patch(mbc, "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapBut
       "    app.organicmaps.eurise.ui.EuriseMapBar.attach(euriseBar, mMapButtonClickListener);\n"
       "    app.organicmaps.eurise.ui.EuriseEsplora.attach(mFrame.findViewById(R.id.eurise_explore_chips));\n")
 print("eurise_patch: orizzonte e scorciatoie mentre si esplora (MapEsplora)")
+# Tasto «3D»/«2D» mentre si esplora (tavola MapEsploraInclinata): a destra, sotto la fascia, in tutte le varianti.
+for _variant in ("layout", "layout-h400dp", "layout-land", "layout-h400dp-land"):
+    patch(res / _variant / "map_buttons_layout_regular.xml", """  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_explore_chips\"""", """  <app.organicmaps.eurise.EuriseTilt
+    android:id="@+id/eurise_tilt"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:layout_alignParentTop="true"
+    android:layout_alignParentEnd="true" />
+  <androidx.compose.ui.platform.ComposeView
+    android:id="@+id/eurise_explore_chips\"""")
+print("eurise_patch: tasto 3D mentre si esplora (MapEsploraInclinata)")
 
 # Ricerca (tavola MapCerca): il campo diventa una pillola satinata sulla testata, con un po' d'aria attorno; vale per
 # tutte le barre di ricerca di Mappe (ricerca, risultati sulla mappa), così hanno la stessa forma.

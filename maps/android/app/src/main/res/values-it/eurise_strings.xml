@@ -526,4 +526,8 @@
         <item quantity="one">%1$d messaggio nuovo</item>
         <item quantity="other">%1$d messaggi nuovi</item>
     </plurals>
+    <string name="eurise_tilt_3d">3D</string>
+    <string name="eurise_tilt_flat">2D</string>
+    <string name="eurise_tilt_3d_desc">Inclina la mappa fino al cielo</string>
+    <string name="eurise_tilt_flat_desc">Torna alla mappa piatta</string>
 </resources>

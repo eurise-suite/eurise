@@ -41,6 +41,8 @@ public final class EuriseSky
 
   private static boolean sGuide;
   private static boolean sShown;
+  /** Esplorando con «3D» (tavola MapEsploraInclinata): stesso cielo, mappa inclinata come in guida. */
+  private static boolean sExplore;
   private static long sLastMs;
   private static int sLastW, sLastH;
 
@@ -52,16 +54,40 @@ public final class EuriseSky
     if (sGuide == on)
       return;
     sGuide = on;
+    // La guida prende la sua inclinazione: «3D» dell'esplorazione si spegne (finita la guida si riparte piatti).
+    sExplore = false;
     if (on)
       refresh(c.getApplicationContext());
     else
       hide();
   }
 
+  /** «3D» è acceso mentre si esplora (la fascia dell'orizzonte si nasconde: c'è il cielo vero). */
+  public static synchronized boolean exploring3d()
+  {
+    return sExplore;
+  }
+
+  /**
+   * Tasto «3D»/«2D» mentre si esplora: la prospettiva automatica del motore (quella della guida, fino al cielo da vicino)
+   * e il cielo di {@link #draw}. Il cielo si mette prima della prospettiva, così l'inclinazione arriva fino a lui.
+   */
+  public static synchronized void explore3d(@NonNull Context c, boolean on)
+  {
+    if (sExplore == on || sGuide)
+      return;
+    sExplore = on;
+    if (on)
+      refresh(c.getApplicationContext());
+    else
+      hide();
+    WORKER.execute(() -> Framework.nativeEuriseSetExplore3d(on));
+  }
+
   /** A ogni aggiornamento della guida: rifà l'immagine solo se serve. */
   public static synchronized void tick(@NonNull Context c)
   {
-    if (!sGuide)
+    if (!sGuide && !sExplore)
       return;
     final boolean wanted = PreferenceManager.getDefaultSharedPreferences(c).getBoolean(PREF, true);
     if (!wanted)
@@ -100,7 +126,7 @@ public final class EuriseSky
       b.getPixels(px, 0, b.getWidth(), 0, 0, b.getWidth(), b.getHeight());
       synchronized (EuriseSky.class)
       {
-        if (sGuide && sShown)
+        if ((sGuide || sExplore) && sShown)
           Framework.nativeEuriseSetSky(px, b.getWidth(), b.getHeight());
       }
       b.recycle();

@@ -10,6 +10,8 @@
 #include "drape/hw_texture.hpp"
 #include "drape/mesh_object.hpp"
 #include "drape/render_state.hpp"
+
+#include <atomic>
 #include "drape/texture.hpp"
 #include "drape/viewport.hpp"
 
@@ -247,5 +249,19 @@ void EuriseSkyReset()
   gpu.m_texture.reset();
   gpu.m_vertices.clear();
   gpu.m_version = 0;  // al contesto nuovo la texture si rifà dall'immagine che resta in Pending
+}
+namespace
+{
+std::atomic<bool> g_perspectiveWish{true};
+}  // namespace
+
+void EuriseSetPerspectiveWish(bool on)
+{
+  g_perspectiveWish = on;
+}
+
+bool EuriseTakePerspectiveWish()
+{
+  return g_perspectiveWish.exchange(true);
 }
 }  // namespace df

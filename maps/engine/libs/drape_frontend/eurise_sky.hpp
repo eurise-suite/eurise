@@ -38,6 +38,12 @@ float constexpr kEuriseSkyHorizonV = 0.8f;
 /// Si chiama da qualsiasi thread: il disegno la prende al fotogramma dopo.
 void EuriseSkySetImage(std::vector<uint8_t> && rgba, uint32_t width, uint32_t height);
 
+/// Esplorando, tasto «3D»/«2D» (tavola MapEsploraInclinata): il prossimo EnablePerspective di DrapeEngine accende
+/// (true) o spegne (false) la prospettiva automatica. Chi legge rimette true: le altre chiamate di CoMaps (inizio della
+/// guida) restano come sono.
+void EuriseSetPerspectiveWish(bool on);
+bool EuriseTakePerspectiveWish();
+
 /// Disegna cielo e colline sopra il bordo lontano della mappa, se c'è un'immagine e la mappa è in prospettiva con il
 /// bordo dentro lo schermo. Solo dal thread del disegno (FrontendRenderer::RenderScene).
 void EuriseSkyRender(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramManager> mng, ScreenBase const & screen);

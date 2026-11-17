@@ -91,7 +91,10 @@ public final class EuriseSkyBand extends View
   {
     final RoutingController rc = RoutingController.get();
     final boolean wanted = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(EuriseSky.PREF, true)
-                           && !rc.isPlanning() && !rc.isNavigating();
+                           && !rc.isPlanning() && !rc.isNavigating() && !EuriseSky.exploring3d();
+    // Col cielo vero («3D») si rifà ogni tanto anche quello (ora, meteo), come in guida.
+    if (EuriseSky.exploring3d())
+      EuriseSky.tick(getContext());
     setVisibility(wanted ? VISIBLE : GONE);
     if (wanted && getWidth() > 0 && getHeight() > 0 && !mDrawing
         && (mBitmap == null || mDrawnW != getWidth() || mDrawnH != getHeight()
