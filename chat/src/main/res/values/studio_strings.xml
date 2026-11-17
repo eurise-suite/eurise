@@ -95,5 +95,5 @@
     <string name="st_verify_other">Senza Chat può mandare il codice anche per email o per SMS: quel canale diventa il suo. Questa scheda diventa verde da sola.</string>
     <string name="st_verify_done">Fatto: il codice è arrivato da %1$s.</string>
     <string name="st_close">Chiudi</string>
-    <string name="st_verified_reply">Fatto: questa chat è collegata allo studio. Da qui può chiedere ricette, appuntamenti e referti. Per le urgenze chiami il 112.</string>
+    <string name="st_verified_reply">Fatto: questa chat è collegata allo studio. Da qui può chiedere ricette, appuntamenti e referti. Per un\'urgenza chiami il 118: i messaggi non sono letti in tempo reale.</string>
 </resources>

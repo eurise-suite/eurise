@@ -149,6 +149,31 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
      (WorkManager + redaction), consenso; per email link Murena con password e scadenza (contratto con l'APK principale);
   4. appuntamenti: orari liberi dal Calendario, scelta, promemoria, lista d'attesa; 5. regole (fuori orario, parole urgenti,
      segreteria); 6. agopuntura (cicli, ricevuta PDF). Fino al server dello studio i pazienti passano da SMS ed email.
+- **La mia Bussola in Chat (richiesta del proprietario, 17 novembre, notte)**: la Chat fa il lato paziente del gestionale
+  BUSSOLA MMG, con **Millewin oggi e Bussola MMG poi**. Specifiche complete in `docs/stato/BUSSOLA-CHAT.md` (dalla chat
+  del gestionale; prototipi con dati finti: area paziente Premium FFKpJRz5SZ6C3VsAg3Ey2D, Base NajX12E4Dg1o7wEvaav3PF,
+  vista del medico HYcWdRa8AUunov5CRysch5). Punti fermi: il paziente vede solo i suoi dati; «Per un'urgenza chiama il
+  118» in ogni schermata con la chat (Campania: **118**, non 112); **nessuna interpretazione automatica lato paziente**
+  (fuori dalla MDR: niente triage né chatbot clinici); notifiche sempre con la frase fissa «Hai ricevuto una nuova
+  comunicazione da parte del tuo medico su La mia Bussola»; servizio facoltativo; lingua semplice.
+  Tavole da approvare, fila «La mia Bussola in Chat» sulla pagina «Chat ed Email» (y 15008; generatore
+  `/home/claude/tela/gen/bus.py`, fuori dal repo): BusAttiva (invito, 4 passi, impronta/PIN/SPID-CIE), BusChat (118,
+  azioni grandi sopra la chat, mittente, ora e tipo, stato del rinnovo, invito al controllo con risposte rapide), BusRinnovo
+  (un tocco sulla terapia già prescritta; nuovi farmaci o sintomi solo per messaggio), BusReferto (PDF/JPG/PNG 10 MB,
+  genetici e HIV di persona, 45 giorni), BusRicette (NRE, 30 giorni, stati, condividi/stampa), BusAvvisi (avvisi semplici,
+  notifica neutra), BusOrari (assenza e sostituto, 118, guardia medica), BusStudio (lato studio: ruoli, l'assistente
+  prepara e il medico firma, NRE dal promemoria di Millewin, paziente non attivo in attesa, stanza interna), BusCollega
+  (oggi il telefono del medico fa da collegamento con Millewin, domani Bussola diretto; eventi `it.bussola.*` con body di
+  riserva per Element; 45 giorni). Seconda fila dopo l'approvazione: prenota una visita, questionario prima della visita,
+  esami e impegnative, certificati e spese per il 730, il mio calendario (.ics), promemoria farmaci e diario delle misure,
+  scheda di emergenza con QR, familiari e deleghe, privacy e consensi (scarica i miei dati, chiudi l'area), accessibilità
+  e lingue (italiano, inglese, rumeno, ucraino).
+  **Da decidere con il proprietario**: (1) la risposta automatica col 112 sulle «parole urgenti» (tavola StuRegole) va
+  contro le specifiche: proposta di toglierla e tenere solo il promemoria fisso del 118 e la risposta fuori orario; (2) lato
+  studio, «Da guardare prima» ordina per parole: tenerlo (aiuto di lettura solo per il medico) o toglierlo; (3) le
+  notifiche della Chat oggi mostrano il testo: per le stanze dei pazienti diventano neutre; (4) il server dello studio
+  (senza, le stanze dei pazienti non esistono: fino ad allora SMS ed email con la frase fissa).
+  Già corretto nel codice (esce col prossimo giro): la conferma della verifica dice 118.
 - **Server (domanda del proprietario, 17 novembre)**: niente dominio né voglia di gestire server. Opzioni trovate: etke.cc
   (Matrix gestito su Hetzner in Germania/Finlandia; prezzi sul modulo d'ordine; chiedere il contratto art. 28 GDPR);
   Element Pro (circa 5 $ per utente al mese: caro con i pazienti); VPS Hetzner CX23 (5,49 € + 0,50 € IPv4 + IVA, nuovi
@@ -167,7 +192,10 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-0. **Studio medico**: passo 2, ricette (richieste dalla terapia abituale, promemoria PDF di Millewin da una cartella con
+0. **La mia Bussola in Chat**: approvazione delle 9 tavole Bus* e delle quattro decisioni qui sopra; poi il codice, a partire
+   dai messaggi con un tipo (`it.bussola.rx_request` e stati, `report`, `checkup_invite`, ricetta pronta) in `core/studio`
+   con i test, notifiche neutre, promemoria del 118 e vista paziente semplice in Chat.
+   **Studio medico**: passo 2, ricette (richieste dalla terapia abituale, promemoria PDF di Millewin da una cartella con
    `PdfText` spostato in un modulo piccolo comune, NRE e codice fiscale, invio nel canale del paziente); poi referti,
    appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.

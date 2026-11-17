@@ -1,3 +1,7 @@
+# La mia Bussola in Chat: specifiche (dalla chat del gestionale BUSSOLA MMG, 17 novembre 2026)
+
+Testo ricevuto dal proprietario così com'è; le decisioni prese nell'area Comunicazione stanno in `docs/stato/COMUNICAZIONE.md`.
+
 Specifiche per l’app di chat Matrix: lato paziente di BUSSOLA MMG (“La mia Bussola”)
 
 Contesto
