@@ -103,7 +103,14 @@ class Tab(
     private val dark: () -> Boolean = { false },
     /** Immagini caricate? (Strumenti › Immagini sì/no: senza, le pagine pesano meno). */
     private val images: () -> Boolean = { true },
+    /**
+     * Apri subito la sessione nel motore? Le schede riaperte all'avvio no: ogni sessione aperta costa memoria e lavoro al
+     * motore anche se non si vede, quindi si apre quando la scheda va in vista ([ensureOpen]).
+     */
+    startOpen: Boolean = true,
 ) {
+    private val appContext = context.applicationContext
+
     val session: GeckoSession = GeckoSession(
         GeckoSessionSettings.Builder().usePrivateMode(private).allowJavascript(true).build(),
     )
@@ -148,6 +155,9 @@ class Tab(
     var thumb by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
     /** Indirizzo da caricare quando la scheda torna in vista (schede riaperte all'avvio). */
     var pending: String? = null
+
+    /** La sessione è aperta nel motore (dichiarata prima di init: lì [ensureOpen] la mette a true). */
+    private var opened = false
 
     private var port: WebExtension.Port? = null
     private var pageRequest: ((PageInfo?) -> Unit)? = null
@@ -278,7 +288,14 @@ class Tab(
                 Gecko.onBlocked()
             }
         }
-        session.open(Gecko.runtime(context))
+        if (startOpen) ensureOpen()
+    }
+
+    /** Apre la sessione nel motore, se non lo è già, e la collega all'estensione Eurise. */
+    fun ensureOpen() {
+        if (opened) return
+        opened = true
+        session.open(Gecko.runtime(appContext))
         Gecko.withExtension { ext ->
             session.webExtensionController.setMessageDelegate(ext, object : WebExtension.MessageDelegate {
                 override fun onConnect(port: WebExtension.Port) {
@@ -289,7 +306,7 @@ class Tab(
                         override fun onPortMessage(message: Any, port: WebExtension.Port) {
                             val o = message as? JSONObject ?: return
                             if (o.optString("type") == "icon") {
-                                SiteIcons.offer(context, o.optString("host"), o.optString("url"), private)
+                                SiteIcons.offer(appContext, o.optString("host"), o.optString("url"), private)
                                 return
                             }
                             if (o.optString("type") == "page") {
@@ -304,6 +321,19 @@ class Tab(
                     })
                 }
             }, "browser")
+        }
+    }
+
+    /**
+     * La scheda è in vista o no. Quelle che non si vedono vanno a riposo nel motore (niente disegno, timer rallentati,
+     * priorità bassa): prima restavano tutte attive e le pagine in secondo piano rubavano processore e memoria a quella
+     * che si guarda. Quella in vista ha la priorità alta.
+     */
+    fun setVisible(on: Boolean) {
+        if (!opened) return
+        runCatching {
+            session.setActive(on)
+            session.setPriorityHint(if (on) GeckoSession.PRIORITY_HIGH else GeckoSession.PRIORITY_DEFAULT)
         }
     }
 
@@ -329,7 +359,7 @@ class Tab(
         runCatching { p.postMessage(JSONObject().put("type", "page")) }.onFailure { pageRequest = null; callback(PageInfo(url, title, "", "", "")) }
     }
 
-    fun load(address: String) = session.loadUri(address)
+    fun load(address: String) { ensureOpen(); session.loadUri(address) }
 
     /** Pagine scure: l'estensione scurisce la pagina che non ha un suo tema scuro (o la riporta com'era). */
     fun setDark(on: Boolean) {

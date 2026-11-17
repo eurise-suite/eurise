@@ -26,6 +26,8 @@ android {
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
         buildConfigField("String", "SUITE_PERMISSION", "\"eu.eurise.permission.SUITE\"")
+        // Pacchetti di prova (.debug) delle altre app: non BuildConfig.DEBUG, che segue «debuggable» (spento anche in prova).
+        buildConfigField("boolean", "SUITE_DEBUG", "false")
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
@@ -57,6 +59,13 @@ android {
             manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE_DEBUG"
             buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub.debug\"")
             buildConfigField("String", "SUITE_PERMISSION", "\"eu.eurise.permission.SUITE_DEBUG\"")
+            buildConfigField("boolean", "SUITE_DEBUG", "true")
+            // L'APK di prova è quello che il proprietario usa ogni giorno: compilato come la versione ufficiale (R8, non
+            // «debuggable», profili di avvio di Compose applicati) va molto più svelto. Stesso nome, stessa chiave di
+            // prova e stesso id: si aggiorna sopra quello installato. I nomi restano leggibili nei rapporti degli errori.
+            isDebuggable = false
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         release {
             isMinifyEnabled = true

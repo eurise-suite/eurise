@@ -95,7 +95,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         Thumbs.init(this)
         Logins.onSaveFailed = { login ->
             // Password chiusa al momento del salvataggio: la voce si apre compilata in Password, da confermare.
-            eu.eurise.core.suite.PasswordContract.addIntent(this, BuildConfig.DEBUG, Uri.parse(login.origin).host.orEmpty(), login.password,
+            eu.eurise.core.suite.PasswordContract.addIntent(this, BuildConfig.SUITE_DEBUG, Uri.parse(login.origin).host.orEmpty(), login.password,
                 username = login.username, url = login.origin)?.let { runCatching { startActivity(it) } }
         }
         model = BrowserModel(this)
@@ -349,7 +349,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         runCatching { importFiles.launch(arrayOf("text/csv", "text/comma-separated-values", "text/html", "text/plain", "application/octet-stream", "*/*")) }
     }
 
-    private val passwordPackage get() = if (BuildConfig.DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
+    private val passwordPackage get() = if (BuildConfig.SUITE_DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
 
     override fun openQr() {
         val qr = Intent().setClassName(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", "qr")

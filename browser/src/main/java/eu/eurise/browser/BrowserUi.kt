@@ -357,6 +357,7 @@ private fun GeckoHost(tab: Tab, modifier: Modifier, focused: Boolean) {
                 view.tag = generation
                 Gecko.views.forEach { other -> if (other !== view && other.session === tab.session) other.releaseSession() }
                 view.releaseSession()
+                tab.ensureOpen()
                 view.setSession(tab.session)
             }
             if (focused) Gecko.view = view

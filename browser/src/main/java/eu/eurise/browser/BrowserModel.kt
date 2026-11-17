@@ -91,9 +91,9 @@ class BrowserModel(private val context: Context) {
         return tab
     }
 
-    private fun newTab(private: Boolean): Tab {
+    private fun newTab(private: Boolean, startOpen: Boolean = true): Tab {
         val tab = Tab(context, nextId++, private, onNewTab = { uri -> val g = current?.group; open(uri, private).group = g },
-            history = if (private) null else history, dark = { settings.darkPages }, images = { settings.images })
+            history = if (private) null else history, dark = { settings.darkPages }, images = { settings.images }, startOpen = startOpen)
         tab.onDownload = { onDownload(it) }
         tab.onFiles = { onFiles(it) }
         return tab
@@ -121,10 +121,12 @@ class BrowserModel(private val context: Context) {
         val c = current ?: return
         if (c === tab) return
         split = c to tab
+        tab.ensureOpen()
         tab.pending?.let { tab.pending = null; tab.load(it) }
+        updateVisible()
     }
 
-    fun unsplit() { split = null }
+    fun unsplit() { split = null; updateVisible() }
 
     fun show(tab: Tab) {
         split?.let { (a, b) ->
@@ -135,8 +137,24 @@ class BrowserModel(private val context: Context) {
         current?.lastActive = System.currentTimeMillis()
         current = tab
         tab.lastActive = System.currentTimeMillis()
+        tab.ensureOpen()
         // Le schede riaperte all'avvio si caricano solo quando le guardi.
         tab.pending?.let { tab.pending = null; tab.load(it) }
+        updateVisible()
+    }
+
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private val restOthers = Runnable { updateVisible(rest = true) }
+
+    /**
+     * Sveglia subito le schede in vista (quella in uso, o la coppia affiancata) e, poco dopo, mette a riposo le altre:
+     * il ritardo lascia finire la miniatura di quella appena lasciata ([snapshot]), che a riposo non si disegna più.
+     */
+    private fun updateVisible(rest: Boolean = false) {
+        val shown = split?.let { (a, b) -> if (current === a || current === b) setOf(a, b) else null } ?: setOfNotNull(current)
+        shown.forEach { it.setVisible(true) }
+        if (rest) tabs.forEach { if (it !in shown) it.setVisible(false) }
+        else { main.removeCallbacks(restOthers); main.postDelayed(restOthers, 800) }
     }
 
     /** Scheda accanto (gesto sulla barra, Ctrl+Tab): [step] +1 a destra, -1 a sinistra. Falso se non c'è. */
@@ -155,13 +173,17 @@ class BrowserModel(private val context: Context) {
         runCatching {
             view.capturePixels().accept({ bmp ->
                 if (bmp == null || bmp.width == 0) return@accept
-                val w = 270
-                val small = android.graphics.Bitmap.createScaledBitmap(bmp, w, (bmp.height * w / bmp.width).coerceAtLeast(1), true)
-                if (small !== bmp) bmp.recycle()
-                // Basta la parte alta della pagina: è quella che si riconosce.
-                val crop = if (small.height > 360) android.graphics.Bitmap.createBitmap(small, 0, 0, w, 360).also { small.recycle() } else small
-                tab.thumb = crop.asImageBitmap()
-                if (!tab.private) Thumbs.save(tab.url, crop)
+                val url = tab.url
+                // Rimpicciolire la cattura a schermo intero costa: si fa fuori dal thread principale, che cambia scheda.
+                Thread {
+                    val w = 270
+                    val small = android.graphics.Bitmap.createScaledBitmap(bmp, w, (bmp.height * w / bmp.width).coerceAtLeast(1), true)
+                    if (small !== bmp) bmp.recycle()
+                    // Basta la parte alta della pagina: è quella che si riconosce.
+                    val crop = if (small.height > 360) android.graphics.Bitmap.createBitmap(small, 0, 0, w, 360).also { small.recycle() } else small
+                    val image = crop.asImageBitmap()
+                    main.post { tab.thumb = image; if (!tab.private) Thumbs.save(url, crop) }
+                }.start()
             }, { })
         }
     }
@@ -209,7 +231,7 @@ class BrowserModel(private val context: Context) {
     fun openSession(s: Session) {
         if (group(s.name) == null) groups += TabGroup(s.name, SessionStore.nextTint(groups))
         s.tabs.forEach { saved ->
-            val tab = newTab(private = false)
+            val tab = newTab(private = false, startOpen = false)
             tab.pending = saved.url; tab.url = saved.url; tab.title = saved.title; tab.group = s.name
             tabs += tab
         }
@@ -287,7 +309,7 @@ class BrowserModel(private val context: Context) {
             val o = a.optJSONObject(i) ?: continue
             val last = o.optLong("last")
             if (last < limit) { forgotten += SavedTab(o.optString("url"), o.optString("title"), last); continue }
-            val tab = newTab(private = false)
+            val tab = newTab(private = false, startOpen = false)
             tab.pending = o.optString("url")
             tab.url = o.optString("url")
             tab.title = o.optString("title")
@@ -315,7 +337,8 @@ class BrowserModel(private val context: Context) {
         split?.let { (a, b) -> if (tab === a || tab === b) split = null }
         tabs.remove(tab)
         tab.close()
-        if (current === tab) current = tabs.getOrNull(i.coerceAtMost(tabs.size - 1))
+        // Si passa da show(), così la scheda che prende il posto si apre, carica ciò che aveva in sospeso e si sveglia.
+        if (current === tab) { current = null; tabs.getOrNull(i.coerceAtMost(tabs.size - 1))?.let(::show) }
         if (tabs.isEmpty()) open()
         dropEmptyGroups()
         saveSessions()
