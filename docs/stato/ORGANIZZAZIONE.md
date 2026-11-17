@@ -245,6 +245,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   ciascuno su pulsante, giorno di oggi, interruttore, numero, testo, con il contrasto del testo bianco (A 3,2:1 non
   basta; da C #0B74D8 in su va bene). Toccato `canvas.json` della tela (una voce in `boards` e in `order`). Dopo la scelta:
   `ExtraTint.Ceruleo.light` (e un `dark` coerente), la sfumatura non cambia.
+- Tavola **IcoCeruleoNotte** accanto: gli stessi sette blu sul tema Notte. Presi come sono si leggono male (da 3,6:1 di A
+  a 1,7:1 di G); schiariti per la sera arrivano a 4,5:1 (testo bianco sopra circa 4:1) e da C a G si somigliano molto.
+  Per ognuno la versione di sera calcolata (`dark`), da usare con la scelta del proprietario.
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
