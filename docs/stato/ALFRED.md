@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 739)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 754)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -72,6 +72,19 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 - Se Kokoro resta lento a generare sul telefono: proposta di usare Riccardo (Piper, molto più leggero) per le conferme
   brevi e Nicola per le risposte lunghe, oppure ridurre i thread o provare il modello Kokoro solo italiano/inglese.
 
+## 17 novembre: l'ironia anche a voce (giro 754)
+- Il proprietario: «Mi raccomando, l'ironia!», «mettine parecchie, di battute, massime, proverbi, citazioni», «deve essere
+  uno spasso da ascoltare pur rimanendo molto professionale». Fatto:
+  - **89 battute** dopo le azioni (`alfred_maxims_*`: appuntamento, nota, attività, messaggio, strada, sveglia, timer,
+    «ricorda», seguiti): proverbi, motti latini, citazioni (Shakespeare, Franklin, Luigi XVIII), ironia da maggiordomo.
+    Brevi, **dette anche a voce** dopo l'esito, **una volta su due**, mai una delle ultime sei (`recentQuips`).
+  - **Conferme ironiche** una volta su tre da elenchi di varianti (`alfred_say_wit_*`: «Disturbo Marco?», «Alle 6:00. Ne
+    è proprio sicuro?»).
+  - Il pannello si chiude dopo la battuta (al massimo 2,5 s in più), così non la tronca.
+- Regola per chi aggiunge battute: Lei sempre, niente volgarità, al massimo una decina di parole, citazioni solo se
+  l'attribuzione è sicura (altrimenti come proverbio). Alla guida restano escluse (in Android Auto Alfred non le dice).
+- Da provare: se una su due è troppo (o troppo poco); `withMaxim` in `Plan.kt`.
+
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
 - **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
   AstImpostazioni (nella voce di Alfred); AlfGiornata, AlfSera, AlfSveglia, AlfMappe; AlfUnico, AlfUnicoMancino, AlfScegli,
@@ -82,7 +95,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario sul giro 739** (prima Alfred più svelto, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+1. **Prove del proprietario sul giro 754** (prima Alfred più svelto e l'ironia a voce, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
    «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
    ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
    cosa per un'altra»).
