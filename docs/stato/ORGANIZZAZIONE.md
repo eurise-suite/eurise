@@ -313,10 +313,34 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
     (pagina nuova o modifica), `PagePickerSheet` («Dove metto…?»). Voci «Aggiungi alla Scrivania…» nel menu delle app delle
     categorie (`AppTile.onAddToPage`) e pressione lunga in «Tutte le app» della dock (`AllAppsPanel.onHold`).
     `LauncherViewModel.addToPage` (sulla home nei preferiti finché c'è posto, poi tra le bolle), `createPage`, `deletePage`.
-  - **Non ancora**: trascinare un'app da una pagina all'altra (ScrPagTrascina) e miniature vere delle pagine; il Cestino per
-    le pagine eliminate (ora c'è la conferma); cartelle e testo libero dentro le pagine nuove; app dei preferiti della home
-    spostabili in un'altra pagina.
+  - **Non ancora**: miniature vere delle pagine; il Cestino per le pagine eliminate (ora c'è la conferma); cartelle e testo
+    libero dentro le pagine nuove. (Trascinamento e preferiti verso altre pagine: fatti nel giro 772, sezione sotto.)
   - Giro 760 (Compila 44166106646 su `prova-organizzazione`).
+
+## 17 novembre, notte: trascinamento tra le pagine (ScrPagTrascina, approvata)
+- **Prove del proprietario sui giri 735, 748 e 760**: l'esito non è arrivato in questa chat (annunciato, non incollato).
+- **Come funziona**: un'app o una bolla tenuta premuta e trascinata va su qualunque pagina della Scrivania. Ai bordi, tenendola
+  un attimo (550 ms), si passa alla pagina accanto (frecce ai lati); sulla **fila delle pagine** in alto (etichette con
+  simbolo e nome) si salta diretti; sul **«+»** nasce una pagina nuova dopo quella vista, con l'oggetto dentro (nome
+  «Pagina», si rinomina in «Le tue pagine»). Sulla pagina un **buco tratteggiato «qui»** mostra dove cadrà e le altre bolle
+  fanno spazio (prima o dopo la bolla sotto il dito, secondo la metà; sotto tutte, in fondo). Sulla home, sopra i
+  preferiti, l'app entra tra i preferiti (la griglia si accende) se c'è posto, altrimenti tra le bolle della home.
+- **Da dove si parte**: dalle categorie (si tiene premuta e si riordina come prima; appena si muove compare la fila delle
+  pagine in alto e, salendoci sopra, l'app passa alla Scrivania); da «Tutte le app» della dock (tenuta ferma: «Dove
+  metto…?» come prima; trascinata: si porta); dai preferiti della home (sulla fila o ai bordi escono dalla griglia: è la
+  voce «app dei preferiti spostabili» che mancava); da **ogni app e bolla** delle pagine, home compresa, widget compresi
+  (tenuta ferma: entra in modifica come prima, al rilascio; trascinata: si porta). Le cartelle nelle pagine non ci sono ancora.
+- **Codice**: `home/DeskCarry.kt` (`DeskCarry` con `CarryItem`/`CarryTarget`, `deskCarryTracker` sulla radice della Scrivania
+  che segue il dito nel passaggio Initial, così il trascinamento sopravvive alle pagine e alle categorie che escono di
+  scena; `carryIndex`, `CarryHole`, `DeskCarryLayer` con fila delle pagine, frecce e oggetto sotto il dito);
+  `List<HomeSlot>.placing` in `DeskPages.kt`; `LauncherViewModel.carryTo`; `HomeBubble` registra dove sta ogni bolla
+  (`carryBounds`, `LocalDeskPage`); passaggi in `CategoryPages`, `FavoritesGrid`, `HomeBoard`, `AllAppsPanel`. Test in
+  `DeskCarryTest`. Solo telefono (sul tablet la Scrivania è una pagina). Parti comuni: nessuna.
+- **Da provare**: portare un'app da una categoria su «Lavoro» passando dalla fila; da «Tutte le app» sulla bacheca; un
+  preferito della home su un'altra pagina; una bolla (anche un widget) dalla home a una pagina nuova col «+»; il bordo per
+  girare pagina; tenere ferme app e bolle (menu, modifica) per vedere che non è cambiato niente.
+- Giro 772 (Compila 44188594640 su `prova-organizzazione`; il 766 si era fermato su una chiamata con nome completo di una
+  funzione con ricevitore `BoxScope`).
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
@@ -333,6 +357,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
   NoteVocale in codice (giri 671 e 673).
 - **Approvate e in codice dal 17 novembre (pomeriggio)**: CollAssistente, InsAssistente (agenda con l'assistente).
+- **Approvate e in codice dal 17 novembre (sera e notte)**: ScrPagAggiungi, ScrPagGestisci, ScrPagNuova, ScrPagLibera (giro 760),
+  ScrPagTrascina (giro 772).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
   codice con l'area Comunicazione); CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
   Comunicazione.
@@ -361,7 +387,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 6. Poi: audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Pagine della Scrivania a piacere**: in codice nel giro 760, da provare (creare pagine, «Aggiungi alla Scrivania…»,
-  ordine, Apri da qui, solo in una modalità, elimina); poi il trascinamento tra pagine (ScrPagTrascina).
+  ordine, Apri da qui, solo in una modalità, elimina) e il trascinamento tra pagine (ScrPagTrascina, giro 772).
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
 ## Come si lavora
