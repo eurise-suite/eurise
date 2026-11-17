@@ -39,6 +39,10 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   Richiesta del proprietario all'approvazione: in auto spostare più in basso e rimpicciolire i 4 tasti tondi. Non si può
   (li disegna Android Auto); la bolla in auto è diventata più stretta e bassa, appoggiata ai tasti (MapBollaAutoStati
   aggiornata).
+- **Da approvare (17 novembre)**: **MapEsploraInclinata** (pagina «comunicazione», in fondo alla riga MapBolla): tasto
+  «3D» esplorando, la mappa si piega fino al cielo della guida e la fascia di MapEsplora sparisce; «2D» torna piatta.
+  CoMaps non ha un gesto per inclinare: il tasto usa la prospettiva automatica del motore (`Enable3dMode`), il gesto a
+  due dita sarebbe un'aggiunta nel motore (`user_event_stream.cpp`).
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
@@ -180,9 +184,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
-4. Passo f) di Esplora, parte che resta: orizzonte col cielo anche esplorando. Proposta: quando si inclina la mappa con due
-   dita, l'inclinazione arriva fino al cielo (come in guida) e la fascia di MapEsplora sparisce; serve l'ok del
-   proprietario e una tavola (cambia il gesto di CoMaps).
+4. Passo f) di Esplora, parte che resta: orizzonte col cielo anche esplorando, tavola MapEsploraInclinata da approvare
+   (tasto «3D»; gesto a due dita facoltativo).
 5. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
 6. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
    traffico (nessuna fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da
