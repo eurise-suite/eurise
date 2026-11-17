@@ -248,7 +248,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Tavola **IcoCeruleoNotte** accanto: gli stessi sette blu sul tema Notte. Presi come sono si leggono male (da 3,6:1 di A
   a 1,7:1 di G); schiariti per la sera arrivano a 4,5:1 (testo bianco sopra circa 4:1) e da C a G si somigliano molto.
   Per ognuno la versione di sera calcolata (`dark`), da usare con la scelta del proprietario.
-- **Scelto: E di giorno (#0552DC), F di sera (#85A4F1)**, in `ExtraTint.Ceruleo`; sfumature invariate. Giro sotto.
+- **Scelto: E di giorno (#0552DC), F di sera (#85A4F1)**, in `ExtraTint.Ceruleo`; sfumature invariate. **Giro 735** (Compila 44079077368).
 - Parte non nostra toccata: `chat/src/main/res/values/bussola_strings.xml`, apostrofo non protetto in `bu_rep_type`
   («un'immagine») che fermava la compilazione di tutti (giro 734); corretto con `\'`.
 

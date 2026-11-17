@@ -3345,3 +3345,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Organizzazione: tavola IcoCeruleo con sette blu pieni per l'accento Ceruleo (da scegliere; toccato canvas.json della tela) → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Mappe 90: riga «Dai l'accesso alle notifiche» in Livelli, manovra verde in Android Auto, «Sei su SS7» senza la rete → `docs/stato/MAPPE.md`.
 - 17 novembre, giorno, Comunicazione: Chat con allegati cifrati, referti di La mia Bussola (10 MB, 45 giorni), NRE dai promemoria PDF di Millewin (modulo nuovo `core/pdf`); Telefono con bolla della chiamata, chiamata in primo piano e icone proprie nella tendina · giro da compilare → `docs/stato/COMUNICAZIONE.md`.
+- 17 novembre, Organizzazione: Ceruleo pieno più intenso (E #0552DC di giorno, F #85A4F1 di sera); corretto un apostrofo in Chat che fermava la compilazione · giro 735 → `docs/stato/ORGANIZZAZIONE.md`.
