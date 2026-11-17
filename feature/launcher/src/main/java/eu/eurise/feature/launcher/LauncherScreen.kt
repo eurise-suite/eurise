@@ -339,6 +339,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
           eu.eurise.feature.launcher.apps.LocalAppIconColors provides settings.appIconColors,
           eu.eurise.feature.launcher.apps.LocalIconTheme provides settings.iconTheme,
+          eu.eurise.feature.launcher.apps.LocalAccentGradient provides settings.accent.gradient(scene.themeDark),
           eu.eurise.feature.launcher.apps.LocalIconShape provides settings.iconShape,
           eu.eurise.feature.launcher.home.LocalMeteo provides meteo,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },

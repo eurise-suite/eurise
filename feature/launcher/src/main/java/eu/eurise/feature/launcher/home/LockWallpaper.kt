@@ -86,7 +86,7 @@ object LockWallpaper {
         val (w, h) = screen(context)
         val hash = "${scene.hashCode()}:${o.dim}:$w:$h"
         if (!force && prefs(context).getString("hash", null) == hash) return@withContext true
-        val ok = runCatching { setLock(context, render(scene, w, h, o.dim)) }.getOrDefault(false)
+        val ok = runCatching { setLock(context, render(scene, w, h, o.dim)) }.getOrElse { fail(context, it); false }
         if (ok) prefs(context).edit().putString("hash", hash).putBoolean("applied", true).apply()
         ok
     }
@@ -109,7 +109,7 @@ object LockWallpaper {
             val crop = Bitmap.createBitmap(scaled, (scaled.width - w) / 2, (scaled.height - h) / 2, w, h)
             val final = if (load(context).dim) darken(crop) else crop
             setLock(context, final).also { if (it) prefs(context).edit().putBoolean("applied", true).remove("hash").apply() }
-        }.getOrDefault(false)
+        }.getOrElse { fail(context, it); false }
     }
 
     /** Torna lo sfondo di sistema sul blocco, se l'avevamo cambiato noi. */
@@ -147,10 +147,38 @@ object LockWallpaper {
         return out
     }
 
+    /**
+     * Il motivo dell'ultimo rifiuto, da mostrare nell'avviso (17 novembre 2026: sul telefono del proprietario lo sfondo del
+     * blocco non arrivava e l'avviso non diceva perché).
+     */
+    fun lastError(context: Context): String? = prefs(context).getString("error", null)
+
+    private fun fail(context: Context, e: Throwable) {
+        prefs(context).edit().putString("error", e.javaClass.simpleName + (e.message?.let { ": $it" } ?: "")).apply()
+    }
+
     private fun setLock(context: Context, bitmap: Bitmap): Boolean {
         val wm = WallpaperManager.getInstance(context)
-        if (!wm.isWallpaperSupported || !wm.isSetWallpaperAllowed) return false
-        return wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK) != 0
+        val p = prefs(context)
+        when {
+            !wm.isWallpaperSupported -> { p.edit().putString("error", "wallpaper non supportato").apply(); return false }
+            !wm.isSetWallpaperAllowed -> { p.edit().putString("error", "sfondo bloccato dal sistema").apply(); return false }
+        }
+        var id = wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+        // Alcuni sistemi rispondono 0 alla prima volta, quando il blocco usa ancora lo sfondo della home: si riprova
+        // passando l'immagine come flusso, che segue un'altra strada nel servizio degli sfondi.
+        if (id == 0) {
+            val bytes = java.io.ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+            id = wm.setStream(bytes.inputStream(), null, true, WallpaperManager.FLAG_LOCK)
+        }
+        val lockId = runCatching { wm.getWallpaperId(WallpaperManager.FLAG_LOCK) }.getOrDefault(id)
+        return if (id != 0 && lockId != -1) {
+            p.edit().remove("error").apply()
+            true
+        } else {
+            p.edit().putString("error", "risposta $id, blocco $lockId").apply()
+            false
+        }
     }
 
     private fun screen(context: Context): Pair<Int, Int> {

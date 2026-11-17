@@ -31,17 +31,36 @@ import kotlinx.coroutines.flow.asStateFlow
  * Tinte in più rispetto a quelle dei calendari: completano i colori secondari (un arancio vero e un viola
  * bluastro) e aggiungono cuoio, verde inglese e azzurro costiera. Servono per l'accento e per le icone.
  */
-enum class ExtraTint(val light: Color, val dark: Color) {
+enum class ExtraTint(
+    val light: Color,
+    val dark: Color,
+    /** Una sfumatura al posto del colore pieno, dove l'accento riempie una forma (bolle delle icone, campione). */
+    val gradientLight: List<Color>? = null,
+    val gradientDark: List<Color>? = null,
+    /** Fuori dai colori «Vario» delle icone e delle categorie: aggiungerla non cambia i colori già assegnati. */
+    val inPalette: Boolean = true,
+) {
     Arancio(Color(0xFFB8621E), Color(0xFFF2A866)),
     Viola(Color(0xFF5A4BA0), Color(0xFFB3A6F0)),
     Cuoio(Color(0xFF7A4A2A), Color(0xFFC9956B)),
     VerdeInglese(Color(0xFF1F4D3A), Color(0xFF7FB59A)),
     AzzurroCostiera(Color(0xFF1E78A8), Color(0xFF7CC4EA)),
+
+    /**
+     * Il ceruleo del gufo del Browser (17 novembre 2026), con la stessa sfumatura del suo tondo: dal ceruleo chiaro in
+     * alto al blu profondo in basso; di sera più chiaro, perché si legga sul fondo scuro.
+     */
+    Ceruleo(
+        Color(0xFF1298DF), Color(0xFF5EB9E9),
+        gradientLight = listOf(Color(0xFF2AA2E2), Color(0xFF1298DF), Color(0xFF003AC7)),
+        gradientDark = listOf(Color(0xFF7CC8F0), Color(0xFF5EB9E9), Color(0xFF4F7FEA)),
+        inPalette = false,
+    ),
 }
 
 /** Colori per i simboli delle icone quando si sceglie "Vario": tutte le tinte tranne la Grafite. */
 val IconPalette: List<Color> =
-    CalendarTint.entries.filter { it != CalendarTint.Grafite }.map { it.dark } + ExtraTint.entries.map { it.dark }
+    CalendarTint.entries.filter { it != CalendarTint.Grafite }.map { it.dark } + ExtraTint.entries.filter { it.inPalette }.map { it.dark }
 
 sealed interface Accent {
     data class Suite(val tint: CalendarTint) : Accent
@@ -53,6 +72,9 @@ sealed interface Accent {
         is Extra -> if (dark) tint.dark else tint.light
         is Custom -> Color(argb).let { if (dark) lighten(it) else it }
     }
+
+    /** La sfumatura dell'accento, se ne ha una (Ceruleo, come il gufo del Browser); null per i colori pieni. */
+    fun gradient(dark: Boolean): List<Color>? = (this as? Extra)?.tint?.let { if (dark) it.gradientDark else it.gradientLight }
 
     fun encode(): String = when (this) {
         is Suite -> "suite:${tint.name}"

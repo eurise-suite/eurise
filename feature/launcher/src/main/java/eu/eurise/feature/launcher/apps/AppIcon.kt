@@ -208,6 +208,9 @@ val LocalAppIconColors = androidx.compose.runtime.compositionLocalOf { false }
 /** Tema delle icone scelto in Griglia e icone (vedi [IconThemes]). */
 val LocalIconTheme = androidx.compose.runtime.compositionLocalOf { IconThemes.EURISE }
 
+/** La sfumatura dell'accento (Ceruleo, come il gufo del Browser): con «Come le bolle» la prendono anche le bolle delle icone. */
+val LocalAccentGradient = androidx.compose.runtime.compositionLocalOf<List<Color>?> { null }
+
 /** Forma delle icone scelta in Griglia e icone (vedi [IconStyles.shape]). */
 val LocalIconShape = androidx.compose.runtime.compositionLocalOf { IconStyles.SHAPE_AUTO }
 
@@ -295,7 +298,11 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         colorful -> vividSymbol(tint, dark)
         else -> listOf(lerp(tint, Color.White, 0.3f), tint)
     }
+    val accentGradient = if (bubbles) LocalAccentGradient.current else null
     val round: Brush = when {
+        // Con un accento a sfumatura (Ceruleo) la bolla la ripete, come il tondo del gufo; di sera verso il blu notte.
+        bubbleBase != null && accentGradient != null ->
+            Brush.verticalGradient(if (dark) accentGradient.map { lerp(it, Color(0xFF1F2A44), 0.58f) } else accentGradient)
         bubbleBase != null -> Brush.verticalGradient(listOf(lerp(bubbleBase, Color.White, 0.10f), lerp(bubbleBase, Color.Black, 0.10f)))
         style != null -> Brush.verticalGradient(listOf(style.top, style.bottom))
         colorful -> {

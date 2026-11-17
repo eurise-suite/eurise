@@ -75,7 +75,7 @@ fun LockWallpaperScreen(homeScene: Scene, onClose: () -> Unit) {
         scope.launch {
             if (next.mode == LockWallpaper.Mode.Off) LockWallpaper.clear(context)
             else if (!(next.mode == LockWallpaper.Mode.Other && next.other == LockWallpaper.PHOTO) && !LockWallpaper.refresh(context, force = true)) {
-                Toast.makeText(context, R.string.lock_wp_failed, Toast.LENGTH_LONG).show()
+                failed(context)
             }
         }
         Unit
@@ -86,7 +86,7 @@ fun LockWallpaperScreen(homeScene: Scene, onClose: () -> Unit) {
             o = next
             LockWallpaper.save(context, next)
             LockWallpaper.schedule(context)
-            scope.launch { if (!LockWallpaper.setPhoto(context, uri)) Toast.makeText(context, R.string.lock_wp_failed, Toast.LENGTH_LONG).show() }
+            scope.launch { if (!LockWallpaper.setPhoto(context, uri)) failed(context) }
         }
     }
 
@@ -199,3 +199,10 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
+
+/** L'avviso del rifiuto, con il motivo dato dal sistema (per capire cosa non va su ogni telefono). */
+private fun failed(context: android.content.Context) {
+    val why = LockWallpaper.lastError(context)
+    val text = context.getString(R.string.lock_wp_failed) + (why?.let { "\n($it)" } ?: "")
+    Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+}

@@ -192,6 +192,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   vedere arrivare l'avviso; verificare che Murena accetti la condivisione per email (`mailto:`) e non solo per nome utente.
 - Giro 717 (Compila 43991645566 su `prova-organizzazione`).
 
+## 17 novembre, tarda mattina: riunione «Assegna a tutti», cartella di squadra, Infomaniak verificato
+- **Nota della riunione** (CollRiunione, la nostra parte): nella chiusura della riunione ogni azione con «@nome» che
+  corrisponde a un invitato con email (nome, cognome o inizio dell'indirizzo) mostra «a Laura», e il pulsante diventa
+  **«Assegna a tutti»**: l'azione nasce affidata a lei (stesso modello di «Affida a…»: elenco «Con …» condiviso solo con
+  lei, avviso a chi l'ha affidata quando è fatta). Nella riunione, sotto «Azioni», «a Laura · vista» per ciascuna.
+  **Manca**: la nota stessa scritta a più mani dagli invitati (serve che le Note degli altri ricevano le note condivise).
+- **Cartella di squadra in Drive** (CollSquadra): in una cartella di Nextcloud/Murena condivisa con qualcuno, in cima
+  le persone, «Marco e Laura modificano · Luca vede», «Gestisci» (il «Condividi con…» della cartella) e **«Cambiato da
+  ieri · N»** con le frasi del server dall'app Attività di Nextcloud (`WebDav.activity`, `DriveData.team`, `DriveTeam.kt`);
+  un tocco su un cambio apre il file. Se l'app Attività non c'è sul server, la sezione non compare.
+- **Parte comune nuova in `core/cloud`**: `TaskSharing` (condivisione degli elenchi delle Attività, nome ed email
+  dell'account, condivisioni in attesa), usata da Attività e Note. `Collab` delle Attività la richiama.
+- **Infomaniak, verificato il 17 novembre** sulle guide ufficiali: **WebDAV di kDrive non è disponibile con my kSuite
+  e my kSuite+** (né con kSuite Free/Standard); c'è con kDrive Solo, Team, Pro e kSuite Business/Enterprise. La via API
+  vuole un token con lo scope «drive», che si crea a mano nel pannello (contro la regola dei due tocchi) e che le
+  applicazioni OAuth registrate non ricevono (prova del 9 novembre). Quindi con il piano del proprietario kDrive non si
+  può collegare in modo pulito: o un piano kDrive con WebDAV (poi la password per le app, già gestita), o chiedere a
+  Infomaniak lo scope «drive» per l'app OAuth di Eurise. La **posta** Infomaniak funziona in IMAP/SMTP con una password
+  per le app (`Providers.kt`), è dell'area Comunicazione. Decisione del proprietario.
+- Giro 720 (Compila 43995339428 su `prova-organizzazione`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -207,26 +228,24 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Approvate e in codice dal 16 novembre (notte fonda)**: AgeGiorno, AgeScrivi (Agenda). NoteBlocca, NoteBloccata,
   NoteVocale in codice (giri 671 e 673).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
-  codice con l'area Comunicazione); le altre Coll* (Riunione, Squadra, Assistente, Disponibilità; Condividi in parte) e le
-  Ins* di Comunicazione.
+  codice con l'area Comunicazione); CollAssistente, CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
+  Comunicazione.
 - **Approvate e in codice dal 17 novembre**: DriveCartelle, DriveCassetto, DriveCloud; «Condividi con…» per Drive e per
   gli appuntamenti (invitati).
 - **Approvate e in codice dal 17 novembre (mattina)**: IcoColoreBolle (tema «Come le bolle», di base), CollElenchi,
-  CollAffida.
+  CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 717 (contiene anche il 701): Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
+1. **Prove del proprietario** sul giro 720 (contiene 701 e 717): Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
    spazio, Oggi sotto le cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena;
-   icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena.
-2. **Accesso a kDrive e alla posta di Infomaniak** (chiesto dal proprietario il 17 novembre, da risolvere): kDrive è fermo
-   perché Infomaniak non concede lo scope OAuth «drive» e il WebDAV risponde 403 sul piano my kSuite+ (`STATO.md`, 9
-   novembre); la posta Infomaniak in Eurise Email (area Comunicazione) richiede la verifica in due passi e una password per le
-   app. Da fare: rileggere le condizioni attuali di Infomaniak (WebDAV, API kDrive, OAuth), riprovare con il proprietario e,
-   per la posta, concordare con l'area Comunicazione.
-3. **Collaborazione, la nostra parte, in ordine**: «Affida a…» con il trasporto di Comunicazione (Chat o email, stessa
-   scheda) al posto dell'email a mano; nota della riunione condivisa (cose da fare → attività assegnate); cartella di
-   squadra (cosa è cambiato da ieri: attività di Nextcloud); agenda con l'assistente (calendario condiviso «Proposte»);
-   disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena).
+   icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena; una riunione con
+   invitati e «Assegna a tutti»; una cartella condivisa con «Cambiato da ieri».
+2. **kDrive e posta di Infomaniak**: verificato (sezione del 17 novembre, tarda mattina). Serve una **decisione del
+   proprietario**: piano kDrive con WebDAV, oppure richiesta a Infomaniak dello scope «drive» per l'app OAuth; la posta si
+   prova in Email (Comunicazione) con una password per le app.
+3. **Collaborazione, la nostra parte, in ordine**: agenda con l'assistente (calendario condiviso «Proposte»);
+   disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena); nota della riunione scritta a più
+   mani (Note che ricevono le note condivise); «Affida a…» con il trasporto di Comunicazione al posto dell'email a mano.
 4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
    personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.

@@ -312,7 +312,7 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.appearance_accent), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         val names = tintNames()
-        // Le otto tinte dei calendari, le cinque in più e il colore personale: due file da sette.
+        // Le otto tinte dei calendari, le sei in più e il colore personale: due file da otto.
         val options: List<@Composable () -> Unit> =
             CalendarTint.entries.map { tint ->
                 @Composable { Swatch(if (dark) tint.dark else tint.light, accent == Accent.Suite(tint), names[tint].orEmpty()) { onPick(Accent.Suite(tint)) } }
@@ -321,6 +321,7 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
                     Swatch(
                         if (dark) tint.dark else tint.light, accent == Accent.Extra(tint),
                         stringResource(extraName(tint)),
+                        gradient = if (dark) tint.gradientDark else tint.gradientLight,
                     ) { onPick(Accent.Extra(tint)) }
                 }
             } + listOf(
@@ -333,10 +334,10 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
                     ) { onPick(Accent.Custom(customColor(hue, light))) }
                 },
             )
-        options.chunked(7).forEach { row ->
+        options.chunked(8).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.forEach { it() }
-                repeat(7 - row.size) { Spacer(Modifier.size(32.dp)) }
+                repeat(8 - row.size) { Spacer(Modifier.size(32.dp)) }
             }
         }
         if (custom != null) {
@@ -353,7 +354,7 @@ private fun AccentPicker(accent: Accent, dark: Boolean, onPick: (Accent) -> Unit
 }
 
 @Composable
-private fun Swatch(color: Color, selected: Boolean, label: String, rainbow: Boolean = false, onClick: () -> Unit) {
+private fun Swatch(color: Color, selected: Boolean, label: String, rainbow: Boolean = false, gradient: List<Color>? = null, onClick: () -> Unit) {
     val ring = MaterialTheme.colorScheme.onSurface
     Box(
         Modifier
@@ -364,6 +365,7 @@ private fun Swatch(color: Color, selected: Boolean, label: String, rainbow: Bool
             .clip(CircleShape)
             .background(
                 if (rainbow) Brush.sweepGradient((0..6).map { Color.hsl(it * 60f % 360f, 0.45f, 0.55f) })
+                else if (gradient != null) Brush.verticalGradient(gradient)
                 else Brush.linearGradient(listOf(color, color)),
             )
             .clickable(role = Role.RadioButton, onClick = onClick)
@@ -389,6 +391,7 @@ private fun extraName(tint: ExtraTint) = when (tint) {
     ExtraTint.Cuoio -> R.string.tint_cuoio
     ExtraTint.VerdeInglese -> R.string.tint_verde_inglese
     ExtraTint.AzzurroCostiera -> R.string.tint_azzurro_costiera
+    ExtraTint.Ceruleo -> R.string.tint_ceruleo
 }
 
 private fun hueOf(c: Color): Float {
