@@ -48,9 +48,32 @@ computer (area Computer, tavola PcEmail).
   versione di una spesa, solo dell'autore. Logica pura in `chat/.../Expenses.kt` con `ExpensesTest`; interfaccia in
   `ExpensesUi.kt`; per i conti si legge tutta la storia della stanza (`ChatModel.loadExpenses`, al massimo 200 pagine).
   Non ancora: scontrino letto con lo Scanner, IBAN o link di pagamento, correggi/togli una spesa, spese dall'email.
+- **Studio medico, passo 1** (17 novembre, tavole StuSpazio e StuPaziente; giro 718): modulo nuovo `core/studio` (logica pura
+  con `TriageTest` e `StudioTest`, nessuna dipendenza): pazienti, consensi con la storia (la revoca vale subito e resta
+  scritta), terapia abituale, smistamento sul telefono senza AI (`Triage`: urgenze in cima con parole scelte, ricette anche
+  dai nomi della terapia abituale, appuntamenti, referti, domande, grazie; medicina generale o agopuntura), codici di
+  verifica (`Verification`, 30 minuti, lettere che non si confondono), coda (`Queue.receive`/`summary`), JSON
+  (`StudioCodec`), contratto tra APK (`StudioContract`: `offer`, `known`, `openIntent`).
+  Chat: lo Studio vive qui, **spento di base** (ingresso dal foglio dell'account; acceso, icona in alto con il pallino
+  delle urgenze). Archivio cifrato con chiave AES del Keystore (`StudioRepo`, `studio.bin`), mai all'avvio sul thread
+  principale. Spazio Studio (Tutto / Medicina generale / Agopuntura, «Da guardare prima», da fare per bisogno, da dove
+  arrivano), coda di un bisogno (Rispondi dal canale d'origine, Scheda, Fatto / Rimetti in coda), pazienti (cerca, verificato
+  o da verificare), scheda (verifica, canale preferito, indirizzi, consensi con interruttori e storia, terapia, storia degli
+  scambi, togli dallo Studio), modifica. **Verifica in studio**: QR con `https://matrix.to/#/<medico>` (apre la chat con lo
+  studio, va bene Element) + codice che il paziente scrive in Chat, email o SMS: quel canale diventa suo e la scheda diventa
+  verde da sola; in Chat arriva una conferma automatica. Dalla chat a due: icona dello Studio (scheda o «Aggiungi allo
+  Studio» già compilato). I messaggi dei pazienti entrano in coda dal ciclo di /sync, dai messaggi decifrati dopo e da
+  `ChatWorker` ad app chiusa (solo quelli dopo l'accensione). `StudioProvider` risponde solo con il permesso di firma e
+  lo Studio acceso.
+  Email: `MailModel.refresh` e `SyncWorker` offrono le email non lette dei pazienti (oggetto); aprendole va il testo intero
+  (la richiesta si aggiorna e si rismista); segno «Paziente» nell'elenco, «Apri nello Studio» nella lettura.
+  Messaggi: `SmsDeliverReceiver` offre ogni SMS (la Chat tiene solo pazienti e codici).
+  Non ancora (passi successivi): risposta automatica alle urgenze con 112 e guardia medica (passo 5, regole), segno
+  «Paziente» in Messaggi, segreteria, ricette con Millewin (passo 2), referti (passo 3), lo Studio nel backup cifrato
+  della suite (oggi solo sul telefono: allowBackup spento).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova` per mail, chat, messages, phone: 16 novembre, 11:31 UTC (ricompilati con le
-  icone nuove).
+- **Ultimo APK pubblicato** in `apk-prova`: chat, mail e messages giro 718 (17 novembre, Studio passo 1); phone del
+  16 novembre.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -118,7 +141,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   cifratura protegge il contenuto, non i metadati (chi parla con chi, quando, nomi): per questo gli account dei pazienti
   vanno sul server dello studio (invito con QR), federazione chiusa o limitata per lo spazio Studio.
 - **Studio, piano del codice (17 novembre)**, in quest'ordine, un giro per passo:
-  1. pazienti e consensi (elenco locale, ruolo «paziente», canale, consensi con data, terapia abituale, verifica con QR)
+  1. **fatto il 17 novembre (vedi «Fatto»)**: pazienti e consensi (elenco locale, ruolo «paziente», canale, consensi con data, terapia abituale, verifica con QR)
      e lo spazio Studio con la coda;
   2. ricette: richieste dalla terapia abituale; promemoria PDF di Millewin letti da una cartella (`PdfText` di core/data
      da spostare in un modulo piccolo comune), NRE e codice fiscale, invio nel canale del paziente;
@@ -144,6 +167,10 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
+0. **Studio medico**: passo 2, ricette (richieste dalla terapia abituale, promemoria PDF di Millewin da una cartella con
+   `PdfText` spostato in un modulo piccolo comune, NRE e codice fiscale, invio nel canale del paziente); poi referti,
+   appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
+   verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
    Codice nell'ordine: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
    poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
@@ -170,7 +197,7 @@ recupero, verifica di una persona, QR stampato letto con lo Scanner); suoneria p
 che suona con Eurise.
 
 ## Come si lavora
-- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts`, `core/data/messages`
+- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts`, `core/studio` (Studio medico), `core/data/messages`
   (`MessageInsights`, con test), contratti in `core/suite`; per il computer `core/sync` (`MailClient`, `MailText`).
 - Prima le tavole sulla tela (pagine «Chat ed Email» e «Mappe, Messaggi e Telefono»), poi il codice dopo l'approvazione.
 - Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
