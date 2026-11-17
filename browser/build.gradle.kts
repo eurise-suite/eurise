@@ -86,6 +86,9 @@ android {
     }
     // Librerie compresse nell'APK: GeckoView (libxul 138 MB) scende a circa un terzo da scaricare; Android le estrae all'installazione.
     packaging { jniLibs { useLegacyPackaging = true } }
+    // L'APK di prova non è più «debuggable», quindi Gradle vi farebbe girare il lint «vital», che si rompe su un rilevatore
+    // di lifecycle (KaCallableMemberCall): il lint resta quello del lavoro apposito.
+    lint { checkReleaseBuilds = false }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
