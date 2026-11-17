@@ -131,4 +131,8 @@
         <item quantity="one">%1$d contatto in rubrica</item>
         <item quantity="other">%1$d contatti in rubrica</item>
     </plurals>
+    <!-- Bolla della chiamata e ritorno alla chiamata (17 novembre) -->
+    <string name="ph_bubble">Bolla</string>
+    <string name="ph_unmute">Microfono</string>
+    <string name="ph_back_to_call">Torna alla chiamata</string>
 </resources>

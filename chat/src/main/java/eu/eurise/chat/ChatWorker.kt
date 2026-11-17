@@ -54,10 +54,15 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         if (StudioRepo.current(ctx).enabled) json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
             join.keys().forEach { id ->
                 Matrix.events(join.getJSONObject(id).optJSONObject("timeline")?.optJSONArray("events"))
-                    .filter { it.sender != s.userId && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice) }
-                    .forEach { e -> StudioRepo.receive(ctx, eu.eurise.core.studio.Channel.Chat, e.sender, e.text, e.time, "$id|${e.id}") }
+                    .filter { it.sender != s.userId }
+                    .forEach { e ->
+                        val text = ChatModel.studioText(e) ?: return@forEach
+                        StudioRepo.receive(ctx, eu.eurise.core.studio.Channel.Chat, e.sender, text, e.time, "$id|${e.id}")
+                    }
             }
         }
+        // I referti mandati da qui che hanno compiuto 45 giorni si cancellano dalla stanza.
+        runCatching { BussolaReports.redactDue(ctx, client) }
         if (since == null) return Result.success()
         var count = 0
         var lastFrom = ""
@@ -120,7 +125,7 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 else -> context.getString(R.string.ch_new_invites, invites)
             }
             val n = NotificationCompat.Builder(context, CHANNEL)
-                .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+                .setSmallIcon(eu.eurise.chat.R.drawable.ic_stat_chat)
                 .setContentTitle(title)
                 .setContentText(if (count >= 1) text else "")
                 .setContentIntent(open).setAutoCancel(true).build()

@@ -88,6 +88,67 @@ object Bussola {
     fun therapy(drugs: List<String>) = content(THERAPY, "Terapia abituale aggiornata: " + drugs.joinToString(", "),
         JSONObject().put("drugs", JSONArray(drugs)))
 
+    // --- Referti (tavola BusReferto) ---
+
+    /**
+     * Un referto è un file vero (`m.file` o `m.image`, cifrato come ogni allegato della stanza) con un campo in più,
+     * [REPORT]: così Element lo mostra e lo scarica, e La mia Bussola sa che è un referto, chi l'ha mandato, le due
+     * righe per il medico e fino a quando resta visibile. Nessuna lettura del contenuto: il significato lo spiega il medico.
+     */
+    const val REPORT = "it.bussola.report"
+    const val REPORT_DAYS = 45
+    const val REPORT_MAX_BYTES = 10L * 1024 * 1024
+    const val REPORT_NOTE_MAX = 200
+    val REPORT_TYPES = listOf("application/pdf", "image/jpeg", "image/png")
+
+    data class Report(val name: String, val mime: String, val size: Long, val note: String, val sentAt: Long) {
+        val expiresAt get() = sentAt + REPORT_DAYS * DAY
+    }
+
+    /** Perché un file non va bene come referto (null = va bene). */
+    enum class ReportProblem { Type, TooBig, Empty }
+
+    fun checkReport(mime: String?, size: Long): ReportProblem? = when {
+        size <= 0L -> ReportProblem.Empty
+        mime?.lowercase()?.substringBefore(';')?.trim() !in REPORT_TYPES -> ReportProblem.Type
+        size > REPORT_MAX_BYTES -> ReportProblem.TooBig
+        else -> null
+    }
+
+    /** Le due righe facoltative per il medico: al massimo due righe e [REPORT_NOTE_MAX] caratteri. */
+    fun reportNote(input: String) = input.trim().lines().map { it.trim() }.filter { it.isNotEmpty() }.take(2).joinToString("\n").take(REPORT_NOTE_MAX)
+
+    fun isReport(c: JSONObject) = c.optJSONObject(REPORT) != null
+
+    /**
+     * Il contenuto del messaggio: [file] è il blocco «file» degli allegati cifrati (con l'indirizzo già caricato).
+     * Con le due righe il «body» è la didascalia e il nome sta in «filename» (Matrix 1.10, la mostrano anche Element X e
+     * FluffyChat); senza, il «body» è il nome.
+     */
+    fun report(r: Report, file: JSONObject, width: Int? = null, height: Int? = null): JSONObject {
+        val image = r.mime.startsWith("image/")
+        val info = JSONObject().put("mimetype", r.mime).put("size", r.size)
+        if (image && width != null && height != null && width > 0 && height > 0) info.put("w", width).put("h", height)
+        return JSONObject()
+            .put("msgtype", if (image) "m.image" else "m.file")
+            .put("body", r.note.ifBlank { r.name })
+            .put("filename", r.name)
+            .put("info", info)
+            .put("file", file)
+            .put(REPORT, JSONObject().put("note", r.note).put("expires", r.expiresAt))
+    }
+
+    /** Il referto di un messaggio; [sentAt] è l'ora del server (la scadenza conta da lì, non da ciò che dice il mittente). */
+    fun readReport(c: JSONObject, sentAt: Long): Report? {
+        val d = c.optJSONObject(REPORT) ?: return null
+        val info = c.optJSONObject("info") ?: JSONObject()
+        val name = c.optString("filename").ifEmpty { c.optString("body") }.ifEmpty { "referto" }
+        return Report(name, info.optString("mimetype"), info.optLong("size"), d.optString("note"), sentAt)
+    }
+
+    /** Dopo 45 giorni il referto non si mostra più, e chi l'ha mandato lo cancella dalla stanza. */
+    fun reportExpired(sentAt: Long, now: Long) = now >= sentAt + REPORT_DAYS * DAY
+
     // --- Lettura ---
 
     private fun data(c: JSONObject, type: String): JSONObject? = c.takeIf { it.optString("msgtype") == type }?.optJSONObject(type)

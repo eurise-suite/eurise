@@ -39,7 +39,7 @@ object StudioCodec {
     private fun patient(p: Patient) = JSONObject()
         .put("id", p.id).put("name", p.name)
         .put("practices", JSONArray(p.practices.map { it.name }))
-        .putOpt("matrix", p.matrixId).putOpt("email", p.email).putOpt("phone", p.phone)
+        .putOpt("matrix", p.matrixId).putOpt("email", p.email).putOpt("phone", p.phone).putOpt("cf", p.fiscalCode)
         .put("preferred", p.preferred.name)
         .putOpt("verifiedAt", p.verifiedAt).putOpt("verifiedBy", p.verifiedBy?.name)
         .put("consents", JSONArray().apply { p.consents.forEach { put(JSONObject().put("c", it.consent.name).put("g", it.granted).put("t", it.at)) } })
@@ -68,6 +68,7 @@ object StudioCodec {
                 Therapy(t.getString("id"), t.getString("n"), t.optString("d"), t.optString("s"))
             },
             createdAt = o.optLong("created"),
+            fiscalCode = o.str("cf"),
         )
     }
 

@@ -466,6 +466,7 @@ private fun PatientEdit(model: ChatModel, state: StudioState, page: StudioPage.E
     var matrix by remember { mutableStateOf(old?.matrixId ?: page.matrixId.orEmpty()) }
     var email by remember { mutableStateOf(old?.email.orEmpty()) }
     var phone by remember { mutableStateOf(old?.phone.orEmpty()) }
+    var cf by remember { mutableStateOf(old?.fiscalCode.orEmpty()) }
     var problem by remember { mutableStateOf<Int?>(null) }
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Header(stringResource(if (old == null) R.string.st_new_patient else R.string.st_edit_patient), null, onBack = { model.studioBack() })
@@ -480,12 +481,15 @@ private fun PatientEdit(model: ChatModel, state: StudioState, page: StudioPage.E
             Field(stringResource(R.string.st_email), email, KeyboardType.Email) { email = it }
             Field(stringResource(R.string.st_phone), phone, KeyboardType.Phone) { phone = it }
             Text(stringResource(R.string.st_where_note), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Il codice fiscale abbina i promemoria delle ricette di Millewin a questa scheda.
+            Field(stringResource(R.string.st_cf), cf, KeyboardType.Ascii) { cf = it; problem = null }
             problem?.let { Text(stringResource(it), fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
             Pill(stringResource(R.string.st_save), EuriseIcons.check(2f), Modifier.fillMaxWidth(), strong = name.isNotBlank()) {
                 if (name.isBlank()) { problem = R.string.st_err_name; return@Pill }
                 val mx = matrix.trim().takeIf { it.isNotEmpty() }?.let { Matrix.normalizeId(it) ?: run { problem = R.string.st_err_matrix; return@Pill } }
                 val em = email.trim().takeIf { it.isNotEmpty() }
                 val ph = phone.trim().takeIf { it.isNotEmpty() }
+                val fc = cf.trim().takeIf { it.isNotEmpty() }?.let { eu.eurise.core.studio.Millewin.fiscalCode(it) ?: run { problem = R.string.st_err_cf; return@Pill } }
                 val practices = buildSet { if (general) add(Practice.General); if (acupuncture) add(Practice.Acupuncture) }.ifEmpty { setOf(Practice.General) }
                 val base = old ?: Patient(UUID.randomUUID().toString(), name.trim(), createdAt = System.currentTimeMillis(),
                     preferred = when { mx != null -> Channel.Chat; ph != null -> Channel.Sms; else -> Channel.Email })
@@ -496,7 +500,7 @@ private fun PatientEdit(model: ChatModel, state: StudioState, page: StudioPage.E
                     Channel.Sms -> ph == base.phone
                     null -> false
                 }
-                val p = base.copy(name = name.trim(), practices = practices, matrixId = mx, email = em, phone = ph,
+                val p = base.copy(name = name.trim(), practices = practices, matrixId = mx, email = em, phone = ph, fiscalCode = fc,
                     verifiedAt = base.verifiedAt.takeIf { stillVerified }, verifiedBy = base.verifiedBy.takeIf { stillVerified })
                     .let { if (it.preferred !in it.channels() && it.channels().isNotEmpty()) it.copy(preferred = it.channels().first()) else it }
                 model.studioIo { StudioRepo.savePatient(ctx, p) }

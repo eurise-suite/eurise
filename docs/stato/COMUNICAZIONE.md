@@ -91,10 +91,43 @@ computer (area Computer, tavola PcEmail).
   Decisioni del proprietario (17 novembre, notte, «Ok su tutto»): niente risposta automatica sulle parole urgenti (solo il
   118 fisso e la risposta fuori orario); «Da guardare prima» resta solo dalla parte del medico come aiuto di lettura;
   notifiche neutre; fino al server dello studio i pazienti passano da SMS ed email.
-  Non ancora: referti (serve l'invio di file cifrati, ChatAllega), attivazione con codice, SMS e passkey (lato server),
+  Non ancora: attivazione con codice, SMS e passkey (lato server),
   ruoli di assistente e infermiere (servono i loro account), la seconda fila (prenotazioni, questionario, esami,
   certificati e 730, calendario, diario delle misure, scheda di emergenza, deleghe, lingue), segno di lettura
   «paziente in attesa» per chi non ha attivato l'area.
+- **Allegati cifrati, referti e promemoria di Millewin** (17 novembre, giorno; giro da compilare):
+  - **Chat › allegati (tavola ChatAllega)**: graffetta a sinistra del campo; file fino a 25 MB, foto come `m.image` (con
+    larghezza e altezza), il resto `m.file` con `filename`. Nelle stanze cifrate il file si cifra sul telefono come in
+    Element (`Attachments.kt`: AES-256-CTR, chiave nuova per file, 64 bit bassi del vettore a zero, SHA-256 controllato
+    prima di aprire; test `AttachmentsTest`); `ChatClient.upload`/`fetch`/`redact`. I file cifrati ricevuti ora si aprono
+    (prima si leggeva solo `url`); le didascalie di Matrix 1.10 (`filename` + `body`) si leggono. La cache dei file aperti
+    si svuota dopo un giorno.
+  - **La mia Bussola › referti (tavola BusReferto, passo 3 dello Studio)**: `m.file`/`m.image` cifrato con il campo
+    `it.bussola.report` (`note`, `expires`), così Element lo apre comunque; PDF, JPG o PNG fino a 10 MB, due righe
+    facoltative (didascalia), avviso «test genetici ed esami HIV di persona». Paziente: dalla graffetta; studio: terza azione
+    «Invia un referto», solo con il consenso «referti online» della scheda. Nella chat: scheda del referto con «Apri» e
+    «Visibile fino al…»; dopo 45 giorni (dall'ora del server) non si mostra più e chi l'ha mandato lo cancella dalla stanza
+    (redaction; elenco in `BussolaReports`, all'apertura e dal lavoro ogni 15 minuti). Solo in chat cifrate. I referti dei
+    pazienti entrano nella coda dello Studio come «Referto: nome — righe» (`ChatModel.studioText`, anche ad app chiusa).
+    Il file cifrato sul server lo toglie la regola di conservazione del server dello studio (Synapse), da impostare.
+  - **Promemoria PDF di Millewin (tavola StuMillewin, passo 2)**: `PdfText` spostato nel modulo nuovo **`core/pdf`**
+    (core/data lo delega, nessun import cambiato altrove: parte comune toccata). `core/studio/Millewin.kt` con
+    `MillewinTest`: NRE (`\d{4}[A-Z]\d{10}`, anche spezzato), codici fiscali con il carattere di controllo, abbinamento al
+    paziente (codice fiscale, o nome e cognome) e ai farmaci chiesti. Scheda del paziente: campo **codice fiscale**
+    (`Patient.fiscalCode`, controllato). Foglio «Ricetta pronta»: si compila da sé dalla **cartella dei promemoria**
+    (scelta una volta, PDF degli ultimi 14 giorni, il più adatto) o «Dal promemoria PDF»; avvisi se il promemoria sembra di
+    un altro paziente o senza i farmaci chiesti. Si può sempre scrivere a mano.
+- **Telefono: chiamata sempre raggiungibile e bolla** (17 novembre, richiesta del proprietario; senza tavola, descritta da
+  lui): la chiamata in corso è un **servizio in primo piano** con lo stile «chiamata in corso» (pillola verde nella barra
+  di stato da Android 12; se il sistema non lo concede resta la notifica, ora a importanza normale: canale nuovo
+  `ongoing_call`, il vecchio era tra le silenziose). La schermata della chiamata compare nelle app recenti finché dura.
+  **Bolla**: tasto accanto a Chiudi; la chiamata diventa una finestra piccola (picture-in-picture di Android, nessun
+  permesso in più) con nome, durata o stato e muto; Muto e Chiudi sopra la bolla; si apre da sola uscendo dalla chiamata
+  (Android 12+ automatico, prima con `onUserLeaveHint`). La nota della chiamata resta. Nel Telefono, con una chiamata in
+  corso, fascia verde «Torna alla chiamata». Lo schermo diviso lo fa Android (attività ridimensionabile).
+- **Icone nella tendina** (17 novembre): ogni app ha la sua icona piccola invece della stella di Eurise: cornetta
+  (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
+  busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
 - **Ultimo APK pubblicato** in `apk-prova`: chat, mail e messages giro 724 (17 novembre, notte: La mia Bussola); phone del
   16 novembre.
@@ -216,13 +249,13 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-0. **La mia Bussola in Chat**: prima parte fatta (vedi «Fatto»). Prossimo: referti (ChatAllega con file cifrati, 10 MB,
-   45 giorni con redaction), lettura dei promemoria PDF di Millewin (passo 2 dello Studio) che compila il NRE da sé,
-   tavole della seconda fila. Prove da chiedere: due telefoni (medico ed Element o Eurise sul secondo), attivazione dalla
+0. **La mia Bussola in Chat**: prima parte, referti e promemoria di Millewin fatti (vedi «Fatto»). Prossimo: tavole della
+   seconda fila; regola di conservazione a 45 giorni sul server dello studio; referti per email (link e codice per SMS).
+   Prove da chiedere anche: allegato cifrato verso Element e da Element, referto paziente → studio e studio → paziente,
+   cartella dei promemoria, bolla della chiamata e pillola verde. Prove da chiedere: due telefoni (medico ed Element o Eurise sul secondo), attivazione dalla
    scheda, rinnovo, NRE, invito, notifiche neutre.
-   **Studio medico**: passo 2, ricette (richieste dalla terapia abituale, promemoria PDF di Millewin da una cartella con
-   `PdfText` spostato in un modulo piccolo comune, NRE e codice fiscale, invio nel canale del paziente); poi referti,
-   appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
+   **Studio medico**: passi 2 e 3 in Chat fatti; resta il NRE nel canale del paziente per email e SMS (oggi solo Chat),
+   poi appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
    Codice nell'ordine: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
@@ -236,7 +269,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    sul telefono, nel pannello di Firefox e sul computer). OAuth per Gmail/Outlook: passo una tantum del proprietario.
 4. **Messaggi**: contratto per Alfred «leggi e rispondi» (passo 3 di Alfred, completa «chi mi ha scritto?»; l'APK
    principale non ha READ_SMS), Disponibilità e posizione nella barra, ricerca in tutto il testo, doppia SIM, MMS di gruppo.
-5. **Chat**: invio di allegati (ChatAllega), chiamate (ChatChiamata, poi ChatVideo con MatrixRTC e LiveKit), UnifiedPush al posto del controllo ogni 15
+5. **Chat**: anteprime delle foto nella conversazione (oggi «tocca per aprire»), chiamate (ChatChiamata, poi ChatVideo con MatrixRTC e LiveKit), UnifiedPush al posto del controllo ogni 15
    minuti, gruppi di lavoro (ChatLavoro, ChatCondividi, commenti della squadra alle email in una stanza legata al
    Message-ID), server Eurise se deciso.
 6. **Email sul computer** (PcEmail) con l'area Computer.

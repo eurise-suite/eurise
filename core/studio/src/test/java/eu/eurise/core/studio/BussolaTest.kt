@@ -67,4 +67,39 @@ class BussolaTest {
         assertEquals("Ho prenotato", Bussola.replyTo("i1", items, patient))
         assertNull(Bussola.replyTo("i2", items, patient))
     }
+
+    @Test fun referto_tipi_e_misura() {
+        assertNull(Bussola.checkReport("application/pdf", 2_000_000))
+        assertNull(Bussola.checkReport("image/JPEG", 10L * 1024 * 1024))
+        assertEquals(Bussola.ReportProblem.TooBig, Bussola.checkReport("image/png", 10L * 1024 * 1024 + 1))
+        assertEquals(Bussola.ReportProblem.Type, Bussola.checkReport("application/zip", 100))
+        assertEquals(Bussola.ReportProblem.Type, Bussola.checkReport(null, 100))
+        assertEquals(Bussola.ReportProblem.Empty, Bussola.checkReport("application/pdf", 0))
+    }
+
+    @Test fun referto_due_righe() {
+        assertEquals("Esami del sangue\ndi marzo", Bussola.reportNote("  Esami del sangue \n\n di marzo \n terza riga"))
+        assertEquals(Bussola.REPORT_NOTE_MAX, Bussola.reportNote("a".repeat(500)).length)
+    }
+
+    @Test fun referto_messaggio_e_scadenza() {
+        val file = org.json.JSONObject().put("url", "mxc://studio.it/x").put("v", "v2")
+        val sent = 1_000L
+        val c = Bussola.report(Bussola.Report("esami.pdf", "application/pdf", 1234, "Da vedere", sent), file)
+        assertEquals("m.file", c.getString("msgtype"))
+        assertEquals("Da vedere", c.getString("body"))
+        assertEquals("esami.pdf", c.getString("filename"))
+        assertTrue(Bussola.isReport(c))
+        // La scadenza vale dall'ora del server, non da quella scritta nel messaggio.
+        val r = Bussola.readReport(c, 5_000L)!!
+        assertEquals("esami.pdf", r.name)
+        assertEquals(1234L, r.size)
+        assertEquals(5_000L + 45 * day, r.expiresAt)
+        val img = Bussola.report(Bussola.Report("eco.jpg", "image/jpeg", 10, "", sent), file, 800, 600)
+        assertEquals("m.image", img.getString("msgtype"))
+        assertEquals("eco.jpg", img.getString("body"))
+        assertEquals(800, img.getJSONObject("info").getInt("w"))
+        assertTrue(!Bussola.reportExpired(0, 45 * day - 1))
+        assertTrue(Bussola.reportExpired(0, 45 * day))
+    }
 }

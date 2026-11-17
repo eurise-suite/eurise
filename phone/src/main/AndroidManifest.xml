@@ -14,6 +14,9 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- La chiamata in corso come servizio in primo piano: la pillola verde nella barra di stato riporta alla chiamata. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
@@ -105,7 +108,10 @@
             android:name=".call.CallActivity"
             android:exported="false"
             android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
+            android:autoRemoveFromRecents="true"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:taskAffinity="eu.eurise.phone.call"
@@ -114,6 +120,7 @@
         <service
             android:name=".call.CallService"
             android:exported="true"
+            android:foregroundServiceType="phoneCall"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true" />
             <intent-filter>

@@ -99,6 +99,19 @@ class ChatClient(val session: Session) {
     fun profile(userId: String): JSONObject = get("/_matrix/client/v3/profile/${enc(userId)}")
 
     /** Un'immagine o un file della chat (media autenticati). */
+    /** Scarica in memoria (i file cifrati si aprono prima di toccare il disco). */
+    fun fetch(url: String): ByteArray {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.setRequestProperty("Authorization", "Bearer ${session.token}")
+        c.connectTimeout = 15_000
+        c.readTimeout = 60_000
+        c.setRequestProperty("User-Agent", USER_AGENT)
+        try {
+            if (c.responseCode !in 200..299) throw MatrixException(c.responseCode, "M_UNKNOWN", "download")
+            return c.inputStream.use { it.readBytes() }
+        } finally { c.disconnect() }
+    }
+
     fun download(url: String, out: File): File {
         val c = URL(url).openConnection() as HttpURLConnection
         c.setRequestProperty("Authorization", "Bearer ${session.token}")
@@ -110,6 +123,37 @@ class ChatClient(val session: Session) {
             c.inputStream.use { input -> out.outputStream().use { input.copyTo(it) } }
         } finally { c.disconnect() }
         return out
+    }
+
+    /**
+     * Carica un file sul server e restituisce il suo indirizzo «mxc://». Nelle stanze cifrate arriva già cifrato da
+     * [Attachments] (tipo application/octet-stream, nome generico: il server non sa cosa sia).
+     */
+    fun upload(bytes: ByteArray, mime: String, filename: String?): String {
+        val q = filename?.let { "?filename=" + enc(it) }.orEmpty()
+        val c = URL(url("/_matrix/media/v3/upload$q")).openConnection() as HttpURLConnection
+        c.requestMethod = "POST"
+        c.connectTimeout = 15_000
+        c.readTimeout = 120_000
+        c.doOutput = true
+        c.setFixedLengthStreamingMode(bytes.size)
+        c.setRequestProperty("Authorization", "Bearer ${session.token}")
+        c.setRequestProperty("Content-Type", mime)
+        c.setRequestProperty("User-Agent", USER_AGENT)
+        try {
+            c.outputStream.use { it.write(bytes) }
+            val code = c.responseCode
+            val text = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            val json = runCatching { JSONObject(text.ifBlank { "{}" }) }.getOrDefault(JSONObject())
+            if (code !in 200..299) throw MatrixException(code, json.optString("errcode", "M_UNKNOWN"), json.optString("error", "HTTP $code"), json)
+            return json.getString("content_uri")
+        } finally { c.disconnect() }
+    }
+
+    /** Cancella un messaggio (redaction): resta solo che c'era. Serve ai referti, che dopo 45 giorni spariscono. */
+    fun redact(roomId: String, eventId: String, reason: String?) {
+        val body = JSONObject().apply { if (reason != null) put("reason", reason) }
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/redact/${enc(eventId)}/${UUID.randomUUID()}", body)
     }
 
     /** Le chat nuove nascono cifrate end-to-end (Megolm, come Element). */

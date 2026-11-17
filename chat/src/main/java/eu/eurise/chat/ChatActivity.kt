@@ -21,6 +21,23 @@ import java.io.File
 class ChatActivity : ComponentActivity(), ChatActions {
     private lateinit var model: ChatModel
     private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    /** Chi aspetta il file o la cartella scelti (un selettore alla volta). */
+    private var picked: ((Uri?) -> Unit)? = null
+    private val openFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> picked?.invoke(uri); picked = null }
+    private val openFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        picked?.invoke(uri); picked = null
+    }
+
+    override fun pickFile(mimes: Array<String>, done: (Uri?) -> Unit) {
+        picked = done
+        runCatching { openFile.launch(mimes) }.onFailure { picked = null; toast(getString(R.string.st_no_app)) }
+    }
+
+    override fun pickFolder(done: (Uri?) -> Unit) {
+        picked = done
+        runCatching { openFolder.launch(null) }.onFailure { picked = null; toast(getString(R.string.st_no_app)) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

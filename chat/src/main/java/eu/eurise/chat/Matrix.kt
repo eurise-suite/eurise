@@ -69,13 +69,17 @@ object Matrix {
             "m.room.encrypted" -> Event(id, sender, "", time, Event.Kind.Encrypted)
             "m.room.message" -> {
                 val body = content.optString("body")
-                // La mia Bussola: rinnovi, stati, inviti, orari e terapia dello studio (data = il contenuto intero).
-                if (eu.eurise.core.studio.Bussola.isBussola(content.optString("msgtype"))) {
-                    return Event(id, sender, body, time, Event.Kind.Bussola, data = content.toString())
+                // Un file: «url» in chiaro, o dentro «file» (stanze cifrate: chiave e impronta, vedi Attachments).
+                val media = content.optString("url").ifEmpty { content.optJSONObject("file")?.optString("url").orEmpty() }.ifEmpty { null }
+                // Con la didascalia (Matrix 1.10) il nome del file sta in «filename» e «body» è il testo.
+                val name = content.optString("filename").ifEmpty { body }
+                // La mia Bussola: rinnovi, stati, inviti, orari, terapia e referti (data = il contenuto intero).
+                if (eu.eurise.core.studio.Bussola.isBussola(content.optString("msgtype")) || eu.eurise.core.studio.Bussola.isReport(content)) {
+                    return Event(id, sender, body, time, Event.Kind.Bussola, media, data = content.toString())
                 }
                 when (content.optString("msgtype")) {
-                    "m.image" -> Event(id, sender, body, time, Event.Kind.Image, content.optString("url").ifEmpty { null })
-                    "m.file", "m.video", "m.audio" -> Event(id, sender, body, time, Event.Kind.File, content.optString("url").ifEmpty { null })
+                    "m.image" -> Event(id, sender, name, time, Event.Kind.Image, media, data = content.toString())
+                    "m.file", "m.video", "m.audio" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice)
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())

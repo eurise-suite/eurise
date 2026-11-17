@@ -204,4 +204,8 @@
     <string name="ex_settle_note">«Pagato» lo segna chi ha dato o chi ha ricevuto i soldi, e lo vede tutto il gruppo. Il conto si fa sul telefono di ognuno, dai messaggi cifrati della chat.</string>
     <string name="ex_settled_line">%1$s ha dato %2$s a %3$s</string>
     <string name="ex_removed">Spesa tolta</string>
+    <!-- Allegati (tavola ChatAllega) -->
+    <string name="ch_attach">Allega un file</string>
+    <string name="ch_file_too_big">Il file è più grande di 25 MB.</string>
+    <string name="ch_file_unreadable">Il file non si legge.</string>
 </resources>

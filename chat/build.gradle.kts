@@ -79,6 +79,8 @@ dependencies {
     implementation(project(":core:suite"))
     // Lo Studio medico (pazienti, consensi, coda), comune con Email e Messaggi.
     implementation(project(":core:studio"))
+    // Il testo dei promemoria PDF di Millewin (codice NRE e codice fiscale), letto sul telefono.
+    implementation(project(":core:pdf"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

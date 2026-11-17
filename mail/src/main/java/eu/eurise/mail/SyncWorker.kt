@@ -86,7 +86,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
             val n = NotificationCompat.Builder(context, CHANNEL)
-                .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+                .setSmallIcon(eu.eurise.mail.R.drawable.ic_stat_mail)
                 .setContentTitle(if (count == 1) from else context.getString(R.string.ml_new_many, count))
                 .setContentText(if (count == 1) subject else context.getString(R.string.ml_new_last, from, subject))
                 .setContentIntent(open)

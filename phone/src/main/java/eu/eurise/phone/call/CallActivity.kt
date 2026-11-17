@@ -1,7 +1,13 @@
 package eu.eurise.phone.call
 
+import android.app.PendingIntent
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.drawable.Icon as SystemIcon
 import android.os.Build
+import android.util.Rational
 import android.os.Bundle
 import android.os.PowerManager
 import android.telecom.Call
@@ -54,7 +60,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import eu.eurise.core.contacts.Avatar
 import eu.eurise.core.contacts.Contact
 import eu.eurise.core.contacts.Contacts
@@ -66,6 +75,7 @@ import eu.eurise.phone.R
 import eu.eurise.phone.data.Engagement
 import eu.eurise.phone.data.PhoneData
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -76,6 +86,8 @@ import java.util.Locale
  */
 class CallActivity : ComponentActivity() {
     private var proximity: PowerManager.WakeLock? = null
+    /** La chiamata è nella bolla (finestra piccola sopra le altre app, «picture in picture» di Android). */
+    private val bubble = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -88,7 +100,64 @@ class CallActivity : ComponentActivity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
         handle(intent)
-        setContent { EuriseTheme(darkTheme = true) { CallScreen(onEnd = ::finishSoon, onProximity = ::proximity) } }
+        setContent {
+            EuriseTheme(darkTheme = true) {
+                CallScreen(onEnd = ::finishSoon, onProximity = ::proximity, onBubble = ::enterBubble, canBubble = canBubble(), bubble = bubble.value)
+            }
+        }
+        lifecycleScope.launch {
+            // La bolla si apre da sola quando si esce dalla schermata con una chiamata in corso (Android 12 e successivi),
+            // e i suoi tasti seguono lo stato (muto acceso o spento).
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                kotlinx.coroutines.flow.combine(CallManager.calls, CallManager.audio) { c, a -> c to a }.collect { updateBubble() }
+            }
+        }
+    }
+
+    private fun canBubble() = Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+
+    /** Una chiamata già partita o in corso (non quella che squilla: lì si risponde o si rifiuta a schermo intero). */
+    private fun talking() = CallManager.primary()?.state.let { it != null && it != Call.STATE_RINGING && it != Call.STATE_DISCONNECTED }
+
+    private fun bubbleParams(): PictureInPictureParams? {
+        if (!canBubble()) return null
+        val muted = CallManager.audio.value?.isMuted == true
+        fun action(icon: Int, label: Int, code: Int, what: String) = RemoteAction(
+            SystemIcon.createWithResource(this, icon), getString(label), getString(label),
+            PendingIntent.getBroadcast(this, code, Intent(this, CallActionReceiver::class.java).setAction(what), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
+        )
+        val b = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 10))
+            .setActions(listOf(
+                action(if (muted) R.drawable.ic_pip_mic_off else R.drawable.ic_pip_mic, if (muted) R.string.ph_unmute else R.string.ph_mute, 10, CallActionReceiver.ACTION_MUTE),
+                action(R.drawable.ic_pip_hangup, R.string.ph_hangup, 11, CallActionReceiver.ACTION_HANGUP),
+            ))
+        if (Build.VERSION.SDK_INT >= 31) b.setAutoEnterEnabled(talking()).setSeamlessResizeEnabled(false)
+        return b.build()
+    }
+
+    private fun updateBubble() {
+        val p = bubbleParams() ?: return
+        runCatching { setPictureInPictureParams(p) }
+    }
+
+    /** Il tasto «Bolla»: la chiamata diventa una finestra piccola e il telefono resta libero per altro. */
+    private fun enterBubble() {
+        val p = bubbleParams() ?: return
+        proximity(false)
+        runCatching { enterPictureInPictureMode(p) }
+    }
+
+    /** Prima di Android 12 la bolla automatica non c'è: si apre qui, quando si va alla schermata Home o a un'altra app. */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT in 26..30 && talking()) enterBubble()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        bubble.value = isInPictureInPictureMode
+        if (isInPictureInPictureMode) proximity(false)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -134,7 +203,7 @@ private val Red = Color(0xFFB63A2B)
 private val Green = Color(0xFF2F7D4F)
 
 @Composable
-private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
+private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubble: () -> Unit, canBubble: Boolean, bubble: Boolean) {
     val context = LocalContext.current
     val calls by CallManager.calls.collectAsStateWithLifecycle()
     val audio by CallManager.audio.collectAsStateWithLifecycle()
@@ -160,7 +229,7 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
         contact = c
         engagements = c?.let { PhoneData.engagements(context, it.name, it.emails.map { e -> e.value }) }.orEmpty()
     }
-    LaunchedEffect(item?.state, speaker) { onProximity(item?.state == Call.STATE_ACTIVE && !speaker) }
+    LaunchedEffect(item?.state, speaker, bubble) { onProximity(item?.state == Call.STATE_ACTIVE && !speaker && !bubble) }
     // Chiamata finita: la nota va in Note (se scritta) e la schermata si chiude.
     LaunchedEffect(calls.isEmpty()) {
         if (calls.isEmpty() && lastNumber.isNotEmpty() && !ended) {
@@ -184,6 +253,12 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
         else -> if (item.connectedAt > 0) duration((now - item.connectedAt) / 1000) else stringResource(R.string.ph_ongoing)
     }
     val other = calls.firstOrNull { it.call != item?.call && it.state != Call.STATE_DISCONNECTED }
+    // Nella bolla la schermata resta viva (nota e fine chiamata compresi), ma si vede solo il riquadro piccolo.
+    if (bubble) {
+        BubbleView(name, status, item?.state == Call.STATE_ACTIVE, muted)
+        DisposableEffect(Unit) { onDispose { onProximity(false) } }
+        return
+    }
 
     Column(Modifier.fillMaxSize().background(Navy).safeDrawingPadding().imePadding()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -260,8 +335,12 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
                 Control(EuriseIcons.volume(), stringResource(R.string.ph_speaker), speaker, Modifier.weight(1f)) { CallManager.setSpeaker(!speaker) }
                 Control(EuriseIcons.pause(), stringResource(R.string.ph_hold), item.state == Call.STATE_HOLDING, Modifier.weight(1f)) { CallManager.toggleHold(item.call) }
             }
-            Box(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 36.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 36.dp, start = 24.dp, end = 24.dp), contentAlignment = Alignment.Center) {
                 RoundButton(EuriseIcons.hangup(), stringResource(R.string.ph_hangup), Red) { CallManager.hangup(item.call) }
+                // «Bolla»: accanto a Chiudi, dal lato del pollice; la chiamata continua in una finestra piccola.
+                if (canBubble) Box(Modifier.align(Alignment.CenterEnd)) {
+                    Control(EuriseIcons.pip(), stringResource(R.string.ph_bubble), false, Modifier.width(84.dp), onBubble)
+                }
             }
         } else {
             Spacer(Modifier.height(140.dp))
@@ -269,6 +348,26 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit) {
     }
 
     DisposableEffect(Unit) { onDispose { onProximity(false) } }
+}
+
+/**
+ * La chiamata nella bolla: chi è e da quanto si parla (o «In attesa», «Chiamata in corso…»). I tasti Muto e Chiudi li
+ * mostra Android sopra la bolla al tocco, insieme a quello che la riapre a tutto schermo.
+ */
+@Composable
+private fun BubbleView(name: String, status: String, active: Boolean, muted: Boolean) {
+    Column(Modifier.fillMaxSize().background(Navy).padding(10.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(9.dp).clip(CircleShape).background(if (active) Green else Gold))
+            Spacer(Modifier.width(6.dp))
+            Text(status, color = Soft, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            if (muted) {
+                Spacer(Modifier.width(6.dp))
+                Icon(EuriseIcons.micOff(), null, tint = Gold, modifier = Modifier.size(13.dp))
+            }
+        }
+        Text(name, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
 }
 
 private fun permission() = if (BuildConfig.DEBUG) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"

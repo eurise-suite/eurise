@@ -36,6 +36,21 @@ class MatrixTest {
         assertEquals("https://hs/_matrix/client/v1/media/download/x.it/abc", Matrix.mediaUrl("https://hs", list[2].mediaUrl!!, thumbnail = false))
     }
 
+    @Test fun fileCifratiEDidascalie() {
+        val a = JSONArray(
+            """[
+            {"type":"m.room.message","event_id":"${'$'}1","sender":"@anna:x.it","origin_server_ts":10,"content":{"msgtype":"m.file","body":"Esami di marzo","filename":"esami.pdf","file":{"url":"mxc://x.it/cif","v":"v2"}}},
+            {"type":"m.room.message","event_id":"${'$'}2","sender":"@anna:x.it","origin_server_ts":11,"content":{"msgtype":"m.file","body":"esami.pdf","filename":"esami.pdf","file":{"url":"mxc://x.it/ref"},"it.bussola.report":{"note":""}}}
+            ]""",
+        )
+        val list = Matrix.events(a)
+        assertEquals(Event.Kind.File, list[0].kind)
+        assertEquals("esami.pdf", list[0].text)
+        assertEquals("mxc://x.it/cif", list[0].mediaUrl)
+        assertEquals(Event.Kind.Bussola, list[1].kind)
+        assertEquals("mxc://x.it/ref", list[1].mediaUrl)
+    }
+
     @Test fun nomeDellaStanza() {
         val named = mapOf("m.room.name" to JSONObject("""{"name":"Famiglia"}"""))
         assertEquals("Famiglia", Matrix.roomName(named, emptyList(), emptyMap(), "@me:x.it"))

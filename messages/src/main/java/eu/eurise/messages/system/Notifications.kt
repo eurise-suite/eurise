@@ -54,14 +54,14 @@ object Notifications {
         val style = Notification.MessagingStyle(Person.Builder().setName(context.getString(R.string.ms_you)).build())
             .addMessage(text, System.currentTimeMillis(), sender)
         val builder = Notification.Builder(context, if (code != null) CHANNEL_CODES else CHANNEL)
-            .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+            .setSmallIcon(eu.eurise.messages.R.drawable.ic_stat_sms)
             .setStyle(style)
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_MESSAGE)
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(
-                Notification.Builder(context, CHANNEL).setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+                Notification.Builder(context, CHANNEL).setSmallIcon(eu.eurise.messages.R.drawable.ic_stat_sms)
                     .setContentTitle(context.getString(R.string.ms_new_message)).build(),
             )
         if (code != null) {
@@ -83,7 +83,7 @@ object Notifications {
         channels(context)
         val open = PendingIntent.getActivity(context, 0, Intent(context, MessagesActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(context, CHANNEL_FAILED)
-            .setSmallIcon(eu.eurise.core.designsystem.R.drawable.ic_stat_eurise)
+            .setSmallIcon(eu.eurise.messages.R.drawable.ic_stat_sms)
             .setContentTitle(context.getString(R.string.ms_not_sent))
             .setContentText(context.getString(R.string.ms_not_sent_text))
             .setContentIntent(open).setAutoCancel(true).build()

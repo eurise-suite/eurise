@@ -82,4 +82,30 @@
     <string name="bu_info_sent">Aggiornati in %1$d chat</string>
     <string name="bu_notice_title">La mia Bussola</string>
     <string name="bu_notice_studio">Hai nuovi messaggi dei pazienti.</string>
+    <!-- Referti (tavola BusReferto) -->
+    <string name="bu_tag_report">referto</string>
+    <string name="bu_rep_send_short">Invia un referto</string>
+    <string name="bu_rep_title">Invia un referto</string>
+    <string name="bu_rep_sub">PDF, JPG o PNG, al massimo 10 MB. Resta visibile 45 giorni, poi si cancella da solo.</string>
+    <string name="bu_rep_never">Non mandare test genetici o esami HIV: si consegnano di persona allo studio.</string>
+    <string name="bu_rep_consent">Il paziente non ha dato il consenso ai referti online: si attiva nella sua scheda dello Studio.</string>
+    <string name="bu_rep_pick">Scegli il file</string>
+    <string name="bu_rep_note">Due righe per il medico (facoltative)</string>
+    <string name="bu_rep_type">Va bene solo un PDF, una foto JPG o un'immagine PNG.</string>
+    <string name="bu_rep_too_big">Il file è più grande di 10 MB.</string>
+    <string name="bu_rep_plain">Questa chat non è cifrata: il referto non parte.</string>
+    <string name="bu_rep_open">Apri</string>
+    <string name="bu_rep_sending">Invio in corso…</string>
+    <string name="bu_rep_until">Visibile fino al %1$s</string>
+    <string name="bu_rep_gone">Un referto non è più visibile: dopo 45 giorni si cancella da solo.</string>
+    <!-- Promemoria PDF di Millewin (tavola StuMillewin) -->
+    <string name="bu_memo_pick">Dal promemoria PDF</string>
+    <string name="bu_memo_folder">Cartella dei promemoria</string>
+    <string name="bu_memo_folder_change">Cambia cartella</string>
+    <string name="bu_memo_from_folder">Preso dal promemoria nella cartella: controlla e manda.</string>
+    <string name="bu_memo_from_pdf">Preso dal promemoria scelto: controlla e manda.</string>
+    <string name="bu_memo_unreadable">In questo PDF non trovo un codice NRE: scrivilo a mano.</string>
+    <string name="bu_memo_other">Attenzione: il promemoria non sembra di questo paziente (codice fiscale o nome diversi).</string>
+    <string name="bu_memo_drugs">Attenzione: nel promemoria non trovo i farmaci chiesti.</string>
+    <string name="bu_memo_no_cf">Senza il codice fiscale nella scheda, il promemoria si abbina per nome e cognome.</string>
 </resources>

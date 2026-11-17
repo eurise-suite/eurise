@@ -95,6 +95,7 @@ fun BussolaBar(model: ChatModel, actions: ChatActions, roomId: String, role: Cha
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BigAction(EuriseIcons.calendar(2.2f), stringResource(R.string.bu_invite), Modifier.weight(1f)) { sheet = "invite" }
             BigAction(EuriseIcons.refresh(2.2f), stringResource(R.string.bu_update), Modifier.weight(1f)) { sheet = "update" }
+            BigAction(EuriseIcons.document(2.2f), stringResource(R.string.bu_rep_send_short), Modifier.weight(1f)) { sheet = "report" }
         }
     }
     when (sheet) {
@@ -103,6 +104,7 @@ fun BussolaBar(model: ChatModel, actions: ChatActions, roomId: String, role: Cha
         "info" -> InfoSheet(model, actions, roomId) { sheet = null }
         "invite" -> InviteSheet(model, actions, roomId) { sheet = null }
         "update" -> UpdateSheet(model, actions, roomId) { sheet = null }
+        "report" -> ReportSheet(model, actions, roomId, role) { sheet = null }
     }
 }
 
@@ -173,6 +175,11 @@ fun BussolaBubble(model: ChatModel, actions: ChatActions, roomId: String, e: Eve
     val me = model.session?.userId.orEmpty()
     val iAmStudio = studio == me
     val type = c.optString("msgtype")
+    val report = Bussola.readReport(c, e.time)
+    // Dopo 45 giorni un referto non si mostra più (e chi l'ha mandato lo cancella dalla stanza).
+    if (report != null && !e.id.startsWith("local:") && Bussola.reportExpired(e.time, System.currentTimeMillis())) {
+        CenterLine(stringResource(R.string.bu_rep_gone)); return
+    }
     // Orari, terapia e stati: una riga al centro (lo stato si vede già nella richiesta).
     when (type) {
         Bussola.STUDIO -> { CenterLine(stringResource(R.string.bu_line_studio)); return }
@@ -193,13 +200,15 @@ fun BussolaBubble(model: ChatModel, actions: ChatActions, roomId: String, e: Eve
                 Text(if (mine) stringResource(R.string.bu_you) else model.nameOf(e.sender) + if (e.sender == studio) " · " + stringResource(R.string.bu_studio) else "",
                     fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = petrol(), modifier = Modifier.weight(1f, fill = false))
                 Spacer(Modifier.width(6.dp))
-                Tag(stringResource(when (type) {
-                    Bussola.RX_REQUEST -> R.string.bu_tag_renew
-                    Bussola.CHECKUP_INVITE -> R.string.bu_tag_checkup
+                Tag(stringResource(when {
+                    report != null -> R.string.bu_tag_report
+                    type == Bussola.RX_REQUEST -> R.string.bu_tag_renew
+                    type == Bussola.CHECKUP_INVITE -> R.string.bu_tag_checkup
                     else -> R.string.bu_tag_reply
                 }), petrol(), petrol().copy(alpha = 0.15f))
             }
-            when (type) {
+            if (report != null) ReportBody(model, actions, e, report)
+            else when (type) {
                 Bussola.RX_REQUEST -> RequestBody(model, actions, roomId, e, c, items, studio, iAmStudio)
                 Bussola.CHECKUP_INVITE -> InviteBody(model, actions, roomId, c, items, me, iAmStudio)
                 else -> Text(e.text, fontSize = 15.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 4.dp))
@@ -267,7 +276,7 @@ private fun RequestBody(
             Chip(stringResource(R.string.bu_step_ready), selected = true) { nreSheet = true }
         }
     }
-    if (nreSheet) NreSheet(onClose = { nreSheet = false }) { nre ->
+    if (nreSheet) NreSheet(model, actions, roomId, r.drugs, onClose = { nreSheet = false }) { nre ->
         model.sendBussola(roomId, Bussola.status(RxStatus(e.id, RxState.Ready, nre))) { actions.toast(failed) }
     }
 }
@@ -292,6 +301,81 @@ private fun InviteBody(model: ChatModel, actions: ChatActions, roomId: String, c
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Bussola.CHECKUP_CHOICES.forEach { choice ->
             BigButton(choice, strong = false) { model.sendBussola(roomId, Bussola.reply(Bussola.Reply(inv.id, choice))) { actions.toast(failed) } }
+        }
+    }
+}
+
+/** Un referto nella conversazione: nome, misura, le due righe, fino a quando si vede, «Apri». */
+@Composable
+private fun ReportBody(model: ChatModel, actions: ChatActions, e: Event, r: Bussola.Report) {
+    val scheme = MaterialTheme.colorScheme
+    val local = e.id.startsWith("local:")
+    val failed = stringResource(R.string.ch_file_failed)
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(14.dp)).background(petrol().copy(alpha = 0.10f))
+            .clickable(enabled = !local && e.mediaUrl != null, role = Role.Button) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(failed) } }
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(if (r.mime.startsWith("image/")) EuriseIcons.image(2.2f) else EuriseIcons.document(2.2f), null, tint = petrol(), modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(r.name, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+            Text(if (local) stringResource(R.string.bu_rep_sending) else sizeLabel(r.size), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+        }
+        if (!local) Text(stringResource(R.string.bu_rep_open), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = petrol())
+    }
+    if (r.note.isNotBlank()) Text(r.note, fontSize = 14.5.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 6.dp))
+    if (!local) Text(stringResource(R.string.bu_rep_until, day(r.expiresAt)), fontSize = 12.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+}
+
+private fun sizeLabel(bytes: Long) = when {
+    bytes <= 0 -> ""
+    bytes < 1024 * 1024 -> "%d KB".format(maxOf(1, bytes / 1024))
+    else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+}
+
+/**
+ * Invia un referto (tavola BusReferto): PDF, JPG o PNG fino a 10 MB, due righe facoltative per il medico, visibile 45
+ * giorni. Test genetici ed esami HIV no: si consegnano di persona. Dallo studio serve il consenso ai referti online
+ * nella scheda del paziente.
+ */
+@Composable
+internal fun ReportSheet(model: ChatModel, actions: ChatActions, roomId: String, role: ChatModel.BussolaRole, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    var file by remember { mutableStateOf<ChatModel.Picked?>(null) }
+    var note by remember { mutableStateOf("") }
+    val problem = file?.let { f -> if (f.size > 0) Bussola.checkReport(f.mime, f.size) else Bussola.checkReport(f.mime, 1) }
+    // Lato studio: il consenso ai referti online del paziente (scheda nello Studio).
+    val studio by StudioRepo.state.collectAsStateWithLifecycle()
+    val peer = model.peerOf(roomId)
+    val patient = studio.patients.firstOrNull { it.matrixId.equals(peer, ignoreCase = true) }
+    val consentMissing = role == ChatModel.BussolaRole.Studio && patient?.has(eu.eurise.core.studio.Consent.OnlineReports) != true
+    Sheet(onClose) {
+        Text(stringResource(R.string.bu_rep_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+        Text(stringResource(R.string.bu_rep_sub), fontSize = 13.5.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(BRASS_BG).padding(12.dp)) {
+            Text(stringResource(R.string.bu_rep_never), fontSize = 13.sp, lineHeight = 18.sp)
+        }
+        if (consentMissing) {
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(BORDEAUX_BG).padding(12.dp)) {
+                Text(stringResource(if (patient == null) R.string.bu_need_patient else R.string.bu_rep_consent), fontSize = 13.sp, lineHeight = 18.sp)
+            }
+        }
+        BigButton(file?.name ?: stringResource(R.string.bu_rep_pick), strong = false) {
+            actions.pickFile(Bussola.REPORT_TYPES.toTypedArray()) { uri -> uri?.let(model::describe)?.let { file = it } }
+        }
+        file?.let { f ->
+            if (problem != null) Text(stringResource(model.reportProblem(problem)), fontSize = 12.5.sp, color = scheme.error)
+            else if (f.size > 0) Text(sizeLabel(f.size), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+        }
+        Field(stringResource(R.string.bu_rep_note), note, KeyboardType.Text) { if (it.length <= Bussola.REPORT_NOTE_MAX) note = it }
+        val ready = file != null && problem == null && !consentMissing
+        Pill(stringResource(R.string.ch_send), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = ready) {
+            val f = file ?: return@Pill
+            if (!ready) return@Pill
+            model.sendFile(roomId, f, note) { actions.toast(actions.text(it)) }
+            onClose()
         }
     }
 }
@@ -424,16 +508,54 @@ private fun NumberRow(label: String, number: String, tint: Color, actions: ChatA
     }
 }
 
-/** Il codice NRE della ricetta fatta in Millewin (lato studio). */
+/**
+ * Il codice NRE della ricetta fatta in Millewin (lato studio, tavola StuMillewin). Si compila da sé: dalla cartella dei
+ * promemoria PDF (quello del paziente con i farmaci chiesti) o da un promemoria scelto a mano; si può sempre scrivere.
+ */
 @Composable
-private fun NreSheet(onClose: () -> Unit, onSend: (String) -> Unit) {
+private fun NreSheet(model: ChatModel, actions: ChatActions, roomId: String, drugs: List<String>, onClose: () -> Unit, onSend: (String) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     var text by remember { mutableStateOf("") }
+    /** Da dove viene il codice: null = scritto a mano. */
+    var source by remember { mutableStateOf<Int?>(null) }
+    var warning by remember { mutableStateOf<Int?>(null) }
+    var folder by remember { mutableStateOf(model.memoFolder) }
+    val studio by StudioRepo.state.collectAsStateWithLifecycle()
+    val peer = model.peerOf(roomId)
+    val patient = studio.patients.firstOrNull { it.matrixId.equals(peer, ignoreCase = true) }
     val nre = Bussola.nre(text)
+    fun take(memo: eu.eurise.core.studio.Millewin.Memo?, from: Int) {
+        if (memo == null) { warning = R.string.bu_memo_unreadable; return }
+        text = Bussola.nreGroups(memo.nre)
+        source = from
+        warning = when {
+            patient == null -> null
+            !eu.eurise.core.studio.Millewin.forPatient(memo, patient.fiscalCode, patient.name) -> R.string.bu_memo_other
+            eu.eurise.core.studio.Millewin.drugsFound(memo, drugs) == 0 -> R.string.bu_memo_drugs
+            else -> null
+        }
+    }
+    // Con la cartella scelta, il promemoria giusto si cerca appena si apre il foglio.
+    androidx.compose.runtime.LaunchedEffect(folder, patient?.id) {
+        if (folder == null || patient == null) return@LaunchedEffect
+        model.findMemo(patient.fiscalCode, patient.name, drugs) { memo -> if (memo != null && text.isBlank()) take(memo, R.string.bu_memo_from_folder) }
+    }
     Sheet(onClose) {
         Text(stringResource(R.string.bu_nre_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
-        Text(stringResource(R.string.bu_nre_sub), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Field(stringResource(R.string.bu_nre), text, KeyboardType.Ascii) { text = it }
-        if (text.isNotBlank() && nre == null) Text(stringResource(R.string.bu_nre_bad), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.error)
+        Text(stringResource(R.string.bu_nre_sub), fontSize = 13.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant)
+        Field(stringResource(R.string.bu_nre), text, KeyboardType.Ascii) { text = it; source = null; warning = null }
+        if (text.isNotBlank() && nre == null) Text(stringResource(R.string.bu_nre_bad), fontSize = 12.5.sp, color = scheme.error)
+        source?.let { Text(stringResource(it), fontSize = 12.5.sp, color = SAGE, fontWeight = FontWeight.Bold) }
+        warning?.let { Text(stringResource(it), fontSize = 12.5.sp, lineHeight = 17.sp, color = BORDEAUX) }
+        if (patient != null && patient.fiscalCode == null) Text(stringResource(R.string.bu_memo_no_cf), fontSize = 12.sp, lineHeight = 16.sp, color = scheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip(stringResource(R.string.bu_memo_pick), selected = false) {
+                actions.pickFile(arrayOf("application/pdf")) { uri -> uri?.let { model.readMemo(it) { m -> take(m, R.string.bu_memo_from_pdf) } } }
+            }
+            Chip(stringResource(if (folder == null) R.string.bu_memo_folder else R.string.bu_memo_folder_change), selected = false) {
+                actions.pickFolder { uri -> if (uri != null) { model.memoFolder = uri; folder = uri } }
+            }
+        }
         Pill(stringResource(R.string.bu_nre_send), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = nre != null) {
             if (nre == null) return@Pill
             onSend(nre)

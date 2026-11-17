@@ -35,6 +35,8 @@ data class Patient(
     val consents: List<ConsentEvent> = emptyList(),
     val therapies: List<Therapy> = emptyList(),
     val createdAt: Long = 0L,
+    /** Il codice fiscale: abbina i promemoria delle ricette di Millewin al paziente (vedi [Millewin]). */
+    val fiscalCode: String? = null,
 ) {
     /** Vale l'ultimo evento: un consenso revocato è revocato da subito. */
     fun has(c: Consent): Boolean = consents.lastOrNull { it.consent == c }?.granted == true

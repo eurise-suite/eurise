@@ -16,6 +16,28 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eu.eurise.phone.call.CallActivity
+import eu.eurise.phone.call.CallManager
 import eu.eurise.core.contacts.Reach
 import eu.eurise.core.designsystem.theme.EuriseTheme
 
@@ -41,17 +63,25 @@ class PhoneActivity : ComponentActivity() {
         setContent {
             EuriseTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    PhoneApp(
-                        dialNumber = dialNumber.value,
-                        onDialConsumed = { dialNumber.value = null },
-                        start = start.value,
-                        onStartConsumed = { start.value = null },
-                        refresh = refresh.value,
-                        isDefault = isDefaultDialer(),
-                        onBecomeDefault = ::requestRole,
-                        onAskPermissions = ::askPermissions,
-                        onCall = ::call,
-                    )
+                    Column(Modifier.fillMaxSize()) {
+                        // Con una chiamata in corso: la fascia verde in cima riporta alla chiamata.
+                        val calls by CallManager.calls.collectAsStateWithLifecycle()
+                        val talking = CallManager.primary(calls) != null
+                        if (talking) BackToCall(::openCall)
+                        Box(Modifier.weight(1f).then(if (talking) Modifier.consumeWindowInsets(WindowInsets.statusBars) else Modifier)) {
+                            PhoneApp(
+                                dialNumber = dialNumber.value,
+                                onDialConsumed = { dialNumber.value = null },
+                                start = start.value,
+                                onStartConsumed = { start.value = null },
+                                refresh = refresh.value,
+                                isDefault = isDefaultDialer(),
+                                onBecomeDefault = ::requestRole,
+                                onAskPermissions = ::askPermissions,
+                                onCall = ::call,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -67,8 +97,13 @@ class PhoneActivity : ComponentActivity() {
         refresh.value++
     }
 
+    private fun openCall() {
+        runCatching { startActivity(Intent(this, CallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+    }
+
     private fun read(intent: Intent?) {
         intent ?: return
+
         if (intent.action == Intent.ACTION_INSERT) {
             start.value = StartAt.Insert(
                 eu.eurise.core.contacts.ContactDraft(
@@ -122,5 +157,16 @@ class PhoneActivity : ComponentActivity() {
         } else {
             Reach.open(this, Reach.dial(number))
         }
+    }
+}
+
+/** La fascia «Torna alla chiamata», in cima alle schermate del Telefono mentre si parla. */
+@Composable
+private fun BackToCall(onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().background(Color(0xFF2F7D4F)).clickable(role = Role.Button, onClick = onClick)
+            .statusBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.ph_back_to_call), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
     }
 }

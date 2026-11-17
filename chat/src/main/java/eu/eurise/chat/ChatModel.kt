@@ -116,6 +116,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     fun start() {
         if (session == null || loop?.isActive == true) return
         active = true
+        cleanCache()
+        client?.let { c -> scope.launch(Dispatchers.IO) { BussolaReports.redactDue(context, c) } }
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
@@ -174,15 +176,12 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
      */
     private fun studio(roomId: String, events: List<Event>) {
         val me = session?.userId ?: return
-        val list = events.filter { it.sender != me && !it.id.startsWith("local:") && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice ||
-            // Da La mia Bussola: le richieste di rinnovo e le risposte agli inviti entrano in coda (con il testo di riserva).
-            it.kind == Event.Kind.Bussola && it.data?.let { d -> runCatching { JSONObject(d).optString("msgtype") }.getOrNull() }
-                .let { t -> t == eu.eurise.core.studio.Bussola.RX_REQUEST || t == eu.eurise.core.studio.Bussola.CHECKUP_REPLY }) }
+        val list = events.filter { it.sender != me && !it.id.startsWith("local:") }.mapNotNull { e -> studioText(e)?.let { e to it } }
         if (list.isEmpty()) return
         scope.launch(Dispatchers.IO) {
             if (!StudioRepo.current(context).enabled) return@launch
-            list.forEach { e ->
-                val out = StudioRepo.receive(context, eu.eurise.core.studio.Channel.Chat, e.sender, e.text, e.time, "$roomId|${e.id}")
+            list.forEach { (e, text) ->
+                val out = StudioRepo.receive(context, eu.eurise.core.studio.Channel.Chat, e.sender, text, e.time, "$roomId|${e.id}")
                 if (out is eu.eurise.core.studio.Queue.Outcome.Verified) {
                     withContext(Dispatchers.Main) { send(roomId, context.getString(R.string.st_verified_reply)) { } }
                 }
@@ -228,6 +227,60 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         scope.launch(Dispatchers.IO) { BussolaRooms.add(context, roomId) }
         sendBussola(roomId, eu.eurise.core.studio.Bussola.studio(info), failed)
         sendBussola(roomId, eu.eurise.core.studio.Bussola.therapy(therapy), failed)
+    }
+
+    // --- Promemoria di Millewin (tavola StuMillewin) ---
+
+    private val millewinPrefs get() = context.getSharedPreferences("studio_millewin", Context.MODE_PRIVATE)
+
+    /** La cartella dove Millewin (o la sincronizzazione del cloud dello studio) lascia i promemoria PDF. */
+    var memoFolder: android.net.Uri?
+        get() = millewinPrefs.getString("folder", null)?.let(android.net.Uri::parse)
+        set(v) { millewinPrefs.edit().putString("folder", v?.toString()).apply() }
+
+    private fun memoOf(uri: android.net.Uri): eu.eurise.core.studio.Millewin.Memo? = runCatching {
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        eu.eurise.core.studio.Millewin.parse(eu.eurise.core.pdf.PdfText.extract(bytes, maxPages = 4))
+    }.getOrNull()
+
+    /** Un promemoria scelto a mano (PDF): codice NRE e codici fiscali, o null se non si legge. */
+    fun readMemo(uri: android.net.Uri, done: (eu.eurise.core.studio.Millewin.Memo?) -> Unit) {
+        scope.launch { done(withContext(Dispatchers.IO) { memoOf(uri) }) }
+    }
+
+    /**
+     * Cerca nella cartella dei promemoria quello del paziente per questa richiesta: solo i PDF degli ultimi 14 giorni
+     * (al massimo 40, i più recenti), abbinati per codice fiscale (o nome) e farmaci. Tutto sul telefono.
+     */
+    fun findMemo(fiscalCode: String?, name: String, drugs: List<String>, done: (eu.eurise.core.studio.Millewin.Memo?) -> Unit) {
+        val tree = memoFolder ?: return done(null)
+        scope.launch {
+            done(withContext(Dispatchers.IO) {
+                runCatching {
+                    val cr = context.contentResolver
+                    val children = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree))
+                    val since = System.currentTimeMillis() - 14 * 86_400_000L
+                    val found = mutableListOf<Pair<Long, String>>()
+                    cr.query(children, arrayOf(
+                        android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                    ), null, null, null)?.use { c ->
+                        while (c.moveToNext()) {
+                            val mime = c.getString(1).orEmpty()
+                            val modified = if (c.isNull(2)) 0L else c.getLong(2)
+                            val size = if (c.isNull(3)) 0L else c.getLong(3)
+                            if (mime == "application/pdf" && modified >= since && size in 1..5_000_000) found += modified to c.getString(0)
+                        }
+                    }
+                    val memos = found.sortedByDescending { it.first }.take(40).mapNotNull { (_, id) ->
+                        memoOf(android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, id))
+                    }
+                    eu.eurise.core.studio.Millewin.best(memos, fiscalCode, name, drugs)
+                }.getOrNull()
+            })
+        }
     }
 
     /** La chat a due con [userId], se c'è già. */
@@ -495,17 +548,143 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    /** Scarica un'immagine o un file della chat nella cache, per aprirlo. */
+    /**
+     * Scarica un'immagine o un file della chat nella cache, per aprirlo. Quelli cifrati si aprono in memoria (impronta
+     * controllata, vedi [Attachments]) e solo dopo vanno su disco; la cache si svuota da sola dopo un giorno.
+     */
     fun media(e: Event, done: (File?) -> Unit) {
         val s = session ?: return
         val url = e.mediaUrl?.let { Matrix.mediaUrl(s.homeserver, it, thumbnail = false) } ?: return done(null)
+        val content = e.data?.let { runCatching { JSONObject(it) }.getOrNull() }
+        if (content != null && eu.eurise.core.studio.Bussola.isReport(content) &&
+            eu.eurise.core.studio.Bussola.reportExpired(e.time, System.currentTimeMillis())) return done(null)
+        val info = content?.optJSONObject("file")
+        val name = (content?.optString("filename")?.ifEmpty { null } ?: e.text).ifBlank { "file" }
+            .replace(Regex("[/\\\\:*?\"<>|\\n]"), "-").take(120)
         scope.launch {
             val f = withContext(Dispatchers.IO) {
                 val dir = File(context.cacheDir, "chat").apply { mkdirs() }
-                runCatching { ChatClient(s).download(url, File(dir, e.text.ifBlank { "file" }.replace('/', '-'))) }.getOrNull()
+                val out = File(dir, name)
+                runCatching {
+                    val c = ChatClient(s)
+                    if (info != null) out.also { it.writeBytes(Attachments.decrypt(c.fetch(url), info)) } else c.download(url, out)
+                }.getOrNull()
             }
             done(f)
         }
+    }
+
+    /** I file aperti restano in cache al massimo un giorno (referti compresi): poi si tolgono. */
+    private fun cleanCache() {
+        scope.launch(Dispatchers.IO) {
+            val limit = System.currentTimeMillis() - 86_400_000L
+            File(context.cacheDir, "chat").listFiles()?.forEach { if (it.lastModified() < limit) it.delete() }
+        }
+    }
+
+    // --- Allegati (tavola ChatAllega) e referti (tavola BusReferto) ---
+
+    /** Un file scelto dal telefono. */
+    data class Picked(val uri: android.net.Uri, val name: String, val mime: String, val size: Long)
+
+    /** Nome, tipo e misura di un file scelto (dal selettore di sistema o da Eurise File). */
+    fun describe(uri: android.net.Uri): Picked? = runCatching {
+        val cr = context.contentResolver
+        var name = uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+        var size = -1L
+        cr.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE), null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                c.getString(0)?.let { name = it }
+                if (!c.isNull(1)) size = c.getLong(1)
+            }
+        }
+        val mime = cr.getType(uri) ?: android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase())
+            ?: "application/octet-stream"
+        Picked(uri, name, mime, size)
+    }.getOrNull()
+
+    /** Perché un invio non è riuscito (testo da mostrare). */
+    class SendProblem(val text: Int) : Exception()
+
+    /**
+     * Manda un file: cifrato sul telefono se la stanza è cifrata (chiave nuova per ogni file, dentro il messaggio
+     * cifrato), poi caricato e annunciato come `m.image` o `m.file`, che ogni app Matrix sa aprire. Con [reportNote] è un
+     * referto di La mia Bussola: PDF, JPG o PNG fino a 10 MB, solo in una chat cifrata, cancellato dopo 45 giorni.
+     */
+    fun sendFile(roomId: String, picked: Picked, reportNote: String?, failed: (Int) -> Unit) {
+        val c = client ?: return
+        val me = session?.userId.orEmpty()
+        val report = reportNote != null
+        val note = reportNote?.let(eu.eurise.core.studio.Bussola::reportNote).orEmpty()
+        val image = picked.mime.startsWith("image/")
+        val echoText = if (report) note.ifBlank { picked.name } else picked.name
+        val local = Event("local:" + System.nanoTime(), me, echoText, System.currentTimeMillis(),
+            if (report) Event.Kind.Bussola else if (image) Event.Kind.Image else Event.Kind.File,
+            data = if (report) JSONObject().put("msgtype", "m.file").put("body", echoText).put("filename", picked.name)
+                .put(eu.eurise.core.studio.Bussola.REPORT, JSONObject().put("note", note)).toString() else null)
+        timeline(roomId).add(local)
+        val encrypted = data[roomId]?.encrypted == true
+        scope.launch {
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (report && !encrypted) throw SendProblem(R.string.bu_rep_plain)
+                    val max = if (report) eu.eurise.core.studio.Bussola.REPORT_MAX_BYTES else MAX_FILE
+                    val bytes = context.contentResolver.openInputStream(picked.uri)?.use { input ->
+                        val buf = java.io.ByteArrayOutputStream()
+                        val chunk = ByteArray(64 * 1024)
+                        while (true) {
+                            val n = input.read(chunk)
+                            if (n < 0) break
+                            buf.write(chunk, 0, n)
+                            if (buf.size() > max) throw SendProblem(if (report) R.string.bu_rep_too_big else R.string.ch_file_too_big)
+                        }
+                        buf.toByteArray()
+                    } ?: throw SendProblem(R.string.ch_file_unreadable)
+                    if (report) eu.eurise.core.studio.Bussola.checkReport(picked.mime, bytes.size.toLong())?.let { throw SendProblem(reportProblem(it)) }
+                    // Larghezza e altezza delle foto (Element le usa per l'impaginazione); solo l'intestazione, niente decodifica.
+                    val dims = if (image) android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        .also { android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, it) }.let { it.outWidth to it.outHeight } else null
+                    val file: JSONObject?
+                    val url: String?
+                    if (encrypted) {
+                        val sealed = Attachments.encrypt(bytes)
+                        file = sealed.info.put("url", c.upload(sealed.bytes, "application/octet-stream", null))
+                        url = null
+                    } else {
+                        file = null
+                        url = c.upload(bytes, picked.mime, picked.name)
+                    }
+                    val content = if (report) {
+                        eu.eurise.core.studio.Bussola.report(
+                            eu.eurise.core.studio.Bussola.Report(picked.name, picked.mime, bytes.size.toLong(), note, System.currentTimeMillis()),
+                            file!!, dims?.first, dims?.second)
+                    } else {
+                        val info = JSONObject().put("mimetype", picked.mime).put("size", bytes.size)
+                        if (dims != null && dims.first > 0 && dims.second > 0) info.put("w", dims.first).put("h", dims.second)
+                        JSONObject().put("msgtype", if (image) "m.image" else "m.file").put("body", picked.name)
+                            .put("filename", picked.name).put("info", info)
+                            .apply { if (file != null) put("file", file) else put("url", url) }
+                    }
+                    val eventId = if (encrypted) {
+                        val cr = cryptoFor(c.session) ?: error("crypto")
+                        c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), "m.room.message", content))
+                    } else c.sendMessage(roomId, content)
+                    if (report && eventId.isNotEmpty()) {
+                        BussolaReports.add(context, roomId, eventId, System.currentTimeMillis() + eu.eurise.core.studio.Bussola.REPORT_DAYS * 86_400_000L)
+                    }
+                }
+            }
+            r.onFailure { e ->
+                timeline(roomId).remove(local)
+                failed((e as? SendProblem)?.text ?: R.string.ch_send_failed)
+            }
+        }
+    }
+
+    fun reportProblem(p: eu.eurise.core.studio.Bussola.ReportProblem) = when (p) {
+        eu.eurise.core.studio.Bussola.ReportProblem.Type -> R.string.bu_rep_type
+        eu.eurise.core.studio.Bussola.ReportProblem.TooBig -> R.string.bu_rep_too_big
+        eu.eurise.core.studio.Bussola.ReportProblem.Empty -> R.string.ch_file_unreadable
     }
 
     // --- Accesso (tavola ChatAccesso: «Collega», accedi nel browser, approva) ---
@@ -762,6 +941,23 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     companion object {
+        /** Gli allegati qualsiasi (non referti): al massimo 25 MB, letti in memoria per cifrarli. */
+        const val MAX_FILE = 25L * 1024 * 1024
+
+        /**
+         * Il testo con cui un messaggio entra nella coda dello Studio, o null se non ci entra: testi, avvisi, e da La mia
+         * Bussola le richieste di rinnovo, le risposte agli inviti e i referti (con il nome del file e le due righe).
+         */
+        fun studioText(e: Event): String? {
+            if (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice) return e.text
+            if (e.kind != Event.Kind.Bussola) return null
+            val c = e.data?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return null
+            eu.eurise.core.studio.Bussola.readReport(c, e.time)?.let { r ->
+                return "Referto: " + r.name + if (r.note.isNotBlank()) " — " + r.note else ""
+            }
+            return e.text.takeIf { c.optString("msgtype").let { t -> t == eu.eurise.core.studio.Bussola.RX_REQUEST || t == eu.eurise.core.studio.Bussola.CHECKUP_REPLY } }
+        }
+
         const val REDIRECT = "eurisechat://login"
         /** Pagine di storia lette al massimo per i conti delle spese (30 messaggi l'una). */
         const val MAX_PAGES = 200

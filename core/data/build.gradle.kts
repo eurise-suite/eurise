@@ -26,6 +26,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     api(libs.kotlinx.coroutines.android)
     implementation(project(":core:suite"))
+    // Il lettore dei PDF (spostato in un modulo piccolo il 17 novembre: lo usa anche la Chat).
+    api(project(":core:pdf"))
 
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è solo uno stub).

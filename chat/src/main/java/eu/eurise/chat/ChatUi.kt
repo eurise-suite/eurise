@@ -86,6 +86,10 @@ interface ChatActions {
     fun printKey(key: String, userId: String)
     /** Apre un'altra app (Email, Messaggi) con [intent]; se non c'è, un avviso. */
     fun launch(intent: android.content.Intent)
+    /** Il selettore di file di sistema (anche Eurise File) per i tipi [mimes]; null se si chiude senza scegliere. */
+    fun pickFile(mimes: Array<String>, done: (android.net.Uri?) -> Unit)
+    /** Una cartella da leggere anche dopo (i promemoria di Millewin): il permesso resta. */
+    fun pickFolder(done: (android.net.Uri?) -> Unit)
 }
 
 /** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */
@@ -351,6 +355,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var draft by remember(roomId) { mutableStateOf("") }
     val failed = stringResource(R.string.ch_send_failed)
     val fileFailed = stringResource(R.string.ch_file_failed)
+    val attachLabel = stringResource(R.string.ch_attach)
     LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(0); model.open(roomId) }
     LaunchedEffect(roomId) { model.checkPeer(roomId) }
     val peer = model.peerOf(roomId)
@@ -413,10 +418,25 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 }
             }
             if (bussola == ChatModel.BussolaRole.Patient) UrgentHint()
+            // La graffetta (tavola ChatAllega): un file qualsiasi, cifrato se la chat lo è; nelle chat di La mia Bussola
+            // apre «Invia un referto», con le sue regole (tavola BusReferto).
+            var reportSheet by remember(roomId) { mutableStateOf(false) }
+            if (reportSheet && bussola != null) ReportSheet(model, actions, roomId, bussola) { reportSheet = false }
             Row(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
+                Box(
+                    Modifier.size(46.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button) {
+                        if (bussola != null) { reportSheet = true; return@clickable }
+                        actions.pickFile(arrayOf("*/*")) { uri ->
+                            val p = uri?.let(model::describe) ?: return@pickFile
+                            model.sendFile(roomId, p, null) { actions.toast(actions.text(it)) }
+                        }
+                    }.semantics { contentDescription = attachLabel },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(EuriseIcons.attach(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(19.dp)) }
+                Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
                     if (draft.isEmpty()) Text(stringResource(R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                     BasicTextField(value = draft, onValueChange = { draft = it }, maxLines = 6,

@@ -96,4 +96,7 @@
     <string name="st_verify_done">Fatto: il codice è arrivato da %1$s.</string>
     <string name="st_close">Chiudi</string>
     <string name="st_verified_reply">Fatto: questa chat è collegata allo studio. Da qui può chiedere ricette, appuntamenti e referti. Per un\'urgenza chiami il 118: i messaggi non sono letti in tempo reale.</string>
+    <!-- Codice fiscale e promemoria di Millewin (tavola StuMillewin) -->
+    <string name="st_cf">Codice fiscale (per i promemoria di Millewin)</string>
+    <string name="st_err_cf">Il codice fiscale non torna: controlla le lettere e le cifre.</string>
 </resources>
