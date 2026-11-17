@@ -137,6 +137,12 @@ import eu.eurise.gallery.logic.HealSpot
 import eu.eurise.gallery.logic.Retouch
 import eu.eurise.gallery.logic.SelectivePoint
 import eu.eurise.gallery.logic.summary
+import eu.eurise.gallery.data.detectFaces
+import eu.eurise.gallery.logic.FaceSpot
+import eu.eurise.gallery.logic.MaskStroke
+import eu.eurise.gallery.logic.StepMask
+import eu.eurise.gallery.logic.blendMasked
+import eu.eurise.gallery.logic.maskGrid
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -242,19 +248,31 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     val pixelPart = adjust.copy(light = 0f, contrast = 0f, saturation = 0f, warmth = 0f, tint = 0f, vignette = 0f)
     // I ritocchi (Correttivo, Selettivo, Pennello) vengono prima delle regolazioni, come nella copia salvata.
     val retouch = state.retouch
-    val toned by produceState<Bitmap?>(null, shown, pixelPart, retouch) {
+    // Con il pennello per passo la matrice non può restare sulla GPU: tutto lo sviluppo si fa sulla copia e si mescola.
+    val toneMask = state.toneMask
+    val masked = !toneMask.isEmpty && !adjust.isNeutral
+    val toned by produceState<Bitmap?>(null, shown, if (masked) adjust else pixelPart, retouch, toneMask) {
         val base = shown ?: return@produceState
-        if (!pixelPart.needsPixels && retouch.isEmpty) { value = null; return@produceState }
+        if (!masked && !pixelPart.needsPixels && retouch.isEmpty) { value = null; return@produceState }
         delay(70)
         value = withContext(Dispatchers.Default) {
             val start = if (retouch.isEmpty) base else retouchBitmap(base.copy(Bitmap.Config.ARGB_8888, true), retouch)
-            if (!pixelPart.needsPixels) return@withContext start
+            if (!masked && !pixelPart.needsPixels) return@withContext start
             val w = start.width; val h = start.height
             val px = IntArray(w * h).also { start.getPixels(it, 0, w, 0, 0, w, h) }
-            develop(px, w, h, pixelPart)
+            if (masked) {
+                val before = px.copyOf()
+                develop(px, w, h, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust))
+                blendMasked(px, before, w, h, 0, w, h, maskGrid(toneMask, w / h.toFloat(), 384))
+            } else develop(px, w, h, pixelPart)
             Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
         }
     }
+    var maskEditing by remember { mutableStateOf(false) }
+    var maskAmount by remember { mutableFloatStateOf(1f) }
+    var maskSize by remember { mutableFloatStateOf(0.07f) }
+    var selFace by remember { mutableIntStateOf(-1) }
+    var facesChecked by remember(shown) { mutableStateOf(false) }
     var retouchSection by remember { mutableStateOf(RetouchSection.Selective) }
     var selPoint by remember { mutableStateOf<Long?>(null) }
     var brushKind by remember { mutableStateOf(BrushKind.Lighten) }
@@ -272,6 +290,21 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         return ((r / 25) shl 16) or ((g / 25) shl 8) or (bl / 25)
     }
     fun setRetouch(next: Retouch) { state = state.copy(retouch = next) }
+    // Ritratto: i volti si cercano una volta, quando si apre la sezione; se non ce ne sono si toccano a mano.
+    LaunchedEffect(tool, retouchSection, shown) {
+        val b = shown ?: return@LaunchedEffect
+        if (tool != Tool.Retouch || retouchSection != RetouchSection.Portrait || facesChecked || state.retouch.portrait.faces.isNotEmpty()) return@LaunchedEffect
+        val found = withContext(Dispatchers.Default) { detectFaces(b) }
+        facesChecked = true
+        if (found.isNotEmpty()) setRetouch(state.retouch.copy(portrait = state.retouch.portrait.copy(faces = found)))
+    }
+    val maskOverlay = remember(toneMask, shown, maskEditing) {
+        val b = shown
+        if (!maskEditing || b == null) null else {
+            val g = maskGrid(toneMask, b.width / b.height.toFloat(), 256)
+            Bitmap.createBitmap(IntArray(g.w * g.h) { android.graphics.Color.argb((g.v[it] * 120).roundToInt(), 232, 80, 91) }, g.w, g.h, Bitmap.Config.ARGB_8888)
+        }
+    }
     // Espandi: i bordi aggiunti si vedono attorno alla foto, calcolati su una copia piccola.
     val showExpand = state.expand.amount > 0f && !(tool == Tool.Crop && cropSection != CropSection.Expand)
     val expandBg by produceState<Bitmap?>(null, toned, shown, state.expand, showExpand) {
@@ -400,6 +433,11 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                     state.retouch.points.minByOrNull { (fromPhoto(it.x, it.y) - p).getDistance() }
                         ?.takeIf { (fromPhoto(it.x, it.y) - p).getDistance() < touch * 1.4f }?.id
                 }
+                val nearestFace: (Offset) -> Int = { p ->
+                    val fs = state.retouch.portrait.faces
+                    fs.indices.minByOrNull { (fromPhoto(fs[it].x, fs[it].y) - p).getDistance() }
+                        ?.takeIf { (fromPhoto(fs[it].x, fs[it].y) - p).getDistance() < maxOf(touch * 1.6f, fs[it].eyes * shortPx * 1.2f) } ?: -1
+                }
                 if (margin > 0 && !original) {
                     val mw = (bitmap.width + 2 * margin) * fit
                     val mh = (bitmap.height + 2 * margin) * fit
@@ -422,7 +460,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 ) {
                     Image(
                         image, null, contentScale = ContentScale.FillBounds,
-                        colorFilter = if (original || adjust.matrixNeutral) null else ColorFilter.colorMatrix(ColorMatrix(adjustMatrix(adjust))),
+                        colorFilter = if (original || adjust.matrixNeutral || (masked && toned != null)) null else ColorFilter.colorMatrix(ColorMatrix(adjustMatrix(adjust))),
                         modifier = Modifier.fillMaxSize().graphicsLayer {
                             rotationZ = state.straighten
                             scaleX = cover
@@ -438,8 +476,18 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 }
                 Canvas(
                     Modifier.fillMaxSize()
-                        .pointerInput(tool, w, h, retouchSection, healSize, state.straighten) {
-                            if (tool == Tool.Retouch && retouchSection == RetouchSection.Selective) detectTapGestures { p ->
+                        .pointerInput(tool, w, h, retouchSection, healSize, state.straighten, maskEditing) {
+                            if (maskEditing) Unit
+                            else if (tool == Tool.Retouch && retouchSection == RetouchSection.Portrait) detectTapGestures { p ->
+                                val near = nearestFace(p)
+                                if (near >= 0) { selFace = near; return@detectTapGestures }
+                                val q = toPhoto(p)
+                                if (q.x !in 0f..1f || q.y !in 0f..1f) return@detectTapGestures
+                                val pr = state.retouch.portrait
+                                val e = pr.faces.lastOrNull()?.eyes ?: 0.12f
+                                commit(state.copy(retouch = state.retouch.copy(portrait = pr.copy(faces = pr.faces + FaceSpot(q.x, q.y, e)))))
+                                selFace = pr.faces.size
+                            } else if (tool == Tool.Retouch && retouchSection == RetouchSection.Selective) detectTapGestures { p ->
                                 val near = nearestPoint(p)
                                 if (near != null) { selPoint = near; return@detectTapGestures }
                                 val q = toPhoto(p)
@@ -456,7 +504,25 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                 onDoubleTap = { p -> nearestText(p)?.let { id -> writing = state.texts.first { it.id == id } } },
                             )
                         }
-                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection, retouchSection, brushKind, brushSize, brushStrength, state.straighten) {
+                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection, retouchSection, brushKind, brushSize, brushStrength, state.straighten, maskEditing, maskAmount, maskSize) {
+                            if (maskEditing) {
+                                // Pennello per passo: si dipinge dove valgono Regola, Curve e Filtro.
+                                detectDragGestures(
+                                    onDragStart = { p ->
+                                        remember_()
+                                        val q = toPhoto(p)
+                                        state = state.copy(toneMask = state.toneMask.copy(strokes = state.toneMask.strokes + MaskStroke(maskSize, maskAmount, listOf(q.x, q.y))))
+                                    },
+                                    onDrag = { change, _ ->
+                                        change.consume()
+                                        val q = toPhoto(change.position)
+                                        val m = state.toneMask
+                                        val last = m.strokes.lastOrNull() ?: return@detectDragGestures
+                                        state = state.copy(toneMask = m.copy(strokes = m.strokes.dropLast(1) + last.copy(points = last.points + q.x + q.y)))
+                                    },
+                                )
+                                return@pointerInput
+                            }
                             when (tool) {
                                 Tool.Retouch -> when (retouchSection) {
                                     RetouchSection.Selective -> {
@@ -494,6 +560,22 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                         },
                                     )
                                     RetouchSection.Heal -> Unit
+                                    RetouchSection.Portrait -> {
+                                        var moving = -1
+                                        detectDragGestures(
+                                            onDragStart = { p -> moving = nearestFace(p); if (moving >= 0) { selFace = moving; remember_() } },
+                                            onDrag = { change, _ ->
+                                                if (moving < 0) return@detectDragGestures
+                                                change.consume()
+                                                val q = toPhoto(change.position)
+                                                val pr = state.retouch.portrait
+                                                setRetouch(state.retouch.copy(portrait = pr.copy(faces = pr.faces.mapIndexed { i, f ->
+                                                    if (i == moving) f.copy(x = q.x.coerceIn(0f, 1f), y = q.y.coerceIn(0f, 1f)) else f
+                                                })))
+                                            },
+                                            onDragEnd = { moving = -1 },
+                                        )
+                                    }
                                 }
                                 Tool.Crop -> if (cropSection == CropSection.Perspective) {
                                     // Prospettiva libera: si trascinano i quattro angoli sulla foto non ancora raddrizzata.
@@ -702,6 +784,28 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                             RetouchSection.Heal -> r.spots.forEach { sp ->
                                 drawCircle(Color.White.copy(alpha = 0.7f), sp.r * shortPx, fromPhoto(sp.x, sp.y), style = Stroke(1.dp.toPx()))
                             }
+                            RetouchSection.Portrait -> r.portrait.faces.forEachIndexed { i, f ->
+                                val e = f.eyes * shortPx
+                                val c = fromPhoto(f.x, f.y)
+                                drawIntoCanvas { cv ->
+                                    val n = cv.nativeCanvas
+                                    n.save(); n.rotate(state.straighten, c.x, c.y)
+                                    n.drawOval(c.x - 1.25f * e, c.y - 1.35f * e, c.x + 1.25f * e, c.y + 2.05f * e, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                                        style = android.graphics.Paint.Style.STROKE; strokeWidth = (if (i == selFace) 2.5f else 1.5f) * 1.dp.toPx()
+                                        color = (if (i == selFace) Accent else Color.White.copy(alpha = 0.75f)).toArgb()
+                                    })
+                                    n.restore()
+                                }
+                            }
+                        }
+                    }
+                    if (maskEditing && !original) maskOverlay?.let { mb ->
+                        drawIntoCanvas { cv ->
+                            val n = cv.nativeCanvas
+                            n.save()
+                            n.translate(left + w / 2, top + h / 2); n.rotate(state.straighten); n.scale(cover, cover)
+                            n.drawBitmap(mb, null, android.graphics.RectF(-w / 2, -h / 2, w / 2, h / 2), android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+                            n.restore()
                         }
                     }
                     if (tool == Tool.Write) state.texts.firstOrNull { it.id == selected }?.let { t ->
@@ -715,6 +819,20 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         }
 
         Column(Modifier.fillMaxWidth().heightIn(min = 150.dp).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
+            if (maskEditing) {
+                val m = state.toneMask
+                Hint(stringResource(R.string.editor_mask_tip))
+                ChipRow {
+                    listOf(1f to "100 %", 0.75f to "75 %", 0.5f to "50 %", 0.25f to "25 %").forEach { (v, l) -> Chip(l, maskAmount == v) { maskAmount = v } }
+                    Chip(stringResource(R.string.editor_brush_erase), maskAmount == 0f) { maskAmount = 0f }
+                }
+                ZeroSlider(stringResource(R.string.editor_brush_size), (maskSize - 0.02f) / 0.16f, {}, from = 0f) { maskSize = 0.02f + it * 0.16f }
+                ChipRow {
+                    Chip(stringResource(R.string.editor_mask_invert), m.inverted) { commit(state.copy(toneMask = m.copy(inverted = !m.inverted))) }
+                    if (!m.isEmpty) Chip(stringResource(R.string.editor_mask_clear), false) { commit(state.copy(toneMask = StepMask())) }
+                    Chip(stringResource(R.string.editor_mask_done), true, strong = true) { maskEditing = false }
+                }
+            } else
             when (tool) {
                 Tool.Crop -> {
                     ChipRow {
@@ -848,6 +966,23 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                     if (r.strokes.isNotEmpty()) Chip(stringResource(R.string.editor_reset), false) { commit(state.copy(retouch = r.copy(strokes = emptyList()))) }
                                 }
                             }
+                            RetouchSection.Portrait -> {
+                                val pr = r.portrait
+                                if (pr.faces.isEmpty()) Hint(stringResource(if (facesChecked) R.string.editor_portrait_none else R.string.editor_portrait_looking)) else {
+                                    fun setPr(next: eu.eurise.gallery.logic.Portrait) = setRetouch(r.copy(portrait = next))
+                                    ZeroSlider(stringResource(R.string.editor_portrait_spotlight), pr.spotlight, ::remember_, from = 0f) { setPr(pr.copy(spotlight = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_portrait_smooth), pr.smoothing, ::remember_, from = 0f) { setPr(pr.copy(smoothing = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_portrait_eyes), pr.eyes, ::remember_, from = 0f) { setPr(pr.copy(eyes = it)) }
+                                    val f = pr.faces.getOrNull(selFace)
+                                    if (f != null) {
+                                        ZeroSlider(stringResource(R.string.editor_portrait_size), (f.eyes - 0.03f) / 0.3f, ::remember_, from = 0f) { v ->
+                                            setPr(pr.copy(faces = pr.faces.mapIndexed { i, x -> if (i == selFace) x.copy(eyes = 0.03f + v * 0.3f) else x }))
+                                        }
+                                        ChipRow { Chip(stringResource(R.string.editor_portrait_remove), false) { commit(state.copy(retouch = r.copy(portrait = pr.copy(faces = pr.faces.filterIndexed { i, _ -> i != selFace })))); selFace = -1 } }
+                                    }
+                                }
+                                Hint(stringResource(R.string.editor_portrait_tip))
+                            }
                             RetouchSection.Heal -> {
                                 ZeroSlider(stringResource(R.string.editor_brush_size), (healSize - 0.01f) / 0.07f, {}, from = 0f) { healSize = 0.01f + it * 0.07f }
                                 Hint(stringResource(R.string.editor_heal_tip))
@@ -924,7 +1059,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
             Tool.entries.forEach { t ->
                 val on = tool == t
                 Column(
-                    Modifier.weight(1f).height(50.dp).clip(RoundedCornerShape(22.dp)).background(if (on) AccentVeil else Color.Transparent).clickable { tool = t },
+                    Modifier.weight(1f).height(50.dp).clip(RoundedCornerShape(22.dp)).background(if (on) AccentVeil else Color.Transparent).clickable { tool = t; maskEditing = false },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                 ) {
                     Icon(t.icon(if (on) 2.7f else 2.3f), null, tint = if (on) Accent else Muted, modifier = Modifier.size(19.dp))
@@ -1024,6 +1159,8 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
             store.setCopiedEdit(state.effective)
             Toast.makeText(context, context.getString(R.string.editor_copied), Toast.LENGTH_LONG).show()
         } },
+        brushed = !state.toneMask.isEmpty,
+        onBrush = { stackOpen = false; maskEditing = true },
     )
     sharingLook?.let { look -> ShareLookDialog(look) { sharingLook = null } }
     if (receiving) {
@@ -1153,6 +1290,8 @@ private class EditStep(
     val tool: Tool,
     val cropSection: CropSection? = null,
     val section: AdjustSection? = null,
+    /** Regola, Curve e Filtro hanno il pennello per passo (una maschera sola per i tre, per ora). */
+    val brush: Boolean = false,
     val reset: (EditState) -> EditState,
 )
 
@@ -1170,20 +1309,20 @@ private fun editSteps(s: EditState): List<EditStep> = buildList {
     if (!a.copy(curves = eu.eurise.gallery.logic.Curves()).isNeutral) {
         val parts = listOf(a.light to "☀", a.contrast to "◐", a.ambiance to "≈", a.shadows to "▼", a.highlights to "▲", a.saturation to "●", a.vibrance to "◉",
             a.warmth to "°", a.tint to "±", a.structure to "▦", a.sharpen to "◇", a.vignette to "◎").filter { it.first != 0f }
-        add(EditStep(R.string.editor_step_adjust, parts.joinToString(" ") { "${it.second}${pct(it.first)}" }, Tool.Adjust, section = AdjustSection.Light) {
+        add(EditStep(R.string.editor_step_adjust, parts.joinToString(" ") { "${it.second}${pct(it.first)}" }, Tool.Adjust, section = AdjustSection.Light, brush = true) {
             it.copy(adjust = eu.eurise.gallery.logic.Adjust(curves = it.adjust.curves))
         })
     }
-    if (!a.curves.isNeutral) add(EditStep(R.string.editor_section_curves, "", Tool.Adjust, section = AdjustSection.Curves) { it.copy(adjust = it.adjust.copy(curves = eu.eurise.gallery.logic.Curves())) })
+    if (!a.curves.isNeutral) add(EditStep(R.string.editor_section_curves, "", Tool.Adjust, section = AdjustSection.Curves, brush = true) { it.copy(adjust = it.adjust.copy(curves = eu.eurise.gallery.logic.Curves())) })
     if (!s.retouch.isEmpty) add(EditStep(R.string.editor_tool_retouch, s.retouch.summary(), Tool.Retouch) { it.copy(retouch = Retouch()) })
-    if (s.mine != null || s.look != Look.None) add(EditStep(R.string.editor_step_filter, s.mine?.name ?: "", Tool.Filters) { it.copy(look = Look.None, mine = null) })
+    if (s.mine != null || s.look != Look.None) add(EditStep(R.string.editor_step_filter, s.mine?.name ?: "", Tool.Filters, brush = true) { it.copy(look = Look.None, mine = null) })
     if (s.texts.isNotEmpty()) add(EditStep(R.string.editor_step_text, s.texts.size.toString(), Tool.Write) { it.copy(texts = emptyList()) })
     if (s.strokes.isNotEmpty()) add(EditStep(R.string.editor_step_draw, s.strokes.size.toString(), Tool.Draw) { it.copy(strokes = emptyList()) })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (EditStep) -> Unit, onRemove: (EditStep) -> Unit, onSaveLook: (() -> Unit)?, onCopy: (() -> Unit)?) {
+private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (EditStep) -> Unit, onRemove: (EditStep) -> Unit, onSaveLook: (() -> Unit)?, onCopy: (() -> Unit)?, brushed: Boolean = false, onBrush: () -> Unit = {}) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Panel, contentColor = Text1) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.editor_stack_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
@@ -1194,7 +1333,11 @@ private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (Ed
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(step.label), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        if (step.detail.isNotEmpty()) Text(step.detail, color = Muted, fontSize = 12.sp, maxLines = 1)
+                        val detail = listOfNotNull(step.detail.ifEmpty { null }, if (step.brush && brushed) stringResource(R.string.editor_mask_some) else null).joinToString(" · ")
+                        if (detail.isNotEmpty()) Text(detail, color = Muted, fontSize = 12.sp, maxLines = 1)
+                    }
+                    if (step.brush) IconButton(onClick = onBrush) {
+                        Icon(EuriseIcons.highlighter(), stringResource(R.string.editor_mask_open), tint = if (brushed) Accent else Muted, modifier = Modifier.size(18.dp))
                     }
                     IconButton(onClick = { onOpen(step) }) { Icon(EuriseIcons.pencil(), stringResource(R.string.editor_stack_open), tint = Accent, modifier = Modifier.size(18.dp)) }
                     IconButton(onClick = { onRemove(step) }) { Icon(EuriseIcons.trash(), stringResource(R.string.editor_stack_remove), tint = Muted, modifier = Modifier.size(18.dp)) }
@@ -1324,6 +1467,7 @@ private enum class RetouchSection(val label: Int) {
     Selective(R.string.editor_retouch_selective),
     Brush(R.string.editor_retouch_brush),
     Heal(R.string.editor_retouch_heal),
+    Portrait(R.string.editor_retouch_portrait),
 }
 
 private enum class AdjustSection(val label: Int) {

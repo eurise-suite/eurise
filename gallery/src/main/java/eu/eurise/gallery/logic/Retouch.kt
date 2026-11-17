@@ -42,9 +42,10 @@ data class Retouch(
     val points: List<SelectivePoint> = emptyList(),
     val strokes: List<BrushStroke> = emptyList(),
     val spots: List<HealSpot> = emptyList(),
+    val portrait: Portrait = Portrait(),
 ) {
-    val isEmpty: Boolean get() = spots.isEmpty() && strokes.isEmpty() && points.none { it.light != 0f || it.contrast != 0f || it.saturation != 0f || it.warmth != 0f }
-    val needsBands: Boolean get() = strokes.isNotEmpty() || points.any { it.light != 0f || it.contrast != 0f || it.saturation != 0f || it.warmth != 0f }
+    val isEmpty: Boolean get() = spots.isEmpty() && strokes.isEmpty() && portrait.isEmpty && points.none { it.light != 0f || it.contrast != 0f || it.saturation != 0f || it.warmth != 0f }
+    val needsBands: Boolean get() = strokes.isNotEmpty() || (!portrait.isEmpty && portrait.spotlight != 0f) || points.any { it.light != 0f || it.contrast != 0f || it.saturation != 0f || it.warmth != 0f }
 }
 
 /** Le tre maschere del Pennello (esposizione, calore, saturazione), da -1 a 1, a bassa risoluzione. */
@@ -252,4 +253,5 @@ fun Retouch.summary(): String = listOfNotNull(
     points.size.takeIf { it > 0 }?.let { "◎ $it" },
     strokes.size.takeIf { it > 0 }?.let { "✎ $it" },
     spots.size.takeIf { it > 0 }?.let { "✚ $it" },
+    portrait.faces.size.takeIf { !portrait.isEmpty }?.let { "☺ $it" },
 ).joinToString(" · ")

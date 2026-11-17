@@ -51,6 +51,12 @@ import eu.eurise.gallery.logic.Retouch
 import eu.eurise.gallery.logic.applyLocal
 import eu.eurise.gallery.logic.brushMasks
 import eu.eurise.gallery.logic.heal
+import eu.eurise.gallery.logic.FaceSpot
+import eu.eurise.gallery.logic.MaskGrid
+import eu.eurise.gallery.logic.blendMasked
+import eu.eurise.gallery.logic.maskGrid
+import eu.eurise.gallery.logic.portraitFace
+import eu.eurise.gallery.logic.spotlight
 import eu.eurise.gallery.logic.cropPixels
 import java.io.File
 import java.io.IOException
@@ -263,7 +269,7 @@ fun applyCurve(bitmap: Bitmap, lut: IntArray) {
  * una foto grande non chiede la memoria di tutta l'immagine più volte. Le fasce si sovrappongono quanto il raggio della
  * struttura, perché i dettagli ai bordi delle fasce vengano uguali al resto.
  */
-fun developBitmap(bitmap: Bitmap, adjust: Adjust, matrix: FloatArray?) {
+fun developBitmap(bitmap: Bitmap, adjust: Adjust, matrix: FloatArray?, mask: MaskGrid? = null, angle: Float = 0f, scale: Float = 1f) {
     if (!adjust.needsPixels && matrix == null) return
     val w = bitmap.width
     val h = bitmap.height
@@ -278,10 +284,12 @@ fun developBitmap(bitmap: Bitmap, adjust: Adjust, matrix: FloatArray?) {
         val rows = bottom - top
         val px = IntArray(w * rows)
         bitmap.getPixels(px, 0, w, 0, top, w, rows)
+        val before = if (mask != null) px.copyOf() else null
         if (detail) {
             // Il raggio della struttura dipende dal lato corto della foto intera, non della fascia.
             develop(px, w, rows, adjust, matrix, radiusBase = minOf(w, h))
         } else develop(px, w, rows, adjust, matrix)
+        if (mask != null && before != null) blendMasked(px, before, w, rows, top, w, h, mask, angle, scale)
         bitmap.setPixels(px, (y - top) * w, w, 0, y, w, n)
         y += n
     }
@@ -329,7 +337,8 @@ fun renderEdited(context: Context, item: MediaItem, state: EditState): Bitmap {
     } else {
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
     }
-    developBitmap(out, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust))
+    val mask = if (state.toneMask.isEmpty) null else maskGrid(state.toneMask, w / h)
+    developBitmap(out, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust), mask, state.straighten, straightenScale(state.straighten, w, h))
     drawVignette(canvas, state.crop.left * w, state.crop.top * h, state.crop.right * w, state.crop.bottom * h, adjust.vignette)
     drawMarks(canvas, w, h, state.texts, state.strokes)
     bitmap = out
@@ -496,6 +505,19 @@ fun retouchBitmap(source: Bitmap, r: Retouch): Bitmap {
         heal(px, rw, rh, cx - x0, cy - y0, rad)
         bitmap.setPixels(px, 0, rw, x0, y0, rw, rh)
     }
+    // Ritratto: pelle e occhi su un ritaglio attorno a ogni volto.
+    val pt = r.portrait
+    if (!pt.isEmpty && (pt.smoothing != 0f || pt.eyes != 0f)) for (face in pt.faces) {
+        val e = face.eyes * short
+        val cx = face.x * w; val cy = face.y * h
+        val x0 = (cx - 2.2f * e).toInt().coerceAtLeast(0); val x1 = (cx + 2.2f * e).toInt().coerceAtMost(w)
+        val y0 = (cy - 2.4f * e).toInt().coerceAtLeast(0); val y1 = (cy + 3f * e).toInt().coerceAtMost(h)
+        val rw = x1 - x0; val rh = y1 - y0
+        if (rw <= 4 || rh <= 4) continue
+        val px = IntArray(rw * rh).also { bitmap.getPixels(it, 0, rw, x0, y0, rw, rh) }
+        portraitFace(px, rw, rh, cx - x0, cy - y0, e, pt.smoothing, pt.eyes)
+        bitmap.setPixels(px, 0, rw, x0, y0, rw, rh)
+    }
     if (r.needsBands) {
         val masks = if (r.strokes.isNotEmpty()) brushMasks(r.strokes, w / h.toFloat()) else null
         val band = maxOf(64, 1_048_576 / w)
@@ -504,11 +526,31 @@ fun retouchBitmap(source: Bitmap, r: Retouch): Bitmap {
             val n = minOf(band, h - y)
             val px = IntArray(w * n).also { bitmap.getPixels(it, 0, w, 0, y, w, n) }
             applyLocal(px, w, n, y, w, h, r, masks)
+            if (!pt.isEmpty) spotlight(px, w, n, y, w, h, pt)
             bitmap.setPixels(px, 0, w, 0, y, w, n)
             y += n
         }
     }
     return bitmap
+}
+
+/**
+ * Volti nella foto con il riconoscimento di Android (`android.media.FaceDetector`, sul telefono, senza librerie):
+ * posizione tra gli occhi e distanza tra gli occhi, in quote. Lavora su una copia piccola.
+ */
+fun detectFaces(source: Bitmap): List<FaceSpot> {
+    val k = minOf(1f, 1024f / maxOf(source.width, source.height))
+    val sw = ((source.width * k).roundToInt() / 2 * 2).coerceAtLeast(2)
+    val sh = (source.height * k).roundToInt().coerceAtLeast(1)
+    val small = Bitmap.createScaledBitmap(source, sw, sh, true).copy(Bitmap.Config.RGB_565, false)
+    val found = arrayOfNulls<android.media.FaceDetector.Face>(8)
+    val n = runCatching { android.media.FaceDetector(sw, sh, found.size).findFaces(small, found) }.getOrDefault(0)
+    val short = minOf(sw, sh).toFloat()
+    val mid = android.graphics.PointF()
+    return (0 until n).mapNotNull { found[it] }.filter { it.confidence() >= 0.3f }.map { f ->
+        f.getMidPoint(mid)
+        FaceSpot(mid.x / sw, mid.y / sh, f.eyesDistance() / short)
+    }
 }
 
 /** I bordi di Espandi attorno alla foto ([expandPixels]). */

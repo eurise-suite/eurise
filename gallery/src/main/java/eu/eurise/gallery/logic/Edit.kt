@@ -179,6 +179,8 @@ data class EditState(
     val expand: Expand = Expand(),
     /** Selettivo, Pennello e Correttivo (tavola GalRitocca): sulla foto, prima delle regolazioni. */
     val retouch: Retouch = Retouch(),
+    /** Pennello per passo: dove valgono Regola, Curve e Filtro (tavola GalModifiche). Vuoto = ovunque. */
+    val toneMask: StepMask = StepMask(),
 ) {
     /** Le regolazioni a mano più il filtro dosato: quello che si applica davvero. */
     val effective: Adjust get() = when {
