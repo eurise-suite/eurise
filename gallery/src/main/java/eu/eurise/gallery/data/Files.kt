@@ -549,7 +549,7 @@ fun photoInfo(context: Context, item: MediaItem): List<Pair<Int, String>> {
         val shot = listOfNotNull(
             exif.getAttributeDouble(ExifInterface.TAG_F_NUMBER, 0.0).takeIf { it > 0 }?.let { "f/%.1f".format(it) },
             exif.getAttributeDouble(ExifInterface.TAG_EXPOSURE_TIME, 0.0).takeIf { it > 0 }?.let { if (it < 1) "1/${(1 / it).roundToInt()} s" else "%.1f s".format(it) },
-            exif.getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, 0).takeIf { it > 0 }?.let { "ISO $it" },
+            exif.getAttributeInt("ISOSpeedRatings", 0).takeIf { it > 0 }?.let { "ISO $it" },
             exif.getAttributeDouble(ExifInterface.TAG_FOCAL_LENGTH, 0.0).takeIf { it > 0 }?.let { "%.1f mm".format(it) },
         ).joinToString(" · ")
         if (shot.isNotEmpty()) out += R.string.info_exposure to shot
