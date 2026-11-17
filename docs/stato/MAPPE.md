@@ -39,10 +39,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   Richiesta del proprietario all'approvazione: in auto spostare più in basso e rimpicciolire i 4 tasti tondi. Non si può
   (li disegna Android Auto); la bolla in auto è diventata più stretta e bassa, appoggiata ai tasti (MapBollaAutoStati
   aggiornata).
-- **Da approvare (17 novembre)**: **MapEsploraInclinata** (pagina «comunicazione», in fondo alla riga MapBolla): tasto
-  «3D» esplorando, la mappa si piega fino al cielo della guida e la fascia di MapEsplora sparisce; «2D» torna piatta.
-  CoMaps non ha un gesto per inclinare: il tasto usa la prospettiva automatica del motore (`Enable3dMode`), il gesto a
-  due dita sarebbe un'aggiunta nel motore (`user_event_stream.cpp`).
+- **MapEsploraInclinata** approvata il 17 novembre e in codice (Mappe 88): tasto «3D»/«2D» esplorando. Il gesto a due
+  dita non c'è (CoMaps non lo ha; va scritto nel motore, se il proprietario lo vuole).
 ## 16 novembre, 13:03: dall'apertura alla partenza come le tavole, Alfred in Android Auto (Mappe 69)
 - Percorso (tavole 4 e 6, `eurise/ui/EurisePercorso.kt`): in alto scheda di vetro con partenza, tappe e arrivo, scambia,
   pillole «Evita …» del mezzo e «+ Tappa» **al posto della barra di CoMaps**; in basso mezzi con simbolo e tempo e il
@@ -174,6 +172,19 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   oltre l'orizzonte, e in esplorazione l'inclinazione di CoMaps non ci arriva; serve una scelta del proprietario (vedi
   Prossimi passi).
 
+## 17 novembre, notte: tasto 3D esplorando e ordine di «Dove devi andare» (Mappe 88)
+- **Tasto «3D»/«2D»** (`eurise/EuriseTilt.java`, nelle quattro varianti di `map_buttons_layout_regular.xml`, a destra
+  sotto la fascia): `EuriseSky.explore3d` mette il cielo della guida e chiama `Framework.nativeEuriseSetExplore3d`, che
+  usa `DrapeEngine::EnablePerspective` con un «desiderio» in `eurise_sky.cpp` (vero di base: l'inizio della guida resta
+  com'era; falso spegne la prospettiva). In 3D la fascia di MapEsplora si nasconde; all'inizio della guida il 3D
+  dell'esplorazione si spegne. Da lontano la prospettiva del motore è zero: la mappa resta piatta anche in 3D (e la
+  fascia resta nascosta finché il tasto dice «2D»).
+- **«Dove devi andare»** (`ui/EuriseSearchHome.kt`), richiesta del proprietario: Sempre a portata, Recenti, Cerca
+  vicino, poi Dal Calendario, poi le mappe. La tavola MapViaggio2Dove ha ancora l'ordine vecchio. In Android Auto
+  l'elenco resta com'era.
+- Pubblicato il 17 novembre, 01:51 (UTC): **Mappe 88** in `apk-prova`, con Eurise e Messaggi del giro 721 di Compila
+  (ultimo riuscito su `brand`, contiene le parti comuni del giro 707).
+
 ## Prossimi passi, in ordine
 1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
    da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono
@@ -184,8 +195,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
    specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
    autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
-4. Passo f) di Esplora, parte che resta: orizzonte col cielo anche esplorando, tavola MapEsploraInclinata da approvare
-   (tasto «3D»; gesto a due dita facoltativo).
+4. Passo f) di Esplora: fatto (Mappe 88). Da provare: «3D» vicino e lontano, giorno e notte, poi avvio della guida e
+   fine guida (la mappa deve tornare piatta).
 5. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
 6. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
    traffico (nessuna fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da
