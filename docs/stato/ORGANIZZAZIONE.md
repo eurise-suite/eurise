@@ -211,7 +211,16 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   può collegare in modo pulito: o un piano kDrive con WebDAV (poi la password per le app, già gestita), o chiedere a
   Infomaniak lo scope «drive» per l'app OAuth di Eurise. La **posta** Infomaniak funziona in IMAP/SMTP con una password
   per le app (`Providers.kt`), è dell'area Comunicazione. Decisione del proprietario.
-- Giro 720 (Compila 43995339428 su `prova-organizzazione`).
+- **Accento «Ceruleo»** (chiesto dal proprietario): il colore del gufo del Browser con la stessa sfumatura del suo tondo
+  (`ExtraTint.Ceruleo`, `Accent.gradient`); la sfumatura si vede nel campione e nelle bolle delle icone «Come le bolle»
+  (`LocalAccentGradient`); altrove l'accento resta un colore pieno (#1298DF di giorno, #5EB9E9 di sera). Fuori dai colori
+  «Vario» (`inPalette = false`) perché aggiungerlo non cambi i colori delle categorie. Le altre app lo ricevono già con la
+  tavolozza di `AppearanceContract` (colore pieno).
+- **Sfondo del blocco che non funziona** (segnalato dal proprietario): dal codice non si vede un errore certo. Ora, se
+  `setBitmap` risponde 0, si riprova con `setStream`; si controlla che il blocco abbia davvero uno sfondo suo
+  (`getWallpaperId(FLAG_LOCK)`), e l'avviso «non ha accettato» mostra il **motivo** dato dal sistema. Da riprovare sul
+  telefono del proprietario e leggere il motivo.
+- Giro 723 (Compila 43997542215 su `prova-organizzazione`; il 720 è stato sostituito).
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
@@ -236,7 +245,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 720 (contiene 701 e 717): Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
+1. **Prove del proprietario** sul giro 723 (contiene 701 e 717): sfondo del blocco (con il motivo, se rifiutato), accento
+   Ceruleo;: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
    spazio, Oggi sotto le cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena;
    icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena; una riunione con
    invitati e «Assegna a tutti»; una cartella condivisa con «Cambiato da ieri».
