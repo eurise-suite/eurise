@@ -185,6 +185,19 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Pubblicato il 17 novembre, 01:51 (UTC): **Mappe 88** in `apk-prova`, con Eurise e Messaggi del giro 721 di Compila
   (ultimo riuscito su `brand`, contiene le parti comuni del giro 707).
 
+## 17 novembre, giorno: prova del proprietario in auto e sul telefono (Mappe 90, pubblicato alle 10:51 UTC)
+- **La bolla non compare** né sul telefono né in auto, pur avendo «attivato tutto dall'app privacy». La bolla non è un
+  servizio del centro privacy: servono l'interruttore di Mappe (Livelli › Sul telefono › Musica e chiamate in guida) e
+  l'accesso alle notifiche nelle impostazioni del telefono. Probabile ostacolo: le **impostazioni con restrizioni** di
+  Android 13+ per le app installate dal browser (interruttore grigio). Ora Livelli, con la bolla accesa e senza accesso,
+  mostra la riga «Dai l'accesso alle notifiche» con la spiegazione, «Info app» (menu ⋮ › Consenti impostazioni con
+  restrizioni) e il pulsante per l'accesso. Da confermare con il proprietario.
+- **In auto i riquadri sono neri**: li disegna Android Auto. Il riquadro della manovra ora chiede il verde della suite
+  (`NavigationTemplate.setBackgroundColor`, come le tavole MapAutoGuida/MapBollaAuto; l'auto può scurirlo per il
+  contrasto). Il riquadro dell'arrivo (tempo, km, «Sei su…») non ha un colore che l'app possa scegliere.
+- **«Sei su IT:national/SS7 …»**: il riferimento della strada veniva dalla relazione con la rete; ora
+  `NowPlayingText.roadRef` tiene solo «SS7» (con le prove).
+
 ## Prossimi passi, in ordine
 1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
    da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono

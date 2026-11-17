@@ -3343,3 +3343,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Galleria: editor, terzo giro (pila delle Modifiche, foglio Salva, Torna all'originale) · giro 730 → `docs/stato/PICCOLE.md`.
 - 17 novembre, Organizzazione: icone «Sfondo delle bolle» (vetro delle bolle, colori originali delle app con sfumatura), Ceruleo cangiante sui fondi d'accento, sfondo di sistema uguale alla Scrivania (niente vecchio sfondo nelle recenti) · giro 731 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Organizzazione: tavola IcoCeruleo con sette blu pieni per l'accento Ceruleo (da scegliere; toccato canvas.json della tela) → `docs/stato/ORGANIZZAZIONE.md`.
+- 17 novembre, Mappe 90: riga «Dai l'accesso alle notifiche» in Livelli, manovra verde in Android Auto, «Sei su SS7» senza la rete → `docs/stato/MAPPE.md`.
