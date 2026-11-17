@@ -20,20 +20,26 @@ import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
 /**
- * App chiusa: ogni 15 minuti, solo con la rete, una tornata di /sync senza attesa per sapere se ci sono messaggi nuovi.
- * Niente servizi sempre accesi; le notifiche istantanee arriveranno con UnifiedPush (libero, senza Google).
+ * App chiusa: ogni 15 minuti, solo con la rete, una tornata di /sync senza attesa per sapere se ci sono messaggi nuovi,
+ * per ognuno dei due account (personale e lavoro). Niente servizi sempre accesi; le notifiche istantanee arriveranno con
+ * UnifiedPush (libero, senza Google).
  */
 class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val ctx = applicationContext
-        val store = SessionStore(ctx)
-        val s = store.load() ?: return Result.success()
-        // App aperta: sincronizza lei (e tiene lei le chiavi), qui non serve.
-        if (ChatModel.active) return Result.success()
+        val results = Account.entries.map { sync(applicationContext, it) }
+        return if (results.any { !it }) Result.retry() else Result.success()
+    }
+
+    /** Una tornata per [account]; false se la rete non ha risposto. */
+    private fun sync(ctx: Context, account: Account): Boolean {
+        val store = SessionStore(ctx, account)
+        val s = store.load() ?: return true
+        // App aperta su questo account: sincronizza lei (e tiene lei le chiavi), qui non serve. L'altro account sì.
+        if (ChatModel.active && ChatAccounts.active(ctx) == account) return true
         val since = store.since
         val client = ChatClient(s)
-        val json = runCatching { client.sync(since, 0) }.getOrNull() ?: return Result.retry()
+        val json = runCatching { client.sync(since, 0) }.getOrNull() ?: return false
         store.since = json.optString("next_batch").ifEmpty { since }
         // Le chiavi delle stanze arrivate ad app chiusa vanno al modulo crittografico, se no si perderebbero.
         val crypto = runCatching { ChatCrypto(ctx, s) }.getOrNull()
@@ -63,7 +69,7 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         }
         // I referti mandati da qui che hanno compiuto 45 giorni si cancellano dalla stanza.
         runCatching { BussolaReports.redactDue(ctx, client) }
-        if (since == null) return Result.success()
+        if (since == null) return true
         var count = 0
         var lastFrom = ""
         var lastText = ""
@@ -96,13 +102,15 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         }
         val neutral = studioSide || patientSide
         val invites = json.optJSONObject("rooms")?.optJSONObject("invite")?.length() ?: 0
-        if (count > 0 || invites > 0) notify(ctx, if (neutral) 1 else count, invites, lastFrom, lastText)
-        return Result.success()
+        if (count > 0 || invites > 0) notify(ctx, account, if (neutral) 1 else count, invites, lastFrom, lastText)
+        return true
     }
 
     companion object {
         private const val WORK = "eurise-chat-sync"
         private const val CHANNEL = "chat"
+        /** Il lavoro fuori orario: notifica senza suono né banner, si trova nella tendina la mattina. */
+        private const val CHANNEL_QUIET = "chat_quiet"
 
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<ChatWorker>(15, TimeUnit.MINUTES)
@@ -112,24 +120,31 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         fun cancel(context: Context) = WorkManager.getInstance(context).cancelUniqueWork(WORK)
 
-        private fun notify(context: Context, count: Int, invites: Int, from: String, text: String) {
+        private fun notify(context: Context, account: Account, count: Int, invites: Int, from: String, text: String) {
             if (Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
             val nm = context.getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.ch_channel), NotificationManager.IMPORTANCE_HIGH))
-            val open = PendingIntent.getActivity(context, 0, Intent(context, ChatActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+            nm.createNotificationChannel(NotificationChannel(CHANNEL_QUIET, context.getString(R.string.ch_channel_quiet), NotificationManager.IMPORTANCE_LOW))
+            val quiet = ChatAccounts.quietNow(context, account)
+            // La notifica apre l'app sull'account giusto.
+            val open = PendingIntent.getActivity(context, account.ordinal,
+                Intent(context, ChatActivity::class.java).putExtra(ChatActivity.EXTRA_ACCOUNT, account.name),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val title = when {
                 count == 1 -> from
                 count > 1 -> context.getString(R.string.ch_new_many, count)
                 else -> context.getString(R.string.ch_new_invites, invites)
             }
-            val n = NotificationCompat.Builder(context, CHANNEL)
+            val two = ChatAccounts.signedIn(context).size > 1
+            val n = NotificationCompat.Builder(context, if (quiet) CHANNEL_QUIET else CHANNEL)
                 .setSmallIcon(eu.eurise.chat.R.drawable.ic_stat_chat)
+                .apply { if (two) setSubText(context.getString(if (account == Account.Work) R.string.ch_acc_work else R.string.ch_acc_personal)) }
                 .setContentTitle(title)
                 .setContentText(if (count >= 1) text else "")
                 .setContentIntent(open).setAutoCancel(true).build()
-            runCatching { NotificationManagerCompat.from(context).notify(11, n) }
+            runCatching { NotificationManagerCompat.from(context).notify(11 + account.ordinal, n) }
         }
     }
 }

@@ -43,8 +43,20 @@ private class RoomState(val id: String) {
  * risponde quando c'è qualcosa); chiusa, ci pensa [ChatWorker] ogni 15 minuti.
  */
 class ChatModel(private val context: Context, private val scope: CoroutineScope) {
-    private val store = SessionStore(context)
+    /** L'account che si sta guardando (personale o lavoro); l'altro resta collegato e conta solo le non lette. */
+    var account by mutableStateOf(ChatAccounts.active(context))
+        private set
+    private var store = SessionStore(context, account)
     var session by mutableStateOf(store.load())
+        private set
+    /** Gli account con una sessione su questo telefono (per la barra in basso). */
+    var accounts by mutableStateOf(ChatAccounts.signedIn(context))
+        private set
+    /** Le non lette dell'altro account (null = non collegato o non ancora contate). */
+    var otherUnread by mutableStateOf<Int?>(null)
+        private set
+    /** La sessione dell'altro account, per la barra e il foglio degli account (null = non collegato). */
+    var otherSession by mutableStateOf(SessionStore(context, account.other).load())
         private set
     private val client get() = session?.let(::ChatClient)
 
@@ -118,6 +130,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         active = true
         cleanCache()
         client?.let { c -> scope.launch(Dispatchers.IO) { BussolaReports.redactDue(context, c) } }
+        startOther()
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
@@ -145,7 +158,65 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun stop() { loop?.cancel(); loop = null; active = false }
+    fun stop() { loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; active = false }
+
+    // --- Due account (tavole ChatDueAccount e ChatAccountAggiungi) ---
+
+    private var otherLoop: Job? = null
+
+    /** Ogni due minuti, ad app aperta, quante non lette ha l'altro account (solo il numero, niente messaggi). */
+    private fun startOther() {
+        otherLoop?.cancel()
+        val other = SessionStore(context, account.other).load() ?: run { otherUnread = null; return }
+        otherLoop = scope.launch {
+            while (isActive) {
+                withContext(Dispatchers.IO) { runCatching { ChatClient(other).unreadTotal() }.getOrNull() }?.let { otherUnread = it }
+                delay(120_000)
+            }
+        }
+    }
+
+    /**
+     * Passa all'altro account: si ferma la sincronizzazione, si svuota ciò che è in memoria (stanze, messaggi, chiavi
+     * aperte) e si riparte con la sessione dell'altro; senza sessione si apre l'accesso, per aggiungerlo.
+     */
+    fun switchTo(a: Account) {
+        if (a == account) return
+        stop()
+        clearMemory()
+        account = a
+        ChatAccounts.setActive(context, a)
+        store = SessionStore(context, a)
+        session = store.load()
+        keptInSuite = store.keptInSuite
+        accounts = ChatAccounts.signedIn(context)
+        otherSession = SessionStore(context, a.other).load()
+        if (session != null) start()
+    }
+
+    private fun clearMemory() {
+        since = null
+        rooms.clear(); data.clear(); timelines.clear()
+        people.clear()
+        crypto = null
+        pending.clear()
+        security = null
+        verify = null
+        verifyJob?.cancel()
+        verifyPeers.clear()
+        verifiedPeople.clear()
+        openRoom = null
+        studioStack.clear()
+        ready = false
+        error = null
+        otherUnread = null
+    }
+
+    /** Fuori orario il lavoro tace (impostazione del foglio degli account). */
+    var workQuiet by mutableStateOf(ChatAccounts.workQuiet(context))
+        private set
+
+    fun setWorkQuiet(on: Boolean) { workQuiet = on; ChatAccounts.setWorkQuiet(context, on) }
 
     // --- Studio medico (tavole StuSpazio e StuPaziente) ---
 
@@ -733,6 +804,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         store.save(s)
         session = s
         since = null
+        accounts = ChatAccounts.signedIn(context)
+        otherSession = SessionStore(context, account.other).load()
         ChatWorker.schedule(context)
         start()
     }
@@ -923,21 +996,15 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         forget()
     }
 
+    /** Esce dall'account che si sta guardando; se c'è l'altro, si passa a quello. */
     private fun forget() {
         stop()
         store.clear()
         session = null
-        since = null
-        rooms.clear(); data.clear(); timelines.clear()
-        crypto = null
-        pending.clear()
-        security = null
-        verify = null
-        verifyJob?.cancel()
-        verifyPeers.clear()
-        verifiedPeople.clear()
-        ready = false
-        ChatWorker.cancel(context)
+        clearMemory()
+        accounts = ChatAccounts.signedIn(context)
+        val rest = accounts.firstOrNull()
+        if (rest != null) switchTo(rest) else ChatWorker.cancel(context)
     }
 
     companion object {

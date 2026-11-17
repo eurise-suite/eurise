@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -145,13 +146,38 @@ private fun Access(model: ChatModel, actions: ChatActions) {
             }
         }
     }
+    val other = model.otherSession
+    val work = model.account == Account.Work
+    var email by remember { mutableStateOf("") }
     Column(
         Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(stringResource(R.string.ch_access_title), fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 16.dp))
-        Text(stringResource(R.string.ch_access_intro), fontSize = 14.sp, lineHeight = 21.sp)
+        // Si sta aggiungendo il secondo account: si può tornare al primo.
+        if (other != null) Row(
+            Modifier.padding(top = 12.dp).clip(RoundedCornerShape(20.dp)).background(scheme.surface)
+                .clickable(role = Role.Button) { model.switchTo(model.account.other) }.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.chevronLeft(2.4f), null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.ch_acc_back, accountName(model.account.other)), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+        }
+        Text(stringResource(if (work) R.string.ch_acc_add_work else R.string.ch_access_title), fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(top = if (other != null) 0.dp else 16.dp))
+        Text(stringResource(if (work) R.string.ch_acc_add_work_intro else R.string.ch_access_intro), fontSize = 14.sp, lineHeight = 21.sp)
         if (working) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
+        // Lavoro: con l'email di lavoro il server si trova dal dominio (nessun indirizzo tecnico da scrivere).
+        if (work) Card {
+            Text(stringResource(R.string.ch_acc_email), fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+            Field(stringResource(R.string.ch_acc_email_hint), email, KeyboardType.Email) { email = it; problem = null }
+            Box(Modifier.padding(bottom = 10.dp)) {
+                Pill(stringResource(R.string.ch_link), EuriseIcons.link(2f), Modifier.fillMaxWidth(), strong = Quiet.domainOf(email) != null) {
+                    val d = Quiet.domainOf(email) ?: run { problem = R.string.ch_acc_email_bad; return@Pill }
+                    go(d)
+                }
+            }
+        }
         Card {
             ServerRow(EuriseIcons.shield(2.2f), stringResource(R.string.ch_eurise), stringResource(R.string.ch_eurise_sub), null, strong = false) { }
             Divider()
@@ -213,7 +239,12 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.ch_title), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.ch_title), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                    // Con due account si vede sempre in quale si è.
+                    if (model.otherSession != null) Text(accountName(model.account) + " · " + Matrix.localpart(model.session?.userId.orEmpty()),
+                        fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = accountColor(model.account), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
                 // Lo Studio medico acceso: l'ingresso sta qui, con le urgenze segnate.
                 if (studio.enabled) {
                     val urgent = studio.requests.count { it.open && it.need == eu.eurise.core.studio.Need.Urgent }
@@ -247,7 +278,8 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                 items(shown, key = { it.id }) { r -> RoomRow(model, r) }
                 item { Spacer(Modifier.height(100.dp)) }
             }
-            Row(
+            if (model.otherSession != null) AccountBar(model, Modifier.align(Alignment.BottomCenter)) { creating = true }
+            else Row(
                 Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp).height(56.dp).clip(RoundedCornerShape(28.dp))
                     .background(scheme.primary).clickable(role = Role.Button) { creating = true }.padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -260,12 +292,107 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     }
     if (creating) NewChatSheet(model, actions, onClose = { creating = false })
     if (account) Sheet({ account = false }) {
-        Text(model.session?.userId.orEmpty(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
-        Text(model.session?.homeserver.orEmpty(), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+        AccountsPanel(model) { account = false }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.st_title), EuriseIcons.medical(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.studioOpen() }
         Pill(stringResource(R.string.ch_logout), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.logout() }
+    }
+}
+
+// --- Due account (tavole ChatDueAccount e ChatAccountAggiungi) ---
+
+@Composable
+private fun accountName(a: Account) = stringResource(if (a == Account.Work) R.string.ch_acc_work else R.string.ch_acc_personal)
+
+/** Personale in blu, Lavoro in ottone, come nella tavola. */
+private fun accountColor(a: Account) = if (a == Account.Work) Color(0xFF85672B) else Color(0xFF3E5C8A)
+
+/**
+ * La barra in basso con due account: Personale e Lavoro, con le non lette dell'altro; accanto, sotto il pollice, la
+ * nuova chat dell'account che si sta guardando.
+ */
+@Composable
+private fun AccountBar(model: ChatModel, modifier: Modifier, onNew: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val mine = model.rooms.sumOf { it.unread }
+    Row(modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(28.dp)).background(scheme.surface.copy(alpha = 0.92f)).padding(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Account.entries.forEach { a ->
+                val on = a == model.account
+                val count = if (on) mine else model.otherUnread ?: 0
+                Row(
+                    Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(23.dp))
+                        .background(if (on) accountColor(a).copy(alpha = 0.18f) else Color.Transparent)
+                        .clickable(role = Role.Tab) { model.switchTo(a) },
+                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(accountName(a), fontSize = 14.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold, color = accountColor(a))
+                    if (count > 0) {
+                        Spacer(Modifier.width(6.dp))
+                        Box(Modifier.heightIn(min = 18.dp).widthIn(min = 18.dp).clip(RoundedCornerShape(9.dp)).background(accountColor(a)).padding(horizontal = 5.dp),
+                            contentAlignment = Alignment.Center) { Text("$count", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        val label = stringResource(R.string.ch_new)
+        Box(
+            Modifier.size(56.dp).clip(CircleShape).background(scheme.primary).clickable(role = Role.Button, onClick = onNew).semantics { contentDescription = label },
+            contentAlignment = Alignment.Center,
+        ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.onPrimary, modifier = Modifier.size(20.dp)) }
+    }
+}
+
+/** I tuoi account: server, tacchette di privacy, fuori orario per il lavoro, e l'aggiunta del secondo. */
+@Composable
+private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Text(stringResource(R.string.ch_acc_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+    Account.entries.forEach { a ->
+        val s = if (a == model.account) model.session else model.otherSession
+        if (s != null) Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface)
+                .clickable(enabled = a != model.account, role = Role.Button) { onClose(); model.switchTo(a) }.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(38.dp).clip(CircleShape).background(accountColor(a).copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Text(accountName(a).take(1), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = accountColor(a))
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(accountName(a) + if (a == model.account) " · " + stringResource(R.string.ch_acc_here) else "", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(s.userId, fontSize = 12.5.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Ticks(Quiet.privacyOf(s.homeserver))
+            }
+            Text(stringResource(if (Quiet.privacyOf(s.homeserver) <= 5) R.string.ch_acc_public else R.string.ch_acc_private), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+            if (a == Account.Work) Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ch_acc_quiet), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                androidx.compose.material3.Switch(checked = model.workQuiet, onCheckedChange = model::setWorkQuiet)
+            }
+        }
+    }
+    if (model.otherSession == null) {
+        val missing = model.account.other
+        Pill(stringResource(if (missing == Account.Work) R.string.ch_acc_add_work_btn else R.string.ch_acc_add_personal_btn), EuriseIcons.plus(2f), Modifier.fillMaxWidth(), strong = true) {
+            onClose(); model.switchTo(missing)
+        }
+        Text(stringResource(R.string.ch_acc_two), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+    }
+}
+
+/** Le 10 tacchette di privacy a semaforo (regola della suite). */
+@Composable
+private fun Ticks(n: Int) {
+    val on = when { n >= 8 -> Color(0xFF4F8A5B); n >= 5 -> Color(0xFFC9A227); else -> Color(0xFFA4502E) }
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.semantics { contentDescription = "$n/10" }) {
+        repeat(10) { i -> Box(Modifier.width(4.dp).height(12.dp).clip(RoundedCornerShape(1.dp)).background(if (i < n) on else Color(0xFFDADAD3))) }
     }
 }
 

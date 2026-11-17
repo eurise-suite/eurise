@@ -208,4 +208,22 @@
     <string name="ch_attach">Allega un file</string>
     <string name="ch_file_too_big">Il file è più grande di 25 MB.</string>
     <string name="ch_file_unreadable">Il file non si legge.</string>
+    <!-- Due account (tavole ChatDueAccount e ChatAccountAggiungi) -->
+    <string name="ch_acc_personal">Personale</string>
+    <string name="ch_acc_work">Lavoro</string>
+    <string name="ch_acc_here">qui ora</string>
+    <string name="ch_acc_title">I tuoi account</string>
+    <string name="ch_acc_back">Torna a %1$s</string>
+    <string name="ch_acc_add_work">Collega l\'account di lavoro</string>
+    <string name="ch_acc_add_work_intro">Il lavoro resta separato dal personale: altro server, altre notifiche, altro backup. Nessun messaggio passa da un account all\'altro.</string>
+    <string name="ch_acc_email">Con la tua email di lavoro</string>
+    <string name="ch_acc_email_hint">nome@lavoro.it</string>
+    <string name="ch_acc_email_bad">Scrivi l\'email intera, con la chiocciola: il server lo troviamo dal dominio.</string>
+    <string name="ch_acc_public">Server pubblico: il contenuto è cifrato, ma chi parla con chi e quando lo vede il server. Va bene per te, non per dati di pazienti o clienti.</string>
+    <string name="ch_acc_private">Server tuo o del tuo lavoro: i dati di chi parla con chi restano lì.</string>
+    <string name="ch_acc_quiet">Fuori orario in silenzio · 19–8 e weekend</string>
+    <string name="ch_acc_add_work_btn">Aggiungi l\'account di lavoro</string>
+    <string name="ch_acc_add_personal_btn">Aggiungi l\'account personale</string>
+    <string name="ch_acc_two">Al massimo due account: uno personale e uno di lavoro. Si cambia dalla barra in basso.</string>
+    <string name="ch_channel_quiet">Lavoro fuori orario</string>
 </resources>

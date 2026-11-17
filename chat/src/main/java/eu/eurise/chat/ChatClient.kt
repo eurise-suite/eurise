@@ -50,6 +50,17 @@ class ChatClient(val session: Session) {
         return get(q, timeoutMs + 20_000)
     }
 
+    /**
+     * Quante non lette ci sono in tutto, per l'account che non si sta guardando: una /sync senza messaggi né stato (solo i
+     * contatori delle stanze), che non sposta il punto di sincronizzazione di quell'account.
+     */
+    fun unreadTotal(): Int {
+        val filter = """{"room":{"timeline":{"limit":0},"state":{"types":[]},"ephemeral":{"types":[]},"account_data":{"types":[]}},""" +
+            """"presence":{"not_types":["*"]},"account_data":{"types":[]}}"""
+        val join = get("/_matrix/client/v3/sync?timeout=0&filter=" + enc(filter), 30_000).optJSONObject("rooms")?.optJSONObject("join") ?: return 0
+        return join.keys().asSequence().sumOf { join.getJSONObject(it).optJSONObject("unread_notifications")?.optInt("notification_count") ?: 0 }
+    }
+
     fun messages(roomId: String, from: String): JSONObject =
         get("/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=30&from=${enc(from)}")
 
@@ -278,9 +289,14 @@ class ChatClient(val session: Session) {
     }
 }
 
-/** La sessione sul telefono: il gettone d'accesso cifrato con una chiave del Keystore (non esce, non va nei backup). */
-class SessionStore(context: Context) {
-    private val prefs = context.getSharedPreferences("chat_session", Context.MODE_PRIVATE)
+/**
+ * La sessione di un [account] sul telefono: il gettone d'accesso cifrato con una chiave del Keystore (non esce, non va nei
+ * backup). Ogni account ha le sue preferenze; la frase dell'archivio delle chiavi è una sola (gli archivi stanno in
+ * cartelle diverse per persona e dispositivo, vedi [ChatCrypto]).
+ */
+class SessionStore(context: Context, account: Account = Account.Personal) {
+    private val prefs = context.getSharedPreferences(account.prefs, Context.MODE_PRIVATE)
+    private val shared = context.getSharedPreferences(Account.Personal.prefs, Context.MODE_PRIVATE)
 
     fun load(): Session? {
         val hs = prefs.getString("hs", null) ?: return null
@@ -298,9 +314,9 @@ class SessionStore(context: Context) {
 
     /** La frase dell'archivio delle chiavi di cifratura: casuale, creata una volta, custodita cifrata dal Keystore. */
     fun cryptoPassphrase(): String {
-        prefs.getString("crypto", null)?.let { sealed -> runCatching { open(sealed) }.getOrNull()?.let { return it } }
+        shared.getString("crypto", null)?.let { sealed -> runCatching { open(sealed) }.getOrNull()?.let { return it } }
         val fresh = ChatCrypto.newPassphrase()
-        prefs.edit().putString("crypto", seal(fresh)).apply()
+        shared.edit().putString("crypto", seal(fresh)).apply()
         return fresh
     }
 

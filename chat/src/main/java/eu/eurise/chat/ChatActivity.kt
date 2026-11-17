@@ -54,6 +54,8 @@ class ChatActivity : ComponentActivity(), ChatActions {
     }
 
     private fun handle(intent: Intent?) {
+        // Dalla notifica di un account: si apre quello.
+        intent?.getStringExtra(EXTRA_ACCOUNT)?.let { name -> runCatching { Account.valueOf(name) }.getOrNull()?.let(model::switchTo) }
         // Da Email o Messaggi: «Apri nello Studio».
         if (intent?.action == eu.eurise.core.studio.StudioContract.ACTION_OPEN) {
             model.studioOpen(intent.getStringExtra(eu.eurise.core.studio.StudioContract.EXTRA_PATIENT))
@@ -150,5 +152,10 @@ class ChatActivity : ComponentActivity(), ChatActions {
 
     override fun askNotifications() {
         if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    companion object {
+        /** Quale account aprire (nome di [Account]), dalle notifiche. */
+        const val EXTRA_ACCOUNT = "eu.eurise.chat.ACCOUNT"
     }
 }
