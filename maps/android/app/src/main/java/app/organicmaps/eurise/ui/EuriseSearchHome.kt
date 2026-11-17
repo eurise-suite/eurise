@@ -84,6 +84,7 @@ object EuriseSearchHome {
         val fab = root.findViewById<View>(R.id.show_on_map_fab)
         appBar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         toolbar?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        pill(root)
         toolbar?.let {
             androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(it) { v, insets ->
                 v.setPadding(v.paddingLeft, 0, v.paddingRight, 0)
@@ -109,6 +110,43 @@ object EuriseSearchHome {
                 content.post { content.layoutParams = lp }
             }
             fab?.translationY = -v.height.toFloat()
+        }
+    }
+
+    /**
+     * Il campo di CoMaps è fatto per una barra colorata (testo, suggerimento e icone bianchi): in basso, su fondo
+     * trasparente, spariva nel bianco (prova del proprietario, 17 novembre). Qui diventa la pillola della suite: vetro
+     * chiaro di giorno e scuro di notte, bordo sottile, testo e icone nell'inchiostro, come la ricerca di MapViaggio2Dove.
+     */
+    private fun pill(root: View) {
+        val container = root.findViewById<View>(R.id.search_container) ?: return
+        val night = ThemeUtils.isNightTheme()
+        val ink = if (night) 0xFFE8ECF4.toInt() else 0xFF1E1D1B.toInt()
+        val muted = if (night) 0xFFA9B4C4.toInt() else 0xFF56564F.toInt()
+        val d = container.resources.displayMetrics.density
+        container.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = 26 * d
+            setColor(if (night) 0xF21C2333.toInt() else 0xFFFFFFFF.toInt())
+            setStroke((1 * d).toInt().coerceAtLeast(1), if (night) 0x33FFFFFF else 0x261E1D1B)
+        }
+        container.elevation = 4 * d
+        (container.layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let { lp ->
+            val m = (12 * d).toInt()
+            if (lp.leftMargin != m) {
+                lp.setMargins(m, (6 * d).toInt(), m, (8 * d).toInt())
+                container.layoutParams = lp
+            }
+        }
+        root.findViewById<android.widget.TextView>(R.id.query)?.apply {
+            setTextColor(ink)
+            setHintTextColor(muted)
+        }
+        val tint = android.content.res.ColorStateList.valueOf(ink)
+        for (id in intArrayOf(R.id.back, R.id.clear, R.id.voice_input))
+            root.findViewById<android.widget.ImageView>(id)?.let { androidx.core.widget.ImageViewCompat.setImageTintList(it, tint) }
+        root.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.progress)?.apply {
+            setIndicatorColor(ink)
+            trackColor = muted
         }
     }
 
