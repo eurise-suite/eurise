@@ -3355,3 +3355,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, pomeriggio, Organizzazione: agenda con l'assistente (calendario condiviso «Proposte»: lei propone, tu confermi, Altra ora, rifiuti; proposte in grigio nel Calendario, avviso delle nuove); corretto un nome doppio in Chat che fermava la compilazione · giro 748 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, sera, Comunicazione: due account in Chat · giro 750 (chat); tavole da approvare ChatTurni e ChatTurniCrea (turni in vista nel gruppo) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Alfred e AI: l'ironia anche a voce (89 battute, conferme ironiche), giro 754 → `docs/stato/ALFRED.md`.
+- 17 novembre, sera, Comunicazione: tutte le tavole in attesa approvate; turni nei gruppi della Chat con le funzioni di Bussola CA · giro 755 (chat) → `docs/stato/COMUNICAZIONE.md`.

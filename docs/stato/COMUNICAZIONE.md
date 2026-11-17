@@ -117,6 +117,26 @@ computer (area Computer, tavola PcEmail).
     (`Patient.fiscalCode`, controllato). Foglio «Ricetta pronta»: si compila da sé dalla **cartella dei promemoria**
     (scelta una volta, PDF degli ultimi 14 giorni, il più adatto) o «Dal promemoria PDF»; avvisi se il promemoria sembra di
     un altro paziente o senza i farmaci chiesti. Si può sempre scrivere a mano.
+- **Turni nei gruppi della Chat** (17 novembre, sera; tavole ChatTurni e ChatTurniCrea approvate, con le funzioni di
+  **Bussola CA** chieste dal proprietario: preferenze, indisponibilità e il resto; giro 755, solo chat): scheda **Turni**
+  accanto a Messaggi e Spese. Logica pura in `chat/.../Shifts.kt` con `ShiftsTest`: tipi di turno (sigla, orari, quante
+  persone, giorni; notte che finisce il giorno dopo; modelli «Reparto M P N» e «Continuità assistenziale» notti 20–8,
+  festivi 8–20, prefestivi 10–20, con festività italiane, Pasqua e festivi locali), persone con ruolo (**titolare**,
+  **sostituto** con «al posto di» e periodo, **reperibile esterno** mai generato) e **monte ore**; **disponibilità** di ognuno
+  (giorni no, turni preferiti ed evitati, giorni della settimana evitati); **Genera** che sceglie l'intera giornata insieme
+  (riposo di 11 ore, al massimo sei giorni di fila, equità pesata sul monte ore, preferenze; fissati a mano intatti; caselle
+  scoperte segnalate); «Come la settimana scorsa»; «A mano». Caselle in **doppia/tripla** con chi tiene il telefono
+  («una volta a testa»), **diurni divisi** all'ora scelta, **fissato a mano**. Cambi: **scambio** e **cessione** (a una persona
+  o a chiunque) con il controllo delle regole per tutti e due prima di chiedere e prima di accettare, **straordinario** a passi
+  di 15 minuti con il motivo; ogni cambio resta registrato e **si annulla** (chi l'ha chiesto, chi l'ha preso o chi
+  coordina). **Turni effettivi** e **ore del mese** (svolte, programmate, straordinari, monte ore, turni e notti), condivisibili
+  come testo. Messaggi della stanza cifrata `eu.eurise.shifts.plan` (vale l'ultima versione di chi l'ha mandato per primo),
+  `.avail` (solo di chi le manda), `.change`, `.reply`, con `body` leggibile da Element. Calendario **«Turni»** locale
+  del telefono (`ShiftCalendar`, account locale «Eurise Chat», promemoria alle 20 della sera prima), acceso da un
+  interruttore nella scheda: permesso del calendario chiesto solo allora (nuovi permessi READ/WRITE_CALENDAR nel manifest).
+  Non ancora (da Bussola CA): moduli ASL di fine mese e fogli firme, registro attività, import dei turni da PDF, «Da foglio o
+  foto» della tavola, riepilogo per SMS/email a chi non usa la Chat (oggi «Condividi»), turni nel calendario di chi usa
+  Element (link .ics), notifiche di promemoria dalla Chat stessa.
 - **Telefono: chiamata sempre raggiungibile e bolla** (17 novembre, richiesta del proprietario; senza tavola, descritta da
   lui): la chiamata in corso è un **servizio in primo piano** con lo stile «chiamata in corso» (pillola verde nella barra
   di stato da Android 12; se il sistema non lo concede resta la notifica, ora a importanza normale: canale nuovo
@@ -129,8 +149,8 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat, mail e messages giro 724 (17 novembre, notte: La mia Bussola); phone del
-  16 novembre.
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 755 (17 novembre, sera: turni nei gruppi); mail, messages e phone
+  giro 737.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -144,7 +164,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 - **Approvate, codice da fare**: ChatChiamata (chiamate e videochiamate: nel codice non c'è nulla), ChatAllega (oggi la
   Chat mostra immagini e file ricevuti ma non li manda); MsgConversazione per la parte «Disponibilità e posizione» nella barra; **PcEmail** (pagina «Eurise sul
   computer», approvata il 16 novembre: schermate da scrivere insieme all'area Computer, IMAP/SMTP già in `core/sync`).
-- **Turni in Chat** (17 novembre, sera; richiesta del proprietario; da approvare, fila y 21278): **ChatTurni** (la
+- **Turni in Chat** (17 novembre, sera; richiesta del proprietario; **approvate e in codice** il 17 novembre, vedi «Fatto»), fila y 21278: **ChatTurni** (la
   settimana in cima al gruppo, chi è in turno ora, scambi controllati sulle 11 ore di riposo che cambiano i calendari) e
   **ChatTurniCrea** (+ › Turni: chi, che turni, come girano; nel calendario «Turni» di ognuno, promemoria la sera prima).
   Da legare alle tavole Turni* già sulla tela (TurniFoglio, TurniOra, TurniProposta, area Organizzazione).
@@ -155,7 +175,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   basso Personale/Lavoro, foglio «I tuoi account», accesso del lavoro con l'email di lavoro, `ChatWorker` per i due
   account con canale `chat_quiet` per il lavoro fuori orario e notifica che apre l'account giusto. Lo Studio non è ancora
   legato al solo account di lavoro (oggi vive in quello aperto).
-- **Da approvare** (pagina «Chat ed Email», 17 novembre, pomeriggio; il proprietario ha approvato le idee, qui le tavole;
+- **Approvate il 17 novembre, sera («Tutte le tavole approvate»)** (pagina «Chat ed Email», 17 novembre, pomeriggio; il proprietario ha approvato le idee, qui le tavole;
   toccato `canvas.json`; generatori fuori dal repo in `/home/claude/tela/gen/` `lib.py`, `uni.py`, `feat.py`):
   - **Una persona, tutti i canali** (la funzione di Eurise secondo il proprietario), fila y 17516: **UniPersone** (vista
     Persone: una riga per persona con Chat, SMS, email e chiamate), **UniConversazione** (un filo con email, chat, SMS,
@@ -277,6 +297,13 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
+00. **Tavole approvate il 17 novembre, sera** (tutte quelle in attesa sulla pagina «Chat ed Email»). Codice in quest'ordine:
+   **Una persona, tutti i canali** (UniPersone, UniConversazione, UniCanale: la Chat legge SMS, chiamate con nota ed email
+   di una persona da provider protetti dal permesso di firma in Messaggi, Telefono ed Email, come `StudioProvider`; la persona
+   si riconosce dal contatto della Rubrica; tutto unito sul telefono), **invito a Ciarly** (ChatInvita, ChatInvitaElenco),
+   poi le 13 tavole Chat* (ChatBasi per prima), poi le tavole della seconda fila di La mia Bussola.
+   Turni: fatti al giro 755 (vedi «Fatto»); prove da chiedere: un gruppo con due telefoni, Fai i turni con Genera, scambio
+   accettato dall'altro, calendario «Turni» acceso.
 0. **La mia Bussola in Chat**: prima parte, referti e promemoria di Millewin fatti (vedi «Fatto»). Prossimo: tavole della
    seconda fila; regola di conservazione a 45 giorni sul server dello studio; referti per email (link e codice per SMS).
    Prove da chiedere anche: allegato cifrato verso Element e da Element, referto paziente → studio e studio → paziente,
