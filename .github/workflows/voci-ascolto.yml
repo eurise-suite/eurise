@@ -1,0 +1,51 @@
+name: Voci da ascoltare
+
+# Campioni per scegliere una voce italiana più naturale per Alfred (17 novembre: «Nicola sembra che non sia italiano»):
+# le stesse frasi lette da Pocket TTS (Kyutai, italiano), Supertonic 3 e Piper Serena. Finiscono, in mp3, nella
+# pre-release «voci-ascolto». Niente entra nell'app finché il proprietario non ha scelto.
+on:
+  push:
+    paths:
+      - ".github/workflows/voci-ascolto.yml"
+      - ".github/scripts/voci_ascolto.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  campioni:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        motore: [pocket, supertonic, serena]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Strumenti
+        run: |
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          pip install -q huggingface_hub numpy soundfile onnxruntime sentencepiece safetensors scipy
+          case "${{ matrix.motore }}" in
+            supertonic) pip install -q supertonic ;;
+            serena) pip install -q piper-tts ;;
+            pocket) pip install -q tokenizers ;;
+          esac
+      - name: Campioni
+        run: python .github/scripts/voci_ascolto.py "${{ matrix.motore }}" out
+      - name: Mp3
+        run: |
+          ffmpeg -loglevel error -i "out/${{ matrix.motore }}.wav" -codec:a libmp3lame -q:a 4 "out/ascolta-${{ matrix.motore }}.mp3"
+          cp "out/${{ matrix.motore }}.txt" "out/ascolta-${{ matrix.motore }}.txt"
+          cat out/*.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Pubblica nella pre-release «voci-ascolto»
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view voci-ascolto -R "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create voci-ascolto -R "${{ github.repository }}" --prerelease --title "Voci da ascoltare" \
+              --notes "Campioni per scegliere la voce di Alfred: Pocket TTS (Kyutai, CC BY 4.0), Supertonic 3 (OpenRAIL-M), Piper Serena (CC BY 4.0)."
+          gh release upload voci-ascolto out/ascolta-* --clobber -R "${{ github.repository }}"
