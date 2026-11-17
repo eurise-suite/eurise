@@ -300,6 +300,9 @@ jobs:
         run: |
           grep -E "^e: |error:|FAILED" build.log | head -40 | while IFS= read -r line; do echo "::error::${line}"; done
           grep -A 12 "What went wrong" build.log | head -60 | grep -v "^\s*$" | while IFS= read -r line; do echo "::error::${line}"; done
+          # R8 scrive i suoi errori in maiuscolo («ERROR: … Missing class …») e le regole mancanti in un file a parte.
+          grep -E "^ERROR|R8: |Missing class" build.log | head -30 | while IFS= read -r line; do echo "::error::${line}"; done
+          cat browser/build/outputs/mapping/debug/missing_rules.txt 2>/dev/null | head -40 | while IFS= read -r line; do echo "::error::R8 ${line}"; done
 
       - name: Versione di GeckoView usata
         run: |
