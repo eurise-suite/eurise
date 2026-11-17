@@ -38,6 +38,7 @@ class EuriseApplication : Application(), eu.eurise.feature.ponte.PonteToday.Sour
         // I lavori di sincronizzazione vanno registrati prima che WorkManager ne avvii uno.
         CloudSync.register(NotesSyncJob(data.notes, data.notebooks))
         CloudSync.register(eu.eurise.feature.tasks.TasksSyncJob(data.tasks))
+        CloudSync.register(eu.eurise.feature.calendar.assistant.AssistantSyncJob())
         data.tasks.onChanged = { CloudSync.get(this).requestSoon() }
         CloudSync.get(this).schedule()
         // Quando cambia un avviso di un'attività si ricalcola la prossima sveglia dei promemoria.

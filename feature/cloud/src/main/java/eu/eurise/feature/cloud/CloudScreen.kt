@@ -82,7 +82,7 @@ private enum class Form { Nextcloud, KDrive, WebDav }
 
 /** Account cloud, cosa va dove e sincronizzazione, come nelle anteprime della pagina "Cloud". */
 @Composable
-fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
+fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}, onAssistant: () -> Unit = {}) {
     val context = LocalContext.current
     val viewModel = viewModel { CloudViewModel(CloudSync.get(context.applicationContext)) }
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
@@ -131,6 +131,20 @@ fun CloudRoute(onBack: () -> Unit, onBackup: () -> Unit = {}) {
                         "",
                         onClick = onBackup,
                     )
+                }
+            }
+            if (accounts.any { it.kind == CloudKind.Murena || it.kind == CloudKind.Nextcloud }) {
+                item("assistant") {
+                    // Agenda con l'assistente: il calendario «Proposte» condiviso con chi ti aiuta (sta nel Calendario).
+                    val who = remember { eu.eurise.core.cloud.Proposals.assistant(context) }
+                    Group {
+                        WhereRow(
+                            stringResource(R.string.cloud_assistant),
+                            who?.let { stringResource(R.string.cloud_assistant_on, it.second) } ?: stringResource(R.string.cloud_assistant_hint),
+                            "",
+                            onClick = onAssistant,
+                        )
+                    }
                 }
             }
             if (accounts.isNotEmpty()) {

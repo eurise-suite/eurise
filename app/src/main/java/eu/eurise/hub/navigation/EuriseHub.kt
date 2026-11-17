@@ -140,6 +140,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "calendar" -> goTo(Section.Calendar)
             section == "dates" -> navController.navigate("dates")
             section == "medicines" -> navController.navigate("medicines")
+            // Dall'avviso di una proposta dell'assistente.
+            section == "proposals" -> navController.navigate("calendar/assistant") { launchSingleTop = true }
             section.startsWith("day:") -> {
                 calendarDay = runCatching { java.time.LocalDate.parse(section.removePrefix("day:")) }.getOrNull()
                 goTo(Section.Calendar)
@@ -208,6 +210,13 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         openDay = calendarDay,
                         onDates = { navController.navigate("dates") },
                         onMedicines = { navController.navigate("medicines") },
+                        onAssistant = { navController.navigate("calendar/assistant") { launchSingleTop = true } },
+                    )
+                }
+                composable("calendar/assistant") {
+                    eu.eurise.feature.calendar.assistant.AssistantAgendaRoute(
+                        calendar = data.calendar,
+                        onBack = { navController.closeIfOn("calendar/assistant") },
                     )
                 }
                 composable("dates") { eu.eurise.feature.calendar.reminders.ImportantDatesRoute(onBack = { navController.popBackStack() }) }
@@ -302,7 +311,11 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     eu.eurise.feature.scanner.ScannerRoute(onClose = { navController.closeIfOn("scanner") })
                 }
                 composable("cloud") {
-                    CloudRoute(onBack = { navController.closeIfOn("cloud") }, onBackup = { navController.navigate("cloud/backup") })
+                    CloudRoute(
+                        onBack = { navController.closeIfOn("cloud") },
+                        onBackup = { navController.navigate("cloud/backup") },
+                        onAssistant = { navController.navigate("calendar/assistant") { launchSingleTop = true } },
+                    )
                 }
                 composable("cloud/backup") {
                     eu.eurise.feature.cloud.BackupRoute(onBack = { navController.closeIfOn("cloud/backup") })

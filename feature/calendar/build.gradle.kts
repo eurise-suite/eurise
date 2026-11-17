@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:suite"))
     implementation(project(":core:links"))
+    implementation(project(":core:cloud"))
     // Già nell'APK per lo Scanner: qui legge le carte d'imbarco nei biglietti PDF.
     implementation(libs.zxing.core)
     implementation(libs.androidx.activity.compose)

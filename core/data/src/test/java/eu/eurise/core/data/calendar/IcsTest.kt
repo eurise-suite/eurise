@@ -64,4 +64,23 @@ class IcsTest {
         assertEquals(1, e.size)
         assertEquals(LocalDateTime.of(2026, 12, 1, 11, 0), e[0].end)
     }
+
+    @Test
+    fun proposalFieldsAndCancel() {
+        val ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:abc-1\r\nSUMMARY:Studio Bianchi\r\nDTSTART:20261119T090000Z\r\n" +
+            "ORGANIZER;CN=\"Laura Neri\":mailto:laura@murena.io\r\nSTATUS:TENTA\r\n TIVE\r\nBEGIN:VALARM\r\nSTATUS:X\r\n" +
+            "END:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        val e = Ics.parse(ics, rome).single()
+        assertEquals("abc-1", e.uid)
+        assertEquals("TENTATIVE", e.status)
+        assertEquals("Laura Neri", e.organizer)
+        val cancelled = Ics.withStatus(ics, "CANCELLED")
+        assertEquals("CANCELLED", Ics.parse(cancelled, rome).single().status)
+        assertTrue("STATUS:X" in cancelled)
+        assertTrue("TIVE" !in cancelled)
+        // Senza STATUS: si aggiunge.
+        val plain = "BEGIN:VEVENT\nUID:x\nDTSTART:20261119T090000Z\nORGANIZER:mailto:luca@example.org\nEND:VEVENT"
+        assertEquals("luca@example.org", Ics.parse(plain, rome).single().organizer)
+        assertEquals("CANCELLED", Ics.parse(Ics.withStatus(plain, "CANCELLED"), rome).single().status)
+    }
 }

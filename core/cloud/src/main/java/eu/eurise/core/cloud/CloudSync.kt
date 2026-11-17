@@ -111,7 +111,8 @@ class CloudSync private constructor(private val context: Context) {
 
     private fun anythingToSync(): Boolean {
         val p = _prefs.value
-        return (p.notesEnabled || p.tasksEnabled) && accounts.get(p.notesAccount) != null
+        // L'agenda con l'assistente controlla le proposte anche senza note e attività nel cloud.
+        return (p.notesEnabled || p.tasksEnabled) && accounts.get(p.notesAccount) != null || Proposals.active(context)
     }
 
     private fun constraints() = Constraints.Builder()

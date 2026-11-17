@@ -22,6 +22,12 @@ object Ics {
         val description: String,
         val url: String,
         val repeats: Boolean,
+        /** UID dell'appuntamento, vuoto se manca. */
+        val uid: String = "",
+        /** STATUS in maiuscolo (CONFIRMED, TENTATIVE, CANCELLED), vuoto se manca. */
+        val status: String = "",
+        /** Il nome di chi l'ha scritto (ORGANIZER con CN, o l'indirizzo), vuoto se manca. */
+        val organizer: String = "",
     )
 
     private val basic = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
@@ -68,6 +74,12 @@ object Ics {
             description = description,
             url = prop("URL")?.second?.trim().orEmpty(),
             repeats = rule != null,
+            uid = prop("UID")?.second?.trim().orEmpty(),
+            status = prop("STATUS")?.second?.trim()?.uppercase().orEmpty(),
+            organizer = prop("ORGANIZER")?.let { (k, v) ->
+                Regex("CN=(\"[^\"]*\"|[^;:]+)", RegexOption.IGNORE_CASE).find(k)?.groupValues?.get(1)?.trim('"')
+                    ?: v.trim().removePrefix("mailto:").removePrefix("MAILTO:")
+            }.orEmpty(),
         )
     }
 
@@ -84,6 +96,35 @@ object Ics {
         }
         if (from == null) local else local.atZone(from).withZoneSameInstant(zone).toLocalDateTime()
     }.getOrNull()
+
+    /**
+     * Lo stesso testo con lo STATUS del primo VEVENT cambiato in [status] (per esempio CANCELLED per una proposta
+     * rifiutata): la riga c'è già e si sostituisce, altrimenti si aggiunge prima della fine dell'appuntamento. Il resto,
+     * comprese le righe piegate, resta com'è.
+     */
+    fun withStatus(text: String, status: String): String {
+        val lines = text.replace("\r\n", "\n").split('\n')
+        val out = ArrayList<String>(lines.size + 1)
+        var inside = false
+        var nested = 0
+        var done = false
+        var skipping = false
+        for (line in lines) {
+            val upper = line.trimEnd().uppercase()
+            if (skipping && (line.startsWith(" ") || line.startsWith("\t"))) continue
+            skipping = false
+            when {
+                done -> out += line
+                upper == "BEGIN:VEVENT" -> { inside = true; nested = 0; out += line }
+                inside && upper.startsWith("BEGIN:") -> { nested++; out += line }
+                inside && upper == "END:VEVENT" -> { out += "STATUS:$status"; out += line; done = true; inside = false }
+                inside && upper.startsWith("END:") -> { nested--; out += line }
+                inside && nested == 0 && (upper.startsWith("STATUS:") || upper.startsWith("STATUS;")) -> skipping = true
+                else -> out += line
+            }
+        }
+        return out.joinToString("\r\n")
+    }
 
     /** `PT1H30M`, `P1D`, `-PT15M` → secondi. */
     private fun duration(d: String): Long? {

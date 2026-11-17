@@ -177,4 +177,7 @@
     <string name="ratings_mega">● Buona · MEGA (Nuova Zelanda), con cifratura propria.</string>
     <string name="ratings_us">● Con avviso · Google Drive, OneDrive, Dropbox (USA): soggetti alle leggi americane, raccolgono molti dati di contorno (quando, quanto, da dove).</string>
     <string name="ratings_local">● Massima · Cartella o chiavetta: resta con te, ma tienila lontana dal telefono.</string>
+    <string name="cloud_assistant">Agenda con l\'assistente</string>
+    <string name="cloud_assistant_hint">Chi ti aiuta propone gli appuntamenti, tu confermi</string>
+    <string name="cloud_assistant_on">Condivisa con %1$s</string>
 </resources>

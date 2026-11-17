@@ -7,6 +7,7 @@ import eu.eurise.core.data.calendar.CalendarEvent
 import eu.eurise.core.data.calendar.CalendarRepository
 import eu.eurise.core.data.model.Task
 import eu.eurise.core.data.modes.Modes
+import eu.eurise.feature.calendar.assistant.AssistantAgenda
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,9 +58,15 @@ class CalendarViewModel(
             .flatMapLatest { q ->
                 val (from, to) = range(q.view, q.anchor)
                 val events = if (q.permission) calendar.observeEvents(from, to) else flowOf(emptyList())
-                combine(events, tasks.observeForCalendar(from, to), Modes.state) { e, t, m ->
+                val calendars = if (q.permission) calendar.observeCalendars() else flowOf(emptyList())
+                combine(events, tasks.observeForCalendar(from, to), Modes.state, AssistantAgenda.proposals, calendars) { e, t, m, p, c ->
                     // La modalità accesa può nascondere calendari ed elenchi.
-                    val shown = if (m.hiddenCalendars.isEmpty()) e else e.filter { it.calendarId !in m.hiddenCalendars }
+                    val visible = if (m.hiddenCalendars.isEmpty()) e else e.filter { it.calendarId !in m.hiddenCalendars }
+                    // Le proposte dell'assistente in grigio finché non si confermano (agenda con l'assistente).
+                    val proposed = AssistantAgenda.asEvents(p, c.any { AssistantAgenda.isProposalCalendar(it.name) })
+                        .filter { !it.lastDay.isBefore(from) && !it.firstDay.isAfter(to) }
+                    val shown = (visible.map { if (AssistantAgenda.isProposalCalendar(it.calendarName)) it.copy(color = AssistantAgenda.PROPOSAL_COLOR) else it } + proposed)
+                        .sortedBy { it.start }
                     val shownTasks = if (m.hiddenLists.isEmpty()) t else t.filter { it.listId !in m.hiddenLists }
                     CalendarState(q.view, q.anchor, today, q.permission, from, to, shown, shownTasks, loaded = true)
                 }

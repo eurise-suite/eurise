@@ -100,8 +100,13 @@ fun CalendarRoute(
     openDay: LocalDate? = null,
     onDates: () -> Unit = {},
     onMedicines: () -> Unit = {},
+    onAssistant: () -> Unit = {},
 ) {
     val viewModel = viewModel { CalendarViewModel(calendar, tasks) }
+    val appContext = LocalContext.current
+    LaunchedEffect(Unit) { eu.eurise.feature.calendar.assistant.AssistantAgenda.load(appContext) }
+    val proposals by eu.eurise.feature.calendar.assistant.AssistantAgenda.proposals.collectAsStateWithLifecycle()
+    val assistant = remember(proposals) { eu.eurise.core.cloud.Proposals.assistant(appContext) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Giorno chiesto da fuori (per esempio dalla scheda Calendario della Scrivania): vista Giorno.
     LaunchedEffect(openDay) { openDay?.let { viewModel.openDay(it, switchToDay = true) } }
@@ -127,9 +132,12 @@ fun CalendarRoute(
         onStep = viewModel::step,
         onOpenDay = viewModel::openDay,
         onToggleTask = viewModel::setTaskDone,
-        onEventClick = { onOpenEvent(it.eventId, it.beginMillis) },
+        // Le proposte dell'assistente (id negativi) aprono l'agenda condivisa.
+        onEventClick = { if (it.eventId < 0) onAssistant() else onOpenEvent(it.eventId, it.beginMillis) },
         onSlotClick = { onNewEvent(it.atZone(zone).toInstant().toEpochMilli()) },
         showSettingsLink = refusals > 0,
+        assistant = assistant?.let { it.second to proposals.size },
+        onAssistant = onAssistant,
         onRequestPermission = {
             launcher.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
         },
@@ -157,6 +165,8 @@ internal fun CalendarScreen(
     onOpenSettings: () -> Unit,
     onDates: () -> Unit = {},
     onMedicines: () -> Unit = {},
+    assistant: Pair<String, Int>? = null,
+    onAssistant: () -> Unit = {},
 ) {
     val headerHaze = remember { HazeState() }
     val density = LocalDensity.current
@@ -205,6 +215,8 @@ internal fun CalendarScreen(
                 hazeState = headerHaze,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
+            // Agenda con l'assistente: chi propone e quante proposte aspettano (solo se l'agenda è condivisa).
+            assistant?.let { (name, pending) -> AssistantStrip(name, pending, onAssistant) }
             if (timeline && state.hasPermission) {
                 Spacer(Modifier.height(6.dp))
                 DayHeads(state.days, state.today, onClick = { onOpenDay(it, state.view != CalendarView.Day) })
@@ -280,6 +292,26 @@ internal fun CalendarScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AssistantStrip(name: String, pending: Int, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            .background(if (pending > 0) scheme.secondaryContainer else scheme.surfaceContainerLow)
+            .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(EuriseIcons.person(), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
+        Text(
+            stringResource(R.string.asst_strip, stringResource(R.string.asst_title_with, name.substringBefore(' ')), pending),
+            fontSize = 12.5.sp, fontWeight = if (pending > 0) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+        )
+        Icon(EuriseIcons.chevronRight(), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
     }
 }
 

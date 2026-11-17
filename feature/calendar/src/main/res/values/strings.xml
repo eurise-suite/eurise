@@ -191,4 +191,53 @@
     <string name="cal_invite_remove">Togli %1$s</string>
     <string name="cal_invite_note">Al salvataggio il tuo calendario manda l\'invito: l\'appuntamento compare nel loro calendario.</string>
     <string name="cal_invite_local">Questo calendario è solo sul telefono: gli inviti non partono. Scegli un calendario di Murena o Nextcloud.</string>
+    <!-- Agenda con l'assistente (tavole CollAssistente e InsAssistente, 17 novembre). -->
+    <string name="asst_title">Agenda con l\'assistente</string>
+    <string name="asst_title_with">Agenda con %1$s</string>
+    <string name="asst_subtitle">condivisa · propone, tu confermi</string>
+    <string name="asst_subtitle_setup">chi ti aiuta propone, tu confermi</string>
+    <string name="asst_back">Indietro</string>
+    <string name="asst_refresh">Aggiorna le proposte</string>
+    <string name="asst_me">Tu</string>
+    <string name="asst_her">lei</string>
+    <string name="asst_someone">L\'assistente</string>
+    <string name="asst_pending">Da confermare · %1$d</string>
+    <string name="asst_pending_hint">in grigio nel calendario finché non dici sì</string>
+    <string name="asst_empty">Nessuna proposta da confermare. Quando %1$s scrive un appuntamento nel calendario «Proposte», arriva qui con un avviso.</string>
+    <string name="asst_proposes">%1$s propone</string>
+    <string name="asst_all_day">tutto il giorno</string>
+    <string name="asst_confirm">Conferma</string>
+    <string name="asst_other_time">Altra ora</string>
+    <string name="asst_decline">Rifiuta</string>
+    <string name="asst_next">Avanti</string>
+    <plurals name="asst_confirm_all">
+        <item quantity="one">Conferma %1$d</item>
+        <item quantity="other">Conferma tutte e %1$d</item>
+    </plurals>
+    <string name="asst_target">Le confermate vanno in</string>
+    <string name="asst_no_target">Nessun calendario modificabile sul telefono</string>
+    <string name="asst_not_saved">Il calendario del telefono non ha accettato l\'appuntamento.</string>
+    <string name="asst_failed">Il cloud non ha risposto</string>
+    <string name="asst_sees_title">Cosa vede %1$s</string>
+    <string name="asst_sees_no">Non vede</string>
+    <string name="asst_sees_titles">Titoli</string>
+    <string name="asst_sees_none">Nessun calendario di appuntamenti sul tuo cloud.</string>
+    <string name="asst_sees_note">Con «Titoli» vede orari e titoli in sola lettura. Gli appuntamenti segnati come privati le arrivano come «Occupato».</string>
+    <string name="asst_cloud_murena">Murena</string>
+    <string name="asst_cloud_nextcloud">tuo Nextcloud</string>
+    <string name="asst_privacy_on">%1$s vede solo le proposte e i calendari scelti qui; tutto resta sul %2$s, Eurise non vede nulla.</string>
+    <string name="asst_privacy_setup">Si crea il calendario «Proposte» sul %1$s e lo si condivide solo con lei. Eurise non ha server e non vede nulla.</string>
+    <string name="asst_stop">Smetti di condividere con %1$s</string>
+    <string name="asst_intro">Chi ti aiuta con gli appuntamenti (una segretaria, un collega) li scrive nel calendario «Proposte», con qualunque app di calendario. Tu li trovi qui e li confermi con un tocco.</string>
+    <string name="asst_need_cloud">Serve un account Murena o Nextcloud: collegalo in Cloud, poi torna qui.</string>
+    <string name="asst_who">Email o nome utente di chi ti aiuta</string>
+    <string name="asst_who_hint">Deve avere un account sullo stesso server (Murena con Murena, lo stesso Nextcloud).</string>
+    <string name="asst_share">Condividi l\'agenda</string>
+    <string name="asst_channel">Agenda con l\'assistente</string>
+    <string name="asst_note_title">%1$s propone un appuntamento</string>
+    <plurals name="asst_log_new">
+        <item quantity="one">%1$d proposta nuova da confermare</item>
+        <item quantity="other">%1$d proposte nuove da confermare</item>
+    </plurals>
+    <string name="asst_strip">%1$s · %2$d da confermare</string>
 </resources>

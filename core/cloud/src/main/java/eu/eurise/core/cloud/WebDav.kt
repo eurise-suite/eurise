@@ -55,7 +55,12 @@ data class DavCalendar(
     val todo: Boolean,
     val ownerName: String? = null,
     val members: List<DavMember> = emptyList(),
+    /** Vero se accetta gli appuntamenti (VEVENT). */
+    val events: Boolean = !todo,
 )
+
+/** Un oggetto di un calendario: [path] relativo alla cartella dei calendari («proposte/abc.ics»), [etag], testo iCalendar. */
+data class DavCalendarObject(val path: String, val etag: String, val data: String)
 
 /**
  * Una persona con cui è condiviso un calendario: [href] come lo scrive il server («principal:principals/users/luca» o
@@ -215,7 +220,9 @@ class WebDav(
                 if (r.getElementsByTagNameNS(CALDAV_NS, "calendar").length == 0) return@mapNotNull null
                 val slug = r.child("href")?.textContent?.trim()?.trimEnd('/')?.substringAfterLast('/')?.let { URLDecoder.decode(it, "UTF-8") } ?: return@mapNotNull null
                 val comps = r.getElementsByTagNameNS(CALDAV_NS, "comp")
-                val todo = (0 until comps.length).any { (comps.item(it) as Element).getAttribute("name").equals("VTODO", true) }
+                val names = (0 until comps.length).map { (comps.item(it) as Element).getAttribute("name").uppercase() }
+                val todo = "VTODO" in names
+                val events = names.isEmpty() || "VEVENT" in names
                 val owner = r.getElementsByTagNameNS(OC_NS, "owner-principal").item(0)?.textContent?.trim()?.trimEnd('/')?.substringAfterLast('/')
                 val ownerName = if (owner != null && owner != calendarUser) {
                     r.getElementsByTagNameNS(NC_NS, "owner-displayname").item(0)?.textContent?.trim()?.takeIf { it.isNotEmpty() } ?: owner
@@ -228,7 +235,7 @@ class WebDav(
                         ?: href.substringAfterLast('/').substringAfter("mailto:")
                     DavMember(href, name, user.getElementsByTagNameNS(OC_NS, "read-write").length > 0)
                 }
-                DavCalendar(slug, r.child("displayname")?.textContent?.trim().orEmpty(), todo, ownerName, members)
+                DavCalendar(slug, r.child("displayname")?.textContent?.trim().orEmpty(), todo, ownerName, members, events)
             }
         }
     }
@@ -275,12 +282,33 @@ class WebDav(
 
     private fun xmlText(text: String) = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    /** Crea un calendario di sole attività, da chiamare su [calendars]. */
-    suspend fun mkCalendar(slug: String, name: String) {
+    /** Crea un calendario di sole attività (o di soli appuntamenti con [events]), da chiamare su [calendars]. */
+    suspend fun mkCalendar(slug: String, name: String, events: Boolean = false) {
         val safe = name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        val body = """<?xml version="1.0" encoding="utf-8"?><c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>$safe</d:displayname><c:supported-calendar-component-set><c:comp name="VTODO"/></c:supported-calendar-component-set></d:prop></d:set></c:mkcalendar>"""
+        val comp = if (events) "VEVENT" else "VTODO"
+        val body = """<?xml version="1.0" encoding="utf-8"?><c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>$safe</d:displayname><c:supported-calendar-component-set><c:comp name="$comp"/></c:supported-calendar-component-set></d:prop></d:set></c:mkcalendar>"""
         val req = request(url(slug, folder = true)).method("MKCALENDAR", body.toRequestBody(XML)).build()
         call(req) { res -> if (!res.isSuccessful && res.code != 405) throw DavException(res.code, "MKCALENDAR $slug: ${res.code}") }
+    }
+
+    /**
+     * Gli appuntamenti del calendario [slug] con il loro testo, da chiamare su [calendars] (un `calendar-query`
+     * con `calendar-data`: va bene per i calendari piccoli, come quello delle proposte dell'assistente).
+     */
+    suspend fun calendarObjects(slug: String): List<DavCalendarObject> {
+        val req = request(url(slug, folder = true)).header("Depth", "1").method("REPORT", EVENTS_QUERY.toRequestBody(XML)).build()
+        return call(req) { res ->
+            if (res.code == 404) return@call emptyList()
+            if (res.code != 207) throw DavException(res.code, "REPORT $slug: ${res.code}")
+            val responses = parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(DAV_NS, "response")
+            (0 until responses.length).mapNotNull { i ->
+                val r = responses.item(i) as Element
+                val name = r.child("href")?.textContent?.trim()?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                val etag = r.child("getetag")?.textContent?.trim() ?: return@mapNotNull null
+                val data = r.getElementsByTagNameNS(CALDAV_NS, "calendar-data").item(0)?.textContent ?: return@mapNotNull null
+                DavCalendarObject(slug + "/" + URLDecoder.decode(name, "UTF-8"), etag, data)
+            }
+        }
     }
 
     /** Vero sui server Nextcloud, Murena compreso: solo loro hanno link, versioni e condivisioni. */
@@ -530,6 +558,8 @@ class WebDav(
         private const val CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
         private const val CALENDARS_BODY =
             """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:o="http://owncloud.org/ns" xmlns:n="http://nextcloud.com/ns"><d:prop><d:resourcetype/><d:displayname/><c:supported-calendar-component-set/><o:owner-principal/><n:owner-displayname/><o:invite/></d:prop></d:propfind>"""
+        private const val EVENTS_QUERY =
+            """<?xml version="1.0" encoding="utf-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter></c:calendar-query>"""
         private const val OC_NS = "http://owncloud.org/ns"
         private const val NC_NS = "http://nextcloud.com/ns"
         private const val SABRE_NS = "http://sabredav.org/ns"
