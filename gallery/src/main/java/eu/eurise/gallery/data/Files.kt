@@ -36,6 +36,9 @@ import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.adjustMatrix
 import eu.eurise.gallery.logic.Adjust
 import eu.eurise.gallery.logic.develop
+import eu.eurise.gallery.logic.Perspective
+import eu.eurise.gallery.logic.Expand
+import eu.eurise.gallery.logic.expandPixels
 import eu.eurise.gallery.logic.cropPixels
 import java.io.File
 import java.io.IOException
@@ -294,7 +297,7 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
         decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / 8192))
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
     }
-    var bitmap = geometry(decoded, state.flip, state.turns)
+    var bitmap = perspective(geometry(decoded, state.flip, state.turns), state.perspective)
     val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(out)
     val adjust = state.effective
@@ -322,6 +325,7 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
         val (x, y, cw, ch) = cropPixels(state.crop, bitmap.width, bitmap.height)
         bitmap = Bitmap.createBitmap(bitmap, x, y, cw, ch)
     }
+    bitmap = expanded(bitmap, state.expand)
     val base = item.name.substringBeforeLast('.').ifEmpty { "foto" }
     val values = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, "$base-modificata-${System.currentTimeMillis() / 1000}.jpg")
@@ -346,6 +350,34 @@ fun geometry(source: Bitmap, flip: Boolean, turns: Int): Bitmap {
         postRotate(turns * 90f)
     }
     return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+}
+
+/**
+ * La prospettiva raddrizzata: i quattro punti di [p] diventano gli angoli della foto (stessa grandezza), con la
+ * trasformazione prospettica di Android (setPolyToPoly), che disegna con il filtro bilineare.
+ */
+fun perspective(source: Bitmap, p: Perspective): Bitmap {
+    if (p.isIdentity) return source
+    val w = source.width.toFloat()
+    val h = source.height.toFloat()
+    val q = p.quad()
+    val src = FloatArray(8) { if (it % 2 == 0) q[it] * w else q[it] * h }
+    val dst = floatArrayOf(0f, 0f, w, 0f, w, h, 0f, h)
+    val matrix = Matrix().apply { setPolyToPoly(src, 0, dst, 0, 4) }
+    val out = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+    Canvas(out).drawBitmap(source, matrix, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+    return out
+}
+
+/** I bordi di Espandi attorno alla foto ([expandPixels]). */
+fun expanded(source: Bitmap, e: Expand): Bitmap {
+    val m = e.margin(source.width, source.height)
+    if (m <= 0) return source
+    val w = source.width
+    val h = source.height
+    val px = IntArray(w * h).also { source.getPixels(it, 0, w, 0, 0, w, h) }
+    val out = expandPixels(px, w, h, m, e.fill)
+    return Bitmap.createBitmap(out, w + 2 * m, h + 2 * m, Bitmap.Config.ARGB_8888)
 }
 
 /** Decodifica ridotta per l'anteprima dell'editor. */

@@ -123,6 +123,10 @@ import eu.eurise.gallery.logic.CurvePreset
 import eu.eurise.gallery.logic.SavedLook
 import eu.eurise.gallery.logic.curveLut
 import eu.eurise.gallery.logic.develop
+import eu.eurise.gallery.logic.Perspective
+import eu.eurise.gallery.logic.ExpandFill
+import eu.eurise.gallery.data.perspective
+import eu.eurise.gallery.data.expanded
 import eu.eurise.gallery.logic.neutralize
 import eu.eurise.gallery.data.GalleryStore
 import kotlinx.coroutines.Dispatchers
@@ -200,7 +204,12 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     fun remember_() { history = (history + state).takeLast(40); future = emptyList() }
     fun commit(next: EditState) { if (next != state) { remember_(); state = next } }
 
-    val shown = remember(source, state.turns, state.flip) { source?.let { geometry(it, state.flip, state.turns) } }
+    val geo = remember(source, state.turns, state.flip) { source?.let { geometry(it, state.flip, state.turns) } }
+    // La prospettiva si applica subito dopo rotazione e specchio, come nella copia salvata.
+    val shown = remember(geo, state.perspective) { geo?.let { perspective(it, state.perspective) } }
+    var cropSection by remember { mutableStateOf(CropSection.Crop) }
+    var freeCorners by remember { mutableStateOf(false) }
+    val editingPerspective = tool == Tool.Crop && cropSection == CropSection.Perspective
     val adjust = state.effective
     // Ombre e alte luci non stanno in una matrice: la curva si ricalcola su una copia, poco dopo l'ultimo ritocco.
     // Ciò che la matrice non sa fare (toni, curve, vividezza, struttura, nitidezza) si calcola su una copia, poco dopo
@@ -215,6 +224,18 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
             val px = IntArray(w * h).also { base.getPixels(it, 0, w, 0, 0, w, h) }
             develop(px, w, h, pixelPart)
             Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+        }
+    }
+    // Espandi: i bordi aggiunti si vedono attorno alla foto, calcolati su una copia piccola.
+    val showExpand = state.expand.amount > 0f && !(tool == Tool.Crop && cropSection != CropSection.Expand)
+    val expandBg by produceState<Bitmap?>(null, toned, shown, state.expand, showExpand) {
+        val base = toned ?: shown
+        if (!showExpand || base == null || state.expand.fill == ExpandFill.White || state.expand.fill == ExpandFill.Black) { value = null; return@produceState }
+        delay(60)
+        value = withContext(Dispatchers.Default) {
+            val k = 400f / maxOf(base.width, base.height)
+            val small = if (k < 1f) Bitmap.createScaledBitmap(base, (base.width * k).roundToInt().coerceAtLeast(1), (base.height * k).roundToInt().coerceAtLeast(1), true) else base
+            expanded(small, state.expand)
         }
     }
     var section by remember { mutableStateOf(AdjustSection.Light) }
@@ -300,9 +321,10 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
               translationY = pan.y
               transformOrigin = TransformOrigin(0f, 0f)
           }) {
-            val bitmap = shown
+            val bitmap = if (editingPerspective) geo else shown
             if (bitmap != null && boxSize != IntSize.Zero) {
-                val fit = min(boxSize.width.toFloat() / bitmap.width, boxSize.height.toFloat() / bitmap.height)
+                val margin = if (showExpand) state.expand.margin(bitmap.width, bitmap.height) else 0
+                val fit = min(boxSize.width.toFloat() / (bitmap.width + 2 * margin), boxSize.height.toFloat() / (bitmap.height + 2 * margin))
                 val w = bitmap.width * fit
                 val h = bitmap.height * fit
                 val left = (boxSize.width - w) / 2
@@ -311,6 +333,21 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 val curved = remember(toned) { toned?.asImageBitmap() }
                 val image = if (original) plain else curved ?: plain
                 val cover = straightenScale(state.straighten, w, h)
+                if (margin > 0 && !original) {
+                    val mw = (bitmap.width + 2 * margin) * fit
+                    val mh = (bitmap.height + 2 * margin) * fit
+                    val bgMod = Modifier.offset { IntOffset((left - margin * fit).toInt(), (top - margin * fit).toInt()) }
+                        .size(with(density) { mw.toDp() }, with(density) { mh.toDp() })
+                    when (state.expand.fill) {
+                        ExpandFill.White -> Box(bgMod.background(Color.White))
+                        ExpandFill.Black -> Box(bgMod.background(Color.Black))
+                        else -> expandBg?.let { bg ->
+                            val img = remember(bg) { bg.asImageBitmap() }
+                            Image(img, null, contentScale = ContentScale.FillBounds, modifier = bgMod,
+                                colorFilter = if (adjust.matrixNeutral) null else ColorFilter.colorMatrix(ColorMatrix(adjustMatrix(adjust))))
+                        }
+                    }
+                }
                 Box(
                     Modifier.offset { IntOffset(left.toInt(), top.toInt()) }
                         .size(with(density) { w.toDp() }, with(density) { h.toDp() })
@@ -340,9 +377,25 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                 onDoubleTap = { p -> nearestText(p)?.let { id -> writing = state.texts.first { it.id == id } } },
                             )
                         }
-                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite) {
+                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection) {
                             when (tool) {
-                                Tool.Crop -> detectDragGestures(
+                                Tool.Crop -> if (cropSection == CropSection.Perspective) {
+                                    // Prospettiva libera: si trascinano i quattro angoli sulla foto non ancora raddrizzata.
+                                    var moving = -1
+                                    detectDragGestures(
+                                        onDragStart = { p ->
+                                            val q = state.perspective.quad()
+                                            moving = (0..3).minByOrNull { hypot(left + q[it * 2] * w - p.x, top + q[it * 2 + 1] * h - p.y) }
+                                                ?.takeIf { hypot(left + q[it * 2] * w - p.x, top + q[it * 2 + 1] * h - p.y) < touch * 1.6f } ?: -1
+                                            if (moving >= 0) { remember_(); freeCorners = true }
+                                        },
+                                        onDrag = { change, amount ->
+                                            if (moving < 0) return@detectDragGestures
+                                            change.consume()
+                                            state = state.copy(perspective = state.perspective.movedCorner(moving, amount.x / w, amount.y / h))
+                                        },
+                                    )
+                                } else if (cropSection == CropSection.Expand) Unit else detectDragGestures(
                                     onDragStart = { p ->
                                         val c = state.crop
                                         val corners = listOf(c.left to c.top, c.right to c.top, c.left to c.bottom, c.right to c.bottom)
@@ -454,6 +507,18 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                         drawMarks(native, w, h, state.texts, state.strokes)
                         native.restore()
                     }
+                    if (editingPerspective) {
+                        val q = state.perspective.quad()
+                        val pts = (0..3).map { Offset(left + q[it * 2] * w, top + q[it * 2 + 1] * h) }
+                        val thin = Color.White.copy(alpha = 0.4f)
+                        for (i in 1..2) {
+                            drawLine(thin, Offset(left + w * i / 3, top), Offset(left + w * i / 3, top + h), 1.dp.toPx())
+                            drawLine(thin, Offset(left, top + h * i / 3), Offset(left + w, top + h * i / 3), 1.dp.toPx())
+                        }
+                        for (i in 0..3) drawLine(Color.White, pts[i], pts[(i + 1) % 4], 2.dp.toPx())
+                        pts.forEach { drawCircle(Accent, 11.dp.toPx(), it); drawCircle(Color.White, 7.dp.toPx(), it) }
+                        return@Canvas
+                    }
                     val shade = Color.Black.copy(alpha = if (tool == Tool.Crop) 0.62f else 0.85f)
                     drawRect(shade, Offset(left, top), Size(w, y0 - top))
                     drawRect(shade, Offset(left, y1), Size(w, top + h - y1))
@@ -505,6 +570,35 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         Column(Modifier.fillMaxWidth().heightIn(min = 150.dp).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
             when (tool) {
                 Tool.Crop -> {
+                    ChipRow {
+                        CropSection.entries.forEach { c -> Chip(stringResource(c.label), cropSection == c) { cropSection = c } }
+                    }
+                    when (cropSection) {
+                    CropSection.Perspective -> {
+                        val pr = state.perspective
+                        ChipRow {
+                            Chip(stringResource(R.string.editor_persp_sliders), !freeCorners) { freeCorners = false; if (pr.free != null) commit(state.copy(perspective = pr.copy(free = null))) }
+                            Chip(stringResource(R.string.editor_persp_free), freeCorners) { freeCorners = true }
+                            Chip(stringResource(R.string.editor_reset), false) { freeCorners = false; commit(state.copy(perspective = Perspective())) }
+                        }
+                        if (!freeCorners) {
+                            ZeroSlider(stringResource(R.string.editor_persp_vertical), pr.vertical, ::remember_) { state = state.copy(perspective = pr.copy(vertical = it, free = null)) }
+                            ZeroSlider(stringResource(R.string.editor_persp_horizontal), pr.horizontal, ::remember_) { state = state.copy(perspective = pr.copy(horizontal = it, free = null)) }
+                        }
+                        Hint(stringResource(R.string.editor_persp_tip))
+                    }
+                    CropSection.Expand -> {
+                        val e = state.expand
+                        ZeroSlider(stringResource(R.string.editor_expand_amount), e.amount, ::remember_, from = 0f) { state = state.copy(expand = e.copy(amount = it)) }
+                        ChipRow {
+                            listOf(ExpandFill.Continue to R.string.editor_expand_continue, ExpandFill.Blur to R.string.editor_expand_blur,
+                                ExpandFill.White to R.string.editor_expand_white, ExpandFill.Black to R.string.editor_expand_black).forEach { (f, l) ->
+                                Chip(stringResource(l), e.fill == f) { commit(state.copy(expand = e.copy(fill = f))) }
+                            }
+                        }
+                        Hint(stringResource(R.string.editor_expand_tip))
+                    }
+                    CropSection.Crop -> {
                     Hint(stringResource(R.string.editor_crop_hint))
                     Dial(state.straighten) { state = state.copy(straighten = it) }
                     ChipRow {
@@ -516,6 +610,8 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                         listOf("1:1" to 1f, "4:3" to 4f / 3f, "3:2" to 3f / 2f, "16:9" to 16f / 9f, "3:4" to 3f / 4f, "9:16" to 9f / 16f).forEach { (name, r) ->
                             Chip(name, ratio == r) { ratio = r; commit(state.copy(crop = ratioCrop(r / aspect))) }
                         }
+                    }
+                    }
                     }
                 }
                 Tool.Adjust -> {
@@ -766,6 +862,11 @@ private fun SaveLookTile(enabled: Boolean, onClick: () -> Unit) {
         }
         Text(stringResource(R.string.editor_mine_add), color = if (enabled) Accent else Muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
+}
+
+/** Le parti di Ritaglia (tavola GalProspettiva). */
+private enum class CropSection(val label: Int) {
+    Crop(R.string.editor_section_crop), Perspective(R.string.editor_section_perspective), Expand(R.string.editor_section_expand),
 }
 
 /** Le parti di Regola (tavola GalRegolaTutto). */

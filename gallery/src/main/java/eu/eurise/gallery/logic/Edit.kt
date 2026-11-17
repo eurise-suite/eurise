@@ -173,6 +173,10 @@ data class EditState(
     val lookStrength: Float = 1f,
     /** Una modalità tua scelta tra i filtri (prende il posto di [look]). */
     val mine: SavedLook? = null,
+    /** Prospettiva raddrizzata (tavola GalProspettiva): si applica subito dopo rotazione e specchio. */
+    val perspective: Perspective = Perspective(),
+    /** Bordi aggiunti attorno alla foto ritagliata, alla fine. */
+    val expand: Expand = Expand(),
 ) {
     /** Le regolazioni a mano più il filtro dosato: quello che si applica davvero. */
     val effective: Adjust get() = when {

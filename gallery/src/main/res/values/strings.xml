@@ -287,4 +287,19 @@
     <string name="editor_mine_delete">Elimina</string>
     <string name="editor_mine_saved">«%1$s» è tra le tue modalità</string>
     <string name="editor_mine_tip">Regola una foto come ti piace, poi «Salva la tua»: la trovi qui per tutte le altre. Tieni premuta una tua per rinominarla o eliminarla.</string>
+    <!-- Editor completo, secondo giro (tavola GalProspettiva, 17 novembre) -->
+    <string name="editor_section_crop">Ritaglia</string>
+    <string name="editor_section_perspective">Prospettiva</string>
+    <string name="editor_section_expand">Espandi</string>
+    <string name="editor_persp_sliders">Verticale e orizzontale</string>
+    <string name="editor_persp_free">Libera, con gli angoli</string>
+    <string name="editor_persp_vertical">Verticale</string>
+    <string name="editor_persp_horizontal">Orizzontale</string>
+    <string name="editor_persp_tip">Raddrizza una facciata vista dal basso o un foglio di sbieco. Con «Libera» trascina i quattro angoli dove dovrebbero stare quelli della cosa da raddrizzare.</string>
+    <string name="editor_expand_amount">Quanto</string>
+    <string name="editor_expand_continue">Continua la foto</string>
+    <string name="editor_expand_blur">Sfocato</string>
+    <string name="editor_expand_white">Bianco</string>
+    <string name="editor_expand_black">Nero</string>
+    <string name="editor_expand_tip">Allarga la foto oltre i bordi, per esempio per farla stare in un formato quadrato. «Continua la foto» riprende i colori dei bordi e li sfuma.</string>
 </resources>
