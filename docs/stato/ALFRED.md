@@ -107,9 +107,10 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
     OpenRAIL-M (limiti d'uso, non libera in senso stretto) e progetto chiuso dall'autore (Supertone).
   - **Piper Serena** (medium e high, CC BY 4.0, italiano standard senza accento, stesso motore di Paola e Riccardo:
     si aggiunge subito): voce **femminile**; il suo checkpoint permette di addestrare un Alfred maschile italiano.
-  - **Pocket TTS** di Kyutai (100M, CC BY 4.0, modello italiano con 26 voci tra cui una «giovanni»; in sherpa-onnx
-    c'è il motore): campione non ancora fatto, serve il runtime ONNX della comunità (KevinAHM/pocket-tts-onnx) nel
-    lavoro, e lanciare codice di terzi va approvato dal proprietario.
+  - **Pocket TTS** di Kyutai (100M, CC BY 4.0, modello italiano a 6 strati, 26 voci; in sherpa-onnx c'è il motore):
+    campione fatto col runtime ONNX della comunità (KevinAHM/pocket-tts-onnx da Hugging Face, approvato dal
+    proprietario il 17 novembre). RTF circa 0,35 sul server, il doppio di Supertonic: sul telefono va misurato (genera
+    a pezzi di 80 ms, quindi la prima parola arriva presto). Elenco numero → voce in `ascolta-pocket.txt`.
 - Prossimo: il proprietario sceglie a orecchio; la voce scelta entra in `voci.yml` e in Voce (`Voices.kt`).
 
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
