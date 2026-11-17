@@ -282,7 +282,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   calendario «Proposte (Mario)».
 - **Da provare** con due account Murena: condividere l'agenda, scrivere una proposta dal secondo account (anche dal web di
   Murena), vederla arrivare con l'avviso, confermarla, rifiutarne una e controllare che dall'altra parte risulti annullata.
-- Giro 745 (Compila 44117375095 su `prova-organizzazione`).
+- Giro 748 (Compila 44118965229 su `prova-organizzazione`; il 745 si era fermato su `chat/.../ChatModel.kt`: setter di
+  `workQuiet` con lo stesso nome JVM di `setWorkQuiet`, corretto con `@set:JvmName("assignWorkQuiet")`, parte non nostra).
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
@@ -308,7 +309,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 745 (contiene il 735; esito del 735 ancora da ricevere), più l'agenda con
+1. **Prove del proprietario** sul giro 748 (contiene il 735; esito del 735 ancora da ricevere), più l'agenda con
    l'assistente (vedi la sezione del 17 pomeriggio): Ceruleo pieno (E di giorno, F di sera) e cangiante; app recenti senza il
    vecchio sfondo; icone «Sfondo delle bolle» (WhatsApp, Spotify, Telegram nei loro colori); Agenda (giorni, «@», «Parti
    alle…»); Drive (cassetto, spazio, Oggi sotto le cartelle, «Cambiato da ieri» in una cartella condivisa); «Condividi
@@ -317,7 +318,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 2. **kDrive e posta di Infomaniak**: verificato (sezione del 17 novembre, tarda mattina). Serve una **decisione del
    proprietario**: piano kDrive con WebDAV, oppure richiesta a Infomaniak dello scope «drive» per l'app OAuth; la posta si
    prova in Email (Comunicazione) con una password per le app.
-3. **Collaborazione, la nostra parte, in ordine**: (agenda con l'assistente fatta nel giro 745: da provare, poi le
+3. **Collaborazione, la nostra parte, in ordine**: (agenda con l'assistente fatta nel giro 748: da provare, poi le
    proposte anche nell'Agenda) disponibilità in un link (verificare gli Appuntamenti di Nextcloud Calendar su Murena); nota della riunione scritta a più
    mani (Note che ricevono le note condivise); «Affida a…» con il trasporto di Comunicazione al posto dell'email a mano.
 4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
