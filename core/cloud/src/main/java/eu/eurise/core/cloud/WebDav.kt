@@ -39,8 +39,23 @@ data class DavPersonShare(val id: String, val path: String, val with: String, va
 /** Una versione precedente di un file; [modified] è la data nel formato del server. */
 data class DavVersion(val href: String, val modified: String, val size: Long?)
 
-/** Un calendario del server; [todo] se accetta le attività. */
-data class DavCalendar(val slug: String, val name: String, val todo: Boolean)
+/**
+ * Un calendario del server; [todo] se accetta le attività. [ownerName] c'è se l'ha condiviso un'altra persona;
+ * [members] sono le persone con cui chi lo possiede l'ha condiviso.
+ */
+data class DavCalendar(
+    val slug: String,
+    val name: String,
+    val todo: Boolean,
+    val ownerName: String? = null,
+    val members: List<DavMember> = emptyList(),
+)
+
+/**
+ * Una persona con cui è condiviso un calendario: [href] come lo scrive il server («principal:principals/users/luca» o
+ * «mailto:…»), [name] come la mostra, [edit] se può modificare.
+ */
+data class DavMember(val href: String, val name: String, val edit: Boolean)
 
 /** Spazio usato e libero, in byte, quando il server lo dice. */
 data class DavQuota(val used: Long?, val available: Long?)
@@ -195,10 +210,64 @@ class WebDav(
                 val slug = r.child("href")?.textContent?.trim()?.trimEnd('/')?.substringAfterLast('/')?.let { URLDecoder.decode(it, "UTF-8") } ?: return@mapNotNull null
                 val comps = r.getElementsByTagNameNS(CALDAV_NS, "comp")
                 val todo = (0 until comps.length).any { (comps.item(it) as Element).getAttribute("name").equals("VTODO", true) }
-                DavCalendar(slug, r.child("displayname")?.textContent?.trim().orEmpty(), todo)
+                val owner = r.getElementsByTagNameNS(OC_NS, "owner-principal").item(0)?.textContent?.trim()?.trimEnd('/')?.substringAfterLast('/')
+                val ownerName = if (owner != null && owner != calendarUser) {
+                    r.getElementsByTagNameNS(NC_NS, "owner-displayname").item(0)?.textContent?.trim()?.takeIf { it.isNotEmpty() } ?: owner
+                } else null
+                val users = r.getElementsByTagNameNS(OC_NS, "user")
+                val members = (0 until users.length).mapNotNull { u ->
+                    val user = users.item(u) as Element
+                    val href = user.child("href")?.textContent?.trim() ?: return@mapNotNull null
+                    val name = user.getElementsByTagNameNS(OC_NS, "common-name").item(0)?.textContent?.trim()?.takeIf { it.isNotEmpty() }
+                        ?: href.substringAfterLast('/').substringAfter("mailto:")
+                    DavMember(href, name, user.getElementsByTagNameNS(OC_NS, "read-write").length > 0)
+                }
+                DavCalendar(slug, r.child("displayname")?.textContent?.trim().orEmpty(), todo, ownerName, members)
             }
         }
     }
+
+    /** Il nome utente sul server per i calendari: la cartella dopo «/calendars/». */
+    private val calendarUser: String get() = base.encodedPath.substringAfter("/remote.php/dav/calendars/").trim('/').substringBefore('/')
+
+    /**
+     * Condivide il calendario [slug] con una persona (elenchi condivisi, collaborazione rapida), da chiamare su
+     * [calendars]: [email] di un utente dello stesso server oppure il suo nome utente. [edit]: può spuntare e aggiungere.
+     */
+    suspend fun shareCalendar(slug: String, email: String, edit: Boolean) {
+        val href = if ('@' in email) "mailto:" + email.trim() else "principal:principals/users/" + email.trim()
+        val body = """<?xml version="1.0" encoding="utf-8"?><o:share xmlns:d="DAV:" xmlns:o="$OC_NS"><o:set><d:href>${xmlText(href)}</d:href>""" +
+            (if (edit) "<o:read-write/>" else "") + "</o:set></o:share>"
+        val req = request(url(slug, folder = true)).post(body.toRequestBody(XML)).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "share calendar: ${res.code}") }
+    }
+
+    /** Toglie la condivisione del calendario [slug] con la persona [href] (come la dà [DavMember.href]). */
+    suspend fun unshareCalendar(slug: String, href: String) {
+        val body = """<?xml version="1.0" encoding="utf-8"?><o:share xmlns:d="DAV:" xmlns:o="$OC_NS"><o:remove><d:href>${xmlText(href)}</d:href></o:remove></o:share>"""
+        val req = request(url(slug, folder = true)).post(body.toRequestBody(XML)).build()
+        call(req) { res -> if (!res.isSuccessful) throw DavException(res.code, "unshare calendar: ${res.code}") }
+    }
+
+    /**
+     * Nome e indirizzo email dell'account sul server, da chiamare su [calendars] (per «preso da» e «Affida a…»).
+     * Null se il server non risponde.
+     */
+    suspend fun me(): Pair<String, String?>? {
+        val url = base.toString().substringBefore("/remote.php/") + "/remote.php/dav/principals/users/" + calendarUser + "/"
+        val req = request(url.toHttpUrl()).header("Depth", "0").method("PROPFIND", ME_BODY.toRequestBody(XML)).build()
+        return runCatching {
+            call(req) { res ->
+                if (res.code != 207) return@call null
+                val doc = parseXml(res.body?.string().orEmpty())
+                val name = doc.getElementsByTagNameNS(DAV_NS, "displayname").item(0)?.textContent?.trim().orEmpty().ifEmpty { calendarUser }
+                val email = doc.getElementsByTagNameNS(SABRE_NS, "email-address").item(0)?.textContent?.trim()?.takeIf { it.isNotEmpty() }
+                name to email
+            }
+        }.getOrNull()
+    }
+
+    private fun xmlText(text: String) = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     /** Crea un calendario di sole attività, da chiamare su [calendars]. */
     suspend fun mkCalendar(slug: String, name: String) {
@@ -426,8 +495,12 @@ class WebDav(
         private const val DAV_NS = "DAV:"
         private const val CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
         private const val CALENDARS_BODY =
-            """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:resourcetype/><d:displayname/><c:supported-calendar-component-set/></d:prop></d:propfind>"""
+            """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:o="http://owncloud.org/ns" xmlns:n="http://nextcloud.com/ns"><d:prop><d:resourcetype/><d:displayname/><c:supported-calendar-component-set/><o:owner-principal/><n:owner-displayname/><o:invite/></d:prop></d:propfind>"""
         private const val OC_NS = "http://owncloud.org/ns"
+        private const val NC_NS = "http://nextcloud.com/ns"
+        private const val SABRE_NS = "http://sabredav.org/ns"
+        private const val ME_BODY =
+            """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns"><d:prop><d:displayname/><s:email-address/></d:prop></d:propfind>"""
         private const val FILEID_BODY =
             """<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop><oc:fileid/></d:prop></d:propfind>"""
         private val XML = "application/xml; charset=utf-8".toMediaType()

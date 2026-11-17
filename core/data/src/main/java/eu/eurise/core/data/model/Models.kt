@@ -102,6 +102,8 @@ data class Task(
     val remoteEtag: String? = null,
     /** L'attività com'era all'ultima sincronizzazione. */
     val syncBase: String? = null,
+    /** Elenchi condivisi e «Affida a…» (pagina Collaborazione). */
+    val collab: TaskCollab = TaskCollab(),
 ) {
     val important: Boolean get() = priority in 1..4
     val medium: Boolean get() = priority == PRIORITY_MEDIUM
@@ -134,8 +136,15 @@ data class TaskList(
     val kind: String,
     val sync: Boolean,
     val position: Int,
+    /** Per un elenco condiviso da un'altra persona, il suo nome. */
+    val owner: String? = null,
+    /** Le persone con cui l'elenco è condiviso, come le mostra il server (senza chi lo guarda). */
+    val members: List<String> = emptyList(),
 ) {
     val automatic: Boolean get() = kind == KIND_MEDICINES || kind == KIND_DATES
+
+    /** Vero se l'elenco è condiviso: con altre persone o da un'altra persona. */
+    val shared: Boolean get() = kind == KIND_SHARED || members.isNotEmpty()
 
     companion object {
         const val MAIN = 1L
@@ -145,6 +154,8 @@ data class TaskList(
         const val KIND_USER = "user"
         const val KIND_MEDICINES = "medicines"
         const val KIND_DATES = "dates"
+        /** Elenco condiviso da un'altra persona: arriva dal server, non si elimina dal telefono. */
+        const val KIND_SHARED = "shared"
     }
 }
 

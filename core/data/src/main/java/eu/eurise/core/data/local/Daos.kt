@@ -286,7 +286,7 @@ internal interface TaskListDao {
     @Query("SELECT * FROM task_lists WHERE id = :id")
     suspend fun get(id: Long): TaskListEntity?
 
-    @Query("SELECT COALESCE(MAX(position), 0) FROM task_lists WHERE kind IN ('main', 'user')")
+    @Query("SELECT COALESCE(MAX(position), 0) FROM task_lists WHERE kind IN ('main', 'user', 'shared')")
     suspend fun maxUserPosition(): Int
 
     @Upsert

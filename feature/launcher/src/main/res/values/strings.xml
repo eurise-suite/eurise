@@ -184,6 +184,8 @@
     <string name="tint_azzurro_costiera">Azzurro costiera</string>
     <string name="appearance_icon_colors">Colore dei simboli</string>
     <string name="appearance_icon_theme">Tema delle icone</string>
+    <string name="appearance_icon_theme_bubbles">Come le bolle</string>
+    <string name="appearance_icon_theme_bubbles_hint">Le icone prendono il colore delle bolle: lo cambi con il colore d\'accento. Le app non nostre tengono il colore del loro disegno, se si legge.</string>
     <string name="appearance_icon_theme_eurise">Eurise</string>
     <string name="appearance_icon_theme_eurise_color">Eurise a colori</string>
     <string name="appearance_icon_theme_glass_light">Bolle chiare (nuove)</string>

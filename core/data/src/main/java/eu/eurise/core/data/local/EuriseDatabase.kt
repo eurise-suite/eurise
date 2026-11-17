@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NoteEntity::class, TaskEntity::class, NotebookEntity::class, NoteTagEntity::class, NoteTombstoneEntity::class,
         TaskListEntity::class, LinkEntity::class, TaskTombstoneEntity::class, TrashEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 internal abstract class EuriseDatabase : RoomDatabase() {
@@ -26,7 +26,7 @@ internal abstract class EuriseDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): EuriseDatabase =
             Room.databaseBuilder(context.applicationContext, EuriseDatabase::class.java, "eurise.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) = insertDefaultTaskLists(db)
                 })
@@ -129,5 +129,14 @@ internal val MIGRATION_6_7 = object : Migration(6, 7) {
                 "detail TEXT NOT NULL, deleted_at INTEGER NOT NULL, payload TEXT NOT NULL)"
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS index_trash_deleted_at ON trash (deleted_at)")
+    }
+}
+
+/** Versione 8: elenchi condivisi e «Affida a…» (pagina Collaborazione). Nessun dato si perde. */
+internal val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN collab TEXT")
+        db.execSQL("ALTER TABLE task_lists ADD COLUMN owner TEXT")
+        db.execSQL("ALTER TABLE task_lists ADD COLUMN members TEXT")
     }
 }

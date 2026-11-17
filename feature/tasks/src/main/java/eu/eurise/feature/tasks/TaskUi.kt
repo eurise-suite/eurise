@@ -65,7 +65,7 @@ internal fun importantColors(): Pair<Color, Color> {
 
 /** Casella tonda da 44 dp (il cerchio visibile è di 20): spunta l'attività. */
 @Composable
-internal fun CheckCircle(done: Boolean, tint: Color, label: String, onToggle: () -> Unit, size: Int = 20) {
+internal fun CheckCircle(done: Boolean, tint: Color, label: String, onToggle: () -> Unit, size: Int = 20, taken: Color? = null) {
     Box(
         Modifier
             .size(44.dp)
@@ -77,6 +77,11 @@ internal fun CheckCircle(done: Boolean, tint: Color, label: String, onToggle: ()
         if (done) {
             Box(Modifier.size(size.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
                 Icon(EuriseIcons.check(3f), null, tint = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.size((size * 0.62f).dp))
+            }
+        } else if (taken != null) {
+            // Presa da qualcuno (elenchi condivisi): il bordo nella sua tinta con un punto dentro; il tocco dopo è «fatta».
+            Box(Modifier.size(size.dp).border(2.dp, taken, CircleShape), contentAlignment = Alignment.Center) {
+                Box(Modifier.size((size * 0.4f).dp).clip(CircleShape).background(taken))
             }
         } else {
             Box(Modifier.size(size.dp).border(2.dp, tint, CircleShape))
@@ -138,7 +143,8 @@ internal fun TaskItem(
         ) {
             Spacer(Modifier.width(2.dp))
             val label = stringResource(if (task.done) R.string.tasks_mark_open else R.string.tasks_mark_done, task.title)
-            CheckCircle(task.done, tintColor(list?.tint), label, onToggle)
+            val shared = collabLine(task)
+            CheckCircle(task.done, tintColor(list?.tint), label, onToggle, taken = shared?.second?.takeIf { !task.done && task.collab.takenBy != null })
             Column(Modifier.weight(1f).padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     task.title,
@@ -163,6 +169,9 @@ internal fun TaskItem(
                     if (list != null && list.id != TaskList.MAIN) add(list.name)
                     if (task.noteId != null) add(stringResource(R.string.tasks_from_note))
                 }
+                shared?.let { (text, color, _) ->
+                    Text(text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
                 if (details.isNotEmpty()) {
                     val overdue = !task.done && task.due?.isBefore(today) == true
                     Text(
@@ -176,6 +185,7 @@ internal fun TaskItem(
                 }
             }
             if (task.important && !task.done) ImportantBadge()
+            shared?.let { Spacer(Modifier.width(8.dp)); PersonDot(it.third, 26.dp) }
         }
     }
 }

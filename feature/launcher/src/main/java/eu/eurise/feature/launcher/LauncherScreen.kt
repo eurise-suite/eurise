@@ -343,7 +343,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
           eu.eurise.feature.launcher.home.LocalMeteo provides meteo,
           LocalCategoryTint provides { entry -> resolveCategory(entry, settings.categories, settings.categoryOverrides)?.tint },
           // Sulla Scrivania le bolle si staccano appena un po' di più dallo sfondo.
-          eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors),
+          eu.eurise.core.designsystem.theme.LocalEuriseColors provides launcherGlass(eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors, accent.takeIf { settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.BUBBLES }),
       ) {
         val hazeState = remember { HazeState() }
         var weatherSheet by remember { mutableStateOf(false) }

@@ -46,6 +46,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -148,7 +149,16 @@ internal fun TaskDetailScreen(
     var pickingDate by remember { mutableStateOf(false) }
     var pickingTime by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var assigning by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // «Affida a…» (tavola CollAffida): chi la riceve e la apre la segna «vista», con l'ora.
+    val receiving = Collab.isMe(context, draft.collab.assigneeEmail)
+    LaunchedEffect(original.id) {
+        if (receiving && !draft.done && draft.collab.step(false) == eu.eurise.core.data.model.Handoff.Assigned) {
+            draft = draft.copy(collab = draft.collab.copy(handoff = eu.eurise.core.data.model.Handoff.Seen, seenAt = eu.eurise.core.data.model.TaskCollab.stamp(System.currentTimeMillis())))
+        }
+    }
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     fun askNotifications() {
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -203,9 +213,12 @@ internal fun TaskDetailScreen(
                         label = stringResource(if (draft.done) R.string.tasks_mark_open else R.string.tasks_mark_done, draft.title),
                         onToggle = {
                             val done = !draft.done
-                            viewModel.saveAndSetDone(draft, done)
+                            // Negli elenchi condivisi resta chi l'ha fatta (tavola CollElenchi).
+                            val collab = if (list?.shared == true) draft.collab.copy(doneBy = if (done) Collab.me(context)?.first else null) else draft.collab
+                            viewModel.saveAndSetDone(draft.copy(collab = collab), done)
                             // Una ripetizione spuntata passa alla prossima volta: questa resta come storico.
                             draft = draft.copy(
+                                collab = collab,
                                 done = done,
                                 completedAt = if (done) System.currentTimeMillis() else null,
                                 repeat = if (done) null else draft.repeat,
@@ -298,6 +311,31 @@ internal fun TaskDetailScreen(
                     CardDivider()
                     PriorityRow(draft.priority) { draft = draft.copy(priority = it) }
                 }
+
+                // «Affida a…» e «Come va» (tavola CollAffida).
+                if (!receiving && draft.parentId == null) GroupCard {
+                    FieldRow(
+                        EuriseIcons.person(), stringResource(R.string.collab_assign_field),
+                        draft.collab.assignee ?: draft.collab.assigneeEmail ?: stringResource(R.string.collab_assign_nobody),
+                    ) { assigning = true }
+                }
+                if (draft.collab.assigned) HandoffCard(
+                    task = draft,
+                    receiving = receiving,
+                    onStart = {
+                        draft = draft.copy(collab = draft.collab.copy(
+                            handoff = eu.eurise.core.data.model.Handoff.Started,
+                            startedAt = eu.eurise.core.data.model.TaskCollab.stamp(System.currentTimeMillis()),
+                        ))
+                    },
+                    onMail = { mailAssignee(context, draft) },
+                    onTakeBack = {
+                        draft = draft.copy(collab = draft.collab.copy(
+                            assignee = null, assigneeEmail = null, handoff = null, assignedAt = null, seenAt = null,
+                            startedAt = null, message = null, notify = false,
+                        ))
+                    },
+                )
 
                 // Passi.
                 val doneSteps = steps.count { it.done }
@@ -393,6 +431,22 @@ internal fun TaskDetailScreen(
                 linked(taskId, draft.title)
             }
         }
+
+        if (assigning) AssignSheet(
+            task = draft,
+            onAssign = { person, due, notify, message ->
+                assigning = false
+                val collab = assignment(person, Collab.me(context), notify, message, System.currentTimeMillis())
+                val name = person.name.ifBlank { person.email }
+                // Le cose affidate a una persona stanno nel suo elenco «Con …», condiviso solo con lei.
+                viewModel.personList(context.getString(R.string.collab_person_list, name)) { listId ->
+                    draft = draft.copy(listId = listId, due = due ?: draft.due, collab = collab)
+                    if (Collab.cloudKind(context) != null) scope.launch { runCatching { Collab.share(context, listId, person.email, edit = true) } }
+                    askNotifications()
+                }
+            },
+            onClose = { assigning = false },
+        )
     }
 
     if (pickingDate) {

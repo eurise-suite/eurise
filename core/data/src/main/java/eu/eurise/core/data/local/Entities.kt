@@ -85,6 +85,8 @@ internal data class TaskEntity(
     val uid: String? = null,
     @ColumnInfo(name = "remote_etag") val remoteEtag: String? = null,
     @ColumnInfo(name = "sync_base") val syncBase: String? = null,
+    /** Elenchi condivisi e «Affida a…» ([eu.eurise.core.data.model.TaskCollab.encode]). */
+    val collab: String? = null,
 )
 
 /** Attività tolta dal telefono o spostata di elenco: da togliere anche dal server alla prossima sincronizzazione. */
@@ -115,6 +117,9 @@ internal data class TaskListEntity(
     val kind: String,
     val sync: Boolean,
     val position: Int,
+    val owner: String? = null,
+    /** Le persone con cui è condiviso, una per riga. */
+    val members: String? = null,
 )
 
 /** Un elenco con il numero di attività ancora da fare (risultato di una query). */
@@ -130,9 +135,9 @@ internal data class StepCountRow(
     val done: Int,
 )
 
-internal fun TaskListEntity.toModel() = TaskList(id, name, tint, kind, sync, position)
+internal fun TaskListEntity.toModel() = TaskList(id, name, tint, kind, sync, position, owner, members?.split('\n')?.filter { it.isNotBlank() }.orEmpty())
 
-internal fun TaskList.toEntity() = TaskListEntity(id, name, tint, kind, sync, position)
+internal fun TaskList.toEntity() = TaskListEntity(id, name, tint, kind, sync, position, owner, members.joinToString("\n").ifEmpty { null })
 
 internal fun NoteEntity.toModel() =
     Note(id, title, body, pinned, createdAt, updatedAt, content, notebookId, trashedAt, uid, conflict != null)
@@ -152,6 +157,7 @@ internal fun TaskEntity.toModel() = Task(
     uid = uid,
     remoteEtag = remoteEtag,
     syncBase = syncBase,
+    collab = eu.eurise.core.data.model.TaskCollab.decode(collab),
 )
 
 internal fun Task.toEntity() = TaskEntity(
@@ -165,6 +171,7 @@ internal fun Task.toEntity() = TaskEntity(
     uid = uid,
     remoteEtag = remoteEtag,
     syncBase = syncBase,
+    collab = collab.encode(),
 )
 
 /**

@@ -63,6 +63,7 @@ internal fun ListsScreen(
     viewModel: TasksViewModel,
     onBack: () -> Unit,
     onOpenList: (Long) -> Unit,
+    onShare: (TaskList) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     var editing by remember { mutableStateOf<TaskList?>(null) }
@@ -113,9 +114,15 @@ internal fun ListsScreen(
                     ListRow(
                         list = s.list,
                         count = s.open,
-                        subtitle = if (s.list.id == TaskList.MAIN) stringResource(R.string.tasks_list_main_hint) else null,
+                        subtitle = when {
+                            s.list.kind == TaskList.KIND_SHARED -> stringResource(R.string.collab_list_from, s.list.owner?.substringBefore(' ') ?: stringResource(R.string.collab_someone))
+                            s.list.members.isNotEmpty() -> stringResource(R.string.collab_list_with, namesPhrase(s.list.members))
+                            s.list.id == TaskList.MAIN -> stringResource(R.string.tasks_list_main_hint)
+                            else -> null
+                        },
                         onClick = { onOpenList(s.list.id) },
                         onEdit = { editing = s.list },
+                        onShare = if (s.list.kind == TaskList.KIND_SHARED || !s.list.sync) null else ({ onShare(s.list) }),
                     )
                 }
             }
@@ -191,7 +198,7 @@ internal fun ListsScreen(
 
 
 @Composable
-private fun ListRow(list: TaskList, count: Int, subtitle: String?, onClick: () -> Unit, onEdit: () -> Unit) {
+private fun ListRow(list: TaskList, count: Int, subtitle: String?, onClick: () -> Unit, onEdit: () -> Unit, onShare: (() -> Unit)? = null) {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().heightIn(min = 54.dp).clickable(onClick = onClick).padding(start = 4.dp),
@@ -204,6 +211,15 @@ private fun ListRow(list: TaskList, count: Int, subtitle: String?, onClick: () -
             if (subtitle != null) Text(subtitle, fontSize = 12.sp, color = scheme.onSurfaceVariant)
         }
         Text(count.toString(), fontSize = 14.sp, color = scheme.onSurfaceVariant)
+        if (onShare != null) {
+            val shareLabel = stringResource(R.string.collab_share_list_named, list.name)
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onShare).semantics { contentDescription = shareLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(EuriseIcons.share(), null, tint = if (list.members.isNotEmpty()) scheme.primary else scheme.onSurfaceVariant, modifier = Modifier.size(17.dp))
+            }
+        }
         val label = stringResource(R.string.tasks_list_edit, list.name)
         Box(
             Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onEdit).semantics { contentDescription = label },

@@ -425,9 +425,12 @@ internal fun WeatherSheet(days: List<eu.eurise.feature.launcher.weather.DayForec
  * Vetro della Scrivania: un velo un poco più pieno di quello delle app, così le bolle si distinguono
  * dallo sfondo illustrato anche quando i colori sono chiari e simili.
  */
-internal fun launcherGlass(base: eu.eurise.core.designsystem.theme.EuriseExtraColors) = base.copy(
-    glass = if (base.isDark) androidx.compose.ui.graphics.Color(0xE6161A21) else androidx.compose.ui.graphics.Color(0xC2FBFBF9),
-)
+internal fun launcherGlass(base: eu.eurise.core.designsystem.theme.EuriseExtraColors, bubbleTint: Color? = null): eu.eurise.core.designsystem.theme.EuriseExtraColors {
+    val glass = if (base.isDark) Color(0xE6161A21) else Color(0xC2FBFBF9)
+    // «Come le bolle» (tavola IcoColoreBolle): le bolle prendono un velo del colore scelto, le icone la tinta piena.
+    val tinted = bubbleTint?.let { androidx.compose.ui.graphics.lerp(glass, it.copy(alpha = glass.alpha), if (base.isDark) 0.30f else 0.16f) }
+    return base.copy(glass = tinted ?: glass)
+}
 
 /** Accento per il tema scuro: si avvicina al blu-grafite dello sfondo e perde un po' di brillantezza. */
 internal fun nightAccent(color: Color): Color = androidx.compose.ui.graphics.lerp(color, Color(0xFF2A303B), 0.32f)

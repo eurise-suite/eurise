@@ -43,6 +43,8 @@ class TasksViewModel(
     private val repository: TaskRepository,
     private val trash: eu.eurise.core.data.trash.TrashRepository? = null,
     private val links: eu.eurise.core.data.LinkRepository? = null,
+    /** Il nome dell'account sul server, per «preso da» negli elenchi condivisi. */
+    private val myName: () -> String? = { null },
 ) : ViewModel() {
 
     private val filter = MutableStateFlow<TasksFilter>(TasksFilter.Today)
@@ -72,8 +74,28 @@ class TasksViewModel(
         query.value = value
     }
 
+    /**
+     * Spunta. Negli elenchi condivisi (tavola CollElenchi) il primo tocco prende la cosa da fare, il secondo la segna
+     * fatta, con il nome di chi l'ha fatto.
+     */
     fun setDone(task: Task, done: Boolean) {
-        viewModelScope.launch { repository.setDone(task.id, done) }
+        val shared = task.parentId == null && state.value.lists.firstOrNull { it.list.id == task.listId }?.list?.shared == true
+        val me = myName()
+        viewModelScope.launch {
+            if (shared && me != null) repository.takeOrDone(task.id, me) else repository.setDone(task.id, done)
+        }
+    }
+
+    /**
+     * L'elenco «Con [person]» in cui stanno le cose affidate a quella persona (creato la prima volta): si condivide solo
+     * quello, così vede solo ciò che le affidi. [then] riceve l'id.
+     */
+    internal fun personList(listName: String, then: (Long) -> Unit) {
+        viewModelScope.launch {
+            val id = state.value.lists.firstOrNull { it.list.name.equals(listName, ignoreCase = true) && it.list.kind == TaskList.KIND_USER }?.list?.id
+                ?: repository.addList(listName, eu.eurise.core.designsystem.theme.CalendarTint.Prugna.name)
+            then(id)
+        }
     }
 
     /** Aggiunge l'attività letta dall'aggiunta rapida; [then] riceve l'id (per aprirne la scheda). */

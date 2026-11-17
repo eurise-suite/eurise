@@ -27,11 +27,18 @@ object IconThemes {
     const val GLASS_DARK = "eurise_glass_dark"
     const val VIVID = "eurise_vivid"
 
+    /**
+     * «Come le bolle» (tavola IcoColoreBolle, approvata il 17 novembre 2026; tema di base): la bolla dell'icona prende il
+     * colore delle bolle della Scrivania (il colore scelto in Aspetto), un po' più piena; il simbolo chiaro o scuro per
+     * leggersi sempre. Le bolle della Scrivania prendono un velo della stessa tinta.
+     */
+    const val BUBBLES = "eurise_bubbles"
+
     /** Vero per le tre serie nuove. */
     fun isNewSeries(theme: String) = theme == GLASS_LIGHT || theme == GLASS_DARK || theme == VIVID
 
     /** Vero per i temi disegnati dalla suite (simboli nella forma): Eurise, a colori, iOS, Android, /e/OS. */
-    fun isSuite(theme: String) = theme == EURISE || theme == EURISE_COLOR || isNewSeries(theme) || IconStyles.isStyle(theme)
+    fun isSuite(theme: String) = theme == BUBBLES || theme == EURISE || theme == EURISE_COLOR || isNewSeries(theme) || IconStyles.isStyle(theme)
     const val SYSTEM = "system"
 
     /** Le azioni con cui i pacchetti di icone si fanno trovare dai launcher. */
@@ -107,6 +114,6 @@ object IconThemes {
     }
 
     /** Vero se il pacchetto del tema è ancora installato. */
-    fun exists(context: Context, theme: String): Boolean = theme == EURISE || theme == EURISE_COLOR || theme == SYSTEM || isNewSeries(theme) || IconStyles.isStyle(theme) ||
+    fun exists(context: Context, theme: String): Boolean = theme == BUBBLES || theme == EURISE || theme == EURISE_COLOR || theme == SYSTEM || isNewSeries(theme) || IconStyles.isStyle(theme) ||
         runCatching { context.packageManager.getApplicationInfo(theme, 0); true }.getOrDefault(false)
 }

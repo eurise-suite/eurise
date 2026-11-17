@@ -138,6 +138,9 @@ fun AppearanceSheet(
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
             }
             IconThemeChooser(settings.iconTheme) { v -> onChange { it.copy(iconTheme = v) } }
+            if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.BUBBLES) {
+                Text(stringResource(R.string.appearance_icon_theme_bubbles_hint), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (eu.eurise.feature.launcher.apps.IconThemes.isSuite(settings.iconTheme)) IconShapeChooser(settings.iconShape) { v -> onChange { it.copy(iconShape = v) } }
             if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.EURISE) Column {
                 Text(stringResource(R.string.appearance_icon_colors), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -463,6 +466,7 @@ private fun IconThemeChooser(current: String, onChoose: (String) -> Unit) {
         packs = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.feature.launcher.apps.IconThemes.installed(context) }
     }
     val choices = listOf(
+        eu.eurise.feature.launcher.apps.IconThemes.BUBBLES to stringResource(R.string.appearance_icon_theme_bubbles),
         eu.eurise.feature.launcher.apps.IconThemes.EURISE to stringResource(R.string.appearance_icon_theme_eurise),
         eu.eurise.feature.launcher.apps.IconThemes.EURISE_COLOR to stringResource(R.string.appearance_icon_theme_eurise_color),
         eu.eurise.feature.launcher.apps.IconThemes.GLASS_LIGHT to stringResource(R.string.appearance_icon_theme_glass_light),

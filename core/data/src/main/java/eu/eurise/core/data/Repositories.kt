@@ -405,6 +405,11 @@ class TaskRepository internal constructor(
         val next = task.copy(
             id = 0, done = false, completedAt = null, createdAt = now, noteId = null,
             due = rule.next(task.due ?: LocalDate.now()), uid = null, remoteEtag = null, syncBase = null,
+            // La prossima volta si riparte: nessuno l'ha presa, affidata resta alla stessa persona ma da vedere.
+            collab = task.collab.copy(
+                takenBy = null, takenAt = null, doneBy = null, seenAt = null, startedAt = null,
+                handoff = if (task.collab.assigned) eu.eurise.core.data.model.Handoff.Assigned else null,
+            ),
         )
         val nextId = dao.upsert(next.toEntity())
         dao.steps(id).forEach { step -> dao.upsert(step.copy(id = 0, done = false, completedAt = null, parentId = nextId, uid = null, remoteEtag = null, syncBase = null)) }
@@ -457,6 +462,47 @@ class TaskRepository internal constructor(
         dao.withReminders(from.toLocalDate().toEpochDay(), to.toLocalDate().plusDays(1).toEpochDay())
             .map { it.toModel() }
             .filter { t -> t.reminderAt()?.let { !it.isBefore(from) && !it.isAfter(to) } == true }
+
+    /**
+     * Elenchi condivisi (tavola CollElenchi): il primo tocco la prende ([me] l'ha presa, con l'ora), il secondo la segna
+     * fatta da [me]; su una già fatta torna da fare e libera.
+     */
+    suspend fun takeOrDone(id: Long, me: String) {
+        val task = dao.get(id)?.toModel() ?: return
+        val c = task.collab
+        when {
+            task.done -> {
+                dao.upsert(task.copy(collab = c.copy(doneBy = null, takenBy = null, takenAt = null)).toEntity())
+                setDone(id, false)
+            }
+            c.takenBy == null -> {
+                dao.upsert(task.copy(collab = c.copy(takenBy = me, takenAt = eu.eurise.core.data.model.TaskCollab.stamp(clock.now()))).toEntity())
+                onChanged?.invoke()
+            }
+            else -> {
+                dao.upsert(task.copy(collab = c.copy(doneBy = me)).toEntity())
+                setDone(id, true)
+            }
+        }
+    }
+
+    /** Cambia la parte condivisa di un'attività (affidamento, stato). */
+    suspend fun setCollab(id: Long, collab: eu.eurise.core.data.model.TaskCollab) {
+        val task = dao.get(id) ?: return
+        dao.upsert(task.copy(collab = collab.encode()))
+        onChanged?.invoke()
+    }
+
+    /** Un elenco condiviso da [owner], arrivato dal server; restituisce l'id. */
+    suspend fun addSharedList(name: String, owner: String?): Long =
+        lists.upsert(TaskListEntity(0, name.trim(), "Salvia", TaskList.KIND_SHARED, sync = true, position = lists.maxUserPosition() + 1, owner = owner))
+
+    /** Chi ha condiviso l'elenco e con chi è condiviso, come lo dice il server. */
+    suspend fun setListPeople(id: Long, owner: String?, members: List<String>) {
+        val list = lists.get(id) ?: return
+        val joined = members.joinToString("\n").ifEmpty { null }
+        if (list.owner != owner || list.members != joined) lists.upsert(list.copy(owner = owner, members = joined))
+    }
 
     /** Crea un elenco in fondo a quelli dell'utente e ne restituisce l'id. */
     suspend fun addList(name: String, tint: String): Long =

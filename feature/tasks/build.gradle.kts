@@ -22,6 +22,8 @@ dependencies {
     implementation(project(":core:cloud"))
     implementation(project(":core:links"))
     implementation(libs.androidx.activity.compose)
+    // Avvisi delle attività condivise e affidate (NotificationCompat), già nell'APK con le altre sezioni.
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

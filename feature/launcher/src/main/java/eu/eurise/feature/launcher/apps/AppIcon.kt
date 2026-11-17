@@ -277,12 +277,26 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     // Eurise (tavola IconeStili): tondo blu notte con la sfumatura diagonale e l'alone caldo, il simbolo nella tinta.
     // Stili iOS, Android e /e/OS: il colore più vicino della palette dello stile (tavola IconeStili).
     val style = if (IconStyles.isStyle(theme)) IconStyles.swatch(theme, tint) else null
+    // «Come le bolle» (tavola IcoColoreBolle): la bolla nel colore delle bolle della Scrivania, un po' più piena; di sera
+    // verso il blu notte. Il simbolo chiaro (crema di giorno, la tinta schiarita di sera) o scuro se il colore è chiaro.
+    val bubbles = theme == IconThemes.BUBBLES
+    val bubbleBase = if (bubbles) {
+        val accent = androidx.compose.material3.MaterialTheme.colorScheme.primary
+        if (dark) lerp(accent, Color(0xFF1F2A44), 0.58f) else accent
+    } else null
+    val bubbleLight = bubbleBase != null && bubbleBase.luminance() > 0.5f
     val symbolBrush = when {
+        bubbleBase != null -> when {
+            bubbleLight -> listOf(lerp(bubbleBase, Color.Black, 0.62f), lerp(bubbleBase, Color.Black, 0.72f))
+            dark -> listOf(lerp(androidx.compose.material3.MaterialTheme.colorScheme.primary, Color.White, 0.42f), lerp(androidx.compose.material3.MaterialTheme.colorScheme.primary, Color.White, 0.30f))
+            else -> listOf(lerp(bubbleBase, Color.White, 0.95f), lerp(bubbleBase, Color.White, 0.88f))
+        }
         style != null -> listOf(style.symbol, style.symbol)
         colorful -> vividSymbol(tint, dark)
         else -> listOf(lerp(tint, Color.White, 0.3f), tint)
     }
     val round: Brush = when {
+        bubbleBase != null -> Brush.verticalGradient(listOf(lerp(bubbleBase, Color.White, 0.10f), lerp(bubbleBase, Color.Black, 0.10f)))
         style != null -> Brush.verticalGradient(listOf(style.top, style.bottom))
         colorful -> {
             val base = if (dark) lerp(tint, IconBackgroundDark, 0.55f) else lerp(tint, Color.White, 0.80f)
@@ -299,7 +313,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         } else Box(
             Modifier
                 .size(size)
-                .shadow(if (colorful || style != null) 3.dp else 6.dp, shape)
+                .shadow(if (colorful || style != null || bubbles) 3.dp else 6.dp, shape)
                 .clip(shape)
                 .background(round)
                 .then(if (glow) Modifier.background(EuriseGlow) else Modifier),
@@ -309,7 +323,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
                 is IconImage.Mono -> Image(
                     img.bitmap,
                     contentDescription = null,
-                    modifier = Modifier.size(size * 0.8f).softTint(if (style != null) symbolBrush else glyphBrush(img.color, !colorful || dark, symbolBrush)),
+                    modifier = Modifier.size(size * 0.8f).softTint(if (style != null) symbolBrush else glyphBrush(img.color, if (bubbles) !bubbleLight else !colorful || dark, symbolBrush)),
                 )
                 is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
                 is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.72f).softTint(symbolBrush))

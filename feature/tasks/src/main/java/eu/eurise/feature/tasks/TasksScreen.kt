@@ -85,11 +85,12 @@ fun TasksRoute(
     linked: @Composable (taskId: Long, title: String) -> Unit = { _, _ -> },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val viewModel = viewModel { eu.eurise.core.data.EuriseData.create(context).let { TasksViewModel(repository, it.trash, it.links) } }
+    val viewModel = viewModel { eu.eurise.core.data.EuriseData.create(context).let { TasksViewModel(repository, it.trash, it.links) { Collab.me(context)?.first } } }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showLists by rememberSaveable { mutableStateOf(false) }
     var quickAdd by rememberSaveable { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf<TaskList?>(null) }
     // Il valore presente all'apertura è già "servito": si reagisce solo agli aumenti successivi.
     var handledRequests by remember { mutableIntStateOf(newTaskRequests) }
     LaunchedEffect(newTaskRequests) {
@@ -128,6 +129,7 @@ fun TasksRoute(
                 viewModel = viewModel,
                 onBack = { showLists = false },
                 onOpenList = { viewModel.setFilter(TasksFilter.OfList(it)); showLists = false },
+                onShare = { sharing = it },
             )
         }
         else -> TasksScreen(
@@ -139,8 +141,12 @@ fun TasksRoute(
             onOpen = { detailId = it.id },
             onLists = { showLists = true },
             onClearCompleted = viewModel::clearCompleted,
+            me = remember { Collab.me(context)?.first },
+            onShareList = { sharing = it },
         )
     }
+
+    sharing?.let { ShareListSheet(it) { sharing = null } }
 
     if (quickAdd) {
         QuickAddSheet(
@@ -173,6 +179,8 @@ private fun TasksScreen(
     onOpen: (Task) -> Unit,
     onLists: () -> Unit,
     onClearCompleted: () -> Unit,
+    me: String? = null,
+    onShareList: (TaskList) -> Unit = {},
 ) {
     val haze = remember { HazeState() }
     var searching by rememberSaveable { mutableStateOf(false) }
@@ -245,6 +253,13 @@ private fun TasksScreen(
             contentPadding = PaddingValues(top = statusTop + 132.dp, bottom = LocalDockClearance.current + 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Elenco condiviso (tavola CollElenchi): chi c'è e come si usa; per un elenco tuo il tocco apre la condivisione.
+            val openList = (state.filter as? TasksFilter.OfList)?.let { lists[it.id] }
+            if (openList != null && openList.shared && state.query.isBlank()) {
+                item(key = "shared") {
+                    SharedStrip(openList, me, if (openList.kind == TaskList.KIND_SHARED) null else ({ onShareList(openList) }))
+                }
+            }
             if (all != null && sections.isEmpty() && hiddenVisible.isEmpty()) {
                 item(key = "empty") {
                     EmptyState(

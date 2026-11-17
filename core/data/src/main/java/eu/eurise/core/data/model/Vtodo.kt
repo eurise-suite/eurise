@@ -19,6 +19,8 @@ data class VtodoFields(
     val priority: Int = 0,
     val rrule: String? = null,
     val parentUid: String? = null,
+    /** Elenchi condivisi e «Affida a…»: vedi [TaskCollab]. */
+    val collab: TaskCollab = TaskCollab(),
 )
 
 data class ParsedVtodo(val uid: String, val fields: VtodoFields)
@@ -30,7 +32,20 @@ data class ParsedVtodo(val uid: String, val fields: VtodoFields)
 object Vtodo {
     private val DATE = DateTimeFormatter.ofPattern("yyyyMMdd")
     private val LOCAL = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
-    private val OWNED = setOf("SUMMARY", "DESCRIPTION", "DUE", "STATUS", "COMPLETED", "PRIORITY", "RRULE", "PERCENT-COMPLETE", "LAST-MODIFIED", "DTSTAMP")
+    private val OWNED = setOf(
+        "SUMMARY", "DESCRIPTION", "DUE", "STATUS", "COMPLETED", "PRIORITY", "RRULE", "PERCENT-COMPLETE", "LAST-MODIFIED", "DTSTAMP",
+        TAKEN_BY, TAKEN_AT, DONE_BY, HANDOFF, MESSAGE, NOTIFY,
+    )
+
+    // Campi propri della suite: le altre app li lasciano com'erano. Chi riceve una cosa affidata è un ATTENDEE con il suo
+    // PARTSTAT, chi l'affida l'ORGANIZER: quelli li capiscono tutti.
+    private const val TAKEN_BY = "X-EURISE-TAKEN-BY"
+    private const val TAKEN_AT = "X-EURISE-TAKEN-AT"
+    private const val DONE_BY = "X-EURISE-DONE-BY"
+    private const val HANDOFF = "X-EURISE-HANDOFF"
+    private const val MESSAGE = "X-EURISE-MESSAGE"
+    private const val NOTIFY = "X-EURISE-NOTIFY"
+    private val UTC = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
     private class Prop(val name: String, val params: String, val value: String)
 
@@ -117,6 +132,20 @@ object Vtodo {
         val status = props.firstOrNull { it.name == "STATUS" }?.value?.uppercase()
         val completed = props.firstOrNull { it.name == "COMPLETED" }
         val done = status == "COMPLETED" || (status == null && completed != null)
+        fun utc(name: String) = text(name)?.let(::utcMillis)
+        // Chi riceve e chi affida contano solo se l'affidamento è nostro: gli invitati messi da altre app restano loro.
+        val ours = props.any { it.name == HANDOFF }
+        val attendee = props.firstOrNull { it.name == "ATTENDEE" }?.takeIf { ours }
+        val organizer = props.firstOrNull { it.name == "ORGANIZER" }?.takeIf { ours }
+        val track = text(HANDOFF)?.split(',')?.associate { it.substringBefore('=').trim() to utcMillis(it.substringAfter('=')) }.orEmpty()
+        val collab = TaskCollab(
+            takenBy = text(TAKEN_BY), takenAt = utc(TAKEN_AT), doneBy = text(DONE_BY)?.takeIf { done },
+            assignee = attendee?.let { param(it, "CN") }, assigneeEmail = attendee?.let(::mailto),
+            handoff = attendee?.takeIf { mailto(it) != null }?.let { if (done) Handoff.Done else Handoff.of(param(it, "PARTSTAT")) ?: Handoff.Assigned },
+            assignedAt = track["A"], seenAt = track["V"], startedAt = track["I"],
+            message = text(MESSAGE), owner = organizer?.let { param(it, "CN") }, ownerEmail = organizer?.let(::mailto),
+            notify = text(NOTIFY) == "1",
+        )
         return ParsedVtodo(
             uid,
             VtodoFields(
@@ -129,9 +158,36 @@ object Vtodo {
                 priority = props.firstOrNull { it.name == "PRIORITY" }?.value?.trim()?.toIntOrNull() ?: 0,
                 rrule = props.firstOrNull { it.name == "RRULE" }?.value,
                 parentUid = props.firstOrNull(::isParent)?.value,
+                collab = collab,
             ),
         )
     }
+
+    private fun utcMillis(value: String): Long? =
+        runCatching { LocalDateTime.parse(value.trim(), UTC).toEpochSecond(ZoneOffset.UTC) * 1000 }.getOrNull()
+
+    private fun utc(millis: Long) = UTC.format(LocalDateTime.ofEpochSecond(millis / 1000, 0, ZoneOffset.UTC))
+
+    /** Il valore di un parametro (CN, PARTSTAT…) di una proprietà, senza virgolette. */
+    private fun param(p: Prop, name: String): String? {
+        var quoted = false
+        val parts = ArrayList<String>()
+        val cur = StringBuilder()
+        for (c in p.params) {
+            when {
+                c == '"' -> { quoted = !quoted; cur.append(c) }
+                c == ';' && !quoted -> { parts += cur.toString(); cur.clear() }
+                else -> cur.append(c)
+            }
+        }
+        parts += cur.toString()
+        return parts.firstOrNull { it.substringBefore('=').trim().equals(name, true) }?.substringAfter('=')?.trim()?.trim('"')?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun mailto(p: Prop): String? = p.value.trim().takeIf { it.startsWith("mailto:", true) }?.substring(7)?.takeIf { it.isNotBlank() }
+
+    /** Un nome come parametro: tra virgolette, senza virgolette dentro. */
+    private fun cn(name: String) = "\"" + name.replace("\"", "'") + "\""
 
     private fun fold(line: String): String {
         if (line.toByteArray().size <= 74) return line
@@ -155,7 +211,20 @@ object Vtodo {
             val t = f.time
             add(if (t == null) "DUE;VALUE=DATE:" + DATE.format(day) else "DUE:" + LOCAL.format(day.atTime(t)))
         }
-        add("STATUS:" + if (f.done) "COMPLETED" else "NEEDS-ACTION")
+        val c = f.collab
+        val busy = c.takenBy != null || c.handoff == Handoff.Started
+        add("STATUS:" + when { f.done -> "COMPLETED"; busy -> "IN-PROCESS"; else -> "NEEDS-ACTION" })
+        c.takenBy?.let { add("$TAKEN_BY:" + escape(it)) }
+        c.takenAt?.let { add("$TAKEN_AT:" + utc(it)) }
+        if (f.done) c.doneBy?.let { add("$DONE_BY:" + escape(it)) }
+        c.assigneeEmail?.let { email ->
+            c.ownerEmail?.let { add("ORGANIZER" + (c.owner?.let { n -> ";CN=" + cn(n) } ?: "") + ":mailto:" + it) }
+            val step = c.step(f.done) ?: Handoff.Assigned
+            add("ATTENDEE" + (c.assignee?.let { n -> ";CN=" + cn(n) } ?: "") + ";PARTSTAT=" + step.partstat + ";ROLE=REQ-PARTICIPANT:mailto:" + email)
+            add("$HANDOFF:" + listOfNotNull(c.assignedAt?.let { "A=" + utc(it) }, c.seenAt?.let { "V=" + utc(it) }, c.startedAt?.let { "I=" + utc(it) }).joinToString(",").ifEmpty { "A" })
+            c.message?.takeIf { it.isNotBlank() }?.let { add("$MESSAGE:" + escape(it)) }
+            if (c.notify) add("$NOTIFY:1")
+        }
         if (f.done) {
             add("PERCENT-COMPLETE:100")
             f.completedAt?.let { add("COMPLETED:" + LOCAL.format(LocalDateTime.ofEpochSecond(it / 1000, 0, ZoneOffset.UTC)) + "Z") }
@@ -168,6 +237,8 @@ object Vtodo {
     /** Il testo da mandare al server. Con [base] si riparte da lì, così i campi sconosciuti non vanno persi. */
     fun render(base: String?, uid: String, fields: VtodoFields, now: Long): String {
         val owned = ownedLines(fields, now)
+        // Chi riceve e chi affida sono nostri se l'attività è affidata ora o lo era: altrimenti restano quelli di altre app.
+        val ownsPeople = fields.collab.assigned || base?.let { unfold(it).any { l -> l.startsWith("$HANDOFF:", true) } } == true
         val lines = if (base != null && parse(base) != null) {
             val source = unfold(base)
             val out = ArrayList<String>()
@@ -190,7 +261,10 @@ object Vtodo {
                         out += line
                     }
                     inTodo && line.startsWith("END:", true) -> { depth--; out += line }
-                    inTodo && depth == 0 -> prop(line).let { p -> if (p.name !in OWNED && !isParent(p)) out += line }
+                    inTodo && depth == 0 -> prop(line).let { p ->
+                        val person = p.name == "ATTENDEE" || p.name == "ORGANIZER"
+                        if (p.name !in OWNED && !isParent(p) && !(person && ownsPeople)) out += line
+                    }
                     else -> out += line
                 }
             }
@@ -214,6 +288,7 @@ object Vtodo {
             pick(base.priority, local.priority, remote.priority),
             pick(base.rrule, local.rrule, remote.rrule),
             pick(base.parentUid, local.parentUid, remote.parentUid),
+            TaskCollab.merge(base.collab, local.collab, remote.collab),
         )
     }
 }
