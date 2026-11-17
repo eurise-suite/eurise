@@ -342,6 +342,28 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Giro 772 (Compila 44188594640 su `prova-organizzazione`; il 766 si era fermato su una chiamata con nome completo di una
   funzione con ricevitore `BoxScope`).
 
+## 18 novembre: spostare app tra categorie e fare cartelle (dalla dock e dalle pagine)
+- **Prove del proprietario sul giro 772**: il trascinamento tra le pagine funziona (dalle categorie, preferiti, bolle e widget
+  col «+», bordi, menu e modifica da fermi). **Non funzionavano** spostare un'app da una categoria all'altra e creare
+  cartelle: le voci c'erano solo nelle pagine intere delle categorie, non in «Tutte le app» della dock (tenuta ferma apriva
+  solo «Dove metto…?») né nelle app delle pagine (tenuta ferma entrava in modifica).
+- **«Tutte le app» della dock**: tenuta ferma, un'app apre il suo menu, lo stesso delle categorie (crea cartella, sposta
+  in…, preferita, aggiungi alla Scrivania…, informazioni). Trascinata: sopra un'altra categoria della colonna (si accende)
+  **si sposta lì**; sopra un'altra app **nasce una cartella** con le due (nome di base, nella categoria aperta o, da «Tutte»,
+  in quella dell'app sotto; l'app portata passa in quella categoria); sopra una cartella **ci entra**; uscendo dal pannello
+  va sulla Scrivania come prima. Il pannello mostra in testa le cartelle della categoria (un tocco le apre) e non ripete
+  le app che stanno in una cartella.
+- **App delle pagine**: tenute ferme aprono lo stesso menu, più «Modifica la pagina» (la modifica di prima) e «Togli dalla
+  pagina». Le bolle tenute ferme entrano in modifica come prima. Una cartella creata da qui nasce nella categoria
+  dell'app (le cartelle dentro le pagine non ci sono ancora).
+- **Codice**: menu comune `AppMenu` / `AppMenuFor` con `AppMenuActions` (`LocalAppMenu`) in `home/HomeParts.kt`, usato da
+  `AppTile`, `AllAppsPanel`, `PageApp`; `SlotMenu` (`LocalSlotMenu`) in `HomeBoard`; `DeskCarry` sa del pannello (`panel`,
+  `panelCats`, `panelApps`, `inPanel`, `dropCategory`, `dropOnApp`; `CarryItem.category`). Parti comuni: nessuna.
+- **Da provare**: in «Tutte le app» tenere ferma un'app (menu), trascinarla su un'altra categoria, trascinarla su un'altra
+  app (cartella) e poi una terza sulla cartella; nelle pagine intere delle categorie «Sposta in…» e «Crea cartella» dal
+  menu; un'app su una pagina tenuta ferma (menu con «Modifica la pagina»).
+- Giro 782 (Compila 44198366637 su `prova-organizzazione`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
