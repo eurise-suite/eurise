@@ -34,6 +34,8 @@ import eu.eurise.gallery.logic.toneLut
 import eu.eurise.gallery.logic.straightenScale
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.adjustMatrix
+import eu.eurise.gallery.logic.Adjust
+import eu.eurise.gallery.logic.develop
 import eu.eurise.gallery.logic.cropPixels
 import java.io.File
 import java.io.IOException
@@ -241,6 +243,35 @@ fun applyCurve(bitmap: Bitmap, lut: IntArray) {
     }
 }
 
+/**
+ * Toni, curve, vividezza, struttura, nitidezza ([develop]) e la matrice su una bitmap modificabile, a fasce: così anche
+ * una foto grande non chiede la memoria di tutta l'immagine più volte. Le fasce si sovrappongono quanto il raggio della
+ * struttura, perché i dettagli ai bordi delle fasce vengano uguali al resto.
+ */
+fun developBitmap(bitmap: Bitmap, adjust: Adjust, matrix: FloatArray?) {
+    if (!adjust.needsPixels && matrix == null) return
+    val w = bitmap.width
+    val h = bitmap.height
+    val detail = adjust.structure != 0f || adjust.sharpen != 0f
+    val pad = if (detail) maxOf(2, minOf(w, h) / 100) * 2 + 2 else 0
+    val band = maxOf(64, 1_048_576 / w)
+    var y = 0
+    while (y < h) {
+        val n = minOf(band, h - y)
+        val top = maxOf(0, y - pad)
+        val bottom = minOf(h, y + n + pad)
+        val rows = bottom - top
+        val px = IntArray(w * rows)
+        bitmap.getPixels(px, 0, w, 0, top, w, rows)
+        if (detail) {
+            // Il raggio della struttura dipende dal lato corto della foto intera, non della fascia.
+            develop(px, w, rows, adjust, matrix, radiusBase = minOf(w, h))
+        } else develop(px, w, rows, adjust, matrix)
+        bitmap.setPixels(px, (y - top) * w, w, 0, y, w, n)
+        y += n
+    }
+}
+
 /** La vignetta: bordi scuriti (valori positivi) o schiariti (negativi) attorno al riquadro tenuto. */
 fun drawVignette(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float, amount: Float) {
     if (amount == 0f) return
@@ -267,7 +298,8 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
     val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(out)
     val adjust = state.effective
-    val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { if (!adjust.matrixNeutral) colorFilter = ColorMatrixColorFilter(ColorMatrix(adjustMatrix(adjust))) }
+    // La matrice si applica dopo il lavoro sui pixel (developBitmap), nello stesso ordine dell'anteprima.
+    val paint = Paint(Paint.FILTER_BITMAP_FLAG)
     val w = bitmap.width.toFloat()
     val h = bitmap.height.toFloat()
     if (state.straighten != 0f) {
@@ -282,7 +314,7 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
     } else {
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
     }
-    if (adjust.hasCurve) applyCurve(out, toneLut(adjust.shadows, adjust.highlights))
+    developBitmap(out, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust))
     drawVignette(canvas, state.crop.left * w, state.crop.top * h, state.crop.right * w, state.crop.bottom * h, adjust.vignette)
     drawMarks(canvas, w, h, state.texts, state.strokes)
     bitmap = out

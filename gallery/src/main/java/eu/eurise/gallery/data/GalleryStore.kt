@@ -222,6 +222,13 @@ class GalleryStore private constructor(context: Context) {
         changed()
     }
 
+    /** Le modalità tue dell'editor («Salva come look», tavola GalModifiche), sul telefono. */
+    fun myLooks(): List<eu.eurise.gallery.logic.SavedLook> = eu.eurise.gallery.logic.LookCodec.decode(prefs.getString("my_looks", null))
+
+    fun saveMyLooks(looks: List<eu.eurise.gallery.logic.SavedLook>) {
+        prefs.edit().putString("my_looks", eu.eurise.gallery.logic.LookCodec.encode(looks)).apply()
+    }
+
     companion object {
         @Volatile private var instance: GalleryStore? = null
         fun get(context: Context): GalleryStore = instance ?: synchronized(this) { instance ?: GalleryStore(context).also { instance = it } }

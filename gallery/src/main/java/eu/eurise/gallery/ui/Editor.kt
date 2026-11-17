@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -46,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -115,6 +117,14 @@ import eu.eurise.gallery.logic.ratioCrop
 import eu.eurise.gallery.logic.rotated
 import eu.eurise.gallery.logic.straightenScale
 import eu.eurise.gallery.logic.toneLut
+import eu.eurise.gallery.logic.CurveChannel
+import eu.eurise.gallery.logic.CurvePoint
+import eu.eurise.gallery.logic.CurvePreset
+import eu.eurise.gallery.logic.SavedLook
+import eu.eurise.gallery.logic.curveLut
+import eu.eurise.gallery.logic.develop
+import eu.eurise.gallery.logic.neutralize
+import eu.eurise.gallery.data.GalleryStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -193,12 +203,29 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     val shown = remember(source, state.turns, state.flip) { source?.let { geometry(it, state.flip, state.turns) } }
     val adjust = state.effective
     // Ombre e alte luci non stanno in una matrice: la curva si ricalcola su una copia, poco dopo l'ultimo ritocco.
-    val toned by produceState<Bitmap?>(null, shown, adjust.shadows, adjust.highlights) {
+    // Ciò che la matrice non sa fare (toni, curve, vividezza, struttura, nitidezza) si calcola su una copia, poco dopo
+    // l'ultimo ritocco; la matrice resta sulla GPU, così i cursori di luce e colore rispondono subito.
+    val pixelPart = adjust.copy(light = 0f, contrast = 0f, saturation = 0f, warmth = 0f, tint = 0f, vignette = 0f)
+    val toned by produceState<Bitmap?>(null, shown, pixelPart) {
         val base = shown ?: return@produceState
-        if (!adjust.hasCurve) { value = null; return@produceState }
-        delay(60)
-        value = withContext(Dispatchers.Default) { base.copy(Bitmap.Config.ARGB_8888, true).also { applyCurve(it, toneLut(adjust.shadows, adjust.highlights)) } }
+        if (!pixelPart.needsPixels) { value = null; return@produceState }
+        delay(70)
+        value = withContext(Dispatchers.Default) {
+            val w = base.width; val h = base.height
+            val px = IntArray(w * h).also { base.getPixels(it, 0, w, 0, 0, w, h) }
+            develop(px, w, h, pixelPart)
+            Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+        }
     }
+    var section by remember { mutableStateOf(AdjustSection.Light) }
+    var channel by remember { mutableStateOf(CurveChannel.Luma) }
+    var pickingWhite by remember { mutableStateOf(false) }
+    val store = remember { GalleryStore.get(context) }
+    var myLooks by remember { mutableStateOf(emptyList<SavedLook>()) }
+    LaunchedEffect(Unit) { myLooks = withContext(Dispatchers.IO) { store.myLooks() } }
+    var naming by remember { mutableStateOf<SavedLook?>(null) }
+    var managing by remember { mutableStateOf<SavedLook?>(null) }
+    fun storeLooks(next: List<SavedLook>) { myLooks = next; scope.launch(Dispatchers.IO) { store.saveMyLooks(next) } }
     val thumb = remember(shown) { shown?.let { Bitmap.createScaledBitmap(it, 160, (160f * it.height / it.width).roundToInt().coerceAtLeast(1), true).asImageBitmap() } }
 
     Column(Modifier.fillMaxSize().background(Ground).pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
@@ -313,7 +340,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                 onDoubleTap = { p -> nearestText(p)?.let { id -> writing = state.texts.first { it.id == id } } },
                             )
                         }
-                        .pointerInput(tool, w, h, ratio, nib) {
+                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite) {
                             when (tool) {
                                 Tool.Crop -> detectDragGestures(
                                     onDragStart = { p ->
@@ -364,6 +391,51 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                         },
                                     )
                                 }
+                                Tool.Adjust -> if (section == AdjustSection.Curves) {
+                                    // Curva sopra la foto (tavola GalCurve): x = ingresso, y = uscita (in alto = chiaro).
+                                    var moving = -1
+                                    detectDragGestures(
+                                        onDragStart = { p ->
+                                            val cx = ((p.x - left) / w).coerceIn(0f, 1f)
+                                            val cy = (1f - (p.y - top) / h).coerceIn(0f, 1f)
+                                            val pts = state.adjust.curves.channel(channel)
+                                            remember_()
+                                            moving = pts.indices.minByOrNull { abs(pts[it].x - cx) }?.takeIf { abs(pts[it].x - cx) < 0.07f } ?: -1
+                                            if (moving < 0) {
+                                                val y = curveLut(pts)[(cx * 255).roundToInt()] / 255f
+                                                val next = (pts + CurvePoint(cx, y)).sortedBy { it.x }
+                                                moving = next.indexOfFirst { it.x == cx }
+                                                state = state.copy(adjust = state.adjust.copy(curves = state.adjust.curves.with(channel, next)))
+                                            }
+                                        },
+                                        onDrag = { change, _ ->
+                                            change.consume()
+                                            val pts = state.adjust.curves.channel(channel)
+                                            if (moving !in pts.indices) return@detectDragGestures
+                                            val x = (change.position.x - left) / w
+                                            val y = 1f - (change.position.y - top) / h
+                                            val next = pts.toMutableList().also { it[moving] = CurvePoint(x.coerceIn(-0.2f, 1.2f), y.coerceIn(-0.2f, 1.2f)) }
+                                            state = state.copy(adjust = state.adjust.copy(curves = state.adjust.curves.with(channel, next)))
+                                        },
+                                        onDragEnd = {
+                                            // Trascinato fuori dalla foto: il punto si toglie.
+                                            val pts = state.adjust.curves.channel(channel)
+                                            val clean = pts.filter { it.x in -0.05f..1.05f && it.y in -0.05f..1.05f }
+                                                .map { CurvePoint(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f)) }.sortedBy { it.x }
+                                            state = state.copy(adjust = state.adjust.copy(curves = state.adjust.curves.with(channel, clean)))
+                                            moving = -1
+                                        },
+                                    )
+                                } else if (pickingWhite) detectTapGestures { p ->
+                                    // Bianco giusto: media di un quadratino attorno al punto toccato, sull'immagine originale.
+                                    val b = shown ?: return@detectTapGestures
+                                    val bx = (((p.x - left) / w) * b.width).roundToInt().coerceIn(2, b.width - 3)
+                                    val by = (((p.y - top) / h) * b.height).roundToInt().coerceIn(2, b.height - 3)
+                                    var r = 0; var g = 0; var bl = 0
+                                    for (dy in -2..2) for (dx in -2..2) { val c = b.getPixel(bx + dx, by + dy); r += (c shr 16) and 0xFF; g += (c shr 8) and 0xFF; bl += c and 0xFF }
+                                    commit(state.copy(adjust = neutralize(r / 25, g / 25, bl / 25, state.adjust.copy(warmth = 0f, tint = 0f))))
+                                    pickingWhite = false
+                                } else Unit
                                 else -> Unit
                             }
                         },
@@ -401,6 +473,25 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                             drawLine(Color.White, Offset(x, y), Offset(x, y + d.second * arm), thick)
                         }
                     }
+                    if (tool == Tool.Adjust && section == AdjustSection.Curves && !original) {
+                        val grid = Color.White.copy(alpha = 0.22f)
+                        for (i in 1..3) {
+                            drawLine(grid, Offset(left + w * i / 4, top), Offset(left + w * i / 4, top + h), 1.dp.toPx())
+                            drawLine(grid, Offset(left, top + h * i / 4), Offset(left + w, top + h * i / 4), 1.dp.toPx())
+                        }
+                        drawLine(Color.White.copy(alpha = 0.35f), Offset(left, top + h), Offset(left + w, top), 1.5.dp.toPx())
+                        val pts = state.adjust.curves.channel(channel)
+                        val lut = curveLut(pts)
+                        val ink = when (channel) { CurveChannel.Luma -> Color.White; CurveChannel.Red -> Color(0xFFFF8A80); CurveChannel.Green -> Color(0xFF9BE59B); CurveChannel.Blue -> Color(0xFF8AB4FF) }
+                        val path = androidx.compose.ui.graphics.Path()
+                        for (i in 0..255 step 3) {
+                            val x = left + w * i / 255f; val y = top + h * (1f - lut[i] / 255f)
+                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        path.lineTo(left + w, top + h * (1f - lut[255] / 255f))
+                        drawPath(path, ink, style = Stroke(2.5.dp.toPx()))
+                        pts.forEach { pt -> drawCircle(ink, 8.dp.toPx(), Offset(left + w * pt.x, top + h * (1f - pt.y))) }
+                    }
                     if (tool == Tool.Write) state.texts.firstOrNull { it.id == selected }?.let { t ->
                         drawCircle(Color.White, t.size * min(w, h) * 0.9f + 12.dp.toPx(), Offset(left + t.x * w, top + t.y * h), style = Stroke(1.5.dp.toPx()))
                     }
@@ -429,28 +520,75 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 }
                 Tool.Adjust -> {
                     val a = state.adjust
+                    fun set(next: Adjust) { state = state.copy(adjust = next) }
                     ChipRow {
+                        AdjustSection.entries.forEach { sct -> Chip(stringResource(sct.label), section == sct) { section = sct; pickingWhite = false } }
                         Chip(stringResource(R.string.editor_auto), false) {
-                            shown?.let { b -> scope.launch { val hist = withContext(Dispatchers.Default) { histogram(b) }; commit(state.copy(adjust = autoAdjust(hist))) } }
+                            shown?.let { b -> scope.launch { val hist = withContext(Dispatchers.Default) { histogram(b) }; commit(state.copy(adjust = a + autoAdjust(hist))) } }
                         }
-                        Chip(stringResource(R.string.editor_reset), false) { commit(EditState()); ratio = null; selected = null }
+                        Chip(stringResource(R.string.editor_reset), false) { commit(state.copy(adjust = Adjust(), look = Look.None, mine = null)) }
                     }
                     Column(Modifier.heightIn(max = 190.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        fun set(next: Adjust) { state = state.copy(adjust = next) }
-                        ZeroSlider(stringResource(R.string.editor_light), a.light, ::remember_) { set(a.copy(light = it)) }
-                        ZeroSlider(stringResource(R.string.editor_contrast), a.contrast, ::remember_) { set(a.copy(contrast = it)) }
-                        ZeroSlider(stringResource(R.string.editor_shadows), a.shadows, ::remember_) { set(a.copy(shadows = it)) }
-                        ZeroSlider(stringResource(R.string.editor_highlights), a.highlights, ::remember_) { set(a.copy(highlights = it)) }
-                        ZeroSlider(stringResource(R.string.editor_saturation), a.saturation, ::remember_) { set(a.copy(saturation = it)) }
-                        ZeroSlider(stringResource(R.string.editor_warmth), a.warmth, ::remember_) { set(a.copy(warmth = it)) }
-                        ZeroSlider(stringResource(R.string.editor_vignette), a.vignette, ::remember_) { set(a.copy(vignette = it)) }
+                        when (section) {
+                            AdjustSection.Light -> {
+                                ZeroSlider(stringResource(R.string.editor_light), a.light, ::remember_) { set(a.copy(light = it)) }
+                                ZeroSlider(stringResource(R.string.editor_contrast), a.contrast, ::remember_) { set(a.copy(contrast = it)) }
+                                ZeroSlider(stringResource(R.string.editor_ambiance), a.ambiance, ::remember_) { set(a.copy(ambiance = it)) }
+                                ZeroSlider(stringResource(R.string.editor_shadows), a.shadows, ::remember_) { set(a.copy(shadows = it)) }
+                                ZeroSlider(stringResource(R.string.editor_highlights), a.highlights, ::remember_) { set(a.copy(highlights = it)) }
+                                ZeroSlider(stringResource(R.string.editor_vignette), a.vignette, ::remember_) { set(a.copy(vignette = it)) }
+                            }
+                            AdjustSection.Color -> {
+                                ZeroSlider(stringResource(R.string.editor_saturation), a.saturation, ::remember_) { set(a.copy(saturation = it)) }
+                                ZeroSlider(stringResource(R.string.editor_vibrance), a.vibrance, ::remember_) { set(a.copy(vibrance = it)) }
+                                ZeroSlider(stringResource(R.string.editor_warmth), a.warmth, ::remember_) { set(a.copy(warmth = it)) }
+                                ZeroSlider(stringResource(R.string.editor_tint), a.tint, ::remember_) { set(a.copy(tint = it)) }
+                                ChipRow { Chip(stringResource(if (pickingWhite) R.string.editor_white_tap else R.string.editor_white_pick), pickingWhite, strong = true) { pickingWhite = !pickingWhite } }
+                            }
+                            AdjustSection.Detail -> {
+                                ZeroSlider(stringResource(R.string.editor_structure), a.structure, ::remember_) { set(a.copy(structure = it)) }
+                                ZeroSlider(stringResource(R.string.editor_sharpen), a.sharpen, ::remember_, from = 0f) { set(a.copy(sharpen = it)) }
+                            }
+                            AdjustSection.Curves -> {
+                                ChipRow {
+                                    listOf(CurveChannel.Luma to R.string.editor_curve_luma, CurveChannel.Red to R.string.editor_curve_red,
+                                        CurveChannel.Green to R.string.editor_curve_green, CurveChannel.Blue to R.string.editor_curve_blue).forEach { (c, l) ->
+                                        Chip(stringResource(l), channel == c) { channel = c }
+                                    }
+                                }
+                                ChipRow {
+                                    listOf(CurvePreset.None to R.string.editor_curve_none, CurvePreset.SoftS to R.string.editor_curve_soft,
+                                        CurvePreset.StrongS to R.string.editor_curve_strong, CurvePreset.Matte to R.string.editor_curve_matte,
+                                        CurvePreset.Cross to R.string.editor_curve_cross).forEach { (pr, l) ->
+                                        Chip(stringResource(l), false) { commit(state.copy(adjust = a.copy(curves = a.curves.with(channel, pr.points)))) }
+                                    }
+                                }
+                                Hint(stringResource(R.string.editor_curve_tip))
+                            }
+                        }
                     }
                 }
                 Tool.Filters -> {
+                    // Prima le modalità tue (salvate da una foto), poi i filtri della suite.
+                    val newName = stringResource(R.string.editor_mine_default, myLooks.size + 1)
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Look.entries.forEach { look -> LookTile(thumb, look, stringResource(LookNames.getValue(look)), state.look == look) { commit(state.copy(look = look, lookStrength = 1f)) } }
+                        SaveLookTile(enabled = !state.effective.isNeutral) {
+                            naming = SavedLook(System.currentTimeMillis(), newName, state.effective)
+                        }
+                        myLooks.forEach { mine ->
+                            LookTile(thumb, mine.adjust, mine.name, state.mine?.id == mine.id, onLongClick = { managing = mine }) {
+                                // Una modalità tua prende il posto delle regolazioni fatte, come quando la si è salvata.
+                                commit(state.copy(adjust = Adjust(), mine = mine, look = Look.None, lookStrength = 1f))
+                            }
+                        }
+                        Look.entries.forEach { look ->
+                            LookTile(thumb, look.adjust, stringResource(LookNames.getValue(look)), state.mine == null && state.look == look) {
+                                commit(state.copy(look = look, mine = null, lookStrength = 1f))
+                            }
+                        }
                     }
-                    if (state.look != Look.None) ZeroSlider(stringResource(R.string.editor_intensity), state.lookStrength, ::remember_, from = 0f) { state = state.copy(lookStrength = it) }
+                    if (state.look != Look.None || state.mine != null) ZeroSlider(stringResource(R.string.editor_intensity), state.lookStrength, ::remember_, from = 0f) { state = state.copy(lookStrength = it) }
+                    else Hint(stringResource(R.string.editor_mine_tip))
                 }
                 Tool.Write -> {
                     val current = state.texts.firstOrNull { it.id == selected }
@@ -506,6 +644,39 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 }
             }
         }
+    }
+
+    naming?.let { look ->
+        var name by remember(look) { mutableStateOf(look.name) }
+        val isNew = myLooks.none { it.id == look.id }
+        AlertDialog(
+            onDismissRequest = { naming = null },
+            title = { Text(stringResource(if (isNew) R.string.editor_mine_save else R.string.editor_mine_rename)) },
+            text = { OutlinedTextField(name, { name = it }, singleLine = true) },
+            confirmButton = {
+                TextButton(enabled = name.isNotBlank(), onClick = {
+                    naming = null
+                    val saved = look.copy(name = name.trim())
+                    storeLooks(if (isNew) listOf(saved) + myLooks else myLooks.map { if (it.id == saved.id) saved else it })
+                    if (isNew) Toast.makeText(context, context.getString(R.string.editor_mine_saved, saved.name), Toast.LENGTH_SHORT).show()
+                }) { Text(stringResource(R.string.editor_text_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { naming = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    managing?.let { look ->
+        AlertDialog(
+            onDismissRequest = { managing = null },
+            title = { Text(look.name) },
+            confirmButton = { TextButton(onClick = { managing = null; naming = look }) { Text(stringResource(R.string.editor_mine_rename)) } },
+            dismissButton = {
+                TextButton(onClick = {
+                    managing = null
+                    storeLooks(myLooks.filterNot { it.id == look.id })
+                    if (state.mine?.id == look.id) commit(state.copy(mine = null))
+                }) { Text(stringResource(R.string.editor_mine_delete)) }
+            },
+        )
     }
 
     writing?.let { mark ->
@@ -569,17 +740,37 @@ private fun InkColors(selected: Color, onPick: (Color) -> Unit) {
     ColorRow(selected, onPick, Modifier.fillMaxWidth(), colors = INK, title = stringResource(R.string.editor_color_title), outline = Line, accent = Accent)
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun LookTile(thumb: ImageBitmap?, look: Look, name: String, on: Boolean, onClick: () -> Unit) {
-    Column(Modifier.width(62.dp).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun LookTile(thumb: ImageBitmap?, adjust: Adjust, name: String, on: Boolean, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
+    Column(
+        Modifier.width(62.dp).combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Box(Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)).background(Raised).then(if (on) Modifier.border(2.dp, Accent, RoundedCornerShape(12.dp)) else Modifier)) {
             thumb?.let {
                 Image(it, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
-                    colorFilter = if (look.adjust.matrixNeutral) null else ColorFilter.colorMatrix(ColorMatrix(adjustMatrix(look.adjust))))
+                    colorFilter = if (adjust.matrixNeutral) null else ColorFilter.colorMatrix(ColorMatrix(adjustMatrix(adjust))))
             }
         }
         Text(name, color = if (on) Accent else Text1, fontSize = 11.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold, maxLines = 1)
     }
+}
+
+/** «Salva la tua»: la regolazione di questa foto diventa una modalità tua, prima tra i filtri. */
+@Composable
+private fun SaveLookTile(enabled: Boolean, onClick: () -> Unit) {
+    Column(Modifier.width(62.dp).clickable(enabled = enabled, onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)).border(1.5.dp, if (enabled) Accent else Muted, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Icon(EuriseIcons.plus(), null, tint = if (enabled) Accent else Muted, modifier = Modifier.size(22.dp))
+        }
+        Text(stringResource(R.string.editor_mine_add), color = if (enabled) Accent else Muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+/** Le parti di Regola (tavola GalRegolaTutto). */
+private enum class AdjustSection(val label: Int) {
+    Light(R.string.editor_section_light), Color(R.string.editor_section_color), Detail(R.string.editor_section_detail), Curves(R.string.editor_section_curves),
 }
 
 /**

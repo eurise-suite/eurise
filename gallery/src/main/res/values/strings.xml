@@ -236,7 +236,7 @@
     <string name="editor_auto">Automatico</string>
     <string name="editor_shadows">Ombre</string>
     <string name="editor_highlights">Alte luci</string>
-    <string name="editor_vignette">Vignetta</string>
+    <string name="editor_vignette">Vignettatura</string>
     <string name="editor_intensity">Intensità</string>
     <string name="editor_style_plain">Aa Normale</string>
     <string name="editor_style_bold">Aa Marcato</string>
@@ -258,4 +258,33 @@
     <string name="pick_title">Scegli una foto</string>
     <string name="pick_title_video">Scegli un video</string>
     <string name="pick_done">Scegli</string>
+    <!-- Editor completo, primo giro (tavole GalRegolaTutto e GalCurve, 17 novembre) -->
+    <string name="editor_ambiance">Atmosfera</string>
+    <string name="editor_vibrance">Vividezza</string>
+    <string name="editor_tint">Tinta</string>
+    <string name="editor_structure">Struttura</string>
+    <string name="editor_sharpen">Nitidezza</string>
+    <string name="editor_white_pick">Bianco giusto: tocca un grigio</string>
+    <string name="editor_white_tap">Tocca sulla foto qualcosa di grigio o bianco</string>
+    <string name="editor_section_light">Luce</string>
+    <string name="editor_section_color">Colore</string>
+    <string name="editor_section_detail">Dettagli</string>
+    <string name="editor_section_curves">Curve</string>
+    <string name="editor_curve_luma">Luminosità</string>
+    <string name="editor_curve_red">Rosso</string>
+    <string name="editor_curve_green">Verde</string>
+    <string name="editor_curve_blue">Blu</string>
+    <string name="editor_curve_none">Diritta</string>
+    <string name="editor_curve_soft">Morbida S</string>
+    <string name="editor_curve_strong">Forte S</string>
+    <string name="editor_curve_matte">Opaca</string>
+    <string name="editor_curve_cross">Incrociata</string>
+    <string name="editor_curve_tip">Tocca la foto per aggiungere un punto sulla curva, trascinalo per cambiarla, trascinalo fuori per toglierlo.</string>
+    <string name="editor_mine_add">Salva la tua</string>
+    <string name="editor_mine_default">La mia %1$d</string>
+    <string name="editor_mine_save">Salva tra le tue modalità</string>
+    <string name="editor_mine_rename">Rinomina</string>
+    <string name="editor_mine_delete">Elimina</string>
+    <string name="editor_mine_saved">«%1$s» è tra le tue modalità</string>
+    <string name="editor_mine_tip">Regola una foto come ti piace, poi «Salva la tua»: la trovi qui per tutte le altre. Tieni premuta una tua per rinominarla o eliminarla.</string>
 </resources>

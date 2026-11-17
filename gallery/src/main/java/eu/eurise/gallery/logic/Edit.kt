@@ -3,8 +3,9 @@ package eu.eurise.gallery.logic
 import kotlin.math.roundToInt
 
 /**
- * Luce, contrasto, saturazione, calore, ombre, alte luci e vignetta, da -1 a 1 (0 lascia com'è).
- * Le prime quattro sono una matrice di colore; ombre e alte luci una curva ([toneLut]); la vignetta un velo ai bordi.
+ * Le regolazioni, da -1 a 1 (0 lascia com'è). Luce, contrasto, saturazione, calore e tinta sono una matrice di colore
+ * ([adjustMatrix]); ombre, alte luci, atmosfera, vividezza, curve, struttura e nitidezza si fanno sui pixel ([develop]);
+ * la vignetta è un velo ai bordi.
  */
 data class Adjust(
     val light: Float = 0f,
@@ -14,19 +15,42 @@ data class Adjust(
     val shadows: Float = 0f,
     val highlights: Float = 0f,
     val vignette: Float = 0f,
+    /** Atmosfera: ombre più aperte, alte luci trattenute e colori un po' più pieni, tutto insieme. */
+    val ambiance: Float = 0f,
+    /** Vividezza: come la saturazione, ma soprattutto sui colori spenti. */
+    val vibrance: Float = 0f,
+    /** Tinta: verde (negativa) o magenta (positiva), insieme al calore per il bianco giusto. */
+    val tint: Float = 0f,
+    /** Struttura: contrasto dei dettagli medi (trama, nuvole, tessuti). */
+    val structure: Float = 0f,
+    /** Nitidezza: bordi fini più netti. */
+    val sharpen: Float = 0f,
+    val curves: Curves = Curves(),
 ) {
-    val isNeutral: Boolean get() = matrixNeutral && hasCurve.not() && vignette == 0f
-    val matrixNeutral: Boolean get() = light == 0f && contrast == 0f && saturation == 0f && warmth == 0f
+    val isNeutral: Boolean get() = matrixNeutral && !needsPixels && vignette == 0f
+    val matrixNeutral: Boolean get() = light == 0f && contrast == 0f && saturation == 0f && warmth == 0f && tint == 0f
     val hasCurve: Boolean get() = shadows != 0f || highlights != 0f
+    /** Serve il lavoro sui pixel (non basta la matrice). */
+    val needsPixels: Boolean get() = hasCurve || ambiance != 0f || vibrance != 0f || structure != 0f || sharpen != 0f || !curves.isNeutral
 
     operator fun plus(o: Adjust) = Adjust(
         (light + o.light).coerceIn(-1f, 1f), (contrast + o.contrast).coerceIn(-1f, 1f), (saturation + o.saturation).coerceIn(-1f, 1f),
         (warmth + o.warmth).coerceIn(-1f, 1f), (shadows + o.shadows).coerceIn(-1f, 1f), (highlights + o.highlights).coerceIn(-1f, 1f),
-        (vignette + o.vignette).coerceIn(-1f, 1f),
+        (vignette + o.vignette).coerceIn(-1f, 1f), (ambiance + o.ambiance).coerceIn(-1f, 1f), (vibrance + o.vibrance).coerceIn(-1f, 1f),
+        (tint + o.tint).coerceIn(-1f, 1f), (structure + o.structure).coerceIn(-1f, 1f), (sharpen + o.sharpen).coerceIn(-1f, 1f),
+        // Le curve non si sommano: valgono quelle fatte a mano, altrimenti quelle del filtro.
+        if (curves.isNeutral) o.curves else curves,
     )
 
-    operator fun times(k: Float) = Adjust(light * k, contrast * k, saturation * k, warmth * k, shadows * k, highlights * k, vignette * k)
+    operator fun times(k: Float) = Adjust(
+        light * k, contrast * k, saturation * k, warmth * k, shadows * k, highlights * k, vignette * k,
+        ambiance * k, vibrance * k, tint * k, structure * k, sharpen * k,
+        Curves(curves.luma.scaled(k), curves.red.scaled(k), curves.green.scaled(k), curves.blue.scaled(k)),
+    )
 }
+
+/** Una curva dosata: i punti si avvicinano alla diagonale. */
+private fun List<CurvePoint>.scaled(k: Float) = map { CurvePoint(it.x, it.x + (it.y - it.x) * k) }
 
 /** I filtri: ognuno è un insieme di regolazioni, dosato con l'intensità. */
 enum class Look(val adjust: Adjust) {
@@ -85,7 +109,7 @@ fun adjustMatrix(a: Adjust): FloatArray {
     val b = 0.0722f * (1 - s)
     return floatArrayOf(
         (r + s) * c, g * c, b * c, 0f, shift + a.warmth * 28f,
-        r * c, (g + s) * c, b * c, 0f, shift,
+        r * c, (g + s) * c, b * c, 0f, shift - a.tint * 28f,
         r * c, g * c, (b + s) * c, 0f, shift - a.warmth * 28f,
         0f, 0f, 0f, 1f, 0f,
     )
@@ -147,9 +171,15 @@ data class EditState(
     val strokes: List<InkStroke> = emptyList(),
     val look: Look = Look.None,
     val lookStrength: Float = 1f,
+    /** Una modalità tua scelta tra i filtri (prende il posto di [look]). */
+    val mine: SavedLook? = null,
 ) {
     /** Le regolazioni a mano più il filtro dosato: quello che si applica davvero. */
-    val effective: Adjust get() = if (look == Look.None) adjust else adjust + look.adjust * lookStrength
+    val effective: Adjust get() = when {
+        mine != null -> adjust + mine.adjust * lookStrength
+        look == Look.None -> adjust
+        else -> adjust + look.adjust * lookStrength
+    }
 }
 
 private fun EditState.mapPoints(map: (Float, Float) -> Pair<Float, Float>) = copy(
