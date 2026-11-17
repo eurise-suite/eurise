@@ -224,22 +224,30 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Da provare: riquadri della suite (giorno e notte, rotonde, corsie, scena dell'uscita), bolla in alto a destra con i
   tasti visibili e nascosti, schermo diviso.
 
+## 17 novembre, sera: campo di ricerca visibile (Mappe 97, pubblicato alle 15:38 UTC)
+- Prova del proprietario: in «Dove devi andare» il campo in basso non si vedeva (tutto bianco). Il campo di CoMaps ha
+  testo, suggerimento e icone bianchi per la barra colorata; spostato in basso su fondo trasparente spariva. Ora
+  `EuriseSearchHome.pill` lo fa pillola della suite (vetro chiaro/scuro, bordo, testo e icone nell'inchiostro).
+
 ## Prossimi passi, in ordine
-1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
-   da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono
-   nella schermata della bandierina); bolla in guida (Livelli › Musica e chiamate in guida, poi l'accesso alle notifiche)
-   con Spotify e un'altra app, chiamata in arrivo e in corso, pausa, telefono in orizzontale, auto; Livelli › Dalla rete ›
-   Testi delle canzoni.
-2. Bolla, dopo la prova: «Avvisa» anche per l'impegno vicino senza chiamata, se il proprietario lo vuole (partecipanti).
-3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub dopo i primi download; ora c'è lo
-   specchio di openstreetmap.fr). In Italia le pietre in OpenStreetMap sono poche (8.672): il km compare soprattutto in
-   autostrada. I file restano su GitHub (16 novembre, il proprietario lascia perdere il server europeo).
-4. Passo f) di Esplora: fatto (Mappe 88). Da provare: «3D» vicino e lontano, giorno e notte, poi avvio della guida e
-   fine guida (la mappa deve tornare piatta).
-5. **Mappe sul computer** (tavola PcMappe, CoMaps su Linux), insieme all'area Computer.
-6. In attesa di una fonte o di una decisione: segnalazioni brevi condivise con gli altri (serve un servizio comune);
-   traffico (nessuna fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da
-   fare e «Il mio viaggio» (nessuna fonte libera verificata).
+1. **Prova del proprietario** (in sospeso):
+   - Android Auto (Mappe 96): riquadri della suite di giorno e di notte, rotonde, corsie, scena dell'uscita; bolla in alto
+     a destra con i tasti tondi visibili e nascosti; schermo diviso.
+   - Bolla e otto aggiunte (Mappe 81 → 96, Eurise e Messaggi 721): podcast, coda «Dopo», radio, chiamata persa →
+     Richiama all'arrivo, «Avvisa» (con Messaggi), messaggi letti da Alfred (Livelli › Messaggi in guida), timer e
+     sveglie, Condividi l'arrivo; anche in auto con gli avvisi a due pulsanti.
+   - «3D» esplorando (Mappe 88): vicino e lontano, giorno e notte, guida avviata e finita.
+   - Ricerca (Mappe 97): campo in basso, ordine Sempre a portata › Recenti › Cerca vicino › Dal Calendario.
+   - Rimasti da Mappe 76: testi delle canzoni (Livelli › Dalla rete), telefono in orizzontale.
+2. Dopo la prova: correzioni; tavola MapViaggio2Dove da aggiornare al nuovo ordine; «Avvisa» anche per l'impegno vicino
+   senza chiamata, se lo vuoi; gesto a due dita per il 3D, se lo vuoi; in auto l'elenco «Dove devi andare» nello
+   stesso ordine del telefono, se lo vuoi.
+3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub; c'è lo specchio di
+   openstreetmap.fr da provare). In Italia le pietre in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
+4. **Mappe sul computer** (tavola PcMappe approvata, CoMaps su Linux), insieme all'area Computer.
+5. In attesa di una fonte o di una decisione: segnalazioni brevi condivise (serve un servizio comune); traffico (nessuna
+   fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio
+   viaggio».
 - **Passo del proprietario prima di pubblicare Mappe**: con Transitous concordare l'uso oltre 720 richieste al giorno
   (canale Matrix) e mettere un contatto nel User-Agent.
 - **Messo da parte** (16 novembre, decisione del proprietario): «Leggi i cartelli con la fotocamera». Forse un
