@@ -71,8 +71,32 @@ computer (area Computer, tavola PcEmail).
   Non ancora (passi successivi): risposta automatica alle urgenze con 112 e guardia medica (passo 5, regole), segno
   «Paziente» in Messaggi, segreteria, ricette con Millewin (passo 2), referti (passo 3), lo Studio nel backup cifrato
   della suite (oggi solo sul telefono: allowBackup spento).
+- **La mia Bussola in Chat, prima parte** (17 novembre, notte; tavole Bus* approvate con le quattro decisioni; giro 724):
+  protocollo in `core/studio/Bussola.kt` con `BussolaTest`: `m.room.message` con `msgtype` `it.bussola.rx_request`,
+  `rx_status` (con `m.relates_to` `m.reference` alla richiesta; stati Received, Preparing, Ready con NRE, Review,
+  Collected), `checkup_invite` / `checkup_reply` (le quattro risposte rapide), `studio` (orari, telefono, indirizzo,
+  guardia medica, assenza, sostituto), `therapy` (terapia abituale, solo cifrata nella stanza). Body di riserva leggibile
+  da Element. Lo studio è chi ha mandato per primo `studio`; stati, inviti, orari e terapia valgono solo da lì; «ritirata»
+  anche dal paziente. Ricetta valida 30 giorni dall'arrivo del NRE. `StudioState.info` (orari dello studio, cifrati).
+  Chat: `Event.Kind.Bussola`; `ChatModel.bussolaRole/bussolaItems/sendBussola/bussolaActivate`; la storia della stanza
+  si legge tutta (come le Spese). Lato paziente: banda del 118, «Urgenze: 118» sotto il campo, tre azioni grandi
+  (Chiedi un rinnovo, Le mie ricette, Orari e contatti), rinnovo con un tocco, stato in tre tappe, NRE grande con Copia,
+  Condividi, «L'ho ritirata», scaduta dopo 30 giorni, risposte agli inviti a pulsanti grandi, accento verde petrolio.
+  Lato studio: Studio › «Orari e contatti dello studio» (salvando arrivano nelle chat attive), scheda del paziente ›
+  «La mia Bussola» › «Attiva nella sua chat» (orari + terapia), nella chat In preparazione / Da rivedere / Ricetta pronta
+  (NRE scritto a mano dal promemoria di Millewin; la lettura del PDF è il passo 2), Invito al controllo, Aggiorna orari
+  e terapia; i rinnovi e le risposte entrano nella coda dello Studio. Notifiche (`ChatWorker`, `BussolaRooms`): nelle
+  stanze di Bussola solo «Hai ricevuto una nuova comunicazione da parte del tuo medico su La mia Bussola»; sul telefono
+  del medico, per i pazienti dello Studio, «Hai nuovi messaggi dei pazienti» senza nomi.
+  Decisioni del proprietario (17 novembre, notte, «Ok su tutto»): niente risposta automatica sulle parole urgenti (solo il
+  118 fisso e la risposta fuori orario); «Da guardare prima» resta solo dalla parte del medico come aiuto di lettura;
+  notifiche neutre; fino al server dello studio i pazienti passano da SMS ed email.
+  Non ancora: referti (serve l'invio di file cifrati, ChatAllega), attivazione con codice, SMS e passkey (lato server),
+  ruoli di assistente e infermiere (servono i loro account), la seconda fila (prenotazioni, questionario, esami,
+  certificati e 730, calendario, diario delle misure, scheda di emergenza, deleghe, lingue), segno di lettura
+  «paziente in attesa» per chi non ha attivato l'area.
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat, mail e messages giro 718 (17 novembre, Studio passo 1); phone del
+- **Ultimo APK pubblicato** in `apk-prova`: chat, mail e messages giro 724 (17 novembre, notte: La mia Bussola); phone del
   16 novembre.
 
 ## Tavole
@@ -192,9 +216,10 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   - spese: calcolo sul telefono (logica pura con test in `core/data`, pagamenti minimi), nessun servizio esterno.
 
 ## Prossimi passi, in ordine
-0. **La mia Bussola in Chat**: approvazione delle 9 tavole Bus* e delle quattro decisioni qui sopra; poi il codice, a partire
-   dai messaggi con un tipo (`it.bussola.rx_request` e stati, `report`, `checkup_invite`, ricetta pronta) in `core/studio`
-   con i test, notifiche neutre, promemoria del 118 e vista paziente semplice in Chat.
+0. **La mia Bussola in Chat**: prima parte fatta (vedi «Fatto»). Prossimo: referti (ChatAllega con file cifrati, 10 MB,
+   45 giorni con redaction), lettura dei promemoria PDF di Millewin (passo 2 dello Studio) che compila il NRE da sé,
+   tavole della seconda fila. Prove da chiedere: due telefoni (medico ed Element o Eurise sul secondo), attivazione dalla
+   scheda, rinnovo, NRE, invito, notifiche neutre.
    **Studio medico**: passo 2, ricette (richieste dalla terapia abituale, promemoria PDF di Millewin da una cartella con
    `PdfText` spostato in un modulo piccolo comune, NRE e codice fiscale, invio nel canale del paziente); poi referti,
    appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
