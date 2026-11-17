@@ -374,7 +374,7 @@ private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
             Text(stringResource(if (Quiet.privacyOf(s.homeserver) <= 5) R.string.ch_acc_public else R.string.ch_acc_private), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
             if (a == Account.Work) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.ch_acc_quiet), fontSize = 13.sp, modifier = Modifier.weight(1f))
-                androidx.compose.material3.Switch(checked = model.workQuiet, onCheckedChange = model::setWorkQuiet)
+                androidx.compose.material3.Switch(checked = model.workQuiet, onCheckedChange = model::changeWorkQuiet)
             }
         }
     }

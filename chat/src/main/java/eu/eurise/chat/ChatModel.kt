@@ -217,7 +217,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     var workQuiet by mutableStateOf(ChatAccounts.workQuiet(context))
         private set
 
-    fun setWorkQuiet(on: Boolean) { workQuiet = on; ChatAccounts.setWorkQuiet(context, on) }
+    fun changeWorkQuiet(on: Boolean) { workQuiet = on; ChatAccounts.setWorkQuiet(context, on) }
 
     // --- Studio medico (tavole StuSpazio e StuPaziente) ---
 
