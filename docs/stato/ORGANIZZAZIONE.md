@@ -301,6 +301,22 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   appunto, ognuno spostabile e con la misura che vuoi; barra App, Bolla, Widget, Cartella, Testo, Fatto).
 - Bacheca e riepilogo diventano pagine come le altre (si possono riordinare, nascondere, riempire di app).
 - **Parte comune toccata**: `canvas.json` della tela (cinque voci in `boards` e `order`, nota `t-pagine`).
+- **Approvate dal proprietario («procedi») e in codice** nello stesso giorno, tranne ScrPagTrascina:
+  - **Modello**: `home/DeskPages.kt` (`DeskPage` con id, nome, simbolo, modalità; `PageSymbol`; `PageStart`; codifica).
+    `LauncherSettings.pages`, `startPage`, `addPage` (la stella), `pageSlots` (bolle delle pagine nuove), `slotsOf`/`withSlots`
+    per tutte le pagine. Le app sono bolle `HomeKind.App` (`HomeSlot.app`, chiave `app#…` codificata; larghezza minima 0,2,
+    di base 0,25: quattro per riga), disegnate da `PageApp` in `LauncherPhone.kt`.
+  - **Carosello**: le pagine visibili (con la modalità accesa) nell'ordine scelto; parte da `startPage`, il tasto Home porta
+    lì. Bacheca, riepilogo e pagine nuove usano `SidePage` con le stesse bolle; catalogo e widget per pagina (`sideCatalog`
+    e `widgetPage` ora sono id di pagina).
+  - **Fogli** (`home/PagesSheet.kt`): `PagesSheet` («Le tue pagine», dai puntini in basso, ora toccabili), `PageDialog`
+    (pagina nuova o modifica), `PagePickerSheet` («Dove metto…?»). Voci «Aggiungi alla Scrivania…» nel menu delle app delle
+    categorie (`AppTile.onAddToPage`) e pressione lunga in «Tutte le app» della dock (`AllAppsPanel.onHold`).
+    `LauncherViewModel.addToPage` (sulla home nei preferiti finché c'è posto, poi tra le bolle), `createPage`, `deletePage`.
+  - **Non ancora**: trascinare un'app da una pagina all'altra (ScrPagTrascina) e miniature vere delle pagine; il Cestino per
+    le pagine eliminate (ora c'è la conferma); cartelle e testo libero dentro le pagine nuove; app dei preferiti della home
+    spostabili in un'altra pagina.
+  - Giro 760 (Compila 44166106646 su `prova-organizzazione`).
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
@@ -344,9 +360,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 5. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
 6. Poi: audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
-- **Pagine della Scrivania a piacere**: tavole ScrPag* da approvare (sezione del 17 novembre, sera); dopo l'approvazione il
-  codice (pagine in `LauncherSettings`, griglia libera per pagina con app, cartelle, bolle e widget, migrazione dei
-  Preferiti nella home).
+- **Pagine della Scrivania a piacere**: in codice nel giro 760, da provare (creare pagine, «Aggiungi alla Scrivania…»,
+  ordine, Apri da qui, solo in una modalità, elimina); poi il trascinamento tra pagine (ScrPagTrascina).
 - **Passi del proprietario**: nome della Scrivania (Benvenuto, Casimiro, Larino) e verifica TMview dei nomi dell'area.
 
 ## Come si lavora
