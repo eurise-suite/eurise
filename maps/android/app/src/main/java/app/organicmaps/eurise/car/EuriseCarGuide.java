@@ -176,6 +176,7 @@ public final class EuriseCarGuide extends FrameLayout
       setVisibility(GONE);
       return;
     }
+    app.organicmaps.eurise.EuriseWit.update(mCar, info, false);
     final boolean night = app.organicmaps.car.util.ThemeUtils.isNightMode(mCar);
     layoutColumn();
     style(night);

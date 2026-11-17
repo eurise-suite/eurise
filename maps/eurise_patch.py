@@ -156,6 +156,7 @@ patch(nav, "    updateStreetView(info);\n    mNavMenu.update(info);",
     app.organicmaps.eurise.EuriseRouteWeather.update(mFrame.findViewById(R.id.eurise_route_weather), info,
                                                      Router.get() == Router.Pedestrian);
     app.organicmaps.eurise.EuriseArrival.update(mFrame.findViewById(R.id.eurise_arrival), info);
+    app.organicmaps.eurise.EuriseWit.update(mFrame.getContext(), info, Router.get() == Router.Pedestrian);
     mNavMenu.update(info);""")
 
 menu = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "widget" / "menu" / "NavMenu.java"

@@ -543,4 +543,21 @@
     <string name="eurise_lv_media_app_info">App info</string>
     <string name="eurise_lv_media_access_help">In the phone settings, Notification access, turn on Eurise Maps. If the switch is grey or says restricted setting (this happens to apps installed from the browser): tap App info, then the ⋮ menu at the top right, Allow restricted settings, and go back to notification access. Maps only reads what is playing, the call, missed calls and timers; nothing leaves the phone.</string>
     <string name="eurise_car_then">Then %1$s</string>
+    <string-array name="eurise_wit_departure">
+        <item>Off we go. Seatbelts are a warm suggestion.</item>
+        <item>On our way. You drive, I handle the details.</item>
+        <item>Here we go. Slow and steady wins the race.</item>
+        <item>Departing. I shall speak only when needed. Mostly.</item>
+    </string-array>
+    <string-array name="eurise_wit_cruise">
+        <item>Long quiet road. I\'ll enjoy the view for you.</item>
+        <item>Nothing to report for a while. A rare luxury.</item>
+        <item>All going splendidly.</item>
+        <item>A butler knows when to be quiet. Now, for instance.</item>
+    </string-array>
+    <string-array name="eurise_wit_arrival">
+        <item>Here we are. It was a pleasure to navigate.</item>
+        <item>Arrived. Parking, alas, is your affair.</item>
+        <item>Destination reached. Not a single wrong bend.</item>
+    </string-array>
 </resources>

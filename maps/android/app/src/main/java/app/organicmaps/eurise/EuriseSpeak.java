@@ -62,6 +62,12 @@ public final class EuriseSpeak
   }
 
   /** «Basta»: smette di leggere. */
+  /** Vero se Alfred sta già leggendo qualcosa (un messaggio, una risposta): le battute in guida aspettano. */
+  public static boolean busy()
+  {
+    return sPending != null || (sTts != null && sReady && sTts.isSpeaking());
+  }
+
   public static void stop()
   {
     sPending = null;

@@ -535,4 +535,43 @@
     <string name="eurise_lv_media_app_info">Info app</string>
     <string name="eurise_lv_media_access_help">Nelle impostazioni del telefono, «Accesso alle notifiche», accendi Eurise Mappe. Se l\'interruttore è grigio o dice «impostazione con restrizioni» (succede alle app installate dal browser): tocca «Info app», poi il menu ⋮ in alto a destra, «Consenti impostazioni con restrizioni», e torna all\'accesso alle notifiche. Mappe legge solo cosa suona, la chiamata, le chiamate perse e i timer; nulla esce dal telefono.</string>
     <string name="eurise_car_then">Poi %1$s</string>
+    <!-- Battute di Alfred in guida (GuideWit): partenza e rettilineo senza parole di direzione (le controlla la prova),
+         all'arrivo sì. Lei sempre, brevi. -->
+    <string-array name="eurise_wit_departure">
+        <item>Partiamo. Le cinture sono un consiglio caloroso.</item>
+        <item>In marcia. Il pilota è Lei, io faccio solo il copilota.</item>
+        <item>Buon viaggio. Chi va piano va sano e va lontano.</item>
+        <item>Si parte. Il viaggio è la meta, ma arrivare non guasta.</item>
+        <item>Pronti. Ho controllato tutto, tranne il caffè.</item>
+        <item>Partiti. Mi limiterò a parlare quando serve. Più o meno.</item>
+        <item>In viaggio. La pazienza al semaforo è una virtù.</item>
+        <item>Andiamo. Festina lente: affrettiamoci con calma.</item>
+        <item>Si comincia. Lei guida, io mi occupo dei dettagli.</item>
+        <item>Partenza. Gli altri automobilisti non sanno cosa si perdono.</item>
+    </string-array>
+    <string-array name="eurise_wit_cruise">
+        <item>Strada lunga e tranquilla. Mi godo il panorama per Lei.</item>
+        <item>Per un po\' nulla da segnalare. Un raro lusso.</item>
+        <item>Tutto procede a meraviglia. Me ne compiaccio.</item>
+        <item>Chilometri tranquilli. Ottimo momento per un po\' di musica.</item>
+        <item>Un maggiordomo sa quando tacere. Ecco, adesso.</item>
+        <item>Viaggiare è vivere due volte, dicono. Io conto i chilometri.</item>
+        <item>Nessuna fretta: la strada non scappa.</item>
+        <item>Se avesse sete, la prossima area di servizio è un\'idea.</item>
+        <item>Tempus fugit. Noi, con prudenza.</item>
+        <item>Strada liscia come un buon tè delle cinque.</item>
+        <item>Ogni lasciata è persa, ma oggi non lasciamo nulla.</item>
+        <item>Per un po\' La lascio in pace. Il silenzio è d\'oro.</item>
+        <item>Guida impeccabile, se mi permette.</item>
+    </string-array>
+    <string-array name="eurise_wit_arrival">
+        <item>Arrivati. Destra o sinistra, ormai, poco importa.</item>
+        <item>Eccoci. Sani, salvi e puntuali, o quasi.</item>
+        <item>Arrivati. È stato un piacere farLe da copilota.</item>
+        <item>A destinazione. Il parcheggio, ahimè, è affar Suo.</item>
+        <item>Siamo arrivati. Chi ben comincia, ben finisce.</item>
+        <item>Eccoci qua. Tutte le strade portano a Roma, questa portava qui.</item>
+        <item>Arrivati. Le auguro una sosta piacevole.</item>
+        <item>Destinazione raggiunta. Non ho sbagliato una curva. Lei nemmeno.</item>
+    </string-array>
 </resources>
