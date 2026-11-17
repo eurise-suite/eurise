@@ -270,3 +270,8 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Servizi nuovi che fanno uscire dati: `PrivacyService` in core/suite (con `SHARED` in `PrivacyContract`), testi in
   `ServiceConsent`, interruttore in Livelli con la spiegazione prima di accendere; servono APK di Eurise e di Mappe nuovi.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 15 novembre (Mappe, Android Auto, guida).
+
+## Nota dall'area Alfred (17 novembre)
+- Battute di Alfred in guida: `GuideWit`/`EuriseWit` in `maps/android/…/eurise/`, una riga in `eurise_patch.py`
+  (NavigationController) e in `EuriseCarGuide.refresh`, `EuriseSpeak.busy()`, stringhe `eurise_wit_*`, prova
+  `GuideWitTest` in `maps-engine.yml`. Dettagli in `docs/stato/ALFRED.md`.

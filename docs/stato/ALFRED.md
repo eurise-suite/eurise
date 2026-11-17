@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: 754)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: Compila 760, Mappe 102)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -82,7 +82,21 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
     è proprio sicuro?»).
   - Il pannello si chiude dopo la battuta (al massimo 2,5 s in più), così non la tronca.
 - Regola per chi aggiunge battute: Lei sempre, niente volgarità, al massimo una decina di parole, citazioni solo se
-  l'attribuzione è sicura (altrimenti come proverbio). «Mai alla guida» (regola di Alfred unico): da verificare che `withMaxim` non scatti nel percorso di Android Auto.
+  l'attribuzione è sicura (altrimenti come proverbio). Niente testi di canzoni (anche un verso): solo allusioni originali.
+
+## 17 novembre, sera: Alfred spiritoso anche alla guida (Mappe 102, pubblicato con Compila 760)
+- Il proprietario: «anche alla guida può essere simpatico… l'importante è che non confonda le istruzioni». Cambia la
+  regola «mai alla guida» di Alfred unico: **in guida sì, ma solo nei momenti tranquilli**.
+- `GuideWit` (logica, prova `GuideWitTest` nel lavoro di Mappe) e `EuriseWit` (aggancio) in
+  `maps/android/…/eurise/`: partenza dopo 30 s se la prossima manovra è lontana; rettilineo con manovra oltre 4 km
+  (400 m a piedi), una ogni 15 minuti al massimo; arrivo una volta, 4 s dopo l'annuncio della guida. Mai vicino a una
+  manovra; solo con la voce della guida accesa e se Alfred non sta già leggendo (`EuriseSpeak.busy`).
+- Partenza e rettilineo **senza parole di direzione** (filtro `GuideWit.safe` e prova sulle stringhe
+  `eurise_wit_*`); all'arrivo sì: «Arrivati. Destra o sinistra, ormai, poco importa.» (cenno a Gaber senza citarlo).
+- **File di Mappe toccati** (area Mappe avvisata in `docs/stato/MAPPE.md`): `maps/eurise_patch.py` (una riga in
+  NavigationController), `EuriseCarGuide.java` (una riga), `EuriseSpeak.java` (`busy()`), stringhe di Mappe,
+  `.github/workflows/maps-engine.yml` (prova in più).
+- Da provare: che non parli mai sopra le istruzioni; se 15 minuti tra una battuta e l'altra sono troppi o pochi.
 - Da provare: se una su due è troppo (o troppo poco); `withMaxim` in `Plan.kt`.
 
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
@@ -95,7 +109,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario sul giro 754** (prima Alfred più svelto e l'ironia a voce, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+1. **Prove del proprietario su Compila 760 e Mappe 102** (Alfred più svelto, ironia a voce e in guida, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
    «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
    ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
    cosa per un'altra»).
