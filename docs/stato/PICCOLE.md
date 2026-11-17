@@ -212,7 +212,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 ## Prossimi passi, in ordine
 0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
    `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
-   **Editor della Galleria, giri successivi**: Effetti, ognuno col suo pennello (Ritocca completo nei giri 779 e 787) (con Vignettatura con centro e grandezza). Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   **Editor della Galleria, giri successivi**: Effetti, ognuno col suo pennello e con la Vignettatura con centro e grandezza (Ritocca completo nei giri 779 e 787). Prova del proprietario sui giri 722 (Regola, Curve, le tue
    modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
