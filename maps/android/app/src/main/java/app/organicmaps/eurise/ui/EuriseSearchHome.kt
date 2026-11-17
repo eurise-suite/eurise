@@ -169,33 +169,12 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
         Modifier.fillMaxSize().background(c.bg).verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp),
     ) {
-        // Tavola MapViaggio2Dove: il titolo grande, poi i tuoi impegni, i posti di sempre, i recenti.
+        // Tavola MapViaggio2Dove: il titolo grande, i posti di sempre, i recenti, Cerca vicino, poi i tuoi impegni dal
+        // Calendario (ordine chiesto dal proprietario il 17 novembre), infine le mappe.
         BasicText(
             stringResource(R.string.eurise_go_title), Modifier.padding(start = 4.dp, top = 8.dp).semantics { heading() },
             style = TextStyle(color = c.ink, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
         )
-        Heading(stringResource(R.string.eurise_sh_from_calendar), c)
-        val d = destinations
-        when {
-            d == null -> Note(stringResource(R.string.eurise_sh_loading), c)
-            !d.hub -> Note(stringResource(R.string.eurise_go_no_hub), c)
-            !d.calendar -> Note(stringResource(R.string.eurise_go_no_calendar), c)
-            d.items.isEmpty() -> Note(stringResource(R.string.eurise_go_empty), c)
-            else -> Card(c) {
-                d.items.forEachIndexed { i, item ->
-                    if (i > 0) Divider(c)
-                    val whenText = DateUtils.formatDateTime(
-                        context, item.start,
-                        DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_WEEKDAY,
-                    )
-                    Row2(c, Badge.Calendar, item.title, "$whenText · ${item.place}") {
-                        EuriseArrival.remember(context, item.title, item.start)
-                        host.query(item.place, false)
-                    }
-                }
-            }
-        }
-
         Heading(stringResource(R.string.eurise_sh_always), c)
         Card(c) {
             // Casa e Lavoro: i luoghi salvati con quel nome, coi minuti stimati in auto.
@@ -243,6 +222,28 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
                             .semantics { role = Role.Button }.padding(horizontal = 14.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) { BasicText(label, style = TextStyle(color = c.ink, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)) }
+                }
+            }
+        }
+
+        Heading(stringResource(R.string.eurise_sh_from_calendar), c)
+        val d = destinations
+        when {
+            d == null -> Note(stringResource(R.string.eurise_sh_loading), c)
+            !d.hub -> Note(stringResource(R.string.eurise_go_no_hub), c)
+            !d.calendar -> Note(stringResource(R.string.eurise_go_no_calendar), c)
+            d.items.isEmpty() -> Note(stringResource(R.string.eurise_go_empty), c)
+            else -> Card(c) {
+                d.items.forEachIndexed { i, item ->
+                    if (i > 0) Divider(c)
+                    val whenText = DateUtils.formatDateTime(
+                        context, item.start,
+                        DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_WEEKDAY,
+                    )
+                    Row2(c, Badge.Calendar, item.title, "$whenText · ${item.place}") {
+                        EuriseArrival.remember(context, item.title, item.start)
+                        host.query(item.place, false)
+                    }
                 }
             }
         }
