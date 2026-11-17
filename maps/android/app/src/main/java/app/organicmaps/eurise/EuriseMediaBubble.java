@@ -105,8 +105,9 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     super(c);
     mCar = car;
     mNight = night;
-    mMaxW = dp(car ? 360 : 300);
-    mFraction = car ? 0.42f : 0.8f;
+    // In auto più grande (prova del proprietario del 17 novembre: «molto piccolina»).
+    mMaxW = dp(car ? 480 : 300);
+    mFraction = car ? 0.5f : 0.8f;
     setOrientation(VERTICAL);
     final int pad = dp(car ? 10 : 9);
     setPadding(pad, pad, dp(car ? 14 : 12), pad);
@@ -118,7 +119,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     row.setGravity(Gravity.CENTER_VERTICAL);
     addView(row, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
-    final int artSize = dp(car ? 48 : 46);
+    final int artSize = dp(car ? 64 : 46);
     final FrameLayout artFrame = new FrameLayout(c);
     row.addView(artFrame, new LayoutParams(artSize + dp(4), artSize + dp(4)));
     mArt = new ImageView(c);
@@ -141,9 +142,9 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final LayoutParams colLp = new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
     colLp.leftMargin = dp(car ? 10 : 10);
     row.addView(col, colLp);
-    mTitle = text(c, car ? 17 : 15, true);
-    mSub = text(c, car ? 14 : 12.5f, false);
-    mSub2 = text(c, car ? 13 : 11.5f, false);
+    mTitle = text(c, car ? 21 : 15, true);
+    mSub = text(c, car ? 17 : 12.5f, false);
+    mSub2 = text(c, car ? 15 : 11.5f, false);
     col.addView(mTitle);
     col.addView(mSub);
     col.addView(mSub2);
@@ -154,8 +155,8 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final LayoutParams timesLp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     timesLp.leftMargin = dp(10);
     row.addView(mTimes, timesLp);
-    mBig = text(c, car ? 20 : 17, true);
-    mBigSub = text(c, car ? 12.5f : 11, false);
+    mBig = text(c, car ? 24 : 17, true);
+    mBigSub = text(c, car ? 15 : 11, false);
     mTimes.addView(mBig);
     mTimes.addView(mBigSub);
 
@@ -165,16 +166,16 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final LayoutParams barRowLp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
     barRowLp.topMargin = dp(car ? 7 : 6);
     addView(bar, barRowLp);
-    mPos = text(c, car ? 13 : 11.5f, true);
+    mPos = text(c, car ? 16 : 11.5f, true);
     bar.addView(mPos);
     mBar = new FrameLayout(c);
-    final LayoutParams trackLp = new LayoutParams(0, dp(car ? 6 : 5), 1f);
+    final LayoutParams trackLp = new LayoutParams(0, dp(car ? 7 : 5), 1f);
     trackLp.leftMargin = dp(8);
     trackLp.rightMargin = dp(8);
     bar.addView(mBar, trackLp);
     mBarFill = new View(c);
     mBar.addView(mBarFill, new FrameLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT));
-    mRem = text(c, car ? 13 : 11.5f, true);
+    mRem = text(c, car ? 16 : 11.5f, true);
     bar.addView(mRem);
 
     final LinearLayout lyric = new LinearLayout(c);
@@ -183,7 +184,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     lyricLp.topMargin = dp(car ? 6 : 5);
     addView(lyric, lyricLp);
     mLyricBox = lyric;
-    mLyric = text(c, car ? 15 : 13, true);
+    mLyric = text(c, car ? 18 : 13, true);
     mLyricNext = text(c, 13, false);
     lyric.addView(mLyric);
 
@@ -249,13 +250,13 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   public static View car(@NonNull Context car, @NonNull Night night)
   {
     final EuriseMediaBubble b = new EuriseMediaBubble(car, true, night);
-    // In basso a sinistra dell'area libera (prova del proprietario, 17 novembre): in alto a destra la coprivano i tasti
-    // tondi dell'auto, che l'area libera non esclude; in basso a sinistra c'è la mappa vuota accanto all'arrivo.
+    // In alto a destra, come deciso, ma dentro l'«area stabile» dell'auto: quella che i 4 tasti tondi non coprono mai,
+    // nemmeno quando ricompaiono (prova del proprietario, 17 novembre). Vedi stackAboveSiblings.
     final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                                                                     Gravity.BOTTOM | Gravity.START);
-    lp.bottomMargin = b.dp(10);
-    lp.leftMargin = b.dp(12);
+                                                                     Gravity.TOP | Gravity.END);
+    lp.topMargin = b.dp(8);
+    lp.rightMargin = b.dp(8);
     b.setLayoutParams(lp);
     if (car instanceof androidx.car.app.CarContext)
       app.organicmaps.eurise.car.EuriseCarAlerts.attach((androidx.car.app.CarContext) car);
@@ -425,39 +426,49 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     postDelayed(this, 500);
   }
 
+  /** Area libera e area stabile dell'auto (SurfaceCallbackBase), in pixel della superficie. */
+  private static final android.graphics.Rect sCarVisible = new android.graphics.Rect();
+  private static final android.graphics.Rect sCarStable = new android.graphics.Rect();
+
+  /** Dall'auto: l'area libera (dove sta lo strato con la bolla) è cambiata. */
+  public static void carVisibleArea(@NonNull android.graphics.Rect r)
+  {
+    final android.graphics.Rect copy = new android.graphics.Rect(r);
+    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+      sCarVisible.set(copy);
+      EuriseNowPlaying.poke();
+    });
+  }
+
+  /** Dall'auto: l'area che i pulsanti che compaiono e scompaiono non coprono mai. */
+  public static void carStableArea(@NonNull android.graphics.Rect r)
+  {
+    final android.graphics.Rect copy = new android.graphics.Rect(r);
+    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+      sCarStable.set(copy);
+      EuriseNowPlaying.poke();
+    });
+  }
+
   /**
-   * In auto, in basso a sinistra c'è anche la pillola dello schermo diviso (EuriseCarSplitInfo): se è in vista la bolla
-   * le sta sopra.
+   * In auto: in alto a destra dell'area stabile. Lo strato della bolla copre l'area libera, quindi i margini sono la
+   * distanza tra i due rettangoli (più un piccolo stacco). Senza area stabile, in alto a destra dell'area libera.
    */
   private void stackAboveSiblings()
   {
-    if (!(getParent() instanceof ViewGroup) || !(getLayoutParams() instanceof FrameLayout.LayoutParams))
+    if (!(getLayoutParams() instanceof FrameLayout.LayoutParams))
       return;
-    final ViewGroup parent = (ViewGroup) getParent();
-    int bottom = dp(10);
-    int left = dp(12);
-    for (int i = 0; i < parent.getChildCount(); i++)
+    int top = dp(8), right = dp(8);
+    if (!sCarStable.isEmpty() && !sCarVisible.isEmpty())
     {
-      final View v = parent.getChildAt(i);
-      // I riquadri della guida disegnati da Mappe (MapAutoSuite): la bolla sta accanto all'arrivo, in basso.
-      if (v instanceof app.organicmaps.eurise.car.EuriseCarGuide)
-      {
-        left = Math.max(left, ((app.organicmaps.eurise.car.EuriseCarGuide) v).columnRight() + dp(12));
-        bottom = Math.max(bottom, dp(12));
-        continue;
-      }
-      if (v == this || v.getVisibility() != VISIBLE || !(v.getLayoutParams() instanceof FrameLayout.LayoutParams))
-        continue;
-      final FrameLayout.LayoutParams o = (FrameLayout.LayoutParams) v.getLayoutParams();
-      if ((o.gravity & Gravity.VERTICAL_GRAVITY_MASK) == Gravity.BOTTOM
-          && (o.gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) == Gravity.START)
-        bottom = Math.max(bottom, o.bottomMargin + v.getHeight() + dp(8));
+      top += Math.max(0, sCarStable.top - sCarVisible.top);
+      right += Math.max(0, sCarVisible.right - sCarStable.right);
     }
     final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
-    if (lp.bottomMargin != bottom || lp.leftMargin != left)
+    if (lp.topMargin != top || lp.rightMargin != right)
     {
-      lp.bottomMargin = bottom;
-      lp.leftMargin = left;
+      lp.topMargin = top;
+      lp.rightMargin = right;
       setLayoutParams(lp);
     }
   }

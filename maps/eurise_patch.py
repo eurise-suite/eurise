@@ -1861,4 +1861,14 @@ patch(navscreen, """    final TravelEstimate destinationTravelEstimate = getDest
     return builder.build();""", """    return builder.build();""")
 patch(car_sc, """    mPillOverlay.addView(app.organicmaps.eurise.EuriseMediaBubble.car(""", """    mPillOverlay.addView(app.organicmaps.eurise.car.EuriseCarGuide.create(mCarContext));
     mPillOverlay.addView(app.organicmaps.eurise.EuriseMediaBubble.car(""")
+# La bolla in alto a destra dentro l'area stabile (non coperta dai tasti tondi che compaiono e scompaiono).
+car_base = car_sc.parent / "SurfaceCallbackBase.java"
+patch(car_base, """    mVisibleArea = visibleArea;
+""", """    mVisibleArea = visibleArea;
+    app.organicmaps.eurise.EuriseMediaBubble.carVisibleArea(visibleArea);
+""")
+patch(car_base, """    Logger.d(TAG, "Stable area changed. stableArea: " + stableArea);
+""", """    Logger.d(TAG, "Stable area changed. stableArea: " + stableArea);
+    app.organicmaps.eurise.EuriseMediaBubble.carStableArea(stableArea);
+""")
 print("eurise_patch: Android Auto, riquadri della suite disegnati da Mappe (MapAutoSuite)")
