@@ -134,6 +134,18 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   modalità condivisa con un codice QR o come testo: solo regolazioni, nessun dato; dati della foto). Resta fuori solo
   la posa della testa (serve un modello AI del viso).
 
+## 17 novembre: editor, terzo giro (giro 730, in apk-prova)
+- GalEsporta e GalLookQR **approvate**.
+- Pila delle Modifiche (GalModifiche): pulsante in alto con il numero dei passi; foglio con i passi (Ritaglia, Prospettiva,
+  Espandi, Regola, Curve, Filtro, Testo, Disegno), Riapri nel suo strumento, Togli senza perdere gli altri, «Salva come
+  tua modalità». Il pennello per passo arriva con Ritocca.
+- Foglio Salva (GalEsporta): copia nuova o Sostituisci (`MediaStore.createWriteRequest`; l'originale in `files/originali`
+  per 30 giorni, elenco in `GalleryStore.kept`, tolti all'avvio da `dropExpiredOriginals`; nel visore «Torna
+  all'originale» con i giorni che restano); JPEG, PNG, WebP; qualità 50–100; grandezza originale, 2048, 1080; posizione
+  tolta di base; dati della fotocamera a scelta (`ExifInterface` di Android, orientamento sempre normale); Condividi senza
+  salvare. Scelte ricordate tranne Sostituisci. Logica in `logic/Save.kt` (`SaveTest`).
+- Giro 728 fallito per gli apostrofi non protetti nei testi nuovi (corretto: `\'`).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -147,14 +159,14 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
     Password.
 - **Approvate il 16 novembre, notte, e in codice**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta.
 - **Approvate il 17 novembre**: GalRegolaTutto, GalCurve (in codice), GalRitocca, GalProspettiva, GalEffetti, GalModifiche.
-- **Da approvare**: GalEsporta, GalLookQR (17 novembre, mattina).
+- **Approvate il 17 novembre**: GalEsporta (in codice), GalLookQR.
 - **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Editor della Galleria, giri successivi**: pila delle Modifiche, Ritocca, Effetti, poi Salva ed Esporta e le modalità
-   col QR (dopo l'approvazione di GalEsporta e GalLookQR). Prova del proprietario sui giri 722 (Regola, Curve, le tue
-   modalità) e 726 (Prospettiva, Espandi).
+0. **Editor della Galleria, giri successivi**: Copia e incolla delle modifiche su altre foto, modalità col codice QR o come
+   testo (zxing-core, già nel catalogo della suite) e dati della foto; poi Ritocca (con il pennello per passo); poi Effetti. Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
    gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200

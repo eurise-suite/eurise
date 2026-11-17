@@ -3340,3 +3340,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, notte, Comunicazione: La mia Bussola in Chat, prima parte (rinnovi, NRE, inviti, orari, 118, notifiche neutre) · giro 724 (chat, mail, messages) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Office: dock Recenti/Telefono/Cloud e rapporto del problema (OffOggiHome, OffRapporto) · giro 718, motore nel giro 724 → `docs/stato/OFFICE.md`.
 - 17 novembre, Galleria: editor, secondo giro (Prospettiva, Espandi) · giro 726; tavole da approvare GalEsporta e GalLookQR → `docs/stato/PICCOLE.md`.
+- 17 novembre, Galleria: editor, terzo giro (pila delle Modifiche, foglio Salva, Torna all'originale) · giro 730 → `docs/stato/PICCOLE.md`.
