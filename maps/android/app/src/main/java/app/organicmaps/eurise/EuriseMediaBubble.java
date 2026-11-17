@@ -241,19 +241,21 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   // ---- Dove si aggancia ---------------------------------------------------------------------------------------------
 
   /**
-   * Sullo schermo dell'auto: nell'area libera della mappa (SurfaceCallback.initSpeedPill), in alto a destra, appoggiata
-   * al bordo dell'area libera, cioè subito accanto ai pulsanti dell'auto (che disegna l'auto e non si spostano). Da qui
+   * Sullo schermo dell'auto: nell'area libera della mappa (SurfaceCallback.initSpeedPill), in basso a sinistra (in alto
+   * a destra la coprivano i pulsanti tondi dell'auto). Da qui
    * partono anche gli avvisi dell'auto con i pulsanti.
    */
   @NonNull
   public static View car(@NonNull Context car, @NonNull Night night)
   {
     final EuriseMediaBubble b = new EuriseMediaBubble(car, true, night);
+    // In basso a sinistra dell'area libera (prova del proprietario, 17 novembre): in alto a destra la coprivano i tasti
+    // tondi dell'auto, che l'area libera non esclude; in basso a sinistra c'è la mappa vuota accanto all'arrivo.
     final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                                                                     Gravity.TOP | Gravity.END);
-    lp.topMargin = b.dp(6);
-    lp.rightMargin = b.dp(2);
+                                                                     Gravity.BOTTOM | Gravity.START);
+    lp.bottomMargin = b.dp(10);
+    lp.leftMargin = b.dp(12);
     b.setLayoutParams(lp);
     if (car instanceof androidx.car.app.CarContext)
       app.organicmaps.eurise.car.EuriseCarAlerts.attach((androidx.car.app.CarContext) car);
@@ -402,6 +404,8 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     }
     style();
     reset();
+    if (mCar)
+      stackAboveSiblings();
     if (call != null)
     {
       showCall(call);
@@ -419,6 +423,34 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
       showStatus(status);
     setVisibility(VISIBLE);
     postDelayed(this, 500);
+  }
+
+  /**
+   * In auto, in basso a sinistra c'è anche la pillola dello schermo diviso (EuriseCarSplitInfo): se è in vista la bolla
+   * le sta sopra.
+   */
+  private void stackAboveSiblings()
+  {
+    if (!(getParent() instanceof ViewGroup) || !(getLayoutParams() instanceof FrameLayout.LayoutParams))
+      return;
+    final ViewGroup parent = (ViewGroup) getParent();
+    int bottom = dp(10);
+    for (int i = 0; i < parent.getChildCount(); i++)
+    {
+      final View v = parent.getChildAt(i);
+      if (v == this || v.getVisibility() != VISIBLE || !(v.getLayoutParams() instanceof FrameLayout.LayoutParams))
+        continue;
+      final FrameLayout.LayoutParams o = (FrameLayout.LayoutParams) v.getLayoutParams();
+      if ((o.gravity & Gravity.VERTICAL_GRAVITY_MASK) == Gravity.BOTTOM
+          && (o.gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) == Gravity.START)
+        bottom = Math.max(bottom, o.bottomMargin + v.getHeight() + dp(8));
+    }
+    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
+    if (lp.bottomMargin != bottom)
+    {
+      lp.bottomMargin = bottom;
+      setLayoutParams(lp);
+    }
   }
 
   /** Riporta le parti facoltative a nascoste: ogni stato mostra solo le sue. */
