@@ -144,8 +144,27 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 - **Approvate, codice da fare**: ChatChiamata (chiamate e videochiamate: nel codice non c'è nulla), ChatAllega (oggi la
   Chat mostra immagini e file ricevuti ma non li manda); MsgConversazione per la parte «Disponibilità e posizione» nella barra; **PcEmail** (pagina «Eurise sul
   computer», approvata il 16 novembre: schermate da scrivere insieme all'area Computer, IMAP/SMTP già in `core/sync`).
-- **Da approvare** (pagina «Chat ed Email», 17 novembre, pomeriggio; richiesta del proprietario; toccato `canvas.json`):
-  fila nuova a y 16262 con **ChatDueAccount** (Personale e Lavoro nella stessa Chat, due server; si cambia dalla barra in
+- **Due account (approvate, codice fatto, 17 novembre, pomeriggio)**: ChatDueAccount e ChatAccountAggiungi. `Accounts.kt`
+  (Personal con le preferenze di sempre `chat_session`, Work `chat_session_work`; `Quiet` con fuori orario 19-8 e weekend,
+  dominio dall'email, tacchette del server; test `AccountsTest`), `SessionStore` per account, `ChatModel.switchTo`,
+  `ChatClient.unreadTotal` (non lette dell'altro ogni 2 minuti senza spostarne il punto di sincronizzazione), barra in
+  basso Personale/Lavoro, foglio «I tuoi account», accesso del lavoro con l'email di lavoro, `ChatWorker` per i due
+  account con canale `chat_quiet` per il lavoro fuori orario e notifica che apre l'account giusto. Lo Studio non è ancora
+  legato al solo account di lavoro (oggi vive in quello aperto).
+- **Da approvare** (pagina «Chat ed Email», 17 novembre, pomeriggio; il proprietario ha approvato le idee, qui le tavole;
+  toccato `canvas.json`; generatori fuori dal repo in `/home/claude/tela/gen/` `lib.py`, `uni.py`, `feat.py`):
+  - **Una persona, tutti i canali** (la funzione di Eurise secondo il proprietario), fila y 17516: **UniPersone** (vista
+    Persone: una riga per persona con Chat, SMS, email e chiamate), **UniConversazione** (un filo con email, chat, SMS,
+    chiamate con nota, chiamata persa; filtri; «rispondi dove ti ha scritto»), **UniCanale** (tocco = canale con la
+    stellina, pressione lunga = elenco con tacchette; scelta automatica). Tutto unito sul telefono; servono i dati di
+    Messaggi, Telefono ed Email via ponte con permessi di firma.
+  - **Invito a Ciarly** (richiesta del proprietario), fila y 16262: **ChatInvita** (dalla scheda della rubrica, per SMS o
+    email dal telefono, link con la chat pronta), **ChatInvitaElenco** (più persone, ognuna sul suo canale).
+  - Funzioni, file y 18770 e 20024: ChatBasi (risposte, reazioni, modifica, fissati, sondaggi), ChatVocali (trascritti e
+    letti ad alta voce), ChatProgramma (più tardi, quando lavora, a scomparsa, Ricordamelo), ChatCartelle (cartelle,
+    Messaggi a me, discussioni), ChatThread, ChatPosizione (a tempo), ChatTruffa, ChatSemplice, ChatPresaVisione,
+    ChatProposta, ChatRiassunto, ChatQuandoLavora, ChatGruppoTempo.
+- **Prima tavola dei due account** (17 novembre, pomeriggio): fila nuova a y 16262 con **ChatDueAccount** (Personale e Lavoro nella stessa Chat, due server; si cambia dalla barra in
   basso sotto il pollice, l'altro account mostra solo quante non lette; ricerca, notifiche, cifratura e backup separati) e
   **ChatAccountAggiungi** (i tuoi account con server e tacchette di privacy, fuori orario per il lavoro; aggiungi con
   matrix.org, con l'email di lavoro che trova il server dal dominio, o da un invito/QR; al massimo due). Codice dopo l'ok.
