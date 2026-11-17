@@ -95,7 +95,7 @@ computer (area Computer, tavola PcEmail).
   ruoli di assistente e infermiere (servono i loro account), la seconda fila (prenotazioni, questionario, esami,
   certificati e 730, calendario, diario delle misure, scheda di emergenza, deleghe, lingue), segno di lettura
   «paziente in attesa» per chi non ha attivato l'area.
-- **Allegati cifrati, referti e promemoria di Millewin** (17 novembre, giorno; giro da compilare):
+- **Allegati cifrati, referti e promemoria di Millewin** (17 novembre, giorno; giro 737: chat, mail, messages, phone):
   - **Chat › allegati (tavola ChatAllega)**: graffetta a sinistra del campo; file fino a 25 MB, foto come `m.image` (con
     larghezza e altezza), il resto `m.file` con `filename`. Nelle stanze cifrate il file si cifra sul telefono come in
     Element (`Attachments.kt`: AES-256-CTR, chiave nuova per file, 64 bit bassi del vettore a zero, SHA-256 controllato
