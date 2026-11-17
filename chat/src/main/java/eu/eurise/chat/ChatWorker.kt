@@ -32,7 +32,7 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
     }
 
     /** Una tornata per [account]; false se la rete non ha risposto. */
-    private fun sync(ctx: Context, account: Account): Boolean {
+    private suspend fun sync(ctx: Context, account: Account): Boolean {
         val store = SessionStore(ctx, account)
         val s = store.load() ?: return true
         // App aperta su questo account: sincronizza lei (e tiene lei le chiavi), qui non serve. L'altro account sì.
