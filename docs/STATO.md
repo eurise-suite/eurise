@@ -3338,3 +3338,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, tarda mattina, Organizzazione: riunione con «Assegna a tutti», cartella di squadra in Drive con «Cambiato da ieri», accento Ceruleo del gufo, motivo del rifiuto dello sfondo del blocco; Infomaniak verificato (WebDAV non c'è con my kSuite+) · giro 723 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, notte, Mappe: tasto 3D esplorando (MapEsploraInclinata) e Calendario in fondo a «Dove devi andare» · Mappe 88 → `docs/stato/MAPPE.md`.
 - 17 novembre, notte, Comunicazione: La mia Bussola in Chat, prima parte (rinnovi, NRE, inviti, orari, 118, notifiche neutre) · giro 724 (chat, mail, messages) → `docs/stato/COMUNICAZIONE.md`.
+- 17 novembre, Office: dock Recenti/Telefono/Cloud e rapporto del problema (OffOggiHome, OffRapporto) · giro 718, motore nel giro 724 → `docs/stato/OFFICE.md`.

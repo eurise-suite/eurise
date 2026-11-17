@@ -60,6 +60,11 @@ motore (`eurise-office-motore-debug.apk`); `apk-prova.yml` mette insieme i due (
   `eurise_patch.py`); `CrashGuard` in `core/designsystem/crash` (per ora solo nel Browser); «Apri con» PDF nell'APK
   principale (`PdfOpenActivity`, 15 novembre).
 
+- **17 novembre, giri 718 e 724** (motore con `Uscite`; prova sull'emulatore 44003666557: dock a posto, motore vivo): dock della schermata iniziale Recenti / Telefono / Cloud (tavola OffOggiHome: tocco breve
+  sul cloud preferito, pressione lunga «File dal cloud» con la stellina; `PlacesProvider` nell'app Eurise, `EXTRA_START`
+  in `FilesContract`, `onLongSelect` in `EuriseDock`); **rapporto del problema** (OffRapporto, OffRapportoVedi):
+  chiusure di Office e del motore da ApplicationExitInfo (provider `Uscite` nel motore), scheda sopra i recenti,
+  rapporto da condividere, Impostazioni › Rapporti dei problemi, test `ReportsTest`.
 - **16 novembre, giro 692** (`apk-prova`): Office leggero 17 MB e motore 113 MB (primo giro di office-app su
   `prova-office`, 1 h 46 senza ccache). `CrashGuard` è già dentro Office leggero (fornitore di `core/designsystem`).
 - **16 novembre, unione in `brand`**: un solo «Apri con» per i PDF (quello di File, con «Modifica in Office»);
@@ -72,8 +77,8 @@ motore (`eurise-office-motore-debug.apk`); `apk-prova.yml` mette insieme i due (
 - 11 novembre: OffMotore, OffTelefono, OffCerca, OffTablet, OffComputer (in codice, tranne «Chiedi all'AI» ancora «in
   arrivo» e la colonna «In Eurise File» con i file vicini); OffPdf, OffPdfPagine, OffPdfCondividi (in codice, nativo).
 - 13 novembre: OffHome; OffLettura, OffLetturaCorreggi, OffLetturaFoglio, OffLetturaCompleta (in codice).
-- 14 novembre: OffTelefonoGruppi, OffLetturaPresentazione (in codice); **OffRapporto, OffRapportoVedi** (rapporto quando
-  Office si è chiuso: **non ancora in codice**); OfficeIcona B (pagina Icone; superata dalla serie colorata del 16).
+- 14 novembre: OffTelefonoGruppi, OffLetturaPresentazione (in codice); OffRapporto, OffRapportoVedi (in codice il 17
+  novembre); OfficeIcona B (pagina Icone; superata dalla serie colorata del 16).
 - 15 novembre: OffPCInizio, OffPCNastro, OffPCTendine, OffPCFile, OffPCFinestre («via direttamente», in codice) e le
   dieci proposte di ergonomia del computer (in codice; la 10, anteprima al passaggio, solo in parte).
 - Pagina «Drive e Scanner»: FileSalvaIn, FileApriDa (approvate 11 novembre, usate da Office).
@@ -91,15 +96,13 @@ approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la t
 2. **Pubblicazione condivisa**: `apk-prova` la rifanno tutte le aree. Un'area che pubblica da un ramo senza l'unione del 16
    novembre lascia `apk-prova` senza Office (è successo con il giro 667): si ripubblica da `prova-office` portato alla
    testa di `brand`. Dal giro 692 Compila carica sempre Office e `apk-prova` prende il motore da office-app.
-3. **Prova del proprietario sul telefono**: «Scarica» del motore, vista rapida (anche presentazioni), card dei gruppi,
+3. **Prova del proprietario sul telefono**: dock Telefono/Cloud e rapporto (giro 718), «Scarica» del motore, vista rapida (anche presentazioni), card dei gruppi,
    PDF con «Inserisci da Scanner» (ora l'app Eurise ha `ScanForResultActivity`), accento delle icone dalla Scrivania.
-4. **OffRapporto e OffRapportoVedi in codice** con `CrashGuard` (in Office e nel processo del motore).
-5. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
+4. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
    (Ponte), proposta 10 da rivedere, verso Flathub; poi la webapp (decisa il 15 novembre).
-6. **Peso del motore** (113/315 MB): librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
-7. **Mancanze note**: «I miei dati» nei moduli PDF, «Link dal cloud», «Salva in…» per ogni documento, «Chiedi all'AI»,
+5. **Peso del motore** (113/315 MB): librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
+6. **Mancanze note**: «I miei dati» nei moduli PDF, «Link dal cloud», «Salva in…» per ogni documento, «Chiedi all'AI»,
    mano dominante presa dalla suite; tablet vero (Volla) appena arriva.
-8. **Dock della schermata iniziale** (OffOggiHome): i file dell'altra chat non sono nel repository; chiedere se rifarla.
 
 ## Come si lavora
 - Inizio di ogni chat: `CLAUDE.md`, questo file; di `docs/STATO.md` solo le parti citate qui. Prima di ogni push
