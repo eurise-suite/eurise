@@ -178,6 +178,19 @@ computer (area Computer, tavola PcEmail).
   altrimenti dal nome uguale a un solo contatto.
   Non ancora: email mandate (Email tiene solo la posta ricevuta), «non è in linea da un giorno → SMS» (serve la presenza),
   videochiamata (ChatChiamata), foto dei contatti (la Chat non legge la Rubrica), invito a chi non è sulla Chat (prossimo).
+- **Invito sulla Chat** (17 novembre, notte; tavole ChatInvita e ChatInvitaElenco; giro 777: chat e phone): il link è
+  **`https://matrix.to/#/<mio utente>`** (apre una chat con me in Eurise, Element o un'altra app Matrix; niente server
+  nostro: `eurise.eu/i/…` della tavola aspetta dominio e server). Nei testi resta «Chat» e non «Ciarly» finché il marchio non
+  è verificato (punto 7 dei prossimi passi). **Una persona** (`InviteUi.InviteScreen`): dalla scheda della **Rubrica**
+  (banner «Invita» nel Telefono, solo con la Chat collegata, contatto senza utente della Chat scritto e non già unito:
+  `PeopleContract.chatUser`/`chatKnows`/`inviteIntent`, fornitore `ChatPeopleProvider`), dal **foglio del canale** (riga
+  Chat di chi non c'è) o da Persone; SMS o email a scelta (quello già usato per primo), testo modificabile, «Manda
+  l'invito»: SMS da Messaggi (se non parte, l'app degli SMS già compilata), email con Scrivi già compilato (oggetto e testo
+  ora anche nel link `mailto:`, che Email legge). **Più persone** (`InviteListScreen`): le persone della Rubrica con cui si
+  scrive o si parla ma non sulla Chat (`People.inviteCandidates`, test), le prime tre non ancora invitate già scelte,
+  motivo per riga, «Invita N persone»: SMS subito, email una alla volta (nessuno vede gli altri). Ingressi: riga in fondo a
+  Persone e foglio dell'account. Invitata il… resta ricordato sul telefono.
+  Non ancora: «modalità semplice già accesa» (ChatSemplice), chat creata in anticipo (serve sapere l'utente dell'altro).
 - **Telefono: chiamata sempre raggiungibile e bolla** (17 novembre, richiesta del proprietario; senza tavola, descritta da
   lui): la chiamata in corso è un **servizio in primo piano** con lo stile «chiamata in corso» (pillola verde nella barra
   di stato da Android 12; se il sistema non lo concede resta la notifica, ora a importanza normale: canale nuovo
@@ -190,8 +203,8 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat, mail, messages e phone giro 764 (17 novembre, notte: «Una persona, tutti
-  i canali»).
+- **Ultimo APK pubblicato** in `apk-prova`: chat e phone giro 777 (17 novembre, notte: invito sulla Chat); mail e messages
+  giro 764 («Una persona, tutti i canali»).
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -341,7 +354,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 00. **Tavole approvate il 17 novembre, sera** (tutte quelle in attesa sulla pagina «Chat ed Email»). Codice in quest'ordine:
    ~~Una persona, tutti i canali~~ (fatto al giro 764, vedi «Fatto»; prove da chiedere: vista Persone con Messaggi,
    Telefono ed Email installati e con i permessi, filo di un contatto con SMS, chiamata con nota ed email, SMS mandato dal
-   filo, Chiama con un tocco, «Unisci al contatto»), **invito a Ciarly** (ChatInvita, ChatInvitaElenco),
+   filo, Chiama con un tocco, «Unisci al contatto»), ~~invito a Ciarly~~ (fatto al giro 777; prove: banner nella scheda della Rubrica, invito per SMS ed email, elenco con
+   più persone),
    poi le 13 tavole Chat* (ChatBasi per prima), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
