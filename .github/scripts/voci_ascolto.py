@@ -17,7 +17,7 @@ import soundfile as sf
 TEXT = ("Buongiorno. Oggi ha tre impegni: alle dieci il dentista, alle quindici la riunione con Marco, "
         "e stasera la cena da Giulia. Chiamo Marco? Annotato. Carta canta, diceva mia zia.")
 
-engine, out = sys.argv[1], Path(sys.argv[2])
+engine, out = sys.argv[1], Path(sys.argv[2]).resolve()
 out.mkdir(parents=True, exist_ok=True)
 pieces, names, rate = [], [], None
 log = []
