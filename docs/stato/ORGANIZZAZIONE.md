@@ -275,11 +275,11 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 731: app recenti senza il vecchio sfondo, Ceruleo cangiante, icone «Sfondo delle
-   bolle» (WhatsApp, Spotify, Telegram nei loro colori);: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
-   spazio, Oggi sotto le cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena;
-   icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena; una riunione con
-   invitati e «Assegna a tutti»; una cartella condivisa con «Cambiato da ieri».
+1. **Prove del proprietario** sul giro 735: Ceruleo pieno (E di giorno, F di sera) e cangiante; app recenti senza il
+   vecchio sfondo; icone «Sfondo delle bolle» (WhatsApp, Spotify, Telegram nei loro colori); Agenda (giorni, «@», «Parti
+   alle…»); Drive (cassetto, spazio, Oggi sotto le cartelle, «Cambiato da ieri» in una cartella condivisa); «Condividi
+   con…» su una cartella di Murena; invitati in un appuntamento di Murena; elenchi condivisi e «Affida a…» con un secondo
+   account Murena; una riunione con invitati e «Assegna a tutti».
 2. **kDrive e posta di Infomaniak**: verificato (sezione del 17 novembre, tarda mattina). Serve una **decisione del
    proprietario**: piano kDrive con WebDAV, oppure richiesta a Infomaniak dello scope «drive» per l'app OAuth; la posta si
    prova in Email (Comunicazione) con una password per le app.
