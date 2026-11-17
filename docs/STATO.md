@@ -3334,3 +3334,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Comunicazione: Studio medico passo 1 (pazienti, consensi, verifica, coda da Chat, Email e SMS; nuovo core/studio) · giro 718 (chat, mail, messages) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Galleria: tavole da approvare dell'editor completo (sei tavole, funzioni da editor professionale) → `docs/stato/PICCOLE.md`.
 - 17 novembre, notte, Comunicazione: La mia Bussola in Chat (lato paziente di BUSSOLA MMG), specifiche in docs/stato/BUSSOLA-CHAT.md e 9 tavole Bus* da approvare → `docs/stato/COMUNICAZIONE.md`.
+- 17 novembre, Galleria: editor completo, primo giro (Regola con Luce, Colore, Dettagli, Curve; le tue modalità) · giro 722 → `docs/stato/PICCOLE.md`.

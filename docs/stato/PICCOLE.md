@@ -107,6 +107,21 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   (`android.media.FaceDetector`, senza librerie Google). Correttivo e «Riempi in modo intelligente» con un algoritmo nostro
   sul telefono (riempimento a toppe), senza modelli scaricati.
 
+## 17 novembre: editor completo, primo giro (giro 722, in apk-prova)
+- Tavole dell'editor **approvate** dal proprietario con due aggiunte: Vignettatura e «le tue modalità» (una regolazione
+  fatta su una foto si salva e si riusa sulle altre). Tavola GalEffetti aggiornata con entrambe.
+- Ordine dei giri: 1 Regola e Curve (fatto) · 2 Ritaglia (Ruota, Prospettiva, Espandi) · 3 pila delle Modifiche ·
+  4 Ritocca (Selettivo, Pennello, Correttivo, Ritratto) · 5 Effetti (con Vignettatura con centro e grandezza).
+- Codice: `logic/Develop.kt` (puro, `DevelopTest`): curve monotone (luminosità e colori, curve pronte), atmosfera,
+  vividezza, tinta (nella matrice), struttura e nitidezza (contrasto locale sulla luminosità), bianco giusto (`neutralize`),
+  `LookCodec` per le modalità tue. `Adjust` ha i campi nuovi; `EditState.mine` per una modalità tua.
+  Anteprima: lavoro sui pixel su una copia dopo 70 ms, matrice sulla GPU; copia salvata con `developBitmap` a fasce
+  sovrapposte, la matrice dopo i pixel come nell'anteprima. Modalità tue in `GalleryStore` (`my_looks`).
+- Interfaccia: Regola con Luce (Atmosfera, Vignettatura), Colore (Vividezza, Tinta, «Bianco giusto: tocca un grigio»),
+  Dettagli (Struttura, Nitidezza), Curve disegnate sopra la foto (tocco aggiunge, trascina sposta, fuori toglie).
+  Filtri: «Salva la tua» prima di tutto, poi le tue, poi quelle della suite; pressione lunga: rinomina, elimina.
+  La barra in basso resta quella di oggi finché non arrivano Ritocca ed Effetti.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -119,12 +134,14 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Senza tavola, nello stile della suite: Luoghi, Cerca, diario, cartella protetta, pulizia della Galleria; importazione di
     Password.
 - **Approvate il 16 novembre, notte, e in codice**: TastComparsaChiusa, TastComparsaAperta, TastComparsaProposta.
-- **Da approvare**: GalRegolaTutto, GalCurve, GalRitocca, GalProspettiva, GalEffetti, GalModifiche (editor completo, 17 novembre).
-  PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
+- **Approvate il 17 novembre**: GalRegolaTutto, GalCurve (in codice), GalRitocca, GalProspettiva, GalEffetti, GalModifiche.
+- **Da approvare**: PwdFamiglia, PwdFamigliaEntra, PwdFamigliaInvita (Famiglia rimandata dal proprietario in fondo alla road map).
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Prova del proprietario sul giro 675** (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
+0. **Editor della Galleria, giri successivi**: Ritaglia (Ruota, Prospettiva, Espandi), poi pila delle Modifiche, Ritocca,
+   Effetti. Prova del proprietario sul giro 722 (Regola, Curve, le tue modalità).
+   Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
    gioco dopo circa 150 lettere imparate; le correzioni col dizionario si aggiornano alla tastiera ricostruita (ogni 200
    esempi, a fine scrittura). Dire se le lettere accanto escono ancora, se le correzioni sono migliori o peggiori, e
