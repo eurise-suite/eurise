@@ -3333,3 +3333,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, mattina, Organizzazione: icone «Come le bolle» (IcoColoreBolle, di base), elenchi condivisi con «preso da» e «fatto da», «Affida a…» nelle Attività; da risolvere l'accesso a kDrive e alla posta Infomaniak · giro 717 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, Comunicazione: Studio medico passo 1 (pazienti, consensi, verifica, coda da Chat, Email e SMS; nuovo core/studio) · giro 718 (chat, mail, messages) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Galleria: tavole da approvare dell'editor completo (sei tavole, funzioni da editor professionale) → `docs/stato/PICCOLE.md`.
+- 17 novembre, notte, Comunicazione: La mia Bussola in Chat (lato paziente di BUSSOLA MMG), specifiche in docs/stato/BUSSOLA-CHAT.md e 9 tavole Bus* da approvare → `docs/stato/COMUNICAZIONE.md`.
