@@ -239,7 +239,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   azzurro) con una sfumatura dal più chiaro al più intenso (`shimmer`). Il tema di prima resta come «Colore d'accento».
 - Giro 731 (Compila 44052844574 su `prova-organizzazione`).
 
-## 17 novembre, fine mattina: tavola IcoCeruleo (da scegliere)
+## 17 novembre, fine mattina: tavole IcoCeruleo e IcoCeruleoNotte (scelto E di giorno, F di sera)
 - Il proprietario: la sfumatura del Ceruleo va bene e resta; **dove l'accento è pieno deve tendere al blu intenso**, non
   al chiaro. Tavola **IcoCeruleo** (pagina Bolle della home, in alto): sette blu pieni da A #1298DF (oggi) a G #003AC7,
   ciascuno su pulsante, giorno di oggi, interruttore, numero, testo, con il contrasto del testo bianco (A 3,2:1 non
@@ -248,6 +248,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - Tavola **IcoCeruleoNotte** accanto: gli stessi sette blu sul tema Notte. Presi come sono si leggono male (da 3,6:1 di A
   a 1,7:1 di G); schiariti per la sera arrivano a 4,5:1 (testo bianco sopra circa 4:1) e da C a G si somigliano molto.
   Per ognuno la versione di sera calcolata (`dark`), da usare con la scelta del proprietario.
+- **Scelto: E di giorno (#0552DC), F di sera (#85A4F1)**, in `ExtraTint.Ceruleo`; sfumature invariate. Giro sotto.
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10

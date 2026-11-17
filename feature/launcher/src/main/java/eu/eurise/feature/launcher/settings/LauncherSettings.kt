@@ -51,7 +51,9 @@ enum class ExtraTint(
      * alto al blu profondo in basso; di sera più chiaro, perché si legga sul fondo scuro.
      */
     Ceruleo(
-        Color(0xFF1298DF), Color(0xFF5EB9E9),
+        // Pieno (scelto dal proprietario sulle tavole IcoCeruleo e IcoCeruleoNotte, 17 novembre): di giorno il blu E,
+        // verso l'intenso del gufo; di sera la versione schiarita del blu F, che sul fondo Notte si legge.
+        Color(0xFF0552DC), Color(0xFF85A4F1),
         gradientLight = listOf(Color(0xFF2AA2E2), Color(0xFF1298DF), Color(0xFF003AC7)),
         gradientDark = listOf(Color(0xFF7CC8F0), Color(0xFF5EB9E9), Color(0xFF4F7FEA)),
         inPalette = false,
