@@ -157,6 +157,27 @@ computer (area Computer, tavola PcEmail).
   stabili, righe piegate), testo. File nella cache della Chat, condivisi con l'app scelta (`ChatActions.shareFile`).
   Non ancora: «da foto» (OCR: servirebbe Eurise Leggi), XLS vecchio formato, firma disegnata sul foglio presenze, moduli
   già impaginati di un ente (si usano intestazione e PDF generici).
+- **Una persona, tutti i canali** (17 novembre, notte; tavole UniPersone, UniConversazione, UniCanale; giro 764: chat,
+  messages, phone, mail): contratto **`PeopleContract`** in `core/suite` (parte comune toccata: un file nuovo) con i
+  fornitori `<pacchetto>.persone` di Messaggi, Telefono ed Email, che rispondono solo con il permesso di firma (controllato
+  in `call()`): `recent` (l'ultima cosa per indirizzo e quante da leggere), `items` (il filo con numeri ed email), `resolve`
+  e `search` (Rubrica, da Telefono o Messaggi: **`PeopleLookup`** in `core/contacts`, che ora dipende da `core:suite`),
+  `send` (SMS da Messaggi; da app non predefinita lo manda direttamente). Telefono: le note delle chiamate restano anche
+  sul telefono (`CallNotes`, ultime 300) e si abbinano alla chiamata; ingresso **`SuiteCall`** con il permesso di firma che
+  chiama subito. Email: `MailCache` (posta già sul telefono, senza rete), `ACTION_OPEN_MAIL` apre il messaggio «casella:uid».
+  Chat: logica pura `People.kt` con `PeopleTest` (numeri scritti in modi diversi, una riga per persona, filo senza
+  doppioni, scelta del canale), dati in `Uni.kt` (in memoria, nessuna copia su disco), interfaccia in `PeopleUi.kt`.
+  Elenco con **Persone / Solo Chat / Non lette · n**: una riga per persona con le icone dei canali (Chat, SMS, email,
+  chiamate), i gruppi restano stanze. Il **filo** della persona: filtri Tutto/Chat/SMS/Email/Chiamate, giorni, SMS e Chat a
+  fumetti, email a scheda (tocco: si apre in Email), chiamata con durata e nota, chiamata persa con **Richiama**; in alto
+  Chiama con un tocco, «Apri solo la Chat» (allegati, spese, verifica) e, per chi è solo nella Chat, **Unisci al contatto
+  della Rubrica** (resta sul telefono). In basso il **canale** (tocco per cambiare) e Invia: tocco = canale scelto,
+  pressione lunga = **foglio del canale** con tacchette, stellina per persona e **Rispondi dove ti ha scritto** (acceso:
+  testo lungo → email, altrimenti il canale dell'ultima cosa ricevuta, poi la stellina). Email: si apre Scrivi già
+  compilato. La persona si riconosce da numero, email o utente della Chat scritto nel contatto (anche link matrix.to);
+  altrimenti dal nome uguale a un solo contatto.
+  Non ancora: email mandate (Email tiene solo la posta ricevuta), «non è in linea da un giorno → SMS» (serve la presenza),
+  videochiamata (ChatChiamata), foto dei contatti (la Chat non legge la Rubrica), invito a chi non è sulla Chat (prossimo).
 - **Telefono: chiamata sempre raggiungibile e bolla** (17 novembre, richiesta del proprietario; senza tavola, descritta da
   lui): la chiamata in corso è un **servizio in primo piano** con lo stile «chiamata in corso» (pillola verde nella barra
   di stato da Android 12; se il sistema non lo concede resta la notifica, ora a importanza normale: canale nuovo
@@ -169,8 +190,8 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 759 (17 novembre, notte: turni generici con importa ed esporta);
-  mail, messages e phone giro 737.
+- **Ultimo APK pubblicato** in `apk-prova`: chat, mail, messages e phone giro 764 (17 novembre, notte: «Una persona, tutti
+  i canali»).
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -318,9 +339,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 
 ## Prossimi passi, in ordine
 00. **Tavole approvate il 17 novembre, sera** (tutte quelle in attesa sulla pagina «Chat ed Email»). Codice in quest'ordine:
-   **Una persona, tutti i canali** (UniPersone, UniConversazione, UniCanale: la Chat legge SMS, chiamate con nota ed email
-   di una persona da provider protetti dal permesso di firma in Messaggi, Telefono ed Email, come `StudioProvider`; la persona
-   si riconosce dal contatto della Rubrica; tutto unito sul telefono), **invito a Ciarly** (ChatInvita, ChatInvitaElenco),
+   ~~Una persona, tutti i canali~~ (fatto al giro 764, vedi «Fatto»; prove da chiedere: vista Persone con Messaggi,
+   Telefono ed Email installati e con i permessi, filo di un contatto con SMS, chiamata con nota ed email, SMS mandato dal
+   filo, Chiama con un tocco, «Unisci al contatto»), **invito a Ciarly** (ChatInvita, ChatInvitaElenco),
    poi le 13 tavole Chat* (ChatBasi per prima), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
@@ -359,8 +380,8 @@ recupero, verifica di una persona, QR stampato letto con lo Scanner); suoneria p
 che suona con Eurise.
 
 ## Come si lavora
-- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts`, `core/studio` (Studio medico), `core/data/messages`
-  (`MessageInsights`, con test), contratti in `core/suite`; per il computer `core/sync` (`MailClient`, `MailText`).
+- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts` (con `PeopleLookup`), `core/studio` (Studio medico), `core/data/messages`
+  (`MessageInsights`, con test), contratti in `core/suite` (`PeopleContract` per «Una persona, tutti i canali»); per il computer `core/sync` (`MailClient`, `MailText`).
 - Prima le tavole sulla tela (pagine «Chat ed Email» e «Mappe, Messaggi e Telefono»), poi il codice dopo l'approvazione.
 - Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
   (altre chat lavorano sullo stesso ramo); poi la stessa testa anche su `prova-comunicazione`, così i giri delle altre
