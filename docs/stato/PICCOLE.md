@@ -179,6 +179,19 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   (`Files.retouchBitmap`, a fasce). Nella pila compare il passo «Ritocca».
 - Prossimo: Ritratto (FaceDetector di Android) e il pennello per ogni passo della pila; poi Effetti.
 
+## 18 novembre: editor, sesto giro: Ritratto e pennello per passo (giro 787, in apk-prova)
+- Ritocca ha la quarta parte, **Ritratto** (`logic/Portrait.kt`, `PortraitTest`): volti trovati sul telefono con
+  `android.media.FaceDetector` (`Files.detectFaces`, su una copia di 1024 px) o toccati a mano tra gli occhi; ovale
+  spostabile e con grandezza; Luce sul viso (volto più chiaro, attorno più scuro), Pelle liscia (solo colori di pelle e
+  senza bordi: occhi, bocca, capelli restano nitidi), Occhi (più chiari e nitidi). Nella copia salvata su un ritaglio attorno
+  a ogni volto; la luce a fasce.
+- **Pennello per passo** (`logic/StepMask.kt`, `StepMaskTest`): nella pila Regola, Curve e Filtro hanno il pennello;
+  si dipinge dove valgono (100, 75, 50, 25 %, Gomma, Inverti, Ovunque), zone dipinte in rosso. Per ora **una maschera sola
+  per i tre passi** (`EditState.toneMask`): separarli vorrebbe dire sviluppare la foto più volte. Gli Effetti avranno
+  ciascuno la sua. Con la maschera l'anteprima calcola anche la matrice sulla copia; nella copia salvata la maschera si
+  riporta sulla foto raddrizzata (`blendMasked`).
+- Giro 783 fallito per un nome in conflitto nel disegno dell'ovale (corretto).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -199,8 +212,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 ## Prossimi passi, in ordine
 0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
    `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
-   **Editor della Galleria, giri successivi**: Ritratto e il pennello per passo nella pila (Selettivo, Pennello e
-   Correttivo nel giro 779); poi Effetti (con Vignettatura con centro e grandezza). Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   **Editor della Galleria, giri successivi**: Effetti, ognuno col suo pennello (Ritocca completo nei giri 779 e 787) (con Vignettatura con centro e grandezza). Prova del proprietario sui giri 722 (Regola, Curve, le tue
    modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
