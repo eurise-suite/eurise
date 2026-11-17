@@ -41,6 +41,13 @@ computer (area Computer, tavola PcEmail).
   elenco dei dispositivi con «Esci».
 - **Suonerie per persona e per app** (approvate e in codice il 14 novembre, nella Scrivania › Griglia e icone › Suoni):
   suoneria del contatto (`CUSTOM_RINGTONE`), suono al posto di WhatsApp/Telegram tramite l'ascolto delle notifiche.
+- **Spese di gruppo in Chat** (17 novembre, giro 713; tavole SpeGruppo, SpeAggiungi, SpeSaldi): nei gruppi la scheda
+  Spese (totale, la tua parte, chi ha speso e saldo, ultime spese), «Nuova spesa» (chi ha pagato; uguale, quote, importi, %),
+  «Chi deve a chi» con i pagamenti minimi, Ricorda, Pagato. Ogni spesa/pagamento è un messaggio cifrato della stanza
+  (`msgtype` `eu.eurise.expense` / `eu.eurise.settlement`, con `body` leggibile da Element X e FluffyChat); vale l'ultima
+  versione di una spesa, solo dell'autore. Logica pura in `chat/.../Expenses.kt` con `ExpensesTest`; interfaccia in
+  `ExpensesUi.kt`; per i conti si legge tutta la storia della stanza (`ChatModel.loadExpenses`, al massimo 200 pagine).
+  Non ancora: scontrino letto con lo Scanner, IBAN o link di pagamento, correggi/togli una spesa, spese dall'email.
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
 - **Ultimo APK pubblicato** in `apk-prova` per mail, chat, messages, phone: 16 novembre, 11:31 UTC (ricompilati con le
   icone nuove).
@@ -110,6 +117,20 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
   giorni dei referti: regola di conservazione per stanza su Synapse più cancellazione (redaction) dal nostro client. La
   cifratura protegge il contenuto, non i metadati (chi parla con chi, quando, nomi): per questo gli account dei pazienti
   vanno sul server dello studio (invito con QR), federazione chiusa o limitata per lo spazio Studio.
+- **Studio, piano del codice (17 novembre)**, in quest'ordine, un giro per passo:
+  1. pazienti e consensi (elenco locale, ruolo «paziente», canale, consensi con data, terapia abituale, verifica con QR)
+     e lo spazio Studio con la coda;
+  2. ricette: richieste dalla terapia abituale; promemoria PDF di Millewin letti da una cartella (`PdfText` di core/data
+     da spostare in un modulo piccolo comune), NRE e codice fiscale, invio nel canale del paziente;
+  3. referti: allegati cifrati in Matrix (serve prima l'invio di file, ChatAllega), cancellazione a 45 giorni
+     (WorkManager + redaction), consenso; per email link Murena con password e scadenza (contratto con l'APK principale);
+  4. appuntamenti: orari liberi dal Calendario, scelta, promemoria, lista d'attesa; 5. regole (fuori orario, parole urgenti,
+     segreteria); 6. agopuntura (cicli, ricevuta PDF). Fino al server dello studio i pazienti passano da SMS ed email.
+- **Server (domanda del proprietario, 17 novembre)**: niente dominio né voglia di gestire server. Opzioni trovate: etke.cc
+  (Matrix gestito su Hetzner in Germania/Finlandia; prezzi sul modulo d'ordine; chiedere il contratto art. 28 GDPR);
+  Element Pro (circa 5 $ per utente al mese: caro con i pazienti); VPS Hetzner CX23 (5,49 € + 0,50 € IPv4 + IVA, nuovi
+  clienti limitati) o Infomaniak VPS Lite (in Svizzera, da CHF 2,70 al mese, non gestito). Proposta: Studio su etke.cc
+  dopo il contratto; un server Eurise separato per i servizi della suite (UnifiedPush, pagine pubbliche, segnalazioni).
 - **Come si farebbe (proposta, da confermare con le tavole)**:
   - condivisione dal cloud dell'utente: condivisioni di Nextcloud/Murena (lettura o modifica) per note, elenchi e cartelle,
     calendari condivisi su CalDAV, inviti iTIP per un appuntamento solo; chi non usa Eurise riceve un link o l'invito per email;

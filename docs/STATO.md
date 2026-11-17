@@ -3329,3 +3329,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Comunicazione: tavole di Chat ed Email approvate; fila «Studio medico» (8 tavole, pazienti) da approvare → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Mappe: le otto aggiunte alla bolla in guida (Mappe 81, Eurise e Messaggi 707); toccati messages (SuiteSmsReceiver), app (DestinationsProvider «soon»), core/suite → `docs/stato/MAPPE.md`.
 - 17 novembre, Tastiera: controllo ortografico di Eurise riacceso, solo sottolineatura (da scegliere in Android al posto di AOSP) · giro 711 → `docs/stato/PICCOLE.md`.
+- 17 novembre, Comunicazione: Spese di gruppo in Chat (giro 713, chat-debug.apk); piano dello Studio e opzioni di server → `docs/stato/COMUNICAZIONE.md`.
