@@ -90,7 +90,7 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   della Tastiera sottolinea soltanto (`PREF_SPELLCHECK_SUGGEST` spento di base, `RESULT_ATTR_DONT_SHOW_UI_FOR_SUGGESTIONS`,
   Android 12 e oltre); si riaccende in Correzione del testo. Le correzioni restano nella fila delle parole.
 - Foto del proprietario: il controllo ortografico di sistema era «Android (AOSP)», perché quello di Eurise era spento nel
-  manifest dal 13 novembre (stesso problema). Riacceso (giro successivo): ora sottolinea soltanto. Il proprietario lo
+  manifest dal 13 novembre (stesso problema). Riacceso (giro 711, in apk-prova): ora sottolinea soltanto. Il proprietario lo
   sceglie in Impostazioni › Lingue e immissione › Controllo ortografico › Controllo ortografico predefinito, oppure spegne
   «Usa il controllo ortografico» (nessuna sottolineatura, nessuna tendina). La tastiera non può cambiarlo da sola.
 
