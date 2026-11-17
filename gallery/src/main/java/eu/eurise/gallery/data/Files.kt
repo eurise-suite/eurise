@@ -47,6 +47,10 @@ import eu.eurise.gallery.logic.KeptOriginal
 import eu.eurise.gallery.logic.SaveFormat
 import eu.eurise.gallery.logic.SaveOptions
 import eu.eurise.gallery.logic.scaledSize
+import eu.eurise.gallery.logic.Retouch
+import eu.eurise.gallery.logic.applyLocal
+import eu.eurise.gallery.logic.brushMasks
+import eu.eurise.gallery.logic.heal
 import eu.eurise.gallery.logic.cropPixels
 import java.io.File
 import java.io.IOException
@@ -305,6 +309,7 @@ fun renderEdited(context: Context, item: MediaItem, state: EditState): Bitmap {
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
     }
     var bitmap = perspective(geometry(decoded, state.flip, state.turns), state.perspective)
+    if (!state.retouch.isEmpty) bitmap = retouchBitmap(bitmap, state.retouch)
     val out = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(out)
     val adjust = state.effective
@@ -468,6 +473,42 @@ fun perspective(source: Bitmap, p: Perspective): Bitmap {
     val out = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
     Canvas(out).drawBitmap(source, matrix, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
     return out
+}
+
+/**
+ * Correttivo, Selettivo e Pennello su una foto (tavola GalRitocca). Le macchie si curano su una zona attorno a ognuna;
+ * Selettivo e Pennello a fasce, per non chiedere la memoria di tutta la foto più volte.
+ */
+fun retouchBitmap(source: Bitmap, r: Retouch): Bitmap {
+    val bitmap = if (source.isMutable) source else source.copy(Bitmap.Config.ARGB_8888, true)
+    val w = bitmap.width
+    val h = bitmap.height
+    val short = minOf(w, h)
+    for (spot in r.spots) {
+        val rad = (spot.r * short).roundToInt().coerceAtLeast(2)
+        val reach = rad * 6
+        val cx = (spot.x * w).roundToInt(); val cy = (spot.y * h).roundToInt()
+        val x0 = (cx - reach).coerceAtLeast(0); val y0 = (cy - reach).coerceAtLeast(0)
+        val x1 = (cx + reach).coerceAtMost(w); val y1 = (cy + reach).coerceAtMost(h)
+        val rw = x1 - x0; val rh = y1 - y0
+        if (rw <= 2 || rh <= 2) continue
+        val px = IntArray(rw * rh).also { bitmap.getPixels(it, 0, rw, x0, y0, rw, rh) }
+        heal(px, rw, rh, cx - x0, cy - y0, rad)
+        bitmap.setPixels(px, 0, rw, x0, y0, rw, rh)
+    }
+    if (r.needsBands) {
+        val masks = if (r.strokes.isNotEmpty()) brushMasks(r.strokes, w / h.toFloat()) else null
+        val band = maxOf(64, 1_048_576 / w)
+        var y = 0
+        while (y < h) {
+            val n = minOf(band, h - y)
+            val px = IntArray(w * n).also { bitmap.getPixels(it, 0, w, 0, y, w, n) }
+            applyLocal(px, w, n, y, w, h, r, masks)
+            bitmap.setPixels(px, 0, w, 0, y, w, n)
+            y += n
+        }
+    }
+    return bitmap
 }
 
 /** I bordi di Espandi attorno alla foto ([expandPixels]). */

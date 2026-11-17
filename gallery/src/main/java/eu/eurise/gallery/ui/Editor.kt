@@ -130,6 +130,13 @@ import eu.eurise.gallery.data.shareEdited
 import eu.eurise.gallery.data.qrBitmap
 import eu.eurise.gallery.data.readQr
 import eu.eurise.gallery.logic.LookShare
+import eu.eurise.gallery.data.retouchBitmap
+import eu.eurise.gallery.logic.BrushKind
+import eu.eurise.gallery.logic.BrushStroke
+import eu.eurise.gallery.logic.HealSpot
+import eu.eurise.gallery.logic.Retouch
+import eu.eurise.gallery.logic.SelectivePoint
+import eu.eurise.gallery.logic.summary
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -158,6 +165,7 @@ private const val MAX_ZOOM = 6f
 private enum class Tool(val label: Int) {
     Crop(R.string.editor_tool_crop),
     Adjust(R.string.editor_tool_adjust),
+    Retouch(R.string.editor_tool_retouch),
     Filters(R.string.editor_tool_filters),
     Write(R.string.editor_tool_text),
     Draw(R.string.editor_tool_draw),
@@ -232,17 +240,38 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     // Ciò che la matrice non sa fare (toni, curve, vividezza, struttura, nitidezza) si calcola su una copia, poco dopo
     // l'ultimo ritocco; la matrice resta sulla GPU, così i cursori di luce e colore rispondono subito.
     val pixelPart = adjust.copy(light = 0f, contrast = 0f, saturation = 0f, warmth = 0f, tint = 0f, vignette = 0f)
-    val toned by produceState<Bitmap?>(null, shown, pixelPart) {
+    // I ritocchi (Correttivo, Selettivo, Pennello) vengono prima delle regolazioni, come nella copia salvata.
+    val retouch = state.retouch
+    val toned by produceState<Bitmap?>(null, shown, pixelPart, retouch) {
         val base = shown ?: return@produceState
-        if (!pixelPart.needsPixels) { value = null; return@produceState }
+        if (!pixelPart.needsPixels && retouch.isEmpty) { value = null; return@produceState }
         delay(70)
         value = withContext(Dispatchers.Default) {
-            val w = base.width; val h = base.height
-            val px = IntArray(w * h).also { base.getPixels(it, 0, w, 0, 0, w, h) }
+            val start = if (retouch.isEmpty) base else retouchBitmap(base.copy(Bitmap.Config.ARGB_8888, true), retouch)
+            if (!pixelPart.needsPixels) return@withContext start
+            val w = start.width; val h = start.height
+            val px = IntArray(w * h).also { start.getPixels(it, 0, w, 0, 0, w, h) }
             develop(px, w, h, pixelPart)
             Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
         }
     }
+    var retouchSection by remember { mutableStateOf(RetouchSection.Selective) }
+    var selPoint by remember { mutableStateOf<Long?>(null) }
+    var brushKind by remember { mutableStateOf(BrushKind.Lighten) }
+    var brushSize by remember { mutableFloatStateOf(0.06f) }
+    var brushStrength by remember { mutableFloatStateOf(0.5f) }
+    var healSize by remember { mutableFloatStateOf(0.03f) }
+    var showMask by remember { mutableStateOf(false) }
+    /** Il colore medio della foto attorno a un punto (coordinate 0..1), per il Selettivo. */
+    fun sampleAt(nx: Float, ny: Float): Int {
+        val b = shown ?: return 0x808080
+        val bx = (nx * b.width).roundToInt().coerceIn(2, b.width - 3)
+        val by = (ny * b.height).roundToInt().coerceIn(2, b.height - 3)
+        var r = 0; var g = 0; var bl = 0
+        for (dy in -2..2) for (dx in -2..2) { val c = b.getPixel(bx + dx, by + dy); r += (c shr 16) and 0xFF; g += (c shr 8) and 0xFF; bl += c and 0xFF }
+        return ((r / 25) shl 16) or ((g / 25) shl 8) or (bl / 25)
+    }
+    fun setRetouch(next: Retouch) { state = state.copy(retouch = next) }
     // Espandi: i bordi aggiunti si vedono attorno alla foto, calcolati su una copia piccola.
     val showExpand = state.expand.amount > 0f && !(tool == Tool.Crop && cropSection != CropSection.Expand)
     val expandBg by produceState<Bitmap?>(null, toned, shown, state.expand, showExpand) {
@@ -354,6 +383,23 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 val curved = remember(toned) { toned?.asImageBitmap() }
                 val image = if (original) plain else curved ?: plain
                 val cover = straightenScale(state.straighten, w, h)
+                // I ritocchi stanno sulla foto prima di raddrizzarla: i tocchi si riportano lì, togliendo rotazione e ingrandimento.
+                val rad = Math.toRadians(state.straighten.toDouble())
+                val cosA = kotlin.math.cos(rad).toFloat(); val sinA = kotlin.math.sin(rad).toFloat()
+                val toPhoto: (Offset) -> Offset = { p ->
+                    val dx = p.x - (left + w / 2); val dy = p.y - (top + h / 2)
+                    val rx = (dx * cosA + dy * sinA) / cover; val ry = (-dx * sinA + dy * cosA) / cover
+                    Offset(0.5f + rx / w, 0.5f + ry / h)
+                }
+                val fromPhoto: (Float, Float) -> Offset = { nx, ny ->
+                    val dx = (nx - 0.5f) * w * cover; val dy = (ny - 0.5f) * h * cover
+                    Offset(left + w / 2 + dx * cosA - dy * sinA, top + h / 2 + dx * sinA + dy * cosA)
+                }
+                val shortPx = min(w, h) * cover
+                val nearestPoint: (Offset) -> Long? = { p ->
+                    state.retouch.points.minByOrNull { (fromPhoto(it.x, it.y) - p).getDistance() }
+                        ?.takeIf { (fromPhoto(it.x, it.y) - p).getDistance() < touch * 1.4f }?.id
+                }
                 if (margin > 0 && !original) {
                     val mw = (bitmap.width + 2 * margin) * fit
                     val mh = (bitmap.height + 2 * margin) * fit
@@ -392,14 +438,63 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 }
                 Canvas(
                     Modifier.fillMaxSize()
-                        .pointerInput(tool, w, h) {
-                            if (tool == Tool.Write) detectTapGestures(
+                        .pointerInput(tool, w, h, retouchSection, healSize, state.straighten) {
+                            if (tool == Tool.Retouch && retouchSection == RetouchSection.Selective) detectTapGestures { p ->
+                                val near = nearestPoint(p)
+                                if (near != null) { selPoint = near; return@detectTapGestures }
+                                val q = toPhoto(p)
+                                if (q.x !in 0f..1f || q.y !in 0f..1f) return@detectTapGestures
+                                val added = SelectivePoint(nextId++, q.x, q.y, ref = sampleAt(q.x, q.y))
+                                commit(state.copy(retouch = state.retouch.copy(points = state.retouch.points + added)))
+                                selPoint = added.id
+                            } else if (tool == Tool.Retouch && retouchSection == RetouchSection.Heal) detectTapGestures { p ->
+                                val q = toPhoto(p)
+                                if (q.x !in 0f..1f || q.y !in 0f..1f) return@detectTapGestures
+                                commit(state.copy(retouch = state.retouch.copy(spots = state.retouch.spots + HealSpot(q.x, q.y, healSize))))
+                            } else if (tool == Tool.Write) detectTapGestures(
                                 onTap = { p -> selected = nearestText(p) },
                                 onDoubleTap = { p -> nearestText(p)?.let { id -> writing = state.texts.first { it.id == id } } },
                             )
                         }
-                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection) {
+                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection, retouchSection, brushKind, brushSize, brushStrength, state.straighten) {
                             when (tool) {
+                                Tool.Retouch -> when (retouchSection) {
+                                    RetouchSection.Selective -> {
+                                        var moving: Long? = null
+                                        detectDragGestures(
+                                            onDragStart = { p -> moving = nearestPoint(p); if (moving != null) { selPoint = moving; remember_() } },
+                                            onDrag = { change, _ ->
+                                                val id = moving ?: return@detectDragGestures
+                                                change.consume()
+                                                val q = toPhoto(change.position)
+                                                setRetouch(state.retouch.copy(points = state.retouch.points.map {
+                                                    if (it.id == id) it.copy(x = q.x.coerceIn(0f, 1f), y = q.y.coerceIn(0f, 1f)) else it
+                                                }))
+                                            },
+                                            onDragEnd = {
+                                                // Spostato, il punto prende il colore del nuovo posto.
+                                                val id = moving ?: return@detectDragGestures
+                                                setRetouch(state.retouch.copy(points = state.retouch.points.map { if (it.id == id) it.copy(ref = sampleAt(it.x, it.y)) else it }))
+                                                moving = null
+                                            },
+                                        )
+                                    }
+                                    RetouchSection.Brush -> detectDragGestures(
+                                        onDragStart = { p ->
+                                            remember_()
+                                            val q = toPhoto(p)
+                                            setRetouch(state.retouch.copy(strokes = state.retouch.strokes + BrushStroke(brushKind, brushSize, brushStrength, listOf(q.x, q.y))))
+                                        },
+                                        onDrag = { change, _ ->
+                                            change.consume()
+                                            val q = toPhoto(change.position)
+                                            val r = state.retouch
+                                            val last = r.strokes.lastOrNull() ?: return@detectDragGestures
+                                            setRetouch(r.copy(strokes = r.strokes.dropLast(1) + last.copy(points = last.points + q.x + q.y)))
+                                        },
+                                    )
+                                    RetouchSection.Heal -> Unit
+                                }
                                 Tool.Crop -> if (cropSection == CropSection.Perspective) {
                                     // Prospettiva libera: si trascinano i quattro angoli sulla foto non ancora raddrizzata.
                                     var moving = -1
@@ -578,6 +673,37 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                         drawPath(path, ink, style = Stroke(2.5.dp.toPx()))
                         pts.forEach { pt -> drawCircle(ink, 8.dp.toPx(), Offset(left + w * pt.x, top + h * (1f - pt.y))) }
                     }
+                    if (tool == Tool.Retouch && !original) {
+                        val r = state.retouch
+                        when (retouchSection) {
+                            RetouchSection.Selective -> r.points.forEach { pt ->
+                                val c = fromPhoto(pt.x, pt.y)
+                                val on = pt.id == selPoint
+                                if (on) drawCircle(Color.White.copy(alpha = 0.55f), pt.radius * shortPx, c, style = Stroke(1.5.dp.toPx()))
+                                drawCircle(if (on) Accent else Color.White, 13.dp.toPx(), c)
+                                drawCircle(Color(0xFF14171C), 9.dp.toPx(), c)
+                                drawCircle(if (on) Accent else Color.White, 4.dp.toPx(), c)
+                            }
+                            RetouchSection.Brush -> if (showMask) r.strokes.forEach { st ->
+                                val tint = when (st.kind) {
+                                    BrushKind.Lighten -> Color(0xFFFFF1B0); BrushKind.Darken -> Color(0xFF5C6BC0)
+                                    BrushKind.Warm -> Color(0xFFFFA65C); BrushKind.Cool -> Color(0xFF6FB7FF)
+                                    BrushKind.Saturate -> Color(0xFFE8505B); BrushKind.Desaturate -> Color(0xFFB0B0B0); BrushKind.Erase -> Color.Black
+                                }
+                                val path = androidx.compose.ui.graphics.Path()
+                                for (i in st.points.indices step 2) {
+                                    val o = fromPhoto(st.points[i], st.points[i + 1])
+                                    if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+                                }
+                                if (st.points.size == 2) fromPhoto(st.points[0], st.points[1]).let { path.lineTo(it.x + 0.1f, it.y) }
+                                drawPath(path, tint.copy(alpha = if (st.kind == BrushKind.Erase) 0.5f else 0.38f),
+                                    style = Stroke(st.size * 2 * shortPx, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                            }
+                            RetouchSection.Heal -> r.spots.forEach { sp ->
+                                drawCircle(Color.White.copy(alpha = 0.7f), sp.r * shortPx, fromPhoto(sp.x, sp.y), style = Stroke(1.dp.toPx()))
+                            }
+                        }
+                    }
                     if (tool == Tool.Write) state.texts.firstOrNull { it.id == selected }?.let { t ->
                         drawCircle(Color.White, t.size * min(w, h) * 0.9f + 12.dp.toPx(), Offset(left + t.x * w, top + t.y * h), style = Stroke(1.5.dp.toPx()))
                     }
@@ -681,6 +807,51 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                     }
                                 }
                                 Hint(stringResource(R.string.editor_curve_tip))
+                            }
+                        }
+                    }
+                }
+                Tool.Retouch -> {
+                    val r = state.retouch
+                    ChipRow {
+                        RetouchSection.entries.forEach { sct -> Chip(stringResource(sct.label), retouchSection == sct) { retouchSection = sct } }
+                    }
+                    Column(Modifier.heightIn(max = 190.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        when (retouchSection) {
+                            RetouchSection.Selective -> {
+                                val pt = r.points.firstOrNull { it.id == selPoint }
+                                if (pt == null) Hint(stringResource(R.string.editor_selective_tip)) else {
+                                    fun setPt(next: SelectivePoint) = setRetouch(r.copy(points = r.points.map { if (it.id == next.id) next else it }))
+                                    ZeroSlider(stringResource(R.string.editor_light), pt.light, ::remember_) { setPt(pt.copy(light = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_contrast), pt.contrast, ::remember_) { setPt(pt.copy(contrast = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_saturation), pt.saturation, ::remember_) { setPt(pt.copy(saturation = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_warmth), pt.warmth, ::remember_) { setPt(pt.copy(warmth = it)) }
+                                    ZeroSlider(stringResource(R.string.editor_selective_size), (pt.radius - 0.05f) / 0.45f, ::remember_, from = 0f) { setPt(pt.copy(radius = 0.05f + it * 0.45f)) }
+                                    ChipRow {
+                                        Chip(stringResource(R.string.editor_selective_remove), false) {
+                                            commit(state.copy(retouch = r.copy(points = r.points.filter { it.id != pt.id }))); selPoint = null
+                                        }
+                                    }
+                                }
+                            }
+                            RetouchSection.Brush -> {
+                                ChipRow {
+                                    listOf(BrushKind.Lighten to R.string.editor_brush_lighten, BrushKind.Darken to R.string.editor_brush_darken,
+                                        BrushKind.Warm to R.string.editor_brush_warm, BrushKind.Cool to R.string.editor_brush_cool,
+                                        BrushKind.Saturate to R.string.editor_brush_saturate, BrushKind.Desaturate to R.string.editor_brush_desaturate,
+                                        BrushKind.Erase to R.string.editor_brush_erase).forEach { (k, l) -> Chip(stringResource(l), brushKind == k) { brushKind = k } }
+                                }
+                                ZeroSlider(stringResource(R.string.editor_brush_size), (brushSize - 0.015f) / 0.135f, {}, from = 0f) { brushSize = 0.015f + it * 0.135f }
+                                if (brushKind != BrushKind.Erase) ZeroSlider(stringResource(R.string.editor_brush_strength), brushStrength, {}, from = 0f) { brushStrength = it.coerceAtLeast(0.05f) }
+                                ChipRow {
+                                    Chip(stringResource(R.string.editor_brush_show), showMask, strong = true) { showMask = !showMask }
+                                    if (r.strokes.isNotEmpty()) Chip(stringResource(R.string.editor_reset), false) { commit(state.copy(retouch = r.copy(strokes = emptyList()))) }
+                                }
+                            }
+                            RetouchSection.Heal -> {
+                                ZeroSlider(stringResource(R.string.editor_brush_size), (healSize - 0.01f) / 0.07f, {}, from = 0f) { healSize = 0.01f + it * 0.07f }
+                                Hint(stringResource(R.string.editor_heal_tip))
+                                if (r.spots.isNotEmpty()) ChipRow { Chip(stringResource(R.string.editor_reset), false) { commit(state.copy(retouch = r.copy(spots = emptyList()))) } }
                             }
                         }
                     }
@@ -908,6 +1079,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
 private fun Tool.icon(stroke: Float): ImageVector = when (this) {
     Tool.Crop -> EuriseIcons.crop(stroke)
     Tool.Adjust -> EuriseIcons.sliders(stroke)
+    Tool.Retouch -> EuriseIcons.spark(stroke)
     Tool.Filters -> EuriseIcons.filters(stroke)
     Tool.Write -> EuriseIcons.text(stroke)
     Tool.Draw -> EuriseIcons.pencil(stroke)
@@ -1003,6 +1175,7 @@ private fun editSteps(s: EditState): List<EditStep> = buildList {
         })
     }
     if (!a.curves.isNeutral) add(EditStep(R.string.editor_section_curves, "", Tool.Adjust, section = AdjustSection.Curves) { it.copy(adjust = it.adjust.copy(curves = eu.eurise.gallery.logic.Curves())) })
+    if (!s.retouch.isEmpty) add(EditStep(R.string.editor_tool_retouch, s.retouch.summary(), Tool.Retouch) { it.copy(retouch = Retouch()) })
     if (s.mine != null || s.look != Look.None) add(EditStep(R.string.editor_step_filter, s.mine?.name ?: "", Tool.Filters) { it.copy(look = Look.None, mine = null) })
     if (s.texts.isNotEmpty()) add(EditStep(R.string.editor_step_text, s.texts.size.toString(), Tool.Write) { it.copy(texts = emptyList()) })
     if (s.strokes.isNotEmpty()) add(EditStep(R.string.editor_step_draw, s.strokes.size.toString(), Tool.Draw) { it.copy(strokes = emptyList()) })
@@ -1147,6 +1320,12 @@ private fun ShareLookDialog(look: SavedLook, onDismiss: () -> Unit) {
 }
 
 /** Le parti di Regola (tavola GalRegolaTutto). */
+private enum class RetouchSection(val label: Int) {
+    Selective(R.string.editor_retouch_selective),
+    Brush(R.string.editor_retouch_brush),
+    Heal(R.string.editor_retouch_heal),
+}
+
 private enum class AdjustSection(val label: Int) {
     Light(R.string.editor_section_light), Color(R.string.editor_section_color), Detail(R.string.editor_section_detail), Curves(R.string.editor_section_curves),
 }
