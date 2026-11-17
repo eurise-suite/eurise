@@ -68,7 +68,11 @@ class GalleryViewModel(private val app: Application) : AndroidViewModel(app) {
     private var indexing: Job? = null
 
     init {
-        viewModelScope.launch(Dispatchers.IO) { File(app.cacheDir, "secure-play").deleteRecursively() }
+        viewModelScope.launch(Dispatchers.IO) {
+            File(app.cacheDir, "secure-play").deleteRecursively()
+            // Gli originali tenuti dopo «Sostituisci» restano 30 giorni, poi si tolgono.
+            eu.eurise.gallery.data.dropExpiredOriginals(app)
+        }
     }
 
     fun onPermission(allowed: Boolean) {

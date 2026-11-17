@@ -123,6 +123,15 @@ import eu.eurise.gallery.logic.CurvePreset
 import eu.eurise.gallery.logic.SavedLook
 import eu.eurise.gallery.logic.curveLut
 import eu.eurise.gallery.logic.develop
+import eu.eurise.gallery.logic.SaveFormat
+import eu.eurise.gallery.logic.SaveOptions
+import eu.eurise.gallery.data.shareEdited
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.MediaStore
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
 import eu.eurise.gallery.logic.Perspective
 import eu.eurise.gallery.logic.ExpandFill
 import eu.eurise.gallery.data.perspective
@@ -196,6 +205,9 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     var penWidth by remember { mutableFloatStateOf(0.012f) }
     var nextId by remember { mutableLongStateOf(1L) }
     var textStyle by remember { mutableStateOf(MarkStyle.Bold) }
+    var saving by remember { mutableStateOf(false) }
+    var stackOpen by remember { mutableStateOf(false) }
+    var pendingOpts by remember { mutableStateOf<SaveOptions?>(null) }
     val savedText = stringResource(R.string.editor_saved)
     val failedText = stringResource(R.string.action_failed)
     val density = LocalDensity.current
@@ -265,17 +277,19 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                 contentAlignment = Alignment.Center,
             ) { Icon(EuriseIcons.eye(), null, tint = if (original) Accent else Text1, modifier = Modifier.size(21.dp)) }
             Spacer(Modifier.weight(1f))
+            // La pila delle modifiche (tavola GalModifiche): quanti passi ci sono, un tocco per vederli.
+            val steps = editSteps(state)
+            Row(
+                Modifier.padding(end = 6.dp).height(40.dp).clip(RoundedCornerShape(20.dp)).background(if (stackOpen) Line else Raised)
+                    .clickable(enabled = steps.isNotEmpty()) { stackOpen = true }.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(EuriseIcons.history(), null, tint = if (steps.isEmpty()) Muted else Accent, modifier = Modifier.size(17.dp))
+                Text(steps.size.toString(), color = if (steps.isEmpty()) Muted else Text1, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
             Box(
                 Modifier.height(40.dp).clip(RoundedCornerShape(20.dp)).background(if (busy || shown == null) Raised else Accent)
-                    .clickable(enabled = !busy && shown != null) {
-                        busy = true
-                        scope.launch {
-                            val saved = withContext(Dispatchers.IO) { try { saveEdited(context, item, state) } catch (e: Throwable) { null } }
-                            Toast.makeText(context, if (saved != null) savedText else failedText, Toast.LENGTH_LONG).show()
-                            busy = false
-                            if (saved != null) { onSaved(saved); onClose() }
-                        }
-                    }.padding(horizontal = 16.dp),
+                    .clickable(enabled = !busy && shown != null) { saving = true }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) { Text(stringResource(R.string.editor_save), color = if (busy) Muted else OnAccent, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold) }
         }
@@ -775,6 +789,52 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         )
     }
 
+    // Salvare: prima il foglio con le scelte; per sostituire l'originale Android chiede il permesso.
+    fun doSave(opts: SaveOptions) {
+        busy = true
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) { try { saveEdited(context, item, state, opts) } catch (e: Throwable) { null } }
+            Toast.makeText(context, if (saved != null) context.getString(if (opts.replace) R.string.editor_replaced else R.string.editor_saved) else failedText, Toast.LENGTH_LONG).show()
+            busy = false
+            if (saved != null) { onSaved(saved); onClose() }
+        }
+    }
+    val writeAccess = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        val opts = pendingOpts
+        pendingOpts = null
+        if (result.resultCode == android.app.Activity.RESULT_OK && opts != null) doSave(opts)
+    }
+    if (saving) SaveSheet(
+        initial = remember { store.saveOptions() },
+        onDismiss = { saving = false },
+        onShare = { opts ->
+            saving = false
+            store.setSaveOptions(opts)
+            busy = true
+            scope.launch {
+                val send = withContext(Dispatchers.IO) { runCatching { shareEdited(context, item, state, opts) }.getOrNull() }
+                busy = false
+                if (send != null) context.startActivity(send) else Toast.makeText(context, failedText, Toast.LENGTH_LONG).show()
+            }
+        },
+        onSave = { opts ->
+            saving = false
+            store.setSaveOptions(opts)
+            if (opts.replace) {
+                pendingOpts = opts
+                val request = MediaStore.createWriteRequest(context.contentResolver, listOf(Uri.parse(item.uri)))
+                writeAccess.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            } else doSave(opts)
+        },
+    )
+    if (stackOpen) StackSheet(
+        steps = editSteps(state),
+        onDismiss = { stackOpen = false },
+        onOpen = { step -> stackOpen = false; tool = step.tool; step.cropSection?.let { cropSection = it }; step.section?.let { section = it } },
+        onRemove = { step -> commit(step.reset(state)); if (editSteps(step.reset(state)).isEmpty()) stackOpen = false },
+        onSaveLook = if (state.effective.isNeutral) null else { { stackOpen = false; naming = SavedLook(System.currentTimeMillis(), context.getString(R.string.editor_mine_default, myLooks.size + 1), state.effective) } },
+    )
+
     writing?.let { mark ->
         var text by remember(mark) { mutableStateOf(mark.text) }
         AlertDialog(
@@ -861,6 +921,128 @@ private fun SaveLookTile(enabled: Boolean, onClick: () -> Unit) {
             Icon(EuriseIcons.plus(), null, tint = if (enabled) Accent else Muted, modifier = Modifier.size(22.dp))
         }
         Text(stringResource(R.string.editor_mine_add), color = if (enabled) Accent else Muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+/** Un passo della modifica, come lo mostra la pila (tavola GalModifiche): si riapre o si toglie. */
+private class EditStep(
+    val label: Int,
+    val detail: String,
+    val tool: Tool,
+    val cropSection: CropSection? = null,
+    val section: AdjustSection? = null,
+    val reset: (EditState) -> EditState,
+)
+
+private fun pct(v: Float) = (v * 100).roundToInt().let { if (it > 0) "+$it" else "$it" }
+
+/** I passi presenti, nell'ordine in cui si applicano. */
+private fun editSteps(s: EditState): List<EditStep> = buildList {
+    if (!s.crop.isFull || s.turns % 4 != 0 || s.flip || s.straighten != 0f) add(EditStep(R.string.editor_step_crop,
+        listOfNotNull(if (s.turns % 4 != 0) "${(s.turns % 4) * 90}°" else null, if (s.flip) "↔" else null,
+            if (s.straighten != 0f) "%.1f°".format(s.straighten) else null, if (!s.crop.isFull) "▢" else null).joinToString(" · "),
+        Tool.Crop, CropSection.Crop) { it.copy(crop = eu.eurise.gallery.logic.Crop(), turns = 0, flip = false, straighten = 0f) })
+    if (!s.perspective.isIdentity) add(EditStep(R.string.editor_section_perspective, "", Tool.Crop, CropSection.Perspective) { it.copy(perspective = Perspective()) })
+    if (s.expand.amount > 0f) add(EditStep(R.string.editor_section_expand, pct(s.expand.amount), Tool.Crop, CropSection.Expand) { it.copy(expand = eu.eurise.gallery.logic.Expand()) })
+    val a = s.adjust
+    if (!a.copy(curves = eu.eurise.gallery.logic.Curves()).isNeutral) {
+        val parts = listOf(a.light to "☀", a.contrast to "◐", a.ambiance to "≈", a.shadows to "▼", a.highlights to "▲", a.saturation to "●", a.vibrance to "◉",
+            a.warmth to "°", a.tint to "±", a.structure to "▦", a.sharpen to "◇", a.vignette to "◎").filter { it.first != 0f }
+        add(EditStep(R.string.editor_step_adjust, parts.joinToString(" ") { "${it.second}${pct(it.first)}" }, Tool.Adjust, section = AdjustSection.Light) {
+            it.copy(adjust = eu.eurise.gallery.logic.Adjust(curves = it.adjust.curves))
+        })
+    }
+    if (!a.curves.isNeutral) add(EditStep(R.string.editor_section_curves, "", Tool.Adjust, section = AdjustSection.Curves) { it.copy(adjust = it.adjust.copy(curves = eu.eurise.gallery.logic.Curves())) })
+    if (s.mine != null || s.look != Look.None) add(EditStep(R.string.editor_step_filter, s.mine?.name ?: "", Tool.Filters) { it.copy(look = Look.None, mine = null) })
+    if (s.texts.isNotEmpty()) add(EditStep(R.string.editor_step_text, s.texts.size.toString(), Tool.Write) { it.copy(texts = emptyList()) })
+    if (s.strokes.isNotEmpty()) add(EditStep(R.string.editor_step_draw, s.strokes.size.toString(), Tool.Draw) { it.copy(strokes = emptyList()) })
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (EditStep) -> Unit, onRemove: (EditStep) -> Unit, onSaveLook: (() -> Unit)?) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Panel, contentColor = Text1) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.editor_stack_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            steps.asReversed().forEach { step ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Raised).clickable { onOpen(step) }.padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(step.label), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        if (step.detail.isNotEmpty()) Text(step.detail, color = Muted, fontSize = 12.sp, maxLines = 1)
+                    }
+                    IconButton(onClick = { onOpen(step) }) { Icon(EuriseIcons.pencil(), stringResource(R.string.editor_stack_open), tint = Accent, modifier = Modifier.size(18.dp)) }
+                    IconButton(onClick = { onRemove(step) }) { Icon(EuriseIcons.trash(), stringResource(R.string.editor_stack_remove), tint = Muted, modifier = Modifier.size(18.dp)) }
+                }
+            }
+            if (onSaveLook != null) Row(
+                Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, Line, RoundedCornerShape(16.dp)).clickable(onClick = onSaveLook),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(EuriseIcons.star(), null, tint = Accent, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.editor_stack_save_look), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+            Hint(stringResource(R.string.editor_stack_tip))
+        }
+    }
+}
+
+/** Il foglio Salva (tavola GalEsporta). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SaveSheet(initial: SaveOptions, onDismiss: () -> Unit, onShare: (SaveOptions) -> Unit, onSave: (SaveOptions) -> Unit) {
+    var o by remember { mutableStateOf(initial) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Panel, contentColor = Text1) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.editor_save_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            ChipRow {
+                Chip(stringResource(R.string.editor_save_copy), !o.replace) { o = o.copy(replace = false) }
+                Chip(stringResource(R.string.editor_save_replace), o.replace) { o = o.copy(replace = true) }
+            }
+            Text(stringResource(if (o.replace) R.string.editor_save_replace_tip else R.string.editor_save_copy_tip), color = Muted, fontSize = 12.sp)
+            if (!o.replace) {
+                SheetLabel(stringResource(R.string.editor_save_format))
+                ChipRow { SaveFormat.entries.forEach { f -> Chip(f.name.uppercase(), o.format == f) { o = o.copy(format = f) } } }
+            }
+            if (o.formatFor(null) != SaveFormat.Png || o.replace) {
+                SheetLabel(stringResource(R.string.editor_save_quality, o.quality))
+                androidx.compose.material3.Slider(
+                    value = o.quality.toFloat(), onValueChange = { o = o.copy(quality = it.roundToInt()) }, valueRange = 50f..100f,
+                    colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Accent, inactiveTrackColor = Line),
+                )
+            }
+            SheetLabel(stringResource(R.string.editor_save_size))
+            ChipRow {
+                SaveOptions.SIDES.forEach { side -> Chip(if (side == 0) stringResource(R.string.editor_original) else "$side px", o.maxSide == side) { o = o.copy(maxSide = side) } }
+            }
+            SheetSwitch(stringResource(R.string.editor_save_strip_location), stringResource(R.string.editor_save_strip_location_tip), o.stripLocation) { o = o.copy(stripLocation = it) }
+            SheetSwitch(stringResource(R.string.editor_save_strip_camera), stringResource(R.string.editor_save_strip_camera_tip), o.stripCamera) { o = o.copy(stripCamera = it) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, Line, RoundedCornerShape(16.dp)).clickable { onShare(o.copy(replace = false)) }, contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.share), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+                Box(Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(16.dp)).background(Accent).clickable { onSave(o) }, contentAlignment = Alignment.Center) {
+                    Text(stringResource(if (o.replace) R.string.editor_save_replace_go else R.string.editor_save_go), color = OnAccent, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SheetLabel(text: String) = Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Text1)
+
+@Composable
+private fun SheetSwitch(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable { onChange(!on) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+            Text(sub, color = Muted, fontSize = 11.5.sp)
+        }
+        androidx.compose.material3.Switch(on, onChange, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Accent, checkedThumbColor = Color.White))
     }
 }
 

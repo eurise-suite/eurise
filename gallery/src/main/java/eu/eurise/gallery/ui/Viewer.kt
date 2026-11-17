@@ -1,5 +1,19 @@
 package eu.eurise.gallery.ui
 
+import android.net.Uri
+import android.provider.MediaStore
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import eu.eurise.gallery.data.GalleryStore
+import eu.eurise.gallery.data.restoreOriginal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,7 +52,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +72,6 @@ import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.gallery.R
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.Memory
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 
@@ -144,8 +156,36 @@ internal fun Viewer(list: List<MediaItem>, start: Int, actions: MediaActions, on
             if (!current.cloudOnly) RoundAction(EuriseIcons.heart(if (current.favorite) 3f else 2.2f), stringResource(R.string.favorite)) { actions.setFavorite(current, !current.favorite) }
             RoundAction(EuriseIcons.share(), stringResource(R.string.share)) { actions.share(listOf(current)) }
             if (!current.cloudOnly && !current.isVideo) RoundAction(EuriseIcons.pencil(), stringResource(R.string.edit)) { actions.edit(current) }
+            RestoreOriginal(current)
             RoundAction(EuriseIcons.trash(), stringResource(R.string.delete)) { actions.trash(listOf(current)) }
         }
+    }
+}
+
+/**
+ * «Torna all'originale» (tavola GalEsporta): compare per 30 giorni sulle foto sostituite dall'editor. Android chiede il
+ * permesso di riscrivere la foto, poi l'originale messo da parte torna al suo posto.
+ */
+@Composable
+private fun RestoreOriginal(item: MediaItem) {
+    val context = LocalContext.current
+    val store = remember { GalleryStore.get(context) }
+    val version by store.keptVersion.collectAsStateWithLifecycle()
+    val kept = remember(item.uri, version) { store.kept().lastOrNull { it.uri == item.uri } } ?: return
+    val scope = rememberCoroutineScope()
+    val done = stringResource(R.string.restore_done)
+    val failed = stringResource(R.string.action_failed)
+    val access = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode != android.app.Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { restoreOriginal(context, kept.uri) }
+            Toast.makeText(context, if (ok) done else failed, Toast.LENGTH_LONG).show()
+        }
+    }
+    val days = ((kept.expiresAt - System.currentTimeMillis()) / 86_400_000L).coerceAtLeast(0).toInt()
+    RoundAction(EuriseIcons.history(), stringResource(R.string.restore_until, days)) {
+        val request = MediaStore.createWriteRequest(context.contentResolver, listOf(Uri.parse(item.uri)))
+        access.launch(IntentSenderRequest.Builder(request.intentSender).build())
     }
 }
 

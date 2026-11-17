@@ -39,6 +39,11 @@ import eu.eurise.gallery.logic.develop
 import eu.eurise.gallery.logic.Perspective
 import eu.eurise.gallery.logic.Expand
 import eu.eurise.gallery.logic.expandPixels
+import eu.eurise.gallery.logic.ExifTags
+import eu.eurise.gallery.logic.KeptOriginal
+import eu.eurise.gallery.logic.SaveFormat
+import eu.eurise.gallery.logic.SaveOptions
+import eu.eurise.gallery.logic.scaledSize
 import eu.eurise.gallery.logic.cropPixels
 import java.io.File
 import java.io.IOException
@@ -289,9 +294,8 @@ fun drawVignette(canvas: Canvas, left: Float, top: Float, right: Float, bottom: 
     canvas.drawRect(left, top, right, bottom, paint)
 }
 
-/** Salva una copia modificata nel telefono, con la data dell'originale. La copia non porta con sé la posizione. */
-/** Salva la foto modificata come copia in Pictures/Eurise; restituisce la copia, o null se non è riuscito. */
-fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
+/** La foto modificata a piena grandezza (al più 8192 px sul lato lungo), con tutti i passi della modifica. */
+fun renderEdited(context: Context, item: MediaItem, state: EditState): Bitmap {
     val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))
     val decoded = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
         decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / 8192))
@@ -326,20 +330,114 @@ fun saveEdited(context: Context, item: MediaItem, state: EditState): Uri? {
         bitmap = Bitmap.createBitmap(bitmap, x, y, cw, ch)
     }
     bitmap = expanded(bitmap, state.expand)
+    return bitmap
+}
+
+/**
+ * Salva la foto modificata (foglio Salva, tavola GalEsporta). Copia nuova in Pictures/Eurise, oppure, con
+ * [SaveOptions.replace], al posto dell'originale: prima l'originale si mette da parte per 30 giorni (Torna
+ * all'originale). Per sostituire serve il permesso di scrittura chiesto dall'editor (MediaStore.createWriteRequest).
+ * I dati della foto passano secondo le scelte: la posizione di base no. Restituisce la foto salvata, o null.
+ */
+fun saveEdited(context: Context, item: MediaItem, state: EditState, opts: SaveOptions = SaveOptions()): Uri? {
+    var bitmap = renderEdited(context, item, state)
+    val (tw, th) = scaledSize(bitmap.width, bitmap.height, opts.maxSide)
+    if (tw != bitmap.width) bitmap = Bitmap.createScaledBitmap(bitmap, tw, th, true)
+    val resolver = context.contentResolver
+    val original = Uri.parse(item.uri)
+    val originalMime = resolver.getType(original)
+    val format = opts.formatFor(originalMime)
+    // Il file nuovo si scrive prima in cache: così i dati della foto si aggiungono con ExifInterface e un errore non
+    // tocca mai la galleria.
+    val temp = File(File(context.cacheDir, "save").apply { mkdirs() }, "out.${format.ext}")
+    temp.outputStream().use { out ->
+        val cf = when (format) {
+            SaveFormat.Jpeg -> Bitmap.CompressFormat.JPEG
+            SaveFormat.Png -> Bitmap.CompressFormat.PNG
+            SaveFormat.Webp -> Bitmap.CompressFormat.WEBP_LOSSY
+        }
+        if (!bitmap.compress(cf, opts.quality, out)) return null
+    }
+    if (format == SaveFormat.Jpeg || format == SaveFormat.Webp) copyExif(context, original, temp, opts)
+    if (opts.replace) {
+        val kept = keepOriginal(context, item, originalMime ?: "image/jpeg") ?: return null
+        val ok = runCatching { resolver.openOutputStream(original, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } } != null }.getOrDefault(false)
+        temp.delete()
+        if (!ok) { File(kept.file).delete(); return null }
+        GalleryStore.get(context).addKept(kept)
+        return original
+    }
     val base = item.name.substringBeforeLast('.').ifEmpty { "foto" }
     val values = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, "$base-modificata-${System.currentTimeMillis() / 1000}.jpg")
-        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        put(MediaStore.MediaColumns.DISPLAY_NAME, "$base-modificata-${System.currentTimeMillis() / 1000}.${format.ext}")
+        put(MediaStore.MediaColumns.MIME_TYPE, format.mime)
         put(MediaStore.MediaColumns.DATE_TAKEN, item.takenAt + 1)
         put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Eurise")
         put(MediaStore.MediaColumns.IS_PENDING, 1)
     }
-    val resolver = context.contentResolver
     val uri = resolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return null
-    val ok = runCatching { resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) } == true }.getOrDefault(false)
+    val ok = runCatching { resolver.openOutputStream(uri)?.use { out -> temp.inputStream().use { it.copyTo(out) } } != null }.getOrDefault(false)
+    temp.delete()
     if (!ok) { resolver.delete(uri, null, null); return null }
     resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
     return uri
+}
+
+/** Condivide la foto modificata senza salvarla in galleria, con le stesse scelte (formato, grandezza, dati). */
+fun shareEdited(context: Context, item: MediaItem, state: EditState, opts: SaveOptions): Intent {
+    var bitmap = renderEdited(context, item, state)
+    val (tw, th) = scaledSize(bitmap.width, bitmap.height, opts.maxSide)
+    if (tw != bitmap.width) bitmap = Bitmap.createScaledBitmap(bitmap, tw, th, true)
+    val format = opts.copy(replace = false).formatFor(null)
+    val dir = File(context.cacheDir, "share").apply { deleteRecursively(); mkdirs() }
+    val base = item.name.substringBeforeLast('.').ifEmpty { "foto" }
+    val file = File(dir, "$base-modificata.${format.ext}")
+    file.outputStream().use { out ->
+        val cf = when (format) { SaveFormat.Jpeg -> Bitmap.CompressFormat.JPEG; SaveFormat.Png -> Bitmap.CompressFormat.PNG; SaveFormat.Webp -> Bitmap.CompressFormat.WEBP_LOSSY }
+        check(bitmap.compress(cf, opts.quality, out))
+    }
+    if (format != SaveFormat.Png) copyExif(context, Uri.parse(item.uri), file, opts)
+    val uri = context.fileUri(file)
+    val send = Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uri).setType(format.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    send.clipData = ClipData.newRawUri(null, uri)
+    return Intent.createChooser(send, null)
+}
+
+/** Copia data, fotocamera e (se scelto) posizione dall'originale al file nuovo; l'orientamento resta «dritto». */
+private fun copyExif(context: Context, original: Uri, target: File, opts: SaveOptions) {
+    runCatching {
+        val from = context.contentResolver.openInputStream(original)?.use { ExifInterface(it) } ?: return
+        val to = ExifInterface(target.path)
+        for (tag in ExifTags.toCopy(opts)) from.getAttribute(tag)?.let { to.setAttribute(tag, it) }
+        to.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+        to.saveAttributes()
+    }
+}
+
+/** Mette da parte l'originale prima di sostituirlo. */
+private fun keepOriginal(context: Context, item: MediaItem, mime: String): KeptOriginal? {
+    val dir = File(context.filesDir, "originali").apply { mkdirs() }
+    val file = File(dir, "${item.id}-${System.currentTimeMillis()}")
+    val ok = runCatching { context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { input -> file.outputStream().use { input.copyTo(it) } } != null }.getOrDefault(false)
+    return if (ok) KeptOriginal(item.uri, file.path, mime, System.currentTimeMillis()) else null.also { file.delete() }
+}
+
+/** Torna all'originale messo da parte con «Sostituisci» (serve di nuovo il permesso di scrittura). */
+fun restoreOriginal(context: Context, uri: String): Boolean {
+    val store = GalleryStore.get(context)
+    val kept = store.kept().lastOrNull { it.uri == uri } ?: return false
+    val file = File(kept.file)
+    if (!file.exists()) { store.removeKept(kept); return false }
+    val ok = runCatching { context.contentResolver.openOutputStream(Uri.parse(uri), "wt")?.use { out -> file.inputStream().use { it.copyTo(out) } } != null }.getOrDefault(false)
+    if (ok) { file.delete(); store.removeKept(kept) }
+    return ok
+}
+
+/** Toglie gli originali conservati da più di 30 giorni (all'avvio, fuori dal thread principale). */
+fun dropExpiredOriginals(context: Context) {
+    val store = GalleryStore.get(context)
+    val now = System.currentTimeMillis()
+    store.kept().filter { it.expiresAt < now }.forEach { File(it.file).delete(); store.removeKept(it) }
 }
 
 /** Specchio e quarti di giro, nell'ordine usato da [EditState]. */

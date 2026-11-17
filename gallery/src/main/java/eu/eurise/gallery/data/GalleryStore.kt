@@ -222,6 +222,30 @@ class GalleryStore private constructor(context: Context) {
         changed()
     }
 
+    /** Le ultime scelte del foglio Salva (senza «Sostituisci», che si sceglie ogni volta). */
+    fun saveOptions(): eu.eurise.gallery.logic.SaveOptions = eu.eurise.gallery.logic.SaveOptions.decode(prefs.getString("save_options", null))
+
+    fun setSaveOptions(o: eu.eurise.gallery.logic.SaveOptions) { prefs.edit().putString("save_options", o.encode()).apply() }
+
+    /** Gli originali messi da parte con «Sostituisci» (Torna all'originale, per 30 giorni). */
+    @Synchronized
+    fun kept(): List<eu.eurise.gallery.logic.KeptOriginal> = eu.eurise.gallery.logic.KeptCodec.decode(prefs.getString("kept_originals", null))
+
+    @Synchronized
+    fun addKept(k: eu.eurise.gallery.logic.KeptOriginal) {
+        prefs.edit().putString("kept_originals", eu.eurise.gallery.logic.KeptCodec.encode(kept() + k)).commit()
+        keptVersion.value++
+    }
+
+    @Synchronized
+    fun removeKept(k: eu.eurise.gallery.logic.KeptOriginal) {
+        prefs.edit().putString("kept_originals", eu.eurise.gallery.logic.KeptCodec.encode(kept().filterNot { it == k })).commit()
+        keptVersion.value++
+    }
+
+    /** Cambia quando un originale si mette da parte o si ripristina (il visore mostra «Torna all'originale»). */
+    val keptVersion = kotlinx.coroutines.flow.MutableStateFlow(0)
+
     /** Le modalità tue dell'editor («Salva come look», tavola GalModifiche), sul telefono. */
     fun myLooks(): List<eu.eurise.gallery.logic.SavedLook> = eu.eurise.gallery.logic.LookCodec.decode(prefs.getString("my_looks", null))
 
