@@ -185,7 +185,7 @@ class ShiftsTest {
     @Test fun messaggiAndataERitorno() {
         val plan = Plan("p", Shifts.continuity(), listOf(Person(io, target = 9000), Person(elena, Role.Substitute, replaces = io, from = mon, to = mon.plusDays(3))),
             listOf(Entry(mon, "N", listOf(io, elena), phone = elena, locked = true), Entry(mon.plusDays(6), "F", listOf(io, elena), split = LocalTime.of(13, 0))),
-            holidays = true, localHolidays = listOf(java.time.MonthDay.of(8, 24)), time = 9)
+            holidays = true, localHolidays = listOf(java.time.MonthDay.of(8, 24)), time = 9, maxInARow = 5, title = "Presidio · Reparto B", rest = 8 * 60)
         val back = Shifts.plan(JSONObject(Shifts.content(plan, "Turni").toString()), 9)
         assertEquals(plan, back)
         val a = Avail(sara, listOf(Off(mon, mon.plusDays(2), setOf("N"))), setOf("M"), setOf("N"), setOf(7), 3)
@@ -197,6 +197,18 @@ class ShiftsTest {
         assertNull(Shifts.change(Shifts.content(Change("2", Kind.Extra, io, mon, "N", minutes = 20), "x"), io, 4))
         val r = Reply("1", io, true, time = 5)
         assertEquals(r, Shifts.reply(Shifts.content(r, "x"), io, 5))
+    }
+
+    @Test fun regoleDelContesto() {
+        // Negozio: niente domenica, riposo minimo 8 ore, al massimo cinque giorni di fila.
+        val shop = Plan("s", Shifts.preset(Shifts.Preset.Shop), four.map { Person(it) }, emptyList(), rest = 8 * 60, maxInARow = 5)
+        val g = Shifts.generate(shop, emptyMap(), mon, 14)
+        assertTrue(g.entries.none { it.date.dayOfWeek == java.time.DayOfWeek.SUNDAY })
+        for (p in four) {
+            val days = g.entries.filter { p in it.people }.map { it.date }.toSet()
+            assertTrue((0 until 14).none { k -> (0..5).all { days.contains(mon.plusDays((k + it).toLong())) } })
+        }
+        assertEquals(listOf("G", "N"), Shifts.preset(Shifts.Preset.TwelveHours).map { it.code })
     }
 
     @Test fun durate() {

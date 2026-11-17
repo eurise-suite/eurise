@@ -95,6 +95,8 @@ interface ChatActions {
     fun askCalendar(done: (Boolean) -> Unit)
     /** Condivide un testo (riepilogo dei turni per chi non usa la Chat) con l'app che sceglie l'utente. */
     fun shareText(text: String)
+    /** Condivide un file della cartella della Chat (PDF, CSV, calendario dei turni) con l'app che sceglie l'utente. */
+    fun shareFile(file: java.io.File, mime: String)
 }
 
 /** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */

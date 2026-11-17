@@ -86,7 +86,7 @@ private fun shiftName(plan: Shifts.Plan, date: LocalDate, code: String): String 
 
 @Composable
 private fun name(model: ChatModel, id: String): String =
-    if (id == model.session?.userId) stringResource(R.string.sh_you) else model.nameOf(id)
+    if (id == model.session?.userId) stringResource(R.string.sh_you) else model.shiftName(id)
 
 @Composable
 private fun problemText(p: Set<Shifts.Problem>): String = p.sortedBy { it.ordinal }.map {
@@ -106,6 +106,9 @@ private sealed interface ShiftSheet {
     data object Hours : ShiftSheet
     data class Cell(val key: String) : ShiftSheet
     data class Add(val date: LocalDate, val person: String) : ShiftSheet
+    /** Importa su [base]: il piano appena impostato in «Fai i turni», o quello del gruppo. */
+    data class Import(val base: Shifts.Plan) : ShiftSheet
+    data object Export : ShiftSheet
 }
 
 @Composable
@@ -153,6 +156,8 @@ internal fun ShiftsPane(model: ChatModel, actions: ChatActions, roomId: String) 
                 item {
                     Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Chip(stringResource(R.string.sh_hours), selected = false) { sheet = ShiftSheet.Hours }
+                        Chip(stringResource(R.string.sh_export), selected = false) { sheet = ShiftSheet.Export }
+                        if (canEdit) Chip(stringResource(R.string.sh_import), selected = false) { sheet = ShiftSheet.Import(plan) }
                         if (canEdit) Chip(stringResource(R.string.sh_settings), selected = false) { sheet = ShiftSheet.Create }
                     }
                 }
@@ -185,7 +190,9 @@ internal fun ShiftsPane(model: ChatModel, actions: ChatActions, roomId: String) 
     }
     when (val s = sheet) {
         null -> Unit
-        ShiftSheet.Create -> CreateSheet(model, actions, roomId, plan, avail) { sheet = null }
+        ShiftSheet.Create -> CreateSheet(model, actions, roomId, plan, avail, onImport = { sheet = ShiftSheet.Import(it) }) { sheet = null }
+        is ShiftSheet.Import -> ImportSheet(model, actions, roomId, s.base) { sheet = null }
+        ShiftSheet.Export -> if (plan != null && eff != null) ExportSheet(model, actions, roomId, plan, eff) { sheet = null }
         ShiftSheet.Avail -> if (plan != null) AvailSheet(model, actions, roomId, plan, avail[me]) { sheet = null }
         ShiftSheet.Hours -> if (plan != null && eff != null) HoursSheet(model, actions, roomId, plan, eff, boss) { sheet = null }
         is ShiftSheet.Cell -> if (plan != null && eff != null) {
@@ -306,15 +313,15 @@ private fun RequestCard(
         }, fontSize = 14.sp, lineHeight = 20.sp)
         if (c.by == me) {
             Pill(stringResource(R.string.sh_cancel_request), EuriseIcons.undo(2.2f), Modifier, strong = false) {
-                model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false, undo = true), String.format(undoFmt, model.nameOf(me)))) { actions.toast(failed) }
+                model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false, undo = true), String.format(undoFmt, model.shiftName(me)))) { actions.toast(failed) }
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Pill(stringResource(if (c.to == null) R.string.sh_take else R.string.sh_accept), EuriseIcons.check(2.2f), Modifier, strong = problems.isEmpty()) {
-                    model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, true), String.format(yesFmt, model.nameOf(me)))) { actions.toast(failed) }
+                    model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, true), String.format(yesFmt, model.shiftName(me)))) { actions.toast(failed) }
                 }
                 if (c.to != null) Pill(stringResource(R.string.sh_refuse), EuriseIcons.close(2.2f), Modifier, strong = false) {
-                    model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false), String.format(noFmt, model.nameOf(me)))) { actions.toast(failed) }
+                    model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false), String.format(noFmt, model.shiftName(me)))) { actions.toast(failed) }
                 }
             }
             Text(if (problems.isEmpty()) stringResource(R.string.sh_checked_ok) else stringResource(R.string.sh_checked_bad, problemText(problems)),
@@ -397,7 +404,7 @@ private fun CellSheet(
                             if (i > 0) Divider()
                             Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(role = Role.Button) {
                                 val c = Shifts.Change(UUID.randomUUID().toString(), Shifts.Kind.Swap, me, e.date, e.type, to = p, withDate = o.date, withType = o.type)
-                                model.sendShift(roomId, Shifts.content(c, String.format(swapFmt, model.nameOf(me), model.nameOf(p),
+                                model.sendShift(roomId, Shifts.content(c, String.format(swapFmt, model.shiftName(me), model.shiftName(p),
                                     "${e.date.format(DAY)} ${e.type}", "${o.date.format(DAY)} ${o.type}"))) { actions.toast(failed) }
                                 actions.toast(sent); onClose()
                             }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -406,7 +413,7 @@ private fun CellSheet(
                                 }
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text("${o.date.format(DAY).replaceFirstChar { it.uppercase() }} · ${model.nameOf(p)}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text("${o.date.format(DAY).replaceFirstChar { it.uppercase() }} · ${model.shiftName(p)}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                     Text(if (probs.isEmpty()) stringResource(R.string.sh_checked_ok) else stringResource(R.string.sh_checked_bad, problemText(probs)),
                                         fontSize = 11.5.sp, lineHeight = 15.sp, color = if (probs.isEmpty()) OK else WARN, maxLines = 2)
                                 }
@@ -419,7 +426,7 @@ private fun CellSheet(
                     val label = "${e.date.format(DAY)} ${e.type}"
                     Pill(stringResource(R.string.sh_anyone), EuriseIcons.send(2.2f), Modifier.fillMaxWidth(), strong = true) {
                         val c = Shifts.Change(UUID.randomUUID().toString(), Shifts.Kind.Give, me, e.date, e.type)
-                        model.sendShift(roomId, Shifts.content(c, String.format(giveAnyFmt, model.nameOf(me), label))) { actions.toast(failed) }
+                        model.sendShift(roomId, Shifts.content(c, String.format(giveAnyFmt, model.shiftName(me), label))) { actions.toast(failed) }
                         actions.toast(sent); onClose()
                     }
                     Card {
@@ -429,12 +436,12 @@ private fun CellSheet(
                             val probs = Shifts.check(plan, eff.entries, avail[p], p, e, me)
                             Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(role = Role.Button) {
                                 val c = Shifts.Change(UUID.randomUUID().toString(), Shifts.Kind.Give, me, e.date, e.type, to = p)
-                                model.sendShift(roomId, Shifts.content(c, String.format(giveFmt, model.nameOf(me), model.nameOf(p), label))) { actions.toast(failed) }
+                                model.sendShift(roomId, Shifts.content(c, String.format(giveFmt, model.shiftName(me), model.shiftName(p), label))) { actions.toast(failed) }
                                 actions.toast(sent); onClose()
                             }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     val role = plan.person(p)?.role
-                                    Text(model.nameOf(p) + if (role == Shifts.Role.External) " · " + stringResource(R.string.sh_role_ext) else "", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(model.shiftName(p) + if (role == Shifts.Role.External) " · " + stringResource(R.string.sh_role_ext) else "", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                     Text(if (probs.isEmpty()) stringResource(R.string.sh_checked_ok) else stringResource(R.string.sh_checked_bad, problemText(probs)),
                                         fontSize = 11.5.sp, lineHeight = 15.sp, color = if (probs.isEmpty()) OK else WARN, maxLines = 2)
                                 }
@@ -458,7 +465,7 @@ private fun CellSheet(
                     }
                     Pill(stringResource(R.string.sh_extra_save), EuriseIcons.check(2.2f), Modifier.fillMaxWidth(), strong = true) {
                         val c = Shifts.Change(UUID.randomUUID().toString(), Shifts.Kind.Extra, me, e.date, e.type, minutes = minutes, reason = reason)
-                        model.sendShift(roomId, Shifts.content(c, String.format(extraFmt, model.nameOf(me), Shifts.duration(minutes.toLong()), e.date.format(DAY), reason))) { actions.toast(failed) }
+                        model.sendShift(roomId, Shifts.content(c, String.format(extraFmt, model.shiftName(me), Shifts.duration(minutes.toLong()), e.date.format(DAY), reason))) { actions.toast(failed) }
                         onClose()
                     }
                 }
@@ -482,7 +489,7 @@ private fun EditEntry(model: ChatModel, actions: ChatActions, roomId: String, pl
     Text(stringResource(R.string.sh_cell_people), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         (plan.people.map { it.id } + model.members[roomId].orEmpty()).distinct().forEach { p ->
-            Chip(model.nameOf(p), selected = p in people) {
+            Chip(model.shiftName(p), selected = p in people) {
                 if (p in people) people.remove(p) else if (people.size < 3) people.add(p)
                 if (phone !in people) phone = people.firstOrNull()
             }
@@ -491,7 +498,7 @@ private fun EditEntry(model: ChatModel, actions: ChatActions, roomId: String, pl
     if (people.size > 1) {
         Text(stringResource(R.string.sh_who_phone), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            people.forEach { p -> Chip(model.nameOf(p), selected = phone == p) { phone = p } }
+            people.forEach { p -> Chip(model.shiftName(p), selected = phone == p) { phone = p } }
         }
         if (t != null) {
             Text(stringResource(R.string.sh_split), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
@@ -509,7 +516,7 @@ private fun EditEntry(model: ChatModel, actions: ChatActions, roomId: String, pl
     }
     fun save(entries: List<Shifts.Entry>) {
         val p = plan.copy(entries = entries)
-        model.sendShift(roomId, Shifts.content(p, String.format(bodyFmt, model.nameOf(model.session?.userId.orEmpty()), entries.size))) { actions.toast(failed) }
+        model.sendShift(roomId, Shifts.content(p, String.format(bodyFmt, model.shiftName(model.session?.userId.orEmpty()), entries.size))) { actions.toast(failed) }
         onClose()
     }
     Pill(stringResource(R.string.sh_save), EuriseIcons.check(2.2f), Modifier.fillMaxWidth(), strong = people.isNotEmpty()) {
@@ -536,7 +543,7 @@ private fun AddSheet(model: ChatModel, actions: ChatActions, roomId: String, pla
                 val old = plan.entries.firstOrNull { it.date == date && it.type == t.code }
                 val n = (old ?: Shifts.Entry(date, t.code, emptyList())).let { it.copy(people = (it.people + person).distinct().take(3), locked = true) }
                 val entries = plan.entries.filter { it.key != n.key } + n
-                model.sendShift(roomId, Shifts.content(plan.copy(entries = entries), String.format(bodyFmt, model.nameOf(model.session?.userId.orEmpty()), entries.size))) { actions.toast(failed) }
+                model.sendShift(roomId, Shifts.content(plan.copy(entries = entries), String.format(bodyFmt, model.shiftName(model.session?.userId.orEmpty()), entries.size))) { actions.toast(failed) }
                 onClose()
             }
         }
@@ -603,7 +610,7 @@ private fun AvailSheet(model: ChatModel, actions: ChatActions, roomId: String, p
                 }
                 val kept = current?.off.orEmpty().filter { it.types.isNotEmpty() || it.to.isBefore(start) || it.from.isAfter(days.last()) }
                 val a = Shifts.Avail(me, kept + ranges, prefer.toSet(), avoid.toSet(), avoidDays.toSet())
-                model.sendShift(roomId, Shifts.content(a, String.format(bodyFmt, model.nameOf(me)))) { actions.toast(failed) }
+                model.sendShift(roomId, Shifts.content(a, String.format(bodyFmt, model.shiftName(me)))) { actions.toast(failed) }
                 onClose()
             }
         }
@@ -612,7 +619,7 @@ private fun AvailSheet(model: ChatModel, actions: ChatActions, roomId: String, p
 
 // --- Fai i turni (tavola ChatTurniCrea): chi, che turni, come girano ---
 
-private enum class How { Generate, Repeat, Manual }
+private enum class How { Generate, Repeat, File, Manual }
 
 private class TypeDraft(code: String, name: String, start: String, end: String, people: Int, days: Set<Int>) {
     var code by mutableStateOf(code); var name by mutableStateOf(name)
@@ -658,7 +665,10 @@ private fun parseDay(s: String): LocalDate? {
 }
 
 @Composable
-private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, plan: Shifts.Plan?, avail: Map<String, Shifts.Avail>, onClose: () -> Unit) {
+private fun CreateSheet(
+    model: ChatModel, actions: ChatActions, roomId: String, plan: Shifts.Plan?, avail: Map<String, Shifts.Avail>,
+    onImport: (Shifts.Plan) -> Unit, onClose: () -> Unit,
+) {
     val scheme = MaterialTheme.colorScheme
     val me = model.session?.userId.orEmpty()
     val scope = rememberCoroutineScope()
@@ -683,6 +693,10 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
     var start by remember { mutableStateOf(if (plan == null) thisWeek else thisWeek.plusDays(7)) }
     var reminder by remember { mutableStateOf(plan?.reminder ?: true) }
     var working by remember { mutableStateOf(false) }
+    var title by remember { mutableStateOf(plan?.title ?: model.room(roomId)?.name.orEmpty()) }
+    var rest by remember { mutableStateOf(plan?.rest ?: Shifts.REST_MINUTES) }
+    var inARow by remember { mutableStateOf(plan?.maxInARow ?: Shifts.MAX_IN_A_ROW) }
+    var newPerson by remember { mutableStateOf("") }
     val failed = stringResource(R.string.ch_send_failed)
     val bodyFmt = stringResource(R.string.sh_plan_body)
     val uncoveredFmt = stringResource(R.string.sh_uncovered)
@@ -692,12 +706,13 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
         if (ts.isEmpty()) return null
         val ps = people.filter { it.id in included }.map { it.build() }
         return Shifts.Plan(plan?.id ?: UUID.randomUUID().toString(), ts, ps,
-            plan?.entries.orEmpty().filter { e -> ts.any { it.code == e.type } }, holidays = holidays, reminder = reminder)
+            plan?.entries.orEmpty().filter { e -> ts.any { it.code == e.type } }, rest = rest, holidays = holidays, reminder = reminder,
+            maxInARow = inARow, title = title.trim())
     }
     fun publish(p: Shifts.Plan) {
         // Il piano resta piccolo: le caselle più vecchie di quattro mesi escono (restano nei messaggi già mandati).
         val trimmed = p.copy(entries = p.entries.filter { !it.date.isBefore(LocalDate.now().minusDays(120)) })
-        model.sendShift(roomId, Shifts.content(trimmed, String.format(bodyFmt, model.nameOf(me), trimmed.entries.size))) { actions.toast(failed) }
+        model.sendShift(roomId, Shifts.content(trimmed, String.format(bodyFmt, model.shiftName(me), trimmed.entries.size))) { actions.toast(failed) }
     }
     Sheet(onClose) {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -731,7 +746,7 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
                             Text(stringResource(R.string.sh_replaces), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
                             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 people.filter { it.id != p.id && it.role == Shifts.Role.Holder && it.id in included }.forEach { h ->
-                                    Chip(model.nameOf(h.id), selected = p.replaces == h.id) { p.replaces = if (p.replaces == h.id) null else h.id }
+                                    Chip(model.shiftName(h.id), selected = p.replaces == h.id) { p.replaces = if (p.replaces == h.id) null else h.id }
                                 }
                             }
                             if (p.replaces != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -742,11 +757,31 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
                     }
                 }
             }
-            // 2 · Che turni: due modelli pronti, poi sigla, nome, orari, quante persone e in che giorni.
+            // Chi fa i turni ma non usa la Chat (volontari, colleghi di un altro servizio): basta il nome.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f)) { Field(stringResource(R.string.sh_add_person), newPerson, KeyboardType.Text) { newPerson = it } }
+                RoundIcon(EuriseIcons.plus(2.4f), stringResource(R.string.sh_add_person)) {
+                    val n = newPerson.trim()
+                    if (n.isNotEmpty()) {
+                        val id = ShiftsIO.EXTERNAL + n
+                        if (people.none { it.id == id }) people.add(PersonDraft(id, Shifts.Role.Holder, "", null, "", ""))
+                        if (id !in included) included.add(id)
+                        newPerson = ""
+                    }
+                }
+            }
+            // 2 · Che turni: modelli pronti per contesti diversi, poi sigla, nome, orari, quante persone e in che giorni.
             Text(stringResource(R.string.sh_step_types), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Chip(stringResource(R.string.sh_preset_ward), selected = false) { types.clear(); types.addAll(Shifts.ward().map(TypeDraft::of)); holidays = false }
-                Chip(stringResource(R.string.sh_preset_ca), selected = false) { types.clear(); types.addAll(Shifts.continuity().map(TypeDraft::of)); holidays = true }
+                listOf(
+                    Shifts.Preset.Ward to R.string.sh_preset_ward, Shifts.Preset.TwelveHours to R.string.sh_preset_12,
+                    Shifts.Preset.Shop to R.string.sh_preset_shop, Shifts.Preset.Continuity to R.string.sh_preset_ca,
+                    Shifts.Preset.Blank to R.string.sh_preset_blank,
+                ).forEach { (p, label) ->
+                    Chip(stringResource(label), selected = false) {
+                        types.clear(); types.addAll(Shifts.preset(p).map(TypeDraft::of)); holidays = p == Shifts.Preset.Continuity
+                    }
+                }
             }
             types.forEachIndexed { i, t ->
                 val (bg, fg) = TYPE_COLORS[i % TYPE_COLORS.size]
@@ -781,11 +816,21 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
                 Text(stringResource(R.string.sh_holidays), fontSize = 13.5.sp, modifier = Modifier.weight(1f))
                 Switch(checked = holidays, onCheckedChange = { holidays = it })
             }
+            // Regole: riposo minimo tra due turni e giorni di fila al massimo (cambiano da un contesto all'altro).
+            Text(stringResource(R.string.sh_rules), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(0, 8, 11, 12).forEach { h -> Chip(if (h == 0) stringResource(R.string.sh_rest_none) else stringResource(R.string.sh_rest_h, h), selected = rest == h * 60) { rest = h * 60 } }
+            }
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(5, 6, 7, 14).forEach { n -> Chip(stringResource(R.string.sh_in_a_row, n), selected = inARow == n) { inARow = n } }
+            }
+            Field(stringResource(R.string.sh_doc_title), title, KeyboardType.Text) { title = it }
             // 3 · Come girano.
             Text(stringResource(R.string.sh_step_how), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Chip(stringResource(R.string.sh_how_generate), selected = how == How.Generate) { how = How.Generate }
                 if (plan?.entries?.isNotEmpty() == true) Chip(stringResource(R.string.sh_how_repeat), selected = how == How.Repeat) { how = How.Repeat }
+                Chip(stringResource(R.string.sh_how_file), selected = how == How.File) { how = How.File }
                 Chip(stringResource(R.string.sh_how_manual), selected = how == How.Manual) { how = How.Manual }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -799,9 +844,12 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
                 Switch(checked = reminder, onCheckedChange = { reminder = it })
             }
             if (working) LinearProgressIndicator(Modifier.fillMaxWidth())
-            Pill(stringResource(R.string.sh_create_go, weeks), EuriseIcons.calendar(2.2f), Modifier.fillMaxWidth(), strong = !working) {
+            Pill(if (how == How.File) stringResource(R.string.sh_import_go_file) else stringResource(R.string.sh_create_go, weeks),
+                EuriseIcons.calendar(2.2f), Modifier.fillMaxWidth(), strong = !working) {
                 if (working) return@Pill
                 val base = build() ?: run { actions.toast(badTypes); return@Pill }
+                // Da un file: le impostazioni vanno con l'importazione, nello stesso messaggio.
+                if (how == How.File) { onImport(base); return@Pill }
                 working = true
                 scope.launch {
                     // «Genera» può richiedere qualche istante con molte persone: fuori dal thread principale.
@@ -809,7 +857,7 @@ private fun CreateSheet(model: ChatModel, actions: ChatActions, roomId: String, 
                         when (how) {
                             How.Generate -> Shifts.generate(base, avail, start, weeks * 7).let { it.entries to it.uncovered.size }
                             How.Repeat -> Shifts.repeatLastWeek(base, start, weeks) to 0
-                            How.Manual -> base.entries to 0
+                            How.Manual, How.File -> base.entries to 0
                         }
                     }
                     publish(base.copy(entries = entries))
@@ -886,7 +934,7 @@ private fun HoursSheet(model: ChatModel, actions: ChatActions, roomId: String, p
                     // Un cambio si annulla con un tocco: chi l'ha chiesto, chi l'ha preso o chi coordina.
                     if (a.state == Shifts.State.Accepted && (c.by == me || a.taker == me || boss == me)) {
                         Chip(stringResource(R.string.sh_undo), selected = false) {
-                            model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false, undo = true), String.format(undoFmt, model.nameOf(me)))) { actions.toast(failed) }
+                            model.sendShift(roomId, Shifts.content(Shifts.Reply(c.id, me, false, undo = true), String.format(undoFmt, model.shiftName(me)))) { actions.toast(failed) }
                         }
                     }
                 }
@@ -898,12 +946,12 @@ private fun HoursSheet(model: ChatModel, actions: ChatActions, roomId: String, p
                     .map { e ->
                         val t = plan.type(e.type)
                         val who = Shifts.slots(plan, e).joinToString(", ") { s ->
-                            model.nameOf(s.person) + (if (e.split != null) " ${s.start.format(HM)}–${s.end.format(HM)}" else "") +
+                            model.shiftName(s.person) + (if (e.split != null) " ${s.start.format(HM)}–${s.end.format(HM)}" else "") +
                                 eff.extras.filter { it.date == e.date && it.type == e.type && it.by == s.person }.joinToString("") { " +" + Shifts.duration(it.minutes.toLong()) }
                         }
                         "${e.date.format(DAY)} · ${e.type}${t?.let { " ${it.start.format(HM)}–${it.end.format(HM)}" } ?: ""} · $who"
                     }
-                val totals = hours.joinToString("\n") { h -> "${model.nameOf(h.person)}: ${Shifts.duration(h.worked)}" + if (h.extra > 0) " + ${Shifts.duration(h.extra)}" else "" }
+                val totals = hours.joinToString("\n") { h -> "${model.shiftName(h.person)}: ${Shifts.duration(h.worked)}" + if (h.extra > 0) " + ${Shifts.duration(h.extra)}" else "" }
                 actions.shareText(String.format(headFmt, group, month.format(MONTH)) + "\n\n" + lines.joinToString("\n") + "\n\n" + totals)
             }
         }
@@ -928,10 +976,206 @@ internal fun ShiftBubble(model: ChatModel, actions: ChatActions, roomId: String,
         }
     }
     // Il resto (piano aggiornato, disponibilità, risposte, cambi chiusi): una riga al centro.
-    val text = if (json?.optString("msgtype") == Shifts.PLAN) stringResource(R.string.sh_line_plan, model.nameOf(e.sender)) else e.text
+    val text = if (json?.optString("msgtype") == Shifts.PLAN) stringResource(R.string.sh_line_plan, model.shiftName(e.sender)) else e.text
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Icon(EuriseIcons.calendar(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(6.dp))
         Text(text, fontSize = 12.sp, color = scheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+    }
+}
+
+// --- Importa: PDF, foglio di calcolo o testo incollato, con anteprima e abbinamento dei nomi ---
+
+@Composable
+private fun ImportSheet(model: ChatModel, actions: ChatActions, roomId: String, base: Shifts.Plan, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val me = model.session?.userId.orEmpty()
+    var month by remember { mutableStateOf(YearMonth.now()) }
+    var table by remember { mutableStateOf<ShiftsIO.Table?>(null) }
+    var pasted by remember { mutableStateOf("") }
+    var reading by remember { mutableStateOf(false) }
+    var replace by remember { mutableStateOf(true) }
+    val aliases = remember { androidx.compose.runtime.mutableStateMapOf<String, String>().apply { putAll(model.shiftAliases(roomId, codes = false)) } }
+    val codeAliases = remember { androidx.compose.runtime.mutableStateMapOf<String, String>().apply { putAll(model.shiftAliases(roomId, codes = true)) } }
+    val unreadable = stringResource(R.string.sh_import_unreadable)
+    val failed = stringResource(R.string.ch_send_failed)
+    val bodyFmt = stringResource(R.string.sh_plan_body)
+    val names = model.shiftNames(roomId, base)
+    val result = table?.let { ShiftsIO.read(it, ShiftsIO.Matcher(base, names, aliases.toMap(), codeAliases.toMap()), month) }
+    Sheet(onClose) {
+        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.sh_import_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(R.string.sh_import_hint), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.sh_import_month, month.format(MONTH)), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                RoundIcon(EuriseIcons.chevronLeft(2.2f), "−", flat = true) { month = month.minusMonths(1) }
+                RoundIcon(EuriseIcons.chevronRight(2.2f), "+", flat = true) { month = month.plusMonths(1) }
+            }
+            Pill(stringResource(R.string.sh_import_file), EuriseIcons.attach(2.2f), Modifier.fillMaxWidth(), strong = table == null) {
+                actions.pickFile(arrayOf("application/pdf", "text/*", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.oasis.opendocument.spreadsheet", "application/octet-stream", "*/*")) { uri ->
+                    if (uri != null) {
+                        reading = true
+                        model.readShiftFile(uri) { t -> reading = false; if (t == null || t.rows.isEmpty()) actions.toast(unreadable) else table = t }
+                    }
+                }
+            }
+            // Il testo incollato (da un'email, da WhatsApp, da una pagina) va su più righe: ogni riga conta.
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.background).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                Text(stringResource(R.string.sh_import_paste), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+                androidx.compose.foundation.text.BasicTextField(
+                    value = pasted, onValueChange = { pasted = it; if (it.isNotBlank()) table = ShiftsIO.text(it) },
+                    minLines = 3, maxLines = 8,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = scheme.onSurface),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(scheme.primary), modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (reading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (result != null) {
+                Card {
+                    Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (result.entries.isEmpty()) Text(stringResource(R.string.sh_import_none), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = WARN)
+                        else Text(stringResource(R.string.sh_import_found, result.entries.sumOf { it.people.size },
+                            result.from!!.format(DAY), result.to!!.format(DAY)), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(when (result.layout) {
+                            ShiftsIO.Layout.PersonRows -> R.string.sh_layout_person
+                            ShiftsIO.Layout.TypeColumns -> R.string.sh_layout_types
+                            ShiftsIO.Layout.DayRows -> R.string.sh_layout_days
+                            ShiftsIO.Layout.Nothing -> R.string.sh_layout_none
+                        }) + if (result.rowsSkipped > 0) " · " + stringResource(R.string.sh_import_skipped, result.rowsSkipped) else "",
+                            fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                        // Anteprima: quanti turni a testa e di che tipo.
+                        result.entries.flatMap { e -> e.people.map { it to e.type } }.groupBy({ it.first }, { it.second }).forEach { (p, codes) ->
+                            Text("${name(model, p)} · " + codes.groupingBy { it }.eachCount().entries.joinToString(" ") { "${it.key} ${it.value}" },
+                                fontSize = 13.sp)
+                        }
+                    }
+                }
+                // Nomi che non si riconoscono: a chi corrispondono? Una volta sola: l'abbinamento resta per il gruppo.
+                if (result.unknownNames.isNotEmpty()) {
+                    SectionTitle(stringResource(R.string.sh_import_who))
+                    val choices = (base.people.map { it.id } + model.members[roomId].orEmpty()).distinct()
+                    result.unknownNames.take(20).forEach { n ->
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surface).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("«$n»", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                choices.forEach { id -> Chip(name(model, id), selected = false) { aliases[ShiftsIO.norm(n)] = id } }
+                                Chip(stringResource(R.string.sh_import_new_person), selected = false) { aliases[ShiftsIO.norm(n)] = ShiftsIO.EXTERNAL + n.trim() }
+                                Chip(stringResource(R.string.sh_import_ignore), selected = false) { aliases[ShiftsIO.norm(n)] = ShiftsIO.IGNORE }
+                            }
+                        }
+                    }
+                }
+                if (result.unknownCodes.isNotEmpty()) {
+                    SectionTitle(stringResource(R.string.sh_import_codes))
+                    result.unknownCodes.take(12).forEach { c ->
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surface).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("«$c»", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                base.types.forEach { t -> Chip("${t.code} · ${t.name}", selected = false) { codeAliases[ShiftsIO.norm(c)] = t.code } }
+                                Chip(stringResource(R.string.sh_import_rest), selected = false) { codeAliases[ShiftsIO.norm(c)] = ShiftsIO.IGNORE }
+                            }
+                        }
+                    }
+                }
+                if (result.entries.isNotEmpty()) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Chip(stringResource(R.string.sh_import_replace), selected = replace) { replace = true }
+                        Chip(stringResource(R.string.sh_import_add), selected = !replace) { replace = false }
+                    }
+                    Pill(stringResource(R.string.sh_import_go, result.entries.sumOf { it.people.size }), EuriseIcons.check(2.2f), Modifier.fillMaxWidth(), strong = true) {
+                        model.saveShiftAliases(roomId, codes = false, aliases.toMap())
+                        model.saveShiftAliases(roomId, codes = true, codeAliases.toMap())
+                        // Chi entra con l'importazione e non c'era (anche senza Chat) si aggiunge al piano come reperibile.
+                        val newcomers = result.entries.flatMap { it.people }.distinct().filter { id -> base.people.none { it.id == id } }
+                            .map { Shifts.Person(it, Shifts.Role.External) }
+                        val plan = base.copy(people = base.people + newcomers, entries = ShiftsIO.merge(base, result.entries, replace))
+                        model.sendShift(roomId, Shifts.content(plan, String.format(bodyFmt, model.shiftName(me), plan.entries.size))) { actions.toast(failed) }
+                        onClose()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// --- Esporta: prospetto e fogli presenze in PDF, foglio di calcolo, calendario, testo ---
+
+@Composable
+private fun ExportSheet(model: ChatModel, actions: ChatActions, roomId: String, plan: Shifts.Plan, eff: Shifts.Effective, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val me = model.session?.userId.orEmpty()
+    var month by remember { mutableStateOf(YearMonth.now()) }
+    var effective by remember { mutableStateOf(true) }
+    var onlyMine by remember { mutableStateOf(false) }
+    var working by remember { mutableStateOf(false) }
+    val group = model.room(roomId)?.name.orEmpty()
+    val title = plan.title.ifBlank { group }
+    val names = model.shiftNames(roomId, plan)
+    val nameOf = { id: String -> names[id] ?: ShiftsIO.display(id) }
+    val entries = if (effective) eff.entries else plan.entries
+    val extras = if (effective) eff.extras else emptyList()
+    val headFmt = stringResource(R.string.sh_share_head)
+    val failedFile = stringResource(R.string.sh_export_failed)
+    fun file(kind: String, ext: String) = java.io.File(java.io.File(context.cacheDir, "chat/turni").apply { mkdirs() },
+        ShiftsIO.norm("$kind $title ${month.format(MONTH)}").replace(' ', '-').take(70) + ".$ext")
+    fun export(kind: String, ext: String, mime: String, write: (java.io.File) -> Unit) {
+        if (working) return
+        working = true
+        scope.launch {
+            val f = withContext(Dispatchers.IO) { runCatching { file(kind, ext).also(write) }.getOrNull() }
+            working = false
+            if (f != null) actions.shareFile(f, mime) else actions.toast(failedFile)
+        }
+    }
+    Sheet(onClose) {
+        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.sh_export_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(month.format(MONTH).replaceFirstChar { it.uppercase() }, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                RoundIcon(EuriseIcons.chevronLeft(2.2f), "−", flat = true) { month = month.minusMonths(1) }
+                RoundIcon(EuriseIcons.chevronRight(2.2f), "+", flat = true) { month = month.plusMonths(1) }
+            }
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.sh_export_effective), selected = effective) { effective = true }
+                Chip(stringResource(R.string.sh_export_planned), selected = !effective) { effective = false }
+            }
+            Text(stringResource(R.string.sh_export_header, title), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+            if (working) LinearProgressIndicator(Modifier.fillMaxWidth())
+            val people = ShiftsIO.people(plan, entries, month)
+            Pill(stringResource(R.string.sh_export_grid_pdf), EuriseIcons.pdf(2.2f), Modifier.fillMaxWidth(), strong = true) {
+                export("turni", "pdf", "application/pdf") { ShiftPdf.grid(it, title, plan, entries.filter { e -> YearMonth.from(e.date) == month }, month, people, nameOf, effective) }
+            }
+            Pill(stringResource(R.string.sh_export_presence_pdf), EuriseIcons.document(2.2f), Modifier.fillMaxWidth(), strong = false) {
+                export("presenze", "pdf", "application/pdf") { f ->
+                    ShiftPdf.presence(f, title, plan, entries, extras, month, if (onlyMine) listOf(me) else people, nameOf)
+                }
+            }
+            Pill(stringResource(R.string.sh_export_grid_csv), EuriseIcons.table(2.2f), Modifier.fillMaxWidth(), strong = false) {
+                export("prospetto", "csv", "text/csv") { it.writeText(ShiftsIO.csvGrid(plan, entries, month, nameOf)) }
+            }
+            Pill(stringResource(R.string.sh_export_list_csv), EuriseIcons.table(2.2f), Modifier.fillMaxWidth(), strong = false) {
+                export("elenco", "csv", "text/csv") { it.writeText(ShiftsIO.csvList(plan, entries, extras, month, nameOf)) }
+            }
+            Pill(stringResource(R.string.sh_export_ics), EuriseIcons.calendar(2.2f), Modifier.fillMaxWidth(), strong = false) {
+                export("calendario", "ics", "text/calendar") {
+                    it.writeText(ShiftsIO.ics(plan, entries, month.atDay(1), group, nameOf, if (onlyMine) me else null,
+                        java.time.ZoneId.systemDefault(), java.time.Instant.now()))
+                }
+            }
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.sh_export_only_mine), fontSize = 13.5.sp, modifier = Modifier.weight(1f))
+                Switch(checked = onlyMine, onCheckedChange = { onlyMine = it })
+            }
+            Pill(stringResource(R.string.sh_export_text), EuriseIcons.share(2.2f), Modifier.fillMaxWidth(), strong = false) {
+                val lines = entries.filter { YearMonth.from(it.date) == month }.sortedWith(compareBy<Shifts.Entry> { it.date }.thenBy { plan.type(it.type)?.start })
+                    .filter { !onlyMine || me in it.people }
+                    .map { e -> "${e.date.format(DAY)} · ${e.type} · " + Shifts.slots(plan, e).joinToString(", ") { nameOf(it.person) } }
+                actions.shareText(String.format(headFmt, title, month.format(MONTH)) + "\n\n" + lines.joinToString("\n"))
+            }
+            Text(stringResource(R.string.sh_export_note), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        }
     }
 }

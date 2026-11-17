@@ -11,11 +11,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Turni nei gruppi della Chat (tavole ChatTurni e ChatTurniCrea, approvate il 17 novembre), con le funzioni di Bussola CA
- * chieste dal proprietario: titolari, sostituti con il loro periodo e reperibili esterni; preferenze, indisponibilità e
- * monte ore; «Genera» che rispetta riposi, preferenze e i turni fissati a mano; turni in doppia con chi tiene il
- * telefono; diurni divisi; straordinari a passi di 15 minuti con il motivo; cambi registrati che si annullano; turni
- * effettivi e riepilogo delle ore.
+ * Turni nei gruppi della Chat (tavole ChatTurni e ChatTurniCrea, approvate il 17 novembre), con le funzioni generali di
+ * Bussola CA per fare, importare ed esportare i turni, declinabili per ogni contesto (reparto, negozio, associazione,
+ * squadra, famiglia): titolari, sostituti con il loro periodo e reperibili esterni; preferenze, indisponibilità e monte
+ * ore; «Genera» che rispetta riposi, preferenze e i turni fissati a mano; turni in doppia con chi tiene il telefono;
+ * diurni divisi; straordinari a passi di 15 minuti con il motivo; cambi registrati che si annullano; turni effettivi e
+ * riepilogo delle ore. Importazione ed esportazione stanno in [ShiftsIO].
  *
  * Tutto vive nella stanza cifrata del gruppo come messaggi con un tipo (come le Spese):
  * - [PLAN]: il piano (turni, persone, caselle), scritto da chi coordina; vale l'ultima versione del primo autore;
@@ -101,6 +102,10 @@ object Shifts {
         val calendar: Boolean = true,
         val reminder: Boolean = true,
         val time: Long = 0L,
+        /** Giorni di lavoro di fila al massimo (un riposo ogni [maxInARow] + 1). */
+        val maxInARow: Int = MAX_IN_A_ROW,
+        /** Intestazione dei documenti esportati (ente, reparto, negozio…), scelta da chi coordina. */
+        val title: String = "",
     ) {
         fun type(code: String) = types.firstOrNull { it.code == code }
         fun person(id: String) = people.firstOrNull { it.id == id }
@@ -248,7 +253,7 @@ object Shifts {
         while (d in days) { run++; d = d.minusDays(1) }
         d = date.plusDays(1)
         while (d in days) { run++; d = d.plusDays(1) }
-        if (run > MAX_IN_A_ROW) out += Problem.InARow
+        if (run > plan.maxInARow) out += Problem.InARow
         return out
     }
 
@@ -270,8 +275,8 @@ object Shifts {
 
     /**
      * Crea i turni da [from] per [days] giorni. Restano come sono i turni fuori dal periodo e quelli fissati a mano.
-     * Per ogni casella sceglie, tra chi può (niente indisponibilità, sovrapposizioni, meno di 11 ore di riposo, più di sei
-     * giorni di fila), chi è più indietro rispetto al suo monte ore del mese, poi chi ha fatto meno turni di quel tipo;
+     * Per ogni casella sceglie, tra chi può (niente indisponibilità, sovrapposizioni, meno del riposo minimo, più giorni
+     * di fila del consentito), chi è più indietro rispetto al suo monte ore del mese, poi chi ha fatto meno turni di quel tipo;
      * le preferenze spostano la scelta, gli «evito» la sconsigliano. A parità decide l'ordine dei nomi, così ogni telefono
      * ottiene gli stessi turni. Le caselle senza nessuno possibile restano scoperte e vengono elencate.
      */
@@ -462,6 +467,7 @@ object Shifts {
 
     fun content(p: Plan, body: String): JSONObject = JSONObject().put("msgtype", PLAN).put("body", body).put(PLAN, JSONObject()
         .put("id", p.id).put("rest", p.rest).put("holidays", p.holidays).put("calendar", p.calendar).put("reminder", p.reminder)
+        .put("in_a_row", p.maxInARow).put("title", p.title)
         .put("local_holidays", JSONArray(p.localHolidays.map { "%02d-%02d".format(it.monthValue, it.dayOfMonth) }))
         .put("types", JSONArray(p.types.map { t ->
             JSONObject().put("code", t.code).put("name", t.name).put("start", t.start.toString()).put("end", t.end.toString())
@@ -496,7 +502,8 @@ object Shifts {
         }
         val local = o.optJSONArray("local_holidays")?.let { a -> (0 until a.length()).mapNotNull { runCatching { MonthDay.parse("--" + a.getString(it)) }.getOrNull() } }.orEmpty()
         Plan(o.getString("id"), types, people, entries, o.optInt("rest", REST_MINUTES), o.optBoolean("holidays"), local,
-            o.optBoolean("calendar", true), o.optBoolean("reminder", true), time)
+            o.optBoolean("calendar", true), o.optBoolean("reminder", true), time,
+            o.optInt("in_a_row", MAX_IN_A_ROW).coerceIn(1, 14), o.optString("title"))
     }.getOrNull()
 
     fun content(a: Avail, body: String): JSONObject = JSONObject().put("msgtype", AVAIL).put("body", body).put(AVAIL, JSONObject()
@@ -553,6 +560,26 @@ object Shifts {
     fun mondayOf(date: LocalDate): LocalDate = date.minusDays((date.dayOfWeek.value - DayOfWeek.MONDAY.value).toLong())
 
     // --- Modelli pronti ---
+
+    /**
+     * Modelli pronti, da cui si parte e che si cambiano a piacere: valgono per un reparto, un negozio, un'associazione,
+     * una squadra, la famiglia. «A mano» parte da un turno solo.
+     */
+    enum class Preset { Ward, TwelveHours, Shop, Continuity, Blank }
+
+    fun preset(p: Preset): List<Type> = when (p) {
+        Preset.Ward -> ward()
+        Preset.TwelveHours -> listOf(
+            Type("G", "Giorno", LocalTime.of(8, 0), LocalTime.of(20, 0)),
+            Type("N", "Notte", LocalTime.of(20, 0), LocalTime.of(8, 0)),
+        )
+        Preset.Shop -> listOf(
+            Type("A", "Apertura", LocalTime.of(9, 0), LocalTime.of(14, 0), days = (1..6).toSet()),
+            Type("C", "Chiusura", LocalTime.of(14, 0), LocalTime.of(20, 0), days = (1..6).toSet()),
+        )
+        Preset.Continuity -> continuity()
+        Preset.Blank -> listOf(Type("T", "Turno", LocalTime.of(9, 0), LocalTime.of(13, 0)))
+    }
 
     /** Reparto: mattina, pomeriggio, notte tutti i giorni. */
     fun ward(): List<Type> = listOf(

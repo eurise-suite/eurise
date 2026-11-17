@@ -586,15 +586,54 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     fun sendShift(roomId: String, content: JSONObject, failed: () -> Unit) = sendContent(roomId, content, Event.Kind.Shift, failed)
 
+    /** Il nome di chi fa i turni: dalla Chat, o quello scritto per chi la Chat non ce l'ha. */
+    fun shiftName(id: String): String = if (id.startsWith(ShiftsIO.EXTERNAL)) ShiftsIO.display(id) else nameOf(id)
+
+    /** I nomi del piano e del gruppo, per riconoscerli nei file importati. */
+    fun shiftNames(roomId: String, plan: Shifts.Plan): Map<String, String> =
+        (plan.people.map { it.id } + members[roomId].orEmpty()).distinct().associateWith { shiftName(it) }
+
+    /**
+     * Legge un file di turni (PDF con testo, CSV, XLSX, ODS, testo) fino a 20 MB, fuori dal thread principale; null se
+     * non si apre.
+     */
+    fun readShiftFile(uri: android.net.Uri, done: (ShiftsIO.Table?) -> Unit) {
+        scope.launch {
+            val t = withContext(Dispatchers.IO) {
+                runCatching {
+                    val name = describe(uri)?.name.orEmpty()
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                        val out = java.io.ByteArrayOutputStream(); val buf = ByteArray(64 * 1024); var n: Int; var total = 0
+                        while (input.read(buf).also { n = it } > 0) { total += n; if (total > 20 * 1024 * 1024) return@runCatching null; out.write(buf, 0, n) }
+                        out.toByteArray()
+                    } ?: return@runCatching null
+                    ShiftsIO.table(name, bytes) { eu.eurise.core.pdf.PdfText.extract(it, maxPages = 30) }
+                }.getOrNull()
+            }
+            done(t)
+        }
+    }
+
+    /** Abbinamenti di nomi e sigle scelti all'importazione, ricordati per gruppo (solo sul telefono). */
+    fun shiftAliases(roomId: String, codes: Boolean): Map<String, String> {
+        val raw = context.getSharedPreferences("shifts", android.content.Context.MODE_PRIVATE).getString((if (codes) "codes:" else "names:") + roomId, null) ?: return emptyMap()
+        return runCatching { JSONObject(raw).let { o -> o.keys().asSequence().associateWith { o.getString(it) } } }.getOrDefault(emptyMap())
+    }
+
+    fun saveShiftAliases(roomId: String, codes: Boolean, map: Map<String, String>) {
+        context.getSharedPreferences("shifts", android.content.Context.MODE_PRIVATE).edit()
+            .putString((if (codes) "codes:" else "names:") + roomId, JSONObject(map).toString()).apply()
+    }
+
     /** Riscrive i propri turni del gruppo nel calendario «Turni» del telefono, se acceso. */
     fun syncShiftCalendar(roomId: String) {
         val plan = shiftPlan(roomId) ?: return
         val eff = shiftEffective(roomId) ?: return
         val me = session?.userId ?: return
         val group = room(roomId)?.name.orEmpty()
-        val names = members[roomId].orEmpty().associateWith { nameOf(it) }
+        val names = shiftNames(roomId, plan)
         scope.launch(Dispatchers.IO) {
-            ShiftCalendar.sync(context, roomId, group, plan, eff.entries, me, { names[it] ?: nameOf(it) },
+            ShiftCalendar.sync(context, roomId, group, plan, eff.entries, me, { names[it] ?: ShiftsIO.display(it) },
                 context.getString(R.string.sh_calendar_name), plan.reminder)
         }
     }

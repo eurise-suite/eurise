@@ -14,7 +14,7 @@
     <string name="sh_now_none">Ora nessuno in turno</string>
     <string name="sh_then">poi %1$s</string>
     <string name="sh_empty_title">Ancora nessun turno</string>
-    <string name="sh_empty_text">Bastano tre scelte: chi, che turni, come girano. Poi si corregge a mano toccando le caselle. I turni vivono nella chat cifrata del gruppo: li vede solo chi c\'è.</string>
+    <string name="sh_empty_text">Bastano tre scelte: chi, che turni, come girano. Oppure si importano da un PDF o da un foglio di calcolo. Poi si corregge a mano toccando le caselle. I turni vivono nella chat cifrata del gruppo: li vede solo chi c\'è.</string>
     <string name="sh_make">Fai i turni</string>
     <string name="sh_availability">Disponibilità</string>
     <string name="sh_hours">Ore e cambi</string>
@@ -30,7 +30,7 @@
     <string name="sh_swap_text">Mi cedi %1$s? Ti do il mio %2$s.</string>
     <string name="sh_give_text">Mi copri %1$s?</string>
     <string name="sh_give_anyone">Mi copre qualcuno %1$s?</string>
-    <string name="sh_checked_ok">Controllato: rispetta le 11 ore di riposo. Se accetti, cambia nella tabella e nei calendari.</string>
+    <string name="sh_checked_ok">Controllato: rispetta riposi e disponibilità. Se accetti, cambia nella tabella e nei calendari.</string>
     <string name="sh_checked_bad">Attenzione: %1$s</string>
     <string name="sh_accept">Accetta</string>
     <string name="sh_take">Lo prendo io</string>
@@ -44,8 +44,8 @@
     <string name="sh_undo">Annulla il cambio</string>
     <string name="sh_p_unavailable">non disponibile</string>
     <string name="sh_p_overlap">si sovrappone a un altro turno</string>
-    <string name="sh_p_rest">meno di 11 ore di riposo</string>
-    <string name="sh_p_row">più di sei giorni di fila</string>
+    <string name="sh_p_rest">riposo troppo breve</string>
+    <string name="sh_p_row">troppi giorni di fila</string>
     <!-- Casella -->
     <string name="sh_cell_people">Chi c\'è</string>
     <string name="sh_phone_holder">tiene il telefono</string>
@@ -97,6 +97,17 @@
     <string name="sh_period_to">Al (gg/mm)</string>
     <string name="sh_preset_ward">Reparto · M P N</string>
     <string name="sh_preset_ca">Continuità assistenziale</string>
+    <string name="sh_preset_12">Giorno e notte · 12 h</string>
+    <string name="sh_preset_shop">Negozio · apertura e chiusura</string>
+    <string name="sh_preset_blank">Da zero</string>
+    <string name="sh_add_person">Persona senza Chat (nome)</string>
+    <string name="sh_rules">Regole</string>
+    <string name="sh_rest_none">Nessun riposo minimo</string>
+    <string name="sh_rest_h">Riposo minimo %1$d h</string>
+    <string name="sh_in_a_row">Al massimo %1$d giorni di fila</string>
+    <string name="sh_doc_title">Intestazione dei documenti (ente, reparto, negozio…)</string>
+    <string name="sh_how_file">Da un file</string>
+    <string name="sh_import_go_file">Continua: scegli il file</string>
     <string name="sh_type_code">Sigla</string>
     <string name="sh_type_name">Nome</string>
     <string name="sh_type_start">Inizio</string>
@@ -107,7 +118,7 @@
     <string name="sh_how_generate">Genera</string>
     <string name="sh_how_repeat">Come la settimana scorsa</string>
     <string name="sh_how_manual">A mano</string>
-    <string name="sh_how_note">Regole rispettate da sole: 11 ore tra un turno e l\'altro, un riposo ogni sette giorni, notti e telefono divisi in modo giusto, indisponibilità e preferenze di ognuno, monte ore. I turni fissati a mano restano.</string>
+    <string name="sh_how_note">Regole rispettate da sole: il riposo minimo tra un turno e l\'altro, i giorni di fila, notti e telefono divisi in modo giusto, indisponibilità e preferenze di ognuno, monte ore. I turni fissati a mano restano.</string>
     <string name="sh_from_this">Da questa settimana</string>
     <string name="sh_from_next">Dalla prossima</string>
     <string name="sh_weeks">%1$d sett.</string>
@@ -137,4 +148,42 @@
     <string name="sh_no_body">%1$s non può fare il cambio</string>
     <string name="sh_undo_body">%1$s ha annullato il cambio</string>
     <string name="sh_line_plan">Turni aggiornati da %1$s</string>
+    <!-- Importa -->
+    <string name="sh_import">Importa</string>
+    <string name="sh_import_title">Importa i turni</string>
+    <string name="sh_import_hint">Da un PDF con il testo (non le scansioni), da un foglio di Excel, LibreOffice o CSV, o incollando il testo. Va bene un prospetto con una riga per persona e una colonna per giorno, una colonna per turno con i nomi, o una riga per giorno («17/11 M Rossi N Bianchi»).</string>
+    <string name="sh_import_month">Mese: %1$s</string>
+    <string name="sh_import_file">Scegli un file</string>
+    <string name="sh_import_paste">Oppure incolla qui il testo</string>
+    <string name="sh_import_unreadable">Il file non si legge: prova a salvarlo come PDF con il testo, CSV o XLSX</string>
+    <string name="sh_import_none">Nessun turno riconosciuto: abbina i nomi qui sotto o controlla il mese</string>
+    <string name="sh_import_found">%1$d turni dal %2$s al %3$s</string>
+    <string name="sh_import_skipped">%1$d righe saltate</string>
+    <string name="sh_layout_person">Una riga per persona</string>
+    <string name="sh_layout_types">Una colonna per turno</string>
+    <string name="sh_layout_days">Una riga per giorno</string>
+    <string name="sh_layout_none">Forma non riconosciuta</string>
+    <string name="sh_import_who">Chi è?</string>
+    <string name="sh_import_new_person">Persona senza Chat</string>
+    <string name="sh_import_ignore">Ignora</string>
+    <string name="sh_import_codes">Che turno è?</string>
+    <string name="sh_import_rest">Riposo o assenza</string>
+    <string name="sh_import_replace">Sostituisci i turni del periodo</string>
+    <string name="sh_import_add">Aggiungi ai turni che ci sono</string>
+    <string name="sh_import_go">Importa %1$d turni</string>
+    <!-- Esporta -->
+    <string name="sh_export">Esporta</string>
+    <string name="sh_export_title">Esporta i turni</string>
+    <string name="sh_export_effective">Turni effettivi</string>
+    <string name="sh_export_planned">Turni programmati</string>
+    <string name="sh_export_header">Intestazione: %1$s (si cambia in Impostazioni)</string>
+    <string name="sh_export_grid_pdf">Prospetto del mese · PDF</string>
+    <string name="sh_export_presence_pdf">Fogli presenze · PDF</string>
+    <string name="sh_export_grid_csv">Prospetto per Excel e LibreOffice · CSV</string>
+    <string name="sh_export_list_csv">Elenco con ore e straordinari · CSV</string>
+    <string name="sh_export_ics">Calendario · .ics</string>
+    <string name="sh_export_only_mine">Solo i miei turni</string>
+    <string name="sh_export_text">Testo da mandare</string>
+    <string name="sh_export_note">I file si preparano sul telefono e vanno solo dove li mandi tu (email, stampa, cartella, ufficio del personale). Il calendario .ics si apre in qualunque calendario.</string>
+    <string name="sh_export_failed">Non sono riuscito a preparare il file</string>
 </resources>

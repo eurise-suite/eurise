@@ -33,6 +33,13 @@ class ChatActivity : ComponentActivity(), ChatActions {
         calendar.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
     }
 
+    override fun shareFile(file: File, mime: String) {
+        val uri = FileProvider.getUriForFile(this, "$packageName.file", file)
+        val send = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).also { it.clipData = ClipData.newRawUri(file.name, uri) }
+        runCatching { startActivity(Intent.createChooser(send, file.name)) }.onFailure { toast(getString(R.string.st_no_app)) }
+    }
+
     override fun shareText(text: String) {
         runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)) }
             .onFailure { toast(getString(R.string.st_no_app)) }
