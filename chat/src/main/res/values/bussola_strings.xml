@@ -91,7 +91,7 @@
     <string name="bu_rep_consent">Il paziente non ha dato il consenso ai referti online: si attiva nella sua scheda dello Studio.</string>
     <string name="bu_rep_pick">Scegli il file</string>
     <string name="bu_rep_note">Due righe per il medico (facoltative)</string>
-    <string name="bu_rep_type">Va bene solo un PDF, una foto JPG o un'immagine PNG.</string>
+    <string name="bu_rep_type">Va bene solo un PDF, una foto JPG o un\'immagine PNG.</string>
     <string name="bu_rep_too_big">Il file è più grande di 10 MB.</string>
     <string name="bu_rep_plain">Questa chat non è cifrata: il referto non parte.</string>
     <string name="bu_rep_open">Apri</string>
