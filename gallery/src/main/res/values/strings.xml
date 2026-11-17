@@ -303,7 +303,7 @@
     <string name="editor_expand_black">Nero</string>
     <string name="editor_expand_tip">Allarga la foto oltre i bordi, per esempio per farla stare in un formato quadrato. «Continua la foto» riprende i colori dei bordi e li sfuma.</string>
     <!-- Editor completo, terzo giro (tavole GalModifiche e GalEsporta, 17 novembre) -->
-    <string name="editor_replaced">Foto sostituita: l'originale resta per 30 giorni (Torna all'originale)</string>
+    <string name="editor_replaced">Foto sostituita: l\'originale resta per 30 giorni (Torna all\'originale)</string>
     <string name="editor_step_crop">Ritaglia</string>
     <string name="editor_step_adjust">Regola</string>
     <string name="editor_step_filter">Filtro</string>
@@ -317,18 +317,18 @@
     <string name="editor_save_title">Salva</string>
     <string name="editor_save_copy">Copia nuova</string>
     <string name="editor_save_replace">Sostituisci</string>
-    <string name="editor_save_copy_tip">La foto modificata va in Immagini › Eurise; l'originale resta com'è.</string>
-    <string name="editor_save_replace_tip">La foto modificata prende il posto dell'originale, che resta conservato per 30 giorni: dalla foto, «Torna all'originale». Android chiederà il permesso.</string>
+    <string name="editor_save_copy_tip">La foto modificata va in Immagini › Eurise; l\'originale resta com\'è.</string>
+    <string name="editor_save_replace_tip">La foto modificata prende il posto dell\'originale, che resta conservato per 30 giorni: dalla foto, «Torna all\'originale». Android chiederà il permesso.</string>
     <string name="editor_save_format">Formato</string>
     <string name="editor_save_quality">Qualità: %1$d %%</string>
     <string name="editor_save_size">Grandezza</string>
     <string name="editor_save_strip_location">Togli la posizione</string>
-    <string name="editor_save_strip_location_tip">Chi riceve la foto non vede dove l'hai scattata</string>
+    <string name="editor_save_strip_location_tip">Chi riceve la foto non vede dove l\'hai scattata</string>
     <string name="editor_save_strip_camera">Togli i dati della fotocamera</string>
-    <string name="editor_save_strip_camera_tip">Modello, obiettivo ed esposizione restano solo nell'originale</string>
+    <string name="editor_save_strip_camera_tip">Modello, obiettivo ed esposizione restano solo nell\'originale</string>
     <string name="editor_save_go">Salva</string>
     <string name="editor_save_replace_go">Sostituisci</string>
-    <string name="restore_original">Torna all'originale</string>
-    <string name="restore_done">Foto tornata com'era</string>
-    <string name="restore_until">Torna all'originale: ancora %1$d giorni</string>
+    <string name="restore_original">Torna all\'originale</string>
+    <string name="restore_done">Foto tornata com\'era</string>
+    <string name="restore_until">Torna all\'originale: ancora %1$d giorni</string>
 </resources>
