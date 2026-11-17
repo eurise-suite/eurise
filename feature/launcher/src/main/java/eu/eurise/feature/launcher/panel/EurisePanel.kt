@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.panel
 
 import android.app.NotificationManager
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
@@ -475,7 +476,7 @@ private fun NotificationRow(n: MessageItem, hazeState: HazeState, onOpen: (Messa
                                 fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .background(MaterialTheme.colorScheme.primary)
+                                    .accentBackground()
                                     .clickable { onReply(n) }
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                             )

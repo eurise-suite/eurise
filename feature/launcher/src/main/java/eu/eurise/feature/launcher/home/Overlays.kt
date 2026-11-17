@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.home
 
 import androidx.compose.foundation.background
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -420,7 +421,7 @@ private fun SelectionBar(count: Int, targets: List<BarCategory>, onMove: (BarCat
         Box {
             Text(
                 stringResource(R.string.apps_move_selected), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.primary)
+                modifier = Modifier.clip(RoundedCornerShape(50)).accentBackground()
                     .clickable { open = true }.padding(horizontal = 14.dp, vertical = 9.dp),
             )
             androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

@@ -34,8 +34,15 @@ object IconThemes {
      */
     const val BUBBLES = "eurise_bubbles"
 
+    /**
+     * «Sfondo delle bolle» (chiesto dal proprietario il 17 novembre 2026): la bolla dell'icona è il vetro delle bolle
+     * della Scrivania (e ne segue i cambi di colore, se si vuole); il disegno nei colori cangianti delle nostre icone, e
+     * per le altre app nel colore dominante della loro icona originale (WhatsApp verde, Telegram azzurro) con una sfumatura.
+     */
+    const val BUBBLE_GLASS = "eurise_bubble_glass"
+
     /** Vero per le tre serie nuove. */
-    fun isNewSeries(theme: String) = theme == GLASS_LIGHT || theme == GLASS_DARK || theme == VIVID
+    fun isNewSeries(theme: String) = theme == GLASS_LIGHT || theme == GLASS_DARK || theme == VIVID || theme == BUBBLE_GLASS
 
     /** Vero per i temi disegnati dalla suite (simboli nella forma): Eurise, a colori, iOS, Android, /e/OS. */
     fun isSuite(theme: String) = theme == BUBBLES || theme == EURISE || theme == EURISE_COLOR || isNewSeries(theme) || IconStyles.isStyle(theme)

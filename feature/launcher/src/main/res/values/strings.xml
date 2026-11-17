@@ -185,7 +185,10 @@
     <string name="tint_ceruleo">Ceruleo</string>
     <string name="appearance_icon_colors">Colore dei simboli</string>
     <string name="appearance_icon_theme">Tema delle icone</string>
-    <string name="appearance_icon_theme_bubbles">Come le bolle</string>
+    <string name="appearance_icon_theme_bubble_glass">Sfondo delle bolle</string>
+    <string name="appearance_icons_follow_bubbles">Segui il colore delle bolle</string>
+    <string name="appearance_icons_follow_bubbles_hint">Di sera, con le bolle scure, anche le icone si scuriscono. Spento: sempre chiare.</string>
+    <string name="appearance_icon_theme_bubbles">Colore d\'accento</string>
     <string name="appearance_icon_theme_bubbles_hint">Le icone prendono il colore delle bolle: lo cambi con il colore d\'accento. Le app non nostre tengono il colore del loro disegno, se si legge.</string>
     <string name="appearance_icon_theme_eurise">Eurise</string>
     <string name="appearance_icon_theme_eurise_color">Eurise a colori</string>
@@ -741,5 +744,8 @@
     <string name="lock_wp_follow">Segue momento, meteo e feste</string>
     <string name="lock_wp_follow_hint">si ridisegna solo quando cambia qualcosa</string>
     <string name="lock_wp_photo">Una tua foto</string>
+    <string name="lock_wp_recents">Dietro le app recenti</string>
+    <string name="lock_wp_recents_switch">Stesso sfondo della Scrivania</string>
+    <string name="lock_wp_recents_hint">Aprendo le app recenti il sistema mostra il suo sfondo: così è la scena della Scrivania e non compare quello vecchio.</string>
     <string name="lock_wp_failed">Il telefono non ha accettato lo sfondo della schermata di blocco.</string>
 </resources>

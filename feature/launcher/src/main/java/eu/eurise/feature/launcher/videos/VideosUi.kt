@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.videos
 
 import androidx.compose.foundation.Image
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -133,7 +134,7 @@ fun ChannelsSheet(repository: VideosRepository, onImport: () -> Unit, onClose: (
         item {
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
-                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primary)
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).accentBackground()
                         .clickable(role = Role.Button, onClick = onImport).padding(vertical = 11.dp),
                     contentAlignment = Alignment.Center,
                 ) { Text(stringResource(R.string.videos_import), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) }

@@ -316,6 +316,8 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         eu.eurise.feature.launcher.home.LockWallpaper.noteInputs(context, weather?.firstOrNull()?.sky, personal)
         eu.eurise.feature.launcher.home.LockWallpaper.refresh(context)
     }
+    // Anche lo sfondo di sistema della home segue la scena: si vede per un attimo aprendo le app recenti.
+    androidx.compose.runtime.LaunchedEffect(scene.copy(forceDark = null)) { eu.eurise.feature.launcher.home.LockWallpaper.refreshHome(context, scene) }
     // La tastiera di Eurise segue le bolle: scure qui, scura anche lei.
     androidx.compose.runtime.LaunchedEffect(scene.themeDark) { context.tellKeyboardTheme(scene.themeDark) }
     EuriseTheme(darkTheme = scene.themeDark) {
@@ -338,6 +340,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
       androidx.compose.runtime.CompositionLocalProvider(
           eu.eurise.feature.launcher.apps.LocalVariedIcons provides settings.variedIcons,
           eu.eurise.feature.launcher.apps.LocalAppIconColors provides settings.appIconColors,
+          eu.eurise.feature.launcher.apps.LocalIconsFollowBubbles provides settings.iconsFollowBubbles,
           eu.eurise.feature.launcher.apps.LocalIconTheme provides settings.iconTheme,
           eu.eurise.feature.launcher.apps.LocalAccentGradient provides settings.accent.gradient(scene.themeDark),
           eu.eurise.feature.launcher.apps.LocalIconShape provides settings.iconShape,

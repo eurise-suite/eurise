@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.notifications
 
 import android.widget.Toast
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -135,7 +136,7 @@ fun QuickReplyDialog(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(scheme.primary), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(40.dp).clip(CircleShape).accentBackground(), contentAlignment = Alignment.Center) {
                     Icon(
                         when (message.kind) { CommsKind.Call -> EuriseIcons.phone(2f); CommsKind.Email -> EuriseIcons.mail(2f); else -> EuriseIcons.message(2f) },
                         null, tint = scheme.onPrimary, modifier = Modifier.size(18.dp),
@@ -212,7 +213,7 @@ fun QuickReplyDialog(
                     }
                     Spacer(Modifier.width(8.dp))
                     Box(
-                        Modifier.size(44.dp).clip(CircleShape).background(scheme.primary)
+                        Modifier.size(44.dp).clip(CircleShape).accentBackground()
                             .clickable(role = Role.Button, onClickLabel = stringResource(R.string.reply)) { send() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(EuriseIcons.send(2f), stringResource(R.string.reply), tint = scheme.onPrimary, modifier = Modifier.size(18.dp)) }

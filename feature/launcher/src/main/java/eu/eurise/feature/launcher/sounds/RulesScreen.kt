@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.sounds
 
 import android.Manifest
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
@@ -241,7 +242,7 @@ private fun AddButton(text: String, onClick: () -> Unit) {
 private fun ActionButton(text: String, onClick: () -> Unit) {
     Text(
         text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary,
-        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary)
+        modifier = Modifier.clip(RoundedCornerShape(14.dp)).accentBackground()
             .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }

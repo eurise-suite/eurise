@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.home
 
 import android.content.Context
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -237,7 +238,7 @@ private fun androidx.compose.foundation.layout.RowScope.DockSlot(
         Icon(icon, null, tint = scheme.onSurface, modifier = Modifier.size(21.dp))
         if (badge > 0) Box(
             Modifier.align(Alignment.TopEnd).offset(x = (-1).dp, y = 3.dp).heightIn(min = 16.dp).widthIn(min = 16.dp)
-                .clip(RoundedCornerShape(8.dp)).background(scheme.primary).padding(horizontal = 4.dp),
+                .clip(RoundedCornerShape(8.dp)).accentBackground().padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center,
         ) { Text(if (badge > 99) "99+" else "$badge", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimary) }
     }
@@ -444,7 +445,7 @@ fun RolePanel(role: DockRole, apps: List<AppEntry>, current: AppEntry?, badges: 
                         if (sub.isNotEmpty()) Text(sub, fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
                     }
                     if (unread > 0) Box(
-                        Modifier.heightIn(min = 22.dp).widthIn(min = 22.dp).clip(RoundedCornerShape(11.dp)).background(scheme.primary).padding(horizontal = 7.dp),
+                        Modifier.heightIn(min = 22.dp).widthIn(min = 22.dp).clip(RoundedCornerShape(11.dp)).accentBackground().padding(horizontal = 7.dp),
                         contentAlignment = Alignment.Center,
                     ) { Text("$unread", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimary) }
                     val starLabel = stringResource(if (ref) R.string.dock_role_ref else R.string.dock_make_ref)

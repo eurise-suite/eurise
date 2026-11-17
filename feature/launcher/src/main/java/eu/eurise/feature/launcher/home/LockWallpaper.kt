@@ -112,6 +112,30 @@ object LockWallpaper {
         }.getOrElse { fail(context, it); false }
     }
 
+    /**
+     * Lo sfondo di sistema della home uguale alla scena della Scrivania (17 novembre 2026): la Scrivania disegna da sé il
+     * suo sfondo, ma quando si apre la vista delle app recenti il sistema mostra per un attimo il suo, e compariva il
+     * vecchio. Si ridisegna solo quando cambia la scena. Il blocco non cambia: se usava lo stesso sfondo della home, il
+     * sistema gli tiene quello di prima.
+     */
+    suspend fun refreshHome(context: Context, scene: Scene): Boolean = withContext(Dispatchers.Default) {
+        if (!homeEnabled(context)) return@withContext true
+        val (w, h) = screen(context)
+        val hash = "${scene.hashCode()}:$w:$h"
+        if (prefs(context).getString("home_hash", null) == hash) return@withContext true
+        runCatching {
+            val wm = WallpaperManager.getInstance(context)
+            if (!wm.isWallpaperSupported || !wm.isSetWallpaperAllowed) return@runCatching false
+            wm.setBitmap(render(scene, w, h, false), null, true, WallpaperManager.FLAG_SYSTEM) != 0
+        }.getOrDefault(false).also { if (it) prefs(context).edit().putString("home_hash", hash).apply() }
+    }
+
+    fun homeEnabled(context: Context): Boolean = prefs(context).getBoolean("home", true)
+
+    fun setHomeEnabled(context: Context, on: Boolean) {
+        prefs(context).edit().putBoolean("home", on).remove("home_hash").apply()
+    }
+
     /** Torna lo sfondo di sistema sul blocco, se l'avevamo cambiato noi. */
     fun clear(context: Context) {
         if (!prefs(context).getBoolean("applied", false)) return

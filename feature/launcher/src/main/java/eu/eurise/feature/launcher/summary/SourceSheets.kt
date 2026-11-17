@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.summary
 
 import androidx.compose.foundation.background
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -115,7 +116,7 @@ private fun AddField(hint: String, keyboard: KeyboardType, onAdd: (String) -> Un
             )
         }
         Box(
-            Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+            Modifier.size(36.dp).clip(CircleShape).accentBackground()
                 .clickable(role = Role.Button) { if (text.isNotBlank()) { onAdd(text); text = "" } },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.plus(), stringResource(R.string.card_add), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp)) }

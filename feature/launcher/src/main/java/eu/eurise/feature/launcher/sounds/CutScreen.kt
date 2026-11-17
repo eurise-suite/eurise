@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.sounds
 
 import android.media.AudioAttributes
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.media.MediaPlayer
 import android.net.Uri
 import android.widget.Toast
@@ -142,7 +143,7 @@ internal fun CutScreen(uri: Uri, onClose: () -> Unit, onPerson: (String) -> Unit
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
-                        Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary)
+                        Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(14.dp)).accentBackground()
                             .clickable(role = Role.Button) {
                                 stopPlay()
                                 val len = (endMs - startMs).toInt() / 1000
@@ -225,7 +226,7 @@ internal fun CutScreen(uri: Uri, onClose: () -> Unit, onPerson: (String) -> Unit
                 contentAlignment = Alignment.Center,
             ) { Text(stringResource(R.string.cut_all_calls), fontSize = 14.sp, fontWeight = FontWeight.Bold) }
             Box(
-                Modifier.weight(1f).heightIn(min = 52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primary)
+                Modifier.weight(1f).heightIn(min = 52.dp).clip(RoundedCornerShape(16.dp)).accentBackground()
                     .clickable(enabled = !saving) { save(true) },
                 contentAlignment = Alignment.Center,
             ) { Text(stringResource(R.string.cut_person), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) }

@@ -167,6 +167,14 @@ fun LockWallpaperScreen(homeScene: Scene, onClose: () -> Unit) {
                 }
             }
         }
+        var home by remember { mutableStateOf(LockWallpaper.homeEnabled(context)) }
+        Section(stringResource(R.string.lock_wp_recents)) {
+            SwitchRow(stringResource(R.string.lock_wp_recents_switch), home, hint = stringResource(R.string.lock_wp_recents_hint)) {
+                home = it
+                LockWallpaper.setHomeEnabled(context, it)
+                if (it) scope.launch { LockWallpaper.refreshHome(context, homeScene) }
+            }
+        }
         if (o.mode != LockWallpaper.Mode.Off) {
             Section(stringResource(R.string.lock_wp_on_lock)) {
                 SwitchRow(stringResource(R.string.lock_wp_dim), o.dim, hint = stringResource(R.string.lock_wp_dim_hint)) { apply(o.copy(dim = it)) }

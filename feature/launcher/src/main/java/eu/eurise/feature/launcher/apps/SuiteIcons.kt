@@ -140,6 +140,7 @@ internal fun SuiteBubble(
     shape: Shape,
     round: List<Color>,
     glow: Color,
+    fill: Color? = null,
     content: @Composable () -> Unit,
 ) {
     val rim = when (series) {
@@ -158,10 +159,14 @@ internal fun SuiteBubble(
             .shadow(if (series == SuiteIcons.Series.Dark) 7.dp else 5.dp, shape, clip = false)
             .clip(shape)
             .then(
-                when (series) {
+                when {
+                    // Il vetro delle bolle della Scrivania (tema «Sfondo delle bolle»), un filo più chiaro in alto.
+                    fill != null -> Modifier.background(Brush.verticalGradient(listOf(lerp(fill, Color.White, 0.10f), fill)))
+                    else -> when (series) {
                     SuiteIcons.Series.Light -> Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.66f), Color.White.copy(alpha = 0.46f))))
                     SuiteIcons.Series.Dark -> Modifier.background(Brush.linearGradient(listOf(Color(0xB0262B33), Color(0xC4181B21))))
                     SuiteIcons.Series.Color -> Modifier.background(roundBrush(round))
+                    }
                 },
             )
             .background(lightSpot(light))

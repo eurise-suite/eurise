@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.home
 
 import android.os.Build
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -187,7 +188,7 @@ private fun CommsRow(m: MessageItem, actions: BubbleActions?, onClick: () -> Uni
             if (m.count > 1) {
                 Text(
                     m.count.toString(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary,
-                    modifier = Modifier.clip(CircleShape).background(scheme.primary).padding(horizontal = 6.dp),
+                    modifier = Modifier.clip(CircleShape).accentBackground().padding(horizontal = 6.dp),
                 )
             }
         }

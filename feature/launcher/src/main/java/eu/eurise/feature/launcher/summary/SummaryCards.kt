@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.summary
 
 import eu.eurise.core.suite.PrivacyService
+import eu.eurise.feature.launcher.apps.accentBackground
 import eu.eurise.core.designsystem.component.ServiceGate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -247,7 +248,7 @@ private fun InteractiveMonth(
                                 val isToday = date == today
                                 val isSelected = date == selected
                                 when {
-                                    isToday -> Box(Modifier.size(22.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    isToday -> Box(Modifier.size(22.dp).accentBackground(CircleShape))
                                     isSelected -> Box(Modifier.size(22.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), CircleShape))
                                 }
                                 Text(
@@ -256,7 +257,7 @@ private fun InteractiveMonth(
                                     color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                 )
                                 if (!isToday && date in busy) {
-                                    Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp).size(3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp).size(3.dp).accentBackground(CircleShape))
                                 }
                             }
                         }
@@ -341,7 +342,7 @@ private fun MiniMonth(today: LocalDate, busy: Set<LocalDate>, modifier: Modifier
                         if (n in 1..days) {
                             val date = first.withDayOfMonth(n)
                             val isToday = date == today
-                            if (isToday) Box(Modifier.size(20.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                            if (isToday) Box(Modifier.size(20.dp).accentBackground(CircleShape))
                             Text(
                                 "$n",
                                 fontSize = 10.5.sp,
@@ -349,7 +350,7 @@ private fun MiniMonth(today: LocalDate, busy: Set<LocalDate>, modifier: Modifier
                                 color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             )
                             if (!isToday && date in busy) {
-                                Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp).size(3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp).size(3.dp).accentBackground(CircleShape))
                             }
                         }
                     }

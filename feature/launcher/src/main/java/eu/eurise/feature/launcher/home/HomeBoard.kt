@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.home
 
 import androidx.annotation.StringRes
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -436,7 +437,7 @@ private fun Handle(modifier: Modifier, onStart: () -> Unit, onDrag: (Float, Floa
     val start by rememberUpdatedState(onStart)
     val drag by rememberUpdatedState(onDrag)
     Box(
-        modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+        modifier.size(24.dp).clip(CircleShape).accentBackground()
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { start() },

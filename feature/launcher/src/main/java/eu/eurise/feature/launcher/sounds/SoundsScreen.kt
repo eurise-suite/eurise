@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.sounds
 
 import android.content.Intent
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -166,7 +167,7 @@ private fun SoundsMain(onClose: () -> Unit, onCut: (Uri) -> Unit, onRules: () ->
         val currentId = settings.defaults[use]
         val current = sounds.firstOrNull { it.id == currentId }
         Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 14.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).accentBackground().padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(EuriseIcons.music(), null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))

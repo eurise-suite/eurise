@@ -19,6 +19,23 @@ object AppColors {
 
     fun cached(entry: AppEntry): Color? = cache[entry.key]?.takeIf { it != NONE }?.let { Color(it) }
 
+    private val originals = java.util.concurrent.ConcurrentHashMap<String, Int>()
+
+    fun cachedOriginal(entry: AppEntry): Color? = originals[entry.key]?.takeIf { it != NONE }?.let { Color(it) }
+
+    /**
+     * Il colore dominante dell'icona originale così com'è, senza portarlo alle tinte della suite (tema «Sfondo delle
+     * bolle»: WhatsApp resta verde WhatsApp, Telegram azzurro). Null per le icone senza un colore proprio.
+     */
+    suspend fun originalTint(context: Context, entry: AppEntry): Color? = withContext(Dispatchers.Default) {
+        originals[entry.key]?.let { return@withContext if (it == NONE) null else Color(it) }
+        val result = runCatching { dominantHue(context, entry) }.getOrNull()?.let { (hue, sat, value) ->
+            Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, sat.coerceIn(0.45f, 1f), value.coerceIn(0.45f, 0.95f))))
+        }
+        originals[entry.key] = result?.let { argb(it) } ?: NONE
+        result
+    }
+
     suspend fun suiteTint(context: Context, entry: AppEntry): Color? = withContext(Dispatchers.Default) {
         cache[entry.key]?.let { return@withContext if (it == NONE) null else Color(it) }
         val result = runCatching { dominantHue(context, entry) }.getOrNull()?.let { (hue, sat, value) -> nearest(hue, sat, value) }

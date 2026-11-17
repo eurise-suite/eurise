@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.settings
 
 import androidx.compose.foundation.background
+import eu.eurise.feature.launcher.apps.accentBackground
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -103,7 +104,7 @@ fun CategoryEditor(
                 color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f),
             )
             Box(
-                Modifier.height(40.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.primary)
+                Modifier.height(40.dp).clip(RoundedCornerShape(50)).accentBackground()
                     .clickable(role = Role.Button, onClick = onClose).padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) { Text(stringResource(R.string.card_done), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) }

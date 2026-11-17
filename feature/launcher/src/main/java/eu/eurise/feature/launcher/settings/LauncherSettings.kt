@@ -113,8 +113,10 @@ data class LauncherSettings(
     val variedIcons: Boolean = false,
     /** Colore del simbolo preso dall'icona originale dell'app e portato alla tinta della suite più vicina. */
     val appIconColors: Boolean = true,
+    /** Tema «Sfondo delle bolle»: la bolla delle icone segue il colore delle bolle (di sera scura); falso: sempre chiara. */
+    val iconsFollowBubbles: Boolean = true,
     /** Tema delle icone: [IconThemes.EURISE] (tondi della suite), [IconThemes.SYSTEM] (icone originali) o il pacchetto di un tema installato. */
-    val iconTheme: String = eu.eurise.feature.launcher.apps.IconThemes.BUBBLES,
+    val iconTheme: String = eu.eurise.feature.launcher.apps.IconThemes.BUBBLE_GLASS,
     /** Forma delle icone: «auto» (quella dello stile) o una delle [eu.eurise.feature.launcher.apps.IconStyles.shapes]. */
     val iconShape: String = eu.eurise.feature.launcher.apps.IconStyles.SHAPE_AUTO,
     /** Nome per il saluto della home ("Buongiorno, …!"); vuoto per il solo saluto. */
@@ -214,6 +216,7 @@ class SettingsStore(context: Context) {
             .putBoolean("show_labels", next.showLabels)
             .putBoolean("varied_icons", next.variedIcons)
             .putBoolean("app_icon_colors", next.appIconColors)
+            .putBoolean("icons_follow_bubbles", next.iconsFollowBubbles)
             .putString("icon_theme", next.iconTheme)
             .putString("icon_shape", next.iconShape)
             .putString("user_name", next.userName)
@@ -255,7 +258,8 @@ class SettingsStore(context: Context) {
         showLabels = prefs.getBoolean("show_labels", true),
         variedIcons = prefs.getBoolean("varied_icons", false),
         appIconColors = prefs.getBoolean("app_icon_colors", true),
-        iconTheme = prefs.getString("icon_theme", null) ?: eu.eurise.feature.launcher.apps.IconThemes.BUBBLES,
+        iconsFollowBubbles = prefs.getBoolean("icons_follow_bubbles", true),
+        iconTheme = prefs.getString("icon_theme", null) ?: eu.eurise.feature.launcher.apps.IconThemes.BUBBLE_GLASS,
         iconShape = prefs.getString("icon_shape", null) ?: eu.eurise.feature.launcher.apps.IconStyles.SHAPE_AUTO,
         userName = prefs.getString("user_name", "").orEmpty(),
         accent = Accent.decode(prefs.getString("accent", null)),

@@ -1,6 +1,7 @@
 package eu.eurise.feature.launcher.notifications
 
 import android.Manifest
+import eu.eurise.feature.launcher.apps.accentBackground
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -151,7 +152,7 @@ internal fun QuoteStrip(quote: String, onRemove: () -> Unit) {
             .padding(start = 0.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(3.dp).height(36.dp).background(scheme.primary))
+        Box(Modifier.width(3.dp).height(36.dp).accentBackground())
         Text("«$quote»", fontSize = 12.5.sp, color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 6.dp))
         val remove = stringResource(R.string.reply_quote_remove)
         Box(Modifier.size(36.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = remove, onClick = onRemove).semantics { contentDescription = remove }, contentAlignment = Alignment.Center) {
@@ -281,7 +282,7 @@ internal fun AttachSheet(
                                 Text(stringResource(R.string.reply_attach_contact), fontSize = 12.sp, color = scheme.onSurfaceVariant)
                             }
                             Box(
-                                Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(scheme.primary)
+                                Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).accentBackground()
                                     .clickable(role = Role.Button) { sendContact(c) }.padding(horizontal = 12.dp),
                                 contentAlignment = Alignment.Center,
                             ) { Text(stringResource(R.string.reply_attach), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary) }

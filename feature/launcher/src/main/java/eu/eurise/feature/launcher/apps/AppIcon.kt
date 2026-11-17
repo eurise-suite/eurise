@@ -211,6 +211,9 @@ val LocalIconTheme = androidx.compose.runtime.compositionLocalOf { IconThemes.EU
 /** La sfumatura dell'accento (Ceruleo, come il gufo del Browser): con «Come le bolle» la prendono anche le bolle delle icone. */
 val LocalAccentGradient = androidx.compose.runtime.compositionLocalOf<List<Color>?> { null }
 
+/** «Sfondo delle bolle»: vero se la bolla delle icone segue il colore delle bolle (giorno, sera); falso: sempre chiara. */
+val LocalIconsFollowBubbles = androidx.compose.runtime.compositionLocalOf { true }
+
 /** Forma delle icone scelta in Griglia e icone (vedi [IconStyles.shape]). */
 val LocalIconShape = androidx.compose.runtime.compositionLocalOf { IconStyles.SHAPE_AUTO }
 
@@ -243,6 +246,34 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         eu.eurise.feature.launcher.settings.IconPalette[Math.floorMod(entry.packageName.hashCode() + entry.label.hashCode(), eu.eurise.feature.launcher.settings.IconPalette.size)]
     } else {
         LocalCategoryTint.current(entry) ?: entry.category.tint.dark
+    }
+    // «Sfondo delle bolle» (17 novembre 2026): il vetro delle bolle, i nostri disegni nei loro colori cangianti, le altre
+    // app nel colore dominante della loro icona originale con una sfumatura.
+    if (theme == IconThemes.BUBBLE_GLASS) {
+        val glass = if (LocalIconsFollowBubbles.current) eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors.glass else Color(0xC2FBFBF9)
+        val darkGlass = glass.copy(alpha = 1f).luminance() < 0.4f
+        val series = if (darkGlass) SuiteIcons.Series.Dark else SuiteIcons.Series.Light
+        val drawing = remember(entry.key) { SuiteIcons.drawingFor(entry) }
+        var original by remember(entry.key) { mutableStateOf(AppColors.cachedOriginal(entry)) }
+        if (drawing == null && entry.euriseSection == null) {
+            LaunchedEffect(entry.key) { if (original == null) original = AppColors.originalTint(context, entry) }
+        }
+        val brush = shimmer(original ?: tint, darkGlass)
+        Box(modifier.size(size), contentAlignment = Alignment.Center) {
+            SuiteBubble(series, size, IconStyles.shape(LocalIconShape.current, theme), emptyList(), Color.White, fill = glass) {
+                if (drawing != null) {
+                    SuiteDrawingCanvas(drawing, series, Modifier.size(size))
+                } else when (val img = image) {
+                    is IconImage.Mono -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.8f).softTint(brush))
+                    is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.86f))
+                    is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
+                    is IconImage.Plain -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size))
+                    null -> Icon(sectionIcon(entry), contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
+                }
+            }
+            if (badge > 0) Badge(badge, dark, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-3).dp))
+        }
+        return
     }
     // Serie nuove (tela, pagina Icone, 16 novembre 2026): le app della suite hanno il loro disegno; le altre il loro
     // simbolo nella stessa bolla, nella loro tinta (chiara sul vetro scuro, piena sul vetro chiaro, crema sul colorato).
@@ -389,6 +420,15 @@ private val EuriseGlow: Brush = object : androidx.compose.ui.graphics.ShaderBrus
  * «Eurise a colori»: il simbolo nella tinta dell'app, più vivo e contrastato del tondo (tavola IconeColori): di giorno
  * dalla luminosità 0,48 a 0,31, di sera da 0,83 a 0,70, con la saturazione portata su con un tetto.
  */
+/**
+ * La sfumatura cangiante di un colore originale (tema «Sfondo delle bolle»): dalla tinta più chiara a quella più intensa,
+ * con la stessa tonalità; sul vetro scuro un po' più luminosa perché si legga.
+ */
+internal fun shimmer(color: Color, darkGlass: Boolean): List<Color> {
+    val c = if (darkGlass && color.luminance() < 0.25f) lerp(color, Color.White, 0.35f) else if (!darkGlass && color.luminance() > 0.6f) lerp(color, Color.Black, 0.25f) else color
+    return listOf(lerp(c, Color.White, 0.28f), c, lerp(c, Color.Black, 0.22f))
+}
+
 internal fun vividSymbol(tint: Color, dark: Boolean): List<Color> {
     val hsl = FloatArray(3)
     androidx.core.graphics.ColorUtils.colorToHSL(tint.toArgb(), hsl)
