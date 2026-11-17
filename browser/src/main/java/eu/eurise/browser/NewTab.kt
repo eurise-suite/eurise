@@ -171,7 +171,10 @@ internal fun NewTabPage(
                 if (!private) ModeChip(stringResource(R.string.brw_nt_in_history), null, mode == Mode.History) { mode = Mode.History }
             }
             if (mode == Mode.History && text.isNotBlank()) {
-                val found = remember(text) { model.history.list(text.trim(), 6) }
+                // La cronologia si legge fuori dal thread principale: la prima lettura carica tutto il file e bloccava i tasti.
+                val found by androidx.compose.runtime.produceState(emptyList<Visit>(), text) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { model.history.list(text.trim(), 6) }
+                }
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(horizontal = 14.dp)) {
                     if (found.isEmpty()) Text(stringResource(R.string.brw_nt_history_none), fontSize = 13.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 14.dp))
                     found.forEachIndexed { i, v ->

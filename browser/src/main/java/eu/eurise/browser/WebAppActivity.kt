@@ -47,7 +47,7 @@ class WebAppActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val url = intent?.dataString ?: return finish()
         val name = intent.getStringExtra(EXTRA_NAME) ?: Links.host(url)
-        Logins.init(this, if (BuildConfig.DEBUG) "eu.eurise.password.debug" else "eu.eurise.password")
+        Logins.init(this, if (BuildConfig.SUITE_DEBUG) "eu.eurise.password.debug" else "eu.eurise.password")
         setTaskDescription(ActivityManager.TaskDescription(name, letterIcon(this, name, 96)))
         tab = Tab(this, System.currentTimeMillis(), private = false, onNewTab = { link ->
             runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClass(this, BrowserActivity::class.java)) }
@@ -81,7 +81,7 @@ class WebAppActivity : ComponentActivity() {
     }
 
     private fun unlock() {
-        val pkg = if (BuildConfig.DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
+        val pkg = if (BuildConfig.SUITE_DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
         val intent = Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
             .setComponent(android.content.ComponentName(pkg, eu.eurise.core.suite.PasswordContract.ALIAS))
         runCatching { unlockResult.launch(intent) }
