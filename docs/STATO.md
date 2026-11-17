@@ -3365,3 +3365,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Alfred e AI: campioni di voci italiane da ascoltare (pre-release voci-ascolto) → `docs/stato/ALFRED.md`.
 - 17 novembre, notte, Organizzazione: trascinamento di app e bolle tra le pagine della Scrivania (bordi, fila delle pagine, «+» per una pagina nuova, anche dai preferiti e da «Tutte le app») · giro 772 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, notte, Galleria: editor, quarto giro (copia e incolla modifiche, modalità col codice QR, dati della foto) · giro 773 → `docs/stato/PICCOLE.md`.
+- 17 novembre, notte, Galleria: editor, quinto giro (Ritocca: Selettivo, Pennello, Correttivo) · giro 779 → `docs/stato/PICCOLE.md`.
