@@ -792,7 +792,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                     n.save(); n.rotate(state.straighten, c.x, c.y)
                                     n.drawOval(c.x - 1.25f * e, c.y - 1.35f * e, c.x + 1.25f * e, c.y + 2.05f * e, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                                         style = android.graphics.Paint.Style.STROKE; strokeWidth = (if (i == selFace) 2.5f else 1.5f) * 1.dp.toPx()
-                                        color = (if (i == selFace) Accent else Color.White.copy(alpha = 0.75f)).toArgb()
+                                        this.color = (if (i == selFace) Accent else Color.White.copy(alpha = 0.75f)).toArgb()
                                     })
                                     n.restore()
                                 }
