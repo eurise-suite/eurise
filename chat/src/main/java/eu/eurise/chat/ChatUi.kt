@@ -64,6 +64,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import java.text.DateFormat
 import java.util.Calendar
@@ -83,6 +84,8 @@ interface ChatActions {
     fun openPassword(key: String, userId: String)
     /** «Su carta»: un foglio con la chiave da stampare. */
     fun printKey(key: String, userId: String)
+    /** Apre un'altra app (Email, Messaggi) con [intent]; se non c'è, un avviso. */
+    fun launch(intent: android.content.Intent)
 }
 
 /** Le schermate della sicurezza (tavole ChatRecupero e ChatVerifica). */
@@ -109,6 +112,7 @@ fun ChatApp(model: ChatModel, actions: ChatActions) {
             page == SecurityPage.Recovery -> RecoveryScreen(model, actions, onClose = { page = null })
             page == SecurityPage.Verify -> VerifyScreen(model, actions, onClose = { if (model.verify !is Verify.Incoming) model.cancelVerify(false); page = null })
             open != null -> Conversation(model, actions, open, onVerify = { page = SecurityPage.Verify })
+            model.studioPage != null -> StudioScreen(model, actions)
             else -> RoomList(model, actions, onRecovery = { page = SecurityPage.Recovery }, onVerify = { page = SecurityPage.Verify })
         }
     }
@@ -199,12 +203,22 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var query by remember { mutableStateOf("") }
     var creating by remember { mutableStateOf(false) }
     var account by remember { mutableStateOf(false) }
+    val studio by StudioRepo.state.collectAsStateWithLifecycle()
     val q = query.trim().lowercase()
     val shown = model.rooms.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.ch_title), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                // Lo Studio medico acceso: l'ingresso sta qui, con le urgenze segnate.
+                if (studio.enabled) {
+                    val urgent = studio.requests.count { it.open && it.need == eu.eurise.core.studio.Need.Urgent }
+                    Box {
+                        RoundIcon(EuriseIcons.medical(2.2f), stringResource(R.string.st_title)) { model.studioOpen() }
+                        if (urgent > 0) Box(Modifier.align(Alignment.TopEnd).size(10.dp).clip(CircleShape).background(Color(0xFFA4502E)))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                }
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
@@ -246,6 +260,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         Text(model.session?.homeserver.orEmpty(), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
+        Pill(stringResource(R.string.st_title), EuriseIcons.medical(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.studioOpen() }
         Pill(stringResource(R.string.ch_logout), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.logout() }
     }
 }
@@ -360,6 +375,15 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     peerVerified -> R.string.ch_room_verified
                     else -> R.string.ch_room_encrypted
                 }), fontSize = 11.5.sp, color = if (peerVerified) VERIFIED else scheme.onSurfaceVariant, maxLines = 1)
+            }
+            // Studio medico: dalla chat a due, la scheda del paziente (o «Aggiungi allo Studio»).
+            val studio by StudioRepo.state.collectAsStateWithLifecycle()
+            if (studio.enabled && peer != null) {
+                val patient = studio.patients.firstOrNull { it.matrixId.equals(peer, ignoreCase = true) }
+                RoundIcon(EuriseIcons.medical(2.2f), stringResource(if (patient != null) R.string.st_card else R.string.st_add_to_studio), flat = true) {
+                    model.studioOpen(patient?.id)
+                    if (patient == null) model.studioGo(StudioPage.Edit(null, matrixId = peer, name = room?.name))
+                }
             }
             // Verifica della persona (tavola ChatVerifica): solo nelle chat a due cifrate.
             if (peer != null && room?.encrypted == true) {
@@ -553,7 +577,7 @@ internal fun RoundIcon(icon: ImageVector, label: String, flat: Boolean = false, 
 }
 
 @Composable
-private fun SearchField(value: String, hint: String, onChange: (String) -> Unit) {
+internal fun SearchField(value: String, hint: String, onChange: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(22.dp)).background(scheme.surface).padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically) {

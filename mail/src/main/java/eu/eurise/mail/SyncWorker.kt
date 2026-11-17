@@ -31,6 +31,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         var newOnes = 0
         var lastFrom = ""
         var lastSubject = ""
+        val studio by lazy { eu.eurise.core.studio.StudioContract.known(ctx) }
         for (a in accounts) {
             val client = MailClient(a)
             val known = lastKnown(ctx, a.id)
@@ -38,6 +39,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             if (top <= known) continue
             val list = runCatching { client.latest(20) }.getOrNull() ?: continue
             val fresh = list.filter { it.uid > known && !it.seen }
+            // Studio medico: le email dei pazienti entrano in coda anche ad app chiusa.
+            if (fresh.isNotEmpty()) offerToStudio(ctx, studio, fresh)
             if (known > 0) {
                 val people = fresh.filter { it.kind == Kind.People }
                 newOnes += people.size

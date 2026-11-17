@@ -145,6 +145,51 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     fun stop() { loop?.cancel(); loop = null; active = false }
 
+    // --- Studio medico (tavole StuSpazio e StuPaziente) ---
+
+    /** Le pagine dello Studio aperte, una sopra l'altra; vuoto = Studio chiuso. */
+    private val studioStack = mutableStateListOf<StudioPage>()
+    val studioPage: StudioPage? get() = studioStack.lastOrNull()
+
+    fun studioGo(page: StudioPage) { studioStack += page }
+    fun studioBack() { if (studioStack.isNotEmpty()) studioStack.removeAt(studioStack.lastIndex) }
+    fun studioClose() = studioStack.clear()
+    /** Apre lo Studio da capo (da un'altra app o dalla chat), sulla scheda di [patientId] se c'è. */
+    fun studioOpen(patientId: String? = null) {
+        openRoom = null
+        studioStack.clear()
+        studioStack += StudioPage.Home
+        if (patientId != null) studioStack += StudioPage.Card(patientId)
+    }
+
+    /** Scritture dello Studio fuori dal thread principale. */
+    fun studioIo(block: () -> Unit) { scope.launch(Dispatchers.IO) { block() } }
+
+    /** Lo Studio si legge dal disco fuori dal thread principale, una volta sola. */
+    fun loadStudio() { scope.launch(Dispatchers.IO) { StudioRepo.load(context) } }
+
+    /**
+     * I messaggi dei pazienti entrano nella coda dello Studio; un codice di verifica lega chi scrive alla sua scheda e
+     * riceve una conferma. Solo i messaggi degli altri, solo con lo Studio acceso.
+     */
+    private fun studio(roomId: String, events: List<Event>) {
+        val me = session?.userId ?: return
+        val list = events.filter { it.sender != me && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice) && !it.id.startsWith("local:") }
+        if (list.isEmpty()) return
+        scope.launch(Dispatchers.IO) {
+            if (!StudioRepo.current(context).enabled) return@launch
+            list.forEach { e ->
+                val out = StudioRepo.receive(context, eu.eurise.core.studio.Channel.Chat, e.sender, e.text, e.time, "$roomId|${e.id}")
+                if (out is eu.eurise.core.studio.Queue.Outcome.Verified) {
+                    withContext(Dispatchers.Main) { send(roomId, context.getString(R.string.st_verified_reply)) { } }
+                }
+            }
+        }
+    }
+
+    /** La chat a due con [userId], se c'è già. */
+    fun directWith(userId: String): String? = rooms.firstOrNull { !it.invite && peerOf(it.id).equals(userId, ignoreCase = true) }?.id
+
     /** I messaggi decifrati in ritardo (la chiave è arrivata dopo) prendono il posto di quelli «cifrati». */
     private fun resolve(solved: List<Pair<String, JSONObject>>) {
         if (solved.isEmpty()) return
@@ -153,6 +198,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
             val list = timeline(roomId)
             val i = list.indexOfFirst { it.id == e.id }
             if (i >= 0) list[i] = e
+            studio(roomId, listOf(e))
         }
         publish()
     }
@@ -202,6 +248,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 // L'eco locale di un messaggio inviato da qui lascia il posto a quello vero.
                 if (fresh.isNotEmpty()) list.removeAll { it.id.startsWith("local:") && fresh.any { f -> f.sender == me && f.text == it.text } }
                 list.addAll(fresh)
+                studio(id, fresh)
             }
         }
         roomsJson.optJSONObject("invite")?.let { inv ->

@@ -92,6 +92,8 @@ dependencies {
     // Integrazione con la suite: Note e Attività (HubBridge), Salva in/Apri da di File, Calendario e Rubrica (Reach),
     // date, attività e truffe capite sul telefono (MessageInsights, lo stesso di Messaggi).
     implementation(project(":core:suite"))
+    // Le richieste dei pazienti vanno nella coda dello Studio (nella Chat), solo sul telefono.
+    implementation(project(":core:studio"))
     implementation(project(":core:contacts"))
     implementation(project(":core:data"))
     implementation(libs.androidx.core.ktx)

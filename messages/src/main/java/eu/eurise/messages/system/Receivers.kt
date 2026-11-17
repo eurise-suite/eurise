@@ -38,6 +38,9 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 val uri = SmsStore.saveIncoming(context, address, body, sentAt, subId)
                 Notifications.incoming(context, address, body, SmsStore.threadId(context, setOf(address)))
                 if (uri != null) Codes.scheduleCleanup(context, uri, body)
+                // Studio medico (nella Chat): l'SMS di un paziente, o con il codice di verifica, entra nella coda.
+                eu.eurise.core.studio.StudioContract.offer(context, eu.eurise.core.studio.Channel.Sms, address, body,
+                    "sms:" + (uri?.toString() ?: "$address:$sentAt"), sentAt)
             } finally {
                 pending.finish()
             }

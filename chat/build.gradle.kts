@@ -77,6 +77,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     // Chiave di recupero nel backup cifrato della suite (SecretsContract), solo tra app con la stessa firma.
     implementation(project(":core:suite"))
+    // Lo Studio medico (pazienti, consensi, coda), comune con Email e Messaggi.
+    implementation(project(":core:studio"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

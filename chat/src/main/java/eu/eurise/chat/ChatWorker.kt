@@ -50,6 +50,14 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             }
             runCatching { crypto.flush(client) }
         }
+        // Studio medico: i messaggi dei pazienti arrivati ad app chiusa entrano in coda (i codici di verifica pure).
+        if (StudioRepo.current(ctx).enabled) json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
+            join.keys().forEach { id ->
+                Matrix.events(join.getJSONObject(id).optJSONObject("timeline")?.optJSONArray("events"))
+                    .filter { it.sender != s.userId && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice) }
+                    .forEach { e -> StudioRepo.receive(ctx, eu.eurise.core.studio.Channel.Chat, e.sender, e.text, e.time, "$id|${e.id}") }
+            }
+        }
         if (since == null) return Result.success()
         var count = 0
         var lastFrom = ""

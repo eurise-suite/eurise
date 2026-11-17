@@ -239,6 +239,12 @@ private fun MessageRow(model: MailModel, m: Summary, onClick: () -> Unit) {
                     color = if (m.seen) scheme.onSurfaceVariant else scheme.primary)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Paziente dello Studio medico (riconosciuto dalla Chat, sul telefono).
+                if (model.studio.email(m.fromAddress)) {
+                    Text(stringResource(R.string.ml_patient), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = scheme.primary,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 6.dp, vertical = 1.dp))
+                    Spacer(Modifier.width(6.dp))
+                }
                 if (m.answered) {
                     Icon(EuriseIcons.reply(2.4f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
@@ -309,6 +315,20 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.ml_images_blocked, o.remoteImages), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
                     Chip(stringResource(R.string.ml_show), selected = false) { showImages = true }
+                }
+            }
+            model.openedPatient?.let { patient ->
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.10f)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(EuriseIcons.medical(2f), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.ml_patient_queue), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                    Chip(stringResource(R.string.ml_open_studio), selected = false) {
+                        actions.start(eu.eurise.core.studio.StudioContract.openIntent(ctx, patient))
+                    }
                 }
             }
             SuiteProposals(o, actions)

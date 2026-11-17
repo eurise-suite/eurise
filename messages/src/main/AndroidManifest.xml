@@ -20,6 +20,9 @@
         <package android:name="com.android.mms.service" />
         <package android:name="eu.eurise.hub" />
         <package android:name="eu.eurise.hub.debug" />
+        <!-- Lo Studio medico sta nella Chat: i messaggi dei pazienti vanno nella sua coda. -->
+        <package android:name="eu.eurise.chat" />
+        <package android:name="eu.eurise.chat.debug" />
         <package android:name="eu.eurise.read" />
         <package android:name="eu.eurise.read.debug" />
         <package android:name="com.whatsapp" />

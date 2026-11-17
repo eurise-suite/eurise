@@ -40,6 +40,11 @@
                 <data android:scheme="eurisechat" android:host="login" />
             </intent-filter>
         </activity>
+        <!-- Lo Studio medico per Email e Messaggi: solo app della suite (permesso di firma, controllato in call()). -->
+        <provider
+            android:name=".StudioProvider"
+            android:authorities="${applicationId}.studio"
+            android:exported="true" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.file"

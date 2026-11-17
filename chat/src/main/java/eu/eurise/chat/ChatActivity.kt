@@ -26,6 +26,7 @@ class ChatActivity : ComponentActivity(), ChatActions {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         model = ChatModel(applicationContext, lifecycleScope)
+        model.loadStudio()
         handle(intent)
         setContent { EuriseTheme { ChatApp(model, this) } }
     }
@@ -36,6 +37,11 @@ class ChatActivity : ComponentActivity(), ChatActions {
     }
 
     private fun handle(intent: Intent?) {
+        // Da Email o Messaggi: «Apri nello Studio».
+        if (intent?.action == eu.eurise.core.studio.StudioContract.ACTION_OPEN) {
+            model.studioOpen(intent.getStringExtra(eu.eurise.core.studio.StudioContract.EXTRA_PATIENT))
+            return
+        }
         val data = intent?.data ?: return
         if (data.scheme != "eurisechat") return
         val token = data.getQueryParameter("loginToken") ?: return
@@ -62,6 +68,10 @@ class ChatActivity : ComponentActivity(), ChatActions {
         val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .also { it.clipData = ClipData.newRawUri(file.name, uri) }
         runCatching { startActivity(Intent.createChooser(view, file.name)) }
+    }
+
+    override fun launch(intent: Intent) {
+        runCatching { startActivity(intent) }.onFailure { toast(getString(R.string.st_no_app)) }
     }
 
     override fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()

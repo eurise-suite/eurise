@@ -6,6 +6,9 @@
     <string name="ml_accounts">Caselle</string>
     <string name="ml_search">Cerca in tutte le caselle</string>
     <string name="ml_people">Persone</string>
+    <string name="ml_patient">Paziente</string>
+    <string name="ml_patient_queue">Paziente dello Studio: è nella coda</string>
+    <string name="ml_open_studio">Apri nello Studio</string>
     <string name="ml_alerts">Avvisi</string>
     <string name="ml_newsletters">Newsletter</string>
     <string name="ml_loading">Arriva la posta…</string>

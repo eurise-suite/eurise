@@ -92,6 +92,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:contacts"))
     implementation(project(":core:suite"))
+    // Le richieste dei pazienti vanno nella coda dello Studio (nella Chat), solo sul telefono.
+    implementation(project(":core:studio"))
     implementation(project(":core:data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

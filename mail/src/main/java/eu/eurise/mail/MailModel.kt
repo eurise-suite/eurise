@@ -13,6 +13,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import eu.eurise.core.studio.Channel
+import eu.eurise.core.studio.StudioContract
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -38,6 +40,12 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     var opened by mutableStateOf<Opened?>(null)
         private set
     var opening by mutableStateOf(false)
+        private set
+    /** I pazienti dello Studio (nella Chat), per riconoscerli: vuoto con lo Studio spento o senza la Chat. */
+    var studio by mutableStateOf(StudioContract.Known(emptySet(), emptySet()))
+        private set
+    /** Il paziente del messaggio aperto, se lo è. */
+    var openedPatient by mutableStateOf<String?>(null)
         private set
     /** Immagini remote: bloccate (tavola MailCaselle: «Blocca chi spia l'apertura»). */
     var blockImages by mutableStateOf(prefs.getBoolean("block_images", true))
@@ -92,6 +100,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             messages.clear()
             messages.addAll(all.sortedByDescending { it.date })
             refreshing = false
+            studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
         }
     }
@@ -107,13 +116,18 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             opening = false
             if (o == null) { error = context.getString(R.string.ml_open_failed); return@launch }
             opened = o
+            openedPatient = null
+            // Un paziente: il testo intero va allo Studio (la coda aveva solo l'oggetto) e qui compare «Apri nello Studio».
+            if (studio.email(s.fromAddress)) openedPatient = withContext(Dispatchers.IO) {
+                StudioContract.offer(context, Channel.Email, s.fromAddress, s.subject + "\n" + o.text.take(4000), studioRef(s), s.date)?.patientId
+            }
             val i = messages.indexOfFirst { it.accountId == s.accountId && it.uid == s.uid }
             if (i >= 0) messages[i] = messages[i].copy(seen = true)
             writeCache(a.id, messages.filter { it.accountId == a.id })
         }
     }
 
-    fun close() { opened = null; opening = false }
+    fun close() { opened = null; opening = false; openedPatient = null }
 
     /** Archivia, cestina o segna come spam il messaggio aperto. */
     fun move(s: Summary, target: MailClient.Target, done: (Boolean) -> Unit) = relocate(s, done) { it.move(s.uid, target) }
@@ -247,5 +261,15 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             Providers.parseAutoconfig(xml, email)?.let { return it }
         }
         return null
+    }
+}
+
+/** Il riferimento di un messaggio nella coda dello Studio. */
+internal fun studioRef(m: Summary) = "mail:${m.accountId}:${m.uid}"
+
+/** Le email non lette dei pazienti vanno nella coda dello Studio (con l'oggetto; il testo quando le apri). */
+internal fun offerToStudio(context: Context, known: StudioContract.Known, list: List<Summary>) {
+    list.filter { !it.seen && known.email(it.fromAddress) }.forEach { m ->
+        StudioContract.offer(context, Channel.Email, m.fromAddress, m.subject.ifBlank { "—" }, studioRef(m), m.date)
     }
 }
