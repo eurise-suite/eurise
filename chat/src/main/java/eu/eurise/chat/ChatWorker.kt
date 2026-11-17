@@ -62,19 +62,36 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         var count = 0
         var lastFrom = ""
         var lastText = ""
+        // Notifiche senza dati sanitari: nelle stanze di La mia Bussola e per i messaggi dei pazienti dello Studio
+        // solo la frase fissa, mai il testo né il nome.
+        val bussolaRooms = BussolaRooms.all(ctx)
+        val studio = StudioRepo.current(ctx)
+        var patientSide = false
+        var studioSide = false
         json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
             join.keys().forEach { id ->
                 val events = Matrix.events(join.getJSONObject(id).optJSONObject("timeline")?.optJSONArray("events"))
-                    .filter { it.sender != s.userId && it.kind != Event.Kind.State }
-                count += events.size
-                events.lastOrNull()?.let { e ->
+                val bussola = id in bussolaRooms || events.any { it.kind == Event.Kind.Bussola }
+                if (bussola) BussolaRooms.add(ctx, id)
+                val others = events.filter { it.sender != s.userId && it.kind != Event.Kind.State }
+                count += others.size
+                others.forEach { e ->
+                    val patient = studio.enabled && studio.patients.any { p -> p.matrixId.equals(e.sender, ignoreCase = true) }
+                    if (patient) studioSide = true else if (bussola) patientSide = true
+                }
+                others.lastOrNull()?.let { e ->
                     lastFrom = Matrix.localpart(e.sender)
                     lastText = if (e.kind == Event.Kind.Encrypted) ctx.getString(R.string.ch_encrypted_short) else e.text
                 }
             }
         }
+        when {
+            studioSide -> { lastFrom = ctx.getString(R.string.st_title); lastText = ctx.getString(R.string.bu_notice_studio); count = maxOf(count, 1) }
+            patientSide -> { lastFrom = ctx.getString(R.string.bu_notice_title); lastText = eu.eurise.core.studio.Bussola.NOTICE }
+        }
+        val neutral = studioSide || patientSide
         val invites = json.optJSONObject("rooms")?.optJSONObject("invite")?.length() ?: 0
-        if (count > 0 || invites > 0) notify(ctx, count, invites, lastFrom, lastText)
+        if (count > 0 || invites > 0) notify(ctx, if (neutral) 1 else count, invites, lastFrom, lastText)
         return Result.success()
     }
 

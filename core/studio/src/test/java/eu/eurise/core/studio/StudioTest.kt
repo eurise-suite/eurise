@@ -82,7 +82,7 @@ class StudioTest {
     }
 
     @Test fun json() {
-        var s = on.copy(codes = listOf(PendingCode("p1", "AAA-CCC", 7L)))
+        var s = on.copy(codes = listOf(PendingCode("p1", "AAA-CCC", 7L)), info = Bussola.StudioInfo("Studio Rossi", "Lun 9-12", guard = "0824 000000"))
         s = Queue.receive(s, Channel.Chat, "@giuseppe:studio.it", "Posso venire domani alle 10?", 2_000L, "e1", 2_000L, id).first
         s = s.copy(patients = s.patients.map { it.withConsent(Consent.Notice, true, 3L).copy(practices = setOf(Practice.General, Practice.Acupuncture), verifiedAt = 4L, verifiedBy = Channel.Sms) })
         assertEquals(s, StudioCodec.decode(StudioCodec.encode(s)))

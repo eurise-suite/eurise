@@ -174,7 +174,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
      */
     private fun studio(roomId: String, events: List<Event>) {
         val me = session?.userId ?: return
-        val list = events.filter { it.sender != me && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice) && !it.id.startsWith("local:") }
+        val list = events.filter { it.sender != me && !it.id.startsWith("local:") && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice ||
+            // Da La mia Bussola: le richieste di rinnovo e le risposte agli inviti entrano in coda (con il testo di riserva).
+            it.kind == Event.Kind.Bussola && it.data?.let { d -> runCatching { JSONObject(d).optString("msgtype") }.getOrNull() }
+                .let { t -> t == eu.eurise.core.studio.Bussola.RX_REQUEST || t == eu.eurise.core.studio.Bussola.CHECKUP_REPLY }) }
         if (list.isEmpty()) return
         scope.launch(Dispatchers.IO) {
             if (!StudioRepo.current(context).enabled) return@launch
@@ -185,6 +188,46 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 }
             }
         }
+    }
+
+    // --- La mia Bussola (tavole Bus*) ---
+
+    /** Chi sono io nella stanza: lo studio, il paziente, o null se non è una stanza di La mia Bussola. */
+    enum class BussolaRole { Studio, Patient }
+
+    /** Le stanze di cui si è già letta tutta la storia (stati delle ricette, orari, terapia). */
+    private val bussolaLoaded = HashSet<String>()
+
+    fun bussolaItems(roomId: String): List<eu.eurise.core.studio.Bussola.Item> =
+        timeline(roomId).filter { it.kind == Event.Kind.Bussola && it.data != null && !it.id.startsWith("local:") }.mapNotNull { e ->
+            runCatching { eu.eurise.core.studio.Bussola.Item(e.id, e.sender, e.time, JSONObject(e.data!!)) }.getOrNull()
+        }
+
+    fun bussolaRole(roomId: String): BussolaRole? {
+        val studio = eu.eurise.core.studio.Bussola.studioSender(bussolaItems(roomId)) ?: return null
+        return if (studio == session?.userId) BussolaRole.Studio else BussolaRole.Patient
+    }
+
+    /** Una stanza con messaggi di Bussola: si legge tutta la storia una volta, e si ricorda per le notifiche neutre. */
+    private fun bussolaSeen(roomId: String, fresh: List<Event>) {
+        if (fresh.none { it.kind == Event.Kind.Bussola }) return
+        if (bussolaLoaded.add(roomId)) {
+            scope.launch(Dispatchers.IO) { BussolaRooms.add(context, roomId) }
+            loadExpenses(roomId)
+        }
+    }
+
+    fun sendBussola(roomId: String, content: JSONObject, failed: () -> Unit) = sendContent(roomId, content, Event.Kind.Bussola, failed)
+
+    /**
+     * Apre La mia Bussola nella chat con il paziente: orari e contatti dello studio e la sua terapia abituale (cifrati).
+     * Da qui in poi il paziente vede i pulsanti grandi e lo stato dei rinnovi.
+     */
+    fun bussolaActivate(roomId: String, info: eu.eurise.core.studio.Bussola.StudioInfo, therapy: List<String>, failed: () -> Unit) {
+        bussolaLoaded.add(roomId)
+        scope.launch(Dispatchers.IO) { BussolaRooms.add(context, roomId) }
+        sendBussola(roomId, eu.eurise.core.studio.Bussola.studio(info), failed)
+        sendBussola(roomId, eu.eurise.core.studio.Bussola.therapy(therapy), failed)
     }
 
     /** La chat a due con [userId], se c'è già. */
@@ -199,6 +242,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
             val i = list.indexOfFirst { it.id == e.id }
             if (i >= 0) list[i] = e
             studio(roomId, listOf(e))
+            bussolaSeen(roomId, listOf(e))
         }
         publish()
     }
@@ -249,6 +293,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 if (fresh.isNotEmpty()) list.removeAll { it.id.startsWith("local:") && fresh.any { f -> f.sender == me && f.text == it.text } }
                 list.addAll(fresh)
                 studio(id, fresh)
+                bussolaSeen(id, fresh)
             }
         }
         roomsJson.optJSONObject("invite")?.let { inv ->

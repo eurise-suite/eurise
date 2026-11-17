@@ -393,6 +393,9 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 }
             }
         }
+        // La mia Bussola: promemoria del 118 e azioni grandi per il paziente; per lo studio, invito e aggiornamento.
+        val bussola = model.bussolaRole(roomId)
+        if (bussola != null) BussolaBar(model, actions, roomId, bussola)
         // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
         val group = room != null && !room.direct && peer == null
         var tab by remember(roomId) { mutableStateOf(0) }
@@ -405,9 +408,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         } else {
             LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
                 items(events.asReversed(), key = { it.id }) { e ->
-                    Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
+                    if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = e.sender == me)
+                    else Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
                 }
             }
+            if (bussola == ChatModel.BussolaRole.Patient) UrgentHint()
             Row(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.Bottom,

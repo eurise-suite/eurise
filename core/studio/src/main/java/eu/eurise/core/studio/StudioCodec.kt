@@ -17,6 +17,7 @@ object StudioCodec {
         .put("patients", JSONArray().apply { s.patients.forEach { put(patient(it)) } })
         .put("requests", JSONArray().apply { s.requests.forEach { put(request(it)) } })
         .put("codes", JSONArray().apply { s.codes.forEach { put(JSONObject().put("p", it.patientId).put("c", it.code).put("t", it.createdAt)) } })
+        .putOpt("info", s.info?.let { Bussola.studio(it) })
         .toString()
 
     fun decode(text: String): StudioState {
@@ -31,6 +32,7 @@ object StudioCodec {
             patients = list("patients", ::patient),
             requests = list("requests", ::request),
             codes = list("codes") { PendingCode(it.getString("p"), it.getString("c"), it.getLong("t")) },
+            info = o.optJSONObject("info")?.let { Bussola.readStudio(it) },
         )
     }
 

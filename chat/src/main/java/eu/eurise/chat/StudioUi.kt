@@ -82,6 +82,8 @@ sealed interface StudioPage {
     data class Line(val need: Need) : StudioPage
     /** Paziente nuovo ([id] null) o da modificare; dalla chat arrivano già l'indirizzo Matrix e il nome. */
     data class Edit(val id: String?, val matrixId: String? = null, val name: String? = null) : StudioPage
+    /** Orari e contatti dello studio, per La mia Bussola. */
+    data object Info : StudioPage
 }
 
 private val AMBER = Color(0xFFA4502E)
@@ -142,6 +144,7 @@ fun StudioScreen(model: ChatModel, actions: ChatActions) {
         }
         is StudioPage.Line -> QueueLine(model, actions, state, page.need)
         is StudioPage.Edit -> PatientEdit(model, state, page)
+        StudioPage.Info -> StudioInfoEdit(model, actions, state)
     }
 }
 
@@ -280,6 +283,18 @@ private fun StudioHome(model: ChatModel, actions: ChatActions, state: StudioStat
                                 Text(stringResource(channelLabel(c)), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
                             }
                         }
+                    }
+                }
+                Card {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { model.studioGo(StudioPage.Info) }.padding(vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Icon(EuriseIcons.clock(2.2f), null, tint = scheme.primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.bu_info_title), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                            Text(state.info?.name ?: stringResource(R.string.bu_info_missing), fontSize = 11.5.sp, color = scheme.onSurfaceVariant, maxLines = 1)
+                        }
+                        Icon(EuriseIcons.chevronRight(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     }
                 }
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.onSurface.copy(alpha = 0.06f)).padding(horizontal = 12.dp, vertical = 9.dp),
@@ -565,6 +580,33 @@ private fun PatientCard(model: ChatModel, actions: ChatActions, state: StudioSta
                         stringResource(if (e.granted) R.string.st_given else R.string.st_revoked), fontSize = 11.5.sp, modifier = Modifier.padding(bottom = 6.dp))
                 }
             }
+            // La mia Bussola nella sua chat (tavole Bus*): orari dello studio e terapia abituale, poi rinnovi e ricette.
+            SectionTitle(stringResource(R.string.bu_section))
+            Card {
+                val mx = p.matrixId
+                val room = mx?.let { model.directWith(it) }
+                val active = room != null && model.bussolaRole(room) == ChatModel.BussolaRole.Studio
+                Text(
+                    stringResource(when {
+                        mx == null -> R.string.bu_card_no_chat
+                        state.info == null -> R.string.bu_need_info
+                        active -> R.string.bu_card_active
+                        else -> R.string.bu_card_off
+                    }),
+                    fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 10.dp),
+                )
+                Row(Modifier.padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val info = state.info
+                    if (info == null) Chip(stringResource(R.string.bu_info_title), selected = true) { model.studioGo(StudioPage.Info) }
+                    else if (mx != null) Chip(stringResource(if (active) R.string.bu_update else R.string.bu_activate), selected = !active) {
+                        val therapy = p.therapies.map { listOf(it.name, it.dose).filter { s -> s.isNotBlank() }.joinToString(" ") }
+                        val failed = actions.text(R.string.ch_send_failed)
+                        val go = { id: String -> model.bussolaActivate(id, info, therapy) { actions.toast(failed) }; actions.toast(actions.text(R.string.bu_sent)) }
+                        if (room != null) go(room) else model.newChat(mx) { id, err -> if (id != null) go(id) else actions.toast(actions.text(err ?: R.string.ch_err_server)) }
+                    }
+                    if (room != null) Chip(stringResource(R.string.st_reply), selected = false) { model.open(room) }
+                }
+            }
             // Terapia abituale: quella che può chiedere senza visita.
             SectionTitle(stringResource(R.string.st_therapy))
             Card {
@@ -693,6 +735,49 @@ private fun Qr(text: String) {
         val cell = size.minDimension / m.width
         for (y in 0 until m.height) for (x in 0 until m.width) if (m.get(x, y)) {
             drawRect(Color(0xFF1E1D1B), topLeft = Offset(x * cell, y * cell), size = Size(cell + 0.5f, cell + 0.5f))
+        }
+    }
+}
+
+/** Orari e contatti dello studio (tavola BusOrari): vanno nelle chat dei pazienti di La mia Bussola. */
+@Composable
+private fun StudioInfoEdit(model: ChatModel, actions: ChatActions, state: StudioState) {
+    val ctx = LocalContext.current
+    val old = state.info
+    var name by remember { mutableStateOf(old?.name.orEmpty()) }
+    var hours by remember { mutableStateOf(old?.hours.orEmpty()) }
+    var phone by remember { mutableStateOf(old?.phone.orEmpty()) }
+    var address by remember { mutableStateOf(old?.address.orEmpty()) }
+    var guard by remember { mutableStateOf(old?.guard.orEmpty()) }
+    var absence by remember { mutableStateOf(old?.absence.orEmpty()) }
+    var substitute by remember { mutableStateOf(old?.substitute.orEmpty()) }
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        Header(stringResource(R.string.bu_info_title), stringResource(R.string.bu_info_sub), onBack = { model.studioBack() })
+        Page {
+            Field(stringResource(R.string.bu_f_name), name, KeyboardType.Text) { name = it }
+            Field(stringResource(R.string.bu_f_hours), hours, KeyboardType.Text) { hours = it }
+            Field(stringResource(R.string.bu_f_phone), phone, KeyboardType.Phone) { phone = it }
+            Field(stringResource(R.string.bu_f_address), address, KeyboardType.Text) { address = it }
+            Field(stringResource(R.string.bu_f_guard), guard, KeyboardType.Phone) { guard = it }
+            SectionTitle(stringResource(R.string.bu_f_absence_title))
+            Field(stringResource(R.string.bu_f_absence), absence, KeyboardType.Text) { absence = it }
+            Field(stringResource(R.string.bu_f_substitute), substitute, KeyboardType.Text) { substitute = it }
+            Text(stringResource(R.string.bu_info_note), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Pill(stringResource(R.string.bu_info_save), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = name.isNotBlank()) {
+                if (name.isBlank()) return@Pill
+                val info = eu.eurise.core.studio.Bussola.StudioInfo(name.trim(), hours.trim(), phone.trim(), address.trim(), guard.trim(), absence.trim(), substitute.trim())
+                model.studioIo { StudioRepo.update(ctx) { it.copy(info = info) } }
+                // Nelle chat già attive arrivano subito i nuovi orari (assenza e sostituto compresi).
+                val failed = actions.text(R.string.ch_send_failed)
+                var sent = 0
+                state.patients.mapNotNull { it.matrixId?.let(model::directWith) }.filter { model.bussolaRole(it) == ChatModel.BussolaRole.Studio }.forEach { room ->
+                    model.sendBussola(room, eu.eurise.core.studio.Bussola.studio(info)) { actions.toast(failed) }
+                    sent++
+                }
+                if (sent > 0) actions.toast(actions.text(R.string.bu_info_sent).format(sent))
+                model.studioBack()
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }

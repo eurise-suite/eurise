@@ -84,6 +84,8 @@ data class StudioState(
     val patients: List<Patient> = emptyList(),
     val requests: List<Request> = emptyList(),
     val codes: List<PendingCode> = emptyList(),
+    /** Orari e contatti dello studio, mandati nelle chat dei pazienti di La mia Bussola. */
+    val info: Bussola.StudioInfo? = null,
 ) {
     fun patient(id: String) = patients.firstOrNull { it.id == id }
 }

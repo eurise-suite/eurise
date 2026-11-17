@@ -28,7 +28,7 @@ data class Event(
     /** Per spese e pagamenti del gruppo: il contenuto del messaggio (JSON), letto da [Expenses]. */
     val data: String? = null,
 ) {
-    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement }
+    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement, Bussola }
 }
 
 /**
@@ -69,6 +69,10 @@ object Matrix {
             "m.room.encrypted" -> Event(id, sender, "", time, Event.Kind.Encrypted)
             "m.room.message" -> {
                 val body = content.optString("body")
+                // La mia Bussola: rinnovi, stati, inviti, orari e terapia dello studio (data = il contenuto intero).
+                if (eu.eurise.core.studio.Bussola.isBussola(content.optString("msgtype"))) {
+                    return Event(id, sender, body, time, Event.Kind.Bussola, data = content.toString())
+                }
                 when (content.optString("msgtype")) {
                     "m.image" -> Event(id, sender, body, time, Event.Kind.Image, content.optString("url").ifEmpty { null })
                     "m.file", "m.video", "m.audio" -> Event(id, sender, body, time, Event.Kind.File, content.optString("url").ifEmpty { null })
