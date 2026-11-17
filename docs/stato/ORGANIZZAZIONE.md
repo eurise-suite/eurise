@@ -222,6 +222,23 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   telefono del proprietario e leggere il motivo.
 - Giro 723 (Compila 43997542215 su `prova-organizzazione`; il 720 è stato sostituito).
 
+## 17 novembre, mattina (dopo le prove): icone «Sfondo delle bolle», Ceruleo cangiante, sfondo dietro le recenti
+- **Sfondo del blocco**: sul telefono del proprietario è arrivato dopo un riavvio. Aprendo le **app recenti** compariva
+  per un attimo il vecchio sfondo: è lo sfondo di sistema della home, che la Scrivania non usava (disegna da sé la sua
+  scena). Ora `LockWallpaper.refreshHome` mette come sfondo di sistema della home la scena della Scrivania, ridisegnata solo
+  quando cambia (momento del giorno, meteo, feste); interruttore «Dietro le app recenti › Stesso sfondo della Scrivania»
+  (acceso di base) in Sfondo anche sul blocco. Il blocco non cambia (Android gli tiene il suo).
+- **Ceruleo cangiante**: oltre al campione e alle bolle delle icone, tutti i fondi pieni nel colore d'accento della
+  Scrivania (pulsanti, giorno di oggi, numeri, risposte rapide, suonerie…) usano la sfumatura del gufo
+  (`Modifier.accentBackground`, `apps/AccentFill.kt`). Interruttori, caselle e testi restano a colore pieno (Material non
+  accetta sfumature).
+- **Icone «Sfondo delle bolle»** (`IconThemes.BUBBLE_GLASS`, **ora di base**): la bolla è il vetro delle bolle della
+  Scrivania; «Segui il colore delle bolle» (acceso: di sera vetro scuro; spento: sempre chiaro). Le nostre app con il loro
+  disegno nei colori cangianti (serie chiara o scura secondo il vetro); le altre con il simbolo nel **colore dominante
+  dell'icona originale** (`AppColors.originalTint`, senza portarlo alle tinte della suite: WhatsApp verde, Telegram
+  azzurro) con una sfumatura dal più chiaro al più intenso (`shimmer`). Il tema di prima resta come «Colore d'accento».
+- Giro 731 (Compila 44052844574 su `prova-organizzazione`).
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);
@@ -245,8 +262,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   CollAffida; CollRiunione (affidamento delle azioni; manca la nota a più mani), CollSquadra.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario** sul giro 723 (contiene 701 e 717): sfondo del blocco (con il motivo, se rifiutato), accento
-   Ceruleo;: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
+1. **Prove del proprietario** sul giro 731: app recenti senza il vecchio sfondo, Ceruleo cangiante, icone «Sfondo delle
+   bolle» (WhatsApp, Spotify, Telegram nei loro colori);: Agenda (giorni, «@», «Parti alle…»), Drive (cassetto,
    spazio, Oggi sotto le cartelle), «Condividi con…» su una cartella di Murena, invitati in un appuntamento di Murena;
    icone «Come le bolle»; elenchi condivisi e «Affida a…» con un secondo account Murena; una riunione con
    invitati e «Assegna a tutti»; una cartella condivisa con «Cambiato da ieri».

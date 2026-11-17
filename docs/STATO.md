@@ -3341,3 +3341,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Office: dock Recenti/Telefono/Cloud e rapporto del problema (OffOggiHome, OffRapporto) · giro 718, motore nel giro 724 → `docs/stato/OFFICE.md`.
 - 17 novembre, Galleria: editor, secondo giro (Prospettiva, Espandi) · giro 726; tavole da approvare GalEsporta e GalLookQR → `docs/stato/PICCOLE.md`.
 - 17 novembre, Galleria: editor, terzo giro (pila delle Modifiche, foglio Salva, Torna all'originale) · giro 730 → `docs/stato/PICCOLE.md`.
+- 17 novembre, Organizzazione: icone «Sfondo delle bolle» (vetro delle bolle, colori originali delle app con sfumatura), Ceruleo cangiante sui fondi d'accento, sfondo di sistema uguale alla Scrivania (niente vecchio sfondo nelle recenti) · giro 731 → `docs/stato/ORGANIZZAZIONE.md`.
