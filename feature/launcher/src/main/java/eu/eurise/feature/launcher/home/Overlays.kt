@@ -138,6 +138,8 @@ fun CategoryPages(
     onAppearance: () -> Unit,
     modifier: Modifier = Modifier,
     favorites: List<AppEntry> = emptyList(),
+    /** «Aggiungi alla Scrivania…»: sceglie la pagina dove mettere l'app (tavola ScrPagAggiungi). */
+    onAddToPage: ((AppEntry) -> Unit)? = null,
 ) {
     val byKey = apps.associateBy { it.key }
     // Le cartelle di una categoria vengono prima; le app che contengono non si ripetono nella griglia.
@@ -365,6 +367,7 @@ fun CategoryPages(
                                 iconSize = iconSize,
                                 showLabel = showLabels,
                                 onCreateFolder = if (category.holdsApps) ({ onCreateFolder(app, category) }) else null,
+                                onAddToPage = onAddToPage?.let { add -> { add(app) } },
                                 externalLongPress = true,
                                 menuRequest = menuKey == app.key,
                                 onMenuClosed = { menuKey = null },

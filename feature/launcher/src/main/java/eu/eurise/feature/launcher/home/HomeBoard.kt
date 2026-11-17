@@ -94,7 +94,12 @@ enum class HomeKind(
     Calendar("calendar_card", R.string.card_calendar, R.string.card_calendar_desc, { EuriseIcons.calendar(1.9f) }, 1f, 300, CardKind.Calendar),
     Messages("messages_card", R.string.card_messages, R.string.card_messages_desc, { EuriseIcons.chat(1.9f) }, 1f, 240, CardKind.Messages),
     /** Il widget di un'altra app (anteprime WidAggiungi, WidBolla): se ne possono mettere più d'uno, ognuno col suo numero. */
-    AppWidget("widget", R.string.home_widget, R.string.home_widget_desc, { EuriseIcons.grid(1.9f) }, 1f, 180);
+    AppWidget("widget", R.string.home_widget, R.string.home_widget_desc, { EuriseIcons.grid(1.9f) }, 1f, 180),
+    /** Un'app su una pagina della Scrivania (tavole ScrPag*): quattro per riga, si sposta e si allarga come le bolle. */
+    App("app", R.string.page_app, R.string.page_app_desc, { EuriseIcons.grid(1.9f) }, 0.25f);
+
+    /** La larghezza minima: le app stanno anche in cinque per riga, le bolle almeno in tre. */
+    val minWidth: Float get() = if (this == App) 0.2f else MinWidth
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }
@@ -105,9 +110,21 @@ enum class HomeKind(
  * Una scheda sulla home: larghezza come frazione della riga (da 0,3 a 1), altezza in dp (0 = quanto il
  * contenuto). Le schede affiancate restano alte uguali finché l'utente non le scioglie ([free]).
  */
-data class HomeSlot(val kind: HomeKind, val width: Float, val height: Int = kind.defaultHeight, val free: Boolean = false, val widget: Int = 0) {
-    /** Chi è la bolla: il tipo, o per i widget il loro numero (ce ne possono essere più d'uno). */
-    val key: String get() = if (kind == HomeKind.AppWidget) "widget#$widget" else kind.id
+data class HomeSlot(
+    val kind: HomeKind,
+    val width: Float,
+    val height: Int = kind.defaultHeight,
+    val free: Boolean = false,
+    val widget: Int = 0,
+    /** Per [HomeKind.App]: la chiave dell'app ([eu.eurise.feature.launcher.apps.AppEntry.key]). */
+    val app: String = "",
+) {
+    /** Chi è la bolla: il tipo, per i widget il loro numero, per le app la loro chiave (ce ne possono essere più d'uno). */
+    val key: String get() = when (kind) {
+        HomeKind.AppWidget -> "widget#$widget"
+        HomeKind.App -> "app#" + java.net.URLEncoder.encode(app, "UTF-8")
+        else -> kind.id
+    }
 }
 
 val DefaultHomeSlots = listOf(
@@ -128,13 +145,19 @@ fun decodeHome(raw: String?): List<HomeSlot> {
     return raw.split('|').mapNotNull { part ->
         val b = part.split(':')
         val widget = b[0].takeIf { it.startsWith("widget#") }?.removePrefix("widget#")?.toIntOrNull() ?: 0
-        val kind = if (widget != 0) HomeKind.AppWidget else HomeKind.byId(b[0])?.takeIf { it != HomeKind.AppWidget } ?: return@mapNotNull null
+        val app = b[0].takeIf { it.startsWith("app#") }?.removePrefix("app#")?.let { runCatching { java.net.URLDecoder.decode(it, "UTF-8") }.getOrNull() }
+        val kind = when {
+            widget != 0 -> HomeKind.AppWidget
+            app != null -> HomeKind.App
+            else -> HomeKind.byId(b[0])?.takeIf { it != HomeKind.AppWidget && it != HomeKind.App } ?: return@mapNotNull null
+        }
         HomeSlot(
             kind,
-            (b.getOrNull(1)?.toFloatOrNull() ?: kind.defaultWidth).coerceIn(MinWidth, 1f),
+            (b.getOrNull(1)?.toFloatOrNull() ?: kind.defaultWidth).coerceIn(kind.minWidth, 1f),
             b.getOrNull(2)?.toIntOrNull() ?: kind.defaultHeight,
             b.getOrNull(3) == "1",
             widget,
+            app.orEmpty(),
         )
     }.distinctBy { it.key }
 }
@@ -273,7 +296,7 @@ fun HomeBoard(
                                             if (slot.kind == HomeKind.AppWidget) AppWidgets.delete(context, slot.widget)
                                             onChange(latest.filterNot { it.key == slot.key })
                                         },
-                                        onWidth = { w -> onChange(latest.map { if (it.key == slot.key) it.copy(width = w.coerceIn(MinWidth, 1f)) else it }) },
+                                        onWidth = { w -> onChange(latest.map { if (it.key == slot.key) it.copy(width = w.coerceIn(it.kind.minWidth, 1f)) else it }) },
                                         currentHeightPx = {
                                             val s = latest.firstOrNull { it.key == slot.key }
                                             when {
@@ -473,7 +496,7 @@ fun HomeCatalog(
             widgetCatalog(onWidget)
             return@BottomSheet
         }
-        HomeKind.entries.filter { it != HomeKind.AppWidget }.forEach { kind ->
+        HomeKind.entries.filter { it != HomeKind.AppWidget && it != HomeKind.App }.forEach { kind ->
             item(key = kind.id) {
                 val on = kind in present
                 Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {

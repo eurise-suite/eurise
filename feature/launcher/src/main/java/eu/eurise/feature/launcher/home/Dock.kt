@@ -266,6 +266,7 @@ fun DockSheet(hazeState: HazeState, bottom: Dp, onClose: () -> Unit, content: @C
  * (sinistro per i mancini); scorrendo il dito sulla colonna, a sinistra compaiono le app della categoria su cui si trova
  * il dito. Si apre sulla categoria aperta più spesso. «La tua» crea una categoria; «Apri» porta alla pagina intera.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AllAppsPanel(
     categories: List<BarCategory>,
@@ -278,6 +279,8 @@ fun AllAppsPanel(
     bottom: Dp,
     onOpen: (AppEntry, BarCategory) -> Unit,
     onPage: (BarCategory) -> Unit,
+    /** Pressione lunga su un'app: «Aggiungi alla Scrivania…» (tavola ScrPagAggiungi). */
+    onHold: ((AppEntry) -> Unit)? = null,
     onAddCategory: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
@@ -304,7 +307,9 @@ fun AllAppsPanel(
                 LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(apps, key = { it.key }) { app ->
                         Column(
-                            Modifier.clip(RoundedCornerShape(16.dp)).clickable { onOpen(app, cat) }.padding(vertical = 4.dp),
+                            Modifier.clip(RoundedCornerShape(16.dp))
+                                .combinedClickable(onClick = { onOpen(app, cat) }, onLongClick = onHold?.let { h -> { h(app) } })
+                                .padding(vertical = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             AppIcon(app, 48.dp, dark, badges[app.packageName] ?: 0)

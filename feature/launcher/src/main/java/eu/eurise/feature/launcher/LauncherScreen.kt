@@ -1,5 +1,7 @@
 package eu.eurise.feature.launcher
 
+import eu.eurise.feature.launcher.home.DeskPage as HD
+import eu.eurise.feature.launcher.home.PagesHelper as HP
 import android.Manifest
 import eu.eurise.feature.launcher.home.HealthPill
 import eu.eurise.feature.launcher.home.openOnSwipe
@@ -381,7 +383,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         var editingCards by remember { mutableStateOf(false) }
         var editingHome by remember { mutableStateOf(false) }
         var homeCatalog by remember { mutableStateOf(false) }
-        var sideCatalog by remember { mutableStateOf<Boolean?>(null) }
+        var sideCatalog by remember { mutableStateOf<String?>(null) }
         BackHandler(enabled = sideCatalog != null) { sideCatalog = null }
         var channelsSheet by remember { mutableStateOf(false) }
         var replyTo by remember { mutableStateOf<MessageItem?>(null) }
@@ -488,15 +490,28 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
             commsApps = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { viewModel.contacts.bubbleApps() } },
             startAction = { viewModel.contacts.start(it) },
         )
-        // Tre pagine: Notizie e mercati a sinistra, Home al centro, Riepilogo a destra.
-        val homePager = rememberPagerState(initialPage = HomePage) { 3 }
+        // Le pagine della Scrivania (tavole ScrPag*): di base bacheca, home e riepilogo; l'utente ne aggiunge quante vuole.
+        val modeState by eu.eurise.core.data.modes.Modes.state.collectAsStateWithLifecycle()
+        val deskPages = remember(settings.pages, modeState.active) { settings.pages.let { all -> HP.visible(all, modeState.active) } }
+        val startIndex = deskPages.indexOfFirst { it.id == settings.startPage }.takeIf { it >= 0 }
+            ?: deskPages.indexOfFirst { it.id == HD.HOME }.coerceAtLeast(0)
+        val homePager = rememberPagerState(initialPage = startIndex) { deskPages.size }
+        var pagesSheet by remember { mutableStateOf(false) }
+        // Pagina nuova: null chiuso, "" senza app, altrimenti la chiave dell'app da metterci.
+        var newPageFor by remember { mutableStateOf<String?>(null) }
+        var pagePicker by remember { mutableStateOf<eu.eurise.feature.launcher.apps.AppEntry?>(null) }
+        var goToPage by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(goToPage, deskPages) {
+            val target = goToPage ?: return@LaunchedEffect
+            val i = deskPages.indexOfFirst { it.id == target }
+            if (i >= 0) { category = HomePageId; homePager.scrollToPage(i); goToPage = null }
+        }
         var newsSheet by remember { mutableStateOf(false) }
         var stocksSheet by remember { mutableStateOf(false) }
         val categoryPager = rememberPagerState { pageCategories.size }
         val scope = rememberCoroutineScope()
 
         // La modalità accesa può scegliere la categoria da cui parte la Scrivania.
-        val modeState by eu.eurise.core.data.modes.Modes.state.collectAsStateWithLifecycle()
         val modeCategory = modeState.config?.homeCategory?.takeIf { id -> pageCategories.any { it.id == id } }
         LaunchedEffect(modeState.active) {
             if (modeCategory != null) {
@@ -506,7 +521,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         }
         LaunchedEffect(homePresses) {
             if (homePresses > 0) {
-                if (category == HomePageId && !searching) homePager.animateScrollToPage(HomePage)
+                if (category == HomePageId && !searching) homePager.animateScrollToPage(startIndex)
                 // Con una modalità che sceglie la categoria, il tasto Home porta lì; premuto di nuovo, alla home.
                 category = if (modeCategory != null && category != modeCategory) modeCategory else HomePageId
                 if (category == modeCategory) categoryPager.scrollToPage(pageCategories.indexOfFirst { it.id == modeCategory }.coerceAtLeast(0))
@@ -521,7 +536,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
         LaunchedEffect(categoryPager.currentPage) {
             if (category != HomePageId) pageCategories.getOrNull(categoryPager.currentPage)?.let { category = it.id }
         }
-        BackHandler(enabled = modesSheet != null || replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != HomePageId || homePager.currentPage != HomePage) {
+        BackHandler(enabled = modesSheet != null || replyTo != null || homeCatalog || channelsSheet || editingHome || folderPicker != null || openFolder != null || signPicker || dailySheet != null || peopleSheet != null || weatherSheet || searching || panelOpen || appearance || editingCards || newsSheet || stocksSheet || categoryEditor || category != HomePageId || homePager.currentPage != startIndex) {
             when {
                 modesSheet != null -> modesSheet = null
                 replyTo != null -> replyTo = null
@@ -542,7 +557,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                 searching -> searching = false
                 categoryEditor -> categoryEditor = false
                 category != HomePageId -> category = HomePageId
-                else -> scope.launch { homePager.animateScrollToPage(HomePage) }
+                else -> scope.launch { homePager.animateScrollToPage(startIndex) }
             }
         }
 
@@ -596,6 +611,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                                         notifications = allNotifications,
                                         readCodes = settings.readCodes,
                                         importantDates = importantDates,
+                                        apps = remember(state.apps) { state.apps.associateBy { it.key } },
+                                        dark = scene.themeDark,
+                                        badges = badges,
+                                        iconSize = settings.iconSize.dp,
+                                        showLabels = settings.showLabels,
                                         cardBody = { kind, modifier ->
                                             androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                                             SummaryCardBody(
@@ -611,17 +631,17 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                                             }
                                         },
                                     )
-                val board: @Composable (Boolean, Modifier) -> Unit = { left, modifier ->
+                val board: @Composable (String, Modifier) -> Unit = { pageId, modifier ->
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.notifications.LocalQuickReply provides { replyTo = it }, eu.eurise.feature.launcher.home.LocalPeopleShortcuts provides peopleShortcuts, eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     androidx.compose.runtime.CompositionLocalProvider(eu.eurise.feature.launcher.home.LocalBubbleActions provides bubbleActions) {
                     val sideAlarm = rememberNextAlarm()
                     SidePage(
-                        slots = if (left) settings.leftSlots else settings.rightSlots,
+                        slots = settings.slotsOf(pageId),
                         editing = editingCards,
                         onEditingChange = { editingCards = it },
-                        onChange = { slots -> viewModel.updateSettings { if (left) it.copy(leftSlots = slots) else it.copy(rightSlots = slots) } },
-                        onCatalog = { sideCatalog = left },
-                        setup = if (left) emptyList() else setup,
+                        onChange = { slots -> viewModel.updateSettings { it.withSlots(pageId, slots) } },
+                        onCatalog = { sideCatalog = pageId },
+                        setup = if (pageId == HD.RIGHT) setup else emptyList(),
                         hazeState = hazeState,
                         clearance = clearance,
                         modifier = modifier,
@@ -629,7 +649,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     }
                     }
                 }
-                val summary: @Composable (Modifier) -> Unit = { modifier -> board(false, modifier) }
+                val summary: @Composable (Modifier) -> Unit = { modifier -> board(HD.RIGHT, modifier) }
 
                 if (searching || panelOpen) {
                     // Durante la ricerca e nel pannello resta solo lo sfondo sfocato.
@@ -641,10 +661,11 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                             clearance = clearance, summary = summary, onWeather = openWeather,
                         )
                     } else {
-                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards && !editingHome) { page ->
-                            if (page == 0) {
-                                board(true, Modifier.fillMaxSize())
-                            } else if (page == HomePage) {
+                        HorizontalPager(homePager, Modifier.fillMaxSize(), userScrollEnabled = !editingCards && !editingHome, key = { deskPages.getOrNull(it)?.id ?: it }) { index ->
+                            val pageId = deskPages.getOrNull(index)?.id ?: HD.HOME
+                            if (pageId != HD.HOME) {
+                                board(pageId, Modifier.fillMaxSize())
+                            } else {
                                 PhoneHome(
                                     now = now, weather = weather, hasLocation = hasLocation, state = state, badges = badges,
                                     dark = scene.themeDark, hazeState = hazeState, actions = actions,
@@ -665,11 +686,13 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                                     skyLight = scene.skyLight,
                                     home = homeData,
                                 )
-                            } else {
-                                summary(Modifier.fillMaxSize())
                             }
                         }
-                        if (!editingCards && !editingHome) PageDots(homePager.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 6.dp))
+                        if (!editingCards && !editingHome) PageDots(
+                            homePager.currentPage, deskPages.size,
+                            Modifier.align(Alignment.BottomCenter).padding(bottom = clearance - 20.dp),
+                            onClick = { pagesSheet = true },
+                        )
                     }
                 } else {
                     Box(Modifier.fillMaxSize().background(scrimColor()))
@@ -699,6 +722,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         onClose = { category = HomePageId },
                         favorites = state.favorites,
                         onAppearance = { appearance = true },
+                        onAddToPage = { pagePicker = it },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -894,24 +918,18 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                 )
             }
             // Un solo «aggiungi widget» fuori dai fogli: il foglio si chiude mentre Android chiede il permesso.
-            var widgetPage by remember { mutableStateOf(0) }
+            var widgetPage by remember { mutableStateOf(HD.HOME) }
             val addWidget = eu.eurise.feature.launcher.home.rememberWidgetAdder { id ->
                 val w = eu.eurise.feature.launcher.home.HomeSlot(eu.eurise.feature.launcher.home.HomeKind.AppWidget, 1f, widget = id)
-                viewModel.updateSettings {
-                    when (widgetPage) {
-                        1 -> it.copy(leftSlots = it.leftSlots + w)
-                        2 -> it.copy(rightSlots = it.rightSlots + w)
-                        else -> it.copy(homeSlots = it.homeSlots + w)
-                    }
-                }
+                viewModel.updateSettings { it.withSlots(widgetPage, it.slotsOf(widgetPage) + w) }
             }
-            sideCatalog?.let { left ->
-                val slots = if (left) settings.leftSlots else settings.rightSlots
+            sideCatalog?.let { pageId ->
+                val slots = settings.slotsOf(pageId)
                 val save = { next: List<eu.eurise.feature.launcher.home.HomeSlot> ->
-                    viewModel.updateSettings { if (left) it.copy(leftSlots = next) else it.copy(rightSlots = next) }
+                    viewModel.updateSettings { it.withSlots(pageId, next) }
                 }
                 eu.eurise.feature.launcher.home.HomeCatalog(
-                    onWidget = { info -> sideCatalog = null; widgetPage = if (left) 1 else 2; addWidget(info) },
+                    onWidget = { info -> sideCatalog = null; widgetPage = pageId; addWidget(info) },
                     slots = slots,
                     onAdd = { kind ->
                         save(slots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth))
@@ -921,9 +939,71 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                     onClose = { sideCatalog = null },
                 )
             }
+            // Pagine della Scrivania (tavole ScrPagGestisci, ScrPagNuova, ScrPagAggiungi).
+            BackHandler(enabled = pagesSheet || newPageFor != null || pagePicker != null) {
+                when {
+                    newPageFor != null -> newPageFor = null
+                    pagePicker != null -> pagePicker = null
+                    else -> pagesSheet = false
+                }
+            }
+            val pageAdded = stringResource(R.string.pages_added)
+            if (pagesSheet) {
+                eu.eurise.feature.launcher.home.PagesSheet(
+                    pages = settings.pages,
+                    startPage = settings.startPage,
+                    countOf = { p -> settings.slotsOf(p.id).size },
+                    onPages = { list -> viewModel.updateSettings { it.copy(pages = list) } },
+                    onStart = { id -> viewModel.updateSettings { it.copy(startPage = id) } },
+                    onOpen = { p -> pagesSheet = false; goToPage = p.id },
+                    onDuplicate = { p ->
+                        viewModel.createPage(p.name, p.symbol.ifBlank { HP.symbolFor(p) }, p.mode, eu.eurise.feature.launcher.home.PageStart.Copy, copyOf = p.id, after = p.id)
+                    },
+                    onDelete = { p ->
+                        // I widget della pagina liberano il loro numero presso Android.
+                        settings.slotsOf(p.id).filter { it.kind == eu.eurise.feature.launcher.home.HomeKind.AppWidget }
+                            .forEach { eu.eurise.feature.launcher.home.AppWidgets.delete(context, it.widget) }
+                        viewModel.deletePage(p.id)
+                    },
+                    onNew = { newPageFor = "" },
+                    onClose = { pagesSheet = false },
+                )
+            }
+            newPageFor?.let { appKey ->
+                eu.eurise.feature.launcher.home.PageDialog(
+                    title = stringResource(R.string.pages_new),
+                    initial = null,
+                    forNew = true,
+                    copyChoices = settings.pages,
+                    onDismiss = { newPageFor = null },
+                    onCreate = { name, symbol, mode, start, copyOf, startHere ->
+                        val after = deskPages.getOrNull(homePager.currentPage)?.id
+                        val id = viewModel.createPage(name, symbol, mode, start, copyOf, startHere, appKey.ifBlank { null }, after)
+                        newPageFor = null
+                        pagesSheet = false
+                        pagePicker = null
+                        goToPage = id
+                    },
+                )
+            }
+            pagePicker?.let { app ->
+                eu.eurise.feature.launcher.home.PagePickerSheet(
+                    appLabel = app.label,
+                    pages = settings.pages,
+                    addPage = settings.addPage,
+                    onPick = { p ->
+                        viewModel.addToPage(app.key, p.id)
+                        pagePicker = null
+                        android.widget.Toast.makeText(context, pageAdded.format(app.label), android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onStar = { p -> viewModel.updateSettings { it.copy(addPage = p.id) } },
+                    onNew = { newPageFor = app.key },
+                    onClose = { pagePicker = null },
+                )
+            }
             if (homeCatalog) {
                 eu.eurise.feature.launcher.home.HomeCatalog(
-                    onWidget = { info -> homeCatalog = false; widgetPage = 0; addWidget(info) },
+                    onWidget = { info -> homeCatalog = false; widgetPage = HD.HOME; addWidget(info) },
                     slots = settings.homeSlots,
                     onAdd = { kind ->
                         viewModel.updateSettings { it.copy(homeSlots = it.homeSlots + eu.eurise.feature.launcher.home.HomeSlot(kind, kind.defaultWidth)) }
@@ -973,6 +1053,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
                         appsOf = { c -> eu.eurise.feature.launcher.home.categoryApps(c, state.apps, state.favorites, categoryOf, settings.appOrder[c.id]) },
                         badges = badges, dark = scene.themeDark, leftHanded = settings.leftHanded, hazeState = hazeState, bottom = dockBottom,
                         onOpen = { app, c -> dockPrefs.countOpen(c.id); close(); actions.openApp(app) },
+                        onHold = { app -> pagePicker = app },
                         onPage = { c -> dockPrefs.countOpen(c.id); close(); select(c) },
                         onAddCategory = if (barCategories.size < eu.eurise.feature.launcher.apps.MAX_CATEGORIES) ({ close(); categoryEditor = true }) else null,
                         onClose = close,

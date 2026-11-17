@@ -324,6 +324,73 @@ class LauncherViewModel(
 
     fun updateSettings(transform: (LauncherSettings) -> LauncherSettings) = settingsStore.update(transform)
 
+    /**
+     * «Aggiungi alla Scrivania» (tavola ScrPagAggiungi): sulla home l'app entra nei preferiti (o, se sono pieni, tra le
+     * bolle della home); sulle altre pagine diventa una bolla-app in fondo. Un'app già presente in quella pagina non si
+     * ripete.
+     */
+    fun addToPage(key: String, page: String) {
+        if (page == eu.eurise.feature.launcher.home.DeskPage.HOME) {
+            val current = favoriteKeys.value
+            if (key in current) return
+            if (current.size < settings.value.maxFavorites) {
+                saveFavorites(current + key)
+                return
+            }
+        }
+        updateSettings { s ->
+            val slots = s.slotsOf(page)
+            if (slots.any { it.kind == eu.eurise.feature.launcher.home.HomeKind.App && it.app == key }) s
+            else s.withSlots(page, slots + eu.eurise.feature.launcher.home.appSlot(key))
+        }
+    }
+
+    /**
+     * Pagina nuova (tavola ScrPagNuova): dopo [after] (o in fondo), con le bolle di partenza o la copia di [copyOf];
+     * [withApp] la riempie con quell'app. Restituisce l'id.
+     */
+    fun createPage(
+        name: String,
+        symbol: String,
+        mode: eu.eurise.core.data.modes.Mode?,
+        start: eu.eurise.feature.launcher.home.PageStart,
+        copyOf: String? = null,
+        startHere: Boolean = false,
+        withApp: String? = null,
+        after: String? = null,
+    ): String {
+        val id = eu.eurise.feature.launcher.home.DeskPage.newId(settings.value.pages)
+        updateSettings { s ->
+            val base = if (start == eu.eurise.feature.launcher.home.PageStart.Copy && copyOf != null) {
+                // La copia della home porta con sé anche i preferiti, come app.
+                if (copyOf == eu.eurise.feature.launcher.home.DeskPage.HOME) favoriteKeys.value.map { eu.eurise.feature.launcher.home.appSlot(it) } + s.homeSlots.filter { it.kind != eu.eurise.feature.launcher.home.HomeKind.AppWidget }
+                else s.slotsOf(copyOf).filter { it.kind != eu.eurise.feature.launcher.home.HomeKind.AppWidget }
+            } else eu.eurise.feature.launcher.home.startSlots(start)
+            val slots = base + listOfNotNull(withApp?.let { eu.eurise.feature.launcher.home.appSlot(it) })
+            val page = eu.eurise.feature.launcher.home.DeskPage(id, name.trim(), symbol, mode)
+            val at = after?.let { a -> s.pages.indexOfFirst { it.id == a } }?.takeIf { it >= 0 }?.plus(1) ?: s.pages.size
+            s.copy(
+                pages = s.pages.toMutableList().apply { add(at, page) },
+                pageSlots = s.pageSlots + (id to slots),
+                startPage = if (startHere) id else s.startPage,
+            )
+        }
+        return id
+    }
+
+    /** Toglie una pagina dell'utente (o la bacheca, o il riepilogo); la home resta. Le app restano nelle categorie. */
+    fun deletePage(id: String) {
+        if (id == eu.eurise.feature.launcher.home.DeskPage.HOME) return
+        updateSettings { s ->
+            s.copy(
+                pages = s.pages.filterNot { it.id == id },
+                pageSlots = s.pageSlots - id,
+                startPage = if (s.startPage == id) eu.eurise.feature.launcher.home.DeskPage.HOME else s.startPage,
+                addPage = if (s.addPage == id) eu.eurise.feature.launcher.home.DeskPage.HOME else s.addPage,
+            )
+        }
+    }
+
     /** Ricorda l'app appena aperta per la fila "Recenti" della ricerca. */
     fun recordLaunch(entry: AppEntry) {
         val next = (listOf(entry.key) + recentKeys.value.filter { it != entry.key }).take(MAX_RECENTS)

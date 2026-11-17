@@ -309,9 +309,18 @@ internal fun QuickIcon(
 
 /** Tre puntini sopra la barra: Notizie, Home e Riepilogo. */
 @Composable
-internal fun PageDots(current: Int, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        repeat(3) { i ->
+internal fun PageDots(current: Int, count: Int = 3, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    // Un tocco sui puntini apre «Le tue pagine» (tavola ScrPagGestisci): l'area tocca è alta 40 dp.
+    Row(
+        modifier.then(
+            if (onClick != null) Modifier.clip(CircleShape)
+                .clickable(onClickLabel = androidx.compose.ui.res.stringResource(eu.eurise.feature.launcher.R.string.pages_title), onClick = onClick)
+                .padding(horizontal = 14.dp, vertical = 17.dp)
+            else Modifier,
+        ),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        repeat(count) { i ->
             Box(
                 Modifier
                     .size(width = if (i == current) 16.dp else 6.dp, height = 6.dp)

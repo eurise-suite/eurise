@@ -1,5 +1,9 @@
 package eu.eurise.feature.launcher.settings
 
+import eu.eurise.feature.launcher.home.decodePageSlots
+import eu.eurise.feature.launcher.home.decodePages
+import eu.eurise.feature.launcher.home.encodePageSlots
+import eu.eurise.feature.launcher.home.encodePages
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -157,7 +161,30 @@ data class LauncherSettings(
     val themeMode: Int = 0,
     /** Bolla Codici e consegne: legge i testi delle notifiche per trovarli (spenta finché l'utente non la accende). */
     val readCodes: Boolean = false,
+    /** Le pagine della Scrivania nell'ordine scelto (tavole ScrPag*): le tre di sempre più quelle dell'utente. */
+    val pages: List<eu.eurise.feature.launcher.home.DeskPage> = eu.eurise.feature.launcher.home.DeskPage.Defaults,
+    /** La pagina da cui parte la Scrivania (e dove porta il tasto Home). */
+    val startPage: String = eu.eurise.feature.launcher.home.DeskPage.HOME,
+    /** La pagina con la stella: dove va un'app con «Aggiungi alla Scrivania» al primo tocco. */
+    val addPage: String = eu.eurise.feature.launcher.home.DeskPage.HOME,
+    /** Le bolle (e le app) delle pagine create dall'utente: id della pagina → bolle. */
+    val pageSlots: Map<String, List<eu.eurise.feature.launcher.home.HomeSlot>> = emptyMap(),
 ) {
+    /** Le bolle di una pagina qualsiasi; nulle per la home, che ha i suoi preferiti e le sue bolle. */
+    fun slotsOf(page: String): List<eu.eurise.feature.launcher.home.HomeSlot> = when (page) {
+        eu.eurise.feature.launcher.home.DeskPage.LEFT -> leftSlots
+        eu.eurise.feature.launcher.home.DeskPage.RIGHT -> rightSlots
+        eu.eurise.feature.launcher.home.DeskPage.HOME -> homeSlots
+        else -> pageSlots[page].orEmpty()
+    }
+
+    fun withSlots(page: String, slots: List<eu.eurise.feature.launcher.home.HomeSlot>): LauncherSettings = when (page) {
+        eu.eurise.feature.launcher.home.DeskPage.LEFT -> copy(leftSlots = slots)
+        eu.eurise.feature.launcher.home.DeskPage.RIGHT -> copy(rightSlots = slots)
+        eu.eurise.feature.launcher.home.DeskPage.HOME -> copy(homeSlots = slots)
+        else -> copy(pageSlots = pageSlots + (page to slots))
+    }
+
     val maxFavorites: Int get() = columns * rows
 
     companion object {
@@ -245,6 +272,10 @@ class SettingsStore(context: Context) {
             .putString("wp_fixed", next.wallpaper.fixed)
             .putInt("theme_mode", next.themeMode)
             .putBoolean("read_codes", next.readCodes)
+            .putString("desk_pages", next.pages.encodePages())
+            .putString("start_page", next.startPage)
+            .putString("add_page", next.addPage)
+            .putString("page_slots", next.pageSlots.encodePageSlots())
             .apply()
     }
 
@@ -293,6 +324,10 @@ class SettingsStore(context: Context) {
         ),
         themeMode = prefs.getInt("theme_mode", 0),
         readCodes = prefs.getBoolean("read_codes", false),
+        pages = decodePages(prefs.getString("desk_pages", null)),
+        startPage = prefs.getString("start_page", null) ?: eu.eurise.feature.launcher.home.DeskPage.HOME,
+        addPage = prefs.getString("add_page", null) ?: eu.eurise.feature.launcher.home.DeskPage.HOME,
+        pageSlots = decodePageSlots(prefs.getString("page_slots", null)),
     )
 }
 

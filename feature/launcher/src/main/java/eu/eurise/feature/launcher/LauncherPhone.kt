@@ -83,6 +83,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -208,6 +211,12 @@ internal class HomeBoardData(
     val readCodes: Boolean,
     /** Compleanni e ricorrenze (Date importanti): quelli di oggi entrano nella bolla «I tuoi impegni». */
     val importantDates: List<eu.eurise.core.data.dates.ImportantDate> = emptyList(),
+    /** Per le app messe sulle pagine: le app installate per chiave, tema, numeri da leggere e misura delle icone. */
+    val apps: Map<String, AppEntry> = emptyMap(),
+    val dark: Boolean = false,
+    val badges: Map<String, Int> = emptyMap(),
+    val iconSize: Dp = 52.dp,
+    val showLabels: Boolean = true,
 )
 
 /** Il contenuto di una bolla: sulla home o, come scheda, in una pagina laterale. */
@@ -289,12 +298,46 @@ internal fun HomeBubble(
                     context.packageManager.getLaunchIntentForPackage(pkg)?.let { runCatching { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
                 }
             }
+            eu.eurise.feature.launcher.home.HomeKind.App -> PageApp(slot, home, actions, mod)
             else -> slot.kind.card?.let { kind ->
                 // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
                 val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
                 home.cardBody(kind, sized)
             }
         }
+}
+
+/**
+ * Un'app su una pagina (tavola ScrPagLibera): icona del tema ed etichetta, al centro della sua casella; un tocco la apre,
+ * la pressione lunga porta in modifica come per le bolle. Se l'app non c'è più resta un segnaposto da togliere.
+ */
+@Composable
+private fun PageApp(slot: eu.eurise.feature.launcher.home.HomeSlot, home: HomeBoardData, actions: LauncherActions, mod: Modifier) {
+    val entry = home.apps[slot.app]
+    val onSurface = MaterialTheme.colorScheme.onBackground
+    Box(mod, contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier.clip(RoundedCornerShape(16.dp))
+                .then(if (entry != null) Modifier.clickable(onClickLabel = entry.label) { actions.openApp(entry) } else Modifier)
+                .padding(vertical = 6.dp, horizontal = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (entry != null) {
+                eu.eurise.feature.launcher.apps.AppIcon(entry, home.iconSize, home.dark, home.badges[entry.packageName] ?: 0)
+            } else {
+                Box(Modifier.size(home.iconSize).clip(RoundedCornerShape(16.dp)).background(onSurface.copy(alpha = 0.12f)))
+            }
+            if (home.showLabels) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    entry?.label ?: stringResource(R.string.page_app_missing),
+                    color = onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                    modifier = Modifier.widthIn(max = home.iconSize + 24.dp),
+                )
+            }
+        }
+    }
 }
 
 /** Le azioni che escono dalla Scrivania (aprire app, impostazioni, permessi). */

@@ -287,6 +287,8 @@ fun AppTile(
     onMenuClosed: () -> Unit = {},
     /** Avvia la selezione di più app partendo da questa; nullo per non mostrare la voce. */
     onSelect: (() -> Unit)? = null,
+    /** «Aggiungi alla Scrivania…»: apre la scelta della pagina; nullo per non mostrare la voce. */
+    onAddToPage: (() -> Unit)? = null,
 ) {
     var moving by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
@@ -353,6 +355,13 @@ fun AppTile(
                 leadingIcon = { Icon(EuriseIcons.star(), null) },
                 onClick = { menu = false; onToggleFavorite() },
             )
+            if (onAddToPage != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.pages_add_menu)) },
+                    leadingIcon = { Icon(EuriseIcons.grid(), null) },
+                    onClick = { menu = false; onAddToPage() },
+                )
+            }
             if (onMove != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.favorite_move_before)) },
