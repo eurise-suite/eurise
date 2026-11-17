@@ -103,7 +103,7 @@ public final class EuriseCarInfo
     {
       sClass = 0;
     }
-    sRef = p[1];
+    sRef = app.organicmaps.eurise.NowPlayingText.roadRef(p[1]);
     sName = p[2];
     sKm = sApp == null || sRef.isEmpty() ? ""
         : EuriseMilestones.label(sApp, sCountryMap, location.getLatitude(), location.getLongitude(), sRef);

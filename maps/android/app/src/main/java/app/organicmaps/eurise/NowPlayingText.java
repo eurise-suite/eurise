@@ -273,6 +273,24 @@ public final class NowPlayingText
     return s.matches("\\+?\\d{3,}") ? s : null;
   }
 
+  /**
+   * Il numero della strada da mostrare: senza la rete delle relazioni di OpenStreetMap («IT:national/SS7» → «SS7»),
+   * più numeri separati da uno spazio, senza doppioni.
+   */
+  public static String roadRef(String raw)
+  {
+    if (raw == null)
+      return "";
+    final java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+    for (String part : raw.split("[;\\s]+"))
+    {
+      final String p = part.substring(part.lastIndexOf('/') + 1).trim();
+      if (!p.isEmpty())
+        out.add(p);
+    }
+    return String.join(" ", out);
+  }
+
   private static String two(long v)
   {
     return v < 10 ? "0" + v : Long.toString(v);

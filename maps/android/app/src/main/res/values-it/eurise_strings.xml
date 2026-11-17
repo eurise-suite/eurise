@@ -530,4 +530,8 @@
     <string name="eurise_tilt_flat">2D</string>
     <string name="eurise_tilt_3d_desc">Inclina la mappa fino al cielo</string>
     <string name="eurise_tilt_flat_desc">Torna alla mappa piatta</string>
+    <string name="eurise_lv_media_access_title">Dai l\'accesso alle notifiche</string>
+    <string name="eurise_lv_media_access_sub">Senza, la bolla in guida non compare (telefono e auto)</string>
+    <string name="eurise_lv_media_app_info">Info app</string>
+    <string name="eurise_lv_media_access_help">Nelle impostazioni del telefono, «Accesso alle notifiche», accendi Eurise Mappe. Se l\'interruttore è grigio o dice «impostazione con restrizioni» (succede alle app installate dal browser): tocca «Info app», poi il menu ⋮ in alto a destra, «Consenti impostazioni con restrizioni», e torna all\'accesso alle notifiche. Mappe legge solo cosa suona, la chiamata, le chiamate perse e i timer; nulla esce dal telefono.</string>
 </resources>

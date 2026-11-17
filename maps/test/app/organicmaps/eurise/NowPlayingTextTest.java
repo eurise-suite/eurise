@@ -61,6 +61,9 @@ public final class NowPlayingTextTest
     eq("+393331234567", NowPlayingText.phone("tel:+39%20333%20123%204567"), "numero dal tel:");
     eq(null, NowPlayingText.phone("mailto:a@b.it"), "non è un numero");
 
+    eq("SS7", NowPlayingText.roadRef("IT:national/SS7"), "rete tolta");
+    eq("A1 E35", NowPlayingText.roadRef("A1;e-road/E35"), "più numeri");
+    eq("SP50", NowPlayingText.roadRef("SP50"), "numero semplice");
     if (sFailed > 0)
     {
       System.out.println("NowPlayingTextTest: " + sFailed + " prove fallite");

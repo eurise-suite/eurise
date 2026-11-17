@@ -538,4 +538,8 @@
     <string name="eurise_tilt_flat">2D</string>
     <string name="eurise_tilt_3d_desc">Tilt the map up to the sky</string>
     <string name="eurise_tilt_flat_desc">Back to the flat map</string>
+    <string name="eurise_lv_media_access_title">Grant notification access</string>
+    <string name="eurise_lv_media_access_sub">Without it the driving bubble does not appear (phone and car)</string>
+    <string name="eurise_lv_media_app_info">App info</string>
+    <string name="eurise_lv_media_access_help">In the phone settings, Notification access, turn on Eurise Maps. If the switch is grey or says restricted setting (this happens to apps installed from the browser): tap App info, then the ⋮ menu at the top right, Allow restricted settings, and go back to notification access. Maps only reads what is playing, the call, missed calls and timers; nothing leaves the phone.</string>
 </resources>

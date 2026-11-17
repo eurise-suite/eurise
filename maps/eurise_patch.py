@@ -1846,3 +1846,12 @@ patch(manifest, """    <package android:name="eu.eurise.voice.debug"/>""", """  
     <package android:name="eu.eurise.messages"/>
     <package android:name="eu.eurise.messages.debug"/>""")
 print("eurise_patch: bolla, otto aggiunte (avvisi, messaggi, arrivo condiviso)")
+
+# Android Auto: il riquadro della manovra nel verde della suite come nelle tavole approvate (MapAutoGuida, MapBollaAuto),
+# non nel nero dell'auto. Il colore lo applica l'auto: può tenerne uno più scuro se il contrasto col testo bianco non basta.
+# Il riquadro dell'arrivo (tempo e km) non ha un colore che l'app possa scegliere.
+patch(navscreen, """    builder.setNavigationInfo(getNavigationInfo());
+    return builder.build();""", """    builder.setNavigationInfo(getNavigationInfo());
+    builder.setBackgroundColor(androidx.car.app.model.CarColor.createCustom(0xFF2F6B45, 0xFF2F6B45));
+    return builder.build();""")
+print("eurise_patch: Android Auto, riquadro della manovra verde")

@@ -153,6 +153,37 @@ private fun Sheet(night: Boolean) {
                     .setNegativeButton(R.string.eurise_lv_cancel, null)
                     .show()
             }
+            if (media && !mediaAccess) {
+                // Acceso ma senza l'accesso alle notifiche: la bolla non può comparire. Una riga sempre in vista che porta
+                // alle impostazioni e spiega il caso delle «impostazioni con restrizioni» (app installate dal browser).
+                Box(Modifier.fillMaxWidth().heightIn(min = 1.dp, max = 1.dp).background(c.ink.copy(alpha = 0.07f)))
+                Column(
+                    Modifier.fillMaxWidth().heightIn(min = 58.dp).clickable {
+                        android.app.AlertDialog.Builder(context)
+                            .setTitle(R.string.eurise_lv_media_access_title)
+                            .setMessage(R.string.eurise_lv_media_access_help)
+                            .setPositiveButton(R.string.eurise_lv_media_access) { _, _ ->
+                                runCatching {
+                                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                                }
+                            }
+                            .setNeutralButton(R.string.eurise_lv_media_app_info) { _, _ ->
+                                runCatching {
+                                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        android.net.Uri.fromParts("package", context.packageName, null))
+                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                                }
+                            }
+                            .setNegativeButton(R.string.eurise_lv_cancel, null)
+                            .show()
+                    }.semantics(mergeDescendants = true) { role = Role.Button }.padding(vertical = 10.dp),
+                ) {
+                    BasicText(stringResource(R.string.eurise_lv_media_access_title),
+                        style = TextStyle(color = c.accent, fontSize = 14.5.sp, fontWeight = FontWeight.Bold))
+                    BasicText(stringResource(R.string.eurise_lv_media_access_sub), style = TextStyle(color = c.muted, fontSize = 12.sp))
+                }
+            }
             if (media) {
                 Toggle(c, stringResource(R.string.eurise_lv_messages), stringResource(R.string.eurise_lv_messages_sub),
                     messages, divider = true) { want ->
