@@ -144,6 +144,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
 - **Approvate, codice da fare**: ChatChiamata (chiamate e videochiamate: nel codice non c'è nulla), ChatAllega (oggi la
   Chat mostra immagini e file ricevuti ma non li manda); MsgConversazione per la parte «Disponibilità e posizione» nella barra; **PcEmail** (pagina «Eurise sul
   computer», approvata il 16 novembre: schermate da scrivere insieme all'area Computer, IMAP/SMTP già in `core/sync`).
+- **Da approvare** (pagina «Chat ed Email», 17 novembre, pomeriggio; richiesta del proprietario; toccato `canvas.json`):
+  fila nuova a y 16262 con **ChatDueAccount** (Personale e Lavoro nella stessa Chat, due server; si cambia dalla barra in
+  basso sotto il pollice, l'altro account mostra solo quante non lette; ricerca, notifiche, cifratura e backup separati) e
+  **ChatAccountAggiungi** (i tuoi account con server e tacchette di privacy, fuori orario per il lavoro; aggiungi con
+  matrix.org, con l'email di lavoro che trova il server dal dominio, o da un invito/QR; al massimo due). Codice dopo l'ok.
 - **Da approvare** (pagina «Chat ed Email», 14 novembre, notte): fila «Chat al lavoro» con **ChatLavoro**, **ChatVideo**,
   **ChatCondividi**; fila «Email da lavoro» con **MailSmart**, **MailInsieme**, **MailScriviLavoro**. Documento collegato
   «Mail e Chat da lavoro · proposta, guida KMail, posta nostra»: https://claude.ai/artifact/F7uLSEo2KPWyaYBFtNCWJe

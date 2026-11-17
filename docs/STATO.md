@@ -3349,3 +3349,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, Alfred e AI: Alfred più svelto (dice l'essenziale, Nicola più rapido), giro 739 → `docs/stato/ALFRED.md`.
 - 17 novembre, Mappe 93: bolla in Android Auto in basso a sinistra (la coprivano i tasti dell'auto); tavole MapAutoSuite da approvare → `docs/stato/MAPPE.md`.
 - 17 novembre, Mappe 96: in Android Auto riquadri della suite disegnati da Mappe (MapAutoSuite) e bolla più grande in alto a destra nell'area stabile → `docs/stato/MAPPE.md`.
+- 17 novembre, pomeriggio, Comunicazione: tavole da approvare ChatDueAccount e ChatAccountAggiungi (due account Matrix, personale e lavoro, nella stessa Chat; toccato canvas.json della tela) → `docs/stato/COMUNICAZIONE.md`.
