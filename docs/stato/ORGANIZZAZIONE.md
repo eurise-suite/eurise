@@ -249,6 +249,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   a 1,7:1 di G); schiariti per la sera arrivano a 4,5:1 (testo bianco sopra circa 4:1) e da C a G si somigliano molto.
   Per ognuno la versione di sera calcolata (`dark`), da usare con la scelta del proprietario.
 - **Scelto: E di giorno (#0552DC), F di sera (#85A4F1)**, in `ExtraTint.Ceruleo`; sfumature invariate. Giro sotto.
+- Parte non nostra toccata: `chat/src/main/res/values/bussola_strings.xml`, apostrofo non protetto in `bu_rep_type`
+  («un'immagine») che fermava la compilazione di tutti (giro 734); corretto con `\'`.
 
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
