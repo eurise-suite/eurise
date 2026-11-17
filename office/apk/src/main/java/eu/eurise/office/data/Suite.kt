@@ -31,7 +31,20 @@ object Suite {
         false
     }
 
-    fun openFrom(extensions: Collection<String>, from: String): Intent = FilesContract.openFrom(hub, extensions, from)
+    fun openFrom(extensions: Collection<String>, from: String, start: String? = null): Intent =
+        FilesContract.openFrom(hub, extensions, from, start)
+
+    /** Un luogo di Eurise File: [id] vuoto è il telefono, altrimenti l'account cloud ([kind]: Murena, Nextcloud…). */
+    data class Place(val id: String, val label: String, val kind: String)
+
+    /** I cloud collegati in Eurise File (senza il telefono); vuoto se l'app Eurise non c'è o non li offre ancora. */
+    fun clouds(context: Context): List<Place> = runCatching {
+        val b = context.contentResolver.call(Uri.parse("content://" + FilesContract.placesAuthority(hub)), FilesContract.METHOD_PLACES, null, null)
+        val ids = b?.getStringArray(FilesContract.KEY_IDS).orEmpty()
+        val labels = b?.getStringArray(FilesContract.KEY_LABELS).orEmpty()
+        val kinds = b?.getStringArray(FilesContract.KEY_KINDS).orEmpty()
+        ids.indices.filter { ids[it].isNotEmpty() && it < labels.size }.map { Place(ids[it], labels[it], kinds.getOrElse(it) { "" }) }
+    }.getOrDefault(emptyList())
 
     /**
      * Avvisa il centro privacy dell'app Eurise ([PrivacyContract]: acceso, contatto nel registro). Senza l'app Eurise, o

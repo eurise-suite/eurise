@@ -60,6 +60,7 @@ import eu.eurise.core.designsystem.theme.EuriseThemeExtras
 import eu.eurise.office.R
 import eu.eurise.office.data.DocKind
 import eu.eurise.office.data.Recent
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
@@ -74,14 +75,19 @@ interface HomeActions {
     fun calendar()
     fun settings()
     fun downloadEngine()
-    fun files()
-    fun templates()
+    /** Dock: i documenti del telefono in Eurise File. */
+    fun phoneFiles()
+    /** Dock, tocco breve: la cartella di riferimento del cloud preferito (se non ce n'è uno, la scelta). */
+    fun cloud()
+    /** Dock, pressione lunga su «Cloud»: l'elenco dei cloud con la stellina del preferito. */
+    fun chooseCloud()
 }
 
 /**
  * Schermata iniziale di Office (tavola OffHome, approvata il 13 novembre): ricerca in alto, «Nuovo» in sei tasti, i
- * recenti ovunque siano con «Apri da…», la riga del motore quando manca, e la barra satinata Recenti / File / Modelli
- * con il + accanto. Il Calendario sta in alto accanto alle impostazioni.
+ * recenti ovunque siano con «Apri da…», la riga del motore quando manca, e la barra satinata Recenti / Telefono / Cloud
+ * con il + accanto (tavola OffOggiHome: tocco breve su Cloud = il preferito, pressione lunga = la scelta). Il Calendario
+ * sta in alto accanto alle impostazioni.
  */
 @Composable
 fun HomeScreen(
@@ -91,6 +97,10 @@ fun HomeScreen(
     engineReady: Boolean,
     leftHanded: Boolean,
     actions: HomeActions,
+    /** Tavola OffRapporto: la scheda sopra i recenti dopo una chiusura improvvisa. */
+    report: eu.eurise.office.data.Reports.Report? = null,
+    onSeeReport: () -> Unit = {},
+    onIgnoreReport: () -> Unit = {},
 ) {
     val haze = remember { HazeState() }
     val list = rememberLazyListState()
@@ -110,6 +120,7 @@ fun HomeScreen(
                 // Mentre si tira giù il campo accenna a scendere (tavola RicTira).
                 Box(Modifier.offset(y = (pull.pull * 14f).dp)) { SearchField(query, onQuery, leftHanded) }
             }
+            if (report != null && query.isBlank()) item(key = "rapporto") { ReportCard(report, onSeeReport, onIgnoreReport) }
             if (query.isBlank()) item(key = "nuovo") { NewGrid(actions) }
             item(key = "titolo-recenti") {
                 Row(
@@ -154,13 +165,21 @@ fun HomeScreen(
         }
         val items = listOf(
             DockItem(stringResource(R.string.office_tab_recent)) { EuriseIcons.clock(it) },
-            DockItem(stringResource(R.string.office_tab_files)) { EuriseIcons.folder(it) },
-            DockItem(stringResource(R.string.office_tab_templates)) { EuriseIcons.document(it) },
+            DockItem(stringResource(R.string.office_tab_phone)) { EuriseIcons.folder(it) },
+            DockItem(stringResource(R.string.office_tab_cloud)) { EuriseIcons.cloud(it) },
         )
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
         if (!pull.lowered) EuriseDock(
             items = items,
             selected = 0,
-            onSelect = { when (it) { 1 -> actions.files(); 2 -> actions.templates() } },
+            onSelect = {
+                when (it) {
+                    0 -> scope.launch { list.animateScrollToItem(0) }
+                    1 -> actions.phoneFiles()
+                    2 -> actions.cloud()
+                }
+            },
+            onLongSelect = { if (it == 2) actions.chooseCloud() else if (it == 1) actions.phoneFiles() },
             hazeState = haze,
             modifier = Modifier.align(Alignment.BottomCenter),
             actionLabel = stringResource(R.string.office_new),

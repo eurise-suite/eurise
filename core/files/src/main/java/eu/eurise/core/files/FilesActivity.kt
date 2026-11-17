@@ -56,6 +56,9 @@ class FilesActivity : ComponentActivity() {
                 }
             }
             ACTION_OPEN_FROM -> {
+                val start = intent.getStringExtra(EXTRA_START)?.let { key ->
+                    if (key == START_PHONE) Spot(null, EuriseFiles.PHONE_HOME) else Spot.fromKey(key)
+                }
                 val extensions = intent.getStringExtra(EXTRA_EXTENSIONS).orEmpty().split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
                 setContent {
                     EuriseTheme {
@@ -73,7 +76,7 @@ class FilesActivity : ComponentActivity() {
                             entry?.let { back.putExtra(EXTRA_ORIGIN, it.spot.key()) }
                             setResult(Activity.RESULT_OK, back)
                             finish()
-                        }, onCancel = { setResult(Activity.RESULT_CANCELED); finish() }, onSystem = { system.launch(arrayOf("*/*")) })
+                        }, onCancel = { setResult(Activity.RESULT_CANCELED); finish() }, onSystem = { system.launch(arrayOf("*/*")) }, start = start)
                     }
                 }
             }
@@ -103,6 +106,8 @@ class FilesActivity : ComponentActivity() {
         const val EXTRA_WHERE = "eu.eurise.extra.WHERE"
         const val EXTRA_EXTENSIONS = "eu.eurise.extra.EXTENSIONS"
         const val EXTRA_ORIGIN = "eu.eurise.extra.ORIGIN"
+        const val EXTRA_START = "eu.eurise.extra.START"
+        const val START_PHONE = "phone"
         /** Dopo il nome del pacchetto: `eu.eurise.hub.eurisefiles`. */
         const val AUTHORITY = ".eurisefiles"
     }

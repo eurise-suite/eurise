@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import eu.eurise.core.designsystem.theme.EuriseTheme
+import eu.eurise.core.suite.FilesContract
 import eu.eurise.office.BuildConfig
 import eu.eurise.office.R
 import eu.eurise.office.data.Appearance
@@ -29,6 +30,7 @@ import eu.eurise.office.data.NewDocuments
 import eu.eurise.office.data.OfficeDocs
 import eu.eurise.office.data.Recent
 import eu.eurise.office.data.Recents
+import eu.eurise.office.data.Reports
 import eu.eurise.office.data.Suite
 import kotlinx.coroutines.launch
 
@@ -47,11 +49,25 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     private var accentTints by mutableStateOf<List<Appearance.Tint>>(emptyList())
     private var accentChoice by mutableStateOf(Appearance.DESK)
     private val recents by lazy { Recents.get(this) }
+    /** Foglio «File dal cloud» della dock (pressione lunga su Cloud) e i cloud di Eurise File. */
+    private var cloudSheet by mutableStateOf(false)
+    private var clouds by mutableStateOf<List<Suite.Place>>(emptyList())
+    private var favoriteCloud by mutableStateOf("")
+    /** Rapporto del problema: la scheda della schermata iniziale, la schermata aperta e quanti sono sul telefono. */
+    private var cardReport by mutableStateOf<Reports.Report?>(null)
+    private var reportsOpen by mutableStateOf(false)
+    private var reportFirst by mutableStateOf<Reports.Report?>(null)
+    private var reports by mutableStateOf<List<Reports.Report>>(emptyList())
 
     /** Eurise File («Apri da…»): torna con l'Uri e i permessi; senza l'app Eurise, il selettore di Android. */
     private val openFromSuite = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data = result.data ?: return@registerForActivityResult
         val uri = data.data ?: return@registerForActivityResult
+        // La cartella del documento diventa quella di riferimento del suo cloud (la riga del foglio «File dal cloud»).
+        data.getStringExtra(FilesContract.EXTRA_ORIGIN)?.let { origin ->
+            val account = origin.substringBefore(':')
+            if (clouds.any { it.id == account }) OfficePrefs.setCloudFolder(this, account, origin.substringBeforeLast('/', "$account:"))
+        }
         openPicked(uri, data.flags)
     }
     private val openFromSystem = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -66,12 +82,41 @@ class OfficeActivity : ComponentActivity(), HomeActions {
             leftHanded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.leftHanded(this@OfficeActivity) }
             accentChoice = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.accent(this@OfficeActivity) }
             accentTints = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Appearance.palette(this@OfficeActivity) }
+            loadClouds()
+            loadReports()
         }
         engineFor(intent)
         setContent {
             EuriseTheme {
                 val list by recents.items.collectAsStateWithLifecycle()
                 val engine by EngineInstaller.state.collectAsStateWithLifecycle()
+                if (reportsOpen) {
+                    ReportScreen(
+                        reports = reports,
+                        first = reportFirst,
+                        onShare = { text ->
+                            val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+                                .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.report_title)).putExtra(Intent.EXTRA_TEXT, text)
+                            startActivity(Intent.createChooser(send, getString(R.string.report_share)))
+                        },
+                        onCopy = { text ->
+                            getSystemService(android.content.ClipboardManager::class.java)
+                                ?.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.report_title), text))
+                            Toast.makeText(this@OfficeActivity, R.string.report_copied, Toast.LENGTH_SHORT).show()
+                        },
+                        onDelete = { r ->
+                            lifecycleScope.launch {
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Reports.delete(this@OfficeActivity, r.id) }
+                                if (cardReport?.id == r.id) cardReport = null
+                                reportFirst = null
+                                loadReports()
+                                if (reports.isEmpty()) reportsOpen = false
+                            }
+                        },
+                        onClose = { reportsOpen = false; reportFirst = null },
+                    )
+                    return@EuriseTheme
+                }
                 HomeScreen(
                     recents = list,
                     query = query,
@@ -79,6 +124,17 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                     engineReady = engine == EngineState.Ready,
                     leftHanded = leftHanded,
                     actions = this,
+                    report = cardReport,
+                    onSeeReport = {
+                        reportFirst = cardReport
+                        reportsOpen = true
+                        cardReport = null
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) { Reports.dismiss(this@OfficeActivity) }
+                    },
+                    onIgnoreReport = {
+                        cardReport = null
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) { Reports.dismiss(this@OfficeActivity) }
+                    },
                 )
                 if (showSettings) {
                     AlertDialog(
@@ -94,6 +150,9 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                                         OfficePrefs.setLeftHanded(this@OfficeActivity, it)
                                     })
                                 }
+                                if (reports.isNotEmpty()) TextButton(onClick = { showSettings = false; reportFirst = null; reportsOpen = true }) {
+                                    Text(stringResource(R.string.report_settings, reports.size))
+                                }
                                 AccentChooser(
                                     tints = accentTints,
                                     chosen = accentChoice,
@@ -108,6 +167,24 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                                 )
                             }
                         },
+                    )
+                }
+                if (cloudSheet) {
+                    CloudSheet(
+                        clouds = clouds,
+                        favorite = favoriteCloud,
+                        folderOf = { id -> OfficePrefs.cloudFolder(this@OfficeActivity, id)?.substringAfter(':')?.ifEmpty { null }?.replace("/", " › ") },
+                        onOpen = { cloudSheet = false; openCloud(it.id) },
+                        onFavorite = {
+                            favoriteCloud = it.id
+                            OfficePrefs.setFavoriteCloud(this@OfficeActivity, it.id)
+                        },
+                        onOtherApp = { cloudSheet = false; openFromSystem.launch(arrayOf("*/*")) },
+                        onConnect = {
+                            cloudSheet = false
+                            if (!Suite.section(this@OfficeActivity, "cloud")) Toast.makeText(this@OfficeActivity, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
+                        },
+                        onDismiss = { cloudSheet = false },
                     )
                 }
                 if (engineSheet) {
@@ -141,6 +218,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         super.onResume()
         EngineInstaller.refresh(this)
         onWifi = EngineInstaller.onUnmeteredNetwork(this)
+        // Tornando da un documento: se il motore si è chiuso da solo, la scheda del rapporto compare subito.
+        lifecycleScope.launch { loadReports() }
     }
 
     /** Un documento arrivato mentre il motore manca: lo si tiene (con i suoi permessi) e si apre la tavola OffMotore. */
@@ -254,10 +333,43 @@ class OfficeActivity : ComponentActivity(), HomeActions {
 
     override fun downloadEngine() = showEngine()
 
-    override fun files() = openFrom()
+    private suspend fun loadReports() {
+        val (card, all) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            Reports.refresh(this@OfficeActivity) to Reports.all(this@OfficeActivity)
+        }
+        cardReport = card
+        reports = all
+    }
 
-    override fun templates() {
-        dialog = R.string.office_templates_soon
+    private suspend fun loadClouds() {
+        clouds = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Suite.clouds(this@OfficeActivity) }
+        favoriteCloud = OfficePrefs.favoriteCloud(this).takeIf { id -> clouds.any { it.id == id } }
+            ?: clouds.singleOrNull()?.id.orEmpty()
+    }
+
+    /** «Apri da…» di Eurise File già in [start]; senza l'app Eurise il selettore di Android. */
+    private fun openFromAt(start: String) {
+        val fromSuite = Suite.installed(this) && runCatching {
+            openFromSuite.launch(Suite.openFrom(DocKind.openable, getString(R.string.office_app_name), start))
+        }.isSuccess
+        if (!fromSuite) openFromSystem.launch(arrayOf("*/*"))
+    }
+
+    private fun openCloud(id: String) = openFromAt(OfficePrefs.cloudFolder(this, id) ?: "$id:")
+
+    override fun phoneFiles() = openFromAt(FilesContract.START_PHONE)
+
+    override fun cloud() {
+        lifecycleScope.launch {
+            loadClouds()
+            // Senza Eurise File (o senza cloud collegati) il cloud si raggiunge dalla sua app, con il selettore di Android.
+            if (!Suite.installed(this@OfficeActivity)) { openFromSystem.launch(arrayOf("*/*")); return@launch }
+            if (favoriteCloud.isNotEmpty()) openCloud(favoriteCloud) else cloudSheet = true
+        }
+    }
+
+    override fun chooseCloud() {
+        lifecycleScope.launch { loadClouds(); cloudSheet = true }
     }
 
     companion object {

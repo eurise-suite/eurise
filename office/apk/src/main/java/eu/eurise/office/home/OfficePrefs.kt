@@ -24,6 +24,21 @@ object OfficePrefs {
     fun accent(context: Context): String = prefs(context).getString("accento", "").orEmpty()
     fun setAccent(context: Context, value: String) = prefs(context).edit().putString("accento", value).apply()
 
+    /** Il cloud preferito della dock (id dell'account in Eurise File): tocco breve su «Cloud» apre lì. */
+    fun favoriteCloud(context: Context): String = prefs(context).getString("cloud_preferito", "").orEmpty()
+    fun setFavoriteCloud(context: Context, id: String) = prefs(context).edit().putString("cloud_preferito", id).apply()
+
+    /** La cartella di riferimento di un cloud: quella dell'ultimo documento aperto da lì (chiave di Eurise File). */
+    fun cloudFolder(context: Context, id: String): String? = prefs(context).getString("cartella_$id", null)
+    fun setCloudFolder(context: Context, id: String, key: String) = prefs(context).edit().putString("cartella_$id", key).apply()
+
+    /** L'ultimo documento passato al motore: nome, tipo e ora (per il rapporto del problema, OffRapporto). */
+    fun setLastEngineOpen(context: Context, name: String, kind: String) = prefs(context).edit()
+        .putString("motore_nome", name).putString("motore_tipo", kind).putLong("motore_ora", System.currentTimeMillis()).apply()
+    fun lastEngineOpen(context: Context): Triple<String, String, Long> = prefs(context).let {
+        Triple(it.getString("motore_nome", "").orEmpty(), it.getString("motore_tipo", "").orEmpty(), it.getLong("motore_ora", 0L))
+    }
+
     /** Il nome con cui si firmano i commenti. */
     fun author(context: Context): String = prefs(context).getString("autore", "").orEmpty()
     fun setAuthor(context: Context, value: String) = prefs(context).edit().putString("autore", value).apply()

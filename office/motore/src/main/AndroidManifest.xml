@@ -34,6 +34,13 @@
             android:exported="false"
             android:screenOrientation="sensorLandscape" />
 
+        <!-- Le ultime uscite del motore per il rapporto del problema di Office (OffRapporto): solo app della suite. -->
+        <provider
+            android:name="eu.eurise.office.motore.Uscite"
+            android:authorities="${applicationId}.uscite"
+            android:exported="true"
+            android:permission="${suitePermission}" />
+
         <!-- Copie in PDF da condividere (guscio della Suite, EuriseSuite.pdf). -->
         <provider
             android:name="androidx.core.content.FileProvider"

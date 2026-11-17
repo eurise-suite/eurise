@@ -145,6 +145,8 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 goTo(Section.Calendar)
             }
             section == "backup" -> navController.navigate("cloud/backup")
+            // «Collega un cloud» dalla dock di Eurise Office.
+            section == "cloud" -> navController.navigate("cloud") { launchSingleTop = true }
             section == "clock" -> goTo(Section.Clock)
             // Dalla riga della sveglia nella home: 0 sveglie, 1 conto alla rovescia, 2 cronometro.
             section.startsWith("clock:") -> { section.removePrefix("clock:").toIntOrNull()?.let { clockTab = it }; goTo(Section.Clock) }

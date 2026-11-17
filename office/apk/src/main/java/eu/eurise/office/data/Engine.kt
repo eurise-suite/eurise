@@ -52,6 +52,8 @@ object Engine {
             if (!engine) return false
             // L'accento delle icone viaggia con il documento: l'interfaccia web lo chiede al guscio del motore.
             val accent = Appearance.current(context)
+            // Per il rapporto del problema: quale documento il motore stava aprendo (il nome entra solo se lo si sceglie).
+            eu.eurise.office.home.OfficePrefs.setLastEngineOpen(context, name.orEmpty(), kind.name)
             Intent(Intent.ACTION_VIEW).setClassName(packageName, LO_ACTIVITY).setDataAndType(uri, mime ?: mimeOf(kind))
                 .putExtra(EXTRA_ACCENT_LIGHT, Appearance.hex(accent.light))
                 .putExtra(EXTRA_ACCENT_DARK, Appearance.hex(accent.dark))

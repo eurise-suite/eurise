@@ -286,5 +286,11 @@
             android:authorities="${applicationId}.appearance"
             android:exported="true"
             android:permission="${suitePermission}" />
+        <!-- Luoghi di Eurise File (telefono e cloud) per le altre app della suite: la dock della schermata iniziale di Office. -->
+        <provider
+            android:name=".PlacesProvider"
+            android:authorities="${applicationId}.places"
+            android:exported="true"
+            android:permission="${suitePermission}" />
     </application>
 </manifest>

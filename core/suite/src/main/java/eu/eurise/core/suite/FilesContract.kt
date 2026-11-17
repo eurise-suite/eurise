@@ -17,6 +17,18 @@ object FilesContract {
     const val EXTRA_WHERE = "eu.eurise.extra.WHERE"
     const val EXTRA_EXTENSIONS = "eu.eurise.extra.EXTENSIONS"
     const val EXTRA_ORIGIN = "eu.eurise.extra.ORIGIN"
+    /** Dove si apre «Apri da…»: la chiave di una cartella («telefono:Documents», «<account>:Lavoro»…), come [EXTRA_ORIGIN]. */
+    const val EXTRA_START = "eu.eurise.extra.START"
+    /** Chiave della cartella principale del telefono per [EXTRA_START]. */
+    const val START_PHONE = "phone"
+
+    /** I luoghi di Eurise File (telefono e cloud collegati), per le altre app della suite: metodo [METHOD_PLACES]. */
+    fun placesAuthority(hubPackage: String) = "$hubPackage.places"
+    /** Risposta: [KEY_IDS] (id dell'account, vuoto per il telefono), [KEY_LABELS] e [KEY_KINDS] (Murena, Nextcloud…). */
+    const val METHOD_PLACES = "places"
+    const val KEY_IDS = "ids"
+    const val KEY_LABELS = "labels"
+    const val KEY_KINDS = "kinds"
     private const val ACTIVITY = "eu.eurise.core.files.FilesActivity"
 
     /**
@@ -33,9 +45,13 @@ object FilesContract {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .also { it.clipData = ClipData.newRawUri(name, uri) }
 
-    /** «Apri da…»: torna con l'Uri del file scelto (in `data`) e, se viene da Eurise File, il posto d'origine. */
-    fun openFrom(hubPackage: String, extensions: Collection<String>, from: String): Intent =
+    /**
+     * «Apri da…»: torna con l'Uri del file scelto (in `data`) e, se viene da Eurise File, il posto d'origine. Con [start]
+     * (chiave di una cartella o [START_PHONE]) si apre già lì invece che sui recenti.
+     */
+    fun openFrom(hubPackage: String, extensions: Collection<String>, from: String, start: String? = null): Intent =
         Intent(ACTION_OPEN_FROM).setClassName(hubPackage, ACTIVITY)
             .putExtra(EXTRA_EXTENSIONS, extensions.joinToString(","))
             .putExtra(EXTRA_FROM, from)
+            .apply { if (start != null) putExtra(EXTRA_START, start) }
 }

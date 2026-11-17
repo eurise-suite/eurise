@@ -2,6 +2,7 @@ package eu.eurise.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -109,6 +111,7 @@ data class DockItem(val label: String, val icon: (stroke: Float) -> ImageVector)
  * Barra delle sezioni flottante e satinata, con il pulsante dell'azione principale (+) accanto.
  * La sezione attiva si riconosce dal colore d'accento, dal tratto più marcato e dall'etichetta in grassetto.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun EuriseDock(
     items: List<DockItem>,
@@ -121,6 +124,8 @@ fun EuriseDock(
     actionIcon: ImageVector? = null,
     /** Vetro quasi pieno: per le schermate dove il contenuto passa sotto la barra e non deve leggersi (Drive). */
     solid: Boolean = false,
+    /** Pressione lunga su una voce (regola dell'ergonomia: tocco breve il preferito, pressione lunga l'elenco). */
+    onLongSelect: ((Int) -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -149,7 +154,12 @@ fun EuriseDock(
                         .weight(if (active && items.size >= 5) 1.25f else 1f)
                         .height(GlassDefaults.ItemHeight)
                         .clip(RoundedCornerShape(14.dp))
-                        .selectable(selected = active, role = Role.Tab, onClick = { onSelect(index) }),
+                        .then(
+                            if (onLongSelect == null) Modifier.selectable(selected = active, role = Role.Tab, onClick = { onSelect(index) })
+                            else Modifier.semantics { this.selected = active }.combinedClickable(
+                                role = Role.Tab, onClick = { onSelect(index) }, onLongClick = { onLongSelect(index) },
+                            ),
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {

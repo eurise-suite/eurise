@@ -55,14 +55,18 @@ import java.io.File
  * apre il selettore di Android come ultima strada.
  */
 @Composable
-fun OpenFromScreen(forApp: String, extensions: Set<String>, onPicked: (File, Entry?) -> Unit, onCancel: () -> Unit, onSystem: (() -> Unit)? = null) {
+fun OpenFromScreen(
+    forApp: String, extensions: Set<String>, onPicked: (File, Entry?) -> Unit, onCancel: () -> Unit, onSystem: (() -> Unit)? = null,
+    /** Cartella da cui partire (Office: «Telefono» o il cloud preferito della dock); null = recenti e luoghi. */
+    start: Spot? = null,
+) {
     val context = LocalContext.current
     val files = remember { EuriseFiles.get(context) }
     val scheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
     val places = remember { files.places() }
     var query by remember { mutableStateOf("") }
-    var browsing by remember { mutableStateOf<Spot?>(null) }
+    var browsing by remember { mutableStateOf(start) }
     var entries by remember { mutableStateOf<List<Entry>?>(null) }
     var failed by remember { mutableStateOf(false) }
     var opening by remember { mutableStateOf(false) }
