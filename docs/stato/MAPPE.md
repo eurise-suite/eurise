@@ -241,9 +241,11 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
    - Rimasti da Mappe 76: testi delle canzoni (Livelli › Dalla rete), telefono in orizzontale.
 2. Dopo la prova: correzioni; tavola MapViaggio2Dove da aggiornare al nuovo ordine; «Avvisa» anche per l'impegno vicino
    senza chiamata, se lo vuoi; gesto a due dita per il 3D, se lo vuoi; in auto l'elenco «Dove devi andare» nello
-   stesso ordine del telefono, se lo vuoi.
-3. **Pietre miliari**: Germania e Austria mancano (Geofabrik rifiuta i runner di GitHub; c'è lo specchio di
-   openstreetmap.fr da provare). In Italia le pietre in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
+   stesso ordine del telefono, se lo vuoi. (Tavola MapViaggio2Dove aggiornata al nuovo ordine il 17 novembre.)
+3. **Pietre miliari**: Germania e Austria ci sono (giro 8 di «Pietre miliari», 17 novembre, con lo specchio di
+   openstreetmap.fr; file in `pietre` alle 14:46 UTC, tutti i 17 paesi). La Croazia quel giro è fallita (Geofabrik non
+   risponde, sullo specchio il file non c'è): resta il file del 15 novembre, si rifà al giro mensile. In Italia le pietre
+   in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
 4. **Mappe sul computer** (tavola PcMappe approvata, CoMaps su Linux), insieme all'area Computer.
 5. In attesa di una fonte o di una decisione: segnalazioni brevi condivise (serve un servizio comune); traffico (nessuna
    fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio
