@@ -45,13 +45,14 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             <meta-data android:name="android.view.im" android:resource="@xml/method_dummy" />
         </service>
 
-        <!-- Eurise: il controllo ortografico di sistema è spento (prova del proprietario, 13 novembre): toccando una
-             parola sottolineata Android apriva il riquadro delle correzioni e la tastiera spariva. La tastiera corregge
-             già mentre si scrive. -->
+        <!-- Eurise: controllo ortografico che sottolinea soltanto (17 novembre). Il 13 novembre era stato spento perché
+             toccando una parola sottolineata le app aprivano la tendina delle correzioni e la tastiera spariva; spento,
+             però, Android usa il suo (AOSP) e la tendina resta. Ora di base non dà proposte alle app
+             (PREF_SPELLCHECK_SUGGEST spento): sceglierlo in Android toglie la tendina e tiene la sottolineatura. -->
         <service android:name=".spellcheck.AndroidSpellCheckerService"
                  android:label="@string/spell_checker_service_name"
                  android:permission="android.permission.BIND_TEXT_SERVICE"
-                 android:enabled="false"
+                 android:enabled="true"
                  android:exported="true">
             <intent-filter>
                 <action android:name="android.service.textservice.SpellCheckerService" />
