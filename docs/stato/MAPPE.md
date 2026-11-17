@@ -198,6 +198,18 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - **«Sei su IT:national/SS7 …»**: il riferimento della strada veniva dalla relazione con la rete; ora
   `NowPlayingText.roadRef` tiene solo «SS7» (con le prove).
 
+## 17 novembre, pomeriggio: bolla in auto spostata (Mappe 93) e tavole dei riquadri della suite in auto
+- Prova del proprietario: in Android Auto niente bolla e riquadri ancora neri. La bolla stava in alto a destra
+  dell'area libera, dove l'auto disegna i 4 tasti tondi che la coprivano (l'area libera non li esclude). Ora in basso a
+  sinistra dell'area libera, accanto al riquadro dell'arrivo (sopra la pillola dello schermo diviso, se c'è).
+  Pubblicato alle 14:03 (UTC).
+- **Da approvare**: **MapAutoSuiteGiorno** e **MapAutoSuiteNotte** (pagina «comunicazione», dopo MapEsploraInclinata):
+  in auto i riquadri (manovra, meteo sul percorso, arrivo con «Sei su», bolla accanto all'arrivo, limite) li disegna
+  Mappe nel vetro della suite come sul telefono; l'auto non mostra più i suoi (si toglie `NavigationInfo` e la stima
+  d'arrivo dal modello di guida; la guida va ancora all'auto con `NavigationManager.updateTrip` per il quadro
+  strumenti). Restano dell'auto la barra a sinistra e i tasti tondi. Cambia la tavola approvata MapAutoGuida («cornice
+  del sistema»).
+
 ## Prossimi passi, in ordine
 1. **Prova del proprietario di Mappe 81, Eurise 707 e Messaggi 707** (le otto aggiunte, elenco sopra) e di quanto restava
    da Mappe 76 ed Eurise 681: avvio della navigazione in auto (non deve più chiudersi; microfono
