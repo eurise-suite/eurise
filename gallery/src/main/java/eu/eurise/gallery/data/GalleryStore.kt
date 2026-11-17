@@ -222,6 +222,14 @@ class GalleryStore private constructor(context: Context) {
         changed()
     }
 
+    /** Le modifiche copiate dall'editor (Copia modifiche), da incollare su altre foto dalla Galleria. */
+    fun copiedEdit(): eu.eurise.gallery.logic.Adjust? =
+        eu.eurise.gallery.logic.LookCodec.decode(prefs.getString("copied_edit", null)).firstOrNull()?.adjust
+
+    fun setCopiedEdit(a: eu.eurise.gallery.logic.Adjust) {
+        prefs.edit().putString("copied_edit", eu.eurise.gallery.logic.LookCodec.encode(listOf(eu.eurise.gallery.logic.SavedLook(0, "copia", a)))).apply()
+    }
+
     /** Le ultime scelte del foglio Salva (senza «Sostituisci», che si sceglie ogni volta). */
     fun saveOptions(): eu.eurise.gallery.logic.SaveOptions = eu.eurise.gallery.logic.SaveOptions.decode(prefs.getString("save_options", null))
 

@@ -1,5 +1,6 @@
 package eu.eurise.gallery.ui
 
+import androidx.compose.material3.MaterialTheme
 import android.net.Uri
 import android.provider.MediaStore
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.eurise.gallery.data.GalleryStore
 import eu.eurise.gallery.data.restoreOriginal
+import eu.eurise.gallery.data.photoInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -157,8 +159,37 @@ internal fun Viewer(list: List<MediaItem>, start: Int, actions: MediaActions, on
             RoundAction(EuriseIcons.share(), stringResource(R.string.share)) { actions.share(listOf(current)) }
             if (!current.cloudOnly && !current.isVideo) RoundAction(EuriseIcons.pencil(), stringResource(R.string.edit)) { actions.edit(current) }
             RestoreOriginal(current)
+            if (!current.cloudOnly && !current.isVideo) PhotoInfoAction(current)
             RoundAction(EuriseIcons.trash(), stringResource(R.string.delete)) { actions.trash(listOf(current)) }
         }
+    }
+}
+
+/** Dati della foto (tavola GalLookQR): quando, grandezza, fotocamera, esposizione, posizione. */
+@Composable
+private fun PhotoInfoAction(item: MediaItem) {
+    val context = LocalContext.current
+    var rows by remember(item.uri) { mutableStateOf<List<Pair<Int, String>>?>(null) }
+    val scope = rememberCoroutineScope()
+    RoundAction(EuriseIcons.document(), stringResource(R.string.info_title)) {
+        scope.launch { rows = withContext(Dispatchers.IO) { photoInfo(context, item) } }
+    }
+    rows?.let { list ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { rows = null },
+            title = { Text(stringResource(R.string.info_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    list.forEach { (label, value) ->
+                        Column {
+                            Text(stringResource(label), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(value, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { rows = null }) { Text(stringResource(R.string.close)) } },
+        )
     }
 }
 

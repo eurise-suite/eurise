@@ -83,6 +83,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // Lettore video integrato (motivo nel commit): solo il motore, l'interfaccia è di Eurise.
     implementation(libs.androidx.media3.exoplayer)
+    // Codici QR delle modalità tue (tavola GalLookQR): zxing, libero, già usato dallo Scanner della suite.
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
 }

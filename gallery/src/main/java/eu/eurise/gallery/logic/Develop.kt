@@ -242,3 +242,23 @@ object LookCodec {
         )
     }
 }
+
+/**
+ * Una modalità tua come testo da mandare o da mettere in un codice QR (tavola GalLookQR): `eurise-look:` e le sole
+ * regolazioni, in base64. Nessuna foto, nessun dato della persona.
+ */
+object LookShare {
+    const val PREFIX = "eurise-look:"
+
+    fun encode(look: SavedLook): String =
+        PREFIX + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(LookCodec.encode(listOf(look.copy(id = 0))).toByteArray(Charsets.UTF_8))
+
+    /** La modalità contenuta in un testo (anche con altre parole attorno), con un id nuovo; null se non ce n'è. */
+    fun decode(text: String?, newId: Long): SavedLook? {
+        val t = text ?: return null
+        val start = t.indexOf(PREFIX).takeIf { it >= 0 } ?: return null
+        val payload = t.substring(start + PREFIX.length).takeWhile { it.isLetterOrDigit() || it == '-' || it == '_' }
+        val raw = runCatching { String(java.util.Base64.getUrlDecoder().decode(payload), Charsets.UTF_8) }.getOrNull() ?: return null
+        return LookCodec.decode(raw).firstOrNull()?.copy(id = newId)
+    }
+}

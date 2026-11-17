@@ -1,5 +1,8 @@
 package eu.eurise.gallery.data
 
+import eu.eurise.gallery.R
+import kotlin.math.roundToInt
+import android.graphics.BitmapFactory
 import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
@@ -498,3 +501,61 @@ fun contentHash(context: Context, uri: String): String? = runCatching {
     digest.digest().joinToString("") { "%02x".format(it) }
 }.getOrNull()
 
+
+/** Il codice QR di un testo (una modalità tua), bianco e nero, lato [size] px. */
+fun qrBitmap(text: String, size: Int): Bitmap {
+    val m = com.google.zxing.qrcode.QRCodeWriter().encode(text, com.google.zxing.BarcodeFormat.QR_CODE, size, size,
+        mapOf(com.google.zxing.EncodeHintType.MARGIN to 1, com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M))
+    val px = IntArray(size * size) { i -> if (m.get(i % size, i / size)) -0x1000000 else -0x1 }
+    return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888)
+}
+
+/** Il testo del codice QR in una foto (per esempio la schermata di un amico), o null. Tutto sul telefono. */
+fun readQr(context: Context, uri: Uri): String? = runCatching {
+    val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
+        BitmapFactory.decodeStream(input, null, BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 })
+    } ?: return null
+    // Le foto grandi si riducono: il codice si legge lo stesso e il calcolo resta rapido.
+    val k = minOf(1f, 1600f / maxOf(bitmap.width, bitmap.height))
+    val b = if (k < 1f) Bitmap.createScaledBitmap(bitmap, (bitmap.width * k).toInt(), (bitmap.height * k).toInt(), true) else bitmap
+    val px = IntArray(b.width * b.height).also { b.getPixels(it, 0, b.width, 0, 0, b.width, b.height) }
+    val source = com.google.zxing.RGBLuminanceSource(b.width, b.height, px)
+    val hints = mapOf(com.google.zxing.DecodeHintType.TRY_HARDER to true)
+    com.google.zxing.qrcode.QRCodeReader().decode(com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source)), hints).text
+}.getOrNull()
+
+/**
+ * I dati di una foto (tavola GalLookQR): quando, grandezza, peso, fotocamera, esposizione e se c'è la posizione
+ * (arrotondata, mai mandata fuori). Ogni riga: etichetta e valore; solo quelle che ci sono.
+ */
+fun photoInfo(context: Context, item: MediaItem): List<Pair<Int, String>> {
+    val out = mutableListOf<Pair<Int, String>>()
+    out += R.string.info_when to java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG, java.text.DateFormat.SHORT).format(java.util.Date(item.takenAt))
+    out += R.string.info_name to item.name
+    runCatching {
+        context.contentResolver.query(Uri.parse(item.uri), arrayOf(MediaStore.MediaColumns.SIZE, MediaStore.MediaColumns.WIDTH, MediaStore.MediaColumns.HEIGHT), null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                val w = c.getInt(1); val h = c.getInt(2)
+                if (w > 0 && h > 0) out += R.string.info_size to "$w × $h · %.1f MP".format(w * h / 1_000_000f)
+                val bytes = c.getLong(0)
+                if (bytes > 0) out += R.string.info_weight to android.text.format.Formatter.formatShortFileSize(context, bytes)
+            }
+        }
+    }
+    runCatching {
+        val exif = context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { ExifInterface(it) } ?: return@runCatching
+        listOfNotNull(exif.getAttribute(ExifInterface.TAG_MAKE), exif.getAttribute(ExifInterface.TAG_MODEL)).joinToString(" ").takeIf { it.isNotBlank() }
+            ?.let { out += R.string.info_camera to it }
+        val shot = listOfNotNull(
+            exif.getAttributeDouble(ExifInterface.TAG_F_NUMBER, 0.0).takeIf { it > 0 }?.let { "f/%.1f".format(it) },
+            exif.getAttributeDouble(ExifInterface.TAG_EXPOSURE_TIME, 0.0).takeIf { it > 0 }?.let { if (it < 1) "1/${(1 / it).roundToInt()} s" else "%.1f s".format(it) },
+            exif.getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, 0).takeIf { it > 0 }?.let { "ISO $it" },
+            exif.getAttributeDouble(ExifInterface.TAG_FOCAL_LENGTH, 0.0).takeIf { it > 0 }?.let { "%.1f mm".format(it) },
+        ).joinToString(" · ")
+        if (shot.isNotEmpty()) out += R.string.info_exposure to shot
+        val ll = FloatArray(2)
+        @Suppress("DEPRECATION")
+        out += R.string.info_location to if (exif.getLatLong(ll)) "%.2f, %.2f".format(ll[0], ll[1]) else context.getString(R.string.info_no_location)
+    }
+    return out
+}

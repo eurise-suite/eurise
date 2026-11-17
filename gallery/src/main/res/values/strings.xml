@@ -331,4 +331,37 @@
     <string name="restore_original">Torna all\'originale</string>
     <string name="restore_done">Foto tornata com\'era</string>
     <string name="restore_until">Torna all\'originale: ancora %1$d giorni</string>
+    <!-- Editor completo, quarto giro (tavole GalModifiche e GalLookQR, 17 novembre) -->
+    <string name="editor_stack_copy">Copia modifiche</string>
+    <string name="editor_copied">Modifiche copiate: nella Galleria tieni premute altre foto e tocca «Incolla modifiche»</string>
+    <string name="paste_edits">Incolla modifiche</string>
+    <string name="editor_mine_share">Condividi con un codice</string>
+    <string name="editor_mine_qr">Codice QR della modalità</string>
+    <string name="editor_mine_share_tip">Chi riceve il codice, o il testo, lo aggiunge dalla Galleria: Filtri › Ricevi. Dentro ci sono solo le regolazioni, nessuna foto e nessun dato tuo.</string>
+    <string name="editor_mine_send_text">Manda come testo</string>
+    <string name="editor_mine_share_text">La mia modalità «%1$s» per Eurise Galleria: %2$s</string>
+    <string name="editor_mine_receive">Ricevi una modalità</string>
+    <string name="editor_mine_receive_short">Ricevi</string>
+    <string name="editor_mine_receive_tip">Scegli una foto o una schermata con il codice QR, oppure copia il testo ricevuto e tocca «Dagli appunti».</string>
+    <string name="editor_mine_from_photo">Da una foto</string>
+    <string name="editor_mine_from_clipboard">Dagli appunti</string>
+    <string name="editor_mine_received">«%1$s» è tra le tue modalità</string>
+    <string name="editor_mine_none">Non c\'è una modalità di Eurise qui</string>
+    <string name="info_title">Dati della foto</string>
+    <string name="info_when">Quando</string>
+    <string name="info_name">Nome</string>
+    <string name="info_size">Grandezza</string>
+    <string name="info_weight">Peso</string>
+    <string name="info_camera">Fotocamera</string>
+    <string name="info_exposure">Scatto</string>
+    <string name="info_location">Posizione</string>
+    <string name="info_no_location">Nessuna</string>
+    <plurals name="paste_running">
+        <item quantity="one">Incollo le modifiche su %d foto…</item>
+        <item quantity="other">Incollo le modifiche su %d foto…</item>
+    </plurals>
+    <plurals name="paste_done">
+        <item quantity="one">%d copia modificata in Immagini › Eurise</item>
+        <item quantity="other">%d copie modificate in Immagini › Eurise</item>
+    </plurals>
 </resources>

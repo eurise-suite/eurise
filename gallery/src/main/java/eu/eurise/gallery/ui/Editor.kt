@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -126,6 +127,10 @@ import eu.eurise.gallery.logic.develop
 import eu.eurise.gallery.logic.SaveFormat
 import eu.eurise.gallery.logic.SaveOptions
 import eu.eurise.gallery.data.shareEdited
+import eu.eurise.gallery.data.qrBitmap
+import eu.eurise.gallery.data.readQr
+import eu.eurise.gallery.logic.LookShare
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -257,6 +262,8 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     var myLooks by remember { mutableStateOf(emptyList<SavedLook>()) }
     LaunchedEffect(Unit) { myLooks = withContext(Dispatchers.IO) { store.myLooks() } }
     var naming by remember { mutableStateOf<SavedLook?>(null) }
+    var sharingLook by remember { mutableStateOf<SavedLook?>(null) }
+    var receiving by remember { mutableStateOf(false) }
     var managing by remember { mutableStateOf<SavedLook?>(null) }
     fun storeLooks(next: List<SavedLook>) { myLooks = next; scope.launch(Dispatchers.IO) { store.saveMyLooks(next) } }
     val thumb = remember(shown) { shown?.let { Bitmap.createScaledBitmap(it, 160, (160f * it.height / it.width).roundToInt().coerceAtLeast(1), true).asImageBitmap() } }
@@ -685,6 +692,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                         SaveLookTile(enabled = !state.effective.isNeutral) {
                             naming = SavedLook(System.currentTimeMillis(), newName, state.effective)
                         }
+                        ReceiveLookTile { receiving = true }
                         myLooks.forEach { mine ->
                             LookTile(thumb, mine.adjust, mine.name, state.mine?.id == mine.id, onLongClick = { managing = mine }) {
                                 // Una modalità tua prende il posto delle regolazioni fatte, come quando la si è salvata.
@@ -778,6 +786,13 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         AlertDialog(
             onDismissRequest = { managing = null },
             title = { Text(look.name) },
+            text = {
+                TextButton(onClick = { managing = null; sharingLook = look }) {
+                    Icon(EuriseIcons.qr(), null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.editor_mine_share))
+                }
+            },
             confirmButton = { TextButton(onClick = { managing = null; naming = look }) { Text(stringResource(R.string.editor_mine_rename)) } },
             dismissButton = {
                 TextButton(onClick = {
@@ -833,7 +848,42 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         onOpen = { step -> stackOpen = false; tool = step.tool; step.cropSection?.let { cropSection = it }; step.section?.let { section = it } },
         onRemove = { step -> commit(step.reset(state)); if (editSteps(step.reset(state)).isEmpty()) stackOpen = false },
         onSaveLook = if (state.effective.isNeutral) null else { { stackOpen = false; naming = SavedLook(System.currentTimeMillis(), context.getString(R.string.editor_mine_default, myLooks.size + 1), state.effective) } },
+        onCopy = if (state.effective.isNeutral) null else { {
+            stackOpen = false
+            store.setCopiedEdit(state.effective)
+            Toast.makeText(context, context.getString(R.string.editor_copied), Toast.LENGTH_LONG).show()
+        } },
     )
+    sharingLook?.let { look -> ShareLookDialog(look) { sharingLook = null } }
+    if (receiving) {
+        val gotText = stringResource(R.string.editor_mine_received)
+        val noneText = stringResource(R.string.editor_mine_none)
+        fun receive(text: String?) {
+            receiving = false
+            val look = LookShare.decode(text, System.currentTimeMillis())
+            if (look == null) { Toast.makeText(context, noneText, Toast.LENGTH_LONG).show(); return }
+            storeLooks(listOf(look) + myLooks)
+            Toast.makeText(context, gotText.format(look.name), Toast.LENGTH_LONG).show()
+        }
+        val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri == null) { receiving = false; return@rememberLauncherForActivityResult }
+            scope.launch { receive(withContext(Dispatchers.IO) { readQr(context, uri) }) }
+        }
+        AlertDialog(
+            onDismissRequest = { receiving = false },
+            title = { Text(stringResource(R.string.editor_mine_receive)) },
+            text = { Text(stringResource(R.string.editor_mine_receive_tip)) },
+            confirmButton = {
+                TextButton(onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { Text(stringResource(R.string.editor_mine_from_photo)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val clip = (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager).primaryClip
+                    receive(clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString())
+                }) { Text(stringResource(R.string.editor_mine_from_clipboard)) }
+            },
+        )
+    }
 
     writing?.let { mark ->
         var text by remember(mark) { mutableStateOf(mark.text) }
@@ -960,7 +1010,7 @@ private fun editSteps(s: EditState): List<EditStep> = buildList {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (EditStep) -> Unit, onRemove: (EditStep) -> Unit, onSaveLook: (() -> Unit)?) {
+private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (EditStep) -> Unit, onRemove: (EditStep) -> Unit, onSaveLook: (() -> Unit)?, onCopy: (() -> Unit)?) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Panel, contentColor = Text1) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.editor_stack_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
@@ -984,6 +1034,14 @@ private fun StackSheet(steps: List<EditStep>, onDismiss: () -> Unit, onOpen: (Ed
                 Icon(EuriseIcons.star(), null, tint = Accent, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.editor_stack_save_look), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+            if (onCopy != null) Row(
+                Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, Line, RoundedCornerShape(16.dp)).clickable(onClick = onCopy),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(EuriseIcons.copy(), null, tint = Accent, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.editor_stack_copy), fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
             Hint(stringResource(R.string.editor_stack_tip))
         }
@@ -1049,6 +1107,43 @@ private fun SheetSwitch(title: String, sub: String, on: Boolean, onChange: (Bool
 /** Le parti di Ritaglia (tavola GalProspettiva). */
 private enum class CropSection(val label: Int) {
     Crop(R.string.editor_section_crop), Perspective(R.string.editor_section_perspective), Expand(R.string.editor_section_expand),
+}
+
+/** «Ricevi»: una modalità di qualcun altro, da un codice QR in una foto o da un testo copiato (tavola GalLookQR). */
+@Composable
+private fun ReceiveLookTile(onClick: () -> Unit) {
+    Column(Modifier.width(62.dp).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)).border(1.5.dp, Line, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Icon(EuriseIcons.qr(), null, tint = Text1, modifier = Modifier.size(22.dp))
+        }
+        Text(stringResource(R.string.editor_mine_receive_short), color = Text1, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+/** Condividi una modalità tua: il codice QR e «Manda come testo». Dentro ci sono solo le regolazioni. */
+@Composable
+private fun ShareLookDialog(look: SavedLook, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val text = remember(look) { LookShare.encode(look) }
+    val qr = remember(text) { qrBitmap(text, 640).asImageBitmap() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(look.name) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Image(qr, stringResource(R.string.editor_mine_qr), modifier = Modifier.size(220.dp).clip(RoundedCornerShape(12.dp)))
+                Text(stringResource(R.string.editor_mine_share_tip), fontSize = 12.5.sp)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onDismiss()
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, context.getString(R.string.editor_mine_share_text, look.name, text))
+                context.startActivity(Intent.createChooser(send, null))
+            }) { Text(stringResource(R.string.editor_mine_send_text)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }
 
 /** Le parti di Regola (tavola GalRegolaTutto). */

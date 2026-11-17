@@ -89,4 +89,16 @@ class DevelopTest {
         assertEquals(0.6f, half.curves.luma[0].y, 0.001f)
         assertTrue((Adjust() * 0f).isNeutral)
     }
+
+    @Test fun unaModalitaSiCondivideComeTesto() {
+        val look = SavedLook(7, "Mare d'estate", Adjust(warmth = 0.3f, vignette = 0.25f, curves = Curves(luma = CurvePreset.SoftS.points)))
+        val text = LookShare.encode(look)
+        assertTrue(text.startsWith(LookShare.PREFIX))
+        val back = LookShare.decode("Prova questa: $text ciao", 99)!!
+        assertEquals(99L, back.id)
+        assertEquals(look.name, back.name)
+        assertEquals(look.adjust, back.adjust)
+        assertEquals(null, LookShare.decode("niente qui", 1))
+        assertEquals(null, LookShare.decode(LookShare.PREFIX + "%%%", 1))
+    }
 }

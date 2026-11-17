@@ -1,5 +1,8 @@
 package eu.eurise.gallery.ui
 
+import eu.eurise.gallery.logic.EditState
+import eu.eurise.gallery.data.saveEdited
+import eu.eurise.gallery.data.GalleryStore
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -550,6 +553,21 @@ private fun PhotosPage(
                 Row(Modifier.padding(start = 4.dp, end = 8.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { onSelected(emptySet()) }) { Icon(EuriseIcons.close(), stringResource(R.string.close), modifier = Modifier.size(20.dp)) }
                     Text(pluralStringResource(R.plurals.selected_count, selected.size, selected.size), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    // Incolla modifiche (tavola GalModifiche): quelle copiate nell'editor, su ogni foto scelta, come copie nuove.
+                    val context = LocalContext.current
+                    val copied = remember(selected.size) { GalleryStore.get(context).copiedEdit() }
+                    val photos = chosen.filter { !it.isVideo && !it.cloudOnly }
+                    if (copied != null && photos.isNotEmpty()) IconButton(onClick = {
+                        onSelected(emptySet())
+                        Toast.makeText(context, context.resources.getQuantityString(R.plurals.paste_running, photos.size, photos.size), Toast.LENGTH_SHORT).show()
+                        scope.launch {
+                            val opts = withContext(Dispatchers.IO) { GalleryStore.get(context).saveOptions() }
+                            val done = withContext(Dispatchers.IO) {
+                                photos.count { item -> runCatching { saveEdited(context, item, EditState(adjust = copied), opts.copy(replace = false)) != null }.getOrDefault(false) }
+                            }
+                            Toast.makeText(context, context.resources.getQuantityString(R.plurals.paste_done, done, done), Toast.LENGTH_LONG).show()
+                        }
+                    }) { Icon(EuriseIcons.copy(), stringResource(R.string.paste_edits), modifier = Modifier.size(21.dp)) }
                     IconButton(onClick = { actions.diary(chosen) }) { Icon(EuriseIcons.book(), stringResource(R.string.add_to_diary), modifier = Modifier.size(21.dp)) }
                     IconButton(onClick = { actions.share(chosen) }) { Icon(EuriseIcons.share(), stringResource(R.string.share), modifier = Modifier.size(21.dp)) }
                     IconButton(onClick = { actions.trash(chosen) }) {
