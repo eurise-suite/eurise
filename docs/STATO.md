@@ -3360,3 +3360,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, sera, Organizzazione: pagine della Scrivania a piacere (tutte quelle che vuoi, app dalle categorie su qualunque pagina come bolle, «Le tue pagine» dai puntini, pagina nuova, solo in una modalità) · giro 760 → `docs/stato/ORGANIZZAZIONE.md`.
 - 17 novembre, notte, Comunicazione: turni generici (modelli, regole, persone senza Chat), importa da PDF/CSV/XLSX/ODS/testo, esporta PDF/CSV/.ics · giro 759 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Alfred e AI: Alfred spiritoso anche alla guida, solo nei momenti tranquilli (Mappe 102) → `docs/stato/ALFRED.md`.
+- 17 novembre, Alfred e AI: campioni di voci italiane da ascoltare (pre-release voci-ascolto) → `docs/stato/ALFRED.md`.

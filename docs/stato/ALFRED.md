@@ -99,6 +99,19 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 - Da provare: che non parli mai sopra le istruzioni; se 15 minuti tra una battuta e l'altra sono troppi o pochi.
 - Da provare: se una su due è troppo (o troppo poco); `withMaxim` in `Plan.kt`.
 
+## 17 novembre, notte: una voce che sembri italiana (in corso)
+- Il proprietario: Nicola «sembra che non sia italiano» (Kokoro pronuncia l'italiano con espeak-ng). Candidati liberi
+  che girano sul telefono, da far **ascoltare prima di metterli nell'app** (lavoro `voci-ascolto.yml`, script
+  `.github/scripts/voci_ascolto.py`, pre-release `voci-ascolto`, stesse frasi per tutti):
+  - **Supertonic 3** (99M, ONNX, 31 lingue con l'italiano, 5 voci maschili e 5 femminili; RTF 0,2 sul server): pesi
+    OpenRAIL-M (limiti d'uso, non libera in senso stretto) e progetto chiuso dall'autore (Supertone).
+  - **Piper Serena** (medium e high, CC BY 4.0, italiano standard senza accento, stesso motore di Paola e Riccardo:
+    si aggiunge subito): voce **femminile**; il suo checkpoint permette di addestrare un Alfred maschile italiano.
+  - **Pocket TTS** di Kyutai (100M, CC BY 4.0, modello italiano con 26 voci tra cui una «giovanni»; in sherpa-onnx
+    c'è il motore): campione non ancora fatto, serve il runtime ONNX della comunità (KevinAHM/pocket-tts-onnx) nel
+    lavoro, e lanciare codice di terzi va approvato dal proprietario.
+- Prossimo: il proprietario sceglie a orecchio; la voce scelta entra in `voci.yml` e in Voce (`Voices.kt`).
+
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
 - **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
   AstImpostazioni (nella voce di Alfred); AlfGiornata, AlfSera, AlfSveglia, AlfMappe; AlfUnico, AlfUnicoMancino, AlfScegli,
