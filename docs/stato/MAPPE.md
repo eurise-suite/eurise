@@ -229,16 +229,28 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   testo, suggerimento e icone bianchi per la barra colorata; spostato in basso su fondo trasparente spariva. Ora
   `EuriseSearchHome.pill` lo fa pillola della suite (vetro chiaro/scuro, bordo, testo e icone nell'inchiostro).
 
+## 18 novembre: prova in auto di Mappe 97, scheda unica a sinistra (tavole da approvare) e bolla più leggibile
+- Prova del proprietario in Android Auto (foto): riquadri della suite e bolla «finalmente come li vogliamo». **Regola nuova
+  del proprietario**: si prova solo l'ultimo APK, che contiene i giri prima; non chiedere più la prova dei giri vecchi.
+- Leggibilità della bolla in auto (`EuriseMediaBubble`): testi più grandi (titolo 24, autore 20, album 17, tempi 17,
+  testo della canzone 20 sp), inchiostri più scuri di giorno e più chiari di notte, vetro quasi pieno (la mappa non
+  traspare), niente «· da Spotify» (lo dice il simbolo sulla copertina), niente «♪» da sola quando la riga del testo è
+  vuota (la riga sparisce; vale anche sul telefono).
+- **Tavole da approvare** (pagina separata, la tela è al limite di 512 file: https://claude.ai/artifact/XxtGwSwV8dnfUJVQLq3snD;
+  generatore `/home/claude/tela/gen/scheda.py`, fuori dal repo): **una scheda sola a sinistra** che cambia con quel che
+  serve, tutta la parte destra libera per la strada. Svolta vicina (sotto 300 m in città, circa 1 km in autostrada) =
+  finestrino; svolta lontana = una riga in cima e sotto la parte che cambia, in ordine chiamata in arrivo › messaggio,
+  ritardo, chiamata persa, timer, sveglia, impegno › musica, podcast, radio (con il testo della canzone sempre, se c'è).
+  **Scelta del proprietario**: con la svolta vicina il finestrino resta sopra e la chiamata scende a una riga sotto.
+  In basso la scheda del viaggio con il meteo come riga. Senza destinazione: pillola con via e meteo che si apre solo
+  quando serve; con la musica, via in cima e musica con testo. Schermo diviso: in guida svolta e ora d'arrivo, via con
+  velocità e meteo, musica in una riga; senza guida via e finestra che si adatta (musica con copertina piccola, titolo,
+  autore e testo; chiamate). Notte. Cambia le tavole approvate MapAutoSuiteGiorno/Notte e MapBollaAuto*.
+- Per metterle sulla tela serve togliere qualche tavola vecchia (512 file al massimo): da chiedere al proprietario.
+
 ## Prossimi passi, in ordine
-1. **Prova del proprietario** (in sospeso):
-   - Android Auto (Mappe 96): riquadri della suite di giorno e di notte, rotonde, corsie, scena dell'uscita; bolla in alto
-     a destra con i tasti tondi visibili e nascosti; schermo diviso.
-   - Bolla e otto aggiunte (Mappe 81 → 96, Eurise e Messaggi 721): podcast, coda «Dopo», radio, chiamata persa →
-     Richiama all'arrivo, «Avvisa» (con Messaggi), messaggi letti da Alfred (Livelli › Messaggi in guida), timer e
-     sveglie, Condividi l'arrivo; anche in auto con gli avvisi a due pulsanti.
-   - «3D» esplorando (Mappe 88): vicino e lontano, giorno e notte, guida avviata e finita.
-   - Ricerca (Mappe 97): campo in basso, ordine Sempre a portata › Recenti › Cerca vicino › Dal Calendario.
-   - Rimasti da Mappe 76: testi delle canzoni (Livelli › Dalla rete), telefono in orizzontale.
+1. **Approvazione delle tavole della scheda unica in auto**, poi il codice. Prova del proprietario: solo l'ultimo APK
+   (Mappe 97 provato in auto il 18 novembre: riquadri e bolla vanno bene).
 2. Dopo la prova: correzioni; tavola MapViaggio2Dove da aggiornare al nuovo ordine; «Avvisa» anche per l'impegno vicino
    senza chiamata, se lo vuoi; gesto a due dita per il 3D, se lo vuoi; in auto l'elenco «Dove devi andare» nello
    stesso ordine del telefono, se lo vuoi. (Tavola MapViaggio2Dove aggiornata al nuovo ordine il 17 novembre.)

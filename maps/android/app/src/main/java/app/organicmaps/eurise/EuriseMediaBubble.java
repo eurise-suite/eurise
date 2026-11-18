@@ -142,9 +142,9 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final LayoutParams colLp = new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
     colLp.leftMargin = dp(car ? 10 : 10);
     row.addView(col, colLp);
-    mTitle = text(c, car ? 21 : 15, true);
-    mSub = text(c, car ? 17 : 12.5f, false);
-    mSub2 = text(c, car ? 15 : 11.5f, false);
+    mTitle = text(c, car ? 24 : 15, true);
+    mSub = text(c, car ? 20 : 12.5f, false);
+    mSub2 = text(c, car ? 17 : 11.5f, false);
     col.addView(mTitle);
     col.addView(mSub);
     col.addView(mSub2);
@@ -166,7 +166,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final LayoutParams barRowLp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
     barRowLp.topMargin = dp(car ? 7 : 6);
     addView(bar, barRowLp);
-    mPos = text(c, car ? 16 : 11.5f, true);
+    mPos = text(c, car ? 17 : 11.5f, true);
     bar.addView(mPos);
     mBar = new FrameLayout(c);
     final LayoutParams trackLp = new LayoutParams(0, dp(car ? 7 : 5), 1f);
@@ -175,7 +175,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     bar.addView(mBar, trackLp);
     mBarFill = new View(c);
     mBar.addView(mBarFill, new FrameLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT));
-    mRem = text(c, car ? 16 : 11.5f, true);
+    mRem = text(c, car ? 17 : 11.5f, true);
     bar.addView(mRem);
 
     final LinearLayout lyric = new LinearLayout(c);
@@ -184,7 +184,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     lyricLp.topMargin = dp(car ? 6 : 5);
     addView(lyric, lyricLp);
     mLyricBox = lyric;
-    mLyric = text(c, car ? 18 : 13, true);
+    mLyric = text(c, car ? 20 : 13, true);
     mLyricNext = text(c, 13, false);
     lyric.addView(mLyric);
 
@@ -506,8 +506,9 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
       album = album.isEmpty() ? chapter : album + " · " + chapter;
     }
     final String from = m.appName == null ? null : c.getString(R.string.eurise_np_from, m.appName);
-    set(mSub2, album.isEmpty() ? from : mCar && from != null ? album + " · " + from : album);
-    mSub2.setTextColor(muted());
+    // In auto niente «da Spotify»: lo dice già il simbolo sulla copertina (prova del 18 novembre).
+    set(mSub2, mCar ? album : album.isEmpty() ? from : album);
+    mSub2.setTextColor(mCar ? sub() : muted());
     if (m.live)
     {
       // Radio: niente barra, il segno «in diretta» a destra.
@@ -538,9 +539,11 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final NowPlayingText.Lyrics l = EuriseLyrics.of(m);
     final int i = l == null ? -1 : l.indexAt(pos);
     final String lyric = l == null ? null : l.line(i);
-    mLyricBox.setVisibility(lyric == null ? GONE : VISIBLE);
-    if (lyric != null)
-      mLyric.setText(lyric.isEmpty() ? "♪" : lyric);
+    // Una riga vuota (pausa strumentale) non mostra più la «♪» da sola: la riga sparisce finché non si canta.
+    final boolean sung = lyric != null && !lyric.trim().isEmpty();
+    mLyricBox.setVisibility(sung ? VISIBLE : GONE);
+    if (sung)
+      mLyric.setText(lyric);
 
     final Line media = mediaLine(m, pos);
     if (mCar)
@@ -810,19 +813,20 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final boolean night = mNight.isNight();
     final GradientDrawable bg = new GradientDrawable();
     bg.setCornerRadius(dp(mCar ? 20 : 20));
-    bg.setColor(night ? 0xF01C2333 : 0xF0F8F7F4);
+    // In auto vetro quasi pieno: la mappa sotto non deve disturbare la lettura.
+    bg.setColor(mCar ? (night ? 0xFA1A202F : 0xFAFAF9F6) : (night ? 0xF01C2333 : 0xF0F8F7F4));
     bg.setStroke(Math.max(1, dp(1) / 2), night ? 0x29FFFFFF : 0x1F1E1D1B);
     setBackground(bg);
-    final int ink = night ? 0xFFE8ECF4 : 0xFF1E1D1B;
+    final int ink = night ? (mCar ? 0xFFF2F5FA : 0xFFE8ECF4) : 0xFF1E1D1B;
     mTitle.setTextColor(ink);
     mBig.setTextColor(ink);
-    mSub.setTextColor(night ? 0xFFC9D2E0 : 0xFF3B3A36);
-    mPos.setTextColor(night ? 0xFFC9D2E0 : 0xFF3B3A36);
-    mRem.setTextColor(night ? 0xFFC9D2E0 : 0xFF3B3A36);
+    mSub.setTextColor(sub());
+    mPos.setTextColor(sub());
+    mRem.setTextColor(sub());
     mBigSub.setTextColor(muted());
     mBigSub.setTypeface(Typeface.DEFAULT);
     mBigSub.setCompoundDrawablesRelative(null, null, null, null);
-    mLyric.setTextColor(night ? 0xFFA9C1F2 : 0xFF1F2A44);
+    mLyric.setTextColor(mCar ? ink : night ? 0xFFA9C1F2 : 0xFF1F2A44);
     mLyricNext.setTextColor(muted());
     mBar.setBackground(round(night ? 0x33FFFFFF : 0xFFDAD7CF, 3));
     mBarFill.setBackground(round(night ? 0xFFA9C1F2 : BLUE, 3));
@@ -892,6 +896,13 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final int s = dp(mCar ? 18 : 16);
     m.setBounds(0, 0, s, s);
     return m;
+  }
+
+  /** Secondo inchiostro (autore, tempi): in auto più scuro di giorno e più chiaro di notte. */
+  private int sub()
+  {
+    final boolean night = mNight.isNight();
+    return mCar ? (night ? 0xFFE1E7F0 : 0xFF2E2D2A) : (night ? 0xFFC9D2E0 : 0xFF3B3A36);
   }
 
   private int muted()
