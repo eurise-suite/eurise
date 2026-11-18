@@ -25,10 +25,12 @@ inst fase2/password-debug.apk "fase 2: Password aggiornata"
 inst fase2/app-debug.apk "fase 2: Eurise aggiornata"
 dato "dopo la fase 2"; echo "  firma: $(firma eu.eurise.password.debug)"
 
-inst vecchi/phone-debug.apk "installata l'intrusa (Telefono con la sola vecchia chiave)"
-adb shell dumpsys package eu.eurise.phone.debug | grep -i "SUITE" | head -5
-g=$(granted eu.eurise.phone.debug); echo "  intrusa: granted=$g"
-[ "$g" = "false" ] && ok "l'app con la vecchia chiave non ha il permesso della suite" || ko "intrusa: permesso '$g'"
+out=$(adb install -r vecchi/phone-debug.apk 2>&1); echo "  adb: $(echo "$out" | tr '\n' ' ')"
+case "$out" in *Success*) ko "un'app con la vecchia chiave che dichiara il permesso della suite si installa";; *) ok "un'app con la vecchia chiave che dichiara il permesso della suite è rifiutata";; esac
+inst vecchi/intrusa.apk "installata l'intrusa (chiede soltanto il permesso, vecchia chiave)"
+g=$(granted org.esempio.intrusa); echo "  intrusa: granted=$g"
+[ "$g" = "true" ] && ko "l'intrusa con la vecchia chiave ha il permesso della suite" || ok "l'intrusa con la vecchia chiave non ha il permesso della suite"
+adb shell dumpsys package org.esempio.intrusa | grep -iE "SUITE_DEBUG" | head -3
 g=$(granted eu.eurise.hub.debug); echo "  Eurise: granted=$g"
 [ "$g" = "true" ] && ok "Eurise con la chiave nuova ha il permesso" || ko "Eurise con la chiave nuova: permesso '$g'"
 

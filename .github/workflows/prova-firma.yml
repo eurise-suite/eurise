@@ -35,6 +35,21 @@ jobs:
           k="$(base64 -w0 usa-e-getta.p12)"
           EURISE_PROVA_KEYSTORE="$k" EURISE_PROVA_FASE=1 .github/scripts/firma-prova.sh fase1/*.apk
           EURISE_PROVA_KEYSTORE="$k" EURISE_PROVA_FASE=2 .github/scripts/firma-prova.sh fase2/*.apk
+          # L'intrusa «pura»: un APK senza codice che chiede soltanto il permesso della suite, firmato con la vecchia
+          # chiave pubblica (come farebbe chiunque abbia letto il repository).
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          jar="$(ls -d "$ANDROID_HOME"/platforms/android-* | sort -V | tail -1)/android.jar"
+          mkdir intrusa
+          cat > intrusa/AndroidManifest.xml <<'XML'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.esempio.intrusa">
+              <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG" />
+              <application android:hasCode="false" android:label="Intrusa" />
+          </manifest>
+          XML
+          "$bt/aapt2" link -o intrusa/grezza.apk --manifest intrusa/AndroidManifest.xml -I "$jar" --min-sdk-version 26 --target-sdk-version 34
+          "$bt/zipalign" -f 4 intrusa/grezza.apk vecchi/intrusa.apk
+          "$bt/apksigner" sign --ks app/debug-key/eurise-debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android vecchi/intrusa.apk
+          "$bt/apksigner" verify --print-certs vecchi/intrusa.apk | head -2
 
       - name: KVM per l'emulatore
         run: |
