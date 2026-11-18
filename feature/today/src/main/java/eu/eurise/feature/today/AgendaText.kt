@@ -16,6 +16,22 @@ object AgendaText {
 
     fun week(date: LocalDate): Int = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
 
+    /** Il giorno dell'anno (1 = primo gennaio), come lo stampavano le vecchie agende in testa alla pagina. */
+    fun dayOfYear(date: LocalDate): Int = date.dayOfYear
+
+    /** Feriale, prefestivo o festivo: decide il colore del numero nella pagina d'agenda (tavola AgePagina). */
+    enum class DayKind { Weekday, PreHoliday, Holiday }
+
+    /**
+     * Festivi le domeniche e le feste nazionali; prefestivi i sabati e le vigilie delle feste (24 dicembre, 31 ottobre…);
+     * gli altri feriali.
+     */
+    fun dayKind(date: LocalDate, isHoliday: (LocalDate) -> Boolean = eu.eurise.core.data.modes.ItalianHolidays::isHoliday): DayKind = when {
+        date.dayOfWeek == java.time.DayOfWeek.SUNDAY || isHoliday(date) -> DayKind.Holiday
+        date.dayOfWeek == java.time.DayOfWeek.SATURDAY || isHoliday(date.plusDays(1)) -> DayKind.PreHoliday
+        else -> DayKind.Weekday
+    }
+
     /**
      * Il meteo del giorno [date]: oggi la temperatura di adesso e da quando piove; gli altri giorni minima e massima.
      * Null se le previsioni non arrivano a quel giorno.

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -50,10 +51,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
@@ -134,8 +137,6 @@ fun AgendaRoute(
                 today = viewModel.today,
                 now = now,
                 meteo = AgendaText.meteo(forecast, shown, now),
-                onPrev = { scope.launch { pager.animateScrollToPage(pager.currentPage - 1) } },
-                onNext = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
                 onToday = { scope.launch { pager.animateScrollToPage(CENTER) } },
                 onWeather = onOpenWeather,
             )
@@ -168,63 +169,140 @@ fun AgendaRoute(
     }
 }
 
+/**
+ * L'intestazione della pagina come una vecchia agenda (tavola AgePagina): in alto il saluto e, piccoli, anno, settimana e
+ * giorno dell'anno; sotto, a sinistra, il nome del giorno, il numero grande e il mese, larghi uguali; a destra meteo e
+ * massima. Il numero è blu notte nei feriali, salvia nei prefestivi, amaranto nei festivi (anche il nome del giorno).
+ */
 @Composable
 private fun DayHeader(
     date: LocalDate,
     today: LocalDate,
     now: LocalDateTime,
     meteo: AgendaMeteo?,
-    onPrev: () -> Unit,
-    onNext: () -> Unit,
     onToday: () -> Unit,
     onWeather: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val title = date.dayOfWeek.getDisplayName(TextStyle.FULL, IT).replaceFirstChar { it.titlecase(IT) } + " " +
-        date.dayOfMonth + " " + date.month.getDisplayName(TextStyle.FULL, IT) + if (date.year != today.year) " ${date.year}" else ""
-    val sub = when (date) {
-        today -> stringResource(
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("eurise_launcher", android.content.Context.MODE_PRIVATE) }
+    val name = remember { prefs.getString("user_name", "").orEmpty().trim() }
+    // Il numero: arrotondato di base, il carattere della suite se scelto in Aspetto della Scrivania.
+    val ours = remember { prefs.getBoolean("agenda_number_ours", false) }
+    val greeting = when (date) {
+        today -> (stringResource(
             when (AgendaText.greeting(now.toLocalTime())) {
                 AgendaText.Greeting.Morning -> R.string.today_good_morning
                 AgendaText.Greeting.Afternoon -> R.string.today_good_afternoon
                 AgendaText.Greeting.Evening -> R.string.today_good_evening
             }
-        )
+        ) + " " + name).trim()
         today.plusDays(1) -> stringResource(R.string.agenda_tomorrow)
         today.minusDays(1) -> stringResource(R.string.agenda_yesterday)
         else -> null
     }
-    Column(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrev) {
-                Icon(EuriseIcons.chevronLeft(), stringResource(R.string.agenda_prev_day), tint = scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-            }
-            Column(Modifier.weight(1f).clickable(enabled = date != today, onClick = onToday)) {
-                Text(title, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
+    val dark = scheme.background.luminance() < 0.5f
+    val kind = remember(date) { AgendaText.dayKind(date) }
+    val tint = when (kind) {
+        AgendaText.DayKind.Weekday -> if (dark) Color(0xFF9DB0DA) else Color(0xFF1F2A44)
+        AgendaText.DayKind.PreHoliday -> if (dark) Color(0xFF9BC2AB) else Color(0xFF4F6B5A)
+        AgendaText.DayKind.Holiday -> if (dark) Color(0xFFE29AA3) else Color(0xFF8C2F39)
+    }
+    val plain = scheme.onSurface.copy(alpha = 0.8f)
+    val weekday = date.dayOfWeek.getDisplayName(TextStyle.FULL, IT).uppercase(IT)
+    val month = date.month.getDisplayName(TextStyle.FULL_STANDALONE, IT).uppercase(IT)
+    val full = date.dayOfWeek.getDisplayName(TextStyle.FULL, IT) + " " + date.dayOfMonth + " " + date.month.getDisplayName(TextStyle.FULL, IT) + " " + date.year
+    val maxim = remember(date) { Maxims.forDay(date) }
+    Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (greeting != null) {
+                    Text(greeting, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                } else {
+                    Text(
+                        stringResource(R.string.agenda_back_to_today), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = scheme.primary,
+                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).clickable(onClick = onToday).padding(vertical = 4.dp),
+                    )
+                }
                 Text(
-                    listOfNotNull(sub, stringResource(R.string.agenda_week, AgendaText.week(date)), if (date != today) stringResource(R.string.agenda_back_today) else null)
-                        .joinToString(" · "),
-                    fontSize = 12.5.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    stringResource(R.string.agenda_year_line, date.year, AgendaText.week(date), AgendaText.dayOfYear(date)),
+                    fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant, maxLines = 1,
                 )
             }
-            IconButton(onClick = onNext) {
-                Icon(EuriseIcons.chevronRight(), stringResource(R.string.agenda_next_day), tint = scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Row(Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+                Column(
+                    Modifier.width(DateColumn).clickable(enabled = date != today, onClick = onToday)
+                        .semantics(mergeDescendants = true) { heading(); contentDescription = full },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    SpreadText(weekday, if (kind == AgendaText.DayKind.Weekday) plain else tint)
+                    DayNumber(date.dayOfMonth, ours, tint)
+                    SpreadText(month, plain)
+                }
+                Box(Modifier.padding(start = 14.dp).width(1.dp).fillMaxHeight().background(scheme.outlineVariant.copy(alpha = 0.45f)))
+                Column(Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)) {
+                    if (meteo != null) {
+                        Row(
+                            Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onWeather),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(skyIcon(meteo.sky), null, tint = Color(0xFFA8742A), modifier = Modifier.size(24.dp))
+                            Column {
+                                Text(meteo.head, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                if (meteo.tail.isNotBlank()) Text(meteo.tail, fontSize = 11.5.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(maxim.text, fontSize = 12.5.sp, lineHeight = 17.sp, fontStyle = FontStyle.Italic, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                        Text(maxim.author, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant)
+                    }
+                }
             }
         }
-        if (meteo != null) {
-            Row(
-                Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surfaceContainerLow)
-                    .clickable(onClick = onWeather).padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Icon(skyIcon(meteo.sky), null, tint = Color(0xFFA8742A), modifier = Modifier.size(22.dp))
-                Text(meteo.head, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                if (meteo.tail.isNotBlank()) Text(meteo.tail, fontSize = 12.5.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(scheme.outlineVariant.copy(alpha = 0.35f)))
     }
 }
+
+/** Larghezza della colonna della data: nome del giorno, numero e mese la occupano tutta. */
+private val DateColumn = 88.dp
+
+/** Le lettere di [text] distribuite su tutta la larghezza della colonna, come nelle intestazioni delle agende. */
+@Composable
+private fun SpreadText(text: String, color: Color) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        text.forEach { Text(it.toString(), fontSize = 11.sp, lineHeight = 13.sp, fontWeight = FontWeight.ExtraBold, color = color) }
+    }
+}
+
+/** Il numero del giorno, grande quanto serve perché due cifre riempiano [DateColumn]. */
+@Composable
+private fun DayNumber(day: Int, ours: Boolean, color: Color) {
+    val family = if (ours) eu.eurise.core.designsystem.theme.PlusJakartaSans else RoundDigits
+    val weight = if (ours) FontWeight.Light else FontWeight.Bold
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val size = remember(ours, density) {
+        val probe = measurer.measure("00", androidx.compose.ui.text.TextStyle(fontFamily = family, fontWeight = weight, fontSize = 100.sp)).size.width
+        val target = with(density) { DateColumn.toPx() }
+        if (probe > 0) (100f * target / probe).sp else 72.sp
+    }
+    Text(
+        day.toString(),
+        style = androidx.compose.ui.text.TextStyle(
+            fontFamily = family, fontWeight = weight, fontSize = size, lineHeight = size, color = color,
+            lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+            ),
+        ),
+        maxLines = 1,
+    )
+}
+
+/** Nunito Bold con le sole dieci cifre (2,6 KB, licenza SIL OFL 1.1): il numero «arrotondato» della pagina d'agenda. */
+private val RoundDigits = androidx.compose.ui.text.font.FontFamily(androidx.compose.ui.text.font.Font(R.font.nunito_digits_bold, FontWeight.Bold))
 
 private fun skyIcon(sky: Sky): ImageVector = when (sky) {
     Sky.Clear, Sky.PartlyCloudy -> EuriseIcons.sun()
@@ -307,19 +385,6 @@ private fun DayPage(
             item(key = "people") {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(day.people, key = { it.lookupKey }) { p -> PersonCard(p, onOpenPerson) }
-                }
-            }
-        }
-
-        item(key = "maxim") {
-            val m = remember(day.date) { Maxims.forDay(day.date) }
-            Card {
-                Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("“", fontSize = 28.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF85672B))
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(m.text, fontSize = 14.sp, lineHeight = 20.sp, fontStyle = FontStyle.Italic)
-                        Text(stringResource(R.string.agenda_maxim, m.author), fontSize = 12.sp, color = scheme.onSurfaceVariant)
-                    }
                 }
             }
         }

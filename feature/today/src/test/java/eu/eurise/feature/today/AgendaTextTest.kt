@@ -69,4 +69,15 @@ class AgendaTextTest {
         assertTrue(Maxims.forDay(day).text.isNotBlank())
         assertTrue(Maxims.forDay(day) != Maxims.forDay(day.plusDays(1)))
     }
+
+    @Test
+    fun dayKindFollowsSundaysSaturdaysAndHolidays() {
+        assertEquals(AgendaText.DayKind.Weekday, AgendaText.dayKind(java.time.LocalDate.of(2026, 11, 17)))
+        assertEquals(AgendaText.DayKind.PreHoliday, AgendaText.dayKind(java.time.LocalDate.of(2026, 11, 21)))
+        assertEquals(AgendaText.DayKind.Holiday, AgendaText.dayKind(java.time.LocalDate.of(2026, 11, 22)))
+        assertEquals(AgendaText.DayKind.PreHoliday, AgendaText.dayKind(java.time.LocalDate.of(2026, 12, 24)))
+        assertEquals(AgendaText.DayKind.Holiday, AgendaText.dayKind(java.time.LocalDate.of(2026, 12, 25)))
+        assertEquals(AgendaText.DayKind.Holiday, AgendaText.dayKind(java.time.LocalDate.of(2026, 12, 8)))
+        assertEquals(321, AgendaText.dayOfYear(java.time.LocalDate.of(2026, 11, 17)))
+    }
 }

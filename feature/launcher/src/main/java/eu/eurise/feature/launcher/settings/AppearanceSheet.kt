@@ -166,6 +166,29 @@ fun AppearanceSheet(
                     }
                 }
             }
+            // Il numero del giorno nella pagina d'agenda: arrotondato (di base) o il carattere della suite.
+            Column {
+                Text(stringResource(R.string.appearance_agenda_number), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
+                ) {
+                    listOf(false to R.string.appearance_agenda_round, true to R.string.appearance_agenda_ours).forEach { (value, label) ->
+                        val on = settings.agendaNumberOurs == value
+                        Box(
+                            Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(50))
+                                .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                .clickable(role = Role.RadioButton) { onChange { it.copy(agendaNumberOurs = value) } },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(label), fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
             IconThemeChooser(settings.iconTheme) { v -> onChange { it.copy(iconTheme = v) } }
             if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.BUBBLE_GLASS) {
                 eu.eurise.core.designsystem.component.SwitchRow(

@@ -804,5 +804,8 @@
     <string name="appearance_adaptive_half">Metà schermo</string>
     <string name="appearance_adaptive_third">Un terzo</string>
     <string name="home_same_height">Stessa altezza</string>
+    <string name="appearance_agenda_number">Numero del giorno nell\'Agenda</string>
+    <string name="appearance_agenda_round">Arrotondato</string>
+    <string name="appearance_agenda_ours">Il nostro</string>
     <string name="bubble_agenda_nothing">Oggi niente in agenda né da fare</string>
 </resources>

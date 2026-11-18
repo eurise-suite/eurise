@@ -12,6 +12,8 @@
     <string name="agenda_yesterday">Ieri</string>
     <string name="agenda_week">settimana %1$d</string>
     <string name="agenda_back_today">tocca per tornare a oggi</string>
+    <string name="agenda_back_to_today">Torna a oggi</string>
+    <string name="agenda_year_line">%1$d · settimana %2$d · %3$d° giorno</string>
     <string name="agenda_prev_day">Giorno prima</string>
     <string name="agenda_next_day">Giorno dopo</string>
     <string name="agenda_events">Appuntamenti</string>

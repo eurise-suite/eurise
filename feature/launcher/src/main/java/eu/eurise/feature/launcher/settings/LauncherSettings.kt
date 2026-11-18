@@ -121,6 +121,8 @@ data class LauncherSettings(
      */
     val adaptiveBubbles: Boolean = false,
     val adaptiveMax: Int = 0,
+    /** Il numero del giorno nell'Agenda col carattere della suite invece che arrotondato (lo legge l'Agenda). */
+    val agendaNumberOurs: Boolean = false,
     /** Simboli delle icone colorati per categoria (falso) o con colori vari per app (vero). */
     val variedIcons: Boolean = false,
     /** Colore del simbolo preso dall'icona originale dell'app e portato alla tinta della suite più vicina. */
@@ -251,6 +253,7 @@ class SettingsStore(context: Context) {
             .putBoolean("show_labels", next.showLabels)
             .putBoolean("adaptive_bubbles", next.adaptiveBubbles)
             .putInt("adaptive_max", next.adaptiveMax)
+            .putBoolean("agenda_number_ours", next.agendaNumberOurs)
             .putBoolean("varied_icons", next.variedIcons)
             .putBoolean("app_icon_colors", next.appIconColors)
             .putBoolean("icons_follow_bubbles", next.iconsFollowBubbles)
@@ -299,6 +302,7 @@ class SettingsStore(context: Context) {
         showLabels = prefs.getBoolean("show_labels", true),
         adaptiveBubbles = prefs.getBoolean("adaptive_bubbles", false),
         adaptiveMax = prefs.getInt("adaptive_max", 0),
+        agendaNumberOurs = prefs.getBoolean("agenda_number_ours", false),
         variedIcons = prefs.getBoolean("varied_icons", false),
         appIconColors = prefs.getBoolean("app_icon_colors", true),
         iconsFollowBubbles = prefs.getBoolean("icons_follow_bubbles", true),
