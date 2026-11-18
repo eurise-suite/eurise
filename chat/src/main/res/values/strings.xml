@@ -226,4 +226,26 @@
     <string name="ch_acc_add_personal_btn">Aggiungi l\'account personale</string>
     <string name="ch_acc_two">Al massimo due account: uno personale e uno di lavoro. Si cambia dalla barra in basso.</string>
     <string name="ch_channel_quiet">Lavoro fuori orario</string>
+
+    <!-- Vocali trascritti e letti ad alta voce (tavola ChatVocali) -->
+    <string name="vo_voice">Messaggio vocale</string>
+    <string name="vo_encode_failed">Il telefono non riesce a preparare il vocale</string>
+    <string name="vo_play">Ascolta</string>
+    <string name="vo_pause">Pausa</string>
+    <string name="vo_transcribing">Trascrivo sul telefono…</string>
+    <string name="vo_no_model">Per leggerlo scritto: scarica il modello in Eurise Voce</string>
+    <string name="vo_no_voice">Per leggerlo scritto serve Eurise Voce</string>
+    <string name="vo_on_phone">Trascritto sul telefono · l\'audio non esce · %1$s</string>
+    <string name="vo_hold">Tieni premuto per un vocale</string>
+    <string name="vo_too_short">Tieni premuto il microfono mentre parli</string>
+    <string name="vo_no_mic">Il microfono non è disponibile</string>
+    <string name="vo_slide_cancel">‹ Scorri per annullare</string>
+    <string name="vo_release_cancel">Lascia per annullare</string>
+    <string name="vo_read_aloud">Leggi ad alta voce</string>
+    <string name="vo_stop_reading">Ferma la lettura</string>
+    <string name="vo_write_or_hold">Scrivi o tieni premuto il microfono</string>
+    <string name="vo_hint">Per chi vede poco: tutti i messaggi letti da soli. Tocca per accendere</string>
+    <string name="vo_auto_on">I messaggi nuovi si leggono da soli (si spegne dal foglio dell\'account)</string>
+    <string name="vo_auto_title">Leggi da soli i messaggi</string>
+    <string name="vo_auto_sub">Per chi vede poco: con una conversazione aperta, la voce del telefono legge i messaggi che arrivano e sotto ognuno c\'è «Leggi ad alta voce». Tutto resta sul telefono.</string>
 </resources>

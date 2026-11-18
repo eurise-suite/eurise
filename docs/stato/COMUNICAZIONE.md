@@ -194,6 +194,26 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
+- **Vocali trascritti e letti ad alta voce** (18 novembre; tavola ChatVocali; giro GIRO: chat): **microfono** al posto di
+  Invia con il campo vuoto (non nelle chat di La mia Bussola): si tiene premuto e si parla, si lascia per mandare, scorrendo
+  a sinistra si annulla (striscia rossa con tempo e livello della voce al posto del campo; sotto un secondo non parte;
+  massimo dieci minuti). Permesso del microfono chiesto solo al primo vocale (RECORD_AUDIO nuovo nel manifest).
+  Registrazione a 16 kHz mono in memoria (`VoiceAudio.kt`: `VoiceRecorder`), file **AAC .m4a** con i codec del telefono
+  (`VoiceCodec.encode`, nessuna libreria), cifrato come gli allegati, mandato come `m.audio` con i campi dei vocali di
+  Element (`org.matrix.msc3245.voice`, `org.matrix.msc1767.audio` con durata e forma d'onda 0–1024). Logica pura in
+  **`Voice.kt`** con `VoiceTest` (contenuto, forma d'onda, sbarrette, durata, tagli nei punti quieti, mono a 16 kHz).
+  Fumetto del vocale: tasto Ascolta/Pausa, forma d'onda (tocco = salta lì), durata che scorre; sotto la **trascrizione
+  fatta sul telefono** con **Eurise Voce** (Whisper, `VoiceContract`; pezzi di al massimo 28 s tagliati nelle pause), che
+  parte da sola quando il vocale si vede, uno alla volta, anche per quelli di Element (Ogg Opus decodificato con
+  `MediaExtractor`); riga «Trascritto sul telefono · l'audio non esce · ora». Senza modello: «scarica il modello in Eurise
+  Voce» (apre Voce); senza Voce: una riga che lo dice. Le trascrizioni restano **solo in memoria** (`VoiceHub`), non si
+  mandano e non si salvano. **Leggi ad alta voce** nel menu della pressione lunga (testi e trascrizioni), con il motore di
+  sintesi del telefono (anche Eurise Voce). **Per chi vede poco**: interruttore «Leggi da soli i messaggi» nel foglio
+  dell'account (e avviso una tantum nella conversazione): con la conversazione aperta i messaggi nuovi si leggono da soli,
+  «Nome: testo», e sotto ogni messaggio ricevuto c'è il tasto «Leggi ad alta voce» della tavola (di base il tasto sta solo
+  nel menu, per non riempire ogni fumetto). L'ascolto si ferma uscendo dalla Chat.
+  Non ancora: Ogg Opus anche in uscita (oggi AAC, che Element apre), vocale bloccato a mani libere, risposta con un vocale
+  (oggi il vocale non porta la risposta), velocità 1,5×/2×, lettura automatica anche dei vocali.
 - **Invito sulla Chat** (17 novembre, notte; tavole ChatInvita e ChatInvitaElenco; giro 777: chat e phone): il link è
   **`https://matrix.to/#/<mio utente>`** (apre una chat con me in Eurise, Element o un'altra app Matrix; niente server
   nostro: `eurise.eu/i/…` della tavola aspetta dominio e server). Nei testi resta «Chat» e non «Ciarly» finché il marchio non
@@ -219,7 +239,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 795 (18 novembre: le basi della chat); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (18 novembre: vocali trascritti e letti); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 
 ## Tavole
@@ -254,8 +274,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
     Messaggi, Telefono ed Email via ponte con permessi di firma.
   - **Invito a Ciarly** (richiesta del proprietario), fila y 16262: **ChatInvita** (dalla scheda della rubrica, per SMS o
     email dal telefono, link con la chat pronta), **ChatInvitaElenco** (più persone, ognuna sul suo canale).
-  - Funzioni, file y 18770 e 20024: ChatBasi (risposte, reazioni, modifica, fissati, sondaggi), ChatVocali (trascritti e
-    letti ad alta voce), ChatProgramma (più tardi, quando lavora, a scomparsa, Ricordamelo), ChatCartelle (cartelle,
+  - Funzioni, file y 18770 e 20024: ChatBasi (risposte, reazioni, modifica, fissati, sondaggi; in codice), ChatVocali
+    (trascritti e letti ad alta voce; in codice), ChatProgramma (più tardi, quando lavora, a scomparsa, Ricordamelo), ChatCartelle (cartelle,
     Messaggi a me, discussioni), ChatThread, ChatPosizione (a tempo), ChatTruffa, ChatSemplice, ChatPresaVisione,
     ChatProposta, ChatRiassunto, ChatQuandoLavora, ChatGruppoTempo.
 - **Prima tavola dei due account** (17 novembre, pomeriggio): fila nuova a y 16262 con **ChatDueAccount** (Personale e Lavoro nella stessa Chat, due server; si cambia dalla barra in
@@ -373,7 +393,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    filo, Chiama con un tocco, «Unisci al contatto»), ~~invito a Ciarly~~ (fatto al giro 777; prove: banner nella scheda della Rubrica, invito per SMS ed email, elenco con
    più persone),
    poi le 13 tavole Chat* (~~ChatBasi~~ fatta al giro 795; prove: rispondi, reazione, modifica, cancella, fissa, inoltra,
-   sondaggio con voto e chiusura, anche con Element dall'altra parte; poi ChatVocali), poi le tavole della seconda fila di La mia Bussola.
+   sondaggio con voto e chiusura, anche con Element dall'altra parte; ~~ChatVocali~~ fatta al giro GIRO; prove: vocale
+   tenuto premuto e annullato, ascolto, trascrizione con Eurise Voce e il modello scaricato, vocale verso Element e da
+   Element, «Leggi ad alta voce», «Leggi da soli i messaggi»; poi ChatProgramma), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

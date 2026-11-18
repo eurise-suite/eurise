@@ -98,6 +98,8 @@ interface ChatActions {
     fun pickFolder(done: (android.net.Uri?) -> Unit)
     /** Il permesso del calendario, per il calendario «Turni» sul telefono; true se c'è. */
     fun askCalendar(done: (Boolean) -> Unit)
+    /** Il permesso del microfono per i vocali (tavola ChatVocali), chiesto solo al primo vocale. */
+    fun askMic(done: (Boolean) -> Unit)
     /** Condivide un testo (riepilogo dei turni per chi non usa la Chat) con l'app che sceglie l'utente. */
     fun shareText(text: String)
     /** Condivide un file della cartella della Chat (PDF, CSV, calendario dei turni) con l'app che sceglie l'utente. */
@@ -399,6 +401,19 @@ private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
             }
         }
     }
+    // Per chi vede poco (tavola ChatVocali): la voce del telefono legge i messaggi che arrivano. Nulla esce dal telefono.
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.volume(2f), null, tint = scheme.onSurface, modifier = Modifier.size(19.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.vo_auto_title), fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            androidx.compose.material3.Switch(checked = model.voice.autoRead, onCheckedChange = { model.voice.changeAutoRead(it); model.readHintDone() })
+        }
+        Text(stringResource(R.string.vo_auto_sub), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+    }
     if (model.otherSession == null) {
         val missing = model.account.other
         Pill(stringResource(if (missing == Account.Work) R.string.ch_acc_add_work_btn else R.string.ch_acc_add_personal_btn), EuriseIcons.plus(2f), Modifier.fillMaxWidth(), strong = true) {
@@ -507,6 +522,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var editing by remember(roomId) { mutableStateOf<Event?>(null) }
     var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
     var pollSheet by remember(roomId) { mutableStateOf(false) }
+    var recording by remember(roomId) { mutableStateOf<VoiceRecorder?>(null) }
+    var cancelling by remember(roomId) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val failed = stringResource(R.string.ch_send_failed)
     val fileFailed = stringResource(R.string.ch_file_failed)
@@ -514,6 +531,15 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     val pollLabel = stringResource(R.string.ba_poll_new)
     LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(0); model.open(roomId) }
     LaunchedEffect(roomId) { model.checkPeer(roomId) }
+    // Per chi vede poco: i messaggi che arrivano mentre la conversazione è aperta si leggono da soli (non la storia).
+    var readFrom by remember(roomId) { mutableStateOf(events.lastOrNull()?.time ?: 0L) }
+    LaunchedEffect(events.size, model.voice.autoRead) {
+        if (!model.voice.autoRead) { readFrom = events.lastOrNull()?.time ?: 0L; return@LaunchedEffect }
+        events.filter { it.time > readFrom && it.sender != me && (it.kind == Event.Kind.Text || it.kind == Event.Kind.Notice) }.forEach { e ->
+            model.voice.speak(e.id, Voice.spoken(model.nameOf(e.sender), shownText(model, e)), queue = true)
+        }
+        readFrom = maxOf(readFrom, events.lastOrNull()?.time ?: 0L)
+    }
     val peer = model.peerOf(roomId)
     val peerVerified = peer != null && model.verifiedPeople[peer] == true
     LaunchedEffect(list) {
@@ -581,6 +607,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     val mine = e.sender == me
                     if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = mine)
                     else if (e.kind == Event.Kind.Shift) ShiftBubble(model, actions, roomId, e, mine = mine)
+                    else if (e.kind == Event.Kind.Audio) Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
+                        AudioBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
                     else if (e.kind == Event.Kind.Poll) Column {
                         PollBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
@@ -590,6 +620,20 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                             model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) }
                         }
                         ReactionChips(model, actions, roomId, e, mine)
+                        // Per chi vede poco (tavola ChatVocali): sotto ogni messaggio ricevuto, «Leggi ad alta voce».
+                        if (!mine && model.voice.autoRead && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice)) {
+                            ReadAloudChip(model, e, shownText(model, e))
+                        }
+                    }
+                }
+                // Una volta sola, dopo l'avviso delle basi: la lettura di tutti i messaggi per chi vede poco.
+                if (model.basiHintSeen && !model.readHintSeen && !model.voice.autoRead && events.any { it.kind == Event.Kind.Text && it.sender != me }) item(key = "read-hint") {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.vo_hint), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(scheme.onSurface.copy(alpha = 0.06f))
+                                .clickable(role = Role.Button) { model.voice.changeAutoRead(true); model.readHintDone(); actions.toast(actions.text(R.string.vo_auto_on)) }
+                                .padding(horizontal = 10.dp, vertical = 4.dp))
                     }
                 }
                 // Una volta sola: come si arriva a rispondere, reagire, modificare… (tavola ChatBasi).
@@ -627,15 +671,24 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     contentAlignment = Alignment.Center,
                 ) { Icon(EuriseIcons.attach(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(19.dp)) }
                 Spacer(Modifier.width(8.dp))
-                Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (draft.isEmpty()) Text(stringResource(if (editing != null) R.string.ba_edit_hint else R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
+                // Vocali (tavola ChatVocali): con il campo vuoto c'è il microfono; mentre si registra, la striscia rossa.
+                val micShown = draft.isBlank() && editing == null && bussola == null
+                val rec = recording
+                if (rec != null) RecordingStrip(rec, cancelling, Modifier.weight(1f))
+                else Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    if (draft.isEmpty()) Text(stringResource(when {
+                        editing != null -> R.string.ba_edit_hint
+                        micShown -> R.string.vo_write_or_hold
+                        else -> R.string.ch_write
+                    }), fontSize = 15.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     BasicTextField(value = draft, onValueChange = { draft = it }, maxLines = 6,
                         textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
                         modifier = Modifier.fillMaxWidth())
                 }
                 Spacer(Modifier.width(8.dp))
                 val send = stringResource(R.string.ch_send)
-                Box(
+                if (micShown) MicButton(model, actions, roomId) { r, c -> recording = r; cancelling = c }
+                else Box(
                     Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) scheme.primary.copy(alpha = 0.4f) else scheme.primary)
                         .clickable(enabled = draft.isNotBlank(), role = Role.Button) {
                             val text = draft.trim()

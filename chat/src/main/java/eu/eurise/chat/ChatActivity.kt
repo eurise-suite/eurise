@@ -27,6 +27,14 @@ class ChatActivity : ComponentActivity(), ChatActions {
         calendarDone?.invoke(r.values.all { it }); calendarDone = null
     }
 
+    private var micDone: ((Boolean) -> Unit)? = null
+    private val mic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> micDone?.invoke(ok); micDone = null }
+
+    override fun askMic(done: (Boolean) -> Unit) {
+        micDone = done
+        mic.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
     override fun askCalendar(done: (Boolean) -> Unit) {
         if (ShiftCalendar.allowed(this)) { done(true); return }
         calendarDone = done
@@ -108,8 +116,16 @@ class ChatActivity : ComponentActivity(), ChatActions {
         if (model.uni.who != null) model.uni.loadThread()
     }
 
+    override fun onDestroy() {
+        model.voice.close()
+        super.onDestroy()
+    }
+
     override fun onStop() {
         model.stop()
+        // Un vocale o una lettura ad alta voce non continuano con la Chat chiusa.
+        model.voice.stopPlaying()
+        if (!isChangingConfigurations) model.voice.stopSpeaking()
         super.onStop()
     }
 

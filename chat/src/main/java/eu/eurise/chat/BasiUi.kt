@@ -204,6 +204,13 @@ internal fun MessageMenu(
                 }
                 Divider()
             }
+            // Leggi ad alta voce (tavola ChatVocali): il testo, o la trascrizione di un vocale, con la voce del telefono.
+            readableText(model, e)?.takeIf { it.isNotBlank() }?.let { text ->
+                MenuRow(EuriseIcons.volume(2f), stringResource(R.string.vo_read_aloud)) {
+                    model.voice.speak(e.id, Voice.spoken(if (mine) "" else model.nameOf(e.sender), text)); onClose()
+                }
+                Divider()
+            }
             if (mine && !local && e.kind == Event.Kind.Text) { MenuRow(EuriseIcons.pencil(2f), stringResource(R.string.ba_edit)) { onEdit(); onClose() }; Divider() }
             if (!local) {
                 MenuRow(EuriseIcons.pin(2f), stringResource(if (pinned) R.string.ba_unpin else R.string.ba_pin)) {
@@ -211,7 +218,7 @@ internal fun MessageMenu(
                 }
                 Divider()
             }
-            if (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice || e.kind == Event.Kind.Image || e.kind == Event.Kind.File) {
+            if (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice || e.kind == Event.Kind.Image || e.kind == Event.Kind.File || e.kind == Event.Kind.Audio) {
                 MenuRow(EuriseIcons.send(2f), stringResource(R.string.ba_forward)) { onForward() }
             }
             if (mine && !local && e.kind == Event.Kind.Poll) {

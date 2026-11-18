@@ -3373,3 +3373,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Organizzazione: tavole «Bolle che si adattano» (ScrBolleAdatta*, pagina Bolle della tela), da approvare; toccato canvas.json della tela → `docs/stato/ORGANIZZAZIONE.md`.
 - 18 novembre, Alfred e AI: Vittorio ed Ettore (Supertonic 3) in Voce, Vittorio voce di Alfred, giro 793 → `docs/stato/ALFRED.md`.
 - 18 novembre, Galleria: editor, settimo giro (Effetti con pennello, barra Ritaglia · Regola · Ritocca · Effetti · Testo · Disegna) · giro 797 → `docs/stato/PICCOLE.md`.
+- 18 novembre, Comunicazione: Chat, vocali trascritti sul telefono con Eurise Voce e messaggi letti ad alta voce (anche da soli, per chi vede poco) · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.

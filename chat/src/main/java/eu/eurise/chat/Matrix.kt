@@ -30,7 +30,7 @@ data class Event(
     /** Il messaggio a cui risponde (tavola ChatBasi). */
     val replyTo: String? = null,
 ) {
-    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll }
+    enum class Kind { Text, Notice, Image, File, Audio, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll }
 }
 
 /**
@@ -88,7 +88,9 @@ object Matrix {
                 }
                 when (content.optString("msgtype")) {
                     "m.image" -> Event(id, sender, name, time, Event.Kind.Image, media, data = content.toString(), replyTo = reply)
-                    "m.file", "m.video", "m.audio" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
+                    // Vocali e audio (tavola ChatVocali): durata e forma d'onda nel contenuto (vedi Voice).
+                    "m.audio" -> Event(id, sender, body, time, Event.Kind.Audio, media, data = content.toString(), replyTo = reply)
+                    "m.file", "m.video" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice, replyTo = reply)
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())

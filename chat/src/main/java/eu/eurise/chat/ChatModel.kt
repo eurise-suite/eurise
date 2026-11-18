@@ -63,6 +63,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     val rooms = mutableStateListOf<Room>()
     /** «Una persona, tutti i canali»: la vista Persone e il filo di una persona con SMS, chiamate ed email. */
     val uni by lazy { Uni(context, scope, this) }
+    /** Vocali: ascolto, trascrizione sul telefono, lettura ad alta voce (tavola ChatVocali). */
+    val voice by lazy { VoiceHub(context, scope) }
     private val data = HashMap<String, RoomState>()
     private val timelines = HashMap<String, SnapshotStateList<Event>>()
     /** Nomi delle persone (per i messaggi dei gruppi). */
@@ -459,6 +461,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     Event.Kind.Encrypted -> context.getString(R.string.ch_encrypted_short)
                     Event.Kind.Image -> context.getString(R.string.ch_photo)
                     Event.Kind.File -> context.getString(R.string.ch_file)
+                    Event.Kind.Audio -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") + context.getString(R.string.vo_voice)
                     else -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") + last.text
                 },
                 lastTime = last?.time ?: 0L, unread = s.unread, encrypted = s.encrypted, invite = s.invite, direct = s.direct,
@@ -690,6 +693,14 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE).edit().putBoolean("basi_hint", true).apply()
     }
 
+    /** L'avviso «Per chi vede poco: tutti i messaggi letti da soli» (tavola ChatVocali) si vede finché non si tocca. */
+    var readHintSeen by mutableStateOf(context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE).getBoolean("read_hint", false))
+        private set
+    fun readHintDone() {
+        readHintSeen = true
+        context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE).edit().putBoolean("read_hint", true).apply()
+    }
+
     /** Reazioni, modifiche, voti e cancellazioni di tutte le stanze, per messaggio. */
     val relations = Relations.Store()
     /** Cambia a ogni reazione, modifica, voto o messaggio fissato, per ridisegnare. */
@@ -759,10 +770,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     /** Inoltra un messaggio (testo, foto o file) in un'altra stanza, senza il riferimento alla risposta. */
     fun forward(e: Event, toRoom: String, failed: () -> Unit) {
-        val content = e.data?.let { runCatching { JSONObject(it) }.getOrNull() }?.takeIf { e.kind == Event.Kind.Image || e.kind == Event.Kind.File }
+        val content = e.data?.let { runCatching { JSONObject(it) }.getOrNull() }?.takeIf { e.kind == Event.Kind.Image || e.kind == Event.Kind.File || e.kind == Event.Kind.Audio }
             ?: JSONObject().put("msgtype", "m.text").put("body", relations.edited(e.id, e.sender) ?: e.text)
         content.remove("m.relates_to")
-        sendContent(toRoom, content, if (e.kind == Event.Kind.Image || e.kind == Event.Kind.File) e.kind else Event.Kind.Text, failed)
+        sendContent(toRoom, content, if (e.kind == Event.Kind.Image || e.kind == Event.Kind.File || e.kind == Event.Kind.Audio) e.kind else Event.Kind.Text, failed)
     }
 
     fun sendPoll(roomId: String, question: String, answers: List<String>, closes: Long?, failed: () -> Unit) =
@@ -832,12 +843,16 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         if (content != null && eu.eurise.core.studio.Bussola.isReport(content) &&
             eu.eurise.core.studio.Bussola.reportExpired(e.time, System.currentTimeMillis())) return done(null)
         val info = content?.optJSONObject("file")
-        val name = (content?.optString("filename")?.ifEmpty { null } ?: e.text).ifBlank { "file" }
+        // I vocali hanno tutti lo stesso nome («Messaggio vocale»): in cache ognuno il suo, e si riusa (ascolto e trascrizione).
+        val name = if (e.kind == Event.Kind.Audio) "vocale-" + (e.mediaUrl.hashCode().toLong() and 0xffffffffL) +
+            (if (Voice.info(content).mime.contains("ogg")) ".ogg" else ".m4a")
+        else (content?.optString("filename")?.ifEmpty { null } ?: e.text).ifBlank { "file" }
             .replace(Regex("[/\\\\:*?\"<>|\\n]"), "-").take(120)
         scope.launch {
             val f = withContext(Dispatchers.IO) {
                 val dir = File(context.cacheDir, "chat").apply { mkdirs() }
                 val out = File(dir, name)
+                if (e.kind == Event.Kind.Audio && out.length() > 0) return@withContext out
                 runCatching {
                     val c = ChatClient(s)
                     if (info != null) out.also { it.writeBytes(Attachments.decrypt(c.fetch(url), info)) } else c.download(url, out)
@@ -949,6 +964,52 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
             }
             r.onFailure { e ->
                 timeline(roomId).remove(local)
+                failed((e as? SendProblem)?.text ?: R.string.ch_send_failed)
+            }
+        }
+    }
+
+    /**
+     * Manda un vocale (tavola ChatVocali): AAC in un .m4a, cifrato se la stanza lo è, come `m.audio` con i campi dei
+     * vocali di Element (durata e forma d'onda). Intanto si trascrive sul telefono dall'audio ancora in memoria.
+     */
+    fun sendVoice(roomId: String, pcm: ShortArray, failed: (Int) -> Unit) {
+        val c = client ?: return
+        val me = session?.userId.orEmpty()
+        val durationMs = pcm.size * 1000L / Voice.RATE
+        val wave = Voice.waveform(pcm)
+        val body = context.getString(R.string.vo_voice)
+        val echo = Voice.content(body, VoiceCodec.MIME, 0, durationMs, wave, null, null)
+        val local = Event("local:" + System.nanoTime(), me, body, System.currentTimeMillis(), Event.Kind.Audio, data = echo.toString())
+        timeline(roomId).add(local)
+        voice.transcribeOwn(local.id, pcm)
+        val encrypted = data[roomId]?.encrypted == true
+        scope.launch {
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    val dir = File(context.cacheDir, "chat").apply { mkdirs() }
+                    val f = File(dir, "invio-" + System.currentTimeMillis() + ".m4a")
+                    if (!VoiceCodec.encode(pcm, f)) throw SendProblem(R.string.vo_encode_failed)
+                    val bytes = f.readBytes()
+                    f.delete()
+                    if (bytes.size > MAX_FILE) throw SendProblem(R.string.ch_file_too_big)
+                    val name = "vocale.m4a"
+                    val content = if (encrypted) {
+                        val sealed = Attachments.encrypt(bytes)
+                        Voice.content(body, VoiceCodec.MIME, bytes.size, durationMs, wave, sealed.info.put("url", c.upload(sealed.bytes, "application/octet-stream", null)), null)
+                    } else Voice.content(body, VoiceCodec.MIME, bytes.size, durationMs, wave, null, c.upload(bytes, VoiceCodec.MIME, name))
+                    val url = content.optString("url").ifEmpty { content.optJSONObject("file")?.optString("url").orEmpty() }
+                    if (encrypted) {
+                        val cr = cryptoFor(c.session) ?: error("crypto")
+                        c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), "m.room.message", content))
+                    } else c.sendMessage(roomId, content)
+                    url
+                }
+            }
+            r.onSuccess { url -> if (url.isNotEmpty()) voice.move(local.id, url) }
+            r.onFailure { e ->
+                timeline(roomId).remove(local)
+                voice.transcripts.remove(local.id)
                 failed((e as? SendProblem)?.text ?: R.string.ch_send_failed)
             }
         }

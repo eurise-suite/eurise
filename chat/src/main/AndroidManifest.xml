@@ -7,6 +7,8 @@
     <!-- I propri turni nel calendario «Turni» del telefono (tavola ChatTurniCrea): chiesto solo accendendo l'interruttore. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- I vocali (tavola ChatVocali): chiesto solo la prima volta che si tiene premuto il microfono. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
@@ -23,6 +25,12 @@
         <package android:name="eu.eurise.phone.debug" />
         <package android:name="eu.eurise.mail" />
         <package android:name="eu.eurise.mail.debug" />
+        <!-- Vocali (tavola ChatVocali): trascrizione con Eurise Voce e lettura con il motore di sintesi del telefono. -->
+        <package android:name="eu.eurise.voice" />
+        <package android:name="eu.eurise.voice.debug" />
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.DIAL" />
             <data android:scheme="tel" />
