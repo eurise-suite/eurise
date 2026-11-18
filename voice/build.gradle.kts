@@ -37,7 +37,7 @@ val sherpaAar: File = file("libs/sherpa-onnx-$sherpaVersion.aar").also { aar ->
 
 android {
     namespace = "eu.eurise.voice"
-    compileSdk = 35
+    compileSdk = 37
     ndkVersion = "28.0.13004108"
 
     defaultConfig {

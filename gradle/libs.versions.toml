@@ -4,7 +4,7 @@ kotlin = "2.3.20"
 # Compose per il computer (desktop/app): la versione che va con Kotlin 2.1.0.
 composeMultiplatform = "1.7.3"
 ksp = "2.3.12"
-composeBom = "2024.12.01"
+composeBom = "2026.08.00"
 coreKtx = "1.15.0"
 activityCompose = "1.9.3"
 lifecycle = "2.8.7"

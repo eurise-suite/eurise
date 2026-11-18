@@ -7,7 +7,7 @@ plugins {
 /** File: telefono e cloud in un solo navigatore, con lettore PDF di sistema. Nessuna libreria nuova. */
 android {
     namespace = "eu.eurise.feature.drive"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

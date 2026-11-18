@@ -9,7 +9,7 @@ plugins {
  */
 android {
     namespace = "eu.eurise.core.studio"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

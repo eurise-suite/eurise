@@ -12,7 +12,7 @@ plugins {
  */
 android {
     namespace = "eu.eurise.read"
-    compileSdk = 35
+    compileSdk = 37
     ndkVersion = "28.0.13004108"
 
     defaultConfig {

@@ -7,7 +7,7 @@ plugins {
 /** Meteo di Eurise: oggi, ore, giorni, vento, pollini, alba e tramonto, allerte con gli impegni toccati. Nessuna libreria nuova. */
 android {
     namespace = "eu.eurise.feature.weather"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
