@@ -14,6 +14,13 @@
   oltre ~40 MB arrivano sul telefono come archivio e non si installano (15 novembre): niente allegati per gli APK grandi.
   Se un APK richiede più tempo (Office, Mappe), si danno subito i link di quelli pronti e gli altri appena arrivano.
 
+## Chiave di prova (regola fissa, 18 novembre 2026)
+- La vecchia chiave di prova (`app/debug-key`) è pubblica: gli APK di prova arrivano al telefono **solo** da `apk-prova` e
+  `apk-prova-office`, dove `.github/scripts/firma-prova.sh` li rifirma con la chiave nuova (segreto `EURISE_PROVA_KEYSTORE`)
+  e la prova di rotazione. Mai dare al proprietario un APK preso dagli artefatti o firmato in altro modo: ha la sola chiave
+  vecchia e non si installa sopra (o, peggio, non ha i permessi della suite).
+- Ogni nuovo flusso che pubblica APK di prova chiama lo stesso script. Dettagli in `docs/SICUREZZA.md`.
+
 ## Conversazioni lunghe (regola, 8 novembre 2026)
 - Quando la chat con il proprietario diventa lunga (molti lavori, contesto riassunto più volte), avvisarlo alla
   consegna dell'APK e consigliare una chat nuova, con le istruzioni pronte da incollare: leggere CLAUDE.md e

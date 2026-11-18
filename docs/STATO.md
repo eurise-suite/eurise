@@ -3375,3 +3375,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Galleria: editor, settimo giro (Effetti con pennello, barra Ritaglia · Regola · Ritocca · Effetti · Testo · Disegna) · giro 797 → `docs/stato/PICCOLE.md`.
 - 18 novembre, Comunicazione: Chat, vocali trascritti sul telefono con Eurise Voce e messaggi letti ad alta voce (anche da soli, per chi vede poco) · giro 809 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 18 novembre, notte, Organizzazione: bolle che si adattano al contenuto (opzione, massimo facoltativo, scatto «Stessa altezza») · giro 800; tavola AgePagina (agenda come una vecchia agenda) da approvare → `docs/stato/ORGANIZZAZIONE.md`.
+- 18 novembre, Sicurezza (chat Browser): la chiave di prova pubblica non vale più; APK di prova rifirmati con chiave nuova e rotazione, fase 1 → `docs/SICUREZZA.md`; nuova regola in CLAUDE.md.

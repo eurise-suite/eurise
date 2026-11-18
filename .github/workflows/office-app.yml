@@ -321,10 +321,14 @@ jobs:
         if: success() && github.ref_name == 'office'
         env:
           GH_TOKEN: ${{ github.token }}
+          EURISE_PROVA_KEYSTORE: ${{ secrets.EURISE_PROVA_KEYSTORE }}
+          EURISE_PROVA_PASSWORD: ${{ secrets.EURISE_PROVA_PASSWORD }}
         run: |
           f="$WORK/out/eurise-office-debug.apk"
           m="$WORK/out/eurise-office-motore-debug.apk"
           [ -f "$f" ] && [ -f "$m" ] || exit 0
+          # Chiave di prova nuova con rotazione (18 novembre), come in apk-prova.
+          "$GITHUB_WORKSPACE/.github/scripts/firma-prova.sh" "$m"
           notes="Eurise Office di prova dal ramo office (giro ${{ github.run_number }}, $(git -C "$GITHUB_WORKSPACE" log -1 --format=%h)). Si sovrascrive a ogni giro."
           gh release view apk-prova-office -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create apk-prova-office -R "${{ github.repository }}" --prerelease --target office --title "APK di prova di Office" --notes "$notes"

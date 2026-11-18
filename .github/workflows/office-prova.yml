@@ -80,8 +80,12 @@ jobs:
         if: inputs.fonte == 'nativo' && github.ref_name == 'office'
         env:
           GH_TOKEN: ${{ github.token }}
+          EURISE_PROVA_KEYSTORE: ${{ secrets.EURISE_PROVA_KEYSTORE }}
+          EURISE_PROVA_PASSWORD: ${{ secrets.EURISE_PROVA_PASSWORD }}
         run: |
           cp apk/office.apk apk/eurise-office-debug.apk
+          # Chiave di prova nuova con rotazione (18 novembre), come in apk-prova.
+          .github/scripts/firma-prova.sh apk/eurise-office-debug.apk
           gh release upload apk-prova-office apk/eurise-office-debug.apk -R "${{ github.repository }}" --clobber
 
       - name: Prende l'APK di Office

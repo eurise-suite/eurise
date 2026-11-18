@@ -26,6 +26,9 @@ jobs:
   pubblica:
     runs-on: ubuntu-latest
     steps:
+      # Lo script di firma e la vecchia chiave di prova (serve a firmare la prova di rotazione).
+      - uses: actions/checkout@v4
+
       - name: Trova il giro
         id: giro
         env:
@@ -75,11 +78,15 @@ jobs:
       - name: Pubblica nella pre-release apk-prova
         env:
           GH_TOKEN: ${{ github.token }}
+          EURISE_PROVA_KEYSTORE: ${{ secrets.EURISE_PROVA_KEYSTORE }}
+          EURISE_PROVA_PASSWORD: ${{ secrets.EURISE_PROVA_PASSWORD }}
         run: |
           mkdir apk
           find artefatti -name '*.apk' -exec cp {} apk/ \;
           motore=$(find office -name 'eurise-office-motore-debug.apk' 2>/dev/null | head -1)
           if [ -n "$motore" ]; then cp "$motore" apk/; fi
+          # Chiave di prova nuova con rotazione (18 novembre): vedi .github/scripts/firma-prova.sh.
+          .github/scripts/firma-prova.sh apk/*.apk
           # Il Ponte per il computer (Linux): la cartella del programma in un archivio (serve Java 17).
           ponte=$(find artefatti -maxdepth 1 -type d -name 'eurise-ponte-linux-*' | head -1)
           if [ -n "$ponte" ]; then tar -czf apk/eurise-ponte-linux.tar.gz -C "$ponte" .; fi
@@ -92,7 +99,7 @@ jobs:
           gh release delete apk-prova -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           gh release create apk-prova apk/* -R "${{ github.repository }}" --prerelease --target "${{ github.sha }}" \
             --title "APK di prova (giro ${{ steps.giro.outputs.num }})" \
-            --notes "APK di prova (firmati con la chiave di prova) del giro ${{ steps.giro.outputs.num }} di Compila. Si sovrascrive a ogni pubblicazione."
+            --notes "APK di prova (firmati con la chiave di prova nuova, con rotazione dalla vecchia) del giro ${{ steps.giro.outputs.num }} di Compila. Si sovrascrive a ogni pubblicazione."
           # A volte la release resta in bozza (16 novembre: i link davano 404): la si rende pubblica e si controlla.
           gh release edit apk-prova -R "${{ github.repository }}" --draft=false --prerelease
           sleep 5
