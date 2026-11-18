@@ -25,14 +25,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir vecchi nuovi
+          mkdir vecchi fase1 fase2
           gh release download apk-prova -R "${{ github.repository }}" -D vecchi -p password-debug.apk -p app-debug.apk -p phone-debug.apk
-          cp vecchi/password-debug.apk vecchi/app-debug.apk nuovi/
+          cp vecchi/password-debug.apk vecchi/app-debug.apk fase1/
+          cp vecchi/password-debug.apk vecchi/app-debug.apk fase2/
           keytool -genkeypair -keystore usa-e-getta.p12 -storetype PKCS12 -storepass eurise-prova -keypass eurise-prova \
             -alias eurise-prova -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA -validity 365 -dname "CN=Prova" 2>/dev/null
-          EURISE_PROVA_KEYSTORE="$(base64 -w0 usa-e-getta.p12)" .github/scripts/firma-prova.sh nuovi/*.apk
-          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          for f in vecchi/password-debug.apk nuovi/password-debug.apk; do echo "== $f"; "$bt/apksigner" verify -v --print-certs "$f" | grep -E "Verified using|certificate SHA-256|Number of signers"; done
+          k="$(base64 -w0 usa-e-getta.p12)"
+          EURISE_PROVA_KEYSTORE="$k" EURISE_PROVA_FASE=1 .github/scripts/firma-prova.sh fase1/*.apk
+          EURISE_PROVA_KEYSTORE="$k" EURISE_PROVA_FASE=2 .github/scripts/firma-prova.sh fase2/*.apk
 
       - name: KVM per l'emulatore
         run: |

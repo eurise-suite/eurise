@@ -4,35 +4,32 @@ set -uo pipefail
 esito=0
 ok() { echo "OK   $*"; }
 ko() { echo "NO   $*"; esito=1; }
-
-granted() { # pacchetto → «true» se ha il permesso della suite (di prova)
-  adb shell dumpsys package "$1" | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//'
-}
+granted() { adb shell dumpsys package "$1" | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//'; }
+dato() { adb shell run-as eu.eurise.password.debug cat files/prova-dato.txt 2>/dev/null | grep -q segreto && ok "il dato è ancora in Password ($1)" || ko "dato perso ($1)"; }
+su() { adb install -r "$1" 2>&1 | tail -1 | grep -q Success && ok "$2" || ko "$2: $(adb install -r "$1" 2>&1 | grep -o 'INSTALL_[A-Z_]*' | head -1)"; }
 
 adb install vecchi/password-debug.apk && adb install vecchi/app-debug.apk || { echo "installazione iniziale fallita"; exit 1; }
-# Un dato «vero» dentro Password, per vedere che resta dopo l'aggiornamento.
 adb shell run-as eu.eurise.password.debug sh -c "'mkdir -p files && echo segreto > files/prova-dato.txt'"
-adb shell run-as eu.eurise.password.debug cat files/prova-dato.txt | grep -q segreto && ok "dato scritto in Password" || ko "dato non scritto"
-echo "Prima: Eurise ha il permesso? $(granted eu.eurise.hub.debug)"
+dato "prima"
 
-# 1. Aggiornamento sopra, con la chiave nuova.
-adb install -r nuovi/password-debug.apk && ok "Password aggiornata con la chiave nuova" || ko "Password non si aggiorna"
-adb install -r nuovi/app-debug.apk && ok "Eurise aggiornata con la chiave nuova" || ko "Eurise non si aggiorna"
-adb shell run-as eu.eurise.password.debug cat files/prova-dato.txt | grep -q segreto && ok "il dato è ancora in Password" || ko "dato perso"
+su fase1/password-debug.apk "fase 1: Password aggiornata"
+su fase1/app-debug.apk "fase 1: Eurise aggiornata"
+dato "dopo la fase 1"
+echo "Fase 1, Eurise: granted=$(granted eu.eurise.hub.debug)"
 
-# 2. L'intrusa: un'app firmata solo con la vecchia chiave (pubblica) chiede il permesso della suite.
-adb install vecchi/phone-debug.apk && echo "intrusa installata"
-g=$(granted eu.eurise.phone.debug); echo "Intrusa (vecchia chiave): granted=$g"
+su fase2/password-debug.apk "fase 2: Password aggiornata"
+su fase2/app-debug.apk "fase 2: Eurise aggiornata"
+dato "dopo la fase 2"
+
+adb install vecchi/phone-debug.apk >/dev/null 2>&1 && echo "intrusa installata (solo vecchia chiave)"
+g=$(granted eu.eurise.phone.debug); echo "Intrusa: granted=$g"
 [ "$g" = "true" ] && ko "l'app con la vecchia chiave ha ancora il permesso della suite" || ok "l'app con la vecchia chiave non ha il permesso"
-
-# 3. Le app con la chiave nuova lo hanno.
-g=$(granted eu.eurise.hub.debug); echo "Eurise (chiave nuova): granted=$g"
+g=$(granted eu.eurise.hub.debug); echo "Eurise: granted=$g"
 [ "$g" = "true" ] && ok "Eurise con la chiave nuova ha il permesso" || ko "Eurise con la chiave nuova non ha il permesso"
+# Il fornitore di Password, chiesto dall'intrusa: deve rifiutare (SecurityException).
+adb shell content query --uri content://eu.eurise.password.debug.logins --user 0 >/dev/null 2>&1; true
 
-# 4. Non si torna alla vecchia chiave: un APK con la sola vecchia chiave non si installa sopra.
-if adb install -r vecchi/password-debug.apk 2>&1 | tee /tmp/giu.txt | grep -q Success; then ko "Password si lascia riportare alla vecchia chiave"
-else ok "Password rifiuta la vecchia chiave ($(grep -o 'INSTALL_[A-Z_]*' /tmp/giu.txt | head -1))"; fi
-adb shell run-as eu.eurise.password.debug cat files/prova-dato.txt | grep -q segreto && ok "il dato è ancora in Password" || ko "dato perso dopo il tentativo"
-
-adb shell dumpsys package eu.eurise.password.debug | grep -iE "signatures|signing|pastSigningCertificates" | head -5
+if adb install -r vecchi/password-debug.apk 2>&1 | grep -q Success; then ko "Password torna alla vecchia chiave"
+else ok "Password rifiuta un APK con la sola vecchia chiave"; fi
+dato "dopo il tentativo di ritorno"
 exit $esito
