@@ -61,7 +61,7 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   sessioni salvate **aprono la sessione Gecko solo quando vanno in vista** (`ensureOpen`). Chiusa la scheda in uso, la
   successiva passa da `show()`. Fuori dal thread principale: «Nella cronologia» della nuova scheda e le miniature.
   In `build.yml` il riassunto degli errori del Browser mostra anche quelli di R8.
-- **Sicurezza della suite** (18 novembre, avviata da questa chat): chiave di prova nuova con rotazione, piano completo in
+- **Sicurezza della suite** (18 novembre, avviata da questa chat; da ora nel progetto «Eurise Sicurezza»): chiave di prova nuova con rotazione, piano completo in
   `docs/SICUREZZA.md`. Parti comuni toccate: CLAUDE.md (regola «Chiave di prova»), `.github/workflows/apk-prova.yml`,
   `office-app.yml`, `office-prova.yml`, `.github/scripts/firma-prova.sh`.
 - **Correzione del giro 789** (18 novembre): con R8 il Browser si chiudeva un secondo dopo l'apertura (giro 808, segnalato

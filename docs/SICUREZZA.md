@@ -1,5 +1,16 @@
 # Sicurezza della suite
 
+Da 18 novembre 2026 sera il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file
+come suo stato. Fatto finora (dalla chat Browser): punto 1 (chiave di prova, fasi 1 e 2 installate dal proprietario),
+punto 2 in parte (strumenti), punto 3 (GeckoView 160). Prossimo: punti 5 e 2 del piano (porte d'ingresso, crittografia),
+con il 6 (allowBackup della Tastiera). Rami di lavoro rimasti, già uniti o superati: `sicurezza` (prova della firma
+sull'emulatore), `strumenti`, `strumenti-2`, `prova-avvio`.
+
+## Strumenti di prova
+- `.github/workflows/prova-firma.yml` + `.github/scripts/prova-firma-emulatore.sh`: firma e permessi sull'emulatore
+  (girano sul ramo `sicurezza`). Modello per provare dal vero ogni correzione sui permessi.
+- `.github/workflows/prova-avvio-browser.yml`: avvio del Browser sull'emulatore (ramo `prova-avvio` o a mano).
+
 La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il piano (avviato il 18 novembre 2026).
 
 ## Chiave di prova (18 novembre 2026)
@@ -31,7 +42,7 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
 4. Aggiornamenti automatici (Renovate), vulnerabilità note a ogni giro (OSV-Scanner), verifica delle librerie di Gradle
    (`verification-metadata.xml`), azioni di GitHub fissate allo SHA.
 5. Revisione delle porte d'ingresso: componenti esportati e fornitori di dati, crittografia di Password, backup e Ponte.
-6. Correzioni già note: `allowBackup="true"` nella Tastiera.
+6. Correzioni già note: `allowBackup="true"` nella Tastiera (`keyboard/app/src/main/AndroidManifest.xml`).
 7. `SECURITY.md` (come segnalare una falla), modello delle minacce, revisione esterna prima della 1.0 (NLnet / NGI).
 8. Computer: Ponte con accoppiamento cifrato e autenticato, estensione Firefox con i soli permessi necessari, Flatpak
    su runtime aggiornato.

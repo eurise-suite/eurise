@@ -3383,3 +3383,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, area Password · Tastiera · Galleria: impostazioni della Tastiera in stile Eurise, Come tocchi con Ricomincia, frase intera; privacy a 10 tacchette in Password e Galleria (PrivacyConsentSheet in core/designsystem); tela ripulita · giro 830 → `docs/stato/PICCOLE.md`.
 - 18 novembre, Strumenti (chat Browser): AGP 9.5, Gradle 9.6, Kotlin 2.3, compileSdk 37, Compose 1.12, GeckoView 160 su tutta la suite; regole nuove in CLAUDE.md («Strumenti») → `docs/SICUREZZA.md`.
 - 18 novembre, pomeriggio, Organizzazione: Calendario, Messaggi e Appunti fissati seguono il contenuto con «Bolle che si adattano» · giro 837 → `docs/stato/ORGANIZZAZIONE.md`.
+- 18 novembre, Sicurezza: il lavoro passa al progetto «Eurise Sicurezza»; stato e piano in `docs/SICUREZZA.md`.
