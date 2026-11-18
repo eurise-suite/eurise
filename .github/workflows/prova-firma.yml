@@ -11,6 +11,7 @@ on:
     paths:
       - ".github/workflows/prova-firma.yml"
       - ".github/scripts/firma-prova.sh"
+      - ".github/scripts/prova-firma-emulatore.sh"
 
 permissions:
   contents: read
