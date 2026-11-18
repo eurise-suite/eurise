@@ -62,7 +62,7 @@ for apk in "$@"; do
   # Rotazione valida da Android 9 (API 28): senza --rotation-min-sdk-version, apksigner la applicherebbe solo da
   # Android 13 e prima resterebbe la vecchia chiave.
   "$apksigner" sign "${old[@]}" --next-signer "${new[@]}" \
-    --lineage "$work/lineage" --rotation-min-sdk-version 28 "$apk"
+    --lineage "$work/lineage" --rotation-min-sdk-version 28 --v4-signing-enabled false "$apk"
   "$apksigner" verify -v --print-certs "$apk" > "$work/verify.txt"
   grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" "$work/verify.txt" || {
     cat "$work/verify.txt"; echo "::error::$(basename "$apk"): firma v3 mancante"; exit 1; }

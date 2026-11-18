@@ -10,7 +10,7 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
 - Soluzione: rotazione della chiave (APK Signature Scheme v3, lineage), senza disinstallare e senza perdere dati.
   `.github/scripts/firma-prova.sh` rifirma ogni APK di prova al momento della pubblicazione (`apk-prova.yml`,
   `office-app.yml`, `office-prova.yml`) con la chiave nuova (EC P-256, alias `eurise-prova`, segreto
-  `EURISE_PROVA_KEYSTORE`; l'impronta del certificato si legge nel registro di ogni pubblicazione). Rotazione valida da Android 9.
+  `EURISE_PROVA_KEYSTORE`; impronta SHA-256 del certificato `96d2cf60…5e55e2`). Rotazione valida da Android 9.
 - Due fasi (`EURISE_PROVA_FASE`, di base nello script): Android rifiuta l'aggiornamento se la vecchia chiave perde i
   permessi nello stesso passo (INSTALL_FAILED_DUPLICATE_PERMISSION).
   - Fase 1: chiave nuova; la vecchia conserva i permessi solo per il passaggio. Il proprietario installa sopra tutte le app.
