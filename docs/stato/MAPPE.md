@@ -258,9 +258,11 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
     (una riga). Con lo schermo diviso o poco spazio niente barra dei tempi e album; il testo della canzone resta.
   - Da provare in auto: svolta vicina e lontana, chiamata in svolta, guida senza destinazione con e senza musica,
     schermo diviso con e senza guida, notte.
+  - **Mappe 114 pubblicato** in `apk-prova` il 18 novembre alle 12:16 UTC (commit 7ba7942, con la leggibilità della
+    bolla): https://github.com/eurise-suite/eurise/releases/download/apk-prova/eurise-mappe-debug.apk
 - Compilazione: commit su `brand` e `prova-mappe` (5b1d8f1); i giri 108 e seguenti sono falliti allo scarico di CoMaps
   perché codeberg.org non si risolveva dai server di GitHub. `maps-engine.yml` ora riprova quattro volte e al secondo
-  tentativo aggiunge un DNS pubblico. APK da pubblicare appena Codeberg risponde. Nota: la coda dei giri di Mappe tiene un
+  tentativo aggiunge un DNS pubblico. Codeberg è tornato verso le 11:45 UTC. Nota: la coda dei giri di Mappe tiene un
   solo giro in attesa; un giro chiesto da un altro ramo cancella quello in attesa (successo il 18 novembre).
 
 ## Prossimi passi, in ordine
