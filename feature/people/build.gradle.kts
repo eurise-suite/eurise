@@ -7,7 +7,7 @@ plugins {
 /** Scheda Persona: tutto ciò che riguarda un contatto in un posto solo. */
 android {
     namespace = "eu.eurise.feature.people"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

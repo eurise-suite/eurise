@@ -7,7 +7,7 @@ plugins {
 /** Centro privacy: dove stanno i dati, quali servizi esterni si contattano e con quali dati, quali permessi sono attivi. */
 android {
     namespace = "eu.eurise.feature.privacy"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

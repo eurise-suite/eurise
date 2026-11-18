@@ -12,7 +12,7 @@ val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
 android {
     namespace = "eu.eurise.hub"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "eu.eurise.hub"

@@ -17,7 +17,7 @@ val geckoAbi = (findProperty("eurise.geckoAbi") as String?) ?: "arm64-v8a"
 
 android {
     namespace = "eu.eurise.browser"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "eu.eurise.browser"
@@ -112,11 +112,10 @@ dependencies {
     // Le date nelle pagine (Lettura › Promemoria) con lo stesso lettore dei messaggi, e l'evento per il Calendario.
     implementation(project(":core:data"))
     implementation(project(":core:contacts"))
-    // Motore Gecko per arm64. GeckoView 160 (novembre 2026) chiede compileSdk 37 e un Android Gradle Plugin più nuovo
-    // di quello della suite (8.7.3): per il prototipo la versione più recente che compila con compileSdk 35. Prima della
-    // versione ufficiale va aggiornato il plugin per tutta la suite e si torna all'ultima GeckoView (aggiornamenti di
-    // sicurezza del motore).
-    implementation("org.mozilla.geckoview:geckoview-$geckoAbi:[130.0,142.0)")
+    // Motore Gecko (18 novembre 2026, ramo strumenti): sempre l'ultima GeckoView uscita. Firefox esce con correzioni di
+    // sicurezza circa ogni quattro settimane e il Browser le prende al giro successivo. Dalla 142 serve compileSdk 37
+    // e AGP 9, ora presenti in tutta la suite.
+    implementation("org.mozilla.geckoview:geckoview-$geckoAbi:[160.0,300.0)")
     // Il QR dell'indirizzo (tavola BrwIndirizzo): ZXing è già nella suite (Scanner, Calendario, Chat).
     implementation(libs.zxing.core)
     implementation(libs.androidx.core.ktx)

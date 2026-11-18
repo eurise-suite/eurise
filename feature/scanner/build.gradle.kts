@@ -7,7 +7,7 @@ plugins {
 /** Scanner di documenti. CameraX serve per anteprima e analisi dal vivo, che Camera2 da sola richiederebbe di riscrivere. */
 android {
     namespace = "eu.eurise.feature.scanner"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

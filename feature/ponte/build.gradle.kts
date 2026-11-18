@@ -10,7 +10,7 @@ plugins {
  */
 android {
     namespace = "eu.eurise.feature.ponte"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

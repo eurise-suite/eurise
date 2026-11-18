@@ -14,7 +14,7 @@ val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
 android {
     namespace = "eu.eurise.ai"
-    compileSdk = 35
+    compileSdk = 37
     ndkVersion = "28.0.13004108"
 
     defaultConfig {

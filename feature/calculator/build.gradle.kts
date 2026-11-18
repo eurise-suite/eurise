@@ -7,7 +7,7 @@ plugins {
 /** Calcolatrice di Eurise: calcolo con il nastro, strumenti professionali, unità e grafico. Nessuna libreria nuova. */
 android {
     namespace = "eu.eurise.feature.calculator"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
