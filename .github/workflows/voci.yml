@@ -60,7 +60,7 @@ jobs:
           tar xjf "$src.tar.bz2"
           ls -la "$src"
           for f in "$src"/*.md "$src"/*.txt "$src"/README*; do [ -f "$f" ] && { echo "== $f"; cat "$f"; }; done || true
-          pip install -q sherpa-onnx soundfile
+          pip install -q sherpa-onnx soundfile huggingface_hub numpy
           python3 - "$src" <<'PY'
           import sys, time, sherpa_onnx, soundfile as sf
           d = sys.argv[1]
