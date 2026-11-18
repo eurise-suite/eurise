@@ -8,3 +8,5 @@
 -dontobfuscate
 # SnakeYAML (lo usa GeckoView per il file di configurazione di debug) cita java.beans, che Android non ha.
 -dontwarn java.beans.**
+# Annotazioni di Kotlin citate dall'exoplayer interno di GeckoView (tenuto per intero sopra): non servono a runtime.
+-dontwarn kotlin.annotations.jvm.**
