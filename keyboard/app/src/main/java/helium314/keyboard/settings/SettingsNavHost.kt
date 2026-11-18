@@ -66,20 +66,24 @@ fun SettingsNavHost(
         popExitTransition = { slideOutHorizontally(targetOffsetX = { +it * dir }, animationSpec = animation) }
     ) {
         composable(SettingsDestination.Settings) {
-            MainSettingsScreen(
-                onClickAbout = { navController.navigate(SettingsDestination.About) },
-                onClickTextCorrection = { navController.navigate(SettingsDestination.TextCorrection) },
-                onClickPreferences = { navController.navigate(SettingsDestination.Preferences) },
-                onClickToolbar = { navController.navigate(SettingsDestination.Toolbar) },
-                onClickGestureTyping = { navController.navigate(SettingsDestination.GestureTyping) },
-                onClickDataGathering = { navController.navigate(SettingsDestination.DataGathering) },
-                onClickAdvanced = { navController.navigate(SettingsDestination.Advanced) },
-                onClickAppearance = { navController.navigate(SettingsDestination.Appearance) },
-                onClickLanguage = { navController.navigate(SettingsDestination.Languages) },
-                onClickLayouts = { navController.navigate(SettingsDestination.Layouts) },
-                onClickDictionaries = { navController.navigate(SettingsDestination.Dictionaries) },
-                onClickBack = ::goBack,
+            // Eurise: impostazioni nello stile della suite (tavola TastImpostazioniFrase); le schermate di HeliBoard dietro.
+            eu.eurise.keyboard.EuriseMainSettings(
+                onBack = ::goBack,
+                onLanguages = { navController.navigate(SettingsDestination.Languages) },
+                onTouch = { navController.navigate(SettingsDestination.EuriseTouch) },
+                onAppearance = { navController.navigate(SettingsDestination.Appearance) },
+                onToolbar = { navController.navigate(SettingsDestination.Toolbar) },
+                onDictionaries = { navController.navigate(SettingsDestination.Dictionaries) },
+                onPreferences = { navController.navigate(SettingsDestination.Preferences) },
+                onGesture = { navController.navigate(SettingsDestination.GestureTyping) },
+                onCorrection = { navController.navigate(SettingsDestination.TextCorrection) },
+                onLayouts = { navController.navigate(SettingsDestination.Layouts) },
+                onAdvanced = { navController.navigate(SettingsDestination.Advanced) },
+                onAbout = { navController.navigate(SettingsDestination.About) },
             )
+        }
+        composable(SettingsDestination.EuriseTouch) {
+            eu.eurise.keyboard.EuriseTouchSettings(onBack = ::goBack)
         }
         composable(SettingsDestination.About) {
             AboutScreen(onClickBack = ::goBack)
@@ -164,6 +168,7 @@ object SettingsDestination {
     const val Subtype = "subtype/"
     const val Layouts = "layouts"
     const val Dictionaries = "dictionaries"
+    const val EuriseTouch = "eurise_touch"
     val navTarget = MutableStateFlow(Settings)
 
     private val navScope = CoroutineScope(Dispatchers.Default)

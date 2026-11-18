@@ -118,6 +118,7 @@ internal sealed interface Screen {
     data class Detail(val uuid: String) : Screen
     data class Edit(val uuid: String?, val card: Boolean = false, val prefill: EntryDraft? = null) : Screen
     data object Sync : Screen
+    data object Privacy : Screen
     data class ProfileEdit(val uuid: String?) : Screen
 }
 
@@ -140,10 +141,12 @@ fun PasswordRoute(vm: PasswordViewModel = viewModel()) {
 @Composable
 internal fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
     var screen by remember { mutableStateOf<Screen>(Screen.List) }
+    var chooseCloud by remember { mutableStateOf(false) }
     val back: () -> Unit = {
         screen = when (val s = screen) {
             is Screen.Edit -> s.uuid?.let { Screen.Detail(it) } ?: Screen.List
             is Screen.ProfileEdit -> s.uuid?.let { Screen.Detail(it) } ?: Screen.List
+            Screen.Privacy -> Screen.Sync
             else -> Screen.List
         }
     }
@@ -183,7 +186,8 @@ internal fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
             vm.save(draft, s.uuid)
             back()
         }
-        Screen.Sync -> SyncScreen(vm, back)
+        Screen.Sync -> SyncScreen(vm, back, onPrivacy = { screen = Screen.Privacy }, chooseCloudFirst = chooseCloud.also { chooseCloud = false })
+        Screen.Privacy -> PrivacyScreen(vm, back, onSettings = { screen = Screen.Sync }, onChooseCloud = { chooseCloud = true; screen = Screen.Sync })
         is Screen.ProfileEdit -> ProfileEdit(entries.firstOrNull { it.uuid == s.uuid }, back) { draft ->
             vm.save(draft, s.uuid)
             back()

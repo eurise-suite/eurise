@@ -148,6 +148,8 @@ internal fun AlbumsPage(
     onCleanup: () -> Unit,
     onDiary: (Long) -> Unit,
     onOpenFromFiles: (() -> Unit)? = null,
+    onPrivacy: () -> Unit = {},
+    privacyLevel: Int = 10,
 ) {
     val list = remember(all) { albums(all.filter { !it.cloudOnly }) }
     val byUri = remember(all) { all.associateBy { it.uri } }
@@ -166,6 +168,15 @@ internal fun AlbumsPage(
                     ToolRow(EuriseIcons.lock(), stringResource(R.string.tool_secure), stringResource(R.string.tool_secure_hint), onSecure)
                     CardDivider()
                     ToolRow(EuriseIcons.spark(), stringResource(R.string.tool_cleanup), stringResource(R.string.tool_cleanup_hint), onCleanup)
+                    CardDivider()
+                    // La privacy della Galleria a 10 tacchette (tavola GalPrivacyTacche).
+                    Row(Modifier.fillMaxWidth().clickable(onClick = onPrivacy).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(stringResource(R.string.gpv_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                            eu.eurise.core.designsystem.component.PrivacyMeter(privacyLevel, eu.eurise.core.designsystem.component.Jurisdiction.Phone.takeIf { privacyLevel == 10 })
+                        }
+                        Icon(EuriseIcons.chevronRight(), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
                     if (onOpenFromFiles != null) {
                         CardDivider()
                         ToolRow(EuriseIcons.folder(), stringResource(R.string.tool_open_from), stringResource(R.string.tool_open_from_hint), onOpenFromFiles)
@@ -255,10 +266,12 @@ internal fun PlacesPage(list: List<Place>, settings: GallerySettings, vm: Galler
         }
     }
     if (explainNames) {
-        Explain(stringResource(R.string.places_names_explain), onCancel = { explainNames = false }) {
-            explainNames = false
-            vm.setNames(true)
-        }
+        eu.eurise.core.designsystem.component.PrivacyConsentSheet(
+            stringResource(R.string.gpv_names_q), stringResource(R.string.gpv_names_read), stringResource(R.string.gpv_names_out),
+            stringResource(R.string.gpv_names_who), stringResource(R.string.gpv_names_back), GalPrivacy.NAMES,
+            eu.eurise.core.designsystem.component.Jurisdiction.EU,
+            onDismiss = { explainNames = false }, onAccept = { explainNames = false; vm.setNames(true) },
+        )
     }
 }
 
@@ -487,10 +500,12 @@ internal fun CloudScreen(vm: GalleryViewModel, all: List<MediaItem>, onClose: ()
         }
     }
     if (explain) {
-        Explain(stringResource(R.string.cloud_explain, account?.label().orEmpty()), onCancel = { explain = false }) {
-            explain = false
-            ask.launch(Manifest.permission.ACCESS_MEDIA_LOCATION)
-        }
+        eu.eurise.core.designsystem.component.PrivacyConsentSheet(
+            stringResource(R.string.gpv_upload_q), stringResource(R.string.gpv_upload_read), stringResource(R.string.gpv_upload_out),
+            stringResource(R.string.gpv_upload_who), stringResource(R.string.gpv_upload_back), GalPrivacy.UPLOAD,
+            eu.eurise.core.designsystem.component.Jurisdiction.EU,
+            onDismiss = { explain = false }, onAccept = { explain = false; ask.launch(Manifest.permission.ACCESS_MEDIA_LOCATION) },
+        )
     }
 }
 

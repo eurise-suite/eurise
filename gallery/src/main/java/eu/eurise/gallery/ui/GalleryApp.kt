@@ -222,6 +222,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
     var playing by remember { mutableStateOf<String?>(null) }
     var cloudOpen by remember { mutableStateOf(false) }
     var cleanupOpen by remember { mutableStateOf(false) }
+    var privacyOpen by remember { mutableStateOf(false) }
     var secureOpen by remember { mutableStateOf(false) }
     var secureMove by remember { mutableStateOf<List<MediaItem>?>(null) }
     val all = media.orEmpty()
@@ -343,6 +344,8 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
                     onCloud = { cloudOpen = true },
                     onSecure = { secureOpen = true },
                     onCleanup = { cleanupOpen = true },
+                    onPrivacy = { privacyOpen = true },
+                    privacyLevel = GalPrivacy.level(settings.placesOn && settings.namesOn, settings.uploadOn),
                     onDiary = { openDiary = it },
                     onOpenFromFiles = if (hasFiles) ({
                         openFrom.launch(eu.eurise.core.suite.FilesContract.openFrom(eu.eurise.gallery.BuildConfig.HUB_PACKAGE, MediaExtensions, fromLabel))
@@ -380,6 +383,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
             if (list.isEmpty()) viewer = null
             else Viewer(list, list.indexOfFirst { it.uri == start }.coerceAtLeast(0), actions, onClose = { viewer = null })
         }
+        if (privacyOpen) PrivacyScreen(vm, onCloud = { cloudOpen = true }, onSecure = { secureOpen = true }, onClose = { privacyOpen = false })
         if (cloudOpen) CloudScreen(vm, all, onClose = { cloudOpen = false })
         if (cleanupOpen) CleanupScreen(all, ops, onClose = { cleanupOpen = false })
         if (secureOpen || secureMove != null) {

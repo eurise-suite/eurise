@@ -50,6 +50,7 @@ object TouchFix {
      * Annota la decisione per l'apprendimento.
      */
     fun adjust(keyboard: Keyboard, hit: Key?, x: Int, y: Int): Key? {
+        if (!TouchModel.spaceBand()) return hit
         if (hit == null || !Character.isLetter(hit.code)) return hit.also { note(hit, false, false) }
         val sp = spaceKey(keyboard) ?: return hit
         val above = isAboveSpace(hit, sp, x)

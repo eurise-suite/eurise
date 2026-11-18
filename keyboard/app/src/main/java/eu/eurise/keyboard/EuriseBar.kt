@@ -439,6 +439,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     fun onFinishInput() {
         if (!::ime.isInitialized) return
+        Phrases.save(context)
         closeMenu()
         if (panel != null) close()
     }
@@ -455,11 +456,12 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     private data class Command(val label: Int, val icon: Int, val action: () -> Unit)
 
-    private data class Chip(val label: String, val icon: Int? = null, val action: () -> Unit)
+    private data class Chip(val label: String, val icon: Int? = null, val onLong: (() -> Unit)? = null, val action: () -> Unit)
 
     /** Comandi subito (aprono un pannello); le altre proposte si calcolano fuori dal thread principale (Rubrica, Calendario). */
     private fun computeChips() {
         val text = before()
+        Phrases.observe(context, text)
         Detect.command(text)?.let { (cmd, raw) ->
             replaceBefore(raw.length, "")
             when (cmd) {
@@ -479,6 +481,12 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     private fun buildChips(text: String, abbreviationsPref: String): List<Chip> {
         val found = mutableListOf<Chip>()
+        // Frase intera (tavola TastImpostazioniFrase): la frase abituale che comincia così, prima di tutto.
+        Phrases.propose(context, text)?.let { (current, rest) ->
+            found += Chip("→ $rest", onLong = {
+                Phrases.forget(context, current, rest); toast(R.string.eurise_phrase_forgotten); showChips(emptyList())
+            }) { insert("$rest "); showChips(emptyList()) }
+        }
         Calc.find(text)?.let { (raw, result) ->
             val keep = if (raw.trimEnd().endsWith("=")) raw.trimEnd() + " " else ""
             found += Chip("= $result") { replaceBefore(raw.length, keep + result) }
@@ -550,6 +558,7 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
             chipsNow.firstOrNull()?.let { c ->
                 slot.addView(context.pill(c.label, p, on = true, icon = c.icon) { c.action() }.apply {
                     minimumHeight = context.dp(32)
+                    c.onLong?.let { long -> setOnLongClickListener { long(); true } }
                 }.lp(LayoutParams.WRAP_CONTENT, context.dp(32)).apply {
                     (layoutParams as LayoutParams).gravity = Gravity.CENTER_VERTICAL
                     (layoutParams as LayoutParams).marginStart = context.dp(4)

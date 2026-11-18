@@ -116,11 +116,12 @@ import java.util.Date
 // Sincronizzazione e alias. (diviso da PasswordApp.kt il 18 novembre).
 
 @Composable
-internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
+internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit, onPrivacy: () -> Unit = {}, chooseCloudFirst: Boolean = false) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val sync by vm.sync.collectAsStateWithLifecycle()
-    var choosingCloud by remember { mutableStateOf(false) }
+    // Dalla privacy, accendendo la sincronizzazione senza un cloud: si apre subito la scelta del cloud.
+    var choosingCloud by remember { mutableStateOf(chooseCloudFirst) }
     val waiting by vm.waitingBrowser.collectAsStateWithLifecycle()
     val on = sync !is SyncState.Off
     var explain by remember { mutableStateOf(false) }
@@ -130,6 +131,7 @@ internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
         BackHeader(stringResource(R.string.pwd_back), onBack)
         Text(stringResource(R.string.pwd_settings), fontSize = 26.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp))
         val bioOn by vm.bioOn.collectAsStateWithLifecycle()
+        GroupCard { PrivacySummaryRow(vm, onPrivacy) }
         GroupCard {
             Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -154,12 +156,11 @@ internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
                 Switch(checked = breachOn, onCheckedChange = { if (it) explainBreach = true else vm.setBreach(false) })
             }
             if (explainBreach) {
-                AlertDialog(
-                    onDismissRequest = { explainBreach = false },
-                    title = { Text(stringResource(R.string.pwd_privacy_title)) },
-                    text = { Text(stringResource(R.string.pwd_breach_privacy)) },
-                    confirmButton = { TextButton(onClick = { explainBreach = false; vm.setBreach(true) }) { Text(stringResource(R.string.pwd_privacy_ok)) } },
-                    dismissButton = { TextButton(onClick = { explainBreach = false }) { Text(stringResource(R.string.pwd_cancel)) } },
+                eu.eurise.core.designsystem.component.PrivacyConsentSheet(
+                    stringResource(R.string.pwd_pv_breach_q), stringResource(R.string.pwd_pv_breach_read), stringResource(R.string.pwd_pv_breach_out),
+                    stringResource(R.string.pwd_pv_breach_who), stringResource(R.string.pwd_pv_back), PwdPrivacy.BREACH,
+                    eu.eurise.core.designsystem.component.Jurisdiction.UK,
+                    onDismiss = { explainBreach = false }, onAccept = { explainBreach = false; vm.setBreach(true) },
                 )
             }
             CardDivider()
@@ -205,17 +206,15 @@ internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit) {
         Spacer(Modifier.height(24.dp))
     }
     if (explain) {
-        AlertDialog(
-            onDismissRequest = { explain = false },
-            title = { Text(stringResource(R.string.pwd_privacy_title)) },
-            text = { Text(stringResource(R.string.pwd_privacy_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    explain = false
-                    if (vm.hasSyncAccount) vm.enableSync(null) { openUrl(context, it) } else choosingCloud = true
-                }) { Text(stringResource(R.string.pwd_privacy_ok)) }
+        eu.eurise.core.designsystem.component.PrivacyConsentSheet(
+            stringResource(R.string.pwd_pv_sync_q), stringResource(R.string.pwd_pv_sync_read), stringResource(R.string.pwd_pv_sync_out),
+            stringResource(R.string.pwd_pv_sync_who), stringResource(R.string.pwd_pv_sync_back), PwdPrivacy.SYNC,
+            eu.eurise.core.designsystem.component.Jurisdiction.EU,
+            onDismiss = { explain = false },
+            onAccept = {
+                explain = false
+                if (vm.hasSyncAccount) vm.enableSync(null) { openUrl(context, it) } else choosingCloud = true
             },
-            dismissButton = { TextButton(onClick = { explain = false }) { Text(stringResource(R.string.pwd_cancel)) } },
         )
     }
     if (choosingCloud) {

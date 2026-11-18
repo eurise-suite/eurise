@@ -61,6 +61,8 @@
     <string name="ds_on_title">Cosa cambia per la tua privacy</string>
     <string name="ds_on_read">Cosa riceve</string>
     <string name="ds_on_where">Dove va</string>
+    <string name="ds_pc_read">Cosa viene letto</string>
+    <string name="ds_pc_out">Cosa esce</string>
     <string name="ds_on_who">Chi lo vede</string>
     <string name="ds_on_who_d">chi gestisce il servizio, che vede anche l\'indirizzo di rete del telefono</string>
     <string name="ds_on_privacy">Come cambia la privacy</string>

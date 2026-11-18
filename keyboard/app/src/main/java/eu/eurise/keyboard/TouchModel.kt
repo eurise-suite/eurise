@@ -32,7 +32,7 @@ object TouchModel {
 
     fun init(context: Context) {
         if (prefs != null) return
-        val p = context.getSharedPreferences("eurise_touch", Context.MODE_PRIVATE)
+        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         prefs = p
         model.load(p.getString(PREF, null))
         savedAt = model.learned
@@ -55,7 +55,21 @@ object TouchModel {
 
     /** Le lettere precedenti contano solo scrivendo testo normale (non password, numeri, codici). */
     @JvmStatic
-    fun lmActive() = lmOn && charModel != null
+    fun lmActive() = lmOn && charModel != null && prefs?.getBoolean(PREF_LM, true) != false
+
+    // --- Interruttori di «Come tocchi» (tavola TastImpostazioniFrase) ---
+    const val PREFS = "eurise_touch"
+    /** Imparare come tocca la persona (di base sì). */
+    const val PREF_LEARN = "learn_on"
+    /** Lettere precedenti sul bordo tra due tasti (di base sì). */
+    const val PREF_LM = "char_lm_on"
+    /** Fascia sopra lo spazio che conta come spazio (di base sì). */
+    const val PREF_SPACE_BAND = "space_band_on"
+    private fun learning() = prefs?.getBoolean(PREF_LEARN, true) != false
+    @JvmStatic
+    fun spaceBand() = prefs?.getBoolean(PREF_SPACE_BAND, true) != false
+    /** Quanti tocchi ha imparato finora. */
+    val learned get() = model.learned
 
     /**
      * Inizio della scrittura in un campo (LatinIME.onStartInputView): si decide se usare le lettere precedenti, si
@@ -184,6 +198,7 @@ object TouchModel {
         }
         val del = deletedTap ?: return
         deletedTap = null
+        if (!learning()) return
         val lower = Character.toLowerCase(code)
         if (!Character.isLetter(code) || lower == del.code || now - del.at > 3_000) return
         val keyboard = KeyboardSwitcher.getInstance().keyboard ?: return
@@ -244,6 +259,7 @@ object TouchModel {
     }
 
     private fun learn(word: Word) {
+        if (!learning()) return
         for ((box, p) in word.letters) model.record(box, p.first, p.second)
         if (model.learned - savedAt >= 50) save()
     }
