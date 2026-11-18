@@ -40,8 +40,8 @@ class Form(
 
     val target: String get() = webDomain ?: packageName
 
-    fun loginDataset(context: Context, username: String, password: String, label: String): Dataset? =
-        build(presentation(context, label)) { kind ->
+    fun loginDataset(context: Context, username: String, password: String, label: String, inline: android.service.autofill.InlinePresentation? = null): Dataset? =
+        build(presentation(context, label), inline) { kind ->
             when (kind) {
                 FieldKind.Username -> username
                 FieldKind.Password, FieldKind.NewPassword -> password
@@ -75,8 +75,9 @@ class Form(
         }
 
     @Suppress("DEPRECATION")
-    private fun build(view: RemoteViews, value: (FieldKind) -> String?): Dataset? {
+    private fun build(view: RemoteViews, inline: android.service.autofill.InlinePresentation? = null, value: (FieldKind) -> String?): Dataset? {
         val builder = Dataset.Builder(view)
+        if (inline != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) builder.setInlinePresentation(inline)
         var any = false
         ids.forEachIndexed { i, id ->
             val text = value(kinds[i])

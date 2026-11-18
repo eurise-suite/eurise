@@ -33,10 +33,20 @@ class EuriseAutofillService : AutofillService() {
         val response = FillResponse.Builder()
         var count = 0
         val open = repo.state.value as? VaultState.Open
+        // Proposte in linea per la tastiera (Android 11+): la Tastiera di Eurise le mostra nella fila «Compila · account».
+        val inline = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) request.inlineSuggestionsRequest else null
+        val inlineMax = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) inline?.maxSuggestionCount ?: 0 else 0
+        fun inlineFor(index: Int, title: String, subtitle: String?): android.service.autofill.InlinePresentation? {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || inline == null || index >= inlineMax) return null
+            val specs = inline.inlinePresentationSpecs
+            if (specs.isEmpty()) return null
+            return InlineRows.presentation(this, specs[minOf(index, specs.size - 1)], title, subtitle)
+        }
         if (open != null && form.hasPassword) {
             open.entries.filter(form::matches).sortedByDescending { it.lastUsed }.take(MAX_DIRECT).forEach { e ->
                 val label = getString(R.string.pwd_fill_for, e.title.ifBlank { form.target }, e.username)
-                form.loginDataset(this, e.username, e.password, label)?.let { response.addDataset(it); count++ }
+                val chip = inlineFor(count, e.username.ifBlank { e.title.ifBlank { form.target } }, e.title.ifBlank { form.target }.takeIf { e.username.isNotBlank() })
+                form.loginDataset(this, e.username, e.password, label, chip)?.let { response.addDataset(it); count++ }
             }
         }
         if (form.hasLogin || form.hasCard || form.hasProfile) {
@@ -47,7 +57,7 @@ class EuriseAutofillService : AutofillService() {
                     else -> R.string.pwd_fill_open
                 },
             )
-            response.addDataset(opener(form, label))
+            response.addDataset(opener(form, label, inlineFor(count, label, null)))
             count++
         }
         val passwords = form.idsOf(FieldKind.Password, FieldKind.NewPassword)
@@ -75,7 +85,7 @@ class EuriseAutofillService : AutofillService() {
 
     /** Riga che apre il foglio: i valori arrivano solo dopo, come risultato dell'autenticazione. */
     @Suppress("DEPRECATION")
-    private fun opener(form: Form, label: String): Dataset {
+    private fun opener(form: Form, label: String, inline: android.service.autofill.InlinePresentation? = null): Dataset {
         val intent = Intent(this, FillActivity::class.java)
             .putParcelableArrayListExtra(FillActivity.EXTRA_IDS, form.ids)
             .putExtra(FillActivity.EXTRA_KINDS, form.kinds.map { it.ordinal }.toIntArray())
@@ -85,6 +95,7 @@ class EuriseAutofillService : AutofillService() {
         val sender = PendingIntent.getActivity(this, nextRequest++, intent, PendingIntent.FLAG_CANCEL_CURRENT or mutable).intentSender
         val view = Form.presentation(this, label)
         val builder = Dataset.Builder(view).setAuthentication(sender)
+        if (inline != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) builder.setInlinePresentation(inline)
         form.ids.forEach { builder.setValue(it, null, view) }
         return builder.build()
     }
