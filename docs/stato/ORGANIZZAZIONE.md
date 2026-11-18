@@ -364,6 +364,19 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   menu; un'app su una pagina tenuta ferma (menu con «Modifica la pagina»).
 - Giro 782 (Compila 44198366637 su `prova-organizzazione`).
 
+## 18 novembre: bolle che si adattano al contenuto (tavole da approvare)
+- **Richiesta del proprietario**: un'opzione per le bolle della Scrivania che si adattano al contenuto: con pochi o nessun
+  impegno e cosa da fare si riducono, con tanti si allungano.
+- **Tavole** sulla pagina «Bolle» della tela, fila «Bolle che si adattano al contenuto · da approvare» (y 3900):
+  `ScrBolleAdattaPoco` (giornata quasi vuota: una riga per bolla), `ScrBolleAdattaTanto` (giornata piena: righe fino
+  all'altezza scelta, poi «Altri…»), `ScrBolleAdattaImpostazioni` (interruttore «Bolle che si adattano» in Impostazioni
+  della Scrivania, spento di base; quali bolle si adattano e quali no; due bolle affiancate restano alte uguali, prendono
+  la più piena). **Parte comune toccata**: `project/canvas.json` della tela (tre tavole e la nota `t-bol4`). La tela ora
+  ha 512 file, il massimo: per le prossime tavole bisognerà toglierne qualcuna superata.
+- **Oggi nel codice** (`HomeBoard`): l'altezza è fissa se scelta con la maniglia, se la bolla è affiancata (prende la
+  scelta o la naturale più alta) o di base per alcune (Calendario 300, Messaggi 240, Appunti 200…); altrimenti è quella del
+  contenuto. Con l'opzione accesa l'altezza scelta diventerà il massimo e il contenuto deciderà sotto.
+
 ## Tavole (tela «Icone della suite»)
 - **Approvate e in codice**: pagine Scrivania, Calendario, Note, Attività, Cloud, Orologio, Bolle (tavole dall'8 al 10
   novembre, comprese RicBasso/RicAppuntamento/RicDocumenti e le Int* di riunioni, viaggi, modalità, cestino unico);

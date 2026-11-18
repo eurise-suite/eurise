@@ -3369,3 +3369,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Organizzazione: spostare un'app tra categorie e fare cartelle da «Tutte le app» della dock (menu, trascinandola su una categoria o su un'altra app) e dalle app delle pagine · giro 782 → `docs/stato/ORGANIZZAZIONE.md`.
 - 18 novembre, Galleria: editor, sesto giro (Ritratto, pennello per passo) · giro 787 → `docs/stato/PICCOLE.md`.
 - 18 novembre, Browser: più svelto (APK di prova ottimizzato con R8, schede in secondo piano a riposo, sessioni riaperte solo in vista), giro 789 → `docs/stato/BROWSER.md`.
+- 18 novembre, Organizzazione: tavole «Bolle che si adattano» (ScrBolleAdatta*, pagina Bolle della tela), da approvare; toccato canvas.json della tela → `docs/stato/ORGANIZZAZIONE.md`.
