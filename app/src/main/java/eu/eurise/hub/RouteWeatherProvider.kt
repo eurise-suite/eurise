@@ -1,8 +1,8 @@
 package eu.eurise.hub
 
+import eu.eurise.core.suite.SuiteAccess
 import android.content.ContentProvider
 import android.content.ContentValues
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -21,7 +21,7 @@ class RouteWeatherProvider : ContentProvider() {
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val context = context ?: return null
-        if (PERMISSIONS.none { context.checkCallingPermission(it) == PackageManager.PERMISSION_GRANTED }) {
+        if (!SuiteAccess.callerAllowed(context)) {
             throw SecurityException("Eurise: solo le app della suite")
         }
         PrivacyCenter.init(context)
@@ -56,8 +56,4 @@ class RouteWeatherProvider : ContentProvider() {
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, s: String?, a: Array<out String>?) = 0
     override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = 0
-
-    private companion object {
-        val PERMISSIONS = listOf("eu.eurise.permission.SUITE", "eu.eurise.permission.SUITE_DEBUG")
-    }
 }

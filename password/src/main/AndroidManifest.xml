@@ -13,6 +13,7 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:icon="@mipmap/ic_password"
         android:label="@string/pwd_app_name"
         android:supportsRtl="true"
@@ -21,7 +22,7 @@
             android:name=".keyboard.CodesProvider"
             android:authorities="${applicationId}.codes"
             android:exported="true"
-            android:readPermission="${suitePermission}" />
+            android:permission="${suitePermission}" />
         <activity
             android:name=".PasswordActivity"
             android:launchMode="singleTop"

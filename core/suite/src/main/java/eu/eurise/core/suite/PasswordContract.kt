@@ -46,6 +46,8 @@ object PasswordContract {
         val intent = Intent(ACTION_ADD).setComponent(ComponentName(passwordPackage(debug), ALIAS))
             .putExtra(EXTRA_TITLE, title).putExtra(EXTRA_SECRET, secret).putExtra(EXTRA_USERNAME, username)
             .putExtra(EXTRA_URL, url).putExtra(EXTRA_NOTES, notes)
+        // Il segreto va solo a Password della suite: se manca, un'app con lo stesso nome di pacchetto non lo riceve.
+        if (!SuiteAccess.isSuitePackage(context, passwordPackage(debug))) return null
         return intent.takeIf { context.packageManager.resolveActivity(it, 0) != null }
     }
 }

@@ -133,3 +133,7 @@ approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la t
   valgono per un ramo nuovo): annullare quelli che non servono (Mappe, Pietre miliari, Voci, Suonerie, apk-prova).
 - Computer (strada 2, 15 novembre):
   https://github.com/eurise-suite/eurise/releases/download/flatpak-sorgenti-office/eurise-office-sorgenti.flatpak
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- `Uscite` del motore accetta solo il permesso della propria variante; Office chiede aspetto, luoghi, privacy e uscite solo
+  a fornitori della suite verificati. Dettagli in `docs/SICUREZZA.md`.

@@ -28,6 +28,7 @@
     <!-- Le password delle caselle stanno nel Keystore del telefono: niente backup di Android per questa app. -->
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:icon="@mipmap/ic_mail"
         android:roundIcon="@mipmap/ic_mail"
         android:label="@string/ml_app_name"

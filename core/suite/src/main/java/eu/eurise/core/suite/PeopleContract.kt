@@ -3,7 +3,6 @@ package eu.eurise.core.suite
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 
@@ -105,10 +104,7 @@ object PeopleContract {
     // --- Lato fornitore (Messaggi, Telefono, Email) ---
 
     /** Vero se chi chiama è un'app della suite (Android non controlla da solo i permessi per call()). */
-    fun allowed(context: Context): Boolean {
-        val permission = if (context.packageName.endsWith(".debug")) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
-        return context.checkCallingPermission(permission) == PackageManager.PERMISSION_GRANTED
-    }
+    fun allowed(context: Context): Boolean = SuiteAccess.callerAllowed(context)
 
     fun packItems(items: List<Item>): Bundle = Bundle().apply {
         putStringArray(K_KIND, items.map { it.kind.name }.toTypedArray())
@@ -178,12 +174,12 @@ object PeopleContract {
 
     /** Il mio utente della Chat (es. «@mario:matrix.org»), o null se la Chat non c'è o non è collegata. */
     fun chatUser(context: Context): String? = runCatching {
-        context.contentResolver.call(Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_ME, null, null)?.getString(EXTRA_USER)
+        SuiteAccess.call(context, Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_ME, null, null)?.getString(EXTRA_USER)
     }.getOrNull()
 
     /** Vero se nella Chat questo contatto ([key] della Rubrica) è già unito a una persona della Chat. */
     fun chatKnows(context: Context, key: String): Boolean = runCatching {
-        context.contentResolver.call(Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_KNOWS, key, null)?.getBoolean(EXTRA_RESULT) == true
+        SuiteAccess.call(context, Uri.parse("content://" + chatPackage(context) + ".persone"), METHOD_KNOWS, key, null)?.getBoolean(EXTRA_RESULT) == true
     }.getOrDefault(false)
 
     /** Apre nella Chat l'invito per un contatto, con nome, numeri ed email già scelti; null se la Chat non c'è. */
@@ -198,7 +194,7 @@ object PeopleContract {
     private fun uri(context: Context, app: App) = Uri.parse("content://" + packageOf(context, app) + ".persone")
 
     private fun call(context: Context, app: App, method: String, extras: Bundle?): Bundle? =
-        runCatching { context.contentResolver.call(uri(context, app), method, null, extras) }.getOrNull()
+        runCatching { SuiteAccess.call(context, uri(context, app), method, null, extras) }.getOrNull()
 
     /** L'ultima cosa per indirizzo da [app] (fuori dal thread principale). Vuoto se l'app non c'è o non ha i permessi. */
     fun recent(context: Context, app: App, since: Long = 0L): List<Recent> =

@@ -317,3 +317,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 - A ogni consegna: aggiornare questo file e una sola riga in `docs/STATO.md`.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'8 al 16 novembre (Password e Galleria dall'8–9 novembre; Tastiera
   dal 10 novembre; carte e Galleria seconda fila l'11 novembre; Password con Browser e Chat il 12 novembre).
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- Password: `LoginsProvider` accetta solo il permesso della propria variante (prima anche l'altro, che un'app qualunque
+  poteva dichiararsi); `CodesProvider` protetto anche in scrittura; un file KDBX con Argon2 fuori misura si rifiuta.
+- Tastiera: `allowBackup="false"` e regole di estrazione complete (prima le parole imparate finivano nel backup Google);
+  il ripristino (`BackupProvider`) controlla chi chiama; traduzione e ricerca nella suite vanno solo a Leggi e all'app
+  Eurise vere (`SuiteTrust`).
+- Galleria: «Modifica» non accetta i file privati della Galleria stessa. Dettagli in `docs/SICUREZZA.md`.

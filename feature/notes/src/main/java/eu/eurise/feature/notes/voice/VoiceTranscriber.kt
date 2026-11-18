@@ -104,7 +104,7 @@ class VoiceTranscriber(context: Context, private val onText: (String) -> Unit, p
             }
         }
         connection = conn
-        val bound = runCatching { app.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(pkg), conn, Context.BIND_AUTO_CREATE) }
+        val bound = eu.eurise.core.suite.SuiteAccess.isSuitePackage(app, pkg) && runCatching { app.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(pkg), conn, Context.BIND_AUTO_CREATE) }
             .getOrDefault(false)
         if (!bound) { connection = null; then(null) }
     }

@@ -104,7 +104,7 @@ class PonteApprove : ComponentActivity() {
     private fun load() {
         thread {
             val b = runCatching {
-                contentResolver.call(Uri.parse("content://" + PasswordContract.loginsAuthority(passwordPackage)), PasswordContract.METHOD_FETCH, site, null)
+                eu.eurise.core.suite.SuiteAccess.call(this@PonteApprove, Uri.parse("content://" + PasswordContract.loginsAuthority(passwordPackage)), PasswordContract.METHOD_FETCH, site, null)
             }.getOrNull()
             runOnUiThread {
                 when {

@@ -99,7 +99,7 @@ object Reports {
     }.getOrDefault(emptyList())
 
     private fun engineExits(context: Context): List<Exit> = runCatching {
-        val b = context.contentResolver.call(Uri.parse("content://" + Engine.packageName + ".uscite"), "uscite", null, null)
+        val b = eu.eurise.core.suite.SuiteAccess.call(context, Uri.parse("content://" + Engine.packageName + ".uscite"), "uscite", null, null)
             ?: return emptyList()
         val times = b.getLongArray("tempi") ?: return emptyList()
         val reasons = b.getIntArray("motivi") ?: IntArray(0)

@@ -71,7 +71,7 @@ object TranslateClient {
                     override fun onServiceDisconnected(name: ComponentName?) = finish(Result.Failed)
                 }
                 connection = conn
-                val ok = runCatching {
+                val ok = eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, BuildConfig.READ_PACKAGE) && runCatching {
                     context.bindService(Intent(TranslateContract.ACTION_TRANSLATE).setPackage(BuildConfig.READ_PACKAGE), conn, Context.BIND_AUTO_CREATE)
                 }.getOrDefault(false)
                 if (!ok) finish(Result.NoApp)

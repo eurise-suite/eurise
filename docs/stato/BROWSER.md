@@ -93,3 +93,7 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   (`gh workflow run apk-prova.yml --ref brand -f run_id=<giro>`).
 - Link da dare a ogni consegna: `browser-debug.apk` (Browser, giro N) e, se cambiato, `eurise-firefox.xpi`.
 - Firefox: `node --check` sui file JS prima del commit; il lavoro «Eurise per Firefox» di Compila fa il pacchetto.
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- Gli accessi salvati e chiesti a Password, l'aspetto e i link di Oggi passano solo da fornitori della suite verificati
+  (`SuiteAccess.call`): se Password manca, un'app con lo stesso nome non riceve le password. Dettagli in `docs/SICUREZZA.md`.

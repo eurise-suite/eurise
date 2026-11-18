@@ -51,6 +51,8 @@ class BackupProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val ctx = context ?: return null
         if (method != "apply") return null
+        // `call` non passa dal permesso del manifesto: lo si controlla qui.
+        if (!SuiteTrust.callerAllowed(ctx)) throw SecurityException("Eurise: solo le app della suite")
         val f = importFile(ctx)
         val ok = f.exists() && runCatching { restore(ctx, f) }.isSuccess
         f.delete()

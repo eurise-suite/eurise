@@ -15,6 +15,7 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:icon="@mipmap/ic_office"
         android:label="@string/motore_app_name"
         android:supportsRtl="true"

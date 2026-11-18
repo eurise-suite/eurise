@@ -1,9 +1,9 @@
 package eu.eurise.hub
 
+import eu.eurise.core.suite.SuiteAccess
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -34,9 +34,7 @@ class SecretsProvider : ContentProvider() {
         }
     }
 
-    private fun allowed(context: Context): Boolean = PERMISSIONS.any {
-        context.checkCallingPermission(it) == PackageManager.PERMISSION_GRANTED
-    }
+    private fun allowed(context: Context): Boolean = SuiteAccess.callerAllowed(context)
 
     override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor? = null
     override fun getType(uri: Uri): String? = null
@@ -46,6 +44,5 @@ class SecretsProvider : ContentProvider() {
 
     private companion object {
         const val PREFS = "eurise_secrets"
-        val PERMISSIONS = listOf("eu.eurise.permission.SUITE", "eu.eurise.permission.SUITE_DEBUG")
     }
 }

@@ -90,7 +90,10 @@ class PonteActivity : ComponentActivity() {
             shareToComputer(intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty(), intent.getStringExtra(Intent.EXTRA_SUBJECT))
             return
         }
-        if (intent?.action == ACTION_PAIR) pair(intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty())
+        // Solo dall'ingresso non esportato (.PontePair, lettore QR della suite): da fuori l'azione si ignora.
+        if (intent?.action == ACTION_PAIR && intent.component?.className == PAIR_ALIAS) {
+            pair(intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty())
+        }
         // Con la schermata davanti Android lascia partire il collegamento in primo piano.
         PonteLink.start(applicationContext)
         setContent { EuriseTheme { PonteScreen() } }
@@ -295,5 +298,7 @@ class PonteActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_PAIR = "eu.eurise.action.PONTE_PAIR"
+        /** L'ingresso non esportato per collegare un computer (manifesto del modulo). */
+        const val PAIR_ALIAS = "eu.eurise.feature.ponte.PontePair"
     }
 }

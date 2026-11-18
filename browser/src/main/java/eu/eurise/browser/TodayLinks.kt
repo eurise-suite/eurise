@@ -10,7 +10,7 @@ data class TodayLink(val title: String, val url: String, val kind: String, val t
 /** Legge «Per oggi» dall'app Eurise (permesso della suite). Senza l'app o senza dati, un elenco vuoto. */
 object TodayLinks {
     fun read(context: Context, hubPackage: String): List<TodayLink> = runCatching {
-        val b = context.contentResolver.call(Uri.parse("content://" + C.authority(hubPackage)), C.METHOD_LIST, null, null)
+        val b = eu.eurise.core.suite.SuiteAccess.call(context, Uri.parse("content://" + C.authority(hubPackage)), C.METHOD_LIST, null, null)
             ?: return emptyList()
         val titles = b.getStringArray(C.KEY_TITLE).orEmpty()
         val urls = b.getStringArray(C.KEY_URL).orEmpty()

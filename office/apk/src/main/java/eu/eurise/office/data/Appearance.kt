@@ -24,7 +24,7 @@ object Appearance {
         get() = CalendarTint.Ottone.let { Tint("suite:Ottone", "Ottone", it.light.toArgb(), it.dark.toArgb()) }
 
     private fun call(context: Context, method: String): Bundle? = runCatching {
-        context.contentResolver.call(Uri.parse("content://" + C.authority(Suite.hub)), method, null, null)
+        eu.eurise.core.suite.SuiteAccess.call(context, Uri.parse("content://" + C.authority(Suite.hub)), method, null, null)
     }.getOrNull()
 
     /** Le tinte da offrire: quelle della Scrivania se l'app Eurise le dà, altrimenti le sette della suite. */

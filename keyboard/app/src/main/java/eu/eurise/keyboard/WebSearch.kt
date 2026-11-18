@@ -81,7 +81,7 @@ internal object WebSearch {
         engines.firstOrNull { it.id == context.prefs().getString(PREF_ENGINE, null) } ?: engines.first()
 
     /** «Nella suite»: la ricerca universale della Scrivania, già con la domanda scritta. Niente esce dal telefono. */
-    fun suite(context: Context, hub: String, query: String): Boolean = runCatching {
+    fun suite(context: Context, hub: String, query: String): Boolean = SuiteTrust.isSuite(context, hub) && runCatching {
         context.startActivity(
             Intent().setComponent(ComponentName(hub, "eu.eurise.hub.LauncherActivity"))
                 .putExtra("eu.eurise.extra.SEARCH", query.trim())
@@ -137,6 +137,7 @@ internal object WebSearch {
             .apply { if (ai) putExtra("eu.eurise.extra.KIND", "ai") }
             .apply { if (pkg != null && installed(context, pkg)) putExtra("eu.eurise.extra.PACKAGE", pkg) }
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        if (!SuiteTrust.isSuite(context, hub)) return false
         return runCatching { context.startActivity(intent) }.isSuccess
     }
 

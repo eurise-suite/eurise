@@ -43,6 +43,7 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:icon="@mipmap/ic_chat"
         android:roundIcon="@mipmap/ic_chat"
         android:label="@string/ch_app_name"

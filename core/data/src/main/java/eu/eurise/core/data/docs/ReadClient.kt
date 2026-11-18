@@ -106,7 +106,7 @@ object ReadClient {
         }
         connection = conn
         val intent = Intent(ReadContract.ACTION_READ).setPackage(pkg)
-        val bound = runCatching { context.bindService(intent, conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
+        val bound = eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, pkg) && runCatching { context.bindService(intent, conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
         if (!bound) finish(if (installed(context)) Result.Failed else Result.NotInstalled)
         cont.invokeOnCancellation { Handler(Looper.getMainLooper()).post { connection?.let { runCatching { context.unbindService(it) } } } }
     }

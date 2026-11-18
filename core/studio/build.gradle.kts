@@ -18,6 +18,8 @@ android {
 }
 
 dependencies {
+    // SuiteAccess: i messaggi dei pazienti vanno solo alla Chat della suite (porte d'ingresso, docs/SICUREZZA.md).
+    implementation(project(":core:suite"))
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no).
     testImplementation("org.json:json:20240303")

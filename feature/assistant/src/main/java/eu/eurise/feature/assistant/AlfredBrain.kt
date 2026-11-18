@@ -56,7 +56,7 @@ class AlfredBrain(private val context: Context) {
             }
         }
         connection = conn
-        val ok = runCatching { context.bindService(Intent(BrainContract.ACTION_BRAIN).setPackage(p), conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
+        val ok = eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, p) && runCatching { context.bindService(Intent(BrainContract.ACTION_BRAIN).setPackage(p), conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
         if (!ok) { connection = null; flush(null) }
     }
 

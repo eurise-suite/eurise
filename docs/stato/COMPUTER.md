@@ -96,3 +96,8 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
   tolti finché non c'è una fonte. Le caselle delle attività si vedono ma non si spuntano. Finestra con le decorazioni
   del sistema (i tre pulsanti della tavola li disegna GNOME).
 - Compila: il lavoro «Eurise per il computer» lancia anche `:desktop:app:test`.
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- Ponte sul telefono: collegare un computer solo dal lettore QR dell'app Eurise (prima qualunque app poteva collegarne uno
+  in silenzio); chiave privata del telefono sigillata nel Keystore, senza rifare l'abbinamento. Da fare (punto 8 di
+  `docs/SICUREZZA.md`): chiavi effimere per sessione. Dettagli in `docs/SICUREZZA.md`.

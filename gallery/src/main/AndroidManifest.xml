@@ -23,6 +23,7 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:hasFragileUserData="true"
         android:icon="@mipmap/ic_gallery"
         android:label="@string/gallery_app_name"

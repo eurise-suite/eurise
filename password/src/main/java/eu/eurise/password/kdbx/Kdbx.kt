@@ -214,6 +214,10 @@ object Kdbx {
                 val salt = kdf["S"] as ByteArray
                 val memoryKiB = (kdf["M"] as Long) / 1024
                 if (memoryKiB > MAX_MEMORY_KIB) throw KdbxException.Unsupported("derivazione da ${memoryKiB / 1024} MiB, troppa memoria")
+                // Un file preparato apposta con valori assurdi bloccherebbe l'app per ore (porte d'ingresso, docs/SICUREZZA.md).
+                if ((kdf["I"] as Long) !in 1L..MAX_ITERATIONS || (kdf["P"] as Int) !in 1..MAX_PARALLELISM) {
+                    throw KdbxException.Unsupported("derivazione con valori fuori misura")
+                }
                 Argon2.hash(
                     type = if (id.contentEquals(KDF_ARGON2D)) Argon2.TYPE_D else Argon2.TYPE_ID,
                     password = composite,
@@ -236,6 +240,8 @@ object Kdbx {
     }
 
     private const val MAX_MEMORY_KIB = 256 * 1024L
+    private const val MAX_ITERATIONS = 1000L
+    private const val MAX_PARALLELISM = 64
 
     private fun decrypt(cipherId: ByteArray?, key: ByteArray, iv: ByteArray, data: ByteArray): ByteArray = when {
         cipherId.contentEqualsOrNull(AES) -> aes(Cipher.DECRYPT_MODE, key, iv, data)

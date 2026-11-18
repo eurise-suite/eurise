@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    L'app «curiosa» della prova delle porte d'ingresso: si dichiara da sé, come permesso normale, il permesso della suite
+    delle versioni ufficiali (SUITE), che sul telefono con le sole app di prova non dichiara nessuno (e lo stesso farebbe
+    con SUITE_DEBUG accanto alle versioni ufficiali). Firmata con una chiave sua, mai con quella della suite.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.esempio.curiosa">
+    <permission android:name="eu.eurise.permission.SUITE" android:protectionLevel="normal" />
+    <uses-permission android:name="eu.eurise.permission.SUITE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <queries>
+        <package android:name="eu.eurise.hub.debug" />
+        <package android:name="eu.eurise.password.debug" />
+        <package android:name="eu.eurise.messages.debug" />
+        <package android:name="eu.eurise.keyboard.debug" />
+    </queries>
+    <application android:label="Curiosa">
+        <activity android:name=".Prova" android:exported="true" />
+    </application>
+</manifest>

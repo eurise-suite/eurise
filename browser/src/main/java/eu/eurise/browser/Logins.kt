@@ -87,7 +87,7 @@ object Logins : Autocomplete.StorageDelegate {
     }
 
     private fun call(method: String, arg: String? = null, extras: Bundle? = null): Bundle? = runCatching {
-        app.contentResolver.call(Uri.parse("content://" + C.loginsAuthority(passwordPackage)), method, arg, extras)
+        eu.eurise.core.suite.SuiteAccess.call(app, Uri.parse("content://" + C.loginsAuthority(passwordPackage)), method, arg, extras)
     }.getOrNull()
 
     override fun onLoginFetch(domain: String): GeckoResult<Array<Autocomplete.LoginEntry>> {

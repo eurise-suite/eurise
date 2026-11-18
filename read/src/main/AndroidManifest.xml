@@ -7,9 +7,12 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <!-- Chi chiede a Leggi di tradurre o leggere controlla che Leggi abbia il permesso (porte d'ingresso). -->
+    <uses-permission android:name="${suitePermission}" />
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:label="@string/read_app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.EuriseRead">

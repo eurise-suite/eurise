@@ -10,6 +10,7 @@
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
         android:icon="@mipmap/ic_voice"
         android:label="@string/voice_app_name"
         android:supportsRtl="true"

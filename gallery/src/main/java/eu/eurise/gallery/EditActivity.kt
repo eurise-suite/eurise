@@ -45,11 +45,12 @@ class EditActivity : ComponentActivity() {
         }
     }
 
+    /** Mai un file privato della Galleria (anche dell'area protetta), che poi finirebbe salvato fuori come copia. */
     private fun imageFrom(intent: Intent): Uri? = when (intent.action) {
         Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
             ?: intent.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
         else -> intent.data
-    }
+    }?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) }
 }
 
 /** Una foto di un'altra app vista come voce della Galleria: nome e data presi dove si può, altrimenti ora. */

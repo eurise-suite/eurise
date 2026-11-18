@@ -1041,13 +1041,27 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    /** Il server dell'accesso in corso nel browser (torna con [finishSso]). */
+    /**
+     * Il server dell'accesso in corso nel browser (torna con [finishSso]). Vale dieci minuti e una volta sola: prima restava
+     * salvato per sempre e un «eurisechat://login?loginToken=…» mandato da un'altra app, anche giorni dopo, poteva far
+     * entrare la Chat nell'account di qualcun altro (porte d'ingresso, docs/SICUREZZA.md).
+     */
     var pendingHomeserver: String?
-        get() = context.getSharedPreferences("chat_login", Context.MODE_PRIVATE).getString("hs", null)
-        set(v) { context.getSharedPreferences("chat_login", Context.MODE_PRIVATE).edit().putString("hs", v).apply() }
+        get() {
+            val prefs = context.getSharedPreferences("chat_login", Context.MODE_PRIVATE)
+            val at = prefs.getLong("hs_at", 0L)
+            val age = System.currentTimeMillis() - at
+            return prefs.getString("hs", null)?.takeIf { age in 0..SSO_WINDOW_MS }
+        }
+        set(v) {
+            context.getSharedPreferences("chat_login", Context.MODE_PRIVATE).edit()
+                .putString("hs", v).putLong("hs_at", if (v == null) 0L else System.currentTimeMillis()).apply()
+        }
 
     fun finishSso(loginToken: String, done: (Boolean) -> Unit) {
         val hs = pendingHomeserver ?: return done(false)
+        // Il ritorno dall'accesso vale una volta sola: un secondo «eurisechat://login» (anche da un'altra app) non entra.
+        pendingHomeserver = null
         scope.launch {
             val s = withContext(Dispatchers.IO) { runCatching { ChatClient.loginWithToken(hs, loginToken) }.getOrNull() }
             if (s != null) signedIn(s)
@@ -1289,6 +1303,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
 
         const val REDIRECT = "eurisechat://login"
+        /** Quanto vale un accesso iniziato nel browser ([pendingHomeserver]). */
+        const val SSO_WINDOW_MS = 10 * 60 * 1000L
         /** Pagine di storia lette al massimo per i conti delle spese (30 messaggi l'una). */
         const val MAX_PAGES = 200
         /** Il nome della chiave di recupero tra i segreti affidati all'app Eurise. */

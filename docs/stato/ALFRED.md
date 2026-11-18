@@ -166,3 +166,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   scrive qui.
 - A ogni consegna: aggiornare questo file e una sola riga in `docs/STATO.md`.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 16 novembre (Eurise AI, Assistente/Alfred, Voce, Leggi).
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- Alfred, Note e Chat si legano a Voce, AI e Leggi solo se sono app della suite (permesso di firma); Leggi ora chiede per
+  sé il permesso della suite (serve al controllo). Dettagli in `docs/SICUREZZA.md`.

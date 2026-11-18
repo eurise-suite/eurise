@@ -451,3 +451,9 @@ che suona con Eurise.
 - A ogni consegna: aggiornare questo file e una sola riga in `docs/STATO.md`.
 - Storia completa: sezioni datate di `docs/STATO.md` dall'11 al 16 novembre (Telefono, Rubrica e Messaggi dall'APK 237;
   Email dal giro 310; Chat dal giro 316; Chat e Mail da lavoro il 14 novembre, notte).
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- Posta e Messaggi: «Condividi» non accetta come allegato i file privati dell'app stessa; SMS da mandare, persone e Studio
+  passano solo tra app della suite verificate (`SuiteAccess`). Chat: il ritorno dall'accesso vale dieci minuti e una volta;
+  la chiave di recupero va solo all'app Eurise vera; trascrizione dei vocali solo a Voce della suite.
+  Dettagli in `docs/SICUREZZA.md`.

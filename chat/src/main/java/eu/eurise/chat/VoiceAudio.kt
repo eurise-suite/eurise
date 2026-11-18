@@ -290,7 +290,7 @@ class VoiceTranscriber(context: Context) {
             override fun onServiceDisconnected(name: ComponentName?) { service = null }
         }
         connection = conn
-        val bound = runCatching { app.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(pkg), conn, Context.BIND_AUTO_CREATE) }
+        val bound = eu.eurise.core.suite.SuiteAccess.isSuitePackage(app, pkg) && runCatching { app.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(pkg), conn, Context.BIND_AUTO_CREATE) }
             .getOrDefault(false)
         if (!bound) { connection = null; then(null) }
     }

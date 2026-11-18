@@ -118,7 +118,7 @@ class Ear(private val context: Context) {
             }
         }
         connection = conn
-        val bound = runCatching {
+        val bound = eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, voice) && runCatching {
             context.bindService(Intent(VoiceContract.ACTION_TRANSCRIBE).setPackage(voice), conn, Context.BIND_AUTO_CREATE)
         }.getOrDefault(false)
         if (!bound) {

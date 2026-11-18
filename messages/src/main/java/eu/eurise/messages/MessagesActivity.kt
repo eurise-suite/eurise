@@ -74,7 +74,7 @@ class MessagesActivity : ComponentActivity() {
             }
             intent.action == Intent.ACTION_SEND -> {
                 @Suppress("DEPRECATION")
-                val stream = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                val stream = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) }
                 open.value = Open.New(emptyList(), intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty(), stream, intent.type)
             }
         }

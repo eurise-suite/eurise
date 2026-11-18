@@ -22,14 +22,14 @@ object SecretsContract {
 
     /** Affida [value] col nome [name]; falso se l'app Eurise non c'è o non risponde. */
     fun put(context: Context, hub: String, name: String, value: String): Boolean = runCatching {
-        context.contentResolver.call(uri(hub), METHOD_PUT, name, Bundle().apply { putString(EXTRA_VALUE, value) }) != null
+        SuiteAccess.call(context, uri(hub), METHOD_PUT, name, Bundle().apply { putString(EXTRA_VALUE, value) }) != null
     }.getOrDefault(false)
 
     fun get(context: Context, hub: String, name: String): String? = runCatching {
-        context.contentResolver.call(uri(hub), METHOD_GET, name, null)?.getString(EXTRA_VALUE)
+        SuiteAccess.call(context, uri(hub), METHOD_GET, name, null)?.getString(EXTRA_VALUE)
     }.getOrNull()
 
     fun remove(context: Context, hub: String, name: String): Boolean = runCatching {
-        context.contentResolver.call(uri(hub), METHOD_REMOVE, name, null) != null
+        SuiteAccess.call(context, uri(hub), METHOD_REMOVE, name, null) != null
     }.getOrDefault(false)
 }

@@ -3384,3 +3384,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Strumenti (chat Browser): AGP 9.5, Gradle 9.6, Kotlin 2.3, compileSdk 37, Compose 1.12, GeckoView 160 su tutta la suite; regole nuove in CLAUDE.md («Strumenti») → `docs/SICUREZZA.md`.
 - 18 novembre, pomeriggio, Organizzazione: Calendario, Messaggi e Appunti fissati seguono il contenuto con «Bolle che si adattano» · giro 837 → `docs/stato/ORGANIZZAZIONE.md`.
 - 18 novembre, Sicurezza: il lavoro passa al progetto «Eurise Sicurezza»; stato e piano in `docs/SICUREZZA.md`.
+- 18 novembre, notte, Sicurezza: porte d'ingresso (90 componenti; permesso della suite giusto nei fornitori, destinatari verificati, Ponte senza abbinamento silenzioso), crittografia (chiave del Ponte nel Keystore, backup a 600 000 iterazioni), Tastiera senza backup Google · ramo prova-sicurezza, prova prova-porte.yml → `docs/SICUREZZA.md`.

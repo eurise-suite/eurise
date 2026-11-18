@@ -35,7 +35,7 @@ class Translator(context: Context, private val bridge: Bridge) {
         data object Failed : Result
     }
 
-    fun installed() = bridge.installed(readPackage)
+    fun installed() = bridge.installed(readPackage) && SuiteTrust.isSuite(app, readPackage)
 
     fun openLanguages() = runCatching {
         app.startActivity(Intent(ACTION_LANGUAGES).setPackage(readPackage).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -76,7 +76,8 @@ class Translator(context: Context, private val bridge: Bridge) {
             override fun onServiceDisconnected(name: ComponentName?) = finish(Result.Failed)
         }
         connection = conn
-        val ok = runCatching { app.bindService(Intent(ACTION_TRANSLATE).setPackage(readPackage), conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
+        // Il testo va solo a Leggi della suite, mai a un'app con lo stesso nome di pacchetto.
+        val ok = SuiteTrust.isSuite(app, readPackage) && runCatching { app.bindService(Intent(ACTION_TRANSLATE).setPackage(readPackage), conn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
         if (!ok) finish(Result.NoApp)
         main.postDelayed({ finish(Result.Failed) }, 60_000)
     }

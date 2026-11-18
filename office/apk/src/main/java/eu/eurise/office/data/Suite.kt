@@ -39,7 +39,7 @@ object Suite {
 
     /** I cloud collegati in Eurise File (senza il telefono); vuoto se l'app Eurise non c'è o non li offre ancora. */
     fun clouds(context: Context): List<Place> = runCatching {
-        val b = context.contentResolver.call(Uri.parse("content://" + FilesContract.placesAuthority(hub)), FilesContract.METHOD_PLACES, null, null)
+        val b = eu.eurise.core.suite.SuiteAccess.call(context, Uri.parse("content://" + FilesContract.placesAuthority(hub)), FilesContract.METHOD_PLACES, null, null)
         val ids = b?.getStringArray(FilesContract.KEY_IDS).orEmpty()
         val labels = b?.getStringArray(FilesContract.KEY_LABELS).orEmpty()
         val kinds = b?.getStringArray(FilesContract.KEY_KINDS).orEmpty()
@@ -52,7 +52,7 @@ object Suite {
      */
     fun privacy(context: Context, method: String, service: PrivacyService) {
         runCatching {
-            context.contentResolver.call(Uri.parse("content://" + PrivacyContract.authority(hub)), method, service.name, null)
+            eu.eurise.core.suite.SuiteAccess.call(context, Uri.parse("content://" + PrivacyContract.authority(hub)), method, service.name, null)
         }
     }
 }

@@ -28,8 +28,11 @@ public final class Uscite extends ContentProvider {
     public Bundle call(String method, String arg, Bundle extras) {
         Context context = getContext();
         if (context == null || !METHOD.equals(method)) return null;
-        if (context.checkCallingPermission("eu.eurise.permission.SUITE") != PackageManager.PERMISSION_GRANTED
-                && context.checkCallingPermission("eu.eurise.permission.SUITE_DEBUG") != PackageManager.PERMISSION_GRANTED) {
+        // Solo il permesso della nostra variante: l'altro, che nessuna app della suite dichiara, potrebbe dichiararlo
+        // un'app qualunque come permesso normale (docs/SICUREZZA.md, porte d'ingresso).
+        String permission = context.getPackageName().endsWith(".debug")
+                ? "eu.eurise.permission.SUITE_DEBUG" : "eu.eurise.permission.SUITE";
+        if (context.checkCallingPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             throw new SecurityException("Eurise: solo le app della suite");
         }
         Bundle out = new Bundle();

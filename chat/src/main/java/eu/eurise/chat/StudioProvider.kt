@@ -2,7 +2,6 @@ package eu.eurise.chat
 
 import android.content.ContentProvider
 import android.content.ContentValues
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -19,8 +18,7 @@ class StudioProvider : ContentProvider() {
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val ctx = context ?: return null
-        val permission = if (ctx.packageName.endsWith(".debug")) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
-        if (ctx.checkCallingPermission(permission) != PackageManager.PERMISSION_GRANTED) return null
+        if (!eu.eurise.core.suite.SuiteAccess.callerAllowed(ctx)) return null
         val state = StudioRepo.current(ctx)
         if (!state.enabled) return null
         return when (method) {

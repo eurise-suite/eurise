@@ -24,7 +24,12 @@ import javax.crypto.spec.SecretKeySpec
 object BackupCrypto {
     private const val MAGIC = "EURISEB1"
     private const val VERSION = 1
-    const val ITERATIONS = 310_000
+    /** PBKDF2-HMAC-SHA256 per i backup nuovi: 600 000 iterazioni (OWASP 2023; erano 310 000 fino al 18 novembre 2026). */
+    const val ITERATIONS = 600_000
+    /** Quelle dei backup impostati prima: le si legge dal file o dalle preferenze, questo è solo il valore di riserva. */
+    const val ITERATIONS_V1 = 310_000
+    /** Un file con un numero di iterazioni assurdo (telefono bloccato per ore a provarlo) non si prova nemmeno. */
+    private val ITERATIONS_RANGE = 1_000..5_000_000
     private const val GCM_TAG = 128
     private val random = SecureRandom()
 
@@ -95,6 +100,7 @@ object BackupCrypto {
             if (input.readByte().toInt() != VERSION) throw BadFile()
             val createdAt = input.readLong()
             val iterations = input.readInt()
+            if (iterations !in ITERATIONS_RANGE) throw BadFile()
             val saltPass = read(input)
             val wrapPass = read(input)
             val saltCode = read(input)

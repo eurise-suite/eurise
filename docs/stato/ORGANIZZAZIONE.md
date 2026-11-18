@@ -500,3 +500,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Note, Attività, Cloud, Drive e Scanner, Orologio, Bolle, Icone, «Suonerie e sfondo»).
 - Storia completa: le sezioni datate di `docs/STATO.md` dall'8 al 16 novembre (in cima anche la descrizione di Scrivania,
   Calendario, Note, Cloud e Attività come erano l'8 novembre).
+
+## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
+- I fornitori dell'APK principale (segreti, aspetto, luoghi, privacy, destinazioni, Oggi, I tuoi giorni, meteo sul percorso)
+  accettano solo il permesso della propria variante; backup della suite a 600 000 iterazioni per i nuovi; regole di
+  estrazione complete. Dettagli in `docs/SICUREZZA.md`.

@@ -204,7 +204,7 @@ class BackupManager private constructor(private val context: Context) {
     private fun header(): BackupCrypto.KeyHeader? {
         if (!prefs.contains("wrap_p")) return null
         return BackupCrypto.KeyHeader(
-            prefs.getInt("iter", BackupCrypto.ITERATIONS),
+            prefs.getInt("iter", BackupCrypto.ITERATIONS_V1),
             unb64(prefs.getString("salt_p", "")!!), unb64(prefs.getString("wrap_p", "")!!),
             unb64(prefs.getString("salt_c", "")!!), unb64(prefs.getString("wrap_c", "")!!),
         )

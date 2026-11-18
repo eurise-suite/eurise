@@ -63,7 +63,8 @@ class BrowserModel(private val context: Context) {
         Gecko.onBlocked = ::countBlocked
         Thread {
             val left = runCatching {
-                context.contentResolver.call(
+                eu.eurise.core.suite.SuiteAccess.call(
+                    context,
                     android.net.Uri.parse("content://" + eu.eurise.core.suite.AppearanceContract.authority(BuildConfig.HUB_PACKAGE)),
                     eu.eurise.core.suite.AppearanceContract.METHOD_HAND, null, null,
                 )?.getBoolean(eu.eurise.core.suite.AppearanceContract.KEY_LEFT, false)

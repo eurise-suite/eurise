@@ -36,12 +36,24 @@ class PonteStore(context: Context) {
 
     val name: String get() = listOfNotNull(Build.MANUFACTURER.replaceFirstChar { it.uppercase() }, Build.MODEL).distinct().joinToString(" ")
 
+    /**
+     * La coppia di chiavi del telefono. La privata sta sigillata con una chiave dell'Android Keystore («priv_k»): chi copia
+     * i file dell'app non la può usare. Fino al 18 novembre 2026 era in chiaro («priv»): la si sigilla alla prima lettura,
+     * senza rifare l'abbinamento. Se il Keystore non funziona, resta com'era (meglio un Ponte che va).
+     */
     val identity: Identity by lazy {
         val pub = prefs.getString("pub", null)
-        val priv = prefs.getString("priv", null)
-        if (pub != null && priv != null) Identity.restore(d64.decode(pub), d64.decode(priv))
-        else Identity.generate().also {
-            prefs.edit().putString("pub", b64.encodeToString(it.publicBytes)).putString("priv", b64.encodeToString(it.privateBytes())).apply()
+        val sealed = prefs.getString("priv_k", null)
+        val plain = prefs.getString("priv", null)
+        val priv = sealed?.let { KeySeal.open(it) } ?: plain?.let { d64.decode(it) }
+        if (pub != null && priv != null) {
+            if (sealed == null) KeySeal.seal(priv)?.let { prefs.edit().putString("priv_k", it).remove("priv").apply() }
+            Identity.restore(d64.decode(pub), priv)
+        } else Identity.generate().also {
+            val edit = prefs.edit().putString("pub", b64.encodeToString(it.publicBytes))
+            val s = KeySeal.seal(it.privateBytes())
+            if (s != null) edit.putString("priv_k", s).remove("priv") else edit.putString("priv", b64.encodeToString(it.privateBytes()))
+            edit.apply()
         }
     }
 
@@ -122,4 +134,38 @@ class PonteClient(private val store: PonteStore) {
             true
         }
     }.getOrDefault(false)
+}
+
+/** Sigilla piccoli segreti del Ponte con una chiave AES-GCM dell'Android Keystore (non esportabile). */
+private object KeySeal {
+    private const val ALIAS = "eurise-ponte"
+
+    private fun key(): javax.crypto.SecretKey {
+        val store = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (store.getKey(ALIAS, null) as? javax.crypto.SecretKey)?.let { return it }
+        val generator = javax.crypto.KeyGenerator.getInstance(android.security.keystore.KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            android.security.keystore.KeyGenParameterSpec.Builder(
+                ALIAS, android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT,
+            ).setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256).build(),
+        )
+        return generator.generateKey()
+    }
+
+    fun seal(plain: ByteArray): String? = runCatching {
+        val c = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(javax.crypto.Cipher.ENCRYPT_MODE, key())
+        val e = Base64.getUrlEncoder().withoutPadding()
+        e.encodeToString(c.iv) + ":" + e.encodeToString(c.doFinal(plain))
+    }.getOrNull()
+
+    fun open(stored: String): ByteArray? = runCatching {
+        val (iv, data) = stored.split(':', limit = 2)
+        val d = Base64.getUrlDecoder()
+        val c = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(javax.crypto.Cipher.DECRYPT_MODE, key(), javax.crypto.spec.GCMParameterSpec(128, d.decode(iv)))
+        c.doFinal(d.decode(data))
+    }.getOrNull()
 }

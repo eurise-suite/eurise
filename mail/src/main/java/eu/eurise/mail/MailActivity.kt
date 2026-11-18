@@ -93,7 +93,7 @@ class MailActivity : ComponentActivity(), MailActions {
     private fun streams(intent: Intent): List<Uri> = when (intent.action) {
         Intent.ACTION_SEND_MULTIPLE -> intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
         else -> listOfNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
-    }
+    }.filter { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } // mai i file della Posta stessa (account, cache) come allegato
 
     override fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 

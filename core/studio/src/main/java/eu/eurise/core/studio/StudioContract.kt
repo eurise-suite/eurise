@@ -48,7 +48,7 @@ object StudioContract {
         val extras = Bundle().apply {
             putString(EXTRA_ADDRESS, address); putString(EXTRA_TEXT, text); putString(EXTRA_REF, ref); putLong(EXTRA_TIME, time)
         }
-        val b = context.contentResolver.call(uri(context), METHOD_OFFER, channel.name, extras) ?: return null
+        val b = eu.eurise.core.suite.SuiteAccess.call(context, uri(context), METHOD_OFFER, channel.name, extras) ?: return null
         Answer(
             b.getString(EXTRA_RESULT) ?: RESULT_IGNORED, b.getString(EXTRA_PATIENT), b.getString(EXTRA_NAME),
             b.getString(EXTRA_NEED)?.let { runCatching { Need.valueOf(it) }.getOrNull() },
@@ -62,7 +62,7 @@ object StudioContract {
     }
 
     fun known(context: Context): Known = runCatching {
-        val b = context.contentResolver.call(uri(context), METHOD_PATIENTS, null, null)
+        val b = eu.eurise.core.suite.SuiteAccess.call(context, uri(context), METHOD_PATIENTS, null, null)
         Known(
             b?.getStringArray(EXTRA_EMAILS)?.map(Addresses::email)?.toSet().orEmpty(),
             b?.getStringArray(EXTRA_PHONES)?.map(Addresses::phone)?.toSet().orEmpty(),
