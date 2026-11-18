@@ -81,32 +81,25 @@ jobs:
               print(f"sid {sid}: {len(a.samples)/a.sample_rate:.1f} s in {time.time()-t:.2f} s")
               sf.write(f"prova-{sid}.wav", a.samples, a.sample_rate)
           PY
-          # Quale numero è M2 e quale M5: la durata dipende solo dalla voce (il predittore è deterministico), quindi si
-          # confronta con il pacchetto ufficiale di Supertone.
-          pip install -q supertonic
+          # Quale numero è M2 e quale M5: si cercano i numeri di ogni stile ufficiale (voice_styles/*.json di Supertone)
+          # dentro voice.bin di sherpa-onnx; l'ordine in cui compaiono è il numero della voce.
           python3 - "$src" <<'PY'
-          import sys, sherpa_onnx
-          from supertonic import TTS
+          import sys, json, numpy as np
+          from huggingface_hub import hf_hub_download
           d = sys.argv[1]
-          text = "Buongiorno, sono Alfred. Oggi ha tre impegni e una cena da Giulia."
-          ref = TTS(auto_download=True)
-          dur = {}
+          raw = open(f"{d}/voice.bin", "rb").read()
+          blob = np.frombuffer(raw[: len(raw) // 4 * 4], dtype=np.float32)
+          where = {}
           for v in ["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"]:
-              _, du = ref.synthesize(text, voice_style=ref.get_voice_style(voice_name=v), lang="it")
-              dur[v] = float(du[0] if hasattr(du, "__len__") else du)
-          cfg = sherpa_onnx.OfflineTtsConfig(model=sherpa_onnx.OfflineTtsModelConfig(
-              supertonic=sherpa_onnx.OfflineTtsSupertonicModelConfig(
-                  duration_predictor=f"{d}/duration_predictor.int8.onnx", text_encoder=f"{d}/text_encoder.int8.onnx",
-                  vector_estimator=f"{d}/vector_estimator.int8.onnx", vocoder=f"{d}/vocoder.int8.onnx",
-                  tts_json=f"{d}/tts.json", unicode_indexer=f"{d}/unicode_indexer.bin", voice_style=f"{d}/voice.bin"),
-              num_threads=2))
-          tts = sherpa_onnx.OfflineTts(cfg)
-          for sid in range(tts.num_speakers):
-              gc = sherpa_onnx.GenerationConfig(); gc.sid = sid; gc.extra = {"lang": "it"}
-              a = tts.generate(text, gc)
-              s = len(a.samples) / a.sample_rate
-              best = min(dur, key=lambda v: abs(dur[v] - s))
-              print(f"MAPPA sid {sid}: {s:.3f} s ~ {best} ({dur[best]:.3f} s)")
+              st = json.load(open(hf_hub_download("Supertone/supertonic-3", f"voice_styles/{v}.json")))
+              key = next(k for k in st if "ttl" in k.lower())
+              x = np.asarray(st[key]["data"] if isinstance(st[key], dict) else st[key], dtype=np.float32).reshape(-1)[:8]
+              hits = [i for i in range(len(blob) - 8) if np.allclose(blob[i:i + 8], x, atol=1e-6)][:3]
+              where[v] = hits
+              print("STILE", v, key, hits)
+          order = sorted((h[0], v) for v, h in where.items() if h)
+          for sid, (_, v) in enumerate(order):
+              print(f"MAPPA sid {sid} = {v}")
           PY
           printf 'Supertonic 3 (Supertone Inc., pesi con licenza BigScience OpenRAIL-M: vedi LICENSE, limiti d uso inclusi),\nquantizzato int8 da sherpa-onnx (Apache 2.0). Voci di Alfred: M2 e M5.\n' > "$src/LEGGIMI.txt"
           (cd "$src" && zip -qr9 ../out/alfred-supertonic.zip *.int8.onnx tts.json unicode_indexer.bin voice.bin LICENSE LEGGIMI.txt)
