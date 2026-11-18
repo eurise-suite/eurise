@@ -194,7 +194,7 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
-- **Vocali trascritti e letti ad alta voce** (18 novembre; tavola ChatVocali; giro GIRO: chat): **microfono** al posto di
+- **Vocali trascritti e letti ad alta voce** (18 novembre; tavola ChatVocali; giro 806: chat): **microfono** al posto di
   Invia con il campo vuoto (non nelle chat di La mia Bussola): si tiene premuto e si parla, si lascia per mandare, scorrendo
   a sinistra si annulla (striscia rossa con tempo e livello della voce al posto del campo; sotto un secondo non parte;
   massimo dieci minuti). Permesso del microfono chiesto solo al primo vocale (RECORD_AUDIO nuovo nel manifest).
@@ -239,7 +239,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (18 novembre: vocali trascritti e letti); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 806 (18 novembre: vocali trascritti e letti); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 
 ## Tavole
@@ -393,7 +393,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    filo, Chiama con un tocco, «Unisci al contatto»), ~~invito a Ciarly~~ (fatto al giro 777; prove: banner nella scheda della Rubrica, invito per SMS ed email, elenco con
    più persone),
    poi le 13 tavole Chat* (~~ChatBasi~~ fatta al giro 795; prove: rispondi, reazione, modifica, cancella, fissa, inoltra,
-   sondaggio con voto e chiusura, anche con Element dall'altra parte; ~~ChatVocali~~ fatta al giro GIRO; prove: vocale
+   sondaggio con voto e chiusura, anche con Element dall'altra parte; ~~ChatVocali~~ fatta al giro 806; prove: vocale
    tenuto premuto e annullato, ascolto, trascrizione con Eurise Voce e il modello scaricato, vocale verso Element e da
    Element, «Leggi ad alta voce», «Leggi da soli i messaggi»; poi ChatProgramma), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
