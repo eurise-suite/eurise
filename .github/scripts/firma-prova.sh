@@ -5,8 +5,12 @@
 # un'app che il telefono trattava come parte di Eurise (permessi «di firma») e chiedere dati a Password o ai Contatti.
 # Qui ogni APK di prova viene rifirmato con la chiave nuova, che sta solo nei segreti di GitHub, insieme alla «prova di
 # rotazione» (lineage, APK Signature Scheme v3): il telefono accetta l'aggiornamento sopra le app installate, senza
-# disinstallare e senza perdere dati. Nella prova la vecchia chiave conserva solo il diritto di essere aggiornata
-# (installed-data): niente permessi di firma, niente uid condiviso, niente ritorno indietro, niente autorizzazioni.
+# disinstallare e senza perdere dati. Il passaggio si fa in due fasi (EURISE_PROVA_FASE), provate sull'emulatore
+# (prova-firma.yml): Android rifiuta l'aggiornamento se la vecchia chiave perde il diritto ai permessi nello stesso passo
+# in cui arriva la nuova (INSTALL_FAILED_DUPLICATE_PERMISSION: ogni app ridichiara i suoi permessi).
+#   fase 1: chiave nuova; la vecchia conserva i permessi (solo per il passaggio), perde uid condiviso e ritorno indietro.
+#   fase 2: la vecchia conserva solo il diritto di essere aggiornata (installed-data): niente permessi di firma, niente
+#           autorizzazioni. Da qui un'app firmata solo con la vecchia chiave (pubblica) non ottiene più nulla.
 #
 # Uso: firma-prova.sh file.apk [altri.apk...]
 # Ambiente: EURISE_PROVA_KEYSTORE (keystore PKCS12 in base64, chiave EC P-256, alias «eurise-prova»). Il segreto è il
@@ -32,12 +36,16 @@ trap 'rm -rf "$work"' EXIT
 printf '%s' "$EURISE_PROVA_KEYSTORE" | tr -d ' \n\r' | base64 -d > "$work/prova.p12"
 export EURISE_PROVA_PASSWORD
 
+fase="${EURISE_PROVA_FASE:-1}"
+case "$fase" in 1) perm=true ;; 2) perm=false ;; *) echo "::error::EURISE_PROVA_FASE deve essere 1 o 2"; exit 1 ;; esac
+echo "Firma di prova, fase $fase (permessi alla vecchia chiave: $perm)"
+
 old=(--ks "$old_ks" --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android)
 new=(--ks "$work/prova.p12" --ks-type PKCS12 --ks-pass env:EURISE_PROVA_PASSWORD --ks-key-alias "$alias_new" --key-pass env:EURISE_PROVA_PASSWORD)
 
 "$apksigner" rotate --out "$work/lineage" \
   --old-signer "${old[@]}" \
-    --set-installed-data true --set-shared-uid false --set-permission false --set-rollback false --set-auth false \
+    --set-installed-data true --set-shared-uid false --set-permission "$perm" --set-rollback false --set-auth "$perm" \
   --new-signer "${new[@]}"
 
 # La vecchia chiave non deve avere il diritto ai permessi di firma: se la prova lo concede, ci si ferma.
@@ -45,7 +53,7 @@ new=(--ks "$work/prova.p12" --ks-type PKCS12 --ks-pass env:EURISE_PROVA_PASSWORD
 # Solo il blocco del primo firmatario (la vecchia chiave); la nuova ha tutti i diritti.
 awk '/#2/{exit} {print}' "$work/lineage.txt" > "$work/old.txt"
 grep -qi "capabilit" "$work/old.txt" || echo "::warning::Diritti della vecchia chiave non leggibili nella prova: controllare il registro."
-if grep -qi "permission capability: true" "$work/old.txt"; then
+if [ "$fase" = 2 ] && grep -qi "permission capability *: *true" "$work/old.txt"; then
   echo "::error::La prova di rotazione lascia i permessi di firma alla vecchia chiave: non si firma."
   exit 1
 fi
