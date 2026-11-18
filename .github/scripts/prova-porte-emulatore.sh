@@ -33,7 +33,7 @@ attesa() { # esito, porta, atteso, descrizione
   if [ "$s" = "$3" ]; then ok "$4 ($2=$s)"; else ko "$4 ($2=${s:-nessuna risposta}, atteso $3)"; fi
 }
 
-echo "=== Prima: le app di apk-prova di adesso ==="
+echo "=== Prima: le app dell'ultimo giro di brand (senza correzioni) ==="
 if ls prima/*.apk >/dev/null 2>&1; then
   installa prima
   adb install -r curiosa.apk >/dev/null

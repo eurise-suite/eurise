@@ -1,11 +1,14 @@
 name: Prova delle porte d'ingresso
 
 # Revisione delle porte d'ingresso (18 novembre 2026, docs/SICUREZZA.md). Sull'emulatore, due volte:
-# - «prima»: le app di apk-prova di adesso;
+# - «prima»: le stesse app dall'ultimo giro riuscito di Compila APK su brand (senza le correzioni);
 # - «dopo»: le stesse app compilate dal ramo (giro di Compila APK sul ramo prova-sicurezza, o quello indicato).
 # Ogni volta un'app «curiosa» (permesso della suite dichiarato da sé, chiave sua) bussa ai fornitori di dati e al Ponte;
 # un'app «amica» (stessa chiave delle app, permesso della suite vero) controlla che la suite parli ancora con sé stessa.
 on:
+  # Il lancio a mano e workflow_run valgono solo per i flussi del ramo principale: sul ramo di lavoro parte con il push.
+  push:
+    branches: [prova-sicurezza]
   workflow_run:
     workflows: ["Compila APK"]
     types: [completed]
@@ -22,7 +25,7 @@ permissions:
 
 jobs:
   prova:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -38,12 +41,21 @@ jobs:
             id=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?branch=prova-sicurezza&status=success&per_page=1" --jq '.workflow_runs[0].id')
           fi
           echo "id=$id" >> "$GITHUB_OUTPUT"
+          prima=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id')
+          echo "prima=$prima" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           run-id: ${{ steps.giro.outputs.id }}
           github-token: ${{ github.token }}
           path: artefatti
+          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug}-*"
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          run-id: ${{ steps.giro.outputs.prima }}
+          github-token: ${{ github.token }}
+          path: scaricati
           pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug}-*"
 
       - name: APK «prima», «dopo» e le due app di prova
@@ -54,9 +66,6 @@ jobs:
           bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
           jar="$(ls -d "$ANDROID_HOME"/platforms/android-* | sort -V | tail -1)/android.jar"
           mkdir -p scaricati prima dopo
-          for p in app-debug.apk password-debug.apk messages-debug.apk '*tastiera*.apk' '*keyboard*.apk' '*HeliBoard*.apk'; do
-            gh release download apk-prova -R "${{ github.repository }}" -D scaricati -p "$p" --skip-existing 2>/dev/null || true
-          done
           # Si riconosce ogni APK dal pacchetto, non dal nome del file.
           scegli() { # cartella sorgente, cartella destinazione
             for f in $(find "$1" -name '*.apk'); do
