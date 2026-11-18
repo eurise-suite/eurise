@@ -174,7 +174,15 @@ private fun ModelsPage(onClose: () -> Unit) {
             Voices.choose(context, voice)
             tick++
         }
-        // Nicola (Kokoro), scelto dal proprietario come voce di Alfred (15 novembre): primo, da scaricare se manca.
+        // Vittorio ed Ettore (Supertonic 3), scelti a orecchio dal proprietario il 18 novembre: un italiano che sembra
+        // italiano. Un solo archivio per tutti e due; Vittorio è la voce di Alfred.
+        listOf(Voice.Vittorio to R.string.voice_opt_vittorio, Voice.Ettore to R.string.voice_opt_ettore).forEach { (v, label) ->
+            Choice(
+                stringResource(label), stringResource(R.string.voice_opt_supertonic_d, v.megabytes),
+                selected = current == v.id, enabled = true, percent = progress[Item.Speak(v)],
+            ) { pick(v, null) }
+        }
+        // Nicola (Kokoro): la voce di Alfred dal 15 al 18 novembre, resta tra le scelte.
         Choice(
             stringResource(R.string.voice_opt_nicola), stringResource(R.string.voice_opt_nicola_d, Voice.Nicola.megabytes),
             selected = current == Voice.Nicola.id, enabled = true, percent = progress[Item.Speak(Voice.Nicola)],

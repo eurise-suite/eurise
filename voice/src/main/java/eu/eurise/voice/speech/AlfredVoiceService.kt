@@ -7,8 +7,11 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeechService
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
+import com.k2fsa.sherpa.onnx.GenerationConfig
+import com.k2fsa.sherpa.onnx.GeneratedAudio
 import com.k2fsa.sherpa.onnx.OfflineTtsKokoroModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsSupertonicModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import eu.eurise.core.suite.SpeechText
 
@@ -66,7 +69,21 @@ class AlfredVoiceService : TextToSpeechService() {
         engine = runCatching {
             OfflineTts(
                 config = OfflineTtsConfig(
-                    model = if (voice.kokoroSid != null) OfflineTtsModelConfig(
+                    model = if (voice.supertonicSid != null) OfflineTtsModelConfig(
+                        // Supertonic 3: quattro modelli; l'italiano lo legge da sé (lingua passata a ogni frase).
+                        supertonic = OfflineTtsSupertonicModelConfig(
+                            durationPredictor = voice.supertonic("duration_predictor.int8.onnx").absolutePath,
+                            textEncoder = voice.supertonic("text_encoder.int8.onnx").absolutePath,
+                            vectorEstimator = voice.supertonic("vector_estimator.int8.onnx").absolutePath,
+                            vocoder = voice.supertonic("vocoder.int8.onnx").absolutePath,
+                            ttsJson = voice.supertonic("tts.json").absolutePath,
+                            unicodeIndexer = voice.supertonic("unicode_indexer.bin").absolutePath,
+                            voiceStyle = voice.supertonic("voice.bin").absolutePath,
+                        ),
+                        numThreads = 4,
+                        debug = false,
+                        provider = "cpu",
+                    ) else if (voice.kokoroSid != null) OfflineTtsModelConfig(
                         // Kokoro: modello unico per più lingue; l'italiano lo pronuncia espeak-ng («it»).
                         kokoro = OfflineTtsKokoroModelConfig(
                             model = voice.model.absolutePath,
@@ -93,7 +110,7 @@ class AlfredVoiceService : TextToSpeechService() {
         }.getOrNull()
         // La prima frase di un modello ONNX appena caricato è molto più lenta delle altre: la si fa adesso (Alfred apre
         // la voce mentre si parla), così la risposta vera parte subito.
-        engine?.let { e -> runCatching { e.generate("Sì.", voice.kokoroSid ?: 0, 1f) } }
+        engine?.let { e -> runCatching { speak(e, voice, "Sì.", 1f) } }
         Voices.speakingEnd(this)
         loaded = voice
         return engine
@@ -112,7 +129,11 @@ class AlfredVoiceService : TextToSpeechService() {
         if (text.isBlank()) { callback.done(); return }
         // La velocità del telefono (100 = normale). Kokoro in italiano è lento di suo: Nicola e Sara un po' più svelti
         // (prova del 17 novembre: «estremamente lento nel parlare»); Piper com'era.
-        val pace = if (loaded?.kokoroSid != null) KOKORO_PACE else 0.95f
+        val pace = when {
+            loaded?.supertonicSid != null -> SUPERTONIC_PACE
+            loaded?.kokoroSid != null -> KOKORO_PACE
+            else -> 0.95f
+        }
         val speed = (request.speechRate / 100f).coerceIn(0.5f, 2.5f) * pace * tuning.speed / tuning.pitch
         val pause = ByteArray(rate * tuning.pauseMs / 1000 * 2)
         val max = callback.maxBufferSize.coerceAtLeast(1024)
@@ -120,7 +141,7 @@ class AlfredVoiceService : TextToSpeechService() {
         val ok = runCatching {
             for ((i, sentence) in SpeechChunks.split(text).withIndex()) {
                 if (stopped) break
-                val audio = tts.generate(sentence, loaded?.kokoroSid ?: 0, speed)
+                val audio = speak(tts, loaded, sentence, speed)
                 val bytes = if (i > 0 && pause.isNotEmpty()) pause + pcm(audio.samples) else pcm(audio.samples)
                 var off = 0
                 while (off < bytes.size && !stopped) {
@@ -132,6 +153,12 @@ class AlfredVoiceService : TextToSpeechService() {
         }.isSuccess
         Voices.speakingEnd(this)
         if (ok) callback.done() else callback.error()
+    }
+
+    /** Una frase con la voce [voice]: Supertonic vuole la lingua e il numero della voce nella configurazione. */
+    private fun speak(tts: OfflineTts, voice: VoicePack?, text: String, speed: Float): GeneratedAudio {
+        val st = voice?.supertonicSid ?: return tts.generate(text, voice?.kokoroSid ?: 0, speed)
+        return tts.generateWithConfig(text, GenerationConfig(speed = speed, sid = st, extra = mapOf("lang" to "it")))
     }
 
     private fun pcm(samples: FloatArray): ByteArray {
@@ -147,5 +174,8 @@ class AlfredVoiceService : TextToSpeechService() {
     private companion object {
         /** Passo di Kokoro rispetto al suo normale: deciso a orecchio, da ritoccare dopo la prova. */
         const val KOKORO_PACE = 1.15f
+
+        /** Supertonic parla già a buon passo: appena un filo più svelto, per non far aspettare. */
+        const val SUPERTONIC_PACE = 1.05f
     }
 }

@@ -22,7 +22,16 @@ enum class Voice(
     val archive: String = id,
     /** Per Kokoro, il numero della voce nel modello (kokoro-multi-lang-v1_0 di sherpa-onnx); null per Piper. */
     val kokoroSid: Int? = null,
+    /** Per Supertonic 3, il numero della voce in voice.bin (0–4 = F1–F5, 5–9 = M1–M5); null per le altre. */
+    val supertonicSid: Int? = null,
 ) {
+    /**
+     * Supertonic 3, maschile (M2): italiano senza accento straniero e svelto. Scelta dal proprietario a orecchio il 18
+     * novembre («Nicola sembra che non sia italiano»): la voce di Alfred.
+     */
+    Vittorio("supertonic-m2", "text_encoder.int8.onnx", 124, R.string.voice_tts_vittorio, R.string.voice_tts_supertonic_d, archive = "alfred-supertonic", supertonicSid = 6),
+    /** Supertonic 3, maschile (M5), l'altra scelta del proprietario: stesso archivio di Vittorio. */
+    Ettore("supertonic-m5", "text_encoder.int8.onnx", 124, R.string.voice_tts_ettore, R.string.voice_tts_supertonic_d, archive = "alfred-supertonic", supertonicSid = 9),
     /** Maschile, pacata: la voce di Alfred. */
     Riccardo("alfred-riccardo", "it_IT-riccardo-x_low.onnx", 19, R.string.voice_tts_riccardo, R.string.voice_tts_riccardo_d),
     /** Femminile, più ricca: per chi la preferisce. */
@@ -35,7 +44,7 @@ enum class Voice(
     val url get() = "https://github.com/eurise-suite/eurise/releases/download/voci/$archive.zip"
 
     fun dir(context: Context) = File(File(context.filesDir, "voices"), archive)
-    fun pack(context: Context) = VoicePack(id, null, dir(context), onnx, kokoroSid)
+    fun pack(context: Context) = VoicePack(id, null, dir(context), onnx, kokoroSid, supertonicSid)
     fun installed(context: Context) = pack(context).installed
 }
 
@@ -43,13 +52,30 @@ enum class Voice(
  * Una voce sul telefono: una delle nostre ([Voice]) o una caricata dalla persona ([name] è il nome scelto, null per le
  * nostre). Tre cose servono al motore: il modello, i simboli e i dati di pronuncia di espeak-ng.
  */
-data class VoicePack(val id: String, val name: String?, val dir: File, val onnx: String, val kokoroSid: Int? = null) {
+data class VoicePack(
+    val id: String,
+    val name: String?,
+    val dir: File,
+    val onnx: String,
+    val kokoroSid: Int? = null,
+    val supertonicSid: Int? = null,
+) {
     val model get() = File(dir, onnx)
     val tokens get() = File(dir, "tokens.txt")
     val data get() = File(dir, "espeak-ng-data")
     /** Kokoro: le voci di tutte le persone del modello in un file. */
     val styles get() = File(dir, "voices.bin")
-    val installed get() = model.isFile && tokens.isFile && data.isDirectory && (kokoroSid == null || styles.isFile)
+    /** Supertonic: quattro modelli, la configurazione, l'indice dei caratteri e gli stili; niente espeak-ng. */
+    fun supertonic(name: String) = File(dir, name)
+    val installed get() = if (supertonicSid != null) SUPERTONIC_FILES.all { File(dir, it).isFile }
+        else model.isFile && tokens.isFile && data.isDirectory && (kokoroSid == null || styles.isFile)
+
+    companion object {
+        val SUPERTONIC_FILES = listOf(
+            "duration_predictor.int8.onnx", "text_encoder.int8.onnx", "vector_estimator.int8.onnx", "vocoder.int8.onnx",
+            "tts.json", "unicode_indexer.bin", "voice.bin",
+        )
+    }
     val imported get() = name != null
 }
 
@@ -88,8 +114,9 @@ object Voices {
         val chosen = runCatching { flag(context, "scelta").readText().trim() }.getOrNull()
             ?: context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CHOSEN, null)
         val all = all(context)
-        // Senza una scelta: Nicola se c'è (la voce di Alfred dal 15 novembre), altrimenti la prima sul telefono.
-        return all.firstOrNull { it.id == chosen } ?: all.firstOrNull { it.id == Voice.Nicola.id } ?: all.firstOrNull()
+        // Senza una scelta: Vittorio se c'è (la voce di Alfred dal 18 novembre), poi Nicola, altrimenti la prima.
+        return all.firstOrNull { it.id == chosen } ?: all.firstOrNull { it.id == Voice.Vittorio.id }
+            ?: all.firstOrNull { it.id == Voice.Nicola.id } ?: all.firstOrNull()
     }
 
     fun choose(context: Context, id: String) {
@@ -135,7 +162,7 @@ object Voices {
             val home = model.parentFile ?: return@runCatching ImportResult.NotAVoice
             if (!File(home, "tokens.txt").isFile) return@runCatching ImportResult.NotAVoice
             if (!File(home, "espeak-ng-data").isDirectory) {
-                val donor = Voice.entries.filter { it.kokoroSid == null }.map { it.pack(context) }.firstOrNull { it.installed } ?: return@runCatching ImportResult.NeedsPronunciation
+                val donor = Voice.entries.filter { it.kokoroSid == null && it.supertonicSid == null }.map { it.pack(context) }.firstOrNull { it.installed } ?: return@runCatching ImportResult.NeedsPronunciation
                 donor.data.copyRecursively(File(home, "espeak-ng-data"), overwrite = true)
             }
             File(home, "modello.txt").writeText(model.name)
