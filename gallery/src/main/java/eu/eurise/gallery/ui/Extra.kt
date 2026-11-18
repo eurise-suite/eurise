@@ -46,6 +46,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Switch
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -80,6 +82,7 @@ import eu.eurise.gallery.PlaceData
 import eu.eurise.gallery.R
 import eu.eurise.gallery.data.Diary
 import eu.eurise.gallery.data.SecureItem
+import eu.eurise.gallery.data.diaryPdf
 import eu.eurise.gallery.data.contentHash
 import eu.eurise.gallery.logic.Crop
 import eu.eurise.gallery.logic.MediaItem
@@ -130,6 +133,10 @@ internal fun DiaryScreen(
     val notes = remember(diary.id) { mutableStateMapOf<String, String>().apply { putAll(diary.notes) } }
     val deleted = remember(diary.id) { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
+    var exporting by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val failedText = stringResource(R.string.action_failed)
     // Si salva all'uscita: riscrivere il database a ogni lettera farebbe rileggere tutta la Galleria.
     DisposableEffect(diary.id) {
         onDispose {
@@ -152,6 +159,16 @@ internal fun DiaryScreen(
     Column(Modifier.screen()) {
         ScreenBar(title, onClose) {
             IconButton(onClick = { actions.shareClean(ordered) }, enabled = ordered.isNotEmpty()) { Icon(EuriseIcons.share(), stringResource(R.string.share_clean_button), modifier = Modifier.size(21.dp)) }
+            IconButton(onClick = {
+                // PDF del diario, fatto sul telefono; esce solo se lo si condivide o salva.
+                exporting = true
+                val t = title.ifBlank { diary.title }; val n = notes.toMap()
+                scope.launch {
+                    val intent = withContext(Dispatchers.IO) { runCatching { diaryPdf(context, t, days, { g -> listOfNotNull(longDate(g.date), dayPlace(g.items, places.cells, places.names)).joinToString(" · ") }, n) }.getOrNull() }
+                    exporting = false
+                    if (intent != null) context.startActivity(intent) else Toast.makeText(context, failedText, Toast.LENGTH_LONG).show()
+                }
+            }, enabled = ordered.isNotEmpty() && !exporting) { Icon(EuriseIcons.pdf(), stringResource(R.string.diary_export), modifier = Modifier.size(21.dp)) }
             IconButton(onClick = { confirm = true }) { Icon(EuriseIcons.trash(), stringResource(R.string.diary_delete), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(21.dp)) }
         }
         LazyColumn(Modifier.imePadding().navigationBarsPadding(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -284,6 +301,10 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
     var keepOnCloud by remember { mutableStateOf<Boolean?>(null) }
     var viewing by remember { mutableStateOf<String?>(null) }
     val failedText = stringResource(R.string.action_failed)
+    val canBio = remember { canFingerprint(context) }
+    var bio by remember { mutableStateOf(folder.bioEnabled) }
+    val bioTitle = stringResource(R.string.secure_bio_title)
+    val bioCancel = stringResource(R.string.secure_bio_use_pass)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     BackHandler(enabled = viewing == null, onBack = onClose)
 
@@ -336,7 +357,13 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
                     isSetUp = true
                 }
             }
-            items == null -> SecureUnlock { secret, wrong ->
+            items == null -> SecureUnlock(
+                onFingerprint = if (canBio && bio) ({
+                    val cipher = folder.bioCipherToUnlock()
+                    if (cipher == null) bio = false
+                    else (context as? Activity)?.let { askFingerprint(it, cipher, bioTitle, bioCancel) { ok -> if (!folder.bioUnlock(ok)) Toast.makeText(context, failedText, Toast.LENGTH_LONG).show() } }
+                }) else null,
+            ) { secret, wrong ->
                 scope.launch { if (!withContext(Dispatchers.Default) { folder.unlock(secret) }) wrong() }
             }
             working.value -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -345,6 +372,22 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
                     Text(stringResource(R.string.secure_working))
                 }
             }
+            else -> Column {
+            // Apertura con l'impronta: resta tutto sul telefono; si spegne senza conferme.
+            if (canBio) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.secure_bio_switch), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.secure_bio_explain), fontSize = 13.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(bio, onCheckedChange = { on ->
+                    if (!on) { folder.bioDisable(); bio = false }
+                    else (context as? Activity)?.let { act ->
+                        runCatching { folder.bioCipherToEnable() }.onSuccess { c -> askFingerprint(act, c, bioTitle, bioCancel) { ok -> folder.bioEnable(ok); bio = true } }
+                            .onFailure { Toast.makeText(context, failedText, Toast.LENGTH_LONG).show() }
+                    }
+                })
+            }
+            when {
             items.orEmpty().isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(icon = EuriseIcons.lock(), title = stringResource(R.string.secure_empty_title), message = stringResource(R.string.secure_empty_message))
             }
@@ -356,6 +399,8 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
                 modifier = Modifier.navigationBarsPadding(),
             ) {
                 items(items.orEmpty(), key = { it.id }) { item -> SecureTile(vm, item) { viewing = item.id } }
+            }
+            }
             }
         }
     }
@@ -400,11 +445,14 @@ private fun RecoveryCode(code: String, onDone: () -> Unit) {
 }
 
 @Composable
-private fun SecureUnlock(onUnlock: (String, () -> Unit) -> Unit) {
+private fun SecureUnlock(onFingerprint: (() -> Unit)? = null, onUnlock: (String, () -> Unit) -> Unit) {
     var secret by remember { mutableStateOf("") }
     var wrong by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    // Con l'impronta accesa la richiesta parte da sola; la frase resta lì sotto.
+    LaunchedEffect(Unit) { onFingerprint?.invoke() }
     Column(Modifier.padding(20.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (onFingerprint != null) OutlinedButton(onClick = onFingerprint, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.secure_bio_unlock)) }
         OutlinedTextField(
             secret, { secret = it; wrong = false }, singleLine = true, isError = wrong,
             label = { Text(stringResource(R.string.secure_unlock_message)) },
@@ -470,4 +518,26 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
             VideoScreen(item = null, title = video.name, load = { withContext(Dispatchers.IO) { vm.secure.videoFile(video) }?.let(android.net.Uri::fromFile) }, actions = null, onClose = { playing = null })
         }
     }
+}
+
+/** C'è un'impronta forte registrata (serve per legare la chiave della cartella all'impronta). */
+private fun canFingerprint(context: android.content.Context): Boolean =
+    context.getSystemService(android.hardware.biometrics.BiometricManager::class.java)
+        ?.canAuthenticate(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG) == android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
+
+/** Chiede l'impronta per usare [cipher]; [onOk] riceve il cifrario sbloccato. Annullare non fa nulla. */
+private fun askFingerprint(activity: Activity, cipher: javax.crypto.Cipher, title: String, usePassphrase: String, onOk: (javax.crypto.Cipher) -> Unit) {
+    val prompt = android.hardware.biometrics.BiometricPrompt.Builder(activity)
+        .setTitle(title)
+        .setAllowedAuthenticators(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        .setNegativeButton(usePassphrase, activity.mainExecutor) { _, _ -> }
+        .build()
+    prompt.authenticate(
+        android.hardware.biometrics.BiometricPrompt.CryptoObject(cipher), android.os.CancellationSignal(), activity.mainExecutor,
+        object : android.hardware.biometrics.BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: android.hardware.biometrics.BiometricPrompt.AuthenticationResult) {
+                result.cryptoObject?.cipher?.let(onOk)
+            }
+        },
+    )
 }

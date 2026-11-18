@@ -231,7 +231,7 @@ internal fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 
 /** Accadde oggi: le foto di un giorno di qualche anno fa, una alla volta. */
 @Composable
-internal fun MemoryScreen(memory: Memory, actions: MediaActions, onClose: () -> Unit) {
+internal fun MemoryScreen(memory: Memory, place: String?, actions: MediaActions, onClose: () -> Unit) {
     BackHandler(onBack = onClose)
     val items = memory.items
     val pager = rememberPagerState { items.size }
@@ -262,6 +262,7 @@ internal fun MemoryScreen(memory: Memory, actions: MediaActions, onClose: () -> 
                     color = Color(0xFFD9D5CC), fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                 )
                 Text(longDate(memory.date), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, lineHeight = 36.sp)
+                if (place != null) Text(place, color = Color(0xFFD9D5CC), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
             LazyRow(contentPadding = PaddingValues(0.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 itemsIndexed(items, key = { _, it -> it.uri }) { i, item ->

@@ -301,6 +301,17 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
         edit = { editing = it },
         diary = { diaryFor = it },
     )
+    // «Apri da…» di Eurise File: una foto o un video dal telefono o da un cloud collegato, nel visore della Galleria.
+    val hasFiles = remember { runCatching { context.packageManager.getPackageInfo(eu.eurise.gallery.BuildConfig.HUB_PACKAGE, 0) }.isSuccess }
+    val openFrom = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.startActivity(
+                Intent(context, eu.eurise.gallery.OpenActivity::class.java).setAction(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, result.data?.type ?: context.contentResolver.getType(uri)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+            )
+        }
+    }
     val openIn: (List<MediaItem>, MediaItem) -> Unit = { list, item -> viewer = list.map { it.uri } to item.uri }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -333,6 +344,9 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
                     onSecure = { secureOpen = true },
                     onCleanup = { cleanupOpen = true },
                     onDiary = { openDiary = it },
+                    onOpenFromFiles = if (hasFiles) ({
+                        openFrom.launch(eu.eurise.core.suite.FilesContract.openFrom(eu.eurise.gallery.BuildConfig.HUB_PACKAGE, MediaExtensions, fromLabel))
+                    }) else null,
                 )
                 2 -> PlacesPage(placeList, settings, vm) { key -> placeKey = key; album = null; filter = Filter.All; section = 0 }
                 else -> SearchPage(all, places, onOpen = openIn)
@@ -355,7 +369,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
                 onAction = { runCatching { context.startActivity(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) } },
             )
         }
-        memory?.let { m -> MemoryScreen(m, actions, onClose = { memory = null }) }
+        memory?.let { m -> MemoryScreen(m, remember(m, places) { dayPlace(m.items, places.cells, places.names) }, actions, onClose = { memory = null }) }
         openDiary?.let { id ->
             val diary = diaries.firstOrNull { it.id == id }
             if (diary != null) DiaryScreen(diary, byUri, places, vm, actions, openIn, onClose = { openDiary = null })
@@ -502,7 +516,10 @@ private fun PhotosPage(
             modifier = Modifier.fillMaxSize(),
         ) {
             memory?.let { m ->
-                item(key = "memory", span = { GridItemSpan(maxLineSpan) }) { MemoryCard(m) { onMemory(m) } }
+                item(key = "memory", span = { GridItemSpan(maxLineSpan) }) {
+                    val place = remember(m, places) { dayPlace(m.items, places.cells, places.names) }
+                    MemoryCard(m, place) { onMemory(m) }
+                }
             }
             groups.forEach { group ->
                 item(key = "day-${group.date}", span = { GridItemSpan(maxLineSpan) }) {
@@ -632,7 +649,7 @@ internal fun Tile(item: MediaItem, chosen: Boolean, waiting: Boolean, onClick: (
 }
 
 @Composable
-private fun MemoryCard(memory: Memory, onClick: () -> Unit) {
+private fun MemoryCard(memory: Memory, place: String?, onClick: () -> Unit) {
     val years = pluralStringResource(R.plurals.memory_years, memory.yearsAgo, memory.yearsAgo)
     Row(
         Modifier.fillMaxWidth().padding(bottom = 4.dp).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).clickable(onClick = onClick).padding(8.dp),
@@ -643,8 +660,8 @@ private fun MemoryCard(memory: Memory, onClick: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(stringResource(R.string.memory_card, years), fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
             Text(
-                "${longDate(memory.date)} · ${pluralStringResource(R.plurals.items_count, memory.items.size, memory.items.size)}",
-                fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                listOfNotNull(longDate(memory.date), place, pluralStringResource(R.plurals.items_count, memory.items.size, memory.items.size)).joinToString(" · "),
+                fontSize = 12.5.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -666,3 +683,6 @@ private fun duration(ms: Long): String {
     val total = ms / 1000
     return "%d:%02d".format(total / 60, total % 60)
 }
+
+/** Le estensioni che la Galleria apre da Eurise File. */
+private val MediaExtensions = listOf("jpg", "jpeg", "png", "webp", "heic", "heif", "gif", "avif", "dng", "mp4", "mkv", "webm", "3gp", "mov")

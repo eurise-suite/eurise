@@ -70,6 +70,60 @@ class SecureFolder private constructor(context: Context) {
         return true
     }
 
+    // Impronta: la chiave della cartella cifrata ancora una volta con una chiave del telefono (Keystore) che si usa solo
+    // dopo l'impronta. La frase resta sempre valida; una nuova impronta registrata nel telefono annulla questa via.
+    private val bioFile = File(dir, "bio.json")
+    val bioEnabled: Boolean get() = bioFile.exists()
+
+    private fun bioKey(create: Boolean): javax.crypto.SecretKey? {
+        val ks = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (ks.getKey(BIO_ALIAS, null) as? javax.crypto.SecretKey)?.let { if (!create) return it }
+        if (!create) return null
+        val gen = javax.crypto.KeyGenerator.getInstance(android.security.keystore.KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        gen.init(
+            android.security.keystore.KeyGenParameterSpec.Builder(BIO_ALIAS, android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setUserAuthenticationRequired(true)
+                .setUserAuthenticationParameters(0, android.security.keystore.KeyProperties.AUTH_BIOMETRIC_STRONG)
+                .setInvalidatedByBiometricEnrollment(true)
+                .build(),
+        )
+        return gen.generateKey()
+    }
+
+    /** Il cifrario da far approvare con l'impronta per accendere l'apertura con l'impronta (cartella aperta). */
+    fun bioCipherToEnable(): javax.crypto.Cipher =
+        javax.crypto.Cipher.getInstance("AES/GCM/NoPadding").apply { init(javax.crypto.Cipher.ENCRYPT_MODE, bioKey(create = true)) }
+
+    fun bioEnable(approved: javax.crypto.Cipher) {
+        val k = key ?: return
+        val sealed = approved.doFinal(k)
+        fun b(x: ByteArray) = Base64.encodeToString(x, Base64.NO_WRAP)
+        bioFile.writeText(JSONObject().put("iv", b(approved.iv)).put("k", b(sealed)).toString())
+    }
+
+    /** Il cifrario per aprire con l'impronta; null (e via dell'impronta spenta) se il telefono l'ha annullata. */
+    fun bioCipherToUnlock(): javax.crypto.Cipher? = runCatching {
+        val j = JSONObject(bioFile.readText())
+        val iv = Base64.decode(j.getString("iv"), Base64.NO_WRAP)
+        javax.crypto.Cipher.getInstance("AES/GCM/NoPadding").apply {
+            init(javax.crypto.Cipher.DECRYPT_MODE, bioKey(create = false), javax.crypto.spec.GCMParameterSpec(128, iv))
+        }
+    }.getOrElse { bioDisable(); null }
+
+    fun bioUnlock(approved: javax.crypto.Cipher): Boolean = runCatching {
+        val j = JSONObject(bioFile.readText())
+        key = approved.doFinal(Base64.decode(j.getString("k"), Base64.NO_WRAP))
+        reload()
+        true
+    }.getOrDefault(false)
+
+    fun bioDisable() {
+        bioFile.delete()
+        runCatching { java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.deleteEntry(BIO_ALIAS) }
+    }
+
     fun lock() {
         key?.fill(0)
         key = null
@@ -193,6 +247,8 @@ class SecureFolder private constructor(context: Context) {
     }
 
     companion object {
+        private const val BIO_ALIAS = "eurise_gallery_secure_bio"
+
         @Volatile private var instance: SecureFolder? = null
         fun get(context: Context): SecureFolder = instance ?: synchronized(this) { instance ?: SecureFolder(context).also { instance = it } }
     }

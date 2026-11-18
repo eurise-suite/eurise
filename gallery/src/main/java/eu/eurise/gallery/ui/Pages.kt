@@ -147,6 +147,7 @@ internal fun AlbumsPage(
     onSecure: () -> Unit,
     onCleanup: () -> Unit,
     onDiary: (Long) -> Unit,
+    onOpenFromFiles: (() -> Unit)? = null,
 ) {
     val list = remember(all) { albums(all.filter { !it.cloudOnly }) }
     val byUri = remember(all) { all.associateBy { it.uri } }
@@ -165,6 +166,10 @@ internal fun AlbumsPage(
                     ToolRow(EuriseIcons.lock(), stringResource(R.string.tool_secure), stringResource(R.string.tool_secure_hint), onSecure)
                     CardDivider()
                     ToolRow(EuriseIcons.spark(), stringResource(R.string.tool_cleanup), stringResource(R.string.tool_cleanup_hint), onCleanup)
+                    if (onOpenFromFiles != null) {
+                        CardDivider()
+                        ToolRow(EuriseIcons.folder(), stringResource(R.string.tool_open_from), stringResource(R.string.tool_open_from_hint), onOpenFromFiles)
+                    }
                 }
             }
             if (diaries.isNotEmpty()) {

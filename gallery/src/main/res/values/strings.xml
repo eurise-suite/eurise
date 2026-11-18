@@ -125,6 +125,7 @@
     <string name="diary_title_label">Titolo</string>
     <string name="diary_note_hint">Racconta questa giornata…</string>
     <string name="diary_delete">Elimina il diario</string>
+    <string name="diary_export">Esporta come PDF</string>
     <string name="diary_delete_hint">Le foto restano dove sono.</string>
     <string name="diary_choose">Metti in un diario</string>
 
@@ -454,4 +455,11 @@
         <item quantity="one">%d copia modificata in Immagini › Eurise</item>
         <item quantity="other">%d copie modificate in Immagini › Eurise</item>
     </plurals>
+    <string name="secure_bio_title">Cartella protetta</string>
+    <string name="secure_bio_use_pass">Usa la frase</string>
+    <string name="secure_bio_unlock">Apri con l\'impronta</string>
+    <string name="secure_bio_switch">Apri con l\'impronta</string>
+    <string name="secure_bio_explain">La chiave della cartella resta sul telefono, protetta dall\'impronta. La frase vale sempre; una nuova impronta registrata spegne questa via.</string>
+    <string name="tool_open_from">Apri da File</string>
+    <string name="tool_open_from_hint">Una foto o un video dal telefono o da un cloud collegato</string>
 </resources>
