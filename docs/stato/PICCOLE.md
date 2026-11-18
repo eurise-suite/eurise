@@ -192,6 +192,23 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   riporta sulla foto raddrizzata (`blendMasked`).
 - Giro 783 fallito per un nome in conflitto nel disegno dell'ovale (corretto).
 
+## 18 novembre: editor, settimo giro: Effetti (giro 797, in apk-prova)
+- Barra in basso come sulle tavole: Ritaglia, Regola, Ritocca, **Effetti**, Testo, Disegna. In Effetti la prima fila sono
+  gli effetti (miniature fatte sulla foto), sotto «Salva la tua», «Ricevi», le tue modalità e i filtri della suite.
+- `logic/Effects.kt` (`EffectsTest`, più un foglio di prova visivo fatto in locale): HDR (Naturale, Persone, Fine, Forte),
+  Drammatico (Chiaro 1–2, Scuro 1–2), Bagliore, Contrasto tonale (alte luci, toni medi, ombre), Vintage, Grana (Neutro,
+  Caldo, Freddo, Seppia), Retrò (luce che filtra da un angolo), Grunge, Bianco e nero (filtri Rosso, Arancio, Giallo, Verde,
+  Blu), Noir (con lavaggio), Sfocatura (ellittica o lineare), Doppia esposizione (seconda foto scelta dalla Galleria;
+  Normale, Schiarisci, Scurisci, Somma, Moltiplica, Sovrapponi), Vignettatura (fuori, dentro, grandezza), Cornici (Bianca,
+  Nera, Arrotondata, Sfumata, Pellicola). «Ritratto» tra gli effetti apre Ritocca › Ritratto.
+- Ogni effetto è un passo della pila (`EditState.effects`) con stili, cursori, «Pennello» (maschera sua), «Togli»; la
+  Sfocatura e la Vignettatura hanno il centro da trascinare sulla foto. Posizioni in quote del riquadro finale
+  (`EffectSpace`, anche con foto raddrizzata e ritagliata).
+- Gli effetti che guardano attorno ai pixel usano una copia piccola (`Plane`, 512 px) sfocata: poco lavoro e stesso aspetto
+  in anteprima e nella copia salvata; differenze forti smorzate per non fare aloni. Con effetti o pennello per passo
+  l'anteprima calcola tutto sulla copia (niente matrice sulla GPU). Nella copia salvata a fasce (`Files.effectsBitmap`).
+- Le tue modalità e «Copia modifiche» portano solo le regolazioni, non gli effetti (come prima).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -212,7 +229,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 ## Prossimi passi, in ordine
 0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
    `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
-   **Editor della Galleria, giri successivi**: Effetti, ognuno col suo pennello e con la Vignettatura con centro e grandezza (Ritocca completo nei giri 779 e 787). Prova del proprietario sui giri 722 (Regola, Curve, le tue
+   **Editor della Galleria**: tutte le tavole in codice (giri 722–797). Resta la prova del proprietario; possibili ritocchi
+   dopo la prova (forza degli effetti, velocità dell'anteprima con molti effetti). Prova del proprietario sui giri 722 (Regola, Curve, le tue
    modalità), 726 (Prospettiva, Espandi) e 730 (Modifiche, Salva, Torna all'originale).
    Prova del proprietario sul giro 675 (Tastiera: barra a comparsa) e sul giro 665 (Galleria: zoom nell'editor).
 1. **Prova del proprietario sul giro 663** (Tastiera e app Eurise): scrivere qualche giorno come sempre. Il modello entra in
