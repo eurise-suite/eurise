@@ -209,6 +209,27 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   l'anteprima calcola tutto sulla copia (niente matrice sulla GPU). Nella copia salvata a fasce (`Files.effectsBitmap`).
 - Le tue modalità e «Copia modifiche» portano solo le regolazioni, non gli effetti (come prima).
 
+## 18 novembre: Password in linea nella Tastiera, resti della Galleria, Password divisa, tavole nuove (giro 822, in apk-prova)
+- **Password → Tastiera** (TastPassword): con Android 11+ la compilazione automatica dà anche le proposte in linea
+  (`autofill/InlineRows.kt`, `InlinePresentation` per ogni voce e per «Apri Password»). La Tastiera di HeliBoard le chiedeva
+  già: ora la fila sopra i tasti mostra gli account del sito o dell'app, con la chiave. Libreria nuova `androidx.autofill`
+  1.3.0 (Jetpack, aperta, già nella Tastiera), motivo nel commit. Giro 818 solo con questo.
+- **Galleria**: impronta per la cartella protetta (`SecureFolder.bio*`: chiave della cartella cifrata con una chiave del
+  Keystore legata all'impronta forte, annullata da un'impronta nuova; la frase resta; interruttore nella cartella aperta,
+  permesso `USE_BIOMETRIC`); luogo del giorno nella scheda e nella pagina di Accadde oggi (`dayPlace`); diario come PDF
+  (`data/DiaryPdf.kt`, `PdfDocument` del sistema, pulsante nel diario, poi Condividi o Salva in Eurise File); «Apri da File»
+  negli Album (`FilesContract.openFrom`, apre nel visore di `OpenActivity`). Senza tavola, nello stile della suite.
+- **Pulizia**: `PasswordApp.kt` diviso in `Common`, `Setup`, `VaultList`, `EntryScreens`, `SyncScreen`, `Import`,
+  `Profiles` (stesso comportamento). Restano i componenti copiati da portare in `core/designsystem` (parte comune).
+- **Tavole nuove, da approvare** (toccato `canvas.json` della tela): TastImpostazioniFrase (pagina Integrazioni, y 5600:
+  impostazioni della Tastiera nello stile di Eurise, Come tocchi con Ricomincia, frase intera tra le parole),
+  PwdPrivacyTacche (Password, y 2488), GalPrivacyTacche (Galleria, y 3732): servizi con le 10 tacchette, spenti di base,
+  foglio «prima di accendere». Valutazioni proposte: Murena per Password 9, controllo violazioni 9, addy.io e SimpleLogin 7,
+  Luoghi 7, caricamento su Murena 6, tutto ciò che resta sul telefono 10.
+- **Tela piena** (512 file, il massimo): per fare posto ho riunito tavole già approvate e in codice dell'area,
+  TastComparsaChiusa/Aperta/Proposta in TastComparsaAperta e GalEsporta in GalLookQR. Le tavole nuove sono a tre e a due
+  schermate per file. Per altre tavole servirà togliere qualcosa di superato (decide il proprietario).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -238,7 +259,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
    esempi, a fine scrittura). Dire se le lettere accanto escono ancora, se le correzioni sono migliori o peggiori, e
    provare un backup con la Tastiera installata. Ultime correzioni ancora senza esito: `TouchOffset`, migrazioni saltate,
    spazio tra i tasti.
-2. **Password → Tastiera, «Compila · account» in linea** (TastPassword approvata): Password non dà ancora
+2. ~~Password → Tastiera in linea~~ fatto nel giro 818/822. Era: Password non dava ancora
    `InlinePresentation` nella compilazione automatica, quindi la fila della Tastiera nei campi password resta vuota.
 3. **Tastiera fuori stile**: schermate delle impostazioni ancora di HeliBoard (tavola prima del codice). Con l'occasione
    «Ricomincia» per il modo di toccare (`TouchModel.reset`, oggi senza pulsante).

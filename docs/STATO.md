@@ -3378,3 +3378,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Sicurezza (chat Browser): la chiave di prova pubblica non vale più; APK di prova rifirmati con chiave nuova e rotazione, fase 1 → `docs/SICUREZZA.md`; nuova regola in CLAUDE.md.
 - 18 novembre, Browser: corretto il crash all'avvio del giro 808 (R8 toglieva classi del motore), prova di avvio sull'emulatore; Sicurezza: fase 2 della chiave di prova → `docs/SICUREZZA.md`.
 - 18 novembre, Mappe: bolla in auto più leggibile; tavole della scheda unica a sinistra in Android Auto (da approvare) → `docs/stato/MAPPE.md`.
+- 18 novembre, area Password · Tastiera · Galleria: account in linea nella Tastiera, impronta per la cartella protetta, diario in PDF, Apri da File, Password divisa; tavole TastImpostazioniFrase, PwdPrivacyTacche, GalPrivacyTacche da approvare · giro 822 → `docs/stato/PICCOLE.md`.
