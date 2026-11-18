@@ -68,7 +68,19 @@ jobs:
           t0=$(date +%s)
           mkdir -p "$HOME/comaps" && cd "$HOME/comaps"
           git init -q && git remote add origin "$COMAPS_REPO"
-          git fetch -q --depth 1 origin "$COMAPS_COMMIT"
+          # Se codeberg.org non si risolve (18 novembre: due giri persi) riprova e poi aggiunge un DNS pubblico,
+          # come apt-update.sh per i mirror di Ubuntu.
+          for i in 1 2 3 4; do
+            git fetch -q --depth 1 origin "$COMAPS_COMMIT" && break
+            [ "$i" = 4 ] && { echo "::error::Codeberg non raggiungibile"; exit 1; }
+            echo "::warning::Codeberg non risponde, riprovo ($i)"
+            if [ "$i" = 2 ] && command -v resolvectl >/dev/null; then
+              iface=$(ip route show default | awk '{print $5; exit}')
+              sudo resolvectl dns "$iface" 9.9.9.9 1.1.1.1 || true
+              sudo resolvectl flush-caches || true
+            fi
+            sleep 30
+          done
           git checkout -q FETCH_HEAD
           git submodule update --depth 1 --init --recursive --jobs=$(( $(nproc) * 8 ))
           echo "sorgenti $(du -sh "$HOME/comaps" | cut -f1)" | tee -a "$RUNNER_TEMP/misure.txt"
