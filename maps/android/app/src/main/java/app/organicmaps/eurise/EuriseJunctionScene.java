@@ -99,6 +99,12 @@ public final class EuriseJunctionScene
   private EuriseJunctionScene() {}
 
   /** Metri da una distanza di CoMaps (che può essere in km, piedi o miglia). */
+  /** In metri, per chi sta fuori dal pacchetto (la scheda in auto); -1 se non si sa. */
+  public static double metersOf(@Nullable Distance d)
+  {
+    return meters(d);
+  }
+
   static double meters(@Nullable Distance d)
   {
     if (d == null || !d.isValid())

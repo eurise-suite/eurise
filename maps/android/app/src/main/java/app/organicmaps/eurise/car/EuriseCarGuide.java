@@ -3,6 +3,7 @@ package app.organicmaps.eurise.car;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
@@ -38,18 +39,40 @@ import java.util.Date;
  * al posto dei riquadri neri dell'auto (il modello di guida non riceve più manovra e stima d'arrivo; la guida va ancora
  * all'auto con NavigationManager per il quadro strumenti).
  *
- * <p>Colonna a sinistra: manovra (freccia nel colore del tipo di strada, distanza, sigla e via, corsie, scena
- * dell'uscita o della rotonda), sotto il meteo sul percorso; in basso l'arrivo (ora, minuti e km, avanzamento, «Sei
- * su…»). La bolla della musica e delle chiamate le sta accanto ({@link #columnRight}).
+ * <p>Scheda unica a sinistra (tavole della scheda unica, approvate il 18 novembre): tutto sta in una colonna e la parte
+ * destra resta libera per la strada. In alto la scheda che cambia: con la svolta vicina (300 m in città, 1 km su
+ * autostrada e superstrada) il finestrino con corsie e scena; con la svolta lontana una riga sola (freccia, distanza,
+ * via) e sotto, unita, la bolla della musica e delle chiamate ({@link app.organicmaps.eurise.EuriseMediaBubble}, che
+ * chiede il posto a {@link #slot()}). In basso il viaggio: ora, minuti e km, avanzamento, «Sei su…» e il meteo come riga.
+ * Senza destinazione una pillola con la via e il meteo, e sotto la bolla quando serve. Con lo schermo diviso la svolta è
+ * sempre una riga e l'arrivo sta in una riga sotto.
  */
 public final class EuriseCarGuide extends FrameLayout
 {
   private static final long TICK_MS = 1000;
+  /** Sotto questa distanza la svolta prende la scheda (finestrino); su autostrada e superstrada prima. */
+  private static final double NEAR_M = 300, NEAR_FAST_M = 1000;
+
+  /** Il posto della bolla nella colonna, in pixel dentro lo strato dell'auto. */
+  public static final class Slot
+  {
+    public int left, top, width, bottom;
+    /** C'è una scheda sopra: la bolla le si unisce (angoli in alto dritti). */
+    public boolean joined;
+    /** Svolta vicina: la bolla compare solo per una chiamata, ridotta a una riga. */
+    public boolean turnNear;
+    /** Schermo diviso: bolla senza barra dei tempi. */
+    public boolean split;
+  }
+
+  @Nullable private static java.lang.ref.WeakReference<EuriseCarGuide> sGuide;
+  @NonNull private final Slot mSlot = new Slot();
 
   private final CarContext mCar;
   private final Handler mHandler = new Handler(Looper.getMainLooper());
   private final Runnable mTick = this::refresh;
   private final LinearLayout mManeuver, mArrival;
+  private final TextView mFree, mShortEta;
   private final ImageView mTurn, mLanes, mScene;
   private final TextView mExit, mDistance, mStreet, mThen, mWeather, mEta, mLeft, mWhere;
   private final View mProgressTrack, mProgressFill;
@@ -80,8 +103,8 @@ public final class EuriseCarGuide extends FrameLayout
     final LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
     wlp.leftMargin = dp(14);
     row.addView(words, wlp);
-    mDistance = text(car, 30, true);
-    mStreet = text(car, 17, true);
+    mDistance = text(car, 32, true);
+    mStreet = text(car, 20, true);
     words.addView(mDistance);
     words.addView(mStreet);
     mLanes = new ImageView(car);
@@ -95,17 +118,23 @@ public final class EuriseCarGuide extends FrameLayout
     final LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(150));
     slp.topMargin = dp(8);
     mManeuver.addView(mScene, slp);
-    mThen = text(car, 14, false);
+    mThen = text(car, 17, false);
     final LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                                                                         ViewGroup.LayoutParams.WRAP_CONTENT);
     tlp.topMargin = dp(6);
     mManeuver.addView(mThen, tlp);
+    // Schermo diviso: l'arrivo in una riga sotto la svolta.
+    mShortEta = text(car, 17, true);
+    final LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                                                        ViewGroup.LayoutParams.WRAP_CONTENT);
+    elp.topMargin = dp(6);
+    mManeuver.addView(mShortEta, elp);
     addView(mManeuver);
 
-    // ---- Meteo sul percorso (sotto la manovra) ----
-    mWeather = text(car, 14, false);
-    mWeather.setMaxLines(2);
-    addView(mWeather);
+    // ---- Senza destinazione: la via e il meteo ----
+    mFree = text(car, 19, true);
+    mFree.setMaxLines(2);
+    addView(mFree);
 
     // ---- Arrivo (in basso) ----
     mArrival = new LinearLayout(car);
@@ -113,8 +142,8 @@ public final class EuriseCarGuide extends FrameLayout
     final LinearLayout times = new LinearLayout(car);
     times.setOrientation(LinearLayout.HORIZONTAL);
     times.setGravity(Gravity.BOTTOM);
-    mEta = text(car, 26, true);
-    mLeft = text(car, 16, false);
+    mEta = text(car, 30, true);
+    mLeft = text(car, 19, true);
     times.addView(mEta);
     final LinearLayout.LayoutParams leftLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                                            ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -129,14 +158,31 @@ public final class EuriseCarGuide extends FrameLayout
     final LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(6));
     plp.topMargin = dp(8);
     mArrival.addView(track, plp);
-    mWhere = text(car, 14, true);
+    mWhere = text(car, 18, true);
     final LinearLayout.LayoutParams whereLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                                                                             ViewGroup.LayoutParams.WRAP_CONTENT);
     whereLp.topMargin = dp(8);
     mArrival.addView(mWhere, whereLp);
+    // Il meteo sul percorso è una riga del viaggio (non più un riquadro a parte).
+    mWeather = text(car, 16, false);
+    mWeather.setMaxLines(2);
+    final LinearLayout.LayoutParams wtlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                                                         ViewGroup.LayoutParams.WRAP_CONTENT);
+    wtlp.topMargin = dp(6);
+    mArrival.addView(mWeather, wtlp);
     addView(mArrival);
+    mManeuver.setVisibility(GONE);
+    mArrival.setVisibility(GONE);
+    mFree.setVisibility(GONE);
+    sGuide = new java.lang.ref.WeakReference<>(this);
+  }
 
-    setVisibility(GONE);
+  /** Il posto della bolla nella colonna; null se la guida non è sullo schermo dell'auto. */
+  @Nullable
+  public static Slot slot()
+  {
+    final EuriseCarGuide g = sGuide == null ? null : sGuide.get();
+    return g == null || !g.isAttachedToWindow() || g.getHeight() == 0 ? null : g.mSlot;
   }
 
   /** Sullo schermo dell'auto, nell'area libera (SurfaceCallback), sotto la bolla. */
@@ -171,15 +217,19 @@ public final class EuriseCarGuide extends FrameLayout
     mHandler.removeCallbacks(mTick);
     mHandler.postDelayed(mTick, TICK_MS);
     final RoutingInfo info = RoutingController.get().isNavigating() ? Framework.nativeGetRouteFollowingInfo() : null;
+    final boolean night = app.organicmaps.car.util.ThemeUtils.isNightMode(mCar);
+    final boolean split = EuriseCarSplitInfo.split();
+    layoutColumn(split);
+    style(night);
     if (info == null)
     {
-      setVisibility(GONE);
+      free(split);
       return;
     }
+    mFree.setVisibility(GONE);
     app.organicmaps.eurise.EuriseWit.update(mCar, info, false);
-    final boolean night = app.organicmaps.car.util.ThemeUtils.isNightMode(mCar);
-    layoutColumn();
-    style(night);
+    final double toTurn = app.organicmaps.eurise.EuriseJunctionScene.metersOf(info.distToTurn);
+    final boolean near = !split && toTurn >= 0 && toTurn < (EuriseCarInfo.isFastRoad() ? NEAR_FAST_M : NEAR_M);
 
     // Manovra.
     info.carDirection.setTurnDrawable(mTurn);
@@ -193,9 +243,11 @@ public final class EuriseCarGuide extends FrameLayout
     else
       mExit.setVisibility(GONE);
     mDistance.setText(EuriseGuide.turnDistance(mCar, info.distToTurn));
+    mDistance.setTextSize(TypedValue.COMPLEX_UNIT_SP, near ? 32 : 26);
+    mStreet.setTextSize(TypedValue.COMPLEX_UNIT_SP, near ? 20 : 18);
     final CharSequence street = RoadShieldUtils.composeInstruction(info, mStreet.getTextSize());
     set(mStreet, street);
-    if (info.lanes != null && info.lanes.length > 0)
+    if (near && info.lanes != null && info.lanes.length > 0)
     {
       mLanes.setImageDrawable(new LanesDrawable(mCar, info.lanes, night ? 0xFFE8ECF4 : 0xFF1F2A44,
                                                 night ? 0x55E8ECF4 : 0x551F2A44));
@@ -203,12 +255,13 @@ public final class EuriseCarGuide extends FrameLayout
     }
     else
       mLanes.setVisibility(GONE);
-    final Bitmap scene = EuriseJunctionScene.bitmap(
-        mCar, EuriseJunctionScene.from(mCar, info, EuriseCarInfo.isFastRoad()), 640, 360);
+    final Bitmap scene = near ? EuriseJunctionScene.bitmap(
+        mCar, EuriseJunctionScene.from(mCar, info, EuriseCarInfo.isFastRoad()), 640, 360) : null;
     mScene.setImageBitmap(scene);
     mScene.setVisibility(scene == null ? GONE : VISIBLE);
-    set(mThen, TextUtils.isEmpty(info.nextNextStreet) || !info.nextCarDirection.containsNextTurn()
+    set(mThen, !near || TextUtils.isEmpty(info.nextNextStreet) || !info.nextCarDirection.containsNextTurn()
                ? null : mCar.getString(app.organicmaps.R.string.eurise_car_then, info.nextNextStreet));
+    mManeuver.setVisibility(VISIBLE);
 
     // Meteo sul percorso.
     set(mWeather, EuriseRouteWeather.carLine(mCar, info, () -> {}));
@@ -229,6 +282,12 @@ public final class EuriseCarGuide extends FrameLayout
       // Distanza non pronta.
     }
     mLeft.setText(distance.isEmpty() ? time : time + " · " + distance);
+    // Schermo diviso: l'arrivo è una riga sotto la svolta, la scheda in basso non c'è (la pillola dello schermo diviso
+    // ha già via, velocità e meteo).
+    final String eta = mEta.getText() + " · " + mLeft.getText();
+    set(mShortEta, split ? eta : null);
+    mShortEta.setTextColor(night ? 0xFF9CC3A9 : 0xFF2F6B45);
+    mArrival.setVisibility(split ? GONE : VISIBLE);
     final int w = mProgressTrack.getWidth();
     final int fill = (int) (w * Math.max(0, Math.min(100, info.completionPercent)) / 100.0);
     final ViewGroup.LayoutParams fl = mProgressFill.getLayoutParams();
@@ -238,20 +297,88 @@ public final class EuriseCarGuide extends FrameLayout
       mProgressFill.setLayoutParams(fl);
     }
     set(mWhere, EuriseCarInfo.where(mCar, info.currentStreet));
-
+    joinBubble(night);
+    updateSlot(mManeuver, near, split);
     setVisibility(VISIBLE);
   }
 
-  /** La colonna: un terzo dello schermo dell'auto, da 300 a 420 dp. */
-  private void layoutColumn()
+  /** Senza destinazione: la pillola con la via e il meteo (con lo schermo diviso c'è già quella in basso). */
+  private void free(boolean split)
+  {
+    mManeuver.setVisibility(GONE);
+    mArrival.setVisibility(GONE);
+    String line = null;
+    if (!split)
+    {
+      line = EuriseCarInfo.where(mCar, null);
+      final Location l = EuriseCarInfo.last();
+      if (l != null)
+      {
+        final String weather = app.organicmaps.eurise.EuriseRouteWeather.here(
+            mCar.getApplicationContext(), l.getLatitude(), l.getLongitude(), () -> {});
+        if (!TextUtils.isEmpty(weather))
+          line = TextUtils.isEmpty(line) ? weather : line + " · " + weather;
+      }
+    }
+    set(mFree, line);
+    joinBubble(app.organicmaps.car.util.ThemeUtils.isNightMode(mCar));
+    updateSlot(mFree, false, split);
+    setVisibility(VISIBLE);
+  }
+
+  /** Il posto della bolla: sotto la scheda in alto (se c'è), largo come la colonna, fino alla scheda del viaggio. */
+  private void updateSlot(@NonNull View top, boolean near, boolean split)
+  {
+    final int m = dp(12);
+    final boolean hasTop = top.getVisibility() == VISIBLE && top.getHeight() > 0;
+    mSlot.left = m;
+    mSlot.width = mColumnWidth;
+    mSlot.top = hasTop ? m + top.getHeight() : m;
+    mSlot.joined = hasTop;
+    mSlot.turnNear = near;
+    mSlot.split = split;
+    int bottom = getHeight() - m;
+    if (mArrival.getVisibility() == VISIBLE && mArrival.getHeight() > 0)
+      bottom -= mArrival.getHeight() + dp(8);
+    else if (split)
+      bottom -= dp(64); // la pillola dello schermo diviso
+    mSlot.bottom = bottom;
+  }
+
+  /** La scheda in alto e la bolla sotto sono una scheda sola: angoli in basso dritti quando la bolla c'è. */
+  private void joinBubble(boolean night)
+  {
+    final boolean joined = app.organicmaps.eurise.EuriseMediaBubble.carShown();
+    for (View v : new View[] {mManeuver, mFree})
+    {
+      final GradientDrawable bg = glass(night);
+      final float r = dp(22);
+      bg.setCornerRadii(joined ? new float[] {r, r, r, r, 0, 0, 0, 0} : new float[] {r, r, r, r, r, r, r, r});
+      v.setBackground(bg);
+    }
+  }
+
+  @NonNull
+  private GradientDrawable glass(boolean night)
+  {
+    final GradientDrawable bg = new GradientDrawable();
+    // Vetro quasi pieno: la mappa sotto non disturba la lettura (prova del 18 novembre).
+    bg.setColor(night ? 0xFA1A202F : 0xFAFAF9F6);
+    bg.setCornerRadius(dp(22));
+    bg.setStroke(Math.max(1, dp(1) / 2), night ? 0x2EFFFFFF : 0x241E1D1B);
+    return bg;
+  }
+
+  /** La colonna: circa un terzo dello schermo dell'auto, da 320 a 440 dp; con lo schermo diviso quasi tutta la mappa. */
+  private void layoutColumn(boolean split)
   {
     final int width = getWidth() > 0 ? getWidth() : getResources().getDisplayMetrics().widthPixels;
-    final int column = Math.max(dp(300), Math.min(dp(420), width * 34 / 100));
+    final int column = split ? Math.min(dp(380), width - dp(24))
+                             : Math.max(dp(320), Math.min(dp(440), width * 36 / 100));
     mColumnWidth = column;
     final int m = dp(12);
     place(mManeuver, column, Gravity.TOP | Gravity.START, m, m, 0);
-    final int weatherTop = m + (mManeuver.getHeight() > 0 ? mManeuver.getHeight() : dp(100)) + dp(8);
-    place(mWeather, column, Gravity.TOP | Gravity.START, m, weatherTop, 0);
+    place(mFree, column, Gravity.TOP | Gravity.START, m, m, 0);
     place(mArrival, column, Gravity.BOTTOM | Gravity.START, m, 0, m);
   }
 
@@ -275,18 +402,13 @@ public final class EuriseCarGuide extends FrameLayout
   /** Il vetro della suite: chiaro di giorno, scuro di notte, come la guida sul telefono. */
   private void style(boolean night)
   {
-    final int ink = night ? 0xFFE8ECF4 : 0xFF1E1D1B;
-    final int sub = night ? 0xFFC9D2E0 : 0xFF3B3A36;
-    for (View v : new View[] {mManeuver, mArrival, mWeather})
+    final int ink = night ? 0xFFF2F5FA : 0xFF1E1D1B;
+    final int sub = night ? 0xFFE1E7F0 : 0xFF2E2D2A;
+    for (View v : new View[] {mManeuver, mArrival, mFree})
     {
-      final GradientDrawable bg = new GradientDrawable();
-      bg.setColor(night ? 0xF01C2333 : 0xF0F8F7F4);
-      bg.setCornerRadius(dp(v == mWeather ? 16 : 22));
-      bg.setStroke(Math.max(1, dp(1) / 2), night ? 0x29FFFFFF : 0x1F1E1D1B);
-      v.setBackground(bg);
+      v.setBackground(glass(night));
       v.setElevation(dp(4));
-      final int ph = dp(v == mWeather ? 14 : 18), pv = dp(v == mWeather ? 9 : 12);
-      v.setPadding(ph, pv, ph, pv);
+      v.setPadding(dp(18), dp(12), dp(18), dp(12));
     }
     mDistance.setTextColor(ink);
     mStreet.setTextColor(ink);
@@ -295,7 +417,8 @@ public final class EuriseCarGuide extends FrameLayout
     mWeather.setTextColor(sub);
     mEta.setTextColor(night ? 0xFF9CC3A9 : 0xFF2F6B45);
     mLeft.setTextColor(sub);
-    mWhere.setTextColor(sub);
+    mWhere.setTextColor(ink);
+    mFree.setTextColor(ink);
     mProgressTrack.setBackground(round(night ? 0x2EFFFFFF : 0xFFDAD7CF));
     mProgressFill.setBackground(round(night ? 0xFFA9C1F2 : 0xFF1F2A44));
     final GradientDrawable scene = new GradientDrawable();

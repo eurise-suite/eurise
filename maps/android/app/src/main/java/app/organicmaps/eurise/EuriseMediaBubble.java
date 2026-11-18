@@ -62,6 +62,8 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   private static final long CLOCK_WINDOW_MS = 15 * 60_000L;
   private static final long NEXT_SOON_MS = 20_000;
   private static boolean sHiddenThisTrip;
+  /** In auto la bolla è in vista: la scheda sopra le si unisce (angoli in basso dritti). */
+  private static boolean sCarShown;
 
   private static final int BLUE = 0xFF3E5C8A, GREEN = 0xFF2F6B45, ORANGE = 0xFF9A4A12, RED = 0xFFA3322B;
 
@@ -89,6 +91,8 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   private final boolean mCar;
   private final Night mNight;
   private final float mMaxW, mFraction;
+  /** In auto la larghezza della colonna di sinistra (0 = come prima). */
+  private int mFixedW;
   private final ImageView mArt, mBadge, mIcon;
   private final TextView mInitials, mTitle, mSub, mSub2, mBig, mBigSub, mPos, mRem, mLyric, mLyricNext, mLine1, mLine2;
   private final TextView mLeft, mRight;
@@ -242,9 +246,9 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   // ---- Dove si aggancia ---------------------------------------------------------------------------------------------
 
   /**
-   * Sullo schermo dell'auto: nell'area libera della mappa (SurfaceCallback.initSpeedPill), in basso a sinistra (in alto
-   * a destra la coprivano i pulsanti tondi dell'auto). Da qui
-   * partono anche gli avvisi dell'auto con i pulsanti.
+   * Sullo schermo dell'auto: nell'area libera della mappa (SurfaceCallback.initSpeedPill), nella colonna di sinistra
+   * sotto la scheda della svolta o della via (scheda unica, {@link app.organicmaps.eurise.car.EuriseCarGuide#slot()}).
+   * Da qui partono anche gli avvisi dell'auto con i pulsanti.
    */
   @NonNull
   public static View car(@NonNull Context car, @NonNull Night night)
@@ -368,7 +372,7 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final int avail = MeasureSpec.getSize(widthSpec);
     final float frac = !mCar && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
                        ? 0.42f : mFraction;
-    final int w = (int) Math.min(mMaxW, avail > 0 ? avail * frac : mMaxW);
+    final int w = mCar && mFixedW > 0 ? mFixedW : (int) Math.min(mMaxW, avail > 0 ? avail * frac : mMaxW);
     super.onMeasure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), heightSpec);
   }
 
@@ -394,10 +398,17 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     final boolean afterCall = mCallEndedAt > 0 && now - mCallEndedAt < CALL_GRACE_MS;
     final boolean mediaOk = media != null && !afterCall && (media.playing || now - media.pausedAt < PAUSE_HIDE_MS);
     final EuriseTrip.Notice notice = mCar ? null : EuriseTrip.notice();
-    final Line status = guiding && EuriseNowPlaying.wanted(getContext()) ? status() : null;
-    if (!guiding || sHiddenThisTrip || (call == null && notice == null && !mediaOk && status == null))
+    // In auto la bolla c'è anche senza destinazione (scheda unica, 18 novembre): musica, chiamate, timer e impegni.
+    final Line status = (guiding || mCar) && EuriseNowPlaying.wanted(getContext()) ? status() : null;
+    final app.organicmaps.eurise.car.EuriseCarGuide.Slot slot = mCar ? app.organicmaps.eurise.car.EuriseCarGuide.slot() : null;
+    // Con la svolta vicina il finestrino prende la scheda: la bolla resta solo per una chiamata, in una riga.
+    final boolean yieldToTurn = slot != null && slot.turnNear && call == null;
+    if ((!mCar && (!guiding || sHiddenThisTrip)) || yieldToTurn
+        || (call == null && notice == null && !mediaOk && status == null))
     {
       setVisibility(GONE);
+      if (mCar)
+        sCarShown = false;
       mShown = null;
       // Un controllo lento anche nascosta: la guida può cominciare con la musica che già suona, senza altri avvisi.
       postDelayed(this, guiding && (media != null || afterCall) ? 1_000 : 2_000);
@@ -406,7 +417,12 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     style();
     reset();
     if (mCar)
-      stackAboveSiblings();
+    {
+      if (slot != null)
+        placeInColumn(slot);
+      else
+        stackAboveSiblings();
+    }
     if (call != null)
     {
       showCall(call);
@@ -422,8 +438,64 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
       showMedia(media, status);
     else
       showStatus(status);
+    if (slot != null)
+      compact(slot);
     setVisibility(VISIBLE);
+    if (mCar)
+      sCarShown = true;
     postDelayed(this, 500);
+  }
+
+  /** In auto: la bolla è in vista (la chiede la scheda di sopra per unirsi). */
+  public static boolean carShown()
+  {
+    return sCarShown;
+  }
+
+  /** Nella colonna di sinistra, sotto la scheda in alto e larga come lei (scheda unica). */
+  private void placeInColumn(@NonNull app.organicmaps.eurise.car.EuriseCarGuide.Slot slot)
+  {
+    if (!(getLayoutParams() instanceof FrameLayout.LayoutParams))
+      return;
+    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
+    if (mFixedW != slot.width)
+    {
+      mFixedW = slot.width;
+      requestLayout();
+    }
+    if (lp.gravity != (Gravity.TOP | Gravity.START) || lp.topMargin != slot.top || lp.leftMargin != slot.left
+        || lp.rightMargin != 0)
+    {
+      lp.gravity = Gravity.TOP | Gravity.START;
+      lp.topMargin = slot.top;
+      lp.leftMargin = slot.left;
+      lp.rightMargin = 0;
+      setLayoutParams(lp);
+    }
+    if (getBackground() instanceof GradientDrawable)
+    {
+      final float r = dp(22);
+      ((GradientDrawable) getBackground()).setCornerRadii(
+          slot.joined ? new float[] {0, 0, 0, 0, r, r, r, r} : new float[] {r, r, r, r, r, r, r, r});
+    }
+  }
+
+  /**
+   * Quanto mostrare secondo lo spazio: con la svolta vicina (chiamata) o poco spazio una riga sola; con lo schermo diviso
+   * o spazio medio senza barra dei tempi e senza album, il testo della canzone resta.
+   */
+  private void compact(@NonNull app.organicmaps.eurise.car.EuriseCarGuide.Slot slot)
+  {
+    final int room = slot.bottom - slot.top;
+    final boolean row = slot.turnNear || room < dp(130);
+    final boolean noBar = row || slot.split || room < dp(240);
+    if (noBar)
+    {
+      ((View) mBar.getParent()).setVisibility(GONE);
+      mSub2.setVisibility(GONE);
+    }
+    if (row)
+      mLyricBox.setVisibility(GONE);
   }
 
   /** Area libera e area stabile dell'auto (SurfaceCallbackBase), in pixel della superficie. */

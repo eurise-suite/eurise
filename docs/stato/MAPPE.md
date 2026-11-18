@@ -246,15 +246,25 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   quando serve; con la musica, via in cima e musica con testo. Schermo diviso: in guida svolta e ora d'arrivo, via con
   velocità e meteo, musica in una riga; senza guida via e finestra che si adatta (musica con copertina piccola, titolo,
   autore e testo; chiamate). Notte. Cambia le tavole approvate MapAutoSuiteGiorno/Notte e MapBollaAuto*.
-- Per metterle sulla tela serve togliere qualche tavola vecchia (512 file al massimo): da chiedere al proprietario.
+- **Approvate** dal proprietario sulla pagina separata («procedi anche senza tavole, l'artefatto è ok»): sulla tela non
+  vanno (è piena). In codice (giro sotto):
+  - `car/EuriseCarGuide.java`: colonna unica a sinistra (36% dello schermo, 320–440 dp). Svolta vicina (300 m, 1 km su
+    autostrada e superstrada) = finestrino con corsie, scena e «Poi…»; svolta lontana = riga con freccia, distanza e via.
+    Il meteo sul percorso è una riga della scheda del viaggio. Senza destinazione: pillola con «Sei in…» e meteo.
+    Schermo diviso: svolta sempre in riga con l'arrivo sotto («09:03 · 2 min · 760 m»), niente scheda in basso (resta la
+    pillola dello schermo diviso con velocità, via e meteo). `slot()` dice alla bolla dove stare.
+  - `EuriseMediaBubble`: in auto sotto la scheda in alto, larga come la colonna e unita (angoli dritti tra le due); c'è
+    anche senza destinazione (musica, chiamate, timer, impegni). Con la svolta vicina si ritira, salvo una chiamata
+    (una riga). Con lo schermo diviso o poco spazio niente barra dei tempi e album; il testo della canzone resta.
+  - Da provare in auto: svolta vicina e lontana, chiamata in svolta, guida senza destinazione con e senza musica,
+    schermo diviso con e senza guida, notte.
 - Compilazione: commit su `brand` e `prova-mappe` (5b1d8f1); i giri 108 e seguenti sono falliti allo scarico di CoMaps
   perché codeberg.org non si risolveva dai server di GitHub. `maps-engine.yml` ora riprova quattro volte e al secondo
   tentativo aggiunge un DNS pubblico. APK da pubblicare appena Codeberg risponde. Nota: la coda dei giri di Mappe tiene un
   solo giro in attesa; un giro chiesto da un altro ramo cancella quello in attesa (successo il 18 novembre).
 
 ## Prossimi passi, in ordine
-1. **Approvazione delle tavole della scheda unica in auto**, poi il codice. Prova del proprietario: solo l'ultimo APK
-   (Mappe 97 provato in auto il 18 novembre: riquadri e bolla vanno bene).
+1. **Prova in auto della scheda unica** (ultimo APK di Mappe; si prova solo l'ultimo).
 2. Dopo la prova: correzioni; tavola MapViaggio2Dove da aggiornare al nuovo ordine; «Avvisa» anche per l'impegno vicino
    senza chiamata, se lo vuoi; gesto a due dita per il 3D, se lo vuoi; in auto l'elenco «Dove devi andare» nello
    stesso ordine del telefono, se lo vuoi. (Tavola MapViaggio2Dove aggiornata al nuovo ordine il 17 novembre.)
