@@ -119,7 +119,7 @@ data class LauncherSettings(
      * Bolle che si adattano (tavole ScrBolleAdatta*): quelle a elenco seguono il contenuto, si accorciano quando c'è poco e
      * si allungano quando c'è tanto. [adaptiveMax] 0 = senza limite, altrimenti al massimo 1/[adaptiveMax] dello schermo.
      */
-    val adaptiveBubbles: Boolean = false,
+    val adaptiveBubbles: Boolean = true,
     val adaptiveMax: Int = 0,
     /** Il numero del giorno nell'Agenda col carattere della suite invece che arrotondato (lo legge l'Agenda). */
     val agendaNumberOurs: Boolean = false,
@@ -251,7 +251,7 @@ class SettingsStore(context: Context) {
             .putInt("grid_rows", next.rows)
             .putInt("icon_size", next.iconSize)
             .putBoolean("show_labels", next.showLabels)
-            .putBoolean("adaptive_bubbles", next.adaptiveBubbles)
+            .putBoolean(ADAPTIVE_KEY, next.adaptiveBubbles)
             .putInt("adaptive_max", next.adaptiveMax)
             .putBoolean("agenda_number_ours", next.agendaNumberOurs)
             .putBoolean("varied_icons", next.variedIcons)
@@ -300,7 +300,7 @@ class SettingsStore(context: Context) {
         rows = prefs.getInt("grid_rows", 1),
         iconSize = prefs.getInt("icon_size", 56),
         showLabels = prefs.getBoolean("show_labels", true),
-        adaptiveBubbles = prefs.getBoolean("adaptive_bubbles", false),
+        adaptiveBubbles = prefs.getBoolean(ADAPTIVE_KEY, true),
         adaptiveMax = prefs.getInt("adaptive_max", 0),
         agendaNumberOurs = prefs.getBoolean("agenda_number_ours", false),
         variedIcons = prefs.getBoolean("varied_icons", false),
@@ -348,3 +348,10 @@ class SettingsStore(context: Context) {
 /** Colore personale da tonalità (0–360) e luminosità (0–1), saturazione fissa per restare nello stile. */
 fun customColor(hue: Float, light: Float): Int =
     Color.hsl(hue.coerceIn(0f, 360f), 0.45f, light.coerceIn(0.2f, 0.75f)).toArgb()
+
+/**
+ * Bolle che si adattano: accese di base dal 18 novembre 2026 (giro 837 e seguenti), su richiesta del proprietario. La
+ * chiave è nuova perché la vecchia («adaptive_bubbles») era già salvata spenta su ogni telefono: così l'opzione si
+ * accende una volta anche dove l'app c'era già; chi poi la spegne la ritrova spenta.
+ */
+private const val ADAPTIVE_KEY = "adaptive_bubbles_on"
