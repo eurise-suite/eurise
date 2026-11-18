@@ -230,6 +230,24 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   TastComparsaChiusa/Aperta/Proposta in TastComparsaAperta e GalEsporta in GalLookQR. Le tavole nuove sono a tre e a due
   schermate per file. Per altre tavole servirà togliere qualcosa di superato (decide il proprietario).
 
+## 18 novembre: tavole approvate in codice, tela ripulita (giro 830, in apk-prova)
+- Approvate dal proprietario: TastImpostazioniFrase, PwdPrivacyTacche, GalPrivacyTacche.
+- **Tastiera**: impostazioni nello stile di Eurise (`EuriseSettings.kt`: Scrivere, Precisione, Aspetto e mano, Barra di Eurise e
+  dati, Privacy 10/10, «Tutte le impostazioni» con le schermate di HeliBoard); colori Perla e Notte in tutte le schermate di
+  HeliBoard (`latin/utils/Theme.kt`, niente più colori del sistema). «Come tocchi» (rotta `eurise_touch`): mappa dei tocchi
+  per tasto, interruttori in `eurise_touch` (`learn_on`, `char_lm_on`, `space_band_on`) e Ricomincia con conferma
+  (`TouchModel.reset`, `TouchOffset.reset`). **Frase intera** (`PhraseModel` con `PhraseModelTest`, `Phrases`): si impara
+  quando una frase finisce (punto, a capo) o il campo si svuota dopo l'invio; da 3 volte la frase compare per prima tra le
+  parole; pressione lunga la toglie; file `eurise_phrases.txt` nella Tastiera (non ancora nel backup); interruttore
+  `eurise_phrase_on`.
+- **Password e Galleria**: schermata Privacy (Password: in cima alle impostazioni; Galleria: negli Album) con il livello
+  attuale, i servizi spenti di base e «prima di accendere». Valutazioni: Murena 9, violazioni 9, alias 7, Luoghi 7,
+  caricamento 6, il resto 10. Usano `PrivacyMeter` comune e il nuovo `PrivacyConsentSheet` in **core/designsystem** (parte
+  comune toccata: componente nuovo e due testi `ds_pc_read`, `ds_pc_out`); sostituisce le vecchie finestre di avviso.
+- **Resta**: le righe di Password e Galleria nel centro privacy e nel cestino unico dell'app Eurise (serve un provider con
+  permesso di firma e tocca `app-debug.apk`); frasi della Tastiera nel backup.
+- **Tela**: tolte le tavole superate dell'area (TastBarra, TastRighe, GalRegola); le tavole nuove segnate approvate.
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
