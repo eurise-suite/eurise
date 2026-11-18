@@ -18,6 +18,8 @@ val geckoAbi = (findProperty("eurise.geckoAbi") as String?) ?: "arm64-v8a"
 android {
     namespace = "eu.eurise.browser"
     compileSdk = 37
+    // GeckoView 160 chiede l'API 37.2 (versione minore di Android 17).
+    compileSdkMinor = 2
 
     defaultConfig {
         applicationId = "eu.eurise.browser"
