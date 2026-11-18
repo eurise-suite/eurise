@@ -364,6 +364,24 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   menu; un'app su una pagina tenuta ferma (menu con «Modifica la pagina»).
 - Giro 782 (Compila 44198366637 su `prova-organizzazione`).
 
+## 18 novembre, notte: bolle che si adattano (giro 800) e pagina d'agenda (tavola da approvare)
+- **Decisioni del proprietario** sulle tavole ScrBolleAdatta: si allungano **senza limite**, con un massimo facoltativo;
+  affiancate **ognuna per conto suo**, con uno scatto e un indicatore quando hanno la stessa altezza; elenco ok.
+- **Codice (giro 800)**: impostazione in Aspetto «Bolle che si adattano» (spenta di base) con «Altezza massima»: Nessuna,
+  Metà schermo, Un terzo (`adaptiveBubbles`, `adaptiveMax`). Accesa, le bolle a elenco (`HomeKind.adapts`: I tuoi impegni,
+  Da fare oggi, Ti hanno cercato, Prossimo impegno, Farmaci, Codici e consegne) ignorano altezza scelta e catena, mostrano
+  tutte le righe (`LocalBubbleGrows`, gli elenchi interni non scorrono più da soli) e non hanno maniglia dell'altezza né
+  catena; «I tuoi impegni» in una giornata vuota è una riga sola con il «+». Per tutte le altre bolle la maniglia
+  dell'altezza **scatta** sull'altezza della vicina non legata (entro 12 dp, `snapHeight`), con vibrazione ed etichetta
+  «Stessa altezza». **Non ancora**: Calendario, Messaggi e Appunti fissati (schede con un numero fisso di righe: vanno
+  rifatte per seguire il contenuto). Test `SnapHeightTest`.
+- **Pagina d'agenda (tavola `AgePagina`, pagina «Agenda» della tela, sopra la fila, da approvare)**: intestazione come una
+  vecchia agenda: il numero del giorno grande in amaranto (#8C2F39), sopra il giorno e sotto il mese (più anno e
+  settimana); accanto meteo e massima del giorno; sotto appuntamenti, cose da fare, persone di oggi come prima; la massima
+  non sta più in fondo.
+- **Tela**: tolta la mia tavola `ScrBolleAdattaTanto` (superata dal codice) per fare posto ad `AgePagina`; aggiornata
+  `ScrBolleAdattaImpostazioni`; `canvas.json` toccato. La tela resta a 512 file.
+
 ## 18 novembre: bolle che si adattano al contenuto (tavole da approvare)
 - **Richiesta del proprietario**: un'opzione per le bolle della Scrivania che si adattano al contenuto: con pochi o nessun
   impegno e cosa da fare si riducono, con tanti si allungano.
