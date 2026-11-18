@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: Compila 760, Mappe 102)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: Compila 793, Mappe 102)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -99,19 +99,19 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 - Da provare: che non parli mai sopra le istruzioni; se 15 minuti tra una battuta e l'altra sono troppi o pochi.
 - Da provare: se una su due è troppo (o troppo poco); `withMaxim` in `Plan.kt`.
 
-## 17 novembre, notte: una voce che sembri italiana (in corso)
-- Il proprietario: Nicola «sembra che non sia italiano» (Kokoro pronuncia l'italiano con espeak-ng). Candidati liberi
-  che girano sul telefono, da far **ascoltare prima di metterli nell'app** (lavoro `voci-ascolto.yml`, script
-  `.github/scripts/voci_ascolto.py`, pre-release `voci-ascolto`, stesse frasi per tutti):
-  - **Supertonic 3** (99M, ONNX, 31 lingue con l'italiano, 5 voci maschili e 5 femminili; RTF 0,2 sul server): pesi
-    OpenRAIL-M (limiti d'uso, non libera in senso stretto) e progetto chiuso dall'autore (Supertone).
-  - **Piper Serena** (medium e high, CC BY 4.0, italiano standard senza accento, stesso motore di Paola e Riccardo:
-    si aggiunge subito): voce **femminile**; il suo checkpoint permette di addestrare un Alfred maschile italiano.
-  - **Pocket TTS** di Kyutai (100M, CC BY 4.0, modello italiano a 6 strati, 26 voci; in sherpa-onnx c'è il motore):
-    campione fatto col runtime ONNX della comunità (KevinAHM/pocket-tts-onnx da Hugging Face, approvato dal
-    proprietario il 17 novembre). RTF circa 0,35 sul server, il doppio di Supertonic: sul telefono va misurato (genera
-    a pezzi di 80 ms, quindi la prima parola arriva presto). Elenco numero → voce in `ascolta-pocket.txt`.
-- Prossimo: il proprietario sceglie a orecchio; la voce scelta entra in `voci.yml` e in Voce (`Voices.kt`).
+## 18 novembre: Vittorio, la nuova voce di Alfred (giro 793)
+- Il proprietario ha ascoltato i campioni (pre-release `voci-ascolto`: Pocket TTS, Supertonic 3, Serena) e ha scelto
+  **Supertonic 3, voci 2 e 5** (M2 e M5): Nicola (Kokoro) «sembra che non sia italiano».
+- In Voce: **Vittorio** (M2, la voce di Alfred) ed **Ettore** (M5), un solo archivio `alfred-supertonic.zip` (124 MB,
+  int8 di sherpa-onnx, pre-release `voci`, lavoro `voci.yml`), scaricato a richiesta. Motore già in sherpa-onnx 1.13.7
+  (`OfflineTtsSupertonicModelConfig`, lingua `extra = {"lang": "it"}` a ogni frase): nessuna libreria nuova.
+  Numeri delle voci verificati in `voci.yml` cercando gli stili ufficiali dentro `voice.bin` (0–4 = F1–F5, 5–9 =
+  M1–M5: M2 = 6, M5 = 9). Passo `SUPERTONIC_PACE` 1,05. Voce di base: Vittorio se scaricato, poi Nicola. Nicola,
+  Riccardo, Paola e Sara restano tra le scelte.
+- Supertonic 3 ha pesi **OpenRAIL-M** (limiti d'uso; `LICENSE` nell'archivio) e il progetto è stato chiuso da
+  Supertone: il modello funziona ma non avrà aggiornamenti. Alternativa libera pronta se servisse: Pocket TTS (CC BY 4.0).
+- Sul server Supertonic genera circa 5 volte più svelto del parlato; **da misurare sul telefono** (tempo alla prima
+  parola, scorrevolezza) e da sentire se M2 resta la preferita.
 
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
 - **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
@@ -123,7 +123,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario su Compila 760 e Mappe 102** (Alfred più svelto, ironia a voce e in guida, vedi sopra) (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
+1. **Prove del proprietario su Compila 793 e Mappe 102**: Vittorio come voce di Alfred (scaricarlo in Voce), Alfred più svelto, ironia a voce e in guida (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
    «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
    ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
    cosa per un'altra»).
