@@ -64,6 +64,12 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
 - **Sicurezza della suite** (18 novembre, avviata da questa chat): chiave di prova nuova con rotazione, piano completo in
   `docs/SICUREZZA.md`. Parti comuni toccate: CLAUDE.md (regola «Chiave di prova»), `.github/workflows/apk-prova.yml`,
   `office-app.yml`, `office-prova.yml`, `.github/scripts/firma-prova.sh`.
+- **Correzione del giro 789** (18 novembre): con R8 il Browser si chiudeva un secondo dopo l'apertura (giro 808, segnalato
+  dal proprietario). Riprodotto sull'emulatore: SIGSEGV di libxul nel thread «launcher», perché R8 toglieva classi di
+  org.mozilla che il motore cerca dal codice nativo. Ora `-keep class org.mozilla.** { *; }` (più `-dontwarn
+  kotlin.annotations.jvm.**`). Prova automatica: `prova-avvio-browser.yml` (ramo `prova-avvio` o a mano) compila il
+  Browser come l'APK di prova con il motore x86_64 (`-Peurise.geckoAbi=x86_64`) e lo avvia sull'emulatore: primo avvio,
+  due pagine, riapertura con le schede salvate. Da far girare prima di ogni consegna che tocca R8 o GeckoView.
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.

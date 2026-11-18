@@ -36,7 +36,7 @@ trap 'rm -rf "$work"' EXIT
 printf '%s' "$EURISE_PROVA_KEYSTORE" | tr -d ' \n\r' | base64 -d > "$work/prova.p12"
 export EURISE_PROVA_PASSWORD
 
-fase="${EURISE_PROVA_FASE:-1}"
+fase="${EURISE_PROVA_FASE:-2}"
 case "$fase" in 1) perm=true ;; 2) perm=false ;; *) echo "::error::EURISE_PROVA_FASE deve essere 1 o 2"; exit 1 ;; esac
 echo "Firma di prova, fase $fase (permessi alla vecchia chiave: $perm)"
 

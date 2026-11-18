@@ -22,7 +22,8 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
 - La chiave delle versioni ufficiali resta solo al proprietario e non è toccata.
 
 ## Piano
-1. Chiave di prova fuori dal repository (sopra). Stato: fase 1.
+1. Chiave di prova fuori dal repository (sopra). Fase 1 pubblicata nel giro 808 e installata dal proprietario su tutte le
+   app il 18 novembre; **fase 2** di base nello script dallo stesso giorno.
 2. Strumenti e librerie aggiornati (AGP, Kotlin, Gradle, SDK, AndroidX, OkHttp, CameraX, PDFBox…) su un ramo a parte,
    unione con una finestra annunciata in `docs/STATO.md`.
 3. GeckoView all'ultima versione e poi a ogni uscita di Firefox (circa ogni quattro settimane).
