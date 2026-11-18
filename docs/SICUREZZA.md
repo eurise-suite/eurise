@@ -24,9 +24,10 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
 ## Piano
 1. Chiave di prova fuori dal repository (sopra). Fase 1 pubblicata nel giro 808 e installata dal proprietario su tutte le
    app il 18 novembre; **fase 2** di base nello script dallo stesso giorno.
-2. Strumenti e librerie aggiornati (AGP, Kotlin, Gradle, SDK, AndroidX, OkHttp, CameraX, PDFBox…) su un ramo a parte,
-   unione con una finestra annunciata in `docs/STATO.md`.
-3. GeckoView all'ultima versione e poi a ogni uscita di Firefox (circa ogni quattro settimane).
+2. Strumenti aggiornati (18 novembre, giro 828 tutto verde): AGP 9.5.0, Gradle 9.6.0, Kotlin 2.3.20, KSP 2.3.12,
+   Room 2.7.2, compileSdk 37, Compose BOM 2026.08.00. Restano: le altre librerie (AndroidX, OkHttp 5, CameraX, Media3,
+   PDFBox…), il passaggio al Kotlin di AGP e al DSL nuovo, la Tastiera (progetto Gradle a parte).
+3. GeckoView: dalla 141 (agosto 2025) alla **160** (16 novembre 2026); da ora sempre l'ultima uscita a ogni giro.
 4. Aggiornamenti automatici (Renovate), vulnerabilità note a ogni giro (OSV-Scanner), verifica delle librerie di Gradle
    (`verification-metadata.xml`), azioni di GitHub fissate allo SHA.
 5. Revisione delle porte d'ingresso: componenti esportati e fornitori di dati, crittografia di Password, backup e Ponte.

@@ -70,6 +70,8 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   kotlin.annotations.jvm.**`). Prova automatica: `prova-avvio-browser.yml` (ramo `prova-avvio` o a mano) compila il
   Browser come l'APK di prova con il motore x86_64 (`-Peurise.geckoAbi=x86_64`) e lo avvia sull'emulatore: primo avvio,
   due pagine, riapertura con le schede salvate. Da far girare prima di ogni consegna che tocca R8 o GeckoView.
+- **GeckoView 160** (18 novembre, con gli strumenti nuovi della suite): motore dalla 141 alla 160, sempre l'ultima a ogni
+  giro (`[160.0,300.0)`); compileSdk 37.2 per il Browser. Prova di avvio sull'emulatore verde (quattro passi).
 - Importazione dal computer, nucleo (`core/sync/BrowserImport.kt`, test): profili di Chrome, Chromium, Brave, Edge,
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.

@@ -21,6 +21,13 @@
   vecchia e non si installa sopra (o, peggio, non ha i permessi della suite).
 - Ogni nuovo flusso che pubblica APK di prova chiama lo stesso script. Dettagli in `docs/SICUREZZA.md`.
 
+## Strumenti (regola fissa, 18 novembre 2026)
+- La suite compila con AGP 9.5, Gradle 9.6, Kotlin 2.3, KSP 2.3, compileSdk 37 (Browser 37.2), Compose BOM 2026.08.
+  Per ora `android.builtInKotlin=false` e `android.newDsl=false` in gradle.properties (da togliere prima di AGP 10).
+- Nei moduli il bersaglio Java si scrive `kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }` (non più
+  `kotlinOptions`); niente Provider in `sourceSets` (cartelle già risolte); un modulo nuovo usa compileSdk 37.
+- Il Browser usa sempre l'ultima GeckoView (correzioni di sicurezza di Firefox circa ogni quattro settimane).
+
 ## Conversazioni lunghe (regola, 8 novembre 2026)
 - Quando la chat con il proprietario diventa lunga (molti lavori, contesto riassunto più volte), avvisarlo alla
   consegna dell'APK e consigliare una chat nuova, con le istruzioni pronte da incollare: leggere CLAUDE.md e
