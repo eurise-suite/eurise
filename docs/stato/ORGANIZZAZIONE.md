@@ -385,6 +385,23 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   ScrAccoglienzaA e B (scelta la C). Restano BrandLogo e BrandMark (componente usato da altre tavole). Le versioni
   precedenti della tela le conservano. **Parte comune toccata**: `canvas.json` della tela.
 
+## 18 novembre, pomeriggio: Calendario, Messaggi e Appunti fissati si adattano anche loro (giro 837)
+- **Cosa cambia**: con «Bolle che si adattano» accesa le tre schede non hanno più l'altezza fissa (Calendario 300,
+  Messaggi 240, Appunti fissati 200) ma seguono il contenuto, ognuna per conto suo, senza maniglia dell'altezza né catena,
+  come le altre bolle a elenco. Calendario: mese e, accanto, **tutti** gli impegni e le cose da fare del giorno scelto
+  (prima 4 e 3); Messaggi: tutte le righe; Appunti fissati: tutte le note fissate (prima 12), una riga sola se non ce ne
+  sono. Con «Altezza massima» (metà o un terzo dello schermo) la scheda si ferma lì e scorre dentro di sé; senza massimo
+  non scorre. Spenta l'opzione, tutto torna come prima (altezza scelta o di partenza).
+- **Codice**: `HomeKind.adapts` con Calendar, Messages, Notes; `SummaryCard` senza scorrimento interno quando la bolla si
+  adatta senza massimo (una colonna con peso e scorrimento, dentro una pagina che scorre, non avrebbe un'altezza);
+  `LauncherPhone` non impone l'altezza di partenza alle schede che si adattano; `InteractiveMonth` e `PinnedNotesCard`
+  senza tetto di righe con `LocalBubbleGrows`. Testo dell'interruttore aggiornato; `SnapHeightTest` esteso. Parti comuni:
+  nessuna.
+- **Da provare**: accendere l'opzione con le tre schede sulla home o su una pagina; giorno vuoto e pieno nel Calendario
+  (toccare un giorno con molti impegni), molti e nessun messaggio, nessuna e molte note fissate; poi «Metà schermo».
+- **Giro 837** compilato da `brand` (Compila 44295933239): lo spostamento di `prova-organizzazione` sulla stessa testa
+  non è stato permesso in questa chat.
+
 ## 18 novembre, notte: bolle che si adattano (giro 800) e pagina d'agenda (tavola da approvare)
 - **Decisioni del proprietario** sulle tavole ScrBolleAdatta: si allungano **senza limite**, con un massimo facoltativo;
   affiancate **ognuna per conto suo**, con uno scatto e un indicatore quando hanno la stessa altezza; elenco ok.
@@ -394,8 +411,7 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   tutte le righe (`LocalBubbleGrows`, gli elenchi interni non scorrono più da soli) e non hanno maniglia dell'altezza né
   catena; «I tuoi impegni» in una giornata vuota è una riga sola con il «+». Per tutte le altre bolle la maniglia
   dell'altezza **scatta** sull'altezza della vicina non legata (entro 12 dp, `snapHeight`), con vibrazione ed etichetta
-  «Stessa altezza». **Non ancora**: Calendario, Messaggi e Appunti fissati (schede con un numero fisso di righe: vanno
-  rifatte per seguire il contenuto). Test `SnapHeightTest`.
+  «Stessa altezza». Calendario, Messaggi e Appunti fissati: fatti nel giro 837 (sezione sopra). Test `SnapHeightTest`.
 - **Pagina d'agenda (tavola `AgePagina`, pagina «Agenda» della tela, sopra la fila, da approvare)**: intestazione come una
   vecchia agenda: il numero del giorno grande in amaranto (#8C2F39), sopra il giorno e sotto il mese (più anno e
   settimana); accanto meteo e massima del giorno; sotto appuntamenti, cose da fare, persone di oggi come prima; la massima
