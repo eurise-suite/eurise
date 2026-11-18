@@ -178,6 +178,22 @@ computer (area Computer, tavola PcEmail).
   altrimenti dal nome uguale a un solo contatto.
   Non ancora: email mandate (Email tiene solo la posta ricevuta), «non è in linea da un giorno → SMS» (serve la presenza),
   videochiamata (ChatChiamata), foto dei contatti (la Chat non legge la Rubrica), invito a chi non è sulla Chat (prossimo).
+- **Chat, le basi** (18 novembre; tavola ChatBasi; giro 795: chat): risposte, reazioni, modifica, cancella per tutti,
+  messaggi fissati, inoltra e **sondaggi**, con gli eventi di Matrix che usa anche Element. Logica pura **`Relations.kt`**
+  con `RelationsTest`: reazioni una per persona e chiave (tocco sulla reazione = metti o togli la tua), modifiche valide
+  solo di chi ha scritto (tenute per autore: quella di un altro non le cancella), cancellazioni che tolgono anche reazioni e
+  voti, risposte senza la vecchia citazione in testa, sondaggi MSC3381 (`org.matrix.msc3381.poll.*`, voto palese, una
+  risposta; vale l'ultimo voto di ognuno dato prima della chiusura; l'ora di chiusura è un campo nostro
+  `eu.eurise.closes` e la fine la manda chi l'ha aperto), fissati in `m.room.pinned_events`. `ChatModel`: invio di eventi
+  di ogni tipo (cifrati se la stanza lo è), `reply`, `react`, `edit`, `delete`, `pin`, `forward`, `sendPoll`, `vote`,
+  `endPoll`; `ChatClient.sendEvent`/`setState`. Interfaccia in **`BasiUi.kt`**: **pressione lunga su un messaggio** = sei
+  reazioni veloci e Rispondi, Copia, Modifica, Fissa, Inoltra, Cancella (con secondo tocco di conferma), Chiudi il
+  sondaggio; citazione dentro il fumetto, «modificato» accanto all'ora, reazioni sotto il fumetto, **barra dei fissati** in
+  cima (tocco = va al messaggio, con più fissati passa al successivo), sopra il campo «Rispondi a…»/«Modifichi il
+  messaggio» con ×. **Graffetta: tocco = file, pressione lunga = sondaggio** (domanda, 2–6 risposte, si chiude: quando lo
+  chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
+  il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
+  nuovi (si leggono se arrivano da altri).
 - **Invito sulla Chat** (17 novembre, notte; tavole ChatInvita e ChatInvitaElenco; giro 777: chat e phone): il link è
   **`https://matrix.to/#/<mio utente>`** (apre una chat con me in Eurise, Element o un'altra app Matrix; niente server
   nostro: `eurise.eu/i/…` della tavola aspetta dominio e server). Nei testi resta «Chat» e non «Ciarly» finché il marchio non
@@ -203,8 +219,8 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat e phone giro 777 (17 novembre, notte: invito sulla Chat); mail e messages
-  giro 764 («Una persona, tutti i canali»).
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 795 (18 novembre: le basi della chat); phone giro 777 (invito sulla
+  Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -356,7 +372,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    Telefono ed Email installati e con i permessi, filo di un contatto con SMS, chiamata con nota ed email, SMS mandato dal
    filo, Chiama con un tocco, «Unisci al contatto»), ~~invito a Ciarly~~ (fatto al giro 777; prove: banner nella scheda della Rubrica, invito per SMS ed email, elenco con
    più persone),
-   poi le 13 tavole Chat* (ChatBasi per prima), poi le tavole della seconda fila di La mia Bussola.
+   poi le 13 tavole Chat* (~~ChatBasi~~ fatta al giro 795; prove: rispondi, reazione, modifica, cancella, fissa, inoltra,
+   sondaggio con voto e chiusura, anche con Element dall'altra parte; poi ChatVocali), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

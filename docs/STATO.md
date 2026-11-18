@@ -3361,6 +3361,7 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 17 novembre, notte, Comunicazione: turni generici (modelli, regole, persone senza Chat), importa da PDF/CSV/XLSX/ODS/testo, esporta PDF/CSV/.ics · giro 759 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, notte, Comunicazione: «Una persona, tutti i canali» (vista Persone, filo con SMS, chiamate con nota ed email, scelta del canale; contratto nuovo `PeopleContract` in core/suite) · giro 764 (chat, mail, messages, phone) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, notte, Comunicazione: invito sulla Chat dalla Rubrica, dal filo e per più persone (link matrix.to) · giro 777 (chat, phone) → `docs/stato/COMUNICAZIONE.md`.
+- 18 novembre, Comunicazione: Chat, le basi (risposte, reazioni, modifica, cancella, fissati, inoltra, sondaggi) · giro 795 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 17 novembre, Alfred e AI: Alfred spiritoso anche alla guida, solo nei momenti tranquilli (Mappe 102) → `docs/stato/ALFRED.md`.
 - 17 novembre, Alfred e AI: campioni di voci italiane da ascoltare (pre-release voci-ascolto) → `docs/stato/ALFRED.md`.
 - 17 novembre, notte, Organizzazione: trascinamento di app e bolle tra le pagine della Scrivania (bordi, fila delle pagine, «+» per una pagina nuova, anche dai preferiti e da «Tutte le app») · giro 772 → `docs/stato/ORGANIZZAZIONE.md`.
