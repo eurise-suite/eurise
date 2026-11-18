@@ -1,0 +1,51 @@
+name: Prova della rotazione della chiave di prova
+
+# Temporaneo (18 novembre 2026): prima di usare la chiave nuova sul telefono del proprietario (password vere), si prova su
+# un emulatore che la firma con rotazione (.github/scripts/firma-prova.sh, qui con una chiave usa e getta):
+# 1. aggiorni le app installate con la vecchia chiave senza disinstallarle e senza perdere i dati;
+# 2. tolga i permessi di firma a un'app firmata solo con la vecchia chiave (l'«intrusa»);
+# 3. li lasci alle app con la chiave nuova.
+on:
+  push:
+    branches: [sicurezza]
+    paths:
+      - ".github/workflows/prova-firma.yml"
+      - ".github/scripts/firma-prova.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  prova:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: APK di prova attuali (vecchia chiave) e copie firmate con la chiave nuova
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir vecchi nuovi
+          gh release download apk-prova -R "${{ github.repository }}" -D vecchi -p password-debug.apk -p app-debug.apk -p phone-debug.apk
+          cp vecchi/password-debug.apk vecchi/app-debug.apk nuovi/
+          keytool -genkeypair -keystore usa-e-getta.p12 -storetype PKCS12 -storepass eurise-prova -keypass eurise-prova \
+            -alias eurise-prova -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA -validity 365 -dname "CN=Prova" 2>/dev/null
+          EURISE_PROVA_KEYSTORE="$(base64 -w0 usa-e-getta.p12)" .github/scripts/firma-prova.sh nuovi/*.apk
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          for f in vecchi/password-debug.apk nuovi/password-debug.apk; do echo "== $f"; "$bt/apksigner" verify -v --print-certs "$f" | grep -E "Verified using|certificate SHA-256|Number of signers"; done
+
+      - name: KVM per l'emulatore
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulatore e prova
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: bash .github/scripts/prova-firma-emulatore.sh
