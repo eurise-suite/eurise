@@ -115,6 +115,12 @@ data class LauncherSettings(
     val rows: Int = 1,
     val iconSize: Int = 56,
     val showLabels: Boolean = true,
+    /**
+     * Bolle che si adattano (tavole ScrBolleAdatta*): quelle a elenco seguono il contenuto, si accorciano quando c'è poco e
+     * si allungano quando c'è tanto. [adaptiveMax] 0 = senza limite, altrimenti al massimo 1/[adaptiveMax] dello schermo.
+     */
+    val adaptiveBubbles: Boolean = false,
+    val adaptiveMax: Int = 0,
     /** Simboli delle icone colorati per categoria (falso) o con colori vari per app (vero). */
     val variedIcons: Boolean = false,
     /** Colore del simbolo preso dall'icona originale dell'app e portato alla tinta della suite più vicina. */
@@ -243,6 +249,8 @@ class SettingsStore(context: Context) {
             .putInt("grid_rows", next.rows)
             .putInt("icon_size", next.iconSize)
             .putBoolean("show_labels", next.showLabels)
+            .putBoolean("adaptive_bubbles", next.adaptiveBubbles)
+            .putInt("adaptive_max", next.adaptiveMax)
             .putBoolean("varied_icons", next.variedIcons)
             .putBoolean("app_icon_colors", next.appIconColors)
             .putBoolean("icons_follow_bubbles", next.iconsFollowBubbles)
@@ -289,6 +297,8 @@ class SettingsStore(context: Context) {
         rows = prefs.getInt("grid_rows", 1),
         iconSize = prefs.getInt("icon_size", 56),
         showLabels = prefs.getBoolean("show_labels", true),
+        adaptiveBubbles = prefs.getBoolean("adaptive_bubbles", false),
+        adaptiveMax = prefs.getInt("adaptive_max", 0),
         variedIcons = prefs.getBoolean("varied_icons", false),
         appIconColors = prefs.getBoolean("app_icon_colors", true),
         iconsFollowBubbles = prefs.getBoolean("icons_follow_bubbles", true),

@@ -623,6 +623,14 @@ fun AgendaPill(
             AlfredPointButton()
         }
     }) {
+        // Bolle che si adattano: in una giornata vuota, una riga sola (tavola ScrBolleAdattaPoco).
+        if (LocalBubbleGrows.current && calendarConnected && !adding && upcoming.isEmpty() && list.isEmpty() && doses.isEmpty() && todayDates.isEmpty()) {
+            BubbleRow(
+                EuriseIcons.calendar(), stringResource(R.string.bubble_agenda_nothing), null, onClick = onCalendar,
+                trailing = { SmallRound(EuriseIcons.plus(2f), stringResource(R.string.bubble_add)) { adding = true } },
+            )
+            return@Pill
+        }
         when {
             !calendarConnected -> BubbleRow(EuriseIcons.calendar(), stringResource(R.string.today_connect_calendar), null, onClick = onConnectCalendar)
             upcoming.isEmpty() -> BubbleRow(EuriseIcons.calendar(), stringResource(R.string.today_free), null, onClick = onCalendar)

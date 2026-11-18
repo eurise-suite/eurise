@@ -705,6 +705,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
             // Sul tablet la Scrivania è una sola pagina: niente trascinamento tra pagine.
             eu.eurise.feature.launcher.home.LocalDeskCarry provides carry.takeIf { LocalConfiguration.current.smallestScreenWidthDp < TabletSmallestWidth },
             eu.eurise.feature.launcher.home.LocalAppMenu provides appMenu,
+            eu.eurise.feature.launcher.home.LocalAdaptiveBubbles provides eu.eurise.feature.launcher.home.AdaptiveBubbles(settings.adaptiveBubbles, settings.adaptiveMax),
         ) {
         Box(Modifier.fillMaxSize().deskCarryTracker(carry) { dropNow() }) {
             SceneBackground(scene, Modifier.fillMaxSize().hazeSource(hazeState))

@@ -137,6 +137,35 @@ fun AppearanceSheet(
                 Text(stringResource(R.string.appearance_labels), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Switch(checked = settings.showLabels, onCheckedChange = { v -> onChange { it.copy(showLabels = v) } })
             }
+            // Bolle che si adattano (tavola ScrBolleAdattaImpostazioni): spento di base; acceso, si può dare un massimo.
+            eu.eurise.core.designsystem.component.SwitchRow(
+                title = stringResource(R.string.appearance_adaptive),
+                hint = stringResource(R.string.appearance_adaptive_hint),
+                checked = settings.adaptiveBubbles,
+                onChange = { on -> onChange { it.copy(adaptiveBubbles = on) } },
+            )
+            if (settings.adaptiveBubbles) Column {
+                Text(stringResource(R.string.appearance_adaptive_max), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)).padding(3.dp),
+                ) {
+                    listOf(0 to R.string.appearance_adaptive_none, 2 to R.string.appearance_adaptive_half, 3 to R.string.appearance_adaptive_third).forEach { (value, label) ->
+                        val on = settings.adaptiveMax == value
+                        Box(
+                            Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(50))
+                                .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                .clickable(role = Role.RadioButton) { onChange { it.copy(adaptiveMax = value) } },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(label), fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
             IconThemeChooser(settings.iconTheme) { v -> onChange { it.copy(iconTheme = v) } }
             if (settings.iconTheme == eu.eurise.feature.launcher.apps.IconThemes.BUBBLE_GLASS) {
                 eu.eurise.core.designsystem.component.SwitchRow(

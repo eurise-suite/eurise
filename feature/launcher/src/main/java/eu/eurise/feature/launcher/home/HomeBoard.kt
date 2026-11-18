@@ -187,6 +187,30 @@ val LocalSlotMenu = compositionLocalOf<SlotMenu?> { null }
 /** Vero se la bolla ha un'altezza scelta: allora scorre tutta insieme e gli elenchi interni non hanno una barra propria. */
 val LocalBubbleFixedHeight = compositionLocalOf { false }
 
+/** Vero nelle bolle che si adattano: gli elenchi interni non scorrono da soli, si mostrano tutti. */
+val LocalBubbleGrows = compositionLocalOf { false }
+
+/** L'opzione «Bolle che si adattano» e il suo massimo (0 = nessuno, altrimenti 1/n dello schermo). */
+data class AdaptiveBubbles(val on: Boolean = false, val maxFraction: Int = 0)
+
+val LocalAdaptiveBubbles = compositionLocalOf { AdaptiveBubbles() }
+
+/** Le bolle a elenco, che con l'opzione accesa seguono il contenuto (le altre non cambiano con la giornata). */
+val HomeKind.adapts: Boolean
+    get() = this == HomeKind.Agenda || this == HomeKind.TodayTasks || this == HomeKind.Comms ||
+        this == HomeKind.NextEvent || this == HomeKind.Meds || this == HomeKind.Codes
+
+/**
+ * Lo scatto della maniglia dell'altezza (richiesta del 18 novembre): vicino all'altezza di una bolla affiancata, entro
+ * [SnapDp], la prende. Restituisce l'altezza da usare e se ha scattato.
+ */
+fun snapHeight(dp: Int, neighbours: List<Int>): Pair<Int, Boolean> {
+    val near = neighbours.filter { it > 0 }.minByOrNull { kotlin.math.abs(it - dp) } ?: return dp to false
+    return if (kotlin.math.abs(near - dp) <= SnapDp) near to true else dp to false
+}
+
+const val SnapDp = 12
+
 /** La larghezza della bolla: sotto certe misure (per esempio in formato quadrato) i comandi vanno a capo. */
 val LocalBubbleWidth = compositionLocalOf { 400.dp }
 
@@ -217,6 +241,11 @@ fun HomeBoard(
     content: @Composable (HomeSlot, Modifier) -> Unit,
 ) {
     val naturals = remember { mutableStateMapOf<String, Int>() }
+    val adaptive = LocalAdaptiveBubbles.current
+    val maxGrow = if (adaptive.on && adaptive.maxFraction > 0) (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp / adaptive.maxFraction).dp else null
+    fun grows(s: HomeSlot) = adaptive.on && s.kind.adapts
+    // La bolla la cui altezza è appena scattata su quella della vicina: lo dice un'etichetta.
+    var snapped by remember { mutableStateOf<String?>(null) }
     val carry = LocalDeskCarry.current
     val deskPage = LocalDeskPage.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -259,13 +288,16 @@ fun HomeBoard(
             Column(verticalArrangement = Arrangement.spacedBy(if (editing) 18.dp else Gap)) {
                 homeRows(slots).forEach { row ->
                     // Altezza comune delle schede legate: quella scelta dall'utente o la più alta delle naturali.
-                    val linked = if (row.size > 1) row.filter { !slots[it].free } else emptyList()
+                    // Con l'opzione accesa le bolle che si adattano vanno ognuna per conto suo.
+                    val linked = if (row.size > 1) row.filter { !slots[it].free && !grows(slots[it]) } else emptyList()
                     val chosen = linked.map { slots[it].height }.filter { it > 0 }.maxOrNull()
                     val natural = linked.mapNotNull { naturals[slots[it].key] }.maxOrNull()?.let { with(density) { it.toDp() } }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.Top) {
                         row.forEachIndexed { pos, index ->
                             val slot = slots[index]
+                            val growing = grows(slot)
                             val heightMod = when {
+                                growing -> maxGrow?.let { Modifier.heightIn(max = it) } ?: Modifier
                                 index in linked && chosen != null -> Modifier.height(chosen.dp)
                                 index in linked && natural != null -> Modifier.heightIn(min = natural)
                                 slot.height > 0 -> Modifier.height(slot.height.dp)
@@ -289,7 +321,8 @@ fun HomeBoard(
                             ) {
                                 androidx.compose.runtime.CompositionLocalProvider(
                                     LocalPillMeasure provides { h -> if (naturals[slot.key] != h) naturals[slot.key] = h },
-                                    LocalBubbleFixedHeight provides (slot.height > 0 || (index in linked && chosen != null)),
+                                    LocalBubbleFixedHeight provides (!growing && (slot.height > 0 || (index in linked && chosen != null))),
+                                    LocalBubbleGrows provides growing,
                                     LocalSlotMenu provides SlotMenu(
                                         open = menuFor == slot.key,
                                         close = { menuFor = null },
@@ -319,6 +352,7 @@ fun HomeBoard(
                                         slot = slot,
                                         linkedLeft = pos > 0,
                                         isLinked = pos > 0 && !slot.free && !slots[row[pos - 1]].free,
+                                        canLink = !growing && (pos == 0 || !grows(slots[row[pos - 1]])),
                                         rowPx = rowPx,
                                         onRemove = {
                                             // Un widget tolto libera il suo numero presso Android.
@@ -333,15 +367,32 @@ fun HomeBoard(
                                                 else -> (naturals[slot.key] ?: 200).toFloat()
                                             }
                                         },
-                                        onHeight = { px ->
-                                            val dp = with(density) { px.toDp().value.toInt() }.coerceIn(MinHeight, 900)
+                                        // Chi si adatta non ha maniglia dell'altezza: la decide il contenuto.
+                                        onHeight = if (growing) null else ({ px ->
+                                            val raw = with(density) { px.toDp().value.toInt() }.coerceIn(MinHeight, 900)
+                                            // Scatta sull'altezza di una vicina non legata, se ci si avvicina.
+                                            val others = row.filter { it != index && !(it in linked && index in linked) }.mapNotNull { i ->
+                                                val s = latest.getOrNull(i) ?: return@mapNotNull null
+                                                if (s.height > 0 && !grows(s)) s.height else naturals[s.key]?.let { with(density) { it.toDp().value.toInt() } }
+                                            }
+                                            val (dp, hit) = snapHeight(raw, others)
+                                            if (hit && snapped != slot.key) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                            snapped = if (hit) slot.key else null
                                             onChange(applyHeight(latest, slot.key, dp))
-                                        },
+                                        }),
                                         onToggleLink = { onChange(toggleHomeLink(latest, row.map { latest.getOrNull(it)?.key }, pos)) },
                                         onDragStart = { dragging = slot.key; dragStart = bounds[slot.key]; dragOffset = Offset.Zero },
                                         onDrag = { dragOffset += it },
                                         onDragEnd = endDrag,
                                     )
+                                    if (snapped == slot.key) {
+                                        Text(
+                                            stringResource(R.string.home_same_height),
+                                            fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
+                                                .clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 10.dp, vertical = 4.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -419,11 +470,12 @@ private fun androidx.compose.foundation.layout.BoxScope.EditFrame(
     slot: HomeSlot,
     linkedLeft: Boolean,
     isLinked: Boolean,
+    canLink: Boolean,
     rowPx: Float,
     onRemove: () -> Unit,
     onWidth: (Float) -> Unit,
     currentHeightPx: () -> Float,
-    onHeight: (Float) -> Unit,
+    onHeight: ((Float) -> Unit)?,
     onToggleLink: () -> Unit,
     onDragStart: () -> Unit,
     onDrag: (Offset) -> Unit,
@@ -465,12 +517,12 @@ private fun androidx.compose.foundation.layout.BoxScope.EditFrame(
     // Altezza: maniglia in basso, continua.
     var startHeight by remember { mutableStateOf(0f) }
     var dragY by remember { mutableStateOf(0f) }
-    Handle(
+    if (onHeight != null) Handle(
         Modifier.align(Alignment.BottomCenter).offset(y = 11.dp),
         onStart = { startHeight = currentHeightPx(); dragY = 0f },
         onDrag = { _, dy -> dragY += dy; onHeight(startHeight + dragY) },
     )
-    if (linkedLeft) {
+    if (linkedLeft && canLink) {
         val label = stringResource(if (isLinked) R.string.card_unlink else R.string.card_link)
         Box(
             Modifier.align(Alignment.CenterStart).offset(x = (-19).dp).size(28.dp).clip(CircleShape)

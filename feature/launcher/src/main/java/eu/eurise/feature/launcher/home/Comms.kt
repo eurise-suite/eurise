@@ -309,7 +309,8 @@ private fun commsSwipes(m: MessageItem, onBubble: (MessageItem) -> Unit, actions
 @Composable
 internal fun ScrollWithBar(maxHeight: Dp, independent: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     // In una bolla di altezza scelta scorre già tutta la bolla: una seconda barra confonderebbe.
-    if (!independent && LocalBubbleFixedHeight.current) {
+    // Nelle bolle che si adattano l'elenco è tutto visibile: è la bolla ad allungarsi.
+    if (LocalBubbleGrows.current || (!independent && LocalBubbleFixedHeight.current)) {
         Column(content = content)
         return
     }
