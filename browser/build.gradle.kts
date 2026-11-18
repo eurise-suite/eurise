@@ -35,7 +35,8 @@ android {
     }
 
     sourceSets {
-        getByName("main") { assets.srcDir(layout.buildDirectory.dir("generated/eurise-assets")) }
+        // AGP 9 non accetta più un Provider qui: si passa la cartella già risolta (la copia resta legata da copyExtension).
+        getByName("main") { assets.srcDir(layout.buildDirectory.dir("generated/eurise-assets").get().asFile) }
     }
 
     signingConfigs {

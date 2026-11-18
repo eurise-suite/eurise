@@ -28,13 +28,13 @@ class CodesProvider : ContentProvider() {
         repo.expireIfDue()
         val open = repo.state.value as? VaultState.Open
         if (open == null) {
-            cursor.addRow(arrayOf(STATE_LOCKED, null, null, null))
+            cursor.addRow(arrayOf<Any?>(STATE_LOCKED, null, null, null))
             return cursor
         }
         val now = System.currentTimeMillis()
         open.entries.filter { target in it.apps }.sortedByDescending { it.lastUsed }.forEach { e ->
             val totp = Totp.parse(e.otp) ?: return@forEach
-            cursor.addRow(arrayOf(STATE_OPEN, e.title, totp.code(now), totp.remaining(now)))
+            cursor.addRow(arrayOf<Any?>(STATE_OPEN, e.title, totp.code(now), totp.remaining(now)))
         }
         return cursor
     }
