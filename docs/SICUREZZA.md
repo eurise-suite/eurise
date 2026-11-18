@@ -66,7 +66,7 @@ nuova in un posto solo: `core/suite/.../SuiteAccess.kt` (per la Tastiera, proget
 
 | Trovato | Rischio reale? | Come è chiuso |
 |---|---|---|
-| Nove fornitori (`SecretsProvider`, `LoginsProvider` di Password, Aspetto, Luoghi, Privacy, Destinazioni, Oggi, I tuoi giorni, Meteo sul percorso) e `Uscite` del motore di Office accettavano **sia** `SUITE` **sia** `SUITE_DEBUG`. | **Sì, grave**. Con le versioni ufficiali nessuna app della suite dichiara `SUITE_DEBUG`: un'app qualunque lo dichiara da sé come permesso normale, lo ottiene senza chiedere e legge tutte le password dei siti (a cassaforte aperta), la chiave di recupero della Chat, i luoghi, e salva accessi nuovi. Sul telefono con le sole app di prova vale lo stesso con `SUITE`. | Solo il permesso della propria variante (`SuiteAccess.callerAllowed`). |
+| Nove fornitori (`SecretsProvider`, `LoginsProvider` di Password, Aspetto, Luoghi, Privacy, Destinazioni, Oggi, I tuoi giorni, Meteo sul percorso) e `Uscite` del motore di Office accettavano nel codice **sia** `SUITE` **sia** `SUITE_DEBUG`. | **No, per fortuna** (difetto di difesa, non porta aperta). Quei fornitori hanno `android:permission` nel manifesto e Android, quando un'app apre un fornitore, la respinge se non ha quel permesso, anche per `call()`. Provato sull'emulatore: anche con le app di prima l'app curiosa (con `SUITE` dichiarato da sé) è respinta con «Permission Denial». Sarebbe diventato sfruttabile togliendo il permesso dal manifesto. | Solo il permesso della propria variante anche nel codice (`SuiteAccess.callerAllowed`). |
 | Le app mandavano dati a un altro pacchetto o fornitore della suite senza controllare chi c'è dietro (chiave di recupero della Chat ai segreti, password salvate dal Browser e da Posta, messaggi dei pazienti dello Studio alla Chat, audio da trascrivere a Voce, testo da tradurre a Leggi, testo della Tastiera, domande ad AI, SMS da mandare). | **Sì, medio**: solo se l'app destinataria non è installata un'altra può prendere lo stesso nome di pacchetto o indirizzo e ricevere tutto. | Prima di chiamare, legarsi o aprire: il destinatario deve avere il nostro permesso di firma (`SuiteAccess.call`, `isSuitePackage`; `SuiteTrust` nella Tastiera). Leggi ora chiede anche per sé il permesso che dichiarava. |
 | `PonteActivity` (esportata) accettava `PONTE_PAIR` da chiunque: collegava subito il «computer» del codice ricevuto; il codice a sei cifre compariva solo dopo il salvataggio. | **Sì, alto**. Un'app sul telefono si collegava in silenzio come computer (appunti, avvisi di chiamate e messaggi, note, attività, appuntamenti, richieste di password con l'impronta). | L'azione passa da un alias non esportato (`.PontePair`) raggiungibile solo dal lettore QR della stessa app; da fuori si ignora. |
 | Ripristino della Tastiera (`BackupProvider.call("apply")`) senza controllo. | Basso: rimetteva solo un file già scritto dalla suite, ma chiunque poteva riavviare la Tastiera. | Controllo del permesso in `call`. |
@@ -75,8 +75,9 @@ nuova in un posto solo: `core/suite/.../SuiteAccess.kt` (per la Tastiera, proget
 | «Condividi» verso Posta, Messaggi e Modifica della Galleria con un `content://` o `file://` che punta ai dati privati dell'app stessa. | **Sì, basso**: la Posta o un MMS potevano allegare i propri file (account) a un messaggio che l'utente poi manda; la Galleria salvare fuori una copia dell'area protetta. | `SuiteAccess.isForeignUri`: i file propri si scartano. |
 | I cinque fornitori «Persone» (Posta, Messaggi, Telefono, Chat) e lo Studio, esportati senza permesso nel manifesto: controllano già il permesso giusto in `call()`. Gli altri componenti (circa 70): avvio, condivisione, apertura di file, servizi di sistema (`BIND_*`, `BROADCAST_SMS`…), ricevitori di avvio, importazioni con conferma (calendario, contatti, Password). | No: protetti dal sistema, con conferma dell'utente o senza dati in uscita. | Restano come sono. |
 
-Prova sull'emulatore: `prova-porte.yml` (curiosa respinta ovunque, amica accolta, Ponte chiuso). **Esito: da riportare
-qui dopo il primo giro.**
+Prova sull'emulatore: `prova-porte.yml`, **verde il 18 novembre, notte** (giro 839 di Compila). Prima (giro di `brand`):
+la curiosa si collegava al Ponte come computer (`ponte=APERTA`), respinta altrove. Dopo: respinta ovunque, Ponte chiuso;
+l'amica con la chiave della suite usa ancora segreti, Password, SMS, ripristino della Tastiera e codici 2FA.
 
 Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - Intent verso l'app Eurise senza controllo del destinatario: «Salva in» e «Apri da» di File, Scanner, Carte (`FilesContract`
@@ -127,6 +128,11 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - **Dependabot** (`.github/dependabot.yml`): azioni, Gradle della suite e della Tastiera, proposte raggruppate sul ramo
   `brand`; GeckoView esclusa (regola «sempre l'ultima» del Browser). Scelto al posto di Renovate perché non richiede di
   installare un'app esterna con accesso al repository.
+- Primo giro di OSV-Scanner (18 novembre, notte): **16 vulnerabilità note** nelle librerie C incluse: 14 in Tesseract
+  5.5.1 (OCR di Leggi e dello Scanner: le immagini possono arrivare da fuori), una in protobuf-lite dentro SentencePiece
+  (traduzione). Tesseract portato a **5.5.4** e Leptonica a **1.87.0** (ultime uscite); SentencePiece/protobuf-lite
+  aperto (copia di browsermt/slimt, da aggiornare a parte). Rischio reale: medio (serve un'immagine preparata che l'utente
+  passi all'OCR).
 - **OSV-Scanner** (`vulnerabilita.yml`, v2.7.1 con impronta verificata): a ogni push su `brand` e `prova-sicurezza` e ogni
   lunedì; legge le impronte Gradle e riconosce le librerie C incluse in `third_party` (llama.cpp, whisper.cpp, tesseract,
   leptonica, sentencepiece…). Una vulnerabilità nota fa diventare rosso il giro.

@@ -291,8 +291,41 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
     if (!wi_.DeSerialize(fp)) {
       return false;
     }
+    // The first dimension is the number of output rows, so it must be at
+    // least 1. A zero dimension would leave the reshaped weight matrix and
+    // the scale vector empty, so reject the corrupt model.
+    if (wi_.dim1() < 1) {
+      return false;
+    }
+    // The second dimension is the number of inputs plus the bias column, so
+    // it must be at least 1. A zero dimension would make IntSimdMatrix::Init
+    // compute num_in = dim2 - 1 = -1 and read the bias from array_[-1] on an
+    // unallocated (null) array, so reject the corrupt model instead of
+    // crashing.
+    if (wi_.dim2() < 1) {
+      return false;
+    }
     uint32_t size;
     if (!fp->DeSerialize(&size)) {
+      return false;
+    }
+    // Reject unreasonably large scale vectors.
+    if (size > 100000000) {
+      return false;
+    }
+    // The scales are stored as doubles, so the file must contain that many
+    // bytes. Checking this before the allocation below stops a tiny crafted
+    // file from forcing a huge allocation.
+    if (static_cast<uint64_t>(size) * sizeof(double) > fp->RemainingBytes()) {
+      return false;
+    }
+    // A valid model carries one scale per output row: the generic
+    // (non-SIMD) MatrixDotVector reads scales_[i] for i < wi_.dim1(), and the
+    // SIMD path resizes to a rounded size no smaller than that. So the
+    // serialized scale vector must have at least wi_.dim1() entries. Check
+    // this here, before resizing below, where a zero size would otherwise
+    // make the &scales_[0] read index an empty vector (undefined behaviour).
+    if (static_cast<size_t>(size) < static_cast<size_t>(wi_.dim1())) {
       return false;
     }
 #ifdef FAST_FLOAT
@@ -306,7 +339,7 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
     }
 #else
     scales_.resize(size);
-    if (!fp->DeSerialize(&scales_[0], size)) {
+    if (size > 0 && !fp->DeSerialize(&scales_[0], size)) {
       return false;
     }
     for (auto &scale : scales_) {
@@ -339,18 +372,45 @@ bool WeightMatrix::DeSerialize(bool training, TFile *fp) {
 
 // As DeSerialize, but reads an old (float) format WeightMatrix for
 // backward compatibility.
-bool WeightMatrix::DeSerializeOld(bool training, TFile *fp) {
+bool WeightMatrix::DeSerializeOld([[maybe_unused]] bool training,
+                                  [[maybe_unused]] TFile *fp) {
 #ifdef FAST_FLOAT
   // Not implemented.
-  ASSERT_HOST(!"not implemented");
+  // Return false, like the other error paths of DeSerialize, instead of
+  // aborting the process: a corrupt or malicious model file with a weight
+  // matrix in the old (float) format must simply fail to load. Aborting
+  // (via ASSERT_HOST) would take down the whole host application, e.g. a
+  // long-running service embedding Tesseract, on a single bad input.
+  tprintf("Error: old format weight matrix not supported, "
+          "cannot load model\n");
   return false;
 #else
   if (int_mode_) {
     if (!wi_.DeSerialize(fp)) {
       return false;
     }
-    std::vector<float> old_scales;
-    if (!fp->DeSerialize(old_scales)) {
+    uint32_t num_scales;
+    if (!fp->DeSerialize(&num_scales)) {
+      return false;
+    }
+    // Reject unreasonably large scale vectors.
+    if (num_scales > 100000000) {
+      return false;
+    }
+    // The scales are stored as floats, so the file must contain that many
+    // bytes. Checking this before the allocation below stops a tiny crafted
+    // file from forcing a huge allocation.
+    if (static_cast<uint64_t>(num_scales) * sizeof(float) > fp->RemainingBytes()) {
+      return false;
+    }
+    std::vector<float> old_scales(num_scales);
+    if (num_scales > 0 && !fp->DeSerialize(&old_scales[0], num_scales)) {
+      return false;
+    }
+    // The generic (non-SIMD) IntSimdMatrix::MatrixDotVector reads
+    // scales_[i] for i < wi_.dim1(), so the old format carries at least
+    // one scale per output row as well.
+    if (old_scales.size() < static_cast<size_t>(wi_.dim1())) {
       return false;
     }
     scales_.reserve(old_scales.size());
@@ -427,7 +487,7 @@ void WeightMatrix::VectorDotMatrix(const TFloat *u, TFloat *v) const {
 // Note that (matching MatrixDotVector) v[last][] is missing, presumed 1.0.
 // Runs parallel if requested. Note that u and v must be transposed.
 void WeightMatrix::SumOuterTransposed(const TransposedArray &u, const TransposedArray &v,
-                                      bool in_parallel) {
+                                      [[maybe_unused]] bool in_parallel) {
   assert(!int_mode_);
   int num_outputs = dw_.dim1();
   assert(u.dim1() == num_outputs);

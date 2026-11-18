@@ -146,6 +146,13 @@ public:
   public:
     Iterator() { // constructor
       list = nullptr;
+      prev = nullptr;
+      current = nullptr;
+      next = nullptr;
+      cycle_pt = nullptr; // await explicit set
+      started_cycling = false;
+      ex_current_was_last = false;
+      ex_current_was_cycle_pt = false;
     } // unassigned list
 
   /***********************************************************************
@@ -450,7 +457,6 @@ public:
         ptr = prev;
       } else {
         for (ptr = current ? current : prev; offset-- > 0; ptr = ptr->next) {
-          ;
         }
       }
 

@@ -40,6 +40,7 @@
 #include <cassert> // for assert
 #include <cstdint> // for INT32_MAX
 #include <cstring> // for strlen
+#include <string_view> // for std::string_view
 
 struct Pix;
 
@@ -328,9 +329,9 @@ bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
           : x_height;
   chopped_word->BLNormalize(block, row, pix, word->flag(W_INVERSE),
                             word_xheight, baseline_shift, numeric_mode,
-                            norm_mode_hint, norm_box, &denorm);
+                            norm_box, &denorm);
   blob_row = row;
-  SetupBasicsFromChoppedWord(unicharset_in);
+  SetupBasicsFromChoppedWord();
   SetupBlamerBundle();
   int num_blobs = chopped_word->NumBlobs();
   ratings = new MATRIX(num_blobs, kWordrecMaxNumJoinChunks);
@@ -341,7 +342,7 @@ bool WERD_RES::SetupForRecognition(const UNICHARSET &unicharset_in,
 // Set up the seam array, bln_boxes, best_choice, and raw_choice to empty
 // accumulators from a made chopped word.  We presume the fields are already
 // empty.
-void WERD_RES::SetupBasicsFromChoppedWord(const UNICHARSET &unicharset_in) {
+void WERD_RES::SetupBasicsFromChoppedWord() {
   bln_boxes = tesseract::BoxWord::CopyFromNormalized(chopped_word);
   start_seam_list(chopped_word, &seam_array);
   SetupBlobWidthsAndGaps();
@@ -935,7 +936,7 @@ void WERD_RES::FakeWordFromRatings(PermuterType permuter) {
     UNICHAR_ID unichar_id = UNICHAR_SPACE;
     // Initialize rating and certainty like in WERD_CHOICE::make_bad().
     float rating = WERD_CHOICE::kBadRating;
-    float certainty = -FLT_MAX;
+    float certainty = WERD_CHOICE::kBadCertainty;
     BLOB_CHOICE_LIST *choices = ratings->get(b, b);
     if (choices != nullptr && !choices->empty()) {
       BLOB_CHOICE_IT bc_it(choices);
@@ -1021,14 +1022,19 @@ void WERD_RES::MergeAdjacentBlobs(unsigned index) {
 // Utility function for fix_quotes
 // Return true if the next character in the string (given the UTF8 length in
 // bytes) is a quote character.
-static int is_simple_quote(const char *signed_str, int length) {
-  const auto *str = reinterpret_cast<const unsigned char *>(signed_str);
+static int is_simple_quote(std::string_view str) {
   // Standard 1 byte quotes.
-  return (length == 1 && (*str == '\'' || *str == '`')) ||
-         // UTF-8 3 bytes curved quotes.
-         (length == 3 &&
-          ((*str == 0xe2 && *(str + 1) == 0x80 && *(str + 2) == 0x98) ||
-           (*str == 0xe2 && *(str + 1) == 0x80 && *(str + 2) == 0x99)));
+  if (str.size() == 1 && (str[0] == '\'' || str[0] == '`')) {
+    return true;
+  }
+  // UTF-8 3 bytes curved quotes.
+  if (str.size() == 3 && static_cast<unsigned char>(str[0]) == 0xe2 &&
+      static_cast<unsigned char>(str[1]) == 0x80 &&
+      (static_cast<unsigned char>(str[2]) == 0x98 ||
+       static_cast<unsigned char>(str[2]) == 0x99)) {
+    return true;
+  }
+  return false;
 }
 
 // Callback helper for fix_quotes returns a double quote if both
@@ -1036,8 +1042,7 @@ static int is_simple_quote(const char *signed_str, int length) {
 UNICHAR_ID WERD_RES::BothQuotes(UNICHAR_ID id1, UNICHAR_ID id2) {
   const char *ch = uch_set->id_to_unichar(id1);
   const char *next_ch = uch_set->id_to_unichar(id2);
-  if (is_simple_quote(ch, strlen(ch)) &&
-      is_simple_quote(next_ch, strlen(next_ch))) {
+  if (is_simple_quote(ch) && is_simple_quote(next_ch)) {
     return uch_set->unichar_to_id("\"");
   }
   return INVALID_UNICHAR_ID;
@@ -1382,6 +1387,27 @@ void PAGE_RES_IT::ReplaceCurrentWord(
     return;
   }
   WERD_RES *input_word = word();
+  // With several languages, a language whose recognizer returns no words
+  // passes back its copy of the input word (made by
+  // WERD_RES::InitForRetryRecognition), which shares the input WERD. That
+  // WERD is deleted below, so give such a word a WERD of its own, with a
+  // fake blob at each blob of the input word, like the words from LSTM.
+  for (size_t w = 0; w < words->size(); ++w) {
+    WERD_RES *word_w = (*words)[w];
+    if (word_w->word == input_word->word) {
+      WERD *new_word = input_word->word->shallow_copy();
+      new_word->set_flag(W_BOL, false);
+      new_word->set_flag(W_EOL, false);
+      C_BLOB_IT src_it(input_word->word->cblob_list());
+      C_BLOB_IT dest_it(new_word->cblob_list());
+      for (src_it.mark_cycle_pt(); !src_it.cycled_list(); src_it.forward()) {
+        dest_it.add_after_then_move(
+            C_BLOB::FakeBlob(src_it.data()->bounding_box()));
+      }
+      word_w->word = new_word;
+      word_w->combination = true; // It owns its word.
+    }
+  }
   // Set the BOL/EOL flags on the words from the input word.
   if (input_word->word->flag(W_BOL)) {
     (*words)[0]->word->set_flag(W_BOL, true);
@@ -1630,7 +1656,6 @@ WERD_RES *PAGE_RES_IT::internal_forward(bool new_block, bool empty_ok) {
 
   while (!block_res_it.cycled_list()) {
     if (new_block) {
-      new_block = false;
       row_res_it.set_to_list(&block_res_it.data()->row_res_list);
       row_res_it.mark_cycle_pt();
       if (row_res_it.empty() && empty_ok) {

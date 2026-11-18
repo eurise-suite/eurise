@@ -244,8 +244,8 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
       pr_it->forward();
     }
     ASSERT_HOST(pr_it->word() != nullptr);
-    bool make_next_word_fuzzy = false;
 #ifndef DISABLED_LEGACY_ENGINE
+    bool make_next_word_fuzzy = false;
     if (!AnyLSTMLang() && ReassignDiacritics(pass_n, pr_it, &make_next_word_fuzzy)) {
       // Needs to be setup again to see the new outlines in the chopped_word.
       SetupWordPassN(pass_n, word);
@@ -258,9 +258,11 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC *monitor, PAGE_RES_IT 
               word->word->best_choice->debug_string().c_str());
     }
     pr_it->forward();
+#ifndef DISABLED_LEGACY_ENGINE
     if (make_next_word_fuzzy && pr_it->word() != nullptr) {
       pr_it->MakeCurrentWordFuzzy();
     }
+#endif // ndef DISABLED_LEGACY_ENGINE
   }
   return true;
 }
@@ -290,6 +292,21 @@ bool Tesseract::recog_all_words(PAGE_RES *page_res, ETEXT_DESC *monitor,
                                 const TBOX *target_word_box, const char *word_config,
                                 int dopasses) {
   PAGE_RES_IT page_res_it(page_res);
+
+#ifndef DISABLED_LEGACY_ENGINE
+  // Start a fresh per-pass seam-evaluation budget for the recognition pass
+  // (see choose_best_seam() in findseam.cpp, OSS-Fuzz issue 4775901406232576).
+  // Reading the parameter here (rather than at SetImage()) means a change of
+  // chop_max_seam_evals_pass between SetImage() and Recognize() takes effect.
+  // The sub-language Tesseract objects must get a budget too: words are
+  // chopped by whichever language recognizes them (RetryWithLanguage()), so
+  // a secondary language running with an unset budget would lose chopping
+  // silently.
+  ResetSeamEvalsBudget();
+  for (auto *sub_lang : sub_langs_) {
+    sub_lang->ResetSeamEvalsBudget();
+  }
+#endif // ndef DISABLED_LEGACY_ENGINE
 
   if (tessedit_minimal_rej_pass1) {
     tessedit_test_adaption.set_value(true);
@@ -1155,8 +1172,7 @@ bool Tesseract::SelectGoodDiacriticOutlines(int pass, float certainty_threshold,
   // Iteratively zero out the bit that improves the certainty the most, until
   // we get past the threshold, have zero bits, or fail to improve.
   int best_index = 0; // To zero out.
-  while (num_outlines > 1 && best_index >= 0 &&
-         (blob == nullptr || best_cert < target_cert || blob != nullptr)) {
+  while (num_outlines > 1 && best_index >= 0 && best_cert < target_cert) {
     // Find the best bit to zero out.
     best_index = -1;
     for (unsigned i = 0; i < outlines.size(); ++i) {
@@ -1417,7 +1433,7 @@ void Tesseract::classify_word_pass1(const WordData &word_data, WERD_RES **in_wor
 
 #ifndef DISABLED_LEGACY_ENGINE
   WERD_RES *word = *in_word;
-  match_word_pass_n(1, word, row, block);
+  match_word_pass_n(1, word);
   if (!word->tess_failed && !word->word->flag(W_REP_CHAR)) {
     word->tess_would_adapt = AdaptableWord(word);
     bool adapt_ok = word_adaptable(word, tessedit_tess_adaption_mode);
@@ -1506,7 +1522,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
   new_x_ht_word.SetupForRecognition(unicharset, this, BestPix(), tessedit_ocr_engine_mode, nullptr,
                                     classify_bln_numeric_mode, textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
-  match_word_pass_n(2, &new_x_ht_word, row, block);
+  match_word_pass_n(2, &new_x_ht_word);
   if (!new_x_ht_word.tess_failed) {
     int new_misfits = CountMisfitTops(&new_x_ht_word);
     if (debug_x_ht_level >= 1) {
@@ -1540,7 +1556,7 @@ bool Tesseract::TestNewNormalization(int original_misfits, float baseline_shift,
  */
 
 void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_word,
-                                    PointerVector<WERD_RES> *out_words) {
+                                    PointerVector<WERD_RES> */*out_words*/) {
   // Return if we do not want to run Tesseract.
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
     return;
@@ -1558,7 +1574,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
     if (word->x_height == 0.0f) {
       word->x_height = row->x_height();
     }
-    match_word_pass_n(2, word, row, block);
+    match_word_pass_n(2, word);
     check_debug_pt(word, 40);
   }
 
@@ -1593,7 +1609,7 @@ void Tesseract::classify_word_pass2(const WordData &word_data, WERD_RES **in_wor
  *
  * Baseline normalize the word and pass it to Tess.
  */
-void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *block) {
+void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word) {
   if (word->tess_failed) {
     return;
   }
@@ -1616,7 +1632,7 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word, ROW *row, BLOCK *b
       word->tess_accepted = tess_acceptable_word(word);
 
       // Also sets word->done flag
-      make_reject_map(word, row, pass_n);
+      make_reject_map(word, pass_n);
     }
   }
   set_word_fonts(word);
@@ -1729,7 +1745,7 @@ ACCEPTABLE_WERD_TYPE Tesseract::acceptable_word_string(const UNICHARSET &char_se
       offset += lengths[i++];
     }
     if (i - leading_punct_count < quality_min_initial_alphas_reqd) {
-      goto not_a_word;
+      return check_abbreviation(char_set, s, lengths, AC_UNACCEPTABLE);
     }
     /*
 Allow a single hyphen in a lower case word
@@ -1743,7 +1759,7 @@ Allow a single hyphen in a lower case word
           offset += lengths[i++];
         }
         if (i < hyphen_pos + 3) {
-          goto not_a_word;
+          return check_abbreviation(char_set, s, lengths, AC_UNACCEPTABLE);
         }
       }
     } else {
@@ -1774,32 +1790,34 @@ Allow a single hyphen in a lower case word
     word_type = AC_UNACCEPTABLE;
   }
 
-not_a_word:
+  return check_abbreviation(char_set, s, lengths, word_type);
+}
 
+ACCEPTABLE_WERD_TYPE Tesseract::check_abbreviation(const UNICHARSET &char_set, const char *s,
+                                                   const char *lengths,
+                                                   ACCEPTABLE_WERD_TYPE word_type) {
   if (word_type == AC_UNACCEPTABLE) {
     /* Look for abbreviation string */
-    i = 0;
-    offset = 0;
+    int offset = 0;
     if (s[0] != '\0' && char_set.get_isupper(s, lengths[0])) {
       word_type = AC_UC_ABBREV;
-      while (s[offset] != '\0' && char_set.get_isupper(s + offset, lengths[i]) &&
-             lengths[i + 1] == 1 && s[offset + lengths[i]] == '.') {
-        offset += lengths[i++];
-        offset += lengths[i++];
+      while (s[offset] != '\0' && char_set.get_isupper(s + offset, lengths[offset]) &&
+             lengths[offset + 1] == 1 && s[offset + lengths[offset]] == '.') {
+        offset += lengths[offset++];
+        offset += lengths[offset++];
       }
     } else if (s[0] != '\0' && char_set.get_islower(s, lengths[0])) {
       word_type = AC_LC_ABBREV;
-      while (s[offset] != '\0' && char_set.get_islower(s + offset, lengths[i]) &&
-             lengths[i + 1] == 1 && s[offset + lengths[i]] == '.') {
-        offset += lengths[i++];
-        offset += lengths[i++];
+      while (s[offset] != '\0' && char_set.get_islower(s + offset, lengths[offset]) &&
+             lengths[offset + 1] == 1 && s[offset + lengths[offset]] == '.') {
+        offset += lengths[offset++];
+        offset += lengths[offset++];
       }
     }
     if (s[offset] != '\0') {
       word_type = AC_UNACCEPTABLE;
     }
   }
-
   return word_type;
 }
 

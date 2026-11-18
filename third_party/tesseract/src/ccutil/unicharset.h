@@ -569,7 +569,7 @@ public:
   // src_unicharset with ranges in it. The unicharsets don't have to be the
   // same, and graphemes are correctly accounted for.
   void ExpandRangesFromOther(const UNICHARSET &src);
-  // Makes this a copy of src. Clears this completely first, so the automattic
+  // Makes this a copy of src. Clears this completely first, so the automatic
   // ids will not be present in this if not in src.
   void CopyFrom(const UNICHARSET &src);
   // For each id in src, if it does not occur in this, add it, as in
@@ -754,7 +754,8 @@ public:
   // SpecialUnicharCodes available. If false then there are normal unichars
   // at these codes and they should not be used.
   bool has_special_codes() const {
-    return get_fragment(UNICHAR_BROKEN) != nullptr &&
+    return contains_unichar_id(UNICHAR_BROKEN) &&
+           get_fragment(UNICHAR_BROKEN) != nullptr &&
            strcmp(id_to_unichar(UNICHAR_BROKEN),
                   kSpecialUnicharCodes[UNICHAR_BROKEN]) == 0;
   }

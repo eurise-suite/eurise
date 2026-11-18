@@ -17,7 +17,6 @@
  **********************************************************************/
 
 #ifndef DISABLED_LEGACY_ENGINE
-#  include <allheaders.h>
 #  include <cctype>
 #  include <cerrno>
 #  include <cstring>
@@ -114,6 +113,15 @@ PAGE_RES *Tesseract::ApplyBoxes(const char *filename, bool find_segmentation,
   std::vector<std::string> texts, full_texts;
   if (!ReadAllBoxes(applybox_page, true, filename, &boxes, &texts, &full_texts, nullptr)) {
     return nullptr; // Can't do it.
+  }
+
+  // Start a fresh per-pass seam-evaluation budget for the resegmentation
+  // (see choose_best_seam() in findseam.cpp, OSS-Fuzz issue 4775901406232576).
+  // The sub-language Tesseract objects get a budget too, for consistency
+  // with recog_all_words() (their chopping paths are the same).
+  ResetSeamEvalsBudget();
+  for (auto *sub_lang : sub_langs_) {
+    sub_lang->ResetSeamEvalsBudget();
   }
 
   const int box_count = boxes.size();

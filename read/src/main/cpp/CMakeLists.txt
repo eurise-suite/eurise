@@ -27,7 +27,7 @@ target_compile_options(leptonica PRIVATE -O2 -w -ffunction-sections -fdata-secti
 # Tesseract ------------------------------------------------------------------------------------------------------
 set(TESSERACT_MAJOR 5)
 set(TESSERACT_MINOR 5)
-set(TESSERACT_MICRO 1)
+set(TESSERACT_MICRO 4)
 set(GENERIC_MAJOR_VERSION ${TESSERACT_MAJOR})
 set(GENERIC_MINOR_VERSION ${TESSERACT_MINOR})
 set(GENERIC_MICRO_VERSION ${TESSERACT_MICRO})
@@ -40,7 +40,7 @@ foreach(dir ${TESS_DIRS})
   file(GLOB part ${TESS}/src/${dir}/*.cpp)
   list(APPEND TESS_SRC ${part})
 endforeach()
-# Motore legacy tolto (i modelli tessdata_fast sono solo LSTM): stesso elenco del CMakeLists di Tesseract 5.5.1.
+# Motore legacy tolto (i modelli tessdata_fast sono solo LSTM): stesso elenco del CMakeLists di Tesseract 5.5.1 (5.5.4 ha tolto mf.cpp).
 set(TESS_LEGACY
     ccmain/adaptions.cpp ccmain/docqual.cpp ccmain/equationdetect.cpp ccmain/fixspace.cpp ccmain/fixxht.cpp
     ccmain/osdetect.cpp ccmain/par_control.cpp ccmain/recogtraining.cpp ccmain/superscript.cpp ccmain/tessbox.cpp

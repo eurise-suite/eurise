@@ -35,6 +35,7 @@
 namespace tesseract {
 
 const float WERD_CHOICE::kBadRating = 100000.0;
+const float WERD_CHOICE::kBadCertainty = -100000.0f;
 // Min offset in baseline-normalized coords to make a character a subscript.
 const int kMinSubscriptOffset = 20;
 // Min offset in baseline-normalized coords to make a character a superscript.
@@ -433,7 +434,7 @@ void WERD_CHOICE::string_and_lengths(std::string *word_str, std::string *word_le
     const char *ch = unicharset_->id_to_unichar_ext(unichar_ids_[i]);
     *word_str += ch;
     if (word_lengths_str != nullptr) {
-      *word_lengths_str += (char)strlen(ch);
+      *word_lengths_str += static_cast<char>(strlen(ch));
     }
   }
 }
@@ -660,7 +661,7 @@ int WERD_CHOICE::GetTopScriptID() const {
   return max_sid;
 }
 
-// Fixes the state_ for a chop at the given blob_posiiton.
+// Fixes the state_ for a chop at the given blob_position.
 void WERD_CHOICE::UpdateStateForSplit(int blob_position) {
   int total_chunks = 0;
   for (unsigned i = 0; i < length_; ++i) {
