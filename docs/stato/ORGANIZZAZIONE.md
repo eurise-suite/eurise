@@ -385,6 +385,13 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   ScrAccoglienzaA e B (scelta la C). Restano BrandLogo e BrandMark (componente usato da altre tavole). Le versioni
   precedenti della tela le conservano. **Parte comune toccata**: `canvas.json` della tela.
 
+## 18 novembre, sera: bolle che si adattano accese di base (giro 838)
+- Il proprietario vedeva le bolle vuote restare alte: l'opzione era spenta di base e non l'aveva accesa (poi l'ha accesa
+  e funziona). Dal giro 838 l'opzione è **accesa di base**, anche dove l'app c'era già (chiave nuova
+  `adaptive_bubbles_on`, perché la vecchia era salvata spenta); si spegne da Aspetto. Questo cambia la scelta
+  «spenta di base» del giro 800: da confermare con il proprietario.
+- Giro 838 pubblicato in `apk-prova` con `run_id` alle 22:57.
+
 ## 18 novembre, pomeriggio: Calendario, Messaggi e Appunti fissati si adattano anche loro (giro 837)
 - **Cosa cambia**: con «Bolle che si adattano» accesa le tre schede non hanno più l'altezza fissa (Calendario 300,
   Messaggi 240, Appunti fissati 200) ma seguono il contenuto, ognuna per conto suo, senza maniglia dell'altezza né catena,
