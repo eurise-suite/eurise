@@ -12,6 +12,9 @@ plugins {
  */
 val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
+// Processore del motore: arm64 per i telefoni; x86_64 solo per provare l'avvio sull'emulatore (prova-avvio-browser.yml).
+val geckoAbi = (findProperty("eurise.geckoAbi") as String?) ?: "arm64-v8a"
+
 android {
     namespace = "eu.eurise.browser"
     compileSdk = 35
@@ -28,7 +31,7 @@ android {
         buildConfigField("String", "SUITE_PERMISSION", "\"eu.eurise.permission.SUITE\"")
         // Pacchetti di prova (.debug) delle altre app: non BuildConfig.DEBUG, che segue «debuggable» (spento anche in prova).
         buildConfigField("boolean", "SUITE_DEBUG", "false")
-        ndk { abiFilters += listOf("arm64-v8a") }
+        ndk { abiFilters += listOf(geckoAbi) }
     }
 
     sourceSets {
@@ -113,7 +116,7 @@ dependencies {
     // di quello della suite (8.7.3): per il prototipo la versione più recente che compila con compileSdk 35. Prima della
     // versione ufficiale va aggiornato il plugin per tutta la suite e si torna all'ultima GeckoView (aggiornamenti di
     // sicurezza del motore).
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:[130.0,142.0)")
+    implementation("org.mozilla.geckoview:geckoview-$geckoAbi:[130.0,142.0)")
     // Il QR dell'indirizzo (tavola BrwIndirizzo): ZXing è già nella suite (Scanner, Calendario, Chat).
     implementation(libs.zxing.core)
     implementation(libs.androidx.core.ktx)
