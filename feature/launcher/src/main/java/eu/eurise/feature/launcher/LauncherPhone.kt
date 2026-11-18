@@ -310,8 +310,10 @@ internal fun HomeBubble(
             }
             eu.eurise.feature.launcher.home.HomeKind.App -> PageApp(slot, home, actions, mod)
             else -> slot.kind.card?.let { kind ->
-                // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza.
-                val sized = if (slot.height > 0) mod else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
+                // Le schede delle altre pagine hanno bisogno di un'altezza: se manca, quella di partenza. Quelle che si
+                // adattano la prendono dal contenuto (il massimo, se c'è, lo mette HomeBoard).
+                val sized = if (slot.height > 0 || eu.eurise.feature.launcher.home.LocalBubbleGrows.current) mod
+                    else mod.height(slot.kind.defaultHeight.coerceAtLeast(120).dp)
                 home.cardBody(kind, sized)
             }
         }

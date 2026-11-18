@@ -195,10 +195,14 @@ data class AdaptiveBubbles(val on: Boolean = false, val maxFraction: Int = 0)
 
 val LocalAdaptiveBubbles = compositionLocalOf { AdaptiveBubbles() }
 
-/** Le bolle a elenco, che con l'opzione accesa seguono il contenuto (le altre non cambiano con la giornata). */
+/**
+ * Le bolle a elenco, che con l'opzione accesa seguono il contenuto (le altre non cambiano con la giornata). Dal 18
+ * novembre anche le schede Calendario, Messaggi e Appunti fissati, che prima avevano un'altezza fissa.
+ */
 val HomeKind.adapts: Boolean
     get() = this == HomeKind.Agenda || this == HomeKind.TodayTasks || this == HomeKind.Comms ||
-        this == HomeKind.NextEvent || this == HomeKind.Meds || this == HomeKind.Codes
+        this == HomeKind.NextEvent || this == HomeKind.Meds || this == HomeKind.Codes ||
+        this == HomeKind.Calendar || this == HomeKind.Messages || this == HomeKind.Notes
 
 /**
  * Lo scatto della maniglia dell'altezza (richiesta del 18 novembre): vicino all'altezza di una bolla affiancata, entro

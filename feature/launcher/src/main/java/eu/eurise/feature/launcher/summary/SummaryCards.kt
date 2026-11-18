@@ -111,12 +111,18 @@ fun SummaryCard(
         } else {
             Label(title)
         }
-        // Il contenuto scorre dentro la scheda: si vede quanto entra, il resto scendendo.
-        Column(
-            Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            content = content,
-        )
+        // Il contenuto scorre dentro la scheda: si vede quanto entra, il resto scendendo. Nelle bolle che si adattano
+        // senza altezza massima la scheda è alta quanto il contenuto: niente scorrimento (l'altezza non avrebbe un limite).
+        val grows = eu.eurise.feature.launcher.home.LocalBubbleGrows.current
+        if (grows && eu.eurise.feature.launcher.home.LocalAdaptiveBubbles.current.maxFraction == 0) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        } else {
+            Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = content,
+            )
+        }
     }
 }
 
@@ -201,6 +207,10 @@ private fun InteractiveMonth(
             tasks.mapNotNull { it.due }
     }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    // Nella bolla che si adatta si vedono tutti gli impegni e le cose da fare del giorno: è la bolla ad allungarsi.
+    val grows = eu.eurise.feature.launcher.home.LocalBubbleGrows.current
+    val maxEvents = if (grows) Int.MAX_VALUE else 4
+    val maxTasks = if (grows) Int.MAX_VALUE else 3
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -278,7 +288,7 @@ private fun InteractiveMonth(
             if (dayEvents.isEmpty() && dayTasks.isEmpty()) {
                 Text(stringResource(R.string.calendar_day_free), color = muted, fontSize = 12.5.sp, lineHeight = 16.sp)
             }
-            dayEvents.take(4).forEach { e ->
+            dayEvents.take(maxEvents).forEach { e ->
                 val tint = CalendarTint.nearest(e.color).colors()
                 Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable { onOpenDay(selected) }, verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.width(3.dp).height(30.dp).background(tint.dot, RoundedCornerShape(2.dp)))
@@ -292,8 +302,8 @@ private fun InteractiveMonth(
                     }
                 }
             }
-            if (dayEvents.size > 4) Text(stringResource(R.string.today_more_tasks, dayEvents.size - 4), color = muted, fontSize = 11.5.sp)
-            dayTasks.take(3).forEach { t ->
+            if (dayEvents.size > maxEvents) Text(stringResource(R.string.today_more_tasks, dayEvents.size - maxEvents), color = muted, fontSize = 11.5.sp)
+            dayTasks.take(maxTasks).forEach { t ->
                 Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onOpenTasks), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(13.dp).border(1.6.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), CircleShape))
                     Spacer(Modifier.width(8.dp))
@@ -510,7 +520,8 @@ fun PinnedNotesCard(
     size: CardSize,
     modifier: Modifier = Modifier,
 ) {
-    val max = 12
+    // Nella bolla che si adatta tutte le note fissate; altrimenti le prime dodici, il resto scorrendo nella scheda.
+    val max = if (eu.eurise.feature.launcher.home.LocalBubbleGrows.current) Int.MAX_VALUE else 12
     SummaryCard(stringResource(R.string.card_notes), hazeState, modifier, onClick = onOpenAll) {
         if (notes.isEmpty()) {
             Text(stringResource(R.string.card_notes_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 17.sp)

@@ -17,6 +17,9 @@ class SnapHeightTest {
     fun onlyListKindsAdapt() {
         assertEquals(true, HomeKind.Agenda.adapts)
         assertEquals(true, HomeKind.TodayTasks.adapts)
+        assertEquals(true, HomeKind.Calendar.adapts)
+        assertEquals(true, HomeKind.Messages.adapts)
+        assertEquals(true, HomeKind.Notes.adapts)
         assertEquals(false, HomeKind.Weather.adapts)
         assertEquals(false, HomeKind.AppWidget.adapts)
     }
