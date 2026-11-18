@@ -51,6 +51,11 @@ import eu.eurise.gallery.logic.Retouch
 import eu.eurise.gallery.logic.applyLocal
 import eu.eurise.gallery.logic.brushMasks
 import eu.eurise.gallery.logic.heal
+import eu.eurise.gallery.logic.EffectSpace
+import eu.eurise.gallery.logic.Plane
+import eu.eurise.gallery.logic.applyEffect
+import eu.eurise.gallery.logic.needsGuide
+import eu.eurise.gallery.logic.prepareEffect
 import eu.eurise.gallery.logic.FaceSpot
 import eu.eurise.gallery.logic.MaskGrid
 import eu.eurise.gallery.logic.blendMasked
@@ -339,6 +344,7 @@ fun renderEdited(context: Context, item: MediaItem, state: EditState): Bitmap {
     }
     val mask = if (state.toneMask.isEmpty) null else maskGrid(state.toneMask, w / h)
     developBitmap(out, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust), mask, state.straighten, straightenScale(state.straighten, w, h))
+    if (state.effects.isNotEmpty()) effectsBitmap(context, out, state)
     drawVignette(canvas, state.crop.left * w, state.crop.top * h, state.crop.right * w, state.crop.bottom * h, adjust.vignette)
     drawMarks(canvas, w, h, state.texts, state.strokes)
     bitmap = out
@@ -552,6 +558,51 @@ fun detectFaces(source: Bitmap): List<FaceSpot> {
         FaceSpot(mid.x / sw, mid.y / sh, f.eyesDistance() / short)
     }
 }
+
+/**
+ * Gli effetti sulla foto già raddrizzata (copia salvata), uno alla volta e a fasce. La copia piccola di guida si rifà
+ * a ogni effetto dall'immagine com'è a quel passo; il pennello di ogni effetto si riporta dalla foto prima di raddrizzarla.
+ */
+fun effectsBitmap(context: Context, bitmap: Bitmap, state: EditState) {
+    val w = bitmap.width
+    val h = bitmap.height
+    val space = EffectSpace.of(w, h, state.crop)
+    val angle = state.straighten
+    val scale = straightenScale(angle, w.toFloat(), h.toFloat())
+    for (e in state.effects) {
+        val input = prepareEffect(e, if (e.needsGuide) planeOf(bitmap) else null, e.second?.let { loadPlane(context, it, 2048) })
+        val grid = if (e.mask.isEmpty) null else maskGrid(e.mask, w / h.toFloat())
+        val band = maxOf(64, 1_048_576 / w)
+        var y = 0
+        while (y < h) {
+            val n = minOf(band, h - y)
+            val px = IntArray(w * n).also { bitmap.getPixels(it, 0, w, 0, y, w, n) }
+            val before = if (grid != null) px.copyOf() else null
+            applyEffect(px, w, n, y, w, h, e, input, space)
+            if (grid != null && before != null) blendMasked(px, before, w, n, y, w, h, grid, angle, scale)
+            bitmap.setPixels(px, 0, w, 0, y, w, n)
+            y += n
+        }
+    }
+}
+
+/** La copia piccola di una foto, per gli effetti che guardano attorno ai pixel. */
+fun planeOf(bitmap: Bitmap, maxSide: Int = 512): Plane {
+    val k = minOf(1f, maxSide.toFloat() / maxOf(bitmap.width, bitmap.height))
+    val small = if (k < 1f) Bitmap.createScaledBitmap(bitmap, (bitmap.width * k).roundToInt().coerceAtLeast(1), (bitmap.height * k).roundToInt().coerceAtLeast(1), true) else bitmap
+    val px = IntArray(small.width * small.height).also { small.getPixels(it, 0, small.width, 0, 0, small.width, small.height) }
+    return Plane.of(px, small.width, small.height, maxSide)
+}
+
+/** La seconda foto della Doppia esposizione, ridotta a [maxSide]. Null se non si apre più. */
+fun loadPlane(context: Context, uri: String, maxSide: Int): Plane? = runCatching {
+    val src = ImageDecoder.createSource(context.contentResolver, Uri.parse(uri))
+    val bmp = ImageDecoder.decodeBitmap(src) { decoder, info, _ ->
+        decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / maxSide))
+        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+    }
+    planeOf(bmp, maxSide)
+}.getOrNull()
 
 /** I bordi di Espandi attorno alla foto ([expandPixels]). */
 fun expanded(source: Bitmap, e: Expand): Bitmap {

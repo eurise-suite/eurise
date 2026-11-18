@@ -181,6 +181,8 @@ data class EditState(
     val retouch: Retouch = Retouch(),
     /** Pennello per passo: dove valgono Regola, Curve e Filtro (tavola GalModifiche). Vuoto = ovunque. */
     val toneMask: StepMask = StepMask(),
+    /** Effetti, nell'ordine in cui si applicano (tavola GalEffetti). */
+    val effects: List<Effect> = emptyList(),
 ) {
     /** Le regolazioni a mano più il filtro dosato: quello che si applica davvero. */
     val effective: Adjust get() = when {
