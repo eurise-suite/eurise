@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le basi della chat (tavola ChatBasi): risposte, reazioni, modifica, cancella, fissa, inoltra, sondaggi. -->
+<resources>
+    <string name="ba_hint">Tieni premuto un messaggio: rispondi, reazione, modifica, cancella, fissa, inoltra</string>
+    <string name="ba_reply">Rispondi</string>
+    <string name="ba_copy">Copia</string>
+    <string name="ba_copied">Copiato</string>
+    <string name="ba_edit">Modifica</string>
+    <string name="ba_edit_hint">Modifica il messaggio</string>
+    <string name="ba_edited">modificato</string>
+    <string name="ba_editing">Modifichi il messaggio</string>
+    <string name="ba_replying_to">Rispondi a %1$s</string>
+    <string name="ba_reply_unknown">Messaggio più vecchio</string>
+    <string name="ba_cancel">Lascia perdere</string>
+    <string name="ba_pin">Fissa in cima</string>
+    <string name="ba_unpin">Togli dai fissati</string>
+    <string name="ba_pin_failed">Non fissato: in questa chat solo chi la gestisce può fissare i messaggi</string>
+    <string name="ba_pinned">Fissato</string>
+    <string name="ba_pinned_old">un messaggio più vecchio</string>
+    <string name="ba_forward">Inoltra</string>
+    <string name="ba_forward_to">Inoltra a…</string>
+    <string name="ba_forwarded">Inoltrato a %1$s</string>
+    <string name="ba_delete">Cancella per tutti</string>
+    <string name="ba_delete_confirm">Tocca di nuovo: si cancella per tutti</string>
+    <string name="ba_reaction_desc">%1$s, %2$d. Tocca per mettere o togliere la tua</string>
+
+    <string name="ba_poll_new">Sondaggio</string>
+    <string name="ba_poll_by">Sondaggio · %1$s</string>
+    <string name="ba_poll_question">La domanda</string>
+    <string name="ba_poll_answer">Risposta %1$d</string>
+    <string name="ba_poll_add">+ Un\'altra risposta</string>
+    <string name="ba_poll_when">Si chiude</string>
+    <string name="ba_poll_never">Quando lo chiudi tu</string>
+    <string name="ba_poll_1h">Tra un\'ora</string>
+    <string name="ba_poll_tomorrow">Domani alle 20</string>
+    <string name="ba_poll_week">Tra una settimana</string>
+    <string name="ba_poll_send">Manda il sondaggio</string>
+    <string name="ba_poll_votes">%1$d voti</string>
+    <string name="ba_poll_vote_one">1 voto</string>
+    <string name="ba_poll_closes">Si chiude %1$s</string>
+    <string name="ba_poll_ended">Chiuso</string>
+    <string name="ba_poll_open_vote">voto palese</string>
+    <string name="ba_poll_secret_vote">risultati alla chiusura</string>
+    <string name="ba_poll_close">Chiudi il sondaggio</string>
+    <string name="ba_poll_closed_text">Il sondaggio è chiuso</string>
+</resources>

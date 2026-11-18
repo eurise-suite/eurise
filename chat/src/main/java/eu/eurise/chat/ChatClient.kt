@@ -74,6 +74,15 @@ class ChatClient(val session: Session) {
     fun sendMessage(roomId: String, content: JSONObject): String =
         put("/_matrix/client/v3/rooms/${enc(roomId)}/send/m.room.message/${UUID.randomUUID()}", content).optString("event_id")
 
+    /** Un evento di un tipo qualsiasi (reazioni, voti dei sondaggi) in una stanza non cifrata. */
+    fun sendEvent(roomId: String, type: String, content: JSONObject): String =
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/send/${enc(type)}/${UUID.randomUUID()}", content).optString("event_id")
+
+    /** Uno stato della stanza (es. i messaggi fissati). */
+    fun setState(roomId: String, type: String, content: JSONObject, stateKey: String = "") {
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/state/${enc(type)}/${enc(stateKey)}", content)
+    }
+
     fun read(roomId: String, eventId: String) {
         runCatching { post("/_matrix/client/v3/rooms/${enc(roomId)}/receipt/m.read/${enc(eventId)}", JSONObject()) }
     }

@@ -1,8 +1,11 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package eu.eurise.chat
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -67,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
@@ -496,9 +501,17 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     val events = model.timeline(roomId)
     val list = rememberLazyListState()
     var draft by remember(roomId) { mutableStateOf("") }
+    // Le basi (tavola ChatBasi): il messaggio tenuto premuto, a cui si risponde, che si modifica o si inoltra.
+    var menuFor by remember(roomId) { mutableStateOf<Event?>(null) }
+    var replyTo by remember(roomId) { mutableStateOf<Event?>(null) }
+    var editing by remember(roomId) { mutableStateOf<Event?>(null) }
+    var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
+    var pollSheet by remember(roomId) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val failed = stringResource(R.string.ch_send_failed)
     val fileFailed = stringResource(R.string.ch_file_failed)
     val attachLabel = stringResource(R.string.ch_attach)
+    val pollLabel = stringResource(R.string.ba_poll_new)
     LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(0); model.open(roomId) }
     LaunchedEffect(roomId) { model.checkPeer(roomId) }
     val peer = model.peerOf(roomId)
@@ -558,13 +571,37 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         } else if (group && tab == 2) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
         } else {
+            // I messaggi fissati: tocco per andarci.
+            PinnedBar(model, roomId) { id ->
+                val i = events.asReversed().indexOfFirst { it.id == id }
+                if (i >= 0) scope.launch { list.animateScrollToItem(i) }
+            }
             LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
                 items(events.asReversed(), key = { it.id }) { e ->
-                    if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = e.sender == me)
-                    else if (e.kind == Event.Kind.Shift) ShiftBubble(model, actions, roomId, e, mine = e.sender == me)
-                    else Bubble(model, e, mine = e.sender == me) { model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) } }
+                    val mine = e.sender == me
+                    if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = mine)
+                    else if (e.kind == Event.Kind.Shift) ShiftBubble(model, actions, roomId, e, mine = mine)
+                    else if (e.kind == Event.Kind.Poll) Column {
+                        PollBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
+                    else Column {
+                        Bubble(model, roomId, e, mine = mine, onLong = { if (e.kind != Event.Kind.State) menuFor = e }) {
+                            model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) }
+                        }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
+                }
+                // Una volta sola: come si arriva a rispondere, reagire, modificare… (tavola ChatBasi).
+                if (!model.basiHintSeen && events.any { it.kind == Event.Kind.Text }) item(key = "basi-hint") {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.ba_hint), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = scheme.onSurfaceVariant,
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(scheme.onSurface.copy(alpha = 0.06f)).padding(horizontal = 10.dp, vertical = 4.dp))
+                    }
                 }
             }
+            replyTo?.let { e -> ComposerContext(stringResource(R.string.ba_replying_to, model.nameOf(e.sender)), if (e.kind == Event.Kind.Poll) e.text else shownText(model, e)) { replyTo = null } }
+            editing?.let { e -> ComposerContext(stringResource(R.string.ba_editing), shownText(model, e)) { editing = null; draft = "" } }
             if (bussola == ChatModel.BussolaRole.Patient) UrgentHint()
             // La graffetta (tavola ChatAllega): un file qualsiasi, cifrato se la chat lo è; nelle chat di La mia Bussola
             // apre «Invia un referto», con le sue regole (tavola BusReferto).
@@ -574,9 +611,14 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
+                // Tocco: un file; pressione lunga: un sondaggio (tavola ChatBasi).
                 Box(
-                    Modifier.size(46.dp).clip(CircleShape).background(scheme.surface).clickable(role = Role.Button) {
-                        if (bussola != null) { reportSheet = true; return@clickable }
+                    Modifier.size(46.dp).clip(CircleShape).background(scheme.surface).combinedClickable(
+                        role = Role.Button,
+                        onLongClick = { if (bussola == null) pollSheet = true },
+                        onLongClickLabel = pollLabel,
+                    ) {
+                        if (bussola != null) { reportSheet = true; return@combinedClickable }
                         actions.pickFile(arrayOf("*/*")) { uri ->
                             val p = uri?.let(model::describe) ?: return@pickFile
                             model.sendFile(roomId, p, null) { actions.toast(actions.text(it)) }
@@ -586,7 +628,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 ) { Icon(EuriseIcons.attach(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(19.dp)) }
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (draft.isEmpty()) Text(stringResource(R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
+                    if (draft.isEmpty()) Text(stringResource(if (editing != null) R.string.ba_edit_hint else R.string.ch_write), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                     BasicTextField(value = draft, onValueChange = { draft = it }, maxLines = 6,
                         textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
                         modifier = Modifier.fillMaxWidth())
@@ -598,17 +640,36 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         .clickable(enabled = draft.isNotBlank(), role = Role.Button) {
                             val text = draft.trim()
                             draft = ""
-                            model.send(roomId, text) { actions.toast(failed) }
+                            val r = replyTo
+                            val ed = editing
+                            replyTo = null
+                            editing = null
+                            when {
+                                ed != null -> model.edit(roomId, ed.id, text) { actions.toast(failed) }
+                                r != null -> model.reply(roomId, r.id, text) { actions.toast(failed) }
+                                else -> model.send(roomId, text) { actions.toast(failed) }
+                            }
                         }.semantics { contentDescription = send },
                     contentAlignment = Alignment.Center,
                 ) { Icon(EuriseIcons.send(2.2f), null, tint = scheme.onPrimary, modifier = Modifier.size(19.dp)) }
             }
         }
     }
+    // Fogli sopra la conversazione (tavola ChatBasi).
+    menuFor?.let { e ->
+        MessageMenu(model, actions, roomId, e, mine = e.sender == me,
+            onReply = { replyTo = e; editing = null },
+            onEdit = { editing = e; replyTo = null; draft = shownText(model, e) },
+            onForward = { forwarding = e; menuFor = null },
+            onClose = { menuFor = null; model.basiHintDone() })
+    }
+    forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
+    if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
 }
 
 @Composable
-private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Unit) {
+private fun Bubble(model: ChatModel, roomId: String, e: Event, mine: Boolean, onLong: () -> Unit, onMedia: () -> Unit) {
+    @Suppress("UNUSED_VARIABLE") val tick = model.relationsTick
     val scheme = MaterialTheme.colorScheme
     if (e.kind == Event.Kind.Expense || e.kind == Event.Kind.Settlement) { ExpenseBubble(model, e, mine); return }
     if (e.kind == Event.Kind.State) {
@@ -627,13 +688,14 @@ private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Uni
         Column(
             Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp))
                 .background(if (mine) scheme.primary else scheme.surface)
-                .clickable(enabled = e.mediaUrl != null, onClick = onMedia)
+                .combinedClickable(onClick = { if (e.mediaUrl != null) onMedia() }, onLongClick = onLong)
                 .padding(horizontal = 13.dp, vertical = 8.dp),
         ) {
             val fg = if (mine) scheme.onPrimary else scheme.onSurface
             if (!mine && !model.room(model.openRoom ?: "").let { it?.direct ?: false }) {
                 Text(model.nameOf(e.sender), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tintFor(e.sender))
             }
+            ReplyQuote(model, roomId, e, if (mine) scheme.onPrimary else scheme.onSurface)
             when (e.kind) {
                 Event.Kind.Encrypted -> Text(stringResource(R.string.ch_encrypted_long), fontSize = 13.5.sp, fontStyle = FontStyle.Italic, color = fg.copy(alpha = 0.75f))
                 Event.Kind.Image -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -644,10 +706,12 @@ private fun Bubble(model: ChatModel, e: Event, mine: Boolean, onMedia: () -> Uni
                     Icon(EuriseIcons.attach(2f), null, tint = fg, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))
                     Text(e.text, fontSize = 14.sp, color = fg, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                else -> Text(e.text, fontSize = 15.sp, lineHeight = 21.sp, color = fg,
+                else -> Text(shownText(model, e), fontSize = 15.sp, lineHeight = 21.sp, color = fg,
                     fontStyle = if (e.kind == Event.Kind.Notice) FontStyle.Italic else FontStyle.Normal)
             }
-            Text(if (e.id.startsWith("local:")) "…" else DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.time)),
+            val edited = model.relations.edited(e.id, e.sender) != null
+            Text(if (e.id.startsWith("local:")) "…" else DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.time)) +
+                if (edited) " · " + stringResource(R.string.ba_edited) else "",
                 fontSize = 10.5.sp, color = fg.copy(alpha = 0.65f), modifier = Modifier.align(Alignment.End))
         }
     }

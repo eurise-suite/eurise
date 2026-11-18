@@ -27,8 +27,10 @@ data class Event(
     val mediaUrl: String? = null,
     /** Per spese e pagamenti del gruppo: il contenuto del messaggio (JSON), letto da [Expenses]. */
     val data: String? = null,
+    /** Il messaggio a cui risponde (tavola ChatBasi). */
+    val replyTo: String? = null,
 ) {
-    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement, Bussola, Shift }
+    enum class Kind { Text, Notice, Image, File, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll }
 }
 
 /**
@@ -65,10 +67,17 @@ object Matrix {
         val time = o.optLong("origin_server_ts")
         val content = o.optJSONObject("content") ?: JSONObject()
         if (o.has("redacted_because") || (o.optJSONObject("unsigned")?.has("redacted_because") == true)) return null
-        return when (o.optString("type")) {
+        val type = o.optString("type")
+        // Un sondaggio (tavola ChatBasi): domanda e risposte nel contenuto, i voti arrivano come riferimenti (Relations).
+        if (type in Relations.POLL_START) {
+            val p = Relations.poll(content) ?: return null
+            return Event(id, sender, p.question, time, Event.Kind.Poll, data = content.toString())
+        }
+        val reply = Relations.replyTo(content)
+        return when (type) {
             "m.room.encrypted" -> Event(id, sender, "", time, Event.Kind.Encrypted)
             "m.room.message" -> {
-                val body = content.optString("body")
+                val body = if (reply != null) Relations.stripFallback(content.optString("body")) else content.optString("body")
                 // Un file: «url» in chiaro, o dentro «file» (stanze cifrate: chiave e impronta, vedi Attachments).
                 val media = content.optString("url").ifEmpty { content.optJSONObject("file")?.optString("url").orEmpty() }.ifEmpty { null }
                 // Con la didascalia (Matrix 1.10) il nome del file sta in «filename» e «body» è il testo.
@@ -78,9 +87,9 @@ object Matrix {
                     return Event(id, sender, body, time, Event.Kind.Bussola, media, data = content.toString())
                 }
                 when (content.optString("msgtype")) {
-                    "m.image" -> Event(id, sender, name, time, Event.Kind.Image, media, data = content.toString())
+                    "m.image" -> Event(id, sender, name, time, Event.Kind.Image, media, data = content.toString(), replyTo = reply)
                     "m.file", "m.video", "m.audio" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
-                    "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice)
+                    "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice, replyTo = reply)
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())
                     // Turni del gruppo: piano, disponibilità, cambi e risposte (vedi Shifts).
@@ -88,7 +97,7 @@ object Matrix {
                     // La richiesta di verifica di una persona: una riga al centro, non un messaggio.
                     "m.key.verification.request" -> Event(id, sender, "verify:" + (names[sender] ?: localpart(sender)), time, Event.Kind.State)
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
-                    else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text)
+                    else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text, replyTo = reply)
                 }
             }
             "m.room.member" -> {

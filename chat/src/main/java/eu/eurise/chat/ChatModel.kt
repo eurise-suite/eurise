@@ -364,6 +364,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     private fun resolve(solved: List<Pair<String, JSONObject>>) {
         if (solved.isEmpty()) return
         solved.forEach { (roomId, json) ->
+            relate(roomId, org.json.JSONArray().put(json))
             val e = Matrix.event(json, data[roomId]?.names.orEmpty()) ?: return@forEach
             val list = timeline(roomId)
             val i = list.indexOfFirst { it.id == e.id }
@@ -415,7 +416,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 val list = timeline(id)
                 if (tl?.optBoolean("limited") == true && list.isNotEmpty()) list.clear()
                 if (list.isEmpty()) s.prevBatch = tl?.optString("prev_batch")?.ifEmpty { null } ?: s.prevBatch
-                val fresh = Matrix.events(tlEvents, s.names).filter { ev -> list.none { it.id == ev.id } }
+                relate(id, tlEvents)
+                val fresh = Matrix.events(tlEvents, s.names).filter { ev -> list.none { it.id == ev.id } && !relations.redacted(ev.id) }
                 // L'eco locale di un messaggio inviato da qui lascia il posto a quello vero.
                 if (fresh.isNotEmpty()) list.removeAll { it.id.startsWith("local:") && fresh.any { f -> f.sender == me && f.text == it.text } }
                 list.addAll(fresh)
@@ -505,7 +507,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 }
             }
         } ?: run { s.prevBatch = from; return false }
-        val chunk = Matrix.events(r.optJSONArray("chunk"), s.names).reversed()
+        relate(roomId, r.optJSONArray("chunk"))
+        val chunk = Matrix.events(r.optJSONArray("chunk"), s.names).reversed().filter { !relations.redacted(it.id) }
         val list = timeline(roomId)
         list.addAll(0, chunk.filter { e -> list.none { it.id == e.id } })
         s.prevBatch = r.optString("end").ifEmpty { null }
@@ -649,25 +652,133 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         sendContent(roomId, JSONObject().put("msgtype", "m.text").put("body", text), Event.Kind.Text, failed)
 
     /** Un messaggio qualsiasi (testo, spesa, pagamento): eco locale subito, cifrato se la stanza lo è. */
-    private fun sendContent(roomId: String, content: JSONObject, kind: Event.Kind, failed: () -> Unit) {
-        val c = client ?: return
+    private fun sendContent(roomId: String, content: JSONObject, kind: Event.Kind, failed: () -> Unit, type: String = "m.room.message") {
         val me = session?.userId.orEmpty()
-        val text = content.optString("body")
+        // L'eco locale ha lo stesso testo del messaggio che arriverà (per i sondaggi, la domanda).
+        val text = if (kind == Event.Kind.Poll) Relations.poll(content)?.question.orEmpty() else content.optString("body")
         val local = Event("local:" + System.nanoTime(), me, text, System.currentTimeMillis(), kind,
-            data = if (kind == Event.Kind.Text) null else content.toString())
+            data = if (kind == Event.Kind.Text) null else content.toString(), replyTo = Relations.replyTo(content))
         timeline(roomId).add(local)
+        sendEvent(roomId, type, content) { timeline(roomId).remove(local); failed() }
+    }
+
+    /** Manda un evento di un tipo qualsiasi, cifrato se la stanza lo è. */
+    private fun sendEvent(roomId: String, type: String, content: JSONObject, failed: () -> Unit) {
+        val c = client ?: return
         val encrypted = data[roomId]?.encrypted == true
         scope.launch {
             val ok = withContext(Dispatchers.IO) {
                 runCatching {
                     if (encrypted) {
                         val cr = cryptoFor(c.session) ?: error("crypto")
-                        c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), "m.room.message", content))
-                    } else c.sendMessage(roomId, content)
+                        c.sendEncrypted(roomId, cr.encrypt(c, roomId, c.joinedMembers(roomId), type, content))
+                    } else c.sendEvent(roomId, type, content)
                 }.isSuccess
             }
-            if (!ok) { timeline(roomId).remove(local); failed() }
+            if (!ok) failed()
         }
+    }
+
+    // --- Le basi (tavola ChatBasi): risposte, reazioni, modifiche, cancellazioni, fissati, inoltri, sondaggi ---
+
+    /** L'avviso «Tieni premuto un messaggio…» si vede finché non si usa il menu la prima volta. */
+    var basiHintSeen by mutableStateOf(context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE).getBoolean("basi_hint", false))
+        private set
+    fun basiHintDone() {
+        if (basiHintSeen) return
+        basiHintSeen = true
+        context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE).edit().putBoolean("basi_hint", true).apply()
+    }
+
+    /** Reazioni, modifiche, voti e cancellazioni di tutte le stanze, per messaggio. */
+    val relations = Relations.Store()
+    /** Cambia a ogni reazione, modifica, voto o messaggio fissato, per ridisegnare. */
+    var relationsTick by mutableStateOf(0)
+        private set
+
+    /** Raccoglie i riferimenti di un elenco di eventi grezzi; una cancellazione toglie il messaggio dalla conversazione. */
+    private fun relate(roomId: String, a: org.json.JSONArray?) {
+        a ?: return
+        var changed = false
+        for (i in 0 until a.length()) {
+            val o = a.optJSONObject(i) ?: continue
+            if (o.optString("type") == Relations.PIN_STATE) changed = true
+            val r = Relations.read(o) ?: continue
+            if (relations.add(r)) {
+                changed = true
+                if (r is Relations.Redaction) timeline(roomId).removeAll { it.id == r.target }
+            }
+        }
+        if (changed) relationsTick++
+    }
+
+    fun reply(roomId: String, target: String, text: String, failed: () -> Unit) =
+        sendContent(roomId, Relations.reply(text, target), Event.Kind.Text, failed)
+
+    /** Mette o toglie (se c'è già la mia) una reazione. */
+    fun react(roomId: String, target: String, key: String, failed: () -> Unit) {
+        val mine = relations.chips(target, session?.userId.orEmpty()).firstOrNull { it.key == key }?.mine
+        if (mine != null) delete(roomId, mine, failed) else sendEvent(roomId, Relations.REACTION, Relations.reaction(target, key), failed)
+    }
+
+    fun edit(roomId: String, target: String, text: String, failed: () -> Unit) {
+        // Subito sul telefono; l'evento vero arriva con la sincronizzazione.
+        relations.add(Relations.Edit("local:" + System.nanoTime(), session?.userId.orEmpty(), System.currentTimeMillis(), target, text))
+        relationsTick++
+        sendEvent(roomId, "m.room.message", Relations.edit(target, text), failed)
+    }
+
+    /** Cancella per tutti un messaggio (o una reazione): resta solo che c'era. */
+    fun delete(roomId: String, eventId: String, failed: () -> Unit) {
+        val c = client ?: return
+        relations.add(Relations.Redaction("local:" + System.nanoTime(), session?.userId.orEmpty(), System.currentTimeMillis(), eventId))
+        timeline(roomId).removeAll { it.id == eventId }
+        relationsTick++
+        publish()
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.redact(roomId, eventId, null) }.isSuccess }
+            if (!ok) failed()
+        }
+    }
+
+    /** I messaggi fissati della stanza, dal più recente. */
+    fun pinned(roomId: String): List<String> = Relations.pinned(data[roomId]?.state?.get(Relations.PIN_STATE))
+
+    fun pin(roomId: String, eventId: String, on: Boolean, failed: () -> Unit) {
+        val c = client ?: return
+        val s = data[roomId] ?: return
+        val before = pinned(roomId)
+        val after = if (on) (listOf(eventId) + before).distinct() else before - eventId
+        s.state[Relations.PIN_STATE] = Relations.pinnedState(after)
+        relationsTick++
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Relations.PIN_STATE, Relations.pinnedState(after)) }.isSuccess }
+            if (!ok) { s.state[Relations.PIN_STATE] = Relations.pinnedState(before); relationsTick++; failed() }
+        }
+    }
+
+    /** Inoltra un messaggio (testo, foto o file) in un'altra stanza, senza il riferimento alla risposta. */
+    fun forward(e: Event, toRoom: String, failed: () -> Unit) {
+        val content = e.data?.let { runCatching { JSONObject(it) }.getOrNull() }?.takeIf { e.kind == Event.Kind.Image || e.kind == Event.Kind.File }
+            ?: JSONObject().put("msgtype", "m.text").put("body", relations.edited(e.id, e.sender) ?: e.text)
+        content.remove("m.relates_to")
+        sendContent(toRoom, content, if (e.kind == Event.Kind.Image || e.kind == Event.Kind.File) e.kind else Event.Kind.Text, failed)
+    }
+
+    fun sendPoll(roomId: String, question: String, answers: List<String>, closes: Long?, failed: () -> Unit) =
+        sendContent(roomId, Relations.newPoll(question, answers, closes), Event.Kind.Poll, failed, type = "org.matrix.msc3381.poll.start")
+
+    fun vote(roomId: String, poll: String, answer: String, failed: () -> Unit) {
+        relations.add(Relations.Vote("local:" + System.nanoTime(), session?.userId.orEmpty(), System.currentTimeMillis(), poll, listOf(answer)))
+        relationsTick++
+        sendEvent(roomId, "org.matrix.msc3381.poll.response", Relations.vote(poll, listOf(answer)), failed)
+    }
+
+    fun endPoll(roomId: String, poll: String, text: String, failed: () -> Unit) {
+        if (relations.endSent(poll)) return
+        relations.add(Relations.PollEnd("local:" + System.nanoTime(), session?.userId.orEmpty(), System.currentTimeMillis(), poll))
+        relationsTick++
+        sendEvent(roomId, "org.matrix.msc3381.poll.end", Relations.endPoll(poll, text), failed)
     }
 
     fun accept(roomId: String) {
