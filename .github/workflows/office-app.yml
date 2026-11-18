@@ -46,8 +46,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 358
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Fa spazio sul disco
         run: |
           echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
@@ -89,7 +88,7 @@ jobs:
           echo "strumenti $(( $(date +%s) - t0 ))" >> "$RUNNER_TEMP/tempi.txt"
 
       - name: Riprende gli archivi esterni
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.WORK }}/tarballs
           key: office-tarballs-${{ env.CORE_COMMIT }}
@@ -97,7 +96,7 @@ jobs:
 
       - name: Riprende la ccache
         id: ccache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.WORK }}/ccache
           key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
@@ -168,7 +167,7 @@ jobs:
       - name: Salva la ccache del motore
         if: always() && env.MAKE_STATUS != ''
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.WORK }}/ccache
           key: office-ccache-${{ env.CORE_COMMIT }}-${{ github.run_id }}
@@ -180,7 +179,7 @@ jobs:
           echo "::warning::Motore non finito (stato $MAKE_STATUS): rilanciare il lavoro, riparte dalla ccache."
           exit 1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
@@ -302,7 +301,7 @@ jobs:
 
       - name: Carica le librerie non ripulite
         if: always() && env.DIAGNOSI == '1'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: office-simboli-${{ github.run_number }}
           path: ${{ env.WORK }}/simboli/
@@ -311,7 +310,7 @@ jobs:
 
       - name: Carica l'APK e i registri
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: eurise-office-app-${{ github.run_number }}
           path: ${{ env.WORK }}/out/

@@ -46,13 +46,16 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
    Room 2.7.2, compileSdk 37, Compose BOM 2026.08.00. Restano: le altre librerie (AndroidX, OkHttp 5, CameraX, Media3,
    PDFBox…), il passaggio al Kotlin di AGP e al DSL nuovo, la Tastiera (progetto Gradle a parte).
 3. GeckoView: dalla 141 (agosto 2025) alla **160** (16 novembre 2026); da ora sempre l'ultima uscita a ogni giro.
-4. Aggiornamenti automatici (Renovate), vulnerabilità note a ogni giro (OSV-Scanner), verifica delle librerie di Gradle
-   (`verification-metadata.xml`), azioni di GitHub fissate allo SHA.
+4. Aggiornamenti automatici, vulnerabilità note a ogni giro (OSV-Scanner), verifica delle librerie di Gradle
+   (`verification-metadata.xml`), azioni di GitHub fissate allo SHA. **Avviato il 18 novembre, notte** (sotto).
 5. Revisione delle porte d'ingresso: componenti esportati e fornitori di dati, crittografia di Password, backup e Ponte.
    **Fatta il 18 novembre, notte** (sotto); restano le voci «Aperto» in fondo alla sezione.
 6. Correzioni già note: `allowBackup="true"` nella Tastiera. **Fatta il 18 novembre, notte**, con le regole di estrazione
    complete in tutte le app (sotto).
 7. `SECURITY.md` (come segnalare una falla), modello delle minacce, revisione esterna prima della 1.0 (NLnet / NGI).
+   **`SECURITY.md` e `docs/MINACCE.md` scritti il 18 novembre, notte.** Passo del proprietario: accendere in GitHub
+   Settings → Code security «Private vulnerability reporting», «Dependabot alerts» e «Dependabot security updates» (da qui
+   non si può: serve l'amministratore).
 8. Computer: Ponte con accoppiamento cifrato e autenticato, estensione Firefox con i soli permessi necessari, Flatpak
    su runtime aggiornato.
 
@@ -117,4 +120,19 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   di estrazione (`eurise_no_backup.xml`; nell'APK principale `data_extraction_rules.xml`) che escludono tutto, anche la
   memoria protetta del dispositivo (`device_*`), dove la Tastiera tiene i suoi dati. I dati passano solo dal backup cifrato
   della suite.
+
+## Catena di compilazione e librerie (18 novembre 2026, notte)
+- **Azioni di GitHub fissate allo SHA** in tutti i flussi (13 azioni, commento con la versione accanto): un'azione
+  manomessa a monte non entra più nei nostri giri. Dependabot le aggiorna (SHA nuovi) ogni lunedì.
+- **Dependabot** (`.github/dependabot.yml`): azioni, Gradle della suite e della Tastiera, proposte raggruppate sul ramo
+  `brand`; GeckoView esclusa (regola «sempre l'ultima» del Browser). Scelto al posto di Renovate perché non richiede di
+  installare un'app esterna con accesso al repository.
+- **OSV-Scanner** (`vulnerabilita.yml`, v2.7.1 con impronta verificata): a ogni push su `brand` e `prova-sicurezza` e ogni
+  lunedì; legge le impronte Gradle e riconosce le librerie C incluse in `third_party` (llama.cpp, whisper.cpp, tesseract,
+  leptonica, sentencepiece…). Una vulnerabilità nota fa diventare rosso il giro.
+- **Impronte delle librerie** (`librerie-verificate.yml`, a mano): compila tutto scrivendo
+  `gradle/verification-metadata.xml` (e quello della Tastiera) e lo spinge sul ramo. Per ora
+  `org.gradle.dependency.verification=lenient` (segnala senza fermare: altri progetti compilano sullo stesso ramo); a file
+  completo e giri puliti si passa a `strict`.
+- Rete: nessun traffico in chiaro (target SDK 35, nessuna eccezione); lettori XML senza DTD (Password, WebDAV, Office).
 

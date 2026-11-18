@@ -27,8 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Lo script di firma e la vecchia chiave di prova (serve a firmare la prova di rotazione).
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Trova il giro
         id: giro
         env:
@@ -53,13 +52,13 @@ jobs:
           echo "office=$office" >> "$GITHUB_OUTPUT"
           echo "num=$num" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           run-id: ${{ steps.giro.outputs.id }}
           github-token: ${{ github.token }}
           path: artefatti
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         if: steps.giro.outputs.mappe != ''
         with:
           run-id: ${{ steps.giro.outputs.mappe }}
@@ -68,7 +67,7 @@ jobs:
 
       # «Eurise Office Motore» (lavoro a parte, molto lungo): l'ultimo riuscito, fuori da artefatti/. Office (leggero)
       # arriva invece dal giro di Compila, con gli altri APK.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         if: steps.giro.outputs.office != ''
         with:
           run-id: ${{ steps.giro.outputs.office }}

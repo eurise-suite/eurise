@@ -1,0 +1,34 @@
+# Aggiornamenti automatici (piano di sicurezza, punto 4; docs/SICUREZZA.md). Proposte sul ramo brand, raggruppate per
+# non sommergere il proprietario; le correzioni di sicurezza arrivano anche fuori calendario. Si uniscono solo dopo
+# che Compila APK e le prove passano. GeckoView non è qui: la tiene aggiornata la regola «sempre l'ultima» del Browser.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: brand
+    schedule: { interval: weekly, day: monday, time: "05:13", timezone: Europe/Rome }
+    groups:
+      azioni: { patterns: ["*"] }
+    commit-message: { prefix: "Dipendenze (azioni)" }
+
+  - package-ecosystem: gradle
+    directory: "/"
+    target-branch: brand
+    schedule: { interval: weekly, day: monday, time: "05:23", timezone: Europe/Rome }
+    open-pull-requests-limit: 5
+    groups:
+      androidx: { patterns: ["androidx.*", "com.android.*"] }
+      kotlin: { patterns: ["org.jetbrains.kotlin*", "com.google.devtools.ksp*", "org.jetbrains.kotlinx*"] }
+      altre: { patterns: ["*"], exclude-patterns: ["org.mozilla.geckoview*"] }
+    ignore:
+      - dependency-name: "org.mozilla.geckoview*"
+    commit-message: { prefix: "Dipendenze (Gradle)" }
+
+  - package-ecosystem: gradle
+    directory: "/keyboard"
+    target-branch: brand
+    schedule: { interval: weekly, day: monday, time: "05:33", timezone: Europe/Rome }
+    open-pull-requests-limit: 3
+    groups:
+      tastiera: { patterns: ["*"] }
+    commit-message: { prefix: "Dipendenze (Tastiera)" }

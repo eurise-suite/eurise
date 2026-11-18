@@ -20,8 +20,7 @@ jobs:
   prova:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: APK di prova attuali (vecchia chiave) e copie firmate con la chiave nuova
         env:
           GH_TOKEN: ${{ github.token }}
@@ -58,7 +57,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Emulatore e prova
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           target: google_apis

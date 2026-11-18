@@ -1,0 +1,42 @@
+name: Vulnerabilità note
+
+# Piano di sicurezza, punto 4 (docs/SICUREZZA.md): OSV-Scanner su tutte le librerie dichiarate (Gradle tramite
+# gradle/verification-metadata.xml, Tastiera, estensione Firefox, script) a ogni push su brand e prova-sicurezza, ogni
+# lunedì e a mano. Il riepilogo va nella pagina del giro; con una vulnerabilità nota il giro diventa rosso.
+on:
+  push:
+    branches: [brand, prova-sicurezza]
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: OSV-Scanner (versione fissata, impronta verificata)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OSV: v2.7.1
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/osv && cd /tmp/osv
+          gh release download "$OSV" -R google/osv-scanner -p osv-scanner_linux_amd64 -p osv-scanner_SHA256SUMS
+          grep " osv-scanner_linux_amd64$" osv-scanner_SHA256SUMS | sha256sum -c -
+          chmod +x osv-scanner_linux_amd64
+      - name: Scansione
+        run: |
+          set -o pipefail
+          # Anche third_party: OSV riconosce le librerie C incluse (llama.cpp, whisper.cpp, tesseract, leptonica…).
+          /tmp/osv/osv-scanner_linux_amd64 scan source --recursive --format markdown . | tee osv.md
+          code=${PIPESTATUS[0]}
+          { echo "## Vulnerabilità note (OSV-Scanner)"; cat osv.md; } >> "$GITHUB_STEP_SUMMARY"
+          # 0 = nessuna; 128 = nessun file da leggere (non è un errore); il resto è una vulnerabilità o un guasto.
+          [ "$code" = 0 ] || [ "$code" = 128 ] || exit "$code"
