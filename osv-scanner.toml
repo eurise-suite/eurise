@@ -1,0 +1,7 @@
+# Eccezioni di OSV-Scanner (vulnerabilita.yml): ognuna con motivo e scadenza, poi torna a far diventare rosso il giro.
+# Elenco e decisioni in docs/SICUREZZA.md («Catena di compilazione e librerie»).
+
+[[IgnoredVulns]]
+id = "CVE-2026-1260"
+ignoreUntil = 2026-12-31
+reason = "protobuf-lite dentro SentencePiece (copia browsermt/slimt): legge solo i modelli di traduzione scaricati in HTTPS dal server di Mozilla, mai file dell'utente. Da aggiornare con slimt entro fine anno."

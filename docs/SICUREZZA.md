@@ -3,8 +3,10 @@
 Da 18 novembre 2026 sera il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file
 come suo stato. Fatto: punto 1 (chiave di prova, fasi 1 e 2 installate dal proprietario), punto 2 in parte (strumenti),
 punto 3 (GeckoView 160); il 18 novembre, notte, punti 5 e 6 (porte d'ingresso, crittografia, backup della Tastiera) nel ramo
-**`prova-sicurezza`**, da compilare e provare con `prova-porte.yml` prima di arrivare al telefono. Prossimo: punto 4
-(Renovate, OSV-Scanner, verifica delle librerie, azioni allo SHA), poi 7 e 8. Rami di lavoro rimasti, già uniti o superati:
+**`prova-sicurezza`**, prova sull'emulatore verde, **giro 842 in `apk-prova`** (Office e Mappe non toccati in quel giro:
+vengono dai loro flussi). Punto 4 avviato (azioni allo SHA, Dependabot, OSV-Scanner, impronte «lenient») e punto 7 in
+parte (`SECURITY.md`, `docs/MINACCE.md`). Prossimo: lanciare `librerie-verificate.yml` e passare a «strict»; permessi
+minimi nei flussi; Ponte con chiavi effimere; punto 8. Rami di lavoro rimasti, già uniti o superati:
 `sicurezza` (prova della firma sull'emulatore), `strumenti`, `strumenti-2`, `prova-avvio`.
 
 ## Strumenti di prova
@@ -131,7 +133,8 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - Primo giro di OSV-Scanner (18 novembre, notte): **16 vulnerabilità note** nelle librerie C incluse: 14 in Tesseract
   5.5.1 (OCR di Leggi e dello Scanner: le immagini possono arrivare da fuori), una in protobuf-lite dentro SentencePiece
   (traduzione). Tesseract portato a **5.5.4** e Leptonica a **1.87.0** (ultime uscite); SentencePiece/protobuf-lite
-  aperto (copia di browsermt/slimt, da aggiornare a parte). Rischio reale: medio (serve un'immagine preparata che l'utente
+  aperto (copia di browsermt/slimt, da aggiornare a parte): eccezione in `osv-scanner.toml` fino al 31 dicembre 2026
+  (legge solo i modelli di traduzione scaricati in HTTPS da Mozilla). Rischio reale: medio (serve un'immagine preparata che l'utente
   passi all'OCR).
 - **OSV-Scanner** (`vulnerabilita.yml`, v2.7.1 con impronta verificata): a ogni push su `brand` e `prova-sicurezza` e ogni
   lunedì; legge le impronte Gradle e riconosce le librerie C incluse in `third_party` (llama.cpp, whisper.cpp, tesseract,

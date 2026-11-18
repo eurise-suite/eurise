@@ -35,7 +35,7 @@ jobs:
         run: |
           set -o pipefail
           # Anche third_party: OSV riconosce le librerie C incluse (llama.cpp, whisper.cpp, tesseract, leptonica…).
-          /tmp/osv/osv-scanner_linux_amd64 scan source --recursive --format markdown . | tee osv.md
+          /tmp/osv/osv-scanner_linux_amd64 scan source --recursive --config osv-scanner.toml --format markdown . | tee osv.md
           code=${PIPESTATUS[0]}
           { echo "## Vulnerabilità note (OSV-Scanner)"; cat osv.md; } >> "$GITHUB_STEP_SUMMARY"
           # 0 = nessuna; 128 = nessun file da leggere (non è un errore); il resto è una vulnerabilità o un guasto.
