@@ -364,6 +364,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   menu; un'app su una pagina tenuta ferma (menu con «Modifica la pagina»).
 - Giro 782 (Compila 44198366637 su `prova-organizzazione`).
 
+## 18 novembre, mattina: pagina d'agenda (giro 827) e pulizia della tela
+- **Agenda come una vecchia agenda** (tavola `AgePagina`, approvata con le correzioni del proprietario): in alto «Buongiorno
+  Marco» (nome da Aspetto della Scrivania, `user_name` in `eurise_launcher`) e a destra «2026 · settimana 47 · 321° giorno»;
+  a sinistra, in una colonna di 88 dp, nome del giorno e mese con le lettere distribuite e il numero misurato perché due
+  cifre la riempiano (`DayNumber`, `SpreadText`); a destra meteo e massima (tolta la scheda della massima in fondo). Colori
+  del numero: blu notte i feriali, salvia i prefestivi (sabati e vigilie), amaranto i festivi (domeniche e feste,
+  `ItalianHolidays`); nome del giorno colorato solo nei prefestivi e festivi; versioni chiare per il tema Notte. Fondo
+  unico, filo quasi invisibile, niente frecce (si scorre). `AgendaText.dayKind`, `dayOfYear` con test.
+- **Numero arrotondato**: Nunito Bold con le sole cifre (`feature/today/res/font/nunito_digits_bold.ttf`, 2,6 KB, SIL OFL
+  1.1, licenza in `assets/licenze/nunito-OFL.txt`). In Aspetto della Scrivania «Numero del giorno nell'Agenda»:
+  Arrotondato (di base) o Il nostro (Plus Jakarta Sans leggero), chiave `agenda_number_ours`.
+- **Tela ripulita** su richiesta del proprietario (512 → 471 file): tolte le tavole segnate «superata» o rese inutili da
+  una scelta: tutta la pagina «App e launcher» (prima versione: LauncherPhone, LauncherSearch, LauncherDrawer,
+  LauncherSettings, LauncherTablet, LauncherTabletApps, Drive, Scanner, Galleria, Mail, Note, Calendario, Orologio,
+  Telefono, Messaggi, Contatti, PDF, Traduttore, Mappe, Assistente, Riconosci, ModalitaAuto, con la pagina e i suoi
+  titoli); il primo set di icone (Main, Home, Tendina, Icon); le prove del simbolo prima della stella polare
+  (BrandSimbolo, BrandStelle, BrandStelleVive, BrandStelleMare, BrandRiflesso, BrandProve5, BrandProve6, BrandCielo,
+  BrandSfera, BrandGlobo, con i titoli delle file); CalTreGiorniGrafite e CalFondoBianco (non scelti); ScrHomeAttuale,
+  ScrAccoglienzaA e B (scelta la C). Restano BrandLogo e BrandMark (componente usato da altre tavole). Le versioni
+  precedenti della tela le conservano. **Parte comune toccata**: `canvas.json` della tela.
+
 ## 18 novembre, notte: bolle che si adattano (giro 800) e pagina d'agenda (tavola da approvare)
 - **Decisioni del proprietario** sulle tavole ScrBolleAdatta: si allungano **senza limite**, con un massimo facoltativo;
   affiancate **ognuna per conto suo**, con uno scatto e un indicatore quando hanno la stessa altezza; elenco ok.
