@@ -247,6 +247,10 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   velocità e meteo, musica in una riga; senza guida via e finestra che si adatta (musica con copertina piccola, titolo,
   autore e testo; chiamate). Notte. Cambia le tavole approvate MapAutoSuiteGiorno/Notte e MapBollaAuto*.
 - Per metterle sulla tela serve togliere qualche tavola vecchia (512 file al massimo): da chiedere al proprietario.
+- Compilazione: commit su `brand` e `prova-mappe` (5b1d8f1); i giri 108 e seguenti sono falliti allo scarico di CoMaps
+  perché codeberg.org non si risolveva dai server di GitHub. `maps-engine.yml` ora riprova quattro volte e al secondo
+  tentativo aggiunge un DNS pubblico. APK da pubblicare appena Codeberg risponde. Nota: la coda dei giri di Mappe tiene un
+  solo giro in attesa; un giro chiesto da un altro ramo cancella quello in attesa (successo il 18 novembre).
 
 ## Prossimi passi, in ordine
 1. **Approvazione delle tavole della scheda unica in auto**, poi il codice. Prova del proprietario: solo l'ultimo APK
