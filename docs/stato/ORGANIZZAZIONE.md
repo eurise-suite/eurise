@@ -401,6 +401,11 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   (toccare un giorno con molti impegni), molti e nessun messaggio, nessuna e molte note fissate; poi «Metà schermo».
 - **Giro 837** compilato da `brand` (Compila 44295933239): lo spostamento di `prova-organizzazione` sulla stessa testa
   non è stato permesso in questa chat.
+- **«Pacchetto non valido» (risolto)**: alle 12:16 `apk-prova` era stato ripubblicato senza numero di giro e aveva preso
+  il **giro 821** (versione 921), più vecchio di quello sul telefono: Android lo rifiuta. Senza `run_id` il flusso prende
+  l'ultimo giro di Compila *riuscito per intero* su brand, e da quando il Flatpak fallisce i giri recenti risultano falliti
+  anche con gli APK buoni. Ripubblicato il 837 alle 13:52 (versione 937). Finché il Flatpak non torna verde, pubblicare
+  **sempre con `run_id`**.
 
 ## 18 novembre, notte: bolle che si adattano (giro 800) e pagina d'agenda (tavola da approvare)
 - **Decisioni del proprietario** sulle tavole ScrBolleAdatta: si allungano **senza limite**, con un massimo facoltativo;
