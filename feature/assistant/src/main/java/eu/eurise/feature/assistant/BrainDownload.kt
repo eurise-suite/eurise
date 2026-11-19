@@ -5,10 +5,7 @@ import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * I due cervelli di Alfred (tavola AlfCervello). Modelli liberi, GGUF ufficiali dei loro autori su Hugging Face, Q4_K_M.
@@ -27,19 +24,13 @@ object BrainDownload {
 
     fun file(context: Context, model: BrainModel) = File(context.getExternalFilesDir("cervello"), "${model.id}.gguf")
 
-    /** Il file da scaricare: si chiede a Hugging Face l'elenco del modello e si sceglie il Q4_K_M (come fa la compilazione). */
-    suspend fun url(model: BrainModel): String? = withContext(Dispatchers.IO) {
-        runCatching {
-            val c = URL("https://huggingface.co/api/models/${model.repo}").openConnection() as HttpURLConnection
-            c.connectTimeout = 15_000
-            c.readTimeout = 15_000
-            val json = c.inputStream.bufferedReader().use { it.readText() }
-            val files = JSONObject(json).getJSONArray("siblings").let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("rfilename") } }
-                .filter { it.endsWith(".gguf") && !it.contains("mmproj", ignoreCase = true) }
-            val pick = files.firstOrNull { "Q4_K_M" in it } ?: files.firstOrNull { "Q4" in it } ?: return@runCatching null
-            "https://huggingface.co/${model.repo}/resolve/main/$pick"
-        }.getOrNull()
-    }
+    /**
+     * Il file da scaricare: il Q4_K_M fissato a una versione precisa con la sua impronta (Contents, docs/SICUREZZA.md).
+     * Prima si chiedeva a Hugging Face l'elenco del ramo main: un file cambiato a monte arrivava a llama.cpp senza controlli
+     * (e c'era una richiesta in più).
+     */
+    @Suppress("RedundantSuspendModifier")
+    suspend fun url(model: BrainModel): String? = eu.eurise.core.suite.Contents.brain[model.repo]?.url
 
     /** Comincia lo scarico (solo Wi-Fi, con la notifica di sistema): continua anche chiudendo Alfred. */
     fun start(context: Context, model: BrainModel, url: String, title: String) {
@@ -83,6 +74,11 @@ object BrainDownload {
         val m = BrainModel.entries.firstOrNull { progress(context, it)?.second == true } ?: return false
         if (!brain.installed) return false
         onStart()
+        // llama.cpp legge il modello con codice C: solo il file con l'impronta attesa, controllata fuori dal thread
+        // dell'interfaccia (qualche secondo per 1–2 GB). Un file diverso si butta e si riscarica.
+        val pinned = eu.eurise.core.suite.Contents.brain[m.repo]
+        val genuine = pinned != null && withContext(Dispatchers.IO) { eu.eurise.core.suite.Contents.matches(file(context, m), pinned) }
+        if (!genuine) { handedOver(context, m); return false }
         val ok = brain.install(file(context, m), m.id)
         if (ok) handedOver(context, m)
         return ok

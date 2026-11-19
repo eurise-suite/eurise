@@ -13,7 +13,9 @@ enum class Model(val id: String, val megabytes: Int, val label: Int, val detail:
     Base("ggml-base-q5_1.bin", 57, R.string.voice_model_base, R.string.voice_model_base_d),
     Small("ggml-small-q5_1.bin", 181, R.string.voice_model_small, R.string.voice_model_small_d);
 
-    val url get() = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$id"
+    /** Versione fissata con la sua impronta (Contents): un file diverso da quello atteso non si usa. */
+    val pinned get() = eu.eurise.core.suite.Contents.whisper.getValue(id)
+    val url get() = pinned.url
 
     fun file(context: Context) = File(File(context.filesDir, "models"), id)
     fun installed(context: Context) = file(context).let { it.isFile && it.length() > megabytes * 900_000L }
@@ -65,6 +67,8 @@ object Downloader {
                 }
             }
             if (total > 0 && part.length() != total) error("download incompleto")
+            // Whisper legge il modello con codice C: solo il file con l'impronta attesa (docs/SICUREZZA.md).
+            if (!eu.eurise.core.suite.Contents.matches(part, model.pinned)) error("impronta diversa da quella attesa")
             target.delete()
             part.renameTo(target)
         }.getOrElse { part.delete(); false }

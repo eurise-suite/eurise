@@ -10,7 +10,9 @@ import java.net.URL
  * file dell'app. Si scaricano da GitHub (progetto tesseract-ocr); nulla del telefono viene inviato.
  */
 internal object TessModel {
-    private fun source(lang: String) = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/$lang.traineddata"
+    /** Versione fissata con la sua impronta (Contents): Tesseract legge questi file con codice C. */
+    private fun pinned(lang: String) = eu.eurise.core.suite.Contents.tesseract[lang] ?: error("lingua non prevista: $lang")
+    private fun source(lang: String) = pinned(lang).url
 
     /** Cartella dei modelli, da dare a [eu.eurise.read.ocr.Ocr.open]. */
     fun dataDir(context: Context) = File(context.filesDir, "tesseract/tessdata")
@@ -36,6 +38,10 @@ internal object TessModel {
                 200 -> {
                     val tmp = File(target.parentFile, target.name + ".part")
                     c.inputStream.use { input -> tmp.outputStream().use { input.copyTo(it) } }
+                    if (!eu.eurise.core.suite.Contents.matches(tmp, pinned(target.name.removeSuffix(".traineddata")))) {
+                        tmp.delete()
+                        error("impronta diversa da quella attesa")
+                    }
                     check(tmp.renameTo(target))
                     return
                 }

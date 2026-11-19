@@ -195,3 +195,19 @@ Il riepilogo di ogni giro sta nel registro del lavoro «Riepilogo» di `codeql.y
   modelli, voci e motori la difesa migliore è l'impronta SHA-256 attesa scritta nel codice, da aggiungere download per
   download.
 
+## Contenuti scaricati (19 novembre 2026)
+Nessun download controllava ciò che arrivava; Whisper, cervelli di Alfred e lingue dell'OCR si prendevano dal ramo `main`
+di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti in C (whisper.cpp, llama.cpp, Tesseract).
+**Rischio reale, medio**: un file cambiato a monte (account compromesso) o per strada poteva far eseguire codice nell'app.
+- Ora ogni file è fissato a un commit preciso con l'impronta SHA-256 e la lunghezza attese, in un posto solo
+  (`core/suite/.../Contents.kt`): Voce (2 modelli Whisper), Alfred (2 cervelli GGUF, niente più richiesta all'API di
+  Hugging Face per scegliere il file), Leggi e Scanner (ita, eng). Il file si usa solo se l'impronta corrisponde;
+  altrimenti si butta. Il controllo dei cervelli (1–2 GB) gira fuori dal thread dell'interfaccia.
+- Le impronte di Hugging Face le legge `impronte-contenuti.yml` (da qui Hugging Face non si raggiunge); quelle di GitHub
+  si calcolano dal repository. Aggiornare un modello = cambiare commit e impronta insieme.
+- Già a posto: il motore di Office (firma dell'APK confrontata con quella di Office prima di installarlo).
+- Aperti, rischio basso: voci e suonerie vengono dalle nostre pre-release (`voci`, `suoni`, rigenerate dai nostri flussi:
+  le impronte vanno scritte dagli stessi flussi); i modelli di traduzione si scelgono dall'elenco di Mozilla (HTTPS, nessuna
+  impronta nell'elenco); sui telefoni con Android 10 o precedente il cervello scaricato sta nella memoria esterna
+  dell'app, che un'app con il permesso di memoria può cambiare tra il controllo e la copia in Eurise AI.
+
