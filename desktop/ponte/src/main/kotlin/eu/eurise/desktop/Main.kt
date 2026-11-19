@@ -13,6 +13,7 @@ import eu.eurise.core.ponte.Message
 import eu.eurise.core.ponte.Opening
 import eu.eurise.core.ponte.Outbox
 import eu.eurise.core.ponte.Pairing
+import eu.eurise.core.ponte.Upgrade
 import eu.eurise.core.ponte.Wire
 import eu.eurise.core.ponte.confirmCode
 import java.io.File
@@ -223,10 +224,14 @@ class Server(private val store: Store) {
             }
             is Opening.Hi -> store.devices().firstOrNull { it.id == opening.deviceId } ?: run { println("Telefono sconosciuto: ${opening.deviceId}"); return }
         }
-        val link = Link.between(store.identity.keys.private, Identity.publicKey(device.publicKey), device.secret)
-        val channel = Channel(link, me = store.id)
+        // Il primo messaggio va con la chiave fissa; se il telefono ha mandato la sua chiave effimera (v2), dentro c'è la
+        // nostra e da lì si passa alla chiave di questa sola sessione (segretezza in avanti, docs/SICUREZZA.md).
+        val fixed = Channel(Link.between(store.identity.keys.private, Identity.publicKey(device.publicKey), device.secret), me = store.id)
+        val upgrade = (opening as? Opening.Hi)?.let { Upgrade.computer(store.identity, Identity.publicKey(device.publicKey), device.secret, it, store.id) }
+        val hello = mapOf("name" to name) + (upgrade?.let { mapOf(Opening.EPHEMERAL to Opening.encodeKey(it.first)) } ?: emptyMap())
+        Wire.writeFrame(output, fixed.seal(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), hello)))
+        val channel = upgrade?.second ?: fixed
         val session = Session(device, channel, output)
-        session.send(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), mapOf("name" to name)))
         live.getOrPut(device.id) { java.util.concurrent.CopyOnWriteArrayList() }.add(session)
         try {
             flush(session)

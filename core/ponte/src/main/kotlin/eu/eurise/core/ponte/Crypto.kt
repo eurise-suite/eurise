@@ -70,12 +70,37 @@ class Link private constructor(private val key: SecretKeySpec) {
         private const val NONCE = 12
         private const val TAG_BITS = 128
         private val INFO = "eurise-ponte v1".toByteArray()
+        private val INFO_SESSION = "eurise-ponte v2 sessione".toByteArray()
 
-        fun between(mine: PrivateKey, theirs: PublicKey, pairingSecret: ByteArray): Link {
+        /** La chiave fissa dell'abbinamento (v1): serve ad aprire il collegamento e alla cassetta nel cloud. */
+        fun between(mine: PrivateKey, theirs: PublicKey, pairingSecret: ByteArray): Link =
+            Link(SecretKeySpec(hkdf(dh(mine, theirs), pairingSecret, INFO, 32), "AES"))
+
+        /**
+         * La chiave di una sola sessione sulla rete di casa (v2, segretezza in avanti): ECDH tra le chiavi effimere di
+         * questo collegamento più ECDH tra quelle fisse, con il segreto dell'abbinamento come sale e le due chiavi
+         * effimere (prima quella del telefono) nell'info. Chi un giorno ruba le chiavi fisse non legge il traffico già
+         * registrato: le effimere non esistono più. Chi cambia una chiave effimera per strada senza le fisse non ottiene
+         * nulla (la chiave non torna e il collegamento cade).
+         */
+        fun session(
+            myStatic: PrivateKey,
+            theirStatic: PublicKey,
+            myEphemeral: PrivateKey,
+            theirEphemeral: PublicKey,
+            pairingSecret: ByteArray,
+            phoneEphemeral: ByteArray,
+            computerEphemeral: ByteArray,
+        ): Link {
+            val ikm = dh(myEphemeral, theirEphemeral) + dh(myStatic, theirStatic)
+            return Link(SecretKeySpec(hkdf(ikm, pairingSecret, INFO_SESSION + phoneEphemeral + computerEphemeral, 32), "AES"))
+        }
+
+        private fun dh(mine: PrivateKey, theirs: PublicKey): ByteArray {
             val ka = KeyAgreement.getInstance("ECDH")
             ka.init(mine)
             ka.doPhase(theirs, true)
-            return Link(SecretKeySpec(hkdf(ka.generateSecret(), pairingSecret, INFO, 32), "AES"))
+            return ka.generateSecret()
         }
 
         /** HKDF (RFC 5869) con HMAC-SHA256. */

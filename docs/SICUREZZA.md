@@ -103,8 +103,13 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - **Ponte**: ECDH P-256 tra chiavi fisse, HKDF-SHA256 con il segreto del QR, AES-256-GCM, mittente nei dati autenticati,
   difesa dalle ripetizioni; l'abbinamento richiede la prova di aver letto il QR. Corretto: la chiave privata del telefono
   stava **in chiaro** nelle preferenze; ora è sigillata nel Keystore (`priv_k`), migrata alla prima lettura senza rifare
-  l'abbinamento. Aperto (punto 8): nessuna segretezza in avanti (chiavi fisse: chi ruba una chiave legge il traffico
-  registrato); da fare con chiavi effimere per sessione e, da Android 12, ECDH dentro il Keystore.
+  l'abbinamento. **Segretezza in avanti (19 novembre)**: sulla rete di casa ogni collegamento usa una chiave di sessione
+  (v2, `Upgrade` in `core/ponte`): il telefono manda una chiave effimera nel saluto, il computer la sua nel primo
+  messaggio (cifrato con la chiave fissa, quindi autenticato), la sessione mescola ECDH effimero ed ECDH fisso con il
+  segreto del QR. Chi un giorno ruba le chiavi fisse non legge il traffico già registrato. Compatibile: con un lato
+  vecchio si resta in v1; il telefono ricorda i computer già passati in v2 e con loro rifiuta di tornare indietro (chi
+  togliesse la chiave effimera dal saluto in chiaro). Test in `PonteTest`. Aperto: la cassetta nel cloud (file
+  asincroni, senza sessione) usa ancora la chiave fissa; ECDH dentro il Keystore da Android 12.
 - **Segreti affidati all'app Eurise** (`eurise_secrets`, chiave di recupero della Chat): in chiaro nelle preferenze, ma
   entrano nel backup cifrato; sigillarli nel Keystore richiede di cambiare anche il backup (aperto).
 

@@ -10,6 +10,7 @@ import eu.eurise.core.ponte.Link
 import eu.eurise.core.ponte.Message
 import eu.eurise.core.ponte.Opening
 import eu.eurise.core.ponte.Pairing
+import eu.eurise.core.ponte.Upgrade
 import eu.eurise.core.ponte.Wire
 import eu.eurise.core.ponte.confirmCode
 import java.net.InetSocketAddress
@@ -94,6 +95,30 @@ class PonteStore(context: Context) {
         set(value) { prefs.edit().putString("ultima", value).apply() }
 
     /** Ciò che il computer riceve dal telefono è acceso di base, tranne «Oggi sul computer» ([Kind.Today]): spento di base. */
+    /**
+     * I computer che hanno già risposto con la chiave di sessione (v2). Con loro un collegamento che torna alla sola chiave
+     * fissa è qualcuno che, sulla rete, ha tolto la chiave effimera dal saluto: si chiude (docs/SICUREZZA.md, «Ponte»).
+     */
+    fun spokeV2(id: String) = id in prefs.getStringSet("v2", emptySet()).orEmpty()
+    fun markV2(id: String, on: Boolean = true) {
+        val now = prefs.getStringSet("v2", emptySet()).orEmpty()
+        prefs.edit().putStringSet("v2", if (on) now + id else now - id).apply()
+    }
+
+    /**
+     * Apre il collegamento verso [c] (dopo la connessione): saluto con una chiave effimera nuova, primo messaggio del
+     * computer con la chiave fissa e, se il computer è aggiornato, il canale di questa sola sessione. Null se il computer
+     * non risponde come deve.
+     */
+    fun open(c: Computer, out: java.io.OutputStream, input: java.io.InputStream): Channel? {
+        val ephemeral = Identity.generate()
+        Wire.writeFrame(out, Opening.Hi(deviceId, ephemeral.publicBytes).encode())
+        val fixed = Channel(Link.between(identity.keys.private, Identity.publicKey(c.publicKey), c.secret), me = deviceId)
+        val hello = Wire.readFrame(input)?.let { fixed.open(it, from = c.id) } ?: return null
+        if (Upgrade.spokeV2(hello)) { if (!spokeV2(c.id)) markV2(c.id) } else if (spokeV2(c.id)) return null
+        return Upgrade.phone(identity, ephemeral, Identity.publicKey(c.publicKey), c.secret, hello, fixed, deviceId)
+    }
+
     fun isOn(kind: Kind) = prefs.getBoolean("on." + kind.wire, kind != Kind.Today)
     fun setOn(kind: Kind, on: Boolean) = prefs.edit().putBoolean("on." + kind.wire, on).apply()
 }
@@ -115,6 +140,7 @@ class PonteClient(private val store: PonteStore) {
             check(hello.kind == Kind.Hello)
             val computer = Computer(p.deviceId, hello["name"] ?: p.name, p.publicKey, p.secret, p.host, p.port ?: Wire.DEFAULT_PORT)
             store.save(computer)
+            store.markV2(computer.id, on = false)
             return computer to confirmCode(me.publicBytes, p.publicKey, p.secret)
         }
     }
@@ -126,9 +152,7 @@ class PonteClient(private val store: PonteStore) {
             s.soTimeout = 6_000
             val out = s.getOutputStream()
             val input = s.getInputStream().buffered()
-            Wire.writeFrame(out, Opening.Hi(store.deviceId).encode())
-            val channel = Channel(Link.between(store.identity.keys.private, Identity.publicKey(c.publicKey), c.secret), me = store.deviceId)
-            Wire.readFrame(input)?.let { channel.open(it, from = c.id) } ?: return false
+            val channel = store.open(c, out, input) ?: return false
             Wire.writeFrame(out, channel.seal(Message(kind, UUID.randomUUID().toString(), System.currentTimeMillis(), fields)))
             out.flush()
             true

@@ -21,12 +21,8 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import eu.eurise.core.ponte.Channel
-import eu.eurise.core.ponte.Identity
 import eu.eurise.core.ponte.Kind
-import eu.eurise.core.ponte.Link
 import eu.eurise.core.ponte.Message
-import eu.eurise.core.ponte.Opening
 import eu.eurise.core.ponte.Wire
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
@@ -91,9 +87,8 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
         s.keepAlive = true
         val out = s.getOutputStream()
         val input = s.getInputStream().buffered()
-        Wire.writeFrame(out, Opening.Hi(store.deviceId).encode())
-        val channel = Channel(Link.between(store.identity.keys.private, Identity.publicKey(c.publicKey), c.secret), me = store.deviceId)
-        Wire.readFrame(input)?.let { channel.open(it, from = c.id) } ?: return false
+        // Saluto, primo messaggio e chiave di questa sola sessione (v2): PonteStore.open.
+        val channel = store.open(c, out, input) ?: return false
         // Solo ora, a collegamento fatto, compare la notifica fissa.
         show(c.name, store.lastThing)
         s.soTimeout = PING_MS

@@ -101,3 +101,5 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 - Ponte sul telefono: collegare un computer solo dal lettore QR dell'app Eurise (prima qualunque app poteva collegarne uno
   in silenzio); chiave privata del telefono sigillata nel Keystore, senza rifare l'abbinamento. Da fare (punto 8 di
   `docs/SICUREZZA.md`): chiavi effimere per sessione. Dettagli in `docs/SICUREZZA.md`.
+- 19 novembre (Sicurezza): Ponte v2 con chiavi di sessione sulla rete di casa (telefono e computer aggiornati insieme;
+  con un lato vecchio resta la v1). Dettagli in `docs/SICUREZZA.md`.

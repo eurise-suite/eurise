@@ -154,4 +154,45 @@ class HandshakeTest {
         assertEquals(m, Message.decode(m.encode()))
         assertNull(Message.decode(m.encode().replace("\"task\"", "\"futuro\"")))
     }
+
+    /** v2: telefono e computer, ognuno con il suo, arrivano alla stessa chiave di sessione, diversa da quella fissa. */
+    @Test
+    fun sessionKeyAgreesAndDiffersFromFixedKey() {
+        val ephemeral = Identity.generate()
+        val hi = Opening.decode(Opening.Hi("tel-1", ephemeral.publicBytes).encode()) as Opening.Hi
+        val (computerEphemeral, computerChannel) = Upgrade.computer(laptop, phone.keys.public, secret, hi, "pc-1")!!
+        val hello = Message(Kind.Hello, "h1", System.currentTimeMillis(), mapOf("name" to "pc", Opening.EPHEMERAL to Opening.encodeKey(computerEphemeral)))
+        val fixedPhone = Channel(Link.between(phone.keys.private, laptop.keys.public, secret), me = "tel-1")
+        val phoneChannel = Upgrade.phone(phone, ephemeral, laptop.keys.public, secret, hello, fixedPhone, "tel-1")
+        assertTrue(Upgrade.spokeV2(hello))
+
+        val m = Message(Kind.Clipboard, "c1", System.currentTimeMillis(), mapOf("text" to "segreto"))
+        assertEquals(m, computerChannel.open(phoneChannel.seal(m), from = "tel-1"))
+        // La chiave fissa non apre i messaggi della sessione: rubata domani, non legge il traffico di oggi.
+        val fixedComputer = Channel(Link.between(laptop.keys.private, phone.keys.public, secret), me = "pc-1")
+        assertNull(fixedComputer.open(phoneChannel.seal(m.copy(id = "c2")), from = "tel-1"))
+    }
+
+    /** Due collegamenti, due chiavi di sessione diverse. */
+    @Test
+    fun everySessionHasItsOwnKey() {
+        val m = Message(Kind.Note, "n1", System.currentTimeMillis(), mapOf("text" to "x"))
+        val first = Upgrade.computer(laptop, phone.keys.public, secret, Opening.Hi("tel-1", Identity.generate().publicBytes), "pc-1")!!.second
+        val second = Upgrade.computer(laptop, phone.keys.public, secret, Opening.Hi("tel-1", Identity.generate().publicBytes), "pc-1")!!.second
+        assertNull(second.open(first.seal(m), from = "pc-1"))
+    }
+
+    /** Lati vecchi: senza chiave effimera si resta sulla chiave fissa (v1), senza errori. */
+    @Test
+    fun oldPeersStayOnFixedKey() {
+        assertNull(Upgrade.computer(laptop, phone.keys.public, secret, Opening.Hi("tel-1"), "pc-1"))
+        val fixed = Channel(Link.between(phone.keys.private, laptop.keys.public, secret), me = "tel-1")
+        val hello = Message(Kind.Hello, "h1", System.currentTimeMillis(), mapOf("name" to "pc"))
+        assertFalse(Upgrade.spokeV2(hello))
+        assertTrue(Upgrade.phone(phone, Identity.generate(), laptop.keys.public, secret, hello, fixed, "tel-1") === fixed)
+        assertEquals(Opening.Hi("tel-1"), Opening.decode("{\"t\":\"hi\",\"id\":\"tel-1\"}".toByteArray()))
+        val withKey = Opening.Hi("tel-1", byteArrayOf(1, 2, 3))
+        assertEquals(withKey, Opening.decode(withKey.encode()))
+        assertNotEquals(withKey, Opening.Hi("tel-1"))
+    }
 }
