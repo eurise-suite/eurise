@@ -10,7 +10,12 @@ on:
   # Il lancio a mano vale solo per i flussi del ramo principale (main): sul ramo di lavoro parte quando cambia questo file.
   push:
     branches: [prova-sicurezza]
-    paths: [".github/workflows/librerie-verificate.yml"]
+    paths:
+      - ".github/workflows/librerie-verificate.yml"
+      - "gradle/libs.versions.toml"
+      - "build.gradle.kts"
+      - "**/build.gradle.kts"
+      - "keyboard/gradle/*.toml"
 
 permissions:
   contents: write
