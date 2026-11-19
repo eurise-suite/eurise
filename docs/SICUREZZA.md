@@ -146,7 +146,9 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - **Librerie di esecuzione**: 522 nelle app della suite e nel computer, 281 nella Tastiera (`gradle.lockfile` sotto
   `gradle/eurise/esecuzione/`). Primo controllo: **BouncyCastle 1.72** (tramite `pdfbox-android`, 12 vulnerabilità note,
   due critiche) e **Guava 31.1 e 33.3.1** (3) arrivano davvero nelle app: il `build.gradle.kts` principale ora impone
-  almeno BouncyCastle 1.85 e Guava 33.7.2-android a tutte le app. Netty e il resto degli strumenti non ci arrivano.
+  almeno Guava 33.7.2-android e sostituisce BouncyCastle jdk15to18 con **jdk18on 1.85** (la jdk15to18 1.85 ha una classe
+  in due archivi e Android si ferma; in Office si escludono le licenze doppie). Netty e il resto degli strumenti non ci
+  arrivano. Office in `apk-prova` arriva dal suo flusso: avrà la correzione dopo l'unione in `brand`.
 - **Impronte delle librerie** (`librerie-verificate.yml`, a mano o al cambio del suo file sul ramo di lavoro): compila tutto scrivendo
   `gradle/verification-metadata.xml` (e quello della Tastiera) e lo spinge sul ramo. Per ora
   `org.gradle.dependency.verification=lenient` (segnala senza fermare: altri progetti compilano sullo stesso ramo); a file
