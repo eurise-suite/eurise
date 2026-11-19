@@ -19,6 +19,15 @@ android {
     namespace = "eu.eurise.office"
     compileSdk = 37
 
+    // BouncyCastle jdk18on (al posto della jdk15to18 vulnerabile, build.gradle.kts principale): i tre archivi portano la
+    // stessa licenza e le informazioni per Java 9+, che ad Android non servono.
+    packaging {
+        resources {
+            excludes += setOf("META-INF/LICENSE.md", "META-INF/versions/9/OSGI-INF/MANIFEST.MF")
+            pickFirsts += setOf("META-INF/versions/9/module-info.class")
+        }
+    }
+
     defaultConfig {
         applicationId = "eu.eurise.office"
         minSdk = 26
