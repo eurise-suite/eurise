@@ -3386,4 +3386,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 18 novembre, Sicurezza: il lavoro passa al progetto «Eurise Sicurezza»; stato e piano in `docs/SICUREZZA.md`.
 - 18 novembre, sera, Organizzazione: «Bolle che si adattano» accesa di base · giro 838 → `docs/stato/ORGANIZZAZIONE.md`.
 - 18 novembre, notte, Sicurezza: porte d'ingresso (90 componenti; permesso della suite giusto nei fornitori, destinatari verificati, Ponte senza abbinamento silenzioso), crittografia (chiave del Ponte nel Keystore, backup a 600 000 iterazioni), Tastiera senza backup Google · giro 842, prova delle porte verde; azioni allo SHA, Dependabot, OSV-Scanner (Tesseract 5.5.4), SECURITY.md, modello delle minacce → `docs/SICUREZZA.md`.
-- 19 novembre, Sicurezza: CodeQL su brand e prova-sicurezza (64 segnalazioni esaminate, 2 corrette), permessi minimi nei flussi, impronte di 1 265 librerie, giro 849 → `docs/SICUREZZA.md`.
+- 19 novembre, Sicurezza: CodeQL (64 segnalazioni esaminate, 2 corrette), permessi minimi nei flussi, impronte delle librerie, BouncyCastle 1.85 e Guava 33.7.2 nelle app, giro 858 → `docs/SICUREZZA.md`.
