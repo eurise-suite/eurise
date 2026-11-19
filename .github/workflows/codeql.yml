@@ -72,3 +72,22 @@ jobs:
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           category: "/lingua:${{ matrix.lingua }}"
+          output: risultati
+      # Anche come artefatto: chi lavora alla sicurezza da fuori (senza accesso a Code scanning) legge e corregge.
+      - name: Riepilogo
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, glob
+          for f in glob.glob("risultati/*.sarif"):
+              for run in json.load(open(f))["runs"]:
+                  res = run.get("results", [])
+                  print(f"### {f}: {len(res)} risultati")
+                  for r in res[:200]:
+                      loc = r["locations"][0]["physicalLocation"]
+                      print(f"- `{r['ruleId']}` {loc['artifactLocation']['uri']}:{loc.get('region', {}).get('startLine', '?')}")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codeql-${{ matrix.lingua }}
+          path: risultati
+          retention-days: 14
