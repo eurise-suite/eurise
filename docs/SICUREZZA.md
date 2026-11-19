@@ -216,3 +216,14 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   impronta nell'elenco); sui telefoni con Android 10 o precedente il cervello scaricato sta nella memoria esterna
   dell'app, che un'app con il permesso di memoria può cambiare tra il controllo e la copia in Eurise AI.
 
+## Chiavi nel chip separato e regole del repository (20 novembre 2026)
+- **StrongBox**: le chiavi dello sblocco con l'impronta di Password e della cartella protetta della Galleria nascono nel
+  chip di sicurezza separato quando il telefono lo ha (Titan M e simili), altrimenti nell'area protetta come prima
+  (`core/suite/.../SecureKeys.kt`). Vale per le chiavi nuove (alla prossima accensione dello sblocco con l'impronta);
+  quelle già create restano dove sono, nulla da rifare.
+- **Rami protetti**: da qui non si possono creare regole del repository. Passo del proprietario: Settings → Rules →
+  Rulesets → New branch ruleset: nome «Rami principali protetti», Enforcement «Active», Target branches `brand` e `main`,
+  regole «Restrict deletions» e «Block force pushes». Le altre chat continuano a spingere normalmente.
+- **Voci e suonerie** (pre-release `voci` e `suoni`): rischio accettato. Chi potesse cambiarle avrebbe già la scrittura sul
+  repository; un'impronta nel codice obbligherebbe a riscriverlo a ogni rigenerazione.
+

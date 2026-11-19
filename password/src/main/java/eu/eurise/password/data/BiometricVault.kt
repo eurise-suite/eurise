@@ -6,13 +6,11 @@ import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
-import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.security.KeyStore
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
@@ -36,17 +34,18 @@ class BiometricVault(private val context: Context) {
 
     /** Sempre una chiave nuova: le impronte attuali sono quelle che valgono da qui in avanti. */
     fun encryptCipher(): Cipher {
-        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        generator.init(
-            KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .setUserAuthenticationRequired(true)
-                .setInvalidatedByBiometricEnrollment(true)
-                .build(),
+        // Nel chip di sicurezza separato (StrongBox) se il telefono lo ha (SecureKeys).
+        val key = eu.eurise.core.suite.SecureKeys.generateAes(
+            {
+                setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                setKeySize(256)
+                setUserAuthenticationRequired(true)
+                setInvalidatedByBiometricEnrollment(true)
+            },
+            ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
         )
-        return Cipher.getInstance(TRANSFORM).apply { init(Cipher.ENCRYPT_MODE, generator.generateKey()) }
+        return Cipher.getInstance(TRANSFORM).apply { init(Cipher.ENCRYPT_MODE, key) }
     }
 
     /** Null se la chiave non vale più (impronte cambiate) o la scelta non è attiva. */

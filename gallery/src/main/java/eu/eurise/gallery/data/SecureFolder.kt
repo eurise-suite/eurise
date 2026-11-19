@@ -79,17 +79,17 @@ class SecureFolder private constructor(context: Context) {
         val ks = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (ks.getKey(BIO_ALIAS, null) as? javax.crypto.SecretKey)?.let { if (!create) return it }
         if (!create) return null
-        val gen = javax.crypto.KeyGenerator.getInstance(android.security.keystore.KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        gen.init(
-            android.security.keystore.KeyGenParameterSpec.Builder(BIO_ALIAS, android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setUserAuthenticationRequired(true)
-                .setUserAuthenticationParameters(0, android.security.keystore.KeyProperties.AUTH_BIOMETRIC_STRONG)
-                .setInvalidatedByBiometricEnrollment(true)
-                .build(),
+        // Nel chip di sicurezza separato (StrongBox) se il telefono lo ha (SecureKeys).
+        return eu.eurise.core.suite.SecureKeys.generateAes(
+            {
+                setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_GCM)
+                setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE)
+                setUserAuthenticationRequired(true)
+                setUserAuthenticationParameters(0, android.security.keystore.KeyProperties.AUTH_BIOMETRIC_STRONG)
+                setInvalidatedByBiometricEnrollment(true)
+            },
+            BIO_ALIAS, android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT,
         )
-        return gen.generateKey()
     }
 
     /** Il cifrario da far approvare con l'impronta per accendere l'apertura con l'impronta (cartella aperta). */
