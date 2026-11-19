@@ -1,0 +1,43 @@
+name: Impronte dei contenuti scaricati
+
+# docs/SICUREZZA.md: i modelli che le app scaricano (Whisper per Voce, i cervelli di Alfred) si fissano a una versione
+# precisa (commit di Hugging Face) con l'impronta SHA-256 scritta nel codice. Questo flusso le legge dall'API di Hugging
+# Face (impronta LFS) e le scrive nel registro e nel riepilogo, da copiare in core/suite/.../Contents.kt quando si
+# aggiorna un modello di proposito. Non cambia nulla da solo.
+on:
+  workflow_dispatch:
+  push:
+    branches: [prova-sicurezza]
+    paths: [".github/workflows/impronte-contenuti.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  impronte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Hugging Face
+        run: |
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, urllib.request
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "eurise-impronte"}), timeout=30) as r:
+                  return json.load(r)
+          def show(repo, pick):
+              info = get(f"https://huggingface.co/api/models/{repo}/revision/main?blobs=true")
+              sha = info["sha"]
+              files = {s["rfilename"]: s for s in info["siblings"]}
+              name = pick(list(files))
+              s = files[name]
+              lfs = s.get("lfs") or {}
+              print(f"- `{repo}` commit `{sha}` file `{name}` sha256 `{lfs.get('sha256')}` byte `{lfs.get('size', s.get('size'))}`")
+          for f in ["ggml-base-q5_1.bin", "ggml-small-q5_1.bin"]:
+              show("ggerganov/whisper.cpp", lambda names, f=f: f)
+          def q4(names):
+              g = [n for n in names if n.endswith(".gguf") and "mmproj" not in n.lower()]
+              return next((n for n in g if "Q4_K_M" in n), None) or next(n for n in g if "Q4" in n)
+          for repo in ["ibm-granite/granite-4.0-1b-GGUF", "mistralai/Ministral-3-3B-Instruct-2512-GGUF"]:
+              show(repo, q4)
+          PY
