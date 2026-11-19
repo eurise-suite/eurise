@@ -28,6 +28,8 @@ jobs:
     steps:
       # Lo script di firma e la vecchia chiave di prova (serve a firmare la prova di rotazione).
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Trova il giro
         id: giro
         env:

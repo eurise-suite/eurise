@@ -1,0 +1,74 @@
+name: CodeQL
+
+# Analisi statica del codice (docs/SICUREZZA.md, «Catena di compilazione e librerie»). Configurazione avanzata e non
+# quella automatica di GitHub: quella guarda solo il ramo principale (main), qui si lavora su brand. Kotlin e Java
+# (compilando le app), i flussi di GitHub, l'estensione per Firefox e gli script Python. Le librerie C di third_party
+# restano a OSV-Scanner (codice di altri, troppo rumore). I risultati vanno in Security → Code scanning; Copilot Autofix
+# propone le correzioni, non cambia nulla da solo.
+on:
+  push:
+    branches: [brand, prova-sicurezza]
+    paths-ignore: ["docs/**", "**/*.md"]
+  schedule:
+    - cron: "41 3 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analizza:
+    name: CodeQL (${{ matrix.lingua }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lingua: java-kotlin
+            modo: manual
+          - lingua: actions
+            modo: none
+          - lingua: javascript-typescript
+            modo: none
+          - lingua: python
+            modo: none
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        if: matrix.lingua == 'java-kotlin'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        if: matrix.lingua == 'java-kotlin'
+        with:
+          cache-read-only: true
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          languages: ${{ matrix.lingua }}
+          build-mode: ${{ matrix.modo }}
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - third_party
+              - "**/build"
+      - name: Compila le app (solo per Kotlin e Java)
+        if: matrix.lingua == 'java-kotlin'
+        run: |
+          chmod +x gradlew
+          # Compilare basta: CodeQL guarda il compilatore. Senza la cache di build, così vede tutti i file.
+          ./gradlew --no-daemon --no-build-cache compileDebugKotlin compileDebugJavaWithJavac :desktop:ponte:compileKotlin
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          category: "/lingua:${{ matrix.lingua }}"

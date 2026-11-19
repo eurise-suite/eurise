@@ -145,3 +145,19 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   completo e giri puliti si passa a `strict`.
 - Rete: nessun traffico in chiaro (target SDK 35, nessuna eccezione); lettori XML senza DTD (Password, WebDAV, Office).
 
+## Impostazioni di GitHub e permessi dei flussi (19 novembre 2026)
+- Accesi dal proprietario (Settings → Code security): segnalazione privata delle falle, avvisi e aggiornamenti di
+  sicurezza di Dependabot, Secret Protection con blocco dei push che contengono segreti, Copilot Autofix. Consigliati in
+  più: Malware alerts, Grouped security updates, Automatic dependency submission. Lasciati spenti: AI Scan e Agentic
+  autofix (a crediti, in prova, solo su `main`) e la configurazione automatica di CodeQL (solo `main`).
+- **CodeQL** (`codeql.yml`, configurazione avanzata): Kotlin/Java compilando le app, flussi di GitHub, estensione per
+  Firefox, Python, con le regole `security-extended`; su `brand` e `prova-sicurezza` e ogni mercoledì. `third_party`
+  resta a OSV-Scanner.
+- **Permessi minimi**: `build.yml` ora legge soltanto e scrive solo il lavoro `release` (tag `v*`); prima tutti i lavori,
+  anche quelli lanciati da una richiesta di modifica, avevano la scrittura sul repository. In tutti i flussi che non
+  spingono commit la copia del codice non conserva il token (`persist-credentials: false`): uno script o un plugin di
+  compilazione manomesso non lo trova.
+- Da sapere: il ramo principale del repository è `main`, quello vivo `brand`. Gli aggiornamenti di sicurezza automatici di
+  Dependabot aprono le proposte su `main`; quelli ordinari (`dependabot.yml`) su `brand`. Da decidere se rendere `brand`
+  il ramo principale.
+

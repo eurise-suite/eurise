@@ -32,6 +32,8 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Strumenti
         run: |
           sudo apt-get update -q
