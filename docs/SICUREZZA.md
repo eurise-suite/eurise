@@ -139,7 +139,9 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
 - **OSV-Scanner** (`vulnerabilita.yml`, v2.7.1 con impronta verificata): a ogni push su `brand` e `prova-sicurezza` e ogni
   lunedì; legge le impronte Gradle e riconosce le librerie C incluse in `third_party` (llama.cpp, whisper.cpp, tesseract,
   leptonica, sentencepiece…). Una vulnerabilità nota fa diventare rosso il giro.
-- **Impronte delle librerie** (`librerie-verificate.yml`, a mano): compila tutto scrivendo
+- **Impronte scritte il 19 novembre**: 645 componenti della suite e 620 della Tastiera (1 040 e 1 009 impronte SHA-256).
+  Ancora «lenient»: si passa a «strict» dopo un giro di Compila senza segnalazioni.
+- **Impronte delle librerie** (`librerie-verificate.yml`, a mano o al cambio del suo file sul ramo di lavoro): compila tutto scrivendo
   `gradle/verification-metadata.xml` (e quello della Tastiera) e lo spinge sul ramo. Per ora
   `org.gradle.dependency.verification=lenient` (segnala senza fermare: altri progetti compilano sullo stesso ramo); a file
   completo e giri puliti si passa a `strict`.
