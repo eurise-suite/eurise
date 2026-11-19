@@ -1,0 +1,24 @@
+// Script di inizializzazione (librerie-verificate.yml, docs/SICUREZZA.md): per ogni progetto scrive le librerie che
+// finiscono davvero nell'app (release e runtime), nel formato gradle.lockfile che OSV-Scanner sa leggere. Gli strumenti
+// di compilazione (AGP, Kotlin, lint) restano fuori: non arrivano sul telefono.
+allprojects { p ->
+    p.tasks.register("euriseLibrerieEsecuzione") {
+        notCompatibleWithConfigurationCache("legge le configurazioni del progetto")
+        doLast {
+            def righe = [] as Set
+            ['releaseRuntimeClasspath', 'debugRuntimeClasspath', 'runtimeClasspath'].each { nome ->
+                def c = p.configurations.findByName(nome)
+                if (c == null || !c.canBeResolved) return
+                c.incoming.resolutionResult.allComponents.each { comp ->
+                    if (comp.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                        def id = comp.id
+                        righe << "${id.group}:${id.module}:${id.version}=${nome}"
+                    }
+                }
+            }
+            def out = p.rootProject.file("build/librerie-esecuzione/${p.path == ':' ? 'radice' : p.path.substring(1).replace(':', '_')}.txt")
+            out.parentFile.mkdirs()
+            out.text = righe.sort().join('\n') + '\n'
+        }
+    }
+}

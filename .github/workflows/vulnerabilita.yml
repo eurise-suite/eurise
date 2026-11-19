@@ -31,12 +31,27 @@ jobs:
           gh release download "$OSV" -R google/osv-scanner -p osv-scanner_linux_amd64 -p osv-scanner_SHA256SUMS
           grep " osv-scanner_linux_amd64$" osv-scanner_SHA256SUMS | sha256sum -c -
           chmod +x osv-scanner_linux_amd64
-      - name: Scansione
+      - name: Librerie che arrivano sul telefono e sul computer (blocca)
         run: |
           set -o pipefail
-          # Anche third_party: OSV riconosce le librerie C incluse (llama.cpp, whisper.cpp, tesseract, leptonica…).
-          /tmp/osv/osv-scanner_linux_amd64 scan source --recursive --config osv-scanner.toml --format markdown . | tee osv.md
+          # Librerie di esecuzione delle app (scritte da librerie-verificate.yml) e librerie C incluse in third_party
+          # (llama.cpp, whisper.cpp, tesseract, leptonica, sentencepiece…), estensione Firefox, script.
+          args=()
+          for f in gradle/eurise/esecuzione/gradle.lockfile keyboard/gradle/eurise/esecuzione/gradle.lockfile; do
+            [ -f "$f" ] && args+=(-L "$f")
+          done
+          /tmp/osv/osv-scanner_linux_amd64 scan source --config osv-scanner.toml --format markdown \
+            "${args[@]}" -r third_party desktop/firefox | tee osv.md
           code=${PIPESTATUS[0]}
-          { echo "## Vulnerabilità note (OSV-Scanner)"; cat osv.md; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "## Vulnerabilità note: librerie delle app"; cat osv.md; } >> "$GITHUB_STEP_SUMMARY"
           # 0 = nessuna; 128 = nessun file da leggere (non è un errore); il resto è una vulnerabilità o un guasto.
           [ "$code" = 0 ] || [ "$code" = 128 ] || exit "$code"
+      - name: Strumenti di compilazione (solo rapporto)
+        if: always()
+        run: |
+          # Le impronte di Gradle contengono anche AGP, Kotlin, lint e le loro librerie (Netty, BouncyCastle…): girano solo
+          # qui su GitHub, non arrivano sugli APK. Si leggono e si aggiornano con Dependabot, ma non fermano il giro.
+          /tmp/osv/osv-scanner_linux_amd64 scan source --config osv-scanner.toml --format markdown \
+            -L gradle/verification-metadata.xml -L keyboard/gradle/verification-metadata.xml > strumenti.md 2>&1 || true
+          { echo "## Strumenti di compilazione (non bloccante)"; cat strumenti.md; } >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^Total|^No issues" strumenti.md || true

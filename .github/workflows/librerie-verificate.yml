@@ -43,11 +43,32 @@ jobs:
           chmod +x gradlew 2>/dev/null || true
           g=./gradlew; [ -x "$g" ] || g=../gradlew
           $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest --tests 'eu.eurise.*'
+      - name: Librerie che arrivano sul telefono (per OSV-Scanner)
+        run: |
+          set -e
+          raccogli() { # cartella del progetto Gradle, file di uscita, comando gradlew, variabili
+            dir=$1; out=$2; shift 2
+            (cd "$dir" && env "$@" --no-daemon --no-configuration-cache -I "$GITHUB_WORKSPACE/gradle/eurise/librerie-esecuzione.gradle" euriseLibrerieEsecuzione -q)
+            mkdir -p "$(dirname "$out")"
+            { echo "# Librerie di esecuzione di tutte le app (generato da librerie-verificate.yml; non lo legge Gradle)."
+              cat "$dir"/build/librerie-esecuzione/*.txt | sort -u
+              echo "empty="; } > "$out"
+            echo "$out: $(grep -c ':' "$out") librerie"
+          }
+          raccogli . gradle/eurise/esecuzione/gradle.lockfile ./gradlew
+          rm -rf build/librerie-esecuzione
+          EURISE_DESKTOP=1 ./gradlew --no-daemon --no-configuration-cache -I gradle/eurise/librerie-esecuzione.gradle euriseLibrerieEsecuzione -q
+          { cat gradle/eurise/esecuzione/gradle.lockfile | grep -v '^empty=' ; cat build/librerie-esecuzione/*.txt; } | grep -v '^#' | sort -u > /tmp/tutte
+          { echo "# Librerie di esecuzione di tutte le app e del computer (generato da librerie-verificate.yml; non lo legge Gradle)."
+            cat /tmp/tutte; echo "empty="; } > gradle/eurise/esecuzione/gradle.lockfile
+          raccogli keyboard keyboard/gradle/eurise/esecuzione/gradle.lockfile ./gradlew
+
       - name: Spingi le impronte
         run: |
           git config user.name "eurise-impronte"
           git config user.email "eurise-impronte@users.noreply.github.com"
-          git add gradle/verification-metadata.xml keyboard/gradle/verification-metadata.xml
+          git add gradle/verification-metadata.xml keyboard/gradle/verification-metadata.xml \
+            gradle/eurise/esecuzione/gradle.lockfile keyboard/gradle/eurise/esecuzione/gradle.lockfile
           git diff --cached --quiet && { echo "Impronte già aggiornate"; exit 0; }
           git commit -m "[skip ci] Impronte delle librerie (verification-metadata.xml)"
           git pull --rebase origin "${GITHUB_REF_NAME}"

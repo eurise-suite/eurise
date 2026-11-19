@@ -145,6 +145,12 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   `gradle/verification-metadata.xml` (e quello della Tastiera) e lo spinge sul ramo. Per ora
   `org.gradle.dependency.verification=lenient` (segnala senza fermare: altri progetti compilano sullo stesso ramo); a file
   completo e giri puliti si passa a `strict`.
+- **Cosa blocca e cosa no** (19 novembre): con le impronte OSV-Scanner vede anche gli strumenti di compilazione (37
+  pacchetti con vulnerabilità note: Netty, BouncyCastle, jose4j, jdom2, Guava, httpclient… tutti di AGP, Kotlin e lint, che
+  girano solo su GitHub e non arrivano sugli APK; `org.json` solo nei test). Il giro diventa rosso solo per le librerie
+  che finiscono nelle app (`gradle/eurise/esecuzione/gradle.lockfile` e quello della Tastiera, scritti da
+  `librerie-verificate.yml` con lo script `gradle/eurise/librerie-esecuzione.gradle`) e per le librerie C incluse; gli
+  strumenti vanno in un rapporto a parte nel riepilogo del giro e si aggiornano con Dependabot.
 - Rete: nessun traffico in chiaro (target SDK 35, nessuna eccezione); lettori XML senza DTD (Password, WebDAV, Office).
 
 ## Impostazioni di GitHub e permessi dei flussi (19 novembre 2026)
