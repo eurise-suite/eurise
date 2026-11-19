@@ -31,15 +31,18 @@ jobs:
       - name: Impronte della suite
         run: |
           chmod +x gradlew
+          # Gli stessi comandi di Compila APK (lavoro «debug»); il computer entra in Gradle solo con EURISE_DESKTOP=1.
+          # Il secondo giro aggiunge le sue impronte allo stesso file.
           ./gradlew --no-daemon --write-verification-metadata sha256 \
-            assembleDebug assembleRelease testDebugUnitTest \
-            :core:ponte:test :desktop:ponte:installDist :desktop:app:test :desktop:app:createDistributable
+            assembleDebug testDebugUnitTest :core:ponte:test :desktop:ponte:installDist
+          EURISE_DESKTOP=1 ./gradlew --no-daemon --write-verification-metadata sha256 \
+            :core:sync:test :core:ponte:test :desktop:app:test :desktop:app:createDistributable
       - name: Impronte della Tastiera
         working-directory: keyboard
         run: |
           chmod +x gradlew 2>/dev/null || true
           g=./gradlew; [ -x "$g" ] || g=../gradlew
-          $g --no-daemon --write-verification-metadata sha256 assembleDebug assembleRelease
+          $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest
       - name: Spingi le impronte
         run: |
           git config user.name "eurise-impronte"
