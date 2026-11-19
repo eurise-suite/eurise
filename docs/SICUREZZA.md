@@ -140,7 +140,11 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   lunedì; legge le impronte Gradle e riconosce le librerie C incluse in `third_party` (llama.cpp, whisper.cpp, tesseract,
   leptonica, sentencepiece…). Una vulnerabilità nota fa diventare rosso il giro.
 - **Impronte scritte il 19 novembre**: 645 componenti della suite e 620 della Tastiera (1 040 e 1 009 impronte SHA-256).
-  Ancora «lenient»: si passa a «strict» dopo un giro di Compila senza segnalazioni.
+  Ancora «lenient». Primo giro di Compila con le impronte: suite pulita; nella Tastiera manca solo
+  `junit-bom-5.11.0-M2.module` (c'è il `.pom`). Prima di «strict» vanno coperti anche i flussi che compilano altrove
+  (Office, Mappe, schermate), per non fermare gli altri progetti dopo l'unione in `brand`.
+- **Librerie di esecuzione**: 522 nelle app della suite e nel computer, 281 nella Tastiera (`gradle.lockfile` sotto
+  `gradle/eurise/esecuzione/`); di Guava arrivano solo `failureaccess` e `listenablefuture`, niente Netty né BouncyCastle.
 - **Impronte delle librerie** (`librerie-verificate.yml`, a mano o al cambio del suo file sul ramo di lavoro): compila tutto scrivendo
   `gradle/verification-metadata.xml` (e quello della Tastiera) e lo spinge sul ramo. Per ora
   `org.gradle.dependency.verification=lenient` (segnala senza fermare: altri progetti compilano sullo stesso ramo); a file
