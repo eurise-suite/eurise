@@ -7,6 +7,10 @@ name: Librerie verificate (impronte)
 # a file completo si passa a «strict» (una libreria manomessa ferma tutto).
 on:
   workflow_dispatch:
+  # Il lancio a mano vale solo per i flussi del ramo principale (main): sul ramo di lavoro parte quando cambia questo file.
+  push:
+    branches: [prova-sicurezza]
+    paths: [".github/workflows/librerie-verificate.yml"]
 
 permissions:
   contents: write
