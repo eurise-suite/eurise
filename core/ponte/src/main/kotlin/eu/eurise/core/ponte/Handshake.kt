@@ -24,8 +24,12 @@ sealed class Opening {
      * [Link.session]. Un computer vecchio la ignora e si resta in v1.
      */
     class Hi(val deviceId: String, val ephemeral: ByteArray? = null) : Opening() {
-        override fun equals(other: Any?) = other is Hi && deviceId == other.deviceId &&
-            (ephemeral?.contentEquals(other.ephemeral ?: return false) ?: (other.ephemeral == null))
+        override fun equals(other: Any?): Boolean {
+            if (other !is Hi || deviceId != other.deviceId) return false
+            val mine = ephemeral
+            val theirs = other.ephemeral
+            return if (mine == null || theirs == null) mine == null && theirs == null else mine.contentEquals(theirs)
+        }
         override fun hashCode() = deviceId.hashCode()
         override fun toString() = "Hi($deviceId${if (ephemeral != null) ", v2" else ""})"
     }
