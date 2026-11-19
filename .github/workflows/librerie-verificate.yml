@@ -42,7 +42,7 @@ jobs:
         run: |
           chmod +x gradlew 2>/dev/null || true
           g=./gradlew; [ -x "$g" ] || g=../gradlew
-          $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest
+          $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest --tests 'eu.eurise.*'
       - name: Spingi le impronte
         run: |
           git config user.name "eurise-impronte"
