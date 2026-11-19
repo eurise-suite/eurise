@@ -109,6 +109,10 @@ class PonteTest {
 }
 
 class HandshakeTest {
+    private val phone = Identity.generate()
+    private val laptop = Identity.generate()
+    private val secret = Pairing.newSecret()
+
     @Test
     fun pairingNeedsTheSecretFromTheQr() {
         val phone = Identity.generate()
