@@ -386,6 +386,15 @@
 	var pending = {};
 	var nextId = 1;
 
+	/** L'origine della pagina che ospita l'editor (dal referrer), o null se non si sa: allora non si manda nulla. */
+	function hostOrigin() {
+		try {
+			return document.referrer ? new URL(document.referrer).origin : null;
+		} catch (e) {
+			return null;
+		}
+	}
+
 	function toShell(message, onReply) {
 		var id = nextId++;
 		message.id = id;
@@ -393,9 +402,10 @@
 		// Nel guscio Linux di Collabora (coda-qt) i messaggi sconosciuti andrebbero al motore: lì il canale Eurise non c'è ancora.
 		if (window.ThisIsAMobileApp && window.postMobileMessage && !window.ThisIsTheQtApp) {
 			window.postMobileMessage('EURISE ' + JSON.stringify(message));
-		} else if (window.parent && window.parent !== window) {
-			// Sul computer (guscio futuro) o in una pagina che ospita l'editor.
-			window.parent.postMessage(JSON.stringify({ MessageId: 'Eurise', Values: message }), '*');
+		} else if (window.parent && window.parent !== window && hostOrigin()) {
+			// Sul computer (guscio futuro) o in una pagina che ospita l'editor: solo all'origine di chi ci ospita, mai a «*»
+			// (una pagina estranea che incornicia l'editor non legge i messaggi; CodeQL js/cross-window-information-leak).
+			window.parent.postMessage(JSON.stringify({ MessageId: 'Eurise', Values: message }), hostOrigin());
 		} else {
 			delete pending[id];
 			notice(t('Funziona dentro l\'app Eurise Office.', 'Works inside the Eurise Office app.'));

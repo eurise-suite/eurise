@@ -189,6 +189,11 @@ class ChatActivity : ComponentActivity(), ChatActions {
             <div class="q">${KeyQr.svg(key)}<p>${esc(getString(R.string.ch_rec_print_qr))}</p></div>
             <p>${esc(getString(R.string.ch_rec_print_note))}</p></body></html>"""
         val web = android.webkit.WebView(this)
+        // Solo la pagina della chiave, scritta qui: niente JavaScript, file, contenuti di altre app né rete.
+        web.settings.javaScriptEnabled = false
+        web.settings.allowFileAccess = false
+        web.settings.allowContentAccess = false
+        web.settings.blockNetworkLoads = true
         web.webViewClient = object : android.webkit.WebViewClient() {
             override fun onPageFinished(view: android.webkit.WebView, url: String?) {
                 val pm = getSystemService(android.print.PrintManager::class.java) ?: return

@@ -161,3 +161,21 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   Dependabot aprono le proposte su `main`; quelli ordinari (`dependabot.yml`) su `brand`. Da decidere se rendere `brand`
   il ramo principale.
 
+### Primo giro di CodeQL (19 novembre 2026): 64 segnalazioni, una per una
+Il riepilogo di ogni giro sta nel registro del lavoro «Riepilogo» di `codeql.yml` (gli avvisi in Security → Code scanning).
+- **Corrette**: `postMessage` dell'editor di Office verso «*» (una pagina estranea che incornicia l'editor poteva leggere i
+  messaggi; ora solo all'origine di chi lo ospita); WebView della stampa della chiave di recupero della Chat senza
+  JavaScript, file, contenuti né rete.
+- **Falsi allarmi, verificati nel codice**: zip slip in backup, suonerie e voci (nomi già filtrati: elenco chiuso, solo il
+  nome del file, percorso canonico); PendingIntent impliciti del Ponte (immutabili, solo link http/https, nomi dei file
+  ripuliti); «dati sensibili» negli intent per chiamare, scrivere SMS e mail (li sceglie l'utente); WebView di Posta,
+  finestre web e AI (file e contenuti già chiusi, JavaScript solo dove serve, nessun ponte JavaScript); preferenze «in
+  chiaro» (solo impostazioni e identificativi, nessun segreto); algoritmi «deboli» imposti dai formati (SHA-1 di TOTP RFC
+  6238 e del controllo k-anonimo delle password violate, AES di KeePass e Cryptomator); backup dell'Orologio (manifesto di
+  libreria, fuso con quello dell'APK principale che lo vieta); un ciclo nel parser MMS di AOSP (codice di altri).
+- **Aperti, da progetto**: (1) blocco delle note e conferma in Password: l'impronta apre la porta ma non è legata alla
+  chiave (le note sono già cifrate con una chiave sigillata nel Keystore); legarla richiede di cambiare come il backup
+  porta con sé quella chiave. (2) Certificate pinning: oggi TLS standard verso i servizi pubblici; per i download di
+  modelli, voci e motori la difesa migliore è l'impronta SHA-256 attesa scritta nel codice, da aggiungere download per
+  download.
+
