@@ -8,8 +8,9 @@ name: Librerie verificate (impronte)
 on:
   workflow_dispatch:
   # Il lancio a mano vale solo per i flussi del ramo principale (main): sul ramo di lavoro parte quando cambia questo file.
+  # Anche su brand: quando un'altra chat aggiunge o aggiorna una libreria, le impronte si riscrivono da sole.
   push:
-    branches: [prova-sicurezza]
+    branches: [brand, prova-sicurezza]
     paths:
       - ".github/workflows/librerie-verificate.yml"
       - "gradle/libs.versions.toml"
@@ -19,6 +20,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: impronte-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   impronte:
@@ -33,15 +38,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
         with:
           cache-disabled: true
+      - name: Spazio sul disco (Leggi, AI e Browser insieme)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift || true
+          df -h / | tail -1
       - name: Impronte della suite
         run: |
           chmod +x gradlew
-          # Gli stessi comandi di Compila APK (lavoro «debug»); il computer entra in Gradle solo con EURISE_DESKTOP=1.
-          # Il secondo giro aggiunge le sue impronte allo stesso file.
+          # Gli stessi comandi di tutti i lavori di Compila APK: Leggi, AI e Browser entrano in Gradle solo con le loro
+          # variabili (prima mancavano: GeckoView e le librerie di Leggi e AI non avevano impronte). Ogni giro aggiunge
+          # le sue impronte allo stesso file.
+          export EURISE_READ=1 EURISE_AI=1 EURISE_BROWSER=1
           ./gradlew --no-daemon --write-verification-metadata sha256 \
-            assembleDebug testDebugUnitTest :core:ponte:test :desktop:ponte:installDist
+            assembleDebug testDebugUnitTest :read:assembleRelease :ai:assembleRelease \
+            :core:ponte:test :desktop:ponte:installDist
+          # La prova d'avvio del Browser sull'emulatore usa GeckoView per x86_64.
+          ./gradlew --no-daemon --write-verification-metadata sha256 :browser:assembleDebug -Peurise.geckoAbi=x86_64
           EURISE_DESKTOP=1 ./gradlew --no-daemon --write-verification-metadata sha256 \
             :core:sync:test :core:ponte:test :desktop:app:test :desktop:app:createDistributable
+      - name: GeckoView è firmato da Mozilla?
+        run: |
+          v=$(grep -o 'name="geckoview-arm64-v8a" version="[^"]*"' gradle/verification-metadata.xml | head -1 | sed 's/.*version="//; s/"//')
+          echo "GeckoView $v"
+          for ext in aar.asc pom.asc; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/$v/geckoview-arm64-v8a-$v.$ext")
+            echo "firma .$ext: HTTP $code" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
       - name: Impronte della Tastiera
         working-directory: keyboard
         run: |
@@ -60,7 +82,7 @@ jobs:
               echo "empty="; } > "$out"
             echo "$out: $(grep -c ':' "$out") librerie"
           }
-          raccogli . gradle/eurise/esecuzione/gradle.lockfile ./gradlew
+          EURISE_READ=1 EURISE_AI=1 EURISE_BROWSER=1 raccogli . gradle/eurise/esecuzione/gradle.lockfile ./gradlew
           rm -rf build/librerie-esecuzione
           EURISE_DESKTOP=1 ./gradlew --no-daemon --no-configuration-cache -I gradle/eurise/librerie-esecuzione.gradle euriseLibrerieEsecuzione -q
           { cat gradle/eurise/esecuzione/gradle.lockfile | grep -v '^empty=' ; cat build/librerie-esecuzione/*.txt; } | grep -v '^#' | sort -u > /tmp/tutte
@@ -75,6 +97,6 @@ jobs:
           git add gradle/verification-metadata.xml keyboard/gradle/verification-metadata.xml \
             gradle/eurise/esecuzione/gradle.lockfile keyboard/gradle/eurise/esecuzione/gradle.lockfile
           git diff --cached --quiet && { echo "Impronte già aggiornate"; exit 0; }
-          git commit -m "[skip ci] Impronte delle librerie (verification-metadata.xml)"
+          git commit -m "Impronte delle librerie (verification-metadata.xml e librerie di esecuzione)"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
