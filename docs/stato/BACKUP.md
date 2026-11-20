@@ -19,7 +19,7 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
   `BackupProvider`, protetto dal permesso della suite).
 - Ripristino dalla prima schermata: passo «Ripristina» nella preparazione della Scrivania, finché non ci sono note né attività.
 
-## Cose trovate da correggere (prima del lavoro nuovo)
+## Cose trovate da correggere (prima del lavoro nuovo) — 1, 2, 3 e 5 fatte il 20 novembre, sera
 1. **Il ripristino sovrascrive senza conferma**: frase giusta → i dati attuali vengono sostituiti al riavvio. Serve una
    conferma che dica cosa si sostituisce (e, se ci sono già dati, cosa si perde).
 2. **Tastiera: zip in chiaro lasciato nella cache** (`eurise-backup-export.zip` non si cancella dopo la lettura; anche
@@ -90,6 +90,23 @@ Aggiunti, su sua richiesta (senza tavola):
   (`BackupHealth`, con test; data di accensione in `configured_at`): pillola «Ultimo backup N giorni fa · Guarda» in
   cima alla home del telefono, apre Cloud › Backup. Sul tablet non ancora.
 - Consegnato con il giro **893** (`prova-backup`), pubblicato in `apk-prova`: cambia solo l'APK principale Eurise.
+
+## Correzioni del 20 novembre, sera
+- **Conferma prima di sostituire**: `BackupManager.open/openBytes` aprono e verificano il backup solo in memoria
+  (`Opened`: contenuto, cosa c'è sul telefono, zip, chiavi); niente cambia finché `apply` dopo la conferma. Finestra
+  «Cosa rimetto» (`ConfirmDialog`): data, dati di Eurise con i conteggi, impostazioni, Tastiera, note bloccate; avviso
+  «Sostituisce quello che c'è ora» con note e attività presenti, o «non si perde niente» se il telefono è vuoto; se il
+  telefono aveva già un backup acceso, avvisa che userà frase e codice del backup ripristinato. «Sostituisci e riavvia».
+- **Manifesto formato 2**: conteggi di note (fuori dal cestino) e attività. I backup di formato 1 si aprono come prima
+  (la finestra non mostra i numeri). Le versioni vecchie dell'app ignorano il manifesto.
+- **Tastiera senza file in chiaro**: `BackupProvider` esporta e riceve lo zip in un tubo (`createPipe`); lo zip ricevuto
+  resta in memoria fino ad `apply` (che aspetta la fine della ricezione); i file vecchi nella cache si cancellano.
+  Compatibile con le versioni precedenti dell'app Eurise (stesse chiamate).
+- **Zip della Tastiera in attesa sigillato**: `LocalSeal` (AES-256-GCM, chiave `eurise-backup-waiting` nel Keystore) in
+  `keyboard_restore.sealed`; al ripristino va lì direttamente, senza passare dalla cartella d'attesa in chiaro; il
+  vecchio `keyboard_restore.zip` si sigilla e si cancella al primo avvio.
+- **Avviso sulla Scrivania anche sul tablet**, sopra l'orologio.
+- Da provare dal vero (fase 3, emulatore): backup con la Tastiera installata, ripristino senza Tastiera, poi Tastiera.
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro

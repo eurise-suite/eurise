@@ -142,6 +142,10 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   quattro settimane. Nessun ripiego sulla chiave fissa. Chi costruisce la cassetta (area Computer): sigillare le
   `MailboxKeys` come la chiave fissa (Keystore, portachiavi), cancellare il file dopo la lettura, `ReplayGuard` lungo
   28 giorni, `prune()` a ogni giro.
+- **Backup, file in chiaro tolti (20 novembre 2026, area Backup)**: la Tastiera consegna e riceve lo zip delle parole
+  imparate in un tubo, non più da file nella cache (quello dell'esportazione restava dopo ogni backup); lo zip in attesa
+  della Tastiera sta sigillato con una chiave del Keystore (`LocalSeal`); il ripristino apre il backup solo in memoria e
+  cambia il telefono dopo una conferma. Nessun permesso e nessuna firma toccati. Dettagli in `docs/stato/BACKUP.md`.
 - **Segreti affidati all'app Eurise** (`eurise_secrets`, chiave di recupero della Chat): in chiaro nelle preferenze, ma
   entrano nel backup cifrato; sigillarli nel Keystore richiede di cambiare anche il backup (aperto).
 

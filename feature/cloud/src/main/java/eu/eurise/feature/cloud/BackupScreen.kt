@@ -114,7 +114,7 @@ private sealed interface Step {
     data class Place(val restoring: Boolean) : Step
     data class Pick(val place: BackupPlace, val files: List<BackupFile>?) : Step
     data class Secret(val place: BackupPlace?, val file: BackupFile?, val bytes: ByteArray?) : Step
-    data object Restart : Step
+    data class Confirm(val opened: BackupManager.Opened) : Step
     data object ChangePassphrase : Step
 }
 
@@ -288,24 +288,28 @@ fun BackupRoute(onBack: () -> Unit) {
         is Step.Secret -> SecretDialog(working = busy, onConfirm = { secret ->
             busy = true
             scope.launch {
+                // Si apre e si verifica soltanto: il telefono non cambia finché non si conferma (ConfirmDialog).
                 val r = runCatching {
-                    if (s.bytes != null) manager.restoreBytes(s.bytes, secret) else manager.restore(s.place!!, s.file!!.name, secret)
+                    if (s.bytes != null) manager.openBytes(s.bytes, secret) else manager.open(s.place!!, s.file!!.name, secret)
                 }
                 busy = false
-                if (r.isSuccess) step = Step.Restart
-                else Toast.makeText(
+                r.getOrNull()?.let { step = Step.Confirm(it) }
+                if (r.isFailure) Toast.makeText(
                     context,
                     context.getString(if (r.exceptionOrNull() is BackupCrypto.WrongSecret) R.string.backup_wrong_secret else R.string.backup_bad_file),
                     Toast.LENGTH_LONG,
                 ).show()
             }
         }, onDismiss = { step = null })
-        Step.Restart -> AlertDialog(
-            onDismissRequest = {},
-            title = { Text(stringResource(R.string.backup_restored_title)) },
-            text = { Text(stringResource(R.string.backup_restored_text)) },
-            confirmButton = { TextButton(onClick = { manager.restartApp() }) { Text(stringResource(R.string.backup_restart), fontWeight = FontWeight.Bold) } },
-        )
+        is Step.Confirm -> ConfirmDialog(s.opened, replacesBackupSettings = state.configured, working = busy, onConfirm = {
+            busy = true
+            scope.launch {
+                val r = runCatching { manager.apply(s.opened) }
+                busy = false
+                if (r.isSuccess) manager.restartApp()
+                else Toast.makeText(context, context.getString(R.string.backup_bad_file), Toast.LENGTH_LONG).show()
+            }
+        }, onDismiss = { step = null })
         Step.ChangePassphrase -> ChangePassDialog(onConfirm = { old, new ->
             scope.launch {
                 val ok = manager.changePassphrase(old, new)
@@ -538,6 +542,63 @@ private fun SecretDialog(working: Boolean, onConfirm: (String) -> Unit, onDismis
         confirmButton = { TextButton(onClick = { onConfirm(secret) }, enabled = secret.isNotBlank() && !working) { Text(stringResource(R.string.backup_restore), fontWeight = FontWeight.Bold) } },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !working) { Text(stringResource(R.string.backup_cancel)) } },
     )
+}
+
+/**
+ * Prima di ripristinare: che cosa c'è nel backup e che cosa verrà sostituito su questo telefono. Niente cambia finché
+ * non si tocca «Sostituisci e riavvia» (o «Ripristina e riavvia» se il telefono è ancora vuoto).
+ */
+@Composable
+private fun ConfirmDialog(opened: BackupManager.Opened, replacesBackupSettings: Boolean, working: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val c = opened.contents
+    val phone = opened.onPhone
+    val date = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(c.createdAt), java.time.ZoneId.systemDefault())
+    AlertDialog(
+        onDismissRequest = { if (!working) onDismiss() },
+        title = { Text(stringResource(R.string.backup_confirm_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.backup_confirm_from, date.format(When)), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val data = if (c.notes != null && c.tasks != null) stringResource(R.string.backup_confirm_data_counts, c.notes, c.tasks)
+                else stringResource(R.string.backup_confirm_data)
+                ConfirmLine(stringResource(R.string.backup_confirm_eurise), data)
+                if (c.settings) ConfirmLine(stringResource(R.string.backup_confirm_settings), stringResource(R.string.backup_confirm_settings_hint))
+                if (c.keyboard) ConfirmLine(stringResource(R.string.backup_confirm_keyboard), stringResource(R.string.backup_confirm_keyboard_hint))
+                if (c.lockedNotes) ConfirmLine(stringResource(R.string.backup_confirm_locked), stringResource(R.string.backup_confirm_locked_hint))
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.tertiaryContainer).padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val onColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    if (phone.empty) {
+                        Text(stringResource(R.string.backup_confirm_empty), fontSize = 13.sp, lineHeight = 18.sp, color = onColor)
+                    } else {
+                        Text(stringResource(R.string.backup_confirm_replace_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = onColor)
+                        Text(stringResource(R.string.backup_confirm_replace, phone.notes, phone.tasks), fontSize = 13.sp, lineHeight = 18.sp, color = onColor)
+                    }
+                    if (replacesBackupSettings) Text(stringResource(R.string.backup_confirm_keys), fontSize = 13.sp, lineHeight = 18.sp, color = onColor)
+                }
+                if (working) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Text(stringResource(R.string.backup_applying), fontSize = 13.sp)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = !working) {
+                Text(stringResource(if (phone.empty) R.string.backup_confirm_go_empty else R.string.backup_confirm_go), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !working) { Text(stringResource(R.string.backup_cancel)) } },
+    )
+}
+
+@Composable
+private fun ConfirmLine(title: String, detail: String) {
+    Column {
+        Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(detail, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable

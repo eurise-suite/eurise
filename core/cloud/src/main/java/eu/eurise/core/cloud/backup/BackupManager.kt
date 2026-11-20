@@ -169,24 +169,43 @@ class BackupManager private constructor(private val context: Context) {
         runCatching { target(place)?.list().orEmpty().sortedByDescending { it.at } }.getOrDefault(emptyList())
 
     /**
-     * Ripristina [name] da [place] con la frase o il codice: verifica tutto, prepara i file e tiene le chiavi per i
-     * prossimi backup su questo telefono. L'app va riavviata ([restartApp]) perché i dati prendano il loro posto.
+     * Un backup aperto e verificato, ancora solo in memoria: niente è cambiato sul telefono finché non si chiama
+     * [apply]. Così si può mostrare che cosa contiene e che cosa sostituirebbe, e chiedere conferma.
      */
-    suspend fun restore(place: BackupPlace, name: String, secret: String) = withContext(Dispatchers.Default) {
+    class Opened internal constructor(
+        val contents: BackupContents,
+        val onPhone: PhoneData,
+        internal val zip: ByteArray,
+        internal val keys: BackupCrypto.Keys,
+        internal val place: BackupPlace?,
+    )
+
+    /** Apre [name] da [place] con la frase o il codice e lo verifica, senza toccare niente. */
+    suspend fun open(place: BackupPlace, name: String, secret: String): Opened = withContext(Dispatchers.IO) {
         val bytes = target(place)?.read(name) ?: throw BackupCrypto.BadFile()
-        restoreBytes(bytes, secret)
-        prefs.edit().putString("place", place.encode()).apply()
-        if (place is BackupPlace.Folder) setPlace(place)
-        refresh()
+        openBytes(bytes, secret, place)
     }
 
-    /** Ripristino da un file scelto a mano. */
-    suspend fun restoreBytes(bytes: ByteArray, secret: String) = withContext(Dispatchers.Default) {
+    /** Come [open], per un file scelto a mano. */
+    suspend fun openBytes(bytes: ByteArray, secret: String, place: BackupPlace? = null): Opened = withContext(Dispatchers.Default) {
         val parsed = BackupCrypto.parse(bytes)
         val dataKey = BackupCrypto.unlock(parsed.header, secret)
         val zip = BackupCrypto.decrypt(parsed, dataKey)
-        BackupArchive.stage(context, zip)
-        storeKeys(BackupCrypto.Keys(dataKey, parsed.header))
+        Opened(BackupArchive.contents(zip, parsed.createdAt), BackupArchive.onPhone(context), zip, BackupCrypto.Keys(dataKey, parsed.header), place)
+    }
+
+    /**
+     * Dopo la conferma: prepara i file (prendono il loro posto al riavvio, [restartApp]) e tiene le chiavi del backup
+     * ripristinato per i prossimi backup di questo telefono.
+     */
+    suspend fun apply(opened: Opened) = withContext(Dispatchers.IO) {
+        BackupArchive.stage(context, opened.zip)
+        storeKeys(opened.keys)
+        opened.place?.let { place ->
+            prefs.edit().putString("place", place.encode()).apply()
+            if (place is BackupPlace.Folder) setPlace(place)
+        }
+        refresh()
     }
 
     /** Riavvia l'app dopo un ripristino. */

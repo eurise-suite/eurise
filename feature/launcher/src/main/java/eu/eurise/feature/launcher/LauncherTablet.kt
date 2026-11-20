@@ -178,6 +178,8 @@ internal fun TabletHome(
                 .padding(bottom = clearance),
         ) {
             Spacer(Modifier.height(32.dp))
+            // Il backup fermo da qualche giorno, come sul telefono (largo quanto la scheda di oggi).
+            Column(Modifier.widthIn(max = 520.dp)) { BackupBanner(hazeState) { actions.openEurise("backup") } }
             ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
             Spacer(Modifier.height(4.dp))
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
