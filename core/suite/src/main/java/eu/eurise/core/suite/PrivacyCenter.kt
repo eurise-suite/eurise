@@ -18,7 +18,9 @@ enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, V
     /** Eurise Mappe: il testo della canzone che suona in guida, da LRCLIB (titolo, autore, album e durata). */
     Lyrics,
     /** Eurise Office: il download del motore dei documenti (APK compagno, uguale per tutti); i documenti non escono. */
-    OfficeEngine;
+    OfficeEngine,
+    /** Eurise Telefono: l'elenco Eurise dei numeri molesti (file uguale per tutti, una volta a settimana col Wi-Fi). */
+    SpamList;
 
     val defaultOn: Boolean get() = false
 }
