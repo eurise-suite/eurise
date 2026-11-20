@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import eu.eurise.desktop.Device
+import eu.eurise.desktop.KeyringClosed
 import eu.eurise.desktop.Server
 import eu.eurise.desktop.Store
 import eu.eurise.desktop.dataDir
@@ -33,11 +34,16 @@ class PonteState {
         val s = Server(store)
         server = s
         thread(isDaemon = true, name = "ponte") {
-            runCatching {
-                s.run(pairing, show = { code -> pairingCode = code }, paired = {
-                    pairingCode = null
-                    devices = store.devices()
-                })
+            while (true) {
+                val failure = runCatching {
+                    s.run(pairing, show = { code -> pairingCode = code }, paired = {
+                        pairingCode = null
+                        devices = store.devices()
+                    })
+                }.exceptionOrNull()
+                // Portachiavi chiuso (finestra del sistema annullata): si richiede tra due minuti, non a ogni istante.
+                if (failure !is KeyringClosed) break
+                Thread.sleep(120_000)
             }
         }
         thread(isDaemon = true, name = "ponte-stato") {

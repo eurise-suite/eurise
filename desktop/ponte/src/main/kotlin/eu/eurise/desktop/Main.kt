@@ -35,6 +35,7 @@ import kotlin.system.exitProcess
  *   eurise-ponte                    resta in ascolto dei telefoni abbinati (appunti, dettatura, «Continua qui», chiamate)
  *   eurise-ponte dispositivi        elenca i telefoni abbinati
  *   eurise-ponte dimentica <nome>   toglie un telefono
+ *   eurise-ponte chiave             dice se la chiave del Ponte è nel portachiavi del sistema o nel file
  *   eurise-ponte manda appunti [testo]     manda al telefono gli appunti del computer (o il testo)
  *   eurise-ponte manda link <url> [titolo] «Continua qui» sul telefono
  *   eurise-ponte manda nota <testo>        una nota in Eurise Note (senza testo: legge dallo standard input)
@@ -50,8 +51,13 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     val home = Store(dataDir())
     when (args.firstOrNull()) {
-        null, "ascolta" -> Server(home).run(pairing = false)
-        "collega" -> Server(home).run(pairing = true)
+        null, "ascolta" -> runCatching { Server(home).run(pairing = false) }.onFailure { fail(it.message ?: "$it") }
+        "collega" -> runCatching { Server(home).run(pairing = true) }.onFailure { fail(it.message ?: "$it") }
+        "chiave" -> println(when (home.key.where()) {
+            "portachiavi" -> "La chiave del Ponte è nel portachiavi del sistema."
+            "file" -> "La chiave del Ponte è nel file ${dataDir()}/chiavi (portachiavi del sistema non disponibile)."
+            else -> "Nessuna chiave: si crea al primo abbinamento."
+        })
         "dispositivi" -> home.devices().ifEmpty { println("Nessun telefono abbinato: eurise-ponte collega"); emptyList() }
             .forEach { println("• ${it.name}  (${it.id})") }
         "dimentica" -> {
@@ -69,7 +75,7 @@ fun main(args: Array<String>) {
     }
 }
 
-private const val HELP = """eurise-ponte collega | ascolta | dispositivi | dimentica <nome>
+private const val HELP = """eurise-ponte collega | ascolta | dispositivi | dimentica <nome> | chiave
 eurise-ponte manda appunti [testo] | manda link <url> [titolo] | manda nota <testo> | manda attivita <testo>
 eurise-ponte manda evento <inizio> [fine] <titolo> | manda file <percorso>
 eurise-ponte installa-firefox
@@ -86,7 +92,7 @@ fun dataDir(): File {
 /** Un telefono abbinato. */
 data class Device(val id: String, val name: String, val publicKey: ByteArray, val secret: ByteArray)
 
-class Store(private val dir: File) {
+class Store(private val dir: File, private val keyring: () -> SecretStore? = SecretService::open) {
     /** Messaggi per i telefoni non collegati in questo momento. */
     val outbox = Outbox(File(dir, "coda"))
 
@@ -98,12 +104,11 @@ class Store(private val dir: File) {
         if (f.exists()) f.readText().trim() else Pairing.newDeviceId().also { private(f, it) }
     }
 
-    val identity: Identity by lazy {
-        val f = File(dir, "chiavi")
-        val saved = runCatching { Json.read(f.readText()) }.getOrNull()
-        if (saved != null) Identity.restore(d64.decode(saved.getValue("pub")), d64.decode(saved.getValue("priv")))
-        else Identity.generate().also { private(f, Json.write(mapOf("pub" to b64.encodeToString(it.publicBytes), "priv" to b64.encodeToString(it.privateBytes())))) }
-    }
+    /** La chiave privata sta nel portachiavi del sistema quando c'è ([PonteKey]); qui solo quando serve davvero. */
+    val key by lazy { PonteKey(File(dir, "chiavi"), id, keyring) }
+
+    /** Se il portachiavi resta chiuso lancia [KeyringClosed] e si riprova al prossimo accesso (lazy non lo ricorda). */
+    val identity: Identity by lazy { key.load(::private) }
 
     fun devices(): List<Device> = File(dir, "telefoni").takeIf { it.exists() }?.readLines()?.mapNotNull { line ->
         val m = Json.read(line) ?: return@mapNotNull null
@@ -144,6 +149,9 @@ class Server(private val store: Store) {
      * (di base nel terminale; l'app Eurise del computer lo disegna nella finestra) e [paired] è chiamato a abbinamento fatto.
      */
     fun run(pairing: Boolean, show: (String) -> Unit = { printPairing(it) }, paired: () -> Unit = {}) {
+        // La chiave prima di aprire la porta: se il portachiavi resta chiuso ci si ferma qui, invece di chiederlo a ogni
+        // collegamento del telefono.
+        store.identity
         val socket = runCatching { ServerSocket(Wire.DEFAULT_PORT) }.getOrElse { ServerSocket(0) }
         var secret: ByteArray? = null
         if (pairing) {
