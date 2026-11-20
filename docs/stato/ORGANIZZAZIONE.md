@@ -516,3 +516,6 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - I fornitori dell'APK principale (segreti, aspetto, luoghi, privacy, destinazioni, Oggi, I tuoi giorni, meteo sul percorso)
   accettano solo il permesso della propria variante; backup della suite a 600 000 iterazioni per i nuovi; regole di
   estrazione complete. Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 21 novembre 2026 (progetto Eurise Sicurezza)
+App Eurise: i segreti affidati dalle altre app (chiave di recupero della Chat) ora sono sigillati nel Keystore (`SuiteSecrets` in `core/cloud`), con una voce a parte nel backup (`lock/secrets.json`); migrazione da sola dal vecchio `eurise_secrets`. Dettagli in `docs/SICUREZZA.md`, «Crittografia».

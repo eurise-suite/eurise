@@ -11,11 +11,13 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import eu.eurise.core.cloud.lock.LockKeys
+import eu.eurise.core.cloud.lock.SuiteSecrets
 
 /**
  * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
  * (Scrivania, bolle, Orologio, farmaci, date…) e quello che ha imparato Eurise Tastiera ([KeyboardBackup]). Restano fuori le cache, gli account cloud e le chiavi del
- * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano.
+ * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano. La chiave delle note e i segreti
+ * affidati dalle altre app ([SuiteSecrets]) sul telefono sono sigillati nel Keystore: entrano come voci a parte.
  */
 object BackupArchive {
     private const val DB = "eurise.db"
@@ -23,6 +25,9 @@ object BackupArchive {
 
     private fun included(prefs: String): Boolean =
         (prefs.startsWith("eurise_") || prefs == "clock") && !prefs.startsWith("eurise_feeds_")
+
+    /** Nei backup nuovi i segreti vanno come [SuiteSecrets.BACKUP_ENTRY]; il file in chiaro si accetta solo in ripristino. */
+    private fun exported(prefs: String): Boolean = included(prefs) && prefs != SuiteSecrets.LEGACY_PREFS
 
     /** Lo zip del backup, ancora in chiaro (si cifra subito dopo, senza toccare il disco). */
     fun create(context: Context, createdAt: Long): ByteArray {
@@ -38,7 +43,7 @@ object BackupArchive {
                 db.delete()
             }
             prefsDir(context).listFiles().orEmpty()
-                .filter { it.name.endsWith(".xml") && included(it.name.removeSuffix(".xml")) }
+                .filter { it.name.endsWith(".xml") && exported(it.name.removeSuffix(".xml")) }
                 .forEach { f ->
                     zip.putNextEntry(ZipEntry("shared_prefs/${f.name}"))
                     f.inputStream().use { it.copyTo(zip) }
@@ -52,6 +57,11 @@ object BackupArchive {
             LockKeys.exportForBackup(context)?.let { key ->
                 zip.putNextEntry(ZipEntry(LockKeys.BACKUP_ENTRY))
                 zip.write(key)
+                zip.closeEntry()
+            }
+            SuiteSecrets.exportForBackup(context)?.let { secrets ->
+                zip.putNextEntry(ZipEntry(SuiteSecrets.BACKUP_ENTRY))
+                zip.write(secrets)
                 zip.closeEntry()
             }
         }
@@ -92,7 +102,8 @@ object BackupArchive {
             while (true) {
                 val e = zip.nextEntry ?: break
                 val name = e.name
-                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
+                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY ||
+                    name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
                 if (!ok || e.isDirectory) continue
                 val target = File(dir, name).apply { parentFile?.mkdirs() }
@@ -125,6 +136,7 @@ object BackupArchive {
             }
             File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it) }
             File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
+            File(dir, SuiteSecrets.BACKUP_ENTRY).takeIf { it.exists() }?.let { SuiteSecrets.restore(context, it.readBytes()) }
         }
         dir.deleteRecursively()
     }

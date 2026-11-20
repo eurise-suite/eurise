@@ -8,10 +8,11 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import eu.eurise.core.suite.SecretsContract
+import eu.eurise.core.cloud.lock.SuiteSecrets
 
 /**
- * I segreti affidati dagli altri APK della suite (SecretsContract), tenuti nelle preferenze «eurise_secrets»: sono
- * nei dati privati dell'app e finiscono nel backup cifrato della suite. Risponde solo a chi ha il permesso della suite
+ * I segreti affidati dagli altri APK della suite (SecretsContract), sigillati nel Keystore ([SuiteSecrets]) e portati nel
+ * backup cifrato della suite. Risponde solo a chi ha il permesso della suite
  * (stessa firma): il controllo è qui, perché `call` non passa dai permessi dichiarati nel manifesto.
  */
 class SecretsProvider : ContentProvider() {
@@ -21,15 +22,14 @@ class SecretsProvider : ContentProvider() {
         val context = context ?: return null
         if (!allowed(context)) throw SecurityException("Eurise: solo le app della suite")
         val name = arg?.takeIf { it.isNotBlank() } ?: return null
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return when (method) {
             SecretsContract.METHOD_PUT -> {
                 val value = extras?.getString(SecretsContract.EXTRA_VALUE) ?: return null
-                prefs.edit().putString(name, value).apply()
+                SuiteSecrets.put(context, name, value)
                 Bundle()
             }
-            SecretsContract.METHOD_GET -> Bundle().apply { putString(SecretsContract.EXTRA_VALUE, prefs.getString(name, null)) }
-            SecretsContract.METHOD_REMOVE -> { prefs.edit().remove(name).apply(); Bundle() }
+            SecretsContract.METHOD_GET -> Bundle().apply { putString(SecretsContract.EXTRA_VALUE, SuiteSecrets.get(context, name)) }
+            SecretsContract.METHOD_REMOVE -> { SuiteSecrets.remove(context, name); Bundle() }
             else -> null
         }
     }
@@ -41,8 +41,4 @@ class SecretsProvider : ContentProvider() {
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, s: String?, a: Array<out String>?) = 0
     override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = 0
-
-    private companion object {
-        const val PREFS = "eurise_secrets"
-    }
 }

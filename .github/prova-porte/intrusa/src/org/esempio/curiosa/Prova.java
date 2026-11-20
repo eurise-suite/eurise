@@ -33,6 +33,7 @@ public class Prova extends Activity {
         final String suffix = getIntent().hasExtra("suffisso") ? getIntent().getStringExtra("suffisso") : ".debug";
         new Thread(() -> {
             call("segreti", "content://eu.eurise.hub" + suffix + ".secrets", "get", "chat-recovery");
+            secrets(suffix);
             call("accessi", "content://eu.eurise.password" + suffix + ".logins", "status", null);
             call("sms", "content://eu.eurise.messages" + suffix + ".persone", "recent", null);
             call("tastiera", "content://eu.eurise.keyboard" + suffix + ".eurise.backup", "apply", null);
@@ -54,6 +55,26 @@ public class Prova extends Activity {
             Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName());
         } catch (Exception e) {
             Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName() + " " + e.getMessage());
+        }
+    }
+
+    /**
+     * Affida un segreto all'app Eurise e lo rilegge («affida»), e rilegge quello che lo script ha messo nel vecchio file
+     * in chiaro («migra»). Lo script controlla poi che nei file dell'app Eurise non resti nulla in chiaro.
+     */
+    private void secrets(String suffix) {
+        Uri u = Uri.parse("content://eu.eurise.hub" + suffix + ".secrets");
+        try {
+            Bundle v = new Bundle();
+            v.putString("value", "EURISE-SEGRETO-NUOVO");
+            getContentResolver().call(u, "put", "prova-porte", v);
+            Bundle b = getContentResolver().call(u, "get", "prova-porte", null);
+            Bundle old = getContentResolver().call(u, "get", "prova-vecchio", null);
+            Log.i(TAG, "affida=" + ("EURISE-SEGRETO-NUOVO".equals(b == null ? null : b.getString("value")) ? "UGUALE" : "DIVERSO"));
+            Log.i(TAG, "migra=" + ("EURISE-SEGRETO-VECCHIO".equals(old == null ? null : old.getString("value")) ? "UGUALE" : "DIVERSO"));
+        } catch (Exception e) {
+            Log.i(TAG, "affida=CHIUSA " + e.getClass().getSimpleName());
+            Log.i(TAG, "migra=CHIUSA " + e.getClass().getSimpleName());
         }
     }
 

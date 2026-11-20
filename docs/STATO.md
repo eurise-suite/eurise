@@ -3398,3 +3398,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Sicurezza: intent verso le altre app della suite controllati (CSV delle password del Browser, «Salva in»/«Apri da», sblocco di Password, dettatura); Mappe con la versione ufficiale → `docs/SICUREZZA.md`.
 - 20 novembre, Organizzazione per Comunicazione: Telefono e Rubrica (chiamate perse, tastierino, ricerca, contatti senza numero, schermata della chiamata) · giro 896 → `docs/stato/COMUNICAZIONE.md`.
 - 20 novembre, Organizzazione per Comunicazione: Telefono, «Sospetto spam» per 0843/0844 e prefissi segnati · giro 902 → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, Sicurezza: segreti affidati all'app Eurise (chiave di recupero della Chat) sigillati nel Keystore, migrati da soli, voce a parte nel backup → `docs/SICUREZZA.md`.

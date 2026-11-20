@@ -113,3 +113,5 @@ Avvisi nelle tinte Eurise: borgogna per gli urgenti, ottone per quelli da tenere
 Questo stile è ancora in anteprima, sul solo prototipo Premium medico, versione 26.11.15.1.
 
 Prima di andare in produzione: valutazione d’impatto privacy (DPIA, dati sanitari, art. 9 GDPR), nomina del fornitore come responsabile del trattamento e registro degli accessi.
+## Sicurezza, 21 novembre 2026 (progetto Eurise Sicurezza)
+Chat: la chiave di recupero affidata all'app Eurise ora è sigillata nel Keystore lì (`SuiteSecrets`); nessuna modifica nella Chat. Dettagli in `docs/SICUREZZA.md`, «Crittografia».

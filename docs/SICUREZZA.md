@@ -24,7 +24,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   3. ~~Voci «Aperto» delle porte d'ingresso~~ intent verso le altre app della suite controllati il 20 novembre, sera
      (tra cui il CSV delle password importate dal Browser). Resta Mappe, da fare con la preparazione della versione
      ufficiale (sezione «Porte d'ingresso», «Mappe»).
-  4. Segreti affidati all'app Eurise sigillati nel Keystore (tocca il backup); blocco delle Note legato all'impronta.
+  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ fatto il 21 novembre (sezione «Crittografia»); resta il
+     blocco delle Note legato all'impronta (da decidere con il proprietario: cambia il backup).
   5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
      passare dal flusso delle impronte.
   6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
@@ -168,8 +169,15 @@ prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-e
   quattro settimane. Nessun ripiego sulla chiave fissa. Chi costruisce la cassetta (area Computer): sigillare le
   `MailboxKeys` come la chiave fissa (Keystore, portachiavi), cancellare il file dopo la lettura, `ReplayGuard` lungo
   28 giorni, `prune()` a ogni giro.
-- **Segreti affidati all'app Eurise** (`eurise_secrets`, chiave di recupero della Chat): in chiaro nelle preferenze, ma
-  entrano nel backup cifrato; sigillarli nel Keystore richiede di cambiare anche il backup (aperto).
+- **Segreti affidati all'app Eurise (21 novembre)**: la chiave di recupero della Chat (l'unico per ora, `SecretsContract`)
+  stava **in chiaro** nelle preferenze `eurise_secrets`. Rischio basso-medio: chi copia i dati privati dell'app (falla di
+  Android, root, copia del telefono sbloccato) la leggeva e con lei apriva le conversazioni salvate della Chat. Ora
+  `SuiteSecrets` (`core/cloud/.../lock`) la sigilla con una chiave AES-GCM del Keystore, in preferenze escluse dal backup,
+  come la chiave delle note; nel backup cifrato della suite entra come voce a parte (`lock/secrets.json`) e sul telefono
+  nuovo si risigilla. Migrazione da sola al primo accesso: scritti, riletti uguali, poi il file vecchio si cancella; se il
+  Keystore non risponde resta tutto com'era. I backup vecchi (con `eurise_secrets.xml`) si aprono ancora: il file torna e
+  viene riassorbito. Provato sull'emulatore (`prova-porte.yml`): l'amica affida e rilegge, un segreto piantato nel
+  vecchio file arriva sigillato, nei file dell'app Eurise non resta nulla in chiaro, il vecchio file è cancellato.
 
 ### Telefono rubato
 - Spento o mai sbloccato dopo l'accensione: tutto è nella memoria cifrata di Android (FBE), illeggibile senza il codice.
