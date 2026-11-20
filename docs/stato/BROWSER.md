@@ -97,3 +97,8 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
 ## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
 - Gli accessi salvati e chiesti a Password, l'aspetto e i link di Oggi passano solo da fornitori della suite verificati
   (`SuiteAccess.call`): se Password manca, un'app con lo stesso nome non riceve le password. Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026 (progetto Eurise Sicurezza)
+Estensione Firefox 0.2.1: dalle pagine web solo `password` e `settings`; password solo su HTTPS, dalla cornice
+principale e con la funzione accesa; tolto `contextMenus`. Password (`Matching.fetchMatches`): un nome senza punto non
+riceve voci; il Browser continua a ricevere i sottodomini. Dettagli in `docs/SICUREZZA.md`, sezione «Computer».

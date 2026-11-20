@@ -103,3 +103,9 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
   `docs/SICUREZZA.md`): chiavi effimere per sessione. Dettagli in `docs/SICUREZZA.md`.
 - 19 novembre (Sicurezza): Ponte v2 con chiavi di sessione sulla rete di casa (telefono e computer aggiornati insieme;
   con un lato vecchio resta la v1). Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026 (progetto Eurise Sicurezza)
+Ponte: risponde solo dalla rete di casa e dalle VPN private (`Peers`), al massimo 32 collegamenti, 10 s e 16 KB per
+presentarsi; da Firefox niente percorsi di file; `wtype -` e `notify-send --`; nome del telefono ripulito. Flatpak su
+Freedesktop 25.08. Da fare con quest'area: chiave del Ponte nel portachiavi del sistema (Secret Service). Dettagli in
+`docs/SICUREZZA.md`, sezione «Computer».

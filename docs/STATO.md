@@ -3391,3 +3391,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 19 novembre, Sicurezza: Ponte con chiavi di sessione (segretezza in avanti) sulla rete di casa, compatibile con i lati vecchi → `docs/SICUREZZA.md`.
 - 20 novembre, Sicurezza: impronte delle librerie complete (GeckoView, Leggi, AI) e provate a cache vuota; bloccanti su prova-sicurezza, segnalate su brand; chiavi dell'impronta in StrongBox (giro 871) → `docs/SICUREZZA.md`.
 - 20 novembre, Sicurezza: librerie verificate anche con le firme PGP degli autori (GeckoView con la chiave di Mozilla); rami brand e main protetti da cancellazione e push forzato → `docs/SICUREZZA.md`.
+- 20 novembre, Sicurezza: punto 8, computer: Ponte solo dalla rete di casa e con limiti, estensione Firefox 0.2.1 con meno porte, Password senza domini interi, Flatpak su 25.08 → `docs/SICUREZZA.md`.

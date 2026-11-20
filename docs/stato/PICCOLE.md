@@ -325,3 +325,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   il ripristino (`BackupProvider`) controlla chi chiama; traduzione e ricerca nella suite vanno solo a Leggi e all'app
   Eurise vere (`SuiteTrust`).
 - Galleria: «Modifica» non accetta i file privati della Galleria stessa. Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026 (progetto Eurise Sicurezza)
+Password, `LoginsProvider` (METHOD_FETCH): chi chiedeva «com» riceveva tutte le voci .com; ora la scelta passa da
+`Matching.fetchMatches` (nome con il punto; sito, domini superiori e sottodomini), con test. Nessun cambiamento ai dati.
+Dettagli in `docs/SICUREZZA.md`, sezione «Computer».

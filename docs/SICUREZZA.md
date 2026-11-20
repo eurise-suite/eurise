@@ -60,6 +60,7 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
    non si può: serve l'amministratore).
 8. Computer: Ponte con accoppiamento cifrato e autenticato, estensione Firefox con i soli permessi necessari, Flatpak
    su runtime aggiornato.
+   **Rivisto il 20 novembre** (sezione «Computer» in fondo); resta la chiave del Ponte nel portachiavi del sistema.
 
 ## Porte d'ingresso (18 novembre 2026, notte)
 Contati uno per uno i **90 componenti esportati** dei manifesti (inventario: attività, alias, servizi, ricevitori, fornitori)
@@ -251,3 +252,36 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   anche avere la chiave privata dell'autore. Le chiavi si leggono dal file nel repository: i server di chiavi servono
   solo al flusso quando arriva un autore nuovo. Prova a cache vuota in modalità stretta: suite, computer e Tastiera OK.
 
+
+## Computer: Ponte, estensione Firefox, Flatpak (20 novembre 2026, punto 8)
+Revisione di `desktop/ponte`, `desktop/firefox` e `desktop/flatpak`. Rischi reali trovati e chiusi:
+- **Ponte aperto a chiunque lo raggiungesse, con memoria senza limiti** (reale, medio): ascoltava su tutte le
+  interfacce; chi si collegava, anche senza chiavi, aveva 15 minuti e poteva annunciare 8 MB, con un thread per
+  collegamento. Poche decine di connessioni bastavano a bloccarlo; su un computer con indirizzo pubblico, da Internet.
+  Ora: solo indirizzi privati, locali e VPN private (`Peers.allowed`, 100.64/10 per Tailscale), al massimo 32
+  collegamenti, e chi non si è presentato ha 10 secondi e 16 KB (`Wire.MAX_OPENING`). Il codice d'abbinamento (128 bit)
+  e le chiavi restano la protezione vera: nessuno entrava, si poteva solo disturbare.
+- **Password per un intero dominio di primo livello** (reale, basso): `LoginsProvider` dava anche le voci dei
+  sottodomini del nome chiesto; chi chiedeva «com» riceveva tutte le voci .com. Dal Browser e da Firefox il nome è
+  quello della pagina, quindi serviva una pagina su «com» o «io» (rarissimo), e il telefono chiede comunque l'impronta e
+  la scelta della voce. Ora un nome senza punto non riceve nulla (`Matching.fetchMatches`, test).
+- **Firefox poteva far partire un file qualsiasi** (difesa in profondità): il Ponte accettava da Firefox un `f.path`;
+  l'estensione non lo usa, ma una versione manomessa avrebbe potuto mandare al telefono `~/.ssh`. Ora da Firefox i file
+  arrivano solo a pezzi nella cartella del Ponte.
+- **Estensione**: dagli script nelle pagine web passano solo `password` e `settings` (prima tutte le richieste, anche
+  `send`, `file`, `dictate`); la password solo su HTTPS, solo dalla cornice principale e solo con la funzione accesa
+  (prima il controllo era solo nello script della pagina); tolto il permesso doppio `contextMenus`. Versione 0.2.1.
+- **Testi dal telefono nei comandi**: un dettato che comincia con «-» diventava un'opzione di `wtype` (ora dall'ingresso
+  standard), così `notify-send` (ora «--»); il nome del telefono perde i caratteri di controllo (finiva nel terminale).
+- **Flatpak** sul runtime Freedesktop 25.08: la 24.08 non riceve più correzioni da agosto.
+
+Già a posto: socket locale in `$XDG_RUNTIME_DIR` (0700) con file 0600; cartella del Ponte 0700; abbinamento con prova
+HMAC confrontata a tempo costante; messaggi con mittente nei dati autenticati e protezione dalle ripetizioni; risposte
+di password solo in memoria per due minuti, con richiesta casuale; native messaging aperto alla sola estensione Eurise;
+CSP predefinita dell'estensione (niente script in linea), testi nelle pagine sempre passati da `esc`; link dal telefono
+aperti solo se http/https.
+
+Resta aperto: la chiave privata del Ponte sul computer è in chiaro nel file `chiavi` (0600, cartella 0700): chi legge i
+file dell'utente la prende. Passo successivo: portarla nel portachiavi del sistema (Secret Service, GNOME Keyring o
+KWallet; nel Flatpak con `--talk-name=org.freedesktop.secrets`), con il file come ripiego e la cifratura del disco
+consigliata. Da fare con l'area Computer.
