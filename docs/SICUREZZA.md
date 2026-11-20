@@ -221,9 +221,10 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   chip di sicurezza separato quando il telefono lo ha (Titan M e simili), altrimenti nell'area protetta come prima
   (`core/suite/.../SecureKeys.kt`). Vale per le chiavi nuove (alla prossima accensione dello sblocco con l'impronta);
   quelle già create restano dove sono, nulla da rifare.
-- **Rami protetti**: da qui non si possono creare regole del repository. Passo del proprietario: Settings → Rules →
-  Rulesets → New branch ruleset: nome «Rami principali protetti», Enforcement «Active», Target branches `brand` e `main`,
-  regole «Restrict deletions» e «Block force pushes». Le altre chat continuano a spingere normalmente.
+- **Rami protetti** (creata dal proprietario il 20 novembre, verificata via API): regola «Rami principali protetti»,
+  attiva su `brand` e `main`, vieta cancellazione e push forzato; nessuna eccezione. Niente controlli obbligatori né
+  richieste di modifica: le chat spingono direttamente su `brand`. Da rivedere quando ci saranno versioni ufficiali
+  (ramo delle uscite con controlli obbligatori).
 - **Voci e suonerie** (pre-release `voci` e `suoni`): rischio accettato. Chi potesse cambiarle avrebbe già la scrittura sul
   repository; un'impronta nel codice obbligherebbe a riscriverlo a ogni rigenerazione.
 
@@ -243,5 +244,10 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   (avviso e riepilogo) ogni file che non corrisponde. Motivo: le impronte di una libreria nuova arrivano dopo il primo giro
   di chi la aggiunge (il flusso parte da solo quando cambiano i file delle librerie e poi rilancia Compila), e GeckoView
   cambia versione da sé a ogni uscita di Mozilla.
-- GeckoView è firmato da Mozilla (`.asc` presenti): passo successivo possibile, verificarlo con la chiave PGP di Mozilla.
+- **Firme PGP degli autori** (20 novembre): il flusso scrive `pgp,sha256` ed esporta le chiavi in
+  `gradle/verification-keyring.keys` (45 chiavi; Tastiera 47). Dove l'autore firma, Gradle controlla la firma oltre
+  all'impronta: GeckoView con la chiave «Mozilla Software Releases» (sottochiave 678E455D76767AA3), Kotlin con quella di
+  JetBrains, AndroidX con quella di Google, BouncyCastle con la sua. Chi sostituisse un file sul repository Maven dovrebbe
+  anche avere la chiave privata dell'autore. Le chiavi si leggono dal file nel repository: i server di chiavi servono
+  solo al flusso quando arriva un autore nuovo. Prova a cache vuota in modalità stretta: suite, computer e Tastiera OK.
 
