@@ -241,6 +241,24 @@ computer (area Computer, tavola PcEmail).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
 - **Ultimo APK pubblicato** in `apk-prova`: chat giro 809 (18 novembre: vocali trascritti e letti); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
+- **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
+  proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
+  predefinita il sistema le affida a noi; prima la notifica era di sistema e apriva il Telefono di Murena, che chiedeva di
+  tornare predefinito). La notifica apre i Recenti e ha Richiama (dal `CallActionReceiver` non esportato) e SMS. Il
+  Telefono gestisce anche `VIEW` `vnd.android.cursor.dir/calls`. Aprendo il Telefono le perse sono «viste»
+  (`cancelMissedCallsNotification`, `CallLog.NEW = 0`). (2)+(5) **tastierino**: il numero è un campo vero
+  (`InterceptPlatformTextInput`: si incolla tenendo premuto, niente tastiera), «Incolla» quando negli appunti c'è un numero
+  (`phoneIn`, con test), «Aggiungi in rubrica» sempre dalle tre cifre (prima spariva se le cifre somigliavano a un nome),
+  due suggerimenti in uno spazio fisso e foglio aperto per intero: il tasto verde non scende. (3) **fine chiamata**: la
+  bolla automatica (PiP del 17 novembre) restava accesa e Android rimpiccioliva la schermata verso un angolo; ora si spegne
+  appena si chiude o la chiamata termina (`ending`). (4) **contatti senza cornetta**: `Contacts.messengerNumber` legge il
+  numero dai campi di WhatsApp, Signal, Telegram (solo indirizzo WhatsApp o numero con «+», mai gli identificativi; con
+  test) in `firstNumbers` e `detail`; il Telefono toglie i doppioni vuoti della stessa persona (`withoutEmptyTwins`).
+  Ipotesi da confermare con il proprietario. (6) **ricerca in rubrica** in Preferiti, Recenti e Rubrica (`SearchState`,
+  stessa parola nelle tre, Indietro la cancella). (7) **chiamata**: Bolla e «Blocca questo numero» come icone discrete in
+  alto (senza fondo); Blocca compare per i numeri fuori rubrica, chiude e blocca. Senza tavola: indicazioni precise del
+  proprietario. (8) **filtro antispam**: c'è già (Recenti › scudo); cosa aggiungere per le chiamate «di altissimo
+  profilo» è da decidere con il proprietario.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo

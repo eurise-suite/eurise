@@ -75,6 +75,8 @@ internal fun FilterScreen(isDefault: Boolean, onBecomeDefault: () -> Unit, onBac
     var blocked by remember { mutableStateOf<List<String>>(emptyList()) }
     var filtered by remember { mutableStateOf<List<SpamFilter.Filtered>>(emptyList()) }
     var typed by remember { mutableStateOf("") }
+    var prefix by remember { mutableStateOf("") }
+    var suspects by remember { mutableStateOf(SpamFilter.suspectPrefixes(context).sorted()) }
     LaunchedEffect(reload) {
         blocked = PhoneData.blockedNumbers(context)
         filtered = SpamFilter.filtered(context)
@@ -113,6 +115,42 @@ internal fun FilterScreen(isDefault: Boolean, onBecomeDefault: () -> Unit, onBac
             }
             Text(stringResource(R.string.ph_filter_privacy), fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+        }
+        // «Sospetto spam» (20 novembre): non blocca, avvisa sulla chiamata, nella notifica e nei Recenti.
+        item(key = "suspect") {
+            Label(stringResource(R.string.ph_suspect_title))
+            Note(stringResource(R.string.ph_suspect_sub))
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    prefix, { prefix = it }, singleLine = true, modifier = Modifier.weight(1f),
+                    placeholder = { Text(stringResource(R.string.ph_suspect_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                )
+                Small(stringResource(R.string.ph_suspect_add)) {
+                    if (prefix.count(Char::isDigit) >= 3) {
+                        SpamFilter.setSuspectPrefix(context, prefix, true)
+                        suspects = SpamFilter.suspectPrefixes(context).sorted(); prefix = ""; onChanged()
+                    }
+                }
+            }
+        }
+        items((SpamFilter.CALL_CENTER_PREFIXES + suspects).distinct(), key = { "s-$it" }) { p ->
+            val builtIn = p in SpamFilter.CALL_CENTER_PREFIXES
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(EuriseIcons.shield(), null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(p, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(if (p == "0843") R.string.ph_suspect_0843 else if (p == "0844") R.string.ph_suspect_0844 else R.string.ph_suspect_mine),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (!builtIn) Small(stringResource(R.string.ph_suspect_remove)) {
+                    SpamFilter.setSuspectPrefix(context, p, false); suspects = SpamFilter.suspectPrefixes(context).sorted(); onChanged()
+                }
+            }
         }
         item(key = "stopped") { Label(stringResource(R.string.ph_filter_stopped)) }
         if (filtered.isEmpty()) item(key = "stopped-none") { Note(stringResource(R.string.ph_filter_stopped_none)) }

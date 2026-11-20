@@ -57,6 +57,15 @@
     <string name="ph_dial_hint">Numero</string>
     <string name="ph_block_call">Blocca questo numero</string>
     <string name="ph_blocked_now">Numero bloccato. Si sblocca da Recenti › Filtro e numeri bloccati.</string>
+    <string name="ph_suspect_spam">Sospetto spam (%1$s…)</string>
+    <string name="ph_suspect_title">Sospetto spam</string>
+    <string name="ph_suspect_sub">Non blocca: quando chiama un numero fuori dalla Rubrica che comincia così, sulla chiamata, nella notifica e nei Recenti compare «Sospetto spam». Puoi segnare i prefissi dei call center che ti chiamano.</string>
+    <string name="ph_suspect_hint">Prefisso, per esempio 02 8734</string>
+    <string name="ph_suspect_add">Segna</string>
+    <string name="ph_suspect_remove">Togli</string>
+    <string name="ph_suspect_0843">Call center per sondaggi e statistiche (AGCOM)</string>
+    <string name="ph_suspect_0844">Call center per vendite e ricerche di mercato (AGCOM)</string>
+    <string name="ph_suspect_mine">Segnato da te</string>
     <string name="ph_search_all">Cerca in rubrica</string>
     <string name="ph_search_none">Nessun contatto trovato.</string>
     <string name="ph_forget_calls">Togli dai recenti</string>

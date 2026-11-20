@@ -3396,3 +3396,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Sicurezza: chiave del Ponte del computer nel portachiavi del sistema (GNOME Keyring, KWallet), migrata dal file senza rifare l'abbinamento → `docs/SICUREZZA.md`.
 - 20 novembre, Sicurezza: cassetta del Ponte nel cloud non ancora costruita; pronto in `core/ponte` il suo formato con segretezza in avanti (`Mailbox`) → `docs/SICUREZZA.md`.
 - 20 novembre, Sicurezza: intent verso le altre app della suite controllati (CSV delle password del Browser, «Salva in»/«Apri da», sblocco di Password, dettatura); Mappe con la versione ufficiale → `docs/SICUREZZA.md`.
+- 20 novembre, Organizzazione per Comunicazione: Telefono e Rubrica (chiamate perse, tastierino, ricerca, contatti senza numero, schermata della chiamata) · giro 896 → `docs/stato/COMUNICAZIONE.md`.

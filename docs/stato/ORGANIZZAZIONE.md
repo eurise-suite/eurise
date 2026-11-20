@@ -51,6 +51,10 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 20 novembre: Telefono e Rubrica (giro 896, area Comunicazione)
+- Su richiesta del proprietario questa chat ha corretto Telefono e Rubrica (APK `phone/`, area Comunicazione) e toccato
+  `core/contacts` (comune con Messaggi). Dettagli in `docs/stato/COMUNICAZIONE.md`, voce «correzioni del 20 novembre».
+
 ## 16 novembre, sera: icone nel cassetto, pulizia, tavole delle Note
 - **Calendario, Attività e Note con un'icona propria** tra le app di Android (activity-alias `.CalendarApp`, `.TasksApp`,
   `.NotesApp` → `SectionShortcutActivity`, come File e Scanner), disegni della serie colorata (`scripts/icone.py`:
