@@ -284,11 +284,11 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
                     else context.contentResolver.openInputStream(android.net.Uri.parse(item.uri))?.use { input -> file.outputStream().use { input.copyTo(it) } }
                         ?: throw java.io.IOException("foto")
                     eu.eurise.core.suite.FilesContract.saveIn(
-                        eu.eurise.gallery.BuildConfig.HUB_PACKAGE, context.fileUri(file), mimeOf(name, item.isVideo), name, "gallery", fromLabel,
+                        context, eu.eurise.gallery.BuildConfig.HUB_PACKAGE, context.fileUri(file), mimeOf(name, item.isVideo), name, "gallery", fromLabel,
                     )
                 }
             }.onSuccess { intent ->
-                runCatching { context.startActivity(intent) }.onFailure { Toast.makeText(context, saveMissing, Toast.LENGTH_LONG).show() }
+                runCatching { context.startActivity(intent!!) }.onFailure { Toast.makeText(context, saveMissing, Toast.LENGTH_LONG).show() }
             }.onFailure { Toast.makeText(context, sendFailed, Toast.LENGTH_LONG).show() }
         }
     }
@@ -303,7 +303,7 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
         diary = { diaryFor = it },
     )
     // «Apri da…» di Eurise File: una foto o un video dal telefono o da un cloud collegato, nel visore della Galleria.
-    val hasFiles = remember { runCatching { context.packageManager.getPackageInfo(eu.eurise.gallery.BuildConfig.HUB_PACKAGE, 0) }.isSuccess }
+    val hasFiles = remember { eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, eu.eurise.gallery.BuildConfig.HUB_PACKAGE) }
     val openFrom = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data ?: return@rememberLauncherForActivityResult
         runCatching {
@@ -348,7 +348,8 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
                     privacyLevel = GalPrivacy.level(settings.placesOn && settings.namesOn, settings.uploadOn),
                     onDiary = { openDiary = it },
                     onOpenFromFiles = if (hasFiles) ({
-                        openFrom.launch(eu.eurise.core.suite.FilesContract.openFrom(eu.eurise.gallery.BuildConfig.HUB_PACKAGE, MediaExtensions, fromLabel))
+                        eu.eurise.core.suite.FilesContract.openFrom(context, eu.eurise.gallery.BuildConfig.HUB_PACKAGE, MediaExtensions, fromLabel)
+                            ?.let { runCatching { openFrom.launch(it) } }
                     }) else null,
                 )
                 2 -> PlacesPage(placeList, settings, vm) { key -> placeKey = key; album = null; filter = Filter.All; section = 0 }

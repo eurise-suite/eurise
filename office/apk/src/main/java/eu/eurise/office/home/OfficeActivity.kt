@@ -285,7 +285,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
 
     override fun openFrom() {
         val fromSuite = Suite.installed(this) && runCatching {
-            openFromSuite.launch(Suite.openFrom(DocKind.openable, getString(R.string.office_app_name)))
+            openFromSuite.launch(Suite.openFrom(this, DocKind.openable, getString(R.string.office_app_name))!!)
         }.isSuccess
         if (!fromSuite) openFromSystem.launch(arrayOf("*/*"))
     }
@@ -350,7 +350,7 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     /** «Apri da…» di Eurise File già in [start]; senza l'app Eurise il selettore di Android. */
     private fun openFromAt(start: String) {
         val fromSuite = Suite.installed(this) && runCatching {
-            openFromSuite.launch(Suite.openFrom(DocKind.openable, getString(R.string.office_app_name), start))
+            openFromSuite.launch(Suite.openFrom(this, DocKind.openable, getString(R.string.office_app_name), start)!!)
         }.isSuccess
         if (!fromSuite) openFromSystem.launch(arrayOf("*/*"))
     }

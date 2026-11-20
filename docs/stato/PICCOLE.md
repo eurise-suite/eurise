@@ -330,3 +330,6 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 Password, `LoginsProvider` (METHOD_FETCH): chi chiedeva «com» riceveva tutte le voci .com; ora la scelta passa da
 `Matching.fetchMatches` (nome con il punto; sito, domini superiori e sottodomini), con test. Nessun cambiamento ai dati.
 Dettagli in `docs/SICUREZZA.md`, sezione «Computer».
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Galleria: «Salva in» e «Apri da File» solo verso l'app Eurise della suite; Tastiera: dettatura solo verso Voce della suite (`SuiteTrust`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».

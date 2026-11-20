@@ -1,13 +1,15 @@
 package eu.eurise.core.suite
 
 import android.content.ClipData
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 
 /**
  * «Salva in…» e «Apri da…» di Eurise File (core/files: FilesActivity nell'app Eurise) per gli altri APK della suite:
  * Galleria, Browser, Office. L'attività chiede il permesso della suite, quindi la possono aprire solo le app firmate
- * con la stessa chiave.
+ * con la stessa chiave. Nell'altro verso, gli intent si danno solo se l'app Eurise installata è davvero della suite
+ * ([SuiteAccess.trusted]): senza, un'app con lo stesso nome di pacchetto riceverebbe i file (20 novembre 2026).
  */
 object FilesContract {
     const val ACTION_SAVE_IN = "eu.eurise.action.SAVE_IN"
@@ -34,24 +36,25 @@ object FilesContract {
     /**
      * «Salva in…» per [uri] (un Uri del proprio FileProvider): il permesso di lettura passa con l'intent.
      * [kind] separa le proposte («gallery», «download», «office»), [from] è il nome mostrato («da Galleria»).
+     * Null se l'app Eurise manca o non è della suite: chi chiama passa al suo ripiego (foglio di condivisione, avviso).
      */
-    fun saveIn(hubPackage: String, uri: Uri, mime: String, name: String, kind: String, from: String): Intent =
-        Intent(ACTION_SAVE_IN).setClassName(hubPackage, ACTIVITY)
+    fun saveIn(context: Context, hubPackage: String, uri: Uri, mime: String, name: String, kind: String, from: String): Intent? =
+        SuiteAccess.trusted(context, Intent(ACTION_SAVE_IN).setClassName(hubPackage, ACTIVITY)
             .setType(mime)
             .putExtra(Intent.EXTRA_STREAM, uri)
             .putExtra(Intent.EXTRA_TITLE, name)
             .putExtra(EXTRA_KIND, kind)
             .putExtra(EXTRA_FROM, from)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            .also { it.clipData = ClipData.newRawUri(name, uri) }
+            .also { it.clipData = ClipData.newRawUri(name, uri) })
 
     /**
      * «Apri da…»: torna con l'Uri del file scelto (in `data`) e, se viene da Eurise File, il posto d'origine. Con [start]
-     * (chiave di una cartella o [START_PHONE]) si apre già lì invece che sui recenti.
+     * (chiave di una cartella o [START_PHONE]) si apre già lì invece che sui recenti. Null come per [saveIn].
      */
-    fun openFrom(hubPackage: String, extensions: Collection<String>, from: String, start: String? = null): Intent =
-        Intent(ACTION_OPEN_FROM).setClassName(hubPackage, ACTIVITY)
+    fun openFrom(context: Context, hubPackage: String, extensions: Collection<String>, from: String, start: String? = null): Intent? =
+        SuiteAccess.trusted(context, Intent(ACTION_OPEN_FROM).setClassName(hubPackage, ACTIVITY)
             .putExtra(EXTRA_EXTENSIONS, extensions.joinToString(","))
             .putExtra(EXTRA_FROM, from)
-            .apply { if (start != null) putExtra(EXTRA_START, start) }
+            .apply { if (start != null) putExtra(EXTRA_START, start) })
 }

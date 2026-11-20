@@ -8,7 +8,6 @@ import android.os.Build
 import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import eu.eurise.core.contacts.Reach
 import java.util.Locale
 
 /**
@@ -29,7 +28,9 @@ class Dictation(private val activity: ComponentActivity) {
     }
     private var registered = false
 
-    private val voicePackage: String? get() = listOf("eu.eurise.voice", "eu.eurise.voice.debug").firstOrNull { Reach.installed(activity, it) }
+    /** Solo Voce della suite: un'app con lo stesso nome ascolterebbe al suo posto ciò che si detta. */
+    private val voicePackage: String? get() = listOf("eu.eurise.voice", "eu.eurise.voice.debug")
+        .firstOrNull { eu.eurise.core.suite.SuiteAccess.isSuitePackage(activity, it) }
 
     private val systemIntent get() = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)

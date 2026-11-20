@@ -137,3 +137,6 @@ approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la t
 ## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
 - `Uscite` del motore accetta solo il permesso della propria variante; Office chiede aspetto, luoghi, privacy e uscite solo
   a fornitori della suite verificati. Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Office: «Salva in», «Apri da» e `Suite.installed` contano solo l'app Eurise della suite (`FilesContract` con il `Context`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».

@@ -123,7 +123,9 @@ class PonteApprove : ComponentActivity() {
     }
 
     private fun askUnlock() {
-        val i = Intent(PasswordContract.ACTION_UNLOCK).setComponent(ComponentName(passwordPackage, PasswordContract.ALIAS))
+        // Solo verso Password della suite: un'app con lo stesso nome potrebbe chiedere la frase principale al suo posto.
+        val i = eu.eurise.core.suite.SuiteAccess.trusted(this, Intent(PasswordContract.ACTION_UNLOCK)
+            .setComponent(ComponentName(passwordPackage, PasswordContract.ALIAS))) ?: return
         runCatching { unlock.launch(i) }
     }
 

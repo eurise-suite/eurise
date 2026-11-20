@@ -257,8 +257,16 @@ computer (area Computer, tavola PcEmail).
   Ipotesi da confermare con il proprietario. (6) **ricerca in rubrica** in Preferiti, Recenti e Rubrica (`SearchState`,
   stessa parola nelle tre, Indietro la cancella). (7) **chiamata**: Bolla e «Blocca questo numero» come icone discrete in
   alto (senza fondo); Blocca compare per i numeri fuori rubrica, chiude e blocca. Senza tavola: indicazioni precise del
-  proprietario. (8) **filtro antispam**: c'è già (Recenti › scudo); cosa aggiungere per le chiamate «di altissimo
-  profilo» è da decidere con il proprietario.
+  proprietario.
+- **Filtro antispam, decisioni del proprietario (20 novembre)**: (a) i call center **non si bloccano, si segnalano**:
+  «Sospetto spam (0844…)» sulla chiamata, nella notifica e nei Recenti per chi non è in rubrica e chiama da 0843/0844
+  (AGCOM, delibera 156/18/CIR) o da un prefisso segnato a mano (Filtro › Sospetto spam). `SpamFilter.suspect`, con test.
+  Giro 902. (b) **No** al blocco di tutti i numeri fuori rubrica (resta solo l'interruttore già esistente «Tutti gli
+  sconosciuti in silenzio», spento di base). (c) **Sì** all'elenco dei numeri molesti scaricato e aggiornato
+  periodicamente: **da fare**, prima va scelta la fonte con il proprietario. L'elenco aperto più noto (Yet Another Call
+  Blocker) viene da un servizio commerciale chiuso, con aggiornamenti da server di terzi, ed è fermo dal 2021. Il
+  Telefono non ha il permesso Internet: lo scaricamento starebbe meglio nell'APK principale (WorkManager, Wi-Fi), con il
+  Telefono che chiede «è nell'elenco?» con il permesso di firma; spento di base, nel centro privacy, avviso prima di accenderlo.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -475,3 +483,6 @@ che suona con Eurise.
   passano solo tra app della suite verificate (`SuiteAccess`). Chat: il ritorno dall'accesso vale dieci minuti e una volta;
   la chiave di recupero va solo all'app Eurise vera; trascrizione dei vocali solo a Voce della suite.
   Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Posta: «Salva in» e «Apri da» di Eurise File solo verso l'app Eurise della suite (`FilesContract` con il `Context`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».
