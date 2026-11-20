@@ -5,7 +5,8 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 («Crittografia», «Backup di Android»).
 
 ### Per ripartire
-- Ramo `prova-backup` (da `brand`). Prima di ogni push: fetch e rebase su `origin/brand`, mai push forzato.
+- Ramo `prova-backup` (da `brand`). Prima di ogni push: fetch di `origin/brand`; dato che il ramo è già pubblicato e il
+  push forzato è vietato, `brand` si porta dentro con un merge (il rebase riscriverebbe i commit già spinti).
 - Fase 1 (cosa entra) decisa il 20 novembre. **Fase 2: anteprime sulla tela di design**, poi codice, poi prova vera (fase 3).
 
 ## Cosa c'è già (al 20 novembre)
@@ -64,6 +65,17 @@ Ogni app separata consegna i suoi dati con un fornitore protetto dal permesso de
 - **Promemoria di prova una volta l'anno**: il telefono chiede di scrivere la frase solo per controllarla; se non la si
   ricorda, la si cambia subito.
 - Se si perdono frase e codice, il backup non si apre: nessuna porta di servizio (deciso, spiegato al proprietario).
+
+## Anteprime (fase 2, 20 novembre 2026)
+Tela «Icone della suite», pagina **Backup** (https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo#page-backup), in attesa di
+approvazione. Generate da uno script (stile Perla, come le tavole del Cloud).
+- Fila Backup: `BakPrima` (spento, cosa salva app per app, «Fai il backup ora» sotto il pollice), `BakDove` (destinazioni
+  con le dieci tacchette, servizi USA per ultimi con avviso), `BakFrase`, `BakCodice` (codice su carta, si controlla un
+  gruppo), `BakStato` (fatto e verificato, frequenza, i cinque conservati), `BakPromemoria` (una volta l'anno),
+  `BakNuovaFrase` (con l'impronta; subito un backup nuovo, i vecchi si aprono con frase e codice vecchi).
+- Fila Ripristino: `RipPrimo` (prima schermata del telefono nuovo), `RipScegli` (dove sta, quale backup), `RipFrase`
+  (frase o codice), `RipConferma` (cosa rimetto, app per app, interruttori; avviso su ciò che si sostituisce; la
+  cassaforte si aggiunge accanto), `RipDopo` (passi che restano, uno per app; i dati aspettano cifrati).
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
