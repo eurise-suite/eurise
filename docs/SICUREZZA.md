@@ -1,13 +1,32 @@
 # Sicurezza della suite
 
-Da 18 novembre 2026 sera il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file
-come suo stato. Fatto: punto 1 (chiave di prova, fasi 1 e 2 installate dal proprietario), punto 2 in parte (strumenti),
-punto 3 (GeckoView 160); il 18 novembre, notte, punti 5 e 6 (porte d'ingresso, crittografia, backup della Tastiera) nel ramo
-**`prova-sicurezza`**, prova sull'emulatore verde, **giro 842 in `apk-prova`** (Office e Mappe non toccati in quel giro:
-vengono dai loro flussi). Punto 4 avviato (azioni allo SHA, Dependabot, OSV-Scanner, impronte «lenient») e punto 7 in
-parte (`SECURITY.md`, `docs/MINACCE.md`). Prossimo: lanciare `librerie-verificate.yml` e passare a «strict»; permessi
-minimi nei flussi; Ponte con chiavi effimere; punto 8. Rami di lavoro rimasti, già uniti o superati:
-`sicurezza` (prova della firma sull'emulatore), `strumenti`, `strumenti-2`, `prova-avvio`.
+Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
+
+### Per ripartire (aggiornato il 20 novembre 2026, pomeriggio)
+- **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
+  `brand`. Al 20 novembre i due rami sono allo stesso commit (6527537). Prima di ogni push: fetch e rebase su
+  `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
+  protetti»).
+- **Ultimo giro pubblicato**: Compila **883** da `brand`, in `apk-prova` con tutte le app della suite, Mappe e motore di
+  Office presi dai loro ultimi giri riusciti. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
+  porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
+  con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di
+  Android spento in tutte le app; azioni allo SHA, permessi minimi, CodeQL, OSV-Scanner, Dependabot; librerie verificate
+  con impronte e **firme PGP degli autori** (`librerie-verificate.yml` le rigenera); contenuti scaricati fissati per
+  commit e impronta; `SECURITY.md`, `docs/MINACCE.md`; computer (Ponte, estensione Firefox 0.2.1, Flatpak 25.08).
+- **Prossimo, in ordine proposto**:
+  1. Chiave del Ponte del computer nel portachiavi del sistema (Secret Service), con l'area Computer.
+  2. Cassetta del Ponte nel cloud con segretezza in avanti (oggi usa la chiave fissa).
+  3. Voci «Aperto» delle porte d'ingresso: intent verso l'app Eurise con `SuiteAccess.trusted`; Mappe senza
+     `SUITE_DEBUG` fuori dalle prove (prima della versione ufficiale).
+  4. Segreti affidati all'app Eurise sigillati nel Keystore (tocca il backup); blocco delle Note legato all'impronta.
+  5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
+     passare dal flusso delle impronte.
+  6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
+- **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
+  password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
+  `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
 
 ## Strumenti di prova
 - `.github/workflows/prova-firma.yml` + `.github/scripts/prova-firma-emulatore.sh`: firma e permessi sull'emulatore
