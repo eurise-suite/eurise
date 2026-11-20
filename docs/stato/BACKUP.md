@@ -7,7 +7,8 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 ### Per ripartire
 - Ramo `prova-backup` (da `brand`). Prima di ogni push: fetch di `origin/brand`; dato che il ramo è già pubblicato e il
   push forzato è vietato, `brand` si porta dentro con un merge (il rebase riscriverebbe i commit già spinti).
-- Fase 1 (cosa entra) decisa il 20 novembre. **Fase 2: anteprime sulla tela di design**, poi codice, poi prova vera (fase 3).
+- Fase 1 (cosa entra) decisa il 20 novembre; fase 2 (tavole approvate, schermate vere) consegnata il 21 col giro 909.
+  **Prossimo: fase 3, prova vera sull'emulatore**, poi le app separate una alla volta, da Password.
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -134,6 +135,9 @@ pollice), al posto delle finestre:
 - **Bentornato**: `applyPending` segna `restored_at`; avviso sulla Scrivania e scheda in cima alla pagina (Eurise al
   suo posto, parole della Tastiera in attesa se non c'è, backup automatico, «In arrivo»), finché si tocca «Ho visto».
 - L'avviso della Scrivania è uno solo alla volta: telefono nuovo → bentornato → backup fermo → promemoria annuale.
+- Consegnato con il giro **909** (solo l'APK principale). Non ancora provato sul telefono né sull'emulatore.
+- Prossimo: prova vera sull'emulatore (fase 3: backup, cancellazione, ripristino, anche il passaggio con la Tastiera),
+  poi Password nel backup (fornitore protetto dal permesso della suite, come la Tastiera).
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
