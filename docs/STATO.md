@@ -3397,3 +3397,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Sicurezza: cassetta del Ponte nel cloud non ancora costruita; pronto in `core/ponte` il suo formato con segretezza in avanti (`Mailbox`) → `docs/SICUREZZA.md`.
 - 20 novembre, Backup: elenco di cosa entra deciso app per app, anteprime sulla tela (pagina Backup); icona «Backup» nel cassetto, scorciatoia sull'icona di Eurise e avviso sulla Scrivania se il backup è fermo (giro 893, ramo prova-backup) → `docs/stato/BACKUP.md`.
 - 20 novembre, Organizzazione per Comunicazione: Telefono e Rubrica (chiamate perse, tastierino, ricerca, contatti senza numero, schermata della chiamata) · giro 896 → `docs/stato/COMUNICAZIONE.md`.
+- 20 novembre, Backup: conferma prima di sostituire al ripristino, Tastiera senza zip in chiaro (tubo e attesa sigillata nel Keystore), avviso anche sul tablet, icona Backup nel cassetto della Scrivania (giro 905) → `docs/stato/BACKUP.md`.
