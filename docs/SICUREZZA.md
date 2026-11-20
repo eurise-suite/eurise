@@ -4,10 +4,10 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 
 ### Per ripartire (aggiornato il 20 novembre 2026, sera)
 - **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
-  `brand`. Al 20 novembre i due rami sono allo stesso commit (6527537). Prima di ogni push: fetch e rebase su
+  `brand`. Al 20 novembre, sera, i due rami sono allo stesso commit (giro 887 di Compila verde su `prova-sicurezza`). Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **883** da `brand`, in `apk-prova` con tutte le app della suite, Mappe e motore di
+- **Ultimo giro pubblicato**: (il giro 887 ha cambiato solo il computer: niente da ripubblicare) Compila **883** da `brand`, in `apk-prova` con tutte le app della suite, Mappe e motore di
   Office presi dai loro ultimi giri riusciti. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
 - **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
   porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
