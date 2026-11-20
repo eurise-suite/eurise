@@ -106,6 +106,9 @@ class AppsRepository(private val context: Context) {
         AppEntry("eurise:qr", "Lettore QR", own, null, Category.Tools, "qr"),
         AppEntry("eurise:privacy", "Privacy", own, null, Category.Tools, "privacy"),
         AppEntry("eurise:ponte", "Telefono e computer", own, null, Category.Tools, "ponte"),
+        // Il backup cifrato con la sua icona (20 novembre 2026): nel cassetto della Scrivania le icone di Android
+        // dell'app Eurise non compaiono, quindi la sezione va elencata qui.
+        AppEntry("eurise:backup", "Backup", own, null, Category.Tools, "backup"),
         AppEntry("eurise:notes", "Note", own, null, Category.Work, "notes"),
         AppEntry("eurise:tasks", "Attività", own, null, Category.Work, "tasks"),
         AppEntry("eurise:alfred", "Alfred", own, null, Category.Ai, "alfred"),

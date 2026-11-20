@@ -106,6 +106,10 @@ Aggiunti, su sua richiesta (senza tavola):
   `keyboard_restore.sealed`; al ripristino va lì direttamente, senza passare dalla cartella d'attesa in chiaro; il
   vecchio `keyboard_restore.zip` si sigilla e si cancella al primo avvio.
 - **Avviso sulla Scrivania anche sul tablet**, sopra l'orologio.
+- **Icona «Backup» nel cassetto della Scrivania** (`eurise:backup` in `Apps.euriseSections`): il cassetto della
+  Scrivania non mostra le icone di Android dell'app Eurise (né l'alias `.BackupApp` né Eurise stessa), elenca a mano le
+  sezioni. Il proprietario non le vedeva col giro 893. La scorciatoia sulla pressione lunga vale solo negli altri
+  launcher, perché nella Scrivania non c'è un'icona di Eurise.
 - Da provare dal vero (fase 3, emulatore): backup con la Tastiera installata, ripristino senza Tastiera, poi Tastiera.
 
 ## Formato (proposta)
