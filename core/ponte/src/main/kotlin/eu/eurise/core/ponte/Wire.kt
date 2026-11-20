@@ -13,6 +13,8 @@ import java.io.OutputStream
  */
 object Wire {
     const val MAX_FRAME = 8 * 1024 * 1024
+    /** Il primo messaggio (chi sei, o l'abbinamento) sta in pochi KB: prima di sapere chi parla non si alloca di più. */
+    const val MAX_OPENING = 16 * 1024
     /** Nome del servizio mDNS sulla rete di casa. */
     const val SERVICE = "_eurise-ponte._tcp"
     const val DEFAULT_PORT = 47_610
@@ -26,10 +28,10 @@ object Wire {
     }
 
     /** La prossima cornice; null a fine flusso. Una lunghezza fuori misura chiude il collegamento (IllegalStateException). */
-    fun readFrame(input: InputStream): ByteArray? {
+    fun readFrame(input: InputStream, max: Int = MAX_FRAME): ByteArray? {
         val d = DataInputStream(input)
         val size = try { d.readInt() } catch (e: EOFException) { return null }
-        check(size in 1..MAX_FRAME) { "cornice non valida" }
+        check(size in 1..max) { "cornice non valida" }
         return ByteArray(size).also { d.readFully(it) }
     }
 

@@ -38,9 +38,7 @@ class LoginsProvider : ContentProvider() {
                 val domain = arg?.let(Matching::host).orEmpty()
                 if (domain.isEmpty()) return out
                 val found = open.entries.filter { e ->
-                    if (e.card != null || e.password.isEmpty()) return@filter false
-                    val h = Matching.host(e.url)
-                    h.isNotEmpty() && (h == domain || h.endsWith(".$domain") || Matching.domainMatches(e.url, domain))
+                    e.card == null && e.password.isNotEmpty() && Matching.fetchMatches(e.url, domain)
                 }.sortedByDescending { it.lastUsed }.take(MAX)
                 out.putStringArray(C.KEY_GUID, found.map { it.uuid }.toTypedArray())
                 out.putStringArray(C.KEY_USERNAME, found.map { it.username }.toTypedArray())

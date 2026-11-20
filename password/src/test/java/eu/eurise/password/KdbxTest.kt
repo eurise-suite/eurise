@@ -183,6 +183,19 @@ class KdbxTest {
         assertFalse(d.domainMatches("", "murena.io"))
     }
 
+    @Test fun fetchNeverHandsOutWholeTlds() {
+        val d = eu.eurise.password.autofill.Matching
+        assertTrue(d.fetchMatches("https://github.com", "github.com"))
+        assertTrue(d.fetchMatches("https://github.com", "gist.github.com"))
+        assertTrue(d.fetchMatches("https://accounts.google.com", "google.com"))
+        assertFalse(d.fetchMatches("https://github.com", "com"))
+        assertFalse(d.fetchMatches("https://github.com", "falsogithub.com"))
+        assertFalse(d.fetchMatches("https://mail.example.com", "other.example.com"))
+        assertFalse(d.fetchMatches("https://posta.murena.io", "io"))
+        assertFalse(d.fetchMatches("https://github.com", ".com"))
+        assertFalse(d.fetchMatches("https://github.com", ""))
+    }
+
     @Test fun formFieldsAreRecognised() {
         val f = eu.eurise.password.autofill.Matching
         val k = eu.eurise.password.autofill.FieldKind.entries.associateBy { it.name }

@@ -102,6 +102,10 @@ class PonteTest {
         assertNull(Wire.readFrame(input))
         val bad = ByteArrayInputStream(byteArrayOf(0x7f, 0, 0, 0))
         assertTrue(runCatching { Wire.readFrame(bad) }.isFailure)
+        // Il primo messaggio di uno sconosciuto non può chiedere più di pochi KB.
+        val big = ByteArrayOutputStream().also { Wire.writeFrame(it, ByteArray(Wire.MAX_OPENING + 1)) }.toByteArray()
+        assertTrue(runCatching { Wire.readFrame(ByteArrayInputStream(big), Wire.MAX_OPENING) }.isFailure)
+        assertEquals(Wire.MAX_OPENING + 1, Wire.readFrame(ByteArrayInputStream(big))?.size)
         val path = Wire.mailboxPath("/Eurise/Ponte/", "pc/../1", Message(Kind.Notify, "a b", 42))
         assertEquals("/Eurise/Ponte/pc1/0000000000042-ab.msg", path)
         assertFalse(path.contains(".."))

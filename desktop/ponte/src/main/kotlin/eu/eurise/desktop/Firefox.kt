@@ -108,7 +108,9 @@ object FirefoxHost {
 
     private fun answer(store: Store, m: Map<String, String>): Map<String, String> {
         val t = m["t"].orEmpty()
-        val fields = m.filterKeys { it.startsWith("f.") }.mapKeys { it.key.removePrefix("f.") }
+        // Da Firefox i file arrivano solo a pezzi ([Recent.tmp]): un percorso del computer non si accetta mai, così
+        // nemmeno un'estensione manomessa può far partire verso il telefono un file qualsiasi della cartella home.
+        val fields = m.filterKeys { it.startsWith("f.") }.mapKeys { it.key.removePrefix("f.") } - "path"
         when (t) {
             "hello" -> {
                 val status = Control.query("status")

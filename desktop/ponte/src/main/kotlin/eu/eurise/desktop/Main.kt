@@ -156,8 +156,10 @@ class Server(private val store: Store) {
         Control.listen(this::query) { kind, fields -> deliver(kind, fields) }
         while (true) {
             val client = socket.accept()
+            // Solo dalla rete di casa (o da una VPN privata), e mai più di [Peers.MAX] collegamenti insieme.
+            if (!Peers.allowed(client.inetAddress) || !Peers.slots.tryAcquire()) { runCatching { client.close() }; continue }
             val s = secret
-            thread(isDaemon = true) { serve(client, s) { secret = null; paired() } }
+            thread(isDaemon = true) { try { serve(client, s) { secret = null; paired() } } finally { Peers.slots.release() } }
         }
     }
 
@@ -208,15 +210,16 @@ class Server(private val store: Store) {
 
     private fun serve(client: Socket, secret: ByteArray?, paired: () -> Unit) = client.use { c ->
         // Il telefono dà un segno di vita ogni pochi minuti: se tace così a lungo, il collegamento è morto.
-        c.soTimeout = 15 * 60_000
+        // Prima di sapere chi è: dieci secondi e pochi KB per presentarsi. Poi il tempo lungo del collegamento fisso.
+        c.soTimeout = 10_000
         c.keepAlive = true
         val input = c.getInputStream().buffered()
         val output = c.getOutputStream()
-        val opening = Opening.decode(Wire.readFrame(input) ?: return) ?: return
+        val opening = Opening.decode(runCatching { Wire.readFrame(input, Wire.MAX_OPENING) }.getOrNull() ?: return) ?: return
         val device = when (opening) {
             is Opening.Pair -> {
                 if (secret == null || !opening.verify(secret)) { println("Abbinamento rifiutato: codice non valido."); return }
-                val d = Device(opening.deviceId, opening.name, opening.publicKey, secret)
+                val d = Device(opening.deviceId, Peers.clean(opening.name), opening.publicKey, secret)
                 store.saveDevices(store.devices().filterNot { it.id == d.id } + d)
                 println("Abbinato: ${d.name}. Controlla che sul telefono ci sia lo stesso codice: ${confirmCode(store.identity.publicBytes, d.publicKey, secret)}")
                 paired()
@@ -231,6 +234,7 @@ class Server(private val store: Store) {
         val hello = mapOf("name" to name) + (upgrade?.let { mapOf(Opening.EPHEMERAL to Opening.encodeKey(it.first)) } ?: emptyMap())
         Wire.writeFrame(output, fixed.seal(Message(Kind.Hello, UUID.randomUUID().toString(), System.currentTimeMillis(), hello)))
         val channel = upgrade?.second ?: fixed
+        c.soTimeout = 15 * 60_000
         val session = Session(device, channel, output)
         live.getOrPut(device.id) { java.util.concurrent.CopyOnWriteArrayList() }.add(session)
         try {
@@ -252,6 +256,31 @@ class Server(private val store: Store) {
         .flatMap { it.inetAddresses.toList() }
         .filterIsInstance<Inet4Address>()
         .firstOrNull { it.isSiteLocalAddress }?.hostAddress
+}
+
+/**
+ * Chi può bussare al Ponte. Il Ponte è per la rete di casa: indirizzi privati (192.168…, 10…, 172.16–31…), locali al
+ * collegamento, IPv6 locali (fc00::/7) e lo spazio condiviso 100.64.0.0/10 delle VPN private come Tailscale. Un
+ * computer con un indirizzo pubblico non risponde a chi viene da Internet. Il codice dell'abbinamento e le chiavi
+ * restano la vera protezione: questo toglie solo la superficie inutile.
+ */
+object Peers {
+    const val MAX = 32
+    val slots = java.util.concurrent.Semaphore(MAX)
+
+    fun allowed(a: InetAddress): Boolean {
+        if (a.isLoopbackAddress || a.isSiteLocalAddress || a.isLinkLocalAddress) return true
+        val b = a.address
+        if (a is Inet4Address) return (b[0].toInt() and 0xFF) == 100 && (b[1].toInt() and 0xC0) == 64
+        // IPv6 ULA fc00::/7 e IPv4 mappati su IPv6.
+        if ((b[0].toInt() and 0xFE) == 0xFC) return true
+        if (b.size == 16 && b.take(10).all { it.toInt() == 0 } && b[10].toInt() == -1 && b[11].toInt() == -1)
+            return allowed(InetAddress.getByAddress(b.copyOfRange(12, 16)))
+        return false
+    }
+
+    /** Il nome che il telefono dà di sé, senza caratteri di controllo (finisce nel terminale e nelle notifiche). */
+    fun clean(name: String) = name.filter { !it.isISOControl() && it.category != CharCategory.FORMAT }.take(64).ifBlank { "Telefono" }
 }
 
 /** Ciò che succede sul computer quando arriva un messaggio: con gli strumenti normali di Ubuntu e Fedora. */
@@ -323,7 +352,8 @@ object Linux {
 
     /** Scrive dove c'è il cursore (wtype su Wayland, xdotool su X11); falso se non c'è lo strumento. */
     fun type(text: String) = when {
-        wayland && has("wtype") -> run("wtype", text)
+        // Il testo dal telefono va a wtype dall'ingresso standard: un testo che comincia con «-» non diventa un'opzione.
+        wayland && has("wtype") -> run("wtype", "-", stdin = text)
         !wayland && has("xdotool") -> run("xdotool", "type", "--delay", "8", "--", text)
         else -> false
     }
@@ -334,7 +364,7 @@ object Linux {
     }
 
     fun notify(title: String, body: String) {
-        if (has("notify-send")) run("notify-send", "--app-name=Eurise", title, body) else println("$title: $body")
+        if (has("notify-send")) run("notify-send", "--app-name=Eurise", "--", title, body) else println("$title: $body")
     }
 }
 

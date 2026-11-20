@@ -104,6 +104,7 @@
     if (!(el instanceof HTMLInputElement)) return;
     if (settings === null) settings = await browser.runtime.sendMessage({ op: "settings" }).catch(() => ({}));
     if (!settings || !settings.passwords) return;
+    if (location.protocol !== "https:") return; // senza HTTPS la password non si propone (background.js la rifiuta)
     const f = loginFields();
     if (!f || (el !== f.pwd && el !== f.user)) return;
     if (box) return;

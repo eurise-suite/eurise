@@ -23,6 +23,19 @@ object Matching {
         return page == saved || page.endsWith(".$saved")
     }
 
+    /**
+     * Le voci da dare a chi chiede le password di un sito (Browser, Ponte per Firefox): quelle del sito, di un suo
+     * dominio superiore e dei suoi sottodomini (il Browser le propone per google.com anche se salvate per
+     * accounts.google.com; la scelta resta all'utente). Mai per un nome senza punto: chi chiedesse «com» o «io» (una
+     * pagina su un dominio di primo livello) riceveva tutte le password di quei domini, fino al 20 novembre.
+     */
+    fun fetchMatches(entryUrl: String, requested: String): Boolean {
+        val page = host(requested)
+        if (!page.contains('.') || page.startsWith('.') || page.endsWith('.')) return false
+        val saved = host(entryUrl)
+        return saved.isNotEmpty() && (domainMatches(entryUrl, page) || saved.endsWith(".$page"))
+    }
+
     fun host(url: String): String = url.trim().lowercase()
         .substringAfter("://").substringBefore('/').substringBefore('?').substringBefore('#')
         .substringAfter('@').substringBefore(':').removePrefix("www.")

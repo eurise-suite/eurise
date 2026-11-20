@@ -380,7 +380,13 @@ browser.commands.onCommand.addListener(async (name) => {
 
 // --- Messaggi da popup, pannello, impostazioni e pagine ---
 
+/** Le sole richieste che lo script nelle pagine web può fare: tutto il resto viene solo dalle pagine dell'estensione. */
+const FROM_PAGES = new Set(["password", "settings"]);
+const fromExtension = (sender) => !!sender.url && sender.url.startsWith(browser.runtime.getURL(""));
+
 browser.runtime.onMessage.addListener((m, sender) => {
+  if (!m || typeof m.op !== "string") return false;
+  if (!fromExtension(sender) && !FROM_PAGES.has(m.op)) return Promise.resolve({ ok: false, text: "?" });
   switch (m.op) {
     case "hello": return hello();
     case "recent": return ponte("recent", {}, 6000);
@@ -404,9 +410,13 @@ browser.runtime.onMessage.addListener((m, sender) => {
     case "findDate": return Promise.resolve(findDate(m.text));
     case "draft": return browser.storage.session.get("draftEvent").then((d) => { browser.storage.session.remove("draftEvent"); return d.draftEvent || null; }).catch(() => null);
     case "password": {
-      // Solo dalla pagina stessa, per il suo sito: mai per un altro dominio.
-      const host = sender.tab && sender.url ? new URL(sender.url).hostname : "";
-      return host ? askPassword(host) : Promise.resolve({ ok: false, text: "?" });
+      // Solo dalla pagina stessa, per il suo sito: mai per un altro dominio, mai su una pagina senza HTTPS (chi sta in
+      // mezzo sulla rete potrebbe leggerla o cambiarla), e solo se le proposte di password sono accese.
+      let page = null;
+      try { page = sender.tab && sender.url ? new URL(sender.url) : null; } catch (e) { page = null; }
+      if (!page || sender.frameId) return Promise.resolve({ ok: false, text: "?" });
+      if (page.protocol !== "https:") return Promise.resolve({ ok: false, text: "Solo sui siti con HTTPS: su questa pagina la password potrebbe essere letta da altri sulla rete." });
+      return browser.storage.local.get(DEFAULTS).then((s) => s.passwords ? askPassword(page.hostname) : { ok: false, text: "Password dal telefono è spenta." });
     }
     case "settings": return browser.storage.local.get(DEFAULTS);
     case "applySettings": return applyTheme().then(buildMenus).then(applyProtection).then(() => ({ ok: true }));

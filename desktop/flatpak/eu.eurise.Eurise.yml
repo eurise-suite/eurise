@@ -4,7 +4,7 @@
 # con le dipendenze Maven scaricate prima (flatpak-gradle-generator): passo da fare quando si pubblica.
 app-id: eu.eurise.Eurise
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'  # 24.08 a fine supporto (agosto 2026); 25.08 fino all'estate 2027
 sdk: org.freedesktop.Sdk
 command: eurise
 finish-args:

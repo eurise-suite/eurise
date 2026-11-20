@@ -30,7 +30,7 @@ Flatpak su Flathub. Un'app «Eurise» sola per il computer che tiene il Ponte e 
   laterale e le sezioni vuote, Perla/Notte dal tema di GNOME o KDE, Ponte dentro (QR nella finestra se non c'è un telefono
   abbinato), stesso programma per i comandi del Ponte. Colori copiati da `core/designsystem` finché non è multipiattaforma.
   Chiudendo la finestra il Ponte si ferma.
-- **Flatpak** `eu.eurise.Eurise` (Freedesktop 24.08) con il programma compilato da Gradle (Java dentro); permessi per rete,
+- **Flatpak** `eu.eurise.Eurise` (Freedesktop 25.08 dal 20 novembre: la 24.08 non riceve più correzioni) con il programma compilato da Gradle (Java dentro); permessi per rete,
   notifiche, Download, native messaging di Firefox, profili dei browser in sola lettura.
 - **Compila**: lavori «Eurise per il computer» (prove di `core/sync` e `core/ponte`, `createDistributable`, prova d'avvio
   con Xvfb su Ubuntu 24.04, Ubuntu 22.04 e Fedora) e «Flatpak di Eurise»; `apk-prova` pubblica `eurise-linux.tar.gz` e
