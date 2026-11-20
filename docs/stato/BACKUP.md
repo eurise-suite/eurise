@@ -6,8 +6,7 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 
 ### Per ripartire
 - Ramo `prova-backup` (da `brand`). Prima di ogni push: fetch e rebase su `origin/brand`, mai push forzato.
-- Fase: **1, elenco di cosa entra** (proposta qui sotto, in attesa delle decisioni del proprietario). Poi anteprime sulla
-  tela di design (fase 2), codice, prova vera (fase 3).
+- Fase 1 (cosa entra) decisa il 20 novembre. **Fase 2: anteprime sulla tela di design**, poi codice, poi prova vera (fase 3).
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -57,9 +56,14 @@ Ogni app separata consegna i suoi dati con un fornitore protetto dal permesso de
 - **Messaggi e Telefono**: **tutto dentro**: SMS, MMS con allegati, registro chiamate, numeri bloccati. Al ripristino
   si riscrivono quando Messaggi è l'app SMS predefinita e Telefono quella delle chiamate (si chiede in quel momento).
 - **Browser**: la **cronologia entra**.
-- **Password**: domanda da rispiegare (la cassaforte nel backup e cosa succede se sul telefono ce n'è già una).
-- Posta (accesso da rifare), Chat (nuovo dispositivo + chiave di recupero), Office (documenti dentro): proposte in
-  attesa di eventuali obiezioni.
+- **Password**: la cassaforte **entra** così com'è (doppio lucchetto). Al ripristino, se sul telefono ce n'è già una,
+  non si sostituisce: si tengono tutte e due e si chiede quale usare o se unirle.
+- Posta (accesso da rifare), Chat (nuovo dispositivo + chiave di recupero), Office (documenti dentro): approvate.
+- **Frase nuova con lo sblocco del telefono**: finché si ha il telefono, frase e codice di recupero nuovi si fanno
+  confermando con impronta o codice di sblocco, senza la frase vecchia (la chiave dei dati è già nel Keystore).
+- **Promemoria di prova una volta l'anno**: il telefono chiede di scrivere la frase solo per controllarla; se non la si
+  ricorda, la si cambia subito.
+- Se si perdono frase e codice, il backup non si apre: nessuna porta di servizio (deciso, spiegato al proprietario).
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
