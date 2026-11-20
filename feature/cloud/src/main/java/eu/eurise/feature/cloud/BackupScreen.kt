@@ -135,17 +135,17 @@ private fun sizeText(bytes: Long?): String = when {
  * Le pagine del backup (tavole «Backup» e «Ripristino» della tela, 20 novembre 2026). Senza pagina si vede la pagina
  * principale: spento (cosa salva) o acceso (stato, frequenza, conservati).
  */
-private sealed interface Page {
+private sealed interface BkPage {
     /** Dove: per accenderlo ([setup]), per cambiare destinazione, o da dove ripristinare ([restoring]). */
-    data class Where(val restoring: Boolean, val setup: Boolean = false) : Page
-    data class Phrase(val place: BackupPlace?) : Page
-    data class Code(val place: BackupPlace?, val phrase: String, val code: String) : Page
-    data class Pick(val place: BackupPlace, val files: List<BackupFile>?) : Page
-    data class Unlock(val place: BackupPlace?, val file: BackupFile?, val bytes: ByteArray?) : Page
-    data class Confirm(val opened: BackupManager.Opened) : Page
+    data class Where(val restoring: Boolean, val setup: Boolean = false) : BkPage
+    data class Phrase(val place: BackupPlace?) : BkPage
+    data class Code(val place: BackupPlace?, val phrase: String, val code: String) : BkPage
+    data class Pick(val place: BackupPlace, val files: List<BackupFile>?) : BkPage
+    data class Unlock(val place: BackupPlace?, val file: BackupFile?, val bytes: ByteArray?) : BkPage
+    data class Confirm(val opened: BackupManager.Opened) : BkPage
     /** Frase nuova dopo lo sblocco del telefono (non serve la vecchia). */
-    data object NewPhrase : Page
-    data class NewCode(val phrase: String, val code: String) : Page
+    data object NewPhrase : BkPage
+    data class NewCode(val phrase: String, val code: String) : BkPage
 }
 
 /** Finestre sopra la pagina. */
@@ -168,7 +168,7 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
     val state by manager.state.collectAsStateWithLifecycle()
     val accounts by remember { CloudAccounts.get(context) }.accounts.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    var page by remember { mutableStateOf<Page?>(if (start == "restore") Page.Where(restoring = true) else null) }
+    var page by remember { mutableStateOf<BkPage?>(if (start == "restore") BkPage.Where(restoring = true) else null) }
     var ask by remember { mutableStateOf<Ask?>(if (start == "check") Ask.Check else null) }
     var files by remember { mutableStateOf<List<BackupFile>?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -182,13 +182,13 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
     fun toast(res: Int) = Toast.makeText(context, context.getString(res), Toast.LENGTH_LONG).show()
 
     /** Dopo la scelta della destinazione, secondo il motivo per cui la si è scelta. */
-    fun chosen(place: BackupPlace, why: Page.Where) {
+    fun chosen(place: BackupPlace, why: BkPage.Where) {
         when {
             why.restoring -> {
-                page = Page.Pick(place, null)
-                scope.launch { page = Page.Pick(place, manager.list(place)) }
+                page = BkPage.Pick(place, null)
+                scope.launch { page = BkPage.Pick(place, manager.list(place)) }
             }
-            why.setup || !state.configured -> page = Page.Phrase(place)
+            why.setup || !state.configured -> page = BkPage.Phrase(place)
             else -> {
                 manager.setPlace(place); page = null
                 scope.launch { manager.backupNow() }
@@ -196,7 +196,7 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
         }
     }
 
-    var folderFor by remember { mutableStateOf<Page.Where?>(null) }
+    var folderFor by remember { mutableStateOf<BkPage.Where?>(null) }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         val why = folderFor ?: return@rememberLauncherForActivityResult
         if (uri == null) return@rememberLauncherForActivityResult
@@ -207,14 +207,14 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val bytes = withContext(Dispatchers.IO) { runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() }
-            if (bytes != null) page = Page.Unlock(null, null, bytes)
+            if (bytes != null) page = BkPage.Unlock(null, null, bytes)
         }
     }
 
     // Lo sblocco del telefono (impronta, volto o codice) prima di una frase nuova senza quella vecchia.
     val keyguard = remember { context.getSystemService(KeyguardManager::class.java) }
     val confirmLegacy = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == Activity.RESULT_OK) page = Page.NewPhrase
+        if (r.resultCode == Activity.RESULT_OK) page = BkPage.NewPhrase
     }
     val unlockTitle = stringResource(R.string.bk_unlock_title)
     val unlockHint = stringResource(R.string.bk_unlock_hint)
@@ -227,7 +227,7 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
                 .build()
                 .authenticate(CancellationSignal(), context.mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { page = Page.NewPhrase }
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { page = BkPage.NewPhrase }
                 })
         } else {
             @Suppress("DEPRECATION")
@@ -238,8 +238,8 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
     when (val p = page) {
         null -> HomePage(
             state = state, accounts = accounts, files = files, busy = busy, onBack = onBack,
-            onStart = { page = Page.Where(restoring = false, setup = true) },
-            onRestore = { page = Page.Where(restoring = true) },
+            onStart = { page = BkPage.Where(restoring = false, setup = true) },
+            onRestore = { page = BkPage.Where(restoring = true) },
             onNow = {
                 scope.launch {
                     val r = manager.backupNow()
@@ -247,14 +247,14 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
                 }
             },
             onFrequency = manager::setFrequency,
-            onPlace = { page = Page.Where(restoring = false) },
-            onFile = { f -> state.place?.let { page = Page.Unlock(it, f, null) } },
+            onPlace = { page = BkPage.Where(restoring = false) },
+            onFile = { f -> state.place?.let { page = BkPage.Unlock(it, f, null) } },
             onNewPhrase = { newPhraseWithUnlock() },
             onCheck = { ask = Ask.Check },
             onSeen = manager::restoreSeen,
             onOff = { manager.turnOff(); files = null },
         )
-        is Page.Where -> WherePage(
+        is BkPage.Where -> WherePage(
             restoring = p.restoring, explain = p.setup, accounts = accounts,
             onBack = { page = null },
             onCloud = { acc -> chosen(BackupPlace.Cloud(acc.id), p) },
@@ -262,10 +262,10 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
             onFolder = { folderFor = p; folderPicker.launch(null) },
             onFile = if (p.restoring) ({ filePicker.launch(arrayOf("*/*")) }) else null,
         )
-        is Page.Phrase -> PhrasePage(back = stringResource(R.string.backup_title), onBack = { page = null }) { phrase ->
-            page = Page.Code(p.place, phrase, BackupCrypto.newRecoveryCode())
+        is BkPage.Phrase -> PhrasePage(back = stringResource(R.string.backup_title), onBack = { page = null }) { phrase ->
+            page = BkPage.Code(p.place, phrase, BackupCrypto.newRecoveryCode())
         }
-        is Page.Code -> CodePage(p.code, working = busy, back = stringResource(R.string.bk_phrase_title), onBack = { page = Page.Phrase(p.place) }) {
+        is BkPage.Code -> CodePage(p.code, working = busy, back = stringResource(R.string.bk_phrase_title), onBack = { page = BkPage.Phrase(p.place) }) {
             busy = true
             scope.launch {
                 manager.setup(p.phrase, p.code)
@@ -276,8 +276,8 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
                 Toast.makeText(context, if (r.isSuccess) doneLabel else failLabel, Toast.LENGTH_SHORT).show()
             }
         }
-        is Page.Pick -> PickPage(p.files, onBack = { page = Page.Where(restoring = true) }) { f -> page = Page.Unlock(p.place, f, null) }
-        is Page.Unlock -> UnlockPage(p.file, working = busy, onBack = { page = null }) { secret ->
+        is BkPage.Pick -> PickPage(p.files, onBack = { page = BkPage.Where(restoring = true) }) { f -> page = BkPage.Unlock(p.place, f, null) }
+        is BkPage.Unlock -> UnlockPage(p.file, working = busy, onBack = { page = null }) { secret ->
             busy = true
             scope.launch {
                 // Si apre e si verifica soltanto: il telefono non cambia finché non si conferma (ConfirmPage).
@@ -285,11 +285,11 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
                     if (p.bytes != null) manager.openBytes(p.bytes, secret) else manager.open(p.place!!, p.file!!.name, secret)
                 }
                 busy = false
-                r.getOrNull()?.let { page = Page.Confirm(it) }
+                r.getOrNull()?.let { page = BkPage.Confirm(it) }
                 if (r.isFailure) toast(if (r.exceptionOrNull() is BackupCrypto.WrongSecret) R.string.backup_wrong_secret else R.string.backup_bad_file)
             }
         }
-        is Page.Confirm -> ConfirmPage(p.opened, replacesBackupSettings = state.configured, working = busy, onBack = { page = null }) {
+        is BkPage.Confirm -> ConfirmPage(p.opened, replacesBackupSettings = state.configured, working = busy, onBack = { page = null }) {
             busy = true
             scope.launch {
                 val r = runCatching { manager.apply(p.opened) }
@@ -297,10 +297,10 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
                 if (r.isSuccess) manager.restartApp() else toast(R.string.backup_bad_file)
             }
         }
-        Page.NewPhrase -> PhrasePage(back = stringResource(R.string.backup_title), title = stringResource(R.string.bk_new_title), sub = stringResource(R.string.bk_new_sub), onBack = { page = null }) { phrase ->
-            page = Page.NewCode(phrase, BackupCrypto.newRecoveryCode())
+        BkPage.NewPhrase -> PhrasePage(back = stringResource(R.string.backup_title), title = stringResource(R.string.bk_new_title), sub = stringResource(R.string.bk_new_sub), onBack = { page = null }) { phrase ->
+            page = BkPage.NewCode(phrase, BackupCrypto.newRecoveryCode())
         }
-        is Page.NewCode -> CodePage(p.code, working = busy, back = stringResource(R.string.bk_new_title), onBack = { page = Page.NewPhrase }, after = stringResource(R.string.bk_new_after)) {
+        is BkPage.NewCode -> CodePage(p.code, working = busy, back = stringResource(R.string.bk_new_title), onBack = { page = BkPage.NewPhrase }, after = stringResource(R.string.bk_new_after)) {
             busy = true
             scope.launch {
                 val ok = manager.resetSecrets(p.phrase, p.code)
