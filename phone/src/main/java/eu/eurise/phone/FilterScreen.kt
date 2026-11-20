@@ -59,6 +59,7 @@ internal fun reasonText(r: SpamFilter.Reason): String = stringResource(
         SpamFilter.Reason.ForeignUnknown -> R.string.ph_filter_why_foreign
         SpamFilter.Reason.Unknown -> R.string.ph_filter_why_unknown
         SpamFilter.Reason.Repeated -> R.string.ph_filter_why_repeated
+        SpamFilter.Reason.Listed -> R.string.ph_filter_why_listed
     },
 )
 
@@ -77,6 +78,14 @@ internal fun FilterScreen(isDefault: Boolean, onBecomeDefault: () -> Unit, onBac
     var typed by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var suspects by remember { mutableStateOf(SpamFilter.suspectPrefixes(context).sorted()) }
+    // L'elenco Eurise dei numeri molesti: lo scarica l'app Eurise (il Telefono non va su Internet).
+    var list by remember { mutableStateOf<eu.eurise.phone.data.SpamListClient.Status?>(null) }
+    var asking by remember { mutableStateOf(false) }
+    fun listDo(action: (android.content.Context) -> eu.eurise.phone.data.SpamListClient.Status) = scope.launch {
+        list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { action(context) }
+        onChanged()
+    }
+    LaunchedEffect(Unit) { listDo(eu.eurise.phone.data.SpamListClient::status) }
     LaunchedEffect(reload) {
         blocked = PhoneData.blockedNumbers(context)
         filtered = SpamFilter.filtered(context)
@@ -152,6 +161,26 @@ internal fun FilterScreen(isDefault: Boolean, onBecomeDefault: () -> Unit, onBac
                 }
             }
         }
+        item(key = "list") {
+            Label(stringResource(R.string.ph_list_title))
+            val st = list
+            Box(Modifier.padding(horizontal = 16.dp).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 14.dp)) {
+                Column {
+                    Toggle(stringResource(R.string.ph_list_on), stringResource(R.string.ph_list_on_sub), st?.on == true, st?.available == true) { want ->
+                        if (want) asking = true else listDo(eu.eurise.phone.data.SpamListClient::disable)
+                    }
+                    if (st?.on == true) Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (st.updated > 0) stringResource(R.string.ph_list_updated, DateUtils.getRelativeTimeSpanString(st.updated), st.count)
+                            else stringResource(R.string.ph_list_waiting),
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f),
+                        )
+                        Small(stringResource(R.string.ph_list_update)) { listDo(eu.eurise.phone.data.SpamListClient::update) }
+                    }
+                }
+            }
+            if (st != null && !st.available) Note(stringResource(R.string.ph_list_need_hub))
+        }
         item(key = "stopped") { Label(stringResource(R.string.ph_filter_stopped)) }
         if (filtered.isEmpty()) item(key = "stopped-none") { Note(stringResource(R.string.ph_filter_stopped_none)) }
         items(filtered.take(40), key = { "f-${it.at}-${it.number}" }) { f ->
@@ -199,6 +228,12 @@ internal fun FilterScreen(isDefault: Boolean, onBecomeDefault: () -> Unit, onBac
         }
         item(key = "end") { Spacer(Modifier.height(20.dp).navigationBarsPadding()) }
     }
+    // Prima di accenderlo l'avviso del centro privacy: cosa esce (la sola richiesta del file), dove va, come si torna indietro.
+    if (asking) eu.eurise.core.designsystem.component.ServiceConsentSheet(
+        eu.eurise.core.suite.PrivacyService.SpamList,
+        onDismiss = { asking = false },
+        onAccept = { asking = false; listDo(eu.eurise.phone.data.SpamListClient::enable) },
+    )
 }
 
 @Composable

@@ -50,6 +50,7 @@ import kotlinx.coroutines.withContext
 private val DESK = listOf(PrivacyService.Weather, PrivacyService.Alerts, PrivacyService.Pollen, PrivacyService.News, PrivacyService.Horoscope)
 private val MAPS = listOf(PrivacyService.Routes, PrivacyService.RouteWeather, PrivacyService.MapSearch, PrivacyService.MapReports, PrivacyService.FuelPrices, PrivacyService.PublicTransport, PrivacyService.Milestones, PrivacyService.Lyrics)
 private val ALFRED = listOf(PrivacyService.AiOnline)
+private val PHONE = listOf(PrivacyService.SpamList)
 private val CLOSED = listOf(PrivacyService.Markets, PrivacyService.Videos)
 
 /**
@@ -102,7 +103,7 @@ fun ServicesWelcome() {
                 Text(stringResource(R.string.ds_w_score, now), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = privacyColor(now))
             }
 
-            for ((title, list) in listOf(R.string.ds_w_desk to DESK, R.string.ds_w_maps to MAPS, R.string.ds_w_alfred to ALFRED, R.string.ds_w_closed to CLOSED)) {
+            for ((title, list) in listOf(R.string.ds_w_desk to DESK, R.string.ds_w_maps to MAPS, R.string.ds_w_alfred to ALFRED, R.string.ds_w_phone to PHONE, R.string.ds_w_closed to CLOSED)) {
                 Text(
                     stringResource(title).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
                     color = if (list === CLOSED) scheme.error else scheme.secondary, modifier = Modifier.padding(start = 4.dp, top = 6.dp),

@@ -56,4 +56,13 @@ class SpamFilterTest {
         assertEquals(null, SpamFilter.suspect("+49 0844 1234", emptySet()))
         assertEquals(null, SpamFilter.suspect(null, setOf("02")))
     }
+
+    @Test
+    fun listedGoesSilentNotBlocked() {
+        assertEquals(Verdict.Silence to Reason.Listed, SpamFilter.decide(Rules(), "0844 1234567", false, false, "39", listed = true))
+        assertEquals(Verdict.Reject to Reason.Repeated, SpamFilter.decide(Rules(), "+216 71 000 000", false, false, "39", 2, listed = true))
+        // La rubrica e chi si è già chiamato passano sempre, anche se nell'elenco.
+        assertEquals(Verdict.Ring to null, SpamFilter.decide(Rules(), "0844 1234567", true, false, "39", listed = true))
+        assertEquals(Verdict.Ring to null, SpamFilter.decide(Rules(enabled = false), "0844 1234567", false, false, "39", listed = true))
+    }
 }

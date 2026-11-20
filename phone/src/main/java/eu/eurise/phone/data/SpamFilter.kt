@@ -9,7 +9,7 @@ import android.content.Context
  */
 object SpamFilter {
     enum class Verdict { Ring, Silence, Reject }
-    enum class Reason { Hidden, ForeignUnknown, Unknown, Repeated }
+    enum class Reason { Hidden, ForeignUnknown, Unknown, Repeated, Listed }
 
     /** Le scelte dell'utente (Telefono › Filtro e numeri bloccati). */
     data class Rules(
@@ -38,12 +38,16 @@ object SpamFilter {
         calledBefore: Boolean,
         country: String,
         recentRejects: Int = 0,
+        /** Nell'elenco Eurise dei numeri molesti (se la persona l'ha acceso). */
+        listed: Boolean = false,
     ): Pair<Verdict, Reason?> {
         if (!rules.enabled) return Verdict.Ring to null
         val digits = number?.filter { it.isDigit() || it == '+' }.orEmpty()
         if (digits.isEmpty()) return if (rules.hidden) Verdict.Silence to Reason.Hidden else Verdict.Ring to null
         if (inContacts || calledBefore) return Verdict.Ring to null
         val foreign = isForeign(digits, country)
+        // Nell'elenco Eurise: in silenzio; chi insiste dall'estero viene rifiutato (come per gli sconosciuti esteri).
+        if (listed) return if (foreign && rules.repeated && recentRejects >= 2) Verdict.Reject to Reason.Repeated else Verdict.Silence to Reason.Listed
         if (foreign && rules.foreignUnknown) {
             return if (rules.repeated && recentRejects >= 2) Verdict.Reject to Reason.Repeated else Verdict.Silence to Reason.ForeignUnknown
         }

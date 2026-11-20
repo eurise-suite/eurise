@@ -11,10 +11,12 @@ import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
 import eu.eurise.phone.data.PhoneData
 import eu.eurise.phone.data.SpamFilter
+import eu.eurise.phone.data.SpamListClient
 
 /**
  * Il filtro antispam: Android chiede al Telefono di Eurise, app predefinita per le chiamate, cosa fare di ogni chiamata
- * in arrivo. Si guarda solo sul telefono (Rubrica, registro delle chiamate, scelte del filtro): niente esce.
+ * in arrivo. Si guarda solo sul telefono (Rubrica, registro delle chiamate, scelte del filtro, elenco Eurise già scaricato
+ * dall'app Eurise): niente esce.
  */
 class SpamScreening : CallScreeningService() {
     override fun onScreenCall(details: Call.Details) {
@@ -33,6 +35,7 @@ class SpamScreening : CallScreeningService() {
                 val since = System.currentTimeMillis() - 15 * 60_000L
                 SpamFilter.filtered(this).count { it.at >= since && PhoneData.same(it.number, n) }
             } ?: 0,
+            listed = number != null && SpamListClient.match(this, number) != null,
         )
         val response = when (verdict) {
             SpamFilter.Verdict.Ring -> allow

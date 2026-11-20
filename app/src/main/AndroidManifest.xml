@@ -275,6 +275,13 @@
             android:exported="true"
             android:permission="${suitePermission}" />
         <!-- Centro privacy per le altre app della suite (ricerca su OpenStreetMap di Eurise Mappe). -->
+        <!-- L'elenco Eurise dei numeri molesti per Eurise Telefono (che non va su Internet): solo app della suite. -->
+        <provider
+            android:name=".SpamListProvider"
+            android:authorities="${applicationId}.spamlist"
+            android:exported="true"
+            android:permission="${suitePermission}" />
+
         <provider
             android:name=".PrivacyProvider"
             android:authorities="${applicationId}.privacy"

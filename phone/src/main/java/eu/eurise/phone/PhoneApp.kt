@@ -209,8 +209,14 @@ private fun HomeScreen(
 ) {
     val callBack = remember(recents) { PhoneData.toCallBack(recents) }
     val context = LocalContext.current
-    val mine = remember(recents) { eu.eurise.phone.data.SpamFilter.suspectPrefixes(context) }
-    val country = remember { eu.eurise.phone.data.SpamFilter.countryCode(context) }
+    // Gli avvisi per i numeri fuori dalla rubrica (elenco Eurise, call center, prefissi segnati), letti fuori dal thread principale.
+    var warnings by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    LaunchedEffect(recents) {
+        warnings = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            recents.filter { it.contact == null && it.number.isNotBlank() }.map { it.number }.distinct().take(200)
+                .mapNotNull { n -> eu.eurise.phone.data.SpamListClient.warning(context, n)?.let { n to it } }.toMap()
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
             item(key = "head") {
@@ -275,11 +281,11 @@ private fun HomeScreen(
                         Text(title(e) + if (e.count > 1) " (${e.count})" else "", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             color = if (e.missed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
                         val stopped = filtered.firstOrNull { f -> PhoneData.same(f.number, e.number) && kotlin.math.abs(f.at - e.date) < 120_000L }
-                        val suspect = if (e.contact == null) eu.eurise.phone.data.SpamFilter.suspect(e.number, mine, country) else null
+                        val suspect = if (e.contact == null) warnings[e.number] else null
                         Text(
                             when {
                                 stopped != null -> stringResource(R.string.ph_filter_stopped_row, reasonText(stopped.reason))
-                                suspect != null -> stringResource(R.string.ph_suspect_spam, suspect) + " · " + detail(e)
+                                suspect != null -> suspect + " · " + detail(e)
                                 else -> detail(e)
                             },
                             fontSize = 12.sp, maxLines = 1,
