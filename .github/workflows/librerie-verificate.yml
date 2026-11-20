@@ -70,6 +70,8 @@ jobs:
           chmod +x gradlew 2>/dev/null || true
           g=./gradlew; [ -x "$g" ] || g=../gradlew
           $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest --tests 'eu.eurise.*'
+          # Alcuni file (junit-bom .module) si chiedono solo riscaricando: un giro in più, che li aggiunge.
+          $g --no-daemon --write-verification-metadata sha256 --refresh-dependencies help assembleDebug --dry-run
       - name: Librerie che arrivano sul telefono (per OSV-Scanner)
         run: |
           set -e

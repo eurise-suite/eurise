@@ -16,6 +16,11 @@ on:
 permissions:
   contents: read
 
+# Impronte delle librerie bloccanti qui (gradle/verification-metadata.xml, provate a cache vuota da
+# librerie-verificate.yml): una libreria o un plugin con un'impronta diversa da quella registrata ferma il giro.
+env:
+  GRADLE_OPTS: "-Dorg.gradle.dependency.verification=strict"
+
 concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
