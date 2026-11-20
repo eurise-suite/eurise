@@ -34,7 +34,10 @@ class EuriseApplication : Application(), eu.eurise.feature.ponte.PonteToday.Sour
         // Un ripristino in attesa prende il suo posto prima che si apra il database (di solito non c'è nulla da fare).
         eu.eurise.core.cloud.backup.BackupArchive.applyPending(this)
         // Le parole imparate dalla Tastiera (APK a parte) tornano alla tastiera appena è installata.
-        Thread { eu.eurise.core.cloud.backup.KeyboardBackup.deliverPending(this) }.start()
+        Thread {
+            eu.eurise.core.cloud.backup.KeyboardBackup.deliverPending(this)
+            BackupShortcut.publish(this)
+        }.start()
         // I lavori di sincronizzazione vanno registrati prima che WorkManager ne avvii uno.
         CloudSync.register(NotesSyncJob(data.notes, data.notebooks))
         CloudSync.register(eu.eurise.feature.tasks.TasksSyncJob(data.tasks))

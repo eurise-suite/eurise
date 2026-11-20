@@ -24,6 +24,8 @@
     <string name="web_retry">Riprova</string>
     <string name="web_only_query">A %1$s va solo ciò che cerchi</string>
     <string name="app_file">Drive</string>
+    <string name="app_backup">Backup</string>
+    <string name="shortcut_backup_long">Backup cifrato</string>
     <string name="app_scanner">Scanner</string>
     <string name="app_calendar">Calendario</string>
     <string name="app_agenda">Agenda</string>

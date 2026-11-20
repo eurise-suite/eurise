@@ -59,7 +59,13 @@ data class BackupState(
     val lastSize: Long? = null,
     val lastError: String? = null,
     val running: Boolean = false,
-)
+    /** Quando il backup è stato acceso su questo telefono (null per quelli accesi prima del 20 novembre 2026). */
+    val configuredAt: Long? = null,
+) {
+    /** Giorni di ritardo sulla frequenza scelta, se il backup è fermo da qualche giorno ([BackupHealth]). */
+    fun lateDays(now: Long = System.currentTimeMillis()): Int? =
+        if (!configured || place == null) null else BackupHealth.lateDays(lastAt ?: configuredAt, frequency.days, now)
+}
 
 /**
  * Il backup cifrato di Eurise. La chiave dei dati resta sul telefono chiusa nel Keystore, così i backup automatici
@@ -78,6 +84,7 @@ class BackupManager private constructor(private val context: Context) {
         lastAt = prefs.getLong("last_at", 0).takeIf { it > 0 },
         lastSize = prefs.getLong("last_size", 0).takeIf { it > 0 },
         lastError = prefs.getString("last_error", null),
+        configuredAt = prefs.getLong("configured_at", 0).takeIf { it > 0 },
     )
 
     private fun refresh(running: Boolean = _state.value.running) { _state.value = load().copy(running = running) }
@@ -193,7 +200,9 @@ class BackupManager private constructor(private val context: Context) {
 
     private fun storeKeys(keys: BackupCrypto.Keys) {
         val h = keys.header
-        prefs.edit()
+        val edit = prefs.edit()
+        if (!prefs.contains("configured_at")) edit.putLong("configured_at", System.currentTimeMillis())
+        edit
             .putString("key", sealKey(keys.dataKey))
             .putInt("iter", h.iterations)
             .putString("salt_p", b64(h.saltPass)).putString("wrap_p", b64(h.wrapPass))

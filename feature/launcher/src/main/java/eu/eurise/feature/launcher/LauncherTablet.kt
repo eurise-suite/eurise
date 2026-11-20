@@ -248,7 +248,12 @@ internal fun DockDivider() {
 
 /** Finché la Scrivania non è la schermata iniziale, un invito in alto a renderla tale. */
 @Composable
-internal fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
+internal fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) =
+    NoticeBanner(hazeState, stringResource(R.string.setup_home), stringResource(R.string.setup_home_action), onClick)
+
+/** Un avviso a pillola in cima alla Scrivania: cosa c'è e, a destra, cosa fare. */
+@Composable
+internal fun NoticeBanner(hazeState: HazeState, text: String, action: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -258,16 +263,30 @@ internal fun HomeBanner(hazeState: HazeState, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.material3.Text(
-            stringResource(R.string.setup_home),
+            text,
             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             modifier = Modifier.weight(1f),
         )
         androidx.compose.material3.Text(
-            stringResource(R.string.setup_home_action),
+            action,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
         )
     }
+}
+
+/** L'avviso del backup fermo da qualche giorno ([eu.eurise.core.cloud.backup.BackupHealth]); tocco: Cloud › Backup. */
+@Composable
+internal fun BackupBanner(hazeState: HazeState, onClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val manager = androidx.compose.runtime.remember { eu.eurise.core.cloud.backup.BackupManager.get(context) }
+    val backup by manager.state.collectAsStateWithLifecycle()
+    backup.lateDays() ?: return
+    val last = backup.lastAt
+    val text = if (last == null) stringResource(R.string.backup_late_never)
+    else stringResource(R.string.backup_late, java.util.concurrent.TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - last).toInt())
+    NoticeBanner(hazeState, text, stringResource(R.string.backup_late_action), onClick)
+    Spacer(Modifier.height(12.dp))
 }
 
 /** Pagina della home nel pager (al centro tra Notizie e Riepilogo). */

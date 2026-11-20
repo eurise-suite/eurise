@@ -58,6 +58,7 @@ internal object SuiteIcons {
                 "calculator" -> "Calcolatrice"
                 "weather" -> "Meteo"
                 "alfred" -> "Alfred"
+                "backup" -> "Backup"
                 else -> null
             }
         }
@@ -83,6 +84,7 @@ internal object SuiteIcons {
             cls.endsWith(".CalendarApp") -> "Calendario"
             cls.endsWith(".TasksApp") -> "Attività"
             cls.endsWith(".NotesApp") -> "Note"
+            cls.endsWith(".BackupApp") -> "Backup"
             else -> null
         }
     }
