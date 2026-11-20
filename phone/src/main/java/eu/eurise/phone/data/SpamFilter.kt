@@ -99,6 +99,60 @@ object SpamFilter {
             .putString("log", kept.joinToString("\n") { "${it.number}|${it.at}|${it.verdict}|${it.reason}" }).apply()
     }
 
+    /**
+     * Prefissi dei call center decisi dall'AGCOM (delibera 156/18/CIR): 0843 per sondaggi e statistiche, 0844 per vendite
+     * e ricerche di mercato. Molti call center usano ancora numeri normali: per quelli ci sono i prefissi segnati a mano.
+     */
+    val CALL_CENTER_PREFIXES = listOf("0843", "0844")
+
+    /** Il numero in forma nazionale, solo cifre: «+39 02 1234» e «0039021234» diventano «021234». */
+    fun national(number: String, country: String = "39"): String {
+        val d = number.filter { it.isDigit() || it == '+' }
+        val intl = when {
+            d.startsWith("+") -> d.drop(1)
+            d.startsWith("00") -> d.drop(2)
+            else -> return d.filter(Char::isDigit)
+        }
+        return if (intl.startsWith(country)) intl.drop(country.length) else "+$intl"
+    }
+
+    /**
+     * «Sospetto spam» (richiesta del proprietario, 20 novembre): non blocca, avvisa. Il prefisso che lo fa scattare, o
+     * null. Solo per chi non è in rubrica: lo decide chi chiama.
+     */
+    fun suspect(number: String?, mine: Set<String>, country: String = "39"): String? {
+        if (number.isNullOrBlank()) return null
+        val n = national(number, country)
+        if (n.startsWith("+")) return null
+        return (CALL_CENTER_PREFIXES + mine).filter { it.length >= 3 }.firstOrNull { n.startsWith(it) }
+    }
+
+    /** Il prefisso del proprio paese, dalla rete o dalla SIM («39» in Italia). */
+    fun countryCode(context: Context): String {
+        val tm = context.getSystemService(android.telephony.TelephonyManager::class.java)
+        val iso = (tm?.networkCountryIso?.takeIf { it.isNotBlank() } ?: tm?.simCountryIso ?: "it").uppercase(java.util.Locale.ROOT)
+        return CODES[iso] ?: "39"
+    }
+
+    private val CODES = mapOf(
+            "IT" to "39", "SM" to "378", "VA" to "39", "CH" to "41", "FR" to "33", "DE" to "49", "AT" to "43", "ES" to "34",
+            "PT" to "351", "GB" to "44", "IE" to "353", "BE" to "32", "NL" to "31", "LU" to "352", "SI" to "386", "HR" to "385",
+            "GR" to "30", "MT" to "356", "PL" to "48", "CZ" to "420", "SE" to "46", "DK" to "45", "FI" to "358", "NO" to "47",
+            "RO" to "40", "HU" to "36", "SK" to "421", "BG" to "359", "US" to "1", "CA" to "1",
+        )
+
+    /** I prefissi segnati a mano come sospetti (Filtro › Sospetto spam), solo cifre in forma nazionale. */
+    fun suspectPrefixes(context: Context): Set<String> =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet("suspect", emptySet()).orEmpty()
+
+    fun setSuspectPrefix(context: Context, prefix: String, on: Boolean) {
+        val clean = national(prefix).filter(Char::isDigit)
+        if (clean.length < 3) return
+        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val set = suspectPrefixes(context).let { if (on) it + clean else it - clean }
+        p.edit().putStringSet("suspect", set).apply()
+    }
+
     /** «Non è un disturbatore»: il numero non passa più dal filtro (resta sul telefono). */
     fun trust(context: Context, number: String) {
         val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

@@ -55,7 +55,10 @@ object CallNotifications {
         scope.launch {
             val name = eu.eurise.core.contacts.Contacts.byNumber(context, item.number)?.name
             val title = name ?: item.number.ifEmpty { context.getString(R.string.ph_private_number) }
-            post(context, item, title)
+            val suspect = if (name != null) null else eu.eurise.phone.data.SpamFilter.suspect(
+                item.number, eu.eurise.phone.data.SpamFilter.suspectPrefixes(context), eu.eurise.phone.data.SpamFilter.countryCode(context),
+            )
+            post(context, item, title, suspect)
         }
     }
 
@@ -63,7 +66,7 @@ object CallNotifications {
         context, code, Intent(context, CallActionReceiver::class.java).setAction(action), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-    private fun post(context: Context, item: CallManager.Item, title: String) {
+    private fun post(context: Context, item: CallManager.Item, title: String, suspect: String? = null) {
         channels(context)
         val ringing = item.state == Call.STATE_RINGING
         val open = PendingIntent.getActivity(
@@ -79,7 +82,10 @@ object CallNotifications {
         val builder = Notification.Builder(context, if (ringing) CHANNEL_INCOMING else CHANNEL_ONGOING)
             .setSmallIcon(eu.eurise.phone.R.drawable.ic_stat_call)
             .setContentTitle(title)
-            .setContentText(context.getString(if (ringing) R.string.ph_incoming else R.string.ph_ongoing))
+            .setContentText(
+                context.getString(if (ringing) R.string.ph_incoming else R.string.ph_ongoing) +
+                    (suspect?.let { " · " + context.getString(R.string.ph_suspect_spam, it) } ?: ""),
+            )
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .setContentIntent(open)
