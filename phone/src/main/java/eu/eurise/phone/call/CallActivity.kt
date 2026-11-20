@@ -102,7 +102,10 @@ class CallActivity : ComponentActivity() {
         handle(intent)
         setContent {
             EuriseTheme(darkTheme = true) {
-                CallScreen(onEnd = ::finishSoon, onProximity = ::proximity, onBubble = ::enterBubble, canBubble = canBubble(), bubble = bubble.value)
+                CallScreen(
+                    onEnd = ::finishSoon, onProximity = ::proximity, onBubble = ::enterBubble, canBubble = canBubble(), bubble = bubble.value,
+                    onClosing = { ending = true; updateBubble() },
+                )
             }
         }
         lifecycleScope.launch {
@@ -117,7 +120,15 @@ class CallActivity : ComponentActivity() {
     private fun canBubble() = Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
 
     /** Una chiamata già partita o in corso (non quella che squilla: lì si risponde o si rifiuta a schermo intero). */
-    private fun talking() = CallManager.primary()?.state.let { it != null && it != Call.STATE_RINGING && it != Call.STATE_DISCONNECTED }
+    private fun talking() = !ending && CallManager.primary()?.state.let {
+        it != null && it != Call.STATE_RINGING && it != Call.STATE_DISCONNECTING && it != Call.STATE_DISCONNECTED
+    }
+
+    /**
+     * La chiamata si sta chiudendo: niente più bolla automatica. Prima restava accesa e, chiudendo la schermata, Android
+     * la rimpiccioliva verso un angolo (foto e nome che salivano in alto a sinistra).
+     */
+    private var ending = false
 
     private fun bubbleParams(): PictureInPictureParams? {
         if (!canBubble()) return null
@@ -182,7 +193,13 @@ class CallActivity : ComponentActivity() {
 
     private fun finishSoon() {
         proximity(false)
-        window.decorView.postDelayed({ if (CallManager.calls.value.isEmpty()) finishAndRemoveTask() }, 1200)
+        ending = true
+        updateBubble()
+        // Nella bolla non serve mostrare «Chiamata terminata»: si chiude subito.
+        val wait = if (bubble.value) 0L else 1200L
+        window.decorView.postDelayed({
+            if (CallManager.calls.value.isEmpty()) finishAndRemoveTask() else ending = false
+        }, wait)
     }
 
     override fun onDestroy() {
@@ -203,13 +220,16 @@ private val Red = Color(0xFFB63A2B)
 private val Green = Color(0xFF2F7D4F)
 
 @Composable
-private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubble: () -> Unit, canBubble: Boolean, bubble: Boolean) {
+private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubble: () -> Unit, canBubble: Boolean, bubble: Boolean, onClosing: () -> Unit) {
     val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val calls by CallManager.calls.collectAsStateWithLifecycle()
     val audio by CallManager.audio.collectAsStateWithLifecycle()
     val item = CallManager.primary(calls)
     var lastNumber by remember { mutableStateOf("") }
     var contact by remember { mutableStateOf<Contact?>(null) }
+    /** Il numero già cercato in rubrica: finché non si sa se è un contatto, «Blocca» non compare. */
+    var lookedUp by remember { mutableStateOf("") }
     var engagements by remember { mutableStateOf<List<Engagement>>(emptyList()) }
     var note by remember { mutableStateOf("") }
     var keypad by remember { mutableStateOf(false) }
@@ -227,6 +247,7 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
         lastNumber = number
         val c = Contacts.byNumber(context, number)?.let { Contacts.detail(context, it.id) ?: it }
         contact = c
+        lookedUp = number
         engagements = c?.let { PhoneData.engagements(context, it.name, it.emails.map { e -> e.value }) }.orEmpty()
     }
     LaunchedEffect(item?.state, speaker, bubble) { onProximity(item?.state == Call.STATE_ACTIVE && !speaker && !bubble) }
@@ -263,8 +284,27 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
     }
 
     Column(Modifier.fillMaxSize().background(Navy).safeDrawingPadding().imePadding()) {
+        // In alto due icone discrete, senza tasto intorno: a sinistra «Blocca» (numero fuori dalla rubrica: lo blocca e
+        // chiude la chiamata, anche mentre squilla), a destra la bolla (richiesta del proprietario, 20 novembre).
+        Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            val number = item?.number.orEmpty()
+            if (item != null && lookedUp == number && contact == null && number.isNotBlank() && item.state != Call.STATE_DISCONNECTED) {
+                val done = stringResource(R.string.ph_blocked_now)
+                TopIcon(EuriseIcons.block(), stringResource(R.string.ph_block_call)) {
+                    onClosing()
+                    CallManager.hangup(item.call)
+                    scope.launch {
+                        if (PhoneData.setBlocked(context, number, true)) android.widget.Toast.makeText(context, done, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            if (canBubble && item != null && item.state != Call.STATE_RINGING && item.state != Call.STATE_DISCONNECTED) {
+                TopIcon(EuriseIcons.pip(), stringResource(R.string.ph_bubble), onBubble)
+            }
+        }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(4.dp))
             Avatar(contact?.name ?: name, contact?.photo, 88.dp)
             Spacer(Modifier.height(10.dp))
             Text(name, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold, maxLines = 2)
@@ -327,7 +367,7 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
                     modifier = Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(14.dp)).clickable(role = Role.Button) { replies = true }.padding(12.dp))
             }
             Row(Modifier.fillMaxWidth().padding(start = 40.dp, end = 40.dp, bottom = 36.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                RoundButton(EuriseIcons.hangup(), stringResource(R.string.ph_decline), Red) { CallManager.reject(item.call) }
+                RoundButton(EuriseIcons.hangup(), stringResource(R.string.ph_decline), Red) { onClosing(); CallManager.reject(item.call) }
                 RoundButton(EuriseIcons.phone(), stringResource(R.string.ph_answer), Green) { CallManager.answer(item.call) }
             }
         } else if (item != null) {
@@ -338,11 +378,7 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
                 Control(EuriseIcons.pause(), stringResource(R.string.ph_hold), item.state == Call.STATE_HOLDING, Modifier.weight(1f)) { CallManager.toggleHold(item.call) }
             }
             Box(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 36.dp, start = 24.dp, end = 24.dp), contentAlignment = Alignment.Center) {
-                RoundButton(EuriseIcons.hangup(), stringResource(R.string.ph_hangup), Red) { CallManager.hangup(item.call) }
-                // «Bolla»: accanto a Chiudi, dal lato del pollice; la chiamata continua in una finestra piccola.
-                if (canBubble) Box(Modifier.align(Alignment.CenterEnd)) {
-                    Control(EuriseIcons.pip(), stringResource(R.string.ph_bubble), false, Modifier.width(84.dp), onBubble)
-                }
+                RoundButton(EuriseIcons.hangup(), stringResource(R.string.ph_hangup), Red) { onClosing(); CallManager.hangup(item.call) }
             }
         } else {
             Spacer(Modifier.height(140.dp))
@@ -379,6 +415,14 @@ private fun duration(seconds: Long): String {
     val m = seconds % 3600 / 60
     val s = seconds % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+}
+
+/** Un'icona discreta in cima alla schermata della chiamata: niente fondo, solo il simbolo (spazio di tocco pieno). */
+@Composable
+private fun TopIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(icon, label, tint = Soft, modifier = Modifier.size(22.dp))
+    }
 }
 
 @Composable
