@@ -39,6 +39,9 @@ object KeyboardBackup {
         tmp.renameTo(target)
     }
 
+    /** Le parole della Tastiera aspettano che la Tastiera sia installata. */
+    fun waiting(context: Context): Boolean = File(context.filesDir, WAITING).exists() || File(context.filesDir, WAITING_OLD).exists()
+
     /** Consegna lo zip in attesa, se c'è e la tastiera risponde. Da chiamare fuori dal thread principale. */
     fun deliverPending(context: Context) {
         File(context.filesDir, WAITING_OLD).takeIf { it.exists() }?.let { old ->

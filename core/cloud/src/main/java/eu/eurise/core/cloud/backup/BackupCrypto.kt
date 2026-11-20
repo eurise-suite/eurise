@@ -75,6 +75,20 @@ object BackupCrypto {
         return KeyHeader(old.iterations, salt, wrap(derive(passphrase, salt, old.iterations), dataKey), old.saltCode, old.wrapCode)
     }
 
+    /**
+     * Frase e codice di recupero nuovi per la stessa chiave dei dati (quella custodita nel Keystore): serve quando
+     * l'utente non ricorda più la frase ma ha ancora il telefono. I file già fatti restano chiusi con quelli vecchi.
+     */
+    fun rewrapAll(dataKey: ByteArray, passphrase: CharArray, recoveryCode: String, iterations: Int = ITERATIONS): KeyHeader {
+        val saltPass = bytes(16)
+        val saltCode = bytes(16)
+        return KeyHeader(
+            iterations,
+            saltPass, wrap(derive(passphrase, saltPass, iterations), dataKey),
+            saltCode, wrap(derive(normalizeCode(recoveryCode).toCharArray(), saltCode, iterations), dataKey),
+        )
+    }
+
     /** Apre la chiave dei dati con la frase segreta oppure con il codice di recupero. */
     fun unlock(header: KeyHeader, secret: String): ByteArray {
         runCatching { return unwrap(derive(secret.toCharArray(), header.saltPass, header.iterations), header.wrapPass) }

@@ -61,7 +61,22 @@ data class BackupState(
     val running: Boolean = false,
     /** Quando il backup è stato acceso su questo telefono (null per quelli accesi prima del 20 novembre 2026). */
     val configuredAt: Long? = null,
+    /** L'ultima volta che l'utente ha riscritto giusta la frase (promemoria una volta l'anno). */
+    val checkedAt: Long? = null,
+    /** Quando questo telefono è stato ripristinato da un backup, finché l'utente non ha visto «Bentornato». */
+    val restoredAt: Long? = null,
 ) {
+    /** Una volta l'anno si chiede di riscrivere la frase, per scoprire in tempo se la si è dimenticata. */
+    fun checkDue(now: Long = System.currentTimeMillis()): Boolean {
+        if (!configured) return false
+        val since = checkedAt ?: configuredAt ?: lastAt ?: return false
+        return now - since >= CHECK_EVERY
+    }
+
+    companion object {
+        val CHECK_EVERY: Long = java.util.concurrent.TimeUnit.DAYS.toMillis(365)
+    }
+
     /** Giorni di ritardo sulla frequenza scelta, se il backup è fermo da qualche giorno ([BackupHealth]). */
     fun lateDays(now: Long = System.currentTimeMillis()): Int? =
         if (!configured || place == null) null else BackupHealth.lateDays(lastAt ?: configuredAt, frequency.days, now)
@@ -85,6 +100,8 @@ class BackupManager private constructor(private val context: Context) {
         lastSize = prefs.getLong("last_size", 0).takeIf { it > 0 },
         lastError = prefs.getString("last_error", null),
         configuredAt = prefs.getLong("configured_at", 0).takeIf { it > 0 },
+        checkedAt = prefs.getLong("checked_at", 0).takeIf { it > 0 },
+        restoredAt = prefs.getLong(BackupArchive.RESTORED_AT, 0).takeIf { it > 0 },
     )
 
     private fun refresh(running: Boolean = _state.value.running) { _state.value = load().copy(running = running) }
@@ -103,6 +120,32 @@ class BackupManager private constructor(private val context: Context) {
         // Si tiene la chiusura per il codice di recupero già consegnato all'utente.
         storeKeys(BackupCrypto.Keys(dataKey, BackupCrypto.rewrapPassphrase(dataKey, next.toCharArray(), header)))
         true
+    }
+
+    /**
+     * Frase e codice di recupero nuovi senza quelli vecchi: si chiama solo dopo che l'utente si è riconosciuto con lo
+     * sblocco del telefono. La chiave dei dati resta la stessa; i backup già fatti si aprono con frase e codice vecchi.
+     */
+    suspend fun resetSecrets(passphrase: String, recoveryCode: String): Boolean = withContext(Dispatchers.Default) {
+        val keys = keys() ?: return@withContext false
+        storeKeys(BackupCrypto.Keys(keys.dataKey, BackupCrypto.rewrapAll(keys.dataKey, passphrase.toCharArray(), recoveryCode)))
+        prefs.edit().putLong("checked_at", System.currentTimeMillis()).apply()
+        refresh()
+        true
+    }
+
+    /** Il promemoria annuale: la frase (o il codice) è giusta? Se sì, il prossimo controllo è tra un anno. */
+    suspend fun verify(secret: String): Boolean = withContext(Dispatchers.Default) {
+        val header = header() ?: return@withContext false
+        val ok = runCatching { BackupCrypto.unlock(header, secret) }.isSuccess
+        if (ok) { prefs.edit().putLong("checked_at", System.currentTimeMillis()).apply(); refresh() }
+        ok
+    }
+
+    /** «Bentornato» visto: non lo si mostra più. */
+    fun restoreSeen() {
+        prefs.edit().remove(BackupArchive.RESTORED_AT).apply()
+        refresh()
     }
 
     fun setFrequency(f: BackupFrequency) {

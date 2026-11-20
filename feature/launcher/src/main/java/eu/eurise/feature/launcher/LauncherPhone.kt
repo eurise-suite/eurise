@@ -432,7 +432,7 @@ internal fun PhoneHome(
                 Spacer(Modifier.height(16.dp))
             }
             // Il backup fermo da qualche giorno: lo si vede qui, non solo in Cloud › Backup.
-            BackupBanner(hazeState) { actions.openEurise("backup") }
+            BackupBanner(hazeState) { actions.openEurise(it) }
             // Accoglienza: saluto, orario, data e meteo, poi le pillole. Sul cielo ancora chiaro il testo prende
             // il colore delle pillole; quando il cielo si scurisce passa al chiaro.
             val headerColor = if (skyLight) (if (dark) Color(0xFF1B1F27) else Color(0xFF1E1D1B)) else Color(0xFFF1EEE8)

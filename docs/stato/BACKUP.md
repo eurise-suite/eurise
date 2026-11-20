@@ -112,6 +112,29 @@ Aggiunti, su sua richiesta (senza tavola):
   launcher, perché nella Scrivania non c'è un'icona di Eurise.
 - Da provare dal vero (fase 3, emulatore): backup con la Tastiera installata, ripristino senza Tastiera, poi Tastiera.
 
+## Schermate vere (21 novembre 2026, approvate le tavole)
+`feature/cloud/BackupScreen.kt` riscritto a pagine intere (`BackupPage`: titolo in alto, comandi in basso sotto il
+pollice), al posto delle finestre:
+- **Spento**: cosa salva davvero oggi (Eurise, Tastiera, note bloccate) e «In arrivo» per le altre app; «Fai il backup
+  ora» e sopra «Ho già un backup: ripristina».
+- **Accendere**: Dove (cloud collegati ordinati per tacchette con `PrivacyMeter`, chiavetta o cartella 10, «Collega un
+  cloud» che apre Cloud; sotto, la spiegazione «Prima di accendere» richiesta dalla regola della privacy) → Frase (dieci
+  tacchette di robustezza, `PhraseStrength` con test, almeno 10 caratteri) → Codice (sei gruppi, si riscrive un gruppo
+  scelto a caso; niente copia negli appunti, che finirebbe nella cronologia della Tastiera) → backup subito.
+- **Acceso**: «Fatto e verificato», frequenza, conservati (tocco → ripristino), Dove con tacchette, Frase segreta,
+  ripristino da altrove, spegnimento.
+- **Frase nuova con lo sblocco** (`BiometricPrompt` con impronta o codice dal livello 30, `KeyguardManager` prima):
+  frase e codice nuovi per la stessa chiave dei dati (`BackupCrypto.rewrapAll`, `BackupManager.resetSecrets`), poi
+  backup subito. Senza blocco schermo serve la frase attuale o il codice (finestra di prima).
+- **Promemoria annuale**: `BackupState.checkDue()` (365 giorni da `checked_at`, o dall'accensione), `verify()`; riga
+  nella pagina e avviso sulla Scrivania «Ti ricordi la frase del backup? · Prova» (sezione `backup_check`).
+- **Ripristino**: Dove sta → Quale backup → Aprilo (linguette Frase / Codice di recupero) → Cosa rimetto →
+  «Sostituisci e riavvia». Dalla Scrivania di un telefono vuoto con il backup spento: «Telefono nuovo? Ritrova i tuoi
+  dati · Ripristina» (sezione `backup_restore`, rotta `cloud/backup?start=restore`).
+- **Bentornato**: `applyPending` segna `restored_at`; avviso sulla Scrivania e scheda in cima alla pagina (Eurise al
+  suo posto, parole della Tastiera in attesa se non c'è, backup automatico, «In arrivo»), finché si tocca «Ho visto».
+- L'avviso della Scrivania è uno solo alla volta: telefono nuovo → bentornato → backup fermo → promemoria annuale.
+
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
   versione dei dati; ogni app separata in `apps/<app>.zip`. I file `format: 1` si ripristinano come oggi.

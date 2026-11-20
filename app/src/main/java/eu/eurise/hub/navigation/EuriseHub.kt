@@ -147,6 +147,9 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                 goTo(Section.Calendar)
             }
             section == "backup" -> navController.navigate("cloud/backup")
+            // Dalla Scrivania: «Telefono nuovo? Ripristina» e il promemoria annuale della frase.
+            section == "backup_restore" -> navController.navigate("cloud/backup?start=restore")
+            section == "backup_check" -> navController.navigate("cloud/backup?start=check")
             // «Collega un cloud» dalla dock di Eurise Office.
             section == "cloud" -> navController.navigate("cloud") { launchSingleTop = true }
             section == "clock" -> goTo(Section.Clock)
@@ -318,7 +321,20 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     )
                 }
                 composable("cloud/backup") {
-                    eu.eurise.feature.cloud.BackupRoute(onBack = { navController.closeIfOn("cloud/backup") })
+                    eu.eurise.feature.cloud.BackupRoute(
+                        onBack = { navController.closeIfOn("cloud/backup") },
+                        onConnectCloud = { navController.navigate("cloud") { launchSingleTop = true } },
+                    )
+                }
+                composable(
+                    "cloud/backup?start={start}",
+                    arguments = listOf(navArgument("start") { type = NavType.StringType; nullable = true; defaultValue = null }),
+                ) { entry ->
+                    eu.eurise.feature.cloud.BackupRoute(
+                        onBack = { navController.closeIfOn("cloud/backup?start={start}") },
+                        onConnectCloud = { navController.navigate("cloud") { launchSingleTop = true } },
+                        start = entry.arguments?.getString("start"),
+                    )
                 }
                 composable("notes/trash") {
                     TrashRoute(notes = data.notes, onBack = { navController.closeIfOn("notes/trash") })

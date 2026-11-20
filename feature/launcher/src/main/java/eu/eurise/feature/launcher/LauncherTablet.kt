@@ -179,7 +179,7 @@ internal fun TabletHome(
         ) {
             Spacer(Modifier.height(32.dp))
             // Il backup fermo da qualche giorno, come sul telefono (largo quanto la scheda di oggi).
-            Column(Modifier.widthIn(max = 520.dp)) { BackupBanner(hazeState) { actions.openEurise("backup") } }
+            Column(Modifier.widthIn(max = 520.dp)) { BackupBanner(hazeState) { actions.openEurise(it) } }
             ClockBlock(now, onClock = actions.openClock, onDate = { actions.openEurise("calendar") })
             Spacer(Modifier.height(4.dp))
             WeatherRow(weather, canAsk = !hasLocation, onAsk = actions.askLocation, onOpen = onWeather)
@@ -277,17 +277,40 @@ internal fun NoticeBanner(hazeState: HazeState, text: String, action: String, on
     }
 }
 
-/** L'avviso del backup fermo da qualche giorno ([eu.eurise.core.cloud.backup.BackupHealth]); tocco: Cloud › Backup. */
+/**
+ * L'avviso del backup in cima alla Scrivania, uno alla volta, nell'ordine:
+ * telefono nuovo ancora vuoto e backup spento → «Ritrova i tuoi dati» (ripristino dalla prima schermata);
+ * appena ripristinato → «Bentornato»; backup fermo da qualche giorno ([eu.eurise.core.cloud.backup.BackupHealth]);
+ * una volta l'anno → «Ti ricordi la frase?». [open] riceve la sezione di Eurise da aprire.
+ */
 @Composable
-internal fun BackupBanner(hazeState: HazeState, onClick: () -> Unit) {
+internal fun BackupBanner(hazeState: HazeState, open: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val manager = androidx.compose.runtime.remember { eu.eurise.core.cloud.backup.BackupManager.get(context) }
     val backup by manager.state.collectAsStateWithLifecycle()
-    backup.lateDays() ?: return
+    // Il telefono è vuoto? Lo si chiede al database una volta, fuori dal thread principale, solo se serve saperlo.
+    val askEmpty = !backup.configured && backup.restoredAt == null
+    val empty by androidx.compose.runtime.produceState<Boolean?>(null, askEmpty) {
+        value = if (!askEmpty) false
+        else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { eu.eurise.core.cloud.backup.BackupArchive.onPhone(context).empty }.getOrDefault(false)
+        }
+    }
+    val late = backup.lateDays()
     val last = backup.lastAt
-    val text = if (last == null) stringResource(R.string.backup_late_never)
-    else stringResource(R.string.backup_late, java.util.concurrent.TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - last).toInt())
-    NoticeBanner(hazeState, text, stringResource(R.string.backup_late_action), onClick)
+    val notice: Triple<String, String, String>? = when {
+        askEmpty && empty == true -> Triple(stringResource(R.string.backup_new_phone), stringResource(R.string.backup_new_phone_action), "backup_restore")
+        backup.restoredAt != null -> Triple(stringResource(R.string.backup_restored), stringResource(R.string.backup_late_action), "backup")
+        late != null -> Triple(
+            if (last == null) stringResource(R.string.backup_late_never)
+            else stringResource(R.string.backup_late, java.util.concurrent.TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - last).toInt()),
+            stringResource(R.string.backup_late_action), "backup",
+        )
+        backup.checkDue() -> Triple(stringResource(R.string.backup_check), stringResource(R.string.backup_check_action), "backup_check")
+        else -> null
+    }
+    notice ?: return
+    NoticeBanner(hazeState, notice.first, notice.second) { open(notice.third) }
     Spacer(Modifier.height(12.dp))
 }
 

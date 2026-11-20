@@ -36,6 +36,8 @@ object BackupArchive {
     private const val DB = "eurise.db"
     private const val PENDING = "restore_pending"
     private const val MANIFEST = "manifest.json"
+    /** Nelle preferenze «backup»: quando il ripristino è stato applicato, per «Bentornato». */
+    const val RESTORED_AT = "restored_at"
     /** 1 fino al 20 novembre 2026; 2 aggiunge al manifesto i conteggi di note e attività. */
     private const val FORMAT = 2
 
@@ -198,6 +200,7 @@ object BackupArchive {
             // Ripristini preparati da una versione precedente: lo zip della Tastiera stava ancora qui.
             File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it.readBytes()) }
             File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
+            context.getSharedPreferences("backup", Context.MODE_PRIVATE).edit().putLong(RESTORED_AT, System.currentTimeMillis()).commit()
         }
         dir.deleteRecursively()
     }
