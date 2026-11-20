@@ -227,3 +227,21 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
 - **Voci e suonerie** (pre-release `voci` e `suoni`): rischio accettato. Chi potesse cambiarle avrebbe già la scrittura sul
   repository; un'impronta nel codice obbligherebbe a riscriverlo a ogni rigenerazione.
 
+## Impronte delle librerie: come funzionano adesso (20 novembre 2026)
+- **Copertura**: il flusso `librerie-verificate.yml` compila come tutti i lavori di Compila (anche Leggi, AI e Browser con
+  le loro variabili, le versioni release, GeckoView x86_64, il computer e la Tastiera). Prima mancavano GeckoView e le
+  librerie di Leggi e AI: non erano né verificate né lette da OSV-Scanner. Ora le librerie di esecuzione sono 549 (280
+  nella Tastiera).
+- **Prova a cache vuota**: dopo aver scritto le impronte il flusso svuota la cache, riscarica tutto con la verifica
+  bloccante e aggiunge da solo le impronte dei file che Gradle chiede solo verificando (`.github/scripts/impronte_mancanti.py`,
+  da Maven Central). Ultimo esito: suite, computer e Tastiera OK.
+- **Indicatori dei plugin** (`*.gradle.plugin`) esclusi: Maven Central e Gradle Plugin Portal li servono diversi; il plugin
+  vero è verificato. Senza questa esclusione, con la cache vuota, anche «lenient» fermava la compilazione (successo il 20
+  novembre sul lavoro del computer; la verifica è stata spenta per qualche ora su `brand` per non bloccare nessuno).
+- **Dove blocca**: su `prova-sicurezza`, in Compila e CodeQL (`GRADLE_OPTS=-Dorg.gradle.dependency.verification=strict`).
+  Su `brand` e negli altri flussi è «lenient»: un passo «Impronte delle librerie» in ogni lavoro mostra in evidenza
+  (avviso e riepilogo) ogni file che non corrisponde. Motivo: le impronte di una libreria nuova arrivano dopo il primo giro
+  di chi la aggiunge (il flusso parte da solo quando cambiano i file delle librerie e poi rilancia Compila), e GeckoView
+  cambia versione da sé a ogni uscita di Mozilla.
+- GeckoView è firmato da Mozilla (`.asc` presenti): passo successivo possibile, verificarlo con la chiave PGP di Mozilla.
+

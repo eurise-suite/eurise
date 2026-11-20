@@ -3389,3 +3389,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 19 novembre, Sicurezza: CodeQL (64 segnalazioni esaminate, 2 corrette), permessi minimi nei flussi, impronte delle librerie, BouncyCastle 1.85 e Guava 33.7.2 nelle app, giro 858 → `docs/SICUREZZA.md`.
 - 19 novembre, Sicurezza: modelli di Whisper, cervelli di Alfred e lingue dell'OCR fissati a versioni precise con impronta SHA-256 (`Contents.kt`) → `docs/SICUREZZA.md`.
 - 19 novembre, Sicurezza: Ponte con chiavi di sessione (segretezza in avanti) sulla rete di casa, compatibile con i lati vecchi → `docs/SICUREZZA.md`.
+- 20 novembre, Sicurezza: impronte delle librerie complete (GeckoView, Leggi, AI) e provate a cache vuota; bloccanti su prova-sicurezza, segnalate su brand; chiavi dell'impronta in StrongBox (giro 871) → `docs/SICUREZZA.md`.

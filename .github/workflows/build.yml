@@ -11,10 +11,11 @@ on:
 permissions:
   contents: read
 
-# Impronte delle librerie bloccanti qui (gradle/verification-metadata.xml, provate a cache vuota da
-# librerie-verificate.yml): una libreria o un plugin con un'impronta diversa da quella registrata ferma il giro.
+# Impronte delle librerie (gradle/verification-metadata.xml, provate a cache vuota da librerie-verificate.yml):
+# bloccanti sul ramo della sicurezza, dove passa tutto prima di brand; su brand solo segnalazione (un passo «Impronte
+# delle librerie» in ogni lavoro), perché le impronte nuove arrivano dopo il primo giro di chi aggiunge una libreria.
 env:
-  GRADLE_OPTS: "-Dorg.gradle.dependency.verification=strict"
+  GRADLE_OPTS: ${{ github.ref_name == 'prova-sicurezza' && '-Dorg.gradle.dependency.verification=strict' || '' }}
 
 concurrency:
   group: build-${{ github.ref }}
@@ -41,6 +42,15 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon assembleDebug testDebugUnitTest :core:ponte:test :desktop:ponte:installDist 2>&1 | tee build.log
 
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=build.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       # Gli errori di compilazione diventano annotazioni, leggibili anche senza scaricare il registro.
       - name: Riassunto degli errori
         if: failure()
@@ -196,6 +206,15 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon assembleDebug testDebugUnitTest --tests 'eu.eurise.*' 2>&1 | tee build.log
 
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=keyboard/build.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Riassunto degli errori
         if: failure()
         working-directory: keyboard
@@ -247,6 +266,15 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon :read:assembleDebug :read:assembleRelease 2>&1 | tee build.log | tail -30
 
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=build.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Carica l'APK di Leggi
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -301,6 +329,15 @@ jobs:
           ./gradlew --no-daemon :browser:assembleDebug :browser:testDebugUnitTest 2>&1 | tee build.log | tail -30
           grep -o "org.mozilla.geckoview:geckoview-arm64-v8a:[^ ]*" build.log | sort -u | head -3 || true
 
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=build.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Riassunto degli errori
         if: failure()
         run: |
@@ -350,6 +387,15 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon :ai:assembleDebug :ai:assembleRelease 2>&1 | tee build.log | tail -30
 
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=build.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Riassunto degli errori
         if: failure()
         run: |
@@ -480,6 +526,15 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew --no-daemon :core:sync:test :core:ponte:test :desktop:app:test :desktop:app:createDistributable 2>&1 | tee desktop.log
+      - name: Impronte delle librerie
+        if: always()
+        run: |
+          # Su brand la verifica è solo segnalazione (docs/SICUREZZA.md): qui si mostra se qualcosa non corrisponde.
+          f=desktop.log
+          if [ -f "$f" ] && grep -q "failed verification" "$f"; then
+            grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Riassunto degli errori
         if: failure()
         run: |

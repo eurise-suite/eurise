@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: impronte-${{ github.ref }}
@@ -131,6 +132,7 @@ jobs:
           exit $esito
 
       - name: Spingi le impronte
+        id: spingi
         run: |
           git config user.name "eurise-impronte"
           git config user.email "eurise-impronte@users.noreply.github.com"
@@ -140,3 +142,10 @@ jobs:
           git commit -m "Impronte delle librerie (verification-metadata.xml e librerie di esecuzione)"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "spinto=1" >> "$GITHUB_OUTPUT"
+      - name: Rilancia Compila APK con le impronte nuove
+        # Un push fatto da un flusso non avvia altri flussi (regola di GitHub): lo si lancia qui.
+        if: steps.spingi.outputs.spinto == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build.yml --ref "${GITHUB_REF_NAME}" -R "${{ github.repository }}"

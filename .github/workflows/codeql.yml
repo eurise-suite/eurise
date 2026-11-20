@@ -16,10 +16,11 @@ on:
 permissions:
   contents: read
 
-# Impronte delle librerie bloccanti qui (gradle/verification-metadata.xml, provate a cache vuota da
-# librerie-verificate.yml): una libreria o un plugin con un'impronta diversa da quella registrata ferma il giro.
+# Impronte delle librerie (gradle/verification-metadata.xml, provate a cache vuota da librerie-verificate.yml):
+# bloccanti sul ramo della sicurezza, dove passa tutto prima di brand; su brand solo segnalazione (un passo «Impronte
+# delle librerie» in ogni lavoro), perché le impronte nuove arrivano dopo il primo giro di chi aggiunge una libreria.
 env:
-  GRADLE_OPTS: "-Dorg.gradle.dependency.verification=strict"
+  GRADLE_OPTS: ${{ github.ref_name == 'prova-sicurezza' && '-Dorg.gradle.dependency.verification=strict' || '' }}
 
 concurrency:
   group: codeql-${{ github.ref }}
