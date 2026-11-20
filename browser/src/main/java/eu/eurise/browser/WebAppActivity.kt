@@ -82,8 +82,9 @@ class WebAppActivity : ComponentActivity() {
 
     private fun unlock() {
         val pkg = if (BuildConfig.SUITE_DEBUG) "eu.eurise.password.debug" else "eu.eurise.password"
-        val intent = Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
-            .setComponent(android.content.ComponentName(pkg, eu.eurise.core.suite.PasswordContract.ALIAS))
+        // Solo verso Password della suite: un'app con lo stesso nome potrebbe chiedere la frase principale al suo posto.
+        val intent = eu.eurise.core.suite.SuiteAccess.trusted(this, Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
+            .setComponent(android.content.ComponentName(pkg, eu.eurise.core.suite.PasswordContract.ALIAS))) ?: return
         runCatching { unlockResult.launch(intent) }
     }
 

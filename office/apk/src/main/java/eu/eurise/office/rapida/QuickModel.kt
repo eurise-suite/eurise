@@ -255,9 +255,9 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
 
     fun saveIn(context: Context) = viewModelScope.launch {
         val copy = copy(context) ?: return@launch
-        val intent = FilesContract.saveIn(Suite.hub, copy, mime, name, "office", context.getString(R.string.office_app_name))
+        val intent = FilesContract.saveIn(context, Suite.hub, copy, mime, name, "office", context.getString(R.string.office_app_name))
         try {
-            context.startActivity(intent)
+            context.startActivity(intent ?: throw ActivityNotFoundException())
             unsaved = false
         } catch (e: ActivityNotFoundException) {
             notice = R.string.office_needs_eurise to null

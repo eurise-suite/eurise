@@ -67,9 +67,9 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     }
 
     override fun unlockPassword() {
-        val intent = Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
-            .setComponent(android.content.ComponentName(passwordPackage, eu.eurise.core.suite.PasswordContract.ALIAS))
-        runCatching { unlock.launch(intent) }.onFailure { openPassword() }
+        val intent = eu.eurise.core.suite.SuiteAccess.trusted(this, Intent(eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK)
+            .setComponent(android.content.ComponentName(passwordPackage, eu.eurise.core.suite.PasswordContract.ALIAS)))
+        runCatching { unlock.launch(intent!!) }.onFailure { openPassword() }
     }
 
     private val importFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> readPicked(uris) }
@@ -205,9 +205,9 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
     /** Passa un file a «Salva in…» di Eurise File; senza l'app Eurise, al foglio di condivisione. */
     private fun offer(file: File, mime: String, kind: String, from: Finished? = null) {
         val uri = FileProvider.getUriForFile(this, "$packageName.salva", file)
-        val save = FilesContract.saveIn(BuildConfig.HUB_PACKAGE, uri, mime, file.name, kind, getString(R.string.brw_app_name))
+        val save = FilesContract.saveIn(this, BuildConfig.HUB_PACKAGE, uri, mime, file.name, kind, getString(R.string.brw_app_name))
         // Si aspetta la risposta di Eurise File per sapere se il file è stato salvato (e togliere la copia in Download).
-        val ok = runCatching { if (from != null) { saving = from; saveInResult.launch(save) } else startActivity(save) }
+        val ok = save != null && runCatching { if (from != null) { saving = from; saveInResult.launch(save) } else startActivity(save) }
             .onFailure { if (from != null) saving = null }.isSuccess
         if (!ok) {
             val send = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
@@ -534,10 +534,13 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                 if (bookmarks) toast(getString(R.string.brw_import_done, added))
                 handoff?.let { file ->
                     val uri = FileProvider.getUriForFile(this, "$packageName.salva", file)
-                    val send = Intent(Intent.ACTION_SEND).setPackage(passwordPackage).setType("text/csv")
+                    // Le password importate vanno solo a Password della suite: se manca, un'app con lo stesso nome di
+                    // pacchetto non riceve il file (docs/SICUREZZA.md, «Porte d'ingresso»).
+                    val send = eu.eurise.core.suite.SuiteAccess.trusted(this, Intent(Intent.ACTION_SEND).setPackage(passwordPackage).setType("text/csv")
                         .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        .also { it.clipData = ClipData.newRawUri("password.csv", uri) }
-                    runCatching { startActivity(send) }.onFailure { toast(getString(R.string.brw_no_password_app)) }
+                        .also { it.clipData = ClipData.newRawUri("password.csv", uri) })
+                    if (send == null) { file.delete(); toast(getString(R.string.brw_no_password_app)) }
+                    else runCatching { startActivity(send) }.onFailure { toast(getString(R.string.brw_no_password_app)) }
                 }
             }
         }.start()

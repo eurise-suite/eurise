@@ -457,3 +457,6 @@ che suona con Eurise.
   passano solo tra app della suite verificate (`SuiteAccess`). Chat: il ritorno dall'accesso vale dieci minuti e una volta;
   la chiave di recupero va solo all'app Eurise vera; trascrizione dei vocali solo a Voce della suite.
   Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Posta: «Salva in» e «Apri da» di Eurise File solo verso l'app Eurise della suite (`FilesContract` con il `Context`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».

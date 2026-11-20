@@ -417,7 +417,8 @@ class EuriseBar(context: Context, attrs: AttributeSet?) : LinearLayout(context, 
 
     /** Il tasto della voce apre la dettatura di Eurise Voce; falso se non è installata (resta quella di sistema). */
     fun startDictation(): Boolean {
-        if (!::ime.isInitialized || !bridge.installed(bridge.voicePackage)) return false
+        // Solo Voce della suite: un'app con lo stesso nome ascolterebbe al suo posto ciò che si detta.
+        if (!::ime.isInitialized || !SuiteTrust.isSuite(context, bridge.voicePackage)) return false
         val intent = Intent().setClassName(bridge.voicePackage, "eu.eurise.voice.DictateActivity")
             .putExtra("reply_to", context.packageName)
             .putExtra("language", ime.euriseLanguage())

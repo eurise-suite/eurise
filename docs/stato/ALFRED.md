@@ -170,3 +170,6 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 ## Sicurezza (18 novembre 2026, notte, progetto Eurise Sicurezza)
 - Alfred, Note e Chat si legano a Voce, AI e Leggi solo se sono app della suite (permesso di firma); Leggi ora chiede per
   sé il permesso della suite (serve al controllo). Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Assistente: dettatura solo verso Eurise Voce della suite (`SuiteAccess.isSuitePackage`); Ponte: sblocco di Password solo verso Password della suite. Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».

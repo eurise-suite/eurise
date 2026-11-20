@@ -15,8 +15,8 @@ object Suite {
     private const val EXTRA_SECTION = "eu.eurise.extra.SECTION"
     val hub: String get() = BuildConfig.HUB_PACKAGE
 
-    fun installed(context: Context): Boolean =
-        runCatching { context.packageManager.getPackageInfo(hub, 0) }.isSuccess
+    /** Vero se l'app Eurise c'è ed è davvero della suite (stessa chiave): un'app con lo stesso nome non conta. */
+    fun installed(context: Context): Boolean = eu.eurise.core.suite.SuiteAccess.isSuitePackage(context, hub)
 
     /** Apre una sezione dell'app Eurise («calendar», «notes», «scanner»). */
     fun section(context: Context, section: String): Boolean = try {
@@ -31,8 +31,8 @@ object Suite {
         false
     }
 
-    fun openFrom(extensions: Collection<String>, from: String, start: String? = null): Intent =
-        FilesContract.openFrom(hub, extensions, from, start)
+    fun openFrom(context: Context, extensions: Collection<String>, from: String, start: String? = null): Intent? =
+        FilesContract.openFrom(context, hub, extensions, from, start)
 
     /** Un luogo di Eurise File: [id] vuoto è il telefono, altrimenti l'account cloud ([kind]: Murena, Nextcloud…). */
     data class Place(val id: String, val label: String, val kind: String)

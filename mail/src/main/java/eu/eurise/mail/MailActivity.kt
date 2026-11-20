@@ -110,14 +110,14 @@ class MailActivity : ComponentActivity(), MailActions {
     override fun saveIn(file: File) {
         val uri = FileProvider.getUriForFile(this, "$packageName.allegati", file)
         val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase()) ?: "application/octet-stream"
-        val save = FilesContract.saveIn(BuildConfig.HUB_PACKAGE, uri, mime, file.name, "document", getString(R.string.ml_app_name))
+        val save = FilesContract.saveIn(this, BuildConfig.HUB_PACKAGE, uri, mime, file.name, "document", getString(R.string.ml_app_name))
         if (!start(save)) toast(getString(R.string.ml_no_hub))
     }
 
     override fun pickAttachments(onPicked: (List<Uri>) -> Unit) {
         this.onPicked = onPicked
-        val files = FilesContract.openFrom(BuildConfig.HUB_PACKAGE, emptyList(), getString(R.string.ml_app_name))
-        val ok = runCatching { fromFiles.launch(files) }.isSuccess
+        val files = FilesContract.openFrom(this, BuildConfig.HUB_PACKAGE, emptyList(), getString(R.string.ml_app_name))
+        val ok = files != null && runCatching { fromFiles.launch(files) }.isSuccess
         if (!ok) runCatching { fromSystem.launch(arrayOf("*/*")) }
     }
 

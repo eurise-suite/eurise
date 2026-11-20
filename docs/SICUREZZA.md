@@ -20,8 +20,9 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   1. ~~Chiave del Ponte del computer nel portachiavi del sistema~~ fatta il 20 novembre, sera (sezione «Computer»).
   2. ~~Cassetta del Ponte nel cloud con segretezza in avanti~~ formato pronto il 20 novembre, sera (`Mailbox` in
      `core/ponte`): la cassetta non è ancora costruita, nasce già sicura (sezione «Crittografia», «Ponte»).
-  3. Voci «Aperto» delle porte d'ingresso: intent verso l'app Eurise con `SuiteAccess.trusted`; Mappe senza
-     `SUITE_DEBUG` fuori dalle prove (prima della versione ufficiale).
+  3. ~~Voci «Aperto» delle porte d'ingresso~~ intent verso le altre app della suite controllati il 20 novembre, sera
+     (tra cui il CSV delle password importate dal Browser). Resta Mappe, da fare con la preparazione della versione
+     ufficiale (sezione «Porte d'ingresso», «Mappe»).
   4. Segreti affidati all'app Eurise sigillati nel Keystore (tocca il backup); blocco delle Note legato all'impronta.
   5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
      passare dal flusso delle impronte.
@@ -103,10 +104,34 @@ Prova sull'emulatore: `prova-porte.yml`, **verde il 18 novembre, notte** (giro 8
 la curiosa si collegava al Ponte come computer (`ponte=APERTA`), respinta altrove. Dopo: respinta ovunque, Ponte chiuso;
 l'amica con la chiave della suite usa ancora segreti, Password, SMS, ripristino della Tastiera e codici 2FA.
 
-Aperto (rischio basso, deciso di non toccarlo in questo giro):
-- Intent verso l'app Eurise senza controllo del destinatario: «Salva in» e «Apri da» di File, Scanner, Carte (`FilesContract`
-  e simili); un intruso servirebbe solo con l'app Eurise disinstallata. Da portare su `SuiteAccess.trusted`.
-- Mappe (patch di Organic Maps) usa `SUITE_DEBUG` anche fuori dalle prove: da sistemare prima della prima versione ufficiale.
+### Intent verso le altre app della suite (20 novembre 2026, sera)
+Riletti tutti gli intent espliciti che un'app della suite manda a un'altra (per nome di pacchetto o componente). Rischio
+solo se l'app destinataria non è installata: un'app estranea con lo stesso nome di pacchetto riceverebbe ciò che le diamo.
+- **Browser → Password, CSV delle password importate** (Vivaldi, Chrome, Brave…): partiva con `setPackage` senza
+  controllo. **Reale, medio**: senza Password installata, un'app con il suo nome avrebbe ricevuto tutte le password
+  importate in chiaro. Ora solo verso Password della suite; se manca, il CSV temporaneo si cancella e compare l'avviso.
+- **«Salva in» e «Apri da» di Eurise File** (Browser, Posta, Galleria, Office: scaricati, allegati, foto, documenti, PDF):
+  ora `FilesContract.saveIn/openFrom` chiedono il `Context` e restituiscono null se l'app Eurise non è della suite; chi
+  chiama passa al suo ripiego (foglio di condivisione, selettore di Android, avviso). Un chiamante nuovo non può
+  dimenticare il controllo. `Suite.installed` di Office e «Apri da File» della Galleria contano solo l'app Eurise vera.
+- **Sblocco di Password** (Browser, app web, approvazione del Ponte): un'app con lo stesso nome avrebbe potuto mostrare
+  una finta richiesta della frase principale. Ora solo verso Password della suite.
+- **Dettatura** (Tastiera, assistente) verso Eurise Voce: un'app con lo stesso nome avrebbe ascoltato ciò che si detta.
+  Ora solo Voce della suite (`SuiteTrust` nella Tastiera, `SuiteAccess` nell'app Eurise).
+- Già a posto: legami ai servizi (Voce, Leggi, AI), ricerca della Tastiera nella suite, Password «Aggiungi»
+  (`PasswordContract.addIntent`), broadcast con permesso. Senza dati: apertura di una sezione dell'app Eurise da Office,
+  elenco dei modelli di Voce.
+- Visibilità controllata: ogni app ha già nei `<queries>` i pacchetti a cui ora chiede il permesso (su Android 11+ senza
+  visibilità il controllo direbbe sempre no e le app smetterebbero di parlarsi).
+
+### Mappe (da fare con la versione ufficiale)
+Mappe (patch di Organic Maps, `maps/eurise_patch.py`) dichiara e usa sempre `SUITE_DEBUG`, prova sia `eu.eurise.hub.debug`
+sia `eu.eurise.hub` (15 file) e manda SMS (`EuriseSms`), attività (`EuriseTrip`) e note («Luogo», «Mezzi») a quei
+pacchetti. Oggi sul telefono di prova il rischio è basso: tutte le app sono di prova, i broadcast chiedono `SUITE_DEBUG`
+a chi riceve, e le note di un luogo vanno prima all'app Eurise di prova, che c'è. Diventa un buco con la versione
+ufficiale: lì nessuna app della suite dichiara `SUITE_DEBUG` e un'app qualunque potrebbe dichiararlo da sé. Da fare
+prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-engine.yml`, lungo): variante «prova» e
+«ufficiale» nel patch (permesso e nomi dei pacchetti di una sola variante), controllo del destinatario come `SuiteAccess`.
 - «Condividi → Note» e «Invia al computer» non chiedono conferma (da Android 10 un'app deve essere in primo piano per aprirli).
 - I visori (PDF, Galleria, Office, import di calendario e contatti) aprono anche file propri: servono all'app stessa e non
   fanno uscire nulla.

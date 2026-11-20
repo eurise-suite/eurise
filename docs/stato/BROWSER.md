@@ -102,3 +102,6 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
 Estensione Firefox 0.2.1: dalle pagine web solo `password` e `settings`; password solo su HTTPS, dalla cornice
 principale e con la funzione accesa; tolto `contextMenus`. Password (`Matching.fetchMatches`): un nome senza punto non
 riceve voci; il Browser continua a ricevere i sottodomini. Dettagli in `docs/SICUREZZA.md`, sezione «Computer».
+
+## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
+Browser: il CSV delle password importate, «Salva in» e lo sblocco di Password vanno solo alle app della suite (`SuiteAccess.trusted`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».

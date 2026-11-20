@@ -36,9 +36,9 @@ object PdfOut {
 
     fun saveIn(context: Context, file: File, name: String) {
         val uri = copy(context, file, name)
-        val intent = FilesContract.saveIn(Suite.hub, uri, "application/pdf", name, "office", context.getString(R.string.office_app_name))
+        val intent = FilesContract.saveIn(context, Suite.hub, uri, "application/pdf", name, "office", context.getString(R.string.office_app_name))
         try {
-            context.startActivity(intent)
+            context.startActivity(intent ?: throw ActivityNotFoundException())
         } catch (e: ActivityNotFoundException) {
             share(context, uri, name)
         } catch (e: SecurityException) {
