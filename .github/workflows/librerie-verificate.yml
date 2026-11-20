@@ -92,6 +92,22 @@ jobs:
             cat /tmp/tutte; echo "empty="; } > gradle/eurise/esecuzione/gradle.lockfile
           raccogli keyboard keyboard/gradle/eurise/esecuzione/gradle.lockfile ./gradlew
 
+      - name: Impronte dei file chiesti solo in verifica
+        run: |
+          # Gradle a volte non scrive l'impronta di un file che poi chiede verificando: si prova in strict, si
+          # aggiungono quelli segnalati (scaricati da Maven Central) e si riprova, fino a due volte.
+          rm -rf ~/.gradle/caches/modules-2
+          completa() { # cartella, file delle impronte, variabili
+            dir=$1; meta=$2; shift 2
+            for giro in 1 2; do
+              (cd "$dir" && env "$@" ./gradlew --no-daemon --dependency-verification strict --refresh-dependencies help -q > /tmp/v.log 2>&1) && break
+              python3 -I .github/scripts/impronte_mancanti.py "$meta" /tmp/v.log
+            done
+          }
+          completa . gradle/verification-metadata.xml EURISE_READ=1 EURISE_AI=1 EURISE_BROWSER=1
+          completa . gradle/verification-metadata.xml EURISE_DESKTOP=1
+          completa keyboard keyboard/gradle/verification-metadata.xml X=1
+
       - name: Prova la verifica bloccante con la cache vuota
         # Ciò che serve per passare a «strict»: con la cache vuota (come un lavoro di Compila nuovo) e le librerie
         # riscaricate, ogni configurazione dei progetti (plugin compresi) deve passare. Non ferma il flusso: riferisce.
