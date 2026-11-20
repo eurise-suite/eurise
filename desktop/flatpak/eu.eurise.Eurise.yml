@@ -14,6 +14,7 @@ finish-args:
   - --socket=fallback-x11
   - --device=dri
   - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.secrets   # portachiavi del sistema: la chiave privata del Ponte (docs/SICUREZZA.md)
   - --filesystem=xdg-download  # documenti arrivati dal telefono
   # Native messaging per l'estensione Eurise di Firefox (deb/rpm e Flatpak di Firefox).
   - --filesystem=~/.mozilla/native-messaging-hosts:create

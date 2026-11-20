@@ -107,5 +107,8 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 ## Sicurezza, 20 novembre 2026 (progetto Eurise Sicurezza)
 Ponte: risponde solo dalla rete di casa e dalle VPN private (`Peers`), al massimo 32 collegamenti, 10 s e 16 KB per
 presentarsi; da Firefox niente percorsi di file; `wtype -` e `notify-send --`; nome del telefono ripulito. Flatpak su
-Freedesktop 25.08. Da fare con quest'area: chiave del Ponte nel portachiavi del sistema (Secret Service). Dettagli in
-`docs/SICUREZZA.md`, sezione «Computer».
+Freedesktop 25.08. Dettagli in `docs/SICUREZZA.md`, sezione «Computer».
+- Sera: chiave privata del Ponte nel portachiavi del sistema (Secret Service: GNOME Keyring, KWallet), migrata da sola dal
+  file `chiavi` senza rifare l'abbinamento; senza portachiavi resta nel file. Nuovi `desktop/ponte/.../DBus.kt` e
+  `Keyring.kt`, comando `eurise-ponte chiave`; `PonteState` riprova ogni due minuti se il portachiavi resta chiuso;
+  Flatpak con `--talk-name=org.freedesktop.secrets`. Nessuna modifica all'interfaccia.

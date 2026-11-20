@@ -2,7 +2,7 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 20 novembre 2026, pomeriggio)
+### Per ripartire (aggiornato il 20 novembre 2026, sera)
 - **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
   `brand`. Al 20 novembre i due rami sono allo stesso commit (6527537). Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
@@ -14,9 +14,10 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di
   Android spento in tutte le app; azioni allo SHA, permessi minimi, CodeQL, OSV-Scanner, Dependabot; librerie verificate
   con impronte e **firme PGP degli autori** (`librerie-verificate.yml` le rigenera); contenuti scaricati fissati per
-  commit e impronta; `SECURITY.md`, `docs/MINACCE.md`; computer (Ponte, estensione Firefox 0.2.1, Flatpak 25.08).
+  commit e impronta; `SECURITY.md`, `docs/MINACCE.md`; computer (Ponte, estensione Firefox 0.2.1, Flatpak 25.08);
+  chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera).
 - **Prossimo, in ordine proposto**:
-  1. Chiave del Ponte del computer nel portachiavi del sistema (Secret Service), con l'area Computer.
+  1. ~~Chiave del Ponte del computer nel portachiavi del sistema~~ fatta il 20 novembre, sera (sezione «Computer»).
   2. Cassetta del Ponte nel cloud con segretezza in avanti (oggi usa la chiave fissa).
   3. Voci «Aperto» delle porte d'ingresso: intent verso l'app Eurise con `SuiteAccess.trusted`; Mappe senza
      `SUITE_DEBUG` fuori dalle prove (prima della versione ufficiale).
@@ -79,7 +80,7 @@ La privacy senza sicurezza non vale nulla: questo file raccoglie lo stato e il p
    non si può: serve l'amministratore).
 8. Computer: Ponte con accoppiamento cifrato e autenticato, estensione Firefox con i soli permessi necessari, Flatpak
    su runtime aggiornato.
-   **Rivisto il 20 novembre** (sezione «Computer» in fondo); resta la chiave del Ponte nel portachiavi del sistema.
+   **Rivisto il 20 novembre** (sezione «Computer» in fondo); chiave del Ponte nel portachiavi del sistema la sera stessa.
 
 ## Porte d'ingresso (18 novembre 2026, notte)
 Contati uno per uno i **90 componenti esportati** dei manifesti (inventario: attività, alias, servizi, ricevitori, fornitori)
@@ -300,7 +301,30 @@ di password solo in memoria per due minuti, con richiesta casuale; native messag
 CSP predefinita dell'estensione (niente script in linea), testi nelle pagine sempre passati da `esc`; link dal telefono
 aperti solo se http/https.
 
-Resta aperto: la chiave privata del Ponte sul computer è in chiaro nel file `chiavi` (0600, cartella 0700): chi legge i
-file dell'utente la prende. Passo successivo: portarla nel portachiavi del sistema (Secret Service, GNOME Keyring o
-KWallet; nel Flatpak con `--talk-name=org.freedesktop.secrets`), con il file come ripiego e la cifratura del disco
-consigliata. Da fare con l'area Computer.
+### Chiave del Ponte nel portachiavi del sistema (20 novembre 2026, sera)
+- **Prima**: la chiave privata del Ponte sul computer stava in chiaro nel file `chiavi` (0600, cartella 0700). Rischio
+  reale, medio: la prendeva chiunque leggesse i file dell'utente fuori dalla sessione (copia o backup della cartella
+  personale, cartella sincronizzata, disco tolto da un computer senza cifratura); con lei e il file `telefoni` si poteva
+  fingersi il computer davanti al telefono (appunti, avvisi, richieste di password con l'impronta).
+- **Ora** (`desktop/ponte/.../Keyring.kt`, `DBus.kt`): la chiave sta nel portachiavi del sistema con l'interfaccia Secret
+  Service (`org.freedesktop.secrets`): GNOME Keyring su Ubuntu e Fedora, KWallet su KDE (Plasma 6), KeePassXC se l'utente
+  la accende. Il portachiavi è cifrato con la password di accesso e si apre con la sessione. Nel file `chiavi` resta solo
+  la chiave pubblica con `"dove": "portachiavi"`. Nessuna libreria nuova e nessun programma esterno (`secret-tool` su
+  Ubuntu non c'è di base): un client D-Bus minimo scritto da noi sul socket del bus di sessione (autenticazione
+  EXTERNAL), sessione «plain» (il bus è solo dell'utente). Nel Flatpak `--talk-name=org.freedesktop.secrets`.
+- **Senza rifare l'abbinamento**: una chiave già nel file passa nel portachiavi al primo avvio (scritta, riletta uguale,
+  solo allora tolta dal file). Una voce diversa con lo stesso nome non si sovrascrive mai.
+- **Mai una chiave nuova per sbaglio**: se il file dice «portachiavi» e il portachiavi resta chiuso (finestra del sistema
+  annullata) o non risponde, il Ponte si ferma con un messaggio (`eurise-ponte`) o riprova tra due minuti (app), senza
+  generare una chiave che staccherebbe tutti i telefoni. La chiave si legge prima di aprire la porta, non a ogni
+  collegamento del telefono.
+- **Ripiego**: senza portachiavi (computer senza sessione grafica, server) la chiave resta nel file come prima, con un
+  avviso; `EURISE_PORTACHIAVI=no` lo forza. `eurise-ponte chiave` dice dove sta.
+- **Prove**: `KeyringTest` (portachiavi finto: creazione, migrazione, ripiego, portachiavi chiuso, chiave sparita, voce
+  altrui; codifica D-Bus e indirizzo del bus) e prova dal vero con GNOME Keyring su un bus di sessione: chiave creata e
+  letta da `secret-tool`, riletta, migrata dal file, portachiavi chiuso → «annullata» con il file intatto, senza servizio
+  → file.
+- **Cosa non protegge**: un programma che gira come l'utente nella sessione aperta può chiedere la chiave al portachiavi
+  come fa il Ponte (vale per tutti i portachiavi di Linux). Il file `telefoni` (segreti dell'abbinamento) resta su disco:
+  senza la chiave privata non serve a nulla. La vecchia chiave tolta dal file può restare nei blocchi liberi del disco:
+  cifratura del disco consigliata.
