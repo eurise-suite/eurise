@@ -64,6 +64,7 @@ fun PrivacyService.titleRes(): Int = when (this) {
     PrivacyService.Milestones -> R.string.ds_s_milestones
     PrivacyService.Lyrics -> R.string.ds_s_lyrics
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine
+    PrivacyService.SpamList -> R.string.ds_s_spam_list
 }
 
 fun PrivacyService.detailRes(): Int = when (this) {
@@ -84,6 +85,7 @@ fun PrivacyService.detailRes(): Int = when (this) {
     PrivacyService.Milestones -> R.string.ds_s_milestones_d
     PrivacyService.Lyrics -> R.string.ds_s_lyrics_d
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine_d
+    PrivacyService.SpamList -> R.string.ds_s_spam_list_d
 }
 
 /** I servizi chiusi: avviso su limiti e pericoli, con l'alternativa (regola del 12 novembre). */
@@ -104,14 +106,14 @@ fun PrivacyService.where(): Jurisdiction = when (this) {
     PrivacyService.PublicTransport -> Jurisdiction.EU // Transitous, comunità; server in Germania
     PrivacyService.News, PrivacyService.Horoscope, PrivacyService.AiOnline -> Jurisdiction.Various // l'AI che sceglie la persona
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
-    PrivacyService.Milestones, PrivacyService.OfficeEngine -> Jurisdiction.US // pubblicazioni del progetto su GitHub (Microsoft)
+    PrivacyService.Milestones, PrivacyService.OfficeEngine, PrivacyService.SpamList -> Jurisdiction.US // pubblicazioni del progetto su GitHub (Microsoft)
     PrivacyService.Lyrics -> Jurisdiction.Other // LRCLIB, progetto indipendente: sede dei server non dichiarata
 }
 
 /** Il grado di privacy effettivo, da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
 fun PrivacyService.score(hiddenIp: Int = 0): Int = when (this) {
     PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices, PrivacyService.Milestones,
-    PrivacyService.OfficeEngine ->
+    PrivacyService.OfficeEngine, PrivacyService.SpamList ->
         privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
     PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
     else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)

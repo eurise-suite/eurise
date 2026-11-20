@@ -1,0 +1,17 @@
+# eurise-spam 1
+# Elenco Eurise dei numeri molesti. Lo scarica l'app Eurise una volta a settimana col Wi-Fi, se acceso (centro privacy,
+# «Numeri molesti»); il Telefono confronta le chiamate sul telefono. Formato e regole: README.md in questa cartella.
+# numero o prefisso (con +)	categoria	nota
+
+# Truffa dello squillo (wangiri): uno squillo per farsi richiamare a tariffa alta. Prefissi citati più spesso dalle
+# segnalazioni italiane (Polizia Postale, stampa, 2024-2025). Non si segnano paesi europei interi (Regno Unito, Francia,
+# Grecia, Romania…): da lì chiamano anche persone vere; per quelli c'è «Sconosciuti dall'estero in silenzio».
++216	wangiri	Tunisia: squillo per farsi richiamare
++373	wangiri	Moldova: squillo per farsi richiamare
++375	wangiri	Bielorussia: squillo per farsi richiamare
++383	wangiri	Kosovo: squillo per farsi richiamare
++255	wangiri	Tanzania: squillo per farsi richiamare
+
+# Call center con i prefissi AGCOM (delibera 156/18/CIR): il Telefono li segna già da sé; qui per chi usa solo l'elenco.
++390843	callcenter	Sondaggi e statistiche (AGCOM)
++390844	callcenter	Vendite e ricerche di mercato (AGCOM)

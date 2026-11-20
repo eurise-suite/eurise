@@ -55,9 +55,9 @@ object CallNotifications {
         scope.launch {
             val name = eu.eurise.core.contacts.Contacts.byNumber(context, item.number)?.name
             val title = name ?: item.number.ifEmpty { context.getString(R.string.ph_private_number) }
-            val suspect = if (name != null) null else eu.eurise.phone.data.SpamFilter.suspect(
-                item.number, eu.eurise.phone.data.SpamFilter.suspectPrefixes(context), eu.eurise.phone.data.SpamFilter.countryCode(context),
-            )
+            // Per chi non è in rubrica: elenco Eurise dei numeri molesti, prefissi dei call center o segnati a mano.
+            val suspect = if (name != null) null
+                else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.phone.data.SpamListClient.warning(context, item.number) }
             post(context, item, title, suspect)
         }
     }
@@ -84,7 +84,7 @@ object CallNotifications {
             .setContentTitle(title)
             .setContentText(
                 context.getString(if (ringing) R.string.ph_incoming else R.string.ph_ongoing) +
-                    (suspect?.let { " · " + context.getString(R.string.ph_suspect_spam, it) } ?: ""),
+                    (suspect?.let { " · $it" } ?: ""),
             )
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
