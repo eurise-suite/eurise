@@ -9,7 +9,7 @@ import java.io.OutputStream
 /**
  * Le due strade del Ponte (docs/PIATTAFORME.md). Sulla rete di casa: cornici su TCP, ognuna lunga 4 byte e poi il
  * messaggio cifrato. Fuori casa: un file cifrato per messaggio in una cartella del cloud dell'utente (WebDAV), che
- * l'altro lato legge e cancella.
+ * l'altro lato legge e cancella: ogni file si chiude con [Mailbox] (segretezza in avanti), mai con la chiave fissa.
  */
 object Wire {
     const val MAX_FRAME = 8 * 1024 * 1024

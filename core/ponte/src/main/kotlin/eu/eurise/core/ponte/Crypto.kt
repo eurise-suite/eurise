@@ -72,7 +72,7 @@ class Link private constructor(private val key: SecretKeySpec) {
         private val INFO = "eurise-ponte v1".toByteArray()
         private val INFO_SESSION = "eurise-ponte v2 sessione".toByteArray()
 
-        /** La chiave fissa dell'abbinamento (v1): serve ad aprire il collegamento e alla cassetta nel cloud. */
+        /** La chiave fissa dell'abbinamento (v1): serve ad aprire il collegamento. La cassetta nel cloud non la usa ([Mailbox]). */
         fun between(mine: PrivateKey, theirs: PublicKey, pairingSecret: ByteArray): Link =
             Link(SecretKeySpec(hkdf(dh(mine, theirs), pairingSecret, INFO, 32), "AES"))
 
@@ -96,7 +96,10 @@ class Link private constructor(private val key: SecretKeySpec) {
             return Link(SecretKeySpec(hkdf(ikm, pairingSecret, INFO_SESSION + phoneEphemeral + computerEphemeral, 32), "AES"))
         }
 
-        private fun dh(mine: PrivateKey, theirs: PublicKey): ByteArray {
+        /** Una chiave da un materiale già pronto ([Mailbox]): HKDF-SHA256 a 32 byte, AES-256-GCM. */
+        internal fun derive(ikm: ByteArray, salt: ByteArray, info: ByteArray): Link = Link(SecretKeySpec(hkdf(ikm, salt, info, 32), "AES"))
+
+        internal fun dh(mine: PrivateKey, theirs: PublicKey): ByteArray {
             val ka = KeyAgreement.getInstance("ECDH")
             ka.init(mine)
             ka.doPhase(theirs, true)
