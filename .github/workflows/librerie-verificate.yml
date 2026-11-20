@@ -1,10 +1,10 @@
 name: Librerie verificate (impronte)
 
-# Piano di sicurezza, punto 4 (docs/SICUREZZA.md): Gradle controlla l'impronta SHA-256 di ogni libreria e plugin
-# scaricati (gradle/verification-metadata.xml e keyboard/gradle/verification-metadata.xml). Questo flusso, lanciato a
-# mano, compila tutto ciò che compila Compila APK scrivendo le impronte e le spinge sul ramo da cui parte.
-# Finché gradle.properties dice «lenient», una libreria senza impronta o diversa si segnala senza fermare la compilazione;
-# a file completo si passa a «strict» (una libreria manomessa ferma tutto).
+# Piano di sicurezza, punto 4 (docs/SICUREZZA.md). Gradle verifica ogni libreria e plugin scaricati: con la firma PGP
+# dell'autore quando c'è (GeckoView firmato da Mozilla, AndroidX da Google…; chiavi in gradle/verification-keyring.keys),
+# altrimenti con l'impronta SHA-256 (gradle/verification-metadata.xml, e i file uguali della Tastiera). Questo flusso
+# compila tutto ciò che compila Compila APK scrivendo firme e impronte, le prova a cache vuota e le spinge sul ramo.
+# Bloccanti su prova-sicurezza (Compila e CodeQL), segnalate su brand.
 on:
   workflow_dispatch:
   # Il lancio a mano vale solo per i flussi del ramo principale (main): sul ramo di lavoro parte quando cambia questo file.
@@ -50,12 +50,12 @@ jobs:
           # variabili (prima mancavano: GeckoView e le librerie di Leggi e AI non avevano impronte). Ogni giro aggiunge
           # le sue impronte allo stesso file.
           export EURISE_READ=1 EURISE_AI=1 EURISE_BROWSER=1
-          ./gradlew --no-daemon --write-verification-metadata sha256 \
+          ./gradlew --no-daemon --write-verification-metadata pgp,sha256 --export-keys \
             assembleDebug testDebugUnitTest :read:assembleRelease :ai:assembleRelease \
             :core:ponte:test :desktop:ponte:installDist
           # La prova d'avvio del Browser sull'emulatore usa GeckoView per x86_64.
-          ./gradlew --no-daemon --write-verification-metadata sha256 :browser:assembleDebug -Peurise.geckoAbi=x86_64
-          EURISE_DESKTOP=1 ./gradlew --no-daemon --write-verification-metadata sha256 \
+          ./gradlew --no-daemon --write-verification-metadata pgp,sha256 --export-keys :browser:assembleDebug -Peurise.geckoAbi=x86_64
+          EURISE_DESKTOP=1 ./gradlew --no-daemon --write-verification-metadata pgp,sha256 --export-keys \
             :core:sync:test :core:ponte:test :desktop:app:test :desktop:app:createDistributable
       - name: GeckoView è firmato da Mozilla?
         run: |
@@ -70,9 +70,9 @@ jobs:
         run: |
           chmod +x gradlew 2>/dev/null || true
           g=./gradlew; [ -x "$g" ] || g=../gradlew
-          $g --no-daemon --write-verification-metadata sha256 assembleDebug testDebugUnitTest --tests 'eu.eurise.*'
+          $g --no-daemon --write-verification-metadata pgp,sha256 --export-keys assembleDebug testDebugUnitTest --tests 'eu.eurise.*'
           # Alcuni file (junit-bom .module) si chiedono solo riscaricando: un giro in più, che li aggiunge.
-          $g --no-daemon --write-verification-metadata sha256 --refresh-dependencies help assembleDebug --dry-run
+          $g --no-daemon --write-verification-metadata pgp,sha256 --export-keys --refresh-dependencies help assembleDebug --dry-run
       - name: Librerie che arrivano sul telefono (per OSV-Scanner)
         run: |
           set -e
@@ -137,6 +137,7 @@ jobs:
           git config user.name "eurise-impronte"
           git config user.email "eurise-impronte@users.noreply.github.com"
           git add gradle/verification-metadata.xml keyboard/gradle/verification-metadata.xml \
+            gradle/verification-keyring.keys keyboard/gradle/verification-keyring.keys \
             gradle/eurise/esecuzione/gradle.lockfile keyboard/gradle/eurise/esecuzione/gradle.lockfile
           git diff --cached --quiet && { echo "Impronte già aggiornate"; exit 0; }
           git commit -m "Impronte delle librerie (verification-metadata.xml e librerie di esecuzione)"
