@@ -89,6 +89,7 @@ Aggiunti, su sua richiesta (senza tavola):
 - **Avviso sulla Scrivania** quando il backup automatico è fermo da almeno 3 giorni oltre la frequenza scelta
   (`BackupHealth`, con test; data di accensione in `configured_at`): pillola «Ultimo backup N giorni fa · Guarda» in
   cima alla home del telefono, apre Cloud › Backup. Sul tablet non ancora.
+- Consegnato con il giro **893** (`prova-backup`), pubblicato in `apk-prova`: cambia solo l'APK principale Eurise.
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
