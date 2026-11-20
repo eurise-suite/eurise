@@ -559,7 +559,9 @@ private fun ConfirmDialog(opened: BackupManager.Opened, replacesBackupSettings: 
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.backup_confirm_from, date.format(When)), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                val data = if (c.notes != null && c.tasks != null) stringResource(R.string.backup_confirm_data_counts, c.notes, c.tasks)
+                val notes = c.notes
+                val tasks = c.tasks
+                val data = if (notes != null && tasks != null) stringResource(R.string.backup_confirm_data_counts, notes, tasks)
                 else stringResource(R.string.backup_confirm_data)
                 ConfirmLine(stringResource(R.string.backup_confirm_eurise), data)
                 if (c.settings) ConfirmLine(stringResource(R.string.backup_confirm_settings), stringResource(R.string.backup_confirm_settings_hint))
