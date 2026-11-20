@@ -309,6 +309,19 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
             Spacer(Modifier.height(10.dp))
             Text(name, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold, maxLines = 2)
             Text(status, color = Soft, fontSize = 15.sp)
+            // «Sospetto spam»: chi non è in rubrica e chiama da un prefisso di call center (0843, 0844) o da uno segnato a mano.
+            val suspect = remember(lookedUp, contact) {
+                if (lookedUp.isEmpty() || contact != null) null
+                else eu.eurise.phone.data.SpamFilter.suspect(lookedUp, eu.eurise.phone.data.SpamFilter.suspectPrefixes(context), eu.eurise.phone.data.SpamFilter.countryCode(context))
+            }
+            if (suspect != null && item != null) {
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0x33D2B06A)).padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(EuriseIcons.shield(), null, tint = Gold, modifier = Modifier.size(15.dp))
+                    Text(stringResource(R.string.ph_suspect_spam, suspect), color = Gold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             if (other != null) {
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Veil).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

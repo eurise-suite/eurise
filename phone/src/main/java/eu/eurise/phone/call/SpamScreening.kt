@@ -9,10 +9,8 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
-import android.telephony.TelephonyManager
 import eu.eurise.phone.data.PhoneData
 import eu.eurise.phone.data.SpamFilter
-import java.util.Locale
 
 /**
  * Il filtro antispam: Android chiede al Telefono di Eurise, app predefinita per le chiamate, cosa fare di ogni chiamata
@@ -30,7 +28,7 @@ class SpamScreening : CallScreeningService() {
             rules, number,
             inContacts = number != null && inContacts(number),
             calledBefore = number != null && calledBefore(number),
-            country = countryCode(),
+            country = SpamFilter.countryCode(this),
             recentRejects = number?.let { n ->
                 val since = System.currentTimeMillis() - 15 * 60_000L
                 SpamFilter.filtered(this).count { it.at >= since && PhoneData.same(it.number, n) }
@@ -64,20 +62,4 @@ class SpamScreening : CallScreeningService() {
             found
         } ?: false
     }.getOrDefault(false)
-
-    /** Il prefisso del proprio paese, dalla rete o dalla SIM («39» in Italia). */
-    private fun countryCode(): String {
-        val tm = getSystemService(TelephonyManager::class.java)
-        val iso = (tm?.networkCountryIso?.takeIf { it.isNotBlank() } ?: tm?.simCountryIso ?: "it").uppercase(Locale.ROOT)
-        return CODES[iso] ?: "39"
-    }
-
-    private companion object {
-        val CODES = mapOf(
-            "IT" to "39", "SM" to "378", "VA" to "39", "CH" to "41", "FR" to "33", "DE" to "49", "AT" to "43", "ES" to "34",
-            "PT" to "351", "GB" to "44", "IE" to "353", "BE" to "32", "NL" to "31", "LU" to "352", "SI" to "386", "HR" to "385",
-            "GR" to "30", "MT" to "356", "PL" to "48", "CZ" to "420", "SE" to "46", "DK" to "45", "FI" to "358", "NO" to "47",
-            "RO" to "40", "HU" to "36", "SK" to "421", "BG" to "359", "US" to "1", "CA" to "1",
-        )
-    }
 }

@@ -46,4 +46,14 @@ class SpamFilterTest {
         assertFalse(SpamFilter.isForeign("+39333", "39"))
         assertFalse(SpamFilter.isForeign("333123", "39"))
     }
+
+    @Test
+    fun callCenterIsSuspect() {
+        assertEquals("0844", SpamFilter.suspect("+39 0844 1234567", emptySet()))
+        assertEquals("0843", SpamFilter.suspect("08431234567", emptySet()))
+        assertEquals("029475", SpamFilter.suspect("0039 02 9475 1111", setOf("029475")))
+        assertEquals(null, SpamFilter.suspect("3331234567", emptySet()))
+        assertEquals(null, SpamFilter.suspect("+49 0844 1234", emptySet()))
+        assertEquals(null, SpamFilter.suspect(null, setOf("02")))
+    }
 }
