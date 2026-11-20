@@ -46,6 +46,11 @@ import eu.eurise.core.designsystem.theme.EuriseTheme
  * Al primo avvio chiede i permessi e propone di diventare l'app per le chiamate (serve per la schermata della chiamata).
  */
 class PhoneActivity : ComponentActivity() {
+    companion object {
+        /** Apre i Recenti (notifica delle chiamate perse). */
+        const val ACTION_RECENTS = "eu.eurise.phone.RECENTS"
+    }
+
     /** Numero arrivato da un'altra app (tel:): apre il tastierino già compilato. */
     private val dialNumber = mutableStateOf<String?>(null)
     /** Aperta dall'icona Rubrica o da «Aggiungi in rubrica» di un'altra app. */
@@ -94,6 +99,8 @@ class PhoneActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Aprendo il Telefono le chiamate perse si vedono subito tra i Recenti: la notifica non serve più.
+        eu.eurise.phone.call.MissedCalls.seen(this)
         refresh.value++
     }
 
@@ -112,6 +119,12 @@ class PhoneActivity : ComponentActivity() {
                     emails = listOfNotNull(intent.getStringExtra(android.provider.ContactsContract.Intents.Insert.EMAIL)),
                 ),
             )
+            return
+        }
+        // Dalla notifica delle chiamate perse, o da chi apre il registro delle chiamate («Mostra le chiamate»).
+        if (intent.action == ACTION_RECENTS || (intent.action == Intent.ACTION_VIEW && intent.type == android.provider.CallLog.Calls.CONTENT_TYPE)) {
+            start.value = StartAt.Recents
+            eu.eurise.phone.call.MissedCalls.seen(this)
             return
         }
         if (intent.action == Intent.ACTION_MAIN && intent.component?.className?.endsWith("ContactsAlias") == true) {

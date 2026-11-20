@@ -3394,4 +3394,5 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Sicurezza: punto 8, computer: Ponte solo dalla rete di casa e con limiti, estensione Firefox 0.2.1 con meno porte, Password senza domini interi, Flatpak su 25.08 → `docs/SICUREZZA.md`.
 - 20 novembre, Sicurezza: stato per ripartire da una chat nuova in testa a `docs/SICUREZZA.md` (giro 883, rami allineati, prossimi passi).
 - 20 novembre, Sicurezza: chiave del Ponte del computer nel portachiavi del sistema (GNOME Keyring, KWallet), migrata dal file senza rifare l'abbinamento → `docs/SICUREZZA.md`.
+- 20 novembre, Sicurezza: cassetta del Ponte nel cloud non ancora costruita; pronto in `core/ponte` il suo formato con segretezza in avanti (`Mailbox`) → `docs/SICUREZZA.md`.
 - 20 novembre, Backup: elenco di cosa entra deciso app per app, anteprime sulla tela (pagina Backup); icona «Backup» nel cassetto, scorciatoia sull'icona di Eurise e avviso sulla Scrivania se il backup è fermo (giro 893, ramo prova-backup) → `docs/stato/BACKUP.md`.

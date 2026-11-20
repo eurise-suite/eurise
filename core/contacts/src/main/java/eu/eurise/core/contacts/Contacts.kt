@@ -85,8 +85,50 @@ object Contacts {
         context.contentResolver.query(
             Phone.CONTENT_URI, arrayOf(Phone.CONTACT_ID, Phone.NUMBER, Phone.IS_SUPER_PRIMARY), null, null, "${Phone.IS_SUPER_PRIMARY} DESC",
         )?.use { c -> while (c.moveToNext()) { val id = c.getLong(0); if (id !in out) c.getString(1)?.let { out[id] = it } } }
+        // Chi non ha un «telefono» ma ha WhatsApp, Signal o Telegram: il numero sta nei campi di quelle app.
+        runCatching {
+            context.contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                arrayOf(ContactsContract.Data.CONTACT_ID, ContactsContract.Data.DATA1, ContactsContract.Data.DATA3, ContactsContract.Data.DATA4),
+                "${ContactsContract.Data.MIMETYPE} LIKE ?", arrayOf(MESSENGER_MIME), null,
+            )?.use { c ->
+                while (c.moveToNext()) {
+                    val id = c.getLong(0)
+                    if (id !in out) messengerNumber(c.getString(1), c.getString(2), c.getString(3))?.let { out[id] = it }
+                }
+            }
+        }
         out
     }
+
+    /**
+     * Il numero scritto nei campi di un'app di messaggi (WhatsApp, Signal, Telegram…), o null. Si prende solo ciò che
+     * è sicuramente un numero: l'indirizzo di WhatsApp («393331234567@s.whatsapp.net») o un numero con il «+», mai un
+     * identificativo dell'app (Telegram ne scrive uno, tutto cifre).
+     */
+    fun messengerNumber(vararg fields: String?): String? {
+        for (f in fields) {
+            val v = f?.trim().orEmpty()
+            if (v.endsWith("@s.whatsapp.net")) return "+" + v.substringBefore('@').filter(Char::isDigit)
+            Regex("""\+\d[\d\s./-]{6,}\d""").find(v)?.value?.let { n ->
+                val digits = n.filter(Char::isDigit)
+                if (digits.length in 8..15) return "+$digits"
+            }
+        }
+        return null
+    }
+
+    /** Il nome dell'app di messaggi da cui viene un numero, per l'etichetta nella scheda. */
+    fun messengerLabel(mime: String): String = when {
+        "whatsapp" in mime -> "WhatsApp"
+        "telegram" in mime -> "Telegram"
+        "thoughtcrime" in mime || "signal" in mime -> "Signal"
+        "threema" in mime -> "Threema"
+        else -> "Messaggi"
+    }
+
+    /** I tipi di dato delle app di messaggi (tutti quelli non di Android: «vnd.android.cursor.item/vnd.…»). */
+    private const val MESSENGER_MIME = "vnd.android.cursor.item/vnd.%"
 
     /** Il contatto con numeri, email, indirizzi, azienda e nota. */
     suspend fun detail(context: Context, id: Long): Contact? = withContext(Dispatchers.IO) {
@@ -101,12 +143,13 @@ object Contacts {
         val phones = ArrayList<LabeledValue>()
         val emails = ArrayList<LabeledValue>()
         val addresses = ArrayList<LabeledValue>()
+        val messenger = ArrayList<LabeledValue>()
         var company: String? = null
         var note: String? = null
         val res = context.resources
         context.contentResolver.query(
             ContactsContract.Data.CONTENT_URI,
-            arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1, ContactsContract.Data.DATA2, ContactsContract.Data.DATA3),
+            arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1, ContactsContract.Data.DATA2, ContactsContract.Data.DATA3, ContactsContract.Data.DATA4),
             "${ContactsContract.Data.CONTACT_ID} = ?", arrayOf(id.toString()), null,
         )?.use { c ->
             while (c.moveToNext()) {
@@ -122,9 +165,17 @@ object Contacts {
                     StructuredPostal.CONTENT_ITEM_TYPE -> addresses += LabeledValue(value, StructuredPostal.getTypeLabel(res, type, custom).toString())
                     Organization.CONTENT_ITEM_TYPE -> company = value
                     Note.CONTENT_ITEM_TYPE -> note = value
+                    else -> {
+                        val mime = c.getString(0).orEmpty()
+                        if (mime.startsWith("vnd.android.cursor.item/vnd.")) messengerNumber(value, custom, c.getString(4))?.let { n ->
+                            if (messenger.none { PhoneNumberUtils.compare(it.value, n) }) messenger += LabeledValue(n, messengerLabel(mime))
+                        }
+                    }
                 }
             }
         }
+        // Senza un «telefono» si usa il numero di WhatsApp, Signal o Telegram: così si può chiamare e scrivere lo stesso.
+        if (phones.isEmpty()) phones += messenger
         base.copy(phones = phones, emails = emails, addresses = addresses, company = company, note = note)
     }
 

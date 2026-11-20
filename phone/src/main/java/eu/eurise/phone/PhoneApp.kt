@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 /** Dove aprire l'app quando arriva da fuori: la rubrica, o l'editor già compilato («Aggiungi in rubrica»). */
 sealed interface StartAt {
     data object People : StartAt
+    data object Recents : StartAt
     data class Insert(val draft: ContactDraft) : StartAt
 }
 
@@ -110,19 +111,22 @@ fun PhoneApp(
     var reload by remember { mutableStateOf(0) }
     // Sezione della pillola in basso (tavola TelPillola): Preferiti, Recenti, Rubrica; il Tastierino si apre sopra.
     var section by remember { mutableStateOf(SEC_RECENTS) }
+    // La ricerca in rubrica è la stessa in Preferiti, Recenti e Rubrica: resta scritta passando da una all'altra.
+    var query by remember { mutableStateOf("") }
     val haze = remember { HazeState() }
 
     var filteredLog by remember { mutableStateOf<List<eu.eurise.phone.data.SpamFilter.Filtered>>(emptyList()) }
     LaunchedEffect(refresh, reload) {
         filteredLog = eu.eurise.phone.data.SpamFilter.filtered(context)
         recents = PhoneData.recents(context)
-        contacts = Contacts.all(context)
         numbers = Contacts.firstNumbers(context)
+        contacts = withoutEmptyTwins(Contacts.all(context), numbers)
     }
     LaunchedEffect(dialNumber) { if (dialNumber != null) { dialpad = dialNumber; onDialConsumed() } }
     LaunchedEffect(start) {
         when (start) {
             StartAt.People -> { stack = listOf(Screen.Home); section = SEC_PEOPLE }
+            StartAt.Recents -> { stack = listOf(Screen.Home); section = SEC_RECENTS }
             is StartAt.Insert -> { stack = listOf(Screen.Home, Screen.Edit(start.draft)); section = SEC_PEOPLE }
             null -> return@LaunchedEffect
         }
@@ -132,6 +136,8 @@ fun PhoneApp(
     fun push(s: Screen) { stack = stack + s }
     fun pop() { if (stack.size > 1) stack = stack.dropLast(1) }
     BackHandler(stack.size > 1) { pop() }
+    BackHandler(stack.size == 1 && query.isNotBlank()) { query = "" }
+    val search = SearchState(query, { query = it }, contacts, numbers, onOpen = { push(Screen.Person(it.id)) }, onCall = onCall)
 
     val permitted = PhoneData.has(context, android.Manifest.permission.READ_CALL_LOG) && Contacts.canRead(context)
 
@@ -139,8 +145,8 @@ fun PhoneApp(
         Screen.Home -> Box(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().hazeSource(haze)) {
                 when (section) {
-                    SEC_FAVORITES -> FavoritesScreen(contacts.filter { it.starred }, numbers, onOpen = { push(Screen.Person(it.id)) }, onCall = onCall)
-                    SEC_PEOPLE -> PeopleScreen(contacts, numbers, onBack = null, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall)
+                    SEC_FAVORITES -> FavoritesScreen(contacts.filter { it.starred }, numbers, search, onOpen = { push(Screen.Person(it.id)) }, onCall = onCall)
+                    SEC_PEOPLE -> PeopleScreen(contacts, numbers, onBack = null, onOpen = { push(Screen.Person(it.id)) }, onNew = { push(Screen.Edit(ContactDraft())) }, onCall = onCall, search = search)
                     else -> HomeScreen(
                         recents = recents, favorites = contacts.filter { it.starred }, permitted = permitted, isDefault = isDefault,
                         onBecomeDefault = onBecomeDefault, onAskPermissions = onAskPermissions,
@@ -149,6 +155,7 @@ fun PhoneApp(
                         onLongEntry = { e -> unknown = e },
                         onFilter = { push(Screen.Filter) },
                         filtered = filteredLog,
+                        search = search,
                     )
                 }
             }
@@ -198,6 +205,7 @@ private fun HomeScreen(
     onLongEntry: (CallEntry) -> Unit = {},
     onFilter: () -> Unit = {},
     filtered: List<eu.eurise.phone.data.SpamFilter.Filtered> = emptyList(),
+    search: SearchState,
 ) {
     val callBack = remember(recents) { PhoneData.toCallBack(recents) }
     Box(Modifier.fillMaxSize()) {
@@ -207,6 +215,11 @@ private fun HomeScreen(
                     Text(stringResource(R.string.ph_recents_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
                     IconCircle(EuriseIcons.shield(), stringResource(R.string.ph_filter_title), onClick = onFilter)
                 }
+            }
+            item(key = "search") { SearchBox(search) }
+            if (search.active) {
+                searchResults(search)
+                return@LazyColumn
             }
             if (!permitted) item(key = "perm") {
                 Banner(stringResource(R.string.ph_need_permissions), stringResource(R.string.ph_allow), onAskPermissions)
@@ -304,11 +317,16 @@ private const val SEC_PEOPLE = 3
 /** I contatti con la stella, tre per riga: un tocco chiama, tenendo premuto si apre la scheda. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FavoritesScreen(favorites: List<Contact>, numbers: Map<Long, String>, onOpen: (Contact) -> Unit, onCall: (String) -> Unit) {
+private fun FavoritesScreen(favorites: List<Contact>, numbers: Map<Long, String>, search: SearchState, onOpen: (Contact) -> Unit, onCall: (String) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
         item(key = "head") {
             Text(stringResource(R.string.ph_favorites), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 10.dp))
+                modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp))
+        }
+        item(key = "search") { SearchBox(search) }
+        if (search.active) {
+            searchResults(search)
+            return@LazyColumn
         }
         if (favorites.isEmpty()) item(key = "none") {
             Text(stringResource(R.string.ph_no_favorites), fontSize = 14.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
@@ -339,20 +357,16 @@ private fun FavoritesScreen(favorites: List<Contact>, numbers: Map<Long, String>
 // Rubrica
 
 @Composable
-private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, onBack: (() -> Unit)?, onOpen: (Contact) -> Unit, onNew: () -> Unit, onCall: (String) -> Unit) {
-    var query by remember { mutableStateOf("") }
-    val shown = remember(contacts, query) {
-        val q = query.trim().lowercase()
-        if (q.isEmpty()) contacts else contacts.filter { c ->
-            c.name.lowercase().contains(q) || (q.any(Char::isDigit) && numbers[c.id]?.filter(Char::isDigit)?.contains(q.filter(Char::isDigit)) == true)
-        }
-    }
+private fun PeopleScreen(contacts: List<Contact>, numbers: Map<Long, String>, onBack: (() -> Unit)?, onOpen: (Contact) -> Unit, onNew: () -> Unit, onCall: (String) -> Unit, search: SearchState? = null) {
+    var own by remember { mutableStateOf("") }
+    val query = search?.query ?: own
+    val shown = remember(contacts, numbers, query) { matchContacts(contacts, numbers, query) }
     Column(Modifier.fillMaxSize()) {
         // Nella pillola (onBack nullo) la Rubrica è una sezione: titolo grande, il «+» è quello accanto alla pillola.
         if (onBack != null) TopBar(stringResource(R.string.ph_contacts), onBack) { IconCircle(EuriseIcons.plus(), stringResource(R.string.ph_new_contact), onClick = onNew) }
         else Text(stringResource(R.string.ph_people_tab), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp))
-        OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.ph_search_contacts)) }, singleLine = true,
+        OutlinedTextField(query, { v -> if (search != null) search.onQuery(v) else own = v }, placeholder = { Text(stringResource(R.string.ph_search_contacts)) }, singleLine = true,
             leadingIcon = { Icon(EuriseIcons.search(), null, modifier = Modifier.size(18.dp)) },
             shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = if (onBack == null) 110.dp else 40.dp)) {
@@ -550,30 +564,83 @@ private fun Field(label: String, value: String, phone: Boolean = false, onChange
 // ---------------------------------------------------------------------------------------------------------------------
 // Tastierino e numero sconosciuto
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Il tastierino. Il numero sta in un campo vero: tenendolo premuto si incolla (anche con «Incolla» accanto), ma la
+ * tastiera del telefono non si apre. Dalle tre cifre c'è sempre «Aggiungi in rubrica» (prima spariva quando le cifre
+ * somigliavano a un nome). I suggerimenti hanno uno spazio fisso: il tasto verde non scende più fuori dallo schermo.
+ */
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun DialpadSheet(start: String, contacts: List<Contact>, numbers: Map<Long, String>, onDismiss: () -> Unit, onCall: (String) -> Unit, onAdd: (String) -> Unit) {
-    var typed by remember(start) { mutableStateOf(start) }
+    val context = LocalContext.current
+    var field by remember(start) { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(start, androidx.compose.ui.text.TextRange(start.length))) }
+    val typed = field.text
+    fun set(text: String) { field = androidx.compose.ui.text.input.TextFieldValue(text, androidx.compose.ui.text.TextRange(text.length)) }
+    /** Inserisce dove sta il cursore (o al posto della parte selezionata). */
+    fun insert(text: String) {
+        val sel = field.selection
+        val t = field.text.substring(0, sel.min) + text + field.text.substring(sel.max)
+        field = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(sel.min + text.length))
+    }
+    fun backspace() {
+        val sel = field.selection
+        if (!sel.collapsed) { insert(""); return }
+        if (sel.start == 0) return
+        val t = field.text.removeRange(sel.start - 1, sel.start)
+        field = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(sel.start - 1))
+    }
+    val clip = remember { context.getSystemService(ClipboardManager::class.java) }
+    var clipNumber by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        clipNumber = runCatching { clip.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString() }.getOrNull()
+            ?.let(::phoneIn)
+    }
     val matches = remember(typed, contacts, numbers) {
         val digits = typed.filter(Char::isDigit)
-        if (digits.length < 2) emptyList() else contacts.filter { c -> numbers[c.id]?.filter(Char::isDigit)?.contains(digits) == true || t9(c.name).contains(digits) }.take(3)
+        if (digits.length < 2) emptyList() else contacts.filter { c -> numbers[c.id]?.filter(Char::isDigit)?.contains(digits) == true || t9(c.name).contains(digits) }.take(2)
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            matches.forEach { c ->
-                Row(Modifier.fillMaxWidth().clickable { numbers[c.id]?.let(onCall) }.padding(horizontal = 24.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Avatar(c.name, c.photo, 34.dp)
-                    Column(Modifier.weight(1f)) {
-                        Text(c.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text(numbers[c.id].orEmpty(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val known = remember(typed, numbers) { typed.length >= 3 && numbers.values.any { PhoneData.same(it, typed) } }
+    val sheet = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            // Spazio fisso per due suggerimenti: comparendo non spingono giù il tastierino.
+            Column(Modifier.fillMaxWidth().height(92.dp), verticalArrangement = Arrangement.Bottom) {
+                matches.forEach { c ->
+                    Row(Modifier.fillMaxWidth().height(46.dp).clickable { numbers[c.id]?.let(onCall) }.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Avatar(c.name, c.photo, 32.dp)
+                        Column(Modifier.weight(1f)) {
+                            Text(c.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(numbers[c.id].orEmpty(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        }
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(typed, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
-                if (typed.isNotEmpty()) IconCircle(EuriseIcons.backspace(), stringResource(R.string.ph_delete_digit)) { typed = typed.dropLast(1) }
+            Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (typed.isEmpty()) Text(stringResource(R.string.ph_dial_hint), fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // Niente tastiera del telefono: il campo serve per il cursore e per incollare tenendo premuto.
+                    androidx.compose.ui.platform.InterceptPlatformTextInput(interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            field, { v -> field = v.copy(text = v.text.filter { it.isDigit() || it in "+*#,; " }) },
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 30.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                if (typed.isNotEmpty()) {
+                    Box(Modifier.size(44.dp).clip(CircleShape).combinedClickableCompat(onClick = ::backspace, onLongClick = { set("") }), contentAlignment = Alignment.Center) {
+                        Icon(EuriseIcons.backspace(), stringResource(R.string.ph_delete_digit), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                    }
+                }
             }
-            if (typed.length >= 3 && matches.isEmpty()) TextButton(onClick = { onAdd(typed) }) { Text(stringResource(R.string.ph_add_to_contacts)) }
+            // Sotto il numero: «Incolla» quando negli appunti c'è un numero, «Aggiungi in rubrica» dalle tre cifre.
+            Row(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val pasted = clipNumber
+                if (pasted != null && typed != pasted) Chip(EuriseIcons.copy(), stringResource(R.string.ph_paste)) { set(pasted) }
+                if (typed.length >= 3 && !known) Chip(EuriseIcons.person(), stringResource(R.string.ph_add_to_contacts)) { onAdd(typed) }
+            }
             val rows = listOf("123", "456", "789", "*0#")
             val letters = mapOf('2' to "ABC", '3' to "DEF", '4' to "GHI", '5' to "JKL", '6' to "MNO", '7' to "PQRS", '8' to "TUV", '9' to "WXYZ", '0' to "+")
             Column(Modifier.width(300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -581,8 +648,8 @@ private fun DialpadSheet(start: String, contacts: List<Contact>, numbers: Map<Lo
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { k ->
                             Column(
-                                Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                    .combinedClickableCompat(onClick = { typed += k }, onLongClick = { if (k == '0') typed += '+' else typed += k }),
+                                Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                    .combinedClickableCompat(onClick = { insert(k.toString()) }, onLongClick = { insert(if (k == '0') "+" else k.toString()) }),
                                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                             ) {
                                 Text(k.toString(), fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
@@ -592,10 +659,23 @@ private fun DialpadSheet(start: String, contacts: List<Contact>, numbers: Map<Lo
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
             Box(Modifier.size(68.dp).clip(CircleShape).background(Color(0xFF2F7D4F)).clickable(role = Role.Button, onClickLabel = stringResource(R.string.ph_call)) { if (typed.isNotBlank()) onCall(typed) },
                 contentAlignment = Alignment.Center) { Icon(EuriseIcons.phone(), stringResource(R.string.ph_call), tint = Color.White, modifier = Modifier.size(28.dp)) }
         }
+    }
+}
+
+/** Un numero di telefono dentro un testo copiato (anche «Chiamami al 333 123 4567»), o null. */
+internal fun phoneIn(text: String): String? =
+    Regex("""\+?\d[\d\s./-]{5,}\d""").find(text)?.value?.filter { it.isDigit() || it == '+' }?.takeIf { it.count(Char::isDigit) in 6..15 }
+
+@Composable
+private fun Chip(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(Modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).background(MaterialTheme.colorScheme.secondaryContainer).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(15.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }
 
@@ -627,6 +707,71 @@ private fun NumberSheet(e: CallEntry, wasFiltered: Boolean, onDismiss: () -> Uni
                 SheetRow(EuriseIcons.block(), stringResource(if (e.blocked) R.string.ph_unblock_number else R.string.ph_block_number)) { onBlock(!e.blocked) }
                 SheetRow(EuriseIcons.trash(), stringResource(R.string.ph_forget_calls), onForget)
             }
+        }
+    }
+}
+
+/**
+ * Toglie i doppioni vuoti: una voce senza numero quando la stessa persona (stesso nome) c'è già con un numero. Succede
+ * con le voci che WhatsApp, Telegram o Signal aggiungono alla rubrica e che Android non unisce alla persona: si vedevano
+ * contatti senza cornetta né chat. Chi non ha un numero e non ha doppioni resta (può avere un'email).
+ */
+private fun withoutEmptyTwins(contacts: List<Contact>, numbers: Map<Long, String>): List<Contact> {
+    val withNumber = contacts.filter { it.id in numbers }.map { it.name.trim().lowercase() }.toHashSet()
+    return contacts.filter { it.id in numbers || it.name.trim().lowercase() !in withNumber }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Ricerca in rubrica (in Preferiti, Recenti e Rubrica)
+
+/** La ricerca in rubrica condivisa dalle sezioni della pillola. */
+private class SearchState(
+    val query: String,
+    val onQuery: (String) -> Unit,
+    val contacts: List<Contact>,
+    val numbers: Map<Long, String>,
+    val onOpen: (Contact) -> Unit,
+    val onCall: (String) -> Unit,
+) {
+    val active get() = query.isNotBlank()
+}
+
+/** Nome (anche una parte) o cifre del numero; con un numero scritto per intero vale anche «+39 333…» contro «333…». */
+private fun matchContacts(contacts: List<Contact>, numbers: Map<Long, String>, query: String): List<Contact> {
+    val q = query.trim().lowercase()
+    if (q.isEmpty()) return contacts
+    val digits = q.filter(Char::isDigit)
+    return contacts.filter { c ->
+        c.name.lowercase().contains(q) || (digits.length >= 2 && numbers[c.id]?.let { n -> n.filter(Char::isDigit).contains(digits) || PhoneData.same(n, q) } == true)
+    }
+}
+
+@Composable
+private fun SearchBox(search: SearchState) {
+    OutlinedTextField(search.query, search.onQuery, placeholder = { Text(stringResource(R.string.ph_search_all)) }, singleLine = true,
+        leadingIcon = { Icon(EuriseIcons.search(), null, modifier = Modifier.size(18.dp)) },
+        trailingIcon = if (search.active) ({
+            Box(Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = stringResource(R.string.ph_cancel)) { search.onQuery("") }, contentAlignment = Alignment.Center) {
+                Icon(EuriseIcons.close(), stringResource(R.string.ph_cancel), modifier = Modifier.size(16.dp))
+            }
+        }) else null,
+        shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
+}
+
+/** I contatti trovati: tocco = scheda, cornetta = chiama. */
+private fun androidx.compose.foundation.lazy.LazyListScope.searchResults(search: SearchState) {
+    val found = matchContacts(search.contacts, search.numbers, search.query).take(60)
+    if (found.isEmpty()) item(key = "s-none") {
+        Text(stringResource(R.string.ph_search_none), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(20.dp))
+    }
+    items(found, key = { "s-${it.id}" }) { c ->
+        Row(Modifier.fillMaxWidth().clickable { search.onOpen(c) }.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Avatar(c.name, c.photo, 40.dp)
+            Column(Modifier.weight(1f)) {
+                Text(c.name, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                search.numbers[c.id]?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
+            }
+            search.numbers[c.id]?.let { n -> IconCircle(EuriseIcons.phone(), stringResource(R.string.ph_call)) { search.onCall(n) } }
         }
     }
 }

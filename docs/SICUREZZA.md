@@ -18,7 +18,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera).
 - **Prossimo, in ordine proposto**:
   1. ~~Chiave del Ponte del computer nel portachiavi del sistema~~ fatta il 20 novembre, sera (sezione «Computer»).
-  2. Cassetta del Ponte nel cloud con segretezza in avanti (oggi usa la chiave fissa).
+  2. ~~Cassetta del Ponte nel cloud con segretezza in avanti~~ formato pronto il 20 novembre, sera (`Mailbox` in
+     `core/ponte`): la cassetta non è ancora costruita, nasce già sicura (sezione «Crittografia», «Ponte»).
   3. Voci «Aperto» delle porte d'ingresso: intent verso l'app Eurise con `SuiteAccess.trusted`; Mappe senza
      `SUITE_DEBUG` fuori dalle prove (prima della versione ufficiale).
   4. Segreti affidati all'app Eurise sigillati nel Keystore (tocca il backup); blocco delle Note legato all'impronta.
@@ -129,8 +130,18 @@ Aperto (rischio basso, deciso di non toccarlo in questo giro):
   messaggio (cifrato con la chiave fissa, quindi autenticato), la sessione mescola ECDH effimero ed ECDH fisso con il
   segreto del QR. Chi un giorno ruba le chiavi fisse non legge il traffico già registrato. Compatibile: con un lato
   vecchio si resta in v1; il telefono ricorda i computer già passati in v2 e con loro rifiuta di tornare indietro (chi
-  togliesse la chiave effimera dal saluto in chiaro). Test in `PonteTest`. Aperto: la cassetta nel cloud (file
-  asincroni, senza sessione) usa ancora la chiave fissa; ECDH dentro il Keystore da Android 12.
+  togliesse la chiave effimera dal saluto in chiaro). Test in `PonteTest`. Aperto: ECDH dentro il Keystore da Android 12.
+- **Cassetta nel cloud (20 novembre, sera)**: verificato che **non è ancora costruita**: c'era solo il nome dei file
+  (`Wire.mailboxPath`), nessuno scrive o legge nel cloud; quindi nessun messaggio è mai passato dal cloud con la chiave
+  fissa (il piano lo diceva per sbaglio). Pronto il formato con cui nascerà, `Mailbox` in `core/ponte` (`MailboxTest`):
+  ogni file mescola ECDH tra una chiave effimera di chi manda (buttata subito) e una **chiave della cassetta** di chi
+  riceve, più ECDH tra le chiavi fisse con il segreto del QR come sale; intestazione e mittente autenticati. Le chiavi
+  della cassetta (`MailboxKeys`) ruotano ogni 7 giorni, si annunciano all'altro lato sul canale autenticato di casa
+  (campi `mk`, `mp`, `mt`, per esempio nel `Hello`), vivono 28 giorni e poi si distruggono; chi manda usa una chiave
+  dell'altro solo se ha meno di 21 giorni. Chi un giorno ruba le chiavi fisse e il QR non apre i file più vecchi di
+  quattro settimane. Nessun ripiego sulla chiave fissa. Chi costruisce la cassetta (area Computer): sigillare le
+  `MailboxKeys` come la chiave fissa (Keystore, portachiavi), cancellare il file dopo la lettura, `ReplayGuard` lungo
+  28 giorni, `prune()` a ogni giro.
 - **Segreti affidati all'app Eurise** (`eurise_secrets`, chiave di recupero della Chat): in chiaro nelle preferenze, ma
   entrano nel backup cifrato; sigillarli nel Keystore richiede di cambiare anche il backup (aperto).
 

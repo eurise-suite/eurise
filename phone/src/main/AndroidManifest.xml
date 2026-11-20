@@ -69,6 +69,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tel" />
             </intent-filter>
+            <!-- «Mostra le chiamate» (registro): così le chiamate perse non aprono il Telefono di sistema. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.dir/calls" />
+            </intent-filter>
         </activity>
         <!-- «Apri con › Rubrica» per i file .vcf (15 novembre). -->
         <activity
@@ -160,5 +166,14 @@
         <receiver
             android:name=".call.CallActionReceiver"
             android:exported="false" />
+        <!-- Chiamate perse: da app predefinita le affida a noi il sistema (che manda la richiesta con READ_PHONE_STATE).
+             Si legge solo il registro sul telefono: chi la mandasse da fuori fa solo ricontrollare il registro. -->
+        <receiver
+            android:name=".call.MissedCallsReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

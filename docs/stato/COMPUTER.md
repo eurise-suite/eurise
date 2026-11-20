@@ -112,3 +112,6 @@ Freedesktop 25.08. Dettagli in `docs/SICUREZZA.md`, sezione «Computer».
   file `chiavi` senza rifare l'abbinamento; senza portachiavi resta nel file. Nuovi `desktop/ponte/.../DBus.kt` e
   `Keyring.kt`, comando `eurise-ponte chiave`; `PonteState` riprova ogni due minuti se il portachiavi resta chiuso;
   Flatpak con `--talk-name=org.freedesktop.secrets`. Nessuna modifica all'interfaccia.
+- Sera: la cassetta del Ponte nel cloud non è ancora costruita; quando si farà, i file si chiudono con `Mailbox` di
+  `core/ponte` (segretezza in avanti, chiavi della cassetta che ruotano), mai con la chiave fissa. Istruzioni in
+  `docs/SICUREZZA.md`, «Cassetta nel cloud».
