@@ -3,6 +3,11 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <!-- Indicatori dei plugin («il plugin X sta lì»): Maven Central e Gradle Plugin Portal li servono con contenuti
+              diversi. Il plugin vero a cui puntano resta verificato con la sua impronta (docs/SICUREZZA.md). -->
+         <trust group="^.*$" name="^.*\.gradle\.plugin$" regex="true" reason="indicatori dei plugin: il plugin vero è verificato"/>
+      </trusted-artifacts>
    </configuration>
    <components>
       <component group="androidx.activity" name="activity" version="1.9.3">

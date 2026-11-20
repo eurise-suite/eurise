@@ -90,6 +90,28 @@ jobs:
             cat /tmp/tutte; echo "empty="; } > gradle/eurise/esecuzione/gradle.lockfile
           raccogli keyboard keyboard/gradle/eurise/esecuzione/gradle.lockfile ./gradlew
 
+      - name: Prova la verifica bloccante con la cache vuota
+        # Ciò che serve per passare a «strict»: con la cache vuota (come un lavoro di Compila nuovo) e le librerie
+        # riscaricate, ogni configurazione dei progetti (plugin compresi) deve passare. Non ferma il flusso: riferisce.
+        continue-on-error: true
+        run: |
+          rm -rf ~/.gradle/caches/modules-2
+          esito=0
+          prova() { # nome, cartella, variabili d'ambiente
+            nome=$1; dir=$2; shift 2
+            if (cd "$dir" && env "$@" ./gradlew --no-daemon --dependency-verification strict --refresh-dependencies help -q > /tmp/strict.log 2>&1); then
+              echo "OK  $nome" | tee -a "$GITHUB_STEP_SUMMARY"
+            else
+              echo "NO  $nome" | tee -a "$GITHUB_STEP_SUMMARY"
+              grep -E "failed verification|artifacts? failed|Dependency verification failed" /tmp/strict.log | head -10 | tee -a "$GITHUB_STEP_SUMMARY"
+              esito=1
+            fi
+          }
+          prova "suite" . EURISE_READ=1 EURISE_AI=1 EURISE_BROWSER=1
+          prova "computer" . EURISE_DESKTOP=1
+          prova "Tastiera" keyboard X=1
+          exit $esito
+
       - name: Spingi le impronte
         run: |
           git config user.name "eurise-impronte"
