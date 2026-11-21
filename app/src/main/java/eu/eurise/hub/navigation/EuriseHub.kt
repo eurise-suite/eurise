@@ -66,15 +66,15 @@ private enum class Section(val route: String, @StringRes val label: Int, val ico
 /** Richiesta di aprire una sezione arrivata da fuori (la Scrivania); [id] distingue due richieste uguali. */
 data class HubRequest(val section: String, val id: Int)
 
-private const val NOTE_ROUTE = "note?id={id}&nb={nb}"
+private const val NOTE_ROUTE = "note?id={id}&nb={nb}&voice={voice}"
 private const val EVENT_ROUTE = "event?id={id}&begin={begin}&start={start}"
 private const val PERSON_ROUTE = "person/{key}"
 private const val MEETING_ROUTE = "meeting/{id}/{begin}"
 private const val TRIP_ROUTE = "trip/{kind}/{value}"
 private const val NO_ID = -1L
 
-private fun NavHostController.openNote(id: Long?, notebook: Long? = null) =
-    navigate("note?id=${id ?: NO_ID}&nb=${notebook ?: NO_ID}")
+private fun NavHostController.openNote(id: Long?, notebook: Long? = null, voice: Boolean = false) =
+    navigate("note?id=${id ?: NO_ID}&nb=${notebook ?: NO_ID}&voice=$voice")
 
 private fun NavHostController.openEvent(id: Long?, begin: Long?, start: Long?) =
     navigate("event?id=${id ?: NO_ID}&begin=${begin ?: NO_ID}&start=${start ?: NO_ID}")
@@ -167,6 +167,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "tasks" -> goTo(Section.Tasks)
             section == "new_event" -> navController.openEvent(null, null, null)
             section == "new_note" -> navController.openNote(null)
+            section == "new_voice_note" -> navController.openNote(null, voice = true)
             section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
             section.startsWith("person:") -> navController.openPerson(section.removePrefix("person:"))
             section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
@@ -234,6 +235,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         filterRequest = notesFilter,
                         onOpenNote = { id, notebook -> navController.openNote(id, notebook) },
                         onOrganize = { navController.navigate("notes/organize") },
+                        onVoiceNote = { notebook -> navController.openNote(null, notebook, voice = true) },
                     )
                 }
                 composable("notes/organize") {
@@ -354,6 +356,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                     arguments = listOf(
                         navArgument("id") { type = NavType.LongType; defaultValue = NO_ID },
                         navArgument("nb") { type = NavType.LongType; defaultValue = NO_ID },
+                        navArgument("voice") { type = NavType.BoolType; defaultValue = false },
                     ),
                 ) { entry ->
                     NoteEditorRoute(
@@ -369,6 +372,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         },
                         linked = { id, title -> linked(LinkRef.note(id), title) },
                         onBackup = { navController.navigate("cloud/backup") },
+                        startVoice = entry.arguments?.getBoolean("voice") == true,
                     )
                 }
                 composable(
