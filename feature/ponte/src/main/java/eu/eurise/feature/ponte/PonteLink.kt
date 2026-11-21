@@ -144,7 +144,11 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
             }
             Kind.Handoff -> {
                 if (!store.isOn(Kind.Handoff)) return null
-                val url = m["url"]?.takeIf { it.startsWith("https://") || it.startsWith("http://") } ?: return null
+                // Anche un luogo per Mappe dalla sezione Mappe del computer: solo `geo:0,0?q=…`, si apre dalla notifica.
+                val url = m["url"]?.takeIf {
+                    it.startsWith("https://") || it.startsWith("http://") ||
+                        (it.startsWith("geo:0,0?q=") && it.length <= 700 && it.none(Char::isWhitespace))
+                } ?: return null
                 PonteLink.continueHere(ctx, m["title"] ?: url, url)
                 ctx.getString(R.string.ponte_got_link, m["title"] ?: Uri.parse(url).host.orEmpty())
             }

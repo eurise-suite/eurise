@@ -48,6 +48,7 @@
     <string name="eurise_go_tab">Impegni</string>
     <string name="eurise_go_title">Dove devi andare</string>
     <string name="eurise_go_from_calendar">%1$s · dal Calendario</string>
+    <string name="eurise_go_always">Sempre a portata</string>
     <string name="eurise_go_empty">Nessun impegno con un luogo nei prossimi 7 giorni.</string>
     <string name="eurise_go_no_calendar">Per vedere qui i tuoi impegni, permetti all\'app Eurise di leggere il Calendario.</string>
     <string name="eurise_go_no_hub">Installa l\'app Eurise per vedere qui i luoghi dei tuoi impegni.</string>

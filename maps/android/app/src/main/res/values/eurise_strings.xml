@@ -48,6 +48,7 @@
     <string name="eurise_go_tab">Appointments</string>
     <string name="eurise_go_title">Where you need to go</string>
     <string name="eurise_go_from_calendar">%1$s · from the Calendar</string>
+    <string name="eurise_go_always">Always at hand</string>
     <string name="eurise_go_empty">No appointments with a place in the next 7 days.</string>
     <string name="eurise_go_no_calendar">To see your appointments here, allow the Eurise app to read the Calendar.</string>
     <string name="eurise_go_no_hub">Install the Eurise app to see here the places of your appointments.</string>

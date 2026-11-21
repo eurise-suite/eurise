@@ -1503,14 +1503,16 @@ print("eurise_patch: il limite che arriva (MapVelocita)")
 car_search = android_root / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "car" / "screens" / "search" / "SearchScreen.java"
 patch(car_search, """    builder.addItem(createCategoriesItem());
     SearchRecents.refresh();
-    final int recentsSize = Math.min(SearchRecents.getSize(), MAX_RESULTS_SIZE - 1);""", """    app.organicmaps.eurise.car.EuriseCarDestinations.addRows(getCarContext(), builder, this::onSearchSubmitted);
-    builder.addItem(createCategoriesItem());
+    final int recentsSize = Math.min(SearchRecents.getSize(), MAX_RESULTS_SIZE - 1);""", """    // Stesso ordine del telefono: Sempre a portata, Recenti, Categorie («Cerca vicino»), impegni (22 novembre).
+    app.organicmaps.eurise.car.EuriseCarDestinations.addHabitual(getCarContext(), builder, this::onSearchSubmitted);
     SearchRecents.refresh();
     final int recentsSize = Math.max(0, Math.min(SearchRecents.getSize(),
         MAX_RESULTS_SIZE - 1 - app.organicmaps.eurise.car.EuriseCarDestinations.size()));""")
 patch(car_search, """    mResults = builder.build();
     
-    return recentsSize != 0;""", """    mResults = builder.build();
+    return recentsSize != 0;""", """    builder.addItem(createCategoriesItem());
+    app.organicmaps.eurise.car.EuriseCarDestinations.addRows(getCarContext(), builder, this::onSearchSubmitted);
+    mResults = builder.build();
     
     return recentsSize != 0 || app.organicmaps.eurise.car.EuriseCarDestinations.size() > 0;""")
 patch(car_search, """    onSearchSubmitted(builder.mQuery);
