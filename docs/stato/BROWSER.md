@@ -105,3 +105,6 @@ riceve voci; il Browser continua a ricevere i sottodomini. Dettagli in `docs/SIC
 
 ## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
 Browser: il CSV delle password importate, «Salva in» e lo sblocco di Password vanno solo alle app della suite (`SuiteAccess.trusted`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».
+
+## Sicurezza, 21 novembre 2026: verifica delle librerie bloccante su brand
+Da ora Compila e CodeQL su `brand` fermano il giro se una libreria non ha la sua impronta. Chi aggiunge o aggiorna una libreria non deve fare nulla: quel giro resta solo segnalazione, il flusso «Impronte delle librerie» scrive le impronte e rilancia Compila. Se un giro si ferma per un'impronta, non togliere la verifica: dirlo al progetto Sicurezza (docs/SICUREZZA.md, «Dove blocca»).

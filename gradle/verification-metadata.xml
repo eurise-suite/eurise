@@ -94,10 +94,7 @@
          <trusted-key id="7616EB882DAF57A11477AAF559A252FB1199D873" group="com.google.code.findbugs" name="jsr305" version="3.0.2"/>
          <trusted-key id="7B121B76A7ED6CE6E60AD51784E913A8E3A748C0" group="org.bouncycastle"/>
          <trusted-key id="7F36E793AE3252E5D9E9B98FEE9E7DC9D92FC896" group="com.google.errorprone"/>
-         <trusted-key id="827E658608679618CD349F93678E455D76767AA3">
-            <trusting group="org.mozilla.geckoview" name="geckoview-arm64-v8a" version="160.0.20261116130455"/>
-            <trusting group="org.mozilla.geckoview" name="geckoview-x86_64" version="160.0.20261116130455"/>
-         </trusted-key>
+         <trusted-key id="827E658608679618CD349F93678E455D76767AA3" group="org.mozilla.geckoview"/>
          <trusted-key id="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B">
             <trusting group="androidx.collection"/>
             <trusting group="androidx.core"/>

@@ -3,7 +3,7 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 20 novembre 2026, sera)
-- **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
+- **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
   `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 911). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
@@ -26,8 +26,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      ufficiale (sezione «Porte d'ingresso», «Mappe»).
   4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ fatto il 21 novembre (sezione «Crittografia»); resta il
      blocco delle Note legato all'impronta (da decidere con il proprietario: cambia il backup).
-  5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
-     passare dal flusso delle impronte.
+  5. ~~Verifica «strict» anche su `brand`~~ fatta il 21 novembre (sezione «Impronte delle librerie», «Dove blocca»).
+     Resta «lenient» nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser): da fare con le loro aree.
   6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
@@ -305,11 +305,17 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
 - **Indicatori dei plugin** (`*.gradle.plugin`) esclusi: Maven Central e Gradle Plugin Portal li servono diversi; il plugin
   vero è verificato. Senza questa esclusione, con la cache vuota, anche «lenient» fermava la compilazione (successo il 20
   novembre sul lavoro del computer; la verifica è stata spenta per qualche ora su `brand` per non bloccare nessuno).
-- **Dove blocca**: su `prova-sicurezza`, in Compila e CodeQL (`GRADLE_OPTS=-Dorg.gradle.dependency.verification=strict`).
-  Su `brand` e negli altri flussi è «lenient»: un passo «Impronte delle librerie» in ogni lavoro mostra in evidenza
-  (avviso e riepilogo) ogni file che non corrisponde. Motivo: le impronte di una libreria nuova arrivano dopo il primo giro
-  di chi la aggiunge (il flusso parte da solo quando cambiano i file delle librerie e poi rilancia Compila), e GeckoView
-  cambia versione da sé a ogni uscita di Mozilla.
+- **Dove blocca (dal 21 novembre)**: su `prova-sicurezza` **e su `brand`**, in Compila e CodeQL
+  (`GRADLE_OPTS=-Dorg.gradle.dependency.verification=strict`). Negli ultimi nove giri di `brand` (dal 20 novembre) nessun
+  file senza impronta: le altre aree passano già dal flusso delle impronte. Le due ragioni per cui era «lenient»:
+  - **Librerie nuove**: le impronte arrivano dopo il primo giro di chi aggiunge la libreria. Ora il giro di un push su
+    `brand` che cambia `build.gradle.kts` o `libs.versions.toml` (letti dai commit del push) resta «lenient»; il flusso
+    delle impronte parte da solo, le scrive e rilancia Compila a mano, e quel giro è bloccante.
+  - **GeckoView** cambia versione da sé a ogni uscita di Mozilla: la chiave «Mozilla Software Releases» è fidata per
+    tutto il gruppo `org.mozilla.geckoview` (`.github/scripts/fidati_mozilla.py`, lanciato dal flusso dopo ogni
+    scrittura): una versione nuova passa solo se è firmata da Mozilla, senza aspettare le impronte.
+  Negli altri flussi (Office, Mappe, schermate, prova d'avvio del Browser) resta «lenient»; un passo «Impronte delle
+  librerie» in ogni lavoro mostra ogni file che non corrisponde, con l'avviso di non togliere mai la verifica.
 - **Firme PGP degli autori** (20 novembre): il flusso scrive `pgp,sha256` ed esporta le chiavi in
   `gradle/verification-keyring.keys` (45 chiavi; Tastiera 47). Dove l'autore firma, Gradle controlla la firma oltre
   all'impronta: GeckoView con la chiave «Mozilla Software Releases» (sottochiave 678E455D76767AA3), Kotlin con quella di
