@@ -116,7 +116,7 @@
     <string name="brw_s_import">Importa ed esporta</string>
     <string name="brw_s_import_sub">Segnalibri e password da Vivaldi, Chrome, Firefox…</string>
     <string name="brw_s_sync">Telefono e computer</string>
-    <string name="brw_s_sync_sub">Schede e segnalibri cifrati dal tuo cloud · in arrivo</string>
+    <string name="brw_s_sync_sub">Spento · schede e segnalibri anche sul computer</string>
     <string name="brw_s_clear">Cancella dati</string>
     <string name="brw_s_clear_sub">Cronologia, cookie, cache: per periodo e per tipo</string>
     <string name="brw_sync_note">Arriva con la sincronizzazione cifrata della suite: schede aperte e segnalibri passano tra telefono e computer attraverso il tuo cloud, cifrati sul telefono. Finché non la accendi non esce nulla.</string>
@@ -271,7 +271,8 @@
     <string name="brw_forgotten">Schede dimenticate</string>
     <string name="brw_forgotten_sub">Dopo %1$d giorni vanno in «Chiuse di recente», non si perdono</string>
     <string name="brw_on_computer">Sul computer</string>
-    <string name="brw_on_computer_soon">In arrivo: le schede aperte su Firefox con l\'estensione Eurise</string>
+    <string name="brw_on_computer_soon">Le schede aperte su Firefox con Eurise: si accende in Impostazioni › Telefono e computer</string>
+    <string name="brw_on_computer_n">%1$d schede aperte su %2$s</string>
     <string name="brw_closed_recent">Chiuse di recente</string>
     <string name="brw_closed_recent_sub">%1$d schede da riaprire</string>
     <string name="brw_close_all">Chiudi tutte le schede</string>
@@ -434,4 +435,33 @@
     <string name="brw_ask_repost_sub">La pagina rimanda i dati già inviati (per esempio un pagamento o un ordine).</string>
     <string name="brw_ask_repost_yes">Rimanda</string>
     <string name="brw_ask_color">Colore</string>
+
+    <!-- Telefono e computer (tavola BrwSincro, 21 novembre) -->
+    <string name="brw_sync_lead">Un interruttore per cosa, il resto lo fa Eurise.</string>
+    <string name="brw_sync_no_pc">Nessun computer ancora</string>
+    <string name="brw_sync_no_pc_sub">Collega Eurise sul computer, poi accendi qui cosa va anche lì.</string>
+    <string name="brw_sync_pc_sub">Firefox con Eurise · sincronizzato %1$s</string>
+    <string name="brw_sync_linked">Collegato</string>
+    <string name="brw_sync_how">Sulla rete di casa: diretto tra telefono e computer, cifrato.</string>
+    <string name="brw_sync_what">Cosa va anche sul computer</string>
+    <string name="brw_sync_tabs">Schede aperte</string>
+    <string name="brw_sync_tabs_sub">continui dove eri, sull\'altro schermo</string>
+    <string name="brw_sync_bm">Segnalibri e siti fissati</string>
+    <string name="brw_sync_bm_short">Segnalibri</string>
+    <string name="brw_sync_bm_sub">una raccolta sola, ovunque; anche Leggi dopo</string>
+    <string name="brw_sync_pwd">Password e passkey</string>
+    <string name="brw_sync_pwd_sub">da Eurise Password, con l\'impronta: si regola nell\'app Eurise</string>
+    <string name="brw_sync_hist">Cronologia</string>
+    <string name="brw_sync_hist_sub">resta spenta: arriva più avanti</string>
+    <string name="brw_sync_explain_tabs">Le schede aperte sul telefono (indirizzo e titolo, mai quelle private) vanno ai computer collegati con Eurise, e quelle del computer compaiono qui, in Schede. Passano solo sulla rete di casa, cifrate tra i due: nessun server, nemmeno il nostro. Le vede solo chi usa quel computer. Spegni quando vuoi: il computer smette di riceverle.</string>
+    <string name="brw_sync_explain_bm">Segnalibri, siti fissati e Leggi dopo (indirizzo e titolo; il testo salvato resta qui) diventano una raccolta sola con Firefox sul computer, nella cartella «Eurise» dei suoi segnalibri: ciò che aggiungi, cambi o togli da una parte vale anche dall\'altra. Passano solo sulla rete di casa, cifrati tra i due: nessun server. Spegni quando vuoi: ciò che c\'è resta da tutte e due le parti e non si sincronizza più.</string>
+    <string name="brw_sync_turn_on">Accendi</string>
+    <string name="brw_sync_other">Altro</string>
+    <string name="brw_sync_import">Importa da altri browser</string>
+    <string name="brw_sync_import_sub">segnalibri e password da Chrome, Firefox, Brave, Edge…</string>
+    <string name="brw_sync_pair">Collega un altro computer</string>
+    <string name="brw_sync_pair_sub">inquadra il codice che mostra Eurise sul computer</string>
+    <string name="brw_sync_privacy">Cifrato tra il telefono e il computer: nessun server, nemmeno il nostro.</string>
+    <string name="brw_sync_no_hub">Serve l\'app Eurise: è lei che tiene il collegamento con il computer</string>
+    <string name="brw_tabs_on_pc">Sul computer · %1$s</string>
 </resources>

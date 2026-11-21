@@ -15,6 +15,10 @@ sleep 15; vivo "dopo una seconda pagina"
 adb shell am force-stop "$pkg"; sleep 3
 adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 sleep 20; vivo "riapertura con le schede salvate"
+# Porta della sincronizzazione (SyncProvider): chi non è della suite (qui la shell) deve essere respinto.
+out=$(adb shell content call --uri "content://$pkg.sync" --method sync --extra computer:s:intruso --extra bm:s:'[]' 2>&1)
+echo "content call da fuori: $out" | head -3
+case "$out" in *SecurityException*|*"not have permission"*|*Permission*) echo "OK: la sincronizzazione respinge chi non è della suite" ;; *) echo "NO: la sincronizzazione risponde a chi non è della suite" ;; esac
 echo "===== ERRORI ====="
 adb logcat -d -b crash | head -150
 adb logcat -d | grep -E "AndroidRuntime|FATAL|libc  |DEBUG   |GeckoRuntime|Gecko.*(rror|xception)|$pkg" | head -200

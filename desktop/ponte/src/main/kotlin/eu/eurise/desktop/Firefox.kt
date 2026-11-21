@@ -117,7 +117,7 @@ object FirefoxHost {
                 return mapOf("ok" to "1", "running" to if (status != null) "1" else "0",
                     "devices" to store.devices().joinToString("\n") { it.name }, "lines" to status.orEmpty().joinToString("\n"))
             }
-            "status", "recent", "pwd-wait", "dict-wait", "today" -> {
+            "status", "recent", "pwd-wait", "dict-wait", "today", "sync-wait" -> {
                 val lines = Control.query(t, fields) ?: return mapOf("ok" to "0", "running" to "0", "lines" to "")
                 return mapOf("ok" to "1", "running" to "1", "lines" to lines.joinToString("\n"))
             }

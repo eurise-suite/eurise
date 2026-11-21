@@ -89,8 +89,30 @@ async function refresh() {
   }));
 }
 
+/** Le schede aperte sul telefono (Telefono e computer): solo se la sincronizzazione è accesa da tutte e due le parti. */
+async function refreshPhoneTabs() {
+  const st = await browser.runtime.sendMessage({ op: "syncState" });
+  const card = $("#phoneTabsCard");
+  const tabs = st && st.on && st.phoneTabs ? st.phoneTabs.tabs : [];
+  card.hidden = !tabs.length;
+  if (!tabs.length) return;
+  $("#phoneTabsLabel").textContent = "Schede aperte sul telefono · " + ago(st.phoneTabs.at);
+  const box = $("#phoneTabs");
+  box.innerHTML = tabs.slice(0, 30).map((t, i) => {
+    let host = t.url;
+    try { host = new URL(t.url).hostname.replace(/^www\./, ""); } catch (e) { /* resta l'indirizzo */ }
+    return `<div class="row link" data-i="${i}">${icon("tabs")}<span class="t"><b>${esc(t.title)}</b><span>${esc(host)}</span></span></div>`;
+  }).join("");
+  box.querySelectorAll(".link").forEach((el) => el.addEventListener("click", () => {
+    const t = tabs[+el.dataset.i];
+    if (t && /^https?:/.test(t.url)) browser.tabs.create({ url: t.url });
+  }));
+}
+
 refresh();
 refreshToday();
+refreshPhoneTabs();
+setInterval(() => { if (!document.hidden) refreshPhoneTabs(); }, 30000);
 setInterval(() => { if (!document.hidden) refresh(); }, 5000);
 // Oggi si chiede al telefono ogni due minuti, solo con il pannello aperto e in vista.
 setInterval(() => { if (!document.hidden) refreshToday(); }, 120000);

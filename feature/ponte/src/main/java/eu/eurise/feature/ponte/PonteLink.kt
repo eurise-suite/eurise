@@ -171,6 +171,12 @@ class PonteLinkWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 PonteInbox.dictationAsk(ctx, from.id, from.name, m["ask"].orEmpty())
                 ctx.getString(R.string.ponte_got_dict)
             }
+            // Il Browser sincronizza con Firefox sul computer: risponde lui, la notifica fissa non cambia (succede spesso).
+            Kind.SyncAsk -> {
+                val answer = runCatching { withTimeout(8_000) { withContext(Dispatchers.IO) { PonteBrowser.sync(ctx, from.id, from.name, m.fields) } } }.getOrNull()
+                reply(Kind.Sync, (answer ?: mapOf("off" to "1")) + ("ask" to m["ask"].orEmpty()))
+                null
+            }
             Kind.TodayAsk -> {
                 val source = ctx.applicationContext as? PonteToday.Source
                 if (!store.isOn(Kind.Today) || source == null) { reply(Kind.Today, mapOf("off" to "1")); return null }
