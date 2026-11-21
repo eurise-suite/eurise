@@ -8,9 +8,27 @@ Cambia solo ciò che serve al prototipo: nome «Eurise Mappe», pacchetto eu.eur
 suite. Il codice Java (pacchetto app.organicmaps) resta com'è. Ogni sostituzione deve riuscire: se CoMaps
 cambia quelle righe, lo script si ferma e lo dice.
 """
+import os
 import shutil
 import sys
 from pathlib import Path
+
+# Variante (docs/SICUREZZA.md, «Mappe»): «prova» parla solo con le app di prova della suite (pacchetti .debug, permesso
+# SUITE_DEBUG), «ufficiale» solo con le ufficiali (permesso SUITE). Mai tutte e due nello stesso APK. Mappe ha lo stesso
+# pacchetto nelle due varianti, quindi la scelta si fa qui e finisce in EuriseSuite.OFFICIAL.
+VARIANTE = os.environ.get("EURISE_VARIANTE", "prova").strip() or "prova"
+if VARIANTE not in ("prova", "ufficiale"):
+    sys.exit(f"eurise_patch: EURISE_VARIANTE deve essere «prova» o «ufficiale», non {VARIANTE!r}")
+UFFICIALE = VARIANTE == "ufficiale"
+SUITE_PERM = "eu.eurise.permission.SUITE" if UFFICIALE else "eu.eurise.permission.SUITE_DEBUG"
+
+
+def suite_pkg(base: str) -> str:
+    """Il nome del pacchetto di un'app della suite nella variante scelta."""
+    return base if UFFICIALE else base + ".debug"
+
+
+HUB_PKG, VOICE_PKG, MESSAGES_PKG = suite_pkg("eu.eurise.hub"), suite_pkg("eu.eurise.voice"), suite_pkg("eu.eurise.messages")
 
 root = Path(sys.argv[1])
 keystore = Path(sys.argv[2])
@@ -68,6 +86,13 @@ for f in ours.rglob("*"):
         dest = root / "android" / f.relative_to(ours)
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(f, dest)
+suite_java = root / "android" / "app" / "src" / "main" / "java" / "app" / "organicmaps" / "eurise" / "EuriseSuite.java"
+_s = suite_java.read_text()
+_old = "  public static final boolean OFFICIAL = false;"
+if _s.count(_old) != 1:
+    sys.exit(f"eurise_patch: non trovo la variante in {suite_java}")
+suite_java.write_text(_s.replace(_old, f"  public static final boolean OFFICIAL = {'true' if UFFICIALE else 'false'};"))
+print(f"eurise_patch: variante «{VARIANTE}» ({SUITE_PERM}, {HUB_PKG})")
 
 
 def patch(path: Path, old: str, new: str) -> None:
@@ -187,13 +212,12 @@ print("eurise_patch: guida con cartello colorato, metri fini e «Manda l'arrivo�
 # Chiede all'app Eurise (permesso della suite di prova: Mappe è firmata con la chiave di debug della suite).
 patch(root / "android" / "app" / "src" / "main" / "AndroidManifest.xml",
       """  <uses-permission android:name="android.permission.INTERNET"/>""",
-      """  <uses-permission android:name="android.permission.INTERNET"/>
-  <!-- Eurise: meteo sul percorso dall'app Eurise di prova (stessa chiave di debug della suite). -->
-  <permission android:name="eu.eurise.permission.SUITE_DEBUG" android:protectionLevel="signature"/>
-  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
+      f"""  <uses-permission android:name="android.permission.INTERNET"/>
+  <!-- Eurise: permesso di firma della suite, variante «{VARIANTE}» (solo questa: EuriseSuite.java). -->
+  <permission android:name="{SUITE_PERM}" android:protectionLevel="signature"/>
+  <uses-permission android:name="{SUITE_PERM}"/>
   <queries>
-    <package android:name="eu.eurise.hub"/>
-    <package android:name="eu.eurise.hub.debug"/>
+    <package android:name="{HUB_PKG}"/>
   </queries>""")
 print("eurise_patch: meteo sul percorso")
 
@@ -416,18 +440,18 @@ patch(tts, "  private boolean mInitializing;\n", """  private boolean mInitializ
   @Nullable
   private static String euriseEngine(@NonNull Context context)
   {
-    for (String p : new String[] {"eu.eurise.voice", "eu.eurise.voice.debug"})
+    // Solo Eurise Voce della suite (permesso di firma, variante della compilazione): il testo della guida non va a
+    // un'app con lo stesso nome.
+    try
     {
-      try
-      {
-        context.getPackageManager().getPackageInfo(p, 0);
-        return p;
-      }
-      catch (Exception ignored) {}
+      if (context.getPackageManager().checkPermission("%s", "%s")
+          == android.content.pm.PackageManager.PERMISSION_GRANTED)
+        return "%s";
     }
+    catch (Exception ignored) {}
     return null;
   }
-""")
+""" % (SUITE_PERM, VOICE_PKG, VOICE_PKG))
 patch(tts, """    mTts = new TextToSpeech(context, status -> UiThread.run(() -> {
       if (status == TextToSpeech.ERROR)""", """    mEuriseEngine = mEuriseSkip ? null : euriseEngine(context);
     mTts = new TextToSpeech(context, status -> UiThread.run(() -> {
@@ -705,12 +729,11 @@ patch(mpc, """  double x = m_visiblePixelRect.Center().x;
 
 # Microfono (solo quando si tocca il microfono di Alfred) ed Eurise Voce, che trascrive sul telefono.
 patch(android_root / "app" / "src" / "main" / "AndroidManifest.xml",
-      """  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
-  <queries>""", """  <uses-permission android:name="eu.eurise.permission.SUITE_DEBUG"/>
+      f"""  <uses-permission android:name="{SUITE_PERM}"/>
+  <queries>""", f"""  <uses-permission android:name="{SUITE_PERM}"/>
   <uses-permission android:name="android.permission.RECORD_AUDIO"/>
   <queries>
-    <package android:name="eu.eurise.voice"/>
-    <package android:name="eu.eurise.voice.debug"/>""")
+    <package android:name="{VOICE_PKG}"/>""")
 print("eurise_patch: Android Auto (apertura diretta, Alfred, freccia in alto, «Sei su», meteo, area ridotta)")
 
 # Passo d) dell'interfaccia rifatta sulle tavole (MapPercorso): sotto il percorso calcolato il pannello della suite in
@@ -976,12 +999,12 @@ print("eurise_patch: guida, prima parte (velocità e limite, scena dell'uscita e
 # pericolo restano sul telefono due ore e avvisano chi ripassa di lì.
 manifest = android_root / "app" / "src" / "main" / "AndroidManifest.xml"
 patch(manifest, """    <activity
-        android:name="app.organicmaps.eurise.EuriseReportActivity\"""", """    <!-- Segnala in guida: dalla bandierina o da Alfred (app della suite con la stessa firma, EXTRA_KIND). -->
+        android:name="app.organicmaps.eurise.EuriseReportActivity\"""", f"""    <!-- Segnala in guida: dalla bandierina o da Alfred (app della suite con la stessa firma, EXTRA_KIND). -->
     <activity
         android:name="app.organicmaps.eurise.EuriseGuideReportActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:exported="true"
-        android:permission="eu.eurise.permission.SUITE_DEBUG"
+        android:permission="{SUITE_PERM}"
         android:excludeFromRecents="true" />
 
     <activity
@@ -1843,9 +1866,8 @@ patch(manifest, """    <service
         android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     <service
         android:name="app.organicmaps.eurise.EuriseNowPlayingService\"""")
-patch(manifest, """    <package android:name="eu.eurise.voice.debug"/>""", """    <package android:name="eu.eurise.voice.debug"/>
-    <package android:name="eu.eurise.messages"/>
-    <package android:name="eu.eurise.messages.debug"/>""")
+patch(manifest, f"""    <package android:name="{VOICE_PKG}"/>""", f"""    <package android:name="{VOICE_PKG}"/>
+    <package android:name="{MESSAGES_PKG}"/>""")
 print("eurise_patch: bolla, otto aggiunte (avvisi, messaggi, arrivo condiviso)")
 
 # Android Auto: il riquadro della manovra nel verde della suite come nelle tavole approvate (MapAutoGuida, MapBollaAuto),

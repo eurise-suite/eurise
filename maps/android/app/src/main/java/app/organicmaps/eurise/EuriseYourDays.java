@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
 public final class EuriseYourDays
 {
   // Stessi nomi di core/suite YourDaysContract (Mappe non dipende dai moduli Kotlin della suite).
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
   private static final String TODAY = "today", KIND = "kind";
   public static final int NONE = 0, BIRTHDAY = 1, ANNIVERSARY = 2;
 
@@ -52,7 +52,7 @@ public final class EuriseYourDays
     {
       try
       {
-        final Bundle b = app.getContentResolver().call(Uri.parse("content://" + h + ".yourdays"), TODAY, null, null);
+        final Bundle b = EuriseSuite.call(app, Uri.parse("content://" + h + ".yourdays"), TODAY, null, null);
         if (b != null)
           return b.getInt(KIND, NONE);
       }

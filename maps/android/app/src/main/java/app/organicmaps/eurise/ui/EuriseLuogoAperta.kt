@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.ui
 
+import app.organicmaps.eurise.EuriseSuite
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -54,7 +55,7 @@ import java.util.Locale
  * righe di CoMaps, già nei colori della suite. Aprire la scheda non manda niente in rete.
  */
 object EuriseLuogoAperta {
-    private val HUBS = arrayOf("eu.eurise.hub.debug", "eu.eurise.hub")
+    private val HUBS: Array<String> = EuriseSuite.HUBS
 
     @JvmStatic
     fun attach(view: View?) {
@@ -93,7 +94,9 @@ object EuriseLuogoAperta {
         for (hub in HUBS) {
             val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
                 .setComponent(ComponentName(hub, "eu.eurise.hub.ShareToNotesActivity"))
-            if (runCatching { context.startActivity(i) }.isSuccess) return
+            // Solo verso l'app Eurise della suite: un'app con lo stesso nome non riceve il testo della nota.
+            val safe = EuriseSuite.trusted(context, i) ?: continue
+            if (runCatching { context.startActivity(safe) }.isSuccess) return
         }
         Toast.makeText(context, R.string.eurise_lo_no_notes, Toast.LENGTH_SHORT).show()
     }

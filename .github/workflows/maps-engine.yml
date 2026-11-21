@@ -5,6 +5,12 @@ name: Prototipo di Eurise Mappe
 # Parte a mano (Actions → Prototipo di Eurise Mappe → Run workflow) o quando cambiano i suoi file.
 on:
   workflow_dispatch:
+    inputs:
+      variante:
+        description: "Variante (docs/SICUREZZA.md, «Mappe»): prova parla con le app di prova, ufficiale con le ufficiali"
+        type: choice
+        options: [prova, ufficiale]
+        default: prova
   push:
     paths:
       - ".github/workflows/maps-engine.yml"
@@ -23,6 +29,8 @@ env:
   # Commit fissato (11 novembre 2026). Per aggiornare CoMaps si cambia qui e si riprova.
   COMAPS_COMMIT: df67cc017b1755b456180c3db258d519e1788bb7
   JAVA_HOME: /usr/lib/jvm/temurin-21-jdk-amd64
+  # Sui push sempre «prova». La variante «ufficiale» produce eurise-mappe-ufficiale.apk, che apk-prova non pubblica mai.
+  EURISE_VARIANTE: ${{ inputs.variante || 'prova' }}
 
 jobs:
   mappe:
@@ -90,6 +98,9 @@ jobs:
       - name: Adatta a Eurise
         run: python3 maps/eurise_patch.py "$HOME/comaps" app/debug-key/eurise-debug.keystore
 
+      - name: Controlla la variante (un solo permesso della suite, destinatari della stessa variante)
+        run: python3 maps/test/controlla_variante.py "$HOME/comaps" "$EURISE_VARIANTE"
+
       - name: Riprende la ccache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -137,7 +148,7 @@ jobs:
           apk=$(ls "$HOME"/comaps/android/app/build/outputs/apk/fdroid/release/*.apk 2>/dev/null | head -1 || true)
           mkdir -p out
           {
-            echo "## Eurise Mappe (CoMaps ${COMAPS_COMMIT:0:8}, arm64)"
+            echo "## Eurise Mappe (CoMaps ${COMAPS_COMMIT:0:8}, arm64, variante $EURISE_VARIANTE)"
             echo
             echo "| Fase | Minuti |"
             echo "|---|---|"
@@ -145,7 +156,8 @@ jobs:
             echo "| totale | $(( ($(date +%s) - T0) / 60 )) |"
             echo
             if [ -n "$apk" ]; then
-              cp "$apk" out/eurise-mappe-debug.apk
+              if [ "$EURISE_VARIANTE" = ufficiale ]; then nome=eurise-mappe-ufficiale.apk; else nome=eurise-mappe-debug.apk; fi
+              cp "$apk" "out/$nome"
               echo "APK: **$(du -m "$apk" | cut -f1) MB** ($(stat -c %s "$apk") byte)"
               echo
               echo "| Parte dell'APK | MB (compressi) |"
@@ -176,5 +188,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: eurise-mappe-debug-${{ github.run_number }}
+          name: eurise-mappe-${{ env.EURISE_VARIANTE == 'ufficiale' && 'ufficiale' || 'debug' }}-${{ github.run_number }}
           path: out/

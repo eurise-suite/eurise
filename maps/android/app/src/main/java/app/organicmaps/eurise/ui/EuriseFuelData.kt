@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.ui
 
+import app.organicmaps.eurise.EuriseSuite
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
@@ -23,7 +24,7 @@ object EuriseFuelData {
     private const val PRICES = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv"
     private const val FILE = "eurise_carburanti.txt"
     private const val MAX_AGE_MS = 20 * 60 * 60 * 1000L
-    private val HUBS = arrayOf("eu.eurise.hub.debug", "eu.eurise.hub")
+    private val HUBS: Array<String> = EuriseSuite.HUBS
     /** Il nome del servizio nel centro privacy dell'app Eurise (core/suite PrivacyService.FuelPrices). */
     private const val SERVICE = "FuelPrices"
 
@@ -49,7 +50,7 @@ object EuriseFuelData {
     fun privacy(c: Context, method: String = "status"): Boolean? {
         for (h in HUBS) {
             try {
-                val b: Bundle? = c.contentResolver.call(Uri.parse("content://$h.privacy"), method, SERVICE, null)
+                val b: Bundle? = EuriseSuite.call(c, Uri.parse("content://$h.privacy"), method, SERVICE, null)
                 if (b != null) return b.getBoolean("on")
             } catch (_: Exception) {
                 // App Eurise assente o di un'altra firma: si prova l'altra.

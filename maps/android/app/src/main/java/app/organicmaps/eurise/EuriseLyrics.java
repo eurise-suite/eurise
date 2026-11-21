@@ -26,7 +26,7 @@ import org.json.JSONObject;
 public final class EuriseLyrics
 {
   private static final String SERVICE = "Lyrics";
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
   private static final NowPlayingText.Lyrics NONE = NowPlayingText.parseLrc(null);
 
@@ -130,7 +130,7 @@ public final class EuriseLyrics
     {
       try
       {
-        final Bundle b = c.getContentResolver().call(Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
+        final Bundle b = EuriseSuite.call(c, Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
         if (b != null)
           return b.getBoolean("on");
       }

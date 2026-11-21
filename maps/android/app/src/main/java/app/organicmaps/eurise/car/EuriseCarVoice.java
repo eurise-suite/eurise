@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.car;
 
+import app.organicmaps.eurise.EuriseSuite;
 import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
@@ -63,7 +64,7 @@ public final class EuriseCarVoice
 
   // Stessi nomi di core/suite VoiceContract (Mappe non dipende dai moduli Kotlin della suite).
   private static final String ACTION_TRANSCRIBE = "eu.eurise.action.TRANSCRIBE";
-  private static final String[] VOICE_PACKAGES = {"eu.eurise.voice", "eu.eurise.voice.debug"};
+  private static final String[] VOICE_PACKAGES = {EuriseSuite.VOICE};
   private static final int MSG_TRANSCRIBE = 1;
   private static final String KEY_AUDIO = "audio", KEY_LANGUAGE = "language", KEY_TEXT = "text", KEY_ERROR = "error";
   private static final String ERROR_NO_MODEL = "no_model";
@@ -409,15 +410,10 @@ public final class EuriseCarVoice
   @Nullable
   private static String voicePackage(@NonNull Context c)
   {
+    // Solo Voce della suite: l'audio del microfono non va a un'app con lo stesso nome.
     for (String p : VOICE_PACKAGES)
-    {
-      try
-      {
-        c.getPackageManager().getPackageInfo(p, 0);
+      if (EuriseSuite.isSuite(c, p))
         return p;
-      }
-      catch (Exception ignored) {}
-    }
     return null;
   }
 

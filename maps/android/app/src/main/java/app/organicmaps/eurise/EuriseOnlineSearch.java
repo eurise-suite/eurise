@@ -59,7 +59,7 @@ public final class EuriseOnlineSearch
   private static String sLastQuery = "";
   private static List<Place> sLastResults = new ArrayList<>();
   /** App Eurise che ha il centro privacy (la versione di prova prima), come per il meteo sul percorso. */
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
   /** Il nome del servizio nel centro privacy (core/suite PrivacyService.MapSearch, PrivacyContract). */
   private static final String SERVICE = "MapSearch";
 
@@ -111,7 +111,7 @@ public final class EuriseOnlineSearch
     {
       try
       {
-        android.os.Bundle b = c.getContentResolver().call(android.net.Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
+        android.os.Bundle b = EuriseSuite.call(c, android.net.Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
         if (b != null)
           return b.getBoolean("on");
       }
