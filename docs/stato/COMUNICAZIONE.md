@@ -549,13 +549,13 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro 957; prove: 15 minuti con la Chat chiusa
    (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly;
    ~~ChatTruffa, ChatPresaVisione, ChatSemplice~~ fatte al giro 964; ~~ChatProposta, ChatRiassunto, ChatQuandoLavora,
-   ChatGruppoTempo~~ fatte al giro 972: **le tavole Chat* sono tutte in codice**; poi la seconda fila di La mia
-   Bussola), poi le tavole della seconda fila di La mia Bussola.
+   ChatGruppoTempo~~ fatte al giro 972: **le tavole Chat* sono tutte in codice**).
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.
-0. **La mia Bussola in Chat**: prima parte, referti e promemoria di Millewin fatti (vedi «Fatto»). Prossimo: tavole della
-   seconda fila; regola di conservazione a 45 giorni sul server dello studio; referti per email (link e codice per SMS).
+0. **La mia Bussola in Chat**: prima parte, referti e promemoria di Millewin fatti (vedi «Fatto»). **In futuro** (deciso
+   dal proprietario il 21 novembre: da tenere per dopo): tavole della seconda fila (prenotazioni, questionario, esami,
+   certificati e 730, diario delle misure, scheda di emergenza, deleghe, lingue); regola di conservazione a 45 giorni sul server dello studio; referti per email (link e codice per SMS).
    Prove da chiedere anche: allegato cifrato verso Element e da Element, referto paziente → studio e studio → paziente,
    cartella dei promemoria, bolla della chiamata e pillola verde. Prove da chiedere: due telefoni (medico ed Element o Eurise sul secondo), attivazione dalla
    scheda, rinnovo, NRE, invito, notifiche neutre.
