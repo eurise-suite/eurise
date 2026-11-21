@@ -4,12 +4,12 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 
 ### Per ripartire (aggiornato il 20 novembre 2026, sera)
 - **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
-  `brand`. Al 20 novembre, sera, i due rami sono allo stesso commit (giro 903). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
+  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 911). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **903** da `prova-sicurezza` (20 novembre, sera), in `apk-prova` con tutte le app
+- **Ultimo giro pubblicato**: Compila **911** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
   della suite, Mappe e motore di Office presi dai loro ultimi giri riusciti; prova delle porte sull'emulatore verde su
-  quel giro. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+  quel giro (22 controlli). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
 - **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
   porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
   con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di

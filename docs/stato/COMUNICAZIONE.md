@@ -263,10 +263,15 @@ computer (area Computer, tavola PcEmail).
   (AGCOM, delibera 156/18/CIR) o da un prefisso segnato a mano (Filtro › Sospetto spam). `SpamFilter.suspect`, con test.
   Giro 902. (b) **No** al blocco di tutti i numeri fuori rubrica (resta solo l'interruttore già esistente «Tutti gli
   sconosciuti in silenzio», spento di base). (c) **Sì** all'elenco dei numeri molesti scaricato e aggiornato
-  periodicamente: **da fare**, prima va scelta la fonte con il proprietario. L'elenco aperto più noto (Yet Another Call
-  Blocker) viene da un servizio commerciale chiuso, con aggiornamenti da server di terzi, ed è fermo dal 2021. Il
-  Telefono non ha il permesso Internet: lo scaricamento starebbe meglio nell'APK principale (WorkManager, Wi-Fi), con il
-  Telefono che chiede «è nell'elenco?» con il permesso di firma; spento di base, nel centro privacy, avviso prima di accenderlo.
+  periodicamente: **fatto nel giro 910** (21 novembre), con la fonte scelta dal proprietario: un **elenco curato da
+  Eurise** in `data/spam/elenco.txt` (formato e regole in `data/spam/README.md`: solo voci con segnalazioni pubbliche e
+  ripetute, mai paesi europei interi). Prime voci: prefissi wangiri +216, +373, +375, +383, +255 e 0843/0844. Lo scarica
+  l'app Eurise (`SpamListProvider`, `SpamListWorker` settimanale col Wi-Fi), servizio `PrivacyService.SpamList` spento di
+  base (GitHub, Stati Uniti: vede l'indirizzo IP di chi scarica, come per le pietre miliari); il Telefono resta senza
+  Internet e chiede l'elenco con il permesso della suite (`SpamListClient`, `SpamListContract`). Chi è nell'elenco e non è
+  in rubrica arriva in silenzio con «Elenco Eurise: …» (chiamata, notifica, Recenti); nessun blocco automatico.
+  **Da fare**: tenere l'elenco aggiornato (chi lo cura, ogni quanto); il file sta sul ramo `brand` (va spostato sul ramo
+  stabile quando ci sarà); valutare la firma del file oltre all'HTTPS.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo

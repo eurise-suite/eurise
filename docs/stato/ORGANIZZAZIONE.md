@@ -54,6 +54,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 ## 20 novembre: Telefono e Rubrica (giro 896, area Comunicazione)
 - Su richiesta del proprietario questa chat ha corretto Telefono e Rubrica (APK `phone/`, area Comunicazione) e toccato
   `core/contacts` (comune con Messaggi). Dettagli in `docs/stato/COMUNICAZIONE.md`, voce «correzioni del 20 novembre».
+- 21 novembre, giro 910: elenco Eurise dei numeri molesti. Parti comuni toccate: `core/suite` (`PrivacyService.SpamList`,
+  `SpamList`, `SpamListContract`) e `core/designsystem` (testi del servizio, gruppo «Telefono» nel primo avvio); nell'app
+  Eurise `SpamListProvider` e `SpamListWorker`. Dettagli in `COMUNICAZIONE.md`.
 
 ## 16 novembre, sera: icone nel cassetto, pulizia, tavole delle Note
 - **Calendario, Attività e Note con un'icona propria** tra le app di Android (activity-alias `.CalendarApp`, `.TasksApp`,
