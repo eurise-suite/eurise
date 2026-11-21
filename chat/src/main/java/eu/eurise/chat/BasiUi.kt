@@ -211,6 +211,8 @@ internal fun MessageMenu(
                 }
                 Divider()
             }
+            // Ricordamelo (tavola ChatProgramma): un'attività con il link al messaggio.
+            if (!mine && !local && e.kind != Event.Kind.Poll) { RemindRow(model, actions, roomId, e, onClose); Divider() }
             if (mine && !local && e.kind == Event.Kind.Text) { MenuRow(EuriseIcons.pencil(2f), stringResource(R.string.ba_edit)) { onEdit(); onClose() }; Divider() }
             if (!local) {
                 MenuRow(EuriseIcons.pin(2f), stringResource(if (pinned) R.string.ba_unpin else R.string.ba_pin)) {

@@ -99,7 +99,9 @@ object Matrix {
                     // La richiesta di verifica di una persona: una riga al centro, non un messaggio.
                     "m.key.verification.request" -> Event(id, sender, "verify:" + (names[sender] ?: localpart(sender)), time, Event.Kind.State)
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
-                    else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text, replyTo = reply)
+                    // A scomparsa (tavola ChatProgramma): il contenuto resta per l'etichetta.
+                    else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text,
+                        data = if (content.has(Programma.FADE)) content.toString() else null, replyTo = reply)
                 }
             }
             "m.room.member" -> {
