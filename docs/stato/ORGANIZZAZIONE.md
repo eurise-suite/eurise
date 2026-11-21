@@ -51,6 +51,24 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 21 novembre: note vocali complete e Impostazioni Eurise (tavole da approvare, niente codice)
+- Richiesta del proprietario: «Nota vocale» accanto ad «Aggiungi nota»; l'audio in una cartella del telefono o nel cloud,
+  a scelta; nella nota il testo trascritto e riordinato (punteggiatura, titoli, paragrafi) con Alfred; riassunto su
+  richiesta; pensare a un posto unico per le impostazioni.
+- **C'è già** (16 novembre, NoteVocale): registrazione 16 kHz in .m4a (`voice/VoiceRecorder.kt`) nella cartella privata
+  `files/note-vocali/`, testo da Eurise Voce (Whisper sul telefono) mentre si parla, «Metti il testo nella nota», «Da fare»
+  trovato. Si entra solo da dentro una nota (NoteInserisci).
+- **Tavole nuove** (pagina Note, quarta fila): NoteVocaleEntra (microfono sopra il +: tocco breve registra, tenuto premuto
+  sceglie dove salvare), NoteVocaleRegistra (testo grezzo mentre parli, dove va l'audio sempre in vista), NoteVocaleOrdinata
+  (titolo, titoletti e paragrafi da Alfred, audio con la cartella, «Riassunto», «Testo com'era», «Riordina di nuovo»),
+  NoteVocaleDove (telefono › Registrazioni › Eurise, visibile alle altre app; solo nelle Note, privata; cloud collegato,
+  cartella «Note vocali»), ImpEurise (un posto unico con la ricerca: suite, dati, app; ogni app apre la sua sezione).
+- **Come si farà, dopo l'approvazione**: cartella pubblica con MediaStore (`Recordings/Eurise`, senza permessi in più da
+  Android 10; su Android 8–9 `Music/Eurise`); cloud con il caricamento già usato da Cloud (WorkManager, Wi-Fi); riordino e
+  riassunto con il cervello di Alfred (Eurise AI, modello GGUF sul telefono) quando c'è; senza modello restano la
+  punteggiatura di Whisper e i paragrafi alle pause, e «Riassunto» non compare. Il testo grezzo resta sempre («Testo com'era»).
+- Impostazioni Eurise tocca parti comuni (navigazione nell'app, voci di ogni area): va concordata con le altre aree.
+
 ## 20 novembre: Telefono e Rubrica (giro 896, area Comunicazione)
 - Su richiesta del proprietario questa chat ha corretto Telefono e Rubrica (APK `phone/`, area Comunicazione) e toccato
   `core/contacts` (comune con Messaggi). Dettagli in `docs/stato/COMUNICAZIONE.md`, voce «correzioni del 20 novembre».
