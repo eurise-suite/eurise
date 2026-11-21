@@ -141,6 +141,9 @@ internal fun SuiteBubble(
     round: List<Color>,
     glow: Color,
     fill: Color? = null,
+    /** Fondo che sale dritto dal basso e dove cade ogni colore (vedi [SuiteDrawings.Drawing]). */
+    vertical: Boolean = false,
+    stops: List<Float> = listOf(0f, 0.45f, 1f),
     content: @Composable () -> Unit,
 ) {
     val rim = when (series) {
@@ -165,7 +168,7 @@ internal fun SuiteBubble(
                     else -> when (series) {
                     SuiteIcons.Series.Light -> Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.66f), Color.White.copy(alpha = 0.46f))))
                     SuiteIcons.Series.Dark -> Modifier.background(Brush.linearGradient(listOf(Color(0xB0262B33), Color(0xC4181B21))))
-                    SuiteIcons.Series.Color -> Modifier.background(roundBrush(round))
+                    SuiteIcons.Series.Color -> Modifier.background(roundBrush(round, vertical, stops))
                     }
                 },
             )
@@ -176,10 +179,10 @@ internal fun SuiteBubble(
 }
 
 /** Il tondo colorato: sfumatura a 165 gradi (dall'alto, appena a sinistra, al basso), con la tinta piena al 45 %. */
-private fun roundBrush(colors: List<Color>): Brush = object : androidx.compose.ui.graphics.ShaderBrush() {
+private fun roundBrush(colors: List<Color>, vertical: Boolean = false, stops: List<Float> = listOf(0f, 0.45f, 1f)): Brush = object : androidx.compose.ui.graphics.ShaderBrush() {
     override fun createShader(size: androidx.compose.ui.geometry.Size) = androidx.compose.ui.graphics.LinearGradientShader(
-        from = Offset(size.width * 0.37f, 0f), to = Offset(size.width * 0.63f, size.height),
-        colors = colors, colorStops = listOf(0f, 0.45f, 1f),
+        from = Offset(size.width * (if (vertical) 0.5f else 0.37f), 0f), to = Offset(size.width * (if (vertical) 0.5f else 0.63f), size.height),
+        colors = colors, colorStops = stops.takeIf { it.size == colors.size } ?: listOf(0f, 0.45f, 1f),
     )
 }
 

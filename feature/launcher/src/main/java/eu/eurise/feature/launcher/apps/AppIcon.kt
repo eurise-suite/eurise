@@ -287,7 +287,10 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
             SuiteIcons.Series.Color -> listOf(Color(0xFFFFFDF8), Color(0xFFEFDDBF))
         }
         Box(modifier.size(size), contentAlignment = Alignment.Center) {
-            SuiteBubble(series, size, IconStyles.shape(LocalIconShape.current, theme), round, glow) {
+            SuiteBubble(
+                series, size, IconStyles.shape(LocalIconShape.current, theme), round, glow,
+                vertical = drawing?.vertical == true, stops = drawing?.stops ?: listOf(0f, 0.45f, 1f),
+            ) {
                 if (drawing != null) {
                     SuiteDrawingCanvas(drawing, series, Modifier.size(size))
                 } else when (val img = image) {
