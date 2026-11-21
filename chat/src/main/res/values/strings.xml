@@ -314,4 +314,23 @@
     <string name="cr_in_tasks">Messo in Attività</string>
     <string name="cr_no_hub">Serve l\'app Eurise (Note e Attività)</string>
     <string name="cr_voice_text">vocale trascritto · «%1$s»</string>
+
+    <!-- Discussioni a filo (tavola ChatThread) -->
+    <string name="th_start">Rispondi in una discussione</string>
+    <string name="th_title">Discussione</string>
+    <string name="th_sub">discussione in «%1$s» · %2$s</string>
+    <string name="th_root_by">%1$s · messaggio di partenza</string>
+    <string name="th_loading">Carico il messaggio di partenza…</string>
+    <string name="th_hint">Le risposte restano qui: il gruppo vede solo «%1$s»</string>
+    <string name="th_write">Rispondi nella discussione</string>
+    <plurals name="th_replies">
+        <item quantity="one">%d risposta</item>
+        <item quantity="many">%d risposte</item>
+        <item quantity="other">%d risposte</item>
+    </plurals>
+    <plurals name="th_threads">
+        <item quantity="one">%d discussione</item>
+        <item quantity="many">%d discussioni</item>
+        <item quantity="other">%d discussioni</item>
+    </plurals>
 </resources>

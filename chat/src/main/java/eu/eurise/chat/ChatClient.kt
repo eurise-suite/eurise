@@ -64,6 +64,14 @@ class ChatClient(val session: Session) {
     fun messages(roomId: String, from: String): JSONObject =
         get("/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=30&from=${enc(from)}")
 
+    /** Le risposte di una discussione (tavola ChatThread), dalla più recente. */
+    fun threadReplies(roomId: String, root: String): JSONObject =
+        get("/_matrix/client/v1/rooms/${enc(roomId)}/relations/${enc(root)}/m.thread?limit=100")
+
+    /** Un evento solo (il messaggio di partenza di una discussione, se non è tra quelli caricati). */
+    fun event(roomId: String, eventId: String): JSONObject =
+        get("/_matrix/client/v3/rooms/${enc(roomId)}/event/${enc(eventId)}")
+
     fun sendText(roomId: String, text: String): String {
         val txn = UUID.randomUUID().toString()
         val body = JSONObject().put("msgtype", "m.text").put("body", text)

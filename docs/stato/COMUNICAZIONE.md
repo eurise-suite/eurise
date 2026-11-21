@@ -194,6 +194,19 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
+- **Discussioni a filo** (21 novembre; tavola ChatThread; giro GIRO: chat): i **thread di Matrix** (`m.thread`, come
+  Element, quindi le discussioni aperte da Element si vedono e viceversa). Nel menu di un messaggio di un gruppo
+  «Rispondi in una discussione» apre la discussione: in alto indietro, il titolo (prima riga del messaggio di partenza)
+  e «discussione in «Casa al mare» · 6 risposte»; in cima la scheda «Luca · messaggio di partenza», poi le risposte con
+  i fumetti di sempre (reazioni, risposte, modifiche), sotto l'avviso «Le risposte restano qui: il gruppo vede solo «6
+  risposte»» e il campo «Rispondi nella discussione». Nella conversazione del gruppo le risposte non ci sono: sotto il
+  messaggio di partenza c'è «6 risposte · 10:11» (azzurro), che apre la discussione; nell'elenco delle chat, sotto
+  l'anteprima, «2 discussioni · Turni pulizie (6), Bollette (3)». All'apertura si chiedono al server tutte le risposte
+  (`/relations/…/m.thread`) e, se manca, il messaggio di partenza; il conteggio usa anche il riepilogo del server
+  (`unsigned.m.relations.m.thread.count`). Il riferimento di ripiego (`is_falling_back`) non diventa una citazione nel
+  fumetto. Dentro una discussione niente microfono, graffetta, programmati né discussioni nella discussione. Logica pura
+  in **`Threads.kt`** con `ThreadsTest`. Non ancora: vocali e allegati nella discussione, notifiche separate per le
+  discussioni che segui, l'elenco di tutte le discussioni di un gruppo.
 - **Cartelle, «Messaggi a me», vocali scritti a richiesta** (21 novembre; tavola ChatCartelle; giro 930: chat).
   **Cartelle** scelte dall'utente sotto le viste (Tutte, Famiglia · 3 = chat da leggere, …, «+»): una chat può stare in
   più cartelle; pressione lunga su una chat = le cartelle come pulsanti da accendere e «+ Nuova»; il bottone con la
@@ -276,7 +289,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 930 (21 novembre: cartelle, Messaggi a me, vocali scritti a richiesta); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: discussioni a filo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -474,7 +487,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    e annullato, programmato tra pochi minuti con la Chat chiusa, quando lavora dall'account di lavoro, a scomparsa letto
    da Element e sparito il giorno dopo, Ricordamelo che compare in Attività e il link (copiato) che apre il messaggio;
    ~~ChatCartelle~~ fatta al giro 930; prove: cartella nuova con due chat, chat in due cartelle, pressione lunga su
-   una chat, Messaggi a me con «→ Note» e «→ Attività», icona «T» su un vocale ricevuto; poi ChatThread), poi le tavole della seconda fila di La mia Bussola.
+   una chat, Messaggi a me con «→ Note» e «→ Attività», icona «T» su un vocale ricevuto; ~~ChatThread~~ fatta al giro
+   GIRO; prove: discussione aperta da Eurise e vista in Element (e al contrario), «6 risposte» sotto il messaggio,
+   riga delle discussioni nell'elenco; poi ChatPosizione), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

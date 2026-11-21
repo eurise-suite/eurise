@@ -3416,4 +3416,5 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 21 novembre, Backup: schermate vere secondo le tavole (backup ora, dove, frase con tacchette, codice con controllo, frase nuova con lo sblocco, promemoria annuale, ripristino dalla Scrivania di un telefono nuovo, Bentornato) (giro 909) → `docs/stato/BACKUP.md`.
 - 21 novembre, Backup: prova vera sull'emulatore (`prova-backup.yml`): backup, telefono nuovo, ripristino con il codice, Tastiera reinstallata dopo; 17 controlli su 17 (giro 921) → `docs/stato/BACKUP.md`.
 - 21 novembre, Backup: tutta la suite nel backup (tranne Mappe) con un fornitore protetto per app, formato a pezzi, prova sull'emulatore 30 su 30 (giro 938) → `docs/stato/BACKUP.md`.
-- 21 novembre, sera, Backup: Mappe nel backup (fornitore nelle patch di CoMaps, backup di Android spento in Mappe); tavole della cartella protetta «dal backup» in Galleria (da approvare) → `docs/stato/BACKUP.md`.
+- 21 novembre, sera, Backup: Mappe nel backup (fornitore nelle patch di CoMaps, backup di Android spento in Mappe); cartella protetta «dal backup» in Galleria (tavole approvate e in codice) → `docs/stato/BACKUP.md`.
+- 21 novembre, Comunicazione: Chat, discussioni a filo (thread di Matrix, come Element) con «6 risposte» sotto il messaggio e nell'elenco · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.

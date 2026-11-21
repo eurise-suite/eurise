@@ -641,6 +641,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     // --- Conversazione ---
 
     fun open(roomId: String?) {
+        if (roomId != openRoom) thread = null
         openRoom = roomId
         roomId ?: return
         markRead(roomId)
@@ -826,7 +827,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         // L'eco locale ha lo stesso testo del messaggio che arriverà (per i sondaggi, la domanda).
         val text = if (kind == Event.Kind.Poll) Relations.poll(content)?.question.orEmpty() else content.optString("body")
         val local = Event("local:" + System.nanoTime(), me, text, System.currentTimeMillis(), kind,
-            data = if (kind == Event.Kind.Text) null else content.toString(), replyTo = Relations.replyTo(content))
+            data = if (kind == Event.Kind.Text) null else content.toString(),
+            replyTo = Relations.replyTo(content).takeUnless { Threads.fallingBack(content) }, thread = Threads.root(content))
         timeline(roomId).add(local)
         sendEvent(roomId, type, content) { timeline(roomId).remove(local); failed() }
     }
@@ -887,6 +889,45 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
             }
         }
         if (changed) relationsTick++
+    }
+
+    // --- Discussioni a filo (tavola ChatThread) ---
+
+    /** La discussione aperta nella conversazione: id del messaggio di partenza, o null. */
+    var thread by mutableStateOf<String?>(null)
+
+    /** Risponde nella discussione [root]; [replyTo] se si risponde a un messaggio preciso della discussione. */
+    fun sendInThread(roomId: String, root: String, text: String, replyTo: String?, failed: () -> Unit) =
+        sendContent(roomId, Threads.content(text, root, Threads.last(timeline(roomId), root), replyTo), Event.Kind.Text, failed)
+
+    /**
+     * All'apertura di una discussione: tutte le risposte dal server (anche quelle più vecchie dei messaggi caricati) e,
+     * se manca, il messaggio di partenza. Si decifrano come i messaggi più vecchi.
+     */
+    fun loadThread(roomId: String, root: String) {
+        val c = client ?: return
+        val s = data[roomId] ?: return
+        scope.launch {
+            val raw = withContext(Dispatchers.IO) {
+                runCatching {
+                    val a = c.threadReplies(roomId, root).optJSONArray("chunk") ?: org.json.JSONArray()
+                    if (timeline(roomId).none { it.id == root }) runCatching { a.put(c.event(roomId, root)) }
+                    val cr = cryptoFor(c.session)
+                    for (i in 0 until a.length()) {
+                        val e = a.getJSONObject(i)
+                        if (cr != null && e.optString("type") == "m.room.encrypted") cr.decrypt(e, roomId)?.let { a.put(i, it) }
+                    }
+                    a
+                }.getOrNull()
+            } ?: return@launch
+            relate(roomId, raw)
+            val list = timeline(roomId)
+            val missing = Matrix.events(raw, s.names).filter { e -> !relations.redacted(e.id) && list.none { it.id == e.id } }
+            if (missing.isEmpty()) return@launch
+            val sorted = (list + missing).sortedBy { it.time }
+            list.clear()
+            list.addAll(sorted)
+        }
     }
 
     fun reply(roomId: String, target: String, text: String, failed: () -> Unit) =

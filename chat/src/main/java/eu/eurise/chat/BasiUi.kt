@@ -198,6 +198,12 @@ internal fun MessageMenu(
         }
         Card {
             if (!local) { MenuRow(EuriseIcons.reply(2f), stringResource(R.string.ba_reply)) { onReply(); onClose() }; Divider() }
+            // Una discussione a filo su questo messaggio (tavola ChatThread): nei gruppi, non dentro un'altra discussione.
+            if (!local && model.thread == null && e.thread == null && model.room(roomId)?.direct != true &&
+                e.kind != Event.Kind.State && e.kind != Event.Kind.Encrypted) {
+                MenuRow(EuriseIcons.chat(2f), stringResource(R.string.th_start)) { model.thread = e.id; onClose() }
+                Divider()
+            }
             if (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice) {
                 MenuRow(EuriseIcons.copy(2f), stringResource(R.string.ba_copy)) {
                     clipboard.setText(AnnotatedString(shownText(model, e))); actions.toast(copied); onClose()

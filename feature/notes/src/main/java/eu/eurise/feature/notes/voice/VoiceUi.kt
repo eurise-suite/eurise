@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -277,9 +278,11 @@ internal fun VoicePlaceSheet(current: VoicePlace, onChoose: (VoicePlace) -> Unit
     val askStorage = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         onChoose(if (ok) VoicePlace.Phone else VoicePlace.App)
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = scheme.background) {
+    // Aperto per intero: «Annulla» e «Va bene» devono vedersi subito, anche sui telefoni bassi.
+    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = scheme.background) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp),
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(stringResource(R.string.notes_voice_where_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)

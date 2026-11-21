@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -473,6 +474,8 @@ internal fun RoomRow(model: ChatModel, r: Room, onLong: (() -> Unit)? = null) {
                             contentAlignment = Alignment.Center) { Text("${r.unread}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimary) }
                     }
                 }
+                // Le discussioni a filo della chat (tavola ChatCartelle e ChatThread).
+                if (!r.invite) RoomThreadsLine(model, r.id)
             }
         }
         if (r.invite) Row(Modifier.padding(start = 58.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -526,8 +529,16 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     val scheme = MaterialTheme.colorScheme
     val room = model.room(roomId)
     val me = model.session?.userId.orEmpty()
-    val events = model.timeline(roomId)
-    val list = rememberLazyListState()
+    // Discussioni a filo (tavola ChatThread): nella conversazione del gruppo non ci sono le risposte delle discussioni;
+    // con una discussione aperta ci sono solo quelle (il messaggio di partenza sta in cima).
+    val thread = model.thread
+    val all = model.timeline(roomId)
+    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread } } }
+    val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
+    val threads by remember(roomId) { derivedStateOf { Threads.summary(all).associateBy { it.root } } }
+    LaunchedEffect(roomId, thread) { thread?.let { model.loadThread(roomId, it) } }
+    BackHandler(enabled = thread != null) { model.thread = null }
+    val list = androidx.compose.runtime.key(thread) { rememberLazyListState() }
     var draft by remember(roomId) { mutableStateOf("") }
     // Le basi (tavola ChatBasi): il messaggio tenuto premuto, a cui si risponde, che si modifica o si inoltra.
     var menuFor by remember(roomId) { mutableStateOf<Event?>(null) }
@@ -559,11 +570,12 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     val peerVerified = peer != null && model.verifiedPeople[peer] == true
     LaunchedEffect(list) {
         snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index }.collect { last ->
-            if (last != null && last >= events.size - 2) model.older(roomId)
+            if (thread == null && last != null && last >= events.size - 2) model.older(roomId)
         }
     }
     Column(Modifier.fillMaxSize().statusBarsPadding().windowInsetsPadding(WindowInsets.ime)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (thread != null) ThreadHeader(model, room?.name.orEmpty(), threadRoot, threads[thread]?.count ?: events.size)
+        else Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             RoundIcon(EuriseIcons.chevronLeft(2.2f), stringResource(R.string.ch_back), flat = true) { model.open(null) }
             val name = room?.name ?: ""
             Box(Modifier.size(38.dp).clip(CircleShape).background(tintFor(roomId).copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
@@ -597,9 +609,9 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         }
         // La mia Bussola: promemoria del 118 e azioni grandi per il paziente; per lo studio, invito e aggiornamento.
         val bussola = model.bussolaRole(roomId)
-        if (bussola != null) BussolaBar(model, actions, roomId, bussola)
+        if (bussola != null && thread == null) BussolaBar(model, actions, roomId, bussola)
         // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
-        val group = room != null && !room.direct && peer == null
+        val group = room != null && !room.direct && peer == null && thread == null
         var tab by remember(roomId) { mutableStateOf(0) }
         if (group) Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
@@ -612,9 +624,9 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         } else if (group && tab == 2) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
         } else {
-            val roomPlanned = model.planned.filter { it.roomId == roomId }
+            val roomPlanned = if (thread == null) model.planned.filter { it.roomId == roomId } else emptyList()
             // I messaggi fissati: tocco per andarci.
-            PinnedBar(model, roomId) { id ->
+            if (thread == null) PinnedBar(model, roomId) { id ->
                 val i = events.asReversed().indexOfFirst { it.id == id }
                 if (i >= 0) scope.launch { list.animateScrollToItem(i + roomPlanned.size) }
             }
@@ -630,16 +642,20 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     else if (e.kind == Event.Kind.Audio) Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
                         AudioBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
+                        threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                     }
                     else if (e.kind == Event.Kind.Poll) Column {
                         PollBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
+                        threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                     }
                     else Column {
                         Bubble(model, roomId, e, mine = mine, onLong = { if (e.kind != Event.Kind.State) menuFor = e }) {
                             model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) }
                         }
                         ReactionChips(model, actions, roomId, e, mine)
+                        // «6 risposte» sotto il messaggio di partenza di una discussione (tavola ChatThread).
+                        if (thread == null) threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                         // Per chi vede poco (tavola ChatVocali): sotto ogni messaggio ricevuto, «Leggi ad alta voce».
                         if (!mine && model.voice.autoRead && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice)) {
                             ReadAloudChip(model, e, shownText(model, e))
@@ -667,7 +683,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                             modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(scheme.onSurface.copy(alpha = 0.06f)).padding(horizontal = 10.dp, vertical = 4.dp))
                     }
                 }
+                // Nella discussione: in cima il messaggio di partenza (tavola ChatThread).
+                if (thread != null) item(key = "thread-root") { ThreadRootCard(model, threadRoot) }
             }
+            if (thread != null) ThreadHint(threads[thread]?.count ?: events.size)
             replyTo?.let { e -> ComposerContext(stringResource(R.string.ba_replying_to, model.nameOf(e.sender)), if (e.kind == Event.Kind.Poll) e.text else shownText(model, e)) { replyTo = null } }
             editing?.let { e -> ComposerContext(stringResource(R.string.ba_editing), shownText(model, e)) { editing = null; draft = "" } }
             if (bussola == ChatModel.BussolaRole.Patient) UrgentHint()
@@ -679,8 +698,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
-                // Tocco: un file; pressione lunga: un sondaggio (tavola ChatBasi).
-                Box(
+                // Tocco: un file; pressione lunga: un sondaggio (tavola ChatBasi). Non dentro una discussione.
+                if (thread == null) Box(
                     Modifier.size(46.dp).clip(CircleShape).background(scheme.surface).combinedClickable(
                         role = Role.Button,
                         onLongClick = { if (bussola == null) pollSheet = true },
@@ -696,12 +715,13 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 ) { Icon(EuriseIcons.attach(2.2f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(19.dp)) }
                 Spacer(Modifier.width(8.dp))
                 // Vocali (tavola ChatVocali): con il campo vuoto c'è il microfono; mentre si registra, la striscia rossa.
-                val micShown = draft.isBlank() && editing == null && bussola == null
+                val micShown = draft.isBlank() && editing == null && bussola == null && thread == null
                 val rec = recording
                 if (rec != null) RecordingStrip(rec, cancelling, Modifier.weight(1f))
                 else Box(Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(scheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
                     if (draft.isEmpty()) Text(stringResource(when {
                         editing != null -> R.string.ba_edit_hint
+                        thread != null -> R.string.th_write
                         micShown -> R.string.vo_write_or_hold
                         else -> R.string.ch_write
                     }), fontSize = 15.sp, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -716,7 +736,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) scheme.primary.copy(alpha = 0.4f) else scheme.primary)
                         // Pressione lunga (tavola ChatProgramma): più tardi, quando lavora, a scomparsa.
                         .combinedClickable(enabled = draft.isNotBlank(), role = Role.Button, onLongClick = {
-                            if (editing == null && bussola == null) laterSheet = draft.trim()
+                            if (editing == null && bussola == null && thread == null) laterSheet = draft.trim()
                         }) {
                             val text = draft.trim()
                             draft = ""
@@ -726,6 +746,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                             editing = null
                             when {
                                 ed != null -> model.edit(roomId, ed.id, text) { actions.toast(failed) }
+                                thread != null -> model.sendInThread(roomId, thread, text, r?.id) { actions.toast(failed) }
                                 r != null -> model.reply(roomId, r.id, text) { actions.toast(failed) }
                                 else -> model.send(roomId, text) { actions.toast(failed) }
                             }
