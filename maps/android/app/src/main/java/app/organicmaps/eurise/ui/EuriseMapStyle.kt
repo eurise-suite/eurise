@@ -25,13 +25,13 @@ internal val Notte = Colors(
 internal class Destination(val title: String, val place: String, val start: Long)
 internal class Destinations(val hub: Boolean, val calendar: Boolean, val items: List<Destination>)
 
-internal val HUBS = arrayOf("eu.eurise.hub.debug", "eu.eurise.hub")
+internal val HUBS: Array<String> = app.organicmaps.eurise.EuriseSuite.HUBS
 
 /** Gli impegni con un luogo dall'app Eurise (DestinationsContract in core/suite), fuori dal thread principale. */
 internal suspend fun loadDestinations(context: Context): Destinations = withContext(Dispatchers.IO) {
     var b: Bundle? = null
     for (h in HUBS) {
-        b = runCatching { context.contentResolver.call(Uri.parse("content://$h.destinations"), "list", null, null) }.getOrNull()
+        b = runCatching { app.organicmaps.eurise.EuriseSuite.call(context, Uri.parse("content://$h.destinations"), "list", null, null) }.getOrNull()
         if (b != null) break
     }
     val bundle = b ?: return@withContext Destinations(hub = false, calendar = false, items = emptyList())

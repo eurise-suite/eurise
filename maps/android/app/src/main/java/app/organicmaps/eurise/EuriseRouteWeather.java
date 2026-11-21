@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
 public final class EuriseRouteWeather
 {
   // Stessi nomi di core/suite RouteWeatherContract (Mappe non dipende dai moduli Kotlin della suite).
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
   private static final String STATUS = "status", ENABLE = "enable", DISABLE = "disable", ROUTE = "route";
   private static final String ON = "on", LAT = "lat", LON = "lon", TIME = "time", CODE = "code", TEMP = "temp",
       RAIN = "rain", GUSTS = "gusts";
@@ -505,7 +505,7 @@ public final class EuriseRouteWeather
     {
       try
       {
-        final Bundle b = app.getContentResolver().call(Uri.parse("content://" + h + ".routeweather"), method, null, extras);
+        final Bundle b = EuriseSuite.call(app, Uri.parse("content://" + h + ".routeweather"), method, null, extras);
         if (b != null)
         {
           sHub = h;

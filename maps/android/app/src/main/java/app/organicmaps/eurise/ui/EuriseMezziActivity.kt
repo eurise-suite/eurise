@@ -372,7 +372,9 @@ private fun note(context: Context, text: String) {
     for (hub in HUBS) {
         val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
             .setComponent(ComponentName(hub, "eu.eurise.hub.ShareToNotesActivity"))
-        if (runCatching { context.startActivity(i) }.isSuccess) return
+        // Solo verso l'app Eurise della suite: un'app con lo stesso nome non riceve il testo della nota.
+        val safe = app.organicmaps.eurise.EuriseSuite.trusted(context, i) ?: continue
+        if (runCatching { context.startActivity(safe) }.isSuccess) return
     }
 }
 

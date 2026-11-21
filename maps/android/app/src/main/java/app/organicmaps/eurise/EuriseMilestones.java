@@ -39,7 +39,7 @@ import java.util.zip.GZIPInputStream;
 public final class EuriseMilestones
 {
   private static final String BASE = "https://github.com/eurise-suite/eurise/releases/download/pietre/";
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
   /** Il nome del servizio nel centro privacy (core/suite PrivacyService.Milestones). */
   private static final String SERVICE = "Milestones";
   private static final long DAY = 24L * 60 * 60 * 1000;
@@ -188,7 +188,7 @@ public final class EuriseMilestones
     {
       try
       {
-        final Bundle b = c.getContentResolver().call(Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
+        final Bundle b = EuriseSuite.call(c, Uri.parse("content://" + h + ".privacy"), method, SERVICE, null);
         if (b != null)
           return b.getBoolean("on");
       }

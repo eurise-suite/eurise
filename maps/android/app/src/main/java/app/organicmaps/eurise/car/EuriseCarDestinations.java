@@ -28,7 +28,7 @@ import app.organicmaps.eurise.EuriseArrival;
  */
 public final class EuriseCarDestinations
 {
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = app.organicmaps.eurise.EuriseSuite.HUBS;
   private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
 
   /** Un impegno: titolo, luogo, inizio. */
@@ -77,7 +77,7 @@ public final class EuriseCarDestinations
       {
         try
         {
-          b = app.getContentResolver().call(Uri.parse("content://" + h + ".destinations"), "list", null, null);
+          b = app.organicmaps.eurise.EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
         }
         catch (Exception ignored)
         {

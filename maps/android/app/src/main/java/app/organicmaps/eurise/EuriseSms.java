@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
@@ -25,8 +24,8 @@ public final class EuriseSms
 
   // Stessi nomi del ricevitore di Messaggi (messages/…/SuiteSmsReceiver.kt).
   private static final String ACTION = "eu.eurise.action.SEND_SMS";
-  private static final String[] PACKAGES = {"eu.eurise.messages.debug", "eu.eurise.messages"};
-  private static final String PERMISSION = "eu.eurise.permission.SUITE_DEBUG";
+  private static final String[] PACKAGES = {EuriseSuite.MESSAGES};
+  private static final String PERMISSION = EuriseSuite.PERMISSION;
 
   private EuriseSms() {}
 
@@ -62,18 +61,10 @@ public final class EuriseSms
   @Nullable
   private static String pkg(@NonNull Context c)
   {
+    // Solo Messaggi della suite: un'app con lo stesso nome non riceve numero e testo.
     for (String p : PACKAGES)
-    {
-      try
-      {
-        c.getPackageManager().getPackageInfo(p, 0);
+      if (EuriseSuite.isSuite(c, p))
         return p;
-      }
-      catch (PackageManager.NameNotFoundException ignored)
-      {
-        // Prova l'altra.
-      }
-    }
     return null;
   }
 }

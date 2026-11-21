@@ -386,7 +386,7 @@ public final class EuriseGuideReports
 
   // --- Centro privacy dell'app Eurise ---
 
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
 
   /**
    * Chiede al centro privacy dell'app Eurise («status» o «log») per le note a OpenStreetMap. Null se l'app Eurise manca:
@@ -399,7 +399,7 @@ public final class EuriseGuideReports
     {
       try
       {
-        final Bundle b = c.getContentResolver().call(android.net.Uri.parse("content://" + h + ".privacy"), method,
+        final Bundle b = EuriseSuite.call(c, android.net.Uri.parse("content://" + h + ".privacy"), method,
                                                      PRIVACY_SERVICE, null);
         if (b != null)
           return b.getBoolean("on");

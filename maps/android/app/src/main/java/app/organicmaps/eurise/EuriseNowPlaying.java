@@ -215,7 +215,7 @@ public final class EuriseNowPlaying
   private static final Handler MAIN = new Handler(Looper.getMainLooper());
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
   private static final CopyOnWriteArrayList<Runnable> LISTENERS = new CopyOnWriteArrayList<>();
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = EuriseSuite.HUBS;
 
   @Nullable private static Media sMedia;
   @Nullable private static Call sCall;
@@ -887,7 +887,7 @@ public final class EuriseNowPlaying
       {
         try
         {
-          b = c.getContentResolver().call(Uri.parse("content://" + h + ".destinations"), method, null, null);
+          b = EuriseSuite.call(c, Uri.parse("content://" + h + ".destinations"), method, null, null);
         }
         catch (Exception ignored)
         {
@@ -977,7 +977,7 @@ public final class EuriseNowPlaying
     {
       try
       {
-        b = c.getContentResolver().call(Uri.parse("content://" + h + ".destinations"), "list", null, null);
+        b = EuriseSuite.call(c, Uri.parse("content://" + h + ".destinations"), "list", null, null);
         if (b != null)
           break;
       }

@@ -21,6 +21,14 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   (file del Ministero), **km dalle pietre miliari** (lavoro `pietre.yml`, pre-release `pietre`, servizio «Km sulle
   strade»). Dettagli del 15 novembre, sera, in `docs/STATO.md`.
 
+## Sicurezza: variante prova/ufficiale (21 novembre 2026, progetto «Eurise Sicurezza»)
+- Il patch sceglie la variante con `EURISE_VARIANTE` (prova di base; `maps-engine.yml` → «variante»). Nomi delle app della
+  suite e permesso solo da `eurise/EuriseSuite.java` (`HUB`, `VOICE`, `MESSAGES`, `PERMISSION`, `call`, `trusted`,
+  `isSuite`): **un codice nuovo non scrive a mano `"eu.eurise.hub.debug"` o il permesso**, altrimenti il passo «Controlla
+  la variante» (`maps/test/controlla_variante.py`) ferma il giro. Nel patch, per il manifesto: `SUITE_PERM`, `HUB_PKG`,
+  `VOICE_PKG`, `MESSAGES_PKG` dentro f-string.
+- Il giro «ufficiale» produce `eurise-mappe-ufficiale.apk`, che `apk-prova` non pubblica. Dettagli in `docs/SICUREZZA.md`.
+
 ## Tavole
 - Tutte le tavole di Mappe sulla tela (pagina Mappe: `Map*`, comprese MapAutoGuida, MapLuogoAperta, MapLivelli, MapMezzi,
   MapCieli) sono **approvate e in codice**.

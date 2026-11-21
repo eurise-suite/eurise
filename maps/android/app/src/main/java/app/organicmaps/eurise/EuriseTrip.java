@@ -107,8 +107,8 @@ public final class EuriseTrip
   private static final long NOTICE_MS = 15_000;
   private static final long UNDO_MS = 5_000;
   private static final long TICK_MS = 5_000;
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
-  private static final String SUITE_PERMISSION = "eu.eurise.permission.SUITE_DEBUG";
+  private static final String[] HUBS = EuriseSuite.HUBS;
+  private static final String SUITE_PERMISSION = EuriseSuite.PERMISSION;
   private static final String ACTION_TASK = "eu.eurise.action.KEYBOARD_TASK";
   private static final String CHANNEL = "eurise_trip";
   private static final String PREFS = "eurise_trip";
@@ -592,9 +592,10 @@ public final class EuriseTrip
   {
     for (String hub : HUBS)
     {
+      if (!EuriseSuite.isSuite(c, hub))
+        continue;
       try
       {
-        c.getPackageManager().getPackageInfo(hub, 0);
         c.sendBroadcast(new Intent(ACTION_TASK).setPackage(hub).putExtra(Intent.EXTRA_TEXT, text), SUITE_PERMISSION);
         return;
       }

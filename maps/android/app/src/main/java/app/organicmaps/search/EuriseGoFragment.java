@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
  */
 public class EuriseGoFragment extends Fragment
 {
-  private static final String[] HUBS = {"eu.eurise.hub.debug", "eu.eurise.hub"};
+  private static final String[] HUBS = app.organicmaps.eurise.EuriseSuite.HUBS;
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
 
   private LinearLayout mList;
@@ -58,7 +58,7 @@ public class EuriseGoFragment extends Fragment
       {
         try
         {
-          b = app.getContentResolver().call(Uri.parse("content://" + h + ".destinations"), "list", null, null);
+          b = app.organicmaps.eurise.EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
           if (b != null)
             break;
         }
