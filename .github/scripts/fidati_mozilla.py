@@ -12,7 +12,9 @@ import sys
 MOZILLA = "827E658608679618CD349F93678E455D76767AA3"
 path = sys.argv[1] if len(sys.argv) > 1 else "gradle/verification-metadata.xml"
 s = open(path, encoding="utf-8").read()
-block = re.compile(r'[ \t]*<trusted-key id="%s"(?:\s*/>|[^>]*>.*?</trusted-key>)\n' % MOZILLA, re.S)
+# Prima la forma breve (<trusted-key … />), poi quella con <trusting>: con l'ordine sbagliato la ricerca correva fino
+# al blocco dopo e si portava via altre chiavi (successo il 21 novembre: Apache, javawriter, ASM, AndroidX).
+block = re.compile(r'[ \t]*<trusted-key id="%s"(?:[^>]*/>|[^>/]*>.*?</trusted-key>)\n' % MOZILLA, re.S)
 wanted = '         <trusted-key id="%s" group="org.mozilla.geckoview"/>\n' % MOZILLA
 if block.search(s):
     s = block.sub(wanted, s, count=1)

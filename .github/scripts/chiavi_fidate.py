@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Nessuna chiave fidata sparisce quando Gradle riscrive le impronte (docs/SICUREZZA.md, «Impronte delle librerie»).
 
-Il 21 novembre 2026 una riscrittura ha tolto la chiave con cui Google firma AndroidX collection, core, lifecycle, room,
-sqlite e tracing (8461EFA0…, forse un server di chiavi che non rispondeva): la verifica bloccante ha fermato Compila.
-Qui ogni <trusted-key> che c'era nella versione precedente del file e manca nella nuova torna com'era. Una chiave da
+Il 21 novembre 2026 due giri del flusso hanno perso chiavi fidate di AndroidX, Apache e ASM: un errore nella ricerca
+di fidati_mozilla.py, che correva fino al blocco dopo. La verifica bloccante ha fermato Compila (giri 914 e 917). Qui
+ogni <trusted-key> che c'era nella versione precedente del file e manca nella nuova torna com'era: un paracadute per
+qualunque causa. Una chiave da
 togliere davvero si toglie a mano, con un commit che lo spiega.
 
 Uso: chiavi_fidate.py <file precedente> <file nuovo>
@@ -14,7 +15,7 @@ import sys
 old_path, new_path = sys.argv[1], sys.argv[2]
 old = open(old_path, encoding="utf-8").read()
 new = open(new_path, encoding="utf-8").read()
-key = re.compile(r'[ \t]*<trusted-key id="([0-9A-F]+)"(?:[^>]*?/>|[^>]*>.*?</trusted-key>)\n', re.S)
+key = re.compile(r'[ \t]*<trusted-key id="([0-9A-F]+)"(?:[^>]*/>|[^>/]*>.*?</trusted-key>)\n', re.S)
 present = {m.group(1) for m in key.finditer(new)}
 missing = [m.group(0) for m in key.finditer(old) if m.group(1) not in present]
 if missing:
