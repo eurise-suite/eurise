@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -291,13 +292,15 @@ private fun NotesListScreen(
 
         // Microfono sopra il + della barra (tavola NoteVocaleEntra): tocco breve registra nel posto preferito, tenuto
         // premuto chiede dove salvare l'audio e poi registra.
-        if (selected.isEmpty()) VoiceNoteButton(
+        // Senza la barra (per esempio mentre si passa alla nota) il microfono non si mostra: il margine sarebbe negativo.
+        val dock = LocalDockClearance.current
+        if (selected.isEmpty() && dock > GlassDefaults.BottomMargin) VoiceNoteButton(
             haze = haze,
             onRecord = onVoiceNote,
             onChoose = { choosePlace = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = GlassDefaults.SideMargin, bottom = LocalDockClearance.current - GlassDefaults.BottomMargin + 12.dp),
+                .padding(end = GlassDefaults.SideMargin, bottom = (dock - GlassDefaults.BottomMargin + 12.dp).coerceAtLeast(0.dp)),
         )
     }
 
