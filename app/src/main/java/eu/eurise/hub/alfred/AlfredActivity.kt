@@ -29,6 +29,8 @@ class AlfredActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Dalla schermata di blocco (tavola AlfAvvio): Alfred si apre sopra; ciò che tocca i dati chiede lo sblocco.
+        if (android.os.Build.VERSION.SDK_INT >= 27) setShowWhenLocked(eu.eurise.core.data.alfred.AlfredPrefs(this).lockScreen)
         dictation = Dictation(this)
         initial = intent?.getStringExtra(Intent.EXTRA_TEXT)
         briefing = intent?.getBooleanExtra(EXTRA_BRIEFING, false) == true
