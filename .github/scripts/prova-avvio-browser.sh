@@ -34,6 +34,8 @@ sleep 5
 adb shell pm dump-profiles --dump-classes-and-methods "$pkg" >/dev/null 2>&1
 mkdir -p profilo
 adb pull "/data/misc/profman/$pkg-primary.prof.txt" profilo/ >/dev/null 2>&1 && echo "PROFILO: $(wc -l < profilo/$pkg-primary.prof.txt) righe" || echo "PROFILO: non letto"
+# Anche nel registro, compresso (l'archivio della prova non sempre si scarica): righe «PROF:».
+[ -f "profilo/$pkg-primary.prof.txt" ] && gzip -9c "profilo/$pkg-primary.prof.txt" | base64 -w 400 | sed 's/^/PROF:/'
 echo "===== ERRORI ====="
 adb logcat -d -b crash | head -150
 adb logcat -d | grep -E "AndroidRuntime|FATAL|libc  |DEBUG   |GeckoRuntime|Gecko.*(rror|xception)|$pkg" | head -200
