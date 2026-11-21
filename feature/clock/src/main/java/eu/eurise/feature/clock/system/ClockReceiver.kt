@@ -54,7 +54,7 @@ class ClockReceiver : BroadcastReceiver() {
                 Scheduler.rescheduleAll(context)
             }
             TIMER_PAUSE -> {
-                store.timer(id)?.let { store.saveTimer(if (it.running) it.pause(now) else it.start(now)) }
+                store.timer(id)?.let { val now = System.currentTimeMillis(); store.saveTimer(if (it.running) it.pause(now) else it.start(now)) }
                 Scheduler.rescheduleAll(context)
             }
             SNOOZE -> RingService.snooze(context)

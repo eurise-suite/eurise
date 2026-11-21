@@ -104,6 +104,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Il riquadro di Alfred nella tendina (tavola AlfAvvio): si spegne dalle disposizioni di Alfred. -->
+        <service
+            android:name=".alfred.AlfredTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_alfred_tile"
+            android:label="@string/alfred_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
         <!-- File, Scanner, Agenda, Calendario, Attività e Note con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
         <activity
             android:name=".SectionShortcutActivity"

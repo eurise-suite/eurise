@@ -135,3 +135,13 @@ class ActionsTest {
         assertTrue(p("portami a casa") is Command.Navigate)
     }
 }
+
+class AlfredLogTest {
+    @Test fun testoDaMandare() {
+        val e = listOf(
+            AlfredLog.Entry(2, "chiamo Marco", AlfredLog.Result.Done, "Chiamata · Marco Ferri"),
+            AlfredLog.Entry(1, "scrivi alla mamma che arrivo", AlfredLog.Result.Cancelled, "Messaggio · Mamma"),
+        )
+        assertEquals("«chiamo Marco» → fatta · Chiamata · Marco Ferri\n«scrivi alla mamma che arrivo» → annullata · Messaggio · Mamma", AlfredLog.text(e))
+    }
+}
