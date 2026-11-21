@@ -242,3 +242,6 @@ ricifrata con la chiave attuale, riletta e solo dopo tolta; oppure «Tienila a p
 - Il fornitore della Galleria non mescola mai due cartelle diverse (`secure-dal-backup-2`… se ne arriva un'altra) e mette
   nel backup anche le cartelle tenute a parte (`altre-protette/<cartella>/`), così non si perdono al prossimo cambio.
 - `SecureMoveTest`: chiave nuova, chiave sbagliata, file troncato, scrittura che si ferma (niente blocchi).
+- Consegnato con il giro **952** (Galleria e le altre; Mappe resta la 125). Sull'emulatore, in più: sul telefono nuovo c'è già
+  una cartella tua con un'altra frase, quella del backup va in `secure-dal-backup` con la sua intestazione e le due non si
+  mescolano: tutto bene. Le schermate (scheda, Apri, Sposta) si guardano sul telefono.
