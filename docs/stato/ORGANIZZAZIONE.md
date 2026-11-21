@@ -51,6 +51,27 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 22 novembre: tutte le tavole approvate; note vocali nel backup, microfono in Scrivania e Agenda, invitati dal +
+- **Il proprietario ha approvato tutte le tavole** ancora segnate «da approvare» in questo file (Note bloccate, Agenda,
+  Drive, Collaborazione, pagine e bolle della Scrivania, pagina d'agenda, ImpEurise). Controllo nel codice: hanno già il
+  codice tutte tranne **ImpEurise**, la **Rubrica** (RubElenco, RubNuovo, RubScheda: con Comunicazione) e le parti di
+  Collaborazione elencate nei prossimi passi.
+- **Audio delle note vocali nel backup cifrato** (`core/cloud/backup/BackupArchive.kt`, **area Sicurezza**): entra
+  `files/note-vocali/` (le registrazioni tenute nelle Note e quelle del cloud non ancora caricate), le più recenti fino a
+  60 MB perché il backup si prepara in memoria prima di cifrarlo; voce `note-vocali/<nome>.m4a`, nomi controllati; al
+  ripristino tornano accanto a quelle che ci sono già. Quelle in Registrazioni o nel cloud restano fuori (stanno già fuori
+  dal telefono o in una cartella pubblica).
+- **Microfono della nota vocale** anche nella **Scrivania** (bolla Promemoria: note, microfono, +; apre `new_voice_note`) e
+  nell'**Agenda** (barra AgeScrivi: con la barra vuota il tasto della nota diventa microfono).
+- **Nome nel saluto dell'Agenda**: c'era già (`user_name` dell'Accoglienza della Scrivania).
+- **Invitati dal + unico** (`core/links/QuickCaptureSheet.kt`): in un appuntamento le persone citate con «@» che hanno
+  un'email in rubrica compaiono come «Invita Marco»; si scelgono a una a una, già scelte se il + è stato aperto da
+  «Invita» (scheda persona, Agenda). L'invito lo manda il calendario sincronizzato (`CalendarRepository.invite`), come
+  nell'editor; un avviso breve lo dice.
+- **Da provare**: backup a richiesta e ripristino su un telefono pulito con una nota vocale «Solo nelle Note»; microfono
+  nella bolla Promemoria e nella barra dell'Agenda; dal + «Pranzo con @Marco domani alle 13» e «Invita Marco» con un
+  calendario di Murena.
+
 ## 21 novembre, sera tardi: chiusura col microfono corretta, Ciarly cangiante (giri 945 e 949)
 - **Errore del giro 934** (segnalato dal proprietario: toccando il microfono si chiudeva tutta Eurise): mentre si passava
   alla nota la barra in basso spariva (`LocalDockClearance` a 0) e il margine sotto il microfono diventava negativo
@@ -547,8 +568,10 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Approvate e in codice dal 17 novembre (pomeriggio)**: CollAssistente, InsAssistente (agenda con l'assistente).
 - **Approvate e in codice dal 17 novembre (sera e notte)**: ScrPagAggiungi, ScrPagGestisci, ScrPagNuova, ScrPagLibera (giro 760),
   ScrPagTrascina (giro 772).
+- **22 novembre: approvate tutte le tavole** di questo file. Codice ancora da scrivere: ImpEurise (con le altre aree),
+  la Rubrica (con Comunicazione), le parti di Collaborazione dei prossimi passi.
 - **Approvate e in codice dal 21 novembre (sera)**: NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata,
-  NoteVocaleDove (giro 934). **Approvata, codice da scrivere**: ImpEurise (con le altre aree).
+  NoteVocaleDove (giro 934).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
   codice con l'area Comunicazione); CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
   Comunicazione.
@@ -573,10 +596,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
    personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.
-5. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
-6. **Impostazioni Eurise** (ImpEurise, approvata): concordare con le altre aree navigazione e voci, poi il codice;
-   l'audio delle note vocali nel backup cifrato (con Sicurezza).
-7. Poi: simboli nuovi nei temi «Eurise» ed «Eurise a
+5. **Impostazioni Eurise** (ImpEurise, approvata): concordare con le altre aree navigazione e voci, poi il codice (anche
+   «Note › Dove salvo le registrazioni»).
+6. Poi: simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Pagine della Scrivania a piacere**: in codice nel giro 760, da provare (creare pagine, «Aggiungi alla Scrivania…»,
   ordine, Apri da qui, solo in una modalità, elimina) e il trascinamento tra pagine (ScrPagTrascina, giro 772).

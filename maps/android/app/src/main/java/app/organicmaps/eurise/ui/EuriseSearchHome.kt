@@ -319,7 +319,8 @@ private fun Home(night: Boolean, host: EuriseSearchHome.Host, contactPicker: Run
  * Casa e Lavoro: i luoghi salvati (preferiti di Mappe) che si chiamano «Casa», «Home», «Lavoro», «Ufficio» o «Work»,
  * al massimo uno per tipo. La suite non ha ancora i luoghi abituali in comune: finché non ci sono, valgono questi.
  */
-private fun habitualPlaces(context: Context): List<app.organicmaps.sdk.bookmarks.data.MapObject> {
+@JvmName("habitualPlaces")
+internal fun habitualPlaces(context: Context): List<app.organicmaps.sdk.bookmarks.data.MapObject> {
     val wanted = listOf(setOf("casa", "home"), setOf("lavoro", "ufficio", "work", "office"))
     val found = arrayOfNulls<app.organicmaps.sdk.bookmarks.data.MapObject>(wanted.size)
     runCatching {

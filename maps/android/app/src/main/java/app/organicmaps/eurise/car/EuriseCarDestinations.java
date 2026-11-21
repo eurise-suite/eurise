@@ -23,9 +23,11 @@ import app.organicmaps.R;
 import app.organicmaps.eurise.EuriseArrival;
 
 /**
- * «Dove devi andare» nella ricerca di Android Auto (tavola MapAutoCerca): gli impegni con un luogo dall'app Eurise
- * (DestinationsContract), in cima alla lista prima di Categorie e ricerche recenti. Si leggono fuori dal thread
- * principale; la schermata si ridisegna quando arrivano. Un tocco ricorda l'impegno (per «Manda l'arrivo») e cerca il luogo.
+ * «Dove devi andare» nella ricerca di Android Auto (tavola MapAutoCerca), nello stesso ordine del telefono (22 novembre):
+ * Sempre a portata (Casa e Lavoro dai preferiti, {@link #addHabitual}), ricerche recenti, Categorie («Cerca vicino»), poi
+ * gli impegni con un luogo dall'app Eurise (DestinationsContract, {@link #addRows}). Gli impegni si leggono fuori dal
+ * thread principale; la schermata si ridisegna quando arrivano. Un tocco su un impegno lo ricorda (per «Manda l'arrivo»)
+ * e cerca il luogo; su Casa o Lavoro cerca le sue coordinate.
  */
 public final class EuriseCarDestinations
 {
@@ -64,6 +66,8 @@ public final class EuriseCarDestinations
 
   @NonNull
   private static volatile List<Item> sItems = Collections.emptyList();
+  /** Quante righe di Sempre a portata sono state messe l'ultima volta (size() non ha il Context). */
+  private static volatile int sHabitualCount;
 
   private EuriseCarDestinations() {}
 
@@ -123,9 +127,36 @@ public final class EuriseCarDestinations
     }
   }
 
-  /** Quante righe aggiunge {@link #addRows} (per non superare il massimo di righe dell'auto). */
+  /** Quante righe aggiungono {@link #addHabitual} e {@link #addRows} (per non superare il massimo di righe dell'auto). */
   public static int size()
   {
-    return sItems.size();
+    return sItems.size() + sHabitualCount;
+  }
+
+  /** Sempre a portata: Casa e Lavoro (gli stessi preferiti del telefono); {@code search} ne cerca le coordinate. */
+  public static void addHabitual(@NonNull Context c, @NonNull ItemList.Builder list, @NonNull Consumer<String> search)
+  {
+    final List<app.organicmaps.sdk.bookmarks.data.MapObject> places = habitual(c);
+    sHabitualCount = places.size();
+    for (app.organicmaps.sdk.bookmarks.data.MapObject m : places)
+      list.addItem(new Row.Builder()
+                       .setTitle(m.getTitle())
+                       .addText(c.getString(R.string.eurise_go_always))
+                       .setOnClickListener(() -> search.accept(
+                           String.format(java.util.Locale.ROOT, "%.6f, %.6f", m.getLat(), m.getLon())))
+                       .build());
+  }
+
+  @NonNull
+  private static List<app.organicmaps.sdk.bookmarks.data.MapObject> habitual(@NonNull Context c)
+  {
+    try
+    {
+      return app.organicmaps.eurise.ui.EuriseSearchHomeKt.habitualPlaces(c);
+    }
+    catch (RuntimeException e)
+    {
+      return Collections.emptyList(); // preferiti non ancora caricati
+    }
   }
 }

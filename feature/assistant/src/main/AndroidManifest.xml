@@ -8,7 +8,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- La finestra AI di Alfred (tavola AlfFinestra): la web app dell'AI scelta, col proprio account. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- «Non disturbare fino alle 8»: l'accesso si chiede la prima volta (pagina di Android); senza, Alfred lo dice. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <application>
+        <!-- Fine di «Non disturbare fino alle…»: messaggio interno all'app, chiuso alle altre. -->
+        <receiver android:name=".QuietEndReceiver" android:exported="false" />
         <activity
             android:name=".online.AiWindowActivity"
             android:exported="false"
@@ -24,6 +28,9 @@
         <package android:name="eu.eurise.voice" />
         <package android:name="eu.eurise.voice.debug" />
         <package android:name="eu.eurise.maps" />
+        <!-- «Leggimi i messaggi», «rispondi che arrivo»: gli SMS da Eurise Messaggi, solo tra app della suite. -->
+        <package android:name="eu.eurise.messages" />
+        <package android:name="eu.eurise.messages.debug" />
         <package android:name="eu.eurise.ai" />
         <package android:name="eu.eurise.ai.debug" />
         <package android:name="com.whatsapp" />

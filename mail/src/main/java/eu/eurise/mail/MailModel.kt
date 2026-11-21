@@ -156,7 +156,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             var next = approvals
             todo.forEach { (r, s) ->
                 val a = account(s.accountId) ?: return@forEach
-                val text = withContext(Dispatchers.IO) { runCatching { MailClient(a).open(s.uid).text }.getOrNull() } ?: return@forEach
+                val text = withContext(Dispatchers.IO) { runCatching { MailClient(a).open(s.uid)?.text }.getOrNull() } ?: return@forEach
                 val v = MailApprovals.verdict(text)
                 next = next.map { if (it.id == r.id) it.copy(verdict = v?.first ?: it.verdict, note = v?.second ?: it.note, answerUid = s.uid) else it }
             }
