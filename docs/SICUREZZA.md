@@ -4,12 +4,17 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 
 ### Per ripartire (aggiornato il 21 novembre 2026)
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
-  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 925). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
+  `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **925** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
-  della suite, Mappe e motore di Office presi dai loro ultimi giri riusciti; prova delle porte sull'emulatore verde su
-  quel giro (22 controlli). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Ultimo giro pubblicato**: Compila **932** da `prova-sicurezza` (21 novembre, pomeriggio; comprende la Chat
+  unita da `brand`) con **Mappe 120** (variante prova, destinatari controllati), in `apk-prova`; prova delle porte
+  sull'emulatore verde su quel giro. Per Mappe si passa `-f mappe_run=<id>` (la scelta da sola guarda solo `prova-mappe`
+  e `brand`). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Da provare sul telefono (Mappe 120)**: con Mappe aggiornata sopra (nessuna disinstallazione), che parli ancora con
+  la suite: meteo sul percorso e «I tuoi giorni», «Dove devi andare» con gli impegni, «Condividi › Note» di un luogo,
+  Avvisa/arrivo per SMS da Messaggi, dettatura in Android Auto, voce di Alfred in guida, stato dei servizi nel centro
+  privacy. Se una di queste non risponde più, il controllo del destinatario ha detto no a un'app vera: dirlo subito.
 - **Da provare sul telefono (giro 925)**: Note bloccate (aprire, modificare, richiudere; bloccarne una nuova: ora chiede
   il dito); poi Backup › Cambia frase con il **codice di recupero** come frase attuale e la stessa frase come nuova:
   crea la coppia del backup e da lì la chiave delle note si lega all'impronta. Fino ad allora tutto resta come prima.
@@ -32,9 +37,9 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   5. ~~Verifica «strict» anche su `brand`~~ fatta il 21 novembre (sezione «Impronte delle librerie», «Dove blocca»).
      Resta «lenient» nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser): da fare con le loro aree.
   6. ~~Mappe per la versione ufficiale~~ codice fatto il 21 novembre (sezione «Porte d'ingresso», «Mappe»): variante
-     nel patch, `EuriseSuite`, controllo a ogni giro. Da chiudere: giro di Mappe verde su `prova-sicurezza`, prova sul
-     telefono (meteo sul percorso, «Dove devi andare», note di un luogo, Avvisa per SMS, dettatura in auto), e un giro
-     «ufficiale» a mano per vedere che compila e passa il controllo.
+     nel patch, `EuriseSuite`, controllo a ogni giro. Mappe 120 (prova) verde e pubblicato; Mappe 121 (ufficiale, a
+     mano) si adatta, passa il controllo e compila. Resta la prova sul telefono (sopra) e, con la versione ufficiale, la
+     firma del proprietario.
   7. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
@@ -143,6 +148,7 @@ un'app con il nome di un'app della suite non installata avrebbe ricevuto i dati,
   variante non si deduce dal nome. `EURISE_VARIANTE` (`prova` di base, `ufficiale`) decide permesso, `<queries>`,
   permesso sulla «Segnala in guida» esportata e `EuriseSuite.OFFICIAL`. Ogni APK conosce un solo permesso e un solo nome
   per app. `maps-engine.yml` ha la scelta «variante» (sui push sempre prova).
+  Provato il 21 novembre: Mappe 120 (prova) e Mappe 121 (ufficiale) passano il controllo e compilano.
 - **`EuriseSuite.java`** (in `maps/android/…/eurise`, come `SuiteAccess`): `call` verso un fornitore solo se il pacchetto
   che lo possiede ha il permesso di firma della suite (altrimenti null, come se l'app mancasse); `trusted` per le note
   («Luogo», «Mezzi»); SMS (`EuriseSms`), attività (`EuriseTrip`), dettatura in auto (`EuriseCarVoice`) e voce di Alfred
