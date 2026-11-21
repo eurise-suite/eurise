@@ -57,6 +57,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -165,6 +167,8 @@ import eu.eurise.gallery.data.expanded
 import eu.eurise.gallery.logic.neutralize
 import eu.eurise.gallery.data.GalleryStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -175,6 +179,49 @@ import kotlin.math.roundToInt
 
 /** Ingrandimento massimo con due dita nell'editor. */
 private const val MAX_ZOOM = 6f
+
+/** Lato lungo della copia su cui si lavora mentre si trascina: abbastanza per lo schermo, quattro volte meno pixel. */
+private const val PROXY_SIDE = 800
+/** Dopo quanto la mano ferma fa arrivare la copia grande. */
+private const val IDLE_MS = 220L
+
+private fun proxyOf(b: Bitmap): Bitmap {
+    val k = PROXY_SIDE.toFloat() / maxOf(b.width, b.height)
+    if (k >= 1f) return b
+    return Bitmap.createScaledBitmap(b, (b.width * k).roundToInt().coerceAtLeast(1), (b.height * k).roundToInt().coerceAtLeast(1), true)
+}
+
+/** Ciò che serve per calcolare l'anteprima: se due richieste sono uguali, non si rifà nulla. */
+private data class PreviewJob(
+    val small: Bitmap?, val full: Bitmap?, val cpu: Boolean, val masked: Boolean, val adjust: Adjust, val retouch: Retouch,
+    val toneMask: StepMask, val effects: List<Effect>, val seconds: Map<String, Plane>,
+    val crop: eu.eurise.gallery.logic.Crop?, val straighten: Float,
+) {
+    val needsWork: Boolean get() = cpu || adjust.needsPixels || !retouch.isEmpty
+}
+
+/**
+ * Ritocchi, regolazioni sui pixel, pennello per passo ed effetti su [base] (copia piccola o grande), come nella copia
+ * salvata. Senza effetti né pennello la matrice di luce e colore resta sulla GPU e qui non si applica.
+ */
+private fun renderPreview(base: Bitmap, j: PreviewJob): Bitmap {
+    val start = if (j.retouch.isEmpty) base else retouchBitmap(base.copy(Bitmap.Config.ARGB_8888, true), j.retouch)
+    if (!j.cpu && !j.adjust.needsPixels) return start
+    val w = start.width; val h = start.height
+    val px = IntArray(w * h).also { start.getPixels(it, 0, w, 0, 0, w, h) }
+    val a = j.adjust
+    if (j.cpu) {
+        val before = if (j.masked) px.copyOf() else null
+        develop(px, w, h, a, if (a.matrixNeutral) null else adjustMatrix(a))
+        if (before != null) blendMasked(px, before, w, h, 0, w, h, maskGrid(j.toneMask, w / h.toFloat(), 384))
+        if (j.effects.isNotEmpty()) {
+            val crop = j.crop ?: eu.eurise.gallery.logic.Crop()
+            val space = EffectSpace.of(w, h, crop, j.straighten, straightenScale(j.straighten, w.toFloat(), h.toFloat()))
+            applyEffects(px, w, h, j.effects, space, j.seconds)
+        }
+    } else develop(px, w, h, a)
+    return Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+}
 
 private enum class Tool(val label: Int) {
     Crop(R.string.editor_tool_crop),
@@ -244,8 +291,19 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     fun commit(next: EditState) { if (next != state) { remember_(); state = next } }
 
     val geo = remember(source, state.turns, state.flip) { source?.let { geometry(it, state.flip, state.turns) } }
-    // La prospettiva si applica subito dopo rotazione e specchio, come nella copia salvata.
-    val shown = remember(geo, state.perspective) { geo?.let { perspective(it, state.perspective) } }
+    // Copia piccola per i gesti: ciò che cambia mentre si trascina si calcola lì, subito; la copia grande arriva quando
+    // la mano si ferma. La prospettiva si applica subito dopo rotazione e specchio, come nella copia salvata.
+    val geoSmall = remember(geo) { geo?.let { proxyOf(it) } }
+    val shownSmall = remember(geoSmall, state.perspective) { geoSmall?.let { perspective(it, state.perspective) } }
+    val fullKey = geo to state.perspective
+    val shownFull by produceState<Pair<Any, Bitmap>?>(null, fullKey) {
+        val g = geo ?: return@produceState
+        val p = state.perspective
+        if (p.isIdentity) { value = fullKey to g; return@produceState }
+        delay(IDLE_MS)
+        value = fullKey to withContext(Dispatchers.Default) { perspective(g, p) }
+    }
+    val shown = shownFull?.takeIf { it.first == fullKey }?.second ?: shownSmall
     var cropSection by remember { mutableStateOf(CropSection.Crop) }
     var freeCorners by remember { mutableStateOf(false) }
     val editingPerspective = tool == Tool.Crop && cropSection == CropSection.Perspective
@@ -267,25 +325,32 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     // Con il pennello per passo o con gli effetti la matrice non può restare sulla GPU: tutto si calcola sulla copia.
     val masked = !toneMask.isEmpty && !adjust.isNeutral
     val cpuTone = masked || effects.isNotEmpty()
-    val toned by produceState<Bitmap?>(null, shown, if (cpuTone) adjust else pixelPart, retouch, toneMask, effects, seconds, if (effects.isEmpty()) null else state.crop, if (effects.isEmpty()) 0f else state.straighten) {
-        val base = shown ?: return@produceState
-        if (!cpuTone && !pixelPart.needsPixels && retouch.isEmpty) { value = null; return@produceState }
-        delay(70)
-        value = withContext(Dispatchers.Default) {
-            val start = if (retouch.isEmpty) base else retouchBitmap(base.copy(Bitmap.Config.ARGB_8888, true), retouch)
-            if (!cpuTone && !pixelPart.needsPixels) return@withContext start
-            val w = start.width; val h = start.height
-            val px = IntArray(w * h).also { start.getPixels(it, 0, w, 0, 0, w, h) }
-            if (cpuTone) {
-                val before = if (masked) px.copyOf() else null
-                develop(px, w, h, adjust, if (adjust.matrixNeutral) null else adjustMatrix(adjust))
-                if (before != null) blendMasked(px, before, w, h, 0, w, h, maskGrid(toneMask, w / h.toFloat(), 384))
-                if (effects.isNotEmpty()) {
-                    val space = EffectSpace.of(w, h, state.crop, state.straighten, straightenScale(state.straighten, w.toFloat(), h.toFloat()))
-                    applyEffects(px, w, h, effects, space, seconds)
-                }
-            } else develop(px, w, h, pixelPart)
-            Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+    // L'anteprima del lavoro sui pixel. Prima si calcolava sulla copia grande 70 ms dopo ogni movimento, e ogni calcolo
+    // partito non si fermava più: trascinando un cursore se ne accumulavano molti e la foto restava indietro. Ora un
+    // calcolo alla volta sulla copia piccola (in tempo reale), poi uno sulla copia grande quando la mano si ferma.
+    val job = PreviewJob(
+        small = shownSmall, full = shown?.takeIf { it !== shownSmall }, cpu = cpuTone, masked = masked,
+        adjust = if (cpuTone) adjust else pixelPart, retouch = retouch, toneMask = toneMask, effects = effects, seconds = seconds,
+        crop = if (effects.isEmpty()) null else state.crop, straighten = if (effects.isEmpty()) 0f else state.straighten,
+    )
+    val latestJob = rememberUpdatedState(job)
+    var toned by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(Unit) {
+        var bigRun: Job? = null
+        snapshotFlow { latestJob.value }.collectLatest { j ->
+            val small = j.small ?: return@collectLatest
+            if (!j.needsWork) { toned = null; return@collectLatest }
+            val quick = withContext(Dispatchers.Default) { renderPreview(small, j) }
+            if (latestJob.value == j) toned = quick
+            val big = j.full ?: return@collectLatest
+            delay(IDLE_MS)
+            bigRun?.join()
+            if (latestJob.value != j) return@collectLatest
+            // Fuori da collectLatest: un movimento nuovo non deve aspettare la fine del calcolo grande.
+            bigRun = scope.launch {
+                val sharp = withContext(Dispatchers.Default) { renderPreview(big, j) }
+                if (latestJob.value == j) toned = sharp
+            }
         }
     }
     var openEffect by remember { mutableStateOf<Long?>(null) }
@@ -297,7 +362,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     var maskAmount by remember { mutableFloatStateOf(1f) }
     var maskSize by remember { mutableFloatStateOf(0.07f) }
     var selFace by remember { mutableIntStateOf(-1) }
-    var facesChecked by remember(shown) { mutableStateOf(false) }
+    var facesChecked by remember(geo) { mutableStateOf(false) }
     var retouchSection by remember { mutableStateOf(RetouchSection.Selective) }
     var selPoint by remember { mutableStateOf<Long?>(null) }
     var brushKind by remember { mutableStateOf(BrushKind.Lighten) }
@@ -316,7 +381,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     }
     fun setRetouch(next: Retouch) { state = state.copy(retouch = next) }
     // Ritratto: i volti si cercano una volta, quando si apre la sezione; se non ce ne sono si toccano a mano.
-    LaunchedEffect(tool, retouchSection, shown) {
+    LaunchedEffect(tool, retouchSection, geo) {
         val b = shown ?: return@LaunchedEffect
         if (tool != Tool.Retouch || retouchSection != RetouchSection.Portrait || facesChecked || state.retouch.portrait.faces.isNotEmpty()) return@LaunchedEffect
         val found = withContext(Dispatchers.Default) { detectFaces(b) }
@@ -331,8 +396,8 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
         else { val e = newEffect(EffectKind.Double, nextId++, uri.toString()); commit(state.copy(effects = state.effects + e)); openEffect = e.id }
     }
     // Le miniature degli effetti, sulla copia piccola della foto, con le regolazioni di partenza.
-    val effectThumbs by produceState(emptyMap<EffectKind?, ImageBitmap>(), shown) {
-        val b = shown ?: return@produceState
+    val effectThumbs by produceState(emptyMap<EffectKind?, ImageBitmap>(), shownSmall) {
+        val b = shownSmall ?: return@produceState
         value = withContext(Dispatchers.Default) {
             val small = Bitmap.createScaledBitmap(b, 120, (120f * b.height / b.width).roundToInt().coerceAtLeast(1), true)
             val sw = small.width; val sh = small.height
@@ -376,7 +441,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
     var receiving by remember { mutableStateOf(false) }
     var managing by remember { mutableStateOf<SavedLook?>(null) }
     fun storeLooks(next: List<SavedLook>) { myLooks = next; scope.launch(Dispatchers.IO) { store.saveMyLooks(next) } }
-    val thumb = remember(shown) { shown?.let { Bitmap.createScaledBitmap(it, 160, (160f * it.height / it.width).roundToInt().coerceAtLeast(1), true).asImageBitmap() } }
+    val thumb = remember(shownSmall) { shownSmall?.let { Bitmap.createScaledBitmap(it, 160, (160f * it.height / it.width).roundToInt().coerceAtLeast(1), true).asImageBitmap() } }
 
     Column(Modifier.fillMaxSize().background(Ground).pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -453,11 +518,14 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
               transformOrigin = TransformOrigin(0f, 0f)
           }) {
             val bitmap = if (editingPerspective) geo else shown
-            if (bitmap != null && boxSize != IntSize.Zero) {
-                val margin = if (showExpand) state.expand.margin(bitmap.width, bitmap.height) else 0
-                val fit = min(boxSize.width.toFloat() / (bitmap.width + 2 * margin), boxSize.height.toFloat() / (bitmap.height + 2 * margin))
-                val w = bitmap.width * fit
-                val h = bitmap.height * fit
+            val frame = geo
+            if (bitmap != null && frame != null && boxSize != IntSize.Zero) {
+                // Misure dalla copia grande, anche quando si vede la piccola: la cornice non si sposta e i gesti in corso
+                // non ripartono (ripartivano a ogni cambio, così il ritaglio non si trascinava).
+                val margin = if (showExpand) state.expand.margin(frame.width, frame.height) else 0
+                val fit = min(boxSize.width.toFloat() / (frame.width + 2 * margin), boxSize.height.toFloat() / (frame.height + 2 * margin))
+                val w = frame.width * fit
+                val h = frame.height * fit
                 val left = (boxSize.width - w) / 2
                 val top = (boxSize.height - h) / 2
                 val plain = remember(bitmap) { bitmap.asImageBitmap() }
@@ -487,8 +555,8 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                         ?.takeIf { (fromPhoto(fs[it].x, fs[it].y) - p).getDistance() < maxOf(touch * 1.6f, fs[it].eyes * shortPx * 1.2f) } ?: -1
                 }
                 if (margin > 0 && !original) {
-                    val mw = (bitmap.width + 2 * margin) * fit
-                    val mh = (bitmap.height + 2 * margin) * fit
+                    val mw = (frame.width + 2 * margin) * fit
+                    val mh = (frame.height + 2 * margin) * fit
                     val bgMod = Modifier.offset { IntOffset((left - margin * fit).toInt(), (top - margin * fit).toInt()) }
                         .size(with(density) { mw.toDp() }, with(density) { mh.toDp() })
                     when (state.expand.fill) {
@@ -552,7 +620,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                                 onDoubleTap = { p -> nearestText(p)?.let { id -> writing = state.texts.first { it.id == id } } },
                             )
                         }
-                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection, retouchSection, brushKind, brushSize, brushStrength, state.straighten, maskEditing, maskAmount, maskSize, openEffect, maskEffect, state.crop) {
+                        .pointerInput(tool, w, h, ratio, nib, section, channel, pickingWhite, cropSection, retouchSection, brushKind, brushSize, brushStrength, state.straighten, maskEditing, maskAmount, maskSize, openEffect, maskEffect) {
                             if (maskEditing) {
                                 // Pennello per passo: si dipinge dove valgono Regola, Curve e Filtro.
                                 detectDragGestures(
@@ -575,11 +643,13 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                             val centered = state.effects.firstOrNull { it.id == openEffect }?.takeIf { tool == Tool.Effects && it.kind.centered }
                             if (centered != null) {
                                 // Sfocatura e Vignettatura: il centro si trascina sulla foto, in quote del riquadro finale.
-                                val cw = state.crop.right - state.crop.left; val ch = state.crop.bottom - state.crop.top
+                                // Il ritaglio si legge a ogni movimento: tra le chiavi del gesto lo faceva ripartire a
+                                // ogni passo, e il riquadro del ritaglio non si trascinava più.
                                 detectDragGestures(
                                     onDragStart = { remember_() },
                                     onDrag = { change, _ ->
                                         change.consume()
+                                        val cw = state.crop.right - state.crop.left; val ch = state.crop.bottom - state.crop.top
                                         val u = (((change.position.x - left) / w - state.crop.left) / cw).coerceIn(0f, 1f)
                                         val v = (((change.position.y - top) / h - state.crop.top) / ch).coerceIn(0f, 1f)
                                         state = state.copy(effects = state.effects.map { if (it.id == centered.id) it.copy(x = u, y = v) else it })
@@ -946,7 +1016,7 @@ internal fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -
                     ChipRow {
                         RoundChip(EuriseIcons.rotate(), stringResource(R.string.editor_rotate)) { ratio = null; commit(state.rotated()) }
                         RoundChip(EuriseIcons.flip(), stringResource(R.string.editor_flip)) { ratio = null; commit(state.flipped()) }
-                        val aspect = shown?.let { it.width.toFloat() / it.height } ?: 1f
+                        val aspect = geo?.let { it.width.toFloat() / it.height } ?: 1f
                         Chip(stringResource(R.string.editor_free), ratio == null) { ratio = null }
                         Chip(stringResource(R.string.editor_original), ratio == aspect) { ratio = aspect; commit(state.copy(crop = ratioCrop(1f))) }
                         listOf("1:1" to 1f, "4:3" to 4f / 3f, "3:2" to 3f / 2f, "16:9" to 16f / 9f, "3:4" to 3f / 4f, "9:16" to 9f / 16f).forEach { (name, r) ->
@@ -1650,19 +1720,23 @@ private enum class AdjustSection(val label: Int) {
 @Composable
 private fun ZeroSlider(label: String, value: Float, onStart: () -> Unit, from: Float = -1f, onChange: (Float) -> Unit) {
     val latest by androidx.compose.runtime.rememberUpdatedState(value)
+    // I gesti restano gli stessi tra un disegno e l'altro: chiamano sempre le funzioni di adesso. Prima chiamavano quelle
+    // del primo disegno, che partivano dai valori di allora: muovere un cursore rimetteva com'erano gli altri.
+    val change by androidx.compose.runtime.rememberUpdatedState(onChange)
+    val start by androidx.compose.runtime.rememberUpdatedState(onStart)
     val shown = if (from < 0) (value * 100).roundToInt().let { if (it > 0) "+$it" else if (it < 0) "−${-it}" else "0" } else "${(value * 100).roundToInt()}"
     Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(label, color = Text1, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(86.dp), maxLines = 1)
         Canvas(
             Modifier.weight(1f).height(36.dp).semantics { contentDescription = "$label $shown" }
                 .pointerInput(from) {
-                    detectTapGestures(onDoubleTap = { onStart(); onChange(if (from < 0) 0f else latest) })
+                    detectTapGestures(onDoubleTap = { start(); change(if (from < 0) 0f else latest) })
                 }
                 .pointerInput(from) {
-                    detectHorizontalDragGestures(onDragStart = { onStart() }) { change, _ ->
-                        change.consume()
-                        val f = (change.position.x / size.width).coerceIn(0f, 1f)
-                        onChange(from + f * (1f - from))
+                    detectHorizontalDragGestures(onDragStart = { start() }) { pointer, _ ->
+                        pointer.consume()
+                        val f = (pointer.position.x / size.width).coerceIn(0f, 1f)
+                        change(from + f * (1f - from))
                     }
                 },
         ) {
@@ -1684,6 +1758,7 @@ private fun ZeroSlider(label: String, value: Float, onStart: () -> Unit, from: F
 private fun Dial(degrees: Float, onChange: (Float) -> Unit) {
     val label = stringResource(R.string.editor_straighten)
     val current by androidx.compose.runtime.rememberUpdatedState(degrees)
+    val change by androidx.compose.runtime.rememberUpdatedState(onChange)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             if (degrees == 0f) "0°" else "%s%.1f°".format(if (degrees < 0) "−" else "+", abs(degrees)).replace('.', ','),
@@ -1691,11 +1766,11 @@ private fun Dial(degrees: Float, onChange: (Float) -> Unit) {
         )
         Canvas(
             Modifier.fillMaxWidth().height(28.dp).semantics { contentDescription = label }
-                .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onChange(0f) }) }
+                .pointerInput(Unit) { detectTapGestures(onDoubleTap = { change(0f) }) }
                 .pointerInput(Unit) {
-                    detectHorizontalDragGestures { change, amount ->
-                        change.consume()
-                        onChange(((current - amount / size.width * 30f) * 10).roundToInt().div(10f).coerceIn(-30f, 30f))
+                    detectHorizontalDragGestures { pointer, amount ->
+                        pointer.consume()
+                        change(((current - amount / size.width * 30f) * 10).roundToInt().div(10f).coerceIn(-30f, 30f))
                     }
                 },
         ) {

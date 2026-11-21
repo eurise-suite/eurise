@@ -618,7 +618,9 @@ fun expanded(source: Bitmap, e: Expand): Bitmap {
 /** Decodifica ridotta per l'anteprima dell'editor. */
 fun editorPreview(context: Context, item: MediaItem, maxSide: Int = 1600): Bitmap =
     ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, Uri.parse(item.uri))) { decoder, info, _ ->
-        decoder.setTargetSampleSize(max(1, max(info.size.width, info.size.height) / maxSide))
+        // Grandezza esatta, non solo divisa per 2: una foto da 4000 px diventava 2000 e l'anteprima lavorava il 50 % in più.
+        val k = maxSide.toFloat() / max(info.size.width, info.size.height)
+        if (k < 1f) decoder.setTargetSize(max(1, (info.size.width * k).toInt()), max(1, (info.size.height * k).toInt()))
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
     }
 
