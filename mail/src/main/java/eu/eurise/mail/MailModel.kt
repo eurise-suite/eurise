@@ -90,6 +90,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             }
             messages.clear()
             messages.addAll(all.sortedByDescending { it.date })
+            refreshBalls()
             refreshing = false
             studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
@@ -97,6 +98,29 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun account(id: String) = accounts.firstOrNull { it.id == id }
+
+    // --- Passa la palla (tavola InsPalla) ---
+
+    private val ballPrefs get() = context.getSharedPreferences("mail_balls", Context.MODE_PRIVATE)
+    /** Le palle passate per email, sul telefono; fatte quando il collega risponde sullo stesso oggetto. */
+    var balls by mutableStateOf(MailBalls.decode(ballPrefs.getString("list", null)))
+        private set
+
+    private fun saveBalls(list: List<MailBalls.Ball>) { balls = list; ballPrefs.edit().putString("list", MailBalls.encode(list)).apply() }
+
+    fun refreshBalls() { val next = MailBalls.update(balls, messages); if (next != balls) saveBalls(next) }
+
+    /** Inoltra l'email aperta a [to] con la riga sul da farsi in cima, e la segna tra le palle passate. */
+    fun passBall(o: Opened, to: String, task: String, copyMe: String?, header: String, done: (Boolean) -> Unit) {
+        val from = account(o.summary.accountId) ?: accounts.firstOrNull() ?: return done(false)
+        val subject = MailText.forwardSubject(o.summary.subject)
+        send(from, to.trim(), "", subject, MailBalls.body(task, copyMe, header, o.text), null, emptyList()) { ok ->
+            if (ok) saveBalls(balls + MailBalls.Ball("m" + System.nanoTime(), to.trim(), o.summary.subject, task.trim(), System.currentTimeMillis()))
+            done(ok)
+        }
+    }
+
+    fun retakeBall(id: String) = saveBalls(balls.map { if (it.id == id) it.copy(taken = true) else it })
 
     fun open(s: Summary) {
         val a = account(s.accountId) ?: return

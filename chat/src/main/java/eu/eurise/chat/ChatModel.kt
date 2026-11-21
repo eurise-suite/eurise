@@ -210,6 +210,85 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         scope.launch(Dispatchers.IO) { rooms.forEach { id -> runCatching { c.setState(id, Orari.TYPE, content, me) } } }
     }
 
+    // --- Passa la palla (tavole InsPalla e InsPallaChat) ---
+
+    private val ballPrefs get() = context.getSharedPreferences("chat_balls", Context.MODE_PRIVATE)
+    /** Le palle passate da questo account (sul telefono). */
+    var balls by mutableStateOf(Palla.decode(ballPrefs.getString("list", null)).filter { it.account == account.name })
+        private set
+
+    private fun saveBalls(mine: List<Palla.Ball>) {
+        val others = Palla.decode(ballPrefs.getString("list", null)).filter { it.account != account.name }
+        ballPrefs.edit().putString("list", Palla.encode(others + mine)).apply()
+        balls = mine
+    }
+
+    /** Le persone a cui passarla: chi ha una chat a due con te in questo account. */
+    fun colleagues(): List<Pair<String, String>> = rooms.filter { it.direct && !it.invite && it.id != selfRoom }
+        .mapNotNull { r -> peerOf(r.id)?.let { r.id to it } }
+
+    /**
+     * Passa la palla: nella chat a due con [toUser] la scheda con il messaggio citato, la riga e la scadenza; se [notify], nella
+     * chat di partenza una risposta «Se ne occupa Marta».
+     */
+    fun passBall(fromRoom: String, e: Event, toRoom: String, toUser: String, task: String, due: java.time.LocalDateTime?, notify: Boolean, failed: () -> Unit) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val id = "b" + System.nanoTime()
+        val name = nameOf(toUser)
+        val dueLabel = due?.let { Programma.time(it.toLocalTime()).let { t ->
+            when (Programma.day(it, java.time.LocalDateTime.now())) {
+                Programma.Day.Today -> context.getString(R.string.pr_today, t)
+                Programma.Day.Tomorrow -> context.getString(R.string.pr_tomorrow, t)
+                else -> context.getString(R.string.pr_date, Programma.shortDate(it.toLocalDate()), t)
+            } } }
+        val content = Palla.content(id, nameOf(me), shownTextOf(e), task, dueLabel, context.getString(R.string.pa_fallback, nameOf(me)))
+        val encrypted = data[toRoom]?.encrypted == true
+        scope.launch {
+            val ev = withContext(Dispatchers.IO) {
+                runCatching { ProgrammaStore.sendNow(c, if (encrypted) cryptoFor(c.session) else null, toRoom, content, encrypted) }.getOrNull()
+            }
+            if (ev == null) { failed(); return@launch }
+            saveBalls(balls + Palla.Ball(id, account.name, toRoom, toUser, name, shownTextOf(e).take(200), task, due?.let { Programma.toMs(it) } ?: 0L,
+                System.currentTimeMillis(), ev))
+            if (notify && fromRoom != toRoom) reply(fromRoom, e.id, context.getString(R.string.pa_notice, name)) {}
+        }
+    }
+
+    private fun shownTextOf(e: Event) = relations.edited(e.id, e.sender) ?: e.text
+
+    /** Chi ha preso la palla risponde: In corso, Fatto. */
+    fun answerBall(roomId: String, e: Event, id: String, state: Palla.State, failed: () -> Unit) {
+        val body = context.getString(if (state == Palla.State.Done) R.string.pa_done_body else R.string.pa_working_body)
+        sendContent(roomId, Palla.statusContent(e.id, id, state, body), Event.Kind.Notice, failed)
+    }
+
+    /** «Riprendi»: la palla torna a te (lo si dice anche all'altro). */
+    fun retakeBall(id: String) {
+        val b = balls.firstOrNull { it.id == id } ?: return
+        saveBalls(balls.map { if (it.id == id) it.copy(state = Palla.State.Taken, stateAt = System.currentTimeMillis()) else it })
+        if (b.eventId.isNotEmpty()) sendContent(b.toRoom, Palla.statusContent(b.eventId, id, Palla.State.Taken, context.getString(R.string.pa_taken_body)), Event.Kind.Notice, {})
+    }
+
+    fun forgetBall(id: String) = saveBalls(balls.filterNot { it.id == id })
+
+    /** Lo stato più recente di ogni palla dalle risposte arrivate nelle chat a due. */
+    private fun refreshBalls() {
+        if (balls.isEmpty()) return
+        val updates = HashMap<String, Pair<Palla.State, Long>>()
+        balls.map { it.toRoom }.distinct().forEach { room ->
+            timelines[room].orEmpty().forEach { e ->
+                Palla.status(e.data?.let { runCatching { JSONObject(it) }.getOrNull() })?.let { (id, st) ->
+                    val b = balls.firstOrNull { it.id == id } ?: return@let
+                    if (e.sender == b.toUser && (updates[id]?.second ?: 0L) <= e.time) updates[id] = st to e.time
+                }
+            }
+        }
+        if (updates.isEmpty()) return
+        val next = Palla.update(balls, updates)
+        if (next != balls) saveBalls(next)
+    }
+
     // --- Gruppi a tempo (tavola ChatGruppoTempo) ---
 
     fun timebox(roomId: String): Tempo.Box? = Tempo.decode(data[roomId]?.state?.get(Tempo.TYPE))
@@ -458,6 +537,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                         runCatching { ProgrammaStore.work(context, account, c, cr) }
                     }
                     refreshPlans()
+                    refreshBalls()
                     if (shareHours) publishHours(all = false)
                 }
                 delay(30_000)
@@ -544,6 +624,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         simple = Semplice.decode(simplePrefs.getString("simple_" + a.name, null))
         shareHours = simplePrefs.getBoolean("hours_" + a.name, false)
         keptOpen = simplePrefs.getStringSet("keep_" + a.name, emptySet()).orEmpty()
+        balls = Palla.decode(ballPrefs.getString("list", null)).filter { it.account == a.name }
         store = SessionStore(context, a)
         session = store.load()
         keptInSuite = store.keptInSuite

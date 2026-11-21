@@ -268,6 +268,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
     var roomFolders by remember { mutableStateOf<Room?>(null) }
     var simpleSetup by remember { mutableStateOf(false) }
+    var ballsSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -332,12 +333,16 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     }
     if (creating) NewChatSheet(model, actions, onClose = { creating = false })
     if (simpleSetup) SimpleSetupSheet(model) { simpleSetup = false }
+    if (ballsSheet) BallsSheet(model) { ballsSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
     roomFolders?.let { r -> RoomFoldersSheet(model, r, onNew = { roomFolders = null; editFolder = null to setOf(r.id) }) { roomFolders = null } }
     if (account) Sheet({ account = false }) {
         AccountsPanel(model) { account = false }
         Pill(stringResource(R.string.sm_menu), EuriseIcons.heart(2f), Modifier.fillMaxWidth(), strong = false) { account = false; simpleSetup = true }
+        Pill(stringResource(R.string.pa_list) + if (model.balls.isNotEmpty()) " · ${model.balls.size}" else "", EuriseIcons.ball(2f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; ballsSheet = true
+        }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.inv_menu), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.uni.openInviteList(true) }
@@ -576,6 +581,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var pollSheet by remember(roomId) { mutableStateOf(false) }
     var moreSheet by remember(roomId) { mutableStateOf(false) }
     var timeboxSheet by remember(roomId) { mutableStateOf(false) }
+    var ballFor by remember(roomId) { mutableStateOf<Event?>(null) }
     var liveSheet by remember(roomId) { mutableStateOf(false) }
     var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
     var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
@@ -688,6 +694,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         AudioBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
                         threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
+                    }
+                    // Passa la palla (tavola InsPallaChat).
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(Palla.BALL) == true) Column {
+                        BallBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
                     }
                     // Presa visione (tavola ChatPresaVisione).
                     else if (e.kind == Event.Kind.Text && e.data?.contains(Ack.ACK) == true) Column {
@@ -828,6 +839,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             onReply = { replyTo = e; editing = null },
             onEdit = { editing = e; replyTo = null; draft = shownText(model, e) },
             onForward = { forwarding = e; menuFor = null },
+            onBall = { ballFor = e; menuFor = null },
             onClose = { menuFor = null; model.basiHintDone() })
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
@@ -836,6 +848,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }) { moreSheet = false }
     if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }
     if (timeboxSheet) TimeboxSheet(model, actions, roomId) { timeboxSheet = false }
+    ballFor?.let { e -> PassBallSheet(model, actions, roomId, e) { ballFor = null } }
     laterSheet?.let { text -> SendLaterSheet(model, actions, roomId, text, onSent = { draft = ""; replyTo = null }) { laterSheet = null } }
     plannedMenu?.let { p -> PlannedMenu(model, actions, p, onEdit = { draft = it }) { plannedMenu = null } }
 }

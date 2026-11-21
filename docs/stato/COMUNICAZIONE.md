@@ -41,6 +41,15 @@ computer (area Computer, tavola PcEmail).
   elenco dei dispositivi con «Esci».
 - **Suonerie per persona e per app** (approvate e in codice il 14 novembre, nella Scrivania › Griglia e icone › Suoni):
   suoneria del contatto (`CUSTOM_RINGTONE`), suono al posto di WhatsApp/Telegram tramite l'ascolto delle notifiche.
+- **Passa la palla in Chat ed Email** (21 novembre, giro 976; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
+  menu di un messaggio: a chi (i membri della stanza o le persone con cui scrivi), la riga sul da farsi, una scadenza;
+  parte come messaggio con il campo `eu.eurise.ball` (Element vede il testo «🏐 Palla a …»), lo stato passa
+  Passata → Vista (ricevuta di lettura) → Ci lavoro → Fatta con risposte `eu.eurise.ball.status` (m.reference); chi la
+  riceve ha i tasti «Ci lavoro», «Fatta»; dopo un giorno senza movimento chi l'ha passata vede «Ferma da ieri» con
+  Riprendi. Elenco «Le palle che hai passato» nel pannello dell'account (`Palla.kt`, `PallaUi.kt`, con test). Email:
+  «Passa la palla» tra i tasti dell'email aperta: inoltro al collega con la riga in cima e, se si vuole, «mettimi in copia
+  quando rispondi»; fatta quando dal collega arriva un'email sullo stesso oggetto; elenco sotto la posta (`MailBalls.kt`,
+  `MailBallsUi.kt`, con test). Prove: palla da Ciarly a Element e da Ciarly a Ciarly (stati), email passata e risposta.
 - **Spese di gruppo in Chat** (17 novembre, giro 713; tavole SpeGruppo, SpeAggiungi, SpeSaldi): nei gruppi la scheda
   Spese (totale, la tua parte, chi ha speso e saldo, ultime spese), «Nuova spesa» (chi ha pagato; uguale, quote, importi, %),
   «Chi deve a chi» con i pagamenti minimi, Ricorda, Pagato. Ogni spesa/pagamento è un messaggio cifrato della stanza
@@ -563,7 +572,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    poi appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
-   Codice nell'ordine: Spese di gruppo, Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
+   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla~~ (giro 976, vedi «Fatto»), Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
    poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
