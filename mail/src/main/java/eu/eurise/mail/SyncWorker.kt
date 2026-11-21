@@ -32,6 +32,10 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         var lastFrom = ""
         var lastSubject = ""
         val studio by lazy { eu.eurise.core.studio.StudioContract.known(ctx) }
+        // Fuori orario (tavola SpaFuoriOrario): le caselle di lavoro aspettano, tranne chi passa lo stesso.
+        val off = rules(ctx)
+        val quiet = MailOffHours.quiet(off, java.time.LocalDateTime.now())
+        var waiting = 0
         for (a in accounts) {
             val client = MailClient(a)
             val known = lastKnown(ctx, a.id)
@@ -42,13 +46,16 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             // Studio medico: le email dei pazienti entrano in coda anche ad app chiusa.
             if (fresh.isNotEmpty()) offerToStudio(ctx, studio, fresh)
             if (known > 0) {
-                val people = fresh.filter { it.kind == Kind.People }
+                val all = fresh.filter { it.kind == Kind.People }
+                val people = if (quiet && a.id in off.work) all.filter { MailOffHours.passes(off, it.fromAddress, it.subject) } else all
+                waiting += all.size - people.size
                 newOnes += people.size
                 people.maxByOrNull { it.date }?.let { lastFrom = it.fromName; lastSubject = it.subject }
             }
             remember(ctx, a.id, top)
         }
         if (newOnes > 0) notify(ctx, newOnes, lastFrom, lastSubject)
+        if (waiting > 0) { prefs(ctx).edit().putInt("waiting", prefs(ctx).getInt("waiting", 0) + waiting).apply(); MorningWorker.schedule(ctx) }
         return Result.success()
     }
 
@@ -65,7 +72,10 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         fun cancel(context: Context) = WorkManager.getInstance(context).cancelUniqueWork(WORK)
 
-        private fun prefs(context: Context) = context.getSharedPreferences("mail_sync", Context.MODE_PRIVATE)
+        internal fun prefs(context: Context) = context.getSharedPreferences("mail_sync", Context.MODE_PRIVATE)
+
+        fun rules(context: Context) = MailOffHours.decode(prefs(context).getString("off_hours", null))
+        fun setRules(context: Context, r: MailOffHours.Rules) = prefs(context).edit().putString("off_hours", MailOffHours.encode(r)).apply()
 
         fun lastKnown(context: Context, id: String) = prefs(context).getLong(id, 0L)
 
@@ -93,6 +103,36 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 .setAutoCancel(true)
                 .build()
             runCatching { NotificationManagerCompat.from(context).notify(7, n) }
+        }
+    }
+}
+
+/** Il riepilogo del mattino della posta di lavoro: «Ti aspettano 3 email di lavoro». */
+class MorningWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        val ctx = applicationContext
+        val p = SyncWorker.prefs(ctx)
+        val n = p.getInt("waiting", 0)
+        p.edit().putInt("waiting", 0).apply()
+        if (n <= 0) return Result.success()
+        if (Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return Result.success()
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(NotificationChannel("mattino", ctx.getString(R.string.ml_off_channel), NotificationManager.IMPORTANCE_DEFAULT))
+        val open = PendingIntent.getActivity(ctx, 1, Intent(ctx, MailActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val note = NotificationCompat.Builder(ctx, "mattino").setSmallIcon(R.drawable.ic_stat_mail)
+            .setContentTitle(ctx.getString(R.string.ml_off_morning, n)).setContentIntent(open).setAutoCancel(true).build()
+        runCatching { NotificationManagerCompat.from(ctx).notify(8, note) }
+        return Result.success()
+    }
+
+    companion object {
+        fun schedule(context: Context) {
+            val now = java.time.LocalDateTime.now()
+            val at = MailOffHours.nextStart(SyncWorker.rules(context), now) ?: return
+            val delay = java.time.Duration.between(now, at).toMillis().coerceAtLeast(0)
+            WorkManager.getInstance(context).enqueueUniqueWork("eurise-mail-mattino", androidx.work.ExistingWorkPolicy.KEEP,
+                androidx.work.OneTimeWorkRequestBuilder<MorningWorker>().setInitialDelay(delay, TimeUnit.MILLISECONDS).build())
         }
     }
 }

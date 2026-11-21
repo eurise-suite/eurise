@@ -204,7 +204,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     private fun publishHours(all: Boolean) {
         val c = client ?: return
         val me = session?.userId ?: return
-        val content = if (shareHours) Orari.encode(Orari.work()) else JSONObject()
+        val content = if (shareHours) Orari.encode(offRules.hours) else JSONObject()
         val rooms = data.values.filter { it.direct && !it.invite && (all || (shareHours && !it.state.containsKey(Orari.TYPE + "|" + me))) }.map { it.id }
         if (rooms.isEmpty()) return
         scope.launch(Dispatchers.IO) { rooms.forEach { id -> runCatching { c.setState(id, Orari.TYPE, content, me) } } }
@@ -287,6 +287,146 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         if (updates.isEmpty()) return
         val next = Palla.update(balls, updates)
         if (next != balls) saveBalls(next)
+    }
+
+    // --- Approvazioni (tavola LavApprova) ---
+
+    private val approvalPrefs get() = context.getSharedPreferences("chat_approvals", Context.MODE_PRIVATE)
+    /** Le richieste di approvazione mandate da questo account (sul telefono). */
+    var approvals by mutableStateOf(Approva.decode(approvalPrefs.getString("list", null)).filter { it.account == account.name })
+        private set
+
+    private fun saveApprovals(mine: List<Approva.Request>) {
+        val others = Approva.decode(approvalPrefs.getString("list", null)).filter { it.account != account.name }
+        approvalPrefs.edit().putString("list", Approva.encode(others + mine)).apply()
+        approvals = mine
+    }
+
+    /** Manda nella stanza la richiesta: titolo, importo, file citato (dal messaggio da cui parte, se è un file). */
+    fun askApproval(roomId: String, title: String, amount: String, file: String, note: String, failed: () -> Unit) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val id = "a" + System.nanoTime()
+        val content = Approva.content(id, nameOf(me), title, amount, file, note, context.getString(R.string.ap_fallback))
+        val encrypted = data[roomId]?.encrypted == true
+        scope.launch {
+            val ev = withContext(Dispatchers.IO) {
+                runCatching { ProgrammaStore.sendNow(c, if (encrypted) cryptoFor(c.session) else null, roomId, content, encrypted) }.getOrNull()
+            }
+            if (ev == null) { failed(); return@launch }
+            val name = rooms.firstOrNull { it.id == roomId }?.name.orEmpty()
+            saveApprovals(approvals + Approva.Request(id, account.name, roomId, name, title.trim(), amount.trim(), System.currentTimeMillis(), ev))
+        }
+    }
+
+    /** Approva, Chiedi modifica, Rifiuta: la risposta si riferisce alla richiesta. */
+    fun answerApproval(roomId: String, e: Event, id: String, verdict: Approva.Verdict, note: String, failed: () -> Unit) {
+        val body = context.getString(when (verdict) {
+            Approva.Verdict.Approved -> R.string.ap_body_ok
+            Approva.Verdict.Change -> R.string.ap_body_change
+            Approva.Verdict.Rejected -> R.string.ap_body_no
+        })
+        sendContent(roomId, Approva.answerContent(e.id, id, verdict, note, body), Event.Kind.Text, failed)
+    }
+
+    /** «Sollecita»: una risposta gentile alla richiesta. */
+    fun remindApproval(id: String, failed: () -> Unit) {
+        val r = approvals.firstOrNull { it.id == id } ?: return
+        if (r.eventId.isEmpty()) return
+        reply(r.room, r.eventId, context.getString(R.string.ap_remind_body, r.title), failed)
+        saveApprovals(approvals.map { if (it.id == id) it.copy(sentAt = System.currentTimeMillis()) else it })
+    }
+
+    fun forgetApproval(id: String) = saveApprovals(approvals.filterNot { it.id == id })
+
+    /** L'ultimo verdetto di ogni richiesta, dalle risposte arrivate (di chiunque altro nella stanza). */
+    private fun refreshApprovals() {
+        if (approvals.isEmpty()) return
+        val me = session?.userId
+        val answers = HashMap<String, Approva.Answer>()
+        approvals.map { it.room }.distinct().forEach { room ->
+            timelines[room].orEmpty().forEach { e ->
+                if (e.sender == me) return@forEach
+                Approva.answer(e.data?.let { runCatching { JSONObject(it) }.getOrNull() })?.let { (id, v, note) ->
+                    if ((answers[id]?.at ?: 0L) <= e.time) answers[id] = Approva.Answer(v, e.sender, note, e.time)
+                }
+            }
+        }
+        if (answers.isEmpty()) return
+        val next = Approva.update(approvals, answers)
+        if (next != approvals) saveApprovals(next)
+    }
+
+    // --- Faccende a turno (tavola FamFaccende) ---
+
+    fun chores(roomId: String): List<Faccende.Chore> = Faccende.decode(data[roomId]?.state?.get(Faccende.TYPE))
+
+    private fun saveChores(roomId: String, list: List<Faccende.Chore>, failed: () -> Unit) {
+        val c = client ?: return
+        val content = Faccende.encode(list)
+        val s = data[roomId]
+        val before = s?.state?.get(Faccende.TYPE)
+        s?.state?.set(Faccende.TYPE, content)
+        relationsTick++
+        saveChoresSnapshot()
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Faccende.TYPE, content) }.isSuccess }
+            if (!ok) { if (before != null) s?.state?.set(Faccende.TYPE, before) else s?.state?.remove(Faccende.TYPE); relationsTick++; failed() }
+        }
+    }
+
+    fun addChore(roomId: String, title: String, days: Set<Int>, every: Int, time: String, people: List<String>, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val chore = Faccende.Chore("f" + System.nanoTime(), title.trim(), days, every, java.time.LocalDate.now().toEpochDay(), time, people, by = me)
+        saveChores(roomId, chores(roomId) + chore, failed)
+    }
+
+    fun removeChore(roomId: String, id: String, failed: () -> Unit) = saveChores(roomId, chores(roomId).filterNot { it.id == id }, failed)
+
+    /** «Fatto»: il turno passa al prossimo; nella chat una riga breve per chi segue. */
+    fun choreDone(roomId: String, id: String, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val list = chores(roomId)
+        val c = list.firstOrNull { it.id == id } ?: return
+        val next = Faccende.done(c, me, System.currentTimeMillis())
+        saveChores(roomId, list.map { if (it.id == id) next else it }, failed)
+        Faccende.whose(next)?.let { who -> sendContent(roomId, JSONObject().put("msgtype", "m.notice")
+            .put("body", context.getString(R.string.fa_done_notice, c.title, nameOf(who).substringBefore(' '))), Event.Kind.Notice, {}) }
+    }
+
+    /** Scambio: «Mi fai tu la spazzatura oggi?» a chi viene dopo; chi accetta tocca «Faccio io» (segna fatta al posto tuo). */
+    fun askChoreSwap(roomId: String, id: String, failed: () -> Unit) {
+        val c = chores(roomId).firstOrNull { it.id == id } ?: return
+        val other = Faccende.next(c) ?: return
+        send(roomId, context.getString(R.string.fa_swap_body, nameOf(other).substringBefore(' '), c.title.lowercase()), failed)
+    }
+
+    /** La copia sul telefono per i promemoria ad app chiusa. */
+    private fun saveChoresSnapshot() {
+        val me = session?.userId ?: return
+        val rooms = data.values.mapNotNull { r -> Faccende.decode(r.state[Faccende.TYPE]).takeIf { it.isNotEmpty() }?.let { r.id to ((rooms.firstOrNull { x -> x.id == r.id }?.name ?: "") to it) } }.toMap()
+        runCatching { FaccendeWorker.save(context, account, me, rooms) }
+    }
+
+    // --- Organizza un'uscita (tavola AmiUscita) ---
+
+    fun createOuting(roomId: String, title: String, options: List<Uscita.Option>, place: String, address: String, closes: Long, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val content = Uscita.content("u" + System.nanoTime(), nameOf(me), title, options, place, address, closes, context.getString(R.string.us_fallback, nameOf(me)))
+        sendEvent(roomId, "m.room.message", content, failed)
+    }
+
+    /** Una risposta all'uscita (date, passaggio, «Fissa»): per chi usa Element, una riga di testo. */
+    fun sayOuting(roomId: String, e: Event, id: String, say: Uscita.Say, body: String, failed: () -> Unit) =
+        sendContent(roomId, Uscita.answer(e.id, id, say, body), Event.Kind.Notice, failed)
+
+    /** Lo stato dell'uscita dalle risposte nella stanza (in ordine). */
+    fun outingState(roomId: String, e: Event, card: Uscita.Card): Uscita.State {
+        val answers = timeline(roomId).mapNotNull { ev ->
+            if (ev.kind != Event.Kind.Notice || ev.data?.contains(Uscita.ANSWER) != true) return@mapNotNull null
+            Uscita.parse(runCatching { JSONObject(ev.data) }.getOrNull())?.takeIf { it.first == card.id }?.let { ev.sender to it.second }
+        }
+        return Uscita.state(card, e.sender, answers)
     }
 
     // --- Gruppi a tempo (tavola ChatGruppoTempo) ---
@@ -538,6 +678,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     }
                     refreshPlans()
                     refreshBalls()
+                    refreshApprovals()
+                    saveChoresSnapshot()
                     if (shareHours) publishHours(all = false)
                 }
                 delay(30_000)
@@ -625,6 +767,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         shareHours = simplePrefs.getBoolean("hours_" + a.name, false)
         keptOpen = simplePrefs.getStringSet("keep_" + a.name, emptySet()).orEmpty()
         balls = Palla.decode(ballPrefs.getString("list", null)).filter { it.account == a.name }
+        approvals = Approva.decode(approvalPrefs.getString("list", null)).filter { it.account == a.name }
         store = SessionStore(context, a)
         session = store.load()
         keptInSuite = store.keptInSuite
@@ -657,6 +800,16 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         private set
 
     fun changeWorkQuiet(on: Boolean) { workQuiet = on; ChatAccounts.setWorkQuiet(context, on) }
+
+    /** Fuori orario (tavola SpaFuoriOrario): orario di lavoro e chi passa lo stesso. */
+    var offRules by mutableStateOf(ChatAccounts.rules(context))
+        private set
+
+    fun changeOffRules(r: FuoriOrario.Rules) {
+        offRules = r
+        ChatAccounts.setRules(context, r)
+        if (shareHours) publishHours(all = true)
+    }
 
     // --- Studio medico (tavole StuSpazio e StuPaziente) ---
 
