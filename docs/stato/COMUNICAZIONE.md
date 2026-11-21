@@ -194,7 +194,7 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
-- **Invia più tardi, quando lavora, a scomparsa, Ricordamelo** (21 novembre; tavola ChatProgramma; giro GIRO: chat;
+- **Invia più tardi, quando lavora, a scomparsa, Ricordamelo** (21 novembre; tavola ChatProgramma; giro 919: chat;
   toccate parti comuni: `core/suite` HubBridge e `app` KeyboardBridgeReceiver, vedi sotto). **Pressione lunga su Invia**
   (non nelle chat di La mia Bussola né in modifica): foglio con *Invia più tardi* (Domani 8:30, Lunedì 9:00, Scegli… con i
   selettori di data e ora del telefono), *Invia quando lavora* (solo nell'account di lavoro: con l'orario 8–19 dei
@@ -263,7 +263,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: più tardi, quando lavora, a scomparsa, Ricordamelo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 919 (21 novembre: più tardi, quando lavora, a scomparsa, Ricordamelo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -294,8 +294,15 @@ computer (area Computer, tavola PcEmail).
   base (GitHub, Stati Uniti: vede l'indirizzo IP di chi scarica, come per le pietre miliari); il Telefono resta senza
   Internet e chiede l'elenco con il permesso della suite (`SpamListClient`, `SpamListContract`). Chi è nell'elenco e non è
   in rubrica arriva in silenzio con «Elenco Eurise: …» (chiamata, notifica, Recenti); nessun blocco automatico.
-  **Da fare**: tenere l'elenco aggiornato (chi lo cura, ogni quanto); il file sta sul ramo `brand` (va spostato sul ramo
-  stabile quando ci sarà); valutare la firma del file oltre all'HTTPS.
+  **Aggiornamento (21 novembre, giro 918)**: (1) il telefono non scarica più dal ramo: il flusso «Elenco dei numeri
+  molesti» (`.github/workflows/elenco-molesti.yml`) controlla il file con `data/spam/controlla.py` (formato, categorie,
+  doppioni, niente paesi europei interi né prefissi italiani corti) e lo carica nella pre-release `elenco-molesti`, da cui
+  l'app Eurise scarica. (2) **Controllo settimanale** delle segnalazioni pubbliche: attività programmata «Elenco numeri
+  molesti: controllo settimanale» (lunedì 10.23, ora di Roma, approvazione automatica, notifica al proprietario) che segue
+  le regole del README, scrive `data/spam/registro.md` e spinge su brand. (3) **«Segnala a Eurise»** nel Telefono: il
+  proprietario lo vuole con **segnalazioni anonime su un server Eurise** (niente email né GitHub). **Ricordarglielo quando
+  il server Eurise ci sarà** (è nei piani della posta e della chat: Stalwart + Continuwuity su un VPS, sezione «Mail e Chat
+  da lavoro»). Resta da valutare la firma del file oltre all'HTTPS.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
@@ -450,7 +457,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    poi le 13 tavole Chat* (~~ChatBasi~~ fatta al giro 795; prove: rispondi, reazione, modifica, cancella, fissa, inoltra,
    sondaggio con voto e chiusura, anche con Element dall'altra parte; ~~ChatVocali~~ fatta al giro 809; prove: vocale
    tenuto premuto e annullato, ascolto, trascrizione con Eurise Voce e il modello scaricato, vocale verso Element e da
-   Element, «Leggi ad alta voce», «Leggi da soli i messaggi»; ~~ChatProgramma~~ fatta al giro GIRO; prove: programmato domani
+   Element, «Leggi ad alta voce», «Leggi da soli i messaggi»; ~~ChatProgramma~~ fatta al giro 919; prove: programmato domani
    e annullato, programmato tra pochi minuti con la Chat chiusa, quando lavora dall'account di lavoro, a scomparsa letto
    da Element e sparito il giorno dopo, Ricordamelo che compare in Attività e il link (copiato) che apre il messaggio;
    poi ChatCartelle), poi le tavole della seconda fila di La mia Bussola.
