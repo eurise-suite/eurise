@@ -2,21 +2,25 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 20 novembre 2026, sera)
+### Per ripartire (aggiornato il 21 novembre 2026)
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
-  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 911). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
+  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 925). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **911** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
+- **Ultimo giro pubblicato**: Compila **925** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
   della suite, Mappe e motore di Office presi dai loro ultimi giri riusciti; prova delle porte sull'emulatore verde su
   quel giro (22 controlli). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Da provare sul telefono (giro 925)**: Note bloccate (aprire, modificare, richiudere; bloccarne una nuova: ora chiede
+  il dito); poi Backup › Cambia frase con il **codice di recupero** come frase attuale e la stessa frase come nuova:
+  crea la coppia del backup e da lì la chiave delle note si lega all'impronta. Fino ad allora tutto resta come prima.
 - **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
   porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
   con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di
   Android spento in tutte le app; azioni allo SHA, permessi minimi, CodeQL, OSV-Scanner, Dependabot; librerie verificate
   con impronte e **firme PGP degli autori** (`librerie-verificate.yml` le rigenera); contenuti scaricati fissati per
   commit e impronta; `SECURITY.md`, `docs/MINACCE.md`; computer (Ponte, estensione Firefox 0.2.1, Flatpak 25.08);
-  chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera).
+  chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera); intent verso le altre app controllati;
+  segreti affidati e note bloccate legate all'impronta; verifica delle librerie bloccante anche su `brand` (21 novembre).
 - **Prossimo, in ordine proposto**:
   1. ~~Chiave del Ponte del computer nel portachiavi del sistema~~ fatta il 20 novembre, sera (sezione «Computer»).
   2. ~~Cassetta del Ponte nel cloud con segretezza in avanti~~ formato pronto il 20 novembre, sera (`Mailbox` in
@@ -28,7 +32,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      novembre (sezione «Crittografia»; tavole NoteBloccaSenzaBackup e NoteRiapri approvate lo stesso giorno).
   5. ~~Verifica «strict» anche su `brand`~~ fatta il 21 novembre (sezione «Impronte delle librerie», «Dove blocca»).
      Resta «lenient» nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser): da fare con le loro aree.
-  6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
+  6. Mappe per la versione ufficiale (variante «prova»/«ufficiale» nel patch, destinatari controllati), con l'area Mappe.
+  7. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
   `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
