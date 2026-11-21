@@ -73,8 +73,9 @@ internal fun AudioBubble(model: ChatModel, actions: ChatActions, roomId: String,
     val failed = stringResource(R.string.ch_file_failed)
     val fetch: (Event, (java.io.File?) -> Unit) -> Unit = { ev, done -> model.media(ev, done) }
     val local = e.id.startsWith("local:")
-    // La trascrizione parte da sola appena il vocale si vede (solo sul telefono, uno alla volta).
-    LaunchedEffect(hub.key(e)) { if (!local) hub.want(e, fetch) }
+    // La trascrizione si chiede con l'icona accanto alla durata (senza ascoltare); parte da sola solo con la lettura
+    // per chi vede poco accesa. Sempre sul telefono, una alla volta.
+    LaunchedEffect(hub.key(e), hub.autoRead) { if (!local && hub.autoRead) hub.want(e, fetch) }
     val transcript = hub.transcripts[hub.key(e)]
     val playing = hub.playing == e.id
     Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
@@ -107,6 +108,16 @@ internal fun AudioBubble(model: ChatModel, actions: ChatActions, roomId: String,
                 Spacer(Modifier.width(8.dp))
                 Text(Voice.duration(if (playing) (info.durationMs * hub.progress).toLong() else info.durationMs),
                     fontSize = 12.sp, color = fg.copy(alpha = 0.72f))
+                // «Scrivilo»: il vocale messo per iscritto senza ascoltarlo.
+                if (transcript == null && !local) {
+                    val label = stringResource(R.string.vo_transcribe)
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(fg.copy(alpha = 0.1f))
+                            .clickable(role = Role.Button) { hub.want(e, fetch) }.semantics { contentDescription = label },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(EuriseIcons.text(2.2f), null, tint = fg, modifier = Modifier.size(15.dp)) }
+                }
             }
             when (transcript) {
                 is VoiceHub.Transcript.Text -> Text("«" + transcript.text + "»", fontSize = 13.5.sp, lineHeight = 19.sp, color = fg,
@@ -118,7 +129,10 @@ internal fun AudioBubble(model: ChatModel, actions: ChatActions, roomId: String,
                         hub.retry(e, fetch)
                     }.padding(vertical = 2.dp))
                 VoiceHub.Transcript.NoVoice -> Text(stringResource(R.string.vo_no_voice), fontSize = 12.sp, color = fg.copy(alpha = 0.72f))
-                else -> Unit
+                VoiceHub.Transcript.Empty -> Text(stringResource(R.string.vo_empty), fontSize = 12.sp, color = fg.copy(alpha = 0.72f))
+                VoiceHub.Transcript.Failed -> Text(stringResource(R.string.vo_failed), fontSize = 12.sp, color = fg.copy(alpha = 0.72f),
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { hub.retry(e, fetch) }.padding(vertical = 2.dp))
+                null -> Unit
             }
             val time = if (local) "…" else DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.time))
             Text(if (transcript is VoiceHub.Transcript.Text) stringResource(R.string.vo_on_phone, time) else time,
