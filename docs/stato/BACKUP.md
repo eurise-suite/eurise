@@ -154,8 +154,8 @@ Esito col giro 921 (run 44887973106): **17 controlli su 17**.
   sigillate (non uno zip), non nella cartella d'attesa in chiaro; note, attività e impostazione tornano; «Bentornato»
   segnato; la cartella d'attesa sparisce.
 - Tastiera reinstallata: le parole in attesa le arrivano dal tubo e la parola di prova torna al suo posto.
-- **Non coperto** dalla prova: le schermate (si guardano sul telefono), l'invio a WebDAV o a una cartella, la regola
-  dei cinque conservati sui file veri, il lavoro pianificato, le chiavi nel Keystore di `BackupManager` e il riavvio.
+- **Non coperto** allora: l'invio a WebDAV o a una cartella, la regola dei cinque sui file veri, il lavoro pianificato,
+  le chiavi nel Keystore di `BackupManager` e il riavvio. **Coperti dal 21 novembre sera** (vedi «Prove del 21 sera»).
 
 ## Tutta la suite nel backup (21 novembre 2026, pomeriggio)
 **Formato a pezzi** (`BackupCrypto` versione 2, `BackupStreamTest`): stessi file `EURISEB1`, dati in pezzi da 1 MiB
@@ -268,3 +268,27 @@ ricifrata con la chiave attuale, riletta e solo dopo tolta; oppure «Tienila a p
 - Consegnato con il giro **952** (Galleria e le altre; Mappe resta la 125). Sull'emulatore, in più: sul telefono nuovo c'è già
   una cartella tua con un'altra frase, quella del backup va in `secure-dal-backup` con la sua intestazione e le due non si
   mescolano: tutto bene. Le schermate (scheda, Apri, Sposta) si guardano sul telefono.
+
+## Prove del 21 novembre sera: il backup come lo fa l'app (giro 958, 48 controlli su 48)
+Run «Prova del backup» sul giro 958 (`.github/prova-backup-giro`). In più rispetto a prima:
+- **Riavvio vero**: il ripristino aspetta in `restore_pending`; si apre Eurise (MainActivity) e si chiude; il ripristino ha
+  preso il suo posto all'avvio, prima del database; note, attività, impostazione e «Bentornato» ci sono.
+- **BackupManager** (fasi `gestore-*` della sonda, che chiama anche le funzioni `suspend` con una Continuation fatta al volo):
+  - acceso con frase e codice: la chiave dei dati è sigillata da una chiave del Keystore che non si può leggere
+    (`getEncoded()` nullo), e non compare mai in chiaro nelle impostazioni;
+  - **cartella**: un fornitore di documenti vero di Android nella sonda (`Cartella.java`; il permesso sull'albero lo concede
+    `Concedi.java`, come il selettore) → il permesso resta (persistente);
+  - **automatico**: in coda con Wi-Fi e carica; senza carica non parte; ricollegato il caricatore parte da solo e il
+    backup finisce nella cartella, cifrato; si elenca e si riapre con la frase (3 note);
+  - **WebDAV** finto in HTTPS sul computer (`.github/prova-backup/dav.py`, certificato fatto al volo): backup, riscaricato
+    e riaperto; **regola dei cinque** su file veri (tre recenti, il più vecchio diventa mensile, il mensile trimestrale,
+    il trimestrale va via);
+  - **backup che non si rilegge uguale** (il server cambia un byte): non è dato per buono, l'errore è segnato, i cinque di
+    prima restano com'erano;
+  - **spento**: chiave tolta dal Keystore, lavoro automatico annullato.
+- Trovato e corretto con queste prove: un file caricato che non si verificava **restava** sul cloud e al giro dopo
+  contava come uno dei tre recenti (faceva uscire un backup buono). Ora si toglie subito.
+- Cose dell'emulatore (non dell'app), annotate nella prova: avviare la sonda ferma Eurise, e Android toglie i lavori
+  pianificati e i permessi non persistenti (come «Forza l'arresto»): Eurise si riapre una volta e la sonda chiede il
+  permesso da dentro; «battery unplug» lascia lo stato «in carica», quindi si mette anche «in scarica».
+- Consegnato con il giro **958** (Eurise; Mappe resta la 125).
