@@ -86,6 +86,10 @@ adb shell pm clear $E >/dev/null; esito "dati di Eurise cancellati" $?
 adb shell pm clear $P >/dev/null && adb shell pm clear $G >/dev/null && adb shell pm clear $ML >/dev/null &&
   adb shell pm clear $O >/dev/null && adb shell pm clear $B >/dev/null; esito "dati di Password, Galleria, Posta, Office e Browser cancellati" $?
 adb uninstall $T >/dev/null; esito "Tastiera disinstallata" $?
+# Sul telefono nuovo c'è già una cartella protetta tua, con un'altra frase: quella del backup deve andare accanto.
+adb shell "run-as $G sh -c 'mkdir -p files/secure && echo mia-intestazione > files/secure/header.json && echo mia-foto > files/secure/mia.enc'"
+adb shell run-as $G cat files/secure/mia.enc | grep -q mia-foto
+esito "cartella protetta diversa già sul telefono nuovo" $?
 adb push prova.eurb /data/local/tmp/prova.eurb >/dev/null && adb shell chmod 644 /data/local/tmp/prova.eurb
 adb shell "run-as $E sh -c 'mkdir -p cache && cat /data/local/tmp/prova.eurb > cache/prova.eurb'"
 adb shell rm /data/local/tmp/prova.eurb
@@ -99,8 +103,14 @@ sonda consegna; esito "dati consegnati a tutte le app pronte; Messaggi (non pred
 sleep 2
 adb shell run-as $P cat files/cassaforte.kdbx 2>/dev/null | grep -q finta-cassaforte
 esito "la cassaforte è tornata in Password" $?
-adb shell run-as $G cat files/secure/prova.enc 2>/dev/null | grep -q foto-cifrata
-esito "la foto protetta è tornata nella Galleria" $?
+adb shell run-as $G cat files/secure-dal-backup/prova.enc 2>/dev/null | grep -q foto-cifrata &&
+  adb shell run-as $G cat files/secure-dal-backup/header.json 2>/dev/null | grep -q intestazione-di-prova
+esito "la foto protetta è tornata nella Galleria, accanto («dal backup»), con la sua intestazione" $?
+adb shell run-as $G cat files/secure/mia.enc 2>/dev/null | grep -q mia-foto &&
+  adb shell run-as $G cat files/secure/header.json 2>/dev/null | grep -q mia-intestazione
+esito "la cartella protetta che c'era resta com'era" $?
+adb shell run-as $G ls files/secure/prova.enc >/dev/null 2>&1
+[ $? -ne 0 ]; esito "le due cartelle non si mescolano" $?
 adb shell run-as $ML cat files/accounts_dal_backup.json 2>/dev/null | grep -q prova@esempio.eu
 esito "la casella di posta è tornata, da ricollegare" $?
 adb shell run-as $ML cat files/accounts_dal_backup.json 2>/dev/null | grep -q SEGRETO
