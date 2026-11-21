@@ -333,4 +333,30 @@
         <item quantity="many">%d discussioni</item>
         <item quantity="other">%d discussioni</item>
     </plurals>
+
+    <!-- Posizione dal vivo a tempo (tavola ChatPosizione) -->
+    <string name="lo_title">Posizione dal vivo</string>
+    <string name="lo_how_long">Per quanto?</string>
+    <string name="lo_15">15 min</string>
+    <string name="lo_60">1 ora</string>
+    <string name="lo_evening">Fino alle 23</string>
+    <string name="lo_arrival">Finché arrivo</string>
+    <string name="lo_explain">Visibile solo in questa chat, cifrata. «Finché arrivo» si spegne da sola quando ti fermi all\'arrivo (al più tre ore). Un avviso fisso ti ricorda che la stai condividendo e ha «Smetti». La mappa non si scarica da nessun server: nessuno oltre la chat sa dove sei.</string>
+    <string name="lo_live_until">Posizione dal vivo · fino alle %1$s</string>
+    <string name="lo_ended">Posizione dal vivo · finita</string>
+    <string name="lo_static">Posizione</string>
+    <string name="lo_private">Solo in questa chat, cifrata</string>
+    <string name="lo_waiting">cerco la posizione…</string>
+    <string name="lo_no_point">nessun punto</string>
+    <string name="lo_updated">aggiornata alle %1$s</string>
+    <string name="lo_stop">Smetti</string>
+    <string name="lo_open_map">Apri in Mappe</string>
+    <string name="lo_failed">Non riesco ad accendere la posizione dal vivo: controlla la connessione</string>
+    <string name="lo_denied">Senza il permesso della posizione non si può condividere</string>
+    <string name="lo_state_stop">%1$s ha smesso di condividere la posizione</string>
+    <string name="lo_preview">Posizione dal vivo</string>
+    <string name="lo_channel">Posizione dal vivo</string>
+    <string name="lo_sharing">Stai condividendo la posizione con %1$s</string>
+    <string name="lo_until">fino alle %1$s · Smetti per fermarla</string>
+    <string name="lo_until_arrival">finché arrivi · Smetti per fermarla</string>
 </resources>

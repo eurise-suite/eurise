@@ -194,6 +194,22 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
+- **Posizione dal vivo a tempo** (21 novembre; tavola ChatPosizione; giro GIRO: chat): **pressione lunga sulla
+  graffetta** = Sondaggio o Posizione dal vivo (prima apriva subito il sondaggio); «Per quanto?» 15 min, 1 ora, Fino
+  alle 23 (prima delle 22), Finché arrivo. Eventi di **Element** (MSC3672/MSC3488): stato `beacon_info` per persona
+  (dal vivo e durata, **nessuna posizione**: gli stati Matrix non sono cifrati) e punti `beacon` **cifrati** come i
+  messaggi; quindi Element vede la posizione di Ciarly e viceversa. Il **servizio in primo piano**
+  `LiveLocationService` (tipo location) tiene l'**avviso fisso** «Stai condividendo la posizione con Giulia · fino alle
+  23:00» con **Smetti**, usa il GPS e la rete del telefono (`LocationManager`, niente Google), manda un punto ogni 20
+  secondi al massimo, spegne a tempo, all'arrivo o con Smetti (stato «non più dal vivo»). «Finché arrivo» senza
+  destinazione: arrivato quando, dopo essersi spostati di 500 m, si resta entro 60 m per 5 minuti (al più tre ore);
+  con Mappe si userà la meta del percorso. Con la Chat aperta i punti li manda lei (`LiveShare.sink`, tiene le chiavi),
+  se no il servizio con la sua sessione. Nella conversazione la scheda con segnaposto e coordinate (**nessuna mappa
+  scaricata**: nessun server di mappe sa dove sei), «Posizione dal vivo · fino alle 23:00», «aggiornata alle…», Smetti
+  (tua) e **Apri in Mappe** (`geo:`, l'app di mappe scelta). Si leggono anche le posizioni singole `m.location` di
+  Element. Permessi nuovi: posizione (chiesta alla prima condivisione), servizio in primo piano. Logica pura in
+  **`Posizione.kt`** con `PosizioneTest`. Non ancora: mandare una posizione singola, la meta di Mappe per «Finché
+  arrivo», la mappa disegnata (servirebbero le mappe scaricate di Mappe), più condivisioni insieme.
 - **Discussioni a filo** (21 novembre; tavola ChatThread; giro 950: chat): i **thread di Matrix** (`m.thread`, come
   Element, quindi le discussioni aperte da Element si vedono e viceversa). Nel menu di un messaggio di un gruppo
   «Rispondi in una discussione» apre la discussione: in alto indietro, il titolo (prima riga del messaggio di partenza)
@@ -289,7 +305,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 950 (21 novembre: discussioni a filo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: posizione dal vivo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -489,7 +505,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    ~~ChatCartelle~~ fatta al giro 930; prove: cartella nuova con due chat, chat in due cartelle, pressione lunga su
    una chat, Messaggi a me con «→ Note» e «→ Attività», icona «T» su un vocale ricevuto; ~~ChatThread~~ fatta al giro
    950; prove: discussione aperta da Eurise e vista in Element (e al contrario), «6 risposte» sotto il messaggio,
-   riga delle discussioni nell'elenco; poi ChatPosizione), poi le tavole della seconda fila di La mia Bussola.
+   riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro GIRO; prove: 15 minuti con la Chat chiusa
+   (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly; poi
+   ChatTruffa), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

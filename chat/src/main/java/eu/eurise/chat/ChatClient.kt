@@ -87,9 +87,9 @@ class ChatClient(val session: Session) {
         put("/_matrix/client/v3/rooms/${enc(roomId)}/send/${enc(type)}/${UUID.randomUUID()}", content).optString("event_id")
 
     /** Uno stato della stanza (es. i messaggi fissati). */
-    fun setState(roomId: String, type: String, content: JSONObject, stateKey: String = "") {
-        put("/_matrix/client/v3/rooms/${enc(roomId)}/state/${enc(type)}/${enc(stateKey)}", content)
-    }
+    /** Restituisce l'id dell'evento (la posizione dal vivo lo usa come riferimento). */
+    fun setState(roomId: String, type: String, content: JSONObject, stateKey: String = ""): String =
+        put("/_matrix/client/v3/rooms/${enc(roomId)}/state/${enc(type)}/${enc(stateKey)}", content).optString("event_id")
 
     fun read(roomId: String, eventId: String) {
         runCatching { post("/_matrix/client/v3/rooms/${enc(roomId)}/receipt/m.read/${enc(eventId)}", JSONObject()) }

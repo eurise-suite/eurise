@@ -138,6 +138,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         startOther()
         startPlans()
         startFolders()
+        // Con la Chat aperta, i punti della posizione dal vivo di questo account li manda lei (tiene le chiavi).
+        LiveShare.sink = { acc, room, content ->
+            if (acc != account.name || client == null) false else { sendEvent(room, Posizione.BEACON, content) {}; true }
+        }
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
@@ -168,7 +172,50 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun stop() { loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false }
+    fun stop() {
+        loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false
+        LiveShare.sink = null
+    }
+
+    // --- Posizione dal vivo a tempo (tavola ChatPosizione) ---
+
+    /** La condivisione accesa (una alla volta), o null. */
+    var live by mutableStateOf(LiveShare.active(context))
+        private set
+
+    fun refreshLive() { live = LiveShare.active(context) }
+
+    /**
+     * Accende la posizione dal vivo in [roomId] per la scelta [until]: lo stato `beacon_info` (senza posizioni), poi il
+     * servizio in primo piano con l'avviso fisso. Una condivisione già accesa altrove si spegne prima.
+     */
+    fun startLive(roomId: String, until: Posizione.Until, failed: () -> Unit) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val now = System.currentTimeMillis()
+        val duration = Posizione.duration(until, java.time.LocalDateTime.now())
+        val name = room(roomId)?.name ?: roomId
+        val myName = data[roomId]?.names?.get(me) ?: Matrix.localpart(me)
+        if (live != null) LiveShare.stop(context)
+        scope.launch {
+            val id = withContext(Dispatchers.IO) {
+                runCatching { c.setState(roomId, Posizione.INFO, Posizione.infoContent(myName, now, duration, true), me) }.getOrNull()
+            }
+            if (id.isNullOrEmpty()) { failed(); return@launch }
+            LiveShare.start(context, LiveShare.Active(account.name, roomId, name, id, now + duration, until == Posizione.Until.Arrival,
+                data[roomId]?.encrypted == true))
+            refreshLive()
+        }
+    }
+
+    fun stopLive() { LiveShare.stop(context); live = null }
+
+    /** L'ultimo punto di una condivisione (o la posizione di un messaggio con una posizione sola). */
+    fun lastPosition(roomId: String, e: Event): Posizione.Pos? {
+        val points = timeline(roomId).filter { it.kind == Event.Kind.Beacon && it.ref == e.id }
+            .mapNotNull { b -> Posizione.pos(b.data?.let { runCatching { JSONObject(it) }.getOrNull() })?.let { p -> if (p.ts > 0) p else p.copy(ts = b.time) } }
+        return points.maxByOrNull { it.ts } ?: Posizione.pos(e.data?.let { runCatching { JSONObject(it) }.getOrNull() })?.takeIf { it.lat != 0.0 || it.lon != 0.0 }
+    }
 
     // --- Cartelle e «Messaggi a me» (tavola ChatCartelle) ---
 
@@ -614,7 +661,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     private fun publish() {
         val me = session?.userId.orEmpty()
         val list = data.values.map { s ->
-            val events = timelines[s.id].orEmpty().filter { it.kind != Event.Kind.State }
+            val events = timelines[s.id].orEmpty().filter { it.kind != Event.Kind.State && it.kind != Event.Kind.Beacon }
             val last = events.lastOrNull()
             val heroes = s.heroes.ifEmpty { s.names.keys.toList() }
             Room(
@@ -624,6 +671,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     Event.Kind.Encrypted -> context.getString(R.string.ch_encrypted_short)
                     Event.Kind.Image -> context.getString(R.string.ch_photo)
                     Event.Kind.File -> context.getString(R.string.ch_file)
+                    Event.Kind.Location -> context.getString(R.string.lo_preview)
                     // Con la trascrizione fatta (tavola ChatCartelle): «Papà: vocale trascritto · «arrivo alle 8»».
                     Event.Kind.Audio -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") +
                         ((voice.transcripts[voice.key(last)] as? VoiceHub.Transcript.Text)?.let { context.getString(R.string.cr_voice_text, it.text) }

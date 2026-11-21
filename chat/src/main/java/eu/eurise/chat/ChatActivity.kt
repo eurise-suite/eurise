@@ -30,6 +30,20 @@ class ChatActivity : ComponentActivity(), ChatActions {
     private var micDone: ((Boolean) -> Unit)? = null
     private val mic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> micDone?.invoke(ok); micDone = null }
 
+    private var locationDone: ((Boolean) -> Unit)? = null
+    private val location = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        locationDone?.invoke(r[Manifest.permission.ACCESS_FINE_LOCATION] == true || r[Manifest.permission.ACCESS_COARSE_LOCATION] == true)
+        locationDone = null
+    }
+
+    override fun askLocation(done: (Boolean) -> Unit) {
+        val granted = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            .any { checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED }
+        if (granted) { done(true); return }
+        locationDone = done
+        location.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
     override fun askMic(done: (Boolean) -> Unit) {
         micDone = done
         mic.launch(Manifest.permission.RECORD_AUDIO)
@@ -118,6 +132,7 @@ class ChatActivity : ComponentActivity(), ChatActions {
     override fun onStart() {
         super.onStart()
         model.start()
+        model.refreshLive()
         // Tornando nella Chat (magari da Messaggi o dal Telefono): il filo aperto si rilegge.
         if (model.uni.who != null) model.uni.loadThread()
     }

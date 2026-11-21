@@ -101,6 +101,8 @@ interface ChatActions {
     fun askCalendar(done: (Boolean) -> Unit)
     /** Il permesso del microfono per i vocali (tavola ChatVocali), chiesto solo al primo vocale. */
     fun askMic(done: (Boolean) -> Unit)
+    /** Il permesso della posizione (tavola ChatPosizione), chiesto solo alla prima condivisione. */
+    fun askLocation(done: (Boolean) -> Unit)
     /** Condivide un testo (riepilogo dei turni per chi non usa la Chat) con l'app che sceglie l'utente. */
     fun shareText(text: String)
     /** Condivide un file della cartella della Chat (PDF, CSV, calendario dei turni) con l'app che sceglie l'utente. */
@@ -533,7 +535,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     // con una discussione aperta ci sono solo quelle (il messaggio di partenza sta in cima).
     val thread = model.thread
     val all = model.timeline(roomId)
-    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread } } }
+    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon } } }
     val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
     val threads by remember(roomId) { derivedStateOf { Threads.summary(all).associateBy { it.root } } }
     LaunchedEffect(roomId, thread) { thread?.let { model.loadThread(roomId, it) } }
@@ -546,6 +548,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var editing by remember(roomId) { mutableStateOf<Event?>(null) }
     var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
     var pollSheet by remember(roomId) { mutableStateOf(false) }
+    var moreSheet by remember(roomId) { mutableStateOf(false) }
+    var liveSheet by remember(roomId) { mutableStateOf(false) }
     var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
     var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
     var recording by remember(roomId) { mutableStateOf<VoiceRecorder?>(null) }
@@ -644,6 +648,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         ReactionChips(model, actions, roomId, e, mine)
                         threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                     }
+                    else if (e.kind == Event.Kind.Location) Column {
+                        LocationBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
                     else if (e.kind == Event.Kind.Poll) Column {
                         PollBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
@@ -702,7 +710,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 if (thread == null) Box(
                     Modifier.size(46.dp).clip(CircleShape).background(scheme.surface).combinedClickable(
                         role = Role.Button,
-                        onLongClick = { if (bussola == null) pollSheet = true },
+                        onLongClick = { if (bussola == null) moreSheet = true },
                         onLongClickLabel = pollLabel,
                     ) {
                         if (bussola != null) { reportSheet = true; return@combinedClickable }
@@ -766,6 +774,9 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
     if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
+    // Pressione lunga sulla graffetta: sondaggio o posizione dal vivo (tavola ChatPosizione).
+    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }) { moreSheet = false }
+    if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }
     laterSheet?.let { text -> SendLaterSheet(model, actions, roomId, text, onSent = { draft = ""; replyTo = null }) { laterSheet = null } }
     plannedMenu?.let { p -> PlannedMenu(model, actions, p, onEdit = { draft = it }) { plannedMenu = null } }
 }
@@ -781,6 +792,7 @@ private fun Bubble(model: ChatModel, roomId: String, e: Event, mine: Boolean, on
             "join" -> stringResource(R.string.ch_state_join, who)
             "leave" -> stringResource(R.string.ch_state_leave, who)
             "verify" -> stringResource(R.string.ch_state_verify, who)
+            "locstop" -> stringResource(R.string.lo_state_stop, who)
             else -> stringResource(R.string.ch_state_invite, who)
         }
         Text(label, fontSize = 11.5.sp, color = scheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
