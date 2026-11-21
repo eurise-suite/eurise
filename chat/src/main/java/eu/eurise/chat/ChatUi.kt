@@ -648,6 +648,12 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         ReactionChips(model, actions, roomId, e, mine)
                         threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                     }
+                    // Presa visione (tavola ChatPresaVisione).
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(Ack.ACK) == true) Column {
+                        AckBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                        if (thread == null) threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
+                    }
                     else if (e.kind == Event.Kind.Location) Column {
                         LocationBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
@@ -670,6 +676,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         }
                         // A scomparsa (tavola ChatProgramma).
                         if (e.kind == Event.Kind.Text) FadeLabel(model, e, mine)
+                        // Difesa dalle truffe (tavola ChatTruffa): nella chat a due con chi non è verificato e a cui non hai mai scritto.
+                        if (!mine && peer != null && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice)) {
+                            val known = peerVerified || all.any { it.sender == me && !it.id.startsWith("local:") }
+                            eu.eurise.core.suite.ScamCheck.check(shownText(model, e), known)?.let { v -> ScamCard(model, actions, roomId, e.sender, v) }
+                        }
                         // «Messaggi a me» (tavola ChatCartelle): un tocco e va in Note o in Attività.
                         if (roomId == model.selfRoom && e.kind == Event.Kind.Text && !e.id.startsWith("local:")) SelfChips(model, actions, e)
                     }

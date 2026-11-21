@@ -150,6 +150,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 val r = withContext(Dispatchers.IO) {
                     runCatching { c.sync(since, if (first) 0 else 30_000) }.map { json ->
                         runCatching { ProgrammaStore.receipts(context, account, c.session.userId, json) }
+                        // Presa visione (tavola ChatPresaVisione): chi ha letto, per persona.
+                        runCatching { Ack.readers(json).forEach { (room, m) -> readers[room] = (readers[room].orEmpty() + m).let { all -> all.keys.associateWith { k -> maxOf(all[k] ?: 0L, m[k] ?: 0L) } } } }
                         json to prepare(c, json)
                     }
                 }
@@ -175,6 +177,59 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     fun stop() {
         loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false
         LiveShare.sink = null
+    }
+
+    // --- Presa visione (tavola ChatPresaVisione) ---
+
+    /** Per stanza: fino a quando ha letto ognuno (conferme di lettura). */
+    val readers = mutableStateMapOf<String, Map<String, Long>>()
+
+    /** Manda [text] chiedendo la presa visione (gli altri confermano con ✅, anche da Element). */
+    fun sendAck(roomId: String, text: String, failed: () -> Unit) {
+        sendContent(roomId, Ack.content(text, context.getString(R.string.pv_fallback)), Event.Kind.Text, failed)
+        loadMembers(roomId)
+    }
+
+    /** «Ricevuto»: la reazione ✅. */
+    fun confirmAck(roomId: String, e: Event, failed: () -> Unit) {
+        if (session?.userId in relations.reactors(e.id, Ack.KEY)) return
+        react(roomId, e.id, Ack.KEY, failed)
+    }
+
+    /** I membri della stanza, se non ci sono già. */
+    fun loadMembers(roomId: String) {
+        if (members.containsKey(roomId)) return
+        val c = client ?: return
+        scope.launch { withContext(Dispatchers.IO) { runCatching { c.joinedMembers(roomId) }.getOrNull() }?.let { members[roomId] = it.sorted() } }
+    }
+
+    /** «Ricorda a chi manca»: una risposta al messaggio con i nomi di chi non ha ancora confermato. */
+    fun remindAck(roomId: String, e: Event, missing: List<String>, failed: () -> Unit) {
+        if (missing.isEmpty()) return
+        reply(roomId, e.id, context.getString(R.string.pv_remind_text, missing.joinToString(", ") { nameOf(it) }), failed)
+    }
+
+    // --- Difesa dalle truffe (tavola ChatTruffa) ---
+
+    /**
+     * Blocca chi ha scritto: lo si ignora (lista `m.ignored_user_list` dell'account, come Element: i suoi messaggi e
+     * inviti non arrivano più) e si esce dalla chat.
+     */
+    fun block(roomId: String, userId: String, done: (Boolean) -> Unit) {
+        val c = client ?: return done(false)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val cur = runCatching { c.accountData("m.ignored_user_list") }.getOrNull() ?: JSONObject()
+                    val users = cur.optJSONObject("ignored_users") ?: JSONObject()
+                    users.put(userId, JSONObject())
+                    c.putAccountData("m.ignored_user_list", JSONObject().put("ignored_users", users))
+                    c.leave(roomId)
+                }.isSuccess
+            }
+            if (ok) open(null)
+            done(ok)
+        }
     }
 
     // --- Posizione dal vivo a tempo (tavola ChatPosizione) ---

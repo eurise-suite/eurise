@@ -108,6 +108,14 @@ internal fun SendLaterSheet(model: ChatModel, actions: ChatActions, roomId: Stri
                     onClick = { start?.let { later(it, work = true) } },
                 )
             }
+            // Presa visione (tavola ChatPresaVisione): nei gruppi.
+            if (model.room(roomId)?.direct != true) {
+                Divider()
+                OptionRow(EuriseIcons.check(2.2f), stringResource(R.string.pv_ask), stringResource(R.string.pv_ask_sub), onClick = {
+                    model.sendAck(roomId, text) { actions.toast(failed) }
+                    onSent(); onClose()
+                })
+            }
             Divider()
             OptionRow(EuriseIcons.eye(2.2f), stringResource(R.string.pr_fade), stringResource(R.string.pr_fade_sub), onClick = {
                 model.sendFading(roomId, text, { actions.toast(failed) })
