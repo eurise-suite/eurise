@@ -167,6 +167,12 @@ internal fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
         vm.repo.pendingEntry.value = null
         screen = Screen.Edit(null, prefill = draft)
     }
+    val pendingPrivacy by vm.repo.pendingPrivacy.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingPrivacy) {
+        if (!pendingPrivacy) return@LaunchedEffect
+        vm.repo.pendingPrivacy.value = false
+        screen = Screen.Privacy
+    }
     val pendingImport by vm.repo.pendingImport.collectAsStateWithLifecycle()
     LaunchedEffect(pendingImport) {
         val file = pendingImport ?: return@LaunchedEffect

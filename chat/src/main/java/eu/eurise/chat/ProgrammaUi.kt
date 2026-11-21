@@ -98,15 +98,25 @@ internal fun SendLaterSheet(model: ChatModel, actions: ChatActions, roomId: Stri
                     Chip(stringResource(R.string.pr_pick), false) { pickDateTime(context) { later(it) } }
                 }
             })
-            if (model.account == Account.Work) {
+            val peerHours = model.peerHours(roomId)
+            if (model.account == Account.Work || peerHours != null) {
                 Divider()
-                val start = Programma.workStart(now)
+                val start = peerHours?.let { h -> Orari.nextStart(h, java.time.ZonedDateTime.now())?.withZoneSameInstant(java.time.ZoneId.systemDefault())?.toLocalDateTime() }
+                    ?: if (peerHours == null) Programma.workStart(now) else null
                 OptionRow(
                     EuriseIcons.calendar(2.2f), stringResource(R.string.pr_work),
                     if (start == null) stringResource(R.string.pr_work_now) else stringResource(R.string.pr_work_sub, whenText(start, now)),
                     enabled = start != null,
                     onClick = { start?.let { later(it, work = true) } },
                 )
+            }
+            // Presa visione (tavola ChatPresaVisione): nei gruppi.
+            if (model.room(roomId)?.direct != true) {
+                Divider()
+                OptionRow(EuriseIcons.check(2.2f), stringResource(R.string.pv_ask), stringResource(R.string.pv_ask_sub), onClick = {
+                    model.sendAck(roomId, text) { actions.toast(failed) }
+                    onSent(); onClose()
+                })
             }
             Divider()
             OptionRow(EuriseIcons.eye(2.2f), stringResource(R.string.pr_fade), stringResource(R.string.pr_fade_sub), onClick = {
@@ -251,5 +261,20 @@ internal fun RemindRow(model: ChatModel, actions: ChatActions, roomId: String, e
             }
         }
         Text(stringResource(R.string.pr_remind_sub), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * Sopra il campo (tavola ChatQuandoLavora): «Marco è fuori orario (lavora 9–18). Il messaggio parte quando inizia, così non
+ * disturbi la sua sera. Manda subito se è urgente.» Toccando «Manda subito» i messaggi partono subito (e si torna indietro).
+ */
+@Composable
+internal fun WorkHoursBanner(name: String, hours: String, urgent: Boolean, onToggle: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(WAIT.copy(alpha = 0.12f))
+            .clickable(role = Role.Button, onClick = onToggle).padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(if (urgent) R.string.ql_banner_urgent else R.string.ql_banner, name.substringBefore(' '), hours), fontSize = 12.5.sp, lineHeight = 18.sp)
+        Text(stringResource(if (urgent) R.string.ql_wait_again else R.string.ql_send_now), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = WAIT)
     }
 }

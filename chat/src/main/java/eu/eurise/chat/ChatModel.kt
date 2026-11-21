@@ -150,6 +150,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 val r = withContext(Dispatchers.IO) {
                     runCatching { c.sync(since, if (first) 0 else 30_000) }.map { json ->
                         runCatching { ProgrammaStore.receipts(context, account, c.session.userId, json) }
+                        // Presa visione (tavola ChatPresaVisione): chi ha letto, per persona.
+                        runCatching { Ack.readers(json).forEach { (room, m) -> readers[room] = (readers[room].orEmpty() + m).let { all -> all.keys.associateWith { k -> maxOf(all[k] ?: 0L, m[k] ?: 0L) } } } }
                         json to prepare(c, json)
                     }
                 }
@@ -175,6 +177,144 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     fun stop() {
         loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false
         LiveShare.sink = null
+    }
+
+    // --- Arriva quando l'altro lavora (tavola ChatQuandoLavora) ---
+
+    /** L'orario di lavoro che l'altra persona della chat a due ha reso visibile, o null. */
+    fun peerHours(roomId: String): Orari.Hours? {
+        val peer = peerOf(roomId) ?: return null
+        return Orari.decode(data[roomId]?.state?.get(Orari.TYPE + "|" + peer))
+    }
+
+    /** Fai sapere il tuo orario di lavoro (solo l'account di lavoro, spento di base). */
+    var shareHours by mutableStateOf(simplePrefs.getBoolean("hours_" + account.name, false))
+        private set
+
+    /**
+     * Accende o spegne: accesa, l'orario 8–19 dei feriali va nelle chat a due di questo account (uno stato per chat, con
+     * la chiave del tuo id); spenta, lo stato si svuota.
+     */
+    fun changeShareHours(on: Boolean) {
+        shareHours = on
+        simplePrefs.edit().putBoolean("hours_" + account.name, on).apply()
+        publishHours(all = true)
+    }
+
+    private fun publishHours(all: Boolean) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val content = if (shareHours) Orari.encode(Orari.work()) else JSONObject()
+        val rooms = data.values.filter { it.direct && !it.invite && (all || (shareHours && !it.state.containsKey(Orari.TYPE + "|" + me))) }.map { it.id }
+        if (rooms.isEmpty()) return
+        scope.launch(Dispatchers.IO) { rooms.forEach { id -> runCatching { c.setState(id, Orari.TYPE, content, me) } } }
+    }
+
+    // --- Gruppi a tempo (tavola ChatGruppoTempo) ---
+
+    fun timebox(roomId: String): Tempo.Box? = Tempo.decode(data[roomId]?.state?.get(Tempo.TYPE))
+
+    /** Mette (o toglie, con null) il periodo del gruppo: uno stato della stanza, lo vedono tutti. */
+    fun setTimebox(roomId: String, box: Tempo.Box?, failed: () -> Unit) {
+        val c = client ?: return
+        val content = box?.let(Tempo::encode) ?: JSONObject()
+        val s = data[roomId]
+        val before = s?.state?.get(Tempo.TYPE)
+        s?.state?.set(Tempo.TYPE, content)
+        relationsTick++
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Tempo.TYPE, content) }.isSuccess }
+            if (!ok) { if (before != null) s?.state?.set(Tempo.TYPE, before) else s?.state?.remove(Tempo.TYPE); relationsTick++; failed() }
+        }
+    }
+
+    /** I gruppi a tempo tenuti aperti oltre la scadenza (su questo telefono). */
+    var keptOpen by mutableStateOf(simplePrefs.getStringSet("keep_" + account.name, emptySet()).orEmpty())
+        private set
+
+    fun keepOpen(roomId: String) {
+        keptOpen = keptOpen + roomId
+        simplePrefs.edit().putStringSet("keep_" + account.name, keptOpen).apply()
+    }
+
+    /** I gruppi a tempo scaduti: stanno nell'archivio dell'elenco. */
+    fun archived(): Set<String> {
+        val today = java.time.LocalDate.now()
+        return data.values.filter { it.id !in keptOpen && Tempo.decode(it.state[Tempo.TYPE])?.let { b -> Tempo.archived(b, today) } == true }.map { it.id }.toSet()
+    }
+
+    // --- Modalità semplice (tavola ChatSemplice) ---
+
+    private val simplePrefs get() = context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE)
+    /** Per account: accesa, le persone (al più quattro), chi riceve «Aiuto». */
+    var simple by mutableStateOf(Semplice.decode(simplePrefs.getString("simple_" + account.name, null)))
+        private set
+
+    fun changeSimple(c: Semplice.Config) {
+        simple = c
+        simplePrefs.edit().putString("simple_" + account.name, Semplice.encode(c)).apply()
+    }
+
+    /** «Aiuto»: un messaggio alla persona scelta e, se si può, la posizione dal vivo per un'ora. */
+    fun askHelp(withLocation: Boolean, done: (Boolean) -> Unit) {
+        val room = simple.help ?: return done(false)
+        val me = session?.userId.orEmpty()
+        send(room, context.getString(R.string.sm_help_text, Semplice.greetingName(simple, me))) { done(false) }
+        if (withLocation) startLive(room, Posizione.Until.Hour) {}
+        done(true)
+    }
+
+    // --- Presa visione (tavola ChatPresaVisione) ---
+
+    /** Per stanza: fino a quando ha letto ognuno (conferme di lettura). */
+    val readers = mutableStateMapOf<String, Map<String, Long>>()
+
+    /** Manda [text] chiedendo la presa visione (gli altri confermano con ✅, anche da Element). */
+    fun sendAck(roomId: String, text: String, failed: () -> Unit) {
+        sendContent(roomId, Ack.content(text, context.getString(R.string.pv_fallback)), Event.Kind.Text, failed)
+        loadMembers(roomId)
+    }
+
+    /** «Ricevuto»: la reazione ✅. */
+    fun confirmAck(roomId: String, e: Event, failed: () -> Unit) {
+        if (session?.userId in relations.reactors(e.id, Ack.KEY)) return
+        react(roomId, e.id, Ack.KEY, failed)
+    }
+
+    /** I membri della stanza, se non ci sono già. */
+    fun loadMembers(roomId: String) {
+        if (members.containsKey(roomId)) return
+        val c = client ?: return
+        scope.launch { withContext(Dispatchers.IO) { runCatching { c.joinedMembers(roomId) }.getOrNull() }?.let { members[roomId] = it.sorted() } }
+    }
+
+    /** «Ricorda a chi manca»: una risposta al messaggio con i nomi di chi non ha ancora confermato. */
+    fun remindAck(roomId: String, e: Event, missing: List<String>, failed: () -> Unit) {
+        if (missing.isEmpty()) return
+        reply(roomId, e.id, context.getString(R.string.pv_remind_text, missing.joinToString(", ") { nameOf(it) }), failed)
+    }
+
+    // --- Difesa dalle truffe (tavola ChatTruffa) ---
+
+    /**
+     * Blocca chi ha scritto: lo si ignora (lista `m.ignored_user_list` dell'account, come Element: i suoi messaggi e
+     * inviti non arrivano più) e si esce dalla chat.
+     */
+    fun block(roomId: String, userId: String, done: (Boolean) -> Unit) {
+        val c = client ?: return done(false)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val cur = runCatching { c.accountData("m.ignored_user_list") }.getOrNull() ?: JSONObject()
+                    val users = cur.optJSONObject("ignored_users") ?: JSONObject()
+                    users.put(userId, JSONObject())
+                    c.putAccountData("m.ignored_user_list", JSONObject().put("ignored_users", users))
+                    c.leave(roomId)
+                }.isSuccess
+            }
+            if (ok) open(null)
+            done(ok)
+        }
     }
 
     // --- Posizione dal vivo a tempo (tavola ChatPosizione) ---
@@ -231,7 +371,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     private fun startFolders() {
         folders = Cartelle.decode(folderPrefs.getString(account.name, null))
-        if (folders.none { it.id == folder }) folder = null
+        if (folder != ARCHIVE && folders.none { it.id == folder }) folder = null
         val c = client ?: return
         scope.launch {
             selfRoom = withContext(Dispatchers.IO) { runCatching { Cartelle.selfRoom(c.accountData(Cartelle.SELF)) }.getOrNull() }
@@ -318,6 +458,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                         runCatching { ProgrammaStore.work(context, account, c, cr) }
                     }
                     refreshPlans()
+                    if (shareHours) publishHours(all = false)
                 }
                 delay(30_000)
             }
@@ -400,6 +541,9 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         clearMemory()
         account = a
         ChatAccounts.setActive(context, a)
+        simple = Semplice.decode(simplePrefs.getString("simple_" + a.name, null))
+        shareHours = simplePrefs.getBoolean("hours_" + a.name, false)
+        keptOpen = simplePrefs.getStringSet("keep_" + a.name, emptySet()).orEmpty()
         store = SessionStore(context, a)
         session = store.load()
         keptInSuite = store.keptInSuite
@@ -620,6 +764,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                                 content.optString("displayname").takeIf { it.isNotBlank() }?.let { s.names[user] = it; people[user] = it }
                             }
                             "m.room.encryption" -> s.encrypted = true
+                            // L'orario di lavoro di ognuno (tavola ChatQuandoLavora), con la chiave del suo id.
+                            Orari.TYPE -> s.state[Orari.TYPE + "|" + e.optString("state_key")] = content
                             else -> if (e.optString("state_key").isEmpty()) s.state[type] = content
                         }
                     }

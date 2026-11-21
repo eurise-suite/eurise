@@ -1,7 +1,11 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package eu.eurise.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,4 +114,123 @@ internal fun RoomThreadsLine(model: ChatModel, roomId: String) {
             color = THREAD, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
     Spacer(Modifier.height(0.dp))
+}
+
+/**
+ * L'avviso di truffa sotto un messaggio (tavola ChatTruffa): che copione è, cosa fare, la rubrica per chiamare chi conosci
+ * davvero, Blocca (con un secondo tocco). Il controllo si fa sul telefono, il messaggio non esce.
+ */
+@Composable
+internal fun ScamCard(model: ChatModel, actions: ChatActions, roomId: String, sender: String, v: eu.eurise.core.suite.ScamCheck.Verdict) {
+    val red = Color(0xFFA4502E)
+    var confirm by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val blocked = stringResource(R.string.sc_blocked)
+    val failed = stringResource(R.string.sc_block_failed)
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(16.dp)).background(red.copy(alpha = 0.10f))
+            .border(1.5.dp, red.copy(alpha = 0.45f), RoundedCornerShape(16.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.shield(2.2f), null, tint = red, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.sc_title), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = red)
+        }
+        Text(stringResource(when (v.kind) {
+            eu.eurise.core.suite.ScamCheck.Kind.Family -> R.string.sc_family
+            eu.eurise.core.suite.ScamCheck.Kind.Money -> R.string.sc_money
+            eu.eurise.core.suite.ScamCheck.Kind.Bank -> R.string.sc_bank
+            eu.eurise.core.suite.ScamCheck.Kind.Parcel -> R.string.sc_parcel
+            eu.eurise.core.suite.ScamCheck.Kind.Code -> R.string.sc_code
+        }), fontSize = 13.5.sp, lineHeight = 19.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (v.kind == eu.eurise.core.suite.ScamCheck.Kind.Family || v.kind == eu.eurise.core.suite.ScamCheck.Kind.Money) {
+                Row(
+                    Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(red).clickable(role = Role.Button) {
+                        actions.launch(android.content.Intent(android.content.Intent.ACTION_VIEW, android.provider.ContactsContract.Contacts.CONTENT_URI)
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(EuriseIcons.phone(2.2f), null, tint = Color.White, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.sc_contacts), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+            Box(
+                Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) {
+                    if (!confirm) { confirm = true; return@clickable }
+                    model.block(roomId, sender) { ok -> actions.toast(if (ok) blocked else failed) }
+                }.padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(stringResource(if (confirm) R.string.sc_block_confirm else R.string.sc_block), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = red) }
+        }
+        Text(stringResource(R.string.sc_local), fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * Un messaggio che chiede la presa visione (tavola ChatPresaVisione). Tuo: barra «Ricevuto da 4 su 6», chi manca (letto
+ * e non confermato, non letto) e «Ricorda a chi manca». Di altri: il testo e il tasto «Ricevuto» (una reazione ✅).
+ */
+@Composable
+internal fun AckBubble(model: ChatModel, actions: ChatActions, roomId: String, e: Event, mine: Boolean, onLong: () -> Unit) {
+    @Suppress("UNUSED_VARIABLE") val tick = model.relationsTick
+    val scheme = MaterialTheme.colorScheme
+    val amber = Color(0xFF85672B)
+    val green = Color(0xFF4F6B5A)
+    val failed = stringResource(R.string.ch_send_failed)
+    val content = androidx.compose.runtime.remember(e.data) { e.data?.let { runCatching { org.json.JSONObject(it) }.getOrNull() } }
+    val text = Ack.text(content, e.text)
+    val me = model.session?.userId.orEmpty()
+    val confirmed = model.relations.reactors(e.id, Ack.KEY)
+    androidx.compose.runtime.LaunchedEffect(roomId) { model.loadMembers(roomId) }
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surface)
+            .combinedClickable(onClick = {}, onLongClick = onLong).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.eye(2.2f), null, tint = amber, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(if (mine) stringResource(R.string.pv_asks_me) else stringResource(R.string.pv_asks, model.nameOf(e.sender)),
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = amber)
+        }
+        Text(text, fontSize = 14.5.sp, lineHeight = 20.sp)
+        if (mine) {
+            val s = Ack.status(model.members[roomId].orEmpty(), me, confirmed, model.readers[roomId].orEmpty(), e.time)
+            if (s.total > 0) {
+                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(scheme.onSurface.copy(alpha = 0.08f))) {
+                    Box(Modifier.fillMaxWidth(s.confirmed.size / s.total.toFloat()).height(8.dp).background(green))
+                }
+                Text(stringResource(R.string.pv_count, s.confirmed.size, s.total), fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                val missing = s.readOnly.map { stringResource(R.string.pv_read_only, model.nameOf(it)) } + s.unread.map { stringResource(R.string.pv_unread, model.nameOf(it)) }
+                if (missing.isNotEmpty()) {
+                    Text(stringResource(R.string.pv_missing, missing.joinToString(", ")), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+                    Row(
+                        Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(scheme.background).clickable(role = Role.Button) {
+                            model.remindAck(roomId, e, s.readOnly + s.unread) { actions.toast(failed) }
+                        }.padding(horizontal = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(EuriseIcons.clock(2.2f), null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.pv_remind), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else Text(stringResource(R.string.pv_all), fontSize = 12.sp, color = green, fontWeight = FontWeight.Bold)
+            }
+        } else {
+            val done = me in confirmed
+            Row(
+                Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(if (done) green.copy(alpha = 0.15f) else green)
+                    .clickable(enabled = !done, role = Role.Button) { model.confirmAck(roomId, e) { actions.toast(failed) } }.padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(EuriseIcons.check(2.4f), null, tint = if (done) green else Color.White, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(if (done) R.string.pv_done else R.string.pv_confirm), fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    color = if (done) green else Color.White)
+            }
+        }
+    }
 }

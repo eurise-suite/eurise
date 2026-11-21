@@ -4,6 +4,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <queries>
         <package android:name="foundation.e.advancedprivacy" />
+        <!-- Password e Galleria nel centro privacy e nel cestino unico dell'app Eurise (AppHubContract). -->
+        <package android:name="eu.eurise.password" />
+        <package android:name="eu.eurise.password.debug" />
+        <package android:name="eu.eurise.gallery" />
+        <package android:name="eu.eurise.gallery.debug" />
         <intent>
             <action android:name="android.net.VpnService" />
         </intent>

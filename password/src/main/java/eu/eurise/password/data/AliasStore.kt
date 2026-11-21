@@ -19,7 +19,7 @@ enum class AliasCheck { Ok, Rejected, Offline }
  * Da dove arrivano gli indirizzi per le iscrizioni. Il servizio si sceglie nelle impostazioni e la sua chiave resta
  * cifrata sul telefono; all'esterno va solo il nome del sito per cui si crea l'alias.
  */
-class AliasStore(context: Context) {
+class AliasStore(private val context: Context) {
     private val prefs = context.getSharedPreferences("password_alias", Context.MODE_PRIVATE)
     private val client = WebDav.sharedClient
     private val json = "application/json".toMediaType()
@@ -55,6 +55,7 @@ class AliasStore(context: Context) {
             AliasProvider.KMail -> kMail(clean)?.let { (token, hosting, box) -> infomaniak("/1/mail_hostings/$hosting/mailboxes/${box.substringBefore('@')}/aliases", token) } ?: return AliasCheck.Rejected
             else -> return AliasCheck.Rejected
         }.get().build()
+        eu.eurise.core.suite.ServiceLog.log(context, PwdHub.aliasId(which))
         val code = withContext(Dispatchers.IO) {
             runCatching { client.newCall(request).execute().use { it.code } }.getOrNull()
         } ?: return AliasCheck.Offline
@@ -68,6 +69,7 @@ class AliasStore(context: Context) {
     /** Crea un alias per [hostname] (dominio del sito o nome del pacchetto dell'app); null se non riesce. */
     suspend fun create(hostname: String): String? = withContext(Dispatchers.IO) {
         val key = secret(provider) ?: return@withContext null
+        if (provider != AliasProvider.Fixed) eu.eurise.core.suite.ServiceLog.log(context, PwdHub.aliasId(provider))
         if (provider == AliasProvider.KMail) return@withContext createKMail(key, hostname)
         val request = when (provider) {
             AliasProvider.SimpleLogin -> simpleLogin("/api/alias/random/new?hostname=" + android.net.Uri.encode(hostname), key)

@@ -248,6 +248,45 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
   permesso di firma e tocca `app-debug.apk`); frasi della Tastiera nel backup.
 - **Tela**: tolte le tavole superate dell'area (TastBarra, TastRighe, GalRegola); le tavole nuove segnate approvate.
 
+## 21 novembre: editor della Galleria più veloce e ritaglio riparato; Password e Galleria nel centro privacy e nel cestino unico (giro 965, in apk-prova)
+- **Editor, cose rotte** (dal proprietario: «lento, pachidermico, i cambiamenti non in tempo reale, il ritaglio non va»):
+  - Ritaglio: dal giro 797 il ritaglio era tra le chiavi del gesto sulla foto, così il gesto ripartiva a ogni passo e il
+    riquadro non si trascinava. Ora si legge dentro il gesto (anche il centro di Sfocatura e Vignettatura).
+  - Cursori e ghiera: i gesti chiamavano le funzioni del primo disegno, che partivano dai valori di allora; muovere un
+    cursore rimetteva com'erano gli altri della stessa sezione (anche Prospettiva ed Espandi). Ora `rememberUpdatedState`.
+- **Editor, velocità**: prima ogni movimento avviava, dopo 70 ms, un calcolo sulla copia grande che non si fermava più,
+  e se ne accumulavano molti. Ora un calcolo alla volta (`PreviewJob`, `renderPreview`) su una copia da 800 px mentre si
+  trascina, la copia grande 220 ms dopo che la mano si ferma, in un lavoro a parte che non blocca i movimenti nuovi.
+  Prospettiva sulla copia piccola durante il gesto, la grande fuori dal thread principale. La foto da modificare si legge
+  già a 1600 px (`setTargetSize`; prima una foto da 4000 px restava a 2000). Misure della cornice sempre dalla copia
+  grande, così passare dalla piccola alla grande non sposta nulla.
+- **Centro privacy e cestino unico** (passo 5 dei prossimi): contratto nuovo `AppHubContract` in **core/suite** (parte
+  comune; più `ServiceLog` con `ServiceLogTest` e le `queries` dei pacchetti di Password e Galleria nel manifesto).
+  Fornitore `<pacchetto>.hub` in Password e Galleria (`data/HubProvider.kt`), permesso della suite nel manifesto e
+  `SuiteAccess.callerAllowed` in `call`: è una porta d'ingresso nuova, da mettere nella prova sull'emulatore della chat
+  Sicurezza (`prova-porte`).
+  - Centro privacy dell'app Eurise: sotto «Altre app della suite» i servizi di Password (sincronizzazione, violazioni,
+    addy.io, SimpleLogin) e della Galleria (Luoghi, caricamento) con le tacchette e lo stato. Spegnere da lì, senza
+    conferme; accendere apre la privacy dell'app (ingresso `ACTION_OPEN` protetto: alias `AddFromSuite` di Password,
+    `FromSuite` nuovo della Galleria), dove ci sono la spiegazione e il collegamento. I contatti di Password e Galleria
+    (sincronizzazione, Have I Been Pwned, alias, Nominatim, caricamento) vanno nel loro registro e compaiono nel registro
+    del centro privacy. Spenti da fuori, le schermate aperte di Password rileggono le scelte (`PwdHub.changes`).
+  - Cestino unico: filtro Password. A cassaforte aperta le voci del cestino della cassaforte, con Rimetti ed Elimina per
+    sempre (`Vault.binned`, `restore`, `deleteForever`, con test: un'eliminata per sempre resta tale anche dopo l'unione con
+    un'altra copia); chiusa, solo quante sono (si ricorda il numero, mai i nomi) e «Sblocca», che apre Password e torna.
+    «Svuota» non tocca le password né le foto. Foto e video nel cestino di Android arrivano dalla Galleria quando l'app
+    Eurise non ha il permesso delle foto; Rimetti ed Elimina li chiede Android, come prima.
+  - **Tocca l'app Eurise**: serve `app-debug.apk` nuovo, oltre a Password e Galleria.
+- **Pulizia di Password**: le righe con interruttore delle impostazioni usano `SwitchRow` comune. Gli altri componenti
+  copiati erano già passati a `GroupCard`, `SectionLabel`, `CardDivider`; restano propri solo pezzi di Password
+  (`BackHeader`, `PillAction`, `RoundIcon`).
+- Nel giro 965 l'APK della Tastiera all'inizio non si è compilato: Gradle non trovava il plugin di Kotlin 2.4.0 (errore
+  di scaricamento, non del codice). Attenzione: una pubblicazione senza Tastiera la **toglie** da `apk-prova`. Rifatto il
+  solo lavoro della Tastiera (riuscito) e ripubblicato il giro: in `apk-prova` ci sono tutti. Il giro 962 si era fermato su
+  un errore della Chat, corretto da quella chat.
+- Prima di cominciare ho controllato il lavoro della chat Sicurezza: `prova-sicurezza` è tutto dentro `brand`, l'editor
+  non l'ha toccato nessun altro; niente librerie nuove (la verifica delle librerie blocca su `brand`).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -266,7 +305,10 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
+0. **Prova del proprietario sul giro 965**: editor della Galleria (ritaglio, cursori, velocità dell'anteprima con e senza
+   effetti), centro privacy e cestino unico con Password e Galleria. Se l'anteprima è ancora lenta: `PROXY_SIDE` e
+   `IDLE_MS` in `Editor.kt`.
+   **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
    `LM_WEIGHT` e `LM_MARGIN` in `KeyModel`.
    **Editor della Galleria**: tutte le tavole in codice (giri 722–797). Resta la prova del proprietario; possibili ritocchi
    dopo la prova (forza degli effetti, velocità dell'anteprima con molti effetti). Prova del proprietario sui giri 722 (Regola, Curve, le tue
@@ -282,13 +324,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 3. **Tastiera fuori stile**: schermate delle impostazioni ancora di HeliBoard (tavola prima del codice). Con l'occasione
    «Ricomincia» per il modo di toccare (`TouchModel.reset`, oggi senza pulsante).
 4. **Frase intera nella fila dei suggerimenti** (frasi abituali visibili): tavola sulla pagina Integrazioni, poi codice.
-5. **Privacy di quest'area**: semaforo a 10 tacchette in Password (Have I Been Pwned, alias, Murena) e Galleria
-   (OpenStreetMap per i luoghi, caricamento); Password e Galleria comandabili dal centro privacy e nel cestino unico
-   (serve il permesso di firma con l'app Eurise; tocca anche `app-debug.apk`).
+5. ~~Privacy di quest'area~~ fatta nei giri 830 e 965 (tacchette, centro privacy, cestino unico). Resta la prova sul
+   telefono con Password, Galleria e app Eurise del giro 965; poi le frasi della Tastiera nel backup.
 6. **Galleria, resti**: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario,
    «Apri da…» di File.
-7. **Pulizia del codice**: `PasswordApp` (1355 righe) da dividere; componenti copiati (Chip, Card, Pill, SwitchRow) da
-   portare in `core/designsystem` (parte comune: scriverlo qui).
+7. ~~Pulizia del codice di Password~~ fatta (giri 822 e 965): `PasswordApp` diviso, componenti comuni al posto delle copie.
 8. **In fondo**: Password Famiglia (tavole da approvare); kMail tra gli alias (API non verificata); kDrive (bloccato da
    Infomaniak); scrittura a mano nella Tastiera (rimandata: nessun modello libero).
 - **Da provare sul telefono, senza esito scritto**: carte con NFC e fotocamera, I miei dati che compilano i moduli,
@@ -310,7 +350,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
   - Tastiera: https://github.com/eurise-suite/eurise/releases/download/apk-prova/EuriseTastiera-debug.apk
   - Galleria: https://github.com/eurise-suite/eurise/releases/download/apk-prova/gallery-debug.apk
   - Se cambia `core/suite`: https://github.com/eurise-suite/eurise/releases/download/apk-prova/app-debug.apk
-- Parti comuni toccate: `canvas.json` della tela (fila dell'editor sulla pagina Galleria) il 17 novembre; `canvas.json` (fila TastComparsa) il 16 novembre, notte; `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
+- Parti comuni toccate: `core/suite` (`AppHubContract`, `ServiceLog`, `queries` nel manifesto) il 21 novembre; `canvas.json` della tela (fila dell'editor sulla pagina Galleria) il 17 novembre; `canvas.json` (fila TastComparsa) il 16 novembre, notte; `core/cloud` (backup: `KeyboardBackup`, `queries` nel manifest) il 16 novembre, sera.
 - Ogni servizio che fa uscire dati è spento di base e compare nel centro privacy; servizi chiusi per ultimi con avviso.
 - Parti comuni (`core/designsystem`, `core/ponte`, `CLAUDE.md`, `canvas.json` della tela): si toccano solo se serve e si
   scrive qui.

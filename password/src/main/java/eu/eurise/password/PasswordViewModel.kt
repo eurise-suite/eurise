@@ -212,6 +212,17 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
     private val _breachFailed = MutableStateFlow(false)
     val breachFailed = _breachFailed.asStateFlow()
 
+    // Dopo le dichiarazioni qui sopra (l'ordine conta): spenti dal centro privacy dell'app Eurise mentre Password era
+    // aperta, si rileggono le scelte.
+    init {
+        viewModelScope.launch {
+            eu.eurise.password.data.PwdHub.changes.collect {
+                _alias.value = aliases.provider
+                _breachOn.value = breach.enabled
+            }
+        }
+    }
+
     fun setBreach(on: Boolean) {
         breach.enabled = on
         _breachOn.value = on

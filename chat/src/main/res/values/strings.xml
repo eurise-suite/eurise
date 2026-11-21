@@ -359,4 +359,114 @@
     <string name="lo_sharing">Stai condividendo la posizione con %1$s</string>
     <string name="lo_until">fino alle %1$s · Smetti per fermarla</string>
     <string name="lo_until_arrival">finché arrivi · Smetti per fermarla</string>
+
+    <!-- Difesa dalle truffe (tavola ChatTruffa) -->
+    <string name="sc_title">Attenzione: sembra una truffa</string>
+    <string name="sc_family">Qualcuno di nuovo che dice di essere un familiare e chiede soldi in fretta: è il copione più usato. Prima di fare qualsiasi cosa, chiama il numero che hai in rubrica.</string>
+    <string name="sc_money">Chi chiede soldi con fretta e non lo conosci di solito non è chi dice di essere. Prima di pagare, senti la persona al numero che hai già.</string>
+    <string name="sc_bank">Banche, Poste e uffici non scrivono che il conto è bloccato chiedendo di toccare un link. Non toccarlo: apri l\'app della banca o chiama il numero sulla carta.</string>
+    <string name="sc_parcel">I corrieri veri non chiedono di pagare piccole spese con un link. Non toccarlo: controlla dal sito del corriere.</string>
+    <string name="sc_code">Il codice che ti arriva per SMS non si dà mai a nessuno, nemmeno a un amico: serve a entrare nei tuoi account. Se un amico te lo chiede, chiamalo: forse gli hanno rubato l\'account.</string>
+    <string name="sc_contacts">Chiama chi conosci</string>
+    <string name="sc_block">Blocca</string>
+    <string name="sc_block_confirm">Tocca di nuovo: blocca</string>
+    <string name="sc_blocked">Bloccato: non ti scriverà più qui</string>
+    <string name="sc_block_failed">Non riesco a bloccarlo: controlla la connessione</string>
+    <string name="sc_local">Controllo fatto sul telefono: il messaggio non esce.</string>
+
+    <!-- Presa visione (tavola ChatPresaVisione) -->
+    <string name="pv_ask">Chiedi la presa visione</string>
+    <string name="pv_ask_sub">Ognuno conferma con «Ricevuto»; tu vedi chi manca</string>
+    <string name="pv_fallback">— Presa visione: conferma con ✅</string>
+    <string name="pv_asks_me">Chiede la presa visione · Tu</string>
+    <string name="pv_asks">%1$s · chiede la presa visione</string>
+    <string name="pv_count">Ricevuto da %1$d su %2$d</string>
+    <string name="pv_missing">Mancano: %1$s</string>
+    <string name="pv_read_only">%1$s (letto, non confermato)</string>
+    <string name="pv_unread">%1$s (non letto)</string>
+    <string name="pv_all">Hanno confermato tutti</string>
+    <string name="pv_remind">Ricorda a chi manca</string>
+    <string name="pv_remind_text">%1$s: c\'è da confermare la presa visione di questo messaggio (tasto «Ricevuto», o ✅).</string>
+    <string name="pv_confirm">Ricevuto</string>
+    <string name="pv_done">Ricevuto ✓</string>
+
+    <!-- Modalità semplice (tavola ChatSemplice) -->
+    <string name="sm_menu">Modalità semplice</string>
+    <string name="sm_setup_explain">Per chi fa fatica con il telefono: al posto dell\'elenco, fino a quattro persone in grande, «Manda un vocale» e il tasto rosso «Aiuto». In fondo si vede sempre che è accesa e come toglierla.</string>
+    <string name="sm_name_hint">Il nome per il saluto (Bruna)</string>
+    <string name="sm_pick">Le persone (al più %1$d); tocca «Aiuto» per scegliere chi lo riceve</string>
+    <string name="sm_help_label">Aiuto</string>
+    <string name="sm_make_help">Aiuto?</string>
+    <string name="sm_on">Accendi la modalità semplice</string>
+    <string name="sm_hello">Ciao %1$s</string>
+    <string name="sm_empty">Nessuna persona scelta: aggiungile dal foglio dell\'account.</string>
+    <string name="sm_voice">Manda un vocale</string>
+    <string name="sm_voice_to">A chi?</string>
+    <string name="sm_voice_hint">Nella chat tieni premuto il microfono mentre parli, poi lascia.</string>
+    <string name="sm_help">Aiuto</string>
+    <string name="sm_help_ask">Chiedo aiuto a %1$s?</string>
+    <string name="sm_help_what">Gli scrivo che hai bisogno di aiuto e, per un\'ora, gli faccio vedere dove sei. Puoi smettere quando vuoi.</string>
+    <string name="sm_help_yes">Sì, chiedi aiuto</string>
+    <string name="sm_help_no">No, torna indietro</string>
+    <string name="sm_help_text">🆘 %1$s chiede aiuto. Ti faccio vedere dove sono per un\'ora.</string>
+    <string name="sm_help_sent">Ho scritto a %1$s</string>
+    <string name="sm_footer">Modalità semplice accesa · la vedi sempre qui · puoi toglierla</string>
+    <string name="sm_leave">Torna alla Chat completa</string>
+    <string name="sm_leave_confirm">Tocca di nuovo: torna alla Chat completa</string>
+    <plurals name="sm_new">
+        <item quantity="one">%d messaggio nuovo</item>
+        <item quantity="many">%d messaggi nuovi</item>
+        <item quantity="other">%d messaggi nuovi</item>
+    </plurals>
+
+    <!-- Proposte dai messaggi e riassunto (tavole ChatProposta e ChatRiassunto) -->
+    <string name="pp_event">%1$s · con %2$s</string>
+    <string name="pp_event_title">Con %1$s</string>
+    <string name="pp_calendar">in Calendario</string>
+    <string name="pp_free">libero in Calendario</string>
+    <string name="pp_busy">c\'è già: %1$s</string>
+    <string name="pp_task">Attività</string>
+    <string name="pp_task_due">Attività · entro %1$s</string>
+    <string name="pp_add">Aggiungi</string>
+    <string name="pp_added">Fatto</string>
+    <string name="rs_title">%1$d messaggi da leggere, in breve</string>
+    <string name="rs_close">Chiudi</string>
+    <string name="rs_go">Riassumi sul telefono</string>
+    <string name="rs_working">Leggo i messaggi…</string>
+    <string name="rs_no_model">Per il riassunto serve un modello: scaricalo in Eurise AI.</string>
+    <string name="rs_no_app">Per il riassunto serve Eurise AI (lavora sul telefono, senza Internet).</string>
+    <string name="rs_failed">Il riassunto non è riuscito.</string>
+    <string name="rs_event">Evento %1$s</string>
+    <string name="rs_task">Attività: %1$s</string>
+    <string name="rs_local">Fatto sul telefono con il modello scaricato: i messaggi non escono.</string>
+    <string name="rs_prompt">Riassumi in italiano, in al massimo cinque punti brevi che iniziano con «•», questi messaggi di una chat di gruppo. Metti in evidenza date, scadenze, soldi e richieste. Niente introduzione.</string>
+
+    <!-- Arriva quando l'altro lavora (tavola ChatQuandoLavora) -->
+    <string name="ql_off_until">fuori orario fino alle %1$s</string>
+    <string name="ql_banner">%1$s è fuori orario (lavora %2$s). Il messaggio parte quando inizia, così non disturbi la sua sera.</string>
+    <string name="ql_banner_urgent">%1$s è fuori orario (lavora %2$s): i messaggi partono subito.</string>
+    <string name="ql_send_now">Manda subito se è urgente</string>
+    <string name="ql_wait_again">Aspetta l\'orario di lavoro</string>
+    <string name="ql_share">Fai sapere il tuo orario di lavoro</string>
+    <string name="ql_share_sub">Nelle chat a due di questo account mette l\'orario 8–19 dei feriali: chi usa Ciarly ti scrive in quell\'orario e i messaggi fuori orario ti arrivano la mattina. Lo vedono solo le persone di quelle chat. Spento, l\'orario si toglie.</string>
+
+    <!-- Gruppi a tempo (tavola ChatGruppoTempo) -->
+    <string name="tb_chip">A tempo</string>
+    <string name="tb_title">Gruppo a tempo</string>
+    <string name="tb_explain">Per un viaggio, una festa, un trasloco: dal giorno al giorno. Finita la cosa, in cima compare il riepilogo (foto, spese, documenti); dopo l\'ultimo giorno il gruppo va nell\'archivio dell\'elenco, e ognuno può tenerlo aperto. Lo vedono tutti nel gruppo.</string>
+    <string name="tb_from">Dal</string>
+    <string name="tb_to">Al</string>
+    <string name="tb_end">Fine del viaggio (o della festa)</string>
+    <string name="tb_end_none">due giorni prima della fine</string>
+    <string name="tb_remove">Togli</string>
+    <string name="tb_failed">Non riesco a cambiarlo: serve essere amministratori del gruppo</string>
+    <string name="tb_line">Gruppo a tempo: dal %1$s al %2$s</string>
+    <string name="tb_done">Finito: riepilogo</string>
+    <string name="tb_recap">%1$d foto · %2$d spese · %3$d documenti</string>
+    <string name="tb_expenses">Spese</string>
+    <string name="tb_will_archive">Il gruppo va in archivio %1$s. Lo puoi tenere aperto con un tocco.</string>
+    <string name="tb_archived">Il gruppo è in archivio da dopo %1$s.</string>
+    <string name="tb_keep">Tieni aperto</string>
+    <string name="tb_kept">Tenuto aperto su questo telefono.</string>
+    <string name="tb_archive">Archivio · %1$d</string>
 </resources>

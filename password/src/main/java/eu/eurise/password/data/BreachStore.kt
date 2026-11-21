@@ -12,7 +12,7 @@ import okhttp3.Request
  * Il controllo delle password violate, spento di base. Sul telefono resta solo quali voci sono risultate violate, con
  * la data dell'ultima modifica: cambiando la password l'avviso sparisce da solo.
  */
-class BreachStore(context: Context) {
+class BreachStore(private val context: Context) {
     private val prefs = context.getSharedPreferences("password_breach", Context.MODE_PRIVATE)
 
     var enabled: Boolean
@@ -32,6 +32,7 @@ class BreachStore(context: Context) {
     suspend fun check(entries: List<VaultEntry>): Boolean = withContext(Dispatchers.IO) {
         val responses = HashMap<String, String>()
         val found = ArrayList<VaultEntry>()
+        eu.eurise.core.suite.ServiceLog.log(context, PwdHub.BREACH)
         try {
             for (entry in entries.filter { it.password.isNotEmpty() }) {
                 val hash = Breach.sha1(entry.password)

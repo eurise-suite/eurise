@@ -87,6 +87,34 @@ class KdbxTest {
         assertTrue(vault(Kdbx.read(Kdbx.write(file), key)).entries().isEmpty())
     }
 
+    @Test fun binnedEntriesComeBackOrGoForGood() {
+        val file = Kdbx.create(key, "Eurise")
+        val v = vault(file)
+        val kept = v.save(draft, null)
+        val gone = v.save(draft.copy(title = "Vecchio"), null)
+        assertFalse(v.restore(kept))
+        assertFalse(v.deleteForever(kept))
+        v.delete(kept, 2_000_000)
+        v.delete(gone, 3_000_000)
+        assertEquals(listOf("Sito" to 2_000_000L, "Vecchio" to 3_000_000L), v.binned().map { it.first.title to it.second })
+        assertTrue(v.restore(kept))
+        assertTrue(v.deleteForever(gone))
+        val reread = vault(Kdbx.read(Kdbx.write(file), key))
+        assertEquals(listOf("Sito"), reread.entries().map { it.title })
+        assertTrue(reread.binned().isEmpty())
+    }
+
+    @Test fun deletedForeverStaysDeletedAfterMerge() {
+        val (here, there) = twoCopies()
+        val id = here.entries().single().uuid
+        here.delete(id, 2_000_000)
+        assertTrue(here.deleteForever(id, 2_000_000))
+        here.mergeFrom(there)
+        assertTrue(here.entries().isEmpty())
+        there.mergeFrom(here)
+        assertTrue(there.entries().isEmpty())
+    }
+
     private fun twoCopies(): Pair<Vault, Vault> {
         val file = Kdbx.create(key, "Eurise")
         Vault(file.document).save(draft, null, 1_000_000)

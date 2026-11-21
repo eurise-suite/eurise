@@ -1,6 +1,10 @@
 package eu.eurise.messages.ui
 
 import android.content.ClipData
+import eu.eurise.core.suite.ScamCheck
+import eu.eurise.core.contacts.PeopleLookup
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.border
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -155,7 +159,10 @@ internal fun ConversationScreen(threadId: Long, addresses: List<String>, draft: 
             val list = messages.reversed()
             list.forEachIndexed { index, m ->
                 val ins = insights[m.key].orEmpty()
-                if (m.key in recentKeys) {
+                // Difesa dalle truffe (tavola ChatTruffa): chi non è in rubrica e scrive con un copione noto.
+                val scam = if (m.incoming && addresses.size == 1) ScamCheck.check(m.body, known = contact != null) else null
+                if (scam != null) item(key = m.key + "-s") { ScamCard(scam, main, isDefault, onBack) }
+                else if (m.key in recentKeys) {
                     val cards = ins.filter { it !is Insight.Foreign && it !is Insight.Code && it != Insight.Delivery }
                     if (cards.isNotEmpty() || (m.incoming && MessageInsights.isSuspicious(m.body))) item(key = m.key + "-i") {
                         InsightCard(m, cards, confirmed(messages, m), contact, scope, onReply = { send(it) })
@@ -376,6 +383,66 @@ private fun InsightCard(m: Message, insights: List<Insight>, confirmed: Boolean,
             }
         }
         done?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) }
+    }
+}
+
+/**
+ * L'avviso di truffa sotto il messaggio (tavola ChatTruffa): che copione è, cosa fare, «Chiama Luca (rubrica)» quando il
+ * messaggio dice un nome che hai in rubrica (se no la rubrica), Blocca. Il controllo si fa sul telefono.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScamCard(v: ScamCheck.Verdict, number: String, isDefault: Boolean, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val red = androidx.compose.ui.graphics.Color(0xFFA4502E)
+    val known = remember(v.name) { v.name?.let { n -> PeopleLookup.search(context, n, 5).firstOrNull { it.phones.isNotEmpty() } } }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(red.copy(alpha = 0.10f))
+            .border(1.5.dp, red.copy(alpha = 0.45f), RoundedCornerShape(16.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(EuriseIcons.shield(), null, tint = red, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.ms_scam_title), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = red)
+        }
+        Text(stringResource(when (v.kind) {
+            ScamCheck.Kind.Family -> R.string.ms_scam_family
+            ScamCheck.Kind.Money -> R.string.ms_scam_money
+            ScamCheck.Kind.Bank -> R.string.ms_scam_bank
+            ScamCheck.Kind.Parcel -> R.string.ms_scam_parcel
+            ScamCheck.Kind.Code -> R.string.ms_scam_code
+        }), fontSize = 13.5.sp, lineHeight = 19.sp)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (v.kind == ScamCheck.Kind.Family || v.kind == ScamCheck.Kind.Money) {
+                val label = known?.let { stringResource(R.string.ms_scam_call, it.name.substringBefore(' ')) } ?: stringResource(R.string.ms_scam_contacts)
+                Row(
+                    Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(red).clickable(role = Role.Button) {
+                        if (known != null) Reach.open(context, Reach.dial(known.phones.first()))
+                        else runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.provider.ContactsContract.Contacts.CONTENT_URI)) }
+                    }.padding(horizontal = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(EuriseIcons.phone(), null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(17.dp))
+                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+                }
+            }
+            if (isDefault && number.any(Char::isDigit)) {
+                var confirm by remember { mutableStateOf(false) }
+                Box(
+                    Modifier.height(48.dp).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) {
+                        if (!confirm) { confirm = true; return@clickable }
+                        val ok = runCatching {
+                            context.contentResolver.insert(android.provider.BlockedNumberContract.BlockedNumbers.CONTENT_URI,
+                                android.content.ContentValues().apply { put(android.provider.BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number) })
+                        }.isSuccess
+                        android.widget.Toast.makeText(context, if (ok) R.string.ms_scam_blocked else R.string.ms_scam_block_failed, android.widget.Toast.LENGTH_SHORT).show()
+                        if (ok) onBack()
+                    }.padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.Center,
+                ) { Text(stringResource(if (confirm) R.string.ms_scam_block_confirm else R.string.ms_scam_block), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = red) }
+            }
+        }
+        Text(stringResource(R.string.ms_scam_local), fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

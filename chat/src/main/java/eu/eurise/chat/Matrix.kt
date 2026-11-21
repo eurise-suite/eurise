@@ -129,7 +129,7 @@ object Matrix {
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
                     // A scomparsa (tavola ChatProgramma): il contenuto resta per l'etichetta.
                     else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text,
-                        data = if (content.has(Programma.FADE)) content.toString() else null, replyTo = reply)
+                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK)) content.toString() else null, replyTo = reply)
                 }
             }
             "m.room.member" -> {

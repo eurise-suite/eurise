@@ -84,4 +84,19 @@
     <string name="ms_not_sent_text">Apri Messaggi per riprovare.</string>
     <string name="ms_photo">Foto</string>
     <string name="backup_summary_messages">%1$d SMS e %2$d MMS</string>
+
+    <!-- Difesa dalle truffe (tavola ChatTruffa) -->
+    <string name="ms_scam_title">Attenzione: sembra una truffa</string>
+    <string name="ms_scam_family">Numero nuovo che dice di essere un familiare e chiede soldi in fretta: è il copione più usato. Prima di fare qualsiasi cosa, chiama il numero che hai in rubrica.</string>
+    <string name="ms_scam_money">Chi chiede soldi con fretta da un numero che non conosci di solito non è chi dice di essere. Prima di pagare, senti la persona al numero che hai già.</string>
+    <string name="ms_scam_bank">Banche, Poste e uffici non scrivono che il conto è bloccato chiedendo di toccare un link o di chiamare un numero. Non toccare il link: apri l\'app della banca o chiama il numero sulla carta.</string>
+    <string name="ms_scam_parcel">I corrieri veri non chiedono di pagare piccole spese con un link in un SMS. Non toccare il link: controlla dal sito del corriere con il numero della spedizione.</string>
+    <string name="ms_scam_code">Il codice che ti arriva per SMS non si dà mai a nessuno, nemmeno a un amico: serve a entrare nei tuoi account (WhatsApp, banca, SPID).</string>
+    <string name="ms_scam_call">Chiama %1$s (rubrica)</string>
+    <string name="ms_scam_contacts">Apri la rubrica</string>
+    <string name="ms_scam_block">Blocca</string>
+    <string name="ms_scam_block_confirm">Tocca di nuovo: blocca</string>
+    <string name="ms_scam_blocked">Numero bloccato</string>
+    <string name="ms_scam_block_failed">Non riesco a bloccarlo</string>
+    <string name="ms_scam_local">Controllo fatto sul telefono: il messaggio non esce.</string>
 </resources>

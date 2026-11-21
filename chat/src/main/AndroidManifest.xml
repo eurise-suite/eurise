@@ -32,6 +32,9 @@
         <package android:name="eu.eurise.mail.debug" />
         <!-- Vocali (tavola ChatVocali): trascrizione con Eurise Voce e lettura con il motore di sintesi del telefono. -->
         <package android:name="eu.eurise.voice" />
+        <!-- Riassunto dei messaggi (tavola ChatRiassunto): Eurise AI sul telefono. -->
+        <package android:name="eu.eurise.ai" />
+        <package android:name="eu.eurise.ai.debug" />
         <package android:name="eu.eurise.voice.debug" />
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />

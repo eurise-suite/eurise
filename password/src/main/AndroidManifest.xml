@@ -67,6 +67,12 @@
             android:authorities="${applicationId}.logins"
             android:exported="true"
             android:permission="${suitePermission}" />
+        <!-- Password nel centro privacy e nel cestino unico dell'app Eurise: solo app della suite. -->
+        <provider
+            android:name=".data.HubProvider"
+            android:authorities="${applicationId}.hub"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <!-- Voci mandate dalle altre app della suite (chiave di recupero della Chat): solo con il permesso della suite. -->
         <activity-alias
             android:name=".AddFromSuite"
@@ -76,6 +82,7 @@
             <intent-filter>
                 <action android:name="eu.eurise.action.ADD_PASSWORD" />
                 <action android:name="eu.eurise.action.UNLOCK_PASSWORD" />
+                <action android:name="eu.eurise.action.OPEN_FROM_HUB" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>

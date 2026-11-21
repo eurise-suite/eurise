@@ -44,10 +44,10 @@ enum class SyncProblem { Network, Rejected, OtherPassword }
  * La cassaforte: il file .kdbx sta nella memoria privata dell'app e, solo se l'utente lo accende, una copia del file
  * (già cifrato) va su Murena. La chiave resta in memoria finché la cassaforte è aperta e [lock] la cancella.
  */
-class VaultRepository private constructor(context: Context) {
-    private val file = File(context.filesDir, "cassaforte.kdbx")
-    private val prefs = context.getSharedPreferences("password_sync", Context.MODE_PRIVATE)
-    private val accounts = CloudAccounts.get(context)
+class VaultRepository private constructor(private val appContext: Context) {
+    private val file = File(appContext.filesDir, "cassaforte.kdbx")
+    private val prefs = appContext.getSharedPreferences("password_sync", Context.MODE_PRIVATE)
+    private val accounts = CloudAccounts.get(appContext)
     private val mutex = Mutex()
 
     private var opened: KdbxFile? = null
@@ -77,6 +77,9 @@ class VaultRepository private constructor(context: Context) {
 
     /** Una voce mandata da un'altra app della suite (chiave della Chat): si apre compilata, si salva se la persona conferma. */
     val pendingEntry = MutableStateFlow<eu.eurise.password.kdbx.EntryDraft?>(null)
+
+    /** Il centro privacy dell'app Eurise ha chiesto di aprire la privacy di Password (per accendere un servizio). */
+    val pendingPrivacy = MutableStateFlow(false)
 
     /** Una schermata dell'app è in primo piano. Se si è stati via troppo, il timer può aver ritardato: si blocca ora. */
     fun enter() {
@@ -162,6 +165,28 @@ class VaultRepository private constructor(context: Context) {
     suspend fun deleteEntry(uuid: String) {
         edit { it.delete(uuid) }
         syncNow()
+    }
+
+    /** Le voci nel cestino della cassaforte con il momento in cui ci sono finite; null se la cassaforte è chiusa. */
+    suspend fun binned(): List<Pair<eu.eurise.password.kdbx.VaultEntry, Long>>? = withContext(Dispatchers.Default) {
+        mutex.withLock { vault?.binned() }
+    }
+
+    /** Quante voci ci sono nel cestino, anche a cassaforte chiusa (si ricorda solo il numero, mai i nomi). */
+    val binCount: Int get() = prefs.getInt(KEY_BIN, 0)
+
+    /** Dal cestino della cassaforte di nuovo tra le voci (anche dal cestino unico dell'app Eurise). */
+    suspend fun restoreEntry(uuid: String): Boolean {
+        val ok = edit { it.restore(uuid) } == true
+        if (ok) syncNow()
+        return ok
+    }
+
+    /** Eliminata per sempre, anche dalle altre copie alla prossima sincronizzazione. */
+    suspend fun deleteForever(uuid: String): Boolean {
+        val ok = edit { it.deleteForever(uuid) } == true
+        if (ok) syncNow()
+        return ok
     }
 
     suspend fun importItems(drafts: List<EntryDraft>): ImportCounts? {
@@ -262,6 +287,7 @@ class VaultRepository private constructor(context: Context) {
         val local = vault ?: return false
         val key = compositeKey ?: return false
         val dav = dav() ?: return false
+        eu.eurise.core.suite.ServiceLog.log(appContext, PwdHub.SYNC)
         dav.mkdirs(REMOTE_DIR)
         repeat(3) {
             val remote = dav.stat(REMOTE_FILE)
@@ -315,7 +341,12 @@ class VaultRepository private constructor(context: Context) {
     }
 
     private fun publish() {
-        _state.value = VaultState.Open(vault?.entries().orEmpty())
+        val v = vault
+        _state.value = VaultState.Open(v?.entries().orEmpty())
+        if (v != null) {
+            val bin = runCatching { v.binned().size }.getOrDefault(0)
+            if (bin != prefs.getInt(KEY_BIN, -1)) prefs.edit().putInt(KEY_BIN, bin).apply()
+        }
     }
 
     private suspend fun persist(target: KdbxFile) {
@@ -337,6 +368,7 @@ class VaultRepository private constructor(context: Context) {
         private const val KEY_ACCOUNT = "account"
         private const val KEY_ETAG = "etag"
         private const val KEY_DIRTY = "dirty"
+        private const val KEY_BIN = "bin_count"
         private const val REMOTE_DIR = "Eurise/Password"
         private const val REMOTE_FILE = "$REMOTE_DIR/eurise.kdbx"
 

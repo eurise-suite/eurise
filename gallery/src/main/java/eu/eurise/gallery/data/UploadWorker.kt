@@ -56,6 +56,7 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         val dav = CloudAccounts.get(applicationContext).dav(settings.accountId) ?: return@withContext Result.success()
         try {
             store.records().filter { it.state == UploadRecord.DELETE_REMOTE }.forEach {
+                eu.eurise.core.suite.ServiceLog.log(applicationContext, GalHub.UPLOAD)
                 dav.delete(it.remote)
                 store.setState(listOf(it.uri), UploadRecord.EXCLUDED)
             }
@@ -64,6 +65,7 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 val queue = uploadQueue(MediaRepository(applicationContext).all(), UploadRule(settings.buckets, settings.fromMillis), known)
                 // Da Android 12 il sistema può negarlo a un lavoro partito in background: si continua lo stesso.
                 if (queue.isNotEmpty()) runCatching { setForeground(getForegroundInfo()) }
+                if (queue.isNotEmpty()) eu.eurise.core.suite.ServiceLog.log(applicationContext, GalHub.UPLOAD)
                 val folders = HashSet<String>()
                 for (item in queue) {
                     if (isStopped) return@withContext Result.retry()

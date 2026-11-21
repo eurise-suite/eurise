@@ -186,6 +186,10 @@ object Relations {
 
         fun redacted(id: String) = id in gone
 
+        /** Chi ha messo la reazione [key] (la presa visione: ✅). */
+        fun reactors(target: String, key: String): Set<String> =
+            reactions[target]?.values?.filter { it.key == key }?.map { it.sender }?.toSet() ?: emptySet()
+
         fun chips(target: String, me: String): List<Chip> {
             val m = reactions[target] ?: return emptyList()
             return m.values.groupBy { it.key }.map { (k, list) -> Chip(k, list.size, list.firstOrNull { it.sender == me }?.id) }

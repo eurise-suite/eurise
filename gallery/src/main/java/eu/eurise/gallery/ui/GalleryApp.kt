@@ -223,6 +223,8 @@ private fun GalleryApp(media: List<MediaItem>?, vm: GalleryViewModel, ops: Syste
     var cloudOpen by remember { mutableStateOf(false) }
     var cleanupOpen by remember { mutableStateOf(false) }
     var privacyOpen by remember { mutableStateOf(false) }
+    val askedPrivacy = eu.eurise.gallery.GalleryActivity.openPrivacy
+    LaunchedEffect(askedPrivacy) { if (askedPrivacy) { privacyOpen = true; eu.eurise.gallery.GalleryActivity.openPrivacy = false } }
     var secureOpen by remember { mutableStateOf(false) }
     var secureMove by remember { mutableStateOf<List<MediaItem>?>(null) }
     val all = media.orEmpty()
