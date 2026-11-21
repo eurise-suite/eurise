@@ -69,6 +69,10 @@ import eu.eurise.core.suite.VpnProvider
 import eu.eurise.core.suite.PrivacyCenter
 import eu.eurise.core.suite.PrivacyEvent
 import eu.eurise.core.suite.PrivacyService
+import eu.eurise.core.suite.AppHubContract
+import eu.eurise.core.suite.ServiceEvent
+import eu.eurise.core.suite.ServiceLog
+import eu.eurise.core.suite.SuiteAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
@@ -157,6 +161,31 @@ private fun TwoLines(
     }
 }
 
+/** Password o Galleria con i suoi servizi ([AppHubContract]) e il suo registro. */
+private class AppServices(val pkg: String, val name: Int, val services: List<AppHubContract.Service>, val log: List<ServiceEvent>)
+
+/** Le app separate che rispondono; quelle che mancano (o sono di una versione che non lo sa fare) restano fuori. */
+private fun loadApps(context: Context): List<AppServices> {
+    val debug = SuiteAccess.isDebug(context)
+    return listOf(AppHubContract.passwordPackage(debug) to R.string.pv_password, AppHubContract.galleryPackage(debug) to R.string.pv_gallery)
+        .mapNotNull { (pkg, name) -> AppHubContract.services(context, pkg)?.let { (list, log) -> AppServices(pkg, name, list, ServiceLog.parse(log)) } }
+}
+
+private fun jurisdiction(name: String) = Jurisdiction.entries.firstOrNull { it.name == name } ?: Jurisdiction.EU
+
+/** Un numero che cresce ogni volta che la schermata torna davanti: dopo l'altra app si rileggono i servizi. */
+@Composable
+private fun resumeTick(): Int {
+    var tick by remember { mutableStateOf(0) }
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event -> if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) tick++ }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    return tick
+}
+
 @Composable
 fun PrivacyRoute(onBack: () -> Unit) {
     var showLog by remember { mutableStateOf(false) }
@@ -182,7 +211,10 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     val choices by produceState(emptyList<NetworkExit>(), shieldTick) { value = withContext(Dispatchers.IO) { NetworkExit.choices(context) } }
     val notesAccount = accounts.firstOrNull { it.id == settings.notesAccount }?.takeIf { settings.notesEnabled }
     val notesPlace = notesAccount?.let { if (it.kind == CloudKind.Murena) "Murena" else it.name }
-    val on = states.count { it.value }
+    var appsTick by remember { mutableStateOf(0) }
+    val resumed = resumeTick()
+    val apps by produceState(emptyList<AppServices>(), appsTick, resumed) { value = withContext(Dispatchers.IO) { loadApps(context) } }
+    val on = states.count { it.value } + apps.sumOf { a -> a.services.count { it.on } }
 
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item(key = "head") {
@@ -290,10 +322,26 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
         item(key = "others") {
             SectionLabel(stringResource(R.string.pv_other_apps))
             Card {
-                TwoLines(stringResource(R.string.pv_gallery), stringResource(R.string.pv_gallery_d))
-                Line()
-                TwoLines(stringResource(R.string.pv_password), stringResource(R.string.pv_password_d))
-                Line()
+                // Password e Galleria: i loro servizi uno per uno, spenti anche da qui senza conferme; accenderli porta
+                // nell'app, dove ci sono la spiegazione e il collegamento. Se l'app non risponde resta la riga di prima.
+                listOf(R.string.pv_gallery to R.string.pv_gallery_d, R.string.pv_password to R.string.pv_password_d).forEach { (name, detail) ->
+                    val app = apps.firstOrNull { it.name == name }
+                    if (app == null) TwoLines(stringResource(name), stringResource(detail))
+                    else {
+                        Text(stringResource(name), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+                        app.services.forEachIndexed { i, s ->
+                            if (i > 0) Line()
+                            Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
+                                TwoLines(s.title, s.detail, Modifier.weight(1f).padding(end = 8.dp), s.score, jurisdiction(s.where))
+                                Switch(s.on, onCheckedChange = { value ->
+                                    if (value) AppHubContract.openIntent(context, app.pkg, AppHubContract.PAGE_PRIVACY)?.let { runCatching { context.startActivity(it) } }
+                                    else { AppHubContract.disable(context, app.pkg, s.id); appsTick++ }
+                                })
+                            }
+                        }
+                    }
+                    Line()
+                }
                 TwoLines(stringResource(R.string.pv_keyboard), stringResource(R.string.pv_keyboard_d), score = 10, where = Jurisdiction.Phone)
                 Line()
                 TwoLines(
@@ -342,6 +390,7 @@ private fun LogScreen(onBack: () -> Unit) {
     val cloud = remember { CloudSync.get(context.applicationContext) }
     val syncEvents by cloud.events.collectAsStateWithLifecycle()
     val events by produceState(emptyList<PrivacyEvent>()) { value = withContext(Dispatchers.IO) { PrivacyCenter.events() } }
+    val apps by produceState(emptyList<AppServices>()) { value = withContext(Dispatchers.IO) { loadApps(context) } }
     val permissions = remember { context.activePermissions() }
     val format = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -367,10 +416,15 @@ private fun LogScreen(onBack: () -> Unit) {
         item(key = "log") {
             SectionLabel(stringResource(R.string.pv_log))
             Card {
-                if (events.isEmpty() && syncEvents.isEmpty()) TwoLines(stringResource(R.string.pv_log_empty), null)
+                val appEvents = apps.flatMap { a -> a.log.map { a to it } }
+                if (events.isEmpty() && syncEvents.isEmpty() && appEvents.isEmpty()) TwoLines(stringResource(R.string.pv_log_empty), null)
                 val rows: List<Pair<Long, String>> = events.map { e ->
                     e.time to (if (e.count > 1) stringResource(R.string.pv_log_count, stringResource(e.service.titleRes()), e.count) else stringResource(e.service.titleRes()))
-                } + syncEvents.map { it.time to it.text }
+                } + syncEvents.map { it.time to it.text } + appEvents.map { (a, e) ->
+                    // Password e Galleria tengono il loro registro: qui si legge con il nome dell'app davanti.
+                    val title = stringResource(a.name) + " · " + (a.services.firstOrNull { it.id == e.id }?.title ?: e.id)
+                    e.time to (if (e.count > 1) stringResource(R.string.pv_log_count, title, e.count) else title)
+                }
                 rows.sortedByDescending { it.first }.take(100).forEachIndexed { i, (time, text) ->
                     if (i > 0) Line()
                     TwoLines(text, format.format(Date(time)))

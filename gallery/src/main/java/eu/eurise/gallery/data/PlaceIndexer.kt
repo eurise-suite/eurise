@@ -81,6 +81,7 @@ class PlaceIndexer(private val context: Context, private val store: GalleryStore
             .addQueryParameter("lon", cellLon(cell).toString())
             .build()
         val request = Request.Builder().url(url).header("User-Agent", WebDav.USER_AGENT).build()
+        eu.eurise.core.suite.ServiceLog.log(context, GalHub.NAMES)
         return WebDav.sharedClient.newCall(request).execute().use { res ->
             if (!res.isSuccessful) return null
             val json = JSONObject(res.body?.string().orEmpty())

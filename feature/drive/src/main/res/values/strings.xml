@@ -129,6 +129,14 @@
     <string name="bin_empty_title">Svuotare il cestino?</string>
     <string name="bin_empty_text">Note, attività, eventi e file nel cestino spariscono per sempre. Le foto restano nel cestino di Android finché non le togli una per una.</string>
     <string name="bin_cancel">Annulla</string>
+    <string name="bin_passwords">Password</string>
+    <string name="bin_pwd_kept">nel cestino della cassaforte</string>
+    <plurals name="bin_pwd_locked">
+        <item quantity="one">%1$d voce di Password nel cestino</item>
+        <item quantity="other">%1$d voci di Password nel cestino</item>
+    </plurals>
+    <string name="bin_pwd_locked_d">La cassaforte è chiusa: sbloccala per vedere i nomi e rimetterle.</string>
+    <string name="bin_unlock">Sblocca</string>
     <string name="drive_trip">Viaggio</string>
     <string name="drive_text_action">Aggiungi il testo (PDF cercabile)</string>
     <string name="drive_text_off">Prima accendi la lettura dei documenti dallo Scanner (Salva → Leggere il testo?).</string>

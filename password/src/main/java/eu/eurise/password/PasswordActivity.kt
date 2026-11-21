@@ -22,10 +22,13 @@ class PasswordActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         readOtp(intent)
         setContent { EuriseTheme { PasswordRoute() } }
-        // «Sblocca» chiesto dal Browser della suite: appena la cassaforte è aperta si torna alla pagina.
-        if (intent?.action == eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK &&
-            intent.component?.className == eu.eurise.core.suite.PasswordContract.ALIAS
-        ) {
+        // «Sblocca» chiesto dal Browser della suite o dal cestino unico dell'app Eurise: appena la cassaforte è aperta si
+        // torna indietro.
+        val fromSuite = intent?.component?.className == eu.eurise.core.suite.PasswordContract.ALIAS
+        val hubPage = intent?.getStringExtra(eu.eurise.core.suite.AppHubContract.EXTRA_PAGE)
+            .takeIf { fromSuite && intent?.action == eu.eurise.core.suite.AppHubContract.ACTION_OPEN }
+        if (hubPage == eu.eurise.core.suite.AppHubContract.PAGE_PRIVACY) repo.pendingPrivacy.value = true
+        if (fromSuite && (intent?.action == eu.eurise.core.suite.PasswordContract.ACTION_UNLOCK || hubPage == eu.eurise.core.suite.AppHubContract.PAGE_TRASH)) {
             lifecycleScope.launch {
                 repo.state.first { it is eu.eurise.password.data.VaultState.Open }
                 setResult(RESULT_OK)
@@ -37,6 +40,9 @@ class PasswordActivity : ComponentActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         readOtp(intent)
+        if (intent.action == eu.eurise.core.suite.AppHubContract.ACTION_OPEN && intent.component?.className == eu.eurise.core.suite.PasswordContract.ALIAS &&
+            intent.getStringExtra(eu.eurise.core.suite.AppHubContract.EXTRA_PAGE) == eu.eurise.core.suite.AppHubContract.PAGE_PRIVACY
+        ) repo.pendingPrivacy.value = true
     }
 
     private fun readOtp(intent: android.content.Intent?) {

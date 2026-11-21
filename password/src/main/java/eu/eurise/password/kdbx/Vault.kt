@@ -175,6 +175,47 @@ class Vault(val document: Document) {
         setTime(entry, "LastModificationTime", now)
     }
 
+    /** Le voci nel cestino della cassaforte, ognuna con il momento in cui ci è finita (LocationChanged). */
+    fun binned(): List<Pair<VaultEntry, Long>> {
+        val bin = recycleBin() ?: return emptyList()
+        val out = ArrayList<Pair<VaultEntry, Long>>()
+        fun walk(group: Element) {
+            group.children("Entry").forEach { out += read(it) to timeOf(it, "LocationChanged") }
+            group.children("Group").forEach { walk(it) }
+        }
+        walk(bin)
+        return out
+    }
+
+    /** Rimette tra le altre una voce del cestino; falso se non è nel cestino. */
+    fun restore(uuid: String, now: Long = System.currentTimeMillis()): Boolean {
+        val entry = binnedEntry(uuid) ?: return false
+        entry.parentNode.removeChild(entry)
+        rootGroup.appendChild(entry)
+        setTime(entry, "LocationChanged", now)
+        setTime(entry, "LastModificationTime", now)
+        return true
+    }
+
+    /**
+     * Elimina per sempre una voce del cestino (solo da lì): resta segnata tra le eliminate (DeletedObjects), così
+     * l'unione con un'altra copia non la riporta indietro. Falso se non è nel cestino.
+     */
+    fun deleteForever(uuid: String, now: Long = System.currentTimeMillis()): Boolean {
+        val entry = binnedEntry(uuid) ?: return false
+        entry.parentNode.removeChild(entry)
+        writeDeletedObjects(deletedObjects() + (uuid to now))
+        return true
+    }
+
+    private fun binnedEntry(uuid: String): Element? {
+        val bin = recycleBin() ?: return null
+        val entry = findEntry(uuid) ?: return null
+        var node: org.w3c.dom.Node? = entry.parentNode
+        while (node != null) { if (node === bin) return entry; node = node.parentNode }
+        return null
+    }
+
     /** Collega la voce a un'app installata: da quel momento le si propone in quell'app. */
     fun linkApp(uuid: String, packageName: String, now: Long = System.currentTimeMillis()) {
         val entry = findEntry(uuid) ?: return

@@ -101,6 +101,23 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+        <!-- La Galleria nel centro privacy e nel cestino unico dell'app Eurise: solo app della suite. -->
+        <provider
+            android:name=".data.HubProvider"
+            android:authorities="${applicationId}.hub"
+            android:exported="true"
+            android:permission="${suitePermission}" />
+        <!-- Dal centro privacy dell'app Eurise: apre la privacy della Galleria (per accendere un servizio). -->
+        <activity-alias
+            android:name=".FromSuite"
+            android:targetActivity=".GalleryActivity"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.OPEN_FROM_HUB" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

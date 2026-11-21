@@ -45,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -87,6 +86,7 @@ import eu.eurise.core.designsystem.component.CardDivider
 import eu.eurise.core.designsystem.component.EmptyState
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.GroupCard
+import eu.eurise.core.designsystem.component.SwitchRow
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.core.designsystem.component.glass
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -133,28 +133,22 @@ internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit, onPrivacy: ()
         val bioOn by vm.bioOn.collectAsStateWithLifecycle()
         GroupCard { PrivacySummaryRow(vm, onPrivacy) }
         GroupCard {
-            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.pwd_bio_switch), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(if (vm.bio.available) R.string.pwd_bio_detail else R.string.pwd_bio_unavailable), fontSize = 12.sp, color = scheme.onSurfaceVariant)
-                }
-                Switch(checked = bioOn, enabled = vm.bio.available, onCheckedChange = { if (it) vm.enableBio(context) else vm.disableBio() })
-            }
+            SwitchRow(
+                stringResource(R.string.pwd_bio_switch), bioOn, RowPad,
+                hint = stringResource(if (vm.bio.available) R.string.pwd_bio_detail else R.string.pwd_bio_unavailable), enabled = vm.bio.available,
+            ) { if (it) vm.enableBio(context) else vm.disableBio() }
             CardDivider()
             val breachOn by vm.breachOn.collectAsStateWithLifecycle()
             val breachLast by vm.breachLast.collectAsStateWithLifecycle()
             val breachFailed by vm.breachFailed.collectAsStateWithLifecycle()
             var explainBreach by remember { mutableStateOf(false) }
-            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.pwd_breach_switch), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    val lastText = if (breachLast > 0) DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(breachLast)) else stringResource(R.string.pwd_breach_never)
-                    Text(if (breachOn) stringResource(R.string.pwd_breach_on, lastText) else stringResource(R.string.pwd_breach_off), fontSize = 12.sp, color = scheme.onSurfaceVariant)
-                    if (breachOn && breachFailed) Text(stringResource(R.string.pwd_breach_failed), fontSize = 12.sp, color = scheme.error)
-                }
-                if (breachOn) RoundIcon(EuriseIcons.refresh(), stringResource(R.string.pwd_breach_now)) { vm.checkBreaches() }
-                Switch(checked = breachOn, onCheckedChange = { if (it) explainBreach = true else vm.setBreach(false) })
-            }
+            val lastText = if (breachLast > 0) DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(breachLast)) else stringResource(R.string.pwd_breach_never)
+            SwitchRow(
+                stringResource(R.string.pwd_breach_switch), breachOn, RowPad,
+                hint = if (breachOn) stringResource(R.string.pwd_breach_on, lastText) else stringResource(R.string.pwd_breach_off),
+                trailing = if (breachOn) ({ RoundIcon(EuriseIcons.refresh(), stringResource(R.string.pwd_breach_now)) { vm.checkBreaches() } }) else null,
+            ) { if (it) explainBreach = true else vm.setBreach(false) }
+            if (breachOn && breachFailed) Text(stringResource(R.string.pwd_breach_failed), fontSize = 12.sp, color = scheme.error, modifier = Modifier.padding(bottom = 8.dp))
             if (explainBreach) {
                 eu.eurise.core.designsystem.component.PrivacyConsentSheet(
                     stringResource(R.string.pwd_pv_breach_q), stringResource(R.string.pwd_pv_breach_read), stringResource(R.string.pwd_pv_breach_out),
@@ -177,14 +171,8 @@ internal fun SyncScreen(vm: PasswordViewModel, onBack: () -> Unit, onPrivacy: ()
         }
         SectionLabel(stringResource(R.string.pwd_section_sync))
         GroupCard {
-            Row(Modifier.heightIn(min = 64.dp).padding(end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.pwd_sync_switch), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    val detail = if (on) stringResource(R.string.pwd_sync_on_account, vm.repo.syncAccountName.orEmpty()) else stringResource(R.string.pwd_sync_off_detail)
-                    Text(detail, fontSize = 12.sp, color = scheme.onSurfaceVariant)
-                }
-                Switch(checked = on, enabled = !waiting, onCheckedChange = { if (it) explain = true else vm.disableSync() })
-            }
+            val detail = if (on) stringResource(R.string.pwd_sync_on_account, vm.repo.syncAccountName.orEmpty()) else stringResource(R.string.pwd_sync_off_detail)
+            SwitchRow(stringResource(R.string.pwd_sync_switch), on, RowPad, hint = detail, enabled = !waiting) { if (it) explain = true else vm.disableSync() }
             if (on) {
                 CardDivider()
                 Row(Modifier.heightIn(min = 56.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -306,3 +294,6 @@ internal fun AliasSettings(vm: PasswordViewModel) {
 }
 
 // --- Carta ---
+
+/** Lo spazio delle righe con interruttore dentro le schede delle impostazioni (SwitchRow comune della suite). */
+private val RowPad = Modifier.padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
