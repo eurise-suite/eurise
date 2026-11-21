@@ -204,7 +204,8 @@ object BackupArchive {
                 val e = zip.nextEntry ?: break
                 val name = e.name
                 if (e.isDirectory || name.contains("..")) continue
-                SuiteApps.keyOf(name)?.let { key -> SuiteApps.keep(context, key, zip) }?.let { continue }
+                val appKey = SuiteApps.keyOf(name)
+                if (appKey != null) { SuiteApps.keep(context, appKey, zip); continue }
                 val ok = name == "databases/$DB" || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
                     name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))

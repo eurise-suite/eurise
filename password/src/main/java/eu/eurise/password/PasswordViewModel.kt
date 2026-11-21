@@ -152,7 +152,7 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun restoredVault() = eu.eurise.password.backup.PasswordBackupProvider.restored(getApplication())
+    private fun restoredVault() = eu.eurise.password.backup.PasswordBackupProvider.restored(getApplication<Application>())
 
     /**
      * Dopo un ripristino, se sul telefono c'era già una cassaforte, quella del backup aspetta accanto: a cassaforte aperta

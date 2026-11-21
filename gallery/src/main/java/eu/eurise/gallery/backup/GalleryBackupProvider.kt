@@ -64,8 +64,6 @@ class GalleryBackupProvider : SuiteBackupProvider() {
     override fun restore(context: Context, zip: ZipInputStream) {
         val secure = secureDir(context)
         val hadPhotos = secure.listFiles().orEmpty().any { it.name.endsWith(".enc") }
-        // Dove vanno le foto protette del backup: si decide alla prima voce, guardando la sua intestazione.
-        var target: File? = null
         val staged = File(context.filesDir, "secure-ripristino").apply { deleteRecursively(); mkdirs() }
         while (true) {
             val e = zip.nextEntry ?: break
@@ -82,7 +80,7 @@ class GalleryBackupProvider : SuiteBackupProvider() {
         val stagedHeader = File(staged, "header.json")
         if (stagedHeader.exists()) {
             val sameFolder = File(secure, "header.json").let { it.exists() && it.readText() == stagedHeader.readText() }
-            target = when {
+            val target = when {
                 !hadPhotos -> secure
                 sameFolder -> secure
                 else -> File(context.filesDir, "secure-dal-backup")
