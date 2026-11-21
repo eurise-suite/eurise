@@ -3413,3 +3413,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Backup: conferma prima di sostituire al ripristino, Tastiera senza zip in chiaro (tubo e attesa sigillata nel Keystore), avviso anche sul tablet, icona Backup nel cassetto della Scrivania (giro 905) → `docs/stato/BACKUP.md`.
 - 21 novembre, Backup: schermate vere secondo le tavole (backup ora, dove, frase con tacchette, codice con controllo, frase nuova con lo sblocco, promemoria annuale, ripristino dalla Scrivania di un telefono nuovo, Bentornato) (giro 909) → `docs/stato/BACKUP.md`.
 - 21 novembre, Backup: prova vera sull'emulatore (`prova-backup.yml`): backup, telefono nuovo, ripristino con il codice, Tastiera reinstallata dopo; 17 controlli su 17 (giro 921) → `docs/stato/BACKUP.md`.
+- 21 novembre, Backup: tutta la suite nel backup (tranne Mappe) con un fornitore protetto per app, formato a pezzi, prova sull'emulatore 30 su 30 (giro 938) → `docs/stato/BACKUP.md`.

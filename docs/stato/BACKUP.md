@@ -8,8 +8,8 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 - Ramo `prova-backup` (da `brand`). Prima di ogni push: fetch di `origin/brand`; dato che il ramo è già pubblicato e il
   push forzato è vietato, `brand` si porta dentro con un merge (il rebase riscriverebbe i commit già spinti).
 - Fase 1 (cosa entra) decisa il 20 novembre; fase 2 (tavole approvate, schermate vere) consegnata il 21 col giro 909.
-  Fase 3 (prova vera sull'emulatore) superata il 21 novembre, 17 su 17. **Prossimo: Password nel backup**, poi le altre
-  app separate una alla volta, ognuna aggiunta alla prova.
+  Fase 3 (prova vera sull'emulatore) superata il 21 novembre, 17 su 17; poi tutta la suite (tranne Mappe) nel backup,
+  30 su 30. **Prossimo**: controllo del proprietario sul telefono; poi Mappe e la cartella protetta «accanto».
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -137,8 +137,7 @@ pollice), al posto delle finestre:
   suo posto, parole della Tastiera in attesa se non c'è, backup automatico, «In arrivo»), finché si tocca «Ho visto».
 - L'avviso della Scrivania è uno solo alla volta: telefono nuovo → bentornato → backup fermo → promemoria annuale.
 - Consegnato con il giro **909** (solo l'APK principale). Non ancora provato sul telefono né sull'emulatore.
-- Prossimo: prova vera sull'emulatore (fase 3: backup, cancellazione, ripristino, anche il passaggio con la Tastiera),
-  poi Password nel backup (fornitore protetto dal permesso della suite, come la Tastiera).
+- Fatto il 21 novembre: prova vera sull'emulatore (fase 3), poi Password e le altre app (vedi sotto).
 
 ## Prova vera sull'emulatore (fase 3, 21 novembre 2026)
 Flusso `.github/workflows/prova-backup.yml` (parte con il push dei suoi file sul ramo; prende l'ultimo giro riuscito di
@@ -187,6 +186,24 @@ con le app e le loro righe (`apps`, `missing` se un'app non ha risposto).
 | Voce, AI | impostazioni (voci e modelli si riscaricano) | — |
 | Leggi | niente di suo da salvare (lingue e modelli si riscaricano) | — |
 | **Mappe** | **non ancora**: CoMaps si compila a parte (`maps-engine.yml`) con le sue patch | segnalibri e tracce da esportare a mano per ora |
+
+**Prova sull'emulatore** col giro 933 (run 44922024981): **30 controlli su 30**. In più rispetto alla prima: formato a
+pezzi; cassaforte, foto protetta, casella di posta e documento piantati, salvati, cancellati e tornati; la casella torna
+«da ricollegare» senza la sua password chiusa; Messaggi (non predefinita sull'emulatore) resta in attesa sigillata;
+la shell (senza permesso della suite) non legge `export` di nessuna delle sette app né chiama `apply`.
+Non provato sull'emulatore: SMS/MMS e registro chiamate veri (servono l'app predefinita e messaggi veri), il contenuto
+del Browser (l'APK di prova non è «debuggable»: solo esporta e riceve), l'unione della cassaforte in Password (serve la
+frase principale), Chat, Voce, AI (solo impostazioni), le schermate, l'invio a un cloud o a una cartella.
+
+Consegnato con il giro **938** (`apk-prova`): Eurise, Password, Messaggi, Telefono, Galleria, Posta, Chat, Voce, AI,
+Browser, Office. La prova sull'emulatore è ripetuta sul giro 938.
+
+**Limiti noti**
+- Galleria: se sul telefono nuovo c'è già un'altra cartella protetta con foto, quella del backup va in
+  `secure-dal-backup` ma la Galleria non la mostra ancora.
+- Mappe: fuori, finché non si aggiunge il fornitore alle patch di CoMaps.
+- Posta: la password di ogni casella va riscritta (sta nel Keystore del telefono vecchio).
+- Chat: si accede come dispositivo nuovo; la cronologia cifrata torna con la chiave di recupero.
 
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
