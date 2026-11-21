@@ -525,3 +525,6 @@ App Eurise: i segreti affidati dalle altre app (chiave di recupero della Chat) o
 
 ## Sicurezza, 21 novembre 2026: verifica delle librerie bloccante su brand
 Da ora Compila e CodeQL su `brand` fermano il giro se una libreria non ha la sua impronta. Chi aggiunge o aggiorna una libreria non deve fare nulla: quel giro resta solo segnalazione, il flusso «Impronte delle librerie» scrive le impronte e rilancia Compila. Se un giro si ferma per un'impronta, non togliere la verifica: dirlo al progetto Sicurezza (docs/SICUREZZA.md, «Dove blocca»).
+
+## Sicurezza, 21 novembre 2026: note bloccate legate all'impronta
+Note: la chiave delle note bloccate si apre solo dopo l'impronta o il PIN; bloccare chiede il dito; senza backup il foglio «Blocca» avvisa (tavola NoteBloccaSenzaBackup); se si toglie il blocco schermo, «Riapri le note bloccate» con la frase del backup (tavola NoteRiapri). Backup: la chiave viaggia chiusa verso la coppia del backup (`NoteSeal`, voce `lock/notes.sealed`). Dettagli in `docs/SICUREZZA.md`, «Crittografia».

@@ -11,6 +11,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import eu.eurise.core.cloud.lock.LockKeys
+import eu.eurise.core.cloud.lock.NoteSeal
 import eu.eurise.core.cloud.lock.SuiteSecrets
 
 /**
@@ -54,9 +55,9 @@ object BackupArchive {
                 zip.write(bytes)
                 zip.closeEntry()
             }
-            LockKeys.exportForBackup(context)?.let { key ->
-                zip.putNextEntry(ZipEntry(LockKeys.BACKUP_ENTRY))
-                zip.write(key)
+            LockKeys.exportForBackup(context).forEach { (entry, bytes) ->
+                zip.putNextEntry(ZipEntry(entry))
+                zip.write(bytes)
                 zip.closeEntry()
             }
             SuiteSecrets.exportForBackup(context)?.let { secrets ->
@@ -102,7 +103,7 @@ object BackupArchive {
             while (true) {
                 val e = zip.nextEntry ?: break
                 val name = e.name
-                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY ||
+                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
                     name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
                 if (!ok || e.isDirectory) continue
@@ -115,6 +116,19 @@ object BackupArchive {
             dir.deleteRecursively()
             throw BackupCrypto.BadFile()
         }
+    }
+
+    /**
+     * Nel ripristino in attesa, apre la copia della chiave delle note con [secret] (frase o codice) e la mette accanto in
+     * chiaro, nei dati privati, per l'avvio: lì si risigilla e si lega all'impronta al primo sblocco. Un backup di prima
+     * ha già la chiave in chiaro e non cambia nulla.
+     */
+    fun openSealedNotes(context: Context, secret: String) {
+        val dir = File(context.filesDir, PENDING)
+        val sealed = File(dir, LockKeys.SEALED_ENTRY).takeIf { it.exists() } ?: return
+        val plain = File(dir, LockKeys.BACKUP_ENTRY)
+        if (plain.exists()) return
+        NoteSeal.open(sealed.readBytes(), secret)?.let { key -> plain.apply { parentFile?.mkdirs() }.writeBytes(key); key.fill(0) }
     }
 
     /** Vero se c'è un ripristino in attesa del riavvio. */
@@ -135,6 +149,7 @@ object BackupArchive {
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
             }
             File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it) }
+            File(dir, LockKeys.SEALED_ENTRY).takeIf { it.exists() }?.let { LockKeys.restoreSealed(context, it.readBytes()) }
             File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
             File(dir, SuiteSecrets.BACKUP_ENTRY).takeIf { it.exists() }?.let { SuiteSecrets.restore(context, it.readBytes()) }
         }

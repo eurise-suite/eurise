@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import eu.eurise.feature.notes.lock.NoteLock
+import eu.eurise.core.cloud.lock.LockKeys
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
@@ -79,6 +80,12 @@ data class NoteEditorState(
     val hideTitle: Boolean = false,
     /** La chiave delle note bloccate non c'è (telefono nuovo senza backup): la nota non si apre. */
     val lockMissingKey: Boolean = false,
+    /** Il blocco schermo è stato tolto: le note si riaprono con la frase del backup (tavola NoteRiapri). */
+    val lockReopen: Boolean = false,
+    /** «Riapri» in corso (la frase si prova con calma, qualche secondo). */
+    val reopenBusy: Boolean = false,
+    /** La frase o il codice scritti non aprono la copia. */
+    val reopenWrong: Boolean = false,
 ) {
     /** Vero se il contenuto non si deve vedere: nota bloccata e non ancora aperta. */
     val hidden: Boolean get() = locked && !unlocked
@@ -678,12 +685,32 @@ class NoteEditorViewModel(
         }
     }
 
-    /** Blocca la nota: da ora si salva cifrata. [hideTitle] nasconde anche il titolo nell'elenco. */
+    /**
+     * Blocca la nota (subito dopo l'impronta o il PIN): da ora si salva cifrata. [hideTitle] nasconde anche il titolo
+     * nell'elenco. Se la chiave non si apre, la nota resta com'era.
+     */
     fun lock(hideTitle: Boolean) {
-        _state.update { it.copy(locked = true, unlocked = true, hideTitle = hideTitle) }
-        dirty = true
-        viewModelScope.launch { saveNow(force = true) }
-        touchLock()
+        viewModelScope.launch {
+            when (val opened = withContext(Dispatchers.Default) { LockKeys.unlock(appContext, create = true) }) {
+                LockKeys.Opened.Ok -> Unit
+                is LockKeys.Opened.Invalidated -> { _state.update { it.copy(lockReopen = opened.canReopen) }; return@launch }
+                else -> return@launch
+            }
+            _state.update { it.copy(locked = true, unlocked = true, hideTitle = hideTitle) }
+            dirty = true
+            saveNow(force = true)
+            touchLock()
+        }
+    }
+
+    /** Riapre le note con la frase o il codice del backup (tavola NoteRiapri); poi serve di nuovo l'impronta o il PIN. */
+    fun reopen(secret: String) {
+        if (_state.value.reopenBusy) return
+        _state.update { it.copy(reopenBusy = true, reopenWrong = false) }
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.Default) { LockKeys.reopen(appContext, secret) }
+            _state.update { it.copy(reopenBusy = false, reopenWrong = !ok, lockReopen = !ok, lockMissingKey = false) }
+        }
     }
 
     /** Apre la nota dopo l'impronta o il PIN. */
@@ -691,7 +718,16 @@ class NoteEditorViewModel(
         val s = _state.value
         val sealed = s.blocks.firstOrNull() as? LockedBlock ?: return
         viewModelScope.launch {
-            val opened = withContext(Dispatchers.Default) { NoteLock.open(appContext, sealed, newId) }
+            when (val key = withContext(Dispatchers.Default) { LockKeys.unlock(appContext) }) {
+                LockKeys.Opened.Ok -> Unit
+                LockKeys.Opened.NeedsAuth -> return@launch
+                is LockKeys.Opened.Invalidated -> {
+                    _state.update { it.copy(lockReopen = key.canReopen, lockMissingKey = !key.canReopen) }
+                    return@launch
+                }
+                LockKeys.Opened.Missing -> { _state.update { it.copy(lockMissingKey = true) }; return@launch }
+            }
+            val opened = withContext(Dispatchers.Default) { NoteLock.open(sealed, newId) }
             if (opened == null) {
                 _state.update { it.copy(lockMissingKey = true) }
                 return@launch
@@ -718,10 +754,13 @@ class NoteEditorViewModel(
             pendingSave?.cancel()
             dirty = true
             saveNow(force = true)
-            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(appContext, _state.value.title.trim(), _state.value.blocks) }
+            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(_state.value.title.trim(), _state.value.blocks) }
+                ?: id?.let { notes.get(it) }?.let { load(it).filterIsInstance<LockedBlock>().firstOrNull() }
+            // La chiave esce dalla memoria insieme al testo.
+            LockKeys.endSession()
             history.clear()
             _state.update {
-                it.copy(blocks = listOf(sealed.copy(id = newId())), unlocked = false, focusedId = null, canUndo = false, drawingId = null)
+                it.copy(blocks = listOfNotNull(sealed?.copy(id = newId())), unlocked = false, focusedId = null, canUndo = false, drawingId = null)
             }
         }
     }
@@ -821,7 +860,8 @@ class NoteEditorViewModel(
         if (s.hidden) return@withLock // ancora cifrata: niente da riscrivere
         dirty = false
         id = if (s.locked) {
-            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(appContext, s.title.trim(), s.blocks) }
+            // Senza la chiave aperta non si scrive nulla: mai il testo in chiaro di una nota bloccata.
+            val sealed = withContext(Dispatchers.Default) { NoteLock.seal(s.title.trim(), s.blocks) } ?: run { dirty = true; return@withLock }
             notes.saveRich(id, if (s.hideTitle) "" else s.title.trim(), "", NoteHtml.write(listOf(sealed)), s.notebookId)
         } else {
             notes.saveRich(id, s.title.trim(), NoteHtml.plainText(s.blocks), NoteHtml.write(s.blocks), s.notebookId)

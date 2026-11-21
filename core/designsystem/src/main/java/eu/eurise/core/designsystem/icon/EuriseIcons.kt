@@ -141,6 +141,8 @@ object EuriseIcons {
     fun map(stroke: Float = Stroke) = icon("map", stroke, "M9 4l6 2 5-2v14l-5 2-6-2-5 2V6z", "M9 4v14M15 6v14")
 
     fun shield(stroke: Float = Stroke) = icon("shield", stroke, "M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z")
+    /** Triangolo d'avviso (tavola NoteBloccaSenzaBackup). */
+    fun warning(stroke: Float = Stroke) = icon("warning", stroke, "M12 4L3 20h18z", "M12 10v4.5M12 17.2v.3")
 
     fun bag(stroke: Float = Stroke) = icon("bag", stroke, "M5 8h14l-1 12H6z", "M9 8V6a3 3 0 0 1 6 0v2")
 

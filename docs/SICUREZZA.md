@@ -24,8 +24,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   3. ~~Voci «Aperto» delle porte d'ingresso~~ intent verso le altre app della suite controllati il 20 novembre, sera
      (tra cui il CSV delle password importate dal Browser). Resta Mappe, da fare con la preparazione della versione
      ufficiale (sezione «Porte d'ingresso», «Mappe»).
-  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ fatto il 21 novembre (sezione «Crittografia»); resta il
-     blocco delle Note legato all'impronta (da decidere con il proprietario: cambia il backup).
+  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ e ~~blocco delle Note legato all'impronta~~ fatti il 21
+     novembre (sezione «Crittografia»; tavole NoteBloccaSenzaBackup e NoteRiapri approvate lo stesso giorno).
   5. ~~Verifica «strict» anche su `brand`~~ fatta il 21 novembre (sezione «Impronte delle librerie», «Dove blocca»).
      Resta «lenient» nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser): da fare con le loro aree.
   6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
@@ -169,6 +169,28 @@ prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-e
   quattro settimane. Nessun ripiego sulla chiave fissa. Chi costruisce la cassetta (area Computer): sigillare le
   `MailboxKeys` come la chiave fissa (Keystore, portachiavi), cancellare il file dopo la lettura, `ReplayGuard` lungo
   28 giorni, `prune()` a ogni giro.
+- **Note bloccate legate all'impronta (21 novembre)**: prima la chiave delle note era sigillata da una chiave del
+  Keystore senza condizioni: chi forzava il telefono (falla di Android, root) poteva usarla senza il dito. Rischio basso,
+  ma è il cuore del blocco. Ora (`LockKeys`) la chiave del Keystore si usa solo nei 30 secondi dopo l'impronta o il PIN;
+  aperta, la chiave delle note resta in memoria finché la nota è aperta e si cancella quando si richiude. Android non la
+  annulla aggiungendo o cambiando un'impronta (validità a tempo, `setInvalidatedByBiometricEnrollment(false)`); la annulla
+  solo togliendo il blocco schermo.
+  - **Backup**: il backup automatico non ha nessuno davanti, quindi non porta più la chiave in chiaro ma una copia chiusa
+    verso una coppia EC P-256 (`NoteSeal`, voce `lock/notes.sealed`) la cui parte privata esiste solo chiusa con la frase e
+    con il codice di recupero (PBKDF2 come il backup). Il telefono scrive la copia ma non la rilegge. La coppia nasce alla
+    prima attivazione del backup e si richiude al cambio frase (la copia segue senza bisogno della chiave). Al ripristino
+    la copia si apre con il segreto appena scritto; i backup di prima (chiave in chiaro) si aprono come prima.
+  - **Riapri** (tavola NoteRiapri): se il blocco schermo è stato tolto, la copia tenuta sul telefono si apre con la frase
+    o il codice, poi si lega all'impronta o al PIN nuovi. Senza blocco schermo, prima lo si rimette.
+  - **Senza backup** (tavola NoteBloccaSenzaBackup): bloccare avvisa che togliendo il blocco schermo o cambiando telefono
+    la nota non si riaprirebbe più; «Blocca lo stesso» o «Attiva il backup». Bloccare ora chiede l'impronta o il PIN.
+  - **Migrazione**: una chiave di prima si lega all'impronta al primo sblocco, solo se il backup ha già la sua coppia (o se
+    l'utente ha scelto di bloccare senza backup). **Chi aveva già il backup attivo** ottiene la coppia la prima volta che
+    scrive la frase: Backup › Cambia frase, con il **codice di recupero** come frase attuale (così si chiudono sia frase
+    sia codice) e la stessa frase come nuova. Fino ad allora tutto resta come prima, senza perdere nulla.
+  - Prove: `NoteSealTest` (copia aperta solo con frase o codice, cambio frase, copia che segue la frase nuova, coppia
+    salvata e ripristinata, copia toccata rifiutata). Lo sblocco con il dito non si prova sull'emulatore: va provato sul
+    telefono (nota bloccata, chiusa, riaperta; backup e ripristino; Cambia frase).
 - **Segreti affidati all'app Eurise (21 novembre)**: la chiave di recupero della Chat (l'unico per ora, `SecretsContract`)
   stava **in chiaro** nelle preferenze `eurise_secrets`. Rischio basso-medio: chi copia i dati privati dell'app (falla di
   Android, root, copia del telefono sbloccato) la leggeva e con lei apriva le conversazioni salvate della Chat. Ora

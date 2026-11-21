@@ -27,7 +27,8 @@ import javax.crypto.spec.GCMParameterSpec
 /**
  * Cifratura delle note bloccate. Il contenuto (titolo compreso) diventa un documento HTML cifrato con AES-GCM e la chiave
  * di [LockKeys]; la nota salvata contiene solo quel [LockedBlock]. Nel database il testo per la ricerca resta vuoto: la
- * ricerca, Alfred, la Scrivania e il Ponte vedono al massimo il titolo.
+ * ricerca, Alfred, la Scrivania e il Ponte vedono al massimo il titolo. La chiave si apre solo dopo l'impronta o il PIN
+ * ([LockKeys.unlock]) e resta in memoria finché la nota è aperta.
  */
 object NoteLock {
     /** Quanto resta aperta una nota sbloccata senza essere toccata. */
@@ -39,21 +40,22 @@ object NoteLock {
     /** Vero se il telefono ha un blocco schermo: senza, una nota non si può bloccare. */
     fun canLock(context: Context): Boolean = context.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
 
-    /** Cifra titolo e blocchi. */
-    fun seal(context: Context, title: String, blocks: List<Block>): LockedBlock {
+    /** Cifra titolo e blocchi; null se la chiave non è aperta (serve [LockKeys.unlock] dopo l'impronta o il PIN). */
+    fun seal(title: String, blocks: List<Block>): LockedBlock? {
+        val key = LockKeys.notes() ?: return null
         val plain = NoteHtml.document(title, blocks).toByteArray(Charsets.UTF_8)
         val c = Cipher.getInstance("AES/GCM/NoPadding")
-        c.init(Cipher.ENCRYPT_MODE, LockKeys.notes(context))
+        c.init(Cipher.ENCRYPT_MODE, key)
         val sealed = b64(c.iv) + ":" + b64(c.doFinal(plain))
         return LockedBlock(0, sealed)
     }
 
-    /** Titolo e blocchi di una nota bloccata; nullo se la chiave non c'è (per esempio un telefono nuovo senza backup). */
-    fun open(context: Context, block: LockedBlock, ids: () -> Long): Pair<String, List<Block>>? = runCatching {
-        if (!LockKeys.hasNotes(context)) return null
+    /** Titolo e blocchi di una nota bloccata; nullo se la chiave non è aperta o non è quella giusta. */
+    fun open(block: LockedBlock, ids: () -> Long): Pair<String, List<Block>>? = runCatching {
+        val key = LockKeys.notes() ?: return null
         val (iv, data) = block.sealed.trim().split(':', limit = 2)
         val c = Cipher.getInstance("AES/GCM/NoPadding")
-        c.init(Cipher.DECRYPT_MODE, LockKeys.notes(context), GCMParameterSpec(128, unb64(iv)))
+        c.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, unb64(iv)))
         val html = String(c.doFinal(unb64(data)), Charsets.UTF_8)
         NoteHtml.title(html) to NoteHtml.read(html, ids)
     }.getOrNull()

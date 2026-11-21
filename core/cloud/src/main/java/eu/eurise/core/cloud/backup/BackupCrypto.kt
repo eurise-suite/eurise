@@ -144,21 +144,21 @@ object BackupCrypto {
         return ByteArray(n).also { input.readFully(it) }
     }
 
-    private fun derive(secret: CharArray, salt: ByteArray, iterations: Int): ByteArray =
+    internal fun derive(secret: CharArray, salt: ByteArray, iterations: Int): ByteArray =
         SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(PBEKeySpec(secret, salt, iterations, 256)).encoded
 
-    private fun wrap(kek: ByteArray, key: ByteArray): ByteArray {
+    internal fun wrap(kek: ByteArray, key: ByteArray): ByteArray {
         val nonce = bytes(12)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(kek, "AES"), GCMParameterSpec(GCM_TAG, nonce))
         return nonce + cipher.doFinal(key)
     }
 
-    private fun unwrap(kek: ByteArray, wrapped: ByteArray): ByteArray {
+    internal fun unwrap(kek: ByteArray, wrapped: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(kek, "AES"), GCMParameterSpec(GCM_TAG, wrapped.copyOfRange(0, 12)))
         return cipher.doFinal(wrapped, 12, wrapped.size - 12)
     }
 
-    private fun bytes(n: Int) = ByteArray(n).also { random.nextBytes(it) }
+    internal fun bytes(n: Int) = ByteArray(n).also { random.nextBytes(it) }
 }

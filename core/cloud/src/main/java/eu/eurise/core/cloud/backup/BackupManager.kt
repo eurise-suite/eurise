@@ -86,6 +86,8 @@ class BackupManager private constructor(private val context: Context) {
     suspend fun setup(passphrase: String, recoveryCode: String) = withContext(Dispatchers.Default) {
         val keys = BackupCrypto.setup(passphrase.toCharArray(), recoveryCode)
         storeKeys(keys)
+        // La coppia per la copia della chiave delle note: il backup automatico la chiude senza poterla riaprire.
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.setBackupPair(context, passphrase, recoveryCode) }
         refresh()
     }
 
@@ -95,6 +97,7 @@ class BackupManager private constructor(private val context: Context) {
         val dataKey = runCatching { BackupCrypto.unlock(header, current) }.getOrNull() ?: return@withContext false
         // Si tiene la chiusura per il codice di recupero già consegnato all'utente.
         storeKeys(BackupCrypto.Keys(dataKey, BackupCrypto.rewrapPassphrase(dataKey, next.toCharArray(), header)))
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.changeBackupPassphrase(context, current, next) }
         true
     }
 
@@ -179,6 +182,8 @@ class BackupManager private constructor(private val context: Context) {
         val dataKey = BackupCrypto.unlock(parsed.header, secret)
         val zip = BackupCrypto.decrypt(parsed, dataKey)
         BackupArchive.stage(context, zip)
+        // La copia della chiave delle note si apre qui, con il segreto appena scritto: all'avvio non c'è nessuno a chiederlo.
+        BackupArchive.openSealedNotes(context, secret)
         storeKeys(BackupCrypto.Keys(dataKey, parsed.header))
     }
 
