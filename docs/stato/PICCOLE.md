@@ -280,9 +280,10 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - **Pulizia di Password**: le righe con interruttore delle impostazioni usano `SwitchRow` comune. Gli altri componenti
   copiati erano già passati a `GroupCard`, `SectionLabel`, `CardDivider`; restano propri solo pezzi di Password
   (`BackHeader`, `PillAction`, `RoundIcon`).
-- Nel giro 965 l'APK della Tastiera non si è compilato: Gradle non ha trovato il plugin di Kotlin 2.4.0 né le altre
-  librerie di base (scaricamento, non codice: la Tastiera qui non è cambiata). In `apk-prova` resta la Tastiera di prima.
-  Il giro 962 si era fermato su un errore della Chat, corretto da quella chat.
+- Nel giro 965 l'APK della Tastiera all'inizio non si è compilato: Gradle non trovava il plugin di Kotlin 2.4.0 (errore
+  di scaricamento, non del codice). Attenzione: una pubblicazione senza Tastiera la **toglie** da `apk-prova`. Rifatto il
+  solo lavoro della Tastiera (riuscito) e ripubblicato il giro: in `apk-prova` ci sono tutti. Il giro 962 si era fermato su
+  un errore della Chat, corretto da quella chat.
 - Prima di cominciare ho controllato il lavoro della chat Sicurezza: `prova-sicurezza` è tutto dentro `brand`, l'editor
   non l'ha toccato nessun altro; niente librerie nuove (la verifica delle librerie blocca su `brand`).
 
