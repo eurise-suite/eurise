@@ -11,6 +11,7 @@ import android.util.Base64
 import android.util.Size
 import eu.eurise.core.cloud.backup.BackupCrypto
 import eu.eurise.gallery.logic.MediaItem
+import eu.eurise.gallery.logic.SecureMove
 import eu.eurise.gallery.logic.SecureStream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,10 +33,14 @@ data class SecureItem(val id: String, val name: String, val takenAt: Long, val i
  * Cartella protetta: le foto escono da MediaStore e restano solo qui, cifrate, nello spazio privato dell'app.
  * La chiave è casuale, chiusa con la frase e con il codice di recupero (stesso schema dei backup) e sta in memoria solo
  * a cartella aperta. L'originale si elimina solo dopo aver riletto e confrontato la copia cifrata.
+ *
+ * Accanto alla tua possono esserci cartelle arrivate **dal backup** ([fromBackup]): quelle del telefono di prima, che il
+ * ripristino mette in `secure-dal-backup` quando qui c'erano già foto tue con un'altra frase. Si aprono con la loro frase
+ * o il loro codice e si spostano nella tua ([moveAllInto]) o si tengono a parte (tavole GalDalBackup, 21 novembre 2026).
  */
-class SecureFolder private constructor(context: Context) {
+class SecureFolder private constructor(context: Context, val dirName: String = MAIN) {
     private val app = context.applicationContext
-    private val dir = File(app.filesDir, "secure").apply { mkdirs() }
+    private val dir = File(app.filesDir, dirName).apply { if (dirName == MAIN) mkdirs() }
     private val headerFile = File(dir, "header.json")
     private var key: ByteArray? = null
     private val _items = MutableStateFlow<List<SecureItem>?>(null)
@@ -45,6 +50,9 @@ class SecureFolder private constructor(context: Context) {
 
     val isSetUp: Boolean get() = headerFile.exists()
     val isOpen: Boolean get() = key != null
+
+    /** Quante foto e video ci sono, anche a cartella chiusa (si contano i file, non si legge nulla). */
+    fun count(): Int = dir.listFiles { f -> f.name.endsWith(".meta") }?.size ?: 0
 
     /** Crea la cartella e restituisce il codice di recupero, da mostrare una volta sola. */
     fun setup(passphrase: String): String {
@@ -246,10 +254,73 @@ class SecureFolder private constructor(context: Context) {
         override fun write(b: ByteArray, off: Int, len: Int) = Unit
     }
 
+    /**
+     * Sposta tutte le foto di questa cartella (aperta) in [target] (aperta): ognuna si ricifra con la chiave di [target]
+     * in memoria ([SecureMove]), si rilegge e si confronta, e solo dopo sparisce da qui. Se una non passa resta qui e si
+     * va avanti con le altre. Quando non resta niente la cartella sparisce, intestazione compresa. Restituisce quante
+     * foto non sono passate. Fuori dal thread principale.
+     */
+    fun moveAllInto(target: SecureFolder, progress: (done: Int, total: Int) -> Unit = { _, _ -> }): Int {
+        // Copie delle chiavi: se intanto una cartella si chiude (lock() azzera la chiave) il lavoro finisce con quella giusta.
+        val k = key?.copyOf() ?: throw IOException("chiusa")
+        val tk = target.key?.copyOf() ?: run { k.fill(0); throw IOException("chiusa") }
+        try {
+            return moveAll(k, tk, target, progress)
+        } finally {
+            k.fill(0); tk.fill(0)
+        }
+    }
+
+    private fun moveAll(k: ByteArray, tk: ByteArray, target: SecureFolder, progress: (Int, Int) -> Unit): Int {
+        val ids = dir.listFiles { f -> f.name.endsWith(".meta") }.orEmpty().map { it.name.removeSuffix(".meta") }
+        var failed = 0
+        ids.forEachIndexed { i, id ->
+            val newId = if (target.meta(id).exists() || target.data(id).exists()) UUID.randomUUID().toString() else id
+            val parts = listOf(Triple(data(id), target.data(newId), id to newId), Triple(thumb(id), target.thumb(newId), "$id/thumb" to "$newId/thumb"), Triple(meta(id), target.meta(newId), "$id/meta" to "$newId/meta"))
+            val ok = runCatching {
+                for ((from, to, labels) in parts) {
+                    if (!from.exists()) continue
+                    val part = File(to.path + ".arrivo")
+                    val sha = from.inputStream().use { src -> part.outputStream().use { o -> SecureMove.reencrypt(k, labels.first, tk, labels.second, src, o) } }
+                    val check = part.inputStream().use { SecureMove.digest(tk, labels.second, it) }
+                    if (!sha.contentEquals(check)) throw IOException("copia diversa")
+                    if (!part.renameTo(to)) throw IOException("non si scrive")
+                }
+            }.isSuccess
+            if (ok) parts.forEach { it.first.delete() }
+            else { failed++; parts.forEach { (_, to, _) -> to.delete(); File(to.path + ".arrivo").delete() } }
+            progress(i + 1, ids.size)
+        }
+        target.reload()
+        if (dir.listFiles { f -> f.name.endsWith(".enc") || f.name.endsWith(".meta") }.isNullOrEmpty()) discard() else reload()
+        return failed
+    }
+
+    /** Toglie dal telefono questa cartella dal backup, chiusa o aperta (resta nei backup di prima). Mai la tua. */
+    fun discard() {
+        check(dirName != MAIN) { "la tua cartella non si toglie così" }
+        lock()
+        dir.deleteRecursively()
+        synchronized(Companion) { backups.remove(dirName) }
+    }
+
     companion object {
         private const val BIO_ALIAS = "eurise_gallery_secure_bio"
+        const val MAIN = "secure"
+        /** Il nome delle cartelle che arrivano dal backup: `secure-dal-backup`, poi `secure-dal-backup-2`… */
+        const val FROM_BACKUP = "secure-dal-backup"
 
         @Volatile private var instance: SecureFolder? = null
+        private val backups = HashMap<String, SecureFolder>()
         fun get(context: Context): SecureFolder = instance ?: synchronized(this) { instance ?: SecureFolder(context).also { instance = it } }
+
+        /** Le cartelle arrivate dal backup che ci sono sul telefono (con la loro intestazione e almeno una foto). */
+        fun fromBackup(context: Context): List<SecureFolder> = synchronized(this) {
+            val root = context.applicationContext.filesDir
+            root.listFiles { f -> f.isDirectory && (f.name == FROM_BACKUP || f.name.startsWith("$FROM_BACKUP-")) }.orEmpty()
+                .filter { File(it, "header.json").exists() && it.listFiles { f -> f.name.endsWith(".meta") }.orEmpty().isNotEmpty() }
+                .sortedBy { it.name }
+                .map { d -> backups.getOrPut(d.name) { SecureFolder(context, d.name) } }
+        }
     }
 }

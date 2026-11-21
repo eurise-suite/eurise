@@ -81,6 +81,7 @@ import eu.eurise.gallery.GalleryViewModel
 import eu.eurise.gallery.PlaceData
 import eu.eurise.gallery.R
 import eu.eurise.gallery.data.Diary
+import eu.eurise.gallery.data.SecureFolder
 import eu.eurise.gallery.data.SecureItem
 import eu.eurise.gallery.data.diaryPdf
 import eu.eurise.gallery.data.contentHash
@@ -306,7 +307,13 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
     val bioTitle = stringResource(R.string.secure_bio_title)
     val bioCancel = stringResource(R.string.secure_bio_use_pass)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    BackHandler(enabled = viewing == null, onBack = onClose)
+    // Le cartelle arrivate dal backup (tavola GalDalBackup): si rileggono quando si torna da una di loro.
+    var opening by remember { mutableStateOf<Pair<SecureFolder, Int>?>(null) }
+    var othersVersion by remember { mutableIntStateOf(0) }
+    val others by produceState(emptyList<Pair<SecureFolder, Int>>(), othersVersion, items != null) {
+        value = withContext(Dispatchers.IO) { SecureFolder.fromBackup(context).map { it to it.count() } }
+    }
+    BackHandler(enabled = viewing == null && opening == null, onBack = onClose)
 
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
@@ -373,6 +380,7 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
                 }
             }
             else -> Column {
+            others.forEach { (other, count) -> FromBackupCard(count) { opening = other to count } }
             // Apertura con l'impronta: resta tutto sul telefono; si spegne senza conferme.
             if (canBio) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -398,15 +406,16 @@ internal fun SecureScreen(vm: GalleryViewModel, ops: SystemOps, moving: List<Med
                 verticalArrangement = Arrangement.spacedBy(3.dp),
                 modifier = Modifier.navigationBarsPadding(),
             ) {
-                items(items.orEmpty(), key = { it.id }) { item -> SecureTile(vm, item) { viewing = item.id } }
+                items(items.orEmpty(), key = { it.id }) { item -> SecureTile(folder, item) { viewing = item.id } }
             }
             }
             }
         }
     }
+    opening?.let { (other, count) -> FromBackupScreen(vm, other, count, folder, onClose = { opening = null; othersVersion++ }) }
     viewing?.let { id ->
         val list = items.orEmpty()
-        if (list.none { it.id == id }) viewing = null else SecureViewer(vm, list, list.indexOfFirst { it.id == id }, onClose = { viewing = null })
+        if (list.none { it.id == id }) viewing = null else SecureViewer(vm, folder, list, list.indexOfFirst { it.id == id }, onClose = { viewing = null })
     }
     if (needsCloudChoice && items != null && code == null) {
         AlertDialog(
@@ -468,15 +477,15 @@ private fun SecureUnlock(onFingerprint: (() -> Unit)? = null, onUnlock: (String,
 }
 
 @Composable
-private fun SecureTile(vm: GalleryViewModel, item: SecureItem, onClick: () -> Unit) {
-    val image by produceState<ImageBitmap?>(null, item.id) { value = withContext(Dispatchers.IO) { vm.secure.thumbnail(item)?.asImageBitmap() } }
+internal fun SecureTile(folder: SecureFolder, item: SecureItem, onClick: () -> Unit) {
+    val image by produceState<ImageBitmap?>(null, item.id) { value = withContext(Dispatchers.IO) { folder.thumbnail(item)?.asImageBitmap() } }
     Box(Modifier.aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceContainer).clickable(onClick = onClick)) {
         image?.let { Image(it, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
     }
 }
 
 @Composable
-private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: Int, onClose: () -> Unit) {
+internal fun SecureViewer(vm: GalleryViewModel, folder: SecureFolder, list: List<SecureItem>, start: Int, onClose: () -> Unit) {
     BackHandler(onBack = onClose)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -488,7 +497,7 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { list[it].id }) { page ->
             val item = list[page]
             val image by produceState<ImageBitmap?>(null, item.id) {
-                value = withContext(Dispatchers.IO) { if (item.isVideo) vm.secure.thumbnail(item)?.asImageBitmap() else vm.secure.image(item)?.asImageBitmap() }
+                value = withContext(Dispatchers.IO) { if (item.isVideo) folder.thumbnail(item)?.asImageBitmap() else folder.image(item)?.asImageBitmap() }
             }
             ZoomableBitmap(image, item.isVideo, item.id, onPlay = { playing = item })
         }
@@ -497,7 +506,7 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
         Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
             RoundAction(EuriseIcons.download(), stringResource(R.string.secure_restore)) {
                 scope.launch {
-                    if (!withContext(Dispatchers.IO) { vm.secure.restore(current) }) Toast.makeText(context, failedText, Toast.LENGTH_LONG).show()
+                    if (!withContext(Dispatchers.IO) { folder.restore(current) }) Toast.makeText(context, failedText, Toast.LENGTH_LONG).show()
                 }
             }
             RoundAction(EuriseIcons.trash(), stringResource(R.string.secure_delete)) { confirmDelete = true }
@@ -508,14 +517,14 @@ private fun SecureViewer(vm: GalleryViewModel, list: List<SecureItem>, start: In
                 title = { Text(stringResource(R.string.secure_delete)) },
                 text = { Text(stringResource(R.string.secure_delete_message)) },
                 confirmButton = {
-                    TextButton(onClick = { confirmDelete = false; vm.io { vm.secure.drop(current.id) } }) { Text(stringResource(R.string.secure_delete)) }
+                    TextButton(onClick = { confirmDelete = false; vm.io { folder.drop(current.id) } }) { Text(stringResource(R.string.secure_delete)) }
                 },
                 dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
             )
         }
         // Video della cartella protetta: si guardano qui, senza passare da altre app.
         playing?.let { video ->
-            VideoScreen(item = null, title = video.name, load = { withContext(Dispatchers.IO) { vm.secure.videoFile(video) }?.let(android.net.Uri::fromFile) }, actions = null, onClose = { playing = null })
+            VideoScreen(item = null, title = video.name, load = { withContext(Dispatchers.IO) { folder.videoFile(video) }?.let(android.net.Uri::fromFile) }, actions = null, onClose = { playing = null })
         }
     }
 }

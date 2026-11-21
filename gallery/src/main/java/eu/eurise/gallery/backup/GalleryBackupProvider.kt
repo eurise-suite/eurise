@@ -28,7 +28,7 @@ import java.util.zip.ZipOutputStream
  */
 class GalleryBackupProvider : SuiteBackupProvider() {
     override fun summary(context: Context): String? {
-        val secure = secureDir(context).listFiles().orEmpty().count { it.name.endsWith(".enc") }
+        val secure = (listOf(secureDir(context)) + backupDirs(context)).sumOf { d -> d.listFiles().orEmpty().count { it.name.endsWith(".enc") } }
         val diaries = runCatching { db(context).let { d -> d.rawQuery("SELECT COUNT(*) FROM diaries", null).use { it.moveToFirst(); it.getInt(0) } } }.getOrDefault(0)
         if (secure == 0 && diaries == 0) return null
         return context.getString(R.string.backup_summary_gallery, secure, diaries)
@@ -36,6 +36,10 @@ class GalleryBackupProvider : SuiteBackupProvider() {
 
     override fun export(context: Context, zip: ZipOutputStream) {
         secureDir(context).listFiles().orEmpty().filter { it.isFile && it.name != "bio.json" }.forEach { addFile(zip, it, "secure/${it.name}") }
+        // Le cartelle arrivate da un backup di prima e tenute a parte: anche loro, così non si perdono al prossimo cambio.
+        backupDirs(context).forEach { dir ->
+            dir.listFiles().orEmpty().filter { it.isFile && it.name != "bio.json" && !it.name.endsWith(".arrivo") }.forEach { addFile(zip, it, "$EXTRA${dir.name}/${it.name}") }
+        }
         runCatching { db(context) }.getOrNull()?.let { d ->
             val diaries = JSONArray()
             d.rawQuery("SELECT id, title, created_at FROM diaries", null).use { c ->
@@ -65,6 +69,7 @@ class GalleryBackupProvider : SuiteBackupProvider() {
         val secure = secureDir(context)
         val hadPhotos = secure.listFiles().orEmpty().any { it.name.endsWith(".enc") }
         val staged = File(context.filesDir, "secure-ripristino").apply { deleteRecursively(); mkdirs() }
+        val stagedExtra = File(context.filesDir, "secure-ripristino-altre").apply { deleteRecursively(); mkdirs() }
         while (true) {
             val e = zip.nextEntry ?: break
             val name = safeName(e) ?: continue
@@ -72,6 +77,11 @@ class GalleryBackupProvider : SuiteBackupProvider() {
                 name.startsWith("secure/") -> {
                     val file = name.removePrefix("secure/").takeIf { it.isNotEmpty() && '/' !in it } ?: continue
                     writeEntry(zip, File(staged, file))
+                }
+                name.startsWith(EXTRA) -> {
+                    val parts = name.removePrefix(EXTRA).split('/')
+                    if (parts.size != 2 || parts.any { it.isEmpty() } || !parts[0].startsWith(eu.eurise.gallery.data.SecureFolder.FROM_BACKUP)) continue
+                    writeEntry(zip, File(File(stagedExtra, parts[0]), parts[1]))
                 }
                 name == DIARIES -> restoreDiaries(context, JSONObject(zip.bufferedReader().readText()))
                 name == SETTINGS -> restoreKeys(context.getSharedPreferences("gallery", Context.MODE_PRIVATE), zip.bufferedReader().readText(), KEYS)
@@ -83,16 +93,54 @@ class GalleryBackupProvider : SuiteBackupProvider() {
             val target = when {
                 !hadPhotos -> secure
                 sameFolder -> secure
-                else -> File(context.filesDir, "secure-dal-backup")
+                else -> backupFolder(context, stagedHeader.readText())
             }
-            target.mkdirs()
-            staged.listFiles().orEmpty().forEach { f ->
-                val dest = File(target, f.name)
-                // Nella stessa cartella si aggiunge solo quello che manca; l'intestazione di una cartella vuota si prende.
-                if (dest.exists() && (target != secure || hadPhotos)) f.delete() else { dest.delete(); f.renameTo(dest) }
-            }
+            // Nella stessa cartella si aggiunge solo quello che manca; l'intestazione di una cartella vuota si prende.
+            moveFiles(staged, target, replace = target == secure && !hadPhotos)
         }
         staged.deleteRecursively()
+        // Le altre cartelle del backup: nella tua se è la stessa, altrimenti a parte, ognuna nella sua.
+        stagedExtra.listFiles().orEmpty().filter { it.isDirectory }.forEach { dir ->
+            val header = File(dir, "header.json").takeIf { it.exists() }?.readText() ?: return@forEach
+            val mine = File(secure, "header.json").takeIf { it.exists() }?.readText()
+            moveFiles(dir, if (header == mine) secure else backupFolder(context, header), replace = false)
+        }
+        stagedExtra.deleteRecursively()
+    }
+
+    /** Sposta i file di [from] in [to]; quelli che ci sono già si tengono, a meno di [replace]. */
+    private fun moveFiles(from: File, to: File, replace: Boolean) {
+        to.mkdirs()
+        from.listFiles().orEmpty().forEach { f ->
+            val dest = File(to, f.name)
+            if (dest.exists() && !replace) f.delete() else { dest.delete(); f.renameTo(dest) }
+        }
+    }
+
+    /** Le cartelle protette arrivate da un backup e tenute a parte. */
+    private fun backupDirs(context: Context): List<File> {
+        val base = eu.eurise.gallery.data.SecureFolder.FROM_BACKUP
+        return context.filesDir.listFiles { f -> f.isDirectory && (f.name == base || f.name.startsWith("$base-")) }.orEmpty()
+            .filter { File(it, "header.json").exists() }
+    }
+
+    /**
+     * Dove va una cartella protetta del backup diversa dalla tua: quella già arrivata con la stessa intestazione (si
+     * aggiunge ciò che manca), altrimenti la prima `secure-dal-backup`, `secure-dal-backup-2`… vuota. Mai mescolate.
+     */
+    private fun backupFolder(context: Context, header: String): File {
+        val base = eu.eurise.gallery.data.SecureFolder.FROM_BACKUP
+        val names = generateSequence(1) { it + 1 }.map { if (it == 1) base else "$base-$it" }
+        for (name in names) {
+            val dir = File(context.filesDir, name)
+            val h = File(dir, "header.json")
+            if (h.exists() && h.readText() == header) return dir
+            if (dir.listFiles { f -> f.name.endsWith(".meta") || f.name.endsWith(".enc") }.isNullOrEmpty()) {
+                dir.deleteRecursively()
+                return dir
+            }
+        }
+        error("irraggiungibile")
     }
 
     /** Nome, data e peso di una foto di MediaStore, per ritrovarla su un altro telefono. */
@@ -159,6 +207,8 @@ class GalleryBackupProvider : SuiteBackupProvider() {
     companion object {
         private const val DIARIES = "diaries.json"
         private const val SETTINGS = "settings.json"
+        /** `altre-protette/<cartella>/<file>`: le cartelle dal backup tenute a parte. */
+        private const val EXTRA = "altre-protette/"
         /** Le impostazioni che valgono anche su un altro telefono (fuori l'account, lo stato e gli errori del caricamento). */
         private val KEYS = setOf("charging", "wifi", "my_looks", "names", "save_options", "places", "kept_originals")
         fun secureDir(context: Context) = File(context.filesDir, "secure")

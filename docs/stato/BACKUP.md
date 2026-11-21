@@ -201,8 +201,6 @@ Consegnato con il giro **938** (`apk-prova`): Eurise, Password, Messaggi, Telefo
 Browser, Office. La prova sull'emulatore è ripetuta sul giro 938.
 
 **Limiti noti**
-- Galleria: se sul telefono nuovo c'è già un'altra cartella protetta con foto, quella del backup va in
-  `secure-dal-backup` ma la Galleria non la mostra ancora.
 - Posta: la password di ogni casella va riscritta (sta nel Keystore del telefono vecchio).
 - Chat: si accede come dispositivo nuovo; la cronologia cifrata torna con la chiave di recupero.
 
@@ -232,4 +230,15 @@ chiude Mappe perché ricarichi i segnalibri). Indirizzo `eu.eurise.maps.eurise.b
 **Galleria, cartella «dal backup»**: tavole sulla tela, pagina Backup, terza fila (in attesa di approvazione):
 `GalDalBackup` (scheda «Arrivata dal backup · Apri» in cima alla cartella protetta), `GalDalBackupApri` (frase o codice
 della cartella del telefono di prima, non del backup), `GalDalBackupUnisci` (aperta: «Sposta nella mia cartella», ogni foto
-ricifrata con la chiave attuale, riletta e solo dopo tolta; oppure «Tienila a parte»). Codice dopo l'approvazione.
+ricifrata con la chiave attuale, riletta e solo dopo tolta; oppure «Tienila a parte»). **Approvate** dal proprietario il
+21 novembre sera e in codice:
+- `SecureFolder` ha un'istanza per ogni cartella dal backup (`fromBackup`, `secure-dal-backup`, `-2`…; `count` senza
+  aprirla), `moveAllInto` (copie delle chiavi, così una cartella che si chiude a metà non rovina niente; foto per foto:
+  ricifrata in un tubo in memoria con `SecureMove`, riletta, confrontata con lo SHA-256, poi tolta; quella che non passa
+  resta) e `discard` (solo per quelle dal backup).
+- Interfaccia in `ui/FromBackup.kt`: scheda in cima alla cartella aperta, pagina «Apri» (linguette Frase / Codice di
+  recupero, «Non la ricordo» → tienila o toglila dal telefono, con conferma), pagina aperta con griglia, visore e le due
+  scelte in basso.
+- Il fornitore della Galleria non mescola mai due cartelle diverse (`secure-dal-backup-2`… se ne arriva un'altra) e mette
+  nel backup anche le cartelle tenute a parte (`altre-protette/<cartella>/`), così non si perdono al prossimo cambio.
+- `SecureMoveTest`: chiave nuova, chiave sbagliata, file troncato, scrittura che si ferma (niente blocchi).
