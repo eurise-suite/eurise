@@ -51,6 +51,50 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 21 novembre, sera: nota vocale completa in codice (giro 934)
+- **Approvate dal proprietario** NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata, NoteVocaleDove e ImpEurise. In
+  codice le quattro della nota vocale; **ImpEurise ancora no** (tocca navigazione e voci di tutte le aree: da concordare).
+- **Entrata** (NoteVocaleEntra): nell'elenco delle Note un tondo satinato col microfono sopra il + della barra
+  (`VoiceNoteButton` in `NotesListScreen`). Tocco breve: nota nuova già in registrazione, nel taccuino aperto, audio nel
+  posto preferito; tenuto premuto: «Dove salvo le registrazioni?», poi registra. Rotta `note?…&voice=true`
+  (`NoteEditorRoute(startVoice)`), anche dalla sezione `new_voice_note` (per la Scrivania e le altre app). Annulla su
+  una nota vocale nuova e vuota chiude la nota.
+- **Registrazione** (NoteVocaleRegistra): «Nota vocale · taccuino», durata, onde, testo grezzo «Mentre parli» un
+  paragrafo per pausa (Voce scrive un pezzo per pausa; nella trascrizione salvata un pezzo per riga), «L'audio va in: …»
+  con **Cambia** sempre in vista. Il file nasce sempre nella cartella privata; a Fine va nel posto scelto.
+- **Dove** (NoteVocaleDove, `voice/VoicePlaces.kt`): **Sul telefono** = MediaStore `Recordings/Eurise` da Android 12,
+  `Music/Eurise` su Android 10–11 (la cartella Registrazioni per l'audio c'è solo da Android 12), su Android 8–9 file in
+  Musica › Eurise con il permesso di scrittura (chiesto alla scelta; negato → cartella privata); tacchette 8. **Solo nelle
+  Note** = `files/note-vocali/` (di base, tacchette 10). **Nel cloud collegato** = cartella «Note vocali» dell'account
+  delle note (o del primo collegato), caricata da `VoiceUploadWorker` (WorkManager; Wi-Fi se in Cloud è scelto «solo
+  Wi-Fi»), poi la copia sul telefono si toglie; per ascoltarla si scarica in cache. Tacchette del servizio. La scelta
+  resta per le prossime (`eurise_notes_voice`, quindi anche nel backup delle impostazioni). Se un posto non si può usare
+  l'audio resta nella cartella privata.
+- **Testo in ordine** (NoteVocaleOrdinata): sotto la registrazione entrano subito i **paragrafi alle pause** (pezzi corti
+  uniti al seguente, maiuscola e punto); poi, se c'è il cervello di Alfred (`voice/NotesBrain.kt`: Eurise AI con
+  `BrainContract.MSG_ASK`, nessuna modifica all'APK AI), punteggiatura e maiuscole a gruppi di circa 120 parole, poi
+  **titolo** della nota (se vuoto) e **titoletti** (blocchi Titolo). Ogni risposta si controlla (`VoiceOrder.acceptClean`:
+  niente riassunti né aggiunte, stessi paragrafi), altrimenti resta il testo alle pause. Senza titolo: «Nota vocale del
+  21 novembre». Il testo sta nella nota come blocchi normali, modificabili e cercabili.
+- **Nel blocco**: posto e peso dell'audio, «riordinata da Alfred sul telefono» (o «paragrafi alle pause»), **Testo
+  com'era** (la trascrizione grezza), **Riordina di nuovo** (sostituisce il testo messo l'altra volta solo se è ancora
+  intatto; se è stato cambiato a mano, il nuovo va sotto la registrazione e il vecchio resta), **Riassunto** solo con il
+  modello (tre righe, le note lunghe a pezzi di 600 parole; riquadro con ✕), la cosa da fare trovata. Le note vocali di
+  prima hanno «Metti in ordine».
+- **Formato**: `AudioBlock` con `place`, `uri`, `size`, `ordered`, `summary` → attributi `data-place`, `data-uri`,
+  `data-size`, `data-ordered`, `data-summary` della `<figure data-eurise="voice">`; nella didascalia i pezzi separati da
+  `<br>`. Test `VoiceOrderTest` (paragrafi, controllo delle risposte, titoletti, riassunto, andata e ritorno dell'HTML).
+- **Parti comuni**: nessuna. Toccato `app` (rotta della nota e sezione `new_voice_note`).
+- **Manca**: l'audio delle note vocali nel **backup cifrato** (la tavola lo dice; serve una voce in `BackupArchive`, area
+  Sicurezza); ImpEurise («Impostazioni Eurise › Note» per cambiare il posto: ora si cambia tenendo premuto il microfono o
+  con «Cambia»); il microfono anche nella Scrivania e in Agenda.
+- **Da provare**: tocco breve sul microfono (nota nuova, testo che compare, Fine, paragrafi e poi titolo da Alfred);
+  tenuto premuto, scegliere «Sul telefono» e ritrovare il file in File › Registrazioni › Eurise; «Nel cloud» con Murena e
+  vedere sparire «da caricare»; Testo com'era, Riordina di nuovo dopo aver cambiato una riga, Riassunto con e senza
+  modello di Eurise AI.
+- Giro 934 (Compila 44919882465) da `brand`: lo spostamento forzato di `prova-organizzazione` sulla stessa testa non è
+  stato permesso in questa chat.
+
 ## 21 novembre: note vocali complete e Impostazioni Eurise (tavole da approvare, niente codice)
 - Richiesta del proprietario: «Nota vocale» accanto ad «Aggiungi nota»; l'audio in una cartella del telefono o nel cloud,
   a scelta; nella nota il testo trascritto e riordinato (punteggiatura, titoli, paragrafi) con Alfred; riassunto su
@@ -488,6 +532,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Approvate e in codice dal 17 novembre (pomeriggio)**: CollAssistente, InsAssistente (agenda con l'assistente).
 - **Approvate e in codice dal 17 novembre (sera e notte)**: ScrPagAggiungi, ScrPagGestisci, ScrPagNuova, ScrPagLibera (giro 760),
   ScrPagTrascina (giro 772).
+- **Approvate e in codice dal 21 novembre (sera)**: NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata,
+  NoteVocaleDove (giro 934). **Approvata, codice da scrivere**: ImpEurise (con le altre aree).
 - **Approvate, codice da scrivere**: RubElenco, RubNuovo, RubScheda (Rubrica arricchita, approvata il 17 novembre: il
   codice con l'area Comunicazione); CollDisponibilita, CollPassaPalla (con Comunicazione) e le Ins* di
   Comunicazione.
@@ -513,7 +559,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
    personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.
 5. **Agenda, rifiniture possibili**: nome nel saluto (dall'Accoglienza della Scrivania); invitati anche dal + unico.
-6. Poi: audio delle note vocali nel cloud; simboli nuovi nei temi «Eurise» ed «Eurise a
+6. **Impostazioni Eurise** (ImpEurise, approvata): concordare con le altre aree navigazione e voci, poi il codice;
+   l'audio delle note vocali nel backup cifrato (con Sicurezza).
+7. Poi: simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Pagine della Scrivania a piacere**: in codice nel giro 760, da provare (creare pagine, «Aggiungi alla Scrivania…»,
   ordine, Apri da qui, solo in una modalità, elimina) e il trascinamento tra pagine (ScrPagTrascina, giro 772).

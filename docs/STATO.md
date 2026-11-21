@@ -3406,3 +3406,5 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 21 novembre, Organizzazione per Comunicazione: elenco dei numeri molesti dalla pre-release `elenco-molesti` e controllo settimanale programmato; «Segnala a Eurise» quando ci sarà il server Eurise (ricordarlo al proprietario) · giro 918 → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, Organizzazione: tavole NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata, NoteVocaleDove e ImpEurise (da approvare) → `docs/stato/ORGANIZZAZIONE.md`.
 - 21 novembre, Comunicazione: Chat, cartelle scelte dall'utente, «Messaggi a me» verso Note e Attività, vocali scritti con l'icona senza ascoltarli · giro 930 (chat) → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, sera, Organizzazione: nota vocale completa (microfono sopra il + delle Note, dove salvare l'audio, testo riordinato da Alfred, «Testo com'era», «Riordina di nuovo», «Riassunto») · giro 934 → `docs/stato/ORGANIZZAZIONE.md`.
+>>>>>>> 9683403 (Stato dell'organizzazione: nota vocale completa, giro 934 [skip ci])
