@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.ui
 
+import app.organicmaps.eurise.EuriseSuite
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -373,7 +374,7 @@ private fun note(context: Context, text: String) {
         val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
             .setComponent(ComponentName(hub, "eu.eurise.hub.ShareToNotesActivity"))
         // Solo verso l'app Eurise della suite: un'app con lo stesso nome non riceve il testo della nota.
-        val safe = app.organicmaps.eurise.EuriseSuite.trusted(context, i) ?: continue
+        val safe = EuriseSuite.trusted(context, i) ?: continue
         if (runCatching { context.startActivity(safe) }.isSuccess) return
     }
 }

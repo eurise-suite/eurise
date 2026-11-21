@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.car;
 
+import app.organicmaps.eurise.EuriseSuite;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,7 +29,7 @@ import app.organicmaps.eurise.EuriseArrival;
  */
 public final class EuriseCarDestinations
 {
-  private static final String[] HUBS = app.organicmaps.eurise.EuriseSuite.HUBS;
+  private static final String[] HUBS = EuriseSuite.HUBS;
   private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
 
   /** Un impegno: titolo, luogo, inizio. */
@@ -77,7 +78,7 @@ public final class EuriseCarDestinations
       {
         try
         {
-          b = app.organicmaps.eurise.EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
+          b = EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
         }
         catch (Exception ignored)
         {

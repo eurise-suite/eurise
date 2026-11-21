@@ -1,5 +1,6 @@
 package app.organicmaps.eurise.ui
 
+import app.organicmaps.eurise.EuriseSuite
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
@@ -52,7 +53,7 @@ object EuriseTransit {
     fun privacy(c: Context, method: String = "status"): Boolean? {
         for (h in HUBS) {
             try {
-                val b: Bundle? = app.organicmaps.eurise.EuriseSuite.call(c, Uri.parse("content://$h.privacy"), method, SERVICE, null)
+                val b: Bundle? = EuriseSuite.call(c, Uri.parse("content://$h.privacy"), method, SERVICE, null)
                 if (b != null) return b.getBoolean("on")
             } catch (_: Exception) {
                 // App Eurise assente o di un'altra firma.

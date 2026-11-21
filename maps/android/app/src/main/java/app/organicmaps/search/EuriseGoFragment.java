@@ -1,5 +1,6 @@
 package app.organicmaps.search;
 
+import app.organicmaps.eurise.EuriseSuite;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
@@ -29,7 +30,7 @@ import java.util.concurrent.Executors;
  */
 public class EuriseGoFragment extends Fragment
 {
-  private static final String[] HUBS = app.organicmaps.eurise.EuriseSuite.HUBS;
+  private static final String[] HUBS = EuriseSuite.HUBS;
   private static final ExecutorService IO = Executors.newSingleThreadExecutor();
 
   private LinearLayout mList;
@@ -58,7 +59,7 @@ public class EuriseGoFragment extends Fragment
       {
         try
         {
-          b = app.organicmaps.eurise.EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
+          b = EuriseSuite.call(app, Uri.parse("content://" + h + ".destinations"), "list", null, null);
           if (b != null)
             break;
         }
