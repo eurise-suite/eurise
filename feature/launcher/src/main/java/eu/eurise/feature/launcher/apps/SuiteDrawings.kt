@@ -121,13 +121,13 @@ internal object SuiteDrawings {
             Part("p", "M10.5 26 H33.5 V29 C33.5 35.5 28.5 40 22 40 C15.5 40 10.5 35.5 10.5 29 Z"),
             Part("s", "M33.5 28 C37.2 28 39 30.1 38.4 32.5 C37.8 34.9 35.4 35.4 32.6 34.5"),
             ),
-            light = Palette(Color(0xFF1995DC), Color(0xFF6D3F1B), Color(0xFF35A4E4), Color(0xFF7A461E), Color(0x291A98E0), Color(0xFFF6F5F1), 2.3f),
-            dark = Palette(Color(0xFFA8D8F3), Color(0xFFBA8C67), Color(0xFF98D1F1), Color(0xFFB07B51), Color(0x2B76C1EC), Color(0xFF262A33), 2.3f),
-            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFF4C6C94), 2.4f),
-            round = listOf(Color(0xFF1A98E0), Color(0xFF2C7CC8), Color(0xFF9C5A26)),
+            light = Palette(Color(0xFF1D98DC), Color(0xFF764620), Color(0xFF39A7E4), Color(0xFF834E24), Color(0x291E9BE0), Color(0xFFF6F5F1), 2.3f),
+            dark = Palette(Color(0xFFAAD9F3), Color(0xFFC2926D), Color(0xFF9AD2F1), Color(0xFFB98358), Color(0x2B78C3EC), Color(0xFF262A33), 2.3f),
+            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFF5A6286), 2.4f),
+            round = listOf(Color(0xFF1E9BE0), Color(0xFF5A6E9A), Color(0xFFA8642E)),
             glow = Color(0xFF5EB9E9),
             vertical = true,
-            stops = listOf(0.05f, 0.42f, 0.72f),
+            stops = listOf(0f, 0.38f, 0.78f),
         ),
         "Contatti" to Drawing(
             listOf(
