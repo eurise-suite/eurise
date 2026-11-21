@@ -56,6 +56,7 @@ done
 adb install -r curiosa.apk >/dev/null
 r=$(bussa org.esempio.curiosa); echo "$r" | sed 's/^/  curiosa: /'
 attesa "$r" segreti CHIUSA "la curiosa non legge i segreti affidati all'app Eurise"
+attesa "$r" affida CHIUSA "la curiosa non affida né rilegge segreti"
 attesa "$r" accessi CHIUSA "la curiosa non arriva alle password dei siti"
 attesa "$r" sms CHIUSA "la curiosa non legge gli SMS"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
@@ -64,10 +65,26 @@ attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"
 attesa "$r" ponte CHIUSA "la curiosa non collega un suo computer al Ponte"
 
 adb install -r amica.apk >/dev/null
+# Un segreto nel vecchio file in chiaro (com'era fino al 21 novembre 2026): l'app Eurise deve sigillarlo e cancellare il file.
+cat > vecchio.xml <<'XML'
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="prova-vecchio">EURISE-SEGRETO-VECCHIO</string>
+</map>
+XML
+adb shell am force-stop eu.eurise.hub.debug
+adb shell "run-as eu.eurise.hub.debug sh -c 'mkdir -p shared_prefs && cat > shared_prefs/eurise_secrets.xml'" < vecchio.xml
+nota "vecchio file: $(adb shell run-as eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c eurise_secrets) (1 = piantato)"
 g=$(adb shell dumpsys package org.esempio.amica | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//')
 echo "  amica: granted=$g"
 r=$(bussa org.esempio.amica); echo "$r" | sed 's/^/  amica: /'
 attesa "$r" segreti APERTA "l'amica (stessa chiave) usa ancora i segreti"
+attesa "$r" affida UGUALE "l'amica affida un segreto all'app Eurise e lo rilegge uguale"
+attesa "$r" migra UGUALE "un segreto del vecchio file in chiaro arriva ancora, sigillato nel Keystore"
+chiaro=$(adb shell "run-as eu.eurise.hub.debug sh -c 'grep -rl EURISE-SEGRETO shared_prefs files databases 2>/dev/null'" | tr -d '\r')
+[ -z "$chiaro" ] && ok "nessun segreto in chiaro nei file dell'app Eurise" || ko "segreti in chiaro nei file dell'app Eurise: $chiaro"
+vecchio=$(adb shell run-as eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c '^eurise_secrets.xml$')
+[ "$vecchio" = "0" ] && ok "il vecchio file in chiaro dei segreti è cancellato" || ko "il vecchio file in chiaro dei segreti è ancora lì"
 attesa "$r" accessi APERTA "l'amica (stessa chiave) arriva ancora a Password"
 # Gli SMS dipendono anche dai permessi di Messaggi sull'emulatore: qui basta che non sia un rifiuto di sicurezza.
 case "$(echo "$r" | grep -m1 '^sms=')" in

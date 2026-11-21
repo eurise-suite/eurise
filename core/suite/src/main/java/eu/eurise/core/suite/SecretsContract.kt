@@ -6,8 +6,8 @@ import android.os.Bundle
 
 /**
  * I segreti che un APK della suite affida all'app Eurise perché finiscano nel backup cifrato della suite (per ora la
- * chiave di recupero della Chat, tavola ChatRecupero). L'app Eurise li tiene nei suoi dati privati (preferenze
- * «eurise_secrets», comprese nel backup che si apre solo con la frase segreta dell'utente) e li restituisce, sul telefono
+ * chiave di recupero della Chat, tavola ChatRecupero). L'app Eurise li tiene sigillati nel Keystore (`SuiteSecrets` in
+ * `core/cloud`), li porta nel backup che si apre solo con la frase segreta dell'utente e li restituisce, sul telefono
  * nuovo, solo alle app firmate con la stessa chiave (permesso della suite, controllato dal fornitore a ogni chiamata).
  */
 object SecretsContract {

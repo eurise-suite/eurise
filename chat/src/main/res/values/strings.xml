@@ -248,4 +248,39 @@
     <string name="vo_auto_on">I messaggi nuovi si leggono da soli (si spegne dal foglio dell\'account)</string>
     <string name="vo_auto_title">Leggi da soli i messaggi</string>
     <string name="vo_auto_sub">Per chi vede poco: con una conversazione aperta, la voce del telefono legge i messaggi che arrivano e sotto ognuno c\'è «Leggi ad alta voce». Tutto resta sul telefono.</string>
+
+    <!-- Invia più tardi, quando lavora, a scomparsa, Ricordamelo (tavola ChatProgramma) -->
+    <string name="pr_title">Pressione lunga su Invia</string>
+    <string name="pr_sub">Tocco breve: invia adesso.</string>
+    <string name="pr_later">Invia più tardi</string>
+    <string name="pr_later_sub">Resta sul telefono e parte all\'ora scelta</string>
+    <string name="pr_tomorrow_short">Domani %1$s</string>
+    <string name="pr_monday_short">Lunedì 9:00</string>
+    <string name="pr_pick">Scegli…</string>
+    <string name="pr_work">Invia quando lavora</string>
+    <string name="pr_work_sub">Orario di lavoro 8–19 nei feriali: arriva %1$s</string>
+    <string name="pr_work_now">Adesso è orario di lavoro: parte con il tocco breve</string>
+    <string name="pr_fade">A scomparsa</string>
+    <string name="pr_fade_sub">sparisce 1 giorno dopo la lettura</string>
+    <string name="pr_fade_short">a scomparsa</string>
+    <string name="pr_fade_at">sparisce %1$s</string>
+    <string name="pr_today">oggi alle %1$s</string>
+    <string name="pr_tomorrow">domani alle %1$s</string>
+    <string name="pr_weekday">%1$s alle %2$s</string>
+    <string name="pr_date">il %1$s alle %2$s</string>
+    <string name="pr_arrives">arriva %1$s</string>
+    <string name="pr_send_now">Invia adesso</string>
+    <string name="pr_edit">Modifica</string>
+    <string name="pr_edit_sub">Il testo torna nel campo</string>
+    <string name="pr_cancel">Annulla l\'invio</string>
+    <string name="pr_cancel_sub">Il messaggio non parte</string>
+    <string name="pr_remind">Ricordamelo</string>
+    <string name="pr_remind_sub">Il promemoria va in Attività con il link al messaggio.</string>
+    <string name="pr_in_hour">Tra un\'ora</string>
+    <string name="pr_evening">Stasera 18</string>
+    <string name="pr_tomorrow9">Domani 9</string>
+    <string name="pr_reminded">In Attività: %1$s</string>
+    <string name="pr_no_hub">Per i promemoria serve l\'app Eurise (Attività)</string>
+    <string name="pr_remind_title">Rispondi a %1$s: «%2$s»</string>
+    <string name="pr_remind_notes">Dalla Chat (%1$s). Il messaggio:</string>
 </resources>

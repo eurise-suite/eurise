@@ -1,0 +1,40 @@
+name: Elenco dei numeri molesti
+
+# Pubblica data/spam/elenco.txt nella pre-release «elenco-molesti», da cui l'app Eurise lo scarica una volta a settimana
+# (hub/SpamListProvider.kt). Così il telefono non dipende dal ramo di lavoro e riceve solo un file controllato
+# (data/spam/controlla.py, stesse regole del Telefono). Parte quando il file cambia su brand o a mano.
+on:
+  push:
+    branches: [brand]
+    paths:
+      - "data/spam/**"
+      - ".github/workflows/elenco-molesti.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: elenco-molesti
+  cancel-in-progress: false
+
+jobs:
+  pubblica:
+    name: Controlla e pubblica
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Controllo
+        run: python3 -I data/spam/controlla.py data/spam/elenco.txt
+      - name: Pubblica nella pre-release «elenco-molesti»
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh release view elenco-molesti -R "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create elenco-molesti -R "${{ github.repository }}" --prerelease --title "Elenco dei numeri molesti" \
+              --notes "Elenco Eurise dei numeri molesti per Eurise Telefono: formato e regole in data/spam/README.md. Lo scarica l'app Eurise, se acceso, una volta a settimana col Wi-Fi."
+          gh release upload elenco-molesti data/spam/elenco.txt --clobber -R "${{ github.repository }}"

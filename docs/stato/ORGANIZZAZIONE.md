@@ -54,6 +54,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 ## 20 novembre: Telefono e Rubrica (giro 896, area Comunicazione)
 - Su richiesta del proprietario questa chat ha corretto Telefono e Rubrica (APK `phone/`, area Comunicazione) e toccato
   `core/contacts` (comune con Messaggi). Dettagli in `docs/stato/COMUNICAZIONE.md`, voce «correzioni del 20 novembre».
+- 21 novembre, giro 910: elenco Eurise dei numeri molesti. Parti comuni toccate: `core/suite` (`PrivacyService.SpamList`,
+  `SpamList`, `SpamListContract`) e `core/designsystem` (testi del servizio, gruppo «Telefono» nel primo avvio); nell'app
+  Eurise `SpamListProvider` e `SpamListWorker`. Dettagli in `COMUNICAZIONE.md`.
 
 ## 16 novembre, sera: icone nel cassetto, pulizia, tavole delle Note
 - **Calendario, Attività e Note con un'icona propria** tra le app di Android (activity-alias `.CalendarApp`, `.TasksApp`,
@@ -516,3 +519,6 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - I fornitori dell'APK principale (segreti, aspetto, luoghi, privacy, destinazioni, Oggi, I tuoi giorni, meteo sul percorso)
   accettano solo il permesso della propria variante; backup della suite a 600 000 iterazioni per i nuovi; regole di
   estrazione complete. Dettagli in `docs/SICUREZZA.md`.
+
+## Sicurezza, 21 novembre 2026 (progetto Eurise Sicurezza)
+App Eurise: i segreti affidati dalle altre app (chiave di recupero della Chat) ora sono sigillati nel Keystore (`SuiteSecrets` in `core/cloud`), con una voce a parte nel backup (`lock/secrets.json`); migrazione da sola dal vecchio `eurise_secrets`. Dettagli in `docs/SICUREZZA.md`, «Crittografia».

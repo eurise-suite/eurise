@@ -4,12 +4,12 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 
 ### Per ripartire (aggiornato il 20 novembre 2026, sera)
 - **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
-  `brand`. Al 20 novembre, sera, i due rami sono allo stesso commit (giro 903). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
+  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 911). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **903** da `prova-sicurezza` (20 novembre, sera), in `apk-prova` con tutte le app
+- **Ultimo giro pubblicato**: Compila **911** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
   della suite, Mappe e motore di Office presi dai loro ultimi giri riusciti; prova delle porte sull'emulatore verde su
-  quel giro. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+  quel giro (22 controlli). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
 - **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
   porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
   con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di
@@ -24,7 +24,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   3. ~~Voci «Aperto» delle porte d'ingresso~~ intent verso le altre app della suite controllati il 20 novembre, sera
      (tra cui il CSV delle password importate dal Browser). Resta Mappe, da fare con la preparazione della versione
      ufficiale (sezione «Porte d'ingresso», «Mappe»).
-  4. Segreti affidati all'app Eurise sigillati nel Keystore (tocca il backup); blocco delle Note legato all'impronta.
+  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ fatto il 21 novembre (sezione «Crittografia»); resta il
+     blocco delle Note legato all'impronta (da decidere con il proprietario: cambia il backup).
   5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
      passare dal flusso delle impronte.
   6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
@@ -172,8 +173,15 @@ prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-e
   imparate in un tubo, non più da file nella cache (quello dell'esportazione restava dopo ogni backup); lo zip in attesa
   della Tastiera sta sigillato con una chiave del Keystore (`LocalSeal`); il ripristino apre il backup solo in memoria e
   cambia il telefono dopo una conferma. Nessun permesso e nessuna firma toccati. Dettagli in `docs/stato/BACKUP.md`.
-- **Segreti affidati all'app Eurise** (`eurise_secrets`, chiave di recupero della Chat): in chiaro nelle preferenze, ma
-  entrano nel backup cifrato; sigillarli nel Keystore richiede di cambiare anche il backup (aperto).
+- **Segreti affidati all'app Eurise (21 novembre)**: la chiave di recupero della Chat (l'unico per ora, `SecretsContract`)
+  stava **in chiaro** nelle preferenze `eurise_secrets`. Rischio basso-medio: chi copia i dati privati dell'app (falla di
+  Android, root, copia del telefono sbloccato) la leggeva e con lei apriva le conversazioni salvate della Chat. Ora
+  `SuiteSecrets` (`core/cloud/.../lock`) la sigilla con una chiave AES-GCM del Keystore, in preferenze escluse dal backup,
+  come la chiave delle note; nel backup cifrato della suite entra come voce a parte (`lock/secrets.json`) e sul telefono
+  nuovo si risigilla. Migrazione da sola al primo accesso: scritti, riletti uguali, poi il file vecchio si cancella; se il
+  Keystore non risponde resta tutto com'era. I backup vecchi (con `eurise_secrets.xml`) si aprono ancora: il file torna e
+  viene riassorbito. Provato sull'emulatore (`prova-porte.yml`): l'amica affida e rilegge, un segreto piantato nel
+  vecchio file arriva sigillato, nei file dell'app Eurise non resta nulla in chiaro, il vecchio file è cancellato.
 
 ### Telefono rubato
 - Spento o mai sbloccato dopo l'accensione: tutto è nella memoria cifrata di Android (FBE), illeggibile senza il codice.
