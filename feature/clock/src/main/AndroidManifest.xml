@@ -74,6 +74,7 @@
                 <action android:name="eu.eurise.clock.action.SKIP_NEXT_ALARM" />
                 <action android:name="eu.eurise.clock.action.UNDO_SKIP_ALARM" />
                 <action android:name="eu.eurise.clock.action.TRIP" />
+                <action android:name="eu.eurise.clock.action.STOP_TIMERS" />
             </intent-filter>
         </receiver>
     </application>

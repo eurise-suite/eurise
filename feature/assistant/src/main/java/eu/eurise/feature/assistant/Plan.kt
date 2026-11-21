@@ -17,6 +17,8 @@ import eu.eurise.core.data.EuriseData
 import eu.eurise.core.data.calendar.DeviceCalendar
 import eu.eurise.core.data.calendar.EventDraft
 import eu.eurise.core.data.model.QuickAdd
+import eu.eurise.core.suite.ClockContract
+import eu.eurise.core.suite.ClockStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -33,7 +35,10 @@ data class Field(val key: String, val label: Int, val value: String, val choices
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask, Follow }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask, Follow, Complete, Device, Clock, Help }
+
+/** Le schede che si fanno subito, senza «Procedo?»: torcia, volume, musica, timer (cose che si annullano da sé). */
+val Card.immediate: Boolean get() = kind == Kind.Device || (kind == Kind.Clock && (command as? Command.Clock)?.action != ClockAction.AlarmOff)
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -53,6 +58,8 @@ data class Card(
     internal val contact: Contact? = null,
     internal val calendars: List<DeviceCalendar> = emptyList(),
     internal val app: Intent? = null,
+    /** La cosa da fare da spuntare (scheda «Fatto»). */
+    internal val taskId: Long? = null,
 ) {
     fun value(key: String) = fields.firstOrNull { it.key == key }?.value.orEmpty()
     fun with(key: String, value: String) = copy(fields = fields.map { if (it.key == key) it.copy(value = value) else it })
@@ -107,6 +114,11 @@ class Butler(private val context: Context) {
         is Command.Remember -> Card(Kind.Remember, command, s(R.string.alfred_lead_remember), R.string.alfred_card_remember,
             listOf(Field("text", R.string.alfred_f_text, command.text)), s(R.string.alfred_note_remember), s(R.string.alfred_do_remember))
         is Command.Follow -> follow(command)
+        is Command.Change -> change(command)
+        is Command.Complete -> complete(command)
+        is Command.Device -> Card(Kind.Device, command, "", R.string.alfred_card_device, emptyList(), null, "")
+        is Command.Clock -> clock(command)
+        Command.Help -> Card(Kind.Help, command, s(R.string.alfred_help_lead), R.string.alfred_card_help, emptyList(), null, "", ready = false)
         // Le domande sui dati non hanno scheda (si risponde con [lookup]); qui solo per l'elenco «Ho capito N cose».
         is Command.Ask -> Card(Kind.Ask, command, s(R.string.alfred_data_card), R.string.alfred_data_card,
             listOf(Field("text", R.string.alfred_f_text, command.about.ifBlank { command.day?.let { whenText(it, null, false, "") }.orEmpty() })),
@@ -258,6 +270,97 @@ class Butler(private val context: Context) {
                 Outcome(s(R.string.alfred_follow_undone), true)
             }
             FollowAction.AlsoTo -> Outcome(s(R.string.alfred_failed), false)
+        }
+    }
+
+    // --- Azioni nuove (tavola AlfAzioni) ---
+
+    /**
+     * «Sposta la riunione a giovedì», «cancella il dentista»: si cerca l'impegno per nome (il più vicino tra quelli che
+     * vengono, o il più recente) e si passa alle schede dei seguiti, con la conferma.
+     */
+    private suspend fun change(c: Command.Change): Card {
+        val none = Card(Kind.Follow, c, s(R.string.alfred_change_none, c.about), R.string.alfred_card_follow, emptyList(), null,
+            s(R.string.alfred_follow_move), ready = false)
+        if (!data.calendar.hasPermission()) return none.copy(lead = s(R.string.alfred_need_calendar))
+        val words = DataWriter.keywords(c.about).ifEmpty { listOf(c.about.lowercase()) }
+        val longest = words.maxByOrNull { it.length } ?: c.about
+        val now = LocalDateTime.now()
+        val found = runCatching { data.calendar.search(longest, 20) }.getOrDefault(emptyList())
+            .filter { e -> words.all { w -> fold(e.title + " " + e.location).contains(fold(w)) } }
+            .filter { e -> !c.delete || c.day == null || e.start.toLocalDate() == c.day }
+        val event = found.filter { !it.end.isBefore(now) }.minByOrNull { it.start } ?: found.maxByOrNull { it.start } ?: return none
+        if (eventDone(event.eventId) == null) return none.copy(lead = s(R.string.alfred_change_fixed, event.title))
+        return follow(Command.Follow(if (c.delete) FollowAction.Undo else FollowAction.Move, c.day.takeIf { !c.delete }, c.time, eventId = event.eventId))
+    }
+
+    /** «Ho comprato il latte»: la cosa da fare che ha quelle parole, da spuntare con un tocco. */
+    private suspend fun complete(c: Command.Complete): Card {
+        val words = DataWriter.keywords(c.about).ifEmpty { listOf(c.about.lowercase()) }
+        val longest = words.maxByOrNull { it.length } ?: c.about
+        val open = withContext(Dispatchers.IO) { runCatching { data.tasks.search(longest, 12) }.getOrDefault(emptyList()) }.filter { !it.done }
+        val hits = open.filter { t -> words.all { w -> fold(t.title).contains(fold(w)) } }.ifEmpty {
+            open.filter { t -> words.any { w -> fold(t.title).contains(fold(w)) } }
+        }
+        val task = hits.minByOrNull { it.due ?: LocalDate.MAX }
+            ?: return Card(Kind.Complete, c, s(R.string.alfred_complete_none, c.about), R.string.alfred_card_complete, emptyList(), null,
+                s(R.string.alfred_do_complete), ready = false)
+        return Card(Kind.Complete, c, s(R.string.alfred_lead_complete), R.string.alfred_card_complete,
+            listOf(Field("what", R.string.alfred_f_what, task.title)), null, s(R.string.alfred_do_complete),
+            hits.filter { it.id != task.id }.take(2).map { Chip(s(R.string.alfred_or, it.title), Command.Complete(it.title)) },
+            taskId = task.id)
+    }
+
+    /** Sveglie e timer: si legge lo stato pubblicato dall'Orologio (stesso APK, modulo che non si conosce). */
+    private suspend fun clock(c: Command.Clock): Card = when (c.action) {
+        ClockAction.StopTimer, ClockAction.TimerLeft -> Card(Kind.Clock, c, "", R.string.alfred_card_timer, emptyList(), null, "")
+        ClockAction.AlarmOff -> {
+            val next = withContext(Dispatchers.IO) { ClockContract.nextAlarm(context) }
+            val ours = ClockContract.nextAlarmIsOurs(context)
+            when {
+                next == null -> Card(Kind.Clock, c, s(R.string.alfred_alarm_none), R.string.alfred_card_alarm_off, emptyList(), null,
+                    s(R.string.alfred_do_alarm_off), ready = false)
+                !ours -> Card(Kind.Clock, c, s(R.string.alfred_alarm_not_ours, whenShort(next.toLocalDate(), next.toLocalTime())),
+                    R.string.alfred_card_alarm_off, emptyList(), null, s(R.string.alfred_do_alarm_off), ready = false)
+                else -> Card(Kind.Clock, c, s(R.string.alfred_lead_alarm_off), R.string.alfred_card_alarm_off,
+                    listOf(Field("when", R.string.alfred_f_when, whenShort(next.toLocalDate(), next.toLocalTime()).replaceFirstChar { it.uppercase() })),
+                    if (c.day != null && c.day != next.toLocalDate()) s(R.string.alfred_alarm_other_day) else s(R.string.alfred_note_alarm_off),
+                    s(R.string.alfred_do_alarm_off))
+            }
+        }
+    }
+
+    private suspend fun doClock(c: Command.Clock): Outcome {
+        val status = withContext(Dispatchers.IO) { ClockStatus.read(context) }
+        val left = status.timerEndsAt?.let { it - System.currentTimeMillis() }?.takeIf { it > 0 }
+        return when (c.action) {
+            ClockAction.StopTimer -> {
+                ClockContract.stopTimers(context)
+                Outcome(s(if (left != null) R.string.alfred_timer_stopped else R.string.alfred_timer_none_stop), true)
+            }
+            ClockAction.TimerLeft -> if (left == null) Outcome(s(R.string.alfred_timer_none), true) else {
+                val sec = (left / 1000).toInt()
+                val text = when {
+                    sec >= 3600 -> s(R.string.alfred_left_hours, sec / 3600, (sec % 3600) / 60)
+                    sec >= 60 -> context.resources.getQuantityString(R.plurals.alfred_left_minutes, sec / 60, sec / 60) +
+                        (if (sec % 60 >= 10 && sec < 600) " " + s(R.string.alfred_left_and_seconds, sec % 60) else "")
+                    else -> context.resources.getQuantityString(R.plurals.alfred_left_seconds, sec, sec)
+                }
+                Outcome(s(R.string.alfred_timer_left, text), true)
+            }
+            ClockAction.AlarmOff -> {
+                ClockContract.skipNext(context)
+                Outcome(s(R.string.alfred_alarm_skipped), true)
+            }
+        }
+    }
+
+    private suspend fun doDevice(c: Command.Device): Outcome = when (val r = Gadgets.run(context, c)) {
+        is Gadgets.Result.Done -> Outcome(if (r.arg != null) s(r.line, r.arg) else s(r.line), true)
+        Gadgets.Result.NoTorch -> Outcome(s(R.string.alfred_dev_no_torch), false)
+        Gadgets.Result.NeedsQuietAccess -> {
+            Reach.open(context, Gadgets.quietAccessIntent())
+            Outcome(s(R.string.alfred_dev_need_quiet), false)
         }
     }
 
@@ -503,6 +606,7 @@ class Butler(private val context: Context) {
             Kind.Timer -> R.array.alfred_maxims_timer
             Kind.Remember -> R.array.alfred_maxims_remember
             Kind.Follow -> R.array.alfred_maxims_follow
+            Kind.Complete -> R.array.alfred_maxims_complete
             else -> return out
         }
         // Battute brevi, dette anche a voce: l'ironia resta, senza far aspettare. Mai la stessa due volte di fila.
@@ -538,6 +642,8 @@ class Butler(private val context: Context) {
             Kind.Search -> s(R.string.alfred_say_search)
             Kind.Open -> s(R.string.alfred_say_open)
             Kind.Remember -> pick(R.string.alfred_say_remember, R.array.alfred_say_wit_remember)
+            Kind.Complete -> s(R.string.alfred_say_complete, card.value("what"))
+            Kind.Clock -> s(R.string.alfred_say_alarm_off, card.value("when").replaceFirstChar { it.lowercase() })
             else -> plain
         }
     }
@@ -613,6 +719,14 @@ class Butler(private val context: Context) {
             Kind.Free -> search(card.value("text"), web = true)
             Kind.Ask -> Outcome(s(R.string.alfred_failed), false)
             Kind.Follow -> doFollow(card)
+            Kind.Complete -> {
+                val id = card.taskId ?: return Outcome(s(R.string.alfred_failed), false)
+                withContext(Dispatchers.IO) { data.tasks.setDone(id, true) }
+                Outcome(s(R.string.alfred_done_complete), true)
+            }
+            Kind.Device -> doDevice(card.command as Command.Device)
+            Kind.Clock -> doClock(card.command as Command.Clock)
+            Kind.Help -> Outcome("", false)
         }
     }.getOrElse { Outcome(s(R.string.alfred_failed), false) }
 

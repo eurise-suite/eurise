@@ -8,7 +8,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- La finestra AI di Alfred (tavola AlfFinestra): la web app dell'AI scelta, col proprio account. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- «Non disturbare fino alle 8»: l'accesso si chiede la prima volta (pagina di Android); senza, Alfred lo dice. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <application>
+        <!-- Fine di «Non disturbare fino alle…»: messaggio interno all'app, chiuso alle altre. -->
+        <receiver android:name=".QuietEndReceiver" android:exported="false" />
         <activity
             android:name=".online.AiWindowActivity"
             android:exported="false"
