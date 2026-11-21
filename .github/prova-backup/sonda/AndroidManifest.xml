@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sonda della prova del backup: gira dentro l'app Eurise di prova (stessa chiave), nessun permesso suo. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="eu.eurise.prova.backup">
+    <application android:label="Sonda backup" android:hasCode="true" />
+    <instrumentation
+        android:name=".Sonda"
+        android:targetPackage="eu.eurise.hub.debug"
+        android:label="Prova del backup" />
+</manifest>
