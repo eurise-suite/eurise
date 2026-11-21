@@ -57,6 +57,8 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - 21 novembre, giro 910: elenco Eurise dei numeri molesti. Parti comuni toccate: `core/suite` (`PrivacyService.SpamList`,
   `SpamList`, `SpamListContract`) e `core/designsystem` (testi del servizio, gruppo «Telefono» nel primo avvio); nell'app
   Eurise `SpamListProvider` e `SpamListWorker`. Dettagli in `COMUNICAZIONE.md`.
+- 21 novembre, giro 918: l'elenco si scarica dalla pre-release `elenco-molesti` (flusso con controllo), controllo
+  settimanale programmato; «Segnala a Eurise» aspetta il server Eurise (**da ricordare al proprietario**).
 
 ## 16 novembre, sera: icone nel cassetto, pulizia, tavole delle Note
 - **Calendario, Attività e Note con un'icona propria** tra le app di Android (activity-alias `.CalendarApp`, `.TasksApp`,

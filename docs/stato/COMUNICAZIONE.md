@@ -294,8 +294,15 @@ computer (area Computer, tavola PcEmail).
   base (GitHub, Stati Uniti: vede l'indirizzo IP di chi scarica, come per le pietre miliari); il Telefono resta senza
   Internet e chiede l'elenco con il permesso della suite (`SpamListClient`, `SpamListContract`). Chi è nell'elenco e non è
   in rubrica arriva in silenzio con «Elenco Eurise: …» (chiamata, notifica, Recenti); nessun blocco automatico.
-  **Da fare**: tenere l'elenco aggiornato (chi lo cura, ogni quanto); il file sta sul ramo `brand` (va spostato sul ramo
-  stabile quando ci sarà); valutare la firma del file oltre all'HTTPS.
+  **Aggiornamento (21 novembre, giro 918)**: (1) il telefono non scarica più dal ramo: il flusso «Elenco dei numeri
+  molesti» (`.github/workflows/elenco-molesti.yml`) controlla il file con `data/spam/controlla.py` (formato, categorie,
+  doppioni, niente paesi europei interi né prefissi italiani corti) e lo carica nella pre-release `elenco-molesti`, da cui
+  l'app Eurise scarica. (2) **Controllo settimanale** delle segnalazioni pubbliche: attività programmata «Elenco numeri
+  molesti: controllo settimanale» (lunedì 10.23, ora di Roma, approvazione automatica, notifica al proprietario) che segue
+  le regole del README, scrive `data/spam/registro.md` e spinge su brand. (3) **«Segnala a Eurise»** nel Telefono: il
+  proprietario lo vuole con **segnalazioni anonime su un server Eurise** (niente email né GitHub). **Ricordarglielo quando
+  il server Eurise ci sarà** (è nei piani della posta e della chat: Stalwart + Continuwuity su un VPS, sezione «Mail e Chat
+  da lavoro»). Resta da valutare la firma del file oltre all'HTTPS.
 
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
