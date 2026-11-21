@@ -574,4 +574,6 @@
         <item>Arrivati. Le auguro una sosta piacevole.</item>
         <item>Destinazione raggiunta. Non ho sbagliato una curva. Lei nemmeno.</item>
     </string-array>
+    <!-- Backup della suite: la riga per «Cosa rimetto» nell'app Eurise. -->
+    <string name="eurise_backup_summary">%1$d elenchi, %2$d luoghi e tracce</string>
 </resources>

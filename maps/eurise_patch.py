@@ -1895,3 +1895,35 @@ patch(car_base, """    Logger.d(TAG, "Stable area changed. stableArea: " + stabl
     app.organicmaps.eurise.EuriseMediaBubble.carStableArea(stableArea);
 """)
 print("eurise_patch: Android Auto, riquadri della suite disegnati da Mappe (MapAutoSuite)")
+
+# Backup cifrato della suite (area Backup, 21 novembre 2026; docs/stato/BACKUP.md): segnalibri e tracce, settings.ini e
+# impostazioni di Eurise passano dal fornitore protetto dal permesso della suite (eurise/EuriseBackupProvider.java), e
+# solo da lì. Il backup di Android di CoMaps (bookmarks/ e settings.ini nel cloud di Google e nel trasferimento da
+# telefono a telefono) si spegne, come nelle altre app (docs/SICUREZZA.md, «Backup di Android»).
+# Il fornitore legge i file dove li tiene CoMaps: prima di scriverlo si controlla che sia ancora così.
+_bh = (root / "libs" / "map" / "bookmark_helpers.cpp").read_text()
+if 'return base::JoinPath(GetPlatform().SettingsDir(), "bookmarks");' not in _bh:
+    sys.exit("eurise_patch: i segnalibri di CoMaps non stanno più in SettingsDir()/bookmarks: aggiornare EuriseBackupProvider")
+_su = (android_root / "sdk" / "src" / "main" / "java" / "app" / "organicmaps" / "sdk" / "util" / "StorageUtils.java").read_text()
+if "return addTrailingSeparator(context.getFilesDir().getAbsolutePath());" not in _su:
+    sys.exit("eurise_patch: SettingsDir di CoMaps non è più getFilesDir(): aggiornare EuriseBackupProvider")
+patch(manifest, """      android:allowBackup="true"
+      android:backupInForeground="true"
+      android:fullBackupContent="@xml/backup_content"
+      android:dataExtractionRules="@xml/backup_content_v31"
+""", """      android:allowBackup="false"
+      android:fullBackupContent="false"
+      android:dataExtractionRules="@xml/eurise_no_backup"
+""")
+patch(manifest, """    <provider
+        android:name=".provider.NavigationContentProvider\"""", f"""    <!-- Backup della suite: segnalibri, tracce e impostazioni, solo verso l'app Eurise della stessa variante. -->
+    <provider
+        android:name="app.organicmaps.eurise.EuriseBackupProvider"
+        android:authorities="eu.eurise.maps.eurise.backup"
+        android:exported="true"
+        android:readPermission="{SUITE_PERM}"
+        android:writePermission="{SUITE_PERM}" />
+
+    <provider
+        android:name=".provider.NavigationContentProvider\"""")
+print("eurise_patch: backup della suite (segnalibri, tracce, impostazioni); backup di Android spento")

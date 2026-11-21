@@ -26,5 +26,7 @@
         <provider android:authorities="eu.eurise.voice.debug.eurise.backup" />
         <provider android:authorities="eu.eurise.ai.eurise.backup" />
         <provider android:authorities="eu.eurise.ai.debug.eurise.backup" />
+        <!-- Mappe: stesso pacchetto in prova e in ufficiale (CoMaps compilata a parte). -->
+        <provider android:authorities="eu.eurise.maps.eurise.backup" />
     </queries>
 </manifest>

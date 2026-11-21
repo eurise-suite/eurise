@@ -18,8 +18,12 @@ import java.io.OutputStream
  * ([SuiteAccess.providerTrusted]): un'app estranea con lo stesso indirizzo non riceve niente.
  */
 object SuiteApps {
-    /** [key]: il nome della voce nel backup; [pkg]: il pacchetto della versione ufficiale. */
-    class App(val key: String, val pkg: String)
+    /**
+     * [key]: il nome della voce nel backup; [pkg]: il pacchetto della versione ufficiale. [samePackage]: l'app ha lo
+     * stesso pacchetto in prova e in ufficiale (Mappe, compilata a parte da CoMaps): l'indirizzo non prende «.debug», e
+     * la variante giusta la garantisce il permesso di firma ([SuiteAccess.providerTrusted]).
+     */
+    class App(val key: String, val pkg: String, val samePackage: Boolean = false)
 
     /** In ordine di importanza: se il ripristino si interrompe, le prime sono già al loro posto. */
     val all = listOf(
@@ -34,6 +38,7 @@ object SuiteApps {
         App("chat", "eu.eurise.chat"),
         App("voice", "eu.eurise.voice"),
         App("ai", "eu.eurise.ai"),
+        App("maps", "eu.eurise.maps", samePackage = true),
     )
 
     fun entry(key: String) = "apps/$key.zip"
@@ -43,7 +48,7 @@ object SuiteApps {
         entry.removePrefix("apps/").removeSuffix(".zip").takeIf { entry.startsWith("apps/") && entry.endsWith(".zip") && all.any { a -> a.key == it } }
 
     private fun authority(context: Context, app: App) =
-        app.pkg + (if (SuiteAccess.isDebug(context)) ".debug" else "") + ".eurise.backup"
+        app.pkg + (if (SuiteAccess.isDebug(context) && !app.samePackage) ".debug" else "") + ".eurise.backup"
 
     private fun uri(context: Context, app: App, path: String) = Uri.parse("content://${authority(context, app)}/$path")
 

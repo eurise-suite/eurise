@@ -424,7 +424,7 @@ private fun HomePage(
     }
 }
 
-/** Cosa salva: Eurise e ogni app separata della suite, quando è installata. Le Mappe arrivano dopo. */
+/** Cosa salva: Eurise e ogni app separata della suite, quando è installata (Mappe compresa dal 21 novembre). */
 @Composable
 private fun WhatCard() {
     Group {
@@ -436,8 +436,6 @@ private fun WhatCard() {
             Divider()
             WhereRow(stringResource(name), stringResource(hint), "")
         }
-        Divider()
-        WhereRow(stringResource(R.string.bk_what_next), stringResource(R.string.bk_what_next_hint), "")
     }
 }
 
@@ -489,8 +487,6 @@ private fun WelcomeCard(state: BackupState, context: android.content.Context, on
         }
         if (state.place == null) WhereRow(stringResource(R.string.bk_welcome_backup), stringResource(R.string.bk_welcome_backup_where), "", onClick = onPlace)
         else WhereRow(stringResource(R.string.bk_welcome_backup), stringResource(R.string.bk_welcome_backup_on), "")
-        Divider()
-        WhereRow(stringResource(R.string.bk_what_next), stringResource(R.string.bk_welcome_next), "")
         Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onSeen) { Text(stringResource(R.string.bk_welcome_seen), fontWeight = FontWeight.Bold) }
         }
@@ -860,7 +856,8 @@ private fun appLabels(key: String): Pair<Int, Int> = when (key) {
     "voice" -> R.string.bk_app_voice to R.string.bk_app_settings_hint
     "read" -> R.string.bk_app_read to R.string.bk_app_settings_hint
     "ai" -> R.string.bk_app_ai to R.string.bk_app_settings_hint
-    else -> R.string.bk_what_next to R.string.bk_app_settings_hint
+    "maps" -> R.string.bk_app_maps to R.string.bk_app_maps_hint
+    else -> R.string.bk_what_eurise to R.string.bk_app_settings_hint
 }
 
 // ---------------------------------------------------------------- finestre

@@ -560,4 +560,6 @@
         <item>Arrived. Parking, alas, is your affair.</item>
         <item>Destination reached. Not a single wrong bend.</item>
     </string-array>
+    <!-- Backup della suite: la riga per «Cosa rimetto» nell'app Eurise. -->
+    <string name="eurise_backup_summary">%1$d lists, %2$d places and tracks</string>
 </resources>

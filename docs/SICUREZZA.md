@@ -258,6 +258,8 @@ un'app con il nome di un'app della suite non installata avrebbe ricevuto i dati,
   di estrazione (`eurise_no_backup.xml`; nell'APK principale `data_extraction_rules.xml`) che escludono tutto, anche la
   memoria protetta del dispositivo (`device_*`), dove la Tastiera tiene i suoi dati. I dati passano solo dal backup cifrato
   della suite.
+- Mappe (21 novembre 2026): CoMaps aveva `allowBackup="true"` con `bookmarks/` e `settings.ini` nel backup di Google;
+  `maps/eurise_patch.py` lo spegne e mette `eurise_no_backup.xml`. Segnalibri e tracce passano dal backup della suite.
 
 ## Catena di compilazione e librerie (18 novembre 2026, notte)
 - **Azioni di GitHub fissate allo SHA** in tutti i flussi (13 azioni, commento con la versione accanto): un'azione

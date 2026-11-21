@@ -9,7 +9,9 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
   push forzato è vietato, `brand` si porta dentro con un merge (il rebase riscriverebbe i commit già spinti).
 - Fase 1 (cosa entra) decisa il 20 novembre; fase 2 (tavole approvate, schermate vere) consegnata il 21 col giro 909.
   Fase 3 (prova vera sull'emulatore) superata il 21 novembre, 17 su 17; poi tutta la suite (tranne Mappe) nel backup,
-  30 su 30. **Prossimo**: controllo del proprietario sul telefono; poi Mappe e la cartella protetta «accanto».
+  30 su 30. Il 21 sera: **Mappe nel backup** (fornitore nelle patch di CoMaps) e **tavole** della cartella protetta
+  «dal backup» in Galleria (in attesa di approvazione). **Prossimo**: controllo del proprietario sul telefono; con le tavole
+  approvate, il codice della Galleria (vedi «Mappe e cartella dal backup» in fondo).
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -185,7 +187,7 @@ con le app e le loro righe (`apps`, `missing` se un'app non ha risposto).
 | Chat | impostazioni, persone, turni (fuori sessione, chiavi del dispositivo, accesso allo studio) | si accede come dispositivo nuovo; la chiave di recupero è nel backup di Eurise |
 | Voce, AI | impostazioni (voci e modelli si riscaricano) | — |
 | Leggi | niente di suo da salvare (lingue e modelli si riscaricano) | — |
-| **Mappe** | **non ancora**: CoMaps si compila a parte (`maps-engine.yml`) con le sue patch | segnalibri e tracce da esportare a mano per ora |
+| Mappe | segnalibri e tracce (i `.kml` di `bookmarks/`), `settings.ini`, impostazioni `eurise_*`, persone del viaggio condiviso | elenchi che mancano arrivano; uguali si saltano; diversi accanto come «nome (dal backup).kml»; poi Mappe riparte |
 
 **Prova sull'emulatore** col giro 933 (run 44922024981): **30 controlli su 30**. In più rispetto alla prima: formato a
 pezzi; cassaforte, foto protetta, casella di posta e documento piantati, salvati, cancellati e tornati; la casella torna
@@ -201,7 +203,6 @@ Browser, Office. La prova sull'emulatore è ripetuta sul giro 938.
 **Limiti noti**
 - Galleria: se sul telefono nuovo c'è già un'altra cartella protetta con foto, quella del backup va in
   `secure-dal-backup` ma la Galleria non la mostra ancora.
-- Mappe: fuori, finché non si aggiunge il fornitore alle patch di CoMaps.
 - Posta: la password di ogni casella va riscritta (sta nel Keystore del telefono vecchio).
 - Chat: si accede come dispositivo nuovo; la cronologia cifrata torna con la chiave di recupero.
 
@@ -210,3 +211,23 @@ Browser, Office. La prova sull'emulatore è ripetuta sul giro 938.
   versione dei dati; ogni app separata in `apps/<app>.zip`. I file `format: 1` si ripristinano come oggi.
 - Al ripristino, l'app che non è ancora installata riceve i suoi dati quando arriva (come la Tastiera), ma lo zip in
   attesa resta **cifrato** con una chiave del Keystore.
+
+## Mappe e cartella dal backup (21 novembre 2026, sera)
+**Mappe** (`maps/android/.../eurise/EuriseBackupProvider.java`, Java perché Mappe si compila dentro CoMaps; logica dei file
+in `BookmarkFiles.java` con `BookmarkFilesTest`, lanciato da `maps-engine.yml`). Stesso accordo di `SuiteBackupProvider`
+(export/import in un tubo, `summary` «N elenchi, M luoghi e tracce», `ready` sempre vero, `apply` che aspetta e poi
+chiude Mappe perché ricarichi i segnalibri). Indirizzo `eu.eurise.maps.eurise.backup` in tutte e due le varianti
+(Mappe ha lo stesso pacchetto): la variante la decide il permesso di firma (`SuiteApps.App.samePackage`).
+- Dentro: i `.kml` di `files/bookmarks` (CoMaps carica solo quelli; tracce registrate comprese), `settings.ini`, le chiavi
+  `eurise_*` delle preferenze, `eurise_trip.recent`. Fuori: mappe, pietre miliari, prezzi, cestino (`.Trash`), segnalazioni
+  in guida (due ore), interruttore della ricerca online (lo tiene il centro privacy).
+- Percorsi verificati sul commit fissato di CoMaps (mirror `github.com/comaps/comaps`): `GetBookmarksDirectory()` =
+  `SettingsDir()/bookmarks`, `getSettingsPath` = `getFilesDir()`. `eurise_patch.py` si ferma se cambiano.
+- **Backup di Android spento anche in Mappe**: CoMaps mandava `bookmarks/` e `settings.ini` nel backup di Google e nel
+  trasferimento tra telefoni (`allowBackup="true"`); ora `allowBackup="false"` e `eurise_no_backup.xml`, come le altre app.
+- Non provato sull'emulatore (Mappe è solo arm64 e si compila a parte): da provare sul telefono.
+
+**Galleria, cartella «dal backup»**: tavole sulla tela, pagina Backup, terza fila (in attesa di approvazione):
+`GalDalBackup` (scheda «Arrivata dal backup · Apri» in cima alla cartella protetta), `GalDalBackupApri` (frase o codice
+della cartella del telefono di prima, non del backup), `GalDalBackupUnisci` (aperta: «Sposta nella mia cartella», ogni foto
+ricifrata con la chiave attuale, riletta e solo dopo tolta; oppure «Tienila a parte»). Codice dopo l'approvazione.

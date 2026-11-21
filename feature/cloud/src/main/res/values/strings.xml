@@ -174,8 +174,6 @@
     <string name="bk_what">Cosa salva</string>
     <string name="bk_what_eurise">Eurise</string>
     <string name="bk_what_eurise_hint">Note, attività, calendario, contatti, orologio, scrivania e impostazioni</string>
-    <string name="bk_what_next">In arrivo</string>
-    <string name="bk_what_next_hint">Mappe: segnalibri e tracce. Intanto si esportano da Mappe › Segnalibri</string>
     <string name="bk_out">Restano fuori le foto e i video (hanno la loro sincronizzazione) e quello che si riscarica: mappe, voci, modelli AI.</string>
     <string name="bk_verified_title">Fatto e verificato</string>
     <string name="bk_verified_sub">%1$s · %2$s. Riletto e aperto prima di toccare i vecchi.</string>
@@ -243,7 +241,6 @@
     <string name="bk_welcome_backup">Backup automatico</string>
     <string name="bk_welcome_backup_on">Riparte da solo, con la stessa frase e lo stesso codice</string>
     <string name="bk_welcome_backup_where">Scegli dove salvarlo d\'ora in poi</string>
-    <string name="bk_welcome_next">Mappe: segnalibri e tracce si rimettono a mano, per ora</string>
     <string name="bk_welcome_messages_wait">Gli SMS aspettano, chiusi: tornano quando Messaggi è l\'app SMS predefinita (aprila e accetta)</string>
     <string name="bk_welcome_phone_wait">Le chiamate aspettano, chiuse: tornano quando Telefono è l\'app predefinita per le chiamate</string>
     <string name="bk_welcome_app_wait">I suoi dati aspettano, chiusi: arrivano appena la installi</string>
@@ -258,7 +255,7 @@
     <string name="bk_app_browser">Browser</string>
     <string name="bk_app_browser_hint">Segnalibri, cronologia, Leggi dopo, note dei siti, schede aperte, impostazioni</string>
     <string name="bk_app_office">Office</string>
-    <string name="bk_app_office_hint">Documenti creati in Office, recenti, impostazioni</string>
+    <string name="bk_app_office_hint">Documenti creati in Office, rapporti, impostazioni</string>
     <string name="bk_app_mail">Posta</string>
     <string name="bk_app_mail_hint">Caselle e impostazioni (la posta sta sul server; l\'accesso si rifà)</string>
     <string name="bk_app_chat">Chat</string>
@@ -266,6 +263,8 @@
     <string name="bk_app_voice">Voce</string>
     <string name="bk_app_read">Leggi</string>
     <string name="bk_app_ai">AI</string>
+    <string name="bk_app_maps">Mappe</string>
+    <string name="bk_app_maps_hint">Segnalibri e tracce, impostazioni della guida e del viaggio (le mappe si riscaricano)</string>
     <string name="bk_app_settings_hint">Impostazioni (voci e modelli si riscaricano)</string>
     <string name="bk_welcome_seen">Ho visto</string>
 </resources>
