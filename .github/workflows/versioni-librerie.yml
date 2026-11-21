@@ -26,4 +26,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Ultime versioni stabili
-        run: python3 -I .github/scripts/versioni_librerie.py >> "$GITHUB_STEP_SUMMARY"
+        run: python3 -I .github/scripts/versioni_librerie.py | tee -a "$GITHUB_STEP_SUMMARY"
