@@ -179,6 +179,70 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         LiveShare.sink = null
     }
 
+    // --- Arriva quando l'altro lavora (tavola ChatQuandoLavora) ---
+
+    /** L'orario di lavoro che l'altra persona della chat a due ha reso visibile, o null. */
+    fun peerHours(roomId: String): Orari.Hours? {
+        val peer = peerOf(roomId) ?: return null
+        return Orari.decode(data[roomId]?.state?.get(Orari.TYPE + "|" + peer))
+    }
+
+    /** Fai sapere il tuo orario di lavoro (solo l'account di lavoro, spento di base). */
+    var shareHours by mutableStateOf(simplePrefs.getBoolean("hours_" + account.name, false))
+        private set
+
+    /**
+     * Accende o spegne: accesa, l'orario 8–19 dei feriali va nelle chat a due di questo account (uno stato per chat, con
+     * la chiave del tuo id); spenta, lo stato si svuota.
+     */
+    fun changeShareHours(on: Boolean) {
+        shareHours = on
+        simplePrefs.edit().putBoolean("hours_" + account.name, on).apply()
+        publishHours(all = true)
+    }
+
+    private fun publishHours(all: Boolean) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val content = if (shareHours) Orari.encode(Orari.work()) else JSONObject()
+        val rooms = data.values.filter { it.direct && !it.invite && (all || (shareHours && !it.state.containsKey(Orari.TYPE + "|" + me))) }.map { it.id }
+        if (rooms.isEmpty()) return
+        scope.launch(Dispatchers.IO) { rooms.forEach { id -> runCatching { c.setState(id, Orari.TYPE, content, me) } } }
+    }
+
+    // --- Gruppi a tempo (tavola ChatGruppoTempo) ---
+
+    fun timebox(roomId: String): Tempo.Box? = Tempo.decode(data[roomId]?.state?.get(Tempo.TYPE))
+
+    /** Mette (o toglie, con null) il periodo del gruppo: uno stato della stanza, lo vedono tutti. */
+    fun setTimebox(roomId: String, box: Tempo.Box?, failed: () -> Unit) {
+        val c = client ?: return
+        val content = box?.let(Tempo::encode) ?: JSONObject()
+        val s = data[roomId]
+        val before = s?.state?.get(Tempo.TYPE)
+        s?.state?.set(Tempo.TYPE, content)
+        relationsTick++
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Tempo.TYPE, content) }.isSuccess }
+            if (!ok) { if (before != null) s?.state?.set(Tempo.TYPE, before) else s?.state?.remove(Tempo.TYPE); relationsTick++; failed() }
+        }
+    }
+
+    /** I gruppi a tempo tenuti aperti oltre la scadenza (su questo telefono). */
+    var keptOpen by mutableStateOf(simplePrefs.getStringSet("keep_" + account.name, emptySet()).orEmpty())
+        private set
+
+    fun keepOpen(roomId: String) {
+        keptOpen = keptOpen + roomId
+        simplePrefs.edit().putStringSet("keep_" + account.name, keptOpen).apply()
+    }
+
+    /** I gruppi a tempo scaduti: stanno nell'archivio dell'elenco. */
+    fun archived(): Set<String> {
+        val today = java.time.LocalDate.now()
+        return data.values.filter { it.id !in keptOpen && Tempo.decode(it.state[Tempo.TYPE])?.let { b -> Tempo.archived(b, today) } == true }.map { it.id }.toSet()
+    }
+
     // --- Modalità semplice (tavola ChatSemplice) ---
 
     private val simplePrefs get() = context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE)
@@ -307,7 +371,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     private fun startFolders() {
         folders = Cartelle.decode(folderPrefs.getString(account.name, null))
-        if (folders.none { it.id == folder }) folder = null
+        if (folder != ARCHIVE && folders.none { it.id == folder }) folder = null
         val c = client ?: return
         scope.launch {
             selfRoom = withContext(Dispatchers.IO) { runCatching { Cartelle.selfRoom(c.accountData(Cartelle.SELF)) }.getOrNull() }
@@ -394,6 +458,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                         runCatching { ProgrammaStore.work(context, account, c, cr) }
                     }
                     refreshPlans()
+                    if (shareHours) publishHours(all = false)
                 }
                 delay(30_000)
             }
@@ -477,6 +542,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         account = a
         ChatAccounts.setActive(context, a)
         simple = Semplice.decode(simplePrefs.getString("simple_" + a.name, null))
+        shareHours = simplePrefs.getBoolean("hours_" + a.name, false)
+        keptOpen = simplePrefs.getStringSet("keep_" + a.name, emptySet()).orEmpty()
         store = SessionStore(context, a)
         session = store.load()
         keptInSuite = store.keptInSuite
@@ -697,6 +764,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                                 content.optString("displayname").takeIf { it.isNotBlank() }?.let { s.names[user] = it; people[user] = it }
                             }
                             "m.room.encryption" -> s.encrypted = true
+                            // L'orario di lavoro di ognuno (tavola ChatQuandoLavora), con la chiave del suo id.
+                            Orari.TYPE -> s.state[Orari.TYPE + "|" + e.optString("state_key")] = content
                             else -> if (e.optString("state_key").isEmpty()) s.state[type] = content
                         }
                     }

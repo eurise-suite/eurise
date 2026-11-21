@@ -418,4 +418,55 @@
         <item quantity="many">%d messaggi nuovi</item>
         <item quantity="other">%d messaggi nuovi</item>
     </plurals>
+
+    <!-- Proposte dai messaggi e riassunto (tavole ChatProposta e ChatRiassunto) -->
+    <string name="pp_event">%1$s · con %2$s</string>
+    <string name="pp_event_title">Con %1$s</string>
+    <string name="pp_calendar">in Calendario</string>
+    <string name="pp_free">libero in Calendario</string>
+    <string name="pp_busy">c\'è già: %1$s</string>
+    <string name="pp_task">Attività</string>
+    <string name="pp_task_due">Attività · entro %1$s</string>
+    <string name="pp_add">Aggiungi</string>
+    <string name="pp_added">Fatto</string>
+    <string name="rs_title">%1$d messaggi da leggere, in breve</string>
+    <string name="rs_close">Chiudi</string>
+    <string name="rs_go">Riassumi sul telefono</string>
+    <string name="rs_working">Leggo i messaggi…</string>
+    <string name="rs_no_model">Per il riassunto serve un modello: scaricalo in Eurise AI.</string>
+    <string name="rs_no_app">Per il riassunto serve Eurise AI (lavora sul telefono, senza Internet).</string>
+    <string name="rs_failed">Il riassunto non è riuscito.</string>
+    <string name="rs_event">Evento %1$s</string>
+    <string name="rs_task">Attività: %1$s</string>
+    <string name="rs_local">Fatto sul telefono con il modello scaricato: i messaggi non escono.</string>
+    <string name="rs_prompt">Riassumi in italiano, in al massimo cinque punti brevi che iniziano con «•», questi messaggi di una chat di gruppo. Metti in evidenza date, scadenze, soldi e richieste. Niente introduzione.</string>
+
+    <!-- Arriva quando l'altro lavora (tavola ChatQuandoLavora) -->
+    <string name="ql_off_until">fuori orario fino alle %1$s</string>
+    <string name="ql_banner">%1$s è fuori orario (lavora %2$s). Il messaggio parte quando inizia, così non disturbi la sua sera.</string>
+    <string name="ql_banner_urgent">%1$s è fuori orario (lavora %2$s): i messaggi partono subito.</string>
+    <string name="ql_send_now">Manda subito se è urgente</string>
+    <string name="ql_wait_again">Aspetta l\'orario di lavoro</string>
+    <string name="ql_share">Fai sapere il tuo orario di lavoro</string>
+    <string name="ql_share_sub">Nelle chat a due di questo account mette l\'orario 8–19 dei feriali: chi usa Ciarly ti scrive in quell\'orario e i messaggi fuori orario ti arrivano la mattina. Lo vedono solo le persone di quelle chat. Spento, l\'orario si toglie.</string>
+
+    <!-- Gruppi a tempo (tavola ChatGruppoTempo) -->
+    <string name="tb_chip">A tempo</string>
+    <string name="tb_title">Gruppo a tempo</string>
+    <string name="tb_explain">Per un viaggio, una festa, un trasloco: dal giorno al giorno. Finita la cosa, in cima compare il riepilogo (foto, spese, documenti); dopo l\'ultimo giorno il gruppo va nell\'archivio dell\'elenco, e ognuno può tenerlo aperto. Lo vedono tutti nel gruppo.</string>
+    <string name="tb_from">Dal</string>
+    <string name="tb_to">Al</string>
+    <string name="tb_end">Fine del viaggio (o della festa)</string>
+    <string name="tb_end_none">due giorni prima della fine</string>
+    <string name="tb_remove">Togli</string>
+    <string name="tb_failed">Non riesco a cambiarlo: serve essere amministratori del gruppo</string>
+    <string name="tb_line">Gruppo a tempo: dal %1$s al %2$s</string>
+    <string name="tb_done">Finito: riepilogo</string>
+    <string name="tb_recap">%1$d foto · %2$d spese · %3$d documenti</string>
+    <string name="tb_expenses">Spese</string>
+    <string name="tb_will_archive">Il gruppo va in archivio %1$s. Lo puoi tenere aperto con un tocco.</string>
+    <string name="tb_archived">Il gruppo è in archivio da dopo %1$s.</string>
+    <string name="tb_keep">Tieni aperto</string>
+    <string name="tb_kept">Tenuto aperto su questo telefono.</string>
+    <string name="tb_archive">Archivio · %1$d</string>
 </resources>

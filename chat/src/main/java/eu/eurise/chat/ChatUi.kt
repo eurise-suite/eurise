@@ -259,7 +259,10 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     val studio by StudioRepo.state.collectAsStateWithLifecycle()
     val q = query.trim().lowercase()
     // Cartelle (tavola ChatCartelle): la scelta filtra l'elenco; «Messaggi a me» sta in cima e non si ripete.
-    val inFolder = Cartelle.shown(model.rooms, model.folders.firstOrNull { it.id == model.folder }, model.selfRoom)
+    // Gruppi a tempo scaduti (tavola ChatGruppoTempo): solo nell'archivio.
+    val archived = model.archived()
+    val inFolder = if (model.folder == ARCHIVE) model.rooms.filter { it.id in archived }
+        else Cartelle.shown(model.rooms, model.folders.firstOrNull { it.id == model.folder }, model.selfRoom).filter { it.id !in archived }
     val shown = inFolder.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
     var foldersSheet by remember { mutableStateOf(false) }
     var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
@@ -291,7 +294,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
             // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
             ViewChips(model)
-            if (model.uni.view == Uni.View.Chat) FolderChips(model) { editFolder = null to emptySet() }
+            if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
             // Senza chiave di recupero l'avviso invita a crearla (cambiando telefono i messaggi cifrati non si riaprirebbero).
             val safe = model.security?.backup == true
             Row(
@@ -434,6 +437,19 @@ private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
         }
         Text(stringResource(R.string.vo_auto_sub), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
     }
+    // Il tuo orario di lavoro alle persone con cui scrivi (tavola ChatQuandoLavora): solo l'account di lavoro, spento di base.
+    if (model.account == Account.Work) Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.work(2f), null, tint = scheme.onSurface, modifier = Modifier.size(19.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.ql_share), fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            androidx.compose.material3.Switch(checked = model.shareHours, onCheckedChange = { model.changeShareHours(it) })
+        }
+        Text(stringResource(R.string.ql_share_sub), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+    }
     if (model.otherSession == null) {
         val missing = model.account.other
         Pill(stringResource(if (missing == Account.Work) R.string.ch_acc_add_work_btn else R.string.ch_acc_add_personal_btn), EuriseIcons.plus(2f), Modifier.fillMaxWidth(), strong = true) {
@@ -542,6 +558,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     val all = model.timeline(roomId)
     val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon } } }
     val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
+    // Proposte (tavola ChatProposta) sotto gli ultimi messaggi ricevuti; riassunto (tavola ChatRiassunto) se entrando
+    // c'erano tanti messaggi da leggere.
+    val recentIds = remember(events.size) { events.takeLast(6).map { it.id }.toSet() }
+    val unreadAtOpen = remember(roomId) { model.room(roomId)?.unread ?: 0 }
+    var summaryClosed by remember(roomId) { mutableStateOf(false) }
     val threads by remember(roomId) { derivedStateOf { Threads.summary(all).associateBy { it.root } } }
     LaunchedEffect(roomId, thread) { thread?.let { model.loadThread(roomId, it) } }
     BackHandler(enabled = thread != null) { model.thread = null }
@@ -554,6 +575,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
     var pollSheet by remember(roomId) { mutableStateOf(false) }
     var moreSheet by remember(roomId) { mutableStateOf(false) }
+    var timeboxSheet by remember(roomId) { mutableStateOf(false) }
     var liveSheet by remember(roomId) { mutableStateOf(false) }
     var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
     var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
@@ -577,6 +599,12 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     }
     val peer = model.peerOf(roomId)
     val peerVerified = peer != null && model.verifiedPeople[peer] == true
+    // Arriva quando l'altro lavora (tavola ChatQuandoLavora): fuori dal suo orario il messaggio aspetta, salvo «Manda subito».
+    val peerHours = if (peer != null) model.peerHours(roomId) else null
+    var minute by remember { mutableStateOf(System.currentTimeMillis() / 60_000) }
+    LaunchedEffect(roomId) { while (true) { kotlinx.coroutines.delay(30_000); minute = System.currentTimeMillis() / 60_000 } }
+    val peerStart = remember(peerHours, minute) { peerHours?.let { Orari.nextStart(it, java.time.ZonedDateTime.now()) } }
+    var urgent by remember(roomId) { mutableStateOf(false) }
     LaunchedEffect(list) {
         snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index }.collect { last ->
             if (thread == null && last != null && last >= events.size - 2) model.older(roomId)
@@ -593,7 +621,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(stringResource(when {
+                Text((peerStart?.let { stringResource(R.string.ql_off_until, Programma.time(it.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime())) + " · " } ?: "") +
+                    stringResource(when {
                     room?.encrypted != true -> R.string.ch_room_plain
                     peerVerified -> R.string.ch_room_verified
                     else -> R.string.ch_room_encrypted
@@ -627,6 +656,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
             // Turni del gruppo (tavola ChatTurni): la settimana sempre a portata, chi è in turno ora, scambi controllati.
             Chip(stringResource(R.string.sh_tab), selected = tab == 2) { tab = 2 }
+            // Gruppo a tempo (tavola ChatGruppoTempo).
+            Chip(stringResource(R.string.tb_chip), selected = false) { timeboxSheet = true }
         }
         if (group && tab == 1) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ExpensesPane(model, actions, roomId) }
@@ -638,6 +669,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             if (thread == null) PinnedBar(model, roomId) { id ->
                 val i = events.asReversed().indexOfFirst { it.id == id }
                 if (i >= 0) scope.launch { list.animateScrollToItem(i + roomPlanned.size) }
+            }
+            // Gruppo a tempo: il periodo e, finita la cosa, il riepilogo con «Tieni aperto».
+            if (thread == null) model.timebox(roomId)?.let { box -> TimeboxBar(model, actions, roomId, box, events) { tab = 1 } }
+            if (thread == null && !summaryClosed && unreadAtOpen >= 15 && room?.direct != true && peer == null) {
+                SummaryCard(model, actions, roomId, events.takeLast(unreadAtOpen)) { summaryClosed = true }
             }
             LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
                 // I programmati (tavola ChatProgramma): in fondo (la lista è capovolta), con l'ora in cui partono.
@@ -673,6 +709,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                             model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) }
                         }
                         ReactionChips(model, actions, roomId, e, mine)
+                        if (!mine && e.id in recentIds && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice) && model.bussolaRole(roomId) == null) {
+                            val ins = remember(e.id) { proposals(shownText(model, e), e.time) }
+                            if (ins.isNotEmpty()) ProposalCards(model, actions, e, ins)
+                        }
                         // «6 risposte» sotto il messaggio di partenza di una discussione (tavola ChatThread).
                         if (thread == null) threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
                         // Per chi vede poco (tavola ChatVocali): sotto ogni messaggio ricevuto, «Leggi ad alta voce».
@@ -714,6 +754,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             replyTo?.let { e -> ComposerContext(stringResource(R.string.ba_replying_to, model.nameOf(e.sender)), if (e.kind == Event.Kind.Poll) e.text else shownText(model, e)) { replyTo = null } }
             editing?.let { e -> ComposerContext(stringResource(R.string.ba_editing), shownText(model, e)) { editing = null; draft = "" } }
             if (bussola == ChatModel.BussolaRole.Patient) UrgentHint()
+            if (peerStart != null && peerHours != null && thread == null) WorkHoursBanner(room?.name.orEmpty(), Orari.label(peerHours), urgent) { urgent = !urgent }
             // La graffetta (tavola ChatAllega): un file qualsiasi, cifrato se la chat lo è; nelle chat di La mia Bussola
             // apre «Invia un referto», con le sue regole (tavola BusReferto).
             var reportSheet by remember(roomId) { mutableStateOf(false) }
@@ -772,6 +813,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                                 ed != null -> model.edit(roomId, ed.id, text) { actions.toast(failed) }
                                 thread != null -> model.sendInThread(roomId, thread, text, r?.id) { actions.toast(failed) }
                                 r != null -> model.reply(roomId, r.id, text) { actions.toast(failed) }
+                                peerStart != null && !urgent -> model.plan(roomId, text, peerStart.toInstant().toEpochMilli(), work = true)
                                 else -> model.send(roomId, text) { actions.toast(failed) }
                             }
                         }.semantics { contentDescription = send },
@@ -793,6 +835,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     // Pressione lunga sulla graffetta: sondaggio o posizione dal vivo (tavola ChatPosizione).
     if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }) { moreSheet = false }
     if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }
+    if (timeboxSheet) TimeboxSheet(model, actions, roomId) { timeboxSheet = false }
     laterSheet?.let { text -> SendLaterSheet(model, actions, roomId, text, onSent = { draft = ""; replyTo = null }) { laterSheet = null } }
     plannedMenu?.let { p -> PlannedMenu(model, actions, p, onEdit = { draft = it }) { plannedMenu = null } }
 }

@@ -194,8 +194,29 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
+- **Proposte, riassunto, quando lavora, gruppi a tempo** (21 novembre, notte; tavole ChatProposta, ChatRiassunto,
+  ChatQuandoLavora, ChatGruppoTempo; giro GIRO: chat; toccata una parte comune: **modulo nuovo `core/text`** con
+  `QuickAdd` e `MessageInsights` spostati da `core/data` **con gli stessi nomi dei pacchetti**, e `core/data` che lo
+  espone con `api(...)`, come si era fatto con `core/pdf`: chi usava quei file non cambia nulla, la Chat li usa senza
+  il database). **Proposte**: sotto gli ultimi sei messaggi ricevuti (non nelle chat di La mia Bussola) le stesse
+  proposte di Messaggi: «Giovedì 19, 15:00 · con Anna — libero in Calendario (o «c'è già: …», con il permesso del
+  calendario) — Aggiungi» (apre Calendario con l'evento) e «Manda il preventivo… — Attività · entro venerdì — Aggiungi»
+  (HubBridge). **Riassunto**: entrando in un gruppo con almeno 15 messaggi da leggere, sopra i messaggi la scheda «84
+  messaggi da leggere, in breve» con **Riassumi sul telefono** (Eurise AI, `BrainContract.MSG_ASK`, risposta a pezzi;
+  senza app o modello lo dice), le proposte trovate in quei messaggi come pulsanti e ×. **Quando lavora**: nel foglio
+  dell'account di lavoro «Fai sapere il tuo orario di lavoro» (**spento di base**): acceso, nelle chat a due mette lo
+  stato `eu.eurise.hours` (feriali 8–19, fuso) con la chiave del proprio id, anche nelle chat nuove; chi scrive con
+  Ciarly a una persona fuori orario vede «fuori orario fino alle 9» in alto e sopra il campo «Marco è fuori orario
+  (lavora 9–18). Il messaggio parte quando inizia…»: i messaggi diventano programmati per l'inizio (con l'orologio ambra
+  «arriva domani alle 9:00»), salvo **Manda subito se è urgente**; «Invia quando lavora» usa l'orario dell'altro.
+  **Gruppi a tempo**: nei gruppi il pulsante «A tempo» (dal, al, fine del viaggio): stato `eu.eurise.timebox`, che vedono
+  tutti; in cima «Gruppo a tempo: dal 18 al 30 novembre», finito il viaggio il riepilogo «148 foto · 9 spese · 4
+  documenti» con Spese e «Il gruppo va in archivio domenica 30 · Tieni aperto»; dopo l'ultimo giorno il gruppo sta nella
+  cartella **Archivio** dell'elenco (sul telefono, salvo «Tieni aperto»). Logica pura in `Orari.kt`, `Tempo.kt` con i
+  test. Non ancora: «Album in Galleria» e «Documenti in File» del riepilogo (servono i contratti con Galleria e File),
+  orari diversi da 8–19, proposte nelle discussioni.
 - **Difesa dalle truffe, presa visione, modalità semplice** (21 novembre, notte; tavole ChatTruffa, ChatPresaVisione,
-  ChatSemplice; giro GIRO: chat e messages; toccata una parte comune: `core/suite` con un file nuovo, `ScamCheck.kt`, e
+  ChatSemplice; giro 964: chat e messages; toccata una parte comune: `core/suite` con un file nuovo, `ScamCheck.kt`, e
   il suo test). **Truffe**: `ScamCheck` riconosce sul telefono i copioni più usati (familiare con il «numero nuovo» che
   chiede soldi, soldi urgenti, conto bloccato con link, pacco in giacenza, richiesta del codice arrivato per SMS; almeno
   due segni insieme; chi è in rubrica non fa scattare l'avviso, tranne per il codice). In **Messaggi**, sotto l'SMS di
@@ -325,7 +346,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat e messages giro GIRO (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: proposte, riassunto, quando lavora, gruppi a tempo); chat e messages giro 964 (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -527,7 +548,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    950; prove: discussione aperta da Eurise e vista in Element (e al contrario), «6 risposte» sotto il messaggio,
    riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro 957; prove: 15 minuti con la Chat chiusa
    (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly;
-   ~~ChatTruffa, ChatPresaVisione, ChatSemplice~~ fatte al giro GIRO; poi ChatProposta), poi le tavole della seconda fila di La mia Bussola.
+   ~~ChatTruffa, ChatPresaVisione, ChatSemplice~~ fatte al giro 964; ~~ChatProposta, ChatRiassunto, ChatQuandoLavora,
+   ChatGruppoTempo~~ fatte al giro GIRO: **le tavole Chat* sono tutte in codice**; poi la seconda fila di La mia
+   Bussola), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

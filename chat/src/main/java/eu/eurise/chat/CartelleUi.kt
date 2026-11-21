@@ -45,9 +45,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
 
+/** La «cartella» dei gruppi a tempo scaduti (tavola ChatGruppoTempo). */
+internal const val ARCHIVE = "__archivio"
+
 /** Le cartelle sopra l'elenco (tavola ChatCartelle): Tutte, le tue cartelle con le chat da leggere, «+» per crearne una. */
 @Composable
-internal fun FolderChips(model: ChatModel, onNew: () -> Unit) {
+internal fun FolderChips(model: ChatModel, archived: Int, onNew: () -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Chip(stringResource(R.string.cr_all), model.folder == null) { model.folder = null }
         model.folders.forEach { f ->
@@ -55,6 +58,9 @@ internal fun FolderChips(model: ChatModel, onNew: () -> Unit) {
             Chip(if (n > 0) stringResource(R.string.cr_folder_n, f.name, n) else f.name, model.folder == f.id) {
                 model.folder = if (model.folder == f.id) null else f.id
             }
+        }
+        if (archived > 0) Chip(stringResource(R.string.tb_archive, archived), model.folder == ARCHIVE) {
+            model.folder = if (model.folder == ARCHIVE) null else ARCHIVE
         }
         Chip("+", false, onNew)
     }
