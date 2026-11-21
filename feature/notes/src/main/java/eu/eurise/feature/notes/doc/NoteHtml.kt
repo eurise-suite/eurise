@@ -84,9 +84,17 @@ object NoteHtml {
                 is DividerBlock -> append("<hr>\n")
                 is DrawingBlock -> append(drawingSvg(block, drawingIndex++))
                 is AudioBlock -> append("<figure class=\"voice\" data-eurise=\"voice\" data-file=\"").append(escape(block.file))
-                    .append("\" data-duration=\"").append(block.durationMs).append("\">")
+                    .append("\" data-duration=\"").append(block.durationMs).append("\"")
+                    .apply {
+                        if (block.place != "app") append(" data-place=\"").append(escape(block.place)).append('"')
+                        if (block.uri.isNotEmpty()) append(" data-uri=\"").append(escape(block.uri)).append('"')
+                        if (block.size > 0) append(" data-size=\"").append(block.size).append('"')
+                        if (block.ordered.isNotEmpty()) append(" data-ordered=\"").append(escapeAttr(block.ordered)).append('"')
+                        if (block.summary.isNotEmpty()) append(" data-summary=\"").append(escapeAttr(block.summary)).append('"')
+                    }
+                    .append(">")
                     .append("<audio controls src=\"audio/").append(escape(block.file)).append("\"></audio>")
-                    .append("<figcaption>").append(escape(block.transcript)).append("</figcaption></figure>\n")
+                    .append("<figcaption>").append(escape(block.transcript).replace("\n", "<br>")).append("</figcaption></figure>\n")
                 is LockedBlock -> append("<section class=\"locked\" data-eurise-lock=\"v1\">\n").append(block.sealed).append("\n</section>\n")
             }
         }
@@ -209,6 +217,9 @@ object NoteHtml {
         }
     }
 
+    /** Come [escape], con gli a capo scritti come entità: negli attributi restano su una riga. */
+    private fun escapeAttr(s: String): String = escape(s).replace("\n", "&#10;")
+
     // Lettura
 
     /**
@@ -240,7 +251,8 @@ object NoteHtml {
             is TextBlock -> block.text.text
             is TableBlock -> block.rows.joinToString("\n") { it.joinToString(" · ") }
             is NoteLinkBlock -> block.title
-            is AudioBlock -> block.transcript
+            is AudioBlock -> listOf(block.summary, block.ordered.lines().joinToString("\n") { it.removePrefix("## ") }.ifBlank { block.transcript })
+                .filter { it.isNotBlank() }.joinToString("\n")
             is DividerBlock, is DrawingBlock, is LockedBlock -> ""
         }
     }.trim('\n')
@@ -344,7 +356,16 @@ object NoteHtml {
             if (n == "figure" && (tag.attrs["data-eurise"] == "voice" || audio != null)) {
                 if (!tag.closing) {
                     finishText()
-                    audio = AudioBlock(ids(), tag.attrs["data-file"].orEmpty(), tag.attrs["data-duration"]?.toLongOrNull() ?: 0L)
+                    audio = AudioBlock(
+                        ids(),
+                        tag.attrs["data-file"].orEmpty(),
+                        tag.attrs["data-duration"]?.toLongOrNull() ?: 0L,
+                        place = tag.attrs["data-place"]?.takeIf { it.isNotBlank() } ?: "app",
+                        uri = tag.attrs["data-uri"].orEmpty(),
+                        size = tag.attrs["data-size"]?.toLongOrNull() ?: 0L,
+                        ordered = tag.attrs["data-ordered"].orEmpty(),
+                        summary = tag.attrs["data-summary"].orEmpty(),
+                    )
                     audioText = null
                 } else audio?.let { a ->
                     if (a.file.isNotBlank()) blocks += a.copy(transcript = audioText?.toString()?.trim().orEmpty())
@@ -355,6 +376,7 @@ object NoteHtml {
             }
             if (audio != null) {
                 if (tag.name == "figcaption") audioText = if (tag.closing) audioText else StringBuilder()
+                else if (tag.name == "br") audioText?.append('\n')
                 return
             }
             if (n == "section" && (tag.attrs.containsKey("data-eurise-lock") || lockText != null)) {
