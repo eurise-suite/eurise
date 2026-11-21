@@ -474,6 +474,7 @@ fun LauncherRoute(data: EuriseData, homePresses: Int, searchRequest: String? = n
             openNote = { actions.openEurise("note:${it.id}") },
             openNotes = { actions.openEurise("notes") },
             newNote = { actions.openEurise("new_note") },
+            newVoiceNote = { actions.openEurise("new_voice_note") },
             grantNotifications = actions.grantNotifications,
             addTask = { text ->
                 viewModel.quickTask(text)

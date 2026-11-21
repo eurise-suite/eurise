@@ -110,6 +110,8 @@ fun AgendaRoute(
     onOpenPerson: (String) -> Unit,
     onOpenWeather: () -> Unit,
     onCapture: (CaptureStart) -> Unit,
+    /** Nota vocale nuova nelle Note (tavola NoteVocaleEntra): il tasto nota della barra, quando è vuota, diventa microfono. */
+    onVoiceNote: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val viewModel = viewModel { AgendaViewModel(context, data) }
@@ -164,6 +166,7 @@ fun AgendaRoute(
             onNote = viewModel::addNote,
             isEvent = viewModel::isEvent,
             onEvent = onCapture,
+            onVoiceNote = onVoiceNote,
             modifier = Modifier.align(Alignment.BottomCenter).imePadding().padding(start = 12.dp, end = 12.dp, bottom = clearance + 8.dp),
         )
     }
@@ -548,6 +551,7 @@ private fun WriteBar(
     onNote: (String, List<eu.eurise.core.data.model.LinkRef>) -> Unit,
     isEvent: (String) -> Boolean,
     onEvent: (CaptureStart) -> Unit,
+    onVoiceNote: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -589,11 +593,14 @@ private fun WriteBar(
                     },
                 )
                 val enabled = text.isNotBlank()
+                // Con la barra vuota il tasto della nota è il microfono: una nota vocale nelle Note.
                 IconButton(
-                    onClick = { onNote(text, picked.refsIn(text)); clear() },
-                    enabled = enabled,
+                    onClick = { if (enabled) { onNote(text, picked.refsIn(text)); clear() } else onVoiceNote() },
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(scheme.surfaceVariant),
-                ) { Icon(EuriseIcons.note(), stringResource(R.string.today_capture_note), tint = scheme.onSurface, modifier = Modifier.size(18.dp)) }
+                ) {
+                    if (enabled) Icon(EuriseIcons.note(), stringResource(R.string.today_capture_note), tint = scheme.onSurface, modifier = Modifier.size(18.dp))
+                    else Icon(EuriseIcons.mic(), stringResource(R.string.agenda_voice_note), tint = scheme.primary, modifier = Modifier.size(19.dp))
+                }
                 IconButton(
                     onClick = {
                         if (isEvent(text)) onEvent(CaptureStart(text, picked.byFirstName(text), Capture.Target.Event))

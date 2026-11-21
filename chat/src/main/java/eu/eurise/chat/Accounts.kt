@@ -34,8 +34,18 @@ object ChatAccounts {
     fun workQuiet(context: Context): Boolean = prefs(context).getBoolean("work_quiet", true)
     fun setWorkQuiet(context: Context, on: Boolean) = prefs(context).edit().putBoolean("work_quiet", on).apply()
 
+    /** Fuori orario (tavola SpaFuoriOrario): il tuo orario di lavoro e chi passa lo stesso. */
+    fun rules(context: Context): FuoriOrario.Rules = FuoriOrario.decode(prefs(context).getString("off_hours", null))
+    fun setRules(context: Context, r: FuoriOrario.Rules) = prefs(context).edit().putString("off_hours", FuoriOrario.encode(r)).apply()
+
     /** Il silenzio del lavoro vale adesso? */
-    fun quietNow(context: Context, account: Account) = account == Account.Work && workQuiet(context) && Quiet.isQuiet(LocalDateTime.now())
+    fun quietNow(context: Context, account: Account) =
+        account == Account.Work && workQuiet(context) && FuoriOrario.quiet(rules(context), java.time.ZonedDateTime.now())
+
+    /** I messaggi di lavoro arrivati in silenzio, per il riepilogo del mattino. */
+    fun addWaiting(context: Context, n: Int) { if (n > 0) prefs(context).edit().putInt("waiting", waiting(context) + n).apply() }
+    fun waiting(context: Context) = prefs(context).getInt("waiting", 0)
+    fun clearWaiting(context: Context) = prefs(context).edit().putInt("waiting", 0).apply()
 }
 
 /** L'orario del lavoro: dalle 8 alle 19 nei giorni feriali; fuori, il lavoro aspetta. Senza Android: ha i suoi test. */
