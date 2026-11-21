@@ -118,7 +118,8 @@ object Matrix {
                     // Vocali e audio (tavola ChatVocali): durata e forma d'onda nel contenuto (vedi Voice).
                     "m.audio" -> Event(id, sender, body, time, Event.Kind.Audio, media, data = content.toString(), replyTo = reply)
                     "m.file", "m.video" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
-                    "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice, replyTo = reply)
+                    "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice,
+                        data = if (content.has(Palla.STATUS)) content.toString() else null, replyTo = reply)
                     "m.location" -> Event(id, sender, body, time, Event.Kind.Location, data = content.toString())
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())
@@ -129,7 +130,7 @@ object Matrix {
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
                     // A scomparsa (tavola ChatProgramma): il contenuto resta per l'etichetta.
                     else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text,
-                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK)) content.toString() else null, replyTo = reply)
+                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK) || content.has(Palla.BALL)) content.toString() else null, replyTo = reply)
                 }
             }
             "m.room.member" -> {

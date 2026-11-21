@@ -469,4 +469,34 @@
     <string name="tb_keep">Tieni aperto</string>
     <string name="tb_kept">Tenuto aperto su questo telefono.</string>
     <string name="tb_archive">Archivio · %1$d</string>
+
+    <!-- Passa la palla (tavole InsPalla e InsPallaChat) -->
+    <string name="pa_title">Passa la palla</string>
+    <string name="pa_nobody">Serve una chat a due con la persona a cui passarla.</string>
+    <string name="pa_task_hint">Cosa deve fare (una riga)</string>
+    <string name="pa_due">Entro</string>
+    <string name="pa_evening">Stasera 18:00</string>
+    <string name="pa_tomorrow">Domani</string>
+    <string name="pa_notify">%1$s vede che se ne occupa %2$s</string>
+    <string name="pa_go">Passa a %1$s</string>
+    <string name="pa_sent">Passata a %1$s</string>
+    <string name="pa_fallback">🏐 %1$s ti passa la palla</string>
+    <string name="pa_notice">Se ne occupa %1$s.</string>
+    <string name="pa_you_passed">Hai passato la palla</string>
+    <string name="pa_passed_by">%1$s ti passa la palla</string>
+    <string name="pa_by">entro %1$s</string>
+    <string name="pa_working">In corso</string>
+    <string name="pa_done">Fatto</string>
+    <string name="pa_working_body">🏐 Ci sto lavorando</string>
+    <string name="pa_done_body">🏐 Fatto ✓</string>
+    <string name="pa_taken_body">🏐 La riprendo io, grazie</string>
+    <string name="pa_st_done">Fatto</string>
+    <string name="pa_st_working">In corso</string>
+    <string name="pa_st_seen">Vista</string>
+    <string name="pa_st_taken">Ripresa</string>
+    <string name="pa_st_passed">Passata</string>
+    <string name="pa_list">Le palle che hai passato</string>
+    <string name="pa_list_empty">Ancora nessuna: dal menu di un messaggio, «Passa la palla».</string>
+    <string name="pa_stale">Nessuna risposta da ieri</string>
+    <string name="pa_retake">Riprendi</string>
 </resources>

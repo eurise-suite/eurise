@@ -110,4 +110,19 @@
     <string name="ml_forward_header">---------- Messaggio inoltrato ----------\nDa: %1$s &lt;%2$s&gt;\nData: %3$s\nOggetto: %4$s</string>
     <string name="backup_summary_mail">%1$d caselle (la password si riscrive)</string>
     <string name="ml_link_restored">Dal backup: indirizzo e server sono già pronti, scrivi solo la password.</string>
+    <string name="ml_ball">Passa la palla</string>
+    <string name="ml_ball_to">Indirizzo del collega</string>
+    <string name="ml_ball_task">Cosa deve fare (es. «Rispondi tu al cliente entro venerdì»)</string>
+    <string name="ml_ball_copy">Mettimi in copia quando risponde</string>
+    <string name="ml_ball_copy_line">Quando rispondi metti in copia %1$s.</string>
+    <string name="ml_ball_go">Passa a %1$s</string>
+    <string name="ml_ball_sent">Palla passata a %1$s</string>
+    <string name="ml_balls_list">Le palle che hai passato · %1$d in corso</string>
+    <string name="ml_balls_title">Le palle che hai passato</string>
+    <string name="ml_balls_mail">Email · %1$s</string>
+    <string name="ml_balls_stale">Nessuna risposta da ieri</string>
+    <string name="ml_balls_done">Fatto</string>
+    <string name="ml_balls_taken">Ripresa</string>
+    <string name="ml_balls_passed">Passata</string>
+    <string name="ml_balls_retake">Riprendi</string>
 </resources>

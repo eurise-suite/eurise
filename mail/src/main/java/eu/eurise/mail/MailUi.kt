@@ -154,6 +154,7 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
 private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var kind by remember { mutableStateOf(Kind.People) }
+    var ballsOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val q = query.trim().lowercase()
     val shown = model.messages.filter { m ->
@@ -195,6 +196,10 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
                     MessageRow(model, m) { model.open(m) }
                 }
                 item {
+                    // Le palle passate per email (tavola InsPalla).
+                    if (model.balls.isNotEmpty()) Text(stringResource(R.string.ml_balls_list, model.balls.count { !it.done && !it.taken }), fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold, color = scheme.primary,
+                        modifier = Modifier.padding(top = 12.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { ballsOpen = true }.padding(8.dp))
                     if (model.accounts.size > 1) Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         model.accounts.forEach { a -> AccountDot(a) }
                     }
@@ -214,6 +219,7 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
             }
         }
     }
+    if (ballsOpen) MailBallsList(model) { ballsOpen = false }
     // Prima apertura: la posta si aggiorna da sola.
     androidx.compose.runtime.LaunchedEffect(model.accounts.size) { model.refresh() }
 }
@@ -287,6 +293,7 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
     val spammed = stringResource(R.string.ml_spammed)
     val moved = stringResource(R.string.ml_moved)
     var folders by remember(o?.summary?.uid) { mutableStateOf<List<String>?>(null) }
+    var ballSheet by remember(o?.summary?.uid) { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(scheme.background).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -386,6 +393,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             listOf(
                 PillAction(EuriseIcons.reply(2.2f), stringResource(R.string.ml_reply), strong = true) { onReply(m) },
                 PillAction(EuriseIcons.send(2.2f), stringResource(R.string.ml_forward)) { onForward(m) },
+                // Passa la palla (tavola InsPalla): a un collega, con una riga sul da farsi.
+                PillAction(EuriseIcons.ball(2.2f), stringResource(R.string.ml_ball)) { ballSheet = true },
                 PillAction(EuriseIcons.folder(2.2f), stringResource(R.string.ml_archive)) {
                     model.move(m.summary, MailClient.Target.Archive) { ok -> actions.toast(if (ok) archived else moveFailed) }
                 },
@@ -399,6 +408,7 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             ),
             Modifier.align(Alignment.BottomCenter),
         )
+        if (ballSheet) MailBallSheet(model, actions, m) { ballSheet = false }
         folders?.let { list ->
             FolderSheet(list, onPick = { f -> folders = null; model.moveTo(m.summary, f) { ok -> actions.toast(if (ok) moved else moveFailed) } }, onClose = { folders = null })
         }

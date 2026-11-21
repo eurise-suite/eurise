@@ -170,7 +170,7 @@ private fun MenuRow(icon: ImageVector, label: String, color: Color = MaterialThe
 @Composable
 internal fun MessageMenu(
     model: ChatModel, actions: ChatActions, roomId: String, e: Event, mine: Boolean,
-    onReply: () -> Unit, onEdit: () -> Unit, onForward: () -> Unit, onClose: () -> Unit,
+    onReply: () -> Unit, onEdit: () -> Unit, onForward: () -> Unit, onClose: () -> Unit, onBall: () -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     val failed = stringResource(R.string.ch_send_failed)
@@ -215,6 +215,11 @@ internal fun MessageMenu(
                 MenuRow(EuriseIcons.volume(2f), stringResource(R.string.vo_read_aloud)) {
                     model.voice.speak(e.id, Voice.spoken(if (mine) "" else model.nameOf(e.sender), text)); onClose()
                 }
+                Divider()
+            }
+            // Passa la palla (tavola InsPallaChat): a un collega, con una riga e la scadenza.
+            if (!local && e.kind != Event.Kind.Poll && e.kind != Event.Kind.State && model.colleagues().isNotEmpty()) {
+                MenuRow(EuriseIcons.ball(2f), stringResource(R.string.pa_title)) { onBall() }
                 Divider()
             }
             // Ricordamelo (tavola ChatProgramma): un'attività con il link al messaggio.
