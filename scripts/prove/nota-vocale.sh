@@ -8,6 +8,8 @@ adb wait-for-device; sleep 5
 adb install -r -g "$APK"
 adb shell pm grant "$PKG" android.permission.RECORD_AUDIO || true
 adb shell cmd locale set-app-locales "$PKG" --locales it-IT || true
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
 adb logcat -c
 section() { adb shell am start -n "$PKG/eu.eurise.hub.MainActivity" --es eu.eurise.extra.SECTION "$1" >/dev/null; }
 section notes; sleep 14
@@ -26,6 +28,7 @@ fi
 sleep 10
 adb exec-out screencap -p > "$OUT/2-registra.png"
 tapText() {
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/ui-$1.xml" >/dev/null 2>&1 || true
   local b; b=$(grep -o "text=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" "$OUT/ui-$1.xml" | grep -o '\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]' | head -1)
   grep -o 'text="[^"]*"' "$OUT/ui-$1.xml" | sort -u | head -30
