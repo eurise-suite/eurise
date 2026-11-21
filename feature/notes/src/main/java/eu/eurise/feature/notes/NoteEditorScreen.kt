@@ -115,6 +115,8 @@ import eu.eurise.feature.notes.lock.ReopenNotesView
 import eu.eurise.feature.notes.lock.LockSheet
 import eu.eurise.feature.notes.voice.AudioActions
 import eu.eurise.feature.notes.voice.AudioBlockView
+import eu.eurise.feature.notes.voice.VoicePlaceSheet
+import eu.eurise.feature.notes.voice.VoicePlaces
 import eu.eurise.feature.notes.voice.VoiceRecordPanel
 import android.widget.Toast
 
@@ -134,6 +136,8 @@ fun NoteEditorRoute(
     linked: @Composable (noteId: Long, title: String) -> Unit = { _, _ -> },
     /** «Attiva il backup» dal foglio «Blocca» senza backup (tavola NoteBloccaSenzaBackup). */
     onBackup: () -> Unit = {},
+    /** Nota vocale dal microfono dell'elenco (tavola NoteVocaleEntra): la nota nuova si apre già in registrazione. */
+    startVoice: Boolean = false,
 ) {
     val context = LocalContext.current
     val viewModel = viewModel { NoteEditorViewModel(notes, notebooks, tasks, noteId, notebookId, context.applicationContext) }
@@ -146,6 +150,7 @@ fun NoteEditorRoute(
         state = state,
         notebookName = books.firstOrNull { it.notebook.id == state.notebookId }?.notebook?.name,
         isNew = noteId == null,
+        startVoice = startVoice && noteId == null,
         viewModel = viewModel,
         onDone = { viewModel.close(closeAndSync) },
         onTrash = { viewModel.trash(closeAndSync) },
@@ -183,6 +188,7 @@ private fun NoteEditorScreen(
     state: NoteEditorState,
     notebookName: String?,
     isNew: Boolean,
+    startVoice: Boolean,
     viewModel: NoteEditorViewModel,
     onDone: () -> Unit,
     onTrash: () -> Unit,
@@ -200,8 +206,12 @@ private fun NoteEditorScreen(
     var pickNotebook by rememberSaveable { mutableStateOf(false) }
     var pickLink by rememberSaveable { mutableStateOf(false) }
     var lockSheet by rememberSaveable { mutableStateOf(false) }
-    var recordingVoice by rememberSaveable { mutableStateOf(false) }
+    var recordingVoice by rememberSaveable { mutableStateOf(startVoice) }
     val screenContext = LocalContext.current
+    // Dove andrà l'audio della registrazione in corso: il posto preferito, o quello scelto con «Cambia».
+    var voicePlace by rememberSaveable { mutableStateOf(VoicePlaces.preferred(screenContext)) }
+    var choosePlace by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.blocks.any { it is AudioBlock }) { if (state.blocks.any { it is AudioBlock }) viewModel.checkBrain() }
     val taskAdded = stringResource(R.string.notes_voice_task_done)
     val askUnlock = rememberDeviceAuth(
         stringResource(R.string.notes_unlock_prompt),
@@ -332,9 +342,14 @@ private fun NoteEditorScreen(
                     ) {
                         AudioBlockView(
                             block,
-                            AudioActions(
+                            work = state.voiceWork[block.id],
+                            brainReady = state.brainReady,
+                            actions = AudioActions(
                                 onToText = { viewModel.audioToText(block.id) },
                                 onTask = { task -> viewModel.audioToTask(task) { Toast.makeText(screenContext, taskAdded, Toast.LENGTH_SHORT).show() } },
+                                onReorder = { viewModel.reorder(block.id) },
+                                onSummary = { viewModel.summarize(block.id) },
+                                onClearSummary = { viewModel.clearSummary(block.id) },
                             ),
                         )
                     }
@@ -467,8 +482,11 @@ private fun NoteEditorScreen(
         // Barra di formattazione: segue la tastiera.
         val focused = state.focusedText
         if (recordingVoice) VoiceRecordPanel(
-            onDone = { audio -> recordingVoice = false; viewModel.insertAudio(audio) },
-            onCancel = { recordingVoice = false },
+            notebookName = notebookName,
+            placeLabel = VoicePlaces.label(screenContext, voicePlace),
+            onChangePlace = { choosePlace = true },
+            onDone = { audio -> recordingVoice = false; viewModel.finishVoice(audio, voicePlace) },
+            onCancel = { recordingVoice = false; if (isNew && startVoice && state.blocks.none { it is AudioBlock }) onDone() },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
@@ -549,6 +567,15 @@ private fun NoteEditorScreen(
     }
     if (pickNotebook) notebookPicker { pickNotebook = false }
     if (pickLink) linkPicker { pickLink = false }
+    if (choosePlace) VoicePlaceSheet(
+        current = voicePlace,
+        onChoose = { place ->
+            voicePlace = place
+            VoicePlaces.setPreferred(screenContext, place)
+            choosePlace = false
+        },
+        onDismiss = { choosePlace = false },
+    )
     if (lockSheet) LockSheet(
         backupOn = backupOn,
         onLock = { hide ->

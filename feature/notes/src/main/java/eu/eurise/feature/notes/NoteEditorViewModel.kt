@@ -44,6 +44,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import eu.eurise.feature.notes.lock.NoteLock
+import eu.eurise.feature.notes.voice.NotesBrain
+import eu.eurise.feature.notes.voice.OrderedText
+import eu.eurise.feature.notes.voice.VoiceOrder
+import eu.eurise.feature.notes.voice.VoicePlace
+import eu.eurise.feature.notes.voice.VoicePlaces
 import eu.eurise.core.cloud.lock.LockKeys
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -86,6 +91,10 @@ data class NoteEditorState(
     val reopenBusy: Boolean = false,
     /** La frase o il codice scritti non aprono la copia. */
     val reopenWrong: Boolean = false,
+    /** Note vocali su cui Alfred sta lavorando, per id del blocco. */
+    val voiceWork: Map<Long, VoiceWork> = emptyMap(),
+    /** C'è il cervello di Alfred con un modello pronto: «Riassunto» compare solo allora. */
+    val brainReady: Boolean = false,
 ) {
     /** Vero se il contenuto non si deve vedere: nota bloccata e non ancora aperta. */
     val hidden: Boolean get() = locked && !unlocked
@@ -103,6 +112,9 @@ data class NoteEditorState(
 
     val tags: List<String> get() = extractTags(title + "\n" + NoteHtml.plainText(blocks)).toList()
 }
+
+/** Che cosa sta facendo Alfred su una nota vocale. */
+enum class VoiceWork { Ordering, Summarizing }
 
 /**
  * Le scelte da fare su una nota cambiata sul telefono e sul cloud. Si sceglie un punto per volta:
@@ -466,6 +478,143 @@ class NoteEditorViewModel(
     /** Mette nella nota una nota vocale appena registrata. */
     fun insertAudio(block: AudioBlock) = insert(block.copy(id = newId()))
 
+    // Note vocali complete (tavole NoteVocaleRegistra, NoteVocaleOrdinata, NoteVocaleDove)
+
+    private var brain: NotesBrain? = null
+    private fun brain() = brain ?: NotesBrain(appContext).also { brain = it }
+
+    /** Chiede (una volta) se il cervello di Alfred è pronto, per mostrare «Riassunto». */
+    fun checkBrain() {
+        if (brainChecked) return
+        brainChecked = true
+        viewModelScope.launch {
+            val b = brain()
+            val ready = b.installed && b.ready()
+            _state.update { it.copy(brainReady = ready) }
+        }
+    }
+    private var brainChecked = false
+
+    /**
+     * Una nota vocale finita: l'audio va nel posto scelto, il blocco entra nella nota e sotto di lui il testo a
+     * paragrafi; poi Alfred, se c'è, lo rimette in ordine (punteggiatura, titolo, titoletti).
+     */
+    fun finishVoice(recorded: AudioBlock, place: VoicePlace) {
+        viewModelScope.launch {
+            val block = VoicePlaces.settle(appContext, recorded, place).copy(id = newId())
+            insert(block, focus = false)
+            reorder(block.id)
+        }
+    }
+
+    /** «Riordina di nuovo»: rifà il testo sotto la registrazione, senza toccarlo se nel frattempo è stato cambiato. */
+    fun reorder(blockId: Long) {
+        val audio = audioBlock(blockId) ?: return
+        if (audio.transcript.isBlank() || blockId in _state.value.voiceWork) return
+        viewModelScope.launch {
+            val local = VoiceOrder.local(audio.transcript)
+            // Il testo alle pause entra subito: se si chiude la nota prima di Alfred, resta questo.
+            if (audio.ordered.isBlank()) applyOrdered(blockId, local)
+            val b = brain()
+            val ready = b.installed && b.ready()
+            _state.update { it.copy(brainReady = ready) }
+            if (!ready) {
+                if (audio.ordered.isNotBlank()) applyOrdered(blockId, local)
+                fallbackTitle()
+                return@launch
+            }
+            setWork(blockId, VoiceWork.Ordering)
+            try {
+                val paragraphs = local.sections.flatMap { it.paragraphs }
+                val cleaned = VoiceOrder.groups(paragraphs).flatMap { group ->
+                    VoiceOrder.acceptClean(group, b.ask(VoiceOrder.cleanPrompt(group))) ?: group
+                }
+                val ordered = VoiceOrder.structure(cleaned, b.ask(VoiceOrder.structurePrompt(cleaned), timeoutMs = 60_000))
+                applyOrdered(blockId, ordered)
+                if (_state.value.title.isBlank() && ordered.title.isNotBlank()) onTitleChange(ordered.title)
+                fallbackTitle()
+            } finally {
+                setWork(blockId, null)
+            }
+        }
+    }
+
+    /** «Riassunto»: tre righe da Alfred, sopra il testo. Le note lunghe si riassumono a pezzi e poi tutte insieme. */
+    fun summarize(blockId: Long) {
+        val audio = audioBlock(blockId) ?: return
+        if (blockId in _state.value.voiceWork) return
+        val text = audio.ordered.lines().joinToString("\n") { it.removePrefix(OrderedText.HEADING) }.ifBlank { audio.transcript }
+        if (text.isBlank()) return
+        viewModelScope.launch {
+            val b = brain()
+            if (!(b.installed && b.ready())) { _state.update { it.copy(brainReady = false) }; return@launch }
+            setWork(blockId, VoiceWork.Summarizing)
+            try {
+                val chunks = VoiceOrder.summaryChunks(text)
+                var lines = chunks.flatMap { VoiceOrder.summaryLines(b.ask(VoiceOrder.summaryPrompt(it))) }
+                if (chunks.size > 1 && lines.size > 4) {
+                    lines = VoiceOrder.summaryLines(b.ask(VoiceOrder.summaryPrompt(lines.joinToString("\n")))).ifEmpty { lines }
+                }
+                if (lines.isEmpty()) return@launch
+                val current = audioBlock(blockId) ?: return@launch
+                remember(coalesce = false)
+                replaceBlock(current.copy(summary = lines.joinToString("\n")))
+            } finally {
+                setWork(blockId, null)
+            }
+        }
+    }
+
+    /** Toglie il riassunto (la ✕ sul riquadro). */
+    fun clearSummary(blockId: Long) {
+        val audio = audioBlock(blockId) ?: return
+        remember(coalesce = false)
+        replaceBlock(audio.copy(summary = ""))
+    }
+
+    private fun audioBlock(id: Long) = _state.value.blocks.firstOrNull { it.id == id } as? AudioBlock
+
+    private fun setWork(blockId: Long, work: VoiceWork?) = _state.update {
+        it.copy(voiceWork = if (work == null) it.voiceWork - blockId else it.voiceWork + (blockId to work))
+    }
+
+    /** Una nota vocale nuova senza titolo prende «Nota vocale del 21 novembre». */
+    private fun fallbackTitle() {
+        if (_state.value.title.isNotBlank()) return
+        val day = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.util.Locale.getDefault()))
+        onTitleChange(appContext.getString(R.string.notes_voice_title_fallback, day))
+    }
+
+    /** I blocchi di testo di un testo ordinato: titoletti e paragrafi. */
+    private fun blocksOf(ordered: OrderedText): List<TextBlock> = ordered.sections.flatMap { s ->
+        listOfNotNull(s.heading?.let { TextBlock(newId(), TextKind.Heading, RichText(it)) }) +
+            s.paragraphs.map { TextBlock(newId(), TextKind.Paragraph, RichText(it)) }
+    }
+
+    /**
+     * Mette [ordered] sotto la nota vocale. Se lì c'è ancora, intatto, il testo messo l'altra volta, lo sostituisce;
+     * se è stato cambiato a mano, il testo nuovo va subito sotto la registrazione e quello vecchio resta.
+     */
+    private fun applyOrdered(blockId: Long, ordered: OrderedText) {
+        if (ordered.isEmpty) return
+        val blocks = _state.value.blocks
+        val index = blocks.indexOfFirst { it.id == blockId }
+        val audio = blocks.getOrNull(index) as? AudioBlock ?: return
+        val previous = OrderedText.parse(audio.ordered).sections.flatMap { s ->
+            listOfNotNull(s.heading?.let { TextKind.Heading to it }) + s.paragraphs.map { TextKind.Paragraph to it }
+        }
+        val following = blocks.drop(index + 1).take(previous.size)
+        val untouched = previous.isNotEmpty() && following.size == previous.size && following.zip(previous).all { (b, p) ->
+            b is TextBlock && b.kind == p.first && b.text.text.trim() == p.second.trim()
+        }
+        remember(coalesce = false)
+        val fresh = blocksOf(ordered)
+        val rest = blocks.drop(index + 1 + if (untouched) previous.size else 0)
+        val updated = audio.copy(ordered = ordered.encode())
+        _state.update { it.copy(blocks = blocks.take(index) + updated + fresh + rest) }
+        scheduleSave()
+    }
+
     /** Copia la trascrizione di una nota vocale in un paragrafo subito sotto. */
     fun audioToText(blockId: Long) {
         val blocks = _state.value.blocks
@@ -473,7 +622,7 @@ class NoteEditorViewModel(
         val audio = blocks.getOrNull(index) as? AudioBlock ?: return
         if (audio.transcript.isBlank()) return
         remember(coalesce = false)
-        val paragraph = TextBlock(newId(), TextKind.Paragraph, RichText(audio.transcript))
+        val paragraph = TextBlock(newId(), TextKind.Paragraph, RichText(VoiceOrder.pieces(audio.transcript).joinToString(" ")))
         _state.update { it.copy(blocks = blocks.take(index + 1) + paragraph + blocks.drop(index + 1)) }
         scheduleSave()
     }
@@ -880,6 +1029,11 @@ class NoteEditorViewModel(
             tasks.get(taskId)?.let { tasks.update(it.copy(title = title)) }
             taskTitles[taskId] = title
         }
+    }
+
+    override fun onCleared() {
+        brain?.close()
+        super.onCleared()
     }
 
     private fun <T> List<T>.replaceAt(index: Int, value: T): List<T> = mapIndexed { i, v -> if (i == index) value else v }

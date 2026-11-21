@@ -38,10 +38,28 @@ data class NoteLinkBlock(override val id: Long, val noteId: Long, val title: Str
 data class DividerBlock(override val id: Long) : Block
 
 /**
- * Nota vocale: il file audio [file] (nome nella cartella delle note vocali del telefono), la durata e il testo trascritto
- * sul telefono da Eurise Voce (vuoto se Voce non c'è).
+ * Nota vocale: il file audio [file], la durata e il testo trascritto sul telefono da Eurise Voce (vuoto se Voce non c'è),
+ * un pezzo per riga, come Voce li ha scritti tra una pausa e l'altra («Testo com'era»).
+ *
+ * @property place dove sta l'audio: "app" (cartella privata delle Note), "phone" (Registrazioni › Eurise) o "cloud"
+ *   (vedi `VoicePlace`).
+ * @property uri per "phone" l'indirizzo del file pubblico, per "cloud" il percorso nel cloud; vuoto per "app".
+ * @property size peso del file in byte, se noto.
+ * @property ordered il testo rimesso in ordine l'ultima volta (righe, «## » per i titoletti): serve a «Riordina di
+ *   nuovo» per riconoscere il testo che ha scritto lui sotto la registrazione.
+ * @property summary il riassunto chiesto ad Alfred, una riga per punto; vuoto finché non lo si chiede.
  */
-data class AudioBlock(override val id: Long, val file: String, val durationMs: Long, val transcript: String = "") : Block
+data class AudioBlock(
+    override val id: Long,
+    val file: String,
+    val durationMs: Long,
+    val transcript: String = "",
+    val place: String = "app",
+    val uri: String = "",
+    val size: Long = 0,
+    val ordered: String = "",
+    val summary: String = "",
+) : Block
 
 /**
  * Tutto il contenuto di una nota bloccata, cifrato sul telefono ([NoteLock]): [sealed] è l'HTML dei blocchi, cifrato

@@ -82,6 +82,10 @@ import java.util.Locale
 import eu.eurise.core.designsystem.component.FilterPill
 import eu.eurise.core.designsystem.component.SectionLabel
 import eu.eurise.feature.notes.lock.NoteLock
+import eu.eurise.feature.notes.voice.VoicePlaceSheet
+import eu.eurise.feature.notes.voice.VoicePlaces
+import eu.eurise.core.designsystem.component.GlassDefaults
+import androidx.compose.ui.semantics.contentDescription
 
 /**
  * Elenco delle note con taccuini, ricerca e note fissate in alto.
@@ -94,6 +98,8 @@ fun NotesListRoute(
     filterRequest: NotesFilterRequest?,
     onOpenNote: (Long?, Long?) -> Unit,
     onOrganize: () -> Unit,
+    /** Nota vocale nuova (microfono sopra il +), nel taccuino aperto. */
+    onVoiceNote: (Long?) -> Unit = {},
 ) {
     val viewModel = viewModel { NotesListViewModel(repository, notebooks) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -108,6 +114,7 @@ fun NotesListRoute(
         onFilter = viewModel::setFilter,
         onOpenNote = { onOpenNote(it, (state.filter as? NotesFilter.Notebook)?.id) },
         onOrganize = onOrganize,
+        onVoiceNote = { onVoiceNote((state.filter as? NotesFilter.Notebook)?.id) },
         onTrash = { viewModel.trash(it, synced) },
         onPin = { ids, pinned -> viewModel.setPinned(ids, pinned, synced) },
         onMove = { ids, notebook -> viewModel.moveToNotebook(ids, notebook, synced) },
@@ -128,6 +135,7 @@ private fun NotesListScreen(
     onFilter: (NotesFilter) -> Unit,
     onOpenNote: (Long?) -> Unit,
     onOrganize: () -> Unit,
+    onVoiceNote: () -> Unit,
     onTrash: (Set<Long>) -> Unit,
     onPin: (Set<Long>, Boolean) -> Unit,
     onMove: (Set<Long>, Long?) -> Unit,
@@ -138,6 +146,7 @@ private fun NotesListScreen(
     // Note scelte con la pressione lunga; finché ce n'è una, un tocco sceglie invece di aprire.
     var selected by remember { mutableStateOf(emptySet<Long>()) }
     var pickNotebook by remember { mutableStateOf(false) }
+    var choosePlace by rememberSaveable { mutableStateOf(false) }
     val visible = state.notes.orEmpty().map { it.id }.toSet()
     if (selected.any { it !in visible } && state.notes != null) selected = selected intersect visible
     BackHandler(enabled = selected.isNotEmpty()) { selected = emptySet() }
@@ -153,7 +162,7 @@ private fun NotesListScreen(
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().hazeSource(haze),
-            contentPadding = PaddingValues(top = statusTop + 132.dp, bottom = LocalDockClearance.current + 16.dp),
+            contentPadding = PaddingValues(top = statusTop + 132.dp, bottom = LocalDockClearance.current + GlassDefaults.PillHeight + 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             when {
@@ -279,6 +288,30 @@ private fun NotesListScreen(
             }
             FilterChips(state.filter, state.notebooks, onFilter)
         }
+
+        // Microfono sopra il + della barra (tavola NoteVocaleEntra): tocco breve registra nel posto preferito, tenuto
+        // premuto chiede dove salvare l'audio e poi registra.
+        if (selected.isEmpty()) VoiceNoteButton(
+            haze = haze,
+            onRecord = onVoiceNote,
+            onChoose = { choosePlace = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = GlassDefaults.SideMargin, bottom = LocalDockClearance.current - GlassDefaults.BottomMargin + 12.dp),
+        )
+    }
+
+    if (choosePlace) {
+        val context = LocalContext.current
+        VoicePlaceSheet(
+            current = VoicePlaces.preferred(context),
+            onChoose = { place ->
+                VoicePlaces.setPreferred(context, place)
+                choosePlace = false
+                onVoiceNote()
+            },
+            onDismiss = { choosePlace = false },
+        )
     }
 
     if (pickNotebook) {
@@ -290,6 +323,24 @@ private fun NotesListScreen(
             onCreate = { name, tint -> onMoveToNew(selected, name, tint); close() },
             onDismiss = { pickNotebook = false },
         )
+    }
+}
+
+/** Il tondo satinato del microfono, grande come il + che gli sta sotto. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun VoiceNoteButton(haze: HazeState, onRecord: () -> Unit, onChoose: () -> Unit, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.notes_voice_new)
+    val chooseLabel = stringResource(R.string.notes_voice_where_title)
+    Box(
+        modifier
+            .size(GlassDefaults.PillHeight)
+            .glass(haze, CircleShape)
+            .combinedClickable(onClick = onRecord, onLongClick = onChoose, onLongClickLabel = chooseLabel)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(EuriseIcons.mic(), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(23.dp))
     }
 }
 
