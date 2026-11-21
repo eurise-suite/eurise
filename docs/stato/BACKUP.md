@@ -226,6 +226,8 @@ chiude Mappe perché ricarichi i segnalibri). Indirizzo `eu.eurise.maps.eurise.b
 - **Backup di Android spento anche in Mappe**: CoMaps mandava `bookmarks/` e `settings.ini` nel backup di Google e nel
   trasferimento tra telefoni (`allowBackup="true"`); ora `allowBackup="false"` e `eurise_no_backup.xml`, come le altre app.
 - Non provato sull'emulatore (Mappe è solo arm64 e si compila a parte): da provare sul telefono.
+- Consegnato con il giro **946** e **Mappe 125** (`apk-prova`, 21 novembre sera); la prova sull'emulatore sul giro 946
+  è tutta a posto (Mappe non c'è sull'emulatore: il backup la salta).
 
 **Galleria, cartella «dal backup»**: tavole sulla tela, pagina Backup, terza fila (in attesa di approvazione):
 `GalDalBackup` (scheda «Arrivata dal backup · Apri» in cima alla cartella protetta), `GalDalBackupApri` (frase o codice
