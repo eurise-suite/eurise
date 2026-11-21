@@ -36,6 +36,9 @@ class VoiceHub(private val context: Context, private val scope: CoroutineScope) 
         data object Failed : Transcript
     }
 
+    /** Chiamato quando una trascrizione è pronta (l'anteprima nell'elenco delle chat la mostra). */
+    var onTranscribed: (() -> Unit)? = null
+
     /** Per messaggio (indirizzo del file, o id dell'eco locale). */
     val transcripts = mutableStateMapOf<String, Transcript>()
     private val transcriber by lazy { VoiceTranscriber(context) }
@@ -85,7 +88,7 @@ class VoiceHub(private val context: Context, private val scope: CoroutineScope) 
             if (pcm == null) { transcripts[key] = Transcript.Failed; busy = false; next(); return@launch }
             transcriber.transcribe(pcm) { r ->
                 transcripts[key] = when (r) {
-                    is VoiceTranscriber.Result.Text -> Transcript.Text(r.text)
+                    is VoiceTranscriber.Result.Text -> Transcript.Text(r.text).also { scope.launch { onTranscribed?.invoke() } }
                     VoiceTranscriber.Result.Empty -> Transcript.Empty
                     VoiceTranscriber.Result.NoModel -> Transcript.NoModel
                     VoiceTranscriber.Result.NoVoice -> Transcript.NoVoice

@@ -253,7 +253,12 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var account by remember { mutableStateOf(false) }
     val studio by StudioRepo.state.collectAsStateWithLifecycle()
     val q = query.trim().lowercase()
-    val shown = model.rooms.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
+    // Cartelle (tavola ChatCartelle): la scelta filtra l'elenco; «Messaggi a me» sta in cima e non si ripete.
+    val inFolder = Cartelle.shown(model.rooms, model.folders.firstOrNull { it.id == model.folder }, model.selfRoom)
+    val shown = inFolder.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
+    var foldersSheet by remember { mutableStateOf(false) }
+    var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
+    var roomFolders by remember { mutableStateOf<Room?>(null) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -273,11 +278,14 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                     }
                     Spacer(Modifier.width(8.dp))
                 }
+                RoundIcon(EuriseIcons.folder(2.2f), stringResource(R.string.cr_title)) { foldersSheet = true }
+                Spacer(Modifier.width(8.dp))
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
             // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
             ViewChips(model)
+            if (model.uni.view == Uni.View.Chat) FolderChips(model) { editFolder = null to emptySet() }
             // Senza chiave di recupero l'avviso invita a crearla (cambiando telefono i messaggi cifrati non si riaprirebbero).
             val safe = model.security?.backup == true
             Row(
@@ -296,7 +304,8 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
             if (model.ready && shown.isEmpty() && model.uni.view == Uni.View.Chat) Text(stringResource(R.string.ch_empty), fontSize = 14.sp, lineHeight = 20.sp,
                 color = scheme.onSurfaceVariant, modifier = Modifier.padding(24.dp))
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) }
+                if (model.uni.view == Uni.View.Chat && model.folder == null && q.isEmpty() && model.ready) item(key = "self") { SelfRow(model, actions) }
+                if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) { roomFolders = r } }
                 else peopleItems(model, query, unreadOnly = model.uni.view == Uni.View.Unread)
                 item { Spacer(Modifier.height(100.dp)) }
             }
@@ -313,6 +322,9 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
     }
     if (creating) NewChatSheet(model, actions, onClose = { creating = false })
+    if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
+    editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
+    roomFolders?.let { r -> RoomFoldersSheet(model, r, onNew = { roomFolders = null; editFolder = null to setOf(r.id) }) { roomFolders = null } }
     if (account) Sheet({ account = false }) {
         AccountsPanel(model) { account = false }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
@@ -433,12 +445,13 @@ internal fun Ticks(n: Int) {
 }
 
 @Composable
-internal fun RoomRow(model: ChatModel, r: Room) {
+internal fun RoomRow(model: ChatModel, r: Room, onLong: (() -> Unit)? = null) {
     val scheme = MaterialTheme.colorScheme
     val tint = tintFor(r.id)
     Column {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable(enabled = !r.invite) { model.open(r.id) }.padding(vertical = 8.dp),
+            Modifier.fillMaxWidth().heightIn(min = 68.dp)
+                .combinedClickable(enabled = !r.invite, onLongClick = onLong) { model.open(r.id) }.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.size(46.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
@@ -633,6 +646,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         }
                         // A scomparsa (tavola ChatProgramma).
                         if (e.kind == Event.Kind.Text) FadeLabel(model, e, mine)
+                        // «Messaggi a me» (tavola ChatCartelle): un tocco e va in Note o in Attività.
+                        if (roomId == model.selfRoom && e.kind == Event.Kind.Text && !e.id.startsWith("local:")) SelfChips(model, actions, e)
                     }
                 }
                 // Una volta sola, dopo l'avviso delle basi: la lettura di tutti i messaggi per chi vede poco.
