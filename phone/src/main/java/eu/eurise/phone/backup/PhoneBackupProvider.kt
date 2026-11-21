@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Telefono nel backup della suite (area Backup, 21 novembre 2026): registro delle chiamate e numeri bloccati (stanno nel
- * database di Android) e le note delle chiamate. Il filtro dello spam vive nelle impostazioni di Eurise ed entra con lei.
+ * database di Android) e le note delle chiamate. Il filtro dello spam è un servizio del centro privacy (scarica un elenco): sul telefono nuovo riparte spento.
  *
  * Al ripristino Android lascia scrivere i numeri bloccati solo all'app predefinita per le chiamate: finché Telefono non
  * lo è (o non ha il permesso del registro), [ready] dice di no ed Eurise riprova più tardi. Niente doppioni.

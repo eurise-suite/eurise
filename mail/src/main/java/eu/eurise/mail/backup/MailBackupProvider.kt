@@ -10,8 +10,8 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * Posta nel backup della suite (area Backup, 21 novembre 2026): le caselle (indirizzo, nome, server, colore) e le
- * impostazioni. La posta sta sul server. La password di ogni casella è chiusa nel Keystore di questo telefono e non si
+ * Posta nel backup della suite (area Backup, 21 novembre 2026): le caselle (indirizzo, nome, server, colore), le
+ * impostazioni e «Le palle che hai passato» (`mail_balls`, 22 novembre). Fuori lo stato della sincronizzazione (`mail_sync`). La posta sta sul server. La password di ogni casella è chiusa nel Keystore di questo telefono e non si
  * può portare via: nel backup non c'è. Sul telefono nuovo le caselle aspettano «da ricollegare» ([PENDING]) e il foglio
  * «Collega» le propone già scritte, con i loro server: basta la password.
  */
@@ -57,6 +57,6 @@ class MailBackupProvider : SuiteBackupProvider() {
         /** Le caselle arrivate da un backup, da ricollegare con la loro password. */
         const val PENDING = "accounts_dal_backup.json"
         private const val ENTRY = "accounts.json"
-        private val PREFS = setOf("mail")
+        private val PREFS = setOf("mail", "mail_balls")
     }
 }

@@ -124,7 +124,7 @@
     <string name="backup_turn_off">Spegni il backup</string>
     <string name="backup_turn_off_hint">Niente più backup automatici; quelli già fatti restano dove sono</string>
     <string name="backup_explain_title">Prima di accendere</string>
-    <string name="backup_explain_read">Cosa viene letto: i dati di Eurise su questo telefono (note, attività, collegamenti, impostazioni, home, sveglie) e quello che ha imparato Eurise Tastiera (parole, dizionario personale, modo di toccare i tasti). Le foto restano fuori.</string>
+    <string name="backup_explain_read">Cosa viene letto: i dati di Eurise su questo telefono (note anche vocali, attività, collegamenti, impostazioni, home, sveglie, suonerie tue) e quelli delle altre app della suite che hai: Password (la cassaforte, già chiusa), Messaggi e Telefono (SMS, MMS, chiamate, numeri bloccati), Galleria (cartella protetta e diari), Tastiera, Browser, Office, Posta, Chat, Mappe. Le altre foto restano fuori, come le password delle caselle e i servizi accesi: sul telefono nuovo ripartono spenti.</string>
     <string name="backup_explain_where">Dove va: nella destinazione che scegli tu (un cloud o una cartella), già cifrato con AES-256 sul telefono.</string>
     <string name="backup_explain_who">Chi lo vede: nessuno. Il servizio vede solo un file illeggibile, con data e dimensione; noi non abbiamo modo di aprirlo.</string>
     <string name="backup_explain_back">Come tornare indietro: «Spegni il backup», senza conferme. I file già fatti li cancelli tu dalla destinazione.</string>
@@ -173,7 +173,7 @@
     <string name="bk_have_one">Ho già un backup: ripristina</string>
     <string name="bk_what">Cosa salva</string>
     <string name="bk_what_eurise">Eurise</string>
-    <string name="bk_what_eurise_hint">Note, attività, calendario, contatti, orologio, scrivania e impostazioni</string>
+    <string name="bk_what_eurise_hint">Note e note vocali, attività, calendario, contatti, orologio, scrivania, suonerie tue e impostazioni</string>
     <string name="bk_out">Restano fuori le foto e i video (hanno la loro sincronizzazione) e quello che si riscarica: mappe, voci, modelli AI.</string>
     <string name="bk_verified_title">Fatto e verificato</string>
     <string name="bk_verified_sub">%1$s · %2$s. Riletto e aperto prima di toccare i vecchi.</string>
@@ -249,7 +249,7 @@
     <string name="bk_app_messages">Messaggi</string>
     <string name="bk_app_messages_hint">SMS e MMS con gli allegati, impostazioni</string>
     <string name="bk_app_phone">Telefono</string>
-    <string name="bk_app_phone_hint">Registro chiamate, numeri bloccati, note delle chiamate, filtro dello spam</string>
+    <string name="bk_app_phone_hint">Registro chiamate, numeri bloccati, note delle chiamate</string>
     <string name="bk_app_gallery">Galleria</string>
     <string name="bk_app_gallery_hint">Cartella protetta, diari di viaggio e impostazioni (le altre foto hanno la loro sincronizzazione)</string>
     <string name="bk_app_browser">Browser</string>
@@ -257,9 +257,9 @@
     <string name="bk_app_office">Office</string>
     <string name="bk_app_office_hint">Documenti creati in Office, rapporti, impostazioni</string>
     <string name="bk_app_mail">Posta</string>
-    <string name="bk_app_mail_hint">Caselle e impostazioni (la posta sta sul server; l\'accesso si rifà)</string>
+    <string name="bk_app_mail_hint">Caselle, impostazioni e palle passate (la posta sta sul server; l\'accesso si rifà)</string>
     <string name="bk_app_chat">Chat</string>
-    <string name="bk_app_chat_hint">Impostazioni (si accede come dispositivo nuovo; la chiave di recupero è già nel backup)</string>
+    <string name="bk_app_chat_hint">Impostazioni, cartelle, palle passate (si accede come dispositivo nuovo; la chiave di recupero è già nel backup)</string>
     <string name="bk_app_voice">Voce</string>
     <string name="bk_app_read">Leggi</string>
     <string name="bk_app_ai">AI</string>

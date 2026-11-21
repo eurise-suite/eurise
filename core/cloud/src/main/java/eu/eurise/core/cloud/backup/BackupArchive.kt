@@ -46,8 +46,34 @@ object BackupArchive {
     /** 1 fino al 20 novembre 2026; 2 aggiunge i conteggi di note e attività; 3 (21 novembre) le app separate. */
     private const val FORMAT = 3
 
+    /**
+     * Preferenze che entrano oltre a quelle `eurise_*`: Orologio, scelte della dock della Scrivania, servizi AI scelti
+     * e aggiunti da Alfred (22 novembre 2026). Restano fuori, apposta: gli interruttori dei servizi che fanno uscire
+     * dati (`privacy_center`, `doc_reading`: sul telefono nuovo ripartono spenti, regola «Spenti di base»), gli account
+     * cloud e lo stato delle sincronizzazioni (`cloud_*`, `*_sync`, `assistant_agenda`), i file scaricati (`spam_list`,
+     * `alfred_brain`) e lo stato del backup stesso.
+     */
+    private val EXTRA_PREFS = setOf("clock", "dock", "alfred_online")
+
+    /**
+     * Cartelle di file tuoi nella memoria privata di Eurise (22 novembre 2026): l'audio delle note vocali tenute
+     * nell'app (senza, la nota torna con la registrazione mancante) e le suonerie fatte da te. Fuori il pacchetto dei
+     * suoni (si riscarica), il meteo, i file del Drive tenuti offline (stanno sul cloud) e il cestino del Drive.
+     */
+    private val FILE_DIRS = listOf("note-vocali", "sounds/mine")
+    private const val FILES = "files/"
+
     private fun included(prefs: String): Boolean =
-        (prefs.startsWith("eurise_") || prefs == "clock") && !prefs.startsWith("eurise_feeds_")
+        (prefs.startsWith("eurise_") || prefs in EXTRA_PREFS) && !prefs.startsWith("eurise_feeds_")
+
+    /** La cartella di [FILE_DIRS] di una voce `files/<cartella>/<nome>` dello zip; null se non è una di queste. */
+    private fun fileDirOf(entry: String): String? {
+        if (!entry.startsWith(FILES)) return null
+        val rest = entry.removePrefix(FILES)
+        val dir = FILE_DIRS.firstOrNull { rest.startsWith("$it/") } ?: return null
+        val name = rest.removePrefix("$dir/")
+        return dir.takeIf { name.isNotEmpty() && '/' !in name && name != "." && name != ".." }
+    }
 
     /** Nei backup nuovi i segreti vanno come [SuiteSecrets.BACKUP_ENTRY]; il file in chiaro si accetta solo in ripristino. */
     private fun exported(prefs: String): Boolean = included(prefs) && prefs != SuiteSecrets.LEGACY_PREFS
@@ -85,6 +111,16 @@ object BackupArchive {
                     f.inputStream().use { it.copyTo(zip) }
                     zip.closeEntry()
                 }
+            var files = 0
+            FILE_DIRS.forEach { dir ->
+                File(context.filesDir, dir).listFiles().orEmpty().filter { it.isFile }.sortedBy { it.name }.forEach { f ->
+                    zip.putNextEntry(ZipEntry("$FILES$dir/${f.name}"))
+                    f.inputStream().use { it.copyTo(zip) }
+                    zip.closeEntry()
+                    files++
+                }
+            }
+            if (files > 0) manifest.put("files", files)
             LockKeys.exportForBackup(context).forEach { (entry, bytes) ->
                 zip.putNextEntry(ZipEntry(entry))
                 zip.write(bytes)
@@ -253,7 +289,7 @@ object BackupArchive {
                 if (e.isDirectory || name.contains("..")) continue
                 val appKey = SuiteApps.keyOf(name)
                 if (appKey != null) { SuiteApps.keep(context, appKey, zip); continue }
-                val ok = name == "databases/$DB" || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
+                val ok = fileDirOf(name) != null || name == "databases/$DB" || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
                     name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
                     included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
                 if (!ok) continue
@@ -297,6 +333,12 @@ object BackupArchive {
             }
             File(dir, "shared_prefs").listFiles().orEmpty().forEach { f ->
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
+            }
+            // Note vocali e suonerie tue: si aggiungono (stesso nome = stesso file); quelli già sul telefono restano.
+            FILE_DIRS.forEach { d ->
+                File(dir, FILES + d).listFiles().orEmpty().filter { it.isFile }.forEach { f ->
+                    f.copyTo(File(File(context.filesDir, d).apply { mkdirs() }, f.name), overwrite = true)
+                }
             }
             // Ripristini preparati da una versione precedente: lo zip della Tastiera stava ancora qui.
             File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { f -> f.inputStream().use { SuiteApps.keep(context, "keyboard", it) } }
