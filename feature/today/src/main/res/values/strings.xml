@@ -28,6 +28,7 @@
     <string name="agenda_leave_at">Parti alle %1$s · %2$d min in auto</string>
     <string name="agenda_call">Chiama %1$s</string>
     <string name="agenda_write">Scrivi a %1$s</string>
+    <string name="agenda_voice_note">Nota vocale</string>
     <string name="agenda_add">Aggiungi</string>
     <string name="agenda_write_placeholder">Scrivi: «domani alle 10 dentista», una cosa da fare, una nota…</string>
 </resources>

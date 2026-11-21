@@ -17,12 +17,24 @@ import eu.eurise.core.cloud.lock.SuiteSecrets
 /**
  * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
  * (Scrivania, bolle, Orologio, farmaci, date…) e quello che ha imparato Eurise Tastiera ([KeyboardBackup]). Restano fuori le cache, gli account cloud e le chiavi del
- * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano. La chiave delle note e i segreti
+ * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano. Entra anche l'audio delle note
+ * vocali tenuto nelle Note (fino a 60 MB, le più recenti). La chiave delle note e i segreti
  * affidati dalle altre app ([SuiteSecrets]) sul telefono sono sigillati nel Keystore: entrano come voci a parte.
  */
 object BackupArchive {
     private const val DB = "eurise.db"
     private const val PENDING = "restore_pending"
+
+    /** Audio delle note vocali tenuto nelle Note (cartella privata, e quelle del cloud non ancora caricate). */
+    private const val VOICE_DIR = "note-vocali"
+    private const val VOICE_ENTRY = "note-vocali/"
+
+    /**
+     * Quanto audio entra al massimo (il backup si prepara in memoria prima di cifrarlo): le note vocali più recenti
+     * fino a 60 MB, circa quattro ore di parlato. Quelle in Registrazioni o nel cloud non servono: stanno già fuori.
+     */
+    private const val VOICE_MAX_BYTES = 60L * 1024 * 1024
+    private val VOICE_NAME = Regex("^[A-Za-z0-9._-]{1,80}\\.m4a$")
 
     private fun included(prefs: String): Boolean =
         (prefs.startsWith("eurise_") || prefs == "clock") && !prefs.startsWith("eurise_feeds_")
@@ -65,6 +77,17 @@ object BackupArchive {
                 zip.write(secrets)
                 zip.closeEntry()
             }
+            var voice = 0L
+            File(context.filesDir, VOICE_DIR).listFiles().orEmpty()
+                .filter { it.isFile && VOICE_NAME.matches(it.name) }
+                .sortedByDescending { it.lastModified() }
+                .forEach { f ->
+                    if (voice + f.length() > VOICE_MAX_BYTES) return@forEach
+                    voice += f.length()
+                    zip.putNextEntry(ZipEntry(VOICE_ENTRY + f.name).apply { time = f.lastModified() })
+                    f.inputStream().use { it.copyTo(zip) }
+                    zip.closeEntry()
+                }
         }
         return out.toByteArray()
     }
@@ -105,7 +128,8 @@ object BackupArchive {
                 val name = e.name
                 val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
                     name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
-                    !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
+                    !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml"))) ||
+                    (name.startsWith(VOICE_ENTRY) && VOICE_NAME.matches(name.removePrefix(VOICE_ENTRY)))
                 if (!ok || e.isDirectory) continue
                 val target = File(dir, name).apply { parentFile?.mkdirs() }
                 target.outputStream().use { zip.copyTo(it) }
@@ -152,6 +176,11 @@ object BackupArchive {
             File(dir, LockKeys.SEALED_ENTRY).takeIf { it.exists() }?.let { LockKeys.restoreSealed(context, it.readBytes()) }
             File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
             File(dir, SuiteSecrets.BACKUP_ENTRY).takeIf { it.exists() }?.let { SuiteSecrets.restore(context, it.readBytes()) }
+            // Le note vocali tornano accanto a quelle che ci sono già (stesso nome = stessa registrazione).
+            File(dir, VOICE_DIR).listFiles().orEmpty().forEach { f ->
+                val target = File(File(context.filesDir, VOICE_DIR).apply { mkdirs() }, f.name)
+                if (!target.exists()) f.copyTo(target)
+            }
         }
         dir.deleteRecursively()
     }

@@ -33,6 +33,8 @@
     <string name="capture_task">Attività</string>
     <string name="capture_note">Nota</string>
     <string name="capture_create_event">Crea evento</string>
+    <string name="capture_invite">Invita %1$s</string>
+    <string name="capture_invite_note">L\'invito parte per email dal calendario dell\'appuntamento (Murena, Nextcloud…). Senza calendario sincronizzato resta solo sul telefono.</string>
     <string name="capture_create_task">Crea attività</string>
     <string name="capture_create_note">Crea nota</string>
     <string name="capture_done_event">Evento creato</string>

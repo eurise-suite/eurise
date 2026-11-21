@@ -113,6 +113,8 @@ class BubbleActions(
     val openNotes: () -> Unit,
     val newNote: () -> Unit,
     val grantNotifications: () -> Unit,
+    /** Nota vocale nuova nelle Note (tavola NoteVocaleEntra), dal microfono della bolla Promemoria. */
+    val newVoiceNote: () -> Unit = {},
     /** Aggiunge un'attività per oggi, letta come nell'aggiunta rapida ("Richiamare Luca"). */
     val addTask: (String) -> Unit = quickTask,
     /** Richiama chi ha telefonato. */
@@ -997,6 +999,8 @@ fun QuickNotePill(
         hazeState, modifier, title = stringResource(R.string.bubble_memo_title),
         trailing = {
             SmallRound(EuriseIcons.note(2f), stringResource(R.string.bubble_memo_open_notes), onClick = actions.openNotes)
+            Spacer(Modifier.width(5.dp))
+            SmallRound(EuriseIcons.mic(2f), stringResource(R.string.bubble_memo_voice_note), onClick = actions.newVoiceNote)
             Spacer(Modifier.width(5.dp))
             SmallRound(EuriseIcons.plus(2f), stringResource(R.string.bubble_memo_new_note), onClick = actions.newNote)
             Spacer(Modifier.width(2.dp))
