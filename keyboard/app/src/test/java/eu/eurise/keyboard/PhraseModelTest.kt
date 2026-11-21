@@ -2,6 +2,7 @@ package eu.eurise.keyboard
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PhraseModelTest {
@@ -51,5 +52,19 @@ class PhraseModelTest {
         val m = PhraseModel()
         repeat(5) { m.learn("Va bene") }
         assertEquals(0, m.size)
+    }
+
+    @Test fun unireNonPerdeNulla() {
+        val here = PhraseModel().apply { repeat(4) { learn("Arrivo tra dieci minuti circa") } }
+        val backup = PhraseModel().apply {
+            repeat(2) { learn("Arrivo tra dieci minuti circa") }
+            repeat(3) { learn("Ci vediamo domani alle 9 al solito posto") }
+        }
+        here.merge(backup.save())
+        assertEquals(2, here.size)
+        assertEquals("dieci minuti circa", here.propose("Arrivo tra "))
+        assertEquals("al solito posto", here.propose("Ci vediamo domani alle 9 "))
+        // Il conto più alto resta: quattro volte, non due.
+        assertTrue(here.save().contains("4\tArrivo tra dieci minuti circa"))
     }
 }

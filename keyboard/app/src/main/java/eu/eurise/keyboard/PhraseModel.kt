@@ -85,6 +85,21 @@ class PhraseModel {
         }
     }
 
+    /**
+     * Unisce le frasi di [text] (formato di [save], per esempio da un backup) a quelle già imparate: per ogni frase vale il
+     * conto più alto, nessuna frase di qui si perde; le nuove entrano tra le meno recenti, così escono per prime se si
+     * supera [MAX_ENTRIES].
+     */
+    @Synchronized
+    fun merge(text: String?) {
+        val incoming = PhraseModel().apply { load(text) }
+        val mine = LinkedHashMap(entries)
+        entries.clear()
+        for ((key, e) in incoming.entries) if (key !in mine) entries[key] = Entry(e.count, e.text)
+        for ((key, e) in mine) entries[key] = Entry(maxOf(e.count, incoming.entries[key]?.count ?: 0), e.text)
+        while (entries.size > MAX_ENTRIES) entries.remove(entries.keys.first())
+    }
+
     companion object {
         const val MIN_WORDS = 3
         const val MAX_WORDS = 12
