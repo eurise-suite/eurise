@@ -35,6 +35,8 @@ class EuriseApplication : Application(), eu.eurise.feature.ponte.PonteToday.Sour
         eu.eurise.core.cloud.backup.BackupArchive.applyPending(this)
         // Le parole imparate dalla Tastiera (APK a parte) tornano alla tastiera appena è installata.
         Thread {
+            // Una copia del database lasciata da un backup interrotto non resta nella cache.
+            eu.eurise.core.cloud.backup.BackupArchive.dropLeftovers(this)
             eu.eurise.core.cloud.backup.KeyboardBackup.deliverPending(this)
             BackupShortcut.publish(this)
         }.start()

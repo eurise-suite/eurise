@@ -187,11 +187,17 @@ class BackupManager private constructor(private val context: Context) {
      * Fa un backup: archivio, cifratura, caricamento, verifica (lo si rilegge e lo si apre), poi la regola dei tre
      * più il mensile e il trimestrale. I vecchi si toccano solo dopo la verifica.
      */
-    suspend fun backupNow(): Result<BackupFile> = mutex.withLock {
+    suspend fun backupNow(): Result<BackupFile> = backupTo(null)
+
+    /**
+     * Come [backupNow], verso [into] invece della destinazione scelta: lo usa la prova sull'emulatore per un WebDAV
+     * finto con il suo certificato (`.github/prova-backup`). Tutto il resto è lo stesso percorso.
+     */
+    internal suspend fun backupTo(into: BackupTarget?): Result<BackupFile> = mutex.withLock {
         refresh(running = true)
         val result = runCatching {
             val keys = keys() ?: error("Backup non attivo")
-            val target = target() ?: error("Nessuna destinazione")
+            val target = into ?: target() ?: error("Nessuna destinazione")
             val now = System.currentTimeMillis()
             val at = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault())
             // Si cifra mentre lo si scrive, in un file di cache che contiene solo dati cifrati; poi parte, si riscarica e
@@ -204,8 +210,15 @@ class BackupManager private constructor(private val context: Context) {
                 }
                 val name = Retention.fileName(at, Tier.Recent)
                 target.write(name, out)
-                if (!target.readTo(name, back)) error("Il backup non si rilegge")
-                withContext(Dispatchers.IO) { verifyFile(back, keys.dataKey) }
+                try {
+                    if (!target.readTo(name, back)) error("Il backup non si rilegge")
+                    withContext(Dispatchers.IO) { verifyFile(back, keys.dataKey) }
+                } catch (e: Exception) {
+                    // Un file che non si verifica non resta là: altrimenti al giro dopo conterebbe come uno dei tre recenti
+                    // e farebbe uscire un backup buono.
+                    runCatching { target.delete(name) }
+                    throw e
+                }
                 val size = out.length()
                 val files = target.list()
                 Retention.plan(files).forEach { a ->

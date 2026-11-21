@@ -25,8 +25,12 @@ import java.util.UUID;
  * - backup: semina note, attività e un'impostazione, fa il backup cifrato a pezzi (con Tastiera, Password e Galleria),
  *   lo lascia in cache/prova.eurb e controlla che nei file dell'app non resti niente in chiaro;
  * - ripristino: a dati cancellati e senza Tastiera, la frase sbagliata non apre, il codice di recupero sì; il
- *   contenuto è quello giusto; poi prepara e applica il ripristino e controlla che tutto sia tornato;
- * - consegna: con la Tastiera di nuovo installata, i dati in attesa (sigillati) arrivano a Tastiera, Password e Galleria.
+ *   contenuto è quello giusto; poi prepara il ripristino, che prende il suo posto al riavvio di Eurise;
+ * - riavvio: dopo che Eurise è ripartita davvero, note, attività e impostazione sono tornate;
+ * - consegna: con la Tastiera di nuovo installata, i dati in attesa (sigillati) arrivano a Tastiera, Password e Galleria;
+ * - gestore-*: il backup come lo fa l'app (BackupManager), sul telefono «ripristinato»: chiave nel Keystore, backup
+ *   automatico con Wi-Fi e carica verso una cartella vera di Android ({@link Cartella}), poi verso un WebDAV finto
+ *   (.github/prova-backup/dav.py) con la regola dei cinque conservati, un backup che non si verifica, lo spegnimento.
  */
 public class Sonda extends Instrumentation {
     private static final String FRASE = "girasole lento sotto la pioggia 1987";
@@ -51,7 +55,13 @@ public class Sonda extends Instrumentation {
             Context ctx = getTargetContext();
             if ("backup".equals(fase)) backup(ctx);
             else if ("ripristino".equals(fase)) ripristino(ctx);
+            else if ("riavvio".equals(fase)) riavvio(ctx);
             else if ("consegna".equals(fase)) consegna(ctx);
+            else if ("gestore-inizio".equals(fase)) gestoreInizio(ctx);
+            else if ("gestore-cartella".equals(fase)) gestoreCartella(ctx);
+            else if ("gestore-dav".equals(fase)) gestoreDav(ctx);
+            else if ("gestore-guasto".equals(fase)) gestoreGuasto(ctx);
+            else if ("gestore-fine".equals(fase)) gestoreFine(ctx);
             else throw new IllegalStateException("fase sconosciuta: " + fase);
             out.putString("esito", "ok");
         } catch (Throwable t) {
@@ -156,8 +166,12 @@ public class Sonda extends Instrumentation {
         }
         check(!new File(new File(ctx.getFilesDir(), "restore_pending"), "apps").exists(), "dati delle app nella cartella d'attesa in chiaro");
         note("dati delle app in attesa, sigillati: " + waiting.size());
+        check((Boolean) call(obj("BackupArchive"), "hasPending", ctx), "il ripristino non aspetta il riavvio");
+        note("ripristino pronto: prende il suo posto quando Eurise riparte");
+    }
 
-        call(obj("BackupArchive"), "applyPending", ctx);
+    /** Dopo che Eurise è ripartita davvero (la prova la apre e la chiude): il ripristino ha preso il suo posto. */
+    private void riavvio(Context ctx) throws Exception {
         check(!new File(ctx.getFilesDir(), "restore_pending").exists(), "la cartella d'attesa del ripristino è rimasta");
         SQLiteDatabase d = SQLiteDatabase.openDatabase(ctx.getDatabasePath("eurise.db").getPath(), null, SQLiteDatabase.OPEN_READONLY);
         try {
@@ -182,6 +196,214 @@ public class Sonda extends Instrumentation {
         File sealed = new File(new File(ctx.getFilesDir(), "apps_waiting"), "messages.sealed");
         check(sealed.exists() && !startsWith(readAll(sealed), "PK"), "i dati di Messaggi in attesa non sono sigillati");
         note("consegnati a tutte; Messaggi aspetta di essere l'app SMS predefinita");
+    }
+
+    // ---------------------------------------------------------------- il backup come lo fa l'app
+
+    private static final String DAV = "https://10.0.2.2:8443/";
+
+    private Object manager(Context ctx) throws Exception {
+        Object companion = Class.forName(PKG + "BackupManager", true, getTargetContext().getClassLoader()).getField("Companion").get(null);
+        return call(companion, "get", ctx);
+    }
+
+    private Object state(Object manager) throws Exception {
+        return get(get(manager, "getState"), "getValue");
+    }
+
+    private Object tree() {
+        return android.provider.DocumentsContract.buildTreeDocumentUri("eu.eurise.prova.backup.cartella", "cartella").toString();
+    }
+
+    private Object folderPlace() throws Exception {
+        return Class.forName(PKG + "BackupPlace$Folder", true, getTargetContext().getClassLoader()).getConstructor(String.class).newInstance(tree());
+    }
+
+    /** Il lavoro pianificato del backup, come lo vede WorkManager. */
+    private Object work(Context ctx) throws Exception {
+        ClassLoader cl = getTargetContext().getClassLoader();
+        Class<?> wm = Class.forName("androidx.work.WorkManager", true, cl);
+        Object m = wm.getMethod("getInstance", Context.class).invoke(null, ctx);
+        Object future = wm.getMethod("getWorkInfosForUniqueWork", String.class).invoke(m, "eurise-backup");
+        List<?> infos = (List<?>) java.util.concurrent.Future.class.getMethod("get").invoke(future);
+        return infos.isEmpty() ? null : infos.get(infos.size() - 1);
+    }
+
+    private void gestoreInizio(Context ctx) throws Exception {
+        Object m = manager(ctx);
+        check(!(Boolean) get(state(m), "getConfigured"), "il backup risulta già acceso");
+        scall(m, "setup", FRASE, CODICE);
+        check((Boolean) get(state(m), "getConfigured"), "dopo l'accensione il backup non risulta acceso");
+        // La chiave dei dati sta chiusa da una chiave del Keystore, che non si può leggere.
+        java.security.KeyStore ks = java.security.KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        check(ks.containsAlias("eurise-backup"), "nel Keystore manca la chiave del backup");
+        check(((javax.crypto.SecretKey) ks.getKey("eurise-backup", null)).getEncoded() == null, "la chiave del Keystore si può leggere");
+        String sealed = ctx.getSharedPreferences("backup", Context.MODE_PRIVATE).getString("key", "");
+        check(sealed.contains(":") && android.util.Base64.decode(sealed.substring(sealed.indexOf(':') + 1), 0).length == 48, "la chiave dei dati non è sigillata (AES-GCM)");
+        note("chiave dei dati sigillata dal Keystore (non leggibile)");
+
+        // La cartella concessa come dal selettore: il permesso resta.
+        call(m, "setPlace", folderPlace());
+        boolean kept = false;
+        for (android.content.UriPermission u : ctx.getContentResolver().getPersistedUriPermissions())
+            kept |= u.getUri().toString().equals(tree()) && u.isWritePermission();
+        check(kept, "il permesso sulla cartella non è rimasto");
+        Object daily = Class.forName(PKG + "BackupFrequency", true, getTargetContext().getClassLoader()).getField("Daily").get(null);
+        call(m, "setFrequency", daily);
+
+        Object info = work(ctx);
+        check(info != null, "il backup automatico non è in coda");
+        Object constraints = get(info, "getConstraints");
+        String state = String.valueOf(get(info, "getState"));
+        String network = String.valueOf(get(constraints, "getRequiredNetworkType"));
+        boolean charging = (Boolean) get(constraints, "requiresCharging");
+        note("backup automatico: " + state + ", rete " + network + ", in carica " + charging);
+        check("ENQUEUED".equals(state), "il backup automatico non è in attesa: " + state);
+        check("UNMETERED".equals(network) && charging, "il backup automatico non chiede Wi-Fi e carica");
+    }
+
+    private void gestoreCartella(Context ctx) throws Exception {
+        Object m = manager(ctx);
+        Object s = state(m);
+        check(get(s, "getLastAt") != null && get(s, "getLastError") == null, "il backup automatico non risulta fatto: " + get(s, "getLastError"));
+        List<?> files = (List<?>) scall(m, "list", folderPlace());
+        note("nella cartella: " + files.size() + " backup");
+        check(files.size() == 1, "nella cartella non c'è un backup solo");
+        String name = (String) get(files.get(0), "getName");
+        check(name.endsWith("-r.eurisebk"), "il nome non è quello di un backup recente: " + name);
+        Object opened = scall(m, "open", folderPlace(), name, FRASE);
+        Object contents = get(opened, "getContents");
+        check(Integer.valueOf(3).equals(get(contents, "getNotes")), "il backup della cartella non ha le 3 note");
+        call(m, "discard", opened);
+        note("dalla cartella si riapre con la frase: 3 note");
+    }
+
+    /** Un client HTTPS che riconosce il certificato del WebDAV finto (cache/prova-dav.pem, messo dalla prova). */
+    private Object davTarget(Context ctx) throws Exception {
+        ClassLoader cl = getTargetContext().getClassLoader();
+        java.security.cert.Certificate cert;
+        try (InputStream in = new FileInputStream(new File(ctx.getCacheDir(), "prova-dav.pem"))) {
+            cert = java.security.cert.CertificateFactory.getInstance("X.509").generateCertificate(in);
+        }
+        java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+        ks.load(null, null);
+        ks.setCertificateEntry("prova", cert);
+        javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory.getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+        javax.net.ssl.X509TrustManager tm = (javax.net.ssl.X509TrustManager) tmf.getTrustManagers()[0];
+        javax.net.ssl.SSLContext tls = javax.net.ssl.SSLContext.getInstance("TLS");
+        tls.init(null, new javax.net.ssl.TrustManager[]{tm}, null);
+        Class<?> builderClass = Class.forName("okhttp3.OkHttpClient$Builder", true, cl);
+        Object builder = builderClass.getConstructor().newInstance();
+        builderClass.getMethod("sslSocketFactory", javax.net.ssl.SSLSocketFactory.class, javax.net.ssl.X509TrustManager.class).invoke(builder, tls.getSocketFactory(), tm);
+        Object client = builderClass.getMethod("build").invoke(builder);
+        Class<?> davClass = Class.forName("eu.eurise.core.cloud.WebDav", true, cl);
+        Object dav = davClass.getConstructor(String.class, String.class, String.class, Class.forName("okhttp3.OkHttpClient", true, cl))
+            .newInstance(DAV, "prova", "segreta", client);
+        return Class.forName(PKG + "DavTarget", true, cl).getConstructor(davClass, String.class).newInstance(dav, "Eurise/Backup");
+    }
+
+    private void gestoreDav(Context ctx) throws Exception {
+        Object m = manager(ctx);
+        Object target = davTarget(ctx);
+        Object file = scall(m, "backupTo", target);
+        String name = (String) get(file, "getName");
+        note("su WebDAV: " + name);
+        // Riscaricato e aperto con la frase: la chiave dei dati è quella che il Keystore tiene sigillata.
+        File back = new File(ctx.getCacheDir(), "prova-dav.eurb");
+        check((Boolean) scall(target, "readTo", name, back), "il backup non si riscarica dal WebDAV");
+        byte[] bytes = readAll(back);
+        back.delete();
+        Object header = call(obj("BackupCrypto"), "readHeader", new java.io.ByteArrayInputStream(bytes));
+        byte[] key = (byte[]) call(obj("BackupCrypto"), "unlock", get(header, "getHeader"), FRASE);
+        check(Integer.valueOf(3).equals(get(contentsOf(bytes, FRASE), "getNotes")), "il backup su WebDAV non ha le 3 note");
+        String prefs = new String(readAll(new File(new File(ctx.getApplicationInfo().dataDir, "shared_prefs"), "backup.xml")), "UTF-8");
+        check(!prefs.contains(android.util.Base64.encodeToString(key, android.util.Base64.NO_WRAP)), "la chiave dei dati è in chiaro nelle impostazioni");
+        note("riaperto con la frase; la chiave dei dati non è in chiaro sul telefono");
+    }
+
+    private void gestoreGuasto(Context ctx) throws Exception {
+        Object m = manager(ctx);
+        try {
+            scall(m, "backupTo", davTarget(ctx));
+            throw new AssertionError("un backup che non si verifica è stato dato per buono");
+        } catch (Exception e) {
+            Throwable c = e instanceof InvocationTargetException && e.getCause() != null ? e.getCause() : e;
+            if (c instanceof AssertionError) throw (AssertionError) c;
+            note("backup non verificato: " + c.getClass().getSimpleName());
+        }
+        check(get(state(m), "getLastError") != null, "l'errore non è segnato (la Scrivania non lo direbbe)");
+    }
+
+    private void gestoreFine(Context ctx) throws Exception {
+        Object m = manager(ctx);
+        call(m, "turnOff");
+        check(!(Boolean) get(state(m), "getConfigured"), "il backup risulta ancora acceso");
+        java.security.KeyStore ks = java.security.KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        check(!ks.containsAlias("eurise-backup"), "spento il backup, la chiave resta nel Keystore");
+        Object info = work(ctx);
+        String state = info == null ? "nessuno" : String.valueOf(get(info, "getState"));
+        check(info == null || "CANCELLED".equals(state), "spento il backup, il lavoro automatico resta: " + state);
+        note("spento: chiave tolta dal Keystore, lavoro automatico " + state);
+    }
+
+    /**
+     * Una funzione «suspend» di Kotlin chiamata da qui: le si passa una Continuation fatta al volo e, se si sospende, si
+     * aspetta che riprenda. Il risultato si toglie da kotlin.Result; un errore torna come eccezione.
+     */
+    private static Object scall(Object target, String name, Object... args) throws Exception {
+        ClassLoader cl = target.getClass().getClassLoader();
+        Class<?> contType = Class.forName("kotlin.coroutines.Continuation", true, cl);
+        Object empty = Class.forName("kotlin.coroutines.EmptyCoroutineContext", true, cl).getField("INSTANCE").get(null);
+        java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        Object[] box = new Object[1];
+        Object cont = java.lang.reflect.Proxy.newProxyInstance(cl, new Class<?>[]{contType}, (proxy, method, a) -> {
+            switch (method.getName()) {
+                case "getContext": return empty;
+                case "resumeWith": box[0] = a[0]; done.countDown(); return null;
+                case "hashCode": return System.identityHashCode(proxy);
+                case "equals": return proxy == a[0];
+                default: return "sonda";
+            }
+        });
+        for (Method m : target.getClass().getMethods()) {
+            if (!(m.getName().equals(name) || m.getName().startsWith(name + "$")) || m.getName().endsWith("$default")) continue;
+            Class<?>[] types = m.getParameterTypes();
+            if (types.length != args.length + 1 || types[args.length] != contType) continue;
+            boolean fits = true;
+            for (int i = 0; i < args.length && fits; i++) fits = args[i] == null || box(types[i]).isInstance(args[i]);
+            if (!fits) continue;
+            Object[] full = java.util.Arrays.copyOf(args, args.length + 1);
+            full[args.length] = cont;
+            Object r = m.invoke(target, full);
+            if (r != null && r.getClass().getName().equals("kotlin.coroutines.intrinsics.CoroutineSingletons") && "COROUTINE_SUSPENDED".equals(r.toString())) {
+                check(done.await(10, java.util.concurrent.TimeUnit.MINUTES), name + ": non finisce");
+                r = box[0];
+            }
+            return unwrap(r);
+        }
+        throw new NoSuchMethodException(target.getClass().getName() + "." + name + "/" + args.length + " (suspend)");
+    }
+
+    /** Toglie kotlin.Result (anche annidato, come per Result<T> restituito da una funzione suspend). */
+    private static Object unwrap(Object r) throws Exception {
+        while (r != null) {
+            String n = r.getClass().getName();
+            if (n.equals("kotlin.Result$Failure")) {
+                java.lang.reflect.Field f = r.getClass().getDeclaredField("exception");
+                f.setAccessible(true);
+                Throwable t = (Throwable) f.get(r);
+                if (t instanceof Exception) throw (Exception) t;
+                throw new RuntimeException(t);
+            }
+            if (!n.equals("kotlin.Result")) return r;
+            java.lang.reflect.Field f = r.getClass().getDeclaredField("value");
+            f.setAccessible(true);
+            r = f.get(r);
+        }
+        return null;
     }
 
     /** Il contenuto di un backup cifrato, letto a pezzi come fa l'app. */

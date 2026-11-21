@@ -62,7 +62,7 @@ jobs:
           done
           ls -la apk
           for p in hub keyboard password gallery messages mail office browser; do test -f apk/eu.eurise.$p.debug.apk; done
-          javac -source 11 -target 11 -cp "$jar" -d classi .github/prova-backup/sonda/src/eu/eurise/prova/backup/Sonda.java
+          javac -source 11 -target 11 -cp "$jar" -d classi .github/prova-backup/sonda/src/eu/eurise/prova/backup/*.java
           "$bt/d8" --min-api 26 --lib "$jar" --output classi $(find classi -name '*.class')
           "$bt/aapt2" link -o sonda-grezza.apk --manifest .github/prova-backup/sonda/AndroidManifest.xml -I "$jar" --min-sdk-version 26 --target-sdk-version 34
           (cd classi && zip -q ../sonda-grezza.apk classes.dex)

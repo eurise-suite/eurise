@@ -31,8 +31,8 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 3. **Zip della Tastiera in attesa** (`keyboard_restore.zip` nei file di Eurise) resta in chiaro finché la Tastiera non
    c'è, anche per sempre. Da tenere cifrato (chiave nel Keystore) e da cancellare dopo un tempo o su richiesta.
 4. La copia del database (`backup-snapshot.db` nella cache) è in chiaro per pochi secondi: stessi dati del database, si
-   cancella subito; si può evitare leggendo lo snapshot direttamente nello zip in memoria (da valutare: VACUUM INTO
-   vuole un file).
+   cancella subito. Valutato il 21 novembre sera: non si può togliere in modo sicuro, rinforzata (vedi «Copia del
+   database»).
 5. Il manifesto dello zip (`format: 1`) non dice quali app ci sono: al ripristino non si può mostrare «cosa contiene».
 
 ## Proposta: cosa entra, app per app (da decidere con il proprietario)
@@ -204,11 +204,34 @@ Browser, Office. La prova sull'emulatore è ripetuta sul giro 938.
 - Posta: la password di ogni casella va riscritta (sta nel Keystore del telefono vecchio).
 - Chat: si accede come dispositivo nuovo; la cronologia cifrata torna con la chiave di recupero.
 
-## Formato (proposta)
-- Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
-  versione dei dati; ogni app separata in `apps/<app>.zip`. I file `format: 1` si ripristinano come oggi.
-- Al ripristino, l'app che non è ancora installata riceve i suoi dati quando arriva (come la Tastiera), ma lo zip in
-  attesa resta **cifrato** con una chiave del Keystore.
+## Formato del file (com'è oggi, 21 novembre 2026)
+- **File**: `eurise-AAAAMMGG-hhmmss-<r|m|q>.eurisebk` (recente, mensile, trimestrale: `Retention`). Comincia con
+  `EURISEB1`, poi la versione: **2** = dati in pezzi da 1 MiB, ognuno cifrato e autenticato (AES-256-GCM; nonce =
+  8 byte dell'intestazione + numero del pezzo; AAD = intestazione + numero + «ultimo»), così un file troncato, toccato o
+  allungato non si apre. La versione 1 (un blocco solo) si apre ancora. Nell'intestazione: data e chiave dei dati chiusa
+  due volte, con la frase e con il codice di recupero (PBKDF2, 600 000 giri; 310 000 nei file vecchi).
+- **Dentro, uno zip** (si scrive e si cifra mentre lo si crea, mai in chiaro su disco):
+  - `databases/eurise.db` (copia coerente del database, vedi «Copia del database» sotto), `shared_prefs/*.xml` scelte,
+    la chiave delle note bloccate chiusa con la frase (`NoteSeal`), i segreti affidati a Eurise (`SuiteSecrets`);
+  - `apps/<app>.zip`, uno per app separata, dal suo fornitore protetto (`SuiteApps`: password, messages, phone, gallery,
+    keyboard, browser, office, mail, chat, voice, ai, maps);
+  - `manifest.json` in fondo, **formato 3**: data, app, numeri di note e attività, `apps` (le righe per «Cosa rimetto»)
+    e `missing` (le app che non hanno risposto). Le versioni vecchie dell'app ignorano il manifesto.
+- **Al ripristino** i file di Eurise aspettano in `restore_pending` e prendono il loro posto al riavvio, prima che si apra
+  il database; ogni `apps/<app>.zip` aspetta sigillato con una chiave del Keystore (`apps_waiting/<app>.sealed`) finché
+  l'app non c'è ed è pronta.
+
+### Copia del database (21 novembre 2026, sera)
+Il punto 4 qui sopra: la copia del database per lo zip (`backup-snapshot.db`, nella cache privata) non si può evitare
+in modo sicuro. Android dà solo due vie per una copia coerente mentre l'app scrive: VACUUM INTO (scrive un file) e la
+copia dopo il checkpoint; leggere le pagine in un tubo (`sqlite_dbpage`, la «backup API» di SQLite) non è disponibile, e
+copiare il file vivo senza blocchi può dare un database rotto. La copia ha gli stessi dati, in chiaro come il database
+stesso, nella stessa cartella privata: non è un posto in più dove i dati si leggono. Sistemato quello che si poteva:
+- si toglie **sempre**, anche se il backup si ferma a metà (prima restava fino al backup dopo), con i file che SQLite le
+  mette accanto; quella lasciata da un'app chiusa a metà sparisce all'avvio (`dropLeftovers`, solo se ferma da 6 ore);
+- prima di Android 11 (e se VACUUM INTO non riesce) si copiava il file senza controllo: ora checkpoint TRUNCATE, copia e
+  `quick_check`; se un'altra scrittura l'ha rovinata si riprova (tre volte), altrimenti il backup si ferma invece di
+  salvare un database rotto.
 
 ## Mappe e cartella dal backup (21 novembre 2026, sera)
 **Mappe** (`maps/android/.../eurise/EuriseBackupProvider.java`, Java perché Mappe si compila dentro CoMaps; logica dei file

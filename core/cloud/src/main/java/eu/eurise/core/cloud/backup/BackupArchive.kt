@@ -62,6 +62,11 @@ object BackupArchive {
      */
     fun create(context: Context, createdAt: Long, out: java.io.OutputStream) {
         val db = snapshot(context)
+        // La copia del database si toglie anche se il backup si ferma a metà (un'app che non risponde, la rete…).
+        try { writeZip(context, createdAt, out, db) } finally { db?.let(::dropSnapshot) }
+    }
+
+    private fun writeZip(context: Context, createdAt: Long, out: java.io.OutputStream, db: File?) {
         ZipOutputStream(out).use { zip ->
             // Formato 3 (21 novembre 2026): le app separate e le loro righe. Chi legge il formato 1 o 2 non guarda il
             // manifesto: resta compatibile nei due sensi.
@@ -71,7 +76,7 @@ object BackupArchive {
                 zip.putNextEntry(ZipEntry("databases/$DB"))
                 file.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
-                file.delete()
+                dropSnapshot(file)
             }
             prefsDir(context).listFiles().orEmpty()
                 .filter { it.name.endsWith(".xml") && exported(it.name.removeSuffix(".xml")) }
@@ -166,25 +171,67 @@ object BackupArchive {
     }
 
     /**
-     * Una copia coerente del database mentre l'app lo usa: VACUUM INTO dove c'è (Android 11+), altrimenti si
-     * riversa il diario nel file principale e lo si copia.
+     * Una copia coerente del database mentre l'app lo usa, da mettere nello zip (21 novembre 2026, sera).
+     *
+     * Perché un file e non direttamente lo zip: le sole vie che Android dà per leggere un database SQLite coerente
+     * mentre l'app ci scrive sono VACUUM INTO (scrive un file) e la copia dopo il checkpoint. Leggere le pagine in un
+     * tubo (`sqlite_dbpage`, la «backup API») non è disponibile, e copiare il file vivo senza blocchi può dare un
+     * database rotto. La copia ha gli stessi dati, in chiaro come il database stesso, nella cartella privata dell'app; vive
+     * pochi secondi, si toglie sempre ([dropSnapshot], anche se il backup si ferma) e quelle rimaste da un'app chiusa a
+     * metà si tolgono all'avvio ([dropLeftovers]).
+     *
+     * Android 11 e oltre: VACUUM INTO. Prima (o se non riesce): checkpoint TRUNCATE, copia del file e controllo della
+     * copia (`quick_check`); se un'altra scrittura l'ha rovinata si riprova, fino a tre volte.
      */
     private fun snapshot(context: Context): File? {
         val src = context.getDatabasePath(DB)
         if (!src.exists()) return null
-        val tmp = File(context.cacheDir, "backup-snapshot.db").apply { delete() }
-        runCatching {
-            SQLiteDatabase.openDatabase(src.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
-                if (Build.VERSION.SDK_INT >= 30) {
-                    db.execSQL("VACUUM INTO ?", arrayOf(tmp.path))
-                } else {
-                    db.rawQuery("PRAGMA wal_checkpoint(FULL)", null).use { it.moveToFirst() }
-                }
+        val tmp = snapshotFile(context).also(::dropSnapshot)
+        if (Build.VERSION.SDK_INT >= 30) {
+            runCatching {
+                SQLiteDatabase.openDatabase(src.path, null, SQLiteDatabase.OPEN_READWRITE).use { db -> db.execSQL("VACUUM INTO ?", arrayOf(tmp.path)) }
             }
+            if (tmp.exists() && intact(tmp)) return tmp
+            dropSnapshot(tmp)
         }
-        if (!tmp.exists()) src.copyTo(tmp, overwrite = true)
-        return tmp
+        repeat(3) {
+            runCatching {
+                SQLiteDatabase.openDatabase(src.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                    db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
+                }
+                src.copyTo(tmp, overwrite = true)
+            }
+            if (tmp.exists() && intact(tmp)) return tmp
+            dropSnapshot(tmp)
+        }
+        error("Il database non si copia")
     }
+
+    private fun snapshotFile(context: Context) = File(context.cacheDir, "backup-snapshot.db")
+
+    /** Vero se la copia si apre ed è integra (non presa a metà di una scrittura). */
+    private fun intact(file: File): Boolean = runCatching {
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { d ->
+            d.rawQuery("PRAGMA quick_check", null).use { it.moveToFirst() && it.getString(0) == "ok" }
+        }
+    }.getOrDefault(false)
+
+    /** La copia e i file che SQLite le mette accanto. */
+    private fun dropSnapshot(file: File) {
+        listOf("", "-journal", "-wal", "-shm").forEach { File(file.path + it).delete() }
+    }
+
+    /**
+     * All'avvio, fuori dal thread principale: la copia lasciata da un backup interrotto (app chiusa a metà) sparisce.
+     * Solo i file fermi da qualche ora, così un backup appena partito nello stesso processo non perde i suoi.
+     */
+    fun dropLeftovers(context: Context, now: Long = System.currentTimeMillis()) {
+        val old = { f: File -> f.exists() && now - f.lastModified() > LEFTOVER_AGE }
+        snapshotFile(context).takeIf(old)?.let(::dropSnapshot)
+        listOf("backup-uscita.eurb", "backup-verifica.eurb", "backup-rinomina.eurb").map { File(context.cacheDir, it) }.filter(old).forEach { it.delete() }
+    }
+
+    private val LEFTOVER_AGE = java.util.concurrent.TimeUnit.HOURS.toMillis(6)
 
     private fun prefsDir(context: Context) = File(context.applicationInfo.dataDir, "shared_prefs")
 

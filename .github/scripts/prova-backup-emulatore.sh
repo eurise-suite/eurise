@@ -13,6 +13,8 @@ ML=eu.eurise.mail.debug
 O=eu.eurise.office.debug
 B=eu.eurise.browser.debug
 S=eu.eurise.prova.backup/.Sonda
+SP=eu.eurise.prova.backup
+DAVROOT=$PWD/dav/root
 fallite=0
 esito() { # nome, condizione già valutata (0 = bene)
   if [ "$2" -eq 0 ]; then echo "✔ $1"; else echo "✘ $1"; fallite=$((fallite + 1)); fi
@@ -25,6 +27,14 @@ sonda() { # fase
   [ $r -ne 0 ] && echo "$out" | grep -E 'esito=|INSTRUMENTATION_FAILED|Exception' | head -5
   return $r
 }
+
+# WebDAV finto sul computer (10.0.2.2 per l'emulatore), HTTPS con un certificato fatto qui (.github/prova-backup/dav.py).
+mkdir -p dav && rm -rf "$DAVROOT" dav/guasta
+openssl req -x509 -newkey rsa:2048 -nodes -keyout dav/chiave.pem -out dav/cert.pem -days 2 -subj "/CN=10.0.2.2" \
+  -addext "subjectAltName=IP:10.0.2.2" 2>/dev/null
+python3 -I .github/prova-backup/dav.py "$DAVROOT" 8443 dav/cert.pem dav/chiave.pem 2>dav/registro.txt &
+DAVPID=$!
+trap 'kill $DAVPID 2>/dev/null; adb shell dumpsys battery reset >/dev/null 2>&1' EXIT
 
 adb wait-for-device
 adb shell 'while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 2; done'
@@ -95,7 +105,15 @@ adb shell "run-as $E sh -c 'mkdir -p cache && cat /data/local/tmp/prova.eurb > c
 adb shell rm /data/local/tmp/prova.eurb
 
 echo "— Ripristino"
-sonda ripristino; esito "frase sbagliata rifiutata, codice e frase aprono, tutto tornato, dati delle app in attesa sigillati" $?
+sonda ripristino; esito "frase sbagliata rifiutata, codice e frase aprono, dati delle app in attesa sigillati, ripristino pronto" $?
+adb shell run-as $E ls files/restore_pending >/dev/null 2>&1; esito "il ripristino aspetta che Eurise riparta" $?
+# Il riavvio vero: Eurise si apre (all'avvio, prima del database, il ripristino prende il suo posto) e si chiude.
+adb shell am start -W -n $E/eu.eurise.hub.MainActivity >/dev/null 2>&1
+sleep 12
+adb shell am force-stop $E
+adb shell run-as $E ls files/restore_pending >/dev/null 2>&1
+[ $? -ne 0 ]; esito "riaprendo Eurise il ripristino prende il suo posto" $?
+sonda riavvio; esito "dopo il riavvio note, attività e impostazione sono tornate, Bentornato segnato" $?
 
 echo "— La Tastiera arriva dopo"
 adb install -r -g apk/$T.apk >/dev/null; esito "Tastiera reinstallata" $?
@@ -122,6 +140,56 @@ adb shell run-as $T cat files/UserHistoryDictionary.prova 2>/dev/null | grep -q 
 esito "la parola di prova è tornata nella Tastiera" $?
 adb shell run-as $T ls cache 2>/dev/null | grep -q 'eurise-backup'
 [ $? -ne 0 ]; esito "nella cache della Tastiera nessun file del backup, anche dopo" $?
+
+echo "— Il backup come lo fa l'app: chiave nel Keystore, automatico con Wi-Fi e carica, cartella, WebDAV, i cinque"
+pianta $E dav/cert.pem cache/prova-dav.pem
+adb shell am broadcast -n $SP/.Concedi 2>&1 | grep -q 'data="content://'; esito "la cartella di prova è concessa a Eurise (come dal selettore)" $?
+adb shell dumpsys battery unplug
+sleep 2
+sonda gestore-inizio; esito "backup acceso, chiave sigillata dal Keystore, cartella scelta, automatico in coda con Wi-Fi e carica" $?
+sleep 25
+n=$(adb shell run-as $SP ls files/cartella 2>/dev/null | grep -c 'eurisebk')
+[ "$n" -eq 0 ]; esito "senza carica il backup automatico non parte" $?
+adb shell dumpsys battery reset
+adb shell dumpsys battery set ac 1
+fatto=1
+for i in $(seq 1 36); do
+  adb shell run-as $E cat shared_prefs/backup.xml 2>/dev/null | grep -q 'name="last_at"' && { fatto=0; break; }
+  # Se JobScheduler tarda, gli si chiede di provare: parte solo se i vincoli (rete e carica) ci sono.
+  if [ "$i" = 12 ]; then
+    jid=$(adb shell dumpsys jobscheduler $E 2>/dev/null | grep -oE 'JOB #u0a[0-9]+/[0-9]+' | head -1 | sed 's#.*/##')
+    [ -n "$jid" ] && adb shell cmd jobscheduler run $E "$jid" >/dev/null 2>&1
+  fi
+  sleep 5
+done
+esito "in carica il backup automatico parte da solo" $fatto
+sleep 3
+n=$(adb shell run-as $SP ls files/cartella 2>/dev/null | grep -c -- '-r\.eurisebk')
+[ "$n" -eq 1 ]; esito "il backup è nella cartella, uno solo" $?
+adb exec-out run-as $SP sh -c 'cat files/cartella/*-r.eurisebk' 2>/dev/null | head -c 8 | grep -q EURISEB1
+esito "nella cartella il backup è cifrato (EURISEB1)" $?
+sonda gestore-cartella; esito "dalla cartella il backup si elenca e si riapre con la frase" $?
+
+# Cinque backup «vecchi» già sul WebDAV: tre recenti, un mensile, un trimestrale (le date sono nei nomi).
+B=$DAVROOT/Eurise/Backup
+mkdir -p "$B"
+nome() { echo "eurise-$(date -u -d "$1" +%Y%m%d-%H%M%S)-$2.eurisebk"; }
+R1=$(nome "-1 day" r); R2=$(nome "-2 days" r); R3=$(nome "-3 days" r); MM=$(nome "-50 days" m); QQ=$(nome "-170 days" q)
+for f in $R1 $R2 $R3 $MM $QQ; do echo "vecchio backup $f" > "$B/$f"; done
+sonda gestore-dav; esito "backup sul WebDAV (HTTPS), riscaricato e riaperto; la chiave dei dati non è in chiaro sul telefono" $?
+ls "$B" | sort > dav/dopo.txt
+cat dav/dopo.txt | sed 's/^/  · /'
+nuovo=$(grep -- '-r\.eurisebk' dav/dopo.txt | grep -vxF -e "$R1" -e "$R2" -e "$R3")
+[ -n "$nuovo" ] && head -c 8 "$B/$nuovo" | grep -q EURISEB1; esito "il nuovo backup è sul WebDAV, cifrato" $?
+atteso=$(printf '%s\n' "$nuovo" "$R1" "$R2" "${R3%-r.eurisebk}-m.eurisebk" "${MM%-m.eurisebk}-q.eurisebk" | sort)
+[ "$(cat dav/dopo.txt)" = "$atteso" ]; esito "regola dei cinque: tre recenti, il più vecchio diventa mensile, il mensile trimestrale, il trimestrale va via" $?
+
+touch dav/guasta
+sonda gestore-guasto; esito "un backup che non si rilegge uguale non è dato per buono" $?
+rm -f dav/guasta
+ls "$B" | sort > dav/dopo-guasto.txt
+cmp -s dav/dopo.txt dav/dopo-guasto.txt; esito "e i cinque di prima restano com'erano (quello non verificato non resta)" $?
+sonda gestore-fine; esito "spento: chiave tolta dal Keystore, niente più backup automatico" $?
 
 echo
 if [ $fallite -eq 0 ]; then echo "Prova del backup: tutto bene"; else echo "Prova del backup: $fallite controlli non riusciti"; fi
