@@ -1,0 +1,29 @@
+name: Versioni delle librerie
+
+# Piano di sicurezza, punto 7 (docs/SICUREZZA.md): tabella delle librerie con un'uscita stabile più recente, nel
+# riepilogo del giro. Solo lettura: non cambia file e non apre proposte (quelle le apre Dependabot); serve a decidere gli
+# aggiornamenti, che passano poi dalle impronte e dai giri bloccanti.
+on:
+  push:
+    branches: [prova-sicurezza]
+    paths:
+      - .github/workflows/versioni-librerie.yml
+      - .github/scripts/versioni_librerie.py
+      - gradle/libs.versions.toml
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  versioni:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Ultime versioni stabili
+        run: python3 -I .github/scripts/versioni_librerie.py >> "$GITHUB_STEP_SUMMARY"
