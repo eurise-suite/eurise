@@ -195,10 +195,10 @@ computer (area Computer, tavola PcEmail).
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
 - **Proposte, riassunto, quando lavora, gruppi a tempo** (21 novembre, notte; tavole ChatProposta, ChatRiassunto,
-  ChatQuandoLavora, ChatGruppoTempo; giro GIRO: chat; toccata una parte comune: **modulo nuovo `core/text`** con
-  `QuickAdd` e `MessageInsights` spostati da `core/data` **con gli stessi nomi dei pacchetti**, e `core/data` che lo
-  espone con `api(...)`, come si era fatto con `core/pdf`: chi usava quei file non cambia nulla, la Chat li usa senza
-  il database). **Proposte**: sotto gli ultimi sei messaggi ricevuti (non nelle chat di La mia Bussola) le stesse
+  ChatQuandoLavora, ChatGruppoTempo; giro GIRO: chat; la Chat ora dipende da `core/data` per `MessageInsights` e
+  `QuickAdd`, le stesse proposte di Messaggi: provato a staccarli in un modulo piccolo `core/text` come `core/pdf`, ma
+  `QuickAdd` usa `Task` e `Recurrence` di core/data; il giro 969 è fallito per questo e lo spostamento è stato tolto
+  subito. Da fare con l'area Organizzazione: modulo piccolo con QuickAdd, Task e Recurrence). **Proposte**: sotto gli ultimi sei messaggi ricevuti (non nelle chat di La mia Bussola) le stesse
   proposte di Messaggi: «Giovedì 19, 15:00 · con Anna — libero in Calendario (o «c'è già: …», con il permesso del
   calendario) — Aggiungi» (apre Calendario con l'evento) e «Manda il preventivo… — Attività · entro venerdì — Aggiungi»
   (HubBridge). **Riassunto**: entrando in un gruppo con almeno 15 messaggi da leggere, sopra i messaggi la scheda «84

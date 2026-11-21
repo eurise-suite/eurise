@@ -80,8 +80,9 @@ dependencies {
     implementation(project(":core:studio"))
     // Il testo dei promemoria PDF di Millewin (codice NRE e codice fiscale), letto sul telefono.
     implementation(project(":core:pdf"))
-    // Proposte dai messaggi (tavola ChatProposta): le stesse di Messaggi, senza il database di core/data.
-    implementation(project(":core:text"))
+    // Proposte dai messaggi (tavola ChatProposta): le stesse di Messaggi (MessageInsights e QuickAdd). Porta con sé
+    // core/data (QuickAdd usa i modelli delle attività); da staccare in un modulo piccolo insieme a Task e Recurrence.
+    implementation(project(":core:data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

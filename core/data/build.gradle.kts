@@ -27,8 +27,6 @@ dependencies {
     implementation(project(":core:suite"))
     // Il lettore dei PDF (spostato in un modulo piccolo il 17 novembre: lo usa anche la Chat).
     api(project(":core:pdf"))
-    // Date a parole e proposte dei messaggi (spostate in un modulo piccolo il 21 novembre: le usa anche la Chat).
-    api(project(":core:text"))
 
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è solo uno stub).
