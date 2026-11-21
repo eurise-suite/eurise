@@ -105,6 +105,12 @@ class ChatActivity : ComponentActivity(), ChatActions {
         }
         val data = intent?.data ?: return
         if (data.scheme != "eurisechat") return
+        // Ricordamelo (tavola ChatProgramma): dall'attività si torna al messaggio, nell'account giusto.
+        if (data.host == "messaggio") {
+            data.getQueryParameter("account")?.let { n -> runCatching { Account.valueOf(n) }.getOrNull()?.let(model::switchTo) }
+            data.getQueryParameter("room")?.let(model::open)
+            return
+        }
         val token = data.getQueryParameter("loginToken") ?: return
         model.finishSso(token) { ok -> toast(getString(if (ok) R.string.ch_welcome else R.string.ch_err_sso)); if (ok) askNotifications() }
     }

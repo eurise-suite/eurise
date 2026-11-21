@@ -56,6 +56,10 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             }
             runCatching { crypto.flush(client) }
         }
+        // Tavola ChatProgramma: conferme di lettura per i messaggi a scomparsa, programmati arrivati all'ora, cancellazioni.
+        runCatching { ProgrammaStore.receipts(ctx, account, s.userId, json) }
+        runCatching { ProgrammaStore.work(ctx, account, client, crypto) }
+        crypto?.let { runCatching { it.flush(client) } }
         // Studio medico: i messaggi dei pazienti arrivati ad app chiusa entrano in coda (i codici di verifica pure).
         if (StudioRepo.current(ctx).enabled) json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
             join.keys().forEach { id ->

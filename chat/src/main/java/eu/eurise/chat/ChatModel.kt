@@ -1,6 +1,7 @@
 package eu.eurise.chat
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -135,13 +136,17 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         cleanCache()
         client?.let { c -> scope.launch(Dispatchers.IO) { BussolaReports.redactDue(context, c) } }
         startOther()
+        startPlans()
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
                 val c = client ?: break
                 val first = since == null
                 val r = withContext(Dispatchers.IO) {
-                    runCatching { c.sync(since, if (first) 0 else 30_000) }.map { json -> json to prepare(c, json) }
+                    runCatching { c.sync(since, if (first) 0 else 30_000) }.map { json ->
+                        runCatching { ProgrammaStore.receipts(context, account, c.session.userId, json) }
+                        json to prepare(c, json)
+                    }
                 }
                 r.onSuccess { (json, solved) ->
                     apply(json)
@@ -162,7 +167,93 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun stop() { loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; active = false }
+    fun stop() { loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false }
+
+    // --- Invia più tardi, quando lavora, a scomparsa (tavola ChatProgramma) ---
+
+    private var planLoop: Job? = null
+    /** I messaggi programmati di questo account, in attesa sul telefono. */
+    var planned by mutableStateOf<List<Programma.Planned>>(emptyList())
+        private set
+    /** I messaggi a scomparsa mandati da qui (per l'etichetta «sparisce…»). */
+    var fading by mutableStateOf<Map<String, Programma.Fading>>(emptyMap())
+        private set
+
+    private fun refreshPlans() {
+        planned = ProgrammaStore.planned(context).filter { it.account == account.name }.sortedBy { it.at }
+        fading = ProgrammaStore.fading(context).filter { it.account == account.name }.associateBy { it.eventId }
+    }
+
+    /** Ad app aperta, ogni 30 secondi: i programmati arrivati all'ora partono, quelli a scomparsa scaduti si cancellano. */
+    private fun startPlans() {
+        planLoop?.cancel()
+        refreshPlans()
+        planLoop = scope.launch {
+            while (isActive) {
+                val c = client
+                if (c != null) {
+                    withContext(Dispatchers.IO) {
+                        val cr = if (ProgrammaStore.planned(context).any { it.account == account.name && it.encrypted }) cryptoFor(c.session) else null
+                        runCatching { ProgrammaStore.work(context, account, c, cr) }
+                    }
+                    refreshPlans()
+                }
+                delay(30_000)
+            }
+        }
+    }
+
+    /** Programma [text] per l'ora [at]; [work] per l'etichetta «quando lavora», [fadeMs] anche a scomparsa. */
+    fun plan(roomId: String, text: String, at: Long, work: Boolean = false, fadeMs: Long = 0) {
+        if (text.isBlank()) return
+        ProgrammaStore.addPlanned(context, Programma.Planned("p" + System.nanoTime(), account.name, roomId, text.trim(), at,
+            data[roomId]?.encrypted == true, fadeMs, work))
+        refreshPlans()
+    }
+
+    fun cancelPlanned(id: String) { ProgrammaStore.removePlanned(context, id); refreshPlans() }
+
+    /** Il programmato parte adesso (eco locale come un messaggio normale). */
+    fun sendPlannedNow(id: String, failed: () -> Unit) {
+        val p = planned.firstOrNull { it.id == id } ?: return
+        cancelPlanned(id)
+        if (p.fadeMs > 0) sendFading(p.roomId, p.text, failed) else send(p.roomId, p.text, failed)
+    }
+
+    /** Un messaggio a scomparsa: parte adesso e, un giorno dopo che l'altro l'ha letto, lo cancella dal server chi l'ha mandato. */
+    fun sendFading(roomId: String, text: String, failed: () -> Unit, fadeMs: Long = Programma.FADE_MS) {
+        val c = client ?: return
+        val me = session?.userId.orEmpty()
+        val content = Programma.content(text.trim(), fadeMs)
+        val local = Event("local:" + System.nanoTime(), me, text.trim(), System.currentTimeMillis(), Event.Kind.Text, data = content.toString())
+        timeline(roomId).add(local)
+        val encrypted = data[roomId]?.encrypted == true
+        scope.launch {
+            val id = withContext(Dispatchers.IO) {
+                runCatching { ProgrammaStore.sendNow(c, if (encrypted) cryptoFor(c.session) else null, roomId, content, encrypted) }.getOrNull()
+            }
+            if (id == null) { timeline(roomId).remove(local); failed(); return@launch }
+            ProgrammaStore.addFading(context, Programma.Fading(account.name, roomId, id, System.currentTimeMillis(), fadeMs))
+            refreshPlans()
+        }
+    }
+
+    /**
+     * Ricordamelo (tavola ChatProgramma): un'attività in Attività dell'app Eurise per l'ora [at], con chi l'ha scritto, il
+     * testo e il link al messaggio. Falso se l'app Eurise non c'è.
+     */
+    fun remind(roomId: String, e: Event, at: java.time.LocalDateTime): Boolean {
+        val debug = context.packageName.endsWith(".debug")
+        val hub = if (debug) "eu.eurise.hub.debug" else "eu.eurise.hub"
+        val permission = if (debug) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
+        val who = nameOf(e.sender)
+        val text = e.text.replace('\n', ' ').trim().let { if (it.length > 80) it.take(79) + "…" else it }
+        val title = context.getString(R.string.pr_remind_title, who, text)
+        val link = "eurisechat://messaggio?account=${account.name}&room=${Uri.encode(roomId)}&event=${Uri.encode(e.id)}"
+        val notes = context.getString(R.string.pr_remind_notes, room(roomId)?.name ?: who) + "\n" + link
+        return eu.eurise.core.suite.HubBridge.send(context, hub, permission, eu.eurise.core.suite.HubBridge.ACTION_TASK, title,
+            due = at.toLocalDate(), time = at.toLocalTime(), notes = notes)
+    }
 
     // --- Due account (tavole ChatDueAccount e ChatAccountAggiungi) ---
 

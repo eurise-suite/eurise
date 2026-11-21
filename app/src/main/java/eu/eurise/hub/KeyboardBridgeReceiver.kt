@@ -1,5 +1,6 @@
 package eu.eurise.hub
 
+import eu.eurise.core.suite.HubBridge
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -27,7 +28,14 @@ class KeyboardBridgeReceiver : BroadcastReceiver() {
             try {
                 val data = (context.applicationContext as EuriseApplication).data
                 val message = when (intent.action) {
-                    ACTION_TASK -> {
+                    // Data e ora già decise (Ricordamelo della Chat): niente interpretazione del testo.
+                    ACTION_TASK -> if (intent.hasExtra(HubBridge.EXTRA_DUE)) {
+                        val due = runCatching { java.time.LocalDate.parse(intent.getStringExtra(HubBridge.EXTRA_DUE)) }.getOrNull()
+                        val time = runCatching { java.time.LocalTime.parse(intent.getStringExtra(HubBridge.EXTRA_TIME)) }.getOrNull()
+                        data.tasks.add(text, due = due, time = time, notes = intent.getStringExtra(HubBridge.EXTRA_NOTES).orEmpty(),
+                            remindBefore = if (time != null) 0 else null)
+                        context.getString(R.string.keyboard_task_created, text)
+                    } else {
                         val r = Capture.parse(text, LocalDateTime.now())
                         val q = r.quick
                         data.tasks.add(

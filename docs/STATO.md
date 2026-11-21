@@ -3400,3 +3400,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Organizzazione per Comunicazione: Telefono, «Sospetto spam» per 0843/0844 e prefissi segnati · giro 902 → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, Sicurezza: segreti affidati all'app Eurise (chiave di recupero della Chat) sigillati nel Keystore, migrati da soli, voce a parte nel backup → `docs/SICUREZZA.md`.
 - 21 novembre, Organizzazione per Comunicazione: elenco Eurise dei numeri molesti (data/spam, scaricato dall'app Eurise, Telefono senza Internet) · giro 910 → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, Comunicazione: Chat, invia più tardi, quando lavora, a scomparsa (cancellato dal server un giorno dopo la lettura) e Ricordamelo in Attività; toccati `core/suite` HubBridge e il ricevitore dell'app Eurise · giro GIRO (chat, eurise) → `docs/stato/COMUNICAZIONE.md`.

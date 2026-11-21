@@ -522,6 +522,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var editing by remember(roomId) { mutableStateOf<Event?>(null) }
     var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
     var pollSheet by remember(roomId) { mutableStateOf(false) }
+    var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
+    var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
     var recording by remember(roomId) { mutableStateOf<VoiceRecorder?>(null) }
     var cancelling by remember(roomId) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -597,12 +599,17 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         } else if (group && tab == 2) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
         } else {
+            val roomPlanned = model.planned.filter { it.roomId == roomId }
             // I messaggi fissati: tocco per andarci.
             PinnedBar(model, roomId) { id ->
                 val i = events.asReversed().indexOfFirst { it.id == id }
-                if (i >= 0) scope.launch { list.animateScrollToItem(i) }
+                if (i >= 0) scope.launch { list.animateScrollToItem(i + roomPlanned.size) }
             }
             LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), state = list, reverseLayout = true) {
+                // I programmati (tavola ChatProgramma): in fondo (la lista è capovolta), con l'ora in cui partono.
+                items(roomPlanned.asReversed(), key = { "plan-" + it.id }) { p ->
+                    PlannedBubble(model, p) { plannedMenu = p }
+                }
                 items(events.asReversed(), key = { it.id }) { e ->
                     val mine = e.sender == me
                     if (e.kind == Event.Kind.Bussola) BussolaBubble(model, actions, roomId, e, mine = mine)
@@ -624,6 +631,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         if (!mine && model.voice.autoRead && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice)) {
                             ReadAloudChip(model, e, shownText(model, e))
                         }
+                        // A scomparsa (tavola ChatProgramma).
+                        if (e.kind == Event.Kind.Text) FadeLabel(model, e, mine)
                     }
                 }
                 // Una volta sola, dopo l'avviso delle basi: la lettura di tutti i messaggi per chi vede poco.
@@ -690,7 +699,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                 if (micShown) MicButton(model, actions, roomId) { r, c -> recording = r; cancelling = c }
                 else Box(
                     Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) scheme.primary.copy(alpha = 0.4f) else scheme.primary)
-                        .clickable(enabled = draft.isNotBlank(), role = Role.Button) {
+                        // Pressione lunga (tavola ChatProgramma): più tardi, quando lavora, a scomparsa.
+                        .combinedClickable(enabled = draft.isNotBlank(), role = Role.Button, onLongClick = {
+                            if (editing == null && bussola == null) laterSheet = draft.trim()
+                        }) {
                             val text = draft.trim()
                             draft = ""
                             val r = replyTo
@@ -718,6 +730,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
     if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
+    laterSheet?.let { text -> SendLaterSheet(model, actions, roomId, text, onSent = { draft = ""; replyTo = null }) { laterSheet = null } }
+    plannedMenu?.let { p -> PlannedMenu(model, actions, p, onEdit = { draft = it }) { plannedMenu = null } }
 }
 
 @Composable
