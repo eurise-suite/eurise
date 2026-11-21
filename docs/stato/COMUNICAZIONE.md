@@ -194,6 +194,19 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
+- **Cartelle, «Messaggi a me», vocali scritti a richiesta** (21 novembre; tavola ChatCartelle; giro GIRO: chat).
+  **Cartelle** scelte dall'utente sotto le viste (Tutte, Famiglia · 3 = chat da leggere, …, «+»): una chat può stare in
+  più cartelle; pressione lunga su una chat = le cartelle come pulsanti da accendere e «+ Nuova»; il bottone con la
+  cartella in alto apre l'elenco (cambia nome, chat dentro, elimina). Restano **sul telefono** per account
+  (preferenze `chat_folders`): i nomi non vanno al server, quindi non si vedono su un altro telefono. **Messaggi a me**
+  in cima all'elenco (pallino scuro con la puntina): stanza cifrata con dentro solo l'utente, creata al primo tocco, il
+  cui id sta nei dati dell'account Matrix (`eu.eurise.self_room`) così un secondo telefono ritrova la stessa; sotto ogni
+  messaggio «→ Note» e «→ Attività» (HubBridge; in Attività si capiscono date e ore). Logica pura in **`Cartelle.kt`** con
+  `CartelleTest`. **Vocali** (richiesta del proprietario): la trascrizione non parte più da sola; accanto alla durata c'è
+  la piccola icona «T» che **scrive il vocale senza ascoltarlo** (parte da sola solo con «Leggi da soli i messaggi»
+  acceso); se non riesce, «tocca per riprovare». Con la trascrizione fatta, l'anteprima nell'elenco diventa «vocale
+  trascritto · «arrivo alle 8»». Non ancora: le discussioni dentro una chat (tavola ChatThread, la prossima) e la presa
+  visione (ChatPresaVisione) che la tavola mostra nell'elenco; cartelle uguali su più telefoni.
 - **Invia più tardi, quando lavora, a scomparsa, Ricordamelo** (21 novembre; tavola ChatProgramma; giro 919: chat;
   toccate parti comuni: `core/suite` HubBridge e `app` KeyboardBridgeReceiver, vedi sotto). **Pressione lunga su Invia**
   (non nelle chat di La mia Bussola né in modifica): foglio con *Invia più tardi* (Domani 8:30, Lunedì 9:00, Scegli… con i
@@ -263,7 +276,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 919 (21 novembre: più tardi, quando lavora, a scomparsa, Ricordamelo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: cartelle, Messaggi a me, vocali scritti a richiesta); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -460,7 +473,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    Element, «Leggi ad alta voce», «Leggi da soli i messaggi»; ~~ChatProgramma~~ fatta al giro 919; prove: programmato domani
    e annullato, programmato tra pochi minuti con la Chat chiusa, quando lavora dall'account di lavoro, a scomparsa letto
    da Element e sparito il giorno dopo, Ricordamelo che compare in Attività e il link (copiato) che apre il messaggio;
-   poi ChatCartelle), poi le tavole della seconda fila di La mia Bussola.
+   ~~ChatCartelle~~ fatta al giro GIRO; prove: cartella nuova con due chat, chat in due cartelle, pressione lunga su
+   una chat, Messaggi a me con «→ Note» e «→ Attività», icona «T» su un vocale ricevuto; poi ChatThread), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

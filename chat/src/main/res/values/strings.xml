@@ -283,4 +283,35 @@
     <string name="pr_no_hub">Per i promemoria serve l\'app Eurise (Attività)</string>
     <string name="pr_remind_title">Rispondi a %1$s: «%2$s»</string>
     <string name="pr_remind_notes">Dalla Chat (%1$s). Il messaggio:</string>
+
+    <!-- Vocali: scrivilo senza ascoltarlo -->
+    <string name="vo_transcribe">Scrivi il vocale senza ascoltarlo</string>
+    <string name="vo_empty">Nessuna parola riconosciuta</string>
+    <string name="vo_failed">Non sono riuscito a scriverlo: tocca per riprovare</string>
+
+    <!-- Cartelle e Messaggi a me (tavola ChatCartelle) -->
+    <string name="cr_title">Cartelle</string>
+    <string name="cr_explain">Le cartelle le scegli tu (Famiglia, Scuola, Clienti…); una chat può stare in più cartelle. Restano sul telefono: i nomi non vanno al server. Pressione lunga su una chat per metterla in una cartella.</string>
+    <string name="cr_all">Tutte</string>
+    <string name="cr_folder_n">%1$s · %2$d</string>
+    <string name="cr_new">Nuova cartella</string>
+    <string name="cr_new_short">+ Nuova</string>
+    <string name="cr_edit">Cartella</string>
+    <string name="cr_name_hint">Nome (Famiglia, Scuola, Clienti…)</string>
+    <string name="cr_name_taken">Scrivi un nome che non hai già usato</string>
+    <string name="cr_pick_chats">Le chat che stanno qui</string>
+    <string name="cr_save">Salva</string>
+    <string name="cr_delete">Elimina</string>
+    <string name="cr_delete_confirm">Tocca di nuovo: elimina</string>
+    <string name="cr_count">%1$d chat</string>
+    <string name="cr_room_sub">Tocca una cartella per mettere o togliere questa chat.</string>
+    <string name="cr_self">Messaggi a me</string>
+    <string name="cr_self_sub">Il tuo blocco veloce: un tocco lo manda in Note o in Attività</string>
+    <string name="cr_self_failed">Non riesco a creare «Messaggi a me»: controlla la connessione</string>
+    <string name="cr_to_notes">→ Note</string>
+    <string name="cr_to_tasks">→ Attività</string>
+    <string name="cr_in_notes">Messo in Note</string>
+    <string name="cr_in_tasks">Messo in Attività</string>
+    <string name="cr_no_hub">Serve l\'app Eurise (Note e Attività)</string>
+    <string name="cr_voice_text">vocale trascritto · «%1$s»</string>
 </resources>

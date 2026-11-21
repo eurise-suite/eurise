@@ -65,7 +65,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     /** «Una persona, tutti i canali»: la vista Persone e il filo di una persona con SMS, chiamate ed email. */
     val uni by lazy { Uni(context, scope, this) }
     /** Vocali: ascolto, trascrizione sul telefono, lettura ad alta voce (tavola ChatVocali). */
-    val voice by lazy { VoiceHub(context, scope) }
+    val voice by lazy { VoiceHub(context, scope).also { it.onTranscribed = { publish() } } }
     private val data = HashMap<String, RoomState>()
     private val timelines = HashMap<String, SnapshotStateList<Event>>()
     /** Nomi delle persone (per i messaggi dei gruppi). */
@@ -137,6 +137,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         client?.let { c -> scope.launch(Dispatchers.IO) { BussolaReports.redactDue(context, c) } }
         startOther()
         startPlans()
+        startFolders()
         loop = scope.launch {
             var backoff = 2_000L
             while (isActive) {
@@ -168,6 +169,79 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun stop() { loop?.cancel(); loop = null; otherLoop?.cancel(); otherLoop = null; planLoop?.cancel(); planLoop = null; active = false }
+
+    // --- Cartelle e «Messaggi a me» (tavola ChatCartelle) ---
+
+    private val folderPrefs get() = context.getSharedPreferences("chat_folders", Context.MODE_PRIVATE)
+    /** Le cartelle di questo account, sul telefono. */
+    var folders by mutableStateOf<List<Cartelle.Folder>>(emptyList())
+        private set
+    /** La cartella scelta nell'elenco (null = Tutte). */
+    var folder by mutableStateOf<String?>(null)
+    /** La stanza «Messaggi a me» (null finché non si usa la prima volta). */
+    var selfRoom by mutableStateOf<String?>(null)
+        private set
+
+    private fun startFolders() {
+        folders = Cartelle.decode(folderPrefs.getString(account.name, null))
+        if (folders.none { it.id == folder }) folder = null
+        val c = client ?: return
+        scope.launch {
+            selfRoom = withContext(Dispatchers.IO) { runCatching { Cartelle.selfRoom(c.accountData(Cartelle.SELF)) }.getOrNull() }
+        }
+    }
+
+    private fun saveFolders(list: List<Cartelle.Folder>) {
+        folders = list
+        folderPrefs.edit().putString(account.name, Cartelle.encode(list)).apply()
+    }
+
+    /** Nuova cartella; null se il nome è vuoto o c'è già. */
+    fun addFolder(name: String, rooms: Set<String> = emptySet()): String? {
+        if (Cartelle.cleanName(folders, name) == null) return null
+        val id = "c" + System.nanoTime()
+        saveFolders(Cartelle.add(folders, name, id, rooms))
+        return id
+    }
+
+    fun renameFolder(id: String, name: String): Boolean {
+        if (Cartelle.cleanName(folders, name, except = id) == null) return false
+        saveFolders(Cartelle.rename(folders, id, name)); return true
+    }
+
+    fun removeFolder(id: String) { saveFolders(Cartelle.remove(folders, id)); if (folder == id) folder = null }
+
+    fun toggleFolder(id: String, roomId: String) = saveFolders(Cartelle.toggle(folders, id, roomId))
+
+    /** Apre «Messaggi a me», creandola la prima volta (stanza cifrata con dentro solo te). */
+    fun openSelf(failed: () -> Unit) {
+        selfRoom?.let { if (data.containsKey(it)) { open(it); return } }
+        val c = client ?: return
+        scope.launch {
+            val id = withContext(Dispatchers.IO) {
+                runCatching {
+                    // Prima si guarda se un altro telefono l'ha già creata.
+                    Cartelle.selfRoom(c.accountData(Cartelle.SELF)) ?: c.createGroup(context.getString(R.string.cr_self), emptyList()).also {
+                        c.putAccountData(Cartelle.SELF, JSONObject().put("room_id", it))
+                    }
+                }.getOrNull()
+            }
+            if (id == null) failed() else { selfRoom = id; open(id) }
+        }
+    }
+
+    /** Il pacchetto dell'app Eurise e il permesso della suite (prova o ufficiale). */
+    private fun hub(): Pair<String, String> {
+        val debug = context.packageName.endsWith(".debug")
+        return (if (debug) "eu.eurise.hub.debug" else "eu.eurise.hub") to (if (debug) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE")
+    }
+
+    /** Da «Messaggi a me» a Note o ad Attività (lì si capiscono date e ore: «pane domani alle 8»). Falso senza l'app Eurise. */
+    fun sendToHub(text: String, task: Boolean): Boolean {
+        val (pkg, permission) = hub()
+        return eu.eurise.core.suite.HubBridge.send(context, pkg, permission,
+            if (task) eu.eurise.core.suite.HubBridge.ACTION_TASK else eu.eurise.core.suite.HubBridge.ACTION_NOTE, text)
+    }
 
     // --- Invia più tardi, quando lavora, a scomparsa (tavola ChatProgramma) ---
 
@@ -243,9 +317,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
      * testo e il link al messaggio. Falso se l'app Eurise non c'è.
      */
     fun remind(roomId: String, e: Event, at: java.time.LocalDateTime): Boolean {
-        val debug = context.packageName.endsWith(".debug")
-        val hub = if (debug) "eu.eurise.hub.debug" else "eu.eurise.hub"
-        val permission = if (debug) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
+        val (hub, permission) = hub()
         val who = nameOf(e.sender)
         val text = e.text.replace('\n', ' ').trim().let { if (it.length > 80) it.take(79) + "…" else it }
         val title = context.getString(R.string.pr_remind_title, who, text)
@@ -552,7 +624,10 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     Event.Kind.Encrypted -> context.getString(R.string.ch_encrypted_short)
                     Event.Kind.Image -> context.getString(R.string.ch_photo)
                     Event.Kind.File -> context.getString(R.string.ch_file)
-                    Event.Kind.Audio -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") + context.getString(R.string.vo_voice)
+                    // Con la trascrizione fatta (tavola ChatCartelle): «Papà: vocale trascritto · «arrivo alle 8»».
+                    Event.Kind.Audio -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") +
+                        ((voice.transcripts[voice.key(last)] as? VoiceHub.Transcript.Text)?.let { context.getString(R.string.cr_voice_text, it.text) }
+                            ?: context.getString(R.string.vo_voice))
                     else -> (if (last.sender == me) context.getString(R.string.ch_you) + ": " else "") + last.text
                 },
                 lastTime = last?.time ?: 0L, unread = s.unread, encrypted = s.encrypted, invite = s.invite, direct = s.direct,
