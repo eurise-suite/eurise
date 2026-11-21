@@ -195,7 +195,7 @@ computer (area Computer, tavola PcEmail).
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
 - **Proposte, riassunto, quando lavora, gruppi a tempo** (21 novembre, notte; tavole ChatProposta, ChatRiassunto,
-  ChatQuandoLavora, ChatGruppoTempo; giro GIRO: chat; la Chat ora dipende da `core/data` per `MessageInsights` e
+  ChatQuandoLavora, ChatGruppoTempo; giro 972: chat; la Chat ora dipende da `core/data` per `MessageInsights` e
   `QuickAdd`, le stesse proposte di Messaggi: provato a staccarli in un modulo piccolo `core/text` come `core/pdf`, ma
   `QuickAdd` usa `Task` e `Recurrence` di core/data; il giro 969 è fallito per questo e lo spostamento è stato tolto
   subito. Da fare con l'area Organizzazione: modulo piccolo con QuickAdd, Task e Recurrence). **Proposte**: sotto gli ultimi sei messaggi ricevuti (non nelle chat di La mia Bussola) le stesse
@@ -346,7 +346,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: proposte, riassunto, quando lavora, gruppi a tempo); chat e messages giro 964 (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat giro 972 (21 novembre: proposte, riassunto, quando lavora, gruppi a tempo); chat e messages giro 964 (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -549,7 +549,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro 957; prove: 15 minuti con la Chat chiusa
    (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly;
    ~~ChatTruffa, ChatPresaVisione, ChatSemplice~~ fatte al giro 964; ~~ChatProposta, ChatRiassunto, ChatQuandoLavora,
-   ChatGruppoTempo~~ fatte al giro GIRO: **le tavole Chat* sono tutte in codice**; poi la seconda fila di La mia
+   ChatGruppoTempo~~ fatte al giro 972: **le tavole Chat* sono tutte in codice**; poi la seconda fila di La mia
    Bussola), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
