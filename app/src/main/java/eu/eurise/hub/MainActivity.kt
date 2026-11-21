@@ -35,6 +35,10 @@ class MainActivity : ComponentActivity() {
         // Voci automatiche (farmaci, regali) e prossimi avvisi.
         eu.eurise.feature.calendar.reminders.Reminders.refresh(this)
         eu.eurise.core.data.modes.Modes.refresh(this)
+        // Dati di un ripristino che aspettano un'app (installata da poco, o diventata app SMS o delle chiamate
+        // predefinita): si riprova a ogni ritorno alla Scrivania, fuori dal thread principale, solo se c'è qualcosa.
+        val app = applicationContext
+        Thread { if (eu.eurise.core.cloud.backup.SuiteApps.waiting(app).isNotEmpty()) eu.eurise.core.cloud.backup.SuiteApps.deliverPending(app) }.start()
     }
 
     override fun onNewIntent(intent: Intent) {

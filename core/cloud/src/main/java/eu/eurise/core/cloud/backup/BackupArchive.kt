@@ -22,6 +22,8 @@ class BackupContents(
     val settings: Boolean,
     val keyboard: Boolean,
     val lockedNotes: Boolean,
+    /** Le app separate nel backup ([SuiteApps]), nell'ordine di [SuiteApps.all], con la riga che hanno dato. */
+    val apps: Map<String, String?> = emptyMap(),
 )
 
 /** Che cosa c'è ora sul telefono e verrebbe sostituito. */
@@ -31,7 +33,7 @@ class PhoneData(val notes: Int, val tasks: Int) {
 
 /**
  * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
- * (Scrivania, bolle, Orologio, farmaci, date…) e quello che ha imparato Eurise Tastiera ([KeyboardBackup]). Restano fuori le cache, gli account cloud e le chiavi del
+ * (Scrivania, bolle, Orologio, farmaci, date…) e i dati delle app separate della suite ([SuiteApps]: Password, Messaggi, Telefono, Galleria, Tastiera…). Restano fuori le cache, gli account cloud e le chiavi del
  * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano. La chiave delle note e i segreti
  * affidati dalle altre app ([SuiteSecrets]) sul telefono sono sigillati nel Keystore: entrano come voci a parte.
  */
@@ -41,8 +43,8 @@ object BackupArchive {
     private const val MANIFEST = "manifest.json"
     /** Nelle preferenze «backup»: quando il ripristino è stato applicato, per «Bentornato». */
     const val RESTORED_AT = "restored_at"
-    /** 1 fino al 20 novembre 2026; 2 aggiunge al manifesto i conteggi di note e attività. */
-    private const val FORMAT = 2
+    /** 1 fino al 20 novembre 2026; 2 aggiunge i conteggi di note e attività; 3 (21 novembre) le app separate. */
+    private const val FORMAT = 3
 
     private fun included(prefs: String): Boolean =
         (prefs.startsWith("eurise_") || prefs == "clock") && !prefs.startsWith("eurise_feeds_")
@@ -50,18 +52,21 @@ object BackupArchive {
     /** Nei backup nuovi i segreti vanno come [SuiteSecrets.BACKUP_ENTRY]; il file in chiaro si accetta solo in ripristino. */
     private fun exported(prefs: String): Boolean = included(prefs) && prefs != SuiteSecrets.LEGACY_PREFS
 
-    /** Lo zip del backup, ancora in chiaro (si cifra subito dopo, senza toccare il disco). */
-    fun create(context: Context, createdAt: Long): ByteArray {
-        val out = ByteArrayOutputStream()
+    /** Lo zip del backup in memoria: solo per backup piccoli e per le prove. */
+    fun create(context: Context, createdAt: Long): ByteArray = ByteArrayOutputStream().also { create(context, createdAt, it) }.toByteArray()
+
+    /**
+     * Scrive lo zip del backup in [out], che lo cifra mentre arriva ([BackupCrypto.encryptingStream]): niente in chiaro su
+     * disco, e non serve tenerlo tutto in memoria. Le app separate ([SuiteApps]) mandano il loro zip in un tubo, che va
+     * dritto nella sua voce. Il manifesto va in fondo, con quello che le app hanno detto di sé.
+     */
+    fun create(context: Context, createdAt: Long, out: java.io.OutputStream) {
         val db = snapshot(context)
         ZipOutputStream(out).use { zip ->
-            // Formato 2 (20 novembre 2026): il manifesto dice anche quante note e attività ci sono, per mostrarlo prima
-            // di ripristinare. Chi legge il formato 1 non guarda il manifesto: resta compatibile nei due sensi.
+            // Formato 3 (21 novembre 2026): le app separate e le loro righe. Chi legge il formato 1 o 2 non guarda il
+            // manifesto: resta compatibile nei due sensi.
             val manifest = JSONObject().put("format", FORMAT).put("createdAt", createdAt).put("app", context.packageName.removeSuffix(".debug"))
             db?.let { counts(it) }?.let { (notes, tasks) -> manifest.put("notes", notes).put("tasks", tasks) }
-            zip.putNextEntry(ZipEntry(MANIFEST))
-            zip.write(manifest.toString().toByteArray())
-            zip.closeEntry()
             db?.let { file ->
                 zip.putNextEntry(ZipEntry("databases/$DB"))
                 file.inputStream().use { it.copyTo(zip) }
@@ -75,11 +80,6 @@ object BackupArchive {
                     f.inputStream().use { it.copyTo(zip) }
                     zip.closeEntry()
                 }
-            KeyboardBackup.export(context)?.let { bytes ->
-                zip.putNextEntry(ZipEntry(KeyboardBackup.ENTRY))
-                zip.write(bytes)
-                zip.closeEntry()
-            }
             LockKeys.exportForBackup(context).forEach { (entry, bytes) ->
                 zip.putNextEntry(ZipEntry(entry))
                 zip.write(bytes)
@@ -90,8 +90,22 @@ object BackupArchive {
                 zip.write(secrets)
                 zip.closeEntry()
             }
+            val apps = JSONObject()
+            val missing = org.json.JSONArray()
+            SuiteApps.all.filter { SuiteApps.available(context, it) }.forEach { app ->
+                val summary = SuiteApps.summary(context, app)
+                zip.putNextEntry(ZipEntry(SuiteApps.entry(app.key)))
+                // Se l'app si ferma a metà, la sua voce resta rovinata e al ripristino non le arriva; il resto vale.
+                val ok = SuiteApps.export(context, app, zip)
+                zip.closeEntry()
+                if (ok) apps.put(app.key, summary ?: JSONObject.NULL) else missing.put(app.key)
+            }
+            manifest.put("apps", apps)
+            if (missing.length() > 0) manifest.put("missing", missing)
+            zip.putNextEntry(ZipEntry(MANIFEST))
+            zip.write(manifest.toString().toByteArray())
+            zip.closeEntry()
         }
-        return out.toByteArray()
     }
 
     /** Note (fuori dal cestino) e attività di un database di Eurise; null se non si legge. */
@@ -110,34 +124,44 @@ object BackupArchive {
         return PhoneData(notes, tasks)
     }
 
-    /** Che cosa contiene lo zip di un backup, letto in memoria (niente su disco). */
-    fun contents(zipBytes: ByteArray, createdAt: Long): BackupContents {
+    /** Come [contents], per uno zip in memoria. */
+    fun contents(zipBytes: ByteArray, createdAt: Long): BackupContents = contents(ByteArrayInputStream(zipBytes), createdAt)
+
+    /** Che cosa contiene lo zip di un backup, letto mentre arriva (lo si legge tutto: così è anche verificato). */
+    fun contents(input: java.io.InputStream, createdAt: Long): BackupContents {
         var manifest: JSONObject? = null
         var hasDb = false
-        var keyboard = false
         var locked = false
         var settings = 0
-        ZipInputStream(ByteArrayInputStream(zipBytes)).use { zip ->
+        val apps = mutableSetOf<String>()
+        val sink = ByteArray(64 * 1024)
+        ZipInputStream(input).use { zip ->
             while (true) {
                 val e = zip.nextEntry ?: break
                 when {
                     e.name == MANIFEST -> manifest = runCatching { JSONObject(zip.readBytes().toString(Charsets.UTF_8)) }.getOrNull()
                     e.name == "databases/$DB" -> hasDb = true
-                    e.name == KeyboardBackup.ENTRY -> keyboard = true
                     e.name == LockKeys.BACKUP_ENTRY || e.name == LockKeys.SEALED_ENTRY -> locked = true
                     e.name.startsWith("shared_prefs/") -> settings++
+                    else -> SuiteApps.keyOf(e.name)?.let { apps += it }
                 }
+                // Si legge fino in fondo ogni voce: un pezzo rovinato si scopre qui, prima di toccare il telefono.
+                while (zip.read(sink) >= 0) Unit
             }
         }
         if (!hasDb) throw BackupCrypto.BadFile()
         val m = manifest
+        val said = m?.optJSONObject("apps")
+        val missing = m?.optJSONArray("missing")?.let { a -> (0 until a.length()).map { a.getString(it) }.toSet() }.orEmpty()
         return BackupContents(
             createdAt = createdAt,
             notes = m?.optInt("notes", -1)?.takeIf { it >= 0 },
             tasks = m?.optInt("tasks", -1)?.takeIf { it >= 0 },
             settings = settings > 0,
-            keyboard = keyboard,
+            keyboard = "keyboard" in apps && "keyboard" !in missing,
             lockedNotes = locked,
+            apps = SuiteApps.all.map { it.key }.filter { it in apps && it !in missing }
+                .associateWith { k -> said?.optString(k)?.takeIf { s -> s.isNotEmpty() && said.opt(k) != JSONObject.NULL } },
         )
     }
 
@@ -164,23 +188,27 @@ object BackupArchive {
 
     private fun prefsDir(context: Context) = File(context.applicationInfo.dataDir, "shared_prefs")
 
+    /** Come [stage], per uno zip in memoria. */
+    fun stage(context: Context, zipBytes: ByteArray) = stage(context, ByteArrayInputStream(zipBytes))
+
     /**
-     * Prepara il ripristino: controlla lo zip e lo apre in una cartella d'attesa. I file prendono il loro posto al
-     * prossimo avvio, prima che l'app apra il database ([applyPending]).
+     * Prepara il ripristino: apre lo zip in una cartella d'attesa. I file di Eurise prendono il loro posto al prossimo
+     * avvio, prima che l'app apra il database ([applyPending]); i dati delle app separate si sigillano subito in attesa
+     * della loro app ([SuiteApps.keep]), senza passare dalla cartella in chiaro.
      */
-    fun stage(context: Context, zipBytes: ByteArray) {
+    fun stage(context: Context, input: java.io.InputStream) {
         val dir = File(context.filesDir, PENDING).apply { deleteRecursively(); mkdirs() }
         var hasDb = false
-        ZipInputStream(ByteArrayInputStream(zipBytes)).use { zip ->
+        ZipInputStream(input).use { zip ->
             while (true) {
                 val e = zip.nextEntry ?: break
                 val name = e.name
-                val ok = name == "databases/$DB" || name == KeyboardBackup.ENTRY || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
+                if (e.isDirectory || name.contains("..")) continue
+                SuiteApps.keyOf(name)?.let { key -> SuiteApps.keep(context, key, zip) }?.let { continue }
+                val ok = name == "databases/$DB" || name == LockKeys.BACKUP_ENTRY || name == LockKeys.SEALED_ENTRY ||
                     name == SuiteSecrets.BACKUP_ENTRY || (name.startsWith("shared_prefs/") && name.endsWith(".xml") &&
-                    !name.contains("..") && included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
-                if (!ok || e.isDirectory) continue
-                // Le parole della Tastiera non passano dalla cartella d'attesa in chiaro: si sigillano subito.
-                if (name == KeyboardBackup.ENTRY) { KeyboardBackup.keep(context, zip.readBytes()); continue }
+                    included(name.removePrefix("shared_prefs/").removeSuffix(".xml")))
+                if (!ok) continue
                 val target = File(dir, name).apply { parentFile?.mkdirs() }
                 target.outputStream().use { zip.copyTo(it) }
                 if (name == "databases/$DB") hasDb = true
@@ -223,7 +251,7 @@ object BackupArchive {
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
             }
             // Ripristini preparati da una versione precedente: lo zip della Tastiera stava ancora qui.
-            File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { KeyboardBackup.keep(context, it.readBytes()) }
+            File(dir, KeyboardBackup.ENTRY).takeIf { it.exists() }?.let { f -> f.inputStream().use { SuiteApps.keep(context, "keyboard", it) } }
             File(dir, LockKeys.SEALED_ENTRY).takeIf { it.exists() }?.let { LockKeys.restoreSealed(context, it.readBytes()) }
             File(dir, LockKeys.BACKUP_ENTRY).takeIf { it.exists() }?.let { LockKeys.restore(context, it.readBytes()) }
             File(dir, SuiteSecrets.BACKUP_ENTRY).takeIf { it.exists() }?.let { SuiteSecrets.restore(context, it.readBytes()) }

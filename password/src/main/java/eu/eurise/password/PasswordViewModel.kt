@@ -143,10 +143,25 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
 
     fun confirmImport(ready: ImportOutcome.Ready) {
         _importing.value = null
+        val fromBackup = importedFile?.takeIf { it.scheme == "file" && it.path == restoredVault().path }
         work {
             val counts = repo.importItems(ready.items.map { it.draft })
             if (counts != null) _importing.value = ImportStage.Done(counts)
+            // La cassaforte arrivata dal backup è unita: la copia accanto non serve più.
+            if (counts != null && fromBackup != null) restoredVault().delete()
         }
+    }
+
+    private fun restoredVault() = eu.eurise.password.backup.PasswordBackupProvider.restored(getApplication())
+
+    /**
+     * Dopo un ripristino, se sul telefono c'era già una cassaforte, quella del backup aspetta accanto: a cassaforte aperta
+     * la si propone come un file KeePass da unire (frase principale del backup, poi anteprima e conferma). Finché non la
+     * si unisce, la proposta torna alla prossima apertura.
+     */
+    fun offerRestoredVault() {
+        val file = restoredVault()
+        if (file.exists() && _importing.value == null) readImport(Uri.fromFile(file))
     }
 
     fun closeImport() { _importing.value = null }
@@ -163,7 +178,7 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { android.provider.DocumentsContract.deleteDocument(getApplication<Application>().contentResolver, uri) }.getOrDefault(false)
     }
 
-    val canDeleteImportedFile: Boolean get() = importedFile?.let { android.provider.DocumentsContract.isDocumentUri(getApplication(), it) } == true
+    val canDeleteImportedFile: Boolean get() = importedFile?.let { it.scheme != "file" && android.provider.DocumentsContract.isDocumentUri(getApplication(), it) } == true
 
     /** Legge un altro file KeePass con la sua frase e prepara le voci, password e passkey comprese. */
     fun readKeepass(bytes: ByteArray, password: String) {

@@ -490,4 +490,5 @@
     <string name="gpv_upload_out">i file così come sono, nella cartella delle foto del cloud collegato</string>
     <string name="gpv_upload_who">chi gestisce il cloud (Murena o il tuo server) può vedere le foto caricate</string>
     <string name="gpv_upload_back">spegni qui o nel Cloud: si ferma subito; le foto già caricate restano sul cloud</string>
+    <string name="backup_summary_gallery">%1$d foto nella cartella protetta e %2$d diari</string>
 </resources>

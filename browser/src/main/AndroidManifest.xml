@@ -86,5 +86,12 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/save_paths" />
         </provider>
+        <!-- Backup della suite: segnalibri, cronologia, Leggi dopo, note e impostazioni, solo verso l'app Eurise. -->
+        <provider
+            android:name=".backup.BrowserBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
     </application>
 </manifest>

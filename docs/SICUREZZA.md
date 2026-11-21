@@ -196,6 +196,14 @@ prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-e
   - Prove: `NoteSealTest` (copia aperta solo con frase o codice, cambio frase, copia che segue la frase nuova, coppia
     salvata e ripristinata, copia toccata rifiutata). Lo sblocco con il dito non si prova sull'emulatore: va provato sul
     telefono (nota bloccata, chiusa, riaperta; backup e ripristino; Cambia frase).
+- **Backup di tutta la suite (21 novembre 2026, area Backup)**: nuove porte d'ingresso, una per app separata
+  (Password, Messaggi, Telefono, Galleria, Browser, Office, Posta, Chat, Voce, AI): fornitore `<pacchetto>.eurise.backup`
+  esportato con `readPermission` e `writePermission` = permesso della suite, e `SuiteAccess.enforceCaller` anche in
+  `openFile` e `call` (`core/suite/SuiteBackupProvider`). Dati solo in tubi, mai file intermedi; dall'altra parte Eurise
+  manda e chiede solo a fornitori della suite (`providerTrusted`) e cifra subito. In attesa del ripristino i dati delle
+  app stanno sigillati con una chiave del Keystore (`LocalSeal`). Posta: le password delle caselle non entrano (Keystore).
+  Prova sull'emulatore (`prova-backup.yml`): la shell, senza il permesso della suite, non legge `export` né chiama
+  `apply`. Nessuna firma toccata; nessun permesso nuovo chiesto all'utente.
 - **Backup, file in chiaro tolti (20 novembre 2026, area Backup)**: la Tastiera consegna e riceve lo zip delle parole
   imparate in un tubo, non più da file nella cache (quello dell'esportazione restava dopo ogni backup); lo zip in attesa
   della Tastiera sta sigillato con una chiave del Keystore (`LocalSeal`); il ripristino apre il backup solo in memoria e

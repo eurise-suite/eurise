@@ -80,7 +80,6 @@ import eu.eurise.core.cloud.backup.BackupFrequency
 import eu.eurise.core.cloud.backup.BackupManager
 import eu.eurise.core.cloud.backup.BackupPlace
 import eu.eurise.core.cloud.backup.BackupState
-import eu.eurise.core.cloud.backup.KeyboardBackup
 import eu.eurise.core.cloud.backup.PhraseStrength
 import eu.eurise.core.cloud.backup.Tier
 import eu.eurise.core.designsystem.component.DataOut
@@ -141,7 +140,8 @@ private sealed interface BkPage {
     data class Phrase(val place: BackupPlace?) : BkPage
     data class Code(val place: BackupPlace?, val phrase: String, val code: String) : BkPage
     data class Pick(val place: BackupPlace, val files: List<BackupFile>?) : BkPage
-    data class Unlock(val place: BackupPlace?, val file: BackupFile?, val bytes: ByteArray?) : BkPage
+    /** [picked]: un file scelto a mano (resta dov'è finché non si apre). */
+    data class Unlock(val place: BackupPlace?, val file: BackupFile?, val picked: Uri?) : BkPage
     data class Confirm(val opened: BackupManager.Opened) : BkPage
     /** Frase nuova dopo lo sblocco del telefono (non serve la vecchia). */
     data object NewPhrase : BkPage
@@ -177,7 +177,12 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
 
     fun reloadFiles() { scope.launch { files = manager.list() } }
     LaunchedEffect(state.place, state.lastAt) { if (state.configured && state.place != null) reloadFiles() }
-    BackHandler { if (!busy) { if (page != null) page = null else onBack() } }
+    BackHandler {
+        if (!busy) {
+            (page as? BkPage.Confirm)?.let { manager.discard(it.opened) }
+            if (page != null) page = null else onBack()
+        }
+    }
 
     fun toast(res: Int) = Toast.makeText(context, context.getString(res), Toast.LENGTH_LONG).show()
 
@@ -205,10 +210,7 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
     }
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            val bytes = withContext(Dispatchers.IO) { runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() }
-            if (bytes != null) page = BkPage.Unlock(null, null, bytes)
-        }
+        page = BkPage.Unlock(null, null, uri)
     }
 
     // Lo sblocco del telefono (impronta, volto o codice) prima di una frase nuova senza quella vecchia.
@@ -282,14 +284,18 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
             scope.launch {
                 // Si apre e si verifica soltanto: il telefono non cambia finché non si conferma (ConfirmPage).
                 val r = runCatching {
-                    if (p.bytes != null) manager.openBytes(p.bytes, secret) else manager.open(p.place!!, p.file!!.name, secret)
+                    val picked = p.picked
+                    if (picked != null) {
+                        val input = withContext(Dispatchers.IO) { context.contentResolver.openInputStream(picked) } ?: throw BackupCrypto.BadFile()
+                        manager.openStream(input, secret)
+                    } else manager.open(p.place!!, p.file!!.name, secret)
                 }
                 busy = false
                 r.getOrNull()?.let { page = BkPage.Confirm(it) }
                 if (r.isFailure) toast(if (r.exceptionOrNull() is BackupCrypto.WrongSecret) R.string.backup_wrong_secret else R.string.backup_bad_file)
             }
         }
-        is BkPage.Confirm -> ConfirmPage(p.opened, replacesBackupSettings = state.configured, working = busy, onBack = { page = null }) {
+        is BkPage.Confirm -> ConfirmPage(p.opened, replacesBackupSettings = state.configured, working = busy, onBack = { manager.discard(p.opened); page = null }) {
             busy = true
             scope.launch {
                 val r = runCatching { manager.apply(p.opened) }
@@ -418,17 +424,17 @@ private fun HomePage(
     }
 }
 
-/** Cosa salva, oggi davvero (le altre app arrivano una alla volta, scritte sotto). */
+/** Cosa salva: Eurise e ogni app separata della suite, quando è installata. Le Mappe arrivano dopo. */
 @Composable
 private fun WhatCard() {
     Group {
-        listOf(
-            R.string.bk_what_eurise to R.string.bk_what_eurise_hint,
-            R.string.backup_confirm_keyboard to R.string.bk_what_keyboard_hint,
-            R.string.backup_confirm_locked to R.string.backup_confirm_locked_hint,
-        ).forEachIndexed { i, (t, h) ->
-            if (i > 0) Divider()
-            WhereRow(stringResource(t), stringResource(h), "")
+        WhereRow(stringResource(R.string.bk_what_eurise), stringResource(R.string.bk_what_eurise_hint), "")
+        Divider()
+        WhereRow(stringResource(R.string.backup_confirm_locked), stringResource(R.string.backup_confirm_locked_hint), "")
+        eu.eurise.core.cloud.backup.SuiteApps.all.forEach { app ->
+            val (name, hint) = appLabels(app.key)
+            Divider()
+            WhereRow(stringResource(name), stringResource(hint), "")
         }
         Divider()
         WhereRow(stringResource(R.string.bk_what_next), stringResource(R.string.bk_what_next_hint), "")
@@ -463,7 +469,7 @@ private fun StatusCard(state: BackupState, busy: Boolean) {
 /** «Bentornato» dopo un ripristino: cosa è già al suo posto e i passi che restano, uno per app. */
 @Composable
 private fun WelcomeCard(state: BackupState, context: android.content.Context, onPlace: () -> Unit, onSeen: () -> Unit) {
-    val keyboardWaiting = remember { KeyboardBackup.waiting(context) }
+    val waiting = remember { eu.eurise.core.cloud.backup.SuiteApps.waiting(context) }
     Group {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp)) {
             Text(stringResource(R.string.bk_welcome_title), fontSize = 17.sp, fontWeight = FontWeight.Bold)
@@ -471,8 +477,14 @@ private fun WelcomeCard(state: BackupState, context: android.content.Context, on
         }
         WhereRow(stringResource(R.string.bk_what_eurise), stringResource(R.string.bk_welcome_eurise), "")
         Divider()
-        if (keyboardWaiting) {
-            WhereRow(stringResource(R.string.backup_confirm_keyboard), stringResource(R.string.bk_welcome_keyboard_wait), "")
+        // Le app che aspettano ancora i loro dati: arrivano appena le installi (da apk-prova o dal negozio).
+        waiting.forEach { key ->
+            val hint = when (key) {
+                "messages" -> R.string.bk_welcome_messages_wait
+                "phone" -> R.string.bk_welcome_phone_wait
+                else -> R.string.bk_welcome_app_wait
+            }
+            WhereRow(stringResource(appLabels(key).first), stringResource(hint), "")
             Divider()
         }
         if (state.place == null) WhereRow(stringResource(R.string.bk_welcome_backup), stringResource(R.string.bk_welcome_backup_where), "", onClick = onPlace)
@@ -816,8 +828,13 @@ private fun ConfirmPage(opened: BackupManager.Opened, replacesBackupSettings: Bo
                 val data = if (notes != null && tasks != null) stringResource(R.string.backup_confirm_data_counts, notes, tasks) else stringResource(R.string.backup_confirm_data)
                 WhereRow(stringResource(R.string.backup_confirm_eurise), data, "")
                 if (c.settings) { Divider(); WhereRow(stringResource(R.string.backup_confirm_settings), stringResource(R.string.backup_confirm_settings_hint), "") }
-                if (c.keyboard) { Divider(); WhereRow(stringResource(R.string.backup_confirm_keyboard), stringResource(R.string.backup_confirm_keyboard_hint), "") }
                 if (c.lockedNotes) { Divider(); WhereRow(stringResource(R.string.backup_confirm_locked), stringResource(R.string.backup_confirm_locked_hint), "") }
+                // Le app separate: ognuna riceve i suoi dati appena è installata (subito, se c'è già).
+                c.apps.forEach { (key, summary) ->
+                    val (name, hint) = appLabels(key)
+                    Divider()
+                    WhereRow(stringResource(name), summary ?: stringResource(hint), "")
+                }
             }
         }
         item("replace") {
@@ -827,6 +844,23 @@ private fun ConfirmPage(opened: BackupManager.Opened, replacesBackupSettings: Bo
             Warning(if (phone.empty) null else stringResource(R.string.backup_confirm_replace_title), text)
         }
     }
+}
+
+/** Nome e descrizione di un'app separata nel backup, per la sua chiave ([eu.eurise.core.cloud.backup.SuiteApps]). */
+private fun appLabels(key: String): Pair<Int, Int> = when (key) {
+    "password" -> R.string.bk_app_password to R.string.bk_app_password_hint
+    "messages" -> R.string.bk_app_messages to R.string.bk_app_messages_hint
+    "phone" -> R.string.bk_app_phone to R.string.bk_app_phone_hint
+    "gallery" -> R.string.bk_app_gallery to R.string.bk_app_gallery_hint
+    "keyboard" -> R.string.backup_confirm_keyboard to R.string.backup_confirm_keyboard_hint
+    "browser" -> R.string.bk_app_browser to R.string.bk_app_browser_hint
+    "office" -> R.string.bk_app_office to R.string.bk_app_office_hint
+    "mail" -> R.string.bk_app_mail to R.string.bk_app_mail_hint
+    "chat" -> R.string.bk_app_chat to R.string.bk_app_chat_hint
+    "voice" -> R.string.bk_app_voice to R.string.bk_app_settings_hint
+    "read" -> R.string.bk_app_read to R.string.bk_app_settings_hint
+    "ai" -> R.string.bk_app_ai to R.string.bk_app_settings_hint
+    else -> R.string.bk_what_next to R.string.bk_app_settings_hint
 }
 
 // ---------------------------------------------------------------- finestre

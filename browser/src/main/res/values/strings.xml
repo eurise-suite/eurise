@@ -434,4 +434,5 @@
     <string name="brw_ask_repost_sub">La pagina rimanda i dati già inviati (per esempio un pagamento o un ordine).</string>
     <string name="brw_ask_repost_yes">Rimanda</string>
     <string name="brw_ask_color">Colore</string>
+    <string name="backup_summary_browser">%1$d segnalibri, con cronologia e Leggi dopo</string>
 </resources>

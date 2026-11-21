@@ -287,4 +287,5 @@
     <string name="report_delete">Elimina</string>
     <string name="report_copied">Rapporto copiato</string>
     <string name="report_settings">Rapporti dei problemi (%1$d)</string>
+    <string name="backup_summary_office">%1$d documenti</string>
 </resources>

@@ -90,5 +90,12 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/chat_paths" />
         </provider>
+        <!-- Backup della suite: le impostazioni, solo verso l'app Eurise (docs/stato/BACKUP.md). -->
+        <provider
+            android:name=".backup.ChatBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
     </application>
 </manifest>

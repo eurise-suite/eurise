@@ -108,4 +108,6 @@
     <string name="ml_move_to_title">Sposta in…</string>
     <string name="ml_no_folders">Nessuna altra cartella in questa casella, oppure il server non risponde.</string>
     <string name="ml_forward_header">---------- Messaggio inoltrato ----------\nDa: %1$s &lt;%2$s&gt;\nData: %3$s\nOggetto: %4$s</string>
+    <string name="backup_summary_mail">%1$d caselle (la password si riscrive)</string>
+    <string name="ml_link_restored">Dal backup: indirizzo e server sono già pronti, scrivi solo la password.</string>
 </resources>

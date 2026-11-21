@@ -156,6 +156,38 @@ Esito col giro 921 (run 44887973106): **17 controlli su 17**.
 - **Non coperto** dalla prova: le schermate (si guardano sul telefono), l'invio a WebDAV o a una cartella, la regola
   dei cinque conservati sui file veri, il lavoro pianificato, le chiavi nel Keystore di `BackupManager` e il riavvio.
 
+## Tutta la suite nel backup (21 novembre 2026, pomeriggio)
+**Formato a pezzi** (`BackupCrypto` versione 2, `BackupStreamTest`): stessi file `EURISEB1`, dati in pezzi da 1 MiB
+cifrati e autenticati uno per uno (nonce = 8 byte dell'intestazione + numero; AAD = intestazione + numero + «ultimo»):
+un file troncato, toccato o allungato non si apre. Il backup si cifra mentre lo zip si scrive (`BackupArchive.create`
+su un flusso), in un file di cache che contiene solo dati cifrati; parte, si riscarica in un altro file e si riapre
+tutto prima di toccare i vecchi. I file di versione 1 si aprono come prima. Ripristino: il file (cifrato) in cache,
+`contents` lo legge tutto (così è verificato), `apply` lo riapre e prepara. Destinazioni a file (`write`, `readTo`).
+
+**App separate** (`core/suite/SuiteBackupProvider`, `core/cloud/backup/SuiteApps`): ogni app ha un fornitore
+`<pacchetto>.eurise.backup`, `exported` con `readPermission`/`writePermission` = permesso della suite e controllo di chi
+chiama anche in `openFile` e `call`; lo zip esce ed entra in un tubo; `summary` (riga per «Cosa rimetto»), `ready`
+(se ora può rimettere), `apply` (aspetta la fine). Eurise controlla che il fornitore sia della suite
+(`SuiteAccess.providerTrusted`) prima di chiedere o mandare; `<queries>` per gli indirizzi in `core/cloud`. Al
+ripristino ogni zip aspetta sigillato (`LocalSeal.sealTo`, a pezzi, chiave del Keystore) in `apps_waiting/` e si
+consegna appena l'app c'è ed è pronta: subito dopo il ripristino e a ogni ritorno alla Scrivania. Manifesto formato 3
+con le app e le loro righe (`apps`, `missing` se un'app non ha risposto).
+
+| App | Nel backup | Al ripristino |
+|---|---|---|
+| Password | `cassaforte.kdbx` così com'è, alias, browser abbinati | se c'è già una cassaforte non si tocca: quella del backup va accanto (`cassaforte-dal-backup.kdbx`) e Password propone di unirla (percorso «Importa da KeePass», con la frase principale del backup) |
+| Messaggi | SMS (`sms.json`), MMS con indirizzi e pezzi, impostazioni | solo quando Messaggi è l'app SMS predefinita (`ready`); niente doppioni (numero, ora, testo; MMS per data) |
+| Telefono | registro chiamate, numeri bloccati, note delle chiamate | solo quando Telefono è l'app delle chiamate e ha il permesso del registro; niente doppioni |
+| Galleria | cartella protetta (file già cifrati, senza `bio.json`), diari con nome/data/peso di ogni foto, nomi dei luoghi, impostazioni scelte | cartella vuota o la stessa: si riempie; un'altra con foto: va accanto in `secure-dal-backup` (da aprire: non ancora nell'interfaccia); diari ricollegati alle foto per nome e data |
+| Tastiera | come prima (il suo `BackupProvider`) | come prima |
+| Browser | segnalibri, cronologia, Leggi dopo, note dei siti, schede, impostazioni | si unisce: liste per indirizzo, note per sito, cronologia del backup prima; schede solo se non ce ne sono |
+| Office | `documenti/`, rapporti, impostazioni (fuori i «recenti») | un documento diverso con lo stesso nome arriva come «nome (dal backup)» |
+| Posta | caselle **senza password**, impostazioni | le caselle aspettano «da ricollegare»; il foglio «Collega» le propone già scritte, con i loro server: basta la password |
+| Chat | impostazioni, persone, turni (fuori sessione, chiavi del dispositivo, accesso allo studio) | si accede come dispositivo nuovo; la chiave di recupero è nel backup di Eurise |
+| Voce, AI | impostazioni (voci e modelli si riscaricano) | — |
+| Leggi | niente di suo da salvare (lingue e modelli si riscaricano) | — |
+| **Mappe** | **non ancora**: CoMaps si compila a parte (`maps-engine.yml`) con le sue patch | segnalibri e tracce da esportare a mano per ora |
+
 ## Formato (proposta)
 - Stesso file `EURISEB1` e stessa cifratura; nello zip il manifesto passa a `format: 2` con l'elenco delle app e la loro
   versione dei dati; ogni app separata in `apps/<app>.zip`. I file `format: 1` si ripristinano come oggi.

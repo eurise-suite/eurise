@@ -15,6 +15,8 @@ android {
 }
 
 dependencies {
+    // Il permesso della suite e il controllo dei fornitori per le app separate nel backup (SuiteApps): pochi byte.
+    implementation(project(":core:suite"))
     api(libs.okhttp)
     api(libs.androidx.work.runtime)
     api(libs.kotlinx.coroutines.android)

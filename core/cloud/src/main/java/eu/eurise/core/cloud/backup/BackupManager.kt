@@ -1,6 +1,7 @@
 package eu.eurise.core.cloud.backup
 
 import android.content.Context
+import java.io.File
 import android.content.Intent
 import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
@@ -193,20 +194,32 @@ class BackupManager private constructor(private val context: Context) {
             val target = target() ?: error("Nessuna destinazione")
             val now = System.currentTimeMillis()
             val at = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault())
-            val file = withContext(Dispatchers.Default) { BackupCrypto.encrypt(keys, now, BackupArchive.create(context, now)) }
-            val name = Retention.fileName(at, Tier.Recent)
-            target.write(name, file)
-            val back = target.read(name) ?: error("Il backup non si rilegge")
-            withContext(Dispatchers.Default) { BackupCrypto.decrypt(BackupCrypto.parse(back), keys.dataKey) }
-            val files = target.list()
-            Retention.plan(files).forEach { a ->
-                when (a) {
-                    is RetentionAction.Delete -> target.delete(a.name)
-                    is RetentionAction.Rename -> target.rename(a.from, a.to)
+            // Si cifra mentre lo si scrive, in un file di cache che contiene solo dati cifrati; poi parte, si riscarica e
+            // si riapre tutto (pezzo per pezzo) prima di toccare i backup vecchi.
+            val out = File(context.cacheDir, "backup-uscita.eurb")
+            val back = File(context.cacheDir, "backup-verifica.eurb")
+            try {
+                withContext(Dispatchers.IO) {
+                    BackupCrypto.encryptingStream(keys, now, java.io.BufferedOutputStream(out.outputStream(), 1 shl 16)).use { BackupArchive.create(context, now, it) }
                 }
+                val name = Retention.fileName(at, Tier.Recent)
+                target.write(name, out)
+                if (!target.readTo(name, back)) error("Il backup non si rilegge")
+                withContext(Dispatchers.IO) { verifyFile(back, keys.dataKey) }
+                val size = out.length()
+                val files = target.list()
+                Retention.plan(files).forEach { a ->
+                    when (a) {
+                        is RetentionAction.Delete -> target.delete(a.name)
+                        is RetentionAction.Rename -> target.rename(a.from, a.to)
+                    }
+                }
+                prefs.edit().putLong("last_at", now).putLong("last_size", size).remove("last_error").apply()
+                BackupFile(name, at, Tier.Recent, size)
+            } finally {
+                out.delete()
+                back.delete()
             }
-            prefs.edit().putLong("last_at", now).putLong("last_size", file.size.toLong()).remove("last_error").apply()
-            BackupFile(name, at, Tier.Recent, file.size.toLong())
         }
         result.exceptionOrNull()?.let { e -> prefs.edit().putString("last_error", e.message ?: e.javaClass.simpleName).apply() }
         refresh(running = false)
@@ -217,40 +230,90 @@ class BackupManager private constructor(private val context: Context) {
     suspend fun list(place: BackupPlace? = _state.value.place): List<BackupFile> =
         runCatching { target(place)?.list().orEmpty().sortedByDescending { it.at } }.getOrDefault(emptyList())
 
+    /** Apre e legge tutto il file: se un solo pezzo è stato toccato o manca, fallisce. */
+    private fun verifyFile(file: File, dataKey: ByteArray) {
+        file.inputStream().buffered(1 shl 16).use { input ->
+            val header = BackupCrypto.readHeader(input)
+            val sink = ByteArray(1 shl 16)
+            try {
+                BackupCrypto.decryptingStream(input, header, dataKey).use { while (it.read(sink) >= 0) Unit }
+            } catch (e: java.io.IOException) {
+                throw BackupCrypto.BadFile()
+            }
+        }
+    }
+
     /**
-     * Un backup aperto e verificato, ancora solo in memoria: niente è cambiato sul telefono finché non si chiama
-     * [apply]. Così si può mostrare che cosa contiene e che cosa sostituirebbe, e chiedere conferma.
+     * Un backup aperto e verificato: il file (ancora cifrato) sta nella cache, la chiave in memoria. Niente è cambiato
+     * sul telefono finché non si chiama [apply]; [discard] lo dimentica. Così si può mostrare che cosa contiene e che
+     * cosa sostituirebbe, e chiedere conferma.
      */
     class Opened internal constructor(
         val contents: BackupContents,
         val onPhone: PhoneData,
-        internal val zip: ByteArray,
+        internal val file: File,
+        internal val header: BackupCrypto.Header,
         internal val keys: BackupCrypto.Keys,
         internal val place: BackupPlace?,
         /** La frase o il codice appena scritti, solo in memoria: aprono la copia della chiave delle note ([apply]). */
         internal val secret: String,
     )
 
+    private fun openedFile() = File(context.cacheDir, "backup-aperto.eurb")
+
     /** Apre [name] da [place] con la frase o il codice e lo verifica, senza toccare niente. */
     suspend fun open(place: BackupPlace, name: String, secret: String): Opened = withContext(Dispatchers.IO) {
-        val bytes = target(place)?.read(name) ?: throw BackupCrypto.BadFile()
-        openBytes(bytes, secret, place)
+        val file = openedFile()
+        if (target(place)?.readTo(name, file) != true) { file.delete(); throw BackupCrypto.BadFile() }
+        openLocal(file, secret, place)
     }
 
-    /** Come [open], per un file scelto a mano. */
-    suspend fun openBytes(bytes: ByteArray, secret: String, place: BackupPlace? = null): Opened = withContext(Dispatchers.Default) {
-        val parsed = BackupCrypto.parse(bytes)
-        val dataKey = BackupCrypto.unlock(parsed.header, secret)
-        val zip = BackupCrypto.decrypt(parsed, dataKey)
-        Opened(BackupArchive.contents(zip, parsed.createdAt), BackupArchive.onPhone(context), zip, BackupCrypto.Keys(dataKey, parsed.header), place, secret)
+    /** Come [open], per un file scelto a mano: [input] si copia così com'è (cifrato) nella cache. */
+    suspend fun openStream(input: java.io.InputStream, secret: String): Opened = withContext(Dispatchers.IO) {
+        val file = openedFile()
+        input.use { i -> file.outputStream().use { i.copyTo(it, 1 shl 16) } }
+        openLocal(file, secret, null)
     }
+
+    /** Come [openStream], per un file in memoria (le prove). */
+    suspend fun openBytes(bytes: ByteArray, secret: String): Opened = openStream(bytes.inputStream(), secret)
+
+    private suspend fun openLocal(file: File, secret: String, place: BackupPlace?): Opened = withContext(Dispatchers.IO) {
+        try {
+            file.inputStream().buffered(1 shl 16).use { input ->
+                val header = BackupCrypto.readHeader(input)
+                val dataKey = BackupCrypto.unlock(header.header, secret)
+                val contents = try {
+                    BackupArchive.contents(BackupCrypto.decryptingStream(input, header, dataKey), header.createdAt)
+                } catch (e: java.io.IOException) {
+                    throw BackupCrypto.BadFile()
+                }
+                Opened(contents, BackupArchive.onPhone(context), file, header, BackupCrypto.Keys(dataKey, header.header), place, secret)
+            }
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
+    }
+
+    /** Il backup aperto non serve più (l'utente è tornato indietro): via il file dalla cache. */
+    fun discard(opened: Opened) { opened.file.delete() }
 
     /**
-     * Dopo la conferma: prepara i file (prendono il loro posto al riavvio, [restartApp]) e tiene le chiavi del backup
-     * ripristinato per i prossimi backup di questo telefono.
+     * Dopo la conferma: prepara i file (prendono il loro posto al riavvio, [restartApp]), sigilla i dati delle app
+     * separate in attesa e tiene le chiavi del backup ripristinato per i prossimi backup di questo telefono.
      */
     suspend fun apply(opened: Opened) = withContext(Dispatchers.IO) {
-        BackupArchive.stage(context, opened.zip)
+        try {
+            opened.file.inputStream().buffered(1 shl 16).use { input ->
+                val header = BackupCrypto.readHeader(input)
+                BackupArchive.stage(context, BackupCrypto.decryptingStream(input, header, opened.keys.dataKey))
+            }
+        } catch (e: java.io.IOException) {
+            throw BackupCrypto.BadFile()
+        } finally {
+            opened.file.delete()
+        }
         // La copia della chiave delle note si apre qui, con il segreto appena scritto: all'avvio non c'è nessuno a chiederlo.
         BackupArchive.openSealedNotes(context, opened.secret)
         storeKeys(opened.keys)
@@ -258,6 +321,8 @@ class BackupManager private constructor(private val context: Context) {
             prefs.edit().putString("place", place.encode()).apply()
             if (place is BackupPlace.Folder) setPlace(place)
         }
+        // Le app già installate ricevono subito i loro dati; le altre appena arrivano.
+        SuiteApps.deliverPending(context)
         refresh()
     }
 

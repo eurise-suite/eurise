@@ -112,5 +112,12 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
+        <!-- Backup della suite: cartella protetta (già cifrata), diari e impostazioni, solo verso l'app Eurise. -->
+        <provider
+            android:name=".backup.GalleryBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
     </application>
 </manifest>

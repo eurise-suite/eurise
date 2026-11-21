@@ -10,8 +10,10 @@ import kotlinx.coroutines.withContext
 /** Dove vanno i backup: un cloud WebDAV collegato o una cartella scelta dall'utente (telefono, chiavetta, app cloud). */
 interface BackupTarget {
     suspend fun list(): List<BackupFile>
-    suspend fun write(name: String, bytes: ByteArray)
-    suspend fun read(name: String): ByteArray?
+    /** Manda [file] (già cifrato) con il nome [name]: si legge a pezzi, non tutto in memoria. */
+    suspend fun write(name: String, file: java.io.File)
+    /** Scarica [name] in [file]; falso se non c'è. */
+    suspend fun readTo(name: String, file: java.io.File): Boolean
     suspend fun delete(name: String)
     suspend fun rename(from: String, to: String)
 }
@@ -19,11 +21,11 @@ interface BackupTarget {
 /** Murena, Nextcloud, kDrive o un altro WebDAV: i file stanno nella cartella Eurise/Backup. */
 class DavTarget(private val dav: WebDav, private val folder: String = "Eurise/Backup") : BackupTarget {
     override suspend fun list() = dav.list(folder).filter { !it.folder }.mapNotNull { Retention.parse(it.name, it.size) }
-    override suspend fun write(name: String, bytes: ByteArray) {
+    override suspend fun write(name: String, file: java.io.File) {
         dav.mkdirs(folder)
-        dav.putBytes("$folder/$name", bytes)
+        dav.upload("$folder/$name", file)
     }
-    override suspend fun read(name: String) = dav.getBytes("$folder/$name")
+    override suspend fun readTo(name: String, file: java.io.File) = dav.download("$folder/$name", file)
     override suspend fun delete(name: String) = dav.delete("$folder/$name")
     override suspend fun rename(from: String, to: String) = dav.move("$folder/$from", "$folder/$to")
 }
@@ -52,18 +54,20 @@ class FolderTarget(private val context: Context, private val tree: Uri) : Backup
 
     override suspend fun list() = children().mapNotNull { Retention.parse(it.second, it.third) }
 
-    override suspend fun write(name: String, bytes: ByteArray) = withContext(Dispatchers.IO) {
+    override suspend fun write(name: String, file: java.io.File) = withContext(Dispatchers.IO) {
         val uri = DocumentsContract.createDocument(resolver, root, "application/octet-stream", name) ?: error("Cartella non scrivibile")
-        resolver.openOutputStream(uri, "w")?.use { it.write(bytes) } ?: error("Cartella non scrivibile")
+        resolver.openOutputStream(uri, "w")?.use { out -> file.inputStream().use { it.copyTo(out, 1 shl 16) } } ?: error("Cartella non scrivibile")
         // Alcuni selettori aggiungono un'estensione: si rimette il nome giusto.
         val written = children().firstOrNull { DocumentsContract.buildDocumentUriUsingTree(tree, it.first) == uri }?.second
         if (written != null && written != name) runCatching { DocumentsContract.renameDocument(resolver, uri, name) }
         Unit
     }
 
-    override suspend fun read(name: String): ByteArray? {
-        val uri = doc(name) ?: return null
-        return withContext(Dispatchers.IO) { resolver.openInputStream(uri)?.use { it.readBytes() } }
+    override suspend fun readTo(name: String, file: java.io.File): Boolean {
+        val uri = doc(name) ?: return false
+        return withContext(Dispatchers.IO) {
+            resolver.openInputStream(uri)?.use { input -> file.outputStream().use { input.copyTo(it, 1 shl 16) } } != null
+        }
     }
 
     override suspend fun delete(name: String) {
@@ -75,10 +79,15 @@ class FolderTarget(private val context: Context, private val tree: Uri) : Backup
         val uri = doc(from) ?: return
         val renamed = withContext(Dispatchers.IO) { runCatching { DocumentsContract.renameDocument(resolver, uri, to) }.getOrNull() }
         if (renamed == null) {
-            // Chi non sa rinominare: si copia con il nuovo nome e si toglie il vecchio.
-            val bytes = read(from) ?: return
-            write(to, bytes)
-            delete(from)
+            // Chi non sa rinominare: si copia con il nuovo nome e si toglie il vecchio (il file è già cifrato).
+            val tmp = java.io.File(context.cacheDir, "backup-rinomina.eurb")
+            try {
+                if (!readTo(from, tmp)) return
+                write(to, tmp)
+                delete(from)
+            } finally {
+                tmp.delete()
+            }
         }
     }
 }
