@@ -147,11 +147,15 @@ adb shell am broadcast -n $SP/.Concedi 2>&1 | grep -q 'data="content://'; esito 
 adb shell dumpsys battery unplug
 sleep 2
 sonda gestore-inizio; esito "backup acceso, chiave sigillata dal Keystore, cartella scelta, automatico in coda con Wi-Fi e carica" $?
-sleep 25
+# La sonda parte fermando Eurise, e Android allora toglie i suoi lavori pianificati: come dopo «Forza l'arresto», WorkManager
+# li rimette alla prima apertura. Eurise si apre e resta in background, come su un telefono vero.
+adb shell am start -W -n $E/eu.eurise.hub.MainActivity >/dev/null 2>&1
+sleep 8
+adb shell input keyevent 3
+sleep 20
 n=$(adb shell run-as $SP ls files/cartella 2>/dev/null | grep -c 'eurisebk')
 [ "$n" -eq 0 ]; esito "senza carica il backup automatico non parte" $?
 adb shell dumpsys battery reset
-adb shell dumpsys battery set ac 1
 fatto=1
 for i in $(seq 1 36); do
   adb shell run-as $E cat shared_prefs/backup.xml 2>/dev/null | grep -q 'name="last_at"' && { fatto=0; break; }
@@ -163,6 +167,11 @@ for i in $(seq 1 36); do
   sleep 5
 done
 esito "in carica il backup automatico parte da solo" $fatto
+if [ $fatto -ne 0 ]; then
+  echo "  · rete: $(adb shell dumpsys connectivity 2>/dev/null | grep -m1 -oE 'NOT_METERED|METERED' || echo ?)"
+  echo "  · batteria: $(adb shell dumpsys battery 2>/dev/null | grep -E 'AC powered|status' | tr -s ' \n' ' ')"
+  adb shell dumpsys jobscheduler $E 2>/dev/null | grep -iE 'JOB #|Required constraints|Satisfied constraints|Unsatisfied|Ready' | head -12 | sed 's/^/  · /'
+fi
 sleep 3
 n=$(adb shell run-as $SP ls files/cartella 2>/dev/null | grep -c -- '-r\.eurisebk')
 [ "$n" -eq 1 ]; esito "il backup è nella cartella, uno solo" $?

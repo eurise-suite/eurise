@@ -243,12 +243,11 @@ public class Sonda extends Instrumentation {
         check(sealed.contains(":") && android.util.Base64.decode(sealed.substring(sealed.indexOf(':') + 1), 0).length == 48, "la chiave dei dati non è sigillata (AES-GCM)");
         note("chiave dei dati sigillata dal Keystore (non leggibile)");
 
-        // La cartella concessa come dal selettore: il permesso resta.
+        // La cartella concessa come dal selettore.
+        android.net.Uri treeUri = android.net.Uri.parse((String) tree());
+        int granted = ctx.checkUriPermission(treeUri, android.os.Process.myPid(), android.os.Process.myUid(), android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        note("permesso sulla cartella prima di sceglierla: " + (granted == 0 ? "sì" : "no"));
         call(m, "setPlace", folderPlace());
-        boolean kept = false;
-        for (android.content.UriPermission u : ctx.getContentResolver().getPersistedUriPermissions())
-            kept |= u.getUri().toString().equals(tree()) && u.isWritePermission();
-        check(kept, "il permesso sulla cartella non è rimasto");
         Object daily = Class.forName(PKG + "BackupFrequency", true, getTargetContext().getClassLoader()).getField("Daily").get(null);
         call(m, "setFrequency", daily);
 
@@ -261,6 +260,20 @@ public class Sonda extends Instrumentation {
         note("backup automatico: " + state + ", rete " + network + ", in carica " + charging);
         check("ENQUEUED".equals(state), "il backup automatico non è in attesa: " + state);
         check("UNMETERED".equals(network) && charging, "il backup automatico non chiede Wi-Fi e carica");
+
+        // Il permesso sulla cartella deve restare anche dopo un riavvio del telefono (persistente).
+        boolean kept = false;
+        for (android.content.UriPermission u : ctx.getContentResolver().getPersistedUriPermissions())
+            kept |= u.getUri().equals(treeUri) && u.isWritePermission();
+        if (!kept) {
+            try {
+                ctx.getContentResolver().takePersistableUriPermission(treeUri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                note("permesso persistente preso solo al secondo tentativo");
+            } catch (Exception e) {
+                note("permesso persistente rifiutato: " + e.getMessage());
+            }
+        }
+        check(kept, "il permesso sulla cartella non è rimasto (persistente)");
     }
 
     private void gestoreCartella(Context ctx) throws Exception {
@@ -368,8 +381,12 @@ public class Sonda extends Instrumentation {
                 default: return "sonda";
             }
         });
+        StringBuilder seen = new StringBuilder();
         for (Method m : target.getClass().getMethods()) {
-            if (!(m.getName().equals(name) || m.getName().startsWith(name + "$")) || m.getName().endsWith("$default")) continue;
+            // Kotlin cambia il nome: «nome$modulo» per le funzioni internal, «nome-xxxx» per quelle che restituiscono Result.
+            String n = m.getName();
+            if (n.startsWith(name)) seen.append(' ').append(n).append('/').append(m.getParameterTypes().length);
+            if (!(n.equals(name) || n.startsWith(name + "$") || n.startsWith(name + "-")) || n.endsWith("$default")) continue;
             Class<?>[] types = m.getParameterTypes();
             if (types.length != args.length + 1 || types[args.length] != contType) continue;
             boolean fits = true;
@@ -384,7 +401,7 @@ public class Sonda extends Instrumentation {
             }
             return unwrap(r);
         }
-        throw new NoSuchMethodException(target.getClass().getName() + "." + name + "/" + args.length + " (suspend)");
+        throw new NoSuchMethodException(target.getClass().getName() + "." + name + "/" + args.length + " (suspend); ci sono:" + seen);
     }
 
     /** Toglie kotlin.Result (anche annidato, come per Result<T> restituito da una funzione suspend). */
