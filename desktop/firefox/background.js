@@ -389,6 +389,7 @@ browser.runtime.onMessage.addListener((m, sender) => {
   if (!fromExtension(sender) && !FROM_PAGES.has(m.op)) return Promise.resolve({ ok: false, text: "?" });
   switch (m.op) {
     case "hello": return hello();
+    case "syncState": case "syncOn": case "syncOff": case "syncNow": return syncOp(m);
     case "recent": return ponte("recent", {}, 6000);
     case "send": {
       const fn = send[m.what];
@@ -473,3 +474,6 @@ async function protectionState() {
 applyTheme();
 buildMenus();
 applyProtection();
+
+// Telefono e computer (sync.js): parte solo se accesa nelle Impostazioni.
+syncStart();

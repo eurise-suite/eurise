@@ -62,6 +62,8 @@ interface BrowserActions {
     fun finish()
     fun pickImportFiles()
     fun openPassword()
+    /** La pagina «Telefono e computer» dell'app Eurise (il Ponte): collegare un computer, password dal computer. */
+    fun openPonte() {}
     /** Apre Eurise Password per sbloccarla; aperta, la pagina si ricarica e compila. */
     fun unlockPassword()
     fun autofillSettings()

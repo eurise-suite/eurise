@@ -38,7 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -101,7 +103,7 @@ private fun summary(section: SettingsSection, model: BrowserModel): String {
         SettingsSection.Import -> stringResource(R.string.brw_s_import_sub)
         SettingsSection.Extensions -> if (Extensions.installed.isEmpty()) stringResource(R.string.brw_s_extensions_sub)
             else Extensions.installed.joinToString(", ") { it.metaData.name ?: it.id }
-        SettingsSection.Sync -> stringResource(R.string.brw_s_sync_sub)
+        SettingsSection.Sync -> syncSummary(model)
         SettingsSection.Clear -> stringResource(R.string.brw_s_clear_sub)
     }
 }
@@ -147,7 +149,7 @@ internal fun SettingsScreen(
                 SettingsSection.Downloads -> DownloadsPage(model, actions)
                 SettingsSection.Import -> ImportExportPage(onImport, actions)
                 SettingsSection.Extensions -> ExtensionsPage(onOpenUrl)
-                SettingsSection.Sync -> Note(stringResource(R.string.brw_sync_note))
+                SettingsSection.Sync -> SyncPage(model, actions) { onSection(SettingsSection.Import) }
                 SettingsSection.Clear -> ClearPage(model, actions)
             }
             Spacer(Modifier.height(24.dp))
@@ -269,6 +271,133 @@ private fun LinkRow(icon: ImageVector, title: String, sub: String?, onClick: () 
 }
 
 // --- Le pagine ---
+
+@Composable
+private fun syncSummary(model: BrowserModel): String {
+    val ctx = LocalContext.current
+    val on = listOfNotNull(
+        stringResource(R.string.brw_sync_tabs).takeIf { BrowserSync.tabsOn(ctx) },
+        stringResource(R.string.brw_sync_bm_short).takeIf { BrowserSync.bookmarksOn(ctx) },
+    )
+    val pc = model.computers.firstOrNull()?.name
+    return when {
+        on.isEmpty() -> stringResource(R.string.brw_s_sync_sub)
+        pc != null -> on.joinToString(", ") + " · " + pc
+        else -> on.joinToString(", ")
+    }
+}
+
+/**
+ * Telefono e computer (tavola BrwSincro): un interruttore per cosa, spento di base; accenderlo mostra prima cosa esce,
+ * dove va, chi lo vede e come si torna indietro. Spegnerlo non chiede niente.
+ */
+@Composable
+private fun SyncPage(model: BrowserModel, actions: BrowserActions, onImport: () -> Unit) {
+    val ctx = LocalContext.current
+    val scheme = MaterialTheme.colorScheme
+    var tabs by remember { mutableStateOf(BrowserSync.tabsOn(ctx)) }
+    var bm by remember { mutableStateOf(BrowserSync.bookmarksOn(ctx)) }
+    var explain by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) { model.reloadSynced() }
+    Note(stringResource(R.string.brw_sync_lead))
+    val pc = model.computers.firstOrNull()
+    // La scheda del computer: nome, quando si è sincronizzato l'ultima volta, come passa.
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF1F2A44)).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                Icon(EuriseIcons.monitor(1.9f), null, tint = Color(0xFFA9C1F2), modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(pc?.name?.ifBlank { null } ?: stringResource(R.string.brw_sync_no_pc), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    if (pc == null) stringResource(R.string.brw_sync_no_pc_sub)
+                    else stringResource(R.string.brw_sync_pc_sub, android.text.format.DateUtils.getRelativeTimeSpanString(pc.at).toString()),
+                    fontSize = 12.sp, lineHeight = 16.sp, color = Color(0xFFC9D3E6),
+                )
+            }
+            if (pc != null && System.currentTimeMillis() - pc.at < 15 * 60_000L) {
+                Text(
+                    stringResource(R.string.brw_sync_linked), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBCD4C4),
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x3893BBA0)).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(EuriseIcons.wifi(1.9f), null, tint = Color(0xFFC9D3E6), modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.brw_sync_how), fontSize = 12.sp, lineHeight = 16.sp, color = Color(0xFFC9D3E6))
+        }
+    }
+    Title(stringResource(R.string.brw_sync_what))
+    Card {
+        SyncRow(EuriseIcons.browser(1.9f), Color(0xFF3E5C8A), stringResource(R.string.brw_sync_tabs), stringResource(R.string.brw_sync_tabs_sub), tabs) { on ->
+            if (!on) { BrowserSync.setTabs(ctx, false); tabs = false } else explain = "tabs"
+        }
+        HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+        SyncRow(EuriseIcons.star(1.9f), Color(0xFF85672B), stringResource(R.string.brw_sync_bm), stringResource(R.string.brw_sync_bm_sub), bm) { on ->
+            if (!on) { BrowserSync.setBookmarks(ctx, false); bm = false } else explain = "bm"
+        }
+        HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+        LinkRow(EuriseIcons.key(1.9f), stringResource(R.string.brw_sync_pwd), stringResource(R.string.brw_sync_pwd_sub)) { actions.openPonte() }
+        HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+        SyncRow(EuriseIcons.globe(1.9f), Color(0xFF2E6E73), stringResource(R.string.brw_sync_hist), stringResource(R.string.brw_sync_hist_sub), false, enabled = false) {}
+    }
+    explain?.let { what ->
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.primary.copy(alpha = 0.1f)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(stringResource(if (what == "tabs") R.string.brw_sync_explain_tabs else R.string.brw_sync_explain_bm), fontSize = 13.sp, lineHeight = 19.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Chip(stringResource(R.string.brw_sync_turn_on), strong = true) {
+                    if (what == "tabs") { BrowserSync.setTabs(ctx, true); tabs = true } else { BrowserSync.setBookmarks(ctx, true); bm = true }
+                    explain = null
+                }
+                Chip(stringResource(R.string.brw_cancel)) { explain = null }
+            }
+        }
+    }
+    Title(stringResource(R.string.brw_sync_other))
+    Card {
+        LinkRow(EuriseIcons.download(1.9f), stringResource(R.string.brw_sync_import), stringResource(R.string.brw_sync_import_sub), onImport)
+        HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
+        LinkRow(EuriseIcons.monitor(1.9f), stringResource(R.string.brw_sync_pair), stringResource(R.string.brw_sync_pair_sub)) { actions.openPonte() }
+    }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PrivacyMeter(9)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(R.string.brw_sync_privacy), fontSize = 12.5.sp, lineHeight = 18.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun SyncRow(icon: ImageVector, tint: Color, title: String, sub: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .then(if (enabled) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(19.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = if (enabled) scheme.onSurface else scheme.onSurfaceVariant)
+            Text(sub, fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(10.dp))
+        Switch(checked = checked, onCheckedChange = if (enabled) onChange else null, enabled = enabled)
+    }
+}
 
 @Composable
 private fun SearchPage(model: BrowserModel) {

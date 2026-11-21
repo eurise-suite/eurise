@@ -79,6 +79,12 @@
             android:autoRemoveFromRecents="true"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|uiMode|density" />
+        <!-- Telefono e computer (tavola BrwSincro): solo l'app Eurise, che tiene il Ponte. Il permesso si controlla anche in call(). -->
+        <provider
+            android:name="eu.eurise.browser.SyncProvider"
+            android:authorities="${applicationId}.sync"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <provider
             android:name="eu.eurise.browser.SaveProvider"
             android:authorities="${applicationId}.salva"

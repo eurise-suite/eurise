@@ -58,6 +58,12 @@
         <span class="note" id="aiNote"></span></div>
     </div>
     <div class="opt">
+      <div class="t"><b>Telefono e computer <span class="ticks" id="syncTicks"></span></b>
+        <span>Segnalibri, siti fissati e Leggi dopo in comune con il Browser Eurise del telefono, nella cartella «Eurise» dei segnalibri di Firefox; le schede aperte del telefono nel pannello Eurise. Spenta di base; sul telefono si accende in Browser › Impostazioni › Telefono e computer.</span>
+        <span class="note" id="syncNote"></span></div>
+      <button class="switch" role="switch" id="sync" aria-label="Telefono e computer"></button>
+    </div>
+    <div class="opt">
       <div class="t"><b>Eurise nel tasto destro</b><span>Apri sul telefono, Leggi dopo, In Note, Da fare, Appuntamento, Manda il file al telefono.</span></div>
       <button class="switch" role="switch" id="menus" aria-label="Eurise nel tasto destro"></button>
     </div>
@@ -81,6 +87,15 @@
     <p id="aiClosed" hidden><b>Attenzione:</b> è un servizio chiuso negli Stati Uniti: le conversazioni restano sui suoi server e possono servire ad addestrare i modelli. Le alternative: Le Chat (Mistral, UE) o Duck.ai (anonima).</p>
     <p><b>Come tornare indietro:</b> scegli «Nessuna», qui o tenendo premuto «Chiedi all'AI», senza conferme.</p>
     <div style="display:flex;gap:8px;margin-top:12px"><button id="aiNo">Non ora</button><button id="aiYes" class="strong">Usa questa</button></div>
+  </dialog>
+
+  <dialog id="syncExplain">
+    <h1 style="font-size:17px">Prima di accendere</h1>
+    <p><b>Cosa viene letto:</b> i segnalibri della sola cartella «Eurise» (la crea Eurise, in Altri segnalibri), i siti fissati, Leggi dopo e indirizzo e titolo delle schede aperte (mai quelle private). Firefox chiede il permesso dei segnalibri: serve per quella cartella, Eurise non tocca le altre.</p>
+    <p><b>Dove va:</b> solo al tuo telefono, ogni cinque minuti e quando cambi un segnalibro, diretto sulla rete di casa e cifrato. Nessun server, nemmeno nostro.</p>
+    <p><b>Chi lo vede:</b> solo tu, sul telefono e qui.</p>
+    <p><b>Come tornare indietro:</b> spegni qui, senza conferme. Ciò che c'è resta da tutte e due le parti e non si sincronizza più.</p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button id="syncNo">Non ora</button><button id="syncYes" class="strong">Accendi</button></div>
   </dialog>
 
   <dialog id="pwdExplain">

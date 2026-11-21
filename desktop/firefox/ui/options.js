@@ -20,6 +20,7 @@ async function render() {
   document.querySelectorAll("#theme button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === s.theme)));
   $("#passwords").setAttribute("aria-checked", String(s.passwords));
   $("#menus").setAttribute("aria-checked", String(s.menus));
+  renderSync();
   $("#protection").setAttribute("aria-checked", String(s.protection));
   $("#aiSeg").innerHTML = [{ id: "", name: "Nessuna" }, ...AIS].map((a) =>
     `<button data-ai="${a.id}" aria-pressed="${s.ai === a.id}">${esc(a.name)}${a.ticks ? " " + ticksHtml(a.ticks) : ""}</button>`).join("");
@@ -59,6 +60,36 @@ $("#aiNo").addEventListener("click", () => $("#aiExplain").close());
 $("#pwdYes").addEventListener("click", () => { $("#pwdExplain").close(); save({ passwords: true }); });
 $("#pwdNo").addEventListener("click", () => $("#pwdExplain").close());
 
+// --- Telefono e computer (sync.js) ---
+
+async function renderSync() {
+  const st = await browser.runtime.sendMessage({ op: "syncState" });
+  $("#sync").setAttribute("aria-checked", String(!!(st && st.on)));
+  const note = $("#syncNote");
+  if (!st || !st.on) { note.textContent = ""; return; }
+  if (!st.last) { note.textContent = "In attesa del telefono: apri Eurise sul telefono, sul Wi-Fi di casa."; return; }
+  const when = new Date(st.last.at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  note.textContent = st.last.on
+    ? "Ultima sincronizzazione: " + when + " (sul telefono: " + st.last.on.replace("bm", "segnalibri").replace("tabs", "schede").replace(",", ", ") + ")."
+    : "Ultima volta " + when + ": sul telefono è spenta (Browser › Impostazioni › Telefono e computer).";
+}
+
+$("#sync").addEventListener("click", async () => {
+  const st = await browser.runtime.sendMessage({ op: "syncState" });
+  if (st && st.on) { await browser.runtime.sendMessage({ op: "syncOff" }); renderSync(); } else $("#syncExplain").showModal();
+});
+$("#syncNo").addEventListener("click", () => $("#syncExplain").close());
+$("#syncYes").addEventListener("click", async () => {
+  // Il permesso si chiede qui, sul tocco: Firefox lo vuole da un gesto dell'utente.
+  const granted = await browser.permissions.request({ permissions: ["bookmarks"] }).catch(() => false);
+  $("#syncExplain").close();
+  $("#syncNote").textContent = "Sincronizzo con il telefono…";
+  await browser.runtime.sendMessage({ op: "syncOn" });
+  await renderSync();
+  if (!granted) $("#syncNote").textContent += " Senza il permesso dei segnalibri passano solo le schede aperte.";
+});
+
+ticks($("#syncTicks"), 9);
 ticks($("#pwdTicks"), 9);
 ticks($("#ponteTicks"), 10);
 ticks($("#protTicks"), 10);
