@@ -79,6 +79,20 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>
+        <!-- «I miei dati» per le altre app della suite (Office: moduli PDF): solo con il permesso della suite. -->
+        <activity
+            android:name=".autofill.MyDataActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.EurisePassword.Sheet"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="eu.eurise.action.PICK_MY_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".autofill.FillActivity"
             android:exported="false"

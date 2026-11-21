@@ -5,6 +5,8 @@ import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +25,7 @@ import java.io.File
  *
  * - [ACTION_SAVE_IN]: il file in `EXTRA_STREAM` (con il permesso di lettura), il nome in `EXTRA_TITLE`, il tipo nell'intent,
  *   [EXTRA_KIND] per le proposte e [EXTRA_FROM] per «da Office». Torna `RESULT_OK` con [EXTRA_WHERE] (la cartella).
+ *   Con [EXTRA_LINK] («Link dal cloud»): propone un cloud che sa fare link e, salvato lì, torna anche [EXTRA_LINK_URL].
  * - [ACTION_OPEN_FROM]: [EXTRA_EXTENSIONS] (es. «docx,odt,pdf»), [EXTRA_FROM]. Torna l'Uri del file in `data`, con il
  *   permesso di lettura, e il percorso d'origine in [EXTRA_ORIGIN] per salvarlo poi nello stesso posto.
  */
@@ -38,6 +41,8 @@ class FilesActivity : ComponentActivity() {
                 val mime = intent.type ?: contentResolver.getType(uri) ?: "application/octet-stream"
                 val shown = intent.getStringExtra(Intent.EXTRA_TITLE) ?: displayName(uri) ?: "Documento"
                 val ext = shown.substringAfterLast('.', "").ifEmpty { android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "bin" }
+                val wantLink = intent.getBooleanExtra(EXTRA_LINK, false)
+                val files = EuriseFiles.get(this)
                 val request = SaveRequest(
                     kind = intent.getStringExtra(EXTRA_KIND) ?: "app",
                     from = from,
@@ -45,12 +50,23 @@ class FilesActivity : ComponentActivity() {
                     extension = ext,
                     mime = mime,
                     produce = { copyIn(uri, ext) },
+                    hint = if (wantLink) files.linkableAccounts().firstOrNull()?.let { Spot(it, "") } else null,
+                    hintReason = if (wantLink) getString(R.string.files_link_hint) else null,
                 )
                 setContent {
                     EuriseTheme {
                         SaveInSheet(request, onSaved = { saved ->
-                            setResult(Activity.RESULT_OK, Intent().putExtra(EXTRA_WHERE, saved.spot.key()).putExtra(Intent.EXTRA_TITLE, saved.name))
-                            finish()
+                            val back = Intent().putExtra(EXTRA_WHERE, saved.spot.key()).putExtra(Intent.EXTRA_TITLE, saved.name)
+                            if (wantLink && saved.spot.account != null && saved.spot.account in files.linkableAccounts()) {
+                                lifecycleScope.launch {
+                                    runCatching { files.link(saved.spot.child(saved.name)) }.getOrNull()?.let { back.putExtra(EXTRA_LINK_URL, it) }
+                                    setResult(Activity.RESULT_OK, back)
+                                    finish()
+                                }
+                            } else {
+                                setResult(Activity.RESULT_OK, back)
+                                finish()
+                            }
                         }, onDismiss = { setResult(Activity.RESULT_CANCELED); finish() })
                     }
                 }
@@ -107,6 +123,8 @@ class FilesActivity : ComponentActivity() {
         const val EXTRA_EXTENSIONS = "eu.eurise.extra.EXTENSIONS"
         const val EXTRA_ORIGIN = "eu.eurise.extra.ORIGIN"
         const val EXTRA_START = "eu.eurise.extra.START"
+        const val EXTRA_LINK = "eu.eurise.extra.LINK"
+        const val EXTRA_LINK_URL = "eu.eurise.extra.LINK_URL"
         const val START_PHONE = "phone"
         /** Dopo il nome del pacchetto: `eu.eurise.hub.eurisefiles`. */
         const val AUTHORITY = ".eurisefiles"

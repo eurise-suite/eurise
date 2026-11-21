@@ -426,6 +426,15 @@ final class EuriseSuite {
             } catch (Exception e) { reply(a, id, t("Serve l'app Eurise", "The Eurise app is needed"), null); }
             return;
         }
+        if (where.equals("ai:device")) {
+            // Alfred della suite con la domanda già scritta: risponde Eurise AI sul telefono (o chi la persona ha scelto).
+            try {
+                a.startActivity(new Intent(Intent.ACTION_ASSIST).setComponent(new ComponentName(hub, "eu.eurise.hub.alfred.AlfredActivity"))
+                        .putExtra(Intent.EXTRA_TEXT, query).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                reply(a, id, null, null);
+            } catch (Exception e) { reply(a, id, t("Serve l'app Eurise", "The Eurise app is needed"), null); }
+            return;
+        }
         String url = address(where, query);
         if (url == null) { reply(a, id, t("Non ancora disponibile", "Not available yet"), null); return; }
         Intent popup = new Intent().setComponent(new ComponentName(hub, "eu.eurise.hub.web.WebPopupActivity"))
