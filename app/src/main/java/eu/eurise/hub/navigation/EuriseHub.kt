@@ -368,6 +368,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                             navController.openNote(target)
                         },
                         linked = { id, title -> linked(LinkRef.note(id), title) },
+                        onBackup = { navController.navigate("cloud/backup") },
                     )
                 }
                 composable(

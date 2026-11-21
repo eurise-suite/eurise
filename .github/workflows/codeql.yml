@@ -20,7 +20,8 @@ permissions:
 # bloccanti sul ramo della sicurezza, dove passa tutto prima di brand; su brand solo segnalazione (un passo «Impronte
 # delle librerie» in ogni lavoro), perché le impronte nuove arrivano dopo il primo giro di chi aggiunge una libreria.
 env:
-  GRADLE_OPTS: ${{ github.ref_name == 'prova-sicurezza' && '-Dorg.gradle.dependency.verification=strict' || '' }}
+  # Come in Compila APK: bloccante su prova-sicurezza e brand, tranne il giro che cambia i file delle librerie.
+  GRADLE_OPTS: ${{ (github.ref_name == 'prova-sicurezza' || (github.ref_name == 'brand' && !(github.event_name == 'push' && (contains(toJSON(github.event.commits), 'build.gradle.kts') || contains(toJSON(github.event.commits), 'libs.versions.toml'))))) && '-Dorg.gradle.dependency.verification=strict' || '' }}
 
 concurrency:
   group: codeql-${{ github.ref }}

@@ -110,6 +110,8 @@ class BackupManager private constructor(private val context: Context) {
     suspend fun setup(passphrase: String, recoveryCode: String) = withContext(Dispatchers.Default) {
         val keys = BackupCrypto.setup(passphrase.toCharArray(), recoveryCode)
         storeKeys(keys)
+        // La coppia per la copia della chiave delle note: il backup automatico la chiude senza poterla riaprire.
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.setBackupPair(context, passphrase, recoveryCode) }
         refresh()
     }
 
@@ -119,6 +121,7 @@ class BackupManager private constructor(private val context: Context) {
         val dataKey = runCatching { BackupCrypto.unlock(header, current) }.getOrNull() ?: return@withContext false
         // Si tiene la chiusura per il codice di recupero già consegnato all'utente.
         storeKeys(BackupCrypto.Keys(dataKey, BackupCrypto.rewrapPassphrase(dataKey, next.toCharArray(), header)))
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.changeBackupPassphrase(context, current, next) }
         true
     }
 
@@ -129,6 +132,9 @@ class BackupManager private constructor(private val context: Context) {
     suspend fun resetSecrets(passphrase: String, recoveryCode: String): Boolean = withContext(Dispatchers.Default) {
         val keys = keys() ?: return@withContext false
         storeKeys(BackupCrypto.Keys(keys.dataKey, BackupCrypto.rewrapAll(keys.dataKey, passphrase.toCharArray(), recoveryCode)))
+        // La frase vecchia non c'è: la coppia della copia delle note si rifà nuova (la copia si richiude subito se la
+        // chiave è aperta, altrimenti al prossimo sblocco di una nota).
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.setBackupPair(context, passphrase, recoveryCode) }
         prefs.edit().putLong("checked_at", System.currentTimeMillis()).apply()
         refresh()
         true
@@ -221,6 +227,8 @@ class BackupManager private constructor(private val context: Context) {
         internal val zip: ByteArray,
         internal val keys: BackupCrypto.Keys,
         internal val place: BackupPlace?,
+        /** La frase o il codice appena scritti, solo in memoria: aprono la copia della chiave delle note ([apply]). */
+        internal val secret: String,
     )
 
     /** Apre [name] da [place] con la frase o il codice e lo verifica, senza toccare niente. */
@@ -234,7 +242,7 @@ class BackupManager private constructor(private val context: Context) {
         val parsed = BackupCrypto.parse(bytes)
         val dataKey = BackupCrypto.unlock(parsed.header, secret)
         val zip = BackupCrypto.decrypt(parsed, dataKey)
-        Opened(BackupArchive.contents(zip, parsed.createdAt), BackupArchive.onPhone(context), zip, BackupCrypto.Keys(dataKey, parsed.header), place)
+        Opened(BackupArchive.contents(zip, parsed.createdAt), BackupArchive.onPhone(context), zip, BackupCrypto.Keys(dataKey, parsed.header), place, secret)
     }
 
     /**
@@ -243,6 +251,8 @@ class BackupManager private constructor(private val context: Context) {
      */
     suspend fun apply(opened: Opened) = withContext(Dispatchers.IO) {
         BackupArchive.stage(context, opened.zip)
+        // La copia della chiave delle note si apre qui, con il segreto appena scritto: all'avvio non c'è nessuno a chiederlo.
+        BackupArchive.openSealedNotes(context, opened.secret)
         storeKeys(opened.keys)
         opened.place?.let { place ->
             prefs.edit().putString("place", place.encode()).apply()

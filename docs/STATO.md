@@ -3400,6 +3400,8 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 20 novembre, Organizzazione per Comunicazione: Telefono, «Sospetto spam» per 0843/0844 e prefissi segnati · giro 902 → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, Sicurezza: segreti affidati all'app Eurise (chiave di recupero della Chat) sigillati nel Keystore, migrati da soli, voce a parte nel backup → `docs/SICUREZZA.md`.
 - 21 novembre, Organizzazione per Comunicazione: elenco Eurise dei numeri molesti (data/spam, scaricato dall'app Eurise, Telefono senza Internet) · giro 910 → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, Sicurezza: verifica delle librerie bloccante anche su `brand` (lenient solo nel giro che cambia le librerie; GeckoView fidata con la chiave di Mozilla) → `docs/SICUREZZA.md`.
+- 21 novembre, Sicurezza: note bloccate legate all'impronta o al PIN, copia della chiave nel backup chiusa con la frase (`NoteSeal`), «Riapri» e avviso senza backup (tavole approvate) → `docs/SICUREZZA.md`.
 - 21 novembre, Comunicazione: Chat, invia più tardi, quando lavora, a scomparsa (cancellato dal server un giorno dopo la lettura) e Ricordamelo in Attività; toccati `core/suite` HubBridge e il ricevitore dell'app Eurise · giro 919 (chat, eurise) → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, Organizzazione per Comunicazione: elenco dei numeri molesti dalla pre-release `elenco-molesti` e controllo settimanale programmato; «Segnala a Eurise» quando ci sarà il server Eurise (ricordarlo al proprietario) · giro 918 → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, Organizzazione: tavole NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata, NoteVocaleDove e ImpEurise (da approvare) → `docs/stato/ORGANIZZAZIONE.md`.

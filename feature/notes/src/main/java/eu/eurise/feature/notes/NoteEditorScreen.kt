@@ -111,6 +111,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.compose.runtime.DisposableEffect
 import eu.eurise.feature.notes.lock.rememberDeviceAuth
 import eu.eurise.feature.notes.lock.LockedNoteView
+import eu.eurise.feature.notes.lock.ReopenNotesView
 import eu.eurise.feature.notes.lock.LockSheet
 import eu.eurise.feature.notes.voice.AudioActions
 import eu.eurise.feature.notes.voice.AudioBlockView
@@ -131,6 +132,8 @@ fun NoteEditorRoute(
     onClose: () -> Unit,
     onOpenNote: (Long) -> Unit,
     linked: @Composable (noteId: Long, title: String) -> Unit = { _, _ -> },
+    /** «Attiva il backup» dal foglio «Blocca» senza backup (tavola NoteBloccaSenzaBackup). */
+    onBackup: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val viewModel = viewModel { NoteEditorViewModel(notes, notebooks, tasks, noteId, notebookId, context.applicationContext) }
@@ -152,6 +155,7 @@ fun NoteEditorRoute(
         },
         onOpenNote = { target -> viewModel.close { CloudSync.get(context).requestSoon(); onOpenNote(target) } },
         onConflictResolved = { CloudSync.get(context).requestSoon() },
+        onBackup = { viewModel.close { CloudSync.get(context).requestSoon(); onBackup() } },
         linked = { viewModel.currentId?.let { id -> linked(id, state.title) } },
         notebookPicker = { onDismiss ->
             NotebookPickerSheet(
@@ -185,6 +189,7 @@ private fun NoteEditorScreen(
     onShare: () -> Unit,
     onOpenNote: (Long) -> Unit,
     onConflictResolved: () -> Unit,
+    onBackup: () -> Unit,
     linked: @Composable () -> Unit,
     notebookPicker: @Composable (onDismiss: () -> Unit) -> Unit,
     linkPicker: @Composable (onDismiss: () -> Unit) -> Unit,
@@ -203,6 +208,14 @@ private fun NoteEditorScreen(
         stringResource(R.string.notes_unlock_prompt_sub),
         onSuccess = viewModel::unlock,
     )
+    // Bloccare chiede l'impronta o il PIN: la chiave delle note si apre solo subito dopo (LockKeys).
+    var pendingHide by remember { mutableStateOf(false) }
+    val askLock = rememberDeviceAuth(
+        stringResource(R.string.notes_lock_prompt),
+        stringResource(R.string.notes_lock_prompt_sub),
+        onSuccess = { viewModel.lock(pendingHide) },
+    )
+    val backupOn = remember { eu.eurise.core.cloud.backup.BackupManager.get(screenContext).state.value.configured }
     // Uscendo dall'app la nota bloccata si richiude subito.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -211,7 +224,9 @@ private fun NoteEditorScreen(
         onDispose { lifecycle.removeObserver(observer) }
     }
     // Aprendo una nota bloccata, la richiesta dell'impronta parte da sola.
-    LaunchedEffect(state.loaded, state.hidden) { if (state.loaded && state.hidden && !state.lockMissingKey) askUnlock() }
+    LaunchedEffect(state.loaded, state.hidden, state.lockReopen) {
+        if (state.loaded && state.hidden && !state.lockMissingKey && !state.lockReopen) askUnlock()
+    }
     val focusManager = LocalFocusManager.current
     val clipboard = LocalClipboardManager.current
     BackHandler(enabled = selecting) { selecting = false }
@@ -534,7 +549,18 @@ private fun NoteEditorScreen(
     }
     if (pickNotebook) notebookPicker { pickNotebook = false }
     if (pickLink) linkPicker { pickLink = false }
-    if (lockSheet) LockSheet(onLock = { hide -> lockSheet = false; viewModel.lock(hide) }, onDismiss = { lockSheet = false })
+    if (lockSheet) LockSheet(
+        backupOn = backupOn,
+        onLock = { hide ->
+            lockSheet = false
+            if (!backupOn) eu.eurise.core.cloud.lock.LockKeys.acceptNoBackup(screenContext)
+            pendingHide = hide
+            askLock()
+        },
+        onBackup = { lockSheet = false; onBackup() },
+        onDismiss = { lockSheet = false },
+    )
+    if (state.lockReopen) ReopenNotesView(busy = state.reopenBusy, wrong = state.reopenWrong, onReopen = viewModel::reopen, onNotNow = onDone)
 }
 
 /** Menu di un blocco alla posizione [index] di [last]+1 blocchi: niente «Sposta su» in cima, niente «Sposta giù» in fondo. */

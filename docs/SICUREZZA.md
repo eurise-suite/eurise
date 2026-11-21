@@ -2,21 +2,25 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 20 novembre 2026, sera)
-- **Rami**: si lavora su `prova-sicurezza` (lì la verifica delle librerie è bloccante, «strict»), poi avanti veloce su
-  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 911). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
+### Per ripartire (aggiornato il 21 novembre 2026)
+- **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
+  `brand`. Al 21 novembre i due rami sono allo stesso commit (giro 925). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **911** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
+- **Ultimo giro pubblicato**: Compila **925** da `prova-sicurezza` (21 novembre), in `apk-prova` con tutte le app
   della suite, Mappe e motore di Office presi dai loro ultimi giri riusciti; prova delle porte sull'emulatore verde su
   quel giro (22 controlli). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Da provare sul telefono (giro 925)**: Note bloccate (aprire, modificare, richiudere; bloccarne una nuova: ora chiede
+  il dito); poi Backup › Cambia frase con il **codice di recupero** come frase attuale e la stessa frase come nuova:
+  crea la coppia del backup e da lì la chiave delle note si lega all'impronta. Fino ad allora tutto resta come prima.
 - **Fatto**: punti 1–8 del piano. Chiave di prova nuova con rotazione; strumenti aggiornati; GeckoView sempre l'ultima;
   porte d'ingresso (permesso della suite ovunque, provato sull'emulatore da `prova-porte.yml`); crittografia (Ponte v2
   con chiavi effimere, chiave del Ponte nel Keystore, StrongBox dove c'è, backup a 600 000 iterazioni); backup di
   Android spento in tutte le app; azioni allo SHA, permessi minimi, CodeQL, OSV-Scanner, Dependabot; librerie verificate
   con impronte e **firme PGP degli autori** (`librerie-verificate.yml` le rigenera); contenuti scaricati fissati per
   commit e impronta; `SECURITY.md`, `docs/MINACCE.md`; computer (Ponte, estensione Firefox 0.2.1, Flatpak 25.08);
-  chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera).
+  chiave del Ponte del computer nel portachiavi del sistema (20 novembre, sera); intent verso le altre app controllati;
+  segreti affidati e note bloccate legate all'impronta; verifica delle librerie bloccante anche su `brand` (21 novembre).
 - **Prossimo, in ordine proposto**:
   1. ~~Chiave del Ponte del computer nel portachiavi del sistema~~ fatta il 20 novembre, sera (sezione «Computer»).
   2. ~~Cassetta del Ponte nel cloud con segretezza in avanti~~ formato pronto il 20 novembre, sera (`Mailbox` in
@@ -24,11 +28,12 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   3. ~~Voci «Aperto» delle porte d'ingresso~~ intent verso le altre app della suite controllati il 20 novembre, sera
      (tra cui il CSV delle password importate dal Browser). Resta Mappe, da fare con la preparazione della versione
      ufficiale (sezione «Porte d'ingresso», «Mappe»).
-  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ fatto il 21 novembre (sezione «Crittografia»); resta il
-     blocco delle Note legato all'impronta (da decidere con il proprietario: cambia il backup).
-  5. Verifica «strict» anche su `brand`, quando i giri delle altre aree avranno smesso di portare librerie nuove senza
-     passare dal flusso delle impronte.
-  6. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
+  4. ~~Segreti affidati all'app Eurise sigillati nel Keystore~~ e ~~blocco delle Note legato all'impronta~~ fatti il 21
+     novembre (sezione «Crittografia»; tavole NoteBloccaSenzaBackup e NoteRiapri approvate lo stesso giorno).
+  5. ~~Verifica «strict» anche su `brand`~~ fatta il 21 novembre (sezione «Impronte delle librerie», «Dove blocca»).
+     Resta «lenient» nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser): da fare con le loro aree.
+  6. Mappe per la versione ufficiale (variante «prova»/«ufficiale» nel patch, destinatari controllati), con l'area Mappe.
+  7. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
   `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
@@ -169,6 +174,28 @@ prima della prima versione ufficiale di Mappe, con l'area Mappe (giro di `maps-e
   quattro settimane. Nessun ripiego sulla chiave fissa. Chi costruisce la cassetta (area Computer): sigillare le
   `MailboxKeys` come la chiave fissa (Keystore, portachiavi), cancellare il file dopo la lettura, `ReplayGuard` lungo
   28 giorni, `prune()` a ogni giro.
+- **Note bloccate legate all'impronta (21 novembre)**: prima la chiave delle note era sigillata da una chiave del
+  Keystore senza condizioni: chi forzava il telefono (falla di Android, root) poteva usarla senza il dito. Rischio basso,
+  ma è il cuore del blocco. Ora (`LockKeys`) la chiave del Keystore si usa solo nei 30 secondi dopo l'impronta o il PIN;
+  aperta, la chiave delle note resta in memoria finché la nota è aperta e si cancella quando si richiude. Android non la
+  annulla aggiungendo o cambiando un'impronta (validità a tempo, `setInvalidatedByBiometricEnrollment(false)`); la annulla
+  solo togliendo il blocco schermo.
+  - **Backup**: il backup automatico non ha nessuno davanti, quindi non porta più la chiave in chiaro ma una copia chiusa
+    verso una coppia EC P-256 (`NoteSeal`, voce `lock/notes.sealed`) la cui parte privata esiste solo chiusa con la frase e
+    con il codice di recupero (PBKDF2 come il backup). Il telefono scrive la copia ma non la rilegge. La coppia nasce alla
+    prima attivazione del backup e si richiude al cambio frase (la copia segue senza bisogno della chiave). Al ripristino
+    la copia si apre con il segreto appena scritto; i backup di prima (chiave in chiaro) si aprono come prima.
+  - **Riapri** (tavola NoteRiapri): se il blocco schermo è stato tolto, la copia tenuta sul telefono si apre con la frase
+    o il codice, poi si lega all'impronta o al PIN nuovi. Senza blocco schermo, prima lo si rimette.
+  - **Senza backup** (tavola NoteBloccaSenzaBackup): bloccare avvisa che togliendo il blocco schermo o cambiando telefono
+    la nota non si riaprirebbe più; «Blocca lo stesso» o «Attiva il backup». Bloccare ora chiede l'impronta o il PIN.
+  - **Migrazione**: una chiave di prima si lega all'impronta al primo sblocco, solo se il backup ha già la sua coppia (o se
+    l'utente ha scelto di bloccare senza backup). **Chi aveva già il backup attivo** ottiene la coppia la prima volta che
+    scrive la frase: Backup › Cambia frase, con il **codice di recupero** come frase attuale (così si chiudono sia frase
+    sia codice) e la stessa frase come nuova. Fino ad allora tutto resta come prima, senza perdere nulla.
+  - Prove: `NoteSealTest` (copia aperta solo con frase o codice, cambio frase, copia che segue la frase nuova, coppia
+    salvata e ripristinata, copia toccata rifiutata). Lo sblocco con il dito non si prova sull'emulatore: va provato sul
+    telefono (nota bloccata, chiusa, riaperta; backup e ripristino; Cambia frase).
 - **Backup, file in chiaro tolti (20 novembre 2026, area Backup)**: la Tastiera consegna e riceve lo zip delle parole
   imparate in un tubo, non più da file nella cache (quello dell'esportazione restava dopo ogni backup); lo zip in attesa
   della Tastiera sta sigillato con una chiave del Keystore (`LocalSeal`); il ripristino apre il backup solo in memoria e
@@ -309,11 +336,23 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
 - **Indicatori dei plugin** (`*.gradle.plugin`) esclusi: Maven Central e Gradle Plugin Portal li servono diversi; il plugin
   vero è verificato. Senza questa esclusione, con la cache vuota, anche «lenient» fermava la compilazione (successo il 20
   novembre sul lavoro del computer; la verifica è stata spenta per qualche ora su `brand` per non bloccare nessuno).
-- **Dove blocca**: su `prova-sicurezza`, in Compila e CodeQL (`GRADLE_OPTS=-Dorg.gradle.dependency.verification=strict`).
-  Su `brand` e negli altri flussi è «lenient»: un passo «Impronte delle librerie» in ogni lavoro mostra in evidenza
-  (avviso e riepilogo) ogni file che non corrisponde. Motivo: le impronte di una libreria nuova arrivano dopo il primo giro
-  di chi la aggiunge (il flusso parte da solo quando cambiano i file delle librerie e poi rilancia Compila), e GeckoView
-  cambia versione da sé a ogni uscita di Mozilla.
+- **Dove blocca (dal 21 novembre)**: su `prova-sicurezza` **e su `brand`**, in Compila e CodeQL
+  (`GRADLE_OPTS=-Dorg.gradle.dependency.verification=strict`). Negli ultimi nove giri di `brand` (dal 20 novembre) nessun
+  file senza impronta: le altre aree passano già dal flusso delle impronte. Le due ragioni per cui era «lenient»:
+  - **Librerie nuove**: le impronte arrivano dopo il primo giro di chi aggiunge la libreria. Ora il giro di un push su
+    `brand` che cambia `build.gradle.kts` o `libs.versions.toml` (letti dai commit del push) resta «lenient»; il flusso
+    delle impronte parte da solo, le scrive e rilancia Compila a mano, e quel giro è bloccante.
+  - **GeckoView** cambia versione da sé a ogni uscita di Mozilla: la chiave «Mozilla Software Releases» è fidata per
+    tutto il gruppo `org.mozilla.geckoview` (`.github/scripts/fidati_mozilla.py`, lanciato dal flusso dopo ogni
+    scrittura): una versione nuova passa solo se è firmata da Mozilla, senza aspettare le impronte.
+  - **Chiavi fidate sparite** (21 novembre): due giri del flusso hanno tolto chiavi fidate (le due di Google per
+    AndroidX, Apache, javawriter, ASM) e i giri bloccanti 914 e 917 si sono fermati. Causa: un errore mio nella ricerca di
+    `fidati_mozilla.py`, che dalla riga di Mozilla correva fino alla fine del blocco dopo. Corretto e provato (due volte
+    di fila non toglie nulla); le chiavi sono tornate identiche. In più `.github/scripts/chiavi_fidate.py` rimette ogni
+    chiave fidata della versione di prima, per qualunque causa; una chiave da togliere davvero si toglie a mano, con un
+    commit che lo spiega. Nessun file non verificato è entrato negli APK: la verifica bloccante ha fermato i giri.
+  Negli altri flussi (Office, Mappe, schermate, prova d'avvio del Browser) resta «lenient»; un passo «Impronte delle
+  librerie» in ogni lavoro mostra ogni file che non corrisponde, con l'avviso di non togliere mai la verifica.
 - **Firme PGP degli autori** (20 novembre): il flusso scrive `pgp,sha256` ed esporta le chiavi in
   `gradle/verification-keyring.keys` (45 chiavi; Tastiera 47). Dove l'autore firma, Gradle controlla la firma oltre
   all'impronta: GeckoView con la chiave «Mozilla Software Releases» (sottochiave 678E455D76767AA3), Kotlin con quella di

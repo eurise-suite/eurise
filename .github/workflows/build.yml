@@ -11,11 +11,12 @@ on:
 permissions:
   contents: read
 
-# Impronte delle librerie (gradle/verification-metadata.xml, provate a cache vuota da librerie-verificate.yml):
-# bloccanti sul ramo della sicurezza, dove passa tutto prima di brand; su brand solo segnalazione (un passo «Impronte
-# delle librerie» in ogni lavoro), perché le impronte nuove arrivano dopo il primo giro di chi aggiunge una libreria.
+# Impronte delle librerie (gradle/verification-metadata.xml, provate a cache vuota da librerie-verificate.yml): bloccanti
+# su prova-sicurezza e su brand (21 novembre 2026, docs/SICUREZZA.md). Unica eccezione: il giro di un push su brand che
+# cambia i file delle librerie (build.gradle.kts, libs.versions.toml) resta solo segnalazione, perché le impronte nuove
+# le scrive dopo librerie-verificate.yml, che poi rilancia questo flusso a mano (workflow_dispatch: bloccante).
 env:
-  GRADLE_OPTS: ${{ github.ref_name == 'prova-sicurezza' && '-Dorg.gradle.dependency.verification=strict' || '' }}
+  GRADLE_OPTS: ${{ (github.ref_name == 'prova-sicurezza' || (github.ref_name == 'brand' && !(github.event_name == 'push' && (contains(toJSON(github.event.commits), 'build.gradle.kts') || contains(toJSON(github.event.commits), 'libs.versions.toml'))))) && '-Dorg.gradle.dependency.verification=strict' || '' }}
 
 concurrency:
   group: build-${{ github.ref }}
@@ -49,7 +50,8 @@ jobs:
           f=build.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       # Gli errori di compilazione diventano annotazioni, leggibili anche senza scaricare il registro.
       - name: Riassunto degli errori
@@ -213,7 +215,8 @@ jobs:
           f=keyboard/build.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Riassunto degli errori
         if: failure()
@@ -273,7 +276,8 @@ jobs:
           f=build.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Carica l'APK di Leggi
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -336,7 +340,8 @@ jobs:
           f=build.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Riassunto degli errori
         if: failure()
@@ -394,7 +399,8 @@ jobs:
           f=build.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Riassunto degli errori
         if: failure()
@@ -533,7 +539,8 @@ jobs:
           f=desktop.log
           if [ -f "$f" ] && grep -q "failed verification" "$f"; then
             grep -h "failed verification" "$f" | sort -u | head -20 | sed 's/^ *//; s/^/::warning title=Impronta delle librerie::/'
-            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "### Impronte delle librerie: da controllare"; grep -h "failed verification" "$f" | sort -u | head -20
+              echo "Libreria nuova o cambiata? Le impronte le scrive «Impronte delle librerie» (librerie-verificate.yml), che parte da solo quando cambiano build.gradle.kts o libs.versions.toml e poi rilancia Compila. Mai togliere la verifica per farlo passare: docs/SICUREZZA.md."; } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Riassunto degli errori
         if: failure()
