@@ -3413,3 +3413,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 21 novembre, notte, Comunicazione: Chat, posizione dal vivo a tempo (come Element, punti cifrati, avviso fisso con Smetti, nessuna mappa scaricata) · giro 957 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, notte, Comunicazione: difesa dalle truffe in Messaggi e Chat (ScamCheck nuovo in `core/suite`), presa visione nei gruppi, modalità semplice della Chat · giro 964 (chat, messages) → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, notte, Comunicazione: Chat, proposte dai messaggi, riassunto con Eurise AI, «arriva quando lavora», gruppi a tempo con archivio; modulo nuovo `core/text` (QuickAdd e MessageInsights spostati da core/data, stessi pacchetti) · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, notte, Organizzazione: Ciarly con il caffè che sale dal basso verso il blu (versione B) · giro 963 → `docs/stato/ORGANIZZAZIONE.md`.

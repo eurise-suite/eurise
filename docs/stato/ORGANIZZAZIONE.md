@@ -58,8 +58,10 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   Trovato con una prova sul telefono simulato: ramo `prova-nota-vocale`, flusso `prova-nota-vocale.yml`, script
   `scripts/prove/nota-vocale.sh` (installa, tocca il microfono, legge il registro degli errori). Resta su quel ramo.
 - «Dove salvo le registrazioni?» si apre per intero e scorre (nel telefono simulato «Va bene» restava sotto il bordo).
-- **Icona della Chat (Ciarly)**, chiesto dal proprietario: fondo cangiante dal blu del Browser (#1E9BE0, #2F63A6) al
-  caffè (#7B4A28). **Parte comune toccata**: `scripts/icone_disegni.json` (voce «Chat»); rigenerati
+- **Icona della Chat (Ciarly)**, chiesto dal proprietario: fondo cangiante dal blu del Browser al caffè, che sale dritto
+  dal basso (versione B scelta dal proprietario, giro 963: #1E9BE0, #5A6E9A, #A8642E alle tappe 0 / 0,38 / 0,78).
+  `scripts/icone.py` e `icone_kotlin.py` hanno ora «verticale» e «tappe» facoltativi per icona (le altre non cambiano);
+  `SuiteDrawings.Drawing` e `SuiteBubble` (`SuiteIcons.kt`, `AppIcon.kt`) li usano nei temi della Scrivania. **Parte comune toccata**: `scripts/icone_disegni.json` (voce «Chat»); rigenerati
   `chat/.../ic_chat_background.xml` e `SuiteDrawings.kt` (temi delle icone della Scrivania). È un'app dell'area
   Comunicazione: da scrivere anche in `COMUNICAZIONE.md` se la ritoccano. La tela non è aggiornata.
 - Giro 945 (solo la correzione) e giro 949 (tutto, con un commit di Comunicazione) pubblicati in `apk-prova`.
