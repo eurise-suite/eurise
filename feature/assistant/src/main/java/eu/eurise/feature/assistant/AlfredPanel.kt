@@ -250,7 +250,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     suspend fun showData(ask: Command.Ask) {
         val answer = butler.lookup(ask)
         phase = Phase.Data(answer)
-        say(SpokenText.brief(answer.spoken))
+        // I messaggi si leggono per intero (fino a una ventina di righe): è ciò che si è chiesto.
+        say(if (ask.kind == AskKind.Messages) SpokenText.brief(answer.spoken, sentences = 12, maxChars = 700) else SpokenText.brief(answer.spoken))
     }
 
     /** Dopo la scheda letta a voce, Alfred ascolta la risposta: «sì» agisce, «no» annulla, altro è una correzione. */
@@ -798,6 +799,7 @@ private fun HelpList() {
     val groups = listOf(
         R.string.alfred_help_g_events to R.string.alfred_help_x_events,
         R.string.alfred_help_g_tasks to R.string.alfred_help_x_tasks,
+        R.string.alfred_help_g_messages to R.string.alfred_help_x_messages,
         R.string.alfred_help_g_clock to R.string.alfred_help_x_clock,
         R.string.alfred_help_g_phone to R.string.alfred_help_x_phone,
         R.string.alfred_help_g_music to R.string.alfred_help_x_music,
@@ -1112,6 +1114,8 @@ private fun DataList(rows: List<DataRow>, onOpen: (String) -> Unit) {
 /** Apre una sezione di Eurise («calendar», «note:12»…) o, per «calls», il registro delle chiamate. */
 private fun openSection(context: android.content.Context, section: String) {
     val intent = if (section == "calls") Intent(Intent.ACTION_VIEW).setType(android.provider.CallLog.Calls.CONTENT_TYPE)
+    else if (section == "messages") context.packageManager.getLaunchIntentForPackage(
+        eu.eurise.core.suite.PeopleContract.packageOf(context, eu.eurise.core.suite.PeopleContract.App.Messages)) ?: return
     else Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", section)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
     eu.eurise.core.contacts.Reach.open(context, intent)

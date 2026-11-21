@@ -49,6 +49,8 @@ sealed interface Command {
     data class Device(val action: DeviceAction, val until: LocalTime? = null, val minutes: Int? = null, val mode: String? = null) : Command
     /** Sveglie e timer già messi: «ferma il timer», «quanto manca al timer?», «spegni la sveglia di domani». */
     data class Clock(val action: ClockAction, val day: LocalDate? = null) : Command
+    /** «Rispondi che arrivo»: a chi ha scritto per ultimo (o di cui si sono appena letti i messaggi). */
+    data class Reply(val text: String) : Command
     /** «Cosa sai fare?»: l'elenco della tavola AlfAzioni. */
     data object Help : Command
     /** Nessuna regola la capisce: tocca a Eurise AI (richiesta libera). */
@@ -67,7 +69,7 @@ enum class ClockAction { StopTimer, TimerLeft, AlarmOff }
 enum class FollowAction { Move, Undo, AlsoTo }
 
 /** Agenda: «cosa ho domani?»; When: «quando ho il dentista?»; Calls: «chi mi ha chiamato?»; Notes: «cosa avevo scritto sul cancello?». */
-enum class AskKind { Agenda, When, Calls, Notes }
+enum class AskKind { Agenda, When, Calls, Notes, Messages }
 
 enum class Channel { WhatsApp, Sms, Telegram, Signal }
 
@@ -127,6 +129,9 @@ object Grammar {
     private val PAUSE = Regex("$O^(?:pausa|metti\\s+in\\s+pausa|(?:ferma|stoppa|spegni)\\s+(?:la\\s+)?musica|basta\\s+musica|stop(?:\\s+musica)?)$")
     private val NEXT = Regex("$O^(?:avanti|prossima|prossimo|la\\s+prossima|(?:prossimo|prossima)\\s+(?:brano|canzone|pezzo)|(?:brano|canzone|pezzo)\\s+successiv[oa]|salta(?:\\s+(?:questa|questo|il\\s+brano|la\\s+canzone))?|cambia\\s+(?:canzone|brano))$")
     private val PREVIOUS = Regex("$O^(?:indietro|torna\\s+indietro\\s+(?:di\\s+una\\s+canzone|di\\s+un\\s+brano)|(?:brano|canzone|pezzo)\\s+precedente|quella\\s+di\\s+prima|la\\s+canzone\\s+di\\s+prima)$")
+    // Messaggi: risposta a chi ha scritto.
+    private val REPLY_TO = Regex("$O^rispondi\\s+(?:a|ad)\\s+(.+?)\\s+(?:che|:)\\s*(.+)$")
+    private val REPLY = Regex("$O^(?:rispondi|rispondigli|rispondile|rispondi\\s+(?:pure|subito))\\s*(?:che|:|,)?\\s+(.+)$")
     // Sveglie e timer già messi.
     private val TIMER_STOP = Regex("$O^(?:ferma|fermami|stoppa|spegni|annulla|cancella|togli|elimina|basta\\s+con)\\s+(?:il\\s+|i\\s+|tutti\\s+i\\s+)?timer$")
     private val TIMER_LEFT = Regex("$O^(?:quanto\\s+(?:tempo\\s+)?(?:manca|resta|rimane)(?:\\s+(?:al|alla\\s+fine\\s+del|sul|del|nel)\\s+timer)?|quanto\\s+fa\\s+il\\s+timer|a\\s+che\\s+punto\\s+è\\s+il\\s+timer)$")
@@ -191,6 +196,8 @@ object Grammar {
         PAUSE.matchEntire(text)?.let { return Command.Device(DeviceAction.Pause) }
         NEXT.matchEntire(text)?.let { return Command.Device(DeviceAction.Next) }
         PREVIOUS.matchEntire(text)?.let { return Command.Device(DeviceAction.Previous) }
+        REPLY_TO.matchEntire(text)?.let { m -> return Command.Message(m.groupValues[1].trim(), capital(m.groupValues[2].trim()), Channel.Sms) }
+        REPLY.matchEntire(text)?.let { m -> return Command.Reply(capital(m.groupValues[1].trim())) }
         TIMER_STOP.matchEntire(text)?.let { return Command.Clock(ClockAction.StopTimer) }
         TIMER_LEFT.matchEntire(text)?.let { m ->
             // «quanto manca?» da solo è anche la domanda in guida: qui solo se si parla del timer.
@@ -235,6 +242,12 @@ object Grammar {
     }
 
     // --- Domande sui dati (tavola AlfDati) ---
+    /** «leggimi i messaggi», «chi mi ha scritto», «ho messaggi nuovi?», «cosa mi ha scritto Anna?» (SMS da Eurise Messaggi). */
+    private val ASK_MESSAGES = Regex(
+        "$O^(?:(?:leggimi|leggi|rileggimi)\\s+(?:i\\s+|gli\\s+ultimi\\s+|l'ultimo\\s+|il\\s+)?(?:nuovi\\s+)?(?:messaggi|messaggio|sms)(?:\\s+(?:nuovi|non\\s+letti|di\\s+oggi))?" +
+            "|chi\\s+mi\\s+ha\\s+(?:scritto|mandato\\s+(?:un\\s+)?messaggi?o?)|ho\\s+(?:dei\\s+|nuovi\\s+|qualche\\s+)?(?:messaggi|sms)(?:\\s+(?:nuovi|non\\s+letti))?" +
+            "|(?:ci\\s+sono\\s+)?(?:messaggi|sms)\\s+nuovi|(?:che\\s+)?(?:cosa|cos')\\s*mi\\s+ha\\s+scritto(?:\\s+(.+))?)$"
+    )
     /** «cosa ho domani», «che impegni ho venerdì», «ho qualcosa stasera», «com'è la mia giornata». */
     private val ASK_AGENDA = Regex(
         "$O^(?:(?:che\\s+)?(?:cosa|cos'|che)\\s*(?:ho|c'è|c'e|ce|devo\\s+fare)(?:\\s+(?:in\\s+(?:programma|agenda|calendario)|da\\s+fare))?" +
@@ -262,6 +275,7 @@ object Grammar {
 
     /** Le domande sui dati, prima di tutti i comandi: null se la frase non è una di queste. */
     internal fun ask(text: String, now: LocalDateTime): Command.Ask? {
+        ASK_MESSAGES.matchEntire(text)?.let { m -> return Command.Ask(AskKind.Messages, about = m.groupValues[1].trim()) }
         ASK_NOTES.matchEntire(text)?.let { m ->
             val about = (m.groupValues[1].ifBlank { m.groupValues[2] }).trim().trimEnd('?')
             if (about.isNotBlank()) return Command.Ask(AskKind.Notes, about = about)

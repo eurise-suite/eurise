@@ -85,6 +85,31 @@ class ActionsTest {
         assertEquals(DeviceAction.VolumeUp, dev("più forte"))
     }
 
+    @Test fun messaggi() {
+        assertEquals(Command.Ask(AskKind.Messages), p("leggimi i messaggi"))
+        assertEquals(Command.Ask(AskKind.Messages), p("chi mi ha scritto?"))
+        assertEquals(Command.Ask(AskKind.Messages), p("ho messaggi nuovi?"))
+        assertEquals("Anna", (p("cosa mi ha scritto Anna?") as Command.Ask).about)
+        assertEquals(Command.Reply("Arrivo"), p("rispondi che arrivo"))
+        val to = p("rispondi a Marco che arrivo tra dieci minuti") as Command.Message
+        assertEquals("Marco", to.who)
+        assertEquals("Arrivo tra dieci minuti", to.text)
+        // Le domande vicine restano com'erano.
+        assertEquals(AskKind.Calls, (p("chi mi ha chiamato?") as Command.Ask).kind)
+        assertTrue(p("scrivi ad Anna che arrivo") is Command.Message)
+    }
+
+    @Test fun letturaDeiMessaggi() {
+        val now = LocalDateTime.of(2026, 11, 12, 10, 15)
+        val a = DataWriter.messages(Command.Ask(AskKind.Messages), now,
+            listOf(DataMessage("Anna Rossi", "+39333", now.minusMinutes(5), listOf("Arrivo alle 8"), 1)), available = true, unreadTotal = 1)
+        assertEquals("Un messaggio nuovo da Anna.", a.lead)
+        assertEquals("Anna ha scritto: Arrivo alle 8.", a.spoken)
+        assertEquals(listOf("Rispondi ad Anna"), a.chips.map { it.label })
+        assertEquals("Per leggere i messaggi mi serve Eurise Messaggi.",
+            DataWriter.messages(Command.Ask(AskKind.Messages), now, emptyList(), available = false).lead)
+    }
+
     @Test fun cosaSaiFare() {
         assertEquals(Command.Help, p("Cosa sai fare?"))
         assertEquals(Command.Help, p("Alfred, che cosa sai fare"))

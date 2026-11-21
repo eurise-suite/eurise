@@ -25,6 +25,9 @@ data class DataTask(val title: String, val due: LocalDate?, val list: String)
 /** Una chiamata del registro: [name] vuoto se il numero non è in rubrica. */
 data class DataCall(val name: String, val number: String, val at: LocalDateTime, val missed: Boolean)
 
+/** Gli SMS di una persona da leggere: [name] vuoto se il numero non è in rubrica; [texts] dal più vecchio. */
+data class DataMessage(val name: String, val number: String, val at: LocalDateTime, val texts: List<String>, val unread: Int)
+
 /** Una nota trovata: [snippet] è il pezzo con la parola cercata. */
 data class DataNote(val id: Long, val title: String, val snippet: String)
 
@@ -64,6 +67,7 @@ object DataWriter {
     const val NOTE_TINT = 0xFF7A4A2A
     const val CALL_TINT = 0xFF2F6B45
     const val MISSED_TINT = 0xFFC2453F
+    const val MESSAGE_TINT = 0xFF8A3A5C
 
     private val NUMBERS = listOf("zero", "un", "due", "tre", "quattro", "cinque", "sei", "sette", "otto", "nove", "dieci")
 
@@ -227,6 +231,32 @@ object DataWriter {
         val chips = calls.filter { it.missed }.ifEmpty { calls }.map { c -> c.name.ifBlank { c.number } }.filter { it.isNotBlank() }.distinct().take(2)
             .map { Chip("Richiama ${it.split(' ').first()}", Command.Call(it)) }
         return DataAnswer(ask, lead, spoken, rows, chips, "calls", "Telefono", empty = calls.isEmpty())
+    }
+
+    // --- «Leggimi i messaggi», «chi mi ha scritto?» ---
+
+    fun messages(ask: Command.Ask, now: LocalDateTime, list: List<DataMessage>, available: Boolean, unreadTotal: Int = 0): DataAnswer {
+        val today = now.toLocalDate()
+        val who = { m: DataMessage -> m.name.ifBlank { m.number.ifBlank { "Numero sconosciuto" } } }
+        val rows = list.map { m ->
+            val d = m.at.toLocalDate()
+            val whenText = if (d == today) clock(m.at) else "${dayName(d, today)} · ${clock(m.at)}"
+            DataRow(who(m), "«" + m.texts.last().take(120) + "» · " + whenText, MESSAGE_TINT, "messages")
+        }
+        val lead = when {
+            !available -> "Per leggere i messaggi mi serve Eurise Messaggi."
+            list.isEmpty() && ask.about.isNotBlank() -> "Da ${ask.about} non trovo messaggi."
+            list.isEmpty() -> "Nessun messaggio."
+            unreadTotal == 0 -> "Nessun messaggio nuovo. Gli ultimi arrivati:"
+            list.size == 1 -> "${count(unreadTotal, "messaggio nuovo", "messaggi nuovi", feminine = false).replaceFirstChar { it.uppercase() }} da ${who(list.first()).split(' ').first()}."
+            else -> "${count(unreadTotal, "messaggio nuovo", "messaggi nuovi", feminine = false).replaceFirstChar { it.uppercase() }} da ${NUMBERS.getOrElse(list.size) { list.size.toString() }} persone."
+        }
+        // A voce si leggono i messaggi: è il punto della domanda.
+        val spoken = if (list.isEmpty()) lead else (if (unreadTotal == 0) "Nessun messaggio nuovo. " else "") +
+            list.joinToString(" ") { m -> "${who(m).split(' ').first()} ha scritto: " + m.texts.joinToString(" ") { it.trim().trimEnd('.') + "." } }
+        val chips = list.map { who(it) }.filter { it.isNotBlank() }.distinct().take(2)
+            .map { val first = it.split(' ').first(); Chip((if (first.first().lowercaseChar() in "aeiou") "Rispondi ad " else "Rispondi a ") + first, Command.Message(it, "", Channel.Sms)) }
+        return DataAnswer(ask, lead, spoken, rows, chips, "messages", "Messaggi", empty = list.isEmpty())
     }
 
     // --- «Cosa avevo scritto sul cancello?» ---

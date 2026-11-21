@@ -115,6 +115,12 @@ class Butler(private val context: Context) {
             listOf(Field("text", R.string.alfred_f_text, command.text)), s(R.string.alfred_note_remember), s(R.string.alfred_do_remember))
         is Command.Follow -> follow(command)
         is Command.Change -> change(command)
+        is Command.Reply -> {
+            val who = withContext(Dispatchers.IO) { LastMessages.sender(context) }
+            if (who == null) Card(Kind.Message, Command.Message("", command.text, Channel.Sms), s(R.string.alfred_reply_none), R.string.alfred_card_message,
+                listOf(Field("to", R.string.alfred_f_to, ""), Field("text", R.string.alfred_f_text, command.text)), null, s(R.string.alfred_do_send_sms), ready = false)
+            else message(Command.Message(who, command.text, Channel.Sms))
+        }
         is Command.Complete -> complete(command)
         is Command.Device -> Card(Kind.Device, command, "", R.string.alfred_card_device, emptyList(), null, "")
         is Command.Clock -> clock(command)

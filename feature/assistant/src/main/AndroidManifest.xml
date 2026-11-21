@@ -28,6 +28,9 @@
         <package android:name="eu.eurise.voice" />
         <package android:name="eu.eurise.voice.debug" />
         <package android:name="eu.eurise.maps" />
+        <!-- «Leggimi i messaggi», «rispondi che arrivo»: gli SMS da Eurise Messaggi, solo tra app della suite. -->
+        <package android:name="eu.eurise.messages" />
+        <package android:name="eu.eurise.messages.debug" />
         <package android:name="eu.eurise.ai" />
         <package android:name="eu.eurise.ai.debug" />
         <package android:name="com.whatsapp" />

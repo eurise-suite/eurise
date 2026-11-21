@@ -529,7 +529,7 @@
     <string name="alfred_help_g_music">Musica</string>
     <string name="alfred_help_x_music">«metti musica» · «pausa» · «avanti» · «più forte»</string>
     <string name="alfred_help_g_people">Persone</string>
-    <string name="alfred_help_x_people">«chiama Marco» · «scrivi ad Anna che arrivo» · «chi mi ha chiamato?»</string>
+    <string name="alfred_help_x_people">«chiama Marco» · «chi mi ha chiamato?» · «manda a Luca su WhatsApp che tardo»</string>
     <string name="alfred_help_g_more">E poi</string>
     <string name="alfred_help_x_more">«annota il codice del cancello» · «portami a casa» · «cerca…» · «ricorda che…» · domande libere al cervello</string>
     <string name="alfred_card_device">Telefono</string>
@@ -556,6 +556,9 @@
     <string name="alfred_timer_left">Mancano %1$s.</string>
     <string name="alfred_left_hours">%1$d ore e %2$d minuti</string>
     <string name="alfred_left_and_seconds">e %1$d secondi</string>
+    <string name="alfred_reply_none">Non trovo a chi rispondere: mi dica il nome.</string>
+    <string name="alfred_help_g_messages">Messaggi</string>
+    <string name="alfred_help_x_messages">«leggimi i messaggi» · «chi mi ha scritto?» · «rispondi che arrivo» · «scrivi ad Anna che arrivo»</string>
     <string name="alfred_dev_torch_on">Torcia accesa.</string>
     <string name="alfred_dev_torch_off">Torcia spenta.</string>
     <string name="alfred_dev_no_torch">Non riesco ad accendere la torcia su questo telefono.</string>
