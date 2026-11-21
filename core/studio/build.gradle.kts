@@ -22,7 +22,7 @@ dependencies {
     implementation(project(":core:suite"))
     testImplementation(libs.junit)
     // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no).
-    testImplementation("org.json:json:20240303")
+    testImplementation(libs.org.json)
 }
 
 // Kotlin 2.3 (AGP 9): il bersaglio Java si indica qui, non più in android { kotlinOptions }.
