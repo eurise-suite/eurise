@@ -68,6 +68,8 @@ public class Sonda extends Instrumentation {
             Throwable c = t instanceof InvocationTargetException && t.getCause() != null ? t.getCause() : t;
             out.putString("esito", "ERRORE " + c.getClass().getSimpleName() + ": " + c.getMessage());
         }
+        // Le impostazioni scritte con apply() vanno su disco prima che la prova chiuda il processo.
+        try { getTargetContext().getSharedPreferences("backup", Context.MODE_PRIVATE).edit().commit(); } catch (Exception ignored) { }
         out.putString("dettagli", log.toString().replace('\n', '|'));
         finish(0, out);
     }
@@ -244,9 +246,17 @@ public class Sonda extends Instrumentation {
         note("chiave dei dati sigillata dal Keystore (non leggibile)");
 
         // La cartella concessa come dal selettore.
+        // Il permesso lo chiede la sonda da qui (avviarla ferma Eurise, e Android allora toglie i permessi non persistenti).
         android.net.Uri treeUri = android.net.Uri.parse((String) tree());
-        int granted = ctx.checkUriPermission(treeUri, android.os.Process.myPid(), android.os.Process.myUid(), android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-        note("permesso sulla cartella prima di sceglierla: " + (granted == 0 ? "sì" : "no"));
+        ctx.sendBroadcast(new android.content.Intent().setComponent(new android.content.ComponentName("eu.eurise.prova.backup", "eu.eurise.prova.backup.Concedi"))
+            .addFlags(android.content.Intent.FLAG_INCLUDE_STOPPED_PACKAGES));
+        boolean granted = false;
+        for (int i = 0; i < 50 && !granted; i++) {
+            granted = ctx.checkUriPermission(treeUri, android.os.Process.myPid(), android.os.Process.myUid(), android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == 0;
+            if (!granted) Thread.sleep(300);
+        }
+        check(granted, "la cartella di prova non è stata concessa");
+        note("cartella concessa come dal selettore");
         call(m, "setPlace", folderPlace());
         Object daily = Class.forName(PKG + "BackupFrequency", true, getTargetContext().getClassLoader()).getField("Daily").get(null);
         call(m, "setFrequency", daily);
