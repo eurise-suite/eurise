@@ -48,7 +48,7 @@ jobs:
           run-id: ${{ steps.giro.outputs.id }}
           github-token: ${{ github.token }}
           path: artefatti
-          pattern: "eurise-{debug,tastiera-debug,password-debug,galleria-debug}-*"
+          pattern: "eurise-{debug,tastiera-debug,password-debug,galleria-debug,messaggi-debug,email-debug,office-debug,browser-debug}-*"
 
       - name: APK e sonda
         run: |
@@ -58,10 +58,10 @@ jobs:
           mkdir -p apk classi
           for f in $(find artefatti -name '*.apk'); do
             pkg=$("$bt/aapt2" dump packagename "$f" 2>/dev/null || true)
-            case "$pkg" in eu.eurise.hub.debug|eu.eurise.keyboard.debug|eu.eurise.password.debug|eu.eurise.gallery.debug) cp "$f" "apk/$pkg.apk";; esac
+            case "$pkg" in eu.eurise.hub.debug|eu.eurise.keyboard.debug|eu.eurise.password.debug|eu.eurise.gallery.debug|eu.eurise.messages.debug|eu.eurise.mail.debug|eu.eurise.office.debug|eu.eurise.browser.debug) cp "$f" "apk/$pkg.apk";; esac
           done
           ls -la apk
-          for p in hub keyboard password gallery; do test -f apk/eu.eurise.$p.debug.apk; done
+          for p in hub keyboard password gallery messages mail office browser; do test -f apk/eu.eurise.$p.debug.apk; done
           javac -source 11 -target 11 -cp "$jar" -d classi .github/prova-backup/sonda/src/eu/eurise/prova/backup/Sonda.java
           "$bt/d8" --min-api 26 --lib "$jar" --output classi $(find classi -name '*.class')
           "$bt/aapt2" link -o sonda-grezza.apk --manifest .github/prova-backup/sonda/AndroidManifest.xml -I "$jar" --min-sdk-version 26 --target-sdk-version 34

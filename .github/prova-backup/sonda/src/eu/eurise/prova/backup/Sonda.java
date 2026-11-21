@@ -32,6 +32,7 @@ public class Sonda extends Instrumentation {
     private static final String FRASE = "girasole lento sotto la pioggia 1987";
     private static final String CODICE = "K7QMR2XAHPN9DW4TZB6SMC3E";
     private static final String PKG = "eu.eurise.core.cloud.backup.";
+    private static final String[] APPS = {"keyboard", "password", "gallery", "messages", "mail", "office", "browser"};
 
     private String fase;
     private final StringBuilder log = new StringBuilder();
@@ -105,7 +106,7 @@ public class Sonda extends Instrumentation {
         check(Integer.valueOf(3).equals(get(contents, "getNotes")), "il manifesto non conta 3 note");
         check(Integer.valueOf(2).equals(get(contents, "getTasks")), "il manifesto non conta 2 attività");
         java.util.Map<?, ?> map = (java.util.Map<?, ?>) apps;
-        for (String k : new String[]{"keyboard", "password", "gallery"}) check(map.containsKey(k), "nel backup manca l'app " + k);
+        for (String k : APPS) check(map.containsKey(k), "nel backup manca l'app " + k);
         check(String.valueOf(map.get("password")).contains("cassaforte"), "la riga di Password non dice della cassaforte");
 
         try (FileOutputStream o = new FileOutputStream(new File(ctx.getCacheDir(), "prova.eurb"))) { o.write(file); }
@@ -148,13 +149,13 @@ public class Sonda extends Instrumentation {
         // Le app separate aspettano i loro dati, sigillati (non zip leggibili), finché non li si consegna.
         java.util.List<?> waiting = (java.util.List<?>) call(obj("SuiteApps"), "waiting", ctx);
         note("in attesa: " + waiting);
-        for (String k : new String[]{"keyboard", "password", "gallery"}) {
+        for (String k : APPS) {
             check(waiting.contains(k), "i dati di " + k + " non sono in attesa");
             File sealed = new File(new File(ctx.getFilesDir(), "apps_waiting"), k + ".sealed");
             check(sealed.exists() && !startsWith(readAll(sealed), "PK"), "i dati di " + k + " in attesa non sono sigillati");
         }
         check(!new File(new File(ctx.getFilesDir(), "restore_pending"), "apps").exists(), "dati delle app nella cartella d'attesa in chiaro");
-        note("dati di Tastiera, Password e Galleria in attesa, sigillati");
+        note("dati delle app in attesa, sigillati: " + waiting.size());
 
         call(obj("BackupArchive"), "applyPending", ctx);
         check(!new File(ctx.getFilesDir(), "restore_pending").exists(), "la cartella d'attesa del ripristino è rimasta");
@@ -176,8 +177,11 @@ public class Sonda extends Instrumentation {
         check(!((java.util.List<?>) call(obj("SuiteApps"), "waiting", ctx)).isEmpty(), "prima della consegna non c'è niente in attesa");
         call(obj("SuiteApps"), "deliverPending", ctx);
         java.util.List<?> left = (java.util.List<?>) call(obj("SuiteApps"), "waiting", ctx);
-        check(left.isEmpty(), "ancora in attesa dopo la consegna: " + left);
-        note("dati consegnati a Tastiera, Password e Galleria");
+        // Messaggi non è l'app SMS predefinita sull'emulatore: i suoi dati devono restare in attesa, sigillati.
+        check(left.size() == 1 && left.contains("messages"), "dopo la consegna aspetta: " + left + " (doveva restare solo messages)");
+        File sealed = new File(new File(ctx.getFilesDir(), "apps_waiting"), "messages.sealed");
+        check(sealed.exists() && !startsWith(readAll(sealed), "PK"), "i dati di Messaggi in attesa non sono sigillati");
+        note("consegnati a tutte; Messaggi aspetta di essere l'app SMS predefinita");
     }
 
     /** Il contenuto di un backup cifrato, letto a pezzi come fa l'app. */
