@@ -487,7 +487,8 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
   private void compact(@NonNull app.organicmaps.eurise.car.EuriseCarGuide.Slot slot)
   {
     final int room = slot.bottom - slot.top;
-    final boolean row = slot.turnNear || room < dp(130);
+    // Schermo diviso in guida: una riga (copertina piccola, titolo, autore) che non copre il percorso.
+    final boolean row = slot.turnNear || (slot.split && slot.guiding) || room < dp(130);
     final boolean noBar = row || slot.split || room < dp(240);
     if (noBar)
     {
@@ -496,6 +497,13 @@ public final class EuriseMediaBubble extends LinearLayout implements Runnable
     }
     if (row)
       mLyricBox.setVisibility(GONE);
+    final int art = dp(row ? 40 : 64);
+    final ViewGroup.LayoutParams alp = mArt.getLayoutParams();
+    if (alp != null && alp.width != art)
+    {
+      alp.width = alp.height = art;
+      mArt.setLayoutParams(alp);
+    }
   }
 
   /** Area libera e area stabile dell'auto (SurfaceCallbackBase), in pixel della superficie. */

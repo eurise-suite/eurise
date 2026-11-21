@@ -83,6 +83,10 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val studio = StudioRepo.current(ctx)
         var patientSide = false
         var studioSide = false
+        // Fuori orario (tavola SpaFuoriOrario): il lavoro aspetta, tranne persone, parole e stanze scelte.
+        val quiet = ChatAccounts.quietNow(ctx, account)
+        val rules = if (quiet) ChatAccounts.rules(ctx) else null
+        var urgent: Event? = null
         json.optJSONObject("rooms")?.optJSONObject("join")?.let { join ->
             join.keys().forEach { id ->
                 val events = Matrix.events(join.getJSONObject(id).optJSONObject("timeline")?.optJSONArray("events"))
@@ -94,6 +98,7 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     val patient = studio.enabled && studio.patients.any { p -> p.matrixId.equals(e.sender, ignoreCase = true) }
                     if (patient) studioSide = true else if (bussola) patientSide = true
                 }
+                if (rules != null) others.lastOrNull { FuoriOrario.passes(rules, it.sender, id, it.text) }?.let { urgent = it }
                 others.lastOrNull()?.let { e ->
                     lastFrom = Matrix.localpart(e.sender)
                     lastText = if (e.kind == Event.Kind.Encrypted) ctx.getString(R.string.ch_encrypted_short) else e.text
@@ -106,7 +111,12 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         }
         val neutral = studioSide || patientSide
         val invites = json.optJSONObject("rooms")?.optJSONObject("invite")?.length() ?: 0
-        if (count > 0 || invites > 0) notify(ctx, account, if (neutral) 1 else count, invites, lastFrom, lastText)
+        val loud = urgent?.let { e ->
+            if (!neutral) { lastFrom = Matrix.localpart(e.sender); lastText = if (e.kind == Event.Kind.Encrypted) ctx.getString(R.string.ch_encrypted_short) else e.text }
+            true
+        } ?: false
+        if (quiet && !loud) { ChatAccounts.addWaiting(ctx, count); FuoriOrarioWorker.schedule(ctx) }
+        if (count > 0 || invites > 0) notify(ctx, account, if (neutral) 1 else count, invites, lastFrom, lastText, loud)
         return true
     }
 
@@ -124,14 +134,14 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         fun cancel(context: Context) = WorkManager.getInstance(context).cancelUniqueWork(WORK)
 
-        private fun notify(context: Context, account: Account, count: Int, invites: Int, from: String, text: String) {
+        private fun notify(context: Context, account: Account, count: Int, invites: Int, from: String, text: String, loud: Boolean = false) {
             if (Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
             val nm = context.getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.ch_channel), NotificationManager.IMPORTANCE_HIGH))
             nm.createNotificationChannel(NotificationChannel(CHANNEL_QUIET, context.getString(R.string.ch_channel_quiet), NotificationManager.IMPORTANCE_LOW))
-            val quiet = ChatAccounts.quietNow(context, account)
+            val quiet = ChatAccounts.quietNow(context, account) && !loud
             // La notifica apre l'app sull'account giusto.
             val open = PendingIntent.getActivity(context, account.ordinal,
                 Intent(context, ChatActivity::class.java).putExtra(ChatActivity.EXTRA_ACCOUNT, account.name),

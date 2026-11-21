@@ -125,6 +125,8 @@ private sealed interface Phase {
     data object Brain : Phase
     /** La risposta a una domanda sui dati, cercata sul telefono (tavola AlfDati). */
     data class Data(val answer: DataAnswer) : Phase
+    /** «Cosa sai fare?» (tavola AlfAzioni). */
+    data object Help : Phase
 }
 
 /**
@@ -248,7 +250,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     suspend fun showData(ask: Command.Ask) {
         val answer = butler.lookup(ask)
         phase = Phase.Data(answer)
-        say(SpokenText.brief(answer.spoken))
+        // I messaggi si leggono per intero (fino a una ventina di righe): è ciò che si è chiesto.
+        say(if (ask.kind == AskKind.Messages) SpokenText.brief(answer.spoken, sentences = 12, maxChars = 700) else SpokenText.brief(answer.spoken))
     }
 
     /** Dopo la scheda letta a voce, Alfred ascolta la risposta: «sì» agisce, «no» annulla, altro è una correzione. */
@@ -341,7 +344,9 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
         }
         val card = butler.plan(command)
         // Segnala in guida: niente scheda né «Procedo?», chi guida non deve toccare nulla (tavola MapSegnalaGuida).
-        if (card.kind == Kind.Report) { execute(card); return }
+        // Lo stesso per torcia, volume, musica e timer (tavola AlfAzioni): si fanno subito e si disfano con una frase.
+        if (card.kind == Kind.Report || card.immediate) { execute(card); return }
+        if (card.kind == Kind.Help) { phase = Phase.Help; say(card.lead); return }
         // Domande libere subito online (disposizione accesa di base): niente scheda, si apre il servizio preferito.
         // Nessun messaggio intermedio: la domanda va subito al servizio (la prima volta, la spiegazione del centro
         // privacy chiede il permesso).
@@ -500,11 +505,12 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         if (p == Phase.Thinking) stringResource(R.string.alfred_transcribing) else stringResource(R.string.alfred_greeting, address),
                         if (p == Phase.Thinking) Mood.Thinking else Mood.Hello,
                         onSettings = { phase = Phase.Settings },
+                        onHelp = { phase = Phase.Help },
                     )
                     if (heard.isNotEmpty() && p == Phase.Thinking) Quote(heard)
                     Text(stringResource(R.string.alfred_hint), fontSize = 12.sp, lineHeight = 18.sp, color = Muted)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(R.string.alfred_ex_data, R.string.alfred_ex_call, R.string.alfred_ex_note, R.string.alfred_ex_route, R.string.alfred_ex_message,
+                        listOf(R.string.alfred_ex_help, R.string.alfred_ex_data, R.string.alfred_ex_call, R.string.alfred_ex_note, R.string.alfred_ex_route, R.string.alfred_ex_message,
                             R.string.alfred_ex_search, R.string.alfred_ex_alarm).forEach { id ->
                             val label = stringResource(id)
                             OutlineChip(label) { if (label.endsWith("…")) typed = label.removeSuffix("…") else understand(label) }
@@ -692,6 +698,14 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         answering = false; ear.cancel(); heard = ""; phase = Phase.Ready
                     }
                 }
+                Phase.Help -> {
+                    Header(stringResource(R.string.alfred_help_lead), Mood.Bow, onSettings = { phase = Phase.Settings })
+                    HelpList()
+                    Text(stringResource(R.string.alfred_help_foot), fontSize = 12.sp, lineHeight = 18.sp, color = Soft)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlineChip(stringResource(R.string.alfred_back)) { phase = Phase.Ready }
+                    }
+                }
                 is Phase.Data -> {
                     val a = p.answer
                     Header(a.lead, Mood.Bow, onSettings = { phase = Phase.Settings })
@@ -747,7 +761,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
 }
 
 @Composable
-private fun Header(line: String, mood: Mood, onSettings: () -> Unit) {
+private fun Header(line: String, mood: Mood, onSettings: () -> Unit, onHelp: (() -> Unit)? = null) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(
             Modifier.size(34.dp).clip(CircleShape).background(Seal).clickable(onClick = onSettings)
@@ -762,12 +776,45 @@ private fun Header(line: String, mood: Mood, onSettings: () -> Unit) {
             Icon(EuriseIcons.shield(2.4f), null, tint = Safe, modifier = Modifier.size(12.dp))
             Text(stringResource(R.string.alfred_on_phone), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Safe)
         }
+        // «Cosa sai fare?» dal punto interrogativo (tavola AlfAzioni).
+        onHelp?.let { help ->
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).clickable(onClick = help)
+                    .semantics { contentDescription = "Cosa sa fare Alfred" },
+                contentAlignment = Alignment.Center,
+            ) { Text("?", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Soft) }
+        }
         // Le impostazioni anche da un'icona visibile (prova del 13 novembre: col solo tondo del papillon non si trovavano).
         Box(
             Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onSettings)
                 .semantics { contentDescription = "Impostazioni di Alfred" },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.gear(2.2f), null, tint = Soft, modifier = Modifier.size(18.dp)) }
+    }
+}
+
+/** L'elenco della tavola AlfAzioni: gruppo in grassetto, esempi sotto, su fondo bianco. */
+@Composable
+private fun HelpList() {
+    val groups = listOf(
+        R.string.alfred_help_g_events to R.string.alfred_help_x_events,
+        R.string.alfred_help_g_tasks to R.string.alfred_help_x_tasks,
+        R.string.alfred_help_g_messages to R.string.alfred_help_x_messages,
+        R.string.alfred_help_g_clock to R.string.alfred_help_x_clock,
+        R.string.alfred_help_g_phone to R.string.alfred_help_x_phone,
+        R.string.alfred_help_g_music to R.string.alfred_help_x_music,
+        R.string.alfred_help_g_drive to R.string.alfred_help_x_drive,
+        R.string.alfred_help_g_people to R.string.alfred_help_x_people,
+        R.string.alfred_help_g_more to R.string.alfred_help_x_more,
+    )
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        groups.forEachIndexed { i, (title, examples) ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x121E1D1B)))
+            Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(title), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
+                Text(stringResource(examples), fontSize = 12.5.sp, lineHeight = 18.sp, color = Color(0xFF56564F))
+            }
+        }
     }
 }
 
@@ -855,6 +902,11 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Remember -> EuriseIcons.note(2.3f)
     Kind.Ask -> EuriseIcons.search(2.3f)
     Kind.Follow -> EuriseIcons.calendar(2.3f)
+    Kind.Complete -> EuriseIcons.task(2.3f)
+    Kind.Clock -> EuriseIcons.clock(2.3f)
+    Kind.Guide -> EuriseIcons.map(2.3f)
+    Kind.Device -> EuriseIcons.phone(2.3f)
+    Kind.Help -> EuriseIcons.spark(2.3f)
 }
 
 @Composable
@@ -1064,6 +1116,8 @@ private fun DataList(rows: List<DataRow>, onOpen: (String) -> Unit) {
 /** Apre una sezione di Eurise («calendar», «note:12»…) o, per «calls», il registro delle chiamate. */
 private fun openSection(context: android.content.Context, section: String) {
     val intent = if (section == "calls") Intent(Intent.ACTION_VIEW).setType(android.provider.CallLog.Calls.CONTENT_TYPE)
+    else if (section == "messages") context.packageManager.getLaunchIntentForPackage(
+        eu.eurise.core.suite.PeopleContract.packageOf(context, eu.eurise.core.suite.PeopleContract.App.Messages)) ?: return
     else Intent().setClassName(context.packageName, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", section)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
     eu.eurise.core.contacts.Reach.open(context, intent)

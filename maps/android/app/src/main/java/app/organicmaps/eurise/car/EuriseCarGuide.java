@@ -63,6 +63,8 @@ public final class EuriseCarGuide extends FrameLayout
     public boolean turnNear;
     /** Schermo diviso: bolla senza barra dei tempi. */
     public boolean split;
+    /** In guida: con lo schermo diviso la bolla è una riga sola dentro la scheda (prova del 22 novembre). */
+    public boolean guiding;
   }
 
   @Nullable private static java.lang.ref.WeakReference<EuriseCarGuide> sGuide;
@@ -337,6 +339,7 @@ public final class EuriseCarGuide extends FrameLayout
     mSlot.joined = hasTop;
     mSlot.turnNear = near;
     mSlot.split = split;
+    mSlot.guiding = top == mManeuver;
     int bottom = getHeight() - m;
     if (mArrival.getVisibility() == VISIBLE && mArrival.getHeight() > 0)
       bottom -= mArrival.getHeight() + dp(8);
@@ -373,7 +376,8 @@ public final class EuriseCarGuide extends FrameLayout
   private void layoutColumn(boolean split)
   {
     final int width = getWidth() > 0 ? getWidth() : getResources().getDisplayMetrics().widthPixels;
-    final int column = split ? Math.min(dp(380), width - dp(24))
+    // Schermo diviso: metà della mappa (240-300 dp), il centro resta libero per la freccia e il percorso.
+    final int column = split ? Math.max(dp(240), Math.min(dp(300), width / 2))
                              : Math.max(dp(320), Math.min(dp(440), width * 36 / 100));
     mColumnWidth = column;
     final int m = dp(12);

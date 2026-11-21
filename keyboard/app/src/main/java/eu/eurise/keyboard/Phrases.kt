@@ -75,4 +75,18 @@ object Phrases {
     }
 
     fun count(context: Context): Int { ensure(context); return model.size }
+
+    /** Le frasi per il backup cifrato della suite ([BackupProvider]), nel formato del file. */
+    fun exportText(context: Context): String { ensure(context); return model.save() }
+
+    /**
+     * Ripristino: le frasi del backup si uniscono a quelle già imparate (nessuna si perde) e il file si scrive subito,
+     * perché dopo il ripristino la tastiera riparte.
+     */
+    fun restoreText(context: Context, text: String) {
+        ensure(context)
+        model.merge(text)
+        dirty = false
+        runCatching { File(context.filesDir, FILE).writeText(model.save()) }
+    }
 }

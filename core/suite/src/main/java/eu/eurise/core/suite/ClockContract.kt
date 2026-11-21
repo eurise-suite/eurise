@@ -16,6 +16,8 @@ object ClockContract {
     const val ACTION_SKIP_NEXT = "eu.eurise.clock.action.SKIP_NEXT_ALARM"
     const val ACTION_UNDO_SKIP = "eu.eurise.clock.action.UNDO_SKIP_ALARM"
     const val ACTION_TRIP = "eu.eurise.clock.action.TRIP"
+    /** Alfred: ferma i timer accesi e quello che suona («ferma il timer»). */
+    const val ACTION_STOP_TIMERS = "eu.eurise.clock.action.STOP_TIMERS"
     const val EXTRA_DATE = "date"
     const val EXTRA_TIME = "time"
     const val EXTRA_LABEL = "label"
@@ -25,6 +27,16 @@ object ClockContract {
     fun nextAlarmIsOurs(context: Context): Boolean = runCatching {
         context.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent?.creatorPackage == context.packageName
     }.getOrDefault(false)
+
+    /** La prossima sveglia del telefono (di qualunque app), o null. */
+    fun nextAlarm(context: Context): java.time.LocalDateTime? = runCatching {
+        context.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime?.let {
+            java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), java.time.ZoneId.systemDefault())
+        }
+    }.getOrNull()
+
+    /** Chiede all'Orologio di fermare i timer accesi e quello che suona. */
+    fun stopTimers(context: Context) = send(context, ACTION_STOP_TIMERS)
 
     /** Chiede all'Orologio di saltare la prossima sveglia. */
     fun skipNext(context: Context) = send(context, ACTION_SKIP_NEXT)

@@ -203,6 +203,7 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
                         onOpenPerson = { navController.openPerson(it) },
                         onOpenWeather = { navController.navigate("weather") { launchSingleTop = true } },
                         onCapture = { capture = it },
+                        onVoiceNote = { navController.openNote(null, voice = true) },
                     )
                 }
                 composable(Section.Calendar.route) {

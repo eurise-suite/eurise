@@ -91,6 +91,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             messages.clear()
             messages.addAll(all.sortedByDescending { it.date })
             refreshBalls()
+            refreshApprovals()
             refreshing = false
             studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
@@ -121,6 +122,70 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun retakeBall(id: String) = saveBalls(balls.map { if (it.id == id) it.copy(taken = true) else it })
+
+    // --- Fuori orario (tavola SpaFuoriOrario) ---
+
+    var offRules by mutableStateOf(SyncWorker.rules(context))
+        private set
+
+    fun changeOff(r: MailOffHours.Rules) { offRules = r; SyncWorker.setRules(context, r) }
+
+    // --- Approvazioni (tavola LavApprova) ---
+
+    private val approvalPrefs get() = context.getSharedPreferences("mail_approvals", Context.MODE_PRIVATE)
+    /** Le richieste di approvazione mandate per email, sul telefono. */
+    var approvals by mutableStateOf(MailApprovals.decode(approvalPrefs.getString("list", null)))
+        private set
+
+    private fun saveApprovals(list: List<MailApprovals.Request>) { approvals = list; approvalPrefs.edit().putString("list", MailApprovals.encode(list)).apply() }
+
+    /** Manda la richiesta: oggetto «Richiesta di approvazione: …» e in fondo come rispondere. */
+    fun askApproval(from: Account, to: String, title: String, text: String, files: List<android.net.Uri>, done: (Boolean) -> Unit) {
+        val clean = title.trim()
+        send(from, to.trim(), "", MailApprovals.subject(clean), MailApprovals.body(text, context.getString(R.string.ml_ap_howto)), null, files) { ok ->
+            if (ok) saveApprovals(approvals + MailApprovals.Request("a" + System.nanoTime(), to.trim(), clean, System.currentTimeMillis()))
+            done(ok)
+        }
+    }
+
+    /** Le risposte arrivate: Eurise le apre e propone il verdetto (da confermare). */
+    fun refreshApprovals() {
+        val todo = MailApprovals.candidates(approvals, messages)
+        if (todo.isEmpty()) return
+        scope.launch {
+            var next = approvals
+            todo.forEach { (r, s) ->
+                val a = account(s.accountId) ?: return@forEach
+                val text = withContext(Dispatchers.IO) { runCatching { MailClient(a).open(s.uid)?.text }.getOrNull() } ?: return@forEach
+                val v = MailApprovals.verdict(text)
+                next = next.map { if (it.id == r.id) it.copy(verdict = v?.first ?: it.verdict, note = v?.second ?: it.note, answerUid = s.uid) else it }
+            }
+            if (next != approvals) saveApprovals(next)
+        }
+    }
+
+    /** «Conferma»: il verdetto letto dalla risposta diventa definitivo. */
+    fun confirmApproval(id: String) = saveApprovals(approvals.map { if (it.id == id) it.copy(confirmed = true) else it })
+
+    fun forgetApproval(id: String) = saveApprovals(approvals.filterNot { it.id == id })
+
+    /** «Sollecita»: un'email gentile sullo stesso oggetto. */
+    fun remindApproval(id: String, done: (Boolean) -> Unit) {
+        val r = approvals.firstOrNull { it.id == id } ?: return
+        val from = accounts.firstOrNull() ?: return done(false)
+        send(from, r.to, "", MailText.replySubject(MailApprovals.subject(r.title)), context.getString(R.string.ml_ap_remind_body, r.title) + "\n\n—\n" +
+            context.getString(R.string.ml_ap_howto), null, emptyList()) { ok ->
+            if (ok) saveApprovals(approvals.map { if (it.id == id) it.copy(sentAt = System.currentTimeMillis()) else it })
+            done(ok)
+        }
+    }
+
+    /** Chi riceve la richiesta in Eurise: Approva o Chiedi modifica rispondono con le parole che l'altro riconosce. */
+    fun answerApproval(o: Opened, approve: Boolean, note: String, done: (Boolean) -> Unit) {
+        val from = account(o.summary.accountId) ?: return done(false)
+        val body = if (approve) context.getString(R.string.ml_ap_ok_body) else note.trim()
+        send(from, o.summary.fromAddress, "", MailText.replySubject(o.summary.subject), body + "\n\n" + MailText.quote(o.text, o.summary.fromName + ":"), o.messageId, emptyList(), done)
+    }
 
     fun open(s: Summary) {
         val a = account(s.accountId) ?: return

@@ -130,7 +130,7 @@
     <string name="eurise_set_autocorrect">Autocorrect</string>
     <string name="eurise_set_autocorrect_detail">Only when sure; undo with Delete</string>
     <string name="eurise_set_phrase">Whole sentence among the words</string>
-    <string name="eurise_set_phrase_detail">Sentences you often write, before the words. Long-press the suggestion to remove it.</string>
+    <string name="eurise_set_phrase_detail">Sentences you often write, before the words. Long-press the suggestion to remove it. They stay on the phone and in the encrypted backup.</string>
     <string name="eurise_set_precision">Precision</string>
     <string name="eurise_set_touch">How you type</string>
     <string name="eurise_set_touch_detail">Learned from %1$d taps · previous letters on the edge</string>

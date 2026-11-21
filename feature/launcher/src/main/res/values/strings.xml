@@ -538,6 +538,7 @@
     <string name="bubble_memo_desc">scrivi o detta: nota o attività</string>
     <string name="bubble_memo_open_notes">Apri le note</string>
     <string name="bubble_memo_new_note">Nuova nota</string>
+    <string name="bubble_memo_voice_note">Nota vocale</string>
     <string name="bubble_memo_hint">Scrivi o detta…</string>
     <string name="bubble_memo_last">ultima nota · %1$s fa</string>
     <string name="bubble_dictate">Detta</string>

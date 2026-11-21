@@ -121,6 +121,9 @@ object Matrix {
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice,
                         data = if (content.has(Palla.STATUS)) content.toString() else null, replyTo = reply)
                     "m.location" -> Event(id, sender, body, time, Event.Kind.Location, data = content.toString())
+                    // Organizza un'uscita (tavola AmiUscita): la proposta e le risposte (date, passaggi, «Fissa»).
+                    Uscita.CARD -> Event(id, sender, body, time, Event.Kind.Text, data = content.toString())
+                    Uscita.ANSWER -> Event(id, sender, body, time, Event.Kind.Notice, data = content.toString())
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())
                     // Turni del gruppo: piano, disponibilità, cambi e risposte (vedi Shifts).
@@ -130,7 +133,7 @@ object Matrix {
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
                     // A scomparsa (tavola ChatProgramma): il contenuto resta per l'etichetta.
                     else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text,
-                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK) || content.has(Palla.BALL)) content.toString() else null, replyTo = reply)
+                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK) || content.has(Palla.BALL) || content.has(Approva.REQUEST) || content.has(Approva.ANSWER)) content.toString() else null, replyTo = reply)
                 }
             }
             "m.room.member" -> {

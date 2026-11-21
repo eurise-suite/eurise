@@ -51,7 +51,7 @@ private val PIN = Color(0xFFA4502E)
 
 /** Pressione lunga sulla graffetta: sondaggio o posizione dal vivo. */
 @Composable
-internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onClose: () -> Unit) {
+internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onApprove: () -> Unit = {}, onOuting: (() -> Unit)? = null, onClose: () -> Unit) {
     Sheet(onClose) {
         Card {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { onClose(); onPoll() }.padding(horizontal = 14.dp),
@@ -64,6 +64,22 @@ internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onClose: ()
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(EuriseIcons.place(2f), null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
                 Text(stringResource(R.string.lo_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
+            Divider()
+            // Approvazioni (tavola LavApprova).
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { onClose(); onApprove() }.padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(EuriseIcons.check(2.4f), null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.ap_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
+            // Organizza un'uscita (tavola AmiUscita), nei gruppi.
+            onOuting?.let { go ->
+                Divider()
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { onClose(); go() }.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(EuriseIcons.calendar(2f), null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.us_new), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

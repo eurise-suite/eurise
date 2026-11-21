@@ -105,7 +105,7 @@ dependencies {
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
     testImplementation(libs.junit)
-    // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no): MailBallsTest.
+    // org.json vero per i test (in Android è dentro il sistema, nei test sulla JVM no).
     testImplementation(libs.org.json)
 }
 

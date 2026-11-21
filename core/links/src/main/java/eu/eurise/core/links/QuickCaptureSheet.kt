@@ -122,6 +122,20 @@ fun QuickCaptureSheet(
     val target = chosen ?: parsed.suggested
 
     val pending = parsed.mentions.lastOrNull { it.name.lowercase() !in people }
+
+    // Invitati: le persone citate in un appuntamento che hanno un'email si possono invitare davvero (il calendario
+    // sincronizzato manda l'invito). Si sceglie a una a una; già scelte se il + è stato aperto da «Invita».
+    val emails = remember { mutableStateMapOf<String, String>() }
+    val invited = remember { mutableStateMapOf<String, Boolean>().apply { start.people.keys.forEach { put(it, start.target == Capture.Target.Event) } } }
+    val peopleKeys = people.keys.toSet()
+    LaunchedEffect(peopleKeys) {
+        peopleKeys.filter { it !in emails }.forEach { key ->
+            val ref = people[key] ?: return@forEach
+            emailOf(context, ref)?.let { emails[key] = it }
+        }
+    }
+    val invitable = parsed.mentions.map { it.name }.distinctBy { it.lowercase() }
+        .mapNotNull { name -> emails[name.lowercase()]?.let { name to it } }
     var suggestions by remember { mutableStateOf(emptyList<LinkItem>()) }
     LaunchedEffect(pending?.name) {
         delay(180)
@@ -161,7 +175,12 @@ fun QuickCaptureSheet(
         scope.launch {
             val q = parsed.quick
             val created = when (target) {
-                Capture.Target.Event -> createEvent()
+                Capture.Target.Event -> createEvent()?.also { ref ->
+                    ref.key.toLongOrNull()?.let { eventId ->
+                        invitable.filter { (name, _) -> invited[name.lowercase()] == true }
+                            .forEach { (name, email) -> data.calendar.invite(eventId, name, email) }
+                    }
+                }
                 Capture.Target.Task -> LinkRef.task(
                     data.tasks.add(
                         parsed.title, due = q.due, time = q.time, repeat = q.repeat, priority = q.priority,
@@ -245,6 +264,20 @@ fun QuickCaptureSheet(
                                 field = TextFieldValue(text, TextRange(caret))
                             }
                         }
+                    }
+                }
+            }
+
+            if (target == Capture.Target.Event && invitable.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LazyRow(contentPadding = PaddingValues(0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(invitable, key = { it.first.lowercase() }) { (name, _) ->
+                            val on = invited[name.lowercase()] == true
+                            FilterPill(stringResource(R.string.capture_invite, name), null, on) { invited[name.lowercase()] = !on }
+                        }
+                    }
+                    if (invitable.any { invited[it.first.lowercase()] == true }) {
+                        Text(stringResource(R.string.capture_invite_note), fontSize = 12.sp, lineHeight = 16.sp, color = scheme.onSurfaceVariant)
                     }
                 }
             }
@@ -335,4 +368,20 @@ private fun explanation(parsed: Capture.Result, target: Capture.Target, automati
     val names = parsed.mentions.map { it.name }.distinctBy { it.lowercase() }
     val person = if (names.isEmpty()) "" else stringResource(R.string.capture_why_people, names.joinToString(", "))
     return listOf(reason, person).filter { it.isNotEmpty() }.joinToString(" ")
+}
+
+/** La prima email di un contatto della rubrica, se si può leggere la rubrica. */
+private suspend fun emailOf(context: android.content.Context, ref: LinkRef): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    if (ref.kind != LinkRef.Kind.Contact) return@withContext null
+    if (context.checkSelfPermission(Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return@withContext null
+    val email = android.provider.ContactsContract.CommonDataKinds.Email.ADDRESS
+    runCatching {
+        context.contentResolver.query(
+            android.provider.ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+            arrayOf(email),
+            "${android.provider.ContactsContract.Data.LOOKUP_KEY} = ?",
+            arrayOf(ref.key),
+            "${android.provider.ContactsContract.Data.IS_PRIMARY} DESC",
+        )?.use { c -> if (c.moveToFirst()) c.getString(0)?.trim()?.takeIf { it.contains('@') } else null }
+    }.getOrNull()
 }

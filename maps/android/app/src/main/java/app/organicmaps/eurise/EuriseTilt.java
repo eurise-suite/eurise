@@ -45,6 +45,7 @@ public final class EuriseTilt extends AppCompatTextView
   protected void onAttachedToWindow()
   {
     super.onAttachedToWindow();
+    EuriseTiltGesture.install(getContext());
     tick();
   }
 

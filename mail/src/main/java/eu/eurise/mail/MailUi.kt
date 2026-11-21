@@ -155,6 +155,7 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
     val scheme = MaterialTheme.colorScheme
     var kind by remember { mutableStateOf(Kind.People) }
     var ballsOpen by remember { mutableStateOf(false) }
+    var approvalsOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val q = query.trim().lowercase()
     val shown = model.messages.filter { m ->
@@ -200,6 +201,10 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
                     if (model.balls.isNotEmpty()) Text(stringResource(R.string.ml_balls_list, model.balls.count { !it.done && !it.taken }), fontSize = 13.sp,
                         fontWeight = FontWeight.Bold, color = scheme.primary,
                         modifier = Modifier.padding(top = 12.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { ballsOpen = true }.padding(8.dp))
+                    // Le richieste di approvazione (tavola LavApprova).
+                    if (model.approvals.isNotEmpty()) Text(stringResource(R.string.ml_ap_list_n, model.approvals.count { !it.confirmed }), fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold, color = scheme.primary,
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { approvalsOpen = true }.padding(8.dp))
                     if (model.accounts.size > 1) Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         model.accounts.forEach { a -> AccountDot(a) }
                     }
@@ -220,6 +225,7 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
         }
     }
     if (ballsOpen) MailBallsList(model) { ballsOpen = false }
+    if (approvalsOpen) MailApprovalsList(model) { approvalsOpen = false }
     // Prima apertura: la posta si aggiorna da sola.
     androidx.compose.runtime.LaunchedEffect(model.accounts.size) { model.refresh() }
 }
@@ -339,6 +345,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
                 }
             }
             SuiteProposals(o, actions)
+            // Una richiesta di approvazione ricevuta (tavola LavApprova): Chiedi modifica, Approva.
+            if (MailApprovals.isRequest(o.summary.subject) && model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) ApprovalAnswer(model, actions, o)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->
@@ -496,6 +504,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
     var body by remember { mutableStateOf(start.body) }
     val files = remember { androidx.compose.runtime.mutableStateListOf<android.net.Uri>().apply { addAll(start.attachments) } }
     var sending by remember { mutableStateOf(false) }
+    var approval by remember { mutableStateOf(false) }
     val sent = stringResource(R.string.ml_sent)
     val failed = stringResource(R.string.ml_send_failed)
     val noAccount = stringResource(R.string.ml_no_account)
@@ -510,11 +519,14 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                         val account = from ?: return@clickable actions.toast(noAccount)
                         if (to.isBlank()) return@clickable
                         sending = true
-                        model.send(account, to, cc, subject, body, start.inReplyTo, files.toList()) { ok ->
+                        val after: (Boolean) -> Unit = { ok ->
                             sending = false
                             actions.toast(if (ok) sent else failed)
                             if (ok) onClose()
                         }
+                        // Approvazioni (tavola LavApprova): l'oggetto diventa «Richiesta di approvazione: …».
+                        if (approval && subject.isNotBlank()) model.askApproval(account, to, subject, body, files.toList(), after)
+                        else model.send(account, to, cc, subject, body, start.inReplyTo, files.toList(), after)
                     }.padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -536,6 +548,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
             Field(stringResource(R.string.ml_subject), subject, KeyboardType.Text) { subject = it }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Chip("+ " + stringResource(R.string.ml_attach), selected = false) { actions.pickAttachments { picked -> files.addAll(picked.filter { it !in files }) } }
+                if (start.inReplyTo == null) Chip(stringResource(R.string.ml_ap_ask), selected = approval) { approval = !approval }
                 files.forEach { u ->
                     Chip((u.lastPathSegment ?: "file").substringAfterLast('/') + "  ✕", selected = true) { files.remove(u) }
                 }
@@ -582,10 +595,17 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
                     }
                     Box(Modifier.size(10.dp).clip(CircleShape).background(Color(ACCOUNT_TINTS[a.tint % ACCOUNT_TINTS.size])))
                     Spacer(Modifier.width(6.dp))
+                    // Fuori orario (tavola SpaFuoriOrario): la casella di lavoro aspetta la mattina.
+                    val work = a.id in model.offRules.work
+                    Chip(stringResource(R.string.ml_off_work), selected = work) {
+                        model.changeOff(model.offRules.copy(work = if (work) model.offRules.work - a.id else model.offRules.work + a.id))
+                    }
+                    Spacer(Modifier.width(6.dp))
                     Chip(stringResource(R.string.ml_remove), selected = false) { model.remove(a) }
                 }
             }
         }
+        if (model.offRules.work.isNotEmpty()) OffHoursCard(model)
         SectionTitle(stringResource(R.string.ml_add))
         Card {
             AddRow(EuriseIcons.shield(2.2f), stringResource(R.string.ml_add_eu), stringResource(R.string.ml_add_eu_sub)) { linking = "" }

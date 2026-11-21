@@ -53,7 +53,7 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 2. **Calendario e Attività** su CalDAV (`core/sync`), con il collegamento in due tocchi dal browser.
 3. **Note** su WebDAV con l'unione a tre vie.
 4. **Email** (IMAP/SMTP, `MailClient`).
-5. **Mappe** con CoMaps per Linux (versione desktop in Qt: da capire come integrarla nella finestra o accanto).
+5. **Mappe**: sezione scritta dall'area Mappe il 22 novembre (`MapsScreen.kt`, la mappa si apre in CoMaps da Flathub; dettagli in `docs/stato/MAPPE.md`).
 6. **Alfred** (PcAlfred, poi AlfComputer: il computer come cervello via Ponte).
 7. Icona nella barra (il Ponte resta acceso a finestra chiusa) e avvio con la sessione.
 8. Flathub: compilazione dai sorgenti (dipendenze Maven scaricate prima), metainfo e schermate.

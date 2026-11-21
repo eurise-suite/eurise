@@ -33,7 +33,8 @@ class PhoneData(val notes: Int, val tasks: Int) {
 
 /**
  * Che cosa entra nel backup: il database di Eurise (note, attività, collegamenti…), le impostazioni delle app
- * (Scrivania, bolle, Orologio, farmaci, date…) e i dati delle app separate della suite ([SuiteApps]: Password, Messaggi, Telefono, Galleria, Tastiera…). Restano fuori le cache, gli account cloud e le chiavi del
+ * (Scrivania, bolle, Orologio, farmaci, date…), l'audio delle note vocali e le suonerie tue ([FILE_DIRS]) e i dati delle
+ * app separate della suite ([SuiteApps]: Password, Messaggi, Telefono, Galleria, Tastiera…). Restano fuori le cache, gli account cloud e le chiavi del
  * backup stesso: sono legati al Keystore di questo telefono e sul nuovo si ricollegano. La chiave delle note e i segreti
  * affidati dalle altre app ([SuiteSecrets]) sul telefono sono sigillati nel Keystore: entrano come voci a parte.
  */
@@ -62,6 +63,13 @@ object BackupArchive {
      */
     private val FILE_DIRS = listOf("note-vocali", "sounds/mine")
     private const val FILES = "files/"
+
+    /**
+     * I backup fatti dai giri di `brand` tra il 21 e il 22 novembre 2026 (backup in memoria) mettono l'audio delle note
+     * vocali in `note-vocali/<nome>.m4a`, senza `files/` davanti: al ripristino si accettano e vanno nello stesso posto.
+     */
+    private const val OLD_VOICE = "note-vocali/"
+    private val VOICE_NAME = Regex("^[A-Za-z0-9._-]{1,80}\\.m4a$")
 
     private fun included(prefs: String): Boolean =
         (prefs.startsWith("eurise_") || prefs in EXTRA_PREFS) && !prefs.startsWith("eurise_feeds_")
@@ -285,7 +293,9 @@ object BackupArchive {
         ZipInputStream(input).use { zip ->
             while (true) {
                 val e = zip.nextEntry ?: break
-                val name = e.name
+                val name = e.name.let { n ->
+                    if (n.startsWith(OLD_VOICE) && VOICE_NAME.matches(n.removePrefix(OLD_VOICE))) FILES + n else n
+                }
                 if (e.isDirectory || name.contains("..")) continue
                 val appKey = SuiteApps.keyOf(name)
                 if (appKey != null) { SuiteApps.keep(context, appKey, zip); continue }
@@ -334,10 +344,11 @@ object BackupArchive {
             File(dir, "shared_prefs").listFiles().orEmpty().forEach { f ->
                 f.copyTo(File(prefsDir(context), f.name).also { it.parentFile?.mkdirs() }, overwrite = true)
             }
-            // Note vocali e suonerie tue: si aggiungono (stesso nome = stesso file); quelli già sul telefono restano.
+            // Note vocali e suonerie tue tornano accanto a quelle che ci sono già (stesso nome = stesso file: resta quello).
             FILE_DIRS.forEach { d ->
                 File(dir, FILES + d).listFiles().orEmpty().filter { it.isFile }.forEach { f ->
-                    f.copyTo(File(File(context.filesDir, d).apply { mkdirs() }, f.name), overwrite = true)
+                    val target = File(File(context.filesDir, d).apply { mkdirs() }, f.name)
+                    if (!target.exists()) f.copyTo(target)
                 }
             }
             // Ripristini preparati da una versione precedente: lo zip della Tastiera stava ancora qui.

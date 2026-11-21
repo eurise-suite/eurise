@@ -106,6 +106,7 @@ fun EuriseApp(ponte: PonteState, today: TodayFeed, nav: Nav) {
                 when {
                     ponte.pairingCode != null -> Box(Modifier.padding(28.dp)) { Pairing(ponte.pairingCode!!) }
                     nav.section == Section.Today -> TodayScreen(today, nav.input)
+                    nav.section == Section.Maps -> MapsScreen(today)
                     else -> Box(Modifier.padding(28.dp)) { Waiting(nav.section) }
                 }
             }

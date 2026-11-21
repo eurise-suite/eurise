@@ -155,7 +155,7 @@ internal fun ComposerContext(title: String, text: String, onClose: () -> Unit) {
 }
 
 @Composable
-private fun MenuRow(icon: ImageVector, label: String, color: Color = MaterialTheme.colorScheme.onSurface, onClick: () -> Unit) {
+internal fun MenuRow(icon: ImageVector, label: String, color: Color = MaterialTheme.colorScheme.onSurface, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable(role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,7 +170,7 @@ private fun MenuRow(icon: ImageVector, label: String, color: Color = MaterialThe
 @Composable
 internal fun MessageMenu(
     model: ChatModel, actions: ChatActions, roomId: String, e: Event, mine: Boolean,
-    onReply: () -> Unit, onEdit: () -> Unit, onForward: () -> Unit, onClose: () -> Unit, onBall: () -> Unit = {},
+    onReply: () -> Unit, onEdit: () -> Unit, onForward: () -> Unit, onClose: () -> Unit, onBall: () -> Unit = {}, onApprove: () -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     val failed = stringResource(R.string.ch_send_failed)
@@ -220,6 +220,11 @@ internal fun MessageMenu(
             // Passa la palla (tavola InsPallaChat): a un collega, con una riga e la scadenza.
             if (!local && e.kind != Event.Kind.Poll && e.kind != Event.Kind.State && model.colleagues().isNotEmpty()) {
                 MenuRow(EuriseIcons.ball(2f), stringResource(R.string.pa_title)) { onBall() }
+                Divider()
+            }
+            // Chiedi l'approvazione (tavola LavApprova) di un file mandato da te.
+            if (mine && !local && (e.kind == Event.Kind.File || e.kind == Event.Kind.Image)) {
+                MenuRow(EuriseIcons.check(2.4f), stringResource(R.string.ap_title)) { onApprove() }
                 Divider()
             }
             // Ricordamelo (tavola ChatProgramma): un'attività con il link al messaggio.

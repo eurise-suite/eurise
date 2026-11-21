@@ -273,16 +273,39 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   tentativo aggiunge un DNS pubblico. Codeberg è tornato verso le 11:45 UTC. Nota: la coda dei giri di Mappe tiene un
   solo giro in attesa; un giro chiesto da un altro ramo cancella quello in attesa (successo il 18 novembre).
 
+## 22 novembre: schermo diviso, Mappe sul computer, «Dove devi andare» in auto, gesto a due dita per il 3D
+- Prova del proprietario di Mappe 114: «funziona tutto»; solo nello schermo diviso in guida la bolla era troppo centrale
+  e copriva. Ora con lo schermo diviso la colonna è metà della mappa (240-300 dp) e in guida la bolla è una riga
+  (copertina 40 dp, titolo, autore) dentro la scheda, come la tavola 7; senza guida resta con il testo della canzone.
+- **Mappe sul computer** (tavola PcMappe), `desktop/app/MapsScreen.kt` e `MapsData.kt` (prove `MapsDataTest`): a
+  sinistra «Dove devi andare?» (Invio apre il luogo nella mappa), il prossimo impegno con un luogo (dal riassunto del
+  telefono col Ponte, come Oggi) con «Al telefono, per guidare» e «Mappa», gli altri impegni con un luogo, riga della
+  privacy 10/10. **La mappa vera è CoMaps per Linux** (Flathub `app.comaps.comaps`, le stesse mappe offline): Eurise la
+  apre sul luogo con un link `geo:0,0?q=…` attraverso il sistema (xdg-open, dal Flatpak passa dal portale), a destra
+  «Apri la mappa» e «Installa CoMaps». **Non c'è la mappa dentro la finestra di Eurise**: CoMaps per Linux è un'app Qt e
+  su Wayland non si incastra in un'altra finestra; per averla dentro servirebbe il motore di CoMaps compilato come
+  libreria per il computer (lavoro grande, da decidere). Non ancora dalla tavola: tempo di strada e «parti alle…»,
+  «Avviso alle…», luoghi salvati (servirebbe un tipo del Ponte per i preferiti), Mezzi/Bici/Carburanti.
+- «Al telefono, per guidare»: il Ponte manda il link `geo:` come «Continua qui»; **parte comune toccata**:
+  `feature/ponte/PonteLink.kt` accetta anche `geo:0,0?q=…` (solo quella forma, senza spazi, al massimo 700 caratteri) e
+  lo apre dalla notifica, cioè in Mappe. Serve l'APK di Eurise nuovo (`app-debug.apk`) e il Flatpak nuovo.
+- **Android Auto, «Dove devi andare»** nell'ordine del telefono: Sempre a portata (Casa e Lavoro, gli stessi preferiti
+  del telefono: `EuriseSearchHome.habitualPlaces` ora `internal`; un tocco cerca le coordinate), Recenti, Categorie,
+  impegni dal Calendario (`EuriseCarDestinations`, patch in `SearchScreen`).
+- **Gesto a due dita per il 3D** (`EuriseTiltGesture.java`, messo dal tasto «3D»): due dita che salgono insieme
+  piegano la mappa, che scendono la rimettono piatta (70 dp, distanza tra le dita che non cambia oltre 45 dp). Non è nel
+  motore (il sorgente di CoMaps qui non si raggiunge): si riconosce nella finestra prima della mappa; riconosciuto, la
+  mappa riceve «annulla». Pizzico e rotazione restano della mappa. Da provare: che non disturbi zoom e rotazione.
+
 ## Prossimi passi, in ordine
-1. **Prova in auto della scheda unica** (ultimo APK di Mappe; si prova solo l'ultimo).
-2. Dopo la prova: correzioni; tavola MapViaggio2Dove da aggiornare al nuovo ordine; «Avvisa» anche per l'impegno vicino
-   senza chiamata, se lo vuoi; gesto a due dita per il 3D, se lo vuoi; in auto l'elenco «Dove devi andare» nello
-   stesso ordine del telefono, se lo vuoi. (Tavola MapViaggio2Dove aggiornata al nuovo ordine il 17 novembre.)
+1. **Prova**: schermo diviso in auto; «Dove devi andare» in auto con Casa e Lavoro; gesto a due dita; sul computer la
+   sezione Mappe con CoMaps installato da Flathub e «Al telefono, per guidare».
+2. Decidere se vale la pena avere la mappa dentro la finestra di Eurise sul computer (motore di CoMaps come libreria).
+   «Avvisa» per l'impegno vicino senza chiamata, se lo vuoi.
 3. **Pietre miliari**: Germania e Austria ci sono (giro 8 di «Pietre miliari», 17 novembre, con lo specchio di
    openstreetmap.fr; file in `pietre` alle 14:46 UTC, tutti i 17 paesi). La Croazia quel giro è fallita (Geofabrik non
    risponde, sullo specchio il file non c'è): resta il file del 15 novembre, si rifà al giro mensile. In Italia le pietre
    in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
-4. **Mappe sul computer** (tavola PcMappe approvata, CoMaps su Linux), insieme all'area Computer.
 5. In attesa di una fonte o di una decisione: segnalazioni brevi condivise (serve un servizio comune); traffico (nessuna
    fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio
    viaggio».

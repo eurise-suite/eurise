@@ -54,7 +54,6 @@ class ClockReceiver : BroadcastReceiver() {
                 Scheduler.rescheduleAll(context)
             }
             TIMER_PAUSE -> {
-                val now = System.currentTimeMillis()
                 store.timer(id)?.let { store.saveTimer(if (it.running) it.pause(now) else it.start(now)) }
                 Scheduler.rescheduleAll(context)
             }
@@ -140,6 +139,11 @@ class SuiteReceiver : BroadcastReceiver() {
             eu.eurise.core.suite.ClockContract.ACTION_UNDO_SKIP -> {
                 val alarm: Alarm = store.alarm(prefs.getInt("last_skipped", -1)) ?: return
                 store.saveAlarm(alarm.copy(skipped = null))
+            }
+            eu.eurise.core.suite.ClockContract.ACTION_STOP_TIMERS -> {
+                // «Alfred, ferma il timer»: quello che suona tace, quelli accesi tornano all'inizio e si fermano.
+                if (RingService.state.value?.timerId != null) RingService.stop(context)
+                store.timers.value.filter { it.running }.forEach { store.saveTimer(it.copy(endsAt = null, remainingMs = it.totalMs)) }
             }
             eu.eurise.core.suite.ClockContract.ACTION_TRIP -> {
                 val c = eu.eurise.core.suite.ClockContract

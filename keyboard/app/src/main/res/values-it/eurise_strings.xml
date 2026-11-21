@@ -130,7 +130,7 @@
     <string name="eurise_set_autocorrect">Correzione automatica</string>
     <string name="eurise_set_autocorrect_detail">Solo quando è sicura; annulli con Cancella</string>
     <string name="eurise_set_phrase">Frase intera tra le parole</string>
-    <string name="eurise_set_phrase_detail">Le frasi che scrivi spesso, prima delle parole. Tieni premuta la proposta per toglierla.</string>
+    <string name="eurise_set_phrase_detail">Le frasi che scrivi spesso, prima delle parole. Tieni premuta la proposta per toglierla. Restano sul telefono e nel backup cifrato.</string>
     <string name="eurise_set_precision">Precisione</string>
     <string name="eurise_set_touch">Come tocchi</string>
     <string name="eurise_set_touch_detail">Imparato da %1$d tocchi · lettere precedenti sul bordo</string>

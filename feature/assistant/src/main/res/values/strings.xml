@@ -512,4 +512,98 @@
     <string name="alfred_which_yesterday">l\'ultima volta ieri</string>
     <string name="alfred_which_ago">l\'ultima volta %1$d giorni fa</string>
     <string name="alfred_memory_word">«%1$s» si scrive «%2$s»</string>
+    <!-- Azioni nuove (tavola AlfAzioni, 22 novembre) -->
+    <string name="alfred_ex_help">Cosa sai fare?</string>
+    <string name="alfred_help_q">Cosa sai fare?</string>
+    <string name="alfred_card_help">Cosa so fare</string>
+    <string name="alfred_help_lead">Ecco cosa so fare. Basta dirlo come viene.</string>
+    <string name="alfred_help_foot">Prima di cambiare o cancellare qualcosa chiedo sempre conferma. Torcia, volume e musica li faccio subito.</string>
+    <string name="alfred_help_g_events">Impegni</string>
+    <string name="alfred_help_x_events">«sposta la riunione a giovedì» · «cancella il dentista» · «cosa ho venerdì?» · «quando ho il dentista?»</string>
+    <string name="alfred_help_g_tasks">Attività</string>
+    <string name="alfred_help_x_tasks">«ricordami di comprare il latte» · «ho comprato il latte» (la spunto) · «cosa devo fare oggi?»</string>
+    <string name="alfred_help_g_clock">Sveglie e timer</string>
+    <string name="alfred_help_x_clock">«sveglia alle 7» · «timer 10 minuti» · «ferma il timer» · «quanto manca al timer?» · «spegni la sveglia di domani»</string>
+    <string name="alfred_help_g_phone">Telefono</string>
+    <string name="alfred_help_x_phone">«accendi la torcia» · «non disturbare fino alle 8» · «volume al minimo» · «silenzioso» · «modalità Notte»</string>
+    <string name="alfred_help_g_music">Musica</string>
+    <string name="alfred_help_x_music">«metti musica» · «pausa» · «avanti» · «più forte»</string>
+    <string name="alfred_help_g_people">Persone</string>
+    <string name="alfred_help_x_people">«chiama Marco» · «chi mi ha chiamato?» · «manda a Luca su WhatsApp che tardo»</string>
+    <string name="alfred_help_g_more">E poi</string>
+    <string name="alfred_help_x_more">«annota il codice del cancello» · «portami a casa» · «cerca…» · «ricorda che…» · domande libere al cervello</string>
+    <string name="alfred_card_device">Telefono</string>
+    <string name="alfred_change_none">Non trovo «%1$s» in agenda.</string>
+    <string name="alfred_change_fixed">«%1$s» si ripete o sta in un calendario che non posso cambiare: meglio dal Calendario.</string>
+    <string name="alfred_card_complete">Fatto</string>
+    <string name="alfred_lead_complete">La spunto tra le cose da fare?</string>
+    <string name="alfred_complete_none">Non trovo «%1$s» tra le cose da fare.</string>
+    <string name="alfred_do_complete">Segna come fatta</string>
+    <string name="alfred_done_complete">Spuntata.</string>
+    <string name="alfred_say_complete">Spunto «%1$s»?</string>
+    <string name="alfred_card_alarm_off">Sveglia</string>
+    <string name="alfred_lead_alarm_off">Salto la prossima sveglia?</string>
+    <string name="alfred_note_alarm_off">Salto solo la prossima volta: le altre restano come sono.</string>
+    <string name="alfred_alarm_other_day">La prossima sveglia non è del giorno detto: salto questa, le altre restano.</string>
+    <string name="alfred_alarm_none">Non c\'è nessuna sveglia da spegnere.</string>
+    <string name="alfred_alarm_not_ours">La prossima sveglia (%1$s) l\'ha messa un\'altra app: va spenta da lì.</string>
+    <string name="alfred_do_alarm_off">Salta la sveglia</string>
+    <string name="alfred_alarm_skipped">Sveglia saltata. Le altre restano.</string>
+    <string name="alfred_say_alarm_off">Salto la sveglia di %1$s?</string>
+    <string name="alfred_timer_stopped">Timer fermato.</string>
+    <string name="alfred_timer_none_stop">Nessun timer acceso.</string>
+    <string name="alfred_timer_none">Non c\'è nessun timer acceso.</string>
+    <string name="alfred_timer_left">Mancano %1$s.</string>
+    <string name="alfred_left_hours">%1$d ore e %2$d minuti</string>
+    <string name="alfred_left_and_seconds">e %1$d secondi</string>
+    <string name="alfred_reply_none">Non trovo a chi rispondere: mi dica il nome.</string>
+    <string name="alfred_help_g_messages">Messaggi</string>
+    <string name="alfred_help_x_messages">«leggimi i messaggi» · «chi mi ha scritto?» · «rispondi che arrivo» · «scrivi ad Anna che arrivo»</string>
+    <string name="alfred_help_g_drive">In guida</string>
+    <string name="alfred_help_x_drive">«quanto manca?» · «dov\'è il benzinaio più vicino?» · «avvisa Anna che arrivo» · «autovelox»</string>
+    <string name="alfred_guide_none">Non c\'è una guida in corso. Mi dica dove andare: «portami a…».</string>
+    <string name="alfred_guide_left">Mancano %1$s: arriviamo verso le %2$s.</string>
+    <string name="alfred_guide_left_to">Mancano %1$s: a %2$s verso le %3$s.</string>
+    <string name="alfred_guide_km">%1$s km</string>
+    <string name="alfred_guide_meters">%1$d metri</string>
+    <string name="alfred_guide_text">Arrivo alle %1$s, tra %2$s.</string>
+    <string name="alfred_guide_text_plain">Sto arrivando.</string>
+    <string name="alfred_dev_torch_on">Torcia accesa.</string>
+    <string name="alfred_dev_torch_off">Torcia spenta.</string>
+    <string name="alfred_dev_no_torch">Non riesco ad accendere la torcia su questo telefono.</string>
+    <string name="alfred_dev_quiet_on">Non disturbare acceso: passano solo sveglie e persone importanti.</string>
+    <string name="alfred_dev_quiet_until">Non disturbare fino alle %1$s.</string>
+    <string name="alfred_dev_quiet_off">Non disturbare spento.</string>
+    <string name="alfred_dev_need_quiet">Per questo Android vuole l\'accesso «Non disturbare»: le ho aperto la pagina. Lo attivi per Eurise, poi me lo richieda.</string>
+    <string name="alfred_dev_volume">Volume al %1$s%%.</string>
+    <string name="alfred_dev_muted">Audio a zero.</string>
+    <string name="alfred_dev_silent">Silenzioso.</string>
+    <string name="alfred_dev_vibrate">Solo vibrazione.</string>
+    <string name="alfred_dev_sound">Suoneria accesa.</string>
+    <string name="alfred_dev_mode_on">Modalità %1$s accesa.</string>
+    <string name="alfred_dev_mode_off">Modalità spenta.</string>
+    <string name="alfred_dev_play">Musica.</string>
+    <string name="alfred_dev_play_app">Nessuna musica in sospeso: le apro l\'app della musica.</string>
+    <string name="alfred_dev_play_none">Non trovo un\'app della musica da far partire.</string>
+    <string name="alfred_dev_pause">In pausa.</string>
+    <string name="alfred_dev_next">Avanti.</string>
+    <string name="alfred_dev_previous">Indietro.</string>
+    <plurals name="alfred_left_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minuti</item>
+    </plurals>
+    <plurals name="alfred_left_seconds">
+        <item quantity="one">%1$d secondo</item>
+        <item quantity="other">%1$d secondi</item>
+    </plurals>
+    <string-array name="alfred_maxims_complete">
+        <item>Un dovere in meno. Il mondo respira.</item>
+        <item>Spuntato. Che soddisfazione, vero?</item>
+        <item>Opera compiuta. Chi ben comincia…</item>
+        <item>Un peso in meno sulla coscienza.</item>
+        <item>Fatto è meglio che perfetto.</item>
+        <item>La lista si accorcia. Io applaudo.</item>
+        <item>Missione compiuta, con discrezione.</item>
+        <item>Una cosa in meno. Ne restano solo tutte le altre.</item>
+    </string-array>
 </resources>

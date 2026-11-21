@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -269,6 +270,8 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var roomFolders by remember { mutableStateOf<Room?>(null) }
     var simpleSetup by remember { mutableStateOf(false) }
     var ballsSheet by remember { mutableStateOf(false) }
+    var approvalsSheet by remember { mutableStateOf(false) }
+    var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -334,14 +337,19 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     if (creating) NewChatSheet(model, actions, onClose = { creating = false })
     if (simpleSetup) SimpleSetupSheet(model) { simpleSetup = false }
     if (ballsSheet) BallsSheet(model) { ballsSheet = false }
+    if (approvalsSheet) ApprovalsSheet(model, actions) { approvalsSheet = false }
+    if (offSheet) OffHoursSheet(model) { offSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
     roomFolders?.let { r -> RoomFoldersSheet(model, r, onNew = { roomFolders = null; editFolder = null to setOf(r.id) }) { roomFolders = null } }
     if (account) Sheet({ account = false }) {
-        AccountsPanel(model) { account = false }
+        AccountsPanel(model, onOffHours = { account = false; offSheet = true }) { account = false }
         Pill(stringResource(R.string.sm_menu), EuriseIcons.heart(2f), Modifier.fillMaxWidth(), strong = false) { account = false; simpleSetup = true }
         Pill(stringResource(R.string.pa_list) + if (model.balls.isNotEmpty()) " · ${model.balls.size}" else "", EuriseIcons.ball(2f), Modifier.fillMaxWidth(), strong = false) {
             account = false; ballsSheet = true
+        }
+        Pill(stringResource(R.string.ap_list) + if (model.approvals.isNotEmpty()) " · ${model.approvals.size}" else "", EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; approvalsSheet = true
         }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
@@ -401,7 +409,7 @@ private fun AccountBar(model: ChatModel, modifier: Modifier, onNew: () -> Unit) 
 
 /** I tuoi account: server, tacchette di privacy, fuori orario per il lavoro, e l'aggiunta del secondo. */
 @Composable
-private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
+private fun AccountsPanel(model: ChatModel, onOffHours: () -> Unit = {}, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Text(stringResource(R.string.ch_acc_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
     Account.entries.forEach { a ->
@@ -427,6 +435,10 @@ private fun AccountsPanel(model: ChatModel, onClose: () -> Unit) {
                 Text(stringResource(R.string.ch_acc_quiet), fontSize = 13.sp, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = model.workQuiet, onCheckedChange = model::changeWorkQuiet)
             }
+            // Fuori orario (tavola SpaFuoriOrario): l'orario e chi passa lo stesso.
+            if (a == Account.Work) Text(stringResource(R.string.fo_line, Orari.label(model.offRules.hours),
+                model.offRules.people.size + model.offRules.rooms.size + model.offRules.words.size), fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                color = scheme.primary, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClick = onOffHours).padding(vertical = 4.dp))
         }
     }
     // Per chi vede poco (tavola ChatVocali): la voce del telefono legge i messaggi che arrivano. Nulla esce dal telefono.
@@ -561,7 +573,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     // con una discussione aperta ci sono solo quelle (il messaggio di partenza sta in cima).
     val thread = model.thread
     val all = model.timeline(roomId)
-    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon } } }
+    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon && !(it.kind == Event.Kind.Notice && it.data?.contains(Uscita.ANSWER) == true) } } }
     val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
     // Proposte (tavola ChatProposta) sotto gli ultimi messaggi ricevuti; riassunto (tavola ChatRiassunto) se entrando
     // c'erano tanti messaggi da leggere.
@@ -577,6 +589,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var menuFor by remember(roomId) { mutableStateOf<Event?>(null) }
     var replyTo by remember(roomId) { mutableStateOf<Event?>(null) }
     var editing by remember(roomId) { mutableStateOf<Event?>(null) }
+    var approvalFile by remember(roomId) { mutableStateOf<String?>(null) }
+    var outingSheet by remember(roomId) { mutableStateOf(false) }
     var forwarding by remember(roomId) { mutableStateOf<Event?>(null) }
     var pollSheet by remember(roomId) { mutableStateOf(false) }
     var moreSheet by remember(roomId) { mutableStateOf(false) }
@@ -657,11 +671,13 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
         val group = room != null && !room.direct && peer == null && thread == null
         var tab by remember(roomId) { mutableStateOf(0) }
-        if (group) Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (group) Row(Modifier.horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
             Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
             // Turni del gruppo (tavola ChatTurni): la settimana sempre a portata, chi è in turno ora, scambi controllati.
             Chip(stringResource(R.string.sh_tab), selected = tab == 2) { tab = 2 }
+            // Faccende a turno (tavola FamFaccende).
+            Chip(stringResource(R.string.fa_tab), selected = tab == 3) { tab = 3 }
             // Gruppo a tempo (tavola ChatGruppoTempo).
             Chip(stringResource(R.string.tb_chip), selected = false) { timeboxSheet = true }
         }
@@ -669,6 +685,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Box(Modifier.weight(1f).fillMaxWidth()) { ExpensesPane(model, actions, roomId) }
         } else if (group && tab == 2) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
+        } else if (group && tab == 3) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { ChoresPane(model, actions, roomId) }
         } else {
             val roomPlanned = if (thread == null) model.planned.filter { it.roomId == roomId } else emptyList()
             // I messaggi fissati: tocco per andarci.
@@ -694,6 +712,16 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         AudioBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
                         threads[e.id]?.let { ThreadChip(it, mine) { model.thread = e.id } }
+                    }
+                    // Organizza un'uscita (tavola AmiUscita).
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(Uscita.CARD) == true) Column {
+                        OutingBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
+                    // Approvazioni (tavola LavApprova).
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(Approva.REQUEST) == true) Column {
+                        ApprovalBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
                     }
                     // Passa la palla (tavola InsPallaChat).
                     else if (e.kind == Event.Kind.Text && e.data?.contains(Palla.BALL) == true) Column {
@@ -840,12 +868,15 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             onEdit = { editing = e; replyTo = null; draft = shownText(model, e) },
             onForward = { forwarding = e; menuFor = null },
             onBall = { ballFor = e; menuFor = null },
+            onApprove = { approvalFile = e.text; menuFor = null },
             onClose = { menuFor = null; model.basiHintDone() })
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
     if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
     // Pressione lunga sulla graffetta: sondaggio o posizione dal vivo (tavola ChatPosizione).
-    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }) { moreSheet = false }
+    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }, onApprove = { approvalFile = "" }, onOuting = if (model.room(roomId)?.direct == false) ({ outingSheet = true }) else null) { moreSheet = false }
+    if (outingSheet) NewOutingSheet(model, actions, roomId) { outingSheet = false }
+    approvalFile?.let { f -> AskApprovalSheet(model, actions, roomId, f) { approvalFile = null } }
     if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }
     if (timeboxSheet) TimeboxSheet(model, actions, roomId) { timeboxSheet = false }
     ballFor?.let { e -> PassBallSheet(model, actions, roomId, e) { ballFor = null } }

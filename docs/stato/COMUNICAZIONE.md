@@ -41,7 +41,33 @@ computer (area Computer, tavola PcEmail).
   elenco dei dispositivi con «Esci».
 - **Suonerie per persona e per app** (approvate e in codice il 14 novembre, nella Scrivania › Griglia e icone › Suoni):
   suoneria del contatto (`CUSTOM_RINGTONE`), suono al posto di WhatsApp/Telegram tramite l'ascolto delle notifiche.
-- **Passa la palla in Chat ed Email** (21 novembre, giro 976; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
+- **Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario** (21 novembre, notte, giro 987; tavole LavApprova,
+  FamFaccende, AmiUscita, SpaFuoriOrario). **Approvazioni** (`Approva.kt`, `ApprovaUi.kt`; posta `MailApprovals.kt`): in Chat
+  «Chiedi un'approvazione» dalla graffetta (pressione lunga) o tenendo premuto un file mandato da te (titolo con
+  Preventivo/Spesa/Ferie, importo, riga); chi la riceve ha Rifiuta, Chiedi modifica (con la riga), Approva; chi chiede vede
+  quando è stata aperta (ricevuta di lettura) e «Le tue richieste» nel foglio dell'account, con Sollecita dopo un giorno.
+  Per email: nello Scrivi il chip «Chiedi l'approvazione» (oggetto «Richiesta di approvazione: …» e in fondo come
+  rispondere); la risposta del destinatario viene letta («ok», «va bene», «sì» → approvata; «no» → rifiutata; altro →
+  modifica) e si conferma con un tocco; chi riceve la richiesta in Eurise ha Chiedi modifica e Approva; elenco sotto la
+  posta con Sollecita. La **firma sul PDF con Office** non c'è ancora (serve l'integrazione con Office): scritto nel foglio.
+  **Faccende** (`Faccende.kt`, `FaccendeUi.kt`, `FaccendeWorker.kt`): scheda «Faccende» nei gruppi (stato della stanza
+  `eu.eurise.chores`): cosa, giorni o ogni N giorni, ora, chi è nel giro in ordine; «Fatto» passa il turno (riga nella chat
+  per chi segue), in cima quelle non fatte l'ultima volta; tocco su una faccenda: «Chiedi a X di fare a cambio» o «Faccio
+  io»; promemoria a chi tocca 30 minuti prima anche ad app chiusa (copia locale delle faccende, WorkManager).
+  **Uscita** (`Uscita.kt`, `UscitaUi.kt`): nei gruppi dalla graffetta (pressione lunga): cosa, fino a tre date proposte,
+  luogo e indirizzo (Mappe con `geo:`), chiusura domani alle 12; le date si votano con un tocco; «Dì al gruppo se il
+  calendario è libero» è spento di base (il calendario lo legge solo il telefono, al gruppo arriva solo «libero»); ognuno
+  vede i suoi impegni sotto la data; passaggi (offro N posti, salgo io, cerco un passaggio da…, la prendo io); chi propone
+  fissa la data migliore e tutti hanno «Aggiungi al calendario». Le risposte non affollano la chat (Element vede una riga).
+  **Fuori orario** (`FuoriOrario.kt`, `FuoriOrarioUi.kt`, `FuoriOrarioWorker.kt`; posta `MailOffHours.kt`): nel foglio
+  dell'account, sotto «Lavoro», «Orario … · passano lo stesso ›»: giorni, inizio e fine; passano lo stesso persone, gruppi
+  e parole («urgente» di base); fuori orario la Chat di lavoro tace (suona solo chi passa) e all'inizio dell'orario arriva
+  «Ti aspettano N messaggi di lavoro»; lo stesso orario è quello condiviso con «arriva quando lavora». In Email: chip «Di
+  lavoro» su ogni casella e la scheda Fuori orario (giorni, ore, parole o indirizzi che passano), con il riepilogo del
+  mattino della posta. Un riepilogo unico Chat + Email (le due app sono separate) e il riassunto con Eurise AI nel
+  riepilogo: dopo. Prove: richiesta da Ciarly a Element e da Ciarly a Ciarly; email «ok» da un altro programma; faccenda con
+  due telefoni e promemoria; uscita con voti, calendario e passaggi; un messaggio «urgente» la sera sull'account di lavoro.
+- **Passa la palla in Chat ed Email** (21 novembre, giro 987; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
   menu di un messaggio: a chi (i membri della stanza o le persone con cui scrivi), la riga sul da farsi, una scadenza;
   parte come messaggio con il campo `eu.eurise.ball` (Element vede il testo «🏐 Palla a …»), lo stato passa
   Passata → Vista (ricevuta di lettura) → Ci lavoro → Fatta con risposte `eu.eurise.ball.status` (m.reference); chi la
@@ -572,7 +598,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    poi appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
-   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla~~ (giro 976, vedi «Fatto»), Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario,
+   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario~~ (giro 987, vedi «Fatto»; Faccende e Uscita per ora solo in Chat: in Email da fare con la scheda viva di InsStessaScheda), Faccende a turno, Organizza un'uscita, Fuori orario,
    poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
