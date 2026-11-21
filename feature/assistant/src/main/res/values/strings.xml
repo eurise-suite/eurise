@@ -559,6 +559,15 @@
     <string name="alfred_reply_none">Non trovo a chi rispondere: mi dica il nome.</string>
     <string name="alfred_help_g_messages">Messaggi</string>
     <string name="alfred_help_x_messages">«leggimi i messaggi» · «chi mi ha scritto?» · «rispondi che arrivo» · «scrivi ad Anna che arrivo»</string>
+    <string name="alfred_help_g_drive">In guida</string>
+    <string name="alfred_help_x_drive">«quanto manca?» · «dov\'è il benzinaio più vicino?» · «avvisa Anna che arrivo» · «autovelox»</string>
+    <string name="alfred_guide_none">Non c\'è una guida in corso. Mi dica dove andare: «portami a…».</string>
+    <string name="alfred_guide_left">Mancano %1$s: arriviamo verso le %2$s.</string>
+    <string name="alfred_guide_left_to">Mancano %1$s: a %2$s verso le %3$s.</string>
+    <string name="alfred_guide_km">%1$s km</string>
+    <string name="alfred_guide_meters">%1$d metri</string>
+    <string name="alfred_guide_text">Arrivo alle %1$s, tra %2$s.</string>
+    <string name="alfred_guide_text_plain">Sto arrivando.</string>
     <string name="alfred_dev_torch_on">Torcia accesa.</string>
     <string name="alfred_dev_torch_off">Torcia spenta.</string>
     <string name="alfred_dev_no_torch">Non riesco ad accendere la torcia su questo telefono.</string>

@@ -28,6 +28,7 @@ public final class EuriseWit
   {
     if (info == null)
       return;
+    EuriseGuideStatus.update(info);
     final GuideWit.Moment moment = WIT.next(System.currentTimeMillis(), EuriseJunctionScene.meters(info.distToTurn),
                                             EuriseJunctionScene.meters(info.distToTarget), pedestrian);
     if (moment == null || !voiceOn() || EuriseSpeak.busy())

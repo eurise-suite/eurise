@@ -19,6 +19,7 @@ import eu.eurise.core.data.calendar.EventDraft
 import eu.eurise.core.data.model.QuickAdd
 import eu.eurise.core.suite.ClockContract
 import eu.eurise.core.suite.ClockStatus
+import eu.eurise.core.suite.SuiteAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -35,10 +36,11 @@ data class Field(val key: String, val label: Int, val value: String, val choices
 /** Una pillola sotto la scheda («Usa SMS», «Oppure Marco Rossi»): cambia la scheda, non agisce. */
 data class Chip(val label: String, val command: Command)
 
-enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask, Follow, Complete, Device, Clock, Help }
+enum class Kind { Event, Message, Note, Task, Call, Route, Report, Alarm, Timer, Search, Open, Free, Remember, Ask, Follow, Complete, Device, Clock, Guide, Help }
 
 /** Le schede che si fanno subito, senza «Procedo?»: torcia, volume, musica, timer (cose che si annullano da sé). */
-val Card.immediate: Boolean get() = kind == Kind.Device || (kind == Kind.Clock && (command as? Command.Clock)?.action != ClockAction.AlarmOff)
+val Card.immediate: Boolean get() = kind == Kind.Device || kind == Kind.Guide ||
+    (kind == Kind.Clock && (command as? Command.Clock)?.action != ClockAction.AlarmOff)
 
 /**
  * La scheda di conferma (tavole AstConferma, AstMessaggio, AstLibera): cosa ha capito Alfred, righe da correggere,
@@ -124,6 +126,8 @@ class Butler(private val context: Context) {
         is Command.Complete -> complete(command)
         is Command.Device -> Card(Kind.Device, command, "", R.string.alfred_card_device, emptyList(), null, "")
         is Command.Clock -> clock(command)
+        is Command.Guide -> if (command.who.isBlank()) Card(Kind.Guide, command, "", R.string.alfred_card_route, emptyList(), null, "")
+            else message(Command.Message(command.who, arrivalText(), null))
         Command.Help -> Card(Kind.Help, command, s(R.string.alfred_help_lead), R.string.alfred_card_help, emptyList(), null, "", ready = false)
         // Le domande sui dati non hanno scheda (si risponde con [lookup]); qui solo per l'elenco «Ho capito N cose».
         is Command.Ask -> Card(Kind.Ask, command, s(R.string.alfred_data_card), R.string.alfred_data_card,
@@ -359,6 +363,39 @@ class Butler(private val context: Context) {
                 Outcome(s(R.string.alfred_alarm_skipped), true)
             }
         }
+    }
+
+    /** La guida in corso da Eurise Mappe: ora d'arrivo (ms), metri che mancano, meta; null se non si guida. */
+    private data class Trip(val eta: Long, val meters: Double, val to: String)
+
+    private fun trip(): Trip? = runCatching {
+        SuiteAccess.call(context, Uri.parse("content://$MAPS.guida"), "guide", null, null)
+    }.getOrNull()?.takeIf { it.containsKey("eta") }?.let { Trip(it.getLong("eta"), it.getDouble("meters"), it.getString("to").orEmpty()) }
+
+    /** «Arrivo alle 18:40, tra 25 minuti.» per «avvisa Anna che arrivo»; senza guida, «Sto arrivando.» */
+    private suspend fun arrivalText(): String {
+        val t = withContext(Dispatchers.IO) { trip() } ?: return s(R.string.alfred_guide_text_plain)
+        val at = java.time.Instant.ofEpochMilli(t.eta).atZone(java.time.ZoneId.systemDefault()).toLocalTime()
+        return s(R.string.alfred_guide_text, at.format(HOUR), minutesText(t.eta))
+    }
+
+    private fun minutesText(eta: Long): String {
+        val min = ((eta - System.currentTimeMillis()) / 60_000.0).let { Math.round(it).toInt() }.coerceAtLeast(1)
+        return if (min >= 60) s(R.string.alfred_left_hours, min / 60, min % 60)
+        else context.resources.getQuantityString(R.plurals.alfred_left_minutes, min, min)
+    }
+
+    private suspend fun doGuide(): Outcome {
+        val t = withContext(Dispatchers.IO) { trip() } ?: return Outcome(s(R.string.alfred_guide_none), true)
+        val at = java.time.Instant.ofEpochMilli(t.eta).atZone(java.time.ZoneId.systemDefault()).toLocalTime().format(HOUR)
+        val km = when {
+            t.meters < 0 -> ""
+            t.meters < 1000 -> s(R.string.alfred_guide_meters, (Math.round(t.meters / 50.0) * 50).toInt().coerceAtLeast(50))
+            t.meters < 10_000 -> s(R.string.alfred_guide_km, String.format(Locale.ITALIAN, "%.1f", t.meters / 1000))
+            else -> s(R.string.alfred_guide_km, Math.round(t.meters / 1000).toString())
+        }
+        val left = if (km.isBlank()) minutesText(t.eta) else minutesText(t.eta) + " e " + km
+        return Outcome(if (t.to.isNotBlank()) s(R.string.alfred_guide_left_to, left, t.to, at) else s(R.string.alfred_guide_left, left, at), true)
     }
 
     private suspend fun doDevice(c: Command.Device): Outcome = when (val r = Gadgets.run(context, c)) {
@@ -732,6 +769,7 @@ class Butler(private val context: Context) {
             }
             Kind.Device -> doDevice(card.command as Command.Device)
             Kind.Clock -> doClock(card.command as Command.Clock)
+            Kind.Guide -> doGuide()
             Kind.Help -> Outcome("", false)
         }
     }.getOrElse { Outcome(s(R.string.alfred_failed), false) }

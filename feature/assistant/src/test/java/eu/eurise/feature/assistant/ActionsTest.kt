@@ -51,7 +51,7 @@ class ActionsTest {
         assertEquals(Command.Timer(10), p("timer 10 minuti"))
         assertTrue(p("sveglia alle 7") is Command.Alarm)
         // «quanto manca?» da solo non è il timer (è la domanda in guida).
-        assertTrue(p("quanto manca?") !is Command.Clock)
+        assertTrue(p("quanto manca?") is Command.Guide)
     }
 
     @Test fun telefono() {
@@ -108,6 +108,15 @@ class ActionsTest {
         assertEquals(listOf("Rispondi ad Anna"), a.chips.map { it.label })
         assertEquals("Per leggere i messaggi mi serve Eurise Messaggi.",
             DataWriter.messages(Command.Ask(AskKind.Messages), now, emptyList(), available = false).lead)
+    }
+
+    @Test fun inGuida() {
+        assertEquals(Command.Guide(), p("quanto manca?"))
+        assertEquals(Command.Guide(), p("a che ora arrivo"))
+        assertEquals(Command.Guide("Anna"), p("avvisa Anna che arrivo"))
+        assertEquals(Command.Navigate("benzinaio"), p("dov'è il benzinaio più vicino?"))
+        assertEquals(Command.Navigate("farmacia"), p("c'è una farmacia qui vicino?"))
+        assertEquals(Command.Clock(ClockAction.TimerLeft), p("quanto manca al timer"))
     }
 
     @Test fun cosaSaiFare() {

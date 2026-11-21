@@ -1007,6 +1007,13 @@ patch(manifest, """    <activity
         android:permission="{SUITE_PERM}"
         android:excludeFromRecents="true" />
 
+    <!-- La guida in corso per Alfred («quanto manca?», «avvisa Anna che arrivo»): permesso della suite controllato in
+         call(), solo app con la stessa firma. -->
+    <provider
+        android:name="app.organicmaps.eurise.EuriseGuideStatus$Provider"
+        android:authorities="eu.eurise.maps.guida"
+        android:exported="true" />
+
     <activity
         android:name="app.organicmaps.eurise.EuriseReportReviewActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"

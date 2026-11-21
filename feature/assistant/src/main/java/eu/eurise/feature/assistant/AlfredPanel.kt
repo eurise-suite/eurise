@@ -803,6 +803,7 @@ private fun HelpList() {
         R.string.alfred_help_g_clock to R.string.alfred_help_x_clock,
         R.string.alfred_help_g_phone to R.string.alfred_help_x_phone,
         R.string.alfred_help_g_music to R.string.alfred_help_x_music,
+        R.string.alfred_help_g_drive to R.string.alfred_help_x_drive,
         R.string.alfred_help_g_people to R.string.alfred_help_x_people,
         R.string.alfred_help_g_more to R.string.alfred_help_x_more,
     )
@@ -903,6 +904,7 @@ private fun kindIcon(kind: Kind) = when (kind) {
     Kind.Follow -> EuriseIcons.calendar(2.3f)
     Kind.Complete -> EuriseIcons.task(2.3f)
     Kind.Clock -> EuriseIcons.clock(2.3f)
+    Kind.Guide -> EuriseIcons.map(2.3f)
     Kind.Device -> EuriseIcons.phone(2.3f)
     Kind.Help -> EuriseIcons.spark(2.3f)
 }

@@ -51,6 +51,8 @@ sealed interface Command {
     data class Clock(val action: ClockAction, val day: LocalDate? = null) : Command
     /** «Rispondi che arrivo»: a chi ha scritto per ultimo (o di cui si sono appena letti i messaggi). */
     data class Reply(val text: String) : Command
+    /** In guida con Eurise Mappe: «quanto manca?» ([who] vuoto) o «avvisa Anna che arrivo» (con l'ora d'arrivo). */
+    data class Guide(val who: String = "") : Command
     /** «Cosa sai fare?»: l'elenco della tavola AlfAzioni. */
     data object Help : Command
     /** Nessuna regola la capisce: tocca a Eurise AI (richiesta libera). */
@@ -129,6 +131,14 @@ object Grammar {
     private val PAUSE = Regex("$O^(?:pausa|metti\\s+in\\s+pausa|(?:ferma|stoppa|spegni)\\s+(?:la\\s+)?musica|basta\\s+musica|stop(?:\\s+musica)?)$")
     private val NEXT = Regex("$O^(?:avanti|prossima|prossimo|la\\s+prossima|(?:prossimo|prossima)\\s+(?:brano|canzone|pezzo)|(?:brano|canzone|pezzo)\\s+successiv[oa]|salta(?:\\s+(?:questa|questo|il\\s+brano|la\\s+canzone))?|cambia\\s+(?:canzone|brano))$")
     private val PREVIOUS = Regex("$O^(?:indietro|torna\\s+indietro\\s+(?:di\\s+una\\s+canzone|di\\s+un\\s+brano)|(?:brano|canzone|pezzo)\\s+precedente|quella\\s+di\\s+prima|la\\s+canzone\\s+di\\s+prima)$")
+    // In guida (Eurise Mappe): quanto manca, chi avvisare, cosa c'è vicino.
+    private val GUIDE_LEFT = Regex("$O^(?:quanto\\s+(?:manca|ci\\s+vuole|ci\\s+metto|ci\\s+mettiamo|resta)(?:\\s+(?:ad\\s+arrivare|all'arrivo|alla\\s+meta|per\\s+arrivare|a\\s+casa|di\\s+strada))?|a\\s+che\\s+ora\\s+arrivo|a\\s+che\\s+ora\\s+arriviamo|quando\\s+arrivo|quando\\s+arriviamo|tra\\s+quanto\\s+arrivo|tra\\s+quanto\\s+arriviamo|quanti\\s+(?:chilometri|km)\\s+mancano)$")
+    private val GUIDE_NOTIFY = Regex("$O^(?:avvisa|avverti|avvisami)\\s+(.+?)\\s+che\\s+(?:sto\\s+arrivando|arrivo|arriviamo|stiamo\\s+arrivando)$")
+    private val NEARBY = Regex(
+        "$O^(?:dov'è|dove\\s+(?:è|trovo|c'è)|c'è|cerca(?:mi)?|trovami)\\s+(?:un|il|la|una|un'|l')?\\s*" +
+            "(benzinaio|distributore|stazione\\s+di\\s+servizio|area\\s+di\\s+servizio|farmacia|bancomat|parcheggio|bar|ristorante|supermercato|ospedale|colonnina(?:\\s+di\\s+ricarica)?|officina|autogrill|pizzeria|hotel|albergo)" +
+            "\\s*(?:più\\s+vicin[oa]|qui\\s+vicino|vicino|nei\\s+dintorni|in\\s+zona)?$"
+    )
     // Messaggi: risposta a chi ha scritto.
     private val REPLY_TO = Regex("$O^rispondi\\s+(?:a|ad)\\s+(.+?)\\s+(?:che|:)\\s*(.+)$")
     private val REPLY = Regex("$O^(?:rispondi|rispondigli|rispondile|rispondi\\s+(?:pure|subito))\\s*(?:che|:|,)?\\s+(.+)$")
@@ -196,6 +206,9 @@ object Grammar {
         PAUSE.matchEntire(text)?.let { return Command.Device(DeviceAction.Pause) }
         NEXT.matchEntire(text)?.let { return Command.Device(DeviceAction.Next) }
         PREVIOUS.matchEntire(text)?.let { return Command.Device(DeviceAction.Previous) }
+        GUIDE_LEFT.matchEntire(text)?.let { return Command.Guide() }
+        GUIDE_NOTIFY.matchEntire(text)?.let { m -> return Command.Guide(m.groupValues[1].trim()) }
+        NEARBY.matchEntire(text)?.let { m -> return Command.Navigate(m.groupValues[1].trim().lowercase()) }
         REPLY_TO.matchEntire(text)?.let { m -> return Command.Message(m.groupValues[1].trim(), capital(m.groupValues[2].trim()), Channel.Sms) }
         REPLY.matchEntire(text)?.let { m -> return Command.Reply(capital(m.groupValues[1].trim())) }
         TIMER_STOP.matchEntire(text)?.let { return Command.Clock(ClockAction.StopTimer) }
