@@ -250,6 +250,8 @@ private fun PasswordSheet(model: ChatModel, actions: ChatActions, homeserver: St
 
 @Composable
 private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> Unit, onVerify: () -> Unit) {
+    // Modalità semplice (tavola ChatSemplice): poche persone grandi, un vocale, Aiuto.
+    if (model.simple.on) { SimpleHome(model, actions); return }
     val scheme = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
     var creating by remember { mutableStateOf(false) }
@@ -262,6 +264,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var foldersSheet by remember { mutableStateOf(false) }
     var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
     var roomFolders by remember { mutableStateOf<Room?>(null) }
+    var simpleSetup by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -325,11 +328,13 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
     }
     if (creating) NewChatSheet(model, actions, onClose = { creating = false })
+    if (simpleSetup) SimpleSetupSheet(model) { simpleSetup = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
     roomFolders?.let { r -> RoomFoldersSheet(model, r, onNew = { roomFolders = null; editFolder = null to setOf(r.id) }) { roomFolders = null } }
     if (account) Sheet({ account = false }) {
         AccountsPanel(model) { account = false }
+        Pill(stringResource(R.string.sm_menu), EuriseIcons.heart(2f), Modifier.fillMaxWidth(), strong = false) { account = false; simpleSetup = true }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.inv_menu), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.uni.openInviteList(true) }

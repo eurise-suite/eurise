@@ -179,6 +179,27 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         LiveShare.sink = null
     }
 
+    // --- Modalità semplice (tavola ChatSemplice) ---
+
+    private val simplePrefs get() = context.getSharedPreferences("chat_ui", Context.MODE_PRIVATE)
+    /** Per account: accesa, le persone (al più quattro), chi riceve «Aiuto». */
+    var simple by mutableStateOf(Semplice.decode(simplePrefs.getString("simple_" + account.name, null)))
+        private set
+
+    fun changeSimple(c: Semplice.Config) {
+        simple = c
+        simplePrefs.edit().putString("simple_" + account.name, Semplice.encode(c)).apply()
+    }
+
+    /** «Aiuto»: un messaggio alla persona scelta e, se si può, la posizione dal vivo per un'ora. */
+    fun askHelp(withLocation: Boolean, done: (Boolean) -> Unit) {
+        val room = simple.help ?: return done(false)
+        val me = session?.userId.orEmpty()
+        send(room, context.getString(R.string.sm_help_text, Semplice.greetingName(simple, me))) { done(false) }
+        if (withLocation) startLive(room, Posizione.Until.Hour) {}
+        done(true)
+    }
+
     // --- Presa visione (tavola ChatPresaVisione) ---
 
     /** Per stanza: fino a quando ha letto ognuno (conferme di lettura). */
@@ -455,6 +476,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         clearMemory()
         account = a
         ChatAccounts.setActive(context, a)
+        simple = Semplice.decode(simplePrefs.getString("simple_" + a.name, null))
         store = SessionStore(context, a)
         session = store.load()
         keptInSuite = store.keptInSuite

@@ -194,7 +194,27 @@ computer (area Computer, tavola PcEmail).
   chiudi tu, tra un'ora, domani alle 20, tra una settimana). L'avviso «Tieni premuto un messaggio…» resta finché non si usa
   il menu. Non ancora: reazioni con emoji qualsiasi (solo le sei veloci), risposte multiple e voto segreto nei sondaggi
   nuovi (si leggono se arrivano da altri).
-- **Posizione dal vivo a tempo** (21 novembre; tavola ChatPosizione; giro GIRO: chat): **pressione lunga sulla
+- **Difesa dalle truffe, presa visione, modalità semplice** (21 novembre, notte; tavole ChatTruffa, ChatPresaVisione,
+  ChatSemplice; giro GIRO: chat e messages; toccata una parte comune: `core/suite` con un file nuovo, `ScamCheck.kt`, e
+  il suo test). **Truffe**: `ScamCheck` riconosce sul telefono i copioni più usati (familiare con il «numero nuovo» che
+  chiede soldi, soldi urgenti, conto bloccato con link, pacco in giacenza, richiesta del codice arrivato per SMS; almeno
+  due segni insieme; chi è in rubrica non fa scattare l'avviso, tranne per il codice). In **Messaggi**, sotto l'SMS di
+  chi non è in rubrica, la scheda rossa «Attenzione: sembra una truffa» con il perché, **Chiama Luca (rubrica)** quando
+  il messaggio dice «sono Luca» e Luca è in rubrica (se no Apri la rubrica) e **Blocca** (numeri bloccati di Android,
+  con l'app predefinita; doppio tocco). In **Chat**, nella chat a due con chi non è verificato e a cui non hai mai
+  scritto: la stessa scheda con «Chiama chi conosci» e Blocca (lista `m.ignored_user_list` come Element, poi esce dalla
+  chat). Non ancora: l'avviso a «chi hai indicato come aiuto». **Presa visione**: nella pressione lunga su Invia dei
+  gruppi «Chiedi la presa visione»; il messaggio porta `eu.eurise.ack` e in fondo, per Element, «— Presa visione:
+  conferma con ✅»; chi riceve ha il tasto **Ricevuto** (la reazione ✅, quindi anche chi usa Element conferma); chi l'ha
+  mandato vede la barra «Ricevuto da 4 su 6», «Mancano: Paolo (letto, non confermato), Marta (non letto)» dalle
+  conferme di lettura per persona, e **Ricorda a chi manca** (una risposta con i nomi). **Modalità semplice**: dal foglio
+  dell'account si sceglie il nome del saluto, fino a quattro persone e chi riceve «Aiuto»; accesa, al posto dell'elenco
+  c'è «Ciao Bruna», le persone in grande con «1 messaggio nuovo», **Manda un vocale** (a chi? poi la chat) e il tasto
+  rosso **Aiuto** («Chiedo aiuto a Luca?»: un messaggio e la posizione dal vivo per un'ora, se c'è il permesso); in fondo
+  sempre «Modalità semplice accesa · puoi toglierla» e «Torna alla Chat completa» con doppio tocco. Logica pura in
+  `Ack.kt`, `Semplice.kt` con i test. Non ancora: impostarla da un familiare a distanza («impostata da Luca con il tuo
+  consenso»), chiamare dalla modalità semplice (le chiamate non ci sono ancora).
+- **Posizione dal vivo a tempo** (21 novembre; tavola ChatPosizione; giro 957: chat): **pressione lunga sulla
   graffetta** = Sondaggio o Posizione dal vivo (prima apriva subito il sondaggio); «Per quanto?» 15 min, 1 ora, Fino
   alle 23 (prima delle 22), Finché arrivo. Eventi di **Element** (MSC3672/MSC3488): stato `beacon_info` per persona
   (dal vivo e durata, **nessuna posizione**: gli stati Matrix non sono cifrati) e punti `beacon` **cifrati** come i
@@ -305,7 +325,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro GIRO (21 novembre: posizione dal vivo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat e messages giro GIRO (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -505,9 +525,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    ~~ChatCartelle~~ fatta al giro 930; prove: cartella nuova con due chat, chat in due cartelle, pressione lunga su
    una chat, Messaggi a me con «→ Note» e «→ Attività», icona «T» su un vocale ricevuto; ~~ChatThread~~ fatta al giro
    950; prove: discussione aperta da Eurise e vista in Element (e al contrario), «6 risposte» sotto il messaggio,
-   riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro GIRO; prove: 15 minuti con la Chat chiusa
-   (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly; poi
-   ChatTruffa), poi le tavole della seconda fila di La mia Bussola.
+   riga delle discussioni nell'elenco; ~~ChatPosizione~~ fatta al giro 957; prove: 15 minuti con la Chat chiusa
+   (avviso fisso, punti in Element), Smetti dall'avviso, Finché arrivo, posizione di Element vista in Ciarly;
+   ~~ChatTruffa, ChatPresaVisione, ChatSemplice~~ fatte al giro GIRO; poi ChatProposta), poi le tavole della seconda fila di La mia Bussola.
    Turni: fatti ai giri 755 e 759 (vedi «Fatto»); prove da chiedere: importare un PDF e un foglio Excel veri del
    proprietario, esportare prospetto e fogli presenze; un gruppo con due telefoni, Fai i turni con Genera, scambio
    accettato dall'altro, calendario «Turni» acceso.

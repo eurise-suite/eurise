@@ -389,4 +389,33 @@
     <string name="pv_remind_text">%1$s: c\'è da confermare la presa visione di questo messaggio (tasto «Ricevuto», o ✅).</string>
     <string name="pv_confirm">Ricevuto</string>
     <string name="pv_done">Ricevuto ✓</string>
+
+    <!-- Modalità semplice (tavola ChatSemplice) -->
+    <string name="sm_menu">Modalità semplice</string>
+    <string name="sm_setup_explain">Per chi fa fatica con il telefono: al posto dell\'elenco, fino a quattro persone in grande, «Manda un vocale» e il tasto rosso «Aiuto». In fondo si vede sempre che è accesa e come toglierla.</string>
+    <string name="sm_name_hint">Il nome per il saluto (Bruna)</string>
+    <string name="sm_pick">Le persone (al più %1$d); tocca «Aiuto» per scegliere chi lo riceve</string>
+    <string name="sm_help_label">Aiuto</string>
+    <string name="sm_make_help">Aiuto?</string>
+    <string name="sm_on">Accendi la modalità semplice</string>
+    <string name="sm_hello">Ciao %1$s</string>
+    <string name="sm_empty">Nessuna persona scelta: aggiungile dal foglio dell\'account.</string>
+    <string name="sm_voice">Manda un vocale</string>
+    <string name="sm_voice_to">A chi?</string>
+    <string name="sm_voice_hint">Nella chat tieni premuto il microfono mentre parli, poi lascia.</string>
+    <string name="sm_help">Aiuto</string>
+    <string name="sm_help_ask">Chiedo aiuto a %1$s?</string>
+    <string name="sm_help_what">Gli scrivo che hai bisogno di aiuto e, per un\'ora, gli faccio vedere dove sei. Puoi smettere quando vuoi.</string>
+    <string name="sm_help_yes">Sì, chiedi aiuto</string>
+    <string name="sm_help_no">No, torna indietro</string>
+    <string name="sm_help_text">🆘 %1$s chiede aiuto. Ti faccio vedere dove sono per un\'ora.</string>
+    <string name="sm_help_sent">Ho scritto a %1$s</string>
+    <string name="sm_footer">Modalità semplice accesa · la vedi sempre qui · puoi toglierla</string>
+    <string name="sm_leave">Torna alla Chat completa</string>
+    <string name="sm_leave_confirm">Tocca di nuovo: torna alla Chat completa</string>
+    <plurals name="sm_new">
+        <item quantity="one">%d messaggio nuovo</item>
+        <item quantity="many">%d messaggi nuovi</item>
+        <item quantity="other">%d messaggi nuovi</item>
+    </plurals>
 </resources>
