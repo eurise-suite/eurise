@@ -117,13 +117,16 @@ def foreground(app: dict, mono: bool) -> str:
 def background_items(app: dict, shape: str, indent: str) -> str:
     """Il fondo: sfumatura del colore dell'app (dall'alto a sinistra in basso a destra) e luce in alto a sinistra."""
     a, b, c = app["fondo"]
+    # «verticale»: il colore sale dritto dal basso (Ciarly, 21 novembre); «tappe»: dove cade ogni colore.
+    x0, x1 = (54, 54) if app.get("verticale") else (40, 68)
+    t0, t1, t2 = app.get("tappe", [0, 0.45, 1])
     return (
         f'{indent}<path android:pathData="{shape}">\n'
         f'{indent}    <aapt:attr name="android:fillColor">\n'
-        f'{indent}        <gradient android:type="linear" android:startX="40" android:startY="18" android:endX="68" android:endY="92">\n'
-        f'{indent}            <item android:offset="0" android:color="{a}" />\n'
-        f'{indent}            <item android:offset="0.45" android:color="{b}" />\n'
-        f'{indent}            <item android:offset="1" android:color="{c}" />\n'
+        f'{indent}        <gradient android:type="linear" android:startX="{x0}" android:startY="18" android:endX="{x1}" android:endY="92">\n'
+        f'{indent}            <item android:offset="{t0:g}" android:color="{a}" />\n'
+        f'{indent}            <item android:offset="{t1:g}" android:color="{b}" />\n'
+        f'{indent}            <item android:offset="{t2:g}" android:color="{c}" />\n'
         f'{indent}        </gradient>\n'
         f'{indent}    </aapt:attr>\n'
         f'{indent}</path>\n'

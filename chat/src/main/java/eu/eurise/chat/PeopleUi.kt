@@ -223,7 +223,7 @@ internal fun PersonScreen(model: ChatModel, actions: ChatActions) {
     val room = roomId?.let(model::room)
     val events = roomId?.let { model.timeline(it) }
     // Le cose della Chat sono vive: arrivano con la sincronizzazione mentre il filo è aperto.
-    val chat = events.orEmpty().filter { it.kind != Event.Kind.State }.map { e ->
+    val chat = events.orEmpty().filter { it.kind != Event.Kind.State && it.kind != Event.Kind.Beacon }.map { e ->
         People.Entry(e.id, Channel.Chat, e.time, e.sender != me, when (e.kind) {
             Event.Kind.Encrypted -> stringResource(R.string.ch_encrypted_short)
             Event.Kind.Image -> stringResource(R.string.ch_photo)

@@ -284,17 +284,17 @@
   ]
  },
  "Chat": {
-  "colore": "Ceruleo e caffè",
-  "base": "#2C6CB0",
-  "c": "#1298DF",
-  "c2": "#7B4A28",
+  "colore": "Ceruleo e caffè, dal basso",
+  "base": "#5A6E9A",
+  "c": "#1E9BE0",
+  "c2": "#A8642E",
   "fondo": [
    "#1E9BE0",
-   "#2F63A6",
-   "#7B4A28"
+   "#5A6E9A",
+   "#A8642E"
   ],
   "luce": "#5EB9E9",
-  "incavo": "#3E5A80",
+  "incavo": "#5A6286",
   "disegno": "la tazzina: il fumetto nasce dal caffè",
   "parti": [
    [
@@ -317,7 +317,13 @@
     "s",
     "M33.5 28 C37.2 28 39 30.1 38.4 32.5 C37.8 34.9 35.4 35.4 32.6 34.5"
    ]
-  ]
+  ],
+  "tappe": [
+   0,
+   0.38,
+   0.78
+  ],
+  "verticale": true
  },
  "Messaggi": {
   "colore": "Oltremare",

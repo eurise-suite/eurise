@@ -33,8 +33,11 @@ data class Event(
     val thread: String? = null,
     /** Quante risposte ha la sua discussione secondo il server (se è un messaggio di partenza). */
     val threadCount: Int = 0,
+    /** Per una posizione dal vivo: la condivisione a cui si riferisce (tavola ChatPosizione). */
+    val ref: String? = null,
 ) {
-    enum class Kind { Text, Notice, Image, File, Audio, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll }
+    /** [Location]: posizione (dal vivo o una sola); [Beacon]: un punto di una posizione dal vivo, non si mostra da solo. */
+    enum class Kind { Text, Notice, Image, File, Audio, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll, Location, Beacon }
 }
 
 /**
@@ -90,6 +93,14 @@ object Matrix {
             return Event(id, sender, p.question, time, Event.Kind.Poll, data = content.toString())
         }
         val reply = Relations.replyTo(content)
+        // Posizione dal vivo (tavola ChatPosizione): l'inizio come scheda, la fine come riga, i punti nascosti.
+        if (type == Posizione.INFO) {
+            val info = Posizione.info(content) ?: return null
+            val who = names[sender] ?: localpart(sender)
+            return if (info.live) Event(id, sender, info.description.ifBlank { who }, time, Event.Kind.Location, data = content.toString())
+            else Event(id, sender, "locstop:$who", time, Event.Kind.State)
+        }
+        if (type == Posizione.BEACON) return Event(id, sender, "", time, Event.Kind.Beacon, data = content.toString(), ref = Posizione.beaconOf(content))
         return when (type) {
             "m.room.encrypted" -> Event(id, sender, "", time, Event.Kind.Encrypted)
             "m.room.message" -> {
@@ -108,6 +119,7 @@ object Matrix {
                     "m.audio" -> Event(id, sender, body, time, Event.Kind.Audio, media, data = content.toString(), replyTo = reply)
                     "m.file", "m.video" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice, replyTo = reply)
+                    "m.location" -> Event(id, sender, body, time, Event.Kind.Location, data = content.toString())
                     Expenses.EXPENSE -> Event(id, sender, body, time, Event.Kind.Expense, data = content.toString())
                     Expenses.SETTLEMENT -> Event(id, sender, body, time, Event.Kind.Settlement, data = content.toString())
                     // Turni del gruppo: piano, disponibilità, cambi e risposte (vedi Shifts).

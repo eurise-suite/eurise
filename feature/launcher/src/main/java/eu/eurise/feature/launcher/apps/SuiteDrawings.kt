@@ -16,8 +16,20 @@ internal object SuiteDrawings {
     /** Tratto da [s0] a [s1], pieni da [p0] a [p1], campitura [tint], incavi [hole], spessore del tratto [stroke]. */
     class Palette(val s0: Color, val s1: Color, val p0: Color, val p1: Color, val tint: Color, val hole: Color, val stroke: Float)
 
-    /** [round] è il fondo della serie colorata (tre tappe), [glow] la luce in alto a sinistra. */
-    class Drawing(val parts: List<Part>, val light: Palette, val dark: Palette, val color: Palette, val round: List<Color>, val glow: Color)
+    /**
+     * [round] è il fondo della serie colorata (tre tappe, posate su [stops]), [glow] la luce in alto a sinistra;
+     * [vertical] fa salire il colore dritto dal basso invece che un po' in diagonale.
+     */
+    class Drawing(
+        val parts: List<Part>,
+        val light: Palette,
+        val dark: Palette,
+        val color: Palette,
+        val round: List<Color>,
+        val glow: Color,
+        val vertical: Boolean = false,
+        val stops: List<Float> = listOf(0f, 0.45f, 1f),
+    )
 
     val all: Map<String, Drawing> = mapOf(
         "Agenda" to Drawing(
@@ -122,11 +134,13 @@ internal object SuiteDrawings {
             Part("p", "M10.5 26 H33.5 V29 C33.5 35.5 28.5 40 22 40 C15.5 40 10.5 35.5 10.5 29 Z"),
             Part("s", "M33.5 28 C37.2 28 39 30.1 38.4 32.5 C37.8 34.9 35.4 35.4 32.6 34.5"),
             ),
-            light = Palette(Color(0xFF1295DB), Color(0xFF56341C), Color(0xFF2EA4E3), Color(0xFF603A1F), Color(0x291298DF), Color(0xFFF6F5F1), 2.3f),
-            dark = Palette(Color(0xFFA5D8F3), Color(0xFFA38068), Color(0xFF94D1F1), Color(0xFF956E53), Color(0x2B71C1EC), Color(0xFF262A33), 2.3f),
-            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFF3E5A80), 2.4f),
-            round = listOf(Color(0xFF1E9BE0), Color(0xFF2F63A6), Color(0xFF7B4A28)),
+            light = Palette(Color(0xFF1D98DC), Color(0xFF764620), Color(0xFF39A7E4), Color(0xFF834E24), Color(0x291E9BE0), Color(0xFFF6F5F1), 2.3f),
+            dark = Palette(Color(0xFFAAD9F3), Color(0xFFC2926D), Color(0xFF9AD2F1), Color(0xFFB98358), Color(0x2B78C3EC), Color(0xFF262A33), 2.3f),
+            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFF5A6286), 2.4f),
+            round = listOf(Color(0xFF1E9BE0), Color(0xFF5A6E9A), Color(0xFFA8642E)),
             glow = Color(0xFF5EB9E9),
+            vertical = true,
+            stops = listOf(0f, 0.38f, 0.78f),
         ),
         "Contatti" to Drawing(
             listOf(

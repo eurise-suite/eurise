@@ -51,6 +51,19 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 21 novembre, sera tardi: chiusura col microfono corretta, Ciarly cangiante (giri 945 e 949)
+- **Errore del giro 934** (segnalato dal proprietario: toccando il microfono si chiudeva tutta Eurise): mentre si passava
+  alla nota la barra in basso spariva (`LocalDockClearance` a 0) e il margine sotto il microfono diventava negativo
+  («Padding must be non-negative»). Ora il microfono si mostra solo con la barra e il margine non scende sotto zero.
+  Trovato con una prova sul telefono simulato: ramo `prova-nota-vocale`, flusso `prova-nota-vocale.yml`, script
+  `scripts/prove/nota-vocale.sh` (installa, tocca il microfono, legge il registro degli errori). Resta su quel ramo.
+- «Dove salvo le registrazioni?» si apre per intero e scorre (nel telefono simulato «Va bene» restava sotto il bordo).
+- **Icona della Chat (Ciarly)**, chiesto dal proprietario: fondo cangiante dal blu del Browser (#1E9BE0, #2F63A6) al
+  caffè (#7B4A28). **Parte comune toccata**: `scripts/icone_disegni.json` (voce «Chat»); rigenerati
+  `chat/.../ic_chat_background.xml` e `SuiteDrawings.kt` (temi delle icone della Scrivania). È un'app dell'area
+  Comunicazione: da scrivere anche in `COMUNICAZIONE.md` se la ritoccano. La tela non è aggiornata.
+- Giro 945 (solo la correzione) e giro 949 (tutto, con un commit di Comunicazione) pubblicati in `apk-prova`.
+
 ## 21 novembre, sera: nota vocale completa in codice (giro 934)
 - **Approvate dal proprietario** NoteVocaleEntra, NoteVocaleRegistra, NoteVocaleOrdinata, NoteVocaleDove e ImpEurise. In
   codice le quattro della nota vocale; **ImpEurise ancora no** (tocca navigazione e voci di tutte le aree: da concordare).

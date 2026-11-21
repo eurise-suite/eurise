@@ -9,6 +9,11 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <!-- I vocali (tavola ChatVocali): chiesto solo la prima volta che si tiene premuto il microfono. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Posizione dal vivo (tavola ChatPosizione): chiesta solo alla prima condivisione; servizio in primo piano con l'avviso fisso. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
@@ -97,5 +102,10 @@
             android:exported="true"
             android:readPermission="${suitePermission}"
             android:writePermission="${suitePermission}" />
+        <!-- Posizione dal vivo (tavola ChatPosizione): solo mentre la si condivide, con l'avviso fisso e «Smetti». -->
+        <service
+            android:name=".LiveLocationService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 </manifest>

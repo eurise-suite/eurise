@@ -3418,3 +3418,6 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 21 novembre, Backup: tutta la suite nel backup (tranne Mappe) con un fornitore protetto per app, formato a pezzi, prova sull'emulatore 30 su 30 (giro 938) → `docs/stato/BACKUP.md`.
 - 21 novembre, sera, Backup: Mappe nel backup (fornitore nelle patch di CoMaps, backup di Android spento in Mappe); cartella protetta «dal backup» in Galleria (tavole approvate e in codice) → `docs/stato/BACKUP.md`.
 - 21 novembre, Comunicazione: Chat, discussioni a filo (thread di Matrix, come Element) con «6 risposte» sotto il messaggio e nell'elenco · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, sera tardi, Organizzazione: corretta la chiusura di Eurise toccando il microfono delle Note; icona di Ciarly cangiante dal Ceruleo al caffè · giro 949 → `docs/stato/ORGANIZZAZIONE.md`.
+- 21 novembre, Comunicazione: Chat, discussioni a filo (thread di Matrix, come Element) con «6 risposte» sotto il messaggio e nell'elenco · giro 950 (chat) → `docs/stato/COMUNICAZIONE.md`.
+- 21 novembre, notte, Comunicazione: Chat, posizione dal vivo a tempo (come Element, punti cifrati, avviso fisso con Smetti, nessuna mappa scaricata) · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.

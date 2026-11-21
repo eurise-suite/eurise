@@ -61,7 +61,9 @@ def main():
             f'            color = {kpal(colori)},\n'
             f'            round = listOf(Color({argb(a)}), Color({argb(b)}), Color({argb(cc)})),\n'
             f'            glow = Color({argb(app["luce"])}),\n'
-            f'        )')
+            + (f'            vertical = true,\n' if app.get("verticale") else '')
+            + (f'            stops = listOf({", ".join(f"{t:g}f" for t in app["tappe"])}),\n' if "tappe" in app else '')
+            + f'        )')
     body = ",\n".join(entries)
     OUT.write_text(f'''package eu.eurise.feature.launcher.apps
 
@@ -81,8 +83,20 @@ internal object SuiteDrawings {{
     /** Tratto da [s0] a [s1], pieni da [p0] a [p1], campitura [tint], incavi [hole], spessore del tratto [stroke]. */
     class Palette(val s0: Color, val s1: Color, val p0: Color, val p1: Color, val tint: Color, val hole: Color, val stroke: Float)
 
-    /** [round] è il fondo della serie colorata (tre tappe), [glow] la luce in alto a sinistra. */
-    class Drawing(val parts: List<Part>, val light: Palette, val dark: Palette, val color: Palette, val round: List<Color>, val glow: Color)
+    /**
+     * [round] è il fondo della serie colorata (tre tappe, posate su [stops]), [glow] la luce in alto a sinistra;
+     * [vertical] fa salire il colore dritto dal basso invece che un po' in diagonale.
+     */
+    class Drawing(
+        val parts: List<Part>,
+        val light: Palette,
+        val dark: Palette,
+        val color: Palette,
+        val round: List<Color>,
+        val glow: Color,
+        val vertical: Boolean = false,
+        val stops: List<Float> = listOf(0f, 0.45f, 1f),
+    )
 
     val all: Map<String, Drawing> = mapOf(
 {body},

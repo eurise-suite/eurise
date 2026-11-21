@@ -88,7 +88,7 @@ class ChatWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 val events = Matrix.events(join.getJSONObject(id).optJSONObject("timeline")?.optJSONArray("events"))
                 val bussola = id in bussolaRooms || events.any { it.kind == Event.Kind.Bussola }
                 if (bussola) BussolaRooms.add(ctx, id)
-                val others = events.filter { it.sender != s.userId && it.kind != Event.Kind.State }
+                val others = events.filter { it.sender != s.userId && it.kind != Event.Kind.State && it.kind != Event.Kind.Beacon }
                 count += others.size
                 others.forEach { e ->
                     val patient = studio.enabled && studio.patients.any { p -> p.matrixId.equals(e.sender, ignoreCase = true) }
