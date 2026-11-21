@@ -7,6 +7,7 @@ import java.util.Locale
 import java.time.format.DateTimeFormatter
 import eu.eurise.core.data.alfred.AlfredMemory
 import android.Manifest
+import android.app.KeyguardManager
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -127,6 +128,8 @@ private sealed interface Phase {
     data class Data(val answer: DataAnswer) : Phase
     /** «Cosa sai fare?» (tavola AlfAzioni). */
     data object Help : Phase
+    /** «Chiamare Alfred» e il registro delle richieste (tavola AlfAvvio). */
+    data object Call : Phase
 }
 
 /**
@@ -151,6 +154,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     DisposableEffect(Unit) { onDispose { brain.stop(); brain.close() } }
     var address by remember { mutableStateOf("") }
     var phase by remember { mutableStateOf<Phase>(Phase.Ready) }
+    /** La scheda com'era quando Alfred l'ha proposta: se al tocco è diversa, nel registro è «corretta». */
+    var presented by remember { mutableStateOf<Card?>(null) }
     var heard by remember { mutableStateOf("") }
     var typed by remember { mutableStateOf("") }
     var readAloud by remember { mutableStateOf(prefs.readAloud) }
@@ -223,14 +228,36 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     /** [freeQuestion] è definita più sotto (usa understandSaid): execute la chiama da qui. */
     lateinit var askFree: (String, Card?) -> Unit
 
+    /**
+     * Dalla schermata di blocco (tavola AlfAvvio): torcia, volume, musica, timer e segnalazioni subito; il resto (dati,
+     * messaggi, chiamate) chiede prima lo sblocco e riprende da solo.
+     */
+    fun unlocked(card: Card?, then: () -> Unit) {
+        val km = context.getSystemService(KeyguardManager::class.java)
+        val activity = context.findActivity()
+        if (km?.isKeyguardLocked != true || activity == null || card?.immediate == true || card?.kind == Kind.Report) { then(); return }
+        phase = Phase.Said(context.getString(R.string.alfred_unlock_first))
+        km.requestDismissKeyguard(activity, object : KeyguardManager.KeyguardDismissCallback() {
+            override fun onDismissSucceeded() = then()
+        })
+    }
+
     fun execute(card: Card) {
         answering = false
         ear.cancel()
         if (speaker.isInitialized()) speaker.value.stop()
+        val km = context.getSystemService(KeyguardManager::class.java)
+        if (km?.isKeyguardLocked == true && !card.immediate && card.kind != Kind.Report) { unlocked(card) { execute(card) }; return }
         // Richiesta libera: sul telefono non c'è ancora chi risponde; va al servizio online preferito, ripulita.
         if (card.kind == Kind.Free) { askFree(card.value("text").ifBlank { heard }, null); return }
         scope.launch {
             val out = butler.run(card)
+            val corrected = presented?.let { it.kind == card.kind && it.fields.map { f -> f.value } != card.fields.map { f -> f.value } } == true
+            AlfredLog.add(context, heard, when {
+                !out.close -> AlfredLog.Result.Failed
+                corrected -> AlfredLog.Result.Corrected
+                else -> AlfredLog.Result.Done
+            }, logDetail(context, card, out))
             phase = Phase.Said(out.line)
             // Si chiude quando ha finito di dire la battuta (non la si tronca) o dopo il tempo di leggerla, al massimo 5 s;
             // l'azione è già fatta, quindi non si aspetta nulla per lavorare.
@@ -265,7 +292,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 if ((phase as? Phase.Confirm)?.card != card) return@listen
                 when (Grammar.answer(said)) {
                     Grammar.Answer.Yes -> execute(card)
-                    Grammar.Answer.No -> { heard = ""; phase = Phase.Ready; say(context.getString(R.string.alfred_cancelled)) }
+                    Grammar.Answer.No -> { AlfredLog.add(context, heard, AlfredLog.Result.Cancelled, logDetail(context, card, null)); heard = ""; phase = Phase.Ready; say(context.getString(R.string.alfred_cancelled)) }
                     Grammar.Answer.Other -> understandSaid(said, true)
                 }
             },
@@ -355,6 +382,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
             return
         }
         phase = Phase.Confirm(card)
+        presented = card
         val canAct = card.ready && (card.kind != Kind.Call ||
             context.checkSelfPermission(Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED)
         when {
@@ -398,7 +426,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                 // Domande sui dati (tavola AlfDati): si risponde subito, cercando solo sul telefono.
                 val asked = exact as? Command.Ask ?: fromBrain.firstOrNull { it is Command.Ask }?.takeIf { actions.isEmpty() } as? Command.Ask
                 if (asked != null) {
-                    showData(asked)
+                    unlocked(null) { scope.launch { showData(asked) } }
                     return@launch
                 }
                 if (actions.size >= 2) {
@@ -592,6 +620,7 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         BigButton(stringResource(R.string.alfred_cancel), primary = false, enabled = true, modifier = Modifier.weight(1f)) {
                             answering = false
                             ear.cancel()
+                            AlfredLog.add(context, heard, AlfredLog.Result.Cancelled, logDetail(context, card, null))
                             heard = ""
                             phase = Phase.Ready
                         }
@@ -751,7 +780,9 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                     onAddress = { address = addressSuffix(prefs) },
                     onTry = { understand(context.getString(R.string.alfred_try_text)) },
                     onBrain = { phase = Phase.Brain },
+                    onCall = { phase = Phase.Call },
                     onBack = { phase = Phase.Ready })
+                Phase.Call -> CallView(prefs, onBack = { phase = Phase.Settings })
             }
         }
         consentFor?.let { s ->
@@ -980,6 +1011,7 @@ private fun SettingsView(
     onAddress: () -> Unit,
     onTry: () -> Unit,
     onBrain: () -> Unit,
+    onCall: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -1049,12 +1081,10 @@ private fun SettingsView(
             }
         }
         Divider()
-        SettingRow(stringResource(R.string.alfred_s_home), stringResource(R.string.alfred_s_home_d)) {
+        SettingRow(stringResource(R.string.alfred_call_title), stringResource(R.string.alfred_call_row_d)) {
             Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
-                .clickable { runCatching { context.startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    .onFailure { runCatching { context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } }
-                .padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.alfred_s_home_open), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
+                .clickable(onClick = onCall).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.alfred_s_brain_open), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
             }
         }
     }
@@ -1063,6 +1093,113 @@ private fun SettingsView(
         OutlineChip(stringResource(R.string.alfred_try), onTry)
         OutlineChip(stringResource(R.string.alfred_back), onBack)
     }
+}
+
+/** «Chiamare Alfred» (tavola AlfAvvio): tasto dell'assistente, riquadro nella tendina, schermata di blocco, «Di' Alfred», registro. */
+@Composable
+private fun CallView(prefs: AlfredPrefs, onBack: () -> Unit) {
+    val context = LocalContext.current
+    var tick by remember { mutableStateOf(0) }
+    val assistant = remember(tick) { isAssistant(context) }
+    var tile by remember { mutableStateOf(AlfredTile.enabled(context)) }
+    var lock by remember { mutableStateOf(prefs.lockScreen) }
+    var logOn by remember { mutableStateOf(AlfredLog.enabled(context)) }
+    var entries by remember { mutableStateOf(AlfredLog.all(context)) }
+    LaunchedEffect(Unit) { tick++ }
+    Header(stringResource(R.string.alfred_call_title), Mood.Attentive, onSettings = onBack)
+    Text(stringResource(R.string.alfred_call_gesture), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Soft)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        SettingRow(stringResource(R.string.alfred_call_assist), stringResource(if (assistant) R.string.alfred_call_assist_on else R.string.alfred_call_assist_d)) {
+            if (!assistant) Box(Modifier.height(32.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF4F4F1))
+                .clickable {
+                    runCatching { context.startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        .onFailure { runCatching { context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+                }
+                .padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.alfred_s_home_open), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy)
+            }
+        }
+        Divider()
+        SettingRow(stringResource(R.string.alfred_call_tile), stringResource(R.string.alfred_call_tile_d)) {
+            Toggle(tile, enabled = true) { tile = it; AlfredTile.setEnabled(context, it); if (it) AlfredTile.offer(context) }
+        }
+        Divider()
+        SettingRow(stringResource(R.string.alfred_call_lock), stringResource(R.string.alfred_call_lock_d)) {
+            Toggle(lock, enabled = true) { lock = it; prefs.lockScreen = it }
+        }
+    }
+    Text(stringResource(R.string.alfred_call_voice), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Soft)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.alfred_call_word), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Ink)
+                Text(stringResource(R.string.alfred_call_word_d), fontSize = 12.sp, lineHeight = 17.sp, color = InkSoft)
+                Text(stringResource(R.string.alfred_call_word_battery), fontSize = 11.5.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9A5B1E))
+            }
+            Toggle(false, enabled = false) {}
+        }
+    }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(stringResource(R.string.alfred_log_title), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Soft)
+        Text(stringResource(R.string.alfred_log_off_default), fontSize = 12.sp, color = Muted)
+    }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White).padding(horizontal = 14.dp)) {
+        SettingRow(stringResource(R.string.alfred_log_keep), stringResource(R.string.alfred_log_keep_d)) {
+            Toggle(logOn, enabled = true) { logOn = it; AlfredLog.setEnabled(context, it); entries = AlfredLog.all(context) }
+        }
+        entries.take(12).forEach { e ->
+            Divider()
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val (mark, color) = when (e.result) {
+                    AlfredLog.Result.Done -> R.string.alfred_log_done to Color(0xFF2F6B45)
+                    AlfredLog.Result.Corrected -> R.string.alfred_log_corrected to Color(0xFF9A5B1E)
+                    AlfredLog.Result.Cancelled -> R.string.alfred_log_cancelled to Color(0xFF8A3A5C)
+                    AlfredLog.Result.Failed -> R.string.alfred_log_failed to Color(0xFFC2453F)
+                }
+                Text(stringResource(mark), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = color, modifier = Modifier.width(72.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("«${e.said}»", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+                    if (e.detail.isNotBlank()) Text(e.detail, fontSize = 12.sp, color = InkSoft)
+                }
+            }
+        }
+        if (logOn && entries.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F5)).clickable {
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.alfred_log_subject))
+                        .putExtra(Intent.EXTRA_TEXT, AlfredLog.text(entries))
+                    runCatching { context.startActivity(Intent.createChooser(send, context.getString(R.string.alfred_log_send)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                }, contentAlignment = Alignment.Center) { Text(stringResource(R.string.alfred_log_send), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Navy) }
+                Box(Modifier.height(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF4F4F1)).clickable {
+                    AlfredLog.clear(context); entries = emptyList()
+                }.padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.alfred_log_clear), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8A3A5C))
+                }
+            }
+        }
+    }
+    Text(stringResource(R.string.alfred_log_foot), fontSize = 12.sp, lineHeight = 18.sp, color = Soft)
+    OutlineChip(stringResource(R.string.alfred_back), onBack)
+}
+
+/** Eurise è l'assistente di Android (tasto Home o accensione tenuto premuto). */
+private fun isAssistant(context: android.content.Context): Boolean = runCatching {
+    if (android.os.Build.VERSION.SDK_INT < 29) return false
+    context.getSystemService(android.app.role.RoleManager::class.java)?.isRoleHeld(android.app.role.RoleManager.ROLE_ASSISTANT) == true
+}.getOrDefault(false)
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+/** Cosa scrive il registro accanto alla frase: il tipo di scheda e le righe principali, o com'è andata. */
+private fun logDetail(context: android.content.Context, card: Card, out: Outcome?): String {
+    val fields = card.fields.map { it.value }.filter { it.isNotBlank() }.take(3).joinToString(" · ")
+    val title = runCatching { context.getString(card.title) }.getOrDefault("")
+    return listOf(title, fields.ifBlank { out?.line.orEmpty() }).filter { it.isNotBlank() }.joinToString(" · ")
 }
 
 @Composable

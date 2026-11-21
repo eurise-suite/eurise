@@ -39,6 +39,11 @@ class AlfredPrefs(context: Context) {
         get() = prefs.getBoolean("free_online", true)
         set(value) = prefs.edit().putBoolean("free_online", value).apply()
 
+    /** Alfred dalla schermata di blocco (tavola AlfAvvio): comandi semplici senza sbloccare, il resto chiede lo sblocco. */
+    var lockScreen: Boolean
+        get() = prefs.getBoolean("lock_screen", true)
+        set(value) = prefs.edit().putBoolean("lock_screen", value).apply()
+
     /** L'app di musica per la perla del punto della giornata (pacchetto); vuoto = non ancora scelta. */
     var musicBriefing: String
         get() = prefs.getString("music_briefing", "").orEmpty()
