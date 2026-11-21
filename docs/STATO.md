@@ -3408,3 +3408,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 21 novembre, Comunicazione: Chat, cartelle scelte dall'utente, «Messaggi a me» verso Note e Attività, vocali scritti con l'icona senza ascoltarli · giro 930 (chat) → `docs/stato/COMUNICAZIONE.md`.
 - 21 novembre, sera, Organizzazione: nota vocale completa (microfono sopra il + delle Note, dove salvare l'audio, testo riordinato da Alfred, «Testo com'era», «Riordina di nuovo», «Riassunto») · giro 934 → `docs/stato/ORGANIZZAZIONE.md`.
 - 21 novembre, Sicurezza: Mappe con una sola variante per compilazione (prova/ufficiale nel patch), destinatari della suite controllati (`EuriseSuite`), controllo a ogni giro; Mappe 122 in `apk-prova` → `docs/SICUREZZA.md`.
+- 21 novembre, Comunicazione: Chat, discussioni a filo (thread di Matrix, come Element) con «6 risposte» sotto il messaggio e nell'elenco · giro GIRO (chat) → `docs/stato/COMUNICAZIONE.md`.

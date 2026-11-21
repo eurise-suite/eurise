@@ -29,6 +29,10 @@ data class Event(
     val data: String? = null,
     /** Il messaggio a cui risponde (tavola ChatBasi). */
     val replyTo: String? = null,
+    /** La discussione a filo di cui fa parte: id del messaggio di partenza (tavola ChatThread). */
+    val thread: String? = null,
+    /** Quante risposte ha la sua discussione secondo il server (se è un messaggio di partenza). */
+    val threadCount: Int = 0,
 ) {
     enum class Kind { Text, Notice, Image, File, Audio, Encrypted, State, Expense, Settlement, Bussola, Shift, Poll }
 }
@@ -60,8 +64,20 @@ object Matrix {
         (0 until a.length()).map { a.getJSONObject(it).getString("type") }
     }.getOrDefault(emptyList())
 
-    /** Un evento della cronologia come messaggio da mostrare, o null se non si mostra. */
+    /**
+     * Un evento della cronologia come messaggio da mostrare, o null se non si mostra. Le risposte di una discussione
+     * (tavola ChatThread) portano l'id del messaggio di partenza; il riferimento di ripiego non conta come risposta.
+     */
     fun event(o: JSONObject, names: Map<String, String> = emptyMap()): Event? {
+        val e = plainEvent(o, names) ?: return null
+        val content = o.optJSONObject("content")
+        val root = Threads.root(content)
+        val count = Threads.serverCount(o)
+        if (root == null && count == 0) return e
+        return e.copy(thread = root, threadCount = count, replyTo = if (root != null && Threads.fallingBack(content)) null else e.replyTo)
+    }
+
+    private fun plainEvent(o: JSONObject, names: Map<String, String>): Event? {
         val id = o.optString("event_id").ifEmpty { return null }
         val sender = o.optString("sender")
         val time = o.optLong("origin_server_ts")
