@@ -143,7 +143,9 @@ adb shell run-as $T ls cache 2>/dev/null | grep -q 'eurise-backup'
 
 echo "— Il backup come lo fa l'app: chiave nel Keystore, automatico con Wi-Fi e carica, cartella, WebDAV, i cinque"
 pianta $E dav/cert.pem cache/prova-dav.pem
+# Senza caricatore e «in scarica» (sull'emulatore «unplug» da solo lascia lo stato «in carica», che WorkManager legge).
 adb shell dumpsys battery unplug
+adb shell dumpsys battery set status 3
 sleep 2
 sonda gestore-inizio; esito "backup acceso, chiave sigillata dal Keystore, cartella scelta, automatico in coda con Wi-Fi e carica" $?
 # La sonda parte fermando Eurise, e Android allora toglie i suoi lavori pianificati: come dopo «Forza l'arresto», WorkManager
