@@ -50,7 +50,7 @@ adb shell "run-as $P sh -c 'mkdir -p files && echo finta-cassaforte > files/cass
 adb shell "run-as $G sh -c 'mkdir -p files/secure && echo intestazione-di-prova > files/secure/header.json && echo foto-cifrata > files/secure/prova.enc'"
 adb shell run-as $G cat files/secure/prova.enc | grep -q foto-cifrata
 esito "cassaforte e foto protetta di prova piantate" $?
-# Una casella di posta (con la sua password chiusa, che nel backup non deve entrare), un documento, un segnalibro.
+# Una casella di posta (con la sua password chiusa, che nel backup non deve entrare) e un documento.
 pianta() { # app, file locale, percorso nell'app
   adb push "$2" /data/local/tmp/pianta >/dev/null && adb shell chmod 644 /data/local/tmp/pianta
   adb shell "run-as $1 sh -c 'mkdir -p \$(dirname $3) && cat /data/local/tmp/pianta > $3'"
@@ -58,13 +58,12 @@ pianta() { # app, file locale, percorso nell'app
 }
 echo '[{"id":"1","email":"prova@esempio.eu","name":"Prova","label":"Esempio","imap":{"host":"imap.esempio.eu","port":993,"sec":"Ssl"},"smtp":{"host":"smtp.esempio.eu","port":465,"sec":"Ssl"},"user":"","secret":"SEGRETO-DEL-KEYSTORE","tint":2}]' > casella.json
 echo documento-di-prova > documento.txt
-echo '[{"title":"Prova","url":"https://esempio.eu/prova","folder":"","pinned":false}]' > segnalibri.json
 pianta $ML casella.json files/accounts.json
 pianta $O documento.txt files/documenti/prova.txt
-pianta $B segnalibri.json files/bookmarks.json
-adb shell run-as $ML cat files/accounts.json | grep -q prova@esempio.eu && adb shell run-as $O cat files/documenti/prova.txt | grep -q documento-di-prova &&
-  adb shell run-as $B cat files/bookmarks.json | grep -q esempio.eu/prova
-esito "casella, documento e segnalibro di prova piantati" $?
+adb shell run-as $ML cat files/accounts.json | grep -q prova@esempio.eu && adb shell run-as $O cat files/documenti/prova.txt | grep -q documento-di-prova
+esito "casella e documento di prova piantati" $?
+# Il Browser di prova è compilato come la versione ufficiale (non «debuggable»): niente run-as, quindi qui si prova
+# solo che esporti e riceva; il contenuto (unione dei segnalibri) va guardato sul telefono.
 
 # Un'app senza il permesso della suite (qui la shell) non legge né scrive i dati del backup.
 for a in $P $G $T $M $ML $O $B; do
@@ -108,8 +107,7 @@ adb shell run-as $ML cat files/accounts_dal_backup.json 2>/dev/null | grep -q SE
 [ $? -ne 0 ]; esito "la password chiusa della casella non è passata dal backup" $?
 adb shell run-as $O cat files/documenti/prova.txt 2>/dev/null | grep -q documento-di-prova
 esito "il documento è tornato in Office" $?
-adb shell run-as $B cat files/bookmarks.json 2>/dev/null | grep -q esempio.eu/prova
-esito "il segnalibro è tornato nel Browser" $?
+
 adb shell run-as $T cat files/UserHistoryDictionary.prova 2>/dev/null | grep -q parola-di-prova
 esito "la parola di prova è tornata nella Tastiera" $?
 adb shell run-as $T ls cache 2>/dev/null | grep -q 'eurise-backup'
