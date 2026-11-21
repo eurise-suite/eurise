@@ -143,8 +143,8 @@ public class Sonda extends Instrumentation {
 
         java.io.ByteArrayInputStream in2 = new java.io.ByteArrayInputStream(file);
         Object h2 = call(obj("BackupCrypto"), "readHeader", in2);
-        java.io.InputStream plain = (java.io.InputStream) call(obj("BackupCrypto"), "decryptingStream", in2, h2, key);
-        call(obj("BackupArchive"), "stage", ctx, plain);
+        java.io.InputStream chiaro = (java.io.InputStream) call(obj("BackupCrypto"), "decryptingStream", in2, h2, key);
+        call(obj("BackupArchive"), "stage", ctx, chiaro);
         // Le app separate aspettano i loro dati, sigillati (non zip leggibili), finché non li si consegna.
         java.util.List<?> waiting = (java.util.List<?>) call(obj("SuiteApps"), "waiting", ctx);
         note("in attesa: " + waiting);
