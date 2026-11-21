@@ -5,6 +5,11 @@
 Telefono (Recenti › scudo) o dal centro privacy. Il file è uguale per tutti: non esce nessun numero né la rubrica, le
 chiamate si confrontano sul telefono. GitHub vede l'indirizzo da cui si scarica, come ogni sito.
 
+## Dove si pubblica
+Ogni modifica di questa cartella su `brand` fa partire il flusso «Elenco dei numeri molesti»
+(`.github/workflows/elenco-molesti.yml`): `controlla.py` verifica il file e, se va bene, lo carica nella pre-release
+`elenco-molesti`. Il telefono scarica da lì, mai dal ramo. Un file sbagliato non viene pubblicato: resta quello di prima.
+
 ## Formato
 - La prima riga è sempre `# eurise-spam 1` (senza, il telefono scarta il file).
 - Una riga per numero o prefisso, **in forma internazionale con il «+»** (`+390212345678`, `+216`), poi una

@@ -64,8 +64,11 @@ class SpamListProvider : ContentProvider() {
 
 /** Il file scaricato, sul telefono, e i lavori che lo tengono aggiornato. */
 object SpamListStore {
-    /** Il file nel repository della suite, uguale per tutti. */
-    const val URL = "https://raw.githubusercontent.com/eurise-suite/eurise/brand/data/spam/elenco.txt"
+    /**
+     * Il file pubblicato nella pre-release «elenco-molesti» (flusso «Elenco dei numeri molesti», dopo il controllo del
+     * formato), uguale per tutti: non dipende dal ramo di lavoro.
+     */
+    const val URL = "https://github.com/eurise-suite/eurise/releases/download/elenco-molesti/elenco.txt"
     private const val WEEKLY = "spam-list-weekly"
     private const val NOW = "spam-list-now"
     private const val PREFS = "spam_list"
