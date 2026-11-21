@@ -7,11 +7,12 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **932** da `prova-sicurezza` (21 novembre, pomeriggio; comprende la Chat
-  unita da `brand`) con **Mappe 120** (variante prova, destinatari controllati), in `apk-prova`; prova delle porte
-  sull'emulatore verde su quel giro. Per Mappe si passa `-f mappe_run=<id>` (la scelta da sola guarda solo `prova-mappe`
-  e `brand`). Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
-- **Da provare sul telefono (Mappe 120)**: con Mappe aggiornata sopra (nessuna disinstallazione), che parli ancora con
+- **Ultimo giro pubblicato**: Compila **934** (ultimo riuscito su `brand`) con **Mappe 122** (giro su `brand`, variante
+  prova, destinatari controllati; stesso codice di Mappe 120 provato su `prova-sicurezza`), in `apk-prova` il 21 novembre,
+  pomeriggio. Attenzione: la scelta automatica di Mappe in `apk-prova` guarda solo `prova-mappe` e `brand`; un giro di
+  Mappe solo su `prova-sicurezza` viene sovrascritto dalla prossima pubblicazione di un'altra area (successo con Mappe
+  120): dopo l'avanti veloce aspettare il giro di Mappe su `brand`. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Da provare sul telefono (Mappe 122)**: con Mappe aggiornata sopra (nessuna disinstallazione), che parli ancora con
   la suite: meteo sul percorso e «I tuoi giorni», «Dove devi andare» con gli impegni, «Condividi › Note» di un luogo,
   Avvisa/arrivo per SMS da Messaggi, dettatura in Android Auto, voce di Alfred in guida, stato dei servizi nel centro
   privacy. Se una di queste non risponde più, il controllo del destinatario ha detto no a un'app vera: dirlo subito.
