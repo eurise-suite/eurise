@@ -6,7 +6,7 @@ import java.io.File
 
 /**
  * Eurise Tastiera nel backup della suite: è un APK a parte e custodisce da sé le parole imparate, il dizionario
- * personale e il modo di toccare i tasti. Qui si chiede il suo zip per metterlo nel backup e, al ripristino, glielo
+ * personale, il modo di toccare i tasti e le frasi abituali. Qui si chiede il suo zip per metterlo nel backup e, al ripristino, glielo
  * si riconsegna (`BackupProvider` della tastiera, solo tra app con la stessa firma).
  *
  * Se al ripristino la tastiera non c'è ancora, lo zip aspetta sul telefono e si consegna a un avvio successivo

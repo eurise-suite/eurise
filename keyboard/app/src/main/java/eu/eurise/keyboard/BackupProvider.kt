@@ -23,7 +23,8 @@ import java.util.zip.ZipOutputStream
  * L'app Eurise, quando fa il backup, legge da qui uno zip e lo mette nel suo; al ripristino lo riconsegna.
  *
  * Nello zip: le parole e le frasi imparate scrivendo (dizionari «UserHistoryDictionary» di HeliBoard), il dizionario
- * personale (parole aggiunte a mano, con le abbreviazioni) e il modo di toccare i tasti (`eurise_touch`).
+ * personale (parole aggiunte a mano, con le abbreviazioni), il modo di toccare i tasti (`eurise_touch`) e le frasi intere
+ * abituali ([Phrases], dal 22 novembre; al ripristino si uniscono a quelle già imparate).
  * Solo app Eurise con la stessa firma (permesso della suite nel manifest); nulla esce dal telefono da qui.
  *
  * - `content://<pacchetto>.eurise.backup/export`, lettura: lo zip.
@@ -67,6 +68,7 @@ class BackupProvider : ContentProvider() {
         private const val HISTORY = "UserHistoryDictionary"
         private const val TOUCH = "eurise_touch.xml"
         private const val PERSONAL = "personal.json"
+        private const val PHRASES = "phrases.txt"
 
         fun export(ctx: Context, target: File) {
             TouchModel.save()
@@ -76,6 +78,9 @@ class BackupProvider : ContentProvider() {
                 File(ctx.applicationInfo.dataDir, "shared_prefs/$TOUCH").takeIf { it.exists() }?.let { add(zip, it, "prefs/$TOUCH") }
                 zip.putNextEntry(ZipEntry(PERSONAL))
                 zip.write(personalWords(ctx).toString().toByteArray())
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry(PHRASES))
+                zip.write(Phrases.exportText(ctx).toByteArray())
                 zip.closeEntry()
             }
         }
@@ -126,6 +131,7 @@ class BackupProvider : ContentProvider() {
                             target.outputStream().use { zip.copyTo(it) }
                         }
                         name == PERSONAL -> addPersonal(ctx, JSONArray(zip.readBytes().toString(Charsets.UTF_8)))
+                        name == PHRASES -> Phrases.restoreText(ctx, zip.readBytes().toString(Charsets.UTF_8))
                     }
                 }
             }
