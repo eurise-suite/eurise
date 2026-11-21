@@ -46,6 +46,9 @@ jobs:
       - name: Impronte della suite
         run: |
           chmod +x gradlew
+          # Le versioni di prima, per rimettere le chiavi fidate che Gradle togliesse riscrivendo (chiavi_fidate.py).
+          cp gradle/verification-metadata.xml /tmp/impronte-prima-suite.xml
+          cp keyboard/gradle/verification-metadata.xml /tmp/impronte-prima-tastiera.xml
           # Gli stessi comandi di tutti i lavori di Compila APK: Leggi, AI e Browser entrano in Gradle solo con le loro
           # variabili (prima mancavano: GeckoView e le librerie di Leggi e AI non avevano impronte). Ogni giro aggiunge
           # le sue impronte allo stesso file.
@@ -111,6 +114,12 @@ jobs:
           completa . gradle/verification-metadata.xml EURISE_DESKTOP=1
           completa keyboard keyboard/gradle/verification-metadata.xml X=1
 
+      - name: Nessuna chiave fidata sparisce
+        run: |
+          # Il 21 novembre una riscrittura ha tolto la chiave di AndroidX e fermato Compila: ogni chiave fidata di prima torna.
+          python3 .github/scripts/chiavi_fidate.py /tmp/impronte-prima-suite.xml gradle/verification-metadata.xml | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/chiavi_fidate.py /tmp/impronte-prima-tastiera.xml keyboard/gradle/verification-metadata.xml | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/fidati_mozilla.py gradle/verification-metadata.xml
       - name: Prova la verifica bloccante con la cache vuota
         # Ciò che serve per passare a «strict»: con la cache vuota (come un lavoro di Compila nuovo) e le librerie
         # riscaricate, ogni configurazione dei progetti (plugin compresi) deve passare. Non ferma il flusso: riferisce.

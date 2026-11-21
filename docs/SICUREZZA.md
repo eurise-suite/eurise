@@ -314,6 +314,10 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   - **GeckoView** cambia versione da sé a ogni uscita di Mozilla: la chiave «Mozilla Software Releases» è fidata per
     tutto il gruppo `org.mozilla.geckoview` (`.github/scripts/fidati_mozilla.py`, lanciato dal flusso dopo ogni
     scrittura): una versione nuova passa solo se è firmata da Mozilla, senza aspettare le impronte.
+  - **Chiavi fidate che spariscono** (21 novembre): una riscrittura automatica ha tolto la chiave con cui Google firma
+    AndroidX collection, core, lifecycle, room, sqlite e tracing (8461EFA0…), e il giro bloccante 914 si è fermato. Ora
+    `.github/scripts/chiavi_fidate.py` rimette ogni chiave fidata della versione di prima prima della prova a cache
+    vuota; una chiave da togliere davvero si toglie a mano, con un commit che lo spiega.
   Negli altri flussi (Office, Mappe, schermate, prova d'avvio del Browser) resta «lenient»; un passo «Impronte delle
   librerie» in ogni lavoro mostra ogni file che non corrisponde, con l'avviso di non togliere mai la verifica.
 - **Firme PGP degli autori** (20 novembre): il flusso scrive `pgp,sha256` ed esporta le chiavi in

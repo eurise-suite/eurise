@@ -145,6 +145,15 @@
             <trusting group="org.junit.platform"/>
             <trusting group="org.opentest4j"/>
          </trusted-key>
+         <trusted-key id="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B">
+            <trusting group="androidx.collection"/>
+            <trusting group="androidx.core"/>
+            <trusting group="androidx.emoji2"/>
+            <trusting group="androidx.lifecycle"/>
+            <trusting group="androidx.room"/>
+            <trusting group="androidx.sqlite"/>
+            <trusting group="androidx.tracing"/>
+         </trusted-key>
       </trusted-keys>
    </configuration>
    <components>
