@@ -409,3 +409,33 @@ internal fun AbsenceCard() {
         }
     }
 }
+
+/** Traduzione (tavola SpaTraduci): un'email in un'altra lingua si legge in italiano, tradotta sul telefono con Eurise Leggi. */
+@Composable
+internal fun TranslateMail(actions: MailActions, o: Opened) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val lang = remember(o.summary.uid) { eu.eurise.core.data.messages.MessageInsights.language(o.text.take(2000)) }?.takeIf { it != "it" } ?: return
+    var text by remember(o.summary.uid) { mutableStateOf<String?>(null) }
+    var busy by remember(o.summary.uid) { mutableStateOf(false) }
+    val name = eu.eurise.core.insieme.Traduci.name(lang)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.06f)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        val t = text
+        if (t == null) BallChip(stringResource(if (busy) R.string.ml_tr_busy else R.string.ml_tr_do, name), true) {
+            if (busy) return@BallChip
+            busy = true
+            eu.eurise.core.insieme.Traduci.translate(context, o.text.take(6000), lang, "it") { r ->
+                busy = false
+                when (r) {
+                    is eu.eurise.core.insieme.Traduci.Result.Done -> text = r.text
+                    eu.eurise.core.insieme.Traduci.Result.Missing -> { actions.toast(context.getString(R.string.ml_tr_missing)); eu.eurise.core.insieme.Traduci.openLanguages(context) }
+                    eu.eurise.core.insieme.Traduci.Result.NoApp -> actions.toast(context.getString(R.string.ml_tr_no_app))
+                    eu.eurise.core.insieme.Traduci.Result.Failed -> actions.toast(context.getString(R.string.ml_tr_failed))
+                }
+            }
+        } else {
+            Text(stringResource(R.string.ml_tr_from, name), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+            Text(t, fontSize = 14.sp, lineHeight = 20.sp)
+        }
+    }
+}

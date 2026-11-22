@@ -367,6 +367,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             if (MailApprovals.isRequest(o.summary.subject) && model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) ApprovalAnswer(model, actions, o)
             // Una scheda ricevuta (tavola InsStessaScheda): gli stessi tasti della Chat.
             if (model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) CardAnswer(model, actions, o)
+            // Traduzione con Eurise Leggi (tavola SpaTraduci).
+            TranslateMail(actions, o)
             // Spese dall'email (tavola SpeEmail): biglietti e ricevute nelle spese di un gruppo della Chat.
             ExpenseFromMail(actions, o)
             // Scadenze e scuola dalle email (tavole FamScadenze, FamScuola).

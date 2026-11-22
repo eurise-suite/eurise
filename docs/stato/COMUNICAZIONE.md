@@ -141,11 +141,11 @@ computer (area Computer, tavola PcEmail).
     o scelto a mano tenendo premuta la conversazione). Email: gli stessi spazi (caselle di lavoro = Lavoro, poi i ruoli).
     Legame con le Modalità della Scrivania: da fare con l'area Organizzazione.
   - **SpaTraduci** · Chat: «Traduzione» dalla graffetta: leggi i suoi messaggi in italiano, manda i tuoi nella sua lingua con
-    l'italiano sotto (Eurise Leggi, `Traduci`); «Traduci» sotto i messaggi in un'altra lingua. Email: da fare (lo stesso client).
+    l'italiano sotto (Eurise Leggi, `Traduci`); «Traduci» sotto i messaggi in un'altra lingua. Email: «Traduci dal tedesco, sul telefono» sull'email aperta.
   Non ancora (prossimo giro): **LavNoteSpese** (scontrino con lo Scanner → voce; nota del mese in PDF al capo con
   Approvazioni o al commercialista), **LavRiassunto in Email** (riassunto di un filo lungo con Eurise AI; in Chat c'è),
   **LavOspiti** (stanza ospite con un link senza account: serve il server Matrix dello studio/Eurise), **LavRapporto**
-  (checklist del sopralluogo con foto, posizione e vocali → PDF), traduzione nell'Email, scheda di Drive vera con l'area
+  (checklist del sopralluogo con foto, posizione e vocali → PDF), scheda di Drive vera con l'area
   Organizzazione, risposta automatica e farmaci ad app chiusa anche senza la Chat aperta (oggi: worker per farmaci; la
   risposta automatica in Chat solo ad app aperta).
   Parti comuni toccate: `settings.gradle.kts` (modulo nuovo `core:insieme`); permessi nuovi: Chat ACCESS_BACKGROUND_LOCATION, Email
@@ -691,7 +691,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    ~~InsStessaScheda (con Faccende e Uscita in Email), InsRuoli, InsCondividi, InsAffida, InsAssistente, InsElenchi, InsRiunione,
    InsDisponibilita, InsSquadra, InsDisponibilitaMail, SpeEmail, FamScadenze, FamDocumenti, FamCena, FamScuola, FamArrivato,
    FamGenitori, AmiViaggio, AmiRegalo, LavDecisioni, LavRicordami, LavStato, SpaSpazi, SpaTraduci~~ (22 novembre, vedi «Fatto»);
-   **restano** LavNoteSpese, LavRiassunto (Email), LavOspiti (serve il server), LavRapporto, traduzione in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
+   **restano** LavNoteSpese, LavRiassunto (Email), LavOspiti (serve il server), LavRapporto. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
 2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto

@@ -246,4 +246,11 @@
     <string name="ml_ab_msg">Il messaggio (facoltativo)</string>
     <string name="ml_ab_save">Accendi la risposta automatica</string>
     <string name="ml_ab_stop">Spegni</string>
+    <!-- Traduzione (tavola SpaTraduci). -->
+    <string name="ml_tr_do">Traduci dal %1$s, sul telefono</string>
+    <string name="ml_tr_busy">Traduco dal %1$s…</string>
+    <string name="ml_tr_from">Tradotto dal %1$s con Eurise Leggi</string>
+    <string name="ml_tr_missing">Manca la lingua in Eurise Leggi: si scarica lì</string>
+    <string name="ml_tr_no_app">Serve Eurise Leggi per tradurre sul telefono</string>
+    <string name="ml_tr_failed">La traduzione non è riuscita</string>
 </resources>
