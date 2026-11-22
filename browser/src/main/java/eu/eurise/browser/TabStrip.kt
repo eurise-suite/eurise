@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,7 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -66,53 +69,75 @@ internal fun stripPlace(setting: String): StripPlace = when (setting) {
 }
 
 /**
- * La barra delle schede sulla pagina (tavola BrwBarraSchede, rifatta come Vivaldi con la tavola BrwCompatta, approvata il
- * 17 novembre): schede squadrate della stessa larghezza, la scheda aperta in bianco con la ✕ in fondo, titoli che
- * sfumano. Con molte schede le altre si stringono fino alla sola icona, poi la fila scorre; la scheda aperta resta
- * larga abbastanza da leggere il titolo. Il colore del gruppo è il filo sotto la scheda. Tieni premuto una scheda per
- * spostarla, metterla in un gruppo o chiuderla.
+ * La barra delle schede sulla pagina (tavole BrwBarraSchede e BrwCompatta; a schedario con la tavola BrwSchedario,
+ * approvata il 22 novembre): la scheda aperta è una linguetta dello stesso colore della barra dell'indirizzo e della
+ * pagina, attaccata a loro con due curve morbide, come una cartella tirata avanti nello schedario. Le altre sono
+ * linguette basse dietro, senza fondo, separate da un filo. Con molte schede le altre si stringono fino alla sola icona,
+ * poi la fila scorre; la aperta resta larga abbastanza da leggere il titolo. Il colore del gruppo è la tacca sul bordo
+ * della linguetta lontano dalla pagina. Con la barra in basso ([place] = Bottom) la linguetta pende dalla pagina.
+ * Tieni premuto una scheda per spostarla, metterla in un gruppo o chiuderla.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> Unit, onGroups: () -> Unit) {
+internal fun TabStrip(model: BrowserModel, modifier: Modifier, place: StripPlace, onNewTab: () -> Unit, onGroups: () -> Unit) {
     val wide = LocalConfiguration.current.screenWidthDp >= 720
     val scheme = MaterialTheme.colorScheme
+    val down = place == StripPlace.Bottom
     val list = rememberLazyListState()
     val current = model.current
     val index = model.tabs.indexOf(current)
     LaunchedEffect(index, model.tabs.size) { if (index >= 0) runCatching { list.animateScrollToItem(index) } }
+    val sheet = scheme.surface
+    val line = scheme.onSurface.copy(alpha = 0.14f)
     Row(
-        Modifier.fillMaxWidth().background(scheme.surfaceContainer).then(modifier).height(40.dp).padding(start = 6.dp, end = 2.dp),
+        Modifier.fillMaxWidth().background(scheme.surfaceContainer).then(modifier).height(40.dp).padding(end = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BoxWithConstraints(Modifier.weight(1f)) {
-            val gap = 4.dp
+        BoxWithConstraints(Modifier.weight(1f).fillMaxHeight()) {
+            val gap = 2.dp
+            val side = 10.dp // spazio per i piedini della linguetta aperta ai due capi della fila
+            val lift = 6.dp // margine della linguetta aperta per non coprire le vicine con i piedini
             val count = model.tabs.size.coerceAtLeast(1)
-            val share: Dp = (maxWidth - gap * (count - 1)) / count
+            val room: Dp = maxWidth - side * 2 - lift * 2
+            val share: Dp = (room - gap * (count - 1)) / count
             // Tutte uguali finché il titolo si legge; poi la scheda aperta tiene la sua larghezza e le altre si stringono.
             val roomy = share >= 96.dp
             val openWidth: Dp = if (roomy) share.coerceAtMost(220.dp) else 136.dp.coerceAtMost(maxWidth / 2)
             val otherWidth: Dp = if (roomy) openWidth
-                else ((maxWidth - openWidth - gap * (count - 1)) / (count - 1).coerceAtLeast(1)).coerceIn(40.dp, 96.dp)
-            LazyRow(state = list, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                else ((room - openWidth - gap * (count - 1)) / (count - 1).coerceAtLeast(1)).coerceIn(40.dp, 96.dp)
+            LazyRow(
+                state = list, modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = if (down) Alignment.Top else Alignment.Bottom,
+                contentPadding = PaddingValues(horizontal = side),
+            ) {
                 items(model.tabs, key = { it.id }) { t ->
                     var menu by remember { mutableStateOf(false) }
                     val on = t === current
+                    val i = model.tabs.indexOf(t)
+                    // Il filo tra due linguette dietro, non accanto a quella aperta.
+                    val divider = !on && i > 0 && model.tabs.getOrNull(i - 1)?.let { it !== current } == true
                     val color = groupColor(model, t.group)
                     val title = t.title.ifBlank { if (t.url.startsWith("http")) Links.host(t.url) else stringResource(R.string.brw_new_tab) }
                     val width = if (on) openWidth else otherWidth
                     val iconOnly = !on && width < 76.dp
-                    Box {
+                    val shape = if (down) RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp) else RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+                    Box(if (on) Modifier.padding(horizontal = lift) else Modifier) {
                         Box(
-                            Modifier.width(width).height(32.dp)
-                                .then(if (on) Modifier.shadow(1.5.dp, RoundedCornerShape(8.dp)) else Modifier)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (on) scheme.surface else scheme.onSurface.copy(alpha = 0.06f))
+                            Modifier.width(width).height(if (on) 36.dp else 32.dp)
+                                .then(
+                                    if (on) Modifier.drawBehind { drawPath(folderPath(size.width, size.height, 10.dp.toPx(), down), sheet) }
+                                    else if (divider) Modifier.drawBehind {
+                                        val h = 16.dp.toPx()
+                                        drawLine(line, Offset(-gap.toPx() / 2, (size.height - h) / 2), Offset(-gap.toPx() / 2, (size.height + h) / 2), 1.dp.toPx())
+                                    } else Modifier,
+                                )
+                                .clip(shape)
                                 .semantics { selected = on }
                                 .combinedClickable(role = Role.Tab, onClick = { model.show(t) }, onLongClick = { menu = true }),
                         ) {
                             Row(
-                                Modifier.fillMaxSize().padding(start = if (iconOnly) 0.dp else 8.dp, end = if (on) 0.dp else if (iconOnly) 0.dp else 4.dp),
+                                Modifier.fillMaxSize().padding(start = if (iconOnly) 0.dp else 10.dp, end = if (on) 0.dp else if (iconOnly) 0.dp else 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = if (iconOnly) Arrangement.Center else Arrangement.Start,
                             ) {
@@ -133,11 +158,13 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
                                     }
                                 }
                             }
-                            // Il colore del gruppo: un filo in fondo alla scheda.
-                            if (color != null) Box(Modifier.align(Alignment.BottomCenter).padding(horizontal = 8.dp).fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)).background(color))
+                            // Il colore del gruppo: la tacca sul bordo lontano dalla pagina, come l'etichetta di una cartella.
+                            if (color != null) Box(
+                                Modifier.align(if (down) Alignment.BottomCenter else Alignment.TopCenter).padding(horizontal = 10.dp, vertical = 3.dp)
+                                    .fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(color),
+                            )
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            val i = model.tabs.indexOf(t)
                             if (i > 0) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_left)) }, onClick = { menu = false; model.move(t, -1) })
                             if (i < model.tabs.size - 1) DropdownMenuItem(text = { Text(stringResource(R.string.brw_strip_right)) }, onClick = { menu = false; model.move(t, 1) })
                             DropdownMenuItem(text = { Text(stringResource(R.string.brw_group_put)) }, onClick = { menu = false; model.show(t); onGroups() })
@@ -154,6 +181,25 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, onNewTab: () -> U
             Modifier.size(width = 40.dp, height = 32.dp).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.onSurface, modifier = Modifier.size(17.dp)) }
+    }
+}
+
+/**
+ * Il contorno della linguetta aperta, largo [w] e alto [h]: angoli tondi di raggio [r] dal lato lontano dalla pagina e
+ * due piedini concavi, larghi [r], che escono ai lati e la saldano alla pagina ([down]: la pagina è sopra).
+ */
+internal fun folderPath(w: Float, h: Float, r: Float, down: Boolean): Path {
+    fun y(v: Float) = if (down) h - v else v
+    return Path().apply {
+        moveTo(-r, y(h))
+        quadraticTo(0f, y(h), 0f, y(h - r))
+        lineTo(0f, y(r))
+        quadraticTo(0f, y(0f), r, y(0f))
+        lineTo(w - r, y(0f))
+        quadraticTo(w, y(0f), w, y(r))
+        lineTo(w, y(h - r))
+        quadraticTo(w, y(h), w + r, y(h))
+        close()
     }
 }
 
