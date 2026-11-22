@@ -92,6 +92,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             messages.addAll(all.sortedByDescending { it.date })
             refreshBalls()
             refreshApprovals()
+            refreshCards()
             refreshing = false
             studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
@@ -122,6 +123,76 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun retakeBall(id: String) = saveBalls(balls.map { if (it.id == id) it.copy(taken = true) else it })
+
+    // --- La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida, Uscita… per email ---
+
+    /** Le schede mandate per email (anche quelle della Chat), con le risposte lette. */
+    var cards by mutableStateOf(CardStore.load(context))
+        private set
+
+    private fun reloadCards() { cards = CardStore.load(context) }
+
+    /** Le risposte arrivate alle schede: si aprono una volta e si leggono. */
+    fun refreshCards() {
+        val inbox = messages.toList()
+        val all = accounts.toList()
+        scope.launch {
+            val changed = withContext(Dispatchers.IO) { runCatching { CardStore.collect(context, all, inbox) }.getOrDefault(false) }
+            if (changed || cards.size != CardStore.load(context).size) reloadCards()
+        }
+    }
+
+    /** Manda la scheda a ognuno degli indirizzi in [to] (separati da virgola), dalla casella [from]. */
+    fun sendCard(from: Account, to: String, card: eu.eurise.core.insieme.Scheda.Card, done: (Boolean) -> Unit) {
+        val list = to.split(',', ';', ' ', '\n').map { it.trim() }.filter { it.contains('@') }
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { CardStore.send(context, from, card.copy(origin = card.origin.ifEmpty { "mail" }), list) }.getOrDefault(false) }
+            reloadCards()
+            done(ok)
+        }
+    }
+
+    /** «Sollecita»: la stessa scheda di nuovo a chi non ha risposto. */
+    fun remindCard(id: String, done: (Boolean) -> Unit) {
+        val s = cards.firstOrNull { it.card.id == id } ?: return
+        val from = accounts.firstOrNull { it.email.equals(s.card.fromAddress, true) } ?: accounts.firstOrNull() ?: return done(false)
+        val silent = MailCards.silent(s, System.currentTimeMillis())
+        if (silent.isEmpty()) return done(true)
+        scope.launch {
+            val w = eu.eurise.core.insieme.SchedaMail.words(context)
+            val ok = withContext(Dispatchers.IO) {
+                silent.count { addr -> runCatching { MailClient(from).send(addr, "", MailText.replySubject(s.subject),
+                    context.getString(R.string.ml_cd_remind_body) + "\n\n" + eu.eurise.core.insieme.SchedaMail.text(s.card, w), null, emptyList(),
+                    eu.eurise.core.insieme.SchedaMail.html(s.card, w, from.email)) }.isSuccess } > 0
+            }
+            if (ok) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(sentAt = System.currentTimeMillis()) else it } }; reloadCards() }
+            done(ok)
+        }
+    }
+
+    /** Uscita: «Fissa» la data scelta e lo dice a tutti con un'email. */
+    fun fixCard(id: String, option: Int, done: (Boolean) -> Unit) {
+        val s = cards.firstOrNull { it.card.id == id } ?: return
+        val label = s.card.options.getOrNull(option) ?: return
+        val from = accounts.firstOrNull { it.email.equals(s.card.fromAddress, true) } ?: accounts.firstOrNull() ?: return done(false)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                s.to.count { addr -> runCatching { MailClient(from).send(addr, "", MailText.replySubject(s.subject),
+                    context.getString(R.string.ml_cd_fixed_body, s.card.title, label), null) }.isSuccess } > 0
+            }
+            if (ok) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(fixed = option) else it } }; reloadCards() }
+            done(ok)
+        }
+    }
+
+    fun closeCard(id: String) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(closed = true) else it } }; reloadCards() }
+
+    /** Chi riceve una scheda in Eurise risponde con i tasti: le stesse parole dei pulsanti dell'email. */
+    fun answerCard(o: Opened, word: String, done: (Boolean) -> Unit) {
+        val from = account(o.summary.accountId) ?: return done(false)
+        send(from, o.summary.fromAddress, "", MailText.replySubject(o.summary.subject), word + "\n\n" + MailText.quote(o.text, o.summary.fromName + ":"),
+            o.messageId, emptyList(), done)
+    }
 
     // --- Fuori orario (tavola SpaFuoriOrario) ---
 

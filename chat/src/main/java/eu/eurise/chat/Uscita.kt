@@ -47,8 +47,13 @@ object Uscita {
         data class Place(val place: String, val address: String) : Say()
     }
 
-    fun answer(cardEvent: String, id: String, say: Say, body: String): JSONObject {
+    /**
+     * [forWho]: chi ha risposto per email (una persona «mailto:», [eu.eurise.core.insieme.Scheda.mailPerson]); la risposta la
+     * manda il telefono di chi ha proposto l'uscita e vale solo se viene da lui.
+     */
+    fun answer(cardEvent: String, id: String, say: Say, body: String, forWho: String = ""): JSONObject {
         val a = JSONObject().put("id", id)
+        if (forWho.isNotBlank()) a.put("for", forWho)
         when (say) {
             is Say.Dates -> { a.put("kind", "dates").put("yes", JSONArray(say.yes.sorted())); say.calFree?.let { a.put("cal", JSONArray(it.sorted())) } }
             is Say.Offer -> a.put("kind", "offer").put("seats", say.seats).put("from", say.from)
@@ -62,6 +67,9 @@ object Uscita {
         return JSONObject().put("msgtype", ANSWER).put("body", body).put(ANSWER, a)
             .put("m.relates_to", JSONObject().put("rel_type", "m.reference").put("event_id", cardEvent))
     }
+
+    /** Per conto di chi è la risposta (solo quelle arrivate per email), o null. */
+    fun forWho(content: JSONObject?): String? = content?.optJSONObject(ANSWER)?.optString("for")?.takeIf { it.isNotBlank() }
 
     fun parse(content: JSONObject?): Pair<String, Say>? {
         val a = content?.optJSONObject(ANSWER) ?: return null

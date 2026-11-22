@@ -151,4 +151,33 @@
     <string name="ml_off_add_hint">Una parola dell\'oggetto o un indirizzo</string>
     <string name="ml_off_channel">Riepilogo del mattino</string>
     <string name="ml_off_morning">Ti aspettano %1$d email di lavoro</string>
+    <!-- La stessa scheda in Chat e in Email (tavola InsStessaScheda). -->
+    <string name="ml_cd_affida">Affida</string>
+    <string name="ml_cd_uscita">Proponi le date</string>
+    <string name="ml_cd_affida_hint">L\'oggetto è la cosa da fare, il testo la riga per chi la riceve. Arriva con i pulsanti Fatta e Non posso; basta anche rispondere «fatto».</string>
+    <string name="ml_cd_uscita_hint">L\'oggetto è cosa si fa. Ognuno riceve la sua email con le date numerate e risponde con i numeri, o tocca i pulsanti.</string>
+    <string name="ml_cd_due">Entro</string>
+    <string name="ml_cd_today">oggi alle 18</string>
+    <string name="ml_cd_tomorrow">domani</string>
+    <string name="ml_cd_option_hint">Data %1$d (per esempio «sab 29, 20:00»)</string>
+    <string name="ml_cd_option_add">Un\'altra data</string>
+    <string name="ml_cd_need_title">Scrivi l\'oggetto (e almeno due date per un\'uscita)</string>
+    <string name="ml_cd_received">Scheda · %1$s</string>
+    <string name="ml_cd_answered_toast">Risposta mandata</string>
+    <string name="ml_cd_none">Nessuna</string>
+    <string name="ml_cd_none_word">nessuna</string>
+    <string name="ml_cd_silent">Nessuna risposta</string>
+    <string name="ml_cd_sent_state">Mandata</string>
+    <string name="ml_cd_list">Schede mandate per email</string>
+    <string name="ml_cd_list_n">Schede mandate per email · %1$d</string>
+    <string name="ml_cd_list_note">Le risposte si leggono da sole quando arriva la posta: «fatto», «non posso», i numeri delle date. Restano sul telefono.</string>
+    <string name="ml_cd_empty">Nessuna scheda aperta.</string>
+    <string name="ml_cd_from_chat">Dalla Chat: le risposte tornano nel gruppo</string>
+    <string name="ml_cd_votes">%1$d sì</string>
+    <string name="ml_cd_fix">Fissa</string>
+    <string name="ml_cd_fixed">Si fa: %1$s</string>
+    <string name="ml_cd_reminded">Sollecito mandato</string>
+    <string name="ml_cd_close">Chiudi</string>
+    <string name="ml_cd_remind_body">Ti ricordo questa cosa: quando puoi, rispondi con una parola o tocca un pulsante. Grazie!</string>
+    <string name="ml_cd_fixed_body">«%1$s»: si fa %2$s. Ci vediamo lì!</string>
 </resources>

@@ -64,6 +64,12 @@
             android:name=".PeopleProvider"
             android:authorities="${applicationId}.persone"
             android:exported="true" />
+        <!-- La stessa scheda in Chat e in Email: la Chat manda per email le schede a chi non la usa e ne legge le risposte.
+             Solo app della suite (permesso di firma controllato in call()). -->
+        <provider
+            android:name=".SchedeProvider"
+            android:authorities="${applicationId}.schede"
+            android:exported="true" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.allegati"

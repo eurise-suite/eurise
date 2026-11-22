@@ -45,6 +45,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             val fresh = list.filter { it.uid > known && !it.seen }
             // Studio medico: le email dei pazienti entrano in coda anche ad app chiusa.
             if (fresh.isNotEmpty()) offerToStudio(ctx, studio, fresh)
+            // Le risposte alle schede (tavola InsStessaScheda) si leggono anche ad app chiusa: la Chat le trova pronte.
+            if (fresh.isNotEmpty()) runCatching { CardStore.collect(ctx, accounts, fresh) }
             if (known > 0) {
                 val all = fresh.filter { it.kind == Kind.People }
                 val people = if (quiet && a.id in off.work) all.filter { MailOffHours.passes(off, it.fromAddress, it.subject) } else all

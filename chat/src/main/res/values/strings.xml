@@ -622,4 +622,32 @@
     <string name="fo_channel">Riepilogo del mattino</string>
     <string name="fo_morning">Ti aspettano %1$d messaggi di lavoro</string>
     <string name="fo_morning_sub">Arrivati fuori orario. Tocca per leggerli.</string>
+    <!-- La stessa scheda in Chat e in Email (tavola InsStessaScheda) e Affida a… (tavola InsAffida). -->
+    <string name="af_title">Affida a…</string>
+    <string name="af_what">Cosa c\'è da fare</string>
+    <string name="af_by_mail">Per email…</string>
+    <string name="af_mail_hint">L\'indirizzo di chi non usa Eurise</string>
+    <string name="af_due">Entro</string>
+    <string name="af_line">Una riga per %1$s</string>
+    <string name="af_note_hint">Per esempio «usa il listino 2026»</string>
+    <string name="af_back">Se non risponde, torna a te</string>
+    <string name="af_back_never">Mai</string>
+    <string name="af_back_days">Dopo %1$d g</string>
+    <string name="af_go">Affida a %1$s</string>
+    <string name="af_sent">Affidata</string>
+    <string name="af_st_given">Affidata</string>
+    <string name="af_you_gave">%1$s · l\'hai mandata tu</string>
+    <string name="af_given_by">%1$s · da %2$s</string>
+    <string name="af_list">Le cose affidate</string>
+    <string name="af_list_empty">Niente affidato per ora. Dalla graffetta (pressione lunga) o tenendo premuto un messaggio: «Affida a…».</string>
+    <string name="af_back_note">Nessuna risposta: è tornata a te</string>
+    <string name="af_retake">Riprendi</string>
+    <string name="af_forget">Togli</string>
+    <string name="af_mail_failed">Per l\'email serve Eurise Email con una casella collegata</string>
+    <string name="af_retaken_body">Riprendo io «%1$s», grazie.</string>
+    <string name="af_remind_body">Ti ricordo «%1$s»: quando puoi, dimmi se è fatta.</string>
+    <string name="fa_mail_hint">Chi ha solo l\'email (indirizzo)</string>
+    <string name="fa_mail_due">oggi alle %1$s</string>
+    <string name="us_emails">Anche per email (indirizzi di chi non usa la Chat)</string>
+    <string name="us_mail_vote">✉ %1$s ha risposto per email</string>
 </resources>

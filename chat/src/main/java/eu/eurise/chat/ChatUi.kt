@@ -271,6 +271,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var simpleSetup by remember { mutableStateOf(false) }
     var ballsSheet by remember { mutableStateOf(false) }
     var approvalsSheet by remember { mutableStateOf(false) }
+    var givenSheet by remember { mutableStateOf(false) }
     var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -338,6 +339,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     if (simpleSetup) SimpleSetupSheet(model) { simpleSetup = false }
     if (ballsSheet) BallsSheet(model) { ballsSheet = false }
     if (approvalsSheet) ApprovalsSheet(model, actions) { approvalsSheet = false }
+    if (givenSheet) GivenSheet(model, actions) { givenSheet = false }
     if (offSheet) OffHoursSheet(model) { offSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
@@ -350,6 +352,9 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
         Pill(stringResource(R.string.ap_list) + if (model.approvals.isNotEmpty()) " · ${model.approvals.size}" else "", EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = false) {
             account = false; approvalsSheet = true
+        }
+        Pill(stringResource(R.string.af_list) + if (model.given.isNotEmpty()) " · ${model.given.size}" else "", EuriseIcons.task(2f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; givenSheet = true
         }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
@@ -573,7 +578,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     // con una discussione aperta ci sono solo quelle (il messaggio di partenza sta in cima).
     val thread = model.thread
     val all = model.timeline(roomId)
-    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon && !(it.kind == Event.Kind.Notice && it.data?.contains(Uscita.ANSWER) == true) } } }
+    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon && !(it.kind == Event.Kind.Notice && (it.data?.contains(Uscita.ANSWER) == true || it.data?.contains(eu.eurise.core.insieme.Scheda.ANSWER) == true)) } } }
     val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
     // Proposte (tavola ChatProposta) sotto gli ultimi messaggi ricevuti; riassunto (tavola ChatRiassunto) se entrando
     // c'erano tanti messaggi da leggere.
@@ -596,6 +601,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var moreSheet by remember(roomId) { mutableStateOf(false) }
     var timeboxSheet by remember(roomId) { mutableStateOf(false) }
     var ballFor by remember(roomId) { mutableStateOf<Event?>(null) }
+    var entrustFrom by remember(roomId) { mutableStateOf<String?>(null) }
     var liveSheet by remember(roomId) { mutableStateOf(false) }
     var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
     var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
@@ -721,6 +727,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                     // Approvazioni (tavola LavApprova).
                     else if (e.kind == Event.Kind.Text && e.data?.contains(Approva.REQUEST) == true) Column {
                         ApprovalBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
+                    // La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida e le altre.
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(eu.eurise.core.insieme.Scheda.FIELD) == true) Column {
+                        CardBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
                     }
                     // Passa la palla (tavola InsPallaChat).
@@ -869,12 +880,17 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             onForward = { forwarding = e; menuFor = null },
             onBall = { ballFor = e; menuFor = null },
             onApprove = { approvalFile = e.text; menuFor = null },
+            onEntrust = { entrustFrom = shownText(model, e); menuFor = null },
             onClose = { menuFor = null; model.basiHintDone() })
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
     if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
     // Pressione lunga sulla graffetta: sondaggio o posizione dal vivo (tavola ChatPosizione).
-    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }, onApprove = { approvalFile = "" }, onOuting = if (model.room(roomId)?.direct == false) ({ outingSheet = true }) else null) { moreSheet = false }
+    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }, onApprove = { approvalFile = "" },
+        onOuting = if (model.room(roomId)?.direct == false) ({ outingSheet = true }) else null,
+        more = listOf(Triple<androidx.compose.ui.graphics.vector.ImageVector, String, () -> Unit>(EuriseIcons.task(2f), stringResource(R.string.af_title), { entrustFrom = "" })),
+    ) { moreSheet = false }
+    entrustFrom?.let { t -> EntrustSheet(model, actions, roomId, t) { entrustFrom = null } }
     if (outingSheet) NewOutingSheet(model, actions, roomId) { outingSheet = false }
     approvalFile?.let { f -> AskApprovalSheet(model, actions, roomId, f) { approvalFile = null } }
     if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }

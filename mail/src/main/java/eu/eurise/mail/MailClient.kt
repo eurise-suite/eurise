@@ -216,13 +216,18 @@ class MailClient(private val account: Account) {
     }
 
     /** Invia e mette una copia nella cartella degli inviati (se il server non lo fa da solo). */
-    fun send(to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<File> = emptyList()) {
+    fun send(to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<File> = emptyList(), html: String? = null) {
         val msg = MimeMessage(session)
         msg.setFrom(InternetAddress(account.email, account.name.ifBlank { null }, "UTF-8"))
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false))
         if (cc.isNotBlank()) msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc, false))
         msg.setSubject(subject, "UTF-8")
-        if (files.isEmpty()) msg.setText(body, "UTF-8")
+        // Le schede (tavola InsStessaScheda): testo semplice e, accanto, l'HTML con i pulsanti.
+        if (html != null && files.isEmpty()) msg.setContent(javax.mail.internet.MimeMultipart("alternative").apply {
+            addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(body, "UTF-8") })
+            addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(html, "UTF-8", "html") })
+        })
+        else if (files.isEmpty()) msg.setText(body, "UTF-8")
         else {
             val mixed = javax.mail.internet.MimeMultipart()
             mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(body, "UTF-8") })

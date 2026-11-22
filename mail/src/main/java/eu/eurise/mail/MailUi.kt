@@ -127,7 +127,7 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (screen) {
-            Screen.Inbox -> Inbox(model, onAccounts = { screen = Screen.Accounts }, onWrite = { draft = Draft() })
+            Screen.Inbox -> Inbox(model, actions, onAccounts = { screen = Screen.Accounts }, onWrite = { draft = Draft() })
             Screen.Accounts -> AccountsScreen(model, actions, onBack = { if (model.accounts.isNotEmpty()) screen = Screen.Inbox else actions.finish() })
         }
         if (opened != null || model.opening) Reader(model, actions, onForward = { o ->
@@ -151,11 +151,12 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
 // --- Posta (tavola MailPosta) ---
 
 @Composable
-private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit) {
+private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit, onWrite: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var kind by remember { mutableStateOf(Kind.People) }
     var ballsOpen by remember { mutableStateOf(false) }
     var approvalsOpen by remember { mutableStateOf(false) }
+    var cardsOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val q = query.trim().lowercase()
     val shown = model.messages.filter { m ->
@@ -205,6 +206,11 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
                     if (model.approvals.isNotEmpty()) Text(stringResource(R.string.ml_ap_list_n, model.approvals.count { !it.confirmed }), fontSize = 13.sp,
                         fontWeight = FontWeight.Bold, color = scheme.primary,
                         modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { approvalsOpen = true }.padding(8.dp))
+                    // Le schede mandate per email (tavola InsStessaScheda).
+                    val openCards = model.cards.count { !it.closed }
+                    if (openCards > 0) Text(stringResource(R.string.ml_cd_list_n, openCards), fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold, color = scheme.primary,
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { cardsOpen = true }.padding(8.dp))
                     if (model.accounts.size > 1) Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         model.accounts.forEach { a -> AccountDot(a) }
                     }
@@ -226,6 +232,7 @@ private fun Inbox(model: MailModel, onAccounts: () -> Unit, onWrite: () -> Unit)
     }
     if (ballsOpen) MailBallsList(model) { ballsOpen = false }
     if (approvalsOpen) MailApprovalsList(model) { approvalsOpen = false }
+    if (cardsOpen) MailCardsList(model, actions) { cardsOpen = false }
     // Prima apertura: la posta si aggiorna da sola.
     androidx.compose.runtime.LaunchedEffect(model.accounts.size) { model.refresh() }
 }
@@ -347,6 +354,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             SuiteProposals(o, actions)
             // Una richiesta di approvazione ricevuta (tavola LavApprova): Chiedi modifica, Approva.
             if (MailApprovals.isRequest(o.summary.subject) && model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) ApprovalAnswer(model, actions, o)
+            // Una scheda ricevuta (tavola InsStessaScheda): gli stessi tasti della Chat.
+            if (model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) CardAnswer(model, actions, o)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->
@@ -505,6 +514,11 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
     val files = remember { androidx.compose.runtime.mutableStateListOf<android.net.Uri>().apply { addAll(start.attachments) } }
     var sending by remember { mutableStateOf(false) }
     var approval by remember { mutableStateOf(false) }
+    // La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida o Uscita, con i pulsanti per chi risponde.
+    var cardKind by remember { mutableStateOf<eu.eurise.core.insieme.Scheda.Kind?>(null) }
+    var cardDue by remember { mutableStateOf<Pair<String, Long>?>(null) }
+    val cardOptions = remember { androidx.compose.runtime.mutableStateListOf("", "", "") }
+    val needTitle = stringResource(R.string.ml_cd_need_title)
     val sent = stringResource(R.string.ml_sent)
     val failed = stringResource(R.string.ml_send_failed)
     val noAccount = stringResource(R.string.ml_no_account)
@@ -526,6 +540,15 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                         }
                         // Approvazioni (tavola LavApprova): l'oggetto diventa «Richiesta di approvazione: …».
                         if (approval && subject.isNotBlank()) model.askApproval(account, to, subject, body, files.toList(), after)
+                        else if (cardKind != null) {
+                            if (subject.isBlank()) { sending = false; return@clickable actions.toast(needTitle) }
+                            val k = cardKind!!
+                            val opts = cardOptions.map { it.trim() }.filter { it.isNotEmpty() }
+                            if (k == eu.eurise.core.insieme.Scheda.Kind.Uscita && opts.size < 2) { sending = false; return@clickable actions.toast(needTitle) }
+                            model.sendCard(account, to, eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), k, subject.trim(), body.trim(),
+                                cardDue?.first.orEmpty(), cardDue?.second ?: 0L, account.name, account.email,
+                                if (k == eu.eurise.core.insieme.Scheda.Kind.Uscita) opts else emptyList()), after)
+                        }
                         else model.send(account, to, cc, subject, body, start.inReplyTo, files.toList(), after)
                     }.padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -548,11 +571,20 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
             Field(stringResource(R.string.ml_subject), subject, KeyboardType.Text) { subject = it }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Chip("+ " + stringResource(R.string.ml_attach), selected = false) { actions.pickAttachments { picked -> files.addAll(picked.filter { it !in files }) } }
-                if (start.inReplyTo == null) Chip(stringResource(R.string.ml_ap_ask), selected = approval) { approval = !approval }
+                if (start.inReplyTo == null) Chip(stringResource(R.string.ml_ap_ask), selected = approval) { approval = !approval; if (approval) cardKind = null }
+                if (start.inReplyTo == null) {
+                    Chip(stringResource(R.string.ml_cd_affida), selected = cardKind == eu.eurise.core.insieme.Scheda.Kind.Affida) {
+                        cardKind = if (cardKind == eu.eurise.core.insieme.Scheda.Kind.Affida) null else eu.eurise.core.insieme.Scheda.Kind.Affida; approval = false
+                    }
+                    Chip(stringResource(R.string.ml_cd_uscita), selected = cardKind == eu.eurise.core.insieme.Scheda.Kind.Uscita) {
+                        cardKind = if (cardKind == eu.eurise.core.insieme.Scheda.Kind.Uscita) null else eu.eurise.core.insieme.Scheda.Kind.Uscita; approval = false
+                    }
+                }
                 files.forEach { u ->
                     Chip((u.lastPathSegment ?: "file").substringAfterLast('/') + "  ✕", selected = true) { files.remove(u) }
                 }
             }
+            cardKind?.let { k -> CardComposer(k, cardDue, { cardDue = it }, cardOptions) }
             Box(Modifier.fillMaxWidth().heightIn(min = 260.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(14.dp)) {
                 if (body.isEmpty()) Text(stringResource(R.string.ml_body), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                 BasicTextField(

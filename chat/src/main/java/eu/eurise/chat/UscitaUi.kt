@@ -94,7 +94,9 @@ internal fun NewOutingSheet(model: ChatModel, actions: ChatActions, roomId: Stri
     var place by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var closesTomorrow by remember { mutableStateOf(true) }
+    var emails by remember { mutableStateOf("") }
     val failed = stringResource(R.string.ch_send_failed)
+    val mailFailed = stringResource(R.string.af_mail_failed)
     Sheet(onClose) {
         Text(stringResource(R.string.us_new), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 4.dp))
         Field(title, stringResource(R.string.us_what)) { title = it.take(80) }
@@ -108,10 +110,14 @@ internal fun NewOutingSheet(model: ChatModel, actions: ChatActions, roomId: Stri
             Text(stringResource(R.string.us_closes_tomorrow), fontSize = 13.sp, modifier = Modifier.weight(1f))
             Switch(checked = closesTomorrow, onCheckedChange = { closesTomorrow = it })
         }
+        // La stessa scheda per email (tavola InsStessaScheda): chi non usa la Chat vota rispondendo con i numeri.
+        Field(emails, stringResource(R.string.us_emails)) { emails = it.take(300) }
         Pill(stringResource(R.string.us_send), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = true) {
             if (title.isBlank() || chosen.isEmpty()) return@Pill
             val closes = if (closesTomorrow) Programma.toMs(now.toLocalDate().plusDays(1).atTime(12, 0)) else 0L
-            model.createOuting(roomId, title, chosen.sorted().map { Uscita.Option(label(it), Programma.toMs(it)) }, place, address, closes) { actions.toast(failed) }
+            val mails = emails.split(',', ';', ' ', '\n').map { it.trim() }.filter { it.contains('@') && it.contains('.') }
+            model.createOuting(roomId, title, chosen.sorted().map { Uscita.Option(label(it), Programma.toMs(it)) }, place, address, closes,
+                mails, { actions.toast(mailFailed) }) { actions.toast(failed) }
             onClose()
         }
     }

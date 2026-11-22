@@ -162,6 +162,9 @@ private fun AddChoreSheet(model: ChatModel, actions: ChatActions, roomId: String
     var every by remember { mutableStateOf(1) }
     var hour by remember { mutableStateOf(20) }
     val people = remember { androidx.compose.runtime.mutableStateListOf<String>().apply { addAll(members) } }
+    val mailPeople = remember { androidx.compose.runtime.mutableStateListOf<String>().apply {
+        addAll(model.chores(roomId).flatMap { it.people }.filter { eu.eurise.core.insieme.Scheda.isMailPerson(it) }.distinct()) } }
+    var mail by remember { mutableStateOf("") }
     val failed = stringResource(R.string.ch_send_failed)
     Sheet(onClose) {
         Text(stringResource(R.string.fa_add_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 4.dp))
@@ -184,11 +187,27 @@ private fun AddChoreSheet(model: ChatModel, actions: ChatActions, roomId: String
         }
         Text(stringResource(R.string.fa_who), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            members.forEach { u ->
+            (members + mailPeople).forEach { u ->
                 val i = people.indexOf(u)
-                Chip((if (i >= 0) "${i + 1}. " else "") + if (u == me) stringResource(R.string.fa_you) else model.nameOf(u).substringBefore(' '), i >= 0) {
+                Chip((if (i >= 0) "${i + 1}. " else "") + (if (u == me) stringResource(R.string.fa_you) else model.nameOf(u).substringBefore(' ')) +
+                    (if (eu.eurise.core.insieme.Scheda.isMailPerson(u)) " ✉" else ""), i >= 0) {
                     if (i >= 0) people.remove(u) else people.add(u)
                 }
+            }
+        }
+        // Chi non usa la Chat (tavola InsStessaScheda): il promemoria gli arriva per email da Eurise Email, «fatto» passa il turno.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).heightIn(min = 42.dp).clip(RoundedCornerShape(12.dp)).background(scheme.surface).padding(horizontal = 12.dp, vertical = 10.dp)) {
+                if (mail.isEmpty()) Text(stringResource(R.string.fa_mail_hint), fontSize = 13.sp, color = scheme.onSurfaceVariant)
+                BasicTextField(value = mail, onValueChange = { mail = it.take(80).trim() }, singleLine = true, textStyle = TextStyle(fontSize = 13.sp, color = scheme.onSurface),
+                    cursorBrush = SolidColor(scheme.primary), modifier = Modifier.fillMaxWidth())
+            }
+            Spacer(Modifier.width(6.dp))
+            Chip("+", false) {
+                if (!mail.contains('@') || !mail.contains('.')) return@Chip
+                val p = eu.eurise.core.insieme.Scheda.mailPerson(mail)
+                if (p !in mailPeople) { mailPeople.add(p); people.add(p) }
+                mail = ""
             }
         }
         Pill(stringResource(R.string.fa_save), EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = true) {

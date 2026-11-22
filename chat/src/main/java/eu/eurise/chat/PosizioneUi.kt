@@ -51,7 +51,8 @@ private val PIN = Color(0xFFA4502E)
 
 /** Pressione lunga sulla graffetta: sondaggio o posizione dal vivo. */
 @Composable
-internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onApprove: () -> Unit = {}, onOuting: (() -> Unit)? = null, onClose: () -> Unit) {
+internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onApprove: () -> Unit = {}, onOuting: (() -> Unit)? = null,
+                             more: List<Triple<androidx.compose.ui.graphics.vector.ImageVector, String, () -> Unit>> = emptyList(), onClose: () -> Unit) {
     Sheet(onClose) {
         Card {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { onClose(); onPoll() }.padding(horizontal = 14.dp),
@@ -79,6 +80,15 @@ internal fun AttachMoreSheet(onPoll: () -> Unit, onLive: () -> Unit, onApprove: 
                     verticalAlignment = Alignment.CenterVertically) {
                     Icon(EuriseIcons.calendar(2f), null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
                     Text(stringResource(R.string.us_new), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            // Le altre schede del lavoro insieme (Affida, Disponibilità, Elenchi…): stessa riga, stessa larghezza.
+            more.forEach { (icon, label, go) ->
+                Divider()
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button) { onClose(); go() }.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
+                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
