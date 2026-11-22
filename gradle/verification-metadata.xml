@@ -10,6 +10,7 @@
          <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0374CF2E8DD1BDFD" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0DA8A5EC02D11EAD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="0F9FE62F88E938D8" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="15C71C0A4E0B8EDD" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="280D66A55F5316C5" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="296CD27F60EED12C" reason="Key couldn't be downloaded from any key server"/>
@@ -42,27 +43,37 @@
          <trusted-key id="09939C73246B4BA7444CAA453D002DBC5EA9615F" group="dev.drewhamilton.poko"/>
          <trusted-key id="0CC641C3A62453AB390066C4A41F13C999945293" group="commons-logging" name="commons-logging" version="1.2"/>
          <trusted-key id="0E225917414670F4442C250DFD533C07C264648F">
+            <trusting group="androidx.activity"/>
             <trusting group="androidx.annotation"/>
             <trusting group="androidx.collection"/>
             <trusting group="androidx.core"/>
             <trusting group="androidx.databinding"/>
             <trusting group="androidx.lifecycle"/>
             <trusting group="androidx.media3"/>
+            <trusting group="androidx.navigation"/>
+            <trusting group="androidx.navigationevent"/>
+            <trusting group="androidx.room"/>
+            <trusting group="androidx.work"/>
             <trusting group="com.google.android.gms"/>
+            <trusting group="^androidx[.]camera($|([.].*))" regex="true"/>
             <trusting group="^androidx[.]compose($|([.].*))" regex="true"/>
             <trusting group="^com[.]android($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42">
             <trusting group="androidx.annotation"/>
             <trusting group="androidx.autofill"/>
+            <trusting group="androidx.camera.viewfinder"/>
             <trusting group="androidx.collection"/>
             <trusting group="androidx.compose.material3"/>
             <trusting group="androidx.core"/>
             <trusting group="androidx.credentials"/>
+            <trusting group="androidx.exifinterface"/>
             <trusting group="androidx.lifecycle"/>
+            <trusting group="androidx.navigationevent"/>
             <trusting group="androidx.room"/>
             <trusting group="androidx.savedstate"/>
             <trusting group="androidx.sqlite"/>
+            <trusting group="androidx.tracing"/>
             <trusting group="androidx.window"/>
             <trusting group="com.google.android.gms"/>
          </trusted-key>
@@ -83,6 +94,7 @@
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF" group="org.jetbrains" name="annotations" version="23.0.0"/>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B" group="org.apache.groovy"/>
          <trusted-key id="3A55CD54C135E4EACF502FEA2D258A6A331D5EB7" group="org.matrix.rustcomponents" name="crypto-android" version="26.05.12"/>
+         <trusted-key id="4021EEEAFF5DE8404DCD0A270AA3E5C3D232E79B" group="jakarta.inject" name="jakarta.inject-api" version="2.0.1"/>
          <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4" group="org.jspecify" name="jspecify"/>
          <trusted-key id="475F3B8E59E6E63AA78067482C7B12F2A511E325" group="org.slf4j"/>
          <trusted-key id="485E371CB07EABE6D5778D4B0C27E8FAC93B3B19" group="com.sun.mail"/>
@@ -92,6 +104,7 @@
          <trusted-key id="4F8FEC6785F611D9A712EA2734918B7D3969D2F5" group="com.google.dagger" name="dagger" version="2.28.3"/>
          <trusted-key id="517B94F8D0A46317A28D8AB30DA8A5EC02D11EAD" group="net.sf.jopt-simple" name="jopt-simple" version="4.9"/>
          <trusted-key id="5897253BEA3046AEEA95A067E93671C7272B7B3F" group="org.jdom" name="jdom2" version="2.0.6"/>
+         <trusted-key id="5DD80B0DDCCBE005F0A47FD66751E1A6E2001B8D" group="^com[.]squareup($|([.].*))" regex="true"/>
          <trusted-key id="694621A7227D8D5289699830ABE9F3126BB741C1" group="^com[.]google($|([.].*))" regex="true"/>
          <trusted-key id="6DD3B8C64EF75253BEB2C53AD908A43FB7EC07AC" group="jakarta.activation"/>
          <trusted-key id="6F538074CCEBF35F28AF9B066A0975F8B1127B83" group="^org[.]jetbrains[.]kotlin($|([.].*))" regex="true"/>
@@ -124,6 +137,7 @@
             <trusting group="androidx.lifecycle"/>
             <trusting group="androidx.navigation"/>
             <trusting group="androidx.profileinstaller"/>
+            <trusting group="androidx.startup" name="startup-runtime" version="1.2.0"/>
             <trusting group="androidx.work"/>
             <trusting group="^androidx[.]compose($|([.].*))" regex="true"/>
          </trusted-key>
@@ -146,7 +160,10 @@
          <trusted-key id="FA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A" group="org.apache" name="apache"/>
          <trusted-key id="FA7929F83AD44C4590F6CC6815C71C0A4E0B8EDD" group="net.java.dev.jna"/>
          <trusted-key id="FAABC3738B1F58DA2D776FA2EB380DC13C39F675" group="com.intellij" name="annotations" version="12.0"/>
-         <trusted-key id="FB35C8D02B4724DADA23DE0AFD116C1969FCCFF3" group="org.json" name="json" version="20240303"/>
+         <trusted-key id="FB35C8D02B4724DADA23DE0AFD116C1969FCCFF3">
+            <trusting group="org.json" name="json" version="20240303"/>
+            <trusting group="org.json" name="json" version="20260814"/>
+         </trusted-key>
          <trusted-key id="FC411CD3CB7DCB0ABC9801058118B3BCDB1A5000" group="jakarta.xml.bind"/>
          <trusted-key id="FF6E2C001948C5F2F38B0CC385911F425EC61B51">
             <trusting group="junit"/>
@@ -157,6 +174,11 @@
       </trusted-keys>
    </configuration>
    <components>
+      <component group="androidx.activity" name="activity" version="1.13.0">
+         <artifact name="activity-1.13.0.aar">
+            <sha256 value="bd4f19a5f00effed0eecad0a310b1f2169b9fc66236a3ba743a222eb77747ee1" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.activity" name="activity" version="1.9.3">
          <artifact name="activity-1.9.3.aar">
             <sha256 value="7e45d2023dc17d715ffff3dc5792f798642c4ae11c948006b1752ab9edda5707" origin="Generated by Gradle"/>
@@ -1018,6 +1040,11 @@
             <sha256 value="5b3db432c61a8f1668023d0aeb3e2cbc3ef337e5da22db9afb10b7513d1d4e5a" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="androidx.lifecycle" name="lifecycle-common" version="2.3.1">
+         <artifact name="lifecycle-common-2.3.1.module">
+            <sha256 value="5fb7c8514d8c56cada5e29ef89dc0289e71942ab4cb0b2e6dca137b9dcb8fdd4" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
       <component group="androidx.lifecycle" name="lifecycle-common" version="2.6.1">
          <artifact name="lifecycle-common-2.6.1.module">
             <sha256 value="93747a9145cb36bc71005f598ede32e2b1149ade5a16e62b0e4969345bc62d85" origin="Generated by Gradle" reason="Artifact is not signed"/>
@@ -1137,6 +1164,16 @@
             <sha256 value="d990bc920ae43729d702d80077328e8a59781ea5a35b24c02bc47d326ae73d7d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="androidx.lifecycle" name="lifecycle-livedata" version="2.11.1">
+         <artifact name="lifecycle-livedata-2.11.1.aar">
+            <sha256 value="917081edc738291d8764fa95aa796730a3a0e2b5b70ac9e22cd5345134ce6405" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="androidx.lifecycle" name="lifecycle-livedata" version="2.3.1">
+         <artifact name="lifecycle-livedata-2.3.1.module">
+            <sha256 value="93494e78d5049dff897fde50f477e7b965e9a3de4a1ed453b5f0cbc409eb4e4c" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
       <component group="androidx.lifecycle" name="lifecycle-livedata" version="2.6.1">
          <artifact name="lifecycle-livedata-2.6.1.module">
             <sha256 value="e2659e87e890b52b66f300471828b387a205e5387a392713190166f399ecf641" origin="Generated by Gradle" reason="Artifact is not signed"/>
@@ -1171,6 +1208,11 @@
             <sha256 value="9a8153a07ae2edd8b7919a34ad9195847005eaed69fa3e5060636208a728c312" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.1.0">
+         <artifact name="lifecycle-livedata-core-2.1.0.pom">
+            <sha256 value="6839d2e68c8fee4cc3bbf04e6b291a6ae842403fcd5f8d944c27814d296deff3" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
       <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.11.0">
          <artifact name="lifecycle-livedata-core-2.11.0.aar">
             <sha256 value="39b26ef1e081fc88d7054ff1a63d0a5d71876373c33a711ab789c8228d025ad1" origin="Generated by Gradle"/>
@@ -1179,9 +1221,19 @@
             <sha256 value="d1c1410c8ce9cf1463616c19ca7d8afca63bcbbac9dabd29da3121d61bd41343" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.11.1">
+         <artifact name="lifecycle-livedata-core-2.11.1.aar">
+            <sha256 value="ca91fb3d46a7ba74eceeba816abfd28e885aa2121daa74851f021e1600c06d0e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.2.0">
          <artifact name="lifecycle-livedata-core-2.2.0.pom">
             <sha256 value="aa51621be3817d1f5d21336b0c0525fe96ae899cec656c13d8ea18a51ea32c2f" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
+      <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.3.1">
+         <artifact name="lifecycle-livedata-core-2.3.1.module">
+            <sha256 value="b1e095d550d39a7d6c815761d6dbe3fd64eb31a39dc28146e78bbf2c01ba8f41" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.lifecycle" name="lifecycle-livedata-core" version="2.6.1">
@@ -1734,6 +1786,14 @@
             <sha256 value="c01afb3a57e3d171e41d98d71220ef9cbb7a508118a189d0c79e55c6337fb796" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
+      <component group="androidx.media3" name="media3-common" version="1.9.0">
+         <artifact name="media3-common-1.9.0.aar">
+            <sha256 value="714114bf8a56fe44f0f78b499ae7ea3bed52391313794c8abdc1b687700d42aa" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+         <artifact name="media3-common-1.9.0.module">
+            <sha256 value="02d42f8fd7cc53c385256f417df73a5cf30e8b7c5635ca5786148518ce711b75" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
       <component group="androidx.media3" name="media3-container" version="1.11.1">
          <artifact name="media3-container-1.11.1.aar">
             <sha256 value="930fca2f018f06f1d08c12599f8c97f31eddbd728edee5de06eb53a882f8fc54" origin="Generated by Gradle"/>
@@ -1748,6 +1808,14 @@
          </artifact>
          <artifact name="media3-container-1.5.1.module">
             <sha256 value="369c92fe1ec4d80aa3bd9cbec4fe6757cc4bea24b3a4cddea328ad9629c56d5f" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
+      <component group="androidx.media3" name="media3-container" version="1.9.0">
+         <artifact name="media3-container-1.9.0.aar">
+            <sha256 value="f73cea4fe8a2bf9eb6462bfb7a547d1aaf55395d0007eed6fadb129b56927c0d" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+         <artifact name="media3-container-1.9.0.module">
+            <sha256 value="5a5f4d796aa34a3480ea75df73892d68eba7cd4bc239c116eee3816ce973d469" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.media3" name="media3-database" version="1.11.1">
@@ -1836,6 +1904,14 @@
          </artifact>
          <artifact name="media3-extractor-1.5.1.module">
             <sha256 value="86b2a4e43762808d57f331c25b5f7967bc7fab3cffe580563108f9149afd3d9b" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
+      <component group="androidx.media3" name="media3-muxer" version="1.9.0">
+         <artifact name="media3-muxer-1.9.0.aar">
+            <sha256 value="452b182d84cfe20d1154d999107b9aac7c218ad8ee208d35d067916a92a02031" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+         <artifact name="media3-muxer-1.9.0.module">
+            <sha256 value="e22678eed7457db37ceb4f14d96c761fa5055a114b4750892cf42b820a791428" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.navigation" name="navigation-common" version="2.8.5">
@@ -2780,6 +2856,14 @@
          </artifact>
          <artifact name="dagger-2.28.3.pom">
             <sha256 value="265ba959a8e13c3a06133f04b539169c1018daffd4d33f53c453ab4cb386f570" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="com.google.dagger" name="dagger" version="2.59">
+         <artifact name="dagger-2.59.jar">
+            <sha256 value="94d5b23812cc12fa903c9ac4a42978e7e7b2622e6b51c17f8b12037ceece43cd" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="dagger-2.59.pom">
+            <sha256 value="0e47846618c7a1b7a8124fd20623a667643d73cbe0a561bb87056151aa967538" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.google.devtools.ksp" name="com.google.devtools.ksp.gradle.plugin" version="2.3.12">
