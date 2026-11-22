@@ -104,8 +104,11 @@ class FilePicker(private val activity: ComponentActivity) {
     }
 
     init {
-        val app = activity.applicationContext
-        Thread { sweep(app, KEEP_MS) }.start()
+        // Si crea con l'attività, quando il contesto non c'è ancora: la pulizia parte appena c'è (prova d'avvio, giro 1057).
+        activity.addOnContextAvailableListener { ctx ->
+            val app = ctx.applicationContext
+            Thread { sweep(app, KEEP_MS) }.start()
+        }
     }
 
     fun pick(ask: PageAsk) {
