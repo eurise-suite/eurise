@@ -166,3 +166,18 @@ tutte le app, analisi di ciò che resta per ogni app, pulizia del codice.
 
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
+
+## 22 novembre 2026, sera (progetto Eurise Sicurezza, su richiesta del proprietario)
+- **Fogli a schedario** (tavole OffSchedarioComputer e OffSchedarioTelefono, approvate): pezzo comune
+  `core/designsystem/component/Folder.kt` (`FolderTabs`, `folderPath`, `folderBackground`), lo stesso del Browser.
+  - Vista rapida (giro 1064): `QuickScreen.SheetTabs` usa `FolderTabs` con la linguetta che pende dalla tabella; la tabella
+    finisce sopra le linguette e la barra in basso non la copre più (spazio misurato); cambiando foglio quello nuovo arriva
+    dalla linguetta (180 ms). **Da fare**: la pressione lunga della tavola (Rinomina, Sposta, Duplica, Elimina) chiede
+    le operazioni sui fogli nei lettori/scrittori della vista rapida; per ora si fanno nella modifica completa.
+  - Modifica completa (`office/app/web/eurise.css`, in fondo): le schede dei fogli di Collabora a schedario, con i
+    piedini e senza la sottolineatura di Collabora 26.04; provate sul computer (prova del Flatpak, giro 51). Sul telefono e
+    sul tablet arrivano con il motore 67.
+  - Schede dei documenti sul computer: il guscio di Collabora 26.04 le disegna già a schedario (maschera con i piedini,
+    `qtapp-tabstrip.css`); `eurise-tabstrip.css` dà solo i colori. La prova del computer ora copia i fogli della striscia
+    in `office-computer-schermate` (sorgente-qtapp-tabstrip.*.txt), perché non sono su GitHub.
+

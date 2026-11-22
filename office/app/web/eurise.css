@@ -2230,9 +2230,15 @@ html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
 	text-decoration: none !important;
 	outline: 0 !important;
 }
+/* Collabora 26.04 sottolinea il nome del foglio aperto con un elemento interno: la linguetta basta. */
 #spreadsheet-tab-scroll .spreadsheet-tab * {
 	text-decoration: none !important;
 	box-shadow: none !important;
+	border-bottom: 0 !important;
+}
+#spreadsheet-tab-scroll .spreadsheet-tab *::before,
+#spreadsheet-tab-scroll .spreadsheet-tab *::after {
+	content: none !important;
 }
 /* I due piedini: il foglio aperto si salda alla griglia sopra. */
 #spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::before,

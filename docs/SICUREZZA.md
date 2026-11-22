@@ -16,6 +16,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
 - **Giro 1048 provato sul telefono** (22 novembre): le app funzionano con R8.
+- **Giro 1064** (22 novembre, sera): Office con i fogli a schedario e il pezzo comune `Folder.kt`; prova d'avvio verde.
+  Motore di Office 67 (con `eurise.css` nuovo) in corso da `brand`.
 - **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
   nativo (R8): posta (IMAP/SMTP), Chat cifrata (Matrix), PDF e firma in Office e Scanner, OCR e traduzione in Leggi,
   dettatura e voce di Alfred, cervello in AI, sincronizzazione e backup. Poi in Leggi o Voce «Scarica» una lingua o un
