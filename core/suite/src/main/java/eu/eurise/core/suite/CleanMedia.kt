@@ -20,6 +20,8 @@ import kotlin.math.max
  * Lavora su un file già copiato in cache: l'originale non si tocca mai.
  */
 object CleanMedia {
+    private const val BODY_SERIAL = "BodySerialNumber"
+
     /** Le chiavi tolte da ogni foto. */
     val REMOVED_TAGS: List<String> = listOf(
         ExifInterface.TAG_GPS_LATITUDE, ExifInterface.TAG_GPS_LATITUDE_REF, ExifInterface.TAG_GPS_LONGITUDE,
@@ -30,7 +32,8 @@ object CleanMedia {
         ExifInterface.TAG_GPS_TRACK, ExifInterface.TAG_GPS_TRACK_REF, ExifInterface.TAG_GPS_AREA_INFORMATION,
         ExifInterface.TAG_GPS_VERSION_ID, ExifInterface.TAG_GPS_DEST_LATITUDE, ExifInterface.TAG_GPS_DEST_LATITUDE_REF,
         ExifInterface.TAG_GPS_DEST_LONGITUDE, ExifInterface.TAG_GPS_DEST_LONGITUDE_REF,
-        ExifInterface.TAG_BODY_SERIAL_NUMBER, ExifInterface.TAG_LENS_SERIAL_NUMBER, ExifInterface.TAG_CAMERA_OWNER_NAME,
+        // Numeri di serie e proprietario: nomi EXIF scritti per esteso (le costanti non sono pubbliche in android.media).
+        BODY_SERIAL, "LensSerialNumber", "CameraOwnerName",
         ExifInterface.TAG_IMAGE_UNIQUE_ID, ExifInterface.TAG_MAKER_NOTE, ExifInterface.TAG_USER_COMMENT,
         ExifInterface.TAG_ARTIST, ExifInterface.TAG_COPYRIGHT,
         // TAG_XMP (Android 10+): scritto per nome, così vale anche dove la costante non c'è.
@@ -47,7 +50,7 @@ object CleanMedia {
             REMOVED_TAGS.forEach { exif.setAttribute(it, null) }
             exif.saveAttributes()
             val check = ExifInterface(file.path)
-            !check.getLatLong(FloatArray(2)) && check.getAttribute(ExifInterface.TAG_BODY_SERIAL_NUMBER) == null
+            !check.getLatLong(FloatArray(2)) && check.getAttribute(BODY_SERIAL) == null
         }.getOrDefault(false)
         if (stripped) return file
         if (Build.VERSION.SDK_INT < 28) throw java.io.IOException("Metadati non riscrivibili")
