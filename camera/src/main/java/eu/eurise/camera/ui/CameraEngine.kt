@@ -161,20 +161,26 @@ class CameraEngine(private val context: Context) {
     }
 
     /**
-     * Tempo e ISO per la foto con poca luce, o null se va bene l'automatico. Il prodotto tempo × ISO resta lo stesso
-     * (stessa luminosità); si allunga il tempo finché gli ISO scendono verso [TARGET_ISO], senza superare il tetto.
+     * Tempo e ISO per la foto con poca luce, o null se va bene l'automatico. Il prodotto tempo × ISO del mirino, con un
+     * terzo di stop in più ([BIAS]: in manuale il telefono non schiarisce più le ombre da sé), si distribuisce allungando il
+     * tempo finché gli ISO scendono verso [TARGET_ISO]. Tetto del tempo: 1/20 s con lo stabilizzatore ottico (1/30 s senza),
+     * la metà da 2× in su.
      */
     private fun lowLight(zoom: Float): Pair<Long, Int>? {
         val e = exposureNs; val s = iso
         if (e <= 0 || s < 320 || flashMode != ImageCapture.FLASH_MODE_OFF || !manualSensor()) return null
-        val cap = if (zoom >= 2f) 16_666_666L else 33_333_333L
+        val ois = (characteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION) as? IntArray)
+            ?.contains(CameraCharacteristics.LENS_OPTICAL_STABILIZATION_MODE_ON) == true
+        val base = if (ois) 50_000_000L else 33_333_333L
+        val cap = if (zoom >= 2f) base / 2 else base
         @Suppress("UNCHECKED_CAST")
         val maxExposure = (characteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE) as? Range<Long>)?.upper ?: return null
         @Suppress("UNCHECKED_CAST")
         val isoRange = characteristic(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE) as? Range<Int> ?: return null
-        val target = minOf(cap, maxExposure, e * s / TARGET_ISO)
+        val total = e.toDouble() * s * BIAS
+        val target = minOf(cap, maxExposure, (total / TARGET_ISO).toLong())
         if (target < e * 13 / 10) return null
-        val newIso = (s.toLong() * e / target).toInt().coerceIn(isoRange.lower, isoRange.upper)
+        val newIso = (total / target).toInt().coerceIn(isoRange.lower, isoRange.upper)
         return target to newIso
     }
 
@@ -207,6 +213,8 @@ class CameraEngine(private val context: Context) {
     companion object {
         /** Gli ISO a cui si punta con poca luce: sotto, sul sensore del Fairphone 6, la grana quasi non si vede. */
         const val TARGET_ISO = 200
+        /** Un terzo di stop in più rispetto al mirino (2^(1/3)). */
+        const val BIAS = 1.26
     }
 }
 

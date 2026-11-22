@@ -82,3 +82,20 @@ class ZoomTest {
         assert(name.endsWith(".jpg"))
     }
 }
+
+class WarmthTest {
+    @Test
+    fun neutralPhotosStayAsTheyAre() {
+        assertNull(eu.eurise.camera.data.Warmth.gains(100.0, 100.0, 100.0))
+        assertNull(eu.eurise.camera.data.Warmth.gains(110.0, 100.0, 90.0))
+    }
+
+    @Test
+    fun strongWarmCastGoesHalfWay() {
+        val (r, b) = eu.eurise.camera.data.Warmth.gains(102.0, 82.0, 47.0)!!
+        assert(r < 1f && r >= 0.85f) { r }
+        assert(b > 1.25f && b <= 1.35f) { b }
+        // Resta calda: il rosso corretto supera ancora il blu corretto.
+        assert(102 * r > 47 * b) { "${102 * r} ${47 * b}" }
+    }
+}

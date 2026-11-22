@@ -80,10 +80,13 @@ import eu.eurise.camera.CameraActivity
 import eu.eurise.camera.CameraModel
 import eu.eurise.camera.R
 import eu.eurise.camera.data.MediaOut
+import eu.eurise.camera.data.Warmth
 import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyConsentSheet
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.io.File
@@ -166,7 +169,15 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         if (setup.capture) {
             val file = File(context.cacheDir, "capture/scatto.jpg").apply { parentFile?.mkdirs(); delete() }
             controller.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(), zoom?.zoomRatio ?: 1f, executor, object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) { confirm = file }
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            val out = File(file.parentFile, "scatto-calda.jpg")
+                            if (Warmth.correctFile(file, out)) out.renameTo(file)
+                        }
+                        confirm = file
+                    }
+                }
                 override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
             })
             return
