@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.graphics.RectangleShape
+import eu.eurise.core.designsystem.component.FolderTabs
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -165,11 +168,6 @@ private fun ListScreen(rows: List<Entry>, isDefault: Boolean, onBecomeDefault: (
                     }
                     OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.ms_search)) }, singleLine = true,
                         leadingIcon = { Icon(EuriseIcons.search(), null, modifier = Modifier.size(18.dp)) }, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth())
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Chip(stringResource(R.string.ms_tab_people), tab == MessageInsights.Category.People) { tab = MessageInsights.Category.People }
-                        Chip(stringResource(R.string.ms_tab_codes) + if (codesCount > 0) " · $codesCount" else "", tab == MessageInsights.Category.Codes) { tab = MessageInsights.Category.Codes }
-                        Chip(stringResource(R.string.ms_tab_alerts), tab == MessageInsights.Category.Alerts) { tab = MessageInsights.Category.Alerts }
-                    }
                 }
             }
             if (!permitted) item(key = "perm") { Banner(stringResource(R.string.ms_need_permissions), stringResource(R.string.ms_allow), onAskPermissions) }
@@ -191,9 +189,31 @@ private fun ListScreen(rows: List<Entry>, isDefault: Boolean, onBecomeDefault: (
                     }
                 }
             }
-            item(key = "space") { Spacer(Modifier.height(10.dp)) }
-            items(shown, key = { it.thread.id }) { r ->
-                Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
+            // Persone · Codici e consegne · Avvisi a schedario (tavola SchedarioProve, decisa il 22 novembre): la linguetta
+            // aperta e l'elenco sotto sono un foglio solo.
+            val sheet = MaterialTheme.colorScheme.surfaceContainerLow
+            val tabs = listOf(MessageInsights.Category.People, MessageInsights.Category.Codes, MessageInsights.Category.Alerts)
+            item(key = "tabs") {
+                FolderTabs(
+                    labels = listOf(
+                        stringResource(R.string.ms_tab_people),
+                        stringResource(R.string.ms_tab_codes) + if (codesCount > 0) " · $codesCount" else "",
+                        stringResource(R.string.ms_tab_alerts),
+                    ),
+                    selected = tabs.indexOf(tab),
+                    onSelect = { tab = tabs[it] },
+                    sheet = sheet,
+                    modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 12.dp).fillMaxWidth(),
+                )
+            }
+            itemsIndexed(shown, key = { _, r -> r.thread.id }) { i, r ->
+                val last = i == shown.lastIndex
+                Box(
+                    Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                        .background(sheet, if (last) RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp) else RectangleShape)
+                        .padding(horizontal = 4.dp).padding(top = if (i == 0) 6.dp else 0.dp, bottom = if (last) 6.dp else 0.dp),
+                ) {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
                     .clickable { onOpen(r) }.padding(horizontal = 12.dp, vertical = 11.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (r.category == MessageInsights.Category.People || r.contact != null) Avatar(name(r), r.contact?.photo, 42.dp)
                     else Box(Modifier.size(42.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
@@ -214,10 +234,13 @@ private fun ListScreen(rows: List<Entry>, isDefault: Boolean, onBecomeDefault: (
                         }
                     }
                 }
-                Spacer(Modifier.height(6.dp))
+                }
             }
-            if (shown.isEmpty() && permitted) item(key = "empty") {
-                Text(stringResource(R.string.ms_empty), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(20.dp))
+            if (shown.isEmpty()) item(key = "empty") {
+                Box(Modifier.padding(horizontal = 16.dp).fillMaxWidth().background(sheet, RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp))) {
+                    if (permitted) Text(stringResource(R.string.ms_empty), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(20.dp))
+                    else Spacer(Modifier.height(24.dp))
+                }
             }
             item(key = "privacy") {
                 Text(stringResource(R.string.ms_privacy_note), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))

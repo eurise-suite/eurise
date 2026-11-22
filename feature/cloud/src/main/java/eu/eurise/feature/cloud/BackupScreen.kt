@@ -82,6 +82,7 @@ import eu.eurise.core.cloud.backup.BackupPlace
 import eu.eurise.core.cloud.backup.BackupState
 import eu.eurise.core.cloud.backup.PhraseStrength
 import eu.eurise.core.cloud.backup.Tier
+import eu.eurise.core.designsystem.component.FolderTabs
 import eu.eurise.core.designsystem.component.DataOut
 import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyMeter
@@ -771,28 +772,26 @@ private fun UnlockPage(file: BackupFile?, working: Boolean, onBack: () -> Unit, 
             Primary(stringResource(R.string.bk_open_go), enabled = secret.isNotBlank() && !working) { onOpen(secret) }
         },
     ) {
-        item("tabs") {
-            Row(
-                Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(4.dp),
-            ) {
-                listOf(false to R.string.backup_pass_field, true to R.string.bk_code_tab).forEach { (code, label) ->
-                    val on = useCode == code
-                    Box(
-                        Modifier.weight(1f).fillMaxSize().clip(CircleShape).background(if (on) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerHigh)
-                            .clickable(role = Role.Tab) { if (useCode != code) { useCode = code; secret = "" } },
-                        contentAlignment = Alignment.Center,
-                    ) { Text(stringResource(label), fontSize = 14.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold) }
-                }
-            }
-        }
-        item("field") {
-            Column(Modifier.padding(horizontal = 16.dp)) {
+        // Frase segreta · Codice di recupero a schedario (tavola SchedarioProve, decisa il 22 novembre): due chiavi per la
+        // stessa cartella; il campo sta sul foglio della linguetta aperta. In un elemento solo, senza spazio tra i due.
+        item("folder") {
+            val sheet = MaterialTheme.colorScheme.surfaceContainerLow
+            Column {
+                FolderTabs(
+                    labels = listOf(stringResource(R.string.backup_pass_field), stringResource(R.string.bk_code_tab)),
+                    selected = if (useCode) 1 else 0,
+                    onSelect = { i -> val code = i == 1; if (useCode != code) { useCode = code; secret = "" } },
+                    sheet = sheet,
+                    modifier = Modifier.padding(horizontal = 6.dp).fillMaxWidth(),
+                )
+            Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth().background(sheet, RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp, topEnd = 18.dp)).padding(14.dp)) {
                 if (useCode) OutlinedTextField(
                     value = secret, onValueChange = { secret = it }, singleLine = true, label = { Text(stringResource(R.string.bk_code_tab)) },
                     textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false, keyboardType = KeyboardType.Password),
                     visualTransformation = VisualTransformation.None, modifier = Modifier.fillMaxWidth(),
                 ) else SecretField(secret, { secret = it }, stringResource(R.string.backup_pass_field))
+            }
             }
         }
         item("hint") { Note(stringResource(if (useCode) R.string.bk_unlock_code_hint else R.string.bk_unlock_phrase_hint)) }

@@ -2258,3 +2258,69 @@ html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
 	right: -10px;
 	background: radial-gradient(circle at 100% 100%, transparent 9.5px, var(--eurise-sheet) 10px);
 }
+
+/* Nastro a schedario su tablet e computer (tavola SchedarioProve, decisa il 22 novembre 2026): la scheda aperta del
+   nastro è una linguetta bianca che continua nella fascia bianca dei comandi, con i due piedini; i gruppi diventano
+   parti della stessa fascia, divise da un filo, al posto delle isole bianche. Il telefono ha il nastro nella dock. */
+body.eurise-tablet #eurise-top {
+	gap: 0 !important;
+	--eurise-band: #FFFFFF;
+}
+[data-theme='dark'] body.eurise-tablet #eurise-top { --eurise-band: #222833; }
+body.eurise-tablet #eurise-header.riga #eurise-tabs {
+	align-self: flex-end;
+	align-items: flex-end;
+	gap: 0;
+	padding: 0 10px;
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab:not(.file) {
+	position: relative;
+	height: 38px;
+	padding: 0 12px;
+	box-shadow: none !important;
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.file {
+	align-self: center;
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file),
+[data-theme='dark'] body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file) {
+	margin: 0 10px !important;
+	border-radius: 10px 10px 0 0;
+	background: var(--eurise-band) !important;
+	box-shadow: none !important;
+	font-weight: 800;
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file)::before,
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file)::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	width: 10px;
+	height: 10px;
+	pointer-events: none;
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file)::before {
+	left: -10px;
+	background: radial-gradient(circle at 0 0, transparent 9.5px, var(--eurise-band) 10px);
+}
+body.eurise-tablet #eurise-header.riga #eurise-tabs .eurise-rtab.active:not(.file)::after {
+	right: -10px;
+	background: radial-gradient(circle at 100% 0, transparent 9.5px, var(--eurise-band) 10px);
+}
+body.eurise-tablet #eurise-ribbon {
+	gap: 0 !important;
+	padding: 4px 6px !important;
+	border-radius: 14px;
+	background: var(--eurise-band);
+}
+body.eurise-tablet #eurise-ribbon .eurise-group:not(.suite) {
+	background: transparent !important;
+	box-shadow: none !important;
+	border-radius: 0;
+	border-right: 1px solid rgba(30, 29, 27, 0.10);
+}
+[data-theme='dark'] body.eurise-tablet #eurise-ribbon .eurise-group:not(.suite) { border-right-color: rgba(230, 233, 240, 0.12); }
+body.eurise-tablet #eurise-ribbon .eurise-group.suite {
+	box-shadow: none !important;
+	margin-left: 6px;
+}
