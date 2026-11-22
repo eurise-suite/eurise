@@ -55,6 +55,29 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         private set
     /** Le non lette dell'altro account (null = non collegato o non ancora contate). */
     var otherUnread by mutableStateOf<Int?>(null)
+    /** «Entrambi» (tavola ChatAccountAlternative): che cosa mostra l'elenco, e il riassunto leggero dell'altro account. */
+    var show by mutableStateOf(runCatching { Entrambi.Show.valueOf(context.getSharedPreferences("chat_accounts_view", Context.MODE_PRIVATE).getString("show", null) ?: "One") }.getOrDefault(Entrambi.Show.One))
+        private set
+    var otherRooms by mutableStateOf<List<Entrambi.Other>>(emptyList())
+        private set
+    /** La chat dell'altro account da aprire appena si è passati a lui (tocco su una sua riga in «Entrambi»). */
+    private var openAfterSwitch: String? = null
+
+    fun changeShow(s: Entrambi.Show) {
+        show = s
+        context.getSharedPreferences("chat_accounts_view", Context.MODE_PRIVATE).edit().putString("show", s.name).apply()
+        if (s == Entrambi.Show.One) otherRooms = emptyList()
+        startOther()
+    }
+
+    /** Apre una chat dell'altro account: si passa a lui (come con la pillola) e la chat si apre quando è pronta. */
+    fun openOther(roomId: String) {
+        openAfterSwitch = roomId
+        switchTo(account.other)
+    }
+
+    /** Fuori orario, con «il lavoro tace» acceso, le chat del Lavoro si fanno da parte nell'elenco insieme. */
+    fun workHiddenNow(): Boolean = ChatAccounts.quietNow(context, Account.Work)
         private set
     /** La sessione dell'altro account, per la barra e il foglio degli account (null = non collegato). */
     var otherSession by mutableStateOf(SessionStore(context, account.other).load())
@@ -166,6 +189,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     ready = true
                     error = null
                     backoff = 2_000L
+                    // Una chat toccata in «Entrambi» dall'altro account: si apre appena c'è.
+                    openAfterSwitch?.let { id -> if (data.containsKey(id)) { openAfterSwitch = null; open(id) } }
                     checkIncoming()
                     if (security == null) refreshSecurity()
                 }.onFailure { e ->
@@ -1591,7 +1616,13 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val other = SessionStore(context, account.other).load() ?: run { otherUnread = null; return }
         otherLoop = scope.launch {
             while (isActive) {
-                withContext(Dispatchers.IO) { runCatching { ChatClient(other).unreadTotal() }.getOrNull() }?.let { otherUnread = it }
+                if (show == Entrambi.Show.Both) {
+                    val me = other.userId
+                    withContext(Dispatchers.IO) { runCatching { Entrambi.parse(ChatClient(other).summary(), me) }.getOrNull() }?.let { list ->
+                        otherRooms = list
+                        otherUnread = list.sumOf { it.room.unread }
+                    }
+                } else withContext(Dispatchers.IO) { runCatching { ChatClient(other).unreadTotal() }.getOrNull() }?.let { otherUnread = it }
                 delay(120_000)
             }
         }
@@ -1638,6 +1669,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         ready = false
         error = null
         otherUnread = null
+        otherRooms = emptyList()
     }
 
     /** Fuori orario il lavoro tace (impostazione del foglio degli account). */
