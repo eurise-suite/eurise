@@ -164,7 +164,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     val askAudio = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     fun takePhoto() {
-        if (recording != null) return
+        if (recording != null || model.night.value == CameraModel.NightStep.Hold) return
         blink = true
         if (setup.capture) {
             val file = File(context.cacheDir, "capture/scatto.jpg").apply { parentFile?.mkdirs(); delete() }
@@ -180,6 +180,14 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 }
                 override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
             })
+            return
+        }
+        val frames = controller.nightFrames()
+        if (frames != null) {
+            model.night.value = CameraModel.NightStep.Hold
+            controller.takeBurst(frames, zoom?.zoomRatio ?: 1f,
+                done = { model.onNight(it, dest) { toast(context, R.string.error_save) } },
+                failed = { model.night.value = null; toast(context, R.string.error_save) })
             return
         }
         val meta = ImageCapture.Metadata().apply { location = model.location() }
@@ -304,6 +312,8 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         }
         when {
             recording != null -> StatusChip(stringResource(R.string.recording, clock(recordedMs)), dot = Color(0xFFE46F5A))
+            model.night.value == CameraModel.NightStep.Hold -> StatusChip(stringResource(R.string.night_hold), dot = Accent)
+            model.night.value == CameraModel.NightStep.Working -> StatusChip(stringResource(R.string.night_working), dot = Accent)
             setup.locked -> StatusChip(stringResource(R.string.locked_status), icon = EuriseIcons.lock())
             setup.capture -> Spacer(Modifier.size(1.dp))
             else -> LocationChip(model.locationOn.value) {

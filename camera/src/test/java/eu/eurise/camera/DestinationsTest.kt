@@ -124,3 +124,33 @@ class RitoccoTest {
         assertEquals(255.0, 255 * Math.pow(1.0, g), 0.001)
     }
 }
+
+class NotteTest {
+    private fun gray(v: Int) = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
+
+    @Test
+    fun findsTheHandShift() {
+        val w = 64; val h = 48
+        val ref = ByteArray(w * h) { i -> (((i % w) * 7 + (i / w) * 13) % 251).toByte() }
+        // Il fotogramma è il riferimento spostato di (3, -2): frame[y+dy][x+dx] = ref[y][x].
+        val frame = ByteArray(w * h) { i ->
+            val x = i % w - 3; val y = i / w + 2
+            if (x in 0 until w && y in 0 until h) ref[y * w + x] else 0
+        }
+        assertEquals(3 to -2, eu.eurise.camera.data.Notte.shift(ref, frame, w, h, range = 5, step = 1))
+    }
+
+    @Test
+    fun averagesNoiseAndIgnoresWhatMoved() {
+        val n = eu.eurise.camera.data.Notte(2, 1)
+        n.addReference(0, intArrayOf(gray(100), gray(100)))
+        val ref = intArrayOf(gray(100), gray(100))
+        n.add(0, ref, intArrayOf(gray(110), gray(250)), 0, last = true)
+        n.add(0, ref, intArrayOf(gray(90), gray(250)), 0, last = true)
+        val out = IntArray(2)
+        n.result(0, out)
+        assertEquals(100, out[0] and 0xFF)   // media di 100, 110, 90
+        assertEquals(100, out[1] and 0xFF)   // 250 è «mosso»: resta il riferimento
+        assertEquals(3, n.frames)
+    }
+}

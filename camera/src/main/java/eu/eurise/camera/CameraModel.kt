@@ -3,8 +3,10 @@ package eu.eurise.camera
 import android.app.Application
 import android.content.ClipData
 import android.content.Intent
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Size
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -13,6 +15,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import eu.eurise.camera.data.MediaOut
+import eu.eurise.camera.data.NotteFoto
 import eu.eurise.camera.data.Ritocco
 import eu.eurise.camera.data.CameraPrefs
 import eu.eurise.camera.data.DestinationState
@@ -63,13 +67,41 @@ class CameraModel(app: Application) : AndroidViewModel(app) {
 
     fun location() = if (locationOn.value) PhotoLocation.latest(getApplication()) else null
 
-    fun onShot(uri: Uri, isVideo: Boolean) {
+    /** Notte in corso: null, [NightStep.Hold] mentre scatta, [NightStep.Working] mentre fonde. */
+    val night = mutableStateOf<NightStep?>(null)
+
+    enum class NightStep { Hold, Working }
+
+    /** I fotogrammi della Notte: si fondono in sottofondo e la foto finisce dove andrebbe uno scatto normale. */
+    fun onNight(frames: List<ByteArray>, dest: String?, failed: () -> Unit) {
+        night.value = NightStep.Working
+        val where = location()
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val out = File(app.cacheDir, "notte.jpg")
+            val uri = runCatching {
+                val iso = NotteFoto.isoOf(frames[0], app.cacheDir)
+                check(NotteFoto.merge(frames, out, iso, app.cacheDir))
+                if (where != null) ExifInterface(out.path).apply { setGpsInfo(where); saveAttributes() }
+                val target = app.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.photo(dest))!!
+                app.contentResolver.openOutputStream(target, "w")!!.use { sink -> out.inputStream().use { it.copyTo(sink) } }
+                target
+            }.onFailure { android.util.Log.w(TAG, "Notte non riuscita", it) }.getOrNull()
+            out.delete()
+            withContext(Dispatchers.Main) {
+                night.value = null
+                if (uri != null) onShot(uri, false, retouched = true) else failed()
+            }
+        }
+    }
+
+    fun onShot(uri: Uri, isVideo: Boolean, retouched: Boolean = false) {
         val shot = Shot(uri, isVideo, null)
         session.add(0, shot)
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             // Prima della miniatura, così anche lei ha i colori corretti.
-            if (!isVideo) Ritocco.correct(app.contentResolver, uri, app.cacheDir)
+            if (!isVideo && !retouched) Ritocco.correct(app.contentResolver, uri, app.cacheDir)
             val thumb = runCatching {
                 getApplication<Application>().contentResolver.loadThumbnail(uri, Size(240, 240), null).asImageBitmap()
             }.getOrNull() ?: return@launch

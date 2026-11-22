@@ -216,7 +216,7 @@ object Ritocco {
         "GPSTimeStamp", "GPSDateStamp", "GPSProcessingMethod",
     )
 
-    private fun copyExif(from: File, to: File) {
+    internal fun copyExif(from: File, to: File) {
         runCatching {
             val a = ExifInterface(from.path); val b = ExifInterface(to.path)
             EXIF_TAGS.forEach { tag -> a.getAttribute(tag)?.let { b.setAttribute(tag, it) } }

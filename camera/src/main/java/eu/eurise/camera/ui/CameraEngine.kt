@@ -184,10 +184,14 @@ class CameraEngine(private val context: Context) {
         return target to newIso
     }
 
-    fun takePicture(options: ImageCapture.OutputFileOptions, zoom: Float, executor: Executor, done: ImageCapture.OnImageSavedCallback) {
+    /**
+     * Esegue [shoot] con tempo e ISO della poca luce, se servono, e poi rimette l'automatico: [shoot] riceve la funzione da
+     * chiamare a scatto finito (riuscito o no).
+     */
+    private fun withLowLight(zoom: Float, shoot: (restore: () -> Unit) -> Unit) {
         val control = camera?.cameraControl
         val manual = if (control != null) lowLight(zoom) else null
-        if (control == null || manual == null) { imageCapture.takePicture(options, executor, done); return }
+        if (control == null || manual == null) { shoot {}; return }
         val (exposure, sensitivity) = manual
         Log.i(TAG, "Poca luce: ISO $iso · ${shutterLabel(exposureNs)} → ISO $sensitivity · ${shutterLabel(exposure)}")
         val manualOptions = baseOptions()
@@ -196,14 +200,55 @@ class CameraEngine(private val context: Context) {
             .setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, sensitivity)
             .setCaptureRequestOption(CaptureRequest.SENSOR_FRAME_DURATION, maxOf(exposure, 33_333_333L))
             .build()
-        val c2 = Camera2CameraControl.from(control)
-        val wrapped = object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) { applyBase(); done.onImageSaved(output) }
-            override fun onError(exception: ImageCaptureException) { applyBase(); done.onError(exception) }
+        val set = runCatching { Camera2CameraControl.from(control).setCaptureRequestOptions(manualOptions) }.getOrNull()
+        if (set == null) { shoot {}; return }
+        set.addListener({ shoot { applyBase() } }, main)
+    }
+
+    fun takePicture(options: ImageCapture.OutputFileOptions, zoom: Float, executor: Executor, done: ImageCapture.OnImageSavedCallback) {
+        withLowLight(zoom) { restore ->
+            imageCapture.takePicture(options, executor, object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) { restore(); done.onImageSaved(output) }
+                override fun onError(exception: ImageCaptureException) { restore(); done.onError(exception) }
+            })
         }
-        val set = runCatching { c2.setCaptureRequestOptions(manualOptions) }.getOrNull()
-        if (set == null) { imageCapture.takePicture(options, executor, done); return }
-        set.addListener({ imageCapture.takePicture(options, executor, wrapped) }, main)
+    }
+
+    /** Fotocamera frontale? */
+    val front: Boolean get() = camera?.cameraInfo?.lensFacing == CameraSelector.LENS_FACING_FRONT
+
+    /**
+     * Quanti fotogrammi per la Notte, o null se basta uno scatto: con il flash spento e ISO del mirino da [NIGHT_ISO] in
+     * su (con il tempo già allungato dalla poca luce, se c'è) 4 sulla posteriore, 6 sulla frontale (sensore più piccolo).
+     */
+    fun nightFrames(): Int? {
+        if (flashMode != ImageCapture.FLASH_MODE_OFF || iso < NIGHT_ISO) return null
+        return if (front) 6 else 4
+    }
+
+    /** Raffica di [n] JPEG in memoria, uno dopo l'altro, con la stessa esposizione. */
+    fun takeBurst(n: Int, zoom: Float, done: (List<ByteArray>) -> Unit, failed: () -> Unit) {
+        withLowLight(zoom) { restore ->
+            val frames = ArrayList<ByteArray>(n)
+            fun next() {
+                imageCapture.takePicture(main, object : ImageCapture.OnImageCapturedCallback() {
+                    override fun onCaptureSuccess(image: androidx.camera.core.ImageProxy) {
+                        val bytes = runCatching {
+                            val buffer = image.planes[0].buffer
+                            ByteArray(buffer.remaining()).also { buffer.get(it) }
+                        }.getOrNull()
+                        image.close()
+                        if (bytes != null) frames += bytes
+                        if (frames.size < n && bytes != null) next()
+                        else { restore(); if (frames.isNotEmpty()) done(frames) else failed() }
+                    }
+                    override fun onError(exception: ImageCaptureException) {
+                        restore(); if (frames.isNotEmpty()) done(frames) else failed()
+                    }
+                })
+            }
+            next()
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -215,6 +260,8 @@ class CameraEngine(private val context: Context) {
         const val TARGET_ISO = 200
         /** Un terzo di stop in più rispetto al mirino (2^(1/3)). */
         const val BIAS = 1.26
+        /** Da quanti ISO del mirino in su si scatta la Notte con più fotogrammi. */
+        const val NIGHT_ISO = 400
     }
 }
 

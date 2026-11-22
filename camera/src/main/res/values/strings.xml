@@ -18,6 +18,8 @@
     <string name="exposure">Esposizione</string>
     <string name="zoom_pill">%1$s×</string>
     <string name="last_photo">Ultima foto: apri</string>
+    <string name="night_hold">Notte · tieni fermo</string>
+    <string name="night_working">Notte · elaborazione</string>
     <string name="recording">Registrazione %1$s</string>
 
     <string name="location_off">Posizione spenta</string>
