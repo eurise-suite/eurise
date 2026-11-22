@@ -137,6 +137,8 @@ android {
     namespace = "helium314.keyboard.latin"
     lint {
         abortOnError = true
+        // Il tipo debug non è più debuggable: niente lint «vital» a ogni APK (scarica strumenti fuori dalle impronte).
+        checkReleaseBuilds = false
     }
 }
 

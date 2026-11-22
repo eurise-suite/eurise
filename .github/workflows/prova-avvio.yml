@@ -1,0 +1,88 @@
+name: Prova dell'avvio di tutte le app
+
+# Rete di sicurezza per la pulizia e la velocità (docs/SICUREZZA.md, 22 novembre 2026): ogni app del giro di Compila
+# installata su un emulatore, tre avvii a freddo misurati, e deve restare viva senza arresti. Confronto con l'ultimo
+# giro riuscito di brand. Le app senza codice per x86_64 (Browser con il motore arm64) si saltano.
+on:
+  push:
+    branches: [prova-sicurezza]
+    paths:
+      - .github/workflows/prova-avvio.yml
+      - .github/scripts/prova-avvio-emulatore.sh
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Id del giro di Compila APK con le app «dopo» (vuoto = ultimo riuscito su prova-sicurezza)"
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  avvio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Trova i giri
+        id: giro
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          id="$RUN_ID"
+          if [ -z "$id" ]; then
+            id=$(gh api "repos/$REPO/actions/workflows/build.yml/runs?branch=prova-sicurezza&status=success&per_page=1" --jq '.workflow_runs[0].id')
+          fi
+          prima=$(gh api "repos/$REPO/actions/workflows/build.yml/runs?branch=brand&status=success&per_page=1" --jq '.workflow_runs[0].id')
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "prima=$prima" >> "$GITHUB_OUTPUT"
+          echo "dopo: giro $id · prima: giro $prima"
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          run-id: ${{ steps.giro.outputs.id }}
+          github-token: ${{ github.token }}
+          path: artefatti
+          pattern: "eurise-*"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          run-id: ${{ steps.giro.outputs.prima }}
+          github-token: ${{ github.token }}
+          path: scaricati
+          pattern: "eurise-*"
+
+      - name: Gli APK, riconosciuti dal pacchetto
+        run: |
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          mkdir -p prima dopo
+          scegli() { # cartella sorgente, cartella destinazione
+            for f in $(find "$1" -name '*.apk'); do
+              pkg=$("$bt/aapt2" dump packagename "$f" 2>/dev/null || true)
+              case "$pkg" in eu.eurise.*.debug) cp "$f" "$2/$pkg.apk";; esac
+            done
+            ls -la "$2"
+          }
+          scegli scaricati prima
+          scegli artefatti dopo
+
+      - name: KVM per l'emulatore
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Avvio sull'emulatore
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: bash .github/scripts/prova-avvio-emulatore.sh
