@@ -158,6 +158,7 @@ private fun ListScreen(rows: List<Entry>, isDefault: Boolean, onBecomeDefault: (
         else r.category == tab
     }
     val freshCode = rows.firstOrNull { it.code != null }
+    val sheet = MaterialTheme.colorScheme.surfaceContainerLow
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 110.dp)) {
             item(key = "head") {
@@ -191,7 +192,6 @@ private fun ListScreen(rows: List<Entry>, isDefault: Boolean, onBecomeDefault: (
             }
             // Persone · Codici e consegne · Avvisi a schedario (tavola SchedarioProve, decisa il 22 novembre): la linguetta
             // aperta e l'elenco sotto sono un foglio solo.
-            val sheet = MaterialTheme.colorScheme.surfaceContainerLow
             val tabs = listOf(MessageInsights.Category.People, MessageInsights.Category.Codes, MessageInsights.Category.Alerts)
             item(key = "tabs") {
                 FolderTabs(
