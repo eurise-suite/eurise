@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -151,6 +152,9 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var recording by remember { mutableStateOf<Recording?>(null) }
     var recordedMs by remember { mutableLongStateOf(0L) }
     var blink by remember { mutableStateOf(false) }
+    var focusPoint by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    var focusTick by remember { mutableStateOf(0) }
+    LaunchedEffect(focusTick) { if (focusTick > 0) { delay(1200); focusPoint = null } }
     var review by remember { mutableStateOf(false) }
     var destSheet by remember { mutableStateOf(false) }
     var consent by remember { mutableStateOf(false) }
@@ -245,10 +249,27 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                         implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                         scaleType = PreviewView.ScaleType.FILL_CENTER
                         controller.surface(this)
+                        // Tocca per mettere a fuoco ed esporre su quel punto (torna all'automatico dopo 5 secondi).
+                        setOnTouchListener { v, e ->
+                            if (e.action == android.view.MotionEvent.ACTION_UP) {
+                                controller.focusAt(this, e.x, e.y)
+                                focusPoint = androidx.compose.ui.geometry.Offset(e.x, e.y)
+                                focusTick++
+                                v.performClick()
+                            }
+                            true
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
             )
+            focusPoint?.let { p ->
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                Box(
+                    Modifier.offset(with(density) { (p.x).toDp() - 32.dp }, with(density) { (p.y).toDp() - 32.dp })
+                        .size(64.dp).border(1.5.dp, Color.White, CircleShape),
+                )
+            }
             if (blink) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)))
             ZoomRow(zoom, Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)) { controller.setZoomRatio(it) }
             if (!setup.capture) {

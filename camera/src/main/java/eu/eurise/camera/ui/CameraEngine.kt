@@ -130,6 +130,17 @@ class CameraEngine(private val context: Context) {
         applyBase()
     }
 
+    /** Fuoco ed esposizione sul punto toccato del mirino; dopo 5 secondi si torna all'automatico su tutta la scena. */
+    fun focusAt(view: androidx.camera.view.PreviewView, x: Float, y: Float) {
+        val control = camera?.cameraControl ?: return
+        val point = view.meteringPointFactory.createPoint(x, y)
+        val action = androidx.camera.core.FocusMeteringAction.Builder(
+            point,
+            androidx.camera.core.FocusMeteringAction.FLAG_AF or androidx.camera.core.FocusMeteringAction.FLAG_AE,
+        ).setAutoCancelDuration(5, java.util.concurrent.TimeUnit.SECONDS).build()
+        runCatching { control.startFocusAndMetering(action) }
+    }
+
     fun setZoomRatio(ratio: Float) { camera?.cameraControl?.setZoomRatio(ratio) }
     fun enableTorch(on: Boolean) { camera?.cameraControl?.enableTorch(on) }
     fun setExposureIndex(index: Int) { camera?.cameraControl?.setExposureCompensationIndex(index) }
