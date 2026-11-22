@@ -118,6 +118,10 @@ class ChatActivity : ComponentActivity(), ChatActions {
             model.studioOpen(intent.getStringExtra(eu.eurise.core.studio.StudioContract.EXTRA_PATIENT))
             return
         }
+        // Da Email (spese, scadenze, «chi va?», tappe, decisioni): solo se l'intent viene davvero da un'app della suite.
+        if (intent?.action?.startsWith("eu.eurise.action.ADD_") == true || intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ASK_FAMILY) {
+            if (!eu.eurise.core.insieme.SchedaContract.fromSuite(this, intent)) return
+        }
         // Da Email: «Aggiungi alle spese di un gruppo» (tavola SpeEmail): si sceglie il gruppo, la spesa è già scritta.
         if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ADD_EXPENSE) {
             val cents = intent.getLongExtra(eu.eurise.core.insieme.SchedaContract.EXTRA_CENTS, 0L)

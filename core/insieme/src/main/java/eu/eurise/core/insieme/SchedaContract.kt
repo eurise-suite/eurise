@@ -55,12 +55,8 @@ object SchedaContract {
 
     fun chatPackage(context: Context) = "eu.eurise.chat" + if (SuiteAccess.isDebug(context)) ".debug" else ""
 
-    fun expenseIntent(context: Context, cents: Long, title: String): android.content.Intent? {
-        val pkg = chatPackage(context)
-        if (!SuiteAccess.isSuitePackage(context, pkg)) return null
-        return android.content.Intent(ACTION_ADD_EXPENSE).setComponent(android.content.ComponentName(pkg, "eu.eurise.chat.ChatActivity"))
-            .putExtra(EXTRA_CENTS, cents).putExtra(EXTRA_TITLE, title).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
+    fun expenseIntent(context: Context, cents: Long, title: String): android.content.Intent? =
+        chatIntent(context, ACTION_ADD_EXPENSE)?.putExtra(EXTRA_CENTS, cents)?.putExtra(EXTRA_TITLE, title)
 
     /** Email → Chat (tavole FamScadenze, FamScuola): una scadenza per le Scadenze di casa, una domanda «chi va?» per la famiglia. */
     const val ACTION_ADD_DEADLINE = "eu.eurise.action.ADD_DEADLINE"
@@ -68,11 +64,25 @@ object SchedaContract {
     const val EXTRA_DAY = "day"
     const val EXTRA_OPTIONS = "options"
 
+    /**
+     * L'intent porta un PendingIntent di chi lo manda ([EXTRA_AUTH]): Android dice da quale app viene, e la Chat lo accetta solo
+     * se è della suite ([fromSuite]). Così nessun'altra app può far mettere spese, scadenze o sondaggi nei gruppi.
+     */
+    const val EXTRA_AUTH = "eu.eurise.extra.AUTH"
+
     private fun chatIntent(context: Context, action: String): android.content.Intent? {
         val pkg = chatPackage(context)
         if (!SuiteAccess.isSuitePackage(context, pkg)) return null
-        return android.content.Intent(action).setComponent(android.content.ComponentName(pkg, "eu.eurise.chat.ChatActivity")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        val auth = android.app.PendingIntent.getActivity(context, 0, android.content.Intent(action).setPackage(context.packageName), android.app.PendingIntent.FLAG_IMMUTABLE)
+        return android.content.Intent(action).setComponent(android.content.ComponentName(pkg, "eu.eurise.chat.ChatActivity"))
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra(EXTRA_AUTH, auth)
     }
+
+    /** Vero se l'intent viene davvero da un'app della suite (vedi [EXTRA_AUTH]). */
+    fun fromSuite(context: Context, intent: android.content.Intent): Boolean = runCatching {
+        @Suppress("DEPRECATION") val auth = intent.getParcelableExtra<android.app.PendingIntent>(EXTRA_AUTH) ?: return false
+        SuiteAccess.isSuitePackage(context, auth.creatorPackage)
+    }.getOrDefault(false)
 
     fun deadlineIntent(context: Context, title: String, cents: Long, day: java.time.LocalDate): android.content.Intent? =
         chatIntent(context, ACTION_ADD_DEADLINE)?.putExtra(EXTRA_TITLE, title)?.putExtra(EXTRA_CENTS, cents)?.putExtra(EXTRA_DAY, day.toEpochDay())
