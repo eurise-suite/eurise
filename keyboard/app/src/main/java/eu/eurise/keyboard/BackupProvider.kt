@@ -39,6 +39,8 @@ class BackupProvider : ContentProvider() {
      */
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         val ctx = context ?: throw FileNotFoundException()
+        // Solo l'app Eurise (il manifesto lascia passare ogni app della suite): docs/SICUREZZA.md, «Backup della suite».
+        if (!SuiteTrust.callerIsHub(ctx)) throw SecurityException("Eurise: solo l'app Eurise")
         return when (uri.lastPathSegment) {
             "export" -> {
                 val (read, write) = ParcelFileDescriptor.createPipe()
@@ -68,7 +70,7 @@ class BackupProvider : ContentProvider() {
         val ctx = context ?: return null
         if (method != "apply") return null
         // `call` non passa dal permesso del manifesto: lo si controlla qui.
-        if (!SuiteTrust.callerAllowed(ctx)) throw SecurityException("Eurise: solo le app della suite")
+        if (!SuiteTrust.callerIsHub(ctx)) throw SecurityException("Eurise: solo l'app Eurise")
         // L'app Eurise chiude il tubo e chiama subito: si aspetta che lo zip sia arrivato tutto.
         synchronized(lock) { receiving }?.join(10_000)
         val zip = synchronized(lock) { received.also { received = null; receiving = null } }

@@ -26,8 +26,9 @@ import java.util.zip.ZipOutputStream
  * - `call("ready")`: se ora può rimettere i dati ([ready]).
  *
  * Il fornitore va dichiarato `exported` con `readPermission` e `writePermission` uguali al permesso della suite; qui si
- * controlla anche chi chiama ([SuiteAccess.callerAllowed]), perché `call` non passa dal manifesto. I dati escono solo
- * verso l'app Eurise, che li cifra subito con la frase dell'utente.
+ * controlla anche che chi chiama sia proprio l'app Eurise ([SuiteAccess.enforceHubCaller]), perché `call` non passa dal
+ * manifesto e perché il backup serve solo a lei: nessun'altra app della suite, nemmeno firmata con la nostra chiave, legge
+ * o rimette i dati. L'app Eurise li cifra subito con la frase dell'utente.
  */
 abstract class SuiteBackupProvider : ContentProvider() {
     /** Scrive in [zip] i dati da salvare. Gira fuori dal thread principale. */
@@ -55,7 +56,7 @@ abstract class SuiteBackupProvider : ContentProvider() {
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         val ctx = context ?: throw FileNotFoundException()
-        SuiteAccess.enforceCaller(ctx)
+        SuiteAccess.enforceHubCaller(ctx)
         return when (uri.lastPathSegment) {
             "export" -> {
                 val (read, write) = ParcelFileDescriptor.createPipe()
@@ -85,7 +86,7 @@ abstract class SuiteBackupProvider : ContentProvider() {
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val ctx = context ?: return null
-        SuiteAccess.enforceCaller(ctx)
+        SuiteAccess.enforceHubCaller(ctx)
         return when (method) {
             "summary" -> Bundle().apply { putString("summary", runCatching { summary(ctx) }.getOrNull()) }
             "ready" -> Bundle().apply { putBoolean("ready", runCatching { ready(ctx) }.getOrDefault(false)) }

@@ -63,6 +63,7 @@ attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"
 attesa "$r" ponte CHIUSA "la curiosa non collega un suo computer al Ponte"
+attesa "$r" backup CHIUSA "la curiosa non legge il backup di Password"
 
 adb install -r amica.apk >/dev/null
 # Un segreto nel vecchio file in chiaro (com'era fino al 21 novembre 2026): l'app Eurise deve sigillarlo e cancellare il file.
@@ -91,7 +92,9 @@ case "$(echo "$r" | grep -m1 '^sms=')" in
   *SecurityException*) ko "l'amica (stessa chiave) respinta da Messaggi";;
   *) ok "l'amica (stessa chiave) non è respinta da Messaggi ($(echo "$r" | grep -m1 '^sms='))";;
 esac
-attesa "$r" tastiera APERTA "l'amica (stessa chiave) comanda ancora il ripristino della Tastiera"
+# Il backup serve solo all'app Eurise (22 novembre 2026): nemmeno un'app con la nostra chiave lo legge o lo rimette.
+attesa "$r" tastiera CHIUSA "nemmeno l'amica (stessa chiave) comanda il ripristino della Tastiera: solo l'app Eurise"
+attesa "$r" backup CHIUSA "nemmeno l'amica (stessa chiave) legge il backup di Password: solo l'app Eurise"
 attesa "$r" codici APERTA "l'amica (stessa chiave) legge ancora i codici 2FA"
 attesa "$r" ponte CHIUSA "nemmeno l'amica collega un computer da fuori (solo il lettore QR dell'app Eurise)"
 exit $esito

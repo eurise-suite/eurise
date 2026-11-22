@@ -37,6 +37,7 @@ public class Prova extends Activity {
             call("accessi", "content://eu.eurise.password" + suffix + ".logins", "status", null);
             call("sms", "content://eu.eurise.messages" + suffix + ".persone", "recent", null);
             call("tastiera", "content://eu.eurise.keyboard" + suffix + ".eurise.backup", "apply", null);
+            apri("backup", "content://eu.eurise.password" + suffix + ".eurise.backup/export");
             call("aspetto", "content://eu.eurise.hub" + suffix + ".appearance", "hand", null);
             query("codici", "content://eu.eurise.password" + suffix + ".codes/otp?package=org.esempio.curiosa");
             ponte(suffix);
@@ -75,6 +76,19 @@ public class Prova extends Activity {
         } catch (Exception e) {
             Log.i(TAG, "affida=CHIUSA " + e.getClass().getSimpleName());
             Log.i(TAG, "migra=CHIUSA " + e.getClass().getSimpleName());
+        }
+    }
+
+    /** Prova a leggere un file da un fornitore (lo zip del backup): se arriva anche un solo byte, la porta è aperta. */
+    private void apri(String porta, String uri) {
+        try (java.io.InputStream in = getContentResolver().openInputStream(Uri.parse(uri))) {
+            if (in == null) { Log.i(TAG, porta + "=CHIUSA risposta vuota"); return; }
+            int n = in.read(new byte[64]);
+            Log.i(TAG, porta + (n > 0 ? "=APERTA byte letti" : "=CHIUSA niente da leggere"));
+        } catch (SecurityException e) {
+            Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName());
+        } catch (Exception e) {
+            Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }
 

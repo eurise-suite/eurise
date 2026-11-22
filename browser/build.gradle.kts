@@ -108,6 +108,21 @@ val copyExtension by tasks.registering(Copy::class) {
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copyExtension) }
 tasks.matching { it.name.contains("lint", ignoreCase = true) }.configureEach { dependsOn(copyExtension) }
 
+// GeckoView chiede le Play Services di Google per le passkey sui siti (WebAuthn): libreria chiusa, contro F-Droid e contro
+// la regola della suite. Al loro posto le stesse interfacce libere di microG (Apache 2.0), come fanno IronFox e Fennec
+// F-Droid: le passkey restano dove c'è un servizio FIDO (microG su /e/OS) e nel Browser non entra codice di Google
+// (22 novembre 2026, decisione del proprietario; docs/SICUREZZA.md). Il controllo «librerie-vietate» ferma il giro se
+// una libreria com.google.android.gms rientra da qualche parte.
+val microg = "0.3.14.250932"
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        listOf("play-services-fido", "play-services-base", "play-services-basement", "play-services-tasks").forEach { m ->
+            substitute(module("com.google.android.gms:$m")).using(module("org.microg.gms:$m:$microg"))
+                .because("microG al posto delle Play Services di Google (docs/SICUREZZA.md)")
+        }
+    }
+}
+
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:suite"))

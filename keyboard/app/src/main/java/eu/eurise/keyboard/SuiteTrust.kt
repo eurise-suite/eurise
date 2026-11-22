@@ -2,6 +2,7 @@ package eu.eurise.keyboard
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Binder
 import helium314.keyboard.latin.BuildConfig
 
 /**
@@ -19,6 +20,14 @@ object SuiteTrust {
 
     /** Chi ci chiama ora (fornitore, ricevitore) è della suite. */
     fun callerAllowed(context: Context) = context.checkCallingPermission(permission()) == PackageManager.PERMISSION_GRANTED
+
+    /** Il pacchetto dell'app Eurise della nostra variante. */
+    fun hubPackage() = if (debug) "eu.eurise.hub.debug" else "eu.eurise.hub"
+
+    /** Chi ci chiama ora è proprio l'app Eurise (per il backup: le parole imparate non vanno a un'altra app della suite). */
+    fun callerIsHub(context: Context): Boolean =
+        callerAllowed(context) &&
+            hubPackage() in runCatching { context.packageManager.getPackagesForUid(Binder.getCallingUid()) }.getOrNull().orEmpty()
 
     /** [pkg] è installato ed è un'app della suite. */
     fun isSuite(context: Context, pkg: String?): Boolean {

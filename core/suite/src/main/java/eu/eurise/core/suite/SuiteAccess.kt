@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Binder
 import android.os.Bundle
 import java.io.File
 
@@ -35,6 +36,23 @@ object SuiteAccess {
     /** Come [callerAllowed], ma ferma la chiamata. */
     fun enforceCaller(context: Context) {
         if (!callerAllowed(context)) throw SecurityException("Eurise: solo le app della suite")
+    }
+
+    /**
+     * Vero se chi ci chiama ora è **l'app Eurise** della stessa variante (pacchetto principale, con il permesso di firma).
+     * Per le porte che servono solo a lei, come il backup: lo zip con SMS, posta, chat e cassaforte non va a un'altra app
+     * della suite, nemmeno firmata con la nostra chiave (docs/SICUREZZA.md, «Backup della suite»).
+     */
+    fun callerIsHub(context: Context): Boolean {
+        if (!callerAllowed(context)) return false
+        val hub = SecretsContract.hubPackage(isDebug(context))
+        val pkgs = runCatching { context.packageManager.getPackagesForUid(Binder.getCallingUid()) }.getOrNull().orEmpty()
+        return hub in pkgs
+    }
+
+    /** Come [callerIsHub], ma ferma la chiamata. */
+    fun enforceHubCaller(context: Context) {
+        if (!callerIsHub(context)) throw SecurityException("Eurise: solo l'app Eurise")
     }
 
     /** Vero se [pkg] è questa app o un'app della suite (ha il nostro permesso di firma). */

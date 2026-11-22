@@ -83,8 +83,12 @@ public class EuriseBackupProvider extends ContentProvider
 
   private static void enforceCaller(@NonNull Context c)
   {
+    // Solo l'app Eurise della variante: il backup non va a un'altra app della suite (docs/SICUREZZA.md, «Backup»).
     if (c.checkCallingPermission(EuriseSuite.PERMISSION) != PackageManager.PERMISSION_GRANTED)
       throw new SecurityException("Eurise: solo le app della suite");
+    final String[] pkgs = c.getPackageManager().getPackagesForUid(android.os.Binder.getCallingUid());
+    if (pkgs == null || !java.util.Arrays.asList(pkgs).contains(EuriseSuite.HUB))
+      throw new SecurityException("Eurise: solo l'app Eurise");
   }
 
   @Nullable
