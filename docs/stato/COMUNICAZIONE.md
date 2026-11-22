@@ -67,7 +67,7 @@ computer (area Computer, tavola PcEmail).
   mattino della posta. Un riepilogo unico Chat + Email (le due app sono separate) e il riassunto con Eurise AI nel
   riepilogo: dopo. Prove: richiesta da Ciarly a Element e da Ciarly a Ciarly; email «ok» da un altro programma; faccenda con
   due telefoni e promemoria; uscita con voti, calendario e passaggi; un messaggio «urgente» la sera sull'account di lavoro.
-- **Lavorare insieme, famiglia, amici, lavoro: le tavole del 17 novembre in Chat e in Email** (22 novembre, giri 1024–1032; chat, mail,
+- **Lavorare insieme, famiglia, amici, lavoro: le tavole del 17 novembre in Chat e in Email** (22 novembre, giri 1024–1033; chat, mail,
   phone). Modulo nuovo **`core/insieme`** (logica pura con `SchedaTest`; dipende da core:suite): **la stessa scheda**
   (`Scheda`: Affida, Faccenda, Uscita, Orari, Spesa, Condividi, Cena, Regalo, Elenco, Decisione, Proposta; nella stanza
   `eu.eurise.card` + risposte `eu.eurise.card.answer` con `m.reference`, testo per Element), **la strada dell'email**
@@ -148,6 +148,9 @@ computer (area Computer, tavola PcEmail).
   (checklist del sopralluogo con foto, posizione e vocali → PDF), scheda di Drive vera con l'area
   Organizzazione, risposta automatica e farmaci ad app chiusa anche senza la Chat aperta (oggi: worker per farmaci; la
   risposta automatica in Chat solo ad app aperta).
+  Sicurezza (principi di base del 22 novembre): i fornitori nuovi (`<Email>.schede`, ruoli nella Rubrica) rispondono solo
+  col permesso di firma; gli intent dall'Email alla Chat portano un PendingIntent di chi li manda e la Chat li accetta solo
+  dalle app della suite (`SchedaContract.fromSuite`). Ogni app funziona anche da sola: senza l'altra le voci non compaiono.
   Parti comuni toccate: `settings.gradle.kts` (modulo nuovo `core:insieme`); permessi nuovi: Chat ACCESS_BACKGROUND_LOCATION, Email
   READ/WRITE_CALENDAR; Telefono dipende da `core:insieme`.
   Prove da chiedere: scheda Affida per email a un indirizzo esterno e risposta «fatto» da un altro programma; uscita con un
