@@ -71,8 +71,9 @@ public final class EuriseGuideStatus
     {
       if (getContext() == null || !"guide".equals(method))
         return null;
-      final boolean suite = getContext().checkCallingPermission("eu.eurise.permission.SUITE") == PackageManager.PERMISSION_GRANTED
-                            || getContext().checkCallingPermission("eu.eurise.permission.SUITE_DEBUG") == PackageManager.PERMISSION_GRANTED;
+      // Solo il permesso della propria variante (EuriseSuite.PERMISSION): accettare anche l'altro lascerebbe entrare,
+      // nella versione ufficiale, un'app qualunque che dichiari lei «SUITE_DEBUG» (nessuna app della suite lo definisce).
+      final boolean suite = getContext().checkCallingPermission(EuriseSuite.PERMISSION) == PackageManager.PERMISSION_GRANTED;
       if (!suite)
         return null;
       final Bundle b = read();
