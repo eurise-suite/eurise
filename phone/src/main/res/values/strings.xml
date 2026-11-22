@@ -169,4 +169,5 @@
     <!-- Invito sulla Chat dalla scheda (tavola ChatInvita). -->
     <string name="ph_invite">Invita</string>
     <string name="ph_invite_text">%1$s non è ancora sulla Chat: mandale l\'invito per SMS o email, con il link a una chat cifrata con te.</string>
+    <string name="backup_summary_phone">%1$d chiamate e %2$d numeri bloccati</string>
 </resources>

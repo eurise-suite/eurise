@@ -33,17 +33,32 @@ import java.util.zip.ZipOutputStream
 class BackupProvider : ContentProvider() {
     override fun onCreate() = true
 
+    /**
+     * Niente file intermedi (20 novembre 2026): lo zip esce e entra in un tubo. Prima passava da file nella cache, in
+     * chiaro, e quello dell'esportazione restava lì dopo ogni backup.
+     */
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         val ctx = context ?: throw FileNotFoundException()
         return when (uri.lastPathSegment) {
             "export" -> {
-                val f = File(ctx.cacheDir, "eurise-backup-export.zip")
-                export(ctx, f)
-                ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY)
+                val (read, write) = ParcelFileDescriptor.createPipe()
+                Thread {
+                    clearOldFiles(ctx)
+                    runCatching {
+                        ParcelFileDescriptor.AutoCloseOutputStream(write).use { out -> export(ctx, out) }
+                    }.onFailure { runCatching { write.closeWithError(it.message ?: "export") } }
+                }.start()
+                read
             }
             "import" -> {
-                val f = importFile(ctx).apply { delete() }
-                ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_WRITE_ONLY or ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE)
+                val (read, write) = ParcelFileDescriptor.createPipe()
+                val reader = Thread {
+                    clearOldFiles(ctx)
+                    received = runCatching { ParcelFileDescriptor.AutoCloseInputStream(read).use { it.readBytes() } }.getOrNull()
+                }
+                synchronized(lock) { received = null; receiving = reader }
+                reader.start()
+                write
             }
             else -> throw FileNotFoundException(uri.toString())
         }
@@ -54,25 +69,35 @@ class BackupProvider : ContentProvider() {
         if (method != "apply") return null
         // `call` non passa dal permesso del manifesto: lo si controlla qui.
         if (!SuiteTrust.callerAllowed(ctx)) throw SecurityException("Eurise: solo le app della suite")
-        val f = importFile(ctx)
-        val ok = f.exists() && runCatching { restore(ctx, f) }.isSuccess
-        f.delete()
+        // L'app Eurise chiude il tubo e chiama subito: si aspetta che lo zip sia arrivato tutto.
+        synchronized(lock) { receiving }?.join(10_000)
+        val zip = synchronized(lock) { received.also { received = null; receiving = null } }
+        val ok = zip != null && runCatching { restore(ctx, zip.inputStream()) }.isSuccess
         // I dizionari aperti in memoria riscriverebbero i file vecchi: la tastiera riparte subito e rilegge tutto.
         if (ok) Handler(Looper.getMainLooper()).postDelayed({ Process.killProcess(Process.myPid()) }, 300)
         return Bundle().apply { putBoolean("ok", ok) }
     }
 
-    private fun importFile(ctx: Context) = File(ctx.cacheDir, "eurise-backup-import.zip")
-
     companion object {
+        private val lock = Any()
+        /** Lo zip ricevuto da «import», solo in memoria, in attesa di «apply». */
+        @Volatile private var received: ByteArray? = null
+        private var receiving: Thread? = null
+
+        /** I file in chiaro delle versioni prima del 20 novembre 2026, se sono rimasti nella cache. */
+        private fun clearOldFiles(ctx: Context) {
+            File(ctx.cacheDir, "eurise-backup-export.zip").delete()
+            File(ctx.cacheDir, "eurise-backup-import.zip").delete()
+        }
+
         private const val HISTORY = "UserHistoryDictionary"
         private const val TOUCH = "eurise_touch.xml"
         private const val PERSONAL = "personal.json"
         private const val PHRASES = "phrases.txt"
 
-        fun export(ctx: Context, target: File) {
+        fun export(ctx: Context, target: java.io.OutputStream) {
             TouchModel.save()
-            ZipOutputStream(target.outputStream()).use { zip ->
+            ZipOutputStream(target).use { zip ->
                 // Dizionari delle parole imparate: file o cartelle (formato v4) che cominciano con il nome.
                 ctx.filesDir.listFiles().orEmpty().filter { it.name.startsWith(HISTORY) }.forEach { add(zip, it, "history/${it.name}") }
                 File(ctx.applicationInfo.dataDir, "shared_prefs/$TOUCH").takeIf { it.exists() }?.let { add(zip, it, "prefs/$TOUCH") }
@@ -110,8 +135,8 @@ class BackupProvider : ContentProvider() {
         }
 
         /** Rimette al loro posto i file dello zip (solo nomi attesi, niente percorsi fuori dalla cartella). */
-        fun restore(ctx: Context, zipFile: File) {
-            ZipInputStream(zipFile.inputStream()).use { zip ->
+        fun restore(ctx: Context, input: java.io.InputStream) {
+            ZipInputStream(input).use { zip ->
                 var cleared = false
                 while (true) {
                     val e = zip.nextEntry ?: break

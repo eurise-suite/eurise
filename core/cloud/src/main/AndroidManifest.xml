@@ -2,9 +2,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Eurise Tastiera (APK a parte) nel backup della suite: KeyboardBackup. -->
+    <!-- Le app separate della suite nel backup (SuiteApps, docs/stato/BACKUP.md): Android 11+ le mostra solo così. -->
     <queries>
+        <provider android:authorities="eu.eurise.password.eurise.backup" />
+        <provider android:authorities="eu.eurise.password.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.messages.eurise.backup" />
+        <provider android:authorities="eu.eurise.messages.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.phone.eurise.backup" />
+        <provider android:authorities="eu.eurise.phone.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.gallery.eurise.backup" />
+        <provider android:authorities="eu.eurise.gallery.debug.eurise.backup" />
         <provider android:authorities="eu.eurise.keyboard.eurise.backup" />
         <provider android:authorities="eu.eurise.keyboard.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.browser.eurise.backup" />
+        <provider android:authorities="eu.eurise.browser.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.office.eurise.backup" />
+        <provider android:authorities="eu.eurise.office.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.mail.eurise.backup" />
+        <provider android:authorities="eu.eurise.mail.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.chat.eurise.backup" />
+        <provider android:authorities="eu.eurise.chat.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.voice.eurise.backup" />
+        <provider android:authorities="eu.eurise.voice.debug.eurise.backup" />
+        <provider android:authorities="eu.eurise.ai.eurise.backup" />
+        <provider android:authorities="eu.eurise.ai.debug.eurise.backup" />
+        <!-- Mappe: stesso pacchetto in prova e in ufficiale (CoMaps compilata a parte). -->
+        <provider android:authorities="eu.eurise.maps.eurise.backup" />
     </queries>
 </manifest>

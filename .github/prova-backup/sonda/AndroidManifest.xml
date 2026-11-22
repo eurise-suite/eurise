@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sonda della prova del backup: gira dentro l'app Eurise di prova (stessa chiave), nessun permesso suo.
+     «Cartella» è una cartella finta (fornitore di documenti) per provare la destinazione «cartella o chiavetta»;
+     debuggable solo per guardarci dentro con run-as dalla prova. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="eu.eurise.prova.backup">
+    <application android:label="Sonda backup" android:hasCode="true" android:debuggable="true">
+        <provider
+            android:name=".Cartella"
+            android:authorities="eu.eurise.prova.backup.cartella"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+        <receiver android:name=".Concedi" android:exported="true" />
+    </application>
+    <instrumentation
+        android:name=".Sonda"
+        android:targetPackage="eu.eurise.hub.debug"
+        android:label="Prova del backup" />
+</manifest>

@@ -104,5 +104,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/office_paths" />
         </provider>
+        <!-- Backup della suite: documenti creati in Office, rapporti e impostazioni, solo verso l'app Eurise. -->
+        <provider
+            android:name=".backup.OfficeBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
     </application>
 </manifest>

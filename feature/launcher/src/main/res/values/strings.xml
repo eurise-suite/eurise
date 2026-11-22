@@ -54,6 +54,14 @@
     <string name="setup_home_action">Imposta</string>
     <string name="setup_home">Usa Eurise come schermata iniziale</string>
     <string name="setup_restore">Hai un backup di Eurise? Ritrova i tuoi dati</string>
+    <string name="backup_late">Ultimo backup %1$d giorni fa</string>
+    <string name="backup_late_never">Il backup non è ancora riuscito</string>
+    <string name="backup_late_action">Guarda</string>
+    <string name="backup_new_phone">Telefono nuovo? Ritrova i tuoi dati</string>
+    <string name="backup_new_phone_action">Ripristina</string>
+    <string name="backup_restored">Ripristino fatto: mancano pochi passi</string>
+    <string name="backup_check">Ti ricordi la frase del backup?</string>
+    <string name="backup_check_action">Prova</string>
     <string name="setup_notifications">Numeri sulle icone e messaggi</string>
     <string name="setup_location">Meteo della tua zona</string>
     <string name="setup_calendar">Appuntamenti nella Scrivania</string>

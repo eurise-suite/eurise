@@ -54,6 +54,9 @@ class GalleryStore private constructor(context: Context) {
 
     private fun changed() = _version.update { it + 1 }
 
+    /** Il database, per il backup della suite (`GalleryBackupProvider`). */
+    fun database(): SQLiteDatabase = helper.writableDatabase
+
     private fun readSettings() = GallerySettings(
         uploadOn = prefs.getBoolean("upload", false),
         accountId = prefs.getString("account", null),

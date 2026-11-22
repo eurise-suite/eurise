@@ -83,6 +83,7 @@
     <string name="ms_not_sent">Messaggio non mandato</string>
     <string name="ms_not_sent_text">Apri Messaggi per riprovare.</string>
     <string name="ms_photo">Foto</string>
+    <string name="backup_summary_messages">%1$d SMS e %2$d MMS</string>
 
     <!-- Difesa dalle truffe (tavola ChatTruffa) -->
     <string name="ms_scam_title">Attenzione: sembra una truffa</string>

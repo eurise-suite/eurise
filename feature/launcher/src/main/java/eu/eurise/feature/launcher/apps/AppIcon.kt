@@ -456,6 +456,7 @@ private fun sectionIcon(entry: AppEntry) = when (entry.euriseSection) {
     "ponte" -> EuriseIcons.work(SuiteSymbols.Stroke)
     "today" -> EuriseIcons.agenda(SuiteSymbols.Stroke)
     "alfred" -> SuiteSymbols.alfred
+    "backup" -> EuriseIcons.refresh(SuiteSymbols.Stroke)
     else -> entry.category.icon(SuiteSymbols.Stroke)
 }
 

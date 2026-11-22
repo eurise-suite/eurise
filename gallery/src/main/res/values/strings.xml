@@ -490,4 +490,32 @@
     <string name="gpv_upload_out">i file così come sono, nella cartella delle foto del cloud collegato</string>
     <string name="gpv_upload_who">chi gestisce il cloud (Murena o il tuo server) può vedere le foto caricate</string>
     <string name="gpv_upload_back">spegni qui o nel Cloud: si ferma subito; le foto già caricate restano sul cloud</string>
+    <string name="backup_summary_gallery">%1$d foto nella cartella protetta e %2$d diari</string>
+    <!-- Cartella protetta arrivata dal backup (tavole GalDalBackup, 21 novembre 2026) -->
+    <string name="fb_card_title">Arrivata dal backup</string>
+    <string name="fb_card_text">Un\'altra cartella protetta, quella del telefono di prima: %1$d foto e video. È chiusa con la sua frase.</string>
+    <string name="fb_open">Apri</string>
+    <string name="fb_unlock_title">Apri la cartella dal backup</string>
+    <string name="fb_unlock_text">Scrivi la frase della cartella protetta del telefono di prima, non quella del backup. Va bene anche il suo codice di recupero.</string>
+    <string name="fb_tab_phrase">Frase</string>
+    <string name="fb_tab_code">Codice di recupero</string>
+    <string name="fb_phrase_label">Frase della cartella</string>
+    <string name="fb_code_label">Codice di recupero della cartella</string>
+    <string name="fb_unlock_note">Si apre qui, sul telefono. La frase non esce e non si salva: chiudendo, la cartella torna chiusa.</string>
+    <string name="fb_forgot">Non la ricordo</string>
+    <string name="fb_forgot_title">Senza frase né codice non si apre</string>
+    <string name="fb_forgot_text">Nessuno può aprirla, nemmeno noi. Puoi tenerla qui finché te la ricordi, oppure toglierla dal telefono: resta nei backup che hai già.</string>
+    <string name="fb_forgot_keep">Tienila</string>
+    <string name="fb_discard">Togli dal telefono</string>
+    <string name="fb_discard_title">Togliere %1$d foto e video dal telefono?</string>
+    <string name="fb_discard_text">Da qui non si recuperano. Restano solo nei backup che hai già, chiuse con la loro frase.</string>
+    <string name="fb_title">Dal backup</string>
+    <string name="fb_open_sub">%1$d foto e video · aperta</string>
+    <string name="fb_merge_title">Una cartella sola?</string>
+    <string name="fb_merge_text">Ogni foto passa alla chiave della tua cartella: si rilegge, e solo dopo sparisce da qui. Alla fine resta una cartella sola, con la tua frase.</string>
+    <string name="fb_keep_apart">Tienila a parte</string>
+    <string name="fb_merge">Sposta nella mia cartella</string>
+    <string name="fb_moving">Sposto e verifico… %1$d di %2$d</string>
+    <string name="fb_moved">Ora sono nella tua cartella</string>
+    <string name="fb_moved_some">%1$d non sono passate: sono rimaste dal backup, puoi riprovare</string>
 </resources>

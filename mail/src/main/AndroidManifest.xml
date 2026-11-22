@@ -71,5 +71,12 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/mail_paths" />
         </provider>
+        <!-- Backup della suite: caselle senza password e impostazioni, solo verso l'app Eurise (docs/stato/BACKUP.md). -->
+        <provider
+            android:name=".backup.MailBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
     </application>
 </manifest>

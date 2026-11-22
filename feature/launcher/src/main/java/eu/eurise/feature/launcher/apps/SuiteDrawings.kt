@@ -74,6 +74,19 @@ internal object SuiteDrawings {
             round = listOf(Color(0xFF7EAB42), Color(0xFF70A22D), Color(0xFF348D1C)),
             glow = Color(0xFF9EC070),
         ),
+        "Backup" to Drawing(
+            listOf(
+            Part("t", "M9 24 A15 15 0 1 0 39 24 A15 15 0 1 0 9 24 Z"),
+            Part("S", "M36.99 16.5 A15 15 0 1 1 24 9"),
+            Part("S", "M20 5 L24.5 9 L20 13"),
+            Part("p", "M24 16 Q24.96 23.04 32 24 Q24.96 24.96 24 32 Q23.04 24.96 16 24 Q23.04 23.04 24 16 Z"),
+            ),
+            light = Palette(Color(0xFF0F7885), Color(0xFF133761), Color(0xFF2C8A96), Color(0xFF153E6C), Color(0x290F7A88), Color(0xFFF6F5F1), 2.3f),
+            dark = Palette(Color(0xFFA4CCD2), Color(0xFF5F84AD), Color(0xFF93C3C9), Color(0xFF4972A1), Color(0x2B6FAFB8), Color(0xFF262A33), 2.3f),
+            color = Palette(Color(0xFFFFFDF8), Color(0xFFF4E6CC), Color(0xFFFFFDF8), Color(0xFFEFDDBF), Color(0x33FFFFFF), Color(0xFF0C6A76), 2.4f),
+            round = listOf(Color(0xFF1C8796), Color(0xFF0F7A88), Color(0xFF173F73)),
+            glow = Color(0xFF5FB0BA),
+        ),
         "Browser" to Drawing(
             listOf(
             Part("p", "M10 22 C10 13 16 8 24 8 C32 8 38 13 38 22 V32 C38 38 32 42 24 42 C16 42 10 38 10 32 Z M12 13 L11 5 L18.5 9.5 Z M36 13 L37 5 L29.5 9.5 Z"),

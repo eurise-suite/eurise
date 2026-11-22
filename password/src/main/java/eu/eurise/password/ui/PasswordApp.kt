@@ -141,6 +141,8 @@ fun PasswordRoute(vm: PasswordViewModel = viewModel()) {
 @Composable
 internal fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
     var screen by remember { mutableStateOf<Screen>(Screen.List) }
+    // Una cassaforte arrivata dal backup accanto a quella di questo telefono: si propone di unirla.
+    LaunchedEffect(Unit) { vm.offerRestoredVault() }
     var chooseCloud by remember { mutableStateOf(false) }
     val back: () -> Unit = {
         screen = when (val s = screen) {

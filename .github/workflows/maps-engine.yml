@@ -41,15 +41,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Prova i calcoli (km dalle pietre miliari, orari della scheda)
+      - name: Prova i calcoli (km dalle pietre miliari, orari della scheda, segnalibri nel backup)
         run: |
           mkdir -p "$RUNNER_TEMP/prove"
           src=maps/android/app/src/main/java/app/organicmaps/eurise
-          javac -d "$RUNNER_TEMP/prove" "$src/MilestoneKm.java" "$src/OpeningRows.java" "$src/NowPlayingText.java" "$src/GuideWit.java" maps/test/app/organicmaps/eurise/*.java
+          javac -d "$RUNNER_TEMP/prove" "$src/MilestoneKm.java" "$src/OpeningRows.java" "$src/NowPlayingText.java" "$src/GuideWit.java" "$src/BookmarkFiles.java" maps/test/app/organicmaps/eurise/*.java
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.MilestoneKmTest
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.OpeningRowsTest
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.NowPlayingTextTest
           java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.GuideWitTest
+          java -cp "$RUNNER_TEMP/prove" app.organicmaps.eurise.BookmarkFilesTest
 
       - name: Fa spazio sul disco
         run: |

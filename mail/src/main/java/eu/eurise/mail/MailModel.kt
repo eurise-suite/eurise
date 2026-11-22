@@ -274,6 +274,28 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
 
     // --- Collegare una casella (tavola MailCaselle: «Collega», accedi, approva; server e porte li trova Eurise) ---
 
+    /** Le caselle arrivate dal backup, da ricollegare: indirizzo e nome (i server li ricorda [restoredSettings]). */
+    fun restoredAccounts(): List<Pair<String, String>> = restored().map { it.optString("email") to it.optString("name") }
+
+    private fun restored(): List<org.json.JSONObject> = runCatching {
+        val a = org.json.JSONArray(java.io.File(context.filesDir, eu.eurise.mail.backup.MailBackupProvider.PENDING).readText())
+        (0 until a.length()).map { a.getJSONObject(it) }
+    }.getOrDefault(emptyList())
+
+    /** I server e le scelte di una casella arrivata dal backup, per provarli per primi. */
+    private fun restoredSettings(address: String): Pair<ServerSettings, Int>? = restored().firstOrNull { it.optString("email").equals(address, ignoreCase = true) }?.let { o ->
+        runCatching {
+            fun srv(j: org.json.JSONObject) = Server(j.getString("host"), j.getInt("port"), Security.valueOf(j.getString("sec")))
+            ServerSettings(srv(o.getJSONObject("imap")), srv(o.getJSONObject("smtp")), o.optString("user").ifBlank { null }) to o.optInt("tint")
+        }.getOrNull()
+    }
+
+    private fun forgetRestored(address: String) {
+        val file = java.io.File(context.filesDir, eu.eurise.mail.backup.MailBackupProvider.PENDING)
+        val left = restored().filterNot { it.optString("email").equals(address, ignoreCase = true) }
+        if (left.isEmpty()) file.delete() else file.writeText(org.json.JSONArray(left).toString())
+    }
+
     /** Collega: trova i server, prova l'accesso, salva la casella con la password cifrata. */
     fun link(email: String, password: String, name: String, done: (LinkResult) -> Unit) {
         val address = email.trim()
@@ -287,14 +309,16 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         scope.launch {
             val result = withContext<LinkResult>(Dispatchers.IO) {
                 val secret = Vault.seal(password)
+                val fromBackup = restoredSettings(address)
                 val candidates = buildList {
+                    fromBackup?.let { add(it.first) }
                     Providers.known(address)?.let { add(it.settings) }
                     autoconfig(address)?.let { add(it) }
                     addAll(Providers.guesses(address))
                 }.distinct()
                 var lastAuth = false
                 for (settings in candidates) {
-                    val tint = (accounts.size) % ACCOUNT_TINTS.size
+                    val tint = fromBackup?.second ?: ((accounts.size) % ACCOUNT_TINTS.size)
                     val label = Providers.known(address)?.name ?: domain.substringBefore('.').replaceFirstChar { it.uppercase() }
                     val account = Account(UUID.randomUUID().toString(), address, name.trim(), label, settings, secret, tint)
                     val outcome = runCatching { MailClient(account).check() }
@@ -305,6 +329,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
                 LinkResult.Failed(if (lastAuth) R.string.ml_err_password else R.string.ml_err_servers)
             }
             if (result is LinkResult.Done) {
+                forgetRestored(address)
                 accounts += result.account
                 store.save(accounts.toList())
                 SyncWorker.schedule(context)

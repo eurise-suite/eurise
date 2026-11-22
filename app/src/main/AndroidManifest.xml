@@ -115,7 +115,7 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-        <!-- File, Scanner, Agenda, Calendario, Attività e Note con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
+        <!-- File, Scanner, Agenda, Calendario, Attività, Note e Backup con la loro icona tra le app di Android: aprono l'app Eurise su quella sezione. -->
         <activity
             android:name=".SectionShortcutActivity"
             android:exported="false"
@@ -194,6 +194,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <meta-data android:name="eu.eurise.section" android:value="notes" />
+        </activity-alias>
+        <!-- Il backup cifrato con la sua icona nel cassetto (20 novembre 2026): apre Cloud › Backup dell'app Eurise. -->
+        <activity-alias
+            android:name=".BackupApp"
+            android:exported="true"
+            android:icon="@mipmap/ic_backup_app"
+            android:label="@string/app_backup"
+            android:targetActivity=".SectionShortcutActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="eu.eurise.section" android:value="backup" />
         </activity-alias>
         <!-- «Condividi › Note»: un testo o un link da qualsiasi app diventa una nota (15 novembre). -->
         <activity

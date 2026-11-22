@@ -800,5 +800,37 @@
     "M18.5 35 H31.5"
    ]
   ]
+ },
+ "Backup": {
+  "colore": "Ottanio profondo",
+  "base": "#146C7A",
+  "c": "#0F7A88",
+  "c2": "#1B4F8A",
+  "fondo": [
+   "#1C8796",
+   "#0F7A88",
+   "#173F73"
+  ],
+  "luce": "#5FB0BA",
+  "incavo": "#0C6A76",
+  "disegno": "la freccia che fa il giro e torna: tutto ritorna; dentro, la stella della suite",
+  "parti": [
+   [
+    "t",
+    "M9 24 A15 15 0 1 0 39 24 A15 15 0 1 0 9 24 Z"
+   ],
+   [
+    "S",
+    "M36.99 16.5 A15 15 0 1 1 24 9"
+   ],
+   [
+    "S",
+    "M20 5 L24.5 9 L20 13"
+   ],
+   [
+    "p",
+    "M24 16 Q24.96 23.04 32 24 Q24.96 24.96 24 32 Q23.04 24.96 16 24 Q23.04 23.04 24 16 Z"
+   ]
+  ]
  }
 }

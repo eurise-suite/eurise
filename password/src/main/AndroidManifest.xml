@@ -55,6 +55,13 @@
             </intent-filter>
         </activity>
         <!-- Accessi ai siti per il Browser della suite (a cassaforte aperta). -->
+        <!-- Backup della suite: la cassaforte (già cifrata) e gli alias, solo verso l'app Eurise (docs/stato/BACKUP.md). -->
+        <provider
+            android:name=".backup.PasswordBackupProvider"
+            android:authorities="${applicationId}.eurise.backup"
+            android:exported="true"
+            android:readPermission="${suitePermission}"
+            android:writePermission="${suitePermission}" />
         <provider
             android:name=".autofill.LoginsProvider"
             android:authorities="${applicationId}.logins"

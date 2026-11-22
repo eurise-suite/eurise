@@ -639,9 +639,11 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
 @Composable
 private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Unit, onLinked: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    var email by remember { mutableStateOf("") }
+    // Le caselle arrivate dal backup: la prima è già scritta, basta la password (tavola del backup, 21 novembre).
+    val restored = remember { model.restoredAccounts() }
+    var email by remember { mutableStateOf(restored.firstOrNull()?.first.orEmpty()) }
     var password by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(restored.firstOrNull()?.second.orEmpty()) }
     var working by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<Int?>(null) }
     val canKeep = remember { actions.hasPassword() }
@@ -655,6 +657,12 @@ private fun LinkSheet(model: MailModel, actions: MailActions, onClose: () -> Uni
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(stringResource(R.string.ml_link_title), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+            if (restored.isNotEmpty()) {
+                Text(stringResource(R.string.ml_link_restored), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant)
+                if (restored.size > 1) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    restored.forEach { (e, n) -> Chip(e, selected = e == email) { email = e; name = n; problem = null } }
+                }
+            }
             Field(stringResource(R.string.ml_link_email), email, KeyboardType.Email) { email = it; problem = null }
             Field(stringResource(R.string.ml_link_password), password, KeyboardType.Password, secret = true) { password = it; problem = null }
             Field(stringResource(R.string.ml_link_name), name, KeyboardType.Text) { name = it }

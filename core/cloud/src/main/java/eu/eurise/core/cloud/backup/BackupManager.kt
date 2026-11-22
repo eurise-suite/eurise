@@ -1,6 +1,7 @@
 package eu.eurise.core.cloud.backup
 
 import android.content.Context
+import java.io.File
 import android.content.Intent
 import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
@@ -59,7 +60,28 @@ data class BackupState(
     val lastSize: Long? = null,
     val lastError: String? = null,
     val running: Boolean = false,
-)
+    /** Quando il backup è stato acceso su questo telefono (null per quelli accesi prima del 20 novembre 2026). */
+    val configuredAt: Long? = null,
+    /** L'ultima volta che l'utente ha riscritto giusta la frase (promemoria una volta l'anno). */
+    val checkedAt: Long? = null,
+    /** Quando questo telefono è stato ripristinato da un backup, finché l'utente non ha visto «Bentornato». */
+    val restoredAt: Long? = null,
+) {
+    /** Una volta l'anno si chiede di riscrivere la frase, per scoprire in tempo se la si è dimenticata. */
+    fun checkDue(now: Long = System.currentTimeMillis()): Boolean {
+        if (!configured) return false
+        val since = checkedAt ?: configuredAt ?: lastAt ?: return false
+        return now - since >= CHECK_EVERY
+    }
+
+    companion object {
+        val CHECK_EVERY: Long = java.util.concurrent.TimeUnit.DAYS.toMillis(365)
+    }
+
+    /** Giorni di ritardo sulla frequenza scelta, se il backup è fermo da qualche giorno ([BackupHealth]). */
+    fun lateDays(now: Long = System.currentTimeMillis()): Int? =
+        if (!configured || place == null) null else BackupHealth.lateDays(lastAt ?: configuredAt, frequency.days, now)
+}
 
 /**
  * Il backup cifrato di Eurise. La chiave dei dati resta sul telefono chiusa nel Keystore, così i backup automatici
@@ -78,6 +100,9 @@ class BackupManager private constructor(private val context: Context) {
         lastAt = prefs.getLong("last_at", 0).takeIf { it > 0 },
         lastSize = prefs.getLong("last_size", 0).takeIf { it > 0 },
         lastError = prefs.getString("last_error", null),
+        configuredAt = prefs.getLong("configured_at", 0).takeIf { it > 0 },
+        checkedAt = prefs.getLong("checked_at", 0).takeIf { it > 0 },
+        restoredAt = prefs.getLong(BackupArchive.RESTORED_AT, 0).takeIf { it > 0 },
     )
 
     private fun refresh(running: Boolean = _state.value.running) { _state.value = load().copy(running = running) }
@@ -99,6 +124,35 @@ class BackupManager private constructor(private val context: Context) {
         storeKeys(BackupCrypto.Keys(dataKey, BackupCrypto.rewrapPassphrase(dataKey, next.toCharArray(), header)))
         runCatching { eu.eurise.core.cloud.lock.LockKeys.changeBackupPassphrase(context, current, next) }
         true
+    }
+
+    /**
+     * Frase e codice di recupero nuovi senza quelli vecchi: si chiama solo dopo che l'utente si è riconosciuto con lo
+     * sblocco del telefono. La chiave dei dati resta la stessa; i backup già fatti si aprono con frase e codice vecchi.
+     */
+    suspend fun resetSecrets(passphrase: String, recoveryCode: String): Boolean = withContext(Dispatchers.Default) {
+        val keys = keys() ?: return@withContext false
+        storeKeys(BackupCrypto.Keys(keys.dataKey, BackupCrypto.rewrapAll(keys.dataKey, passphrase.toCharArray(), recoveryCode)))
+        // La frase vecchia non c'è: la coppia della copia delle note si rifà nuova (la copia si richiude subito se la
+        // chiave è aperta, altrimenti al prossimo sblocco di una nota).
+        runCatching { eu.eurise.core.cloud.lock.LockKeys.setBackupPair(context, passphrase, recoveryCode) }
+        prefs.edit().putLong("checked_at", System.currentTimeMillis()).apply()
+        refresh()
+        true
+    }
+
+    /** Il promemoria annuale: la frase (o il codice) è giusta? Se sì, il prossimo controllo è tra un anno. */
+    suspend fun verify(secret: String): Boolean = withContext(Dispatchers.Default) {
+        val header = header() ?: return@withContext false
+        val ok = runCatching { BackupCrypto.unlock(header, secret) }.isSuccess
+        if (ok) { prefs.edit().putLong("checked_at", System.currentTimeMillis()).apply(); refresh() }
+        ok
+    }
+
+    /** «Bentornato» visto: non lo si mostra più. */
+    fun restoreSeen() {
+        prefs.edit().remove(BackupArchive.RESTORED_AT).apply()
+        refresh()
     }
 
     fun setFrequency(f: BackupFrequency) {
@@ -133,27 +187,52 @@ class BackupManager private constructor(private val context: Context) {
      * Fa un backup: archivio, cifratura, caricamento, verifica (lo si rilegge e lo si apre), poi la regola dei tre
      * più il mensile e il trimestrale. I vecchi si toccano solo dopo la verifica.
      */
-    suspend fun backupNow(): Result<BackupFile> = mutex.withLock {
+    suspend fun backupNow(): Result<BackupFile> = backupTo(null)
+
+    /**
+     * Come [backupNow], verso [into] invece della destinazione scelta: lo usa la prova sull'emulatore per un WebDAV
+     * finto con il suo certificato (`.github/prova-backup`). Tutto il resto è lo stesso percorso.
+     */
+    internal suspend fun backupTo(into: BackupTarget?): Result<BackupFile> = mutex.withLock {
         refresh(running = true)
         val result = runCatching {
             val keys = keys() ?: error("Backup non attivo")
-            val target = target() ?: error("Nessuna destinazione")
+            val target = into ?: target() ?: error("Nessuna destinazione")
             val now = System.currentTimeMillis()
             val at = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault())
-            val file = withContext(Dispatchers.Default) { BackupCrypto.encrypt(keys, now, BackupArchive.create(context, now)) }
-            val name = Retention.fileName(at, Tier.Recent)
-            target.write(name, file)
-            val back = target.read(name) ?: error("Il backup non si rilegge")
-            withContext(Dispatchers.Default) { BackupCrypto.decrypt(BackupCrypto.parse(back), keys.dataKey) }
-            val files = target.list()
-            Retention.plan(files).forEach { a ->
-                when (a) {
-                    is RetentionAction.Delete -> target.delete(a.name)
-                    is RetentionAction.Rename -> target.rename(a.from, a.to)
+            // Si cifra mentre lo si scrive, in un file di cache che contiene solo dati cifrati; poi parte, si riscarica e
+            // si riapre tutto (pezzo per pezzo) prima di toccare i backup vecchi.
+            val out = File(context.cacheDir, "backup-uscita.eurb")
+            val back = File(context.cacheDir, "backup-verifica.eurb")
+            try {
+                withContext(Dispatchers.IO) {
+                    BackupCrypto.encryptingStream(keys, now, java.io.BufferedOutputStream(out.outputStream(), 1 shl 16)).use { BackupArchive.create(context, now, it) }
                 }
+                val name = Retention.fileName(at, Tier.Recent)
+                target.write(name, out)
+                try {
+                    if (!target.readTo(name, back)) error("Il backup non si rilegge")
+                    withContext(Dispatchers.IO) { verifyFile(back, keys.dataKey) }
+                } catch (e: Exception) {
+                    // Un file che non si verifica non resta là: altrimenti al giro dopo conterebbe come uno dei tre recenti
+                    // e farebbe uscire un backup buono.
+                    runCatching { target.delete(name) }
+                    throw e
+                }
+                val size = out.length()
+                val files = target.list()
+                Retention.plan(files).forEach { a ->
+                    when (a) {
+                        is RetentionAction.Delete -> target.delete(a.name)
+                        is RetentionAction.Rename -> target.rename(a.from, a.to)
+                    }
+                }
+                prefs.edit().putLong("last_at", now).putLong("last_size", size).remove("last_error").apply()
+                BackupFile(name, at, Tier.Recent, size)
+            } finally {
+                out.delete()
+                back.delete()
             }
-            prefs.edit().putLong("last_at", now).putLong("last_size", file.size.toLong()).remove("last_error").apply()
-            BackupFile(name, at, Tier.Recent, file.size.toLong())
         }
         result.exceptionOrNull()?.let { e -> prefs.edit().putString("last_error", e.message ?: e.javaClass.simpleName).apply() }
         refresh(running = false)
@@ -164,27 +243,100 @@ class BackupManager private constructor(private val context: Context) {
     suspend fun list(place: BackupPlace? = _state.value.place): List<BackupFile> =
         runCatching { target(place)?.list().orEmpty().sortedByDescending { it.at } }.getOrDefault(emptyList())
 
-    /**
-     * Ripristina [name] da [place] con la frase o il codice: verifica tutto, prepara i file e tiene le chiavi per i
-     * prossimi backup su questo telefono. L'app va riavviata ([restartApp]) perché i dati prendano il loro posto.
-     */
-    suspend fun restore(place: BackupPlace, name: String, secret: String) = withContext(Dispatchers.Default) {
-        val bytes = target(place)?.read(name) ?: throw BackupCrypto.BadFile()
-        restoreBytes(bytes, secret)
-        prefs.edit().putString("place", place.encode()).apply()
-        if (place is BackupPlace.Folder) setPlace(place)
-        refresh()
+    /** Apre e legge tutto il file: se un solo pezzo è stato toccato o manca, fallisce. */
+    private fun verifyFile(file: File, dataKey: ByteArray) {
+        file.inputStream().buffered(1 shl 16).use { input ->
+            val header = BackupCrypto.readHeader(input)
+            val sink = ByteArray(1 shl 16)
+            try {
+                BackupCrypto.decryptingStream(input, header, dataKey).use { while (it.read(sink) >= 0) Unit }
+            } catch (e: java.io.IOException) {
+                throw BackupCrypto.BadFile()
+            }
+        }
     }
 
-    /** Ripristino da un file scelto a mano. */
-    suspend fun restoreBytes(bytes: ByteArray, secret: String) = withContext(Dispatchers.Default) {
-        val parsed = BackupCrypto.parse(bytes)
-        val dataKey = BackupCrypto.unlock(parsed.header, secret)
-        val zip = BackupCrypto.decrypt(parsed, dataKey)
-        BackupArchive.stage(context, zip)
+    /**
+     * Un backup aperto e verificato: il file (ancora cifrato) sta nella cache, la chiave in memoria. Niente è cambiato
+     * sul telefono finché non si chiama [apply]; [discard] lo dimentica. Così si può mostrare che cosa contiene e che
+     * cosa sostituirebbe, e chiedere conferma.
+     */
+    class Opened internal constructor(
+        val contents: BackupContents,
+        val onPhone: PhoneData,
+        internal val file: File,
+        internal val header: BackupCrypto.Header,
+        internal val keys: BackupCrypto.Keys,
+        internal val place: BackupPlace?,
+        /** La frase o il codice appena scritti, solo in memoria: aprono la copia della chiave delle note ([apply]). */
+        internal val secret: String,
+    )
+
+    private fun openedFile() = File(context.cacheDir, "backup-aperto.eurb")
+
+    /** Apre [name] da [place] con la frase o il codice e lo verifica, senza toccare niente. */
+    suspend fun open(place: BackupPlace, name: String, secret: String): Opened = withContext(Dispatchers.IO) {
+        val file = openedFile()
+        if (target(place)?.readTo(name, file) != true) { file.delete(); throw BackupCrypto.BadFile() }
+        openLocal(file, secret, place)
+    }
+
+    /** Come [open], per un file scelto a mano: [input] si copia così com'è (cifrato) nella cache. */
+    suspend fun openStream(input: java.io.InputStream, secret: String): Opened = withContext(Dispatchers.IO) {
+        val file = openedFile()
+        input.use { i -> file.outputStream().use { i.copyTo(it, 1 shl 16) } }
+        openLocal(file, secret, null)
+    }
+
+    /** Come [openStream], per un file in memoria (le prove). */
+    suspend fun openBytes(bytes: ByteArray, secret: String): Opened = openStream(bytes.inputStream(), secret)
+
+    private suspend fun openLocal(file: File, secret: String, place: BackupPlace?): Opened = withContext(Dispatchers.IO) {
+        try {
+            file.inputStream().buffered(1 shl 16).use { input ->
+                val header = BackupCrypto.readHeader(input)
+                val dataKey = BackupCrypto.unlock(header.header, secret)
+                val contents = try {
+                    BackupArchive.contents(BackupCrypto.decryptingStream(input, header, dataKey), header.createdAt)
+                } catch (e: java.io.IOException) {
+                    throw BackupCrypto.BadFile()
+                }
+                Opened(contents, BackupArchive.onPhone(context), file, header, BackupCrypto.Keys(dataKey, header.header), place, secret)
+            }
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
+    }
+
+    /** Il backup aperto non serve più (l'utente è tornato indietro): via il file dalla cache. */
+    fun discard(opened: Opened) { opened.file.delete() }
+
+    /**
+     * Dopo la conferma: prepara i file (prendono il loro posto al riavvio, [restartApp]), sigilla i dati delle app
+     * separate in attesa e tiene le chiavi del backup ripristinato per i prossimi backup di questo telefono.
+     */
+    suspend fun apply(opened: Opened) = withContext(Dispatchers.IO) {
+        try {
+            opened.file.inputStream().buffered(1 shl 16).use { input ->
+                val header = BackupCrypto.readHeader(input)
+                BackupArchive.stage(context, BackupCrypto.decryptingStream(input, header, opened.keys.dataKey))
+            }
+        } catch (e: java.io.IOException) {
+            throw BackupCrypto.BadFile()
+        } finally {
+            opened.file.delete()
+        }
         // La copia della chiave delle note si apre qui, con il segreto appena scritto: all'avvio non c'è nessuno a chiederlo.
-        BackupArchive.openSealedNotes(context, secret)
-        storeKeys(BackupCrypto.Keys(dataKey, parsed.header))
+        BackupArchive.openSealedNotes(context, opened.secret)
+        storeKeys(opened.keys)
+        opened.place?.let { place ->
+            prefs.edit().putString("place", place.encode()).apply()
+            if (place is BackupPlace.Folder) setPlace(place)
+        }
+        // Le app già installate ricevono subito i loro dati; le altre appena arrivano.
+        SuiteApps.deliverPending(context)
+        refresh()
     }
 
     /** Riavvia l'app dopo un ripristino. */
@@ -198,7 +350,9 @@ class BackupManager private constructor(private val context: Context) {
 
     private fun storeKeys(keys: BackupCrypto.Keys) {
         val h = keys.header
-        prefs.edit()
+        val edit = prefs.edit()
+        if (!prefs.contains("configured_at")) edit.putLong("configured_at", System.currentTimeMillis())
+        edit
             .putString("key", sealKey(keys.dataKey))
             .putInt("iter", h.iterations)
             .putString("salt_p", b64(h.saltPass)).putString("wrap_p", b64(h.wrapPass))
