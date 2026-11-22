@@ -7,11 +7,14 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **934** (ultimo riuscito su `brand`) con **Mappe 122** (giro su `brand`, variante
-  prova, destinatari controllati; stesso codice di Mappe 120 provato su `prova-sicurezza`), in `apk-prova` il 21 novembre,
-  pomeriggio. Attenzione: la scelta automatica di Mappe in `apk-prova` guarda solo `prova-mappe` e `brand`; un giro di
-  Mappe solo su `prova-sicurezza` viene sovrascritto dalla prossima pubblicazione di un'altra area (successo con Mappe
-  120): dopo l'avanti veloce aspettare il giro di Mappe su `brand`. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Ultimo giro pubblicato**: Compila **1023** da `prova-sicurezza` (22 novembre, notte), con le librerie aggiornate
+  del primo passo del punto 7 e la verifica bloccante; tutti i lavori verdi, prova delle porte sull'emulatore verde su
+  quel giro (lanciata a mano con `-f run_id=`: quella del push prende il Compila precedente). In `apk-prova` con Mappe
+  134 (area Mappe) e Office 60. Attenzione: la scelta automatica di Mappe in `apk-prova` guarda solo `prova-mappe` e
+  `brand`. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Da provare sul telefono (giro 1023, librerie nuove)**: un giro normale di ogni app, soprattutto la sincronizzazione
+  e il cloud (OkHttp 5), i video della Galleria (Media3), la posta (android-mail), Scanner e QR (CameraX), le passkey
+  di Password (credentials 1.6.0). Si installa sopra, nessuna disinstallazione: chiave e permessi uguali.
 - **Da provare sul telefono (Mappe 122)**: con Mappe aggiornata sopra (nessuna disinstallazione), che parli ancora con
   la suite: meteo sul percorso e «I tuoi giorni», «Dove devi andare» con gli impegni, «Condividi › Note» di un luogo,
   Avvisa/arrivo per SMS da Messaggi, dettatura in Android Auto, voce di Alfred in guida, stato dei servizi nel centro
@@ -41,7 +44,10 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      nel patch, `EuriseSuite`, controllo a ogni giro. Mappe 120 (prova) verde e pubblicato; Mappe 121 (ufficiale, a
      mano) si adatta, passa il controllo e compila. Resta la prova sul telefono (sopra) e, con la versione ufficiale, la
      firma del proprietario.
-  7. Le altre librerie da aggiornare (AndroidX, OkHttp 5, CameraX, Media3, PDFBox…) e i due interruttori di AGP 9.
+  7. Librerie (sezione «Aggiornamento delle librerie», 22 novembre). **Primo passo fatto**: OkHttp 5, Media3, CameraX,
+     android-mail, AndroidX del catalogo, coroutines, AGP 9.5.2. Restano, in quest'ordine: Play Services dentro il
+     Browser (decisione del proprietario, sotto), zxing 3.5.4 (firma), Tastiera e Office, Compose BOM 2026.11 con
+     compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4, Haze 2 (con l'area grafica).
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
   `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
@@ -346,6 +352,32 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
   (ramo delle uscite con controlli obbligatori).
 - **Voci e suonerie** (pre-release `voci` e `suoni`): rischio accettato. Chi potesse cambiarle avrebbe già la scrittura sul
   repository; un'impronta nel codice obbligherebbe a riscriverlo a ogni rigenerazione.
+
+## Aggiornamento delle librerie (22 novembre 2026, punto 7)
+- **Quali versioni ci sono**: il flusso «Versioni delle librerie» (`versioni-librerie.yml`,
+  `.github/scripts/versioni_librerie.py`) confronta catalogo, versioni scritte nei `build.gradle.kts` (anche Tastiera e
+  Office) e librerie di esecuzione con l'ultima uscita stabile su Maven Google/Central/Plugin Portal; tabella nel
+  riepilogo e nel registro del giro. Solo lettura; ogni lunedì e al cambio del catalogo su `prova-sicurezza`. Il 22
+  novembre: 41 versioni dichiarate avevano un'uscita più recente. Dependabot non aveva ancora fatto il primo giro settimanale.
+- **Primo passo** (prima le librerie che leggono dati da fuori): OkHttp 4.12.0 → **5.5.1** (rete di sincronizzazione e
+  cloud), Media3 1.5.1 → **1.11.1** (video della Galleria), android-mail 1.6.7 → **1.6.8**, CameraX 1.4.1 → **1.7.0**,
+  credentials 1.6.0; AndroidX core 1.19.1, activity 1.13.0, lifecycle 2.11.1, navigation 2.10.2, Room 2.8.5, WorkManager
+  2.12.0; coroutines 1.11.0; AGP 9.5.2; org.json dei test 20260814 (anche Chat e studio ora dal catalogo). Molte
+  arrivavano già nelle app per via transitiva. OSV-Scanner sulle versioni nuove: nessuna vulnerabilità nota.
+- **Rimandati, con il motivo**:
+  - **Compose BOM 2026.11.01** (Compose 1.13) chiede compileSdk **37.1**; la suite compila con 37.0. Va insieme al cambio
+    di compileSdk, nel passo degli interruttori di AGP. Compose non legge dati da fuori.
+  - **zxing 3.5.4**: la verifica bloccante ha fermato il giro 1018. Il gruppo `com.google.zxing` è fidato per la chiave
+    `CE3285F3…C9318406` (RSA 2013), che gpg dà come non valida: la firma della 3.5.4 non si verifica e non c'era
+    un'impronta. Nessun segno di manomissione: manca solo un'impronta di cui fidarsi. Si resta alla 3.5.3, che ha le sue
+    impronte. Da fare: impronte della 3.5.4 prese da Maven Central e confrontate con la firma, e la chiave del gruppo
+    sostituita o tolta (con un commit che lo spieghi).
+- **Scoperta: Play Services dentro il Browser.** Fra le librerie di esecuzione ci sono `play-services-fido` 21.3.1,
+  `-base`, `-basement` e `-tasks`. Le porta quasi certamente GeckoView (passkey e WebAuthn sui siti; F-Droid le toglie da
+  Fennec). Sono librerie Google chiuse, contro la regola «nessuna libreria Google proprietaria» e contro F-Droid. Su
+  /e/OS parlano con microG. Toglierle (`exclude` sul Browser) toglie le passkey sui siti, e va provato che GeckoView non
+  si fermi senza. **Decide il proprietario.** Prima di toccarle va confermata da dove vengono, con
+  `:browser:dependencies`.
 
 ## Impronte delle librerie: come funzionano adesso (20 novembre 2026)
 - **Copertura**: il flusso `librerie-verificate.yml` compila come tutti i lavori di Compila (anche Leggi, AI e Browser con

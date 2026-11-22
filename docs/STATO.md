@@ -3420,3 +3420,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 22 novembre, Organizzazione: tutte le tavole approvate; note vocali nel backup cifrato, microfono in Scrivania e Agenda, «Invita» dal + unico · giro 1011 → `docs/stato/ORGANIZZAZIONE.md`.
 - 22 novembre, Password, Tastiera, Galleria: frasi abituali della Tastiera nel backup cifrato (unite al ripristino); Orologio di nuovo compilabile (una riga in `ClockReceiver`, area Alfred) · giro 1011 → `docs/stato/PICCOLE.md`.
 - 22 novembre, Browser: Telefono e computer (segnalibri, siti fissati, Leggi dopo e schede con Firefox via Ponte; estensione 0.3.0), profilo di avvio, tavola PcImporta da approvare → `docs/stato/BROWSER.md`.
+- 22 novembre, notte, Sicurezza: librerie aggiornate, primo passo (OkHttp 5, Media3 1.11, CameraX 1.7, android-mail 1.6.8, AndroidX, AGP 9.5.2), flusso «Versioni delle librerie»; Play Services nel Browser da decidere; giro 1023 in `apk-prova` → `docs/SICUREZZA.md`.
