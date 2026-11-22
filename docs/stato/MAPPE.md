@@ -337,3 +337,6 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - Battute di Alfred in guida: `GuideWit`/`EuriseWit` in `maps/android/…/eurise/`, una riga in `eurise_patch.py`
   (NavigationController) e in `EuriseCarGuide.refresh`, `EuriseSpeak.busy()`, stringhe `eurise_wit_*`, prova
   `GuideWitTest` in `maps-engine.yml`. Dettagli in `docs/stato/ALFRED.md`.
+- 22 novembre, area Alfred: guida in corso per Alfred («quanto manca?», «avvisa Anna che arrivo»): `EuriseGuideStatus.java`
+  (stato e provider `eu.eurise.maps.guida`, permesso della suite in `call()`), una riga in `EuriseWit.update`, il provider
+  nel manifesto da `eurise_patch.py`. Dettagli in `docs/stato/ALFRED.md`.

@@ -3420,3 +3420,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 22 novembre, Organizzazione: tutte le tavole approvate; note vocali nel backup cifrato, microfono in Scrivania e Agenda, «Invita» dal + unico · giro 1011 → `docs/stato/ORGANIZZAZIONE.md`.
 - 22 novembre, Password, Tastiera, Galleria: frasi abituali della Tastiera nel backup cifrato (unite al ripristino); Orologio di nuovo compilabile (una riga in `ClockReceiver`, area Alfred) · giro 1011 → `docs/stato/PICCOLE.md`.
 - 22 novembre, Browser: Telefono e computer (segnalibri, siti fissati, Leggi dopo e schede con Firefox via Ponte; estensione 0.3.0), profilo di avvio, tavola PcImporta da approvare → `docs/stato/BROWSER.md`.
+- 22 novembre, Alfred e AI: passi 3, 4 e 5 (azioni, messaggi, in guida, «Cosa sai fare?», tendina, blocco, registro), Compila 1021, Mappe 142 → `docs/stato/ALFRED.md`.

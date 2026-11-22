@@ -7,7 +7,7 @@ diario generale: lì si scrive solo una riga per consegna che rimanda qui. Regol
 ## Cosa comprende
 Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatura), Leggi (testo dalle immagini).
 
-## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: Compila 793, Mappe 102)
+## Fatto (in breve, al 16 novembre; ultimo giro in `apk-prova`: Compila 1021, Mappe 142)
 - **Alfred unico** (`feature/assistant`, app `alfred/AlfredActivity`, ASSIST e VOICE_COMMAND): maggiordomo che dà del Lei,
   ironia britannica (una battuta su tre dopo un'azione riuscita, mai alla guida), appellativo scelto dall'utente. Tre tasti
   nel campo (PC · online col preferito e la stellina · Invio sotto il pollice, anche per mancini). Parla solo se gli si è
@@ -113,7 +113,7 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 - Sul server Supertonic genera circa 5 volte più svelto del parlato; **da misurare sul telefono** (tempo alla prima
   parola, scorrevolezza) e da sentire se M2 resta la preferita.
 
-## 22 novembre: passi 3, 4 e 5 (tavole AlfAzioni e AlfAvvio) · giro GIRO_COMPILA, Mappe GIRO_MAPPE
+## 22 novembre: passi 3, 4 e 5 (tavole AlfAzioni e AlfAvvio) · Compila 1021, Mappe 142
 - Il proprietario: «Ci son parecchie cose da fare, procedi». Fatto, con test in `ActionsTest` (frasi della tavola e quelle
   vicine che devono restare com'erano):
   - **Impegni per nome** (`Command.Change`): «sposta la riunione a giovedì», «cancella il dentista (di domani)»: cerca
@@ -143,6 +143,12 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
     messaggi e schede chiedono lo sblocco e poi riprendono da soli).
   - **Registro delle richieste** (`AlfredLog`, file `alfred_log` fuori dal backup, spento di base, spegnerlo cancella):
     fatta, corretta, annullata, non riuscita; «Mandalo a chi sviluppa…», «Cancella».
+  - **L'azione utile nella risposta libera** (tavola AlfTelefono, `Suggest.kt`): «Timer 9 min», «Chiama…» sotto la
+    risposta del cervello, al massimo due, solo senza dubbi.
+- Nota: nel giro del passo 3 un `sed` ha tolto per sbaglio un `val now` nel `ClockReceiver` (timer in pausa); l'ha
+  rimesso un'altra chat (commit `0cdbb1c`). Mai più `sed` a righe intere su file condivisi: modifiche puntuali.
+- `apk-prova` prende Mappe solo da `prova-mappe` o `brand`: quando l'area Alfred tocca Mappe, si pubblica con
+  `-f mappe_run=<giro di Mappe con le modifiche>` (qui il 142, su `prova-backup`, che le conteneva).
 - **Non ancora**: «Di' Alfred» (mostrato spento con l'avviso sulla batteria: serve il motore di parole chiave di
   sherpa-onnx in Voce e misurare il consumo); segnare come letti i messaggi letti da Alfred (il contratto di Messaggi non
   lo prevede ancora).
