@@ -3424,3 +3424,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 22 novembre, notte, Sicurezza: librerie aggiornate, primo passo (OkHttp 5, Media3 1.11, CameraX 1.7, android-mail 1.6.8, AndroidX, AGP 9.5.2), flusso «Versioni delle librerie»; Play Services nel Browser da decidere; giro 1023 in `apk-prova` → `docs/SICUREZZA.md`.
 - 22 novembre, Office: I miei dati nei moduli PDF, Link dal cloud, Chiedi all'AI con Alfred, mano dalla Scrivania; motore nuovo · giro 1023 → `docs/stato/OFFICE.md`.
 - 22 novembre, sera, Organizzazione: proposta di Impostazioni Eurise (voci, navigazione, contratto) in `docs/IMPOSTAZIONI.md`, aree avvisate → `docs/stato/ORGANIZZAZIONE.md`.
+- 22 novembre, Sicurezza: principi di base di tutta la suite in testa a CLAUDE.md (sicurezza, privacy, funzionalità oltre i migliori, game changer, lavoro, ergonomia, design, integrazione con libertà, leggerezza).
