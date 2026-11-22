@@ -10,12 +10,11 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
   le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
   precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
-- **Ultimo giro pubblicato**: Compila **1048** da `prova-sicurezza` (22 novembre, 12:04 UTC): **R8 in tutte le app di
-  prova** e gli scaricamenti dei modelli nel centro privacy, sopra il giro 1044. Con Mappe 145 e Office 65 (invariati).
-  Prove sull'emulatore: porte verdi, avvio di tutte le 13 app senza arresti e più svelto (Eurise 944 → ~850 ms, Chat
-  1084 → ~680, AI 988 → ~530, Password ~500 → ~270). APK molto più leggeri (Eurise 19 → 6 MB, Password 10 → 2, Chat
-  26 → 18, Voce 42 → 34). `brand` = `prova-sicurezza` (b2ab5cc). Pubblicare:
-  `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Ultimo giro pubblicato**: Compila **1057** da `prova-sicurezza` (22 novembre, 15:14 UTC): sopra il 1048, il
+  Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
+  schede a schedario (tavola BrwSchedario). Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza` (da7d75c).
+  Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Giro 1048 provato sul telefono** (22 novembre): le app funzionano con R8.
 - **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
   nativo (R8): posta (IMAP/SMTP), Chat cifrata (Matrix), PDF e firma in Office e Scanner, OCR e traduzione in Leggi,
   dettatura e voce di Alfred, cervello in AI, sincronizzazione e backup. Poi in Leggi o Voce «Scarica» una lingua o un
