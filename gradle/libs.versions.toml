@@ -52,6 +52,8 @@ androidx-autofill = { module = "androidx.autofill:autofill", version = "1.3.0" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+# Video della Fotocamera (Recorder, registrazione in MediaStore): già presente come dipendenza di camera-view.
+androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
 
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 

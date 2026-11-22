@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Nessuna rete, mai: anche se una libreria la chiedesse, qui si toglie (Compila APK lo controlla a ogni giro). -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+    <uses-feature android:name="android.hardware.camera.any" android:required="true" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Solo per l'audio dei video: chiesto al primo video. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Posizione nelle foto: spenta di base, chiesta solo accendendo l'interruttore dopo l'avviso. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Le altre app della suite: solo quelle firmate con la stessa chiave. -->
+    <uses-permission android:name="${suitePermission}" />
+    <permission android:name="${suitePermission}" android:protectionLevel="signature" />
+    <queries>
+        <package android:name="${hubPackage}" />
+        <package android:name="${galleryPackage}" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/eurise_no_backup"
+        android:icon="@mipmap/ic_camera"
+        android:label="@string/camera_app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EuriseCamera">
+
+        <!-- Avvio normale, tasto della fotocamera e «Apri la fotocamera» / «Registra un video» di Android. -->
+        <activity
+            android:name=".CameraActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.action.VIDEO_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Dal blocco schermo (doppia pressione del tasto di accensione, icona sul blocco): solo le foto appena fatte. -->
+        <activity
+            android:name=".SecureCameraActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="eu.eurise.camera.blocco"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- «Scatta foto» per le altre app (Posta, Chat, qualunque app): la foto va dove dice l'app, mai nei nostri file. -->
+        <activity
+            android:name=".CaptureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:screenOrientation="portrait"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.media.action.IMAGE_CAPTURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Riquadro nelle impostazioni rapide. -->
+        <service
+            android:name=".CameraTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_camera"
+            android:label="@string/camera_app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data android:name="android.service.quicksettings.ACTIVE_TILE" android:value="false" />
+        </service>
+
+        <!-- Copie pulite per «Condividi»: non esportato, si dà accesso solo al file condiviso. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

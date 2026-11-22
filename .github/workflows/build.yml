@@ -102,6 +102,27 @@ jobs:
           path: gallery/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # Eurise Fotocamera: APK senza rete (decisione del 22 novembre 2026). Si ferma se il permesso INTERNET entra nel
+      # manifesto finale (anche portato da una libreria) e mostra le porte esportate, da confrontare con docs/stato/FOTOCAMERA.md.
+      - name: Fotocamera senza rete
+        run: |
+          set -e
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          apk=$(ls camera/build/outputs/apk/debug/*.apk | head -1)
+          "$bt/aapt2" dump permissions "$apk" | tee camera-permessi.txt
+          if grep -Eq "android.permission.(INTERNET|ACCESS_NETWORK_STATE|ACCESS_WIFI_STATE|CHANGE_NETWORK_STATE)" camera-permessi.txt; then
+            echo "::error title=Fotocamera::La Fotocamera ha un permesso di rete: non deve averlo (docs/stato/FOTOCAMERA.md)"
+            exit 1
+          fi
+          { echo "### Fotocamera: permessi (nessuna rete)"; echo '```'; cat camera-permessi.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Carica l'APK della Fotocamera
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: eurise-fotocamera-debug-${{ github.run_number }}
+          path: camera/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
       - name: Carica l'APK di Voce
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

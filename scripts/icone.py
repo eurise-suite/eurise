@@ -37,6 +37,7 @@ ICONS = [
     ("phone/src/main/res", "ic_phone", "Telefono", False),
     ("phone/src/main/res", "ic_contacts", "Contatti", False),
     ("gallery/src/main/res", "ic_gallery", "Galleria", False),
+    ("camera/src/main/res", "ic_camera", "Fotocamera", False),
     ("password/src/main/res", "ic_password", "Password", False),
     ("keyboard/app/src/main/res", "ic_launcher", "Tastiera", True),
     ("maps/android/app/src/main/res", "ic_maps", "Mappe", True),

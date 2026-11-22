@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_app_name">Fotocamera</string>
+
+    <string name="mode_photo">Foto</string>
+    <string name="mode_video">Video</string>
+    <string name="mode_document">Documento</string>
+
+    <string name="shutter">Scatta. Tieni premuto per un video</string>
+    <string name="shutter_video_start">Avvia il video</string>
+    <string name="shutter_video_stop">Ferma il video</string>
+    <string name="flip">Cambia fotocamera</string>
+    <string name="flash_off">Flash spento</string>
+    <string name="flash_auto">Flash automatico</string>
+    <string name="flash_on">Flash acceso</string>
+    <string name="torch_on">Luce accesa</string>
+    <string name="torch_off">Luce spenta</string>
+    <string name="exposure">Esposizione</string>
+    <string name="zoom_pill">%1$s×</string>
+    <string name="last_photo">Ultima foto: apri</string>
+    <string name="recording">Registrazione %1$s</string>
+
+    <string name="location_off">Posizione spenta</string>
+    <string name="location_on">Posizione accesa</string>
+    <string name="location_title">Posizione nelle foto</string>
+    <string name="location_read">Il punto GPS dove scatti, scritto dentro ogni foto e ogni video. Serve per Luoghi nella Galleria e per i rapporti di cantiere.</string>
+    <string name="location_out">Nulla, finché la foto resta sul telefono: la Fotocamera non ha la rete. Condividendo da qui la posizione si toglie sempre.</string>
+    <string name="location_who">Solo tu. Se mandi la foto originale con un\'altra app, chi la riceve può leggerla.</string>
+    <string name="location_back">Rispegni dall\'icona in alto nel mirino. Le foto già fatte la tengono: la Galleria può toglierla.</string>
+
+    <string name="dest_label">Destinazione: %1$s. Tocca per l\'ultima usata, tieni premuto per scegliere</string>
+    <string name="dest_roll">Rullino</string>
+    <string name="dest_title">Dove va la foto</string>
+    <string name="dest_new">Cartella nuova (cliente o progetto)</string>
+    <string name="dest_new_hint">Nome della cartella</string>
+    <string name="dest_create">Crea</string>
+    <string name="dest_cancel">Annulla</string>
+    <string name="dest_star">Preferita</string>
+    <string name="dest_remove">Togli dall\'elenco</string>
+    <string name="dest_folder_sub">Foto in DCIM › Eurise › %1$s</string>
+    <string name="dest_roll_sub">Foto in DCIM › Camera</string>
+    <string name="dest_help">Tocco breve sulla pillola: l\'ultima scelta. La stellina sceglie quella con cui si apre la Fotocamera.</string>
+    <string name="dest_locked">Dal blocco schermo le foto vanno nel Rullino</string>
+
+    <string name="locked_status">Telefono bloccato · solo le foto di adesso</string>
+    <string name="locked_unlock">Sblocca per la Galleria</string>
+
+    <string name="review_title">Appena fatte · %1$d</string>
+    <string name="review_share">Condividi</string>
+    <string name="review_delete">Elimina</string>
+    <string name="review_gallery">Apri nella Galleria</string>
+    <string name="review_close">Chiudi</string>
+    <string name="review_clean">Posizione e dati del telefono tolti</string>
+    <string name="review_empty">Nessuna foto in questa sessione</string>
+
+    <string name="capture_use">Usa questa</string>
+    <string name="capture_retake">Rifai</string>
+
+    <string name="permission_title">La Fotocamera ha bisogno della fotocamera</string>
+    <string name="permission_text">Le foto restano sul telefono: questa app non ha accesso alla rete.</string>
+    <string name="permission_allow">Consenti</string>
+
+    <string name="error_save">Foto non salvata: riprova</string>
+    <string name="error_no_camera">Nessuna fotocamera disponibile</string>
+    <string name="saved_capture">Foto pronta per l\'app che l\'ha chiesta</string>
+</resources>

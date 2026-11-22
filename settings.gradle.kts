@@ -20,6 +20,7 @@ rootProject.name = "eurise"
 
 include(":app")
 include(":gallery")
+include(":camera")
 include(":password")
 include(":voice")
 include(":phone")

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- La fotocamera è sempre scura (il mirino), in Perla e in Notte: nessun lampo bianco all'avvio. -->
+    <style name="Theme.EuriseCamera" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/camera_background</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/camera_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <color name="camera_background">#14171C</color>
+</resources>
