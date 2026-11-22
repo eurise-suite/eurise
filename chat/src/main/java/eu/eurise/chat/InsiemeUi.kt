@@ -293,7 +293,30 @@ internal fun MeetingPane(model: ChatModel, actions: ChatActions, roomId: String)
                 actions.toast(actions.text(R.string.ri_assigned))
             }
         }
-        if (decisions.isNotEmpty()) Text(stringResource(R.string.ri_decisions, decisions.joinToString(" · ")), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+        // Il registro delle decisioni (tavola LavDecisioni): le frasi «decidiamo che…» proposte, poi l'elenco del gruppo.
+        val register = model.decisions(roomId)
+        decisions.filter { d -> register.none { it.text.equals(d, true) } }.forEach { d ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ri_decisions, d), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                Chip(stringResource(R.string.dc_add), false) { model.addDecision(roomId, d, me, "nota", "") { actions.toast(failed) } }
+            }
+        }
+        Text(stringResource(R.string.dc_title, register.size), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
+        if (register.isEmpty()) Text(stringResource(R.string.dc_empty), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        else Card {
+            register.forEachIndexed { i, d ->
+                if (i > 0) Divider()
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(d.text, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                        Text(Disponibilita.label(d.at, ZoneId.systemDefault()).substringBefore(" · ") + " · " + model.nameOf(d.who).substringBefore(' ') + " · " +
+                            stringResource(when (d.source) { "mail" -> R.string.dc_src_mail; "nota" -> R.string.dc_src_note; else -> R.string.dc_src_chat }), fontSize = 11.5.sp,
+                            color = scheme.onSurfaceVariant)
+                    }
+                    Text("✕", fontSize = 13.sp, color = scheme.onSurfaceVariant, modifier = Modifier.clickable(role = Role.Button) { model.removeDecision(roomId, d.id) { actions.toast(failed) } }.padding(6.dp))
+                }
+            }
+        }
         Spacer(Modifier.heightIn(min = 90.dp))
     }
 }

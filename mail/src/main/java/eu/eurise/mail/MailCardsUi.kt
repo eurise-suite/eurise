@@ -324,3 +324,49 @@ internal fun DeadlineFromMail(model: MailModel, actions: MailActions, o: Opened)
         }
     }
 }
+
+/** Una conferma di viaggio (tavola AmiViaggio): «Nell'itinerario del gruppo», con il giorno e l'ora trovati sul telefono. */
+@Composable
+internal fun TravelFromMail(actions: MailActions, o: Opened) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val travel = remember(o.summary.uid) { Regex("(prenotazione|biglietto|volo|traghetto|treno|check-in|imbarco|booking|itinerario)", RegexOption.IGNORE_CASE)
+        .containsMatchIn(o.summary.subject + " " + o.text.take(3000)) }
+    if (!travel || SchedaMail.ref(o.text) != null) return
+    val today = remember { java.time.LocalDate.now() }
+    val day = remember(o.summary.uid) { eu.eurise.core.insieme.Scadenze.date(o.text, today) }?.takeIf { !it.isBefore(today) } ?: return
+    val time = remember(o.summary.uid) { Regex("\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)\\b").find(o.text)?.let { "%02d:%s".format(it.groupValues[1].toInt(), it.groupValues[2]) }.orEmpty() }
+    val title = remember(o.summary.uid) { MailBalls.core(o.summary.subject).replaceFirstChar { it.uppercase() }.take(70) }
+    val intent = remember(o.summary.uid) { eu.eurise.core.insieme.SchedaContract.stopIntent(context, title, day, time, "") } ?: return
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.08f)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.ml_vi_found, day.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.getDefault())) +
+                if (time.isNotBlank()) ", $time" else ""), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.ml_vi_hint), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+        }
+        BallChip(stringResource(R.string.ml_vi_add), true) { actions.start(intent) }
+    }
+}
+
+/** Ricordamelo e Deciso su un'email (tavole LavRicordami, LavDecisioni): stasera, domani mattina, se non risponde; nel registro del gruppo. */
+@Composable
+internal fun WorkActions(model: MailModel, actions: MailActions, o: Opened) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val now = remember { java.time.LocalDateTime.now() }
+    var friday = now.toLocalDate().plusDays(1)
+    while (friday.dayOfWeek != java.time.DayOfWeek.FRIDAY) friday = friday.plusDays(1)
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("EEE d", java.util.Locale.getDefault())
+    fun done(ok: Boolean) = actions.toast(context.getString(if (ok) R.string.ml_rm_ok else R.string.ml_no_hub))
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.ml_rm_title_short), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (now.hour < 19) BallChip(stringResource(R.string.ml_rm_tonight), false) { done(model.remindMail(o, now.toLocalDate().atTime(20, 0))) }
+            BallChip(stringResource(R.string.ml_rm_tomorrow), false) { done(model.remindMail(o, now.toLocalDate().plusDays(1).atTime(8, 30))) }
+            BallChip(stringResource(R.string.ml_rm_noreply, friday.format(fmt)), false) { model.watchReply(o, friday); actions.toast(context.getString(R.string.ml_rm_watch)) }
+            eu.eurise.core.insieme.SchedaContract.decisionIntent(context, MailBalls.core(o.summary.subject).replaceFirstChar { it.uppercase() } + " — " +
+                o.text.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() && !it.startsWith(">") }.orEmpty().take(160), o.summary.fromName.ifBlank { o.summary.fromAddress })
+                ?.let { i -> BallChip(stringResource(R.string.ml_dc_mark), false) { actions.start(i) } }
+        }
+    }
+}

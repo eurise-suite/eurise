@@ -296,3 +296,75 @@ private fun MedsSheet(model: ChatModel, actions: ChatActions, roomId: String, on
         }
     }
 }
+
+/**
+ * Sono arrivato (tavola FamArrivato): i posti (segnati da dove sei ora), quando vale, l'avviso a mezzanotte. Esce solo la frase,
+ * nella chat; il posto si riconosce sul telefono. Spento di base; accenderlo chiede la posizione «sempre».
+ */
+@Composable
+internal fun ArrivalSheet(model: ChatModel, actions: ChatActions, roomId: String, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val current = model.arrival(roomId)
+    val places = remember { androidx.compose.runtime.mutableStateListOf<Arrivo.Place>().apply { current?.places?.let { addAll(it) } } }
+    var whenever by remember { mutableStateOf(current?.whenever ?: Arrivo.When.Tonight) }
+    var midnight by remember { mutableStateOf(current?.midnight ?: false) }
+    var name by remember { mutableStateOf("") }
+    val noFix = stringResource(R.string.ar_no_fix)
+    Sheet(onClose) {
+        Text(stringResource(R.string.ar_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 4.dp))
+        Text(stringResource(R.string.ar_note), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.ar_where), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                places.forEach { p -> Chip(p.name + "  ✕", true) { places.remove(p) } }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { SmallField(name, stringResource(R.string.ar_place_hint)) { name = it.take(30) } }
+                Spacer(Modifier.width(6.dp))
+                Chip(stringResource(R.string.ar_here), false) {
+                    actions.askLocation { ok ->
+                        val here = if (ok) model.hereNow() else null
+                        if (here == null) { actions.toast(noFix); return@askLocation }
+                        places.add(Arrivo.Place(name.ifBlank { actions.text(R.string.ar_home) }, here.first, here.second)); name = ""
+                    }
+                }
+            }
+            Text(stringResource(R.string.ar_when), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.ar_tonight), whenever == Arrivo.When.Tonight) { whenever = Arrivo.When.Tonight }
+                Chip(stringResource(R.string.ar_school), whenever == Arrivo.When.SchoolDays) { whenever = Arrivo.When.SchoolDays }
+                Chip(stringResource(R.string.ar_always), whenever == Arrivo.When.Always) { whenever = Arrivo.When.Always }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ar_midnight), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Switch(checked = midnight, onCheckedChange = { midnight = it })
+            }
+            Text(stringResource(R.string.ar_privacy), fontSize = 11.5.sp, lineHeight = 16.sp, color = scheme.onSurfaceVariant)
+        }
+        Pill(stringResource(if (current == null) R.string.ar_on else R.string.as_save), eu.eurise.core.designsystem.icon.EuriseIcons.place(2f), Modifier.fillMaxWidth(), strong = true) {
+            if (places.isEmpty()) return@Pill
+            actions.askBackgroundLocation { ok ->
+                if (!ok) actions.toast(actions.text(R.string.ar_need_always))
+                model.saveArrival(roomId, Arrivo.Rule(current?.id ?: ("a" + System.nanoTime()), model.account.name, roomId, model.room(roomId)?.encrypted == true,
+                    places.toList(), whenever, midnight, System.currentTimeMillis()))
+                onClose()
+            }
+        }
+        if (current != null) Pill(stringResource(R.string.ar_off), eu.eurise.core.designsystem.icon.EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) {
+            model.saveArrival(roomId, null); onClose()
+        }
+    }
+}
+
+/** In cima alla chat: chi ha l'avviso di arrivo acceso (gli altri lo vedono, non la posizione). */
+@Composable
+internal fun ArrivalBar(model: ChatModel, roomId: String, onMine: () -> Unit) {
+    @Suppress("UNUSED_VARIABLE") val tick = model.relationsTick
+    val me = model.session?.userId.orEmpty()
+    val on = model.arrivalsOn(roomId)
+    if (on.isEmpty()) return
+    val scheme = MaterialTheme.colorScheme
+    Text(on.joinToString(" · ") { (who, places) -> (if (who == me) stringResource(R.string.fa_you) else model.nameOf(who).substringBefore(' ')) + ": " +
+        stringResource(R.string.ar_bar, places.joinToString(", ") { it.lowercase() }) }, fontSize = 11.5.sp, color = scheme.onSurfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp).clickable(role = Role.Button, onClick = onMine))
+}

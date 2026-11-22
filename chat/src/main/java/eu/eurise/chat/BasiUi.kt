@@ -223,6 +223,11 @@ internal fun MessageMenu(
                 MenuRow(EuriseIcons.ball(2f), stringResource(R.string.pa_title)) { onBall() }
                 Divider()
             }
+            // Deciso (tavola LavDecisioni): nel registro del gruppo.
+            if (!local && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice) && model.room(roomId)?.direct == false) {
+                MenuRow(EuriseIcons.flag(2f), stringResource(R.string.dc_mark)) { onDecide() }
+                Divider()
+            }
             // Affida a… (tavola InsAffida): la cosa da fare nasce dal messaggio.
             if (!local && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice)) {
                 MenuRow(EuriseIcons.task(2f), stringResource(R.string.af_title)) { onEntrust() }

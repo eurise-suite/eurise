@@ -80,6 +80,20 @@ object SchedaContract {
     fun askIntent(context: Context, question: String, options: List<String>): android.content.Intent? =
         chatIntent(context, ACTION_ASK_FAMILY)?.putExtra(EXTRA_TITLE, question)?.putExtra(EXTRA_OPTIONS, options.toTypedArray())
 
+    /** Email → Chat (tavola AmiViaggio): una conferma di viaggio diventa una tappa dell'itinerario del gruppo. */
+    const val ACTION_ADD_STOP = "eu.eurise.action.ADD_STOP"
+    const val EXTRA_TIME = "time"
+    const val EXTRA_PLACE = "place"
+
+    fun stopIntent(context: Context, title: String, day: java.time.LocalDate, time: String, place: String): android.content.Intent? =
+        chatIntent(context, ACTION_ADD_STOP)?.putExtra(EXTRA_TITLE, title)?.putExtra(EXTRA_DAY, day.toEpochDay())?.putExtra(EXTRA_TIME, time)?.putExtra(EXTRA_PLACE, place)
+
+    /** Email → Chat (tavola LavDecisioni): «Deciso» su un'email la mette nel registro del gruppo scelto ([EXTRA_PLACE]: chi). */
+    const val ACTION_ADD_DECISION = "eu.eurise.action.ADD_DECISION"
+
+    fun decisionIntent(context: Context, text: String, who: String): android.content.Intent? =
+        chatIntent(context, ACTION_ADD_DECISION)?.putExtra(EXTRA_TITLE, text)?.putExtra(EXTRA_PLACE, who)
+
     fun pack(list: List<Got>): String = JSONArray().apply {
         list.forEach { g -> put(Scheda.answerToJson(g.answer).put("id", g.id).put("address", g.address).put("at", g.at)) }
     }.toString()

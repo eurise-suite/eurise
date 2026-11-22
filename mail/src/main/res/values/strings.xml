@@ -219,4 +219,18 @@
     <string name="ml_fs_you">Vai tu</string>
     <string name="ml_fs_both">Tutti e due</string>
     <string name="ml_fs_due_note">Scade il %1$s</string>
+    <!-- Viaggio di gruppo (tavola AmiViaggio). -->
+    <string name="ml_vi_found">Viaggio · %1$s</string>
+    <string name="ml_vi_hint">Nell\'itinerario del gruppo della Chat, per tutti</string>
+    <string name="ml_vi_add">Itinerario</string>
+    <!-- Ricordamelo e Deciso (tavole LavRicordami, LavDecisioni). -->
+    <string name="ml_rm_title_short">Ricordamelo</string>
+    <string name="ml_rm_title">%1$s · %2$s</string>
+    <string name="ml_rm_tonight">Stasera 20:00</string>
+    <string name="ml_rm_tomorrow">Domani 8:30</string>
+    <string name="ml_rm_noreply">Se non risponde entro %1$s</string>
+    <string name="ml_rm_ok">Nelle Attività</string>
+    <string name="ml_rm_watch">Se fino ad allora non risponde, te lo ricordo</string>
+    <string name="ml_rm_nudge">Non ha risposto: %1$s · %2$s</string>
+    <string name="ml_dc_mark">Deciso</string>
 </resources>

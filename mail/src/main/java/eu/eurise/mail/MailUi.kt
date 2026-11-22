@@ -362,6 +362,10 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             ExpenseFromMail(actions, o)
             // Scadenze e scuola dalle email (tavole FamScadenze, FamScuola).
             DeadlineFromMail(model, actions, o)
+            // Una conferma di viaggio nell'itinerario del gruppo (tavola AmiViaggio).
+            TravelFromMail(actions, o)
+            // Ricordamelo e Deciso (tavole LavRicordami, LavDecisioni).
+            WorkActions(model, actions, o)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->

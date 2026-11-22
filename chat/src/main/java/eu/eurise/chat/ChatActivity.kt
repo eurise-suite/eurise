@@ -44,6 +44,18 @@ class ChatActivity : ComponentActivity(), ChatActions {
         location.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 
+    private var backgroundDone: ((Boolean) -> Unit)? = null
+    private val backgroundLocation = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> backgroundDone?.invoke(ok); backgroundDone = null }
+
+    override fun askBackgroundLocation(done: (Boolean) -> Unit) {
+        askLocation { fine ->
+            if (!fine) return@askLocation done(false)
+            if (Arrivo.background(this)) return@askLocation done(true)
+            backgroundDone = done
+            backgroundLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
     override fun askMic(done: (Boolean) -> Unit) {
         micDone = done
         mic.launch(Manifest.permission.RECORD_AUDIO)
@@ -117,6 +129,20 @@ class ChatActivity : ComponentActivity(), ChatActions {
             val C = eu.eurise.core.insieme.SchedaContract
             val title = intent.getStringExtra(C.EXTRA_TITLE).orEmpty().take(80)
             if (title.isNotBlank()) model.pendingDeadline = Triple(title, intent.getLongExtra(C.EXTRA_CENTS, 0L), intent.getLongExtra(C.EXTRA_DAY, 0L))
+            return
+        }
+        if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ADD_STOP) {
+            val C = eu.eurise.core.insieme.SchedaContract
+            val title = intent.getStringExtra(C.EXTRA_TITLE).orEmpty().take(80)
+            val day = intent.getLongExtra(C.EXTRA_DAY, 0L)
+            if (title.isNotBlank() && day > 0) model.pendingStop = Amici.Stop("t" + System.nanoTime(), day, intent.getStringExtra(C.EXTRA_TIME).orEmpty().take(5), title,
+                place = intent.getStringExtra(C.EXTRA_PLACE).orEmpty().take(100))
+            return
+        }
+        if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ADD_DECISION) {
+            val C = eu.eurise.core.insieme.SchedaContract
+            val t = intent.getStringExtra(C.EXTRA_TITLE).orEmpty().take(300)
+            if (t.isNotBlank()) model.pendingDecision = t to intent.getStringExtra(C.EXTRA_PLACE).orEmpty().take(80)
             return
         }
         if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ASK_FAMILY) {

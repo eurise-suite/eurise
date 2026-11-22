@@ -93,6 +93,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             refreshBalls()
             refreshApprovals()
             refreshCards()
+            checkWatches()
             refreshing = false
             studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
@@ -196,6 +197,42 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
             title + (if (cents > 0) " · %d,%02d €".format(cents / 100, cents % 100) else ""), due = due.minusDays(3),
             notes = context.getString(R.string.ml_fs_due_note, due.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.getDefault()))))
+
+    /** Ricordamelo (tavola LavRicordami): un'attività con data e ora, il testo e chi l'ha mandata. Falso senza l'app Eurise. */
+    fun remindMail(o: Opened, at: java.time.LocalDateTime): Boolean =
+        eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            context.getString(R.string.ml_rm_title, o.summary.fromName.ifBlank { o.summary.fromAddress }, MailBalls.core(o.summary.subject)),
+            due = at.toLocalDate(), time = at.toLocalTime(), notes = o.text.take(400))
+
+    private val watchPrefs get() = context.getSharedPreferences("mail_watch", Context.MODE_PRIVATE)
+
+    /** «Se non risponde entro…»: se fino a quel giorno da lui non arriva niente sullo stesso oggetto, diventa un'attività. */
+    fun watchReply(o: Opened, by: java.time.LocalDate) {
+        val list = org.json.JSONArray(watchPrefs.getString("list", "[]"))
+        list.put(org.json.JSONObject().put("from", o.summary.fromAddress).put("name", o.summary.fromName).put("subject", o.summary.subject)
+            .put("since", o.summary.date).put("by", by.toEpochDay()))
+        watchPrefs.edit().putString("list", list.toString()).apply()
+    }
+
+    /** I promemoria «se non risponde» scaduti senza risposta: nelle Attività, poi via. */
+    fun checkWatches() {
+        val a = runCatching { org.json.JSONArray(watchPrefs.getString("list", "[]")) }.getOrNull() ?: return
+        val today = java.time.LocalDate.now().toEpochDay()
+        val keep = org.json.JSONArray()
+        for (i in 0 until a.length()) {
+            val w = a.optJSONObject(i) ?: continue
+            val answered = messages.any { it.fromAddress.equals(w.optString("from"), true) && it.date > w.optLong("since") &&
+                MailBalls.core(it.subject) == MailBalls.core(w.optString("subject")) }
+            when {
+                answered -> {}
+                w.optLong("by") < today -> eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION,
+                    eu.eurise.core.suite.HubBridge.ACTION_TASK, context.getString(R.string.ml_rm_nudge, w.optString("name").ifBlank { w.optString("from") },
+                        MailBalls.core(w.optString("subject"))), due = java.time.LocalDate.now())
+                else -> keep.put(w)
+            }
+        }
+        watchPrefs.edit().putString("list", keep.toString()).apply()
+    }
 
     /** «Sollecita»: la stessa scheda di nuovo a chi non ha risposto. */
     fun remindCard(id: String, done: (Boolean) -> Unit) {
