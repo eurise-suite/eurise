@@ -38,10 +38,7 @@
     <string name="brw_note_done">Messo in Note</string>
     <string name="brw_task_done">Aggiunto a Da fare</string>
     <string name="brw_no_hub">Serve l\'app Eurise</string>
-    <string name="brw_download_started">Scarico %1$s</string>
-    <string name="brw_download_done">In Download: %1$s</string>
     <string name="brw_download_failed">Il download non parte</string>
-    <string name="brw_downloaded_save">Scaricato %1$s · Salva in…</string>
     <string name="brw_save_in_missing">Serve l\'app Eurise per «Salva in…»</string>
 
     <!-- Browser completo (tavole BrwMenu, BrwImpostazioni, BrwImportaPwd; 12 novembre) -->
@@ -119,7 +116,6 @@
     <string name="brw_s_sync_sub">Spento · schede e segnalibri anche sul computer</string>
     <string name="brw_s_clear">Cancella dati</string>
     <string name="brw_s_clear_sub">Cronologia, cookie, cache: per periodo e per tipo</string>
-    <string name="brw_sync_note">Arriva con la sincronizzazione cifrata della suite: schede aperte e segnalibri passano tra telefono e computer attraverso il tuo cloud, cifrati sul telefono. Finché non la accendi non esce nulla.</string>
 
     <string name="brw_ai_title">AI dalla barra</string>
     <string name="brw_ai_none">Nessuna</string>

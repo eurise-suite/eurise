@@ -23,6 +23,8 @@ class AlfredActivity : ComponentActivity() {
     private lateinit var dictation: Dictation
     private var session by mutableStateOf(0)
     private var initial by mutableStateOf<String?>(null)
+    /** Vero se la frase viene da fuori dell'app Eurise: si mette nel campo, non si esegue ([AlfredTrust]). */
+    private var prefill by mutableStateOf(false)
     private var briefing by mutableStateOf(false)
     private var listen by mutableStateOf(false)
 
@@ -33,6 +35,7 @@ class AlfredActivity : ComponentActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 27) setShowWhenLocked(eu.eurise.core.data.alfred.AlfredPrefs(this).lockScreen)
         dictation = Dictation(this)
         initial = intent?.getStringExtra(Intent.EXTRA_TEXT)
+        prefill = !trusted(intent)
         briefing = intent?.getBooleanExtra(EXTRA_BRIEFING, false) == true
         listen = startsListening(intent)
         val source = SuiteBriefingSource(applicationContext)
@@ -40,7 +43,7 @@ class AlfredActivity : ComponentActivity() {
             EuriseTheme {
                 key(session) {
                     if (briefing) BriefingPanel(source, onClose = ::finish)
-                    else AlfredPanel(dictation, initial, onClose = ::finish, listenNow = listen)
+                    else AlfredPanel(dictation, initial, onClose = ::finish, listenNow = listen, prefillOnly = prefill)
                 }
             }
         }
@@ -50,10 +53,13 @@ class AlfredActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         initial = intent.getStringExtra(Intent.EXTRA_TEXT)
+        prefill = !trusted(intent)
         briefing = intent.getBooleanExtra(EXTRA_BRIEFING, false)
         listen = startsListening(intent)
         session++
     }
+
+    private fun trusted(intent: Intent?) = intent?.getStringExtra(eu.eurise.core.data.alfred.AlfredTrust.EXTRA) == eu.eurise.core.data.alfred.AlfredTrust.token
 
     /** Dal tasto home tenuto premuto o da un comando vocale si comincia ad ascoltare senza altri tocchi. */
     private fun startsListening(intent: Intent?): Boolean =

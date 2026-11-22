@@ -127,7 +127,6 @@
     <string name="sh_save_settings">Salva senza rifare i turni</string>
     <string name="sh_plan_body">Turni aggiornati da %1$s (%2$d caselle). Aprili nella scheda Turni del gruppo.</string>
     <string name="sh_uncovered">%1$d caselle restano scoperte: nessuno poteva senza rompere le regole</string>
-    <string name="sh_working">Preparo i turni…</string>
     <string name="sh_bad_types">Controlla i turni: sigla e orari (es. 7:00, 21:00)</string>
     <!-- Ore -->
     <string name="sh_hours_title">Ore del mese</string>

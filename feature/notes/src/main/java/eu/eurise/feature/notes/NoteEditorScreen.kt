@@ -146,6 +146,15 @@ fun NoteEditorRoute(
     // Chiusa la nota, il cloud la riceve dopo pochi secondi (se è collegato).
     val closeAndSync = { CloudSync.get(context).requestSoon(); onClose() }
     BackHandler { viewModel.close(closeAndSync) }
+    // Nota bloccata e aperta: niente schermate né anteprima nelle app recenti (come la cartella protetta della Galleria).
+    val secure = state.locked && state.unlocked
+    androidx.compose.runtime.DisposableEffect(secure) {
+        var c: android.content.Context? = context
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        val window = (c as? android.app.Activity)?.window
+        if (secure) window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        onDispose { if (secure) window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE) }
+    }
     NoteEditorScreen(
         state = state,
         notebookName = books.firstOrNull { it.notebook.id == state.notebookId }?.notebook?.name,
