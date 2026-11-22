@@ -376,7 +376,7 @@ private fun moreTiles(context: Context, refresh: Int, onChanged: () -> Unit): Li
         },
         Triple(EuriseIcons.music(), stringResource(R.string.tile_ringer), ringer) to {
             val ok = runCatching {
-                audio?.ringerMode = if (audio?.ringerMode == android.media.AudioManager.RINGER_MODE_NORMAL) {
+                audio?.ringerMode = if (audio.ringerMode == android.media.AudioManager.RINGER_MODE_NORMAL) {
                     android.media.AudioManager.RINGER_MODE_VIBRATE
                 } else {
                     android.media.AudioManager.RINGER_MODE_NORMAL

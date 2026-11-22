@@ -138,7 +138,11 @@ private sealed interface Phase {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, listenNow: Boolean = false) {
+fun AlfredPanel(
+    dictation: Dictation, initial: String?, onClose: () -> Unit, listenNow: Boolean = false,
+    /** La frase viene da un'altra app: resta nel campo e parte solo con Invio (niente azioni da sola). */
+    prefillOnly: Boolean = false,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { AlfredPrefs(context) }
@@ -491,7 +495,8 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
     LaunchedEffect(Unit) {
         address = addressSuffix(prefs)
         if (askingName) suggestion = ownFirstName(context)
-        if (!initial.isNullOrBlank() && !askingName) understand(initial)
+        if (!initial.isNullOrBlank() && prefillOnly) typed = initial.take(500)
+        else if (!initial.isNullOrBlank() && !askingName) understand(initial)
         else if (listenNow && !askingName) voice()
     }
 

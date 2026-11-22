@@ -36,6 +36,8 @@ val sherpaAar: File = file("libs/sherpa-onnx-$sherpaVersion.aar").also { aar ->
 }
 
 android {
+    // Solo le lingue della suite: le librerie portano traduzioni in decine di lingue che nessuno vedrebbe.
+    androidResources { localeFilters += listOf("it", "en") }
     namespace = "eu.eurise.voice"
     compileSdk = 37
     ndkVersion = "28.0.13004108"
@@ -46,7 +48,6 @@ android {
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
-        resourceConfigurations += listOf("it", "en")
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         ndk { abiFilters += listOf("arm64-v8a") }
         externalNativeBuild {

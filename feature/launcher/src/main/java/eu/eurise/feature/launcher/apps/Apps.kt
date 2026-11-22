@@ -216,6 +216,6 @@ fun Context.openAlfredBriefing() {
 fun Context.openAlfred(text: String? = null) {
     val intent = Intent().setClassName(packageName, "eu.eurise.hub.alfred.AlfredActivity")
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    text?.let { intent.putExtra(Intent.EXTRA_TEXT, it) }
+    text?.let { intent.putExtra(Intent.EXTRA_TEXT, it).putExtra(eu.eurise.core.data.alfred.AlfredTrust.EXTRA, eu.eurise.core.data.alfred.AlfredTrust.token) }
     runCatching { startActivity(intent) }
 }

@@ -42,13 +42,13 @@ object BrainCommands {
         val hasTime = q?.pieces?.any { it.kind == QuickAdd.Kind.Time } == true
         val date = when {
             !checking -> modelDate
-            hasDate -> q?.due
+            hasDate -> q.due
             DATE_WORDS.containsMatchIn(said) -> modelDate
             else -> null
         }
         val time = when {
             !checking -> modelTime
-            hasTime -> q?.time
+            hasTime -> q.time
             TIME_WORDS.containsMatchIn(said) -> modelTime
             else -> null
         }

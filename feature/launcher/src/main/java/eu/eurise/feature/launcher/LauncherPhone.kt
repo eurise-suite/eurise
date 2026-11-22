@@ -330,7 +330,7 @@ private fun PageApp(slot: eu.eurise.feature.launcher.home.HomeSlot, home: HomeBo
     val slotMenu = eu.eurise.feature.launcher.home.LocalSlotMenu.current
     val appMenu = eu.eurise.feature.launcher.home.LocalAppMenu.current
     // Un'app che non c'è più non ha menu: si va dritti alla modifica, per toglierla.
-    if (slotMenu?.open == true && (entry == null || appMenu == null)) androidx.compose.runtime.LaunchedEffect(Unit) { slotMenu?.edit?.invoke() }
+    if (slotMenu?.open == true && (entry == null || appMenu == null)) androidx.compose.runtime.LaunchedEffect(Unit) { slotMenu.edit?.invoke() }
     Box(mod, contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.clip(RoundedCornerShape(16.dp))

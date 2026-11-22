@@ -5,5 +5,4 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
     </style>
-    <color name="voice_icon_background">#1F2A44</color>
 </resources>

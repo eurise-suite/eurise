@@ -274,7 +274,6 @@
     <string name="notes_voice_stop">Metti in pausa</string>
     <string name="notes_voice_missing">L\'audio è rimasto sull\'altro telefono: qui c\'è solo il testo.</string>
     <string name="notes_voice_task">Da fare: %1$s</string>
-    <string name="notes_voice_to_text">Metti il testo nella nota</string>
     <string name="notes_voice_by_voice">Trascritta sul telefono da Eurise Voce</string>
     <string name="notes_voice_task_done">Aggiunta alle Attività</string>
     <string name="notes_voice_delete">Elimina la nota vocale</string>

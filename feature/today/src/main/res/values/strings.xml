@@ -10,12 +10,8 @@
     <string name="today_connect_message">Per vedere qui gli appuntamenti del giorno.</string>
     <string name="agenda_tomorrow">Domani</string>
     <string name="agenda_yesterday">Ieri</string>
-    <string name="agenda_week">settimana %1$d</string>
-    <string name="agenda_back_today">tocca per tornare a oggi</string>
     <string name="agenda_back_to_today">Torna a oggi</string>
     <string name="agenda_year_line">%1$d · settimana %2$d · %3$d° giorno</string>
-    <string name="agenda_prev_day">Giorno prima</string>
-    <string name="agenda_next_day">Giorno dopo</string>
     <string name="agenda_events">Appuntamenti</string>
     <string name="agenda_no_events">Nessun appuntamento.</string>
     <string name="agenda_tasks">Cose da fare</string>
@@ -24,7 +20,6 @@
     <string name="agenda_late">in ritardo</string>
     <string name="agenda_people">Persone del giorno</string>
     <string name="agenda_people_from">dagli impegni</string>
-    <string name="agenda_maxim">Massima del giorno · %1$s</string>
     <string name="agenda_leave_at">Parti alle %1$s · %2$d min in auto</string>
     <string name="agenda_call">Chiama %1$s</string>
     <string name="agenda_write">Scrivi a %1$s</string>

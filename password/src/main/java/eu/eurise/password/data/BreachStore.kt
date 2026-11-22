@@ -53,7 +53,7 @@ class BreachStore(private val context: Context) {
     private fun fetch(prefix: String): String? {
         val request = Request.Builder().url("https://api.pwnedpasswords.com/range/$prefix")
             .header("Add-Padding", "true").header("User-Agent", WebDav.USER_AGENT).build()
-        return WebDav.sharedClient.newCall(request).execute().use { if (it.isSuccessful) it.body?.string() else null }
+        return WebDav.sharedClient.newCall(request).execute().use { if (it.isSuccessful) it.body.string() else null }
     }
 
     private companion object {

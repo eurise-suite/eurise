@@ -108,7 +108,6 @@
     <string name="places_switch">Luoghi</string>
     <string name="places_names">Nomi dei luoghi</string>
     <string name="places_names_hint">Da OpenStreetMap, con posizione arrotondata</string>
-    <string name="places_names_explain">Cosa viene letto: la casella di circa 10 km di ogni luogo, non la posizione delle foto.\n\nDove va: a Nominatim, il servizio di OpenStreetMap, una richiesta al secondo.\n\nChi la vede: chi gestisce Nominatim, insieme all\'indirizzo di rete del telefono.\n\nCome si torna indietro: spegni l\'interruttore e i nomi salvati si cancellano.</string>
     <string name="places_reading">Ancora %1$d foto da leggere…</string>
     <string name="places_empty_title">Nessun luogo ancora</string>
     <string name="places_empty_message">Le foto scattate con la posizione attiva compaiono qui.</string>
@@ -157,7 +156,6 @@
     <string name="editor_rotate">Ruota</string>
     <string name="editor_tool_crop">Ritaglia</string>
     <string name="editor_tool_adjust">Regola</string>
-    <string name="editor_tool_filters">Filtri</string>
     <string name="editor_tool_text">Testo</string>
     <string name="editor_tool_draw">Disegna</string>
     <string name="editor_tool_retouch">Ritocca</string>
@@ -377,7 +375,6 @@
     <string name="editor_mine_rename">Rinomina</string>
     <string name="editor_mine_delete">Elimina</string>
     <string name="editor_mine_saved">«%1$s» è tra le tue modalità</string>
-    <string name="editor_mine_tip">Regola una foto come ti piace, poi «Salva la tua»: la trovi qui per tutte le altre. Tieni premuta una tua per rinominarla o eliminarla.</string>
     <!-- Editor completo, secondo giro (tavola GalProspettiva, 17 novembre) -->
     <string name="editor_section_crop">Ritaglia</string>
     <string name="editor_section_perspective">Prospettiva</string>
@@ -419,7 +416,6 @@
     <string name="editor_save_strip_camera_tip">Modello, obiettivo ed esposizione restano solo nell\'originale</string>
     <string name="editor_save_go">Salva</string>
     <string name="editor_save_replace_go">Sostituisci</string>
-    <string name="restore_original">Torna all\'originale</string>
     <string name="restore_done">Foto tornata com\'era</string>
     <string name="restore_until">Torna all\'originale: ancora %1$d giorni</string>
     <!-- Editor completo, quarto giro (tavole GalModifiche e GalLookQR, 17 novembre) -->

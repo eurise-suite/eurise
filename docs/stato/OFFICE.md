@@ -147,3 +147,19 @@ Office: «Salva in», «Apri da» e `Suite.installed` contano solo l'app Eurise 
 
 ## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
 Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.
+
+## 22 novembre 2026, chat unica del proprietario: sicurezza e pulizia di tutta la suite (giro 1038)
+Il proprietario ha riunito il lavoro in questa chat: tutti gli APK alla versione corrente, controllo di sicurezza su
+tutte le app, analisi di ciò che resta per ogni app, pulizia del codice.
+- **Sicurezza**: esito completo in `docs/SICUREZZA.md`, sezione «22 novembre 2026: controllo completo». Corretti Alfred
+  (una frase da un'altra app non parte più da sola: `AlfredTrust`), note bloccate con `FLAG_SECURE`, iniezione nei flussi
+  `office-prova.yml` e `prova-porte.yml`. Da decidere: APK di prova non debuggable per Password ed Eurise.
+- **Office**: la versione ufficiale non compilava più (lint: `office_background_night` solo in `values-night`): ora il
+  colore sta anche in `values/themes.xml`. Vista rapida dei fogli: una formula che non sa leggere si tornava a vedere
+  come valore modificabile (il `?: ""` cancellava il null): ora rimanda di nuovo alla modifica completa.
+- **Pulizia**: 29 risorse inutilizzate tolte; avvio dell'app Eurise più leggero (pianificazione del cloud fuori dal
+  thread principale, dopo la registrazione dei lavori); avvisi del compilatore (chiamate sicure e `!!` inutili, ritorno
+  nel Ponte del computer che con Kotlin 2.5 diventerebbe errore, `localeFilters` al posto di `resourceConfigurations` in
+  13 moduli, `LocalLifecycleOwner` nuovo). Versione ufficiale 5,5 MB (tetto 6).
+- **File comuni toccati**: `core/cloud` (WebDav, NextcloudLogin, SuiteSecrets), `core/data` (AlfredTrust nuovo, QuickAdd,
+  Modes, MeteoRepository), `core/designsystem` (ColorPicker, solo un `!!`), `build.gradle.kts` di 13 moduli.

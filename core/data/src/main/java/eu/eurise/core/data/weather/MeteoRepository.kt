@@ -82,7 +82,7 @@ class MeteoRepository(context: Context) {
             fetch(File(dir, "alerts-$name.xml"), 30, network, force, PrivacyService.Alerts, "https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-$name")
         }?.let { xml ->
             val all = runCatching { MeteoParse.alerts(xml) }.getOrDefault(emptyList())
-            MeteoParse.forPlace(all, listOfNotNull(place?.region, place?.provinceName, place?.name), now)
+            MeteoParse.forPlace(all, listOfNotNull(place.region, place.provinceName, place.name), now)
         }.orEmpty()
         if (forecast == null && !network) return null
         return MeteoState(place?.place, forecast, pollen, alerts, forecastFile.lastModified())

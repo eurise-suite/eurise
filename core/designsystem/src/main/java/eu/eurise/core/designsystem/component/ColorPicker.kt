@@ -111,7 +111,7 @@ fun ColorRow(
         val label = stringResource(R.string.ds_color_own)
         Box(
             Modifier.size(swatch).clip(CircleShape)
-                .then(if (own) Modifier.background(selected!!) else Modifier.background(Brush.sweepGradient(Wheel)))
+                .then(if (own) Modifier.background(selected) else Modifier.background(Brush.sweepGradient(Wheel)))
                 .border(if (own) 3.dp else 1.5.dp, if (own) accent else outline, CircleShape)
                 .clickable { picking = true }.semantics { contentDescription = label },
             contentAlignment = Alignment.Center,
