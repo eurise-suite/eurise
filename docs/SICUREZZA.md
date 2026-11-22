@@ -2,16 +2,21 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 21 novembre 2026)
+### Per ripartire (aggiornato il 22 novembre 2026, mattina)
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
   protetti»).
-- **Ultimo giro pubblicato**: Compila **1023** da `prova-sicurezza` (22 novembre, notte), con le librerie aggiornate
-  del primo passo del punto 7 e la verifica bloccante; tutti i lavori verdi, prova delle porte sull'emulatore verde su
-  quel giro (lanciata a mano con `-f run_id=`: quella del push prende il Compila precedente). In `apk-prova` con Mappe
-  134 (area Mappe) e Office 60. Attenzione: la scelta automatica di Mappe in `apk-prova` guarda solo `prova-mappe` e
-  `brand`. Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id>`.
+- **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
+  le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
+  precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
+- **Ultimo giro pubblicato**: Compila **1044** da `prova-sicurezza` (22 novembre, 10:25 UTC): Backup unito, Comunicazione
+  fino al giro 1033, controllo di sicurezza di tutta la suite, microG nel Browser, **app non più debuggable**. Con Mappe
+  145 (prova-sicurezza) e Office 65. Prove sull'emulatore su quel giro: porte 24/24, backup 48/48, avvio di tutte le
+  app senza arresti (`prova-avvio.yml`, nuova). `brand` = `prova-sicurezza` (9ce3c69). Pubblicare:
+  `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Da provare sul telefono (giro 1044)**: un giro di ogni app (più veloci); una passkey su un sito nel Browser
+  (webauthn.io, con microG); backup e ripristino veri; Condividi verso Eurise e Office da un'altra app.
 - **Da provare sul telefono (giro 1023, librerie nuove)**: un giro normale di ogni app, soprattutto la sincronizzazione
   e il cloud (OkHttp 5), i video della Galleria (Media3), la posta (android-mail), Scanner e QR (CameraX), le passkey
   di Password (credentials 1.6.0). Si installa sopra, nessuna disinstallazione: chiave e permessi uguali.
@@ -48,6 +53,12 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      android-mail, AndroidX del catalogo, coroutines, AGP 9.5.2. Restano, in quest'ordine: Play Services dentro il
      Browser (decisione del proprietario, sotto), zxing 3.5.4 (firma), Tastiera e Office, Compose BOM 2026.11 con
      compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4, Haze 2 (con l'area grafica).
+     ~~Play Services nel Browser~~ sostituite da microG il 22 novembre.
+  8. **Pulizia e velocità** (22 novembre): ~~APK di prova non debuggable~~ (avvii a freddo da 2 a 3 volte più rapidi),
+     ~~prova d'avvio di tutte le app~~. Prossimo: **R8 app per app** (oggi solo Browser e Tastiera), con regole prudenti
+     (codice nostro tenuto, librerie con riflessione tenute: javax.mail, BouncyCastle, pdfbox, onnx, Tesseract) e la
+     prova d'avvio a ogni app; poi Mappe non debuggable (patch); modelli scaricati nel centro privacy; Office con il
+     motore nuovo ricompilato (ha già la variante dal nome del pacchetto).
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
   `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
