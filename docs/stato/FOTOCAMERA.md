@@ -58,4 +58,4 @@ rifiuta un indirizzo verso i nostri file, il fornitore delle copie non si apre d
 - Galleria: usare `CleanMedia` al posto del suo codice di pulizia (stesso lavoro, un posto solo).
 
 ## Consegne
-- 22 novembre: primo passo (v1) sul ramo `prova-fotocamera`.
+- 22 novembre: primo passo (v1) sul ramo `prova-fotocamera`, giro 1053 di Compila APK in `apk-prova` (`camera-debug.apk`, 5,4 MB). Prova sull'emulatore riuscita; lo scatto col volume parte (`takePictureInternal`) ma con la fotocamera simulata la foto non arriva nei 6 secondi della prova: da guardare sul telefono.
