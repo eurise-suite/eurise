@@ -1,5 +1,28 @@
 # Eurise – indicazioni per chi lavora al codice
 
+## Principi di base (regola fissa, 22 novembre 2026: valgono per ogni app, già fatta o futura)
+Ogni scelta, in ogni app, si misura su queste coordinate. Una funzione che ne tradisce una non entra, anche se il codice è pronto.
+1. **Sicurezza**: nessuna porta aperta alle altre app (solo permessi di firma della suite, `SuiteAccess`), nessuna backdoor,
+   nessuna libreria chiusa, contenuti scaricati con impronta, file in arrivo controllati (`isForeignUri`). Dettagli e stato
+   in `docs/SICUREZZA.md`; ogni app nuova passa dalla prova delle porte sull'emulatore prima del telefono.
+2. **Privacy**: di base tutto resta sul telefono; ogni servizio che fa uscire dati è spento di base e sta nel centro privacy
+   (sezioni «Privacy sempre chiara» e «Spenti di base» qui sotto). Senza sicurezza la privacy non vale nulla.
+3. **Funzionalità** al livello dei migliori concorrenti **e oltre**: prima si studia cosa fanno i migliori (app di sistema,
+   Google, Apple, Samsung e le migliori libere) e si scrive nella proposta dove li superiamo.
+4. **Opzioni intelligenti e «game changer»**: in ogni app almeno qualche funzione che nessuno ha, utile davvero, pensata
+   per far risparmiare tempo; si propone sulla tela e decide il proprietario.
+5. **Utilità nel lavoro e nella vita di tutti i giorni**, con riguardo particolare per **chi lavora** (professionisti,
+   artigiani, studi, squadre): flussi rapidi, poche mosse, dati che finiscono dove servono (cliente, progetto, pratica).
+6. **Ergonomia**: comandi sotto il pollice e dal lato della mano dominante, tocco breve = preferito, pressione lunga = scelte
+   (sezione «Ergonomia»); telefono, tablet e computer ognuno con la sua disposizione.
+7. **Design moderno, caldo e impeccabile, da riferimento**: stile della suite (Perla e Notte, `core/designsystem`,
+   `EuriseIcons`), cura dei dettagli, movimento fluido; le anteprime sulla tela vengono prima del codice (sezione «Metodo»).
+8. **Integrazione profonda con la suite** (le app si passano dati e azioni tra loro: un contatto, un impegno, una nota, un
+   file vanno dove servono senza copiarli a mano) **e libertà**: ogni app separata funziona **anche da sola**, senza le
+   altre installate. L'integrazione si accende quando l'altra app c'è (controllata con il permesso di firma) e sparisce
+   senza errori quando manca; mai un'app che obbliga a installare la suite.
+9. **Leggerezza e velocità** (sezione «Leggerezza»): avvio rapido, scorrimento fluido, niente lavoro inutile.
+
 ## Metodo
 - Prima del codice vengono sempre le anteprime: render sulla tela di design, discussione con il proprietario,
   e solo dopo l'approvazione si scrive il codice dell'app.
