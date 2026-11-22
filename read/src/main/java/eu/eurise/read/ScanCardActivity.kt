@@ -123,7 +123,7 @@ private fun ScanCard(onDone: (CardFields) -> Unit, onCancel: () -> Unit) {
                         if (downloading) return@Pill
                         downloading = true
                         scope.launch {
-                            val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(TessModel.file(context)) }.isSuccess }
+                            val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(context, TessModel.file(context)) }.isSuccess }
                             downloading = false
                             model = ok && TessModel.ready(context)
                         }

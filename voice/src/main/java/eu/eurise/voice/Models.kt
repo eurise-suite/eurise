@@ -30,6 +30,7 @@ enum class Model(val id: String, val megabytes: Int, val label: Int, val detail:
 object Downloader {
     /** Scarica [model] in una copia temporanea e la rinomina solo se arriva intera. [progress] riceve 0–100. */
     fun download(context: Context, model: Model, progress: (Int) -> Unit): Boolean {
+        eu.eurise.core.suite.PrivacyContract.downloadStarted(context, eu.eurise.core.suite.PrivacyService.VoiceModels)
         val target = model.file(context)
         target.parentFile?.mkdirs()
         val part = File(target.parentFile, target.name + ".part")

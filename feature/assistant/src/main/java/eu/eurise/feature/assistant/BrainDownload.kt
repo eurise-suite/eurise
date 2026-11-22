@@ -34,6 +34,7 @@ object BrainDownload {
 
     /** Comincia lo scarico (solo Wi-Fi, con la notifica di sistema): continua anche chiudendo Alfred. */
     fun start(context: Context, model: BrainModel, url: String, title: String) {
+        eu.eurise.core.suite.PrivacyContract.downloadStarted(context, eu.eurise.core.suite.PrivacyService.BrainModels)
         file(context, model).delete()
         val req = DownloadManager.Request(Uri.parse(url))
             .setTitle(title)

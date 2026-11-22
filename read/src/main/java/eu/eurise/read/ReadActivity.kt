@@ -107,7 +107,7 @@ private fun ReadScreen() {
             else OutlinedButton(onClick = {
                 busy = context.getString(R.string.read_downloading)
                 scope.launch {
-                    val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(english) }.isSuccess }
+                    val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(context, english) }.isSuccess }
                     hasEnglish = ok && english.exists()
                     busy = if (ok) null else context.getString(R.string.read_download_failed)
                 }
@@ -131,7 +131,7 @@ private fun ReadScreen() {
                     askDownload = false
                     busy = context.getString(R.string.read_downloading)
                     scope.launch {
-                        val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(model) }.isSuccess }
+                        val ok = withContext(Dispatchers.IO) { runCatching { TessModel.download(context, model) }.isSuccess }
                         hasModel = ok && model.exists()
                         busy = if (ok) null else context.getString(R.string.read_download_failed)
                     }

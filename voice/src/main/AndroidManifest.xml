@@ -8,6 +8,12 @@
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
     <uses-permission android:name="${suitePermission}" />
 
+    <!-- Il centro privacy dell'app Eurise, per annotare gli scaricamenti chiesti dalla persona (PrivacyContract). -->
+    <queries>
+        <package android:name="eu.eurise.hub" />
+        <package android:name="eu.eurise.hub.debug" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/eurise_no_backup"

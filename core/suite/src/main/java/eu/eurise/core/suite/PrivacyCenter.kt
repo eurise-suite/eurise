@@ -19,6 +19,12 @@ enum class PrivacyService { Weather, Pollen, Alerts, News, Markets, Horoscope, V
     Lyrics,
     /** Eurise Office: il download del motore dei documenti (APK compagno, uguale per tutti); i documenti non escono. */
     OfficeEngine,
+    /** Eurise Leggi: le lingue per leggere il testo (Tesseract, da GitHub) e i modelli di traduzione (Mozilla, da Google Cloud). */
+    ReadModels,
+    /** Eurise Voce: i modelli per la dettatura (Whisper, da Hugging Face) e le voci di Alfred (pubblicazioni del progetto). */
+    VoiceModels,
+    /** Alfred: i cervelli sul telefono (Granite, Ministral) da Hugging Face, passati poi a Eurise AI. */
+    BrainModels,
     /** Eurise Telefono: l'elenco Eurise dei numeri molesti (file uguale per tutti, una volta a settimana col Wi-Fi). */
     SpamList;
 

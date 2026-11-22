@@ -205,6 +205,7 @@ object Voices {
 
     /** Scarica l'archivio in una copia temporanea, lo apre in una cartella nuova e la mette al suo posto solo se è intera. */
     fun download(context: Context, voice: Voice, progress: (Int) -> Unit): Boolean {
+        eu.eurise.core.suite.PrivacyContract.downloadStarted(context, eu.eurise.core.suite.PrivacyService.VoiceModels)
         val root = File(context.filesDir, "voices").apply { mkdirs() }
         val part = File(root, voice.id + ".zip.part")
         val unpack = File(root, voice.id + ".new")

@@ -64,6 +64,9 @@ fun PrivacyService.titleRes(): Int = when (this) {
     PrivacyService.Milestones -> R.string.ds_s_milestones
     PrivacyService.Lyrics -> R.string.ds_s_lyrics
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine
+    PrivacyService.ReadModels -> R.string.ds_s_read_models
+    PrivacyService.VoiceModels -> R.string.ds_s_voice_models
+    PrivacyService.BrainModels -> R.string.ds_s_brain_models
     PrivacyService.SpamList -> R.string.ds_s_spam_list
 }
 
@@ -85,6 +88,9 @@ fun PrivacyService.detailRes(): Int = when (this) {
     PrivacyService.Milestones -> R.string.ds_s_milestones_d
     PrivacyService.Lyrics -> R.string.ds_s_lyrics_d
     PrivacyService.OfficeEngine -> R.string.ds_s_office_engine_d
+    PrivacyService.ReadModels -> R.string.ds_s_read_models_d
+    PrivacyService.VoiceModels -> R.string.ds_s_voice_models_d
+    PrivacyService.BrainModels -> R.string.ds_s_brain_models_d
     PrivacyService.SpamList -> R.string.ds_s_spam_list_d
 }
 
@@ -107,13 +113,15 @@ fun PrivacyService.where(): Jurisdiction = when (this) {
     PrivacyService.News, PrivacyService.Horoscope, PrivacyService.AiOnline -> Jurisdiction.Various // l'AI che sceglie la persona
     PrivacyService.Markets, PrivacyService.Videos -> Jurisdiction.US
     PrivacyService.Milestones, PrivacyService.OfficeEngine, PrivacyService.SpamList -> Jurisdiction.US // pubblicazioni del progetto su GitHub (Microsoft)
+    // GitHub (Microsoft), Google Cloud (elenco e modelli di Mozilla), Hugging Face: tutti negli Stati Uniti.
+    PrivacyService.ReadModels, PrivacyService.VoiceModels, PrivacyService.BrainModels -> Jurisdiction.US
     PrivacyService.Lyrics -> Jurisdiction.Other // LRCLIB, progetto indipendente: sede dei server non dichiarata
 }
 
 /** Il grado di privacy effettivo, da ciò che il servizio riceve (vedi [privacyScore]); [hiddenIp] dalla rete. */
 fun PrivacyService.score(hiddenIp: Int = 0): Int = when (this) {
     PrivacyService.Alerts, PrivacyService.News, PrivacyService.Horoscope, PrivacyService.FuelPrices, PrivacyService.Milestones,
-    PrivacyService.OfficeEngine, PrivacyService.SpamList ->
+    PrivacyService.OfficeEngine, PrivacyService.SpamList, PrivacyService.ReadModels, PrivacyService.VoiceModels, PrivacyService.BrainModels ->
         privacyScore(DataOut.Anonymous, where(), hiddenIp = hiddenIp)
     PrivacyService.Markets, PrivacyService.Videos -> privacyScore(DataOut.Minimal, where(), closed = true) // Yahoo, Google
     else -> privacyScore(DataOut.Minimal, where(), hiddenIp = hiddenIp)

@@ -23,8 +23,9 @@ internal object TessModel {
     fun languages(context: Context): String? =
         if (!ready(context)) null else listOf("ita", "eng").filter { file(context, it).exists() }.joinToString("+")
 
-    /** Scarica la lingua; nulla del telefono viene inviato. */
-    fun download(target: File) {
+    /** Scarica la lingua; nulla del telefono viene inviato. Il contatto va nel centro privacy dell'app Eurise. */
+    fun download(context: Context, target: File) {
+        eu.eurise.core.suite.PrivacyContract.downloadStarted(context, eu.eurise.core.suite.PrivacyService.ReadModels)
         target.parentFile?.mkdirs()
         var url = URL(source(target.name.removeSuffix(".traineddata")))
         repeat(5) {

@@ -68,6 +68,7 @@ object Models {
 
     /** Scarica la direzione [pair] (es. «it-en»): la versione rilasciata migliore, decompressa. */
     fun download(context: Context, pair: String) {
+        eu.eurise.core.suite.PrivacyContract.downloadStarted(context, eu.eurise.core.suite.PrivacyService.ReadModels)
         val manifest = JSONObject(fetch(MANIFEST).toString(Charsets.UTF_8))
         val base = manifest.getString("baseUrl").trimEnd('/')
         val entries = manifest.getJSONObject("models").optJSONArray(pair) ?: error("coppia non disponibile")
