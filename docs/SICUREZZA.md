@@ -10,9 +10,10 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
   le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
   precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
-- **Ultimo giro pubblicato**: Compila **1057** da `prova-sicurezza` (22 novembre, 15:14 UTC): sopra il 1048, il
+- **Ultimo giro pubblicato**: Compila **1060** da `prova-sicurezza` (22 novembre, 16:06 UTC; il 1057 si chiudeva
+  all'apertura del Browser, preso dalla prova d'avvio e corretto): sopra il 1048, il
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
-  schede a schedario (tavola BrwSchedario). Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza` (da7d75c).
+  schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
 - **Giro 1048 provato sul telefono** (22 novembre): le app funzionano con R8.
 - **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
