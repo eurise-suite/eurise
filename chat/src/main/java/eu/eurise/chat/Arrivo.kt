@@ -148,7 +148,7 @@ class ArrivoWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         return Result.success()
     }
 
-    private fun send(ctx: Context, r: Arrivo.Rule, text: String) {
+    private suspend fun send(ctx: Context, r: Arrivo.Rule, text: String) {
         val content = JSONObject().put("msgtype", "m.notice").put("body", "📍 " + text).put(Arrivo.STATE, JSONObject().put("auto", true))
         if (Arrivo.sink?.invoke(r.account, r.roomId, content) == true) return
         runCatching {

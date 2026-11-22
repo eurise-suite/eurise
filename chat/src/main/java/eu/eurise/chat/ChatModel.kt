@@ -960,6 +960,77 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    // --- Spazi Lavoro, Famiglia, Amici (tavola SpaSpazi) ---
+
+    private val spacePrefs get() = context.getSharedPreferences("chat_spaces", Context.MODE_PRIVATE)
+
+    /** Lo spazio scelto a mano per la conversazione, se c'è. */
+    fun spaceSet(roomId: String): eu.eurise.core.insieme.Ruoli.Space? =
+        spacePrefs.getString(account.name + "|" + roomId, null)?.let { runCatching { eu.eurise.core.insieme.Ruoli.Space.valueOf(it) }.getOrNull() }
+
+    fun setSpace(roomId: String, space: eu.eurise.core.insieme.Ruoli.Space?) {
+        spacePrefs.edit().apply { if (space == null) remove(account.name + "|" + roomId) else putString(account.name + "|" + roomId, space.name) }.apply()
+        relationsTick++
+    }
+
+    /** Lo spazio: scelto a mano, o dal ruolo in Rubrica (dell'altro, o dei più nel gruppo); l'account di lavoro è Lavoro. */
+    fun spaceOf(r: Room): eu.eurise.core.insieme.Ruoli.Space? {
+        spaceSet(r.id)?.let { return it }
+        if (account == Account.Work) return eu.eurise.core.insieme.Ruoli.Space.Lavoro
+        val me = session?.userId
+        val people = peerOf(r.id)?.let { listOf(it) } ?: members[r.id].orEmpty().filter { it != me }
+        return people.mapNotNull { roleOf(it)?.let(eu.eurise.core.insieme.Ruoli::space) }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
+    }
+
+    /** Lo spazio mostrato nell'elenco (null = tutte). */
+    var space by mutableStateOf<eu.eurise.core.insieme.Ruoli.Space?>(null)
+
+    // --- Stato e assenza (tavola LavStato) ---
+
+    private val STATUS = "eu.eurise.status"
+    private val statusPrefs get() = context.getSharedPreferences("chat_status", Context.MODE_PRIVATE)
+
+    var myStatus by mutableStateOf(eu.eurise.core.insieme.Assenza.decode(statusPrefs.getString(account.name, null)?.let { runCatching { JSONObject(it) }.getOrNull() }))
+        private set
+
+    /** Il tuo stato e l'assenza: nelle tue chat (lo vedono gli altri) e, se scelto, la stessa risposta automatica in Email. */
+    fun setStatus(st: eu.eurise.core.insieme.Assenza.State?) {
+        myStatus = st
+        statusPrefs.edit().apply { if (st == null) remove(account.name) else putString(account.name, eu.eurise.core.insieme.Assenza.encode(st).toString()) }.apply()
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val content = st?.let { eu.eurise.core.insieme.Assenza.encode(it) } ?: JSONObject()
+        val ids = rooms.filter { !it.invite }.take(60).map { it.id }
+        scope.launch(Dispatchers.IO) {
+            ids.forEach { id -> runCatching { c.setState(id, STATUS, content, me) } }
+            runCatching { eu.eurise.core.insieme.SchedaContract.setAbsence(context, st?.takeIf { it.email && it.from > 0 }) }
+        }
+    }
+
+    /** Lo stato di un'altra persona in questa stanza (o null). */
+    fun statusOf(roomId: String, user: String): eu.eurise.core.insieme.Assenza.State? = eu.eurise.core.insieme.Assenza.decode(data[roomId]?.state?.get(STATUS + "|" + user))
+
+    private val autoPrefs get() = context.getSharedPreferences("chat_status_auto", Context.MODE_PRIVATE)
+
+    /** In assenza: a chi ti scrive in una chat a due arriva la risposta automatica (una volta per persona e per giorno). */
+    private fun autoReply() {
+        val st = myStatus?.takeIf { it.chat } ?: return
+        val today = java.time.LocalDate.now()
+        if (!st.away(today)) return
+        val me = session?.userId ?: return
+        val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val until = java.time.LocalDate.ofEpochDay(st.to).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.util.Locale.getDefault()))
+        val text = eu.eurise.core.insieme.Assenza.reply(st, until) { u, sub -> context.getString(if (sub.isBlank()) R.string.ls_auto else R.string.ls_auto_sub, u, sub) }
+        rooms.filter { it.direct && !it.invite }.forEach { r ->
+            val last = timeline(r.id).lastOrNull() ?: return@forEach
+            if (last.sender == me || last.time < start || last.kind != Event.Kind.Text) return@forEach
+            val key = account.name + "|" + r.id + "|" + today.toEpochDay()
+            if (autoPrefs.getBoolean(key, false)) return@forEach
+            autoPrefs.edit().putBoolean(key, true).apply()
+            sendContent(r.id, JSONObject().put("msgtype", "m.notice").put("body", "🌴 " + text), Event.Kind.Notice, {})
+        }
+    }
+
     // --- Spese dall'email e per email (tavola SpeEmail) ---
 
     /** Una spesa arrivata dall'Email (importo, cosa): si sceglie il gruppo e si apre «Nuova spesa» già compilata. */
@@ -1451,6 +1522,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     refreshAgendas()
                     refreshDinner()
                     saveMedsSnapshot()
+                    autoReply()
                     saveChoresSnapshot()
                     if (shareHours) publishHours(all = false)
                 }
@@ -1540,6 +1612,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         keptOpen = simplePrefs.getStringSet("keep_" + a.name, emptySet()).orEmpty()
         balls = Palla.decode(ballPrefs.getString("list", null)).filter { it.account == a.name }
         given = Affida.decode(givenPrefs.getString("list", null)).filter { it.account == a.name }
+        myStatus = eu.eurise.core.insieme.Assenza.decode(statusPrefs.getString(a.name, null)?.let { runCatching { JSONObject(it) }.getOrNull() })
         approvals = Approva.decode(approvalPrefs.getString("list", null)).filter { it.account == a.name }
         store = SessionStore(context, a)
         session = store.load()
@@ -1776,6 +1849,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                             // L'agenda condivisa con l'assistente (tavola InsAssistente), con la chiave di chi la condivide.
                             Assistente.TYPE -> s.state[Assistente.TYPE + "|" + e.optString("state_key")] = content
                             Arrivo.STATE -> s.state[Arrivo.STATE + "|" + e.optString("state_key")] = content
+                            "eu.eurise.status" -> s.state["eu.eurise.status|" + e.optString("state_key")] = content
                             else -> if (e.optString("state_key").isEmpty()) s.state[type] = content
                         }
                     }

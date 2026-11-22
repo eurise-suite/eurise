@@ -370,6 +370,8 @@ internal fun TeamPane(model: ChatModel, actions: ChatActions, roomId: String) {
             model.members[roomId].orEmpty().forEach { u -> Text(if (u == me) stringResource(R.string.fa_you) else personLabel(model, u), fontSize = 12.5.sp,
                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.surface).padding(horizontal = 10.dp, vertical = 5.dp)) }
         }
+        // Le ferie della squadra (tavola LavStato).
+        TeamHolidays(model, roomId)
         Text(stringResource(R.string.tm_since, recent.size), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
         if (recent.isNotEmpty()) Card {
             recent.asReversed().take(10).forEachIndexed { i, e ->

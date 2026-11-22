@@ -67,6 +67,95 @@ computer (area Computer, tavola PcEmail).
   mattino della posta. Un riepilogo unico Chat + Email (le due app sono separate) e il riassunto con Eurise AI nel
   riepilogo: dopo. Prove: richiesta da Ciarly a Element e da Ciarly a Ciarly; email «ok» da un altro programma; faccenda con
   due telefoni e promemoria; uscita con voti, calendario e passaggi; un messaggio «urgente» la sera sull'account di lavoro.
+- **Lavorare insieme, famiglia, amici, lavoro: le tavole del 17 novembre in Chat e in Email** (22 novembre, giri 1024–1032; chat, mail,
+  phone). Modulo nuovo **`core/insieme`** (logica pura con `SchedaTest`; dipende da core:suite): **la stessa scheda**
+  (`Scheda`: Affida, Faccenda, Uscita, Orari, Spesa, Condividi, Cena, Regalo, Elenco, Decisione, Proposta; nella stanza
+  `eu.eurise.card` + risposte `eu.eurise.card.answer` con `m.reference`, testo per Element), **la strada dell'email**
+  (`SchedaMail`: oggetto «[Da fare] …», testo e HTML con pulsanti `mailto:` che preparano la risposta, riferimento
+  «eurise-<id>»; nessuna pagina né server), **le risposte** (`Risposte`: «fatto», «non posso», «vista», «1 e 3», «nessuna»,
+  «ho pagato», «sì/tardi/no», «confermo»), **il contratto Chat → Email** (`SchedaContract`, fornitore `<Email>.schede` col
+  permesso di firma: manda la scheda dalla prima casella, un'email a persona, e restituisce le risposte; intent verso la Chat
+  per spese, scadenze, «chi va?», tappe, decisioni), **ruoli** (`Ruoli`, `RuoliContract`), **orari liberi** (`Disponibilita`),
+  **inviti .ics** (`Ics`), **calendario** (`Agenda`), **nota della riunione** (`Riunione`), **importi e scadenze nelle email**
+  (`Importi`, `Scadenze`), **assenza** (`Assenza`), **traduzione con Leggi** (`Traduci`). Persone con la sola email nelle liste
+  della Chat: `mailto:indirizzo#Nome`.
+  - **InsStessaScheda** · Email: «Affida» e «Proponi le date» nello Scrivi; scheda ricevuta con gli stessi tasti; «Schede
+    mandate per email» sotto la posta con le risposte lette da sole (anche ad app chiusa, `SyncWorker`), Sollecita, Fissa.
+    Chat: scheda viva (`CardBubble`), risposte nascoste dalla conversazione. **Faccende e Uscite in Email**: nelle Faccende
+    «chi ha solo l'email» (promemoria per email dal telefono di chi l'ha messa, `FaccendeWorker`; «fatto» passa il turno);
+    nell'Uscita «Anche per email» (si vota rispondendo con i numeri; il telefono di chi propone mette i voti nel gruppo per
+    conto loro, `Uscita.forWho`).
+  - **InsRuoli** · ruoli nella Rubrica (scheda del contatto, «Persone e ruoli», `phone/.../Roles.kt`, fornitore `.persone`
+    con `roles`/`set_role`); Chat ed Email li leggono e li cambiano (foglio «Persone e ruoli» nell'account / nelle
+    impostazioni); le proposte (Affida, Condividi) partono dai ruoli.
+  - **InsAffida** · Chat: «Affida a…» dalla graffetta (pressione lunga) e dal menu del messaggio, alla chat a due o per email;
+    Non posso / Vista / Fatta; «se non risponde torna a te» (1 o 2 giorni); «Le cose affidate» nell'account. Email: chip Affida.
+  - **InsCondividi** · Chat: «Condividi un appuntamento» dal calendario, persone per ruolo, Vede/Modifica, per email a chi non
+    usa Eurise; «Aggiungi al mio calendario». Email: chip «Appuntamento» con l'invito .ics allegato. (Note, elenchi, cartelle:
+    con l'area Organizzazione.)
+  - **InsAssistente** · Chat: nella chat a due «Fai vedere la tua agenda» (per calendario: mai, libero/occupato, titoli; stato
+    `eu.eurise.agenda` con la chiave del proprio id, aggiornato ogni mezz'ora ad app aperta); chi la vede ha «Proponi» con i
+    liberi; la proposta si conferma con un tocco ed entra nel calendario (`Agenda.insert`, permesso già della Chat).
+  - **InsElenchi** · Chat: scheda «Elenchi» nei gruppi (Spesa, Casa, Ufficio e altri; stato `eu.eurise.lists`): Lo prendo io,
+    fatta, chi e quando; Condividi come testo, Manda per email.
+  - **InsRiunione** · Chat: scheda «Riunione» (nota condivisa `eu.eurise.meeting`): le righe «@Paolo cosa ven 22» diventano
+    «Affida a…» nel gruppo rivolte a lui (le tue nelle Attività). Email: nel testo dello Scrivi le stesse righe → «Assegna N cose
+    da fare», un'email a testa.
+  - **InsDisponibilita / InsDisponibilitaMail** · Chat: «Disponibilità» (30 min, 1 o 2 ore; orari liberi della settimana
+    prossima, uno la mattina e uno il pomeriggio; scade in 7 giorni); l'altro sceglie, l'appuntamento entra nel calendario di
+    chi li ha mandati e l'altro ha «Aggiungi al calendario». Email: chip «Disponibilità» (permessi del calendario nuovi
+    nell'Email, chiesti solo allora); la risposta con il numero fissa l'appuntamento: invito .ics all'altro e calendario.
+  - **InsSquadra** · Chat: scheda «File» del gruppo: link della cartella di squadra sul cloud (stato `eu.eurise.team`), chi c'è,
+    «Da ieri · N cambi», tutti i file del gruppo. La cartella vera di Drive (chi è dentro, cosa è cambiato) va fatta con l'area
+    Organizzazione.
+  - **SpeEmail** · Email: «Spesa di 528,00 € · Aggiungi» su biglietti e ricevute (si sceglie il gruppo nella Chat, «Nuova
+    spesa» già compilata). Chat: nelle Spese «Chi non usa la Chat · Per email» (stato `eu.eurise.expense.people`) e «Manda il
+    riepilogo» (quota e saldo, un'email a testa); «ho pagato» per email segna il pagamento verso di te.
+  - **FamScadenze, FamDocumenti** · Chat: scheda «Casa» (stato `eu.eurise.deadlines`): bollette, bollo, revisione, rate
+    (tornano ogni mese), contratti (disdetta), garanzie, documenti (avviso 60 giorni prima); chi paga, «Pagata» che entra nelle
+    spese divisa, promemoria in Attività o Calendario. Email: «Scadenza: …» trovata nel testo con Promemoria (Attività tre
+    giorni prima) e «Nelle scadenze di casa». Il cassetto cifrato dei documenti resta a Eurise Password · Famiglia.
+  - **FamCena** · Chat: «Chi c'è a cena stasera?» dalla graffetta (Sì, Tardi, No; «Siete in 3»), ogni giorno alle 17 se acceso
+    (lo manda il telefono di chi l'ha acceso, ad app aperta); menu della settimana con gli ingredienti → «In Spesa».
+  - **FamScuola** · Email: circolari e avvisi del registro che arrivano per posta: «Dalla scuola · entro …», Promemoria, «Nelle
+    scadenze di casa», «Chiedi in famiglia chi va» (sondaggio nel gruppo scelto). Nessun accesso al registro.
+  - **FamArrivato** · Chat: «Sono arrivato» (graffetta): posti segnati da dove sei, Stasera / Giorni di scuola / Sempre, avviso a
+    mezzanotte; avviso di vicinanza di Android (`Arrivo.kt`, `ArrivoReceiver`, `ArrivoWorker`); esce solo la frase; gli altri
+    vedono che è acceso (stato `eu.eurise.arrival`). **Permesso nuovo** ACCESS_BACKGROUND_LOCATION, chiesto solo accendendolo.
+  - **FamGenitori** · Chat: nella scheda Casa «Farmaci condivisi» (stato `eu.eurise.meds`): dosi di oggi, Presa, la settimana;
+    con Eurise notifica all'ora; con un telefono semplice SMS da Eurise Messaggi «rispondi 1» e lettura della risposta
+    (`PeopleContract.items`); mezz'ora dopo avviso a chi li ha messi (`MedsWorker`).
+  - **AmiViaggio** · Chat: scheda «Viaggio» (con il gruppo a tempo o le tappe; stato `eu.eurise.trip`): prossima tappa, itinerario,
+    spese, foto, biglietti, Valigia (elenco). Email: «Viaggio · …» sulle conferme → «Itinerario».
+  - **AmiRegalo** · Chat: scheda «Regalo» (stato `eu.eurise.gift`): idee votate (un voto a testa), quota dall'idea più votata,
+    chi ha versato, Ricorda, chi compra, IBAN, biglietto con una riga di ognuno; amici senza Chat per email («ho versato»).
+  - **LavDecisioni** · Chat: «Deciso» tenendo premuto un messaggio; frasi «decidiamo che…» della nota proposte; registro nella
+    scheda Riunione (stato `eu.eurise.decisions`). Email: «Deciso» su un'email → registro del gruppo scelto.
+  - **LavRicordami** · Email: Ricordamelo stasera 20:00, domani 8:30 (Attività con data e ora), «Se non risponde entro ven»
+    (se non arriva niente sullo stesso oggetto diventa un'attività). In Chat c'era già (ChatProgramma).
+  - **LavStato** · Chat: «Il tuo stato» nell'account (adesso: libero, in cantiere fino alle…, in riunione, in viaggio; assenza dal/al,
+    per urgenze, messaggio; stato `eu.eurise.status` nelle stanze); risposta automatica nelle chat a due (una volta al giorno,
+    ad app aperta); «in ferie fino al…» in alto nella chat a due; ferie della squadra nella scheda File del gruppo. Email: la
+    stessa assenza (dalla Chat o nelle impostazioni) con la risposta automatica delle caselle (`MailAbsence`, `SyncWorker`).
+  - **SpaSpazi** · Chat: Tutto / Lavoro / Famiglia / Amici nell'elenco (dal ruolo in Rubrica, account di lavoro = Lavoro,
+    o scelto a mano tenendo premuta la conversazione). Email: gli stessi spazi (caselle di lavoro = Lavoro, poi i ruoli).
+    Legame con le Modalità della Scrivania: da fare con l'area Organizzazione.
+  - **SpaTraduci** · Chat: «Traduzione» dalla graffetta: leggi i suoi messaggi in italiano, manda i tuoi nella sua lingua con
+    l'italiano sotto (Eurise Leggi, `Traduci`); «Traduci» sotto i messaggi in un'altra lingua. Email: da fare (lo stesso client).
+  Non ancora (prossimo giro): **LavNoteSpese** (scontrino con lo Scanner → voce; nota del mese in PDF al capo con
+  Approvazioni o al commercialista), **LavRiassunto in Email** (riassunto di un filo lungo con Eurise AI; in Chat c'è),
+  **LavOspiti** (stanza ospite con un link senza account: serve il server Matrix dello studio/Eurise), **LavRapporto**
+  (checklist del sopralluogo con foto, posizione e vocali → PDF), traduzione nell'Email, scheda di Drive vera con l'area
+  Organizzazione, risposta automatica e farmaci ad app chiusa anche senza la Chat aperta (oggi: worker per farmaci; la
+  risposta automatica in Chat solo ad app aperta).
+  Parti comuni toccate: `settings.gradle.kts` (modulo nuovo `core:insieme`); permessi nuovi: Chat ACCESS_BACKGROUND_LOCATION, Email
+  READ/WRITE_CALENDAR; Telefono dipende da `core:insieme`.
+  Prove da chiedere: scheda Affida per email a un indirizzo esterno e risposta «fatto» da un altro programma; uscita con un
+  voto per email; faccenda con una persona per email; ruoli dalla Rubrica visti in Chat ed Email; disponibilità in Chat e per
+  email con la scelta; agenda condivisa con un secondo telefono e proposta confermata; elenco Spesa su due telefoni; nota della
+  riunione con «Assegna tutte»; spesa dall'email nel gruppo; scadenza dalla bolletta; farmaci con SMS «1»; Sono arrivato a
+  casa con l'app chiusa; regalo con voti e versamenti; traduzione con Leggi e un messaggio in tedesco; assenza con risposta in
+  Chat ed Email.
 - **Passa la palla in Chat ed Email** (21 novembre, giro 994; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
   menu di un messaggio: a chi (i membri della stanza o le persone con cui scrivi), la riga sul da farsi, una scadenza;
   parte come messaggio con il campo `eu.eurise.ball` (Element vede il testo «🏐 Palla a …»), lo stato passa
@@ -598,8 +687,11 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    poi appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
-   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario~~ (giro 994, vedi «Fatto»; Faccende e Uscita per ora solo in Chat: in Email da fare con la scheda viva di InsStessaScheda), Faccende a turno, Organizza un'uscita, Fuori orario,
-   poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
+   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario~~ (giro 994),
+   ~~InsStessaScheda (con Faccende e Uscita in Email), InsRuoli, InsCondividi, InsAffida, InsAssistente, InsElenchi, InsRiunione,
+   InsDisponibilita, InsSquadra, InsDisponibilitaMail, SpeEmail, FamScadenze, FamDocumenti, FamCena, FamScuola, FamArrivato,
+   FamGenitori, AmiViaggio, AmiRegalo, LavDecisioni, LavRicordami, LavStato, SpaSpazi, SpaTraduci~~ (22 novembre, vedi «Fatto»);
+   **restano** LavNoteSpese, LavRiassunto (Email), LavOspiti (serve il server), LavRapporto, traduzione in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
 2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto
@@ -623,7 +715,7 @@ recupero, verifica di una persona, QR stampato letto con lo Scanner); suoneria p
 che suona con Eurise.
 
 ## Come si lavora
-- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/contacts` (con `PeopleLookup`), `core/studio` (Studio medico), `core/data/messages`
+- Codice: `mail/`, `chat/`, `messages/`, `phone/` (con la Rubrica); in comune `core/insieme` (la stessa scheda in Chat ed Email, ruoli, orari, inviti), `core/contacts` (con `PeopleLookup`), `core/studio` (Studio medico), `core/data/messages`
   (`MessageInsights`, con test), contratti in `core/suite` (`PeopleContract` per «Una persona, tutti i canali»); per il computer `core/sync` (`MailClient`, `MailText`).
 - Prima le tavole sulla tela (pagine «Chat ed Email» e «Mappe, Messaggi e Telefono»), poi il codice dopo l'approvazione.
 - Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`

@@ -35,6 +35,11 @@ class SchedeProvider : ContentProvider() {
                         .flatMap { s -> s.answers.map { (addr, g) -> C.Got(s.card.id, addr, g.answer, g.at) } }
                     Bundle().apply { putString(C.EXTRA_RESULT, C.pack(got)) }
                 }
+                C.METHOD_ABSENCE -> {
+                    val txt = extras?.getString(C.EXTRA_ABSENCE).orEmpty()
+                    MailAbsence.save(ctx, if (txt.isBlank()) null else eu.eurise.core.insieme.Assenza.decode(org.json.JSONObject(txt)))
+                    Bundle().apply { putBoolean(C.EXTRA_RESULT, true) }
+                }
                 else -> null
             }
         }.getOrNull()

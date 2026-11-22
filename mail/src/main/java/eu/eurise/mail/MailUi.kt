@@ -160,10 +160,15 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
     var approvalsOpen by remember { mutableStateOf(false) }
     var cardsOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    // Gli spazi (tavola SpaSpazi): dalla casella (quelle di lavoro → Lavoro) o dal ruolo in Rubrica di chi scrive.
+    var space by remember { mutableStateOf<eu.eurise.core.insieme.Ruoli.Space?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { model.loadRoles() }
+    fun spaceOf(m: Summary) = if (m.accountId in model.offRules.work) eu.eurise.core.insieme.Ruoli.Space.Lavoro
+        else model.roleOf(m.fromAddress)?.let(eu.eurise.core.insieme.Ruoli::space)
     val q = query.trim().lowercase()
     val shown = model.messages.filter { m ->
         if (q.isNotEmpty()) m.subject.lowercase().contains(q) || m.fromName.lowercase().contains(q) || m.fromAddress.lowercase().contains(q)
-        else m.kind == kind
+        else m.kind == kind && (space == null || spaceOf(m) == space)
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -182,6 +187,10 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
                     ) + if (unread > 0 && k != Kind.People) " · $unread" else ""
                     Chip(label, selected = q.isEmpty() && kind == k) { kind = k; query = "" }
                 }
+            }
+            if (model.roles.isNotEmpty() || model.offRules.work.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.ml_sp_all), selected = space == null) { space = null }
+                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = space == sp) { space = sp } }
             }
         }
         if (model.refreshing) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
@@ -699,6 +708,8 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
         if (model.accounts.isNotEmpty()) Card {
             AddRow(EuriseIcons.person(2.2f), stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), stringResource(R.string.ml_roles_sub)) { roles = true }
         }
+        // Stato e assenza (tavola LavStato): la risposta automatica delle caselle di lavoro.
+        if (model.accounts.isNotEmpty()) AbsenceCard()
         SectionTitle(stringResource(R.string.ml_add))
         Card {
             AddRow(EuriseIcons.shield(2.2f), stringResource(R.string.ml_add_eu), stringResource(R.string.ml_add_eu_sub)) { linking = "" }

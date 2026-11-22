@@ -266,7 +266,11 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     val archived = model.archived()
     val inFolder = if (model.folder == ARCHIVE) model.rooms.filter { it.id in archived }
         else Cartelle.shown(model.rooms, model.folders.firstOrNull { it.id == model.folder }, model.selfRoom).filter { it.id !in archived }
+    // Gli spazi (tavola SpaSpazi): Tutto, Lavoro, Famiglia, Amici.
+    LaunchedEffect(Unit) { model.loadRoles() }
+    @Suppress("UNUSED_VARIABLE") val spaceTick = model.relationsTick
     val shown = inFolder.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
+        .filter { model.space == null || q.isNotEmpty() || model.spaceOf(it) == model.space }
     var foldersSheet by remember { mutableStateOf(false) }
     var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
     var roomFolders by remember { mutableStateOf<Room?>(null) }
@@ -275,6 +279,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var approvalsSheet by remember { mutableStateOf(false) }
     var givenSheet by remember { mutableStateOf(false) }
     var rolesSheet by remember { mutableStateOf(false) }
+    var statusSheet by remember { mutableStateOf(false) }
     var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -303,6 +308,10 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
             // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
             ViewChips(model)
             if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
+            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
+                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
+            }
             // Una spesa arrivata dall'Email (tavola SpeEmail): si sceglie il gruppo.
             (model.pendingDeadline?.first ?: model.pendingAsk?.first ?: model.pendingStop?.title ?: model.pendingDecision?.first)?.let { what ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
@@ -361,6 +370,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     if (approvalsSheet) ApprovalsSheet(model, actions) { approvalsSheet = false }
     if (givenSheet) GivenSheet(model, actions) { givenSheet = false }
     if (rolesSheet) RolesSheet(model, actions) { rolesSheet = false }
+    if (statusSheet) StatusSheet(model, actions) { statusSheet = false }
     if (offSheet) OffHoursSheet(model) { offSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
@@ -380,6 +390,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         Pill(stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), EuriseIcons.person(2f), Modifier.fillMaxWidth(), strong = false) {
             account = false; rolesSheet = true
         }
+        Pill(stringResource(R.string.ls_title), EuriseIcons.work(2f), Modifier.fillMaxWidth(), strong = false) { account = false; statusSheet = true }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.inv_menu), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.uni.openInviteList(true) }
@@ -677,7 +688,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text((peerStart?.let { stringResource(R.string.ql_off_until, Programma.time(it.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime())) + " · " } ?: "") +
+                // Lo stato dell'altro (tavola LavStato): in ferie fino al…
+                val peerAway = peer?.let { model.statusOf(roomId, it) }?.takeIf { it.away(java.time.LocalDate.now()) }
+                Text((peerAway?.let { stringResource(R.string.ls_peer_away, java.time.LocalDate.ofEpochDay(it.to).let { d -> "${d.dayOfMonth}/${d.monthValue}" }) + " · " } ?: "") +
+                    (peerStart?.let { stringResource(R.string.ql_off_until, Programma.time(it.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime())) + " · " } ?: "") +
                     stringResource(when {
                     room?.encrypted != true -> R.string.ch_room_plain
                     peerVerified -> R.string.ch_room_verified

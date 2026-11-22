@@ -370,3 +370,42 @@ internal fun WorkActions(model: MailModel, actions: MailActions, o: Opened) {
         }
     }
 }
+
+/** L'assenza (tavola LavStato) nelle impostazioni dell'Email: dal, al, per urgenze, il messaggio; la stessa della Chat. */
+@Composable
+internal fun AbsenceCard() {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    var st by remember { mutableStateOf(MailAbsence.load(context)) }
+    var from by remember { mutableStateOf("") }
+    var to by remember { mutableStateOf("") }
+    var sub by remember { mutableStateOf(st?.substitute.orEmpty()) }
+    var msg by remember { mutableStateOf(st?.message.orEmpty()) }
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.util.Locale.getDefault())
+    fun day(s: String): java.time.LocalDate? = Regex("^(\\d{1,2})/(\\d{1,2})(?:/(\\d{4}))?$").matchEntire(s.trim())?.let { m ->
+        runCatching { java.time.LocalDate.of(m.groupValues[3].toIntOrNull() ?: java.time.LocalDate.now().year, m.groupValues[2].toInt(), m.groupValues[1].toInt()) }.getOrNull() }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.ml_ab_title), fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+        val s = st
+        if (s != null && s.to >= java.time.LocalDate.now().toEpochDay()) {
+            Text(stringResource(R.string.ml_ab_on, java.time.LocalDate.ofEpochDay(s.to).format(fmt)), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            BallChip(stringResource(R.string.ml_ab_stop), false) { MailAbsence.save(context, null); st = null }
+        } else {
+            Text(stringResource(R.string.ml_ab_off), fontSize = 12.sp, color = scheme.onSurfaceVariant)
+            listOf(Triple(from, R.string.ml_ab_from) { v: String -> from = v }, Triple(to, R.string.ml_ab_to) { v: String -> to = v },
+                Triple(sub, R.string.ml_ab_sub) { v: String -> sub = v }, Triple(msg, R.string.ml_ab_msg) { v: String -> msg = v }).forEach { (value, hint, set) ->
+                Box(Modifier.fillMaxWidth().heightIn(min = 40.dp).clip(RoundedCornerShape(12.dp)).background(scheme.background).padding(horizontal = 12.dp, vertical = 9.dp)) {
+                    if (value.isEmpty()) Text(stringResource(hint), fontSize = 13.sp, color = scheme.onSurfaceVariant)
+                    BasicTextField(value = value, onValueChange = { set(it.take(300)) }, textStyle = TextStyle(fontSize = 13.sp, color = scheme.onSurface),
+                        cursorBrush = SolidColor(scheme.primary), modifier = Modifier.fillMaxWidth())
+                }
+            }
+            BallChip(stringResource(R.string.ml_ab_save), true) {
+                val a = day(from) ?: return@BallChip
+                val b = day(to) ?: return@BallChip
+                val next = eu.eurise.core.insieme.Assenza.State(from = a.toEpochDay(), to = b.toEpochDay(), substitute = sub.trim(), message = msg.trim())
+                MailAbsence.save(context, next); st = next
+            }
+        }
+    }
+}

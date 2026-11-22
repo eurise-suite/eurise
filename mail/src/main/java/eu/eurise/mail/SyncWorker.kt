@@ -47,6 +47,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             if (fresh.isNotEmpty()) offerToStudio(ctx, studio, fresh)
             // Le risposte alle schede (tavola InsStessaScheda) si leggono anche ad app chiusa: la Chat le trova pronte.
             if (fresh.isNotEmpty()) runCatching { CardStore.collect(ctx, accounts, fresh) }
+            // L'assenza (tavola LavStato): la risposta automatica alle persone, una volta al giorno.
+            if (fresh.isNotEmpty()) runCatching { MailAbsence.reply(ctx, accounts, fresh, off.work) }
             if (known > 0) {
                 val all = fresh.filter { it.kind == Kind.People }
                 val people = if (quiet && a.id in off.work) all.filter { MailOffHours.passes(off, it.fromAddress, it.subject) } else all

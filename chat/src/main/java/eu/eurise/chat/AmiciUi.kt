@@ -313,3 +313,73 @@ internal fun TranslateSheet(model: ChatModel, roomId: String, onClose: () -> Uni
         Pill(stringResource(R.string.fs_save), EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = true) { model.setTranslate(roomId, read, send); onClose() }
     }
 }
+
+// --- Stato e assenza (tavola LavStato) ---
+
+@Composable
+internal fun StatusSheet(model: ChatModel, actions: ChatActions, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val cur = model.myStatus
+    var now by remember { mutableStateOf(cur?.now ?: eu.eurise.core.insieme.Assenza.Now.Libero) }
+    var until by remember { mutableStateOf(cur?.until.orEmpty()) }
+    fun label(d: Long) = if (d > 0) LocalDate.ofEpochDay(d).let { "${it.dayOfMonth}/${it.monthValue}" } else ""
+    var from by remember { mutableStateOf(label(cur?.from ?: 0)) }
+    var to by remember { mutableStateOf(label(cur?.to ?: 0)) }
+    var sub by remember { mutableStateOf(cur?.substitute.orEmpty()) }
+    var msg by remember { mutableStateOf(cur?.message.orEmpty()) }
+    var chat by remember { mutableStateOf(cur?.chat ?: true) }
+    var email by remember { mutableStateOf(cur?.email ?: true) }
+    Sheet(onClose) {
+        Text(stringResource(R.string.ls_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 4.dp))
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.ls_now), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(eu.eurise.core.insieme.Assenza.Now.Libero to R.string.ls_free, eu.eurise.core.insieme.Assenza.Now.Cantiere to R.string.ls_site,
+                    eu.eurise.core.insieme.Assenza.Now.Riunione to R.string.ls_meeting, eu.eurise.core.insieme.Assenza.Now.Viaggio to R.string.ls_travel).forEach { (n, l) ->
+                    Chip(stringResource(l), now == n) { now = n }
+                }
+            }
+            if (now != eu.eurise.core.insieme.Assenza.Now.Libero) SmallField(until, stringResource(R.string.ls_until_hint)) { until = it.take(5) }
+            Text(stringResource(R.string.ls_absence), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.weight(1f)) { SmallField(from, stringResource(R.string.ls_from)) { from = it.take(10) } }
+                Box(Modifier.weight(1f)) { SmallField(to, stringResource(R.string.ls_to)) { to = it.take(10) } }
+            }
+            SmallField(sub, stringResource(R.string.ls_sub)) { sub = it.take(60) }
+            SmallField(msg, stringResource(R.string.ls_msg)) { msg = it.take(300) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ls_chat), fontSize = 13.sp, modifier = Modifier.weight(1f)); androidx.compose.material3.Switch(checked = chat, onCheckedChange = { chat = it })
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ls_email), fontSize = 13.sp, modifier = Modifier.weight(1f)); androidx.compose.material3.Switch(checked = email, onCheckedChange = { email = it })
+            }
+        }
+        Pill(stringResource(R.string.ls_save), EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = true) {
+            val a = parseDay(from)
+            val b = parseDay(to)
+            model.setStatus(eu.eurise.core.insieme.Assenza.State(now, until.trim(), a?.toEpochDay() ?: 0L, b?.toEpochDay() ?: 0L, sub.trim(), msg.trim(), chat, email))
+            onClose()
+        }
+        if (cur != null) Pill(stringResource(R.string.ls_clear), EuriseIcons.close(2f), Modifier.fillMaxWidth(), strong = false) { model.setStatus(null); onClose() }
+    }
+}
+
+/** Nel gruppo di lavoro: chi è in ferie nei prossimi 30 giorni, e i giorni in cui siete fuori in due o più. */
+@Composable
+internal fun TeamHolidays(model: ChatModel, roomId: String) {
+    val scheme = MaterialTheme.colorScheme
+    val me = model.session?.userId.orEmpty()
+    val states = model.members[roomId].orEmpty().mapNotNull { u -> (if (u == me) model.myStatus else model.statusOf(roomId, u))?.takeIf { it.from > 0 }?.let { u to it } }
+    val today = LocalDate.now()
+    val soon = states.filter { it.second.to >= today.toEpochDay() && it.second.from <= today.plusDays(30).toEpochDay() }
+    if (soon.isEmpty()) return
+    Text(stringResource(R.string.ls_team), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant)
+    soon.forEach { (u, s) ->
+        Text((if (u == me) stringResource(R.string.fa_you) else model.nameOf(u).substringBefore(' ')) + " · " + LocalDate.ofEpochDay(s.from).format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())) +
+            "–" + LocalDate.ofEpochDay(s.to).format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())), fontSize = 12.5.sp)
+    }
+    (0..30).map { today.plusDays(it.toLong()) }.firstOrNull { d -> eu.eurise.core.insieme.Assenza.outOn(soon.map { it.second }, d) >= 2 }?.let { d ->
+        Text(stringResource(R.string.ls_team_two, d.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())), eu.eurise.core.insieme.Assenza.outOn(soon.map { it.second }, d)),
+            fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF85672B))
+    }
+}

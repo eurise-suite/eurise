@@ -207,4 +207,14 @@ class SchedaTest {
         assertEquals(null, Scadenze.due("Ci vediamo giovedì", today))
         assertEquals(java.time.LocalDate.of(2027, 3, 15), Scadenze.date("15 marzo", today))
     }
+
+    @Test fun absence() {
+        val from = java.time.LocalDate.of(2026, 12, 23)
+        val st = Assenza.State(Assenza.Now.Cantiere, "13:00", from.toEpochDay(), from.plusDays(4).toEpochDay(), "Paolo")
+        assertTrue(st.away(from.plusDays(2)))
+        assertFalse(st.away(from.minusDays(1)))
+        assertEquals(st, Assenza.decode(Assenza.encode(st)))
+        assertEquals("fino al 27 · Paolo", Assenza.reply(st, "27") { u, s -> "fino al $u · $s" })
+        assertEquals(1, Assenza.outOn(listOf(st, Assenza.State()), from))
+    }
 }

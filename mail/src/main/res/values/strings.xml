@@ -233,4 +233,17 @@
     <string name="ml_rm_watch">Se fino ad allora non risponde, te lo ricordo</string>
     <string name="ml_rm_nudge">Non ha risposto: %1$s · %2$s</string>
     <string name="ml_dc_mark">Deciso</string>
+    <string name="ml_sp_all">Tutto</string>
+    <!-- Stato e assenza (tavola LavStato). -->
+    <string name="ml_ab_auto">Sono assente fino al %1$s e leggerò la posta al ritorno.</string>
+    <string name="ml_ab_auto_sub">Sono assente fino al %1$s. Per urgenze scrivete a %2$s, che vi risponde lui.</string>
+    <string name="ml_ab_title">Assenza</string>
+    <string name="ml_ab_on">In ferie fino al %1$s · risposta automatica accesa</string>
+    <string name="ml_ab_off">Nessuna assenza. La si mette dalla Chat (Il tuo stato) o qui.</string>
+    <string name="ml_ab_from">Dal (23/12)</string>
+    <string name="ml_ab_to">Al (27/12)</string>
+    <string name="ml_ab_sub">Per urgenze (nome o indirizzo)</string>
+    <string name="ml_ab_msg">Il messaggio (facoltativo)</string>
+    <string name="ml_ab_save">Accendi la risposta automatica</string>
+    <string name="ml_ab_stop">Spegni</string>
 </resources>

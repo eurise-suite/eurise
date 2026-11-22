@@ -906,4 +906,29 @@
     <string name="tr_missing">Manca la lingua in Eurise Leggi: si scarica lì</string>
     <string name="tr_no_app">Serve Eurise Leggi per tradurre sul telefono</string>
     <string name="tr_failed">La traduzione non è riuscita</string>
+    <!-- Spazi (tavola SpaSpazi). -->
+    <string name="sp_all">Tutto</string>
+    <string name="sp_room">Spazio</string>
+    <!-- Stato e assenza (tavola LavStato). -->
+    <string name="ls_title">Il tuo stato</string>
+    <string name="ls_now">Adesso</string>
+    <string name="ls_free">Libero</string>
+    <string name="ls_site">In cantiere</string>
+    <string name="ls_meeting">In riunione</string>
+    <string name="ls_travel">In viaggio</string>
+    <string name="ls_until_hint">fino alle (13:00)</string>
+    <string name="ls_absence">Assenza</string>
+    <string name="ls_from">Dal (23/12)</string>
+    <string name="ls_to">Al (27/12)</string>
+    <string name="ls_sub">Per urgenze (Paolo Monti)</string>
+    <string name="ls_msg">Il messaggio («Sono in ferie fino al 27…»), facoltativo</string>
+    <string name="ls_chat">Risposta automatica in Chat</string>
+    <string name="ls_email">Risposta automatica in Email · caselle di lavoro</string>
+    <string name="ls_save">Salva</string>
+    <string name="ls_clear">Togli lo stato e l\'assenza</string>
+    <string name="ls_auto">Sono assente fino al %1$s e rispondo al ritorno.</string>
+    <string name="ls_auto_sub">Sono assente fino al %1$s. Per urgenze scrivete a %2$s, che vi risponde lui.</string>
+    <string name="ls_peer_away">in ferie fino al %1$s</string>
+    <string name="ls_team">Ferie della squadra</string>
+    <string name="ls_team_two">Il %1$s siete fuori in %2$d</string>
 </resources>

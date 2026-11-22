@@ -364,7 +364,8 @@ internal fun ArrivalBar(model: ChatModel, roomId: String, onMine: () -> Unit) {
     val on = model.arrivalsOn(roomId)
     if (on.isEmpty()) return
     val scheme = MaterialTheme.colorScheme
-    Text(on.joinToString(" · ") { (who, places) -> (if (who == me) stringResource(R.string.fa_you) else model.nameOf(who).substringBefore(' ')) + ": " +
-        stringResource(R.string.ar_bar, places.joinToString(", ") { it.lowercase() }) }, fontSize = 11.5.sp, color = scheme.onSurfaceVariant,
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Text(on.joinToString(" · ") { (who, places) -> (if (who == me) context.getString(R.string.fa_you) else model.nameOf(who).substringBefore(' ')) + ": " +
+        context.getString(R.string.ar_bar, places.joinToString(", ") { it.lowercase() }) }, fontSize = 11.5.sp, color = scheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp).clickable(role = Role.Button, onClick = onMine))
 }

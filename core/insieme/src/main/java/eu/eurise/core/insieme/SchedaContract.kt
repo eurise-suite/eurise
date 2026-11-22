@@ -94,6 +94,13 @@ object SchedaContract {
     fun decisionIntent(context: Context, text: String, who: String): android.content.Intent? =
         chatIntent(context, ACTION_ADD_DECISION)?.putExtra(EXTRA_TITLE, text)?.putExtra(EXTRA_PLACE, who)
 
+    /** Chat → Email (tavola LavStato): la stessa assenza, per la risposta automatica delle caselle di lavoro. */
+    const val METHOD_ABSENCE = "absence"
+    const val EXTRA_ABSENCE = "absence"
+
+    fun setAbsence(context: Context, s: Assenza.State?): Boolean =
+        call(context, METHOD_ABSENCE, Bundle().apply { putString(EXTRA_ABSENCE, s?.let { Assenza.encode(it).toString() }.orEmpty()) })?.getBoolean(EXTRA_RESULT) == true
+
     fun pack(list: List<Got>): String = JSONArray().apply {
         list.forEach { g -> put(Scheda.answerToJson(g.answer).put("id", g.id).put("address", g.address).put("at", g.at)) }
     }.toString()
