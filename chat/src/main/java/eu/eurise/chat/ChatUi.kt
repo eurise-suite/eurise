@@ -305,13 +305,6 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
-            // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
-            ViewChips(model)
-            if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
-            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
-                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
-            }
             // Una spesa arrivata dall'Email (tavola SpeEmail): si sceglie il gruppo.
             (model.pendingDeadline?.first ?: model.pendingAsk?.first ?: model.pendingStop?.title ?: model.pendingDecision?.first)?.let { what ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
@@ -343,14 +336,28 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
         if (!model.ready) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
         model.error?.let { Text(it, fontSize = 12.5.sp, color = scheme.error, modifier = Modifier.padding(horizontal = 20.dp)) }
+        // Persone (tutti i canali insieme), Solo Chat, Non lette a schedario (tavole UniPersone e ChatSchedario, approvata il
+        // 22 novembre): l'elenco è il foglio della linguetta aperta; cartelle e spazi restano pillole sul foglio.
+        ViewTabs(model, Modifier.padding(horizontal = 6.dp).fillMaxWidth())
         Box(Modifier.weight(1f)) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 16.dp).background(scheme.surfaceContainerLow, RoundedCornerShape(topEnd = 18.dp))) {
+            if (model.uni.view == Uni.View.Chat) Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
+            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
+                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
+            }
+            }
+            Box(Modifier.weight(1f)) {
             if (model.ready && shown.isEmpty() && model.uni.view == Uni.View.Chat) Text(stringResource(R.string.ch_empty), fontSize = 14.sp, lineHeight = 20.sp,
                 color = scheme.onSurfaceVariant, modifier = Modifier.padding(24.dp))
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
                 if (model.uni.view == Uni.View.Chat && model.folder == null && q.isEmpty() && model.ready) item(key = "self") { SelfRow(model, actions) }
                 if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) { roomFolders = r } }
                 else peopleItems(model, query, unreadOnly = model.uni.view == Uni.View.Unread)
                 item { Spacer(Modifier.height(100.dp)) }
+            }
+            }
             }
             if (model.otherSession != null) AccountBar(model, Modifier.align(Alignment.BottomCenter)) { creating = true }
             else Row(
