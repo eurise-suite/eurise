@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import eu.eurise.core.suite.SuiteAccess
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession.PromptDelegate as P
@@ -63,6 +64,12 @@ class PageAsk(val prompt: P.BasePrompt, result: GeckoResult<P.PromptResponse>) :
 /**
  * «Scegli un file» delle pagine: il selettore di Android (foto, file, cloud), uno o più file secondo la pagina.
  * Da creare quando si crea l'attività (registra il risultato prima che l'attività parta).
+ *
+ * GeckoView carica solo file con un percorso vero (`file://`): gli indirizzi `content://` che dà il selettore (foto,
+ * Download, cloud) li perdeva quando non ne ricavava il percorso, uno o tutti (prova del 22 novembre). Come Firefox, i
+ * file scelti si copiano in una cartella privata ([UPLOADS], dentro la cache) e la pagina riceve le copie. Si accettano
+ * solo file di altre app ([SuiteAccess.isForeignUri]: mai il profilo o le password del Browser); le copie si cancellano
+ * dopo [KEEP_MS] e a ogni avvio del Browser.
  */
 class FilePicker(private val activity: ComponentActivity) {
     private var pending: PageAsk? = null
@@ -73,10 +80,32 @@ class FilePicker(private val activity: ComponentActivity) {
         val uris = buildList {
             data?.clipData?.let { c -> for (i in 0 until c.itemCount) c.getItemAt(i).uri?.let(::add) }
             if (isEmpty()) data?.data?.let(::add)
-        }
-        val p = ask.prompt as P.FilePrompt
+        }.distinct().filter { SuiteAccess.isForeignUri(activity, it) }
         if (r.resultCode != android.app.Activity.RESULT_OK || uris.isEmpty()) { ask.cancel(); return@registerForActivityResult }
-        ask.reply { if (uris.size == 1 || p.type != P.FilePrompt.Type.MULTIPLE) p.confirm(activity, uris[0]) else p.confirm(activity, uris.toTypedArray()) }
+        val p = ask.prompt as P.FilePrompt
+        val wanted = if (p.type == P.FilePrompt.Type.MULTIPLE) uris else uris.take(1)
+        val app = activity.applicationContext
+        Thread {
+            val copies = copy(app, wanted)
+            activity.runOnUiThread {
+                when {
+                    copies.isEmpty() -> {
+                        ask.cancel()
+                        android.widget.Toast.makeText(activity, R.string.brw_upload_failed, android.widget.Toast.LENGTH_LONG).show()
+                    }
+                    copies.size == 1 || p.type != P.FilePrompt.Type.MULTIPLE -> ask.reply { p.confirm(activity, copies[0]) }
+                    else -> ask.reply { p.confirm(activity, copies.toTypedArray()) }
+                }
+                if (copies.isNotEmpty() && copies.size < wanted.size) {
+                    android.widget.Toast.makeText(activity, activity.getString(R.string.brw_upload_partial, copies.size, wanted.size), android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
+
+    init {
+        val app = activity.applicationContext
+        Thread { sweep(app, KEEP_MS) }.start()
     }
 
     fun pick(ask: PageAsk) {
@@ -94,6 +123,60 @@ class FilePicker(private val activity: ComponentActivity) {
     }
 
     companion object {
+        /** La cartella delle copie da caricare, dentro la cache privata del Browser. */
+        private const val UPLOADS = "uploads"
+        /** Quanto restano le copie: il tempo di compilare e inviare il modulo della pagina. */
+        private const val KEEP_MS = 6 * 60 * 60 * 1000L
+
+        /**
+         * Copia ogni file scelto in una cartella nuova sotto [UPLOADS], con il suo nome ripulito (la pagina lo mostra),
+         * e restituisce gli indirizzi `file://` delle copie riuscite. Fuori dal thread principale.
+         */
+        internal fun copy(context: android.content.Context, uris: List<Uri>): List<Uri> {
+            sweep(context, KEEP_MS)
+            val root = java.io.File(context.cacheDir, UPLOADS)
+            return uris.mapIndexedNotNull { i, uri ->
+                runCatching {
+                    val dir = java.io.File(root, java.util.UUID.randomUUID().toString()).apply { mkdirs() }
+                    val target = java.io.File(dir, safeName(displayName(context, uri), context.contentResolver.getType(uri), i))
+                    val ok = context.contentResolver.openInputStream(uri)?.use { input ->
+                        target.outputStream().use { input.copyTo(it, 64 * 1024) }
+                        true
+                    } ?: false
+                    if (!ok) { dir.deleteRecursively(); null } else Uri.fromFile(target)
+                }.getOrNull()
+            }
+        }
+
+        /** Cancella le copie più vecchie di [maxAgeMs]. */
+        internal fun sweep(context: android.content.Context, maxAgeMs: Long) {
+            val now = System.currentTimeMillis()
+            java.io.File(context.cacheDir, UPLOADS).listFiles().orEmpty()
+                .filter { now - it.lastModified() > maxAgeMs }
+                .forEach { runCatching { it.deleteRecursively() } }
+        }
+
+        private fun displayName(context: android.content.Context, uri: Uri): String? = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) c.getString(0) else null
+            }
+        }.getOrNull() ?: uri.lastPathSegment
+
+        /**
+         * Un nome di file sicuro: niente cartelle («../»), niente caratteri di controllo o riservati, al massimo 120
+         * caratteri; senza nome si usa «file» con l'estensione del tipo.
+         */
+        internal fun safeName(name: String?, mime: String?, index: Int): String {
+            val base = name.orEmpty().substringAfterLast('/').substringAfterLast('\\')
+                .filter { it >= ' ' && it !in "\\/:*?\"<>|" }.trim().trimStart('.')
+            if (base.isNotEmpty()) return if (base.length <= 120) base else {
+                val ext = base.substringAfterLast('.', "").take(10)
+                if (ext.isEmpty()) base.take(120) else base.take(120 - ext.length - 1) + "." + ext
+            }
+            val ext = mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
+            return "file${if (index > 0) "-${index + 1}" else ""}${ext?.let { ".$it" }.orEmpty()}"
+        }
+
         /** I tipi accettati dalla pagina (`image/` con l'asterisco, «.pdf», «image/png») in tipi di Android; vuoto = qualsiasi file. */
         fun mimes(accept: Array<String>?): List<String> = accept.orEmpty().mapNotNull { a ->
             val t = a.trim().lowercase()

@@ -72,6 +72,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -209,7 +210,7 @@ fun BrowserScreen(
         )
     }
     Column(Modifier.fillMaxSize().background(scheme.background).windowInsetsPadding(WindowInsets.ime)) {
-        if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
+        if (strip == StripPlace.Top) TabStrip(model, Modifier.statusBarsPadding(), StripPlace.Top, onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
         if (barAtTop) Box(if (strip == StripPlace.Top) Modifier else Modifier.background(scheme.surface).statusBarsPadding()) { bar(true) }
         Box(Modifier.weight(1f).fillMaxWidth().then(if (tab?.fullscreen == true || strip == StripPlace.Top || barAtTop) Modifier else Modifier.statusBarsPadding())) {
             if (tab != null) Panes(model, tab)
@@ -228,13 +229,14 @@ fun BrowserScreen(
                     },
                 )
             }
+            if (tab != null && tab.fullscreen != true && model.split == null) SheetArrival(tab, fromAbove = strip == StripPlace.Bottom)
             if (tab != null && tab.progress in 1..99) {
                 LinearProgressIndicator(progress = { tab.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter))
             }
         }
         if (tab != null && !editing && tab.fullscreen != true) LoginBubbles(tab, onUnlock = actions::unlockPassword)
         if (tab != null) PagePromptDialog(tab)
-        if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
+        if (strip == StripPlace.Bottom && !editing && !finding) TabStrip(model, Modifier, StripPlace.Bottom, onNewTab = { model.open(); model.focusNewTab = true }, onGroups = openGroups)
         if (tab?.fullscreen != true) {
             if (finding && tab != null) FindBar(tab, onClose = { finding = false })
             else if (editing) AddressEditor(tab, model, onDone = { editing = false })
@@ -595,6 +597,53 @@ internal fun Pill(label: String, icon: ImageVector, modifier: Modifier, strong: 
         Icon(icon, null, tint = if (strong) scheme.onPrimary else scheme.primary, modifier = Modifier.size(17.dp))
         Spacer(Modifier.width(8.dp))
         Text(label, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (strong) scheme.onPrimary else scheme.onSurface)
+    }
+}
+
+/**
+ * Cambiare scheda porta davanti il suo foglio (tavola BrwSchedario, approvata il 22 novembre): sopra la pagina compare
+ * per un attimo il foglio della scheda nuova, con la sua miniatura, che arriva dal lato della linguetta (180 ms) e poi
+ * lascia vedere la pagina vera. Così si capisce che è un'altra pagina e non si vede il lampo del cambio. Non prende i
+ * tocchi; niente movimento se le animazioni del telefono sono spente o la scheda è nuova e senza miniatura.
+ */
+@Composable
+private fun SheetArrival(tab: Tab, fromAbove: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val rise = remember { androidx.compose.animation.core.Animatable(1f) }
+    val cover = remember { androidx.compose.animation.core.Animatable(0f) }
+    var shown by remember { mutableStateOf<Long?>(null) }
+    var thumb by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    LaunchedEffect(tab.id) {
+        val before = shown
+        shown = tab.id
+        if (before == null || before == tab.id) return@LaunchedEffect
+        val still = runCatching {
+            android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        }.getOrDefault(1f) == 0f
+        val blank = tab.url.isBlank() || tab.url == "about:blank"
+        if (still || (blank && tab.thumb == null)) return@LaunchedEffect
+        thumb = tab.thumb
+        rise.snapTo(0f)
+        cover.snapTo(1f)
+        rise.animateTo(1f, androidx.compose.animation.core.tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        kotlinx.coroutines.delay(140)
+        cover.animateTo(0f, androidx.compose.animation.core.tween(140))
+        thumb = null
+    }
+    if (cover.value <= 0f) return
+    Box(
+        Modifier.fillMaxSize().graphicsLayer {
+            translationY = (1f - rise.value) * 18.dp.toPx() * (if (fromAbove) -1f else 1f)
+            alpha = cover.value
+        }.background(scheme.surface),
+    ) {
+        thumb?.let {
+            androidx.compose.foundation.Image(
+                it, null, Modifier.fillMaxWidth(),
+                contentScale = androidx.compose.ui.layout.ContentScale.FillWidth, alignment = Alignment.TopCenter,
+            )
+        }
     }
 }
 

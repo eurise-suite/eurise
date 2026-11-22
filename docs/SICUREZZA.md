@@ -10,12 +10,11 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
   le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
   precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
-- **Ultimo giro pubblicato**: Compila **1048** da `prova-sicurezza` (22 novembre, 12:04 UTC): **R8 in tutte le app di
-  prova** e gli scaricamenti dei modelli nel centro privacy, sopra il giro 1044. Con Mappe 145 e Office 65 (invariati).
-  Prove sull'emulatore: porte verdi, avvio di tutte le 13 app senza arresti e più svelto (Eurise 944 → ~850 ms, Chat
-  1084 → ~680, AI 988 → ~530, Password ~500 → ~270). APK molto più leggeri (Eurise 19 → 6 MB, Password 10 → 2, Chat
-  26 → 18, Voce 42 → 34). `brand` = `prova-sicurezza` (b2ab5cc). Pubblicare:
-  `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Ultimo giro pubblicato**: Compila **1057** da `prova-sicurezza` (22 novembre, 15:14 UTC): sopra il 1048, il
+  Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
+  schede a schedario (tavola BrwSchedario). Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza` (da7d75c).
+  Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Giro 1048 provato sul telefono** (22 novembre): le app funzionano con R8.
 - **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
   nativo (R8): posta (IMAP/SMTP), Chat cifrata (Matrix), PDF e firma in Office e Scanner, OCR e traduzione in Leggi,
   dettatura e voce di Alfred, cervello in AI, sincronizzazione e backup. Poi in Leggi o Voce «Scarica» una lingua o un
@@ -137,6 +136,7 @@ nuova in un posto solo: `core/suite/.../SuiteAccess.kt` (per la Tastiera, proget
 | `CodesProvider` di Password: lettura protetta, scrittura no. | Nessuno oggi (scrittura vuota), ma fragile. | `android:permission` su tutto il fornitore. |
 | Chat: il server dell'accesso restava salvato per sempre; un `eurisechat://login?loginToken=…` di un'altra app poteva far entrare la Chat in un altro account giorni dopo. | **Sì, medio-basso** (servono un'app installata e un token dell'attaccante). | Vale dieci minuti e una volta sola. |
 | «Condividi» verso Posta, Messaggi e Modifica della Galleria con un `content://` o `file://` che punta ai dati privati dell'app stessa. | **Sì, basso**: la Posta o un MMS potevano allegare i propri file (account) a un messaggio che l'utente poi manda; la Galleria salvare fuori una copia dell'area protetta. | `SuiteAccess.isForeignUri`: i file propri si scartano. |
+| Browser, «Scegli un file» delle pagine (22 novembre): GeckoView carica solo file con un percorso, quindi i file scelti si copiano in `cache/uploads`. | **No, prevenuto**: una pagina non deve poter ricevere i file privati del Browser (profilo, password) se un selettore restituisse un indirizzo verso di essi; i nomi delle copie non devono uscire dalla cartella. | Solo file di altre app (`isForeignUri`), nomi ripuliti (`FilePicker.safeName`, test `UploadNameTest`), copie cancellate dopo sei ore e all'avvio. |
 | I cinque fornitori «Persone» (Posta, Messaggi, Telefono, Chat) e lo Studio, esportati senza permesso nel manifesto: controllano già il permesso giusto in `call()`. Gli altri componenti (circa 70): avvio, condivisione, apertura di file, servizi di sistema (`BIND_*`, `BROADCAST_SMS`…), ricevitori di avvio, importazioni con conferma (calendario, contatti, Password). | No: protetti dal sistema, con conferma dell'utente o senza dati in uscita. | Restano come sono. |
 
 Prova sull'emulatore: `prova-porte.yml`, **verde il 18 novembre, notte** (giro 839 di Compila). Prima (giro di `brand`):
