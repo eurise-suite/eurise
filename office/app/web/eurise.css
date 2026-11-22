@@ -2177,6 +2177,16 @@ html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
 	box-sizing: border-box;
 }
 [data-theme='dark'] #spreadsheet-tab-scroll { --eurise-sheet: #12161D; }
+/* La fila dei fogli comincia subito sotto la griglia: niente bordo né spazio sopra (prova del computer, giro 49). */
+#spreadsheet-toolbar {
+	border-top: 0 !important;
+	padding-top: 0 !important;
+	margin-top: 0 !important;
+}
+.spreadsheet-tabs-container {
+	align-content: start !important;
+	vertical-align: top !important;
+}
 #spreadsheet-tab-scroll .spreadsheet-tab {
 	flex: none;
 	position: relative;
@@ -2216,6 +2226,13 @@ html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
 	color: var(--color-main-text) !important;
 	font-weight: 800;
 	overflow: visible;
+	box-shadow: none !important;
+	text-decoration: none !important;
+	outline: 0 !important;
+}
+#spreadsheet-tab-scroll .spreadsheet-tab * {
+	text-decoration: none !important;
+	box-shadow: none !important;
 }
 /* I due piedini: il foglio aperto si salda alla griglia sopra. */
 #spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::before,
