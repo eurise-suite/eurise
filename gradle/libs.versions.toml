@@ -55,7 +55,7 @@ androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "
 
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 
-zxing-core = { module = "com.google.zxing:core", version = "3.5.4" }
+zxing-core = { module = "com.google.zxing:core", version = "3.5.3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
