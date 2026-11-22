@@ -11,6 +11,8 @@ plugins {
 val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
 android {
+    // Solo le lingue della suite: le librerie portano traduzioni in decine di lingue che nessuno vedrebbe.
+    androidResources { localeFilters += listOf("it", "en") }
     namespace = "eu.eurise.hub"
     compileSdk = 37
 
@@ -21,8 +23,6 @@ android {
         // Su GitHub Actions il numero cresce a ogni compilazione: ogni versione aggiorna la precedente.
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.1.0"
-        // Solo le lingue della suite: le librerie portano traduzioni in decine di lingue che nessuno vedrebbe.
-        resourceConfigurations += listOf("it", "en")
         // Permesso di firma della suite (vedi core/suite ClockContract): uno per le ufficiali, uno per le prove.
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
     }

@@ -134,9 +134,9 @@ object QuickAdd {
         // Senza giorno: un'ora già passata vale per domani; una ripetizione parte dal suo primo giorno utile.
         if (due == null) {
             due = when {
-                repeatDay != null -> today.with(TemporalAdjusters.next(repeatDay!!))
+                repeatDay != null -> today.with(TemporalAdjusters.next(repeatDay))
                 repeat != null -> today
-                time != null -> if (time!!.isAfter(now.toLocalTime())) today else today.plusDays(1)
+                time != null -> if (time.isAfter(now.toLocalTime())) today else today.plusDays(1)
                 else -> null
             }
         }

@@ -106,7 +106,7 @@ object SoundRouter {
         val ranked = service.currentRanking?.getRanking(sbn.key, ranking) == true
         val channel = if (ranked) ranking.channel else null
         val appSounds = channel != null && channel.sound != null && channel.importance >= NotificationManager.IMPORTANCE_DEFAULT
-        SoundStore.noteAppSound(service, sbn.packageName, if (appSounds) channel!!.id else null)
+        SoundStore.noteAppSound(service, sbn.packageName, if (appSounds) channel.id else null)
         if (appSounds || choice !is SoundChoice.Play) return
         // Un aggiornamento che l'app vuole silenzioso, o una raffica dello stesso mittente: un suono solo.
         if ((n.flags and Notification.FLAG_ONLY_ALERT_ONCE) != 0 && lastPlayed.containsKey(sbn.key)) return

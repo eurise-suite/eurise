@@ -33,7 +33,7 @@ class NextcloudLogin(private val client: OkHttpClient = WebDav.sharedClient) {
         val req = Request.Builder().url(url).header("User-Agent", WebDav.USER_AGENT).post(ByteArray(0).toRequestBody()).build()
         client.newCall(req).execute().use { res ->
             if (!res.isSuccessful) throw DavException(res.code, "login/v2: ${res.code}")
-            val json = JSONObject(res.body?.string().orEmpty())
+            val json = JSONObject(res.body.string())
             val poll = json.getJSONObject("poll")
             Start(json.getString("login"), poll.getString("endpoint"), poll.getString("token"))
         }
@@ -58,7 +58,7 @@ class NextcloudLogin(private val client: OkHttpClient = WebDav.sharedClient) {
         runCatching {
             client.newCall(req).execute().use { res ->
                 if (res.code != 200) return@use null
-                val json = JSONObject(res.body?.string().orEmpty())
+                val json = JSONObject(res.body.string())
                 val result = Result(json.getString("server"), json.getString("loginName"), json.getString("appPassword"))
                 result.copy(davUser = userId(result) ?: result.loginName)
             }
@@ -74,7 +74,7 @@ class NextcloudLogin(private val client: OkHttpClient = WebDav.sharedClient) {
             .build()
         client.newCall(req).execute().use { res ->
             if (!res.isSuccessful) return@use null
-            JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONObject("data").getString("id").takeIf { it.isNotBlank() }
+            JSONObject(res.body.string()).getJSONObject("ocs").getJSONObject("data").getString("id").takeIf { it.isNotBlank() }
         }
     }.getOrNull()
 

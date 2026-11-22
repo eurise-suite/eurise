@@ -170,7 +170,7 @@ object Modes {
             Interruptions.Alarms -> NotificationManager.INTERRUPTION_FILTER_ALARMS
             Interruptions.None -> NotificationManager.INTERRUPTION_FILTER_NONE
         }
-        if (filter != null && policy) runCatching { nm?.setInterruptionFilter(filter) }
+        if (filter != null && policy) runCatching { nm.setInterruptionFilter(filter) }
         val ringer = when (to?.ringer ?: Ringer.Unchanged) {
             Ringer.Unchanged -> if (from?.ringer != null && from.ringer != Ringer.Unchanged) baseRinger else null
             Ringer.Sound -> AudioManager.RINGER_MODE_NORMAL

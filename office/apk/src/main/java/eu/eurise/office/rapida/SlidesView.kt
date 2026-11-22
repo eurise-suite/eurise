@@ -376,7 +376,7 @@ private fun Presenter(model: QuickModel, deck: SlideDeck, index: Int) {
         controller?.hide(WindowInsetsCompat.Type.systemBars())
         onDispose {
             controller?.show(WindowInsetsCompat.Type.systemBars())
-            if (before != null) activity?.requestedOrientation = before
+            if (before != null) activity.requestedOrientation = before
         }
     }
     val drag = remember { mutableFloatStateOf(0f) }

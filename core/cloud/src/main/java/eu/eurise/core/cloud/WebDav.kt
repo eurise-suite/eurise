@@ -105,7 +105,7 @@ class WebDav(
         return call(req) { res ->
             when (res.code) {
                 404 -> emptyList()
-                207 -> parse(res.body?.string().orEmpty()).filterNot { samePath(it.first, folderUrl.encodedPath) }.map { it.second }
+                207 -> parse(res.body.string()).filterNot { samePath(it.first, folderUrl.encodedPath) }.map { it.second }
                 else -> throw DavException(res.code, "PROPFIND $path: ${res.code}")
             }
         }
@@ -117,7 +117,7 @@ class WebDav(
         return call(req) { res ->
             when {
                 res.code == 404 -> null
-                res.isSuccessful -> res.body?.string().orEmpty() to res.header("ETag")
+                res.isSuccessful -> res.body.string() to res.header("ETag")
                 else -> throw DavException(res.code, "GET $path: ${res.code}")
             }
         }
@@ -165,7 +165,7 @@ class WebDav(
         return call(req) { res ->
             when {
                 res.code == 404 -> null
-                res.isSuccessful -> res.body?.bytes()
+                res.isSuccessful -> res.body.bytes()
                 else -> throw DavException(res.code, "GET $path: ${res.code}")
             }
         }
@@ -179,7 +179,7 @@ class WebDav(
                 res.code == 404 -> false
                 res.isSuccessful -> {
                     target.parentFile?.mkdirs()
-                    res.body?.byteStream()?.use { input -> target.outputStream().use { input.copyTo(it) } }
+                    res.body.byteStream().use { input -> target.outputStream().use { input.copyTo(it) } }
                     true
                 }
                 else -> throw DavException(res.code, "GET $path: ${res.code}")
@@ -214,7 +214,7 @@ class WebDav(
         val req = request(url("", folder = true)).header("Depth", "1").method("PROPFIND", CALENDARS_BODY.toRequestBody(XML)).build()
         return call(req) { res ->
             if (res.code != 207) throw DavException(res.code, "PROPFIND calendari: ${res.code}")
-            val responses = parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(DAV_NS, "response")
+            val responses = parseXml(res.body.string()).getElementsByTagNameNS(DAV_NS, "response")
             (0 until responses.length).mapNotNull { i ->
                 val r = responses.item(i) as Element
                 if (r.getElementsByTagNameNS(CALDAV_NS, "calendar").length == 0) return@mapNotNull null
@@ -272,7 +272,7 @@ class WebDav(
         return runCatching {
             call(req) { res ->
                 if (res.code != 207) return@call null
-                val doc = parseXml(res.body?.string().orEmpty())
+                val doc = parseXml(res.body.string())
                 val name = doc.getElementsByTagNameNS(DAV_NS, "displayname").item(0)?.textContent?.trim().orEmpty().ifEmpty { calendarUser }
                 val email = doc.getElementsByTagNameNS(SABRE_NS, "email-address").item(0)?.textContent?.trim()?.takeIf { it.isNotEmpty() }
                 name to email
@@ -300,7 +300,7 @@ class WebDav(
         return call(req) { res ->
             if (res.code == 404) return@call emptyList()
             if (res.code != 207) throw DavException(res.code, "REPORT $slug: ${res.code}")
-            val responses = parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(DAV_NS, "response")
+            val responses = parseXml(res.body.string()).getElementsByTagNameNS(DAV_NS, "response")
             (0 until responses.length).mapNotNull { i ->
                 val r = responses.item(i) as Element
                 val name = r.child("href")?.textContent?.trim()?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
@@ -336,7 +336,7 @@ class WebDav(
         val root = base.encodedPath
         return call(req) { res ->
             if (res.code != 207) throw DavException(res.code, "SEARCH: ${res.code}")
-            parse(res.body?.string().orEmpty())
+            parse(res.body.string())
                 .filter { !it.second.folder && it.first.startsWith(root) }
                 .map { (path, entry) -> URLDecoder.decode(path.removePrefix(root).replace("+", "%2B"), "UTF-8") to entry }
         }
@@ -350,7 +350,7 @@ class WebDav(
         val req = request("$sharesUrl?format=json".toHttpUrl()).header("OCS-APIRequest", "true").post(form.build()).build()
         return call(req) { res ->
             if (!res.isSuccessful) throw DavException(res.code, "share: ${res.code}")
-            org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONObject("data").getString("url")
+            org.json.JSONObject(res.body.string()).getJSONObject("ocs").getJSONObject("data").getString("url")
         }
     }
 
@@ -359,7 +359,7 @@ class WebDav(
         val req = request("$sharesUrl?format=json".toHttpUrl()).header("OCS-APIRequest", "true").get().build()
         return call(req) { res ->
             if (!res.isSuccessful) throw DavException(res.code, "shares: ${res.code}")
-            val data = org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").getJSONArray("data")
+            val data = org.json.JSONObject(res.body.string()).getJSONObject("ocs").getJSONArray("data")
             (0 until data.length()).map { data.getJSONObject(it) }.filter { it.optInt("share_type") == 3 }.map {
                 DavShare(it.getString("id"), it.optString("path").trimStart('/'), it.optString("url"), it.optString("expiration").takeUnless { e -> e.isBlank() || e == "null" })
             }
@@ -390,7 +390,7 @@ class WebDav(
         return call(req) { res ->
             if (res.code == 404) return@call emptyList()
             if (!res.isSuccessful) throw DavException(res.code, "shares of: ${res.code}")
-            val data = org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").optJSONArray("data") ?: return@call emptyList()
+            val data = org.json.JSONObject(res.body.string()).getJSONObject("ocs").optJSONArray("data") ?: return@call emptyList()
             (0 until data.length()).map { data.getJSONObject(it) }.filter { it.optInt("share_type") in PERSON_TYPES }.map {
                 DavPersonShare(
                     id = it.getString("id"), path = it.optString("path").trimStart('/'), with = it.optString("share_with"),
@@ -420,7 +420,7 @@ class WebDav(
         return call(req) { res ->
             // 304: nessuna attività; 404/503: app spenta sul server.
             if (!res.isSuccessful) return@call emptyList()
-            val data = runCatching { org.json.JSONObject(res.body?.string().orEmpty()).getJSONObject("ocs").optJSONArray("data") }.getOrNull()
+            val data = runCatching { org.json.JSONObject(res.body.string()).getJSONObject("ocs").optJSONArray("data") }.getOrNull()
                 ?: return@call emptyList()
             (0 until data.length()).map { data.getJSONObject(it) }.mapNotNull { a ->
                 val at = runCatching { java.time.OffsetDateTime.parse(a.optString("datetime")).toInstant().toEpochMilli() }.getOrNull() ?: return@mapNotNull null
@@ -444,14 +444,14 @@ class WebDav(
         val idReq = request(url(path)).header("Depth", "0").method("PROPFIND", FILEID_BODY.toRequestBody(XML)).build()
         val fileId = call(idReq) { res ->
             if (res.code != 207) throw DavException(res.code, "fileid: ${res.code}")
-            parseXml(res.body?.string().orEmpty()).getElementsByTagNameNS(OC_NS, "fileid").item(0)?.textContent?.trim()
+            parseXml(res.body.string()).getElementsByTagNameNS(OC_NS, "fileid").item(0)?.textContent?.trim()
         } ?: return emptyList()
         val listUrl = "$serverRoot/remote.php/dav/versions/$davUser/versions/$fileId/".toHttpUrl()
         val req = request(listUrl).header("Depth", "1").method("PROPFIND", PROPFIND_BODY.toRequestBody(XML)).build()
         return call(req) { res ->
             if (res.code == 404) return@call emptyList()
             if (res.code != 207) throw DavException(res.code, "versions: ${res.code}")
-            val doc = parseXml(res.body?.string().orEmpty())
+            val doc = parseXml(res.body.string())
             val responses = doc.getElementsByTagNameNS(DAV_NS, "response")
             (0 until responses.length).mapNotNull { i ->
                 val r = responses.item(i) as Element
@@ -482,7 +482,7 @@ class WebDav(
         return call(req) { res ->
             when (res.code) {
                 404 -> null
-                207 -> parse(res.body?.string().orEmpty()).firstOrNull()?.second
+                207 -> parse(res.body.string()).firstOrNull()?.second
                 else -> throw DavException(res.code, "PROPFIND $path: ${res.code}")
             }
         }
@@ -512,7 +512,7 @@ class WebDav(
         val req = request(url("", folder = true)).header("Depth", "0").method("PROPFIND", QUOTA_BODY.toRequestBody(XML)).build()
         return call(req) { res ->
             if (res.code != 207) throw DavException(res.code, "PROPFIND quota: ${res.code}")
-            val doc = parseXml(res.body?.string().orEmpty())
+            val doc = parseXml(res.body.string())
             fun value(name: String) = doc.getElementsByTagNameNS(DAV_NS, name).item(0)?.textContent?.trim()?.toLongOrNull()?.takeIf { it >= 0 }
             DavQuota(value("quota-used-bytes"), value("quota-available-bytes"))
         }

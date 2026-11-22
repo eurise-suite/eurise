@@ -371,7 +371,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         saveChoresSnapshot()
         scope.launch {
             val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Faccende.TYPE, content) }.isSuccess }
-            if (!ok) { if (before != null) s?.state?.set(Faccende.TYPE, before) else s?.state?.remove(Faccende.TYPE); relationsTick++; failed() }
+            if (!ok) { if (before != null) s.state?.set(Faccende.TYPE, before) else s?.state?.remove(Faccende.TYPE); relationsTick++; failed() }
         }
     }
 
@@ -443,7 +443,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         relationsTick++
         scope.launch {
             val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Tempo.TYPE, content) }.isSuccess }
-            if (!ok) { if (before != null) s?.state?.set(Tempo.TYPE, before) else s?.state?.remove(Tempo.TYPE); relationsTick++; failed() }
+            if (!ok) { if (before != null) s.state?.set(Tempo.TYPE, before) else s?.state?.remove(Tempo.TYPE); relationsTick++; failed() }
         }
     }
 

@@ -216,7 +216,7 @@ class Server(private val store: Store) {
         return true
     }
 
-    private fun serve(client: Socket, secret: ByteArray?, paired: () -> Unit) = client.use { c ->
+    private fun serve(client: Socket, secret: ByteArray?, paired: () -> Unit): Unit = client.use { c ->
         // Il telefono dà un segno di vita ogni pochi minuti: se tace così a lungo, il collegamento è morto.
         // Prima di sapere chi è: dieci secondi e pochi KB per presentarsi. Poi il tempo lungo del collegamento fisso.
         c.soTimeout = 10_000
