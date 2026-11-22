@@ -287,6 +287,20 @@ Galleria (foto, video, editor). Voce e Alfred sono dell'area Alfred; Leggi e Sca
 - Prima di cominciare ho controllato il lavoro della chat Sicurezza: `prova-sicurezza` è tutto dentro `brand`, l'editor
   non l'ha toccato nessun altro; niente librerie nuove (la verifica delle librerie blocca su `brand`).
 
+## 22 novembre: frasi della Tastiera nel backup (giro 1011, in apk-prova)
+- `BackupProvider` della Tastiera mette nello zip anche le frasi intere imparate (`phrases.txt`, da `Phrases.exportText`).
+  Al ripristino si uniscono a quelle già sul telefono (`PhraseModel.merge`: per ogni frase il conto più alto, nessuna si
+  perde; test `unireNonPerdeNulla`) e il file si scrive subito, perché poi la tastiera riparte.
+- Testi: nelle impostazioni della frase intera «Restano sul telefono e nel backup cifrato»; in «Cosa viene letto» del
+  backup dell'app Eurise «frasi abituali» (`feature/cloud`, solo il testo); KDoc di `KeyboardBackup` (`core/cloud`, solo
+  commento). Lo zip per l'app Eurise resta lo stesso contenitore: serve `app-debug.apk` nuovo solo per il testo.
+- Giri 981, 988 e 1007 fermati da altre aree (test e compilazione della Posta, poi l'Orologio dopo il passo 3 di Alfred:
+  `now` mancante in `ClockReceiver`, timer in pausa). Dopo più di venti minuti senza correzione l'ho corretto io con una
+  riga (`System.currentTimeMillis()`, come gli altri usi), commit «Orologio: compila di nuovo»: **area Alfred, da
+  sapere**. Pubblicati Tastiera, Password, Galleria e app Eurise del giro 1011.
+- Nel file di stato: segnati come fatti i passi 3, 4 e 6 (impostazioni e frase intera nel giro 830, resti della Galleria
+  nel giro 822).
+
 ## Tavole
 Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integrazioni, Galleria).
 - **Approvate e in codice**:
@@ -305,7 +319,9 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 - **Da rifare**: le tavole di quest'area con le tacche vecchie della privacy (ora 10 tacchette a semaforo).
 
 ## Prossimi passi, in ordine
-0. **Prova del proprietario sul giro 965**: editor della Galleria (ritaglio, cursori, velocità dell'anteprima con e senza
+0. **Prova del proprietario sul giro 1011** (Tastiera e app Eurise): backup con la Tastiera installata, poi ripristino;
+   le frasi abituali devono tornare.
+   **Prova del proprietario sul giro 965**: editor della Galleria (ritaglio, cursori, velocità dell'anteprima con e senza
    effetti), centro privacy e cestino unico con Password e Galleria. Se l'anteprima è ancora lenta: `PROXY_SIDE` e
    `IDLE_MS` in `Editor.kt`.
    **Prova del proprietario sul giro 758** (Tastiera: lettere precedenti, lettera sopra il dito). Se serve, regolare
@@ -321,13 +337,12 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
    spazio tra i tasti.
 2. ~~Password → Tastiera in linea~~ fatto nel giro 818/822. Era: Password non dava ancora
    `InlinePresentation` nella compilazione automatica, quindi la fila della Tastiera nei campi password resta vuota.
-3. **Tastiera fuori stile**: schermate delle impostazioni ancora di HeliBoard (tavola prima del codice). Con l'occasione
-   «Ricomincia» per il modo di toccare (`TouchModel.reset`, oggi senza pulsante).
-4. **Frase intera nella fila dei suggerimenti** (frasi abituali visibili): tavola sulla pagina Integrazioni, poi codice.
+3. ~~Tastiera fuori stile~~ fatto nel giro 830 (impostazioni nello stile di Eurise, «Ricomincia» in Come tocchi).
+4. ~~Frase intera nella fila dei suggerimenti~~ fatto nel giro 830; nel backup dal giro 1011.
 5. ~~Privacy di quest'area~~ fatta nei giri 830 e 965 (tacchette, centro privacy, cestino unico). Resta la prova sul
-   telefono con Password, Galleria e app Eurise del giro 965; poi le frasi della Tastiera nel backup.
-6. **Galleria, resti**: impronta per la cartella protetta, luogo nella scheda Accadde oggi, esportazione del diario,
-   «Apri da…» di File.
+   telefono con Password, Galleria e app Eurise del giro 965. Frasi della Tastiera nel backup: giro 1011.
+6. ~~Galleria, resti~~ fatti nel giro 822. Restano piccoli: gli originali tenuti 30 giorni (dopo «Sostituisci») nel
+   cestino unico; una maschera per ciascun passo di Regola, Curve e Filtro (solo se serve: rallenta l'anteprima).
 7. ~~Pulizia del codice di Password~~ fatta (giri 822 e 965): `PasswordApp` diviso, componenti comuni al posto delle copie.
 8. **In fondo**: Password Famiglia (tavole da approvare); kMail tra gli alias (API non verificata); kDrive (bloccato da
    Infomaniak); scrittura a mano nella Tastiera (rimandata: nessun modello libero).

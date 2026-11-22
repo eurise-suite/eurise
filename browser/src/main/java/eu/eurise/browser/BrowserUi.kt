@@ -216,7 +216,8 @@ fun BrowserScreen(
             if (tab == null || tab.url.isBlank() || tab.url == "about:blank") {
                 NewTabPage(
                     model, onImport = onImport, onOpen = { model.go(it) }, onQr = actions::openQr, onPin = { sheet = Sheet.Pin },
-                    onLater = { l -> readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) },
+                    // Arrivato dal computer (sincronizzazione) è senza testo: si apre la pagina.
+                    onLater = { l -> if (l.text.isBlank()) { sheet = Sheet.None; model.go(l.url) } else { readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) } },
                     onTool = { tool ->
                         when (tool) {
                             NewTabTool.Downloads -> actions.openDownloads()
@@ -304,7 +305,8 @@ fun BrowserScreen(
         }
         Sheet.Bookmarks, Sheet.Pin -> BookmarksPopup(
             model, tab, pinMode = sheet == Sheet.Pin, onImport = onImport,
-            onLater = { l -> readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) },
+            // Arrivato dal computer (sincronizzazione) è senza testo: si apre la pagina.
+                    onLater = { l -> if (l.text.isBlank()) { sheet = Sheet.None; model.go(l.url) } else { readerOffline = true; reader = PageInfo(l.url, l.title, "", "", l.text) } },
             onClose = { sheet = Sheet.None },
         )
         Sheet.Address -> if (tab != null) AddressMenu(model, tab, actions, onEdit = { sheet = Sheet.None; editing = true }, onClose = { sheet = Sheet.None })

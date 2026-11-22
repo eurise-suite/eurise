@@ -68,7 +68,14 @@
     <string name="pdf_extract">Estrai</string>
     <string name="pdf_form_hint">Questo PDF ha un modulo: tocca «Moduli» per compilarlo.</string>
     <string name="pdf_forms_hint">I valori si scrivono nel PDF. Controllali prima di firmare.</string>
+    <string name="office_hand_suite_left">Mano: sinistra, come sulla Scrivania (si cambia lì, vale per tutta la suite).</string>
+    <string name="office_hand_suite_right">Mano: destra, come sulla Scrivania (si cambia lì, vale per tutta la suite).</string>
+    <string name="pdf_link_cloud">Link dal cloud</string>
+    <string name="pdf_link_none">Salvato, ma da lì non si può fare un link: scegli un cloud Murena o Nextcloud.</string>
     <string name="pdf_forms_title">Compila il modulo</string>
+    <string name="pdf_forms_my_data">Compila con I miei dati</string>
+    <string name="pdf_forms_my_data_done">%1$d campi compilati con «%2$s». Controllali, poi Salva.</string>
+    <string name="pdf_forms_my_data_none">Nessun campo di questo modulo corrisponde ai dati di «%1$s».</string>
     <string name="pdf_image_place">Tocca la pagina dove mettere l\'immagine.</string>
     <string name="pdf_insert">Inserisci</string>
     <string name="pdf_insert_blank">Vuota</string>

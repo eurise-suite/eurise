@@ -19,6 +19,9 @@ object FilesContract {
     const val EXTRA_WHERE = "eu.eurise.extra.WHERE"
     const val EXTRA_EXTENSIONS = "eu.eurise.extra.EXTENSIONS"
     const val EXTRA_ORIGIN = "eu.eurise.extra.ORIGIN"
+    /** «Link dal cloud»: [saveIn] propone un cloud che sa fare link e torna anche [EXTRA_LINK_URL] (link pubblico). */
+    const val EXTRA_LINK = "eu.eurise.extra.LINK"
+    const val EXTRA_LINK_URL = "eu.eurise.extra.LINK_URL"
     /** Dove si apre «Apri da…»: la chiave di una cartella («telefono:Documents», «<account>:Lavoro»…), come [EXTRA_ORIGIN]. */
     const val EXTRA_START = "eu.eurise.extra.START"
     /** Chiave della cartella principale del telefono per [EXTRA_START]. */
@@ -38,8 +41,9 @@ object FilesContract {
      * [kind] separa le proposte («gallery», «download», «office»), [from] è il nome mostrato («da Galleria»).
      * Null se l'app Eurise manca o non è della suite: chi chiama passa al suo ripiego (foglio di condivisione, avviso).
      */
-    fun saveIn(context: Context, hubPackage: String, uri: Uri, mime: String, name: String, kind: String, from: String): Intent? =
+    fun saveIn(context: Context, hubPackage: String, uri: Uri, mime: String, name: String, kind: String, from: String, link: Boolean = false): Intent? =
         SuiteAccess.trusted(context, Intent(ACTION_SAVE_IN).setClassName(hubPackage, ACTIVITY)
+            .putExtra(EXTRA_LINK, link)
             .setType(mime)
             .putExtra(Intent.EXTRA_STREAM, uri)
             .putExtra(Intent.EXTRA_TITLE, name)

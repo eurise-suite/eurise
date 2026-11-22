@@ -41,7 +41,7 @@ computer (area Computer, tavola PcEmail).
   elenco dei dispositivi con «Esci».
 - **Suonerie per persona e per app** (approvate e in codice il 14 novembre, nella Scrivania › Griglia e icone › Suoni):
   suoneria del contatto (`CUSTOM_RINGTONE`), suono al posto di WhatsApp/Telegram tramite l'ascolto delle notifiche.
-- **Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario** (21 novembre, notte, giro 987; tavole LavApprova,
+- **Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario** (21–22 novembre, notte, giro 994; tavole LavApprova,
   FamFaccende, AmiUscita, SpaFuoriOrario). **Approvazioni** (`Approva.kt`, `ApprovaUi.kt`; posta `MailApprovals.kt`): in Chat
   «Chiedi un'approvazione» dalla graffetta (pressione lunga) o tenendo premuto un file mandato da te (titolo con
   Preventivo/Spesa/Ferie, importo, riga); chi la riceve ha Rifiuta, Chiedi modifica (con la riga), Approva; chi chiede vede
@@ -67,7 +67,7 @@ computer (area Computer, tavola PcEmail).
   mattino della posta. Un riepilogo unico Chat + Email (le due app sono separate) e il riassunto con Eurise AI nel
   riepilogo: dopo. Prove: richiesta da Ciarly a Element e da Ciarly a Ciarly; email «ok» da un altro programma; faccenda con
   due telefoni e promemoria; uscita con voti, calendario e passaggi; un messaggio «urgente» la sera sull'account di lavoro.
-- **Passa la palla in Chat ed Email** (21 novembre, giro 987; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
+- **Passa la palla in Chat ed Email** (21 novembre, giro 994; tavole InsPalla, InsPallaChat). Chat: «Passa la palla» nel
   menu di un messaggio: a chi (i membri della stanza o le persone con cui scrivi), la riga sul da farsi, una scadenza;
   parte come messaggio con il campo `eu.eurise.ball` (Element vede il testo «🏐 Palla a …»), lo stato passa
   Passata → Vista (ricevuta di lettura) → Ci lavoro → Fatta con risposte `eu.eurise.ball.status` (m.reference); chi la
@@ -381,7 +381,7 @@ computer (area Computer, tavola PcEmail).
   (`phone`, `ic_stat_call`), fumetto squadrato (`messages`, `ic_stat_sms`), fumetto arrotondato (`chat`, `ic_stat_chat`),
   busta (`mail`, `ic_stat_mail`). Le altre app della suite usano ancora `ic_stat_eurise` (non di quest'area).
 - **Icone nuove degli APK** (16 novembre, serie colorata): Email, Chat (smeraldo), Messaggi (oltremare), Telefono, Contatti.
-- **Ultimo APK pubblicato** in `apk-prova`: chat giro 972 (21 novembre: proposte, riassunto, quando lavora, gruppi a tempo); chat e messages giro 964 (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
+- **Ultimo APK pubblicato** in `apk-prova`: chat e mail giro 994 (22 novembre: Passa la palla, Approvazioni, Faccende, Uscita, Fuori orario; il giro 987 non compilava, correzione al 994); chat giro 972 (21 novembre: proposte, riassunto, quando lavora, gruppi a tempo); chat e messages giro 964 (21 novembre: truffe, presa visione, modalità semplice; prima chat giro 957, posizione dal vivo); phone giro 777 (invito sulla
   Chat); mail e messages giro 764 («Una persona, tutti i canali»).
 - **Telefono e Rubrica: correzioni del 20 novembre (giro 896, fatte dalla chat Organizzazione su richiesta del
   proprietario)**: (1) **chiamate perse**: `MissedCallsReceiver` riceve `ACTION_SHOW_MISSED_CALLS_NOTIFICATION` (da app
@@ -598,7 +598,7 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    poi appuntamenti, regole, agopuntura (piano qui sopra). Prove da chiedere: accendere lo Studio, aggiungere un paziente,
    verifica con Element sull'altro telefono, email e SMS di un paziente in coda.
 1. **Tavole approvate il 17 novembre** («Tutto approvato»): le sei da lavoro del 14, le dodici del 16 e le venticinque del 17.
-   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario~~ (giro 987, vedi «Fatto»; Faccende e Uscita per ora solo in Chat: in Email da fare con la scheda viva di InsStessaScheda), Faccende a turno, Organizza un'uscita, Fuori orario,
+   Codice nell'ordine: ~~Spese di gruppo~~, ~~Passa la palla, Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario~~ (giro 994, vedi «Fatto»; Faccende e Uscita per ora solo in Chat: in Email da fare con la scheda viva di InsStessaScheda), Faccende a turno, Organizza un'uscita, Fuori orario,
    poi il resto; ognuna in Chat e in Email. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.

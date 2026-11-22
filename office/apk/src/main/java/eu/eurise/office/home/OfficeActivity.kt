@@ -22,6 +22,7 @@ import eu.eurise.core.suite.FilesContract
 import eu.eurise.office.BuildConfig
 import eu.eurise.office.R
 import eu.eurise.office.data.Appearance
+import androidx.compose.material3.MaterialTheme
 import eu.eurise.office.data.DocKind
 import eu.eurise.office.data.Engine
 import eu.eurise.office.data.EngineInstaller
@@ -45,6 +46,8 @@ class OfficeActivity : ComponentActivity(), HomeActions {
     private var pendingFlags = 0
     private var onWifi by mutableStateOf(true)
     private var leftHanded by mutableStateOf(false)
+    /** Vero quando la mano viene dalla Scrivania: allora l'interruttore di Office non serve. */
+    private var handFromSuite by mutableStateOf(false)
     /** Tinte offerte per l'accento delle icone e scelta attuale (vuota = come la Scrivania). */
     private var accentTints by mutableStateOf<List<Appearance.Tint>>(emptyList())
     private var accentChoice by mutableStateOf(Appearance.DESK)
@@ -79,7 +82,10 @@ class OfficeActivity : ComponentActivity(), HomeActions {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             recents.load()
-            leftHanded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.leftHanded(this@OfficeActivity) }
+            val suiteHand = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Appearance.suiteLeftHanded(this@OfficeActivity) }
+            handFromSuite = suiteHand != null
+            leftHanded = suiteHand ?: kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.leftHanded(this@OfficeActivity) }
+            OfficePrefs.setLeftHanded(this@OfficeActivity, leftHanded)
             accentChoice = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { OfficePrefs.accent(this@OfficeActivity) }
             accentTints = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Appearance.palette(this@OfficeActivity) }
             loadClouds()
@@ -143,7 +149,10 @@ class OfficeActivity : ComponentActivity(), HomeActions {
                         title = { Text(stringResource(R.string.office_settings)) },
                         text = {
                             androidx.compose.foundation.layout.Column {
-                                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                if (handFromSuite) Text(
+                                    stringResource(if (leftHanded) R.string.office_hand_suite_left else R.string.office_hand_suite_right),
+                                    style = MaterialTheme.typography.bodySmall,
+                                ) else androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                                     Text(stringResource(R.string.office_left_handed), modifier = androidx.compose.ui.Modifier.weight(1f))
                                     androidx.compose.material3.Switch(checked = leftHanded, onCheckedChange = {
                                         leftHanded = it

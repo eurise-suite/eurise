@@ -57,6 +57,27 @@ class BrowserModel(private val context: Context) {
     var engine by mutableStateOf(Links.engine(prefs.getString("engine", null)))
         private set
 
+    /** I computer sincronizzati con le loro schede aperte (Telefono e computer, tavola BrwSincro). */
+    var computers by mutableStateOf<List<BrowserSync.Computer>>(emptyList())
+        private set
+
+    /**
+     * Dopo una sincronizzazione ([BrowserSync.changes]): segnalibri e Leggi dopo si rileggono dal disco, dove li ha
+     * scritti la sincronizzazione, e le schede dei computer si aggiornano. La lettura fuori dal thread principale.
+     */
+    fun reloadSynced() {
+        Thread {
+            val bm = store.load()
+            val lt = laterStore.load()
+            val pcs = BrowserSync.computers(context)
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                if (bm != bookmarks.toList()) { bookmarks.clear(); bookmarks.addAll(bm) }
+                if (lt != later.toList()) { later.clear(); later.addAll(lt) }
+                computers = pcs
+            }
+        }.start()
+    }
+
     init {
         sessionStore.load().let { d -> groups.addAll(d.groups); sessions.addAll(d.sessions); closed.addAll(d.closed) }
         later.addAll(laterStore.load())

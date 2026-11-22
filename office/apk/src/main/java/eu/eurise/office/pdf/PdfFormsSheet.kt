@@ -1,5 +1,7 @@
 package eu.eurise.office.pdf
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,27 +16,50 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import eu.eurise.core.suite.PasswordContract
+import eu.eurise.office.BuildConfig
 import eu.eurise.office.R
 
-/** «Moduli» (tavola OffPdf): i campi del PDF in un elenco, da compilare con la tastiera; si scrivono nel file. */
+/**
+ * «Moduli» (tavola OffPdf): i campi del PDF in un elenco, da compilare con la tastiera o con «I miei dati» di Eurise
+ * Password (il profilo lo sceglie la persona dentro Password; i campi riempiti si vedono e si correggono prima di
+ * salvare); si scrivono nel file.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfFormsSheet(model: PdfModel, onClose: () -> Unit) {
     val fields by produceState<List<FormField>?>(null) { value = model.session.read { PdfTools.fields(it) }.orEmpty() }
     val changes = remember { mutableStateMapOf<String, String>() }
+    val context = LocalContext.current
+    var filledFrom by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    val myDataIntent = remember { PasswordContract.pickMyDataIntent(context, debug = BuildConfig.DEBUG) }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        val names = data.getStringArrayExtra(PasswordContract.KEY_FIELD_NAMES).orEmpty()
+        val values = data.getStringArrayExtra(PasswordContract.KEY_FIELD_VALUES).orEmpty()
+        val profile = names.indices.filter { it < values.size }.map { names[it] to values[it] }
+        val list = fields.orEmpty().map { f -> changes[f.name]?.let { f.copy(value = it) } ?: f }
+        val filled = MyDataFill.fill(list, profile)
+        filled.forEach { (k, v) -> changes[k] = v }
+        filledFrom = data.getStringExtra(PasswordContract.KEY_TITLE).orEmpty() to filled.size
+    }
     ModalBottomSheet(onDismissRequest = onClose) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -46,6 +71,17 @@ fun PdfFormsSheet(model: PdfModel, onClose: () -> Unit) {
                 }) { Text(stringResource(R.string.pdf_save)) }
             }
             Text(stringResource(R.string.pdf_forms_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (myDataIntent != null && fields.orEmpty().any { it.kind == FormField.Kind.Text }) {
+                OutlinedButton(onClick = { pick.launch(myDataIntent) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.pdf_forms_my_data), fontWeight = FontWeight.SemiBold)
+                }
+            }
+            filledFrom?.let { (title, count) ->
+                Text(
+                    if (count > 0) stringResource(R.string.pdf_forms_my_data_done, count, title) else stringResource(R.string.pdf_forms_my_data_none, title),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
+                )
+            }
             val list = fields
             if (list == null) {
                 Text(stringResource(R.string.pdf_loading))

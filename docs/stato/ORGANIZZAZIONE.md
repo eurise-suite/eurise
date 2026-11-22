@@ -68,6 +68,10 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
   un'email in rubrica compaiono come «Invita Marco»; si scelgono a una a una, già scelte se il + è stato aperto da
   «Invita» (scheda persona, Agenda). L'invito lo manda il calendario sincronizzato (`CalendarRepository.invite`), come
   nell'editor; un avviso breve lo dice.
+- **Giro**: `brand` era troppo affollato (giri annullati di continuo) e la stessa testa `0cdbb1c` è uscita come giro 1013
+  dal ramo nuovo `prova-organizzazione-22nov-c` e come giro 1011 dal ramo `prova-piccole` di un'altra chat; in `apk-prova`
+  c'è il 1011, identico. Rami di prova di oggi da togliere: `prova-organizzazione-22nov`, `-22nov-giro`, `-22nov-b`,
+  `-22nov-c`.
 - **Da provare**: backup a richiesta e ripristino su un telefono pulito con una nota vocale «Solo nelle Note»; microfono
   nella bolla Promemoria e nella barra dell'Agenda; dal + «Pranzo con @Marco domani alle 13» e «Invita Marco» con un
   calendario di Murena.

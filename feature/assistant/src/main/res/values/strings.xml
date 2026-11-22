@@ -584,6 +584,8 @@
     <string name="alfred_log_subject">Registro di Alfred</string>
     <string name="alfred_log_clear">Cancella</string>
     <string name="alfred_log_foot">Resta sul telefono e fuori dal backup. «Mandalo» lo condivide solo se lo sceglie lei, con l\'app che vuole: serve a capire dove Alfred sbaglia.</string>
+    <string name="alfred_suggest_timer">Timer %1$d min</string>
+    <string name="alfred_suggest_call">Chiama %1$s</string>
     <string name="alfred_reply_none">Non trovo a chi rispondere: mi dica il nome.</string>
     <string name="alfred_help_g_messages">Messaggi</string>
     <string name="alfred_help_x_messages">«leggimi i messaggi» · «chi mi ha scritto?» · «rispondi che arrivo» · «scrivi ad Anna che arrivo»</string>

@@ -47,6 +47,18 @@ enum class Kind(val wire: String) {
      * delle attività aperte; `off`=`1` se è spento sul telefono.
      */
     Today("today"),
+    /**
+     * Sincronizzazione del Browser (tavola BrwSincro, 21 novembre): il computer manda il suo stato e il telefono risponde
+     * con [Sync]. Campi, tutti facoltativi tranne `ask`: `bm` segnalibri e siti fissati, `later` Leggi dopo, `tabs` schede
+     * aperte, ognuno un array JSON di oggetti `{u, t, f, p}` (indirizzo, titolo, cartella «A › B», fissato `1`).
+     */
+    SyncAsk("sync-ask"),
+    /**
+     * La risposta del telefono a [SyncAsk], con lo stesso `ask`: `bm` e `later` già uniti (il computer li applica così
+     * come sono), `tabs` le schede aperte sul telefono, `on` ciò che è acceso sul telefono (`bm,tabs`), `off`=`1` se è
+     * tutto spento o il Browser non c'è.
+     */
+    Sync("sync"),
     ;
 
     companion object {

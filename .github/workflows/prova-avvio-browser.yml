@@ -47,3 +47,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
           script: bash .github/scripts/prova-avvio-browser.sh
+
+      - name: Profilo d'uso raccolto
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: profilo-browser
+          path: profilo/
+          if-no-files-found: ignore

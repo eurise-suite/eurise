@@ -200,7 +200,7 @@ class Server(private val store: Store) {
     private fun query(t: String, fields: Map<String, String>): List<String>? = when (t) {
         "status" -> store.devices().map { d -> Json.write(mapOf("name" to d.name, "live" to if (live[d.id].isNullOrEmpty()) "0" else "1")) }
         "recent" -> Recent.list()
-        "pwd-wait", "dict-wait" -> listOf(Answers.take(fields["ask"].orEmpty())?.let { Json.write(it) } ?: "")
+        "pwd-wait", "dict-wait", "sync-wait" -> listOf(Answers.take(fields["ask"].orEmpty())?.let { Json.write(it) } ?: "")
         "today" -> listOf(TodayCache.get()?.let { Json.write(it) } ?: "")
         else -> null
     }
@@ -310,6 +310,8 @@ object Linux {
             Kind.Notify -> { notify(m["title"] ?: device.name, m["text"].orEmpty()); Recent.add(m.kind, m["title"] ?: device.name, m["text"].orEmpty()) }
             // Mai stampata né salvata: resta in memoria finché Firefox la prende (al massimo due minuti).
             Kind.Today -> { TodayCache.put(m.fields); return }
+            // Telefono e computer: la risposta del Browser, solo in memoria finché Firefox la prende (due minuti).
+            Kind.Sync -> { Answers.put(m.fields); return }
             Kind.PasswordGive -> { Answers.put(m.fields); println("${device.name} → password per ${m["site"].orEmpty()}"); return }
             else -> println("${device.name}: ${m.kind.wire}")
         }

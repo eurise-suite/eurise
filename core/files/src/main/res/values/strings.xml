@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="files_save_in">Salva in…</string>
+    <string name="files_link_hint">per il link: un cloud che sa fare i link pubblici (Murena, Nextcloud)</string>
     <string name="files_from">da %1$s</string>
     <string name="files_name">Nome</string>
     <string name="files_suggestions">Proposte</string>

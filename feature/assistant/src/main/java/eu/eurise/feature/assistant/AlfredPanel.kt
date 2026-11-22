@@ -664,6 +664,16 @@ fun AlfredPanel(dictation: Dictation, initial: String?, onClose: () -> Unit, lis
                         onTask = { replan(Command.Task(p.text.lineSequence().first { it.isNotBlank() }.take(90), null, null)) },
                         onSend = { replan(Command.Message("", p.text, null)) },
                     )
+                    // L'azione utile dentro la risposta (tavola AlfTelefono): «Timer 9 min», «Chiama».
+                    if (p.done) {
+                        val useful = remember(p.text) { Suggest.actions(p.text) }
+                        if (useful.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            useful.forEach { u ->
+                                u.minutes?.let { m -> OutlineChip(stringResource(R.string.alfred_suggest_timer, m)) { replan(Command.Timer(m)) } }
+                                u.number?.let { n -> OutlineChip(stringResource(R.string.alfred_suggest_call, n)) { replan(Command.Call(n)) } }
+                            }
+                        }
+                    }
                     if (p.local) {
                         OutlineChip(stringResource(R.string.alfred_ask_online, favorite.name)) {
                             brain.stop()
