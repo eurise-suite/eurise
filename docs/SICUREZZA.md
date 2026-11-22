@@ -403,7 +403,13 @@ Richiesto dal proprietario: tutte le app, massimo livello, nessuna backdoor. Cos
   Rete: niente testo in chiaro, nessun certificato dell'utente fidato; nessuna app consente il backup di Android.
 - **Server contattati**: ogni indirizzo corrisponde a un servizio noto (meteo, mappe, notizie, ricerca, DNS cifrati,
   Murena, Infomaniak, Have I Been Pwned, modelli); i servizi «di pagina» sono tutti nel centro privacy e spenti di base.
-  **Aperto**: gli scaricamenti dei modelli (traduzioni di Leggi, Voce, AI) non compaiono nel centro privacy.
+  ~~**Aperto**: gli scaricamenti dei modelli non compaiono nel centro privacy~~ fatto il 22 novembre: tre servizi nuovi,
+  spenti di base, «Lingue e traduzioni di Leggi» (`ReadModels`: Tesseract da GitHub, traduzioni di Mozilla su Google
+  Cloud), «Modelli e voci di Eurise Voce» (`VoiceModels`: Whisper da Hugging Face, voci da GitHub), «Cervelli di Alfred»
+  (`BrainModels`, Hugging Face). Come il motore di Office: «Scarica» li accende e annota il contatto nel registro
+  (`PrivacyContract.downloadStarted`); Leggi e Voce passano dal fornitore del centro privacy con il permesso della suite
+  (solo i loro due servizi aggiunti a `SHARED`) e dichiarano l'app Eurise nelle `<queries>`. Tutti e tre: Stati Uniti,
+  dati anonimi (file uguali per tutti, con impronta).
 - **Leggi**: i modelli di traduzione si controllano con l'impronta SHA-256 dell'elenco di Mozilla quando c'è; rinvii solo
   in https.
 - **Alfred**: le azioni (chiamare, mandare un messaggio…) partono solo dal tocco o dal «sì» dell'utente, a telefono
@@ -425,7 +431,15 @@ Richiesto dal proprietario: tutte le app, massimo livello, nessuna backdoor. Cos
   - le prove sull'emulatore entrano nei dati con `adb root` e `.github/scripts/run-as-root.sh` (stessa cartella, poi
     proprietario ed etichetta SELinux dell'app ai file nuovi), incluso da `emulatore-root.sh`: porte, backup, firma,
     avvio del Browser, prova di Office. Mai sul telefono.
-  - Mappe (CoMaps) resta per ora com'è: il suo tipo di compilazione lo decide il patch.
+  - Mappe (CoMaps) si compila come `FdroidRelease`: **non è debuggable** (verificato il 22 novembre nel manifest di
+    `eurise-mappe-debug.apk` del giro 1044: nessun `android:debuggable`). Nessuna modifica al patch.
+- **R8 negli APK di prova** (22 novembre): oggi solo Browser e Tastiera lo avevano. Ora tutte le app del progetto
+  principale (Eurise, Password, Galleria, Posta, Messaggi, Telefono, Chat, Leggi, Voce, AI, Office) con regole comuni
+  prudenti in `proguard-suite.pro` (punto unico in `build.gradle.kts`): codice `eu.eurise` tenuto con i membri, nomi
+  leggibili (`-dontobfuscate`), PdfBox e BouncyCastle tenuti, più le regole di ogni app (javax.mail, JNA/uniffi,
+  sherpa-onnx, Whisper, AI). Niente riduzione delle risorse. Esclusi il motore di Office (JNI) e il Browser (già suo).
+  Le stesse regole comuni anche nella versione ufficiale. Un'app che si guasta si spegne da sola con
+  `-Peurise.r8.senza=:mail`. Rete: la prova d'avvio di tutte le app (`prova-avvio.yml`) sul giro.
 
 ## Aggiornamento delle librerie (22 novembre 2026, punto 7)
 - **Quali versioni ci sono**: il flusso «Versioni delle librerie» (`versioni-librerie.yml`,
