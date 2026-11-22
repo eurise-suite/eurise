@@ -49,7 +49,7 @@ fun PdfFormsSheet(model: PdfModel, onClose: () -> Unit) {
     val changes = remember { mutableStateMapOf<String, String>() }
     val context = LocalContext.current
     var filledFrom by remember { mutableStateOf<Pair<String, Int>?>(null) }
-    val myDataIntent = remember { PasswordContract.pickMyDataIntent(context, debug = BuildConfig.DEBUG) }
+    val myDataIntent = remember { PasswordContract.pickMyDataIntent(context, debug = eu.eurise.core.suite.SuiteAccess.isDebug(context)) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data = result.data ?: return@rememberLauncherForActivityResult
         val names = data.getStringArrayExtra(PasswordContract.KEY_FIELD_NAMES).orEmpty()

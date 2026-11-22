@@ -13,6 +13,20 @@ plugins {
  * vecchio; gli strumenti di compilazione (versioni -jre, jdk18on di AGP) non si toccano.
  */
 subprojects {
+    /*
+     * APK di prova non «debuggable» (22 novembre 2026, docs/SICUREZZA.md): sono quelli che il proprietario usa ogni giorno, con
+     * dati veri. Da debuggable, con adb autorizzato, run-as leggeva i dati privati di Password, Messaggi, Posta…, e l'app
+     * girava più lenta (niente codice precompilato, controlli JNI). Stesso pacchetto e stessa chiave: si aggiornano sopra.
+     * Le prove sull'emulatore entrano nei dati con «adb root» (.github/scripts/emulatore-root.sh). Per un debugger:
+     * -Peurise.debuggable=true. La variante (prova/ufficiale) si legge dal nome del pacchetto, mai da BuildConfig.DEBUG.
+     */
+    plugins.withId("com.android.application") {
+        extensions.configure(com.android.build.api.dsl.ApplicationExtension::class.java) {
+            buildTypes.getByName("debug").isDebuggable = providers.gradleProperty("eurise.debuggable").orNull == "true"
+            // Da non debuggable Gradle farebbe girare il lint «vital» a ogni APK: il lint resta quello del lavoro apposito.
+            lint.checkReleaseBuilds = false
+        }
+    }
     configurations.configureEach {
         // BouncyCastle: la variante jdk15to18 1.85 ha una classe in due archivi (bcprov e bcutil) e Android si ferma;
         // si passa alla variante jdk18on, la stessa degli strumenti di compilazione (Android ha Java 8 e oltre).

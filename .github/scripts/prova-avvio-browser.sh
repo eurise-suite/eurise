@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Avvio del Browser sull'emulatore (vedi prova-avvio-browser.yml).
 set -uo pipefail
+source "$(dirname "$0")/emulatore-root.sh"
 pkg=eu.eurise.browser.debug
 apk=$(ls browser/build/outputs/apk/debug/*.apk | head -1)
 adb install -r "$apk" | tail -1
@@ -40,4 +41,4 @@ echo "===== ERRORI ====="
 adb logcat -d -b crash | head -150
 adb logcat -d | grep -E "AndroidRuntime|FATAL|libc  |DEBUG   |GeckoRuntime|Gecko.*(rror|xception)|$pkg" | head -200
 echo "===== ultimo-errore.txt ====="
-adb shell run-as "$pkg" cat files/ultimo-errore.txt 2>/dev/null || echo "(non leggibile: app non debuggable)"
+adb shell $RUN_AS "$pkg" cat files/ultimo-errore.txt 2>/dev/null || echo "(non leggibile: app non debuggable)"

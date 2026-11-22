@@ -7,6 +7,8 @@
 #   - file:    il file copiato nella memoria dell'app e aperto con file:// (prova il motore senza i permessi).
 # Per ogni apertura: registro dell'app (logcat), schermata dopo l'attesa, esito in riassunto.md.
 set -u
+# Office di prova non è più «debuggable»: si entra nei suoi dati con adb root (docs/SICUREZZA.md).
+source .github/scripts/emulatore-root.sh
 APK=$1
 OUT=$2
 PKG=${PKG:-eu.eurise.office.debug}
@@ -64,9 +66,9 @@ adb logcat -d > "$OUT/00-iniziale.log"
 adb shell am force-stop "$PKG"
 # COMPLETA=1: «Apri sempre nella modifica completa», così anche Word, Excel e OpenDocument passano dal motore.
 if [ -n "${COMPLETA:-}" ]; then
-	adb shell "run-as $PKG mkdir -p shared_prefs"
+	adb shell "$RUN_AS $PKG mkdir -p shared_prefs"
 	echo '<?xml version="1.0" encoding="utf-8" standalone="yes" ?><map><boolean name="sempre_completa" value="true" /></map>' |
-		adb shell "run-as $PKG sh -c 'cat > shared_prefs/office.xml'"
+		adb shell "$RUN_AS $PKG sh -c 'cat > shared_prefs/office.xml'"
 	echo "modifica completa per tutti i documenti" >> "$sum"
 fi
 
@@ -76,7 +78,7 @@ for f in "$HERE"/campioni/*; do
 	adb push "$f" "/sdcard/Download/$name" > /dev/null
 	adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Download/$name" > /dev/null
 	adb shell "cat > /data/local/tmp/$name" < "$f"
-	adb shell "run-as $PKG mkdir -p files/prova && cat /data/local/tmp/$name | run-as $PKG sh -c 'cat > files/prova/$name'"
+	adb shell "$RUN_AS $PKG mkdir -p files/prova && cat /data/local/tmp/$name | $RUN_AS $PKG sh -c 'cat > files/prova/$name'"
 done
 sleep 5
 

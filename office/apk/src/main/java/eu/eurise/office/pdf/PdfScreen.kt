@@ -626,7 +626,8 @@ private fun PdfModel.toggle(t: Tool) {
 }
 
 private fun toHub(context: android.content.Context, action: String, text: String) {
-    val permission = if (BuildConfig.DEBUG) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
+    // La variante dal nome del pacchetto, non da BuildConfig.DEBUG (che segue «debuggable»).
+    val permission = eu.eurise.core.suite.SuiteAccess.permission(context)
     val sent = HubBridge.send(context, BuildConfig.HUB_PACKAGE, permission, action, text)
     Toast.makeText(context, if (sent) R.string.pdf_suite_sent else R.string.office_needs_eurise, Toast.LENGTH_SHORT).show()
 }

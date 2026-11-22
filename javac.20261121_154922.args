@@ -1,5 +1,0 @@
--d
-/tmp/jt
--cp
-/dev/null
-.github/prova-backup/sonda/src/eu/eurise/prova/backup/Sonda.java

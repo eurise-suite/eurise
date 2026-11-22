@@ -236,7 +236,7 @@ private fun shareName(name: String): String = name.ifBlank { "documento.pdf" }
 private fun keepPassword(context: Context, name: String, password: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText(name, password))
-    val intent = PasswordContract.addIntent(context, BuildConfig.DEBUG, name, password, notes = context.getString(R.string.pdf_share_password_note))
+    val intent = PasswordContract.addIntent(context, eu.eurise.core.suite.SuiteAccess.isDebug(context), name, password, notes = context.getString(R.string.pdf_share_password_note))
     if (intent != null) runCatching { context.startActivity(intent) }
     Toast.makeText(context, R.string.pdf_share_password_copied, Toast.LENGTH_LONG).show()
 }

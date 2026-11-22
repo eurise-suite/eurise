@@ -17,7 +17,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
@@ -61,8 +60,10 @@ final class EuriseSuite {
     private EuriseSuite() {}
 
     /** Nomi delle app e permesso: la prova (.debug, chiave di prova) parla solo con le app di prova, e viceversa. */
+    // Dal nome del pacchetto (eu.eurise.office.motore.debug), non da «debuggable»: le app di prova non lo sono più
+    // (docs/SICUREZZA.md, 22 novembre 2026).
     private static boolean debug(Context c) {
-        return (c.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        return c.getPackageName().endsWith(".debug");
     }
     private static String pkg(Context c, String base) { return debug(c) ? base + ".debug" : base; }
     private static String permission(Context c) {

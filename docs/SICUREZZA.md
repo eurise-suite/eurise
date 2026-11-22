@@ -402,7 +402,19 @@ Richiesto dal proprietario: tutte le app, massimo livello, nessuna backdoor. Cos
 - **Scelta di progetto, non cambiata**: Messaggi manda un SMS su richiesta di un'app della suite (Chat per la posta
   unica, Mappe per «Avvisa»). Restringerlo a due app servirebbe a poco: dal ricevitore Android non dice in modo affidabile
   chi ha mandato il comando.
-- **APK di prova non «debuggable»**: vedi sezione sotto (passo successivo).
+- **APK di prova non «debuggable»** (22 novembre, anche proposta della chat di Office qui sotto): da debuggable, con
+  adb autorizzato e il debug USB acceso, `run-as` leggeva i dati privati di Password, Messaggi, Posta… e si potevano
+  ispezionare le WebView; in più l'app girava più lenta. Ora il tipo `debug` di tutte le app del progetto principale
+  (punto unico in `build.gradle.kts`, `-Peurise.debuggable=true` per un debugger) e della Tastiera non è più debuggable.
+  Stesso pacchetto, stessa chiave: si aggiorna sopra. Insieme:
+  - la variante (prova/ufficiale) si legge dal **nome del pacchetto**, mai da `BuildConfig.DEBUG` o da «debuggable»:
+    corretti Office (permesso della suite, «aggiungi a Password», «I miei dati»), Telefono (nota della chiamata),
+    Ponte (approvazione delle password) e il motore di Office (`office/app/android/EuriseSuite.java`), che altrimenti
+    avrebbero cercato le app ufficiali;
+  - le prove sull'emulatore entrano nei dati con `adb root` e `.github/scripts/run-as-root.sh` (stessa cartella, poi
+    proprietario ed etichetta SELinux dell'app ai file nuovi), incluso da `emulatore-root.sh`: porte, backup, firma,
+    avvio del Browser, prova di Office. Mai sul telefono.
+  - Mappe (CoMaps) resta per ora com'è: il suo tipo di compilazione lo decide il patch.
 
 ## Aggiornamento delle librerie (22 novembre 2026, punto 7)
 - **Quali versioni ci sono**: il flusso «Versioni delle librerie» (`versioni-librerie.yml`,

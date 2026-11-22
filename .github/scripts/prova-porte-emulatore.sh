@@ -3,6 +3,7 @@
 # «prima» ci si aspetta di vedere i buchi (serve a dimostrare che la prova li trova); «dopo» devono essere tutti chiusi
 # per la curiosa e tutti aperti (tranne il Ponte) per l'amica. L'esito della prova dipende solo da «dopo».
 set -uo pipefail
+source "$(dirname "$0")/emulatore-root.sh"
 esito=0
 ok() { echo "OK   $*"; }
 ko() { echo "NO   $*"; esito=1; }
@@ -74,17 +75,17 @@ cat > vecchio.xml <<'XML'
 </map>
 XML
 adb shell am force-stop eu.eurise.hub.debug
-adb shell "run-as eu.eurise.hub.debug sh -c 'mkdir -p shared_prefs && cat > shared_prefs/eurise_secrets.xml'" < vecchio.xml
-nota "vecchio file: $(adb shell run-as eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c eurise_secrets) (1 = piantato)"
+adb shell "$RUN_AS eu.eurise.hub.debug sh -c 'mkdir -p shared_prefs && cat > shared_prefs/eurise_secrets.xml'" < vecchio.xml
+nota "vecchio file: $(adb shell $RUN_AS eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c eurise_secrets) (1 = piantato)"
 g=$(adb shell dumpsys package org.esempio.amica | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//')
 echo "  amica: granted=$g"
 r=$(bussa org.esempio.amica); echo "$r" | sed 's/^/  amica: /'
 attesa "$r" segreti APERTA "l'amica (stessa chiave) usa ancora i segreti"
 attesa "$r" affida UGUALE "l'amica affida un segreto all'app Eurise e lo rilegge uguale"
 attesa "$r" migra UGUALE "un segreto del vecchio file in chiaro arriva ancora, sigillato nel Keystore"
-chiaro=$(adb shell "run-as eu.eurise.hub.debug sh -c 'grep -rl EURISE-SEGRETO shared_prefs files databases 2>/dev/null'" | tr -d '\r')
+chiaro=$(adb shell "$RUN_AS eu.eurise.hub.debug sh -c 'grep -rl EURISE-SEGRETO shared_prefs files databases 2>/dev/null'" | tr -d '\r')
 [ -z "$chiaro" ] && ok "nessun segreto in chiaro nei file dell'app Eurise" || ko "segreti in chiaro nei file dell'app Eurise: $chiaro"
-vecchio=$(adb shell run-as eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c '^eurise_secrets.xml$')
+vecchio=$(adb shell $RUN_AS eu.eurise.hub.debug ls shared_prefs 2>&1 | tr -d '\r' | grep -c '^eurise_secrets.xml$')
 [ "$vecchio" = "0" ] && ok "il vecchio file in chiaro dei segreti è cancellato" || ko "il vecchio file in chiaro dei segreti è ancora lì"
 attesa "$r" accessi APERTA "l'amica (stessa chiave) arriva ancora a Password"
 # Gli SMS dipendono anche dai permessi di Messaggi sull'emulatore: qui basta che non sia un rifiuto di sicurezza.

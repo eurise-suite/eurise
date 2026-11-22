@@ -2,7 +2,6 @@ package eu.eurise.feature.ponte
 
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -50,7 +49,7 @@ class PonteApprove : ComponentActivity() {
     private var status by mutableStateOf<String?>(null)
 
     private val site get() = intent.getStringExtra(EXTRA_SITE).orEmpty()
-    private val passwordPackage get() = PasswordContract.passwordPackage((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
+    private val passwordPackage get() = PasswordContract.passwordPackage(eu.eurise.core.suite.SuiteAccess.isDebug(this))
 
     private val unlock = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { load() }
 

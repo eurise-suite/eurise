@@ -258,7 +258,7 @@ private fun CallScreen(onEnd: () -> Unit, onProximity: (Boolean) -> Unit, onBubb
             if (note.isNotBlank()) {
                 val who = contact?.name ?: lastNumber
                 val time = java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM, HH:mm", Locale.ITALIAN))
-                HubBridge.send(context, BuildConfig.HUB_PACKAGE, permission(), HubBridge.ACTION_NOTE,
+                HubBridge.send(context, BuildConfig.HUB_PACKAGE, eu.eurise.core.suite.SuiteAccess.permission(context), HubBridge.ACTION_NOTE,
                     context.getString(R.string.ph_note_title, who, time) + "\n" + note.trim())
                 // Anche sul telefono, per il filo della persona nella Chat («Una persona, tutti i canali»).
                 eu.eurise.phone.data.CallNotes.add(context, lastNumber, System.currentTimeMillis(), note)
@@ -422,7 +422,6 @@ private fun BubbleView(name: String, status: String, active: Boolean, muted: Boo
     }
 }
 
-private fun permission() = if (BuildConfig.DEBUG) "eu.eurise.permission.SUITE_DEBUG" else "eu.eurise.permission.SUITE"
 
 private fun duration(seconds: Long): String {
     val h = seconds / 3600

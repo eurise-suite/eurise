@@ -56,6 +56,9 @@ android {
             // "normal" debug has minify for smaller APK to fit the GitHub 25 MB limit when zipped
             // and for better performance in case users want to install a debug APK
             isMinifyEnabled = true
+            // Non «debuggable», come le altre app di prova (docs/SICUREZZA.md): le parole imparate non si leggono con
+            // run-as, e la tastiera risponde più svelta.
+            isDebuggable = false
             isJniDebuggable = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
