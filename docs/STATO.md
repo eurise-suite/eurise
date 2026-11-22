@@ -3418,3 +3418,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 22 novembre, Mappe: schermo diviso in auto, Mappe sul computer (con CoMaps), «Dove devi andare» in auto nell'ordine del telefono, gesto a due dita per il 3D → `docs/stato/MAPPE.md`.
 - 21 novembre, notte, Comunicazione: «Passa la palla», Approvazioni, Faccende a turno, Organizza un'uscita, Fuori orario in Chat (Passa la palla, Approvazioni e Fuori orario anche in Email) · giro 994 (chat, mail) → `docs/stato/COMUNICAZIONE.md`.
 - 22 novembre, Organizzazione: tutte le tavole approvate; note vocali nel backup cifrato, microfono in Scrivania e Agenda, «Invita» dal + unico · giro 1011 → `docs/stato/ORGANIZZAZIONE.md`.
+- 22 novembre, Password, Tastiera, Galleria: frasi abituali della Tastiera nel backup cifrato (unite al ripristino); Orologio di nuovo compilabile (una riga in `ClockReceiver`, area Alfred) · giro 1011 → `docs/stato/PICCOLE.md`.
