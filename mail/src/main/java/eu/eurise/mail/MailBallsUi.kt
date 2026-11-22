@@ -53,7 +53,7 @@ private val GREEN = Color(0xFF4F6B5A)
 private val AMBER = Color(0xFF85672B)
 
 @Composable
-private fun BallDialog(onClose: () -> Unit, content: @Composable () -> Unit) {
+internal fun BallDialog(onClose: () -> Unit, content: @Composable () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.BottomCenter) {
             Column(
@@ -66,7 +66,7 @@ private fun BallDialog(onClose: () -> Unit, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun BallChip(label: String, on: Boolean, onClick: () -> Unit) {
+internal fun BallChip(label: String, on: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Text(label, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (on) scheme.onPrimary else scheme.onSurface, maxLines = 1,
         modifier = Modifier.clip(RoundedCornerShape(15.dp)).background(if (on) scheme.primary else scheme.surface).clickable(role = Role.Button, onClick = onClick)

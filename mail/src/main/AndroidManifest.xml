@@ -4,6 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Disponibilità e appuntamenti condivisi (tavole InsDisponibilitaMail, InsCondividi): chiesti solo quando servono. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
 
@@ -63,6 +66,12 @@
         <provider
             android:name=".PeopleProvider"
             android:authorities="${applicationId}.persone"
+            android:exported="true" />
+        <!-- La stessa scheda in Chat e in Email: la Chat manda per email le schede a chi non la usa e ne legge le risposte.
+             Solo app della suite (permesso di firma controllato in call()). -->
+        <provider
+            android:name=".SchedeProvider"
+            android:authorities="${applicationId}.schede"
             android:exported="true" />
         <provider
             android:name="androidx.core.content.FileProvider"

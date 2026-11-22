@@ -92,6 +92,8 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             messages.addAll(all.sortedByDescending { it.date })
             refreshBalls()
             refreshApprovals()
+            refreshCards()
+            checkWatches()
             refreshing = false
             studio = withContext(Dispatchers.IO) { StudioContract.known(context).also { offerToStudio(context, it, all) } }
             if (failures.isNotEmpty()) error = context.getString(R.string.ml_refresh_failed, failures.joinToString(", "))
@@ -122,6 +124,178 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun retakeBall(id: String) = saveBalls(balls.map { if (it.id == id) it.copy(taken = true) else it })
+
+    // --- La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida, Uscita… per email ---
+
+    /** Le schede mandate per email (anche quelle della Chat), con le risposte lette. */
+    var cards by mutableStateOf(CardStore.load(context))
+        private set
+
+    private fun reloadCards() { cards = CardStore.load(context) }
+
+    /** Le risposte arrivate alle schede: si aprono una volta e si leggono. */
+    fun refreshCards() {
+        val inbox = messages.toList()
+        val all = accounts.toList()
+        scope.launch {
+            val changed = withContext(Dispatchers.IO) { runCatching { CardStore.collect(context, all, inbox) }.getOrDefault(false) }
+            if (changed || cards.size != CardStore.load(context).size) reloadCards()
+        }
+    }
+
+    /** Manda la scheda a ognuno degli indirizzi in [to] (separati da virgola), dalla casella [from]. */
+    fun sendCard(from: Account, to: String, card: eu.eurise.core.insieme.Scheda.Card, done: (Boolean) -> Unit) {
+        val list = to.split(',', ';', ' ', '\n').map { it.trim() }.filter { it.contains('@') }
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { CardStore.send(context, from, card.copy(origin = card.origin.ifEmpty { "mail" }), list) }.getOrDefault(false) }
+            reloadCards()
+            done(ok)
+        }
+    }
+
+    /** Gli orari liberi della settimana prossima dal calendario (tavola InsDisponibilitaMail). */
+    fun freeSlots(durationMin: Int, done: (List<eu.eurise.core.insieme.Disponibilita.Slot>) -> Unit) {
+        scope.launch {
+            val zone = java.time.ZoneId.systemDefault()
+            val from = eu.eurise.core.insieme.Disponibilita.nextWeek(java.time.LocalDate.now())
+            val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            done(withContext(Dispatchers.IO) {
+                eu.eurise.core.insieme.Disponibilita.free(eu.eurise.core.insieme.Agenda.busy(context, start, start + 7 * 86_400_000L), from, 5, durationMin, zone,
+                    System.currentTimeMillis())
+            })
+        }
+    }
+
+    /** Gli impegni dei prossimi 14 giorni (tavola InsCondividi). */
+    fun upcoming(done: (List<eu.eurise.core.insieme.Agenda.Item>) -> Unit) {
+        scope.launch {
+            val now = System.currentTimeMillis()
+            done(withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.items(context, now, now + 14 * 86_400_000L).filter { !it.allDay }.take(40) })
+        }
+    }
+
+    /** Le cose da fare della nota (tavola InsRiunione) a ognuno per email, come «Affida»; [people]: (indirizzo, nome). */
+    fun assignTasks(from: Account, tasks: List<eu.eurise.core.insieme.Riunione.Task>, title: String, done: (Int) -> Unit) {
+        val zone = java.time.ZoneId.systemDefault()
+        val fmt = java.time.format.DateTimeFormatter.ofPattern("EEE d", java.util.Locale.getDefault())
+        scope.launch {
+            val n = withContext(Dispatchers.IO) {
+                tasks.filter { it.who != null && it.who != from.email }.count { t ->
+                    val card = eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Affida, t.text,
+                        if (title.isNotBlank()) context.getString(R.string.ml_cd_from_note, title) else "", t.due?.format(fmt).orEmpty(),
+                        t.due?.atTime(12, 0)?.atZone(zone)?.toInstant()?.toEpochMilli() ?: 0L, from.name, from.email, origin = "mail")
+                    runCatching { CardStore.send(context, from, card, listOf(t.who!!)) }.getOrDefault(false)
+                }
+            }
+            reloadCards()
+            done(n)
+        }
+    }
+
+    /** Una scadenza da un'email (tavola FamScadenze): nelle Attività tre giorni prima. Falso senza l'app Eurise. */
+    fun remindBill(title: String, cents: Long, due: java.time.LocalDate): Boolean =
+        eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            title + (if (cents > 0) " · %d,%02d €".format(cents / 100, cents % 100) else ""), due = due.minusDays(3),
+            notes = context.getString(R.string.ml_fs_due_note, due.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.getDefault()))))
+
+    /** Ricordamelo (tavola LavRicordami): un'attività con data e ora, il testo e chi l'ha mandata. Falso senza l'app Eurise. */
+    fun remindMail(o: Opened, at: java.time.LocalDateTime): Boolean =
+        eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            context.getString(R.string.ml_rm_title, o.summary.fromName.ifBlank { o.summary.fromAddress }, MailBalls.core(o.summary.subject)),
+            due = at.toLocalDate(), time = at.toLocalTime(), notes = o.text.take(400))
+
+    private val watchPrefs get() = context.getSharedPreferences("mail_watch", Context.MODE_PRIVATE)
+
+    /** «Se non risponde entro…»: se fino a quel giorno da lui non arriva niente sullo stesso oggetto, diventa un'attività. */
+    fun watchReply(o: Opened, by: java.time.LocalDate) {
+        val list = org.json.JSONArray(watchPrefs.getString("list", "[]"))
+        list.put(org.json.JSONObject().put("from", o.summary.fromAddress).put("name", o.summary.fromName).put("subject", o.summary.subject)
+            .put("since", o.summary.date).put("by", by.toEpochDay()))
+        watchPrefs.edit().putString("list", list.toString()).apply()
+    }
+
+    /** I promemoria «se non risponde» scaduti senza risposta: nelle Attività, poi via. */
+    fun checkWatches() {
+        val a = runCatching { org.json.JSONArray(watchPrefs.getString("list", "[]")) }.getOrNull() ?: return
+        val today = java.time.LocalDate.now().toEpochDay()
+        val keep = org.json.JSONArray()
+        for (i in 0 until a.length()) {
+            val w = a.optJSONObject(i) ?: continue
+            val answered = messages.any { it.fromAddress.equals(w.optString("from"), true) && it.date > w.optLong("since") &&
+                MailBalls.core(it.subject) == MailBalls.core(w.optString("subject")) }
+            when {
+                answered -> {}
+                w.optLong("by") < today -> eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION,
+                    eu.eurise.core.suite.HubBridge.ACTION_TASK, context.getString(R.string.ml_rm_nudge, w.optString("name").ifBlank { w.optString("from") },
+                        MailBalls.core(w.optString("subject"))), due = java.time.LocalDate.now())
+                else -> keep.put(w)
+            }
+        }
+        watchPrefs.edit().putString("list", keep.toString()).apply()
+    }
+
+    /** «Sollecita»: la stessa scheda di nuovo a chi non ha risposto. */
+    fun remindCard(id: String, done: (Boolean) -> Unit) {
+        val s = cards.firstOrNull { it.card.id == id } ?: return
+        val from = accounts.firstOrNull { it.email.equals(s.card.fromAddress, true) } ?: accounts.firstOrNull() ?: return done(false)
+        val silent = MailCards.silent(s, System.currentTimeMillis())
+        if (silent.isEmpty()) return done(true)
+        scope.launch {
+            val w = eu.eurise.core.insieme.SchedaMail.words(context)
+            val ok = withContext(Dispatchers.IO) {
+                silent.count { addr -> runCatching { MailClient(from).send(addr, "", MailText.replySubject(s.subject),
+                    context.getString(R.string.ml_cd_remind_body) + "\n\n" + eu.eurise.core.insieme.SchedaMail.text(s.card, w), null, emptyList(),
+                    eu.eurise.core.insieme.SchedaMail.html(s.card, w, from.email)) }.isSuccess } > 0
+            }
+            if (ok) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(sentAt = System.currentTimeMillis()) else it } }; reloadCards() }
+            done(ok)
+        }
+    }
+
+    /** Uscita: «Fissa» la data scelta e lo dice a tutti con un'email. */
+    fun fixCard(id: String, option: Int, done: (Boolean) -> Unit) {
+        val s = cards.firstOrNull { it.card.id == id } ?: return
+        val label = s.card.options.getOrNull(option) ?: return
+        val from = accounts.firstOrNull { it.email.equals(s.card.fromAddress, true) } ?: accounts.firstOrNull() ?: return done(false)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                s.to.count { addr -> runCatching { MailClient(from).send(addr, "", MailText.replySubject(s.subject),
+                    context.getString(R.string.ml_cd_fixed_body, s.card.title, label), null) }.isSuccess } > 0
+            }
+            if (ok) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(fixed = option) else it } }; reloadCards() }
+            done(ok)
+        }
+    }
+
+    fun closeCard(id: String) { CardStore.update(context) { l -> l.map { if (it.card.id == id) it.copy(closed = true) else it } }; reloadCards() }
+
+    /** Chi riceve una scheda in Eurise risponde con i tasti: le stesse parole dei pulsanti dell'email. */
+    fun answerCard(o: Opened, word: String, done: (Boolean) -> Unit) {
+        val from = account(o.summary.accountId) ?: return done(false)
+        send(from, o.summary.fromAddress, "", MailText.replySubject(o.summary.subject), word + "\n\n" + MailText.quote(o.text, o.summary.fromName + ":"),
+            o.messageId, emptyList(), done)
+    }
+
+    // --- Persone e ruoli (tavola InsRuoli): dalla Rubrica ---
+
+    var roles by mutableStateOf(emptyList<eu.eurise.core.insieme.Ruoli.Person>())
+        private set
+
+    fun loadRoles() { scope.launch { roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) } } }
+
+    fun roleOf(address: String) = eu.eurise.core.insieme.Ruoli.find(roles, address)?.role
+
+    fun setRole(address: String, name: String, role: eu.eurise.core.insieme.Ruoli.Role?, failed: () -> Unit) {
+        val existing = eu.eurise.core.insieme.Ruoli.find(roles, address)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                eu.eurise.core.insieme.RuoliContract.set(context, existing?.key ?: ("mail:" + address.lowercase()), existing?.name ?: name, role, existing?.level,
+                    (existing?.addresses.orEmpty() + address).distinct())
+            }
+            if (!ok) failed()
+            roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) }
+        }
+    }
 
     // --- Fuori orario (tavola SpaFuoriOrario) ---
 

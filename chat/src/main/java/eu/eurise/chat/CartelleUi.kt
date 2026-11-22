@@ -193,6 +193,15 @@ internal fun RoomFoldersSheet(model: ChatModel, room: Room, onNew: () -> Unit, o
             model.folders.forEach { f -> Chip(f.name, room.id in f.rooms) { model.toggleFolder(f.id, room.id) } }
             Chip(stringResource(R.string.cr_new_short), false, onNew)
         }
+        // Lo spazio (tavola SpaSpazi): Lavoro, Famiglia, Amici; di base lo dice il ruolo in Rubrica.
+        @Suppress("UNUSED_VARIABLE") val tick = model.relationsTick
+        Text(stringResource(R.string.sp_room), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val now = model.spaceOf(room)
+            eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp ->
+                Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), now == sp) { model.setSpace(room.id, if (model.spaceSet(room.id) == sp) null else sp) }
+            }
+        }
         Spacer(Modifier.height(4.dp))
     }
 }

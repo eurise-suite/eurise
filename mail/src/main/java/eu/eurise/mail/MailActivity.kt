@@ -24,6 +24,11 @@ class MailActivity : ComponentActivity(), MailActions {
     private lateinit var model: MailModel
     private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     private var onPicked: ((List<Uri>) -> Unit)? = null
+    // Il calendario (tavole InsDisponibilitaMail e InsCondividi): chiesto solo quando serve, letto solo sul telefono.
+    private var onCalendar: ((Boolean) -> Unit)? = null
+    private val calendar = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        onCalendar?.invoke(r[Manifest.permission.READ_CALENDAR] == true || eu.eurise.core.insieme.Agenda.canRead(this)); onCalendar = null
+    }
     private val fromFiles = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         r.data?.data?.let { onPicked?.invoke(listOf(it)) }
     }
@@ -132,6 +137,12 @@ class MailActivity : ComponentActivity(), MailActions {
 
     override fun openLink(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
+
+    override fun askCalendar(done: (Boolean) -> Unit) {
+        if (eu.eurise.core.insieme.Agenda.canRead(this) && eu.eurise.core.insieme.Agenda.canWrite(this)) return done(true)
+        onCalendar = done
+        calendar.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
     }
 
     override fun askNotifications() {

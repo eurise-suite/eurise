@@ -104,6 +104,8 @@ interface ChatActions {
     fun askMic(done: (Boolean) -> Unit)
     /** Il permesso della posizione (tavola ChatPosizione), chiesto solo alla prima condivisione. */
     fun askLocation(done: (Boolean) -> Unit)
+    /** La posizione «sempre» (Sono arrivato, tavola FamArrivato), chiesta solo quando lo si accende; true se c'è. */
+    fun askBackgroundLocation(done: (Boolean) -> Unit)
     /** Condivide un testo (riepilogo dei turni per chi non usa la Chat) con l'app che sceglie l'utente. */
     fun shareText(text: String)
     /** Condivide un file della cartella della Chat (PDF, CSV, calendario dei turni) con l'app che sceglie l'utente. */
@@ -264,13 +266,20 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     val archived = model.archived()
     val inFolder = if (model.folder == ARCHIVE) model.rooms.filter { it.id in archived }
         else Cartelle.shown(model.rooms, model.folders.firstOrNull { it.id == model.folder }, model.selfRoom).filter { it.id !in archived }
+    // Gli spazi (tavola SpaSpazi): Tutto, Lavoro, Famiglia, Amici.
+    LaunchedEffect(Unit) { model.loadRoles() }
+    @Suppress("UNUSED_VARIABLE") val spaceTick = model.relationsTick
     val shown = inFolder.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.lastText.lowercase().contains(q) }
+        .filter { model.space == null || q.isNotEmpty() || model.spaceOf(it) == model.space }
     var foldersSheet by remember { mutableStateOf(false) }
     var editFolder by remember { mutableStateOf<Pair<String?, Set<String>>?>(null) }
     var roomFolders by remember { mutableStateOf<Room?>(null) }
     var simpleSetup by remember { mutableStateOf(false) }
     var ballsSheet by remember { mutableStateOf(false) }
     var approvalsSheet by remember { mutableStateOf(false) }
+    var givenSheet by remember { mutableStateOf(false) }
+    var rolesSheet by remember { mutableStateOf(false) }
+    var statusSheet by remember { mutableStateOf(false) }
     var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -299,6 +308,27 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
             // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
             ViewChips(model)
             if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
+            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
+                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
+            }
+            // Una spesa arrivata dall'Email (tavola SpeEmail): si sceglie il gruppo.
+            (model.pendingDeadline?.first ?: model.pendingAsk?.first ?: model.pendingStop?.title ?: model.pendingDecision?.first)?.let { what ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.se_pick_any, what), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                    Text("✕", fontSize = 14.sp, modifier = Modifier.clickable(role = Role.Button) { model.pendingDeadline = null; model.pendingAsk = null; model.pendingStop = null; model.pendingDecision = null }.padding(4.dp))
+                }
+            }
+            model.pendingExpense?.let { (cents, what) ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(EuriseIcons.euro(2f), null, modifier = Modifier.size(15.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.se_pick_group, Expenses.money(cents), what.ifBlank { "—" }), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                    Text("✕", fontSize = 14.sp, modifier = Modifier.clickable(role = Role.Button) { model.pendingExpense = null }.padding(4.dp))
+                }
+            }
             // Senza chiave di recupero l'avviso invita a crearla (cambiando telefono i messaggi cifrati non si riaprirebbero).
             val safe = model.security?.backup == true
             Row(
@@ -338,6 +368,9 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     if (simpleSetup) SimpleSetupSheet(model) { simpleSetup = false }
     if (ballsSheet) BallsSheet(model) { ballsSheet = false }
     if (approvalsSheet) ApprovalsSheet(model, actions) { approvalsSheet = false }
+    if (givenSheet) GivenSheet(model, actions) { givenSheet = false }
+    if (rolesSheet) RolesSheet(model, actions) { rolesSheet = false }
+    if (statusSheet) StatusSheet(model, actions) { statusSheet = false }
     if (offSheet) OffHoursSheet(model) { offSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
@@ -351,6 +384,13 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         Pill(stringResource(R.string.ap_list) + if (model.approvals.isNotEmpty()) " · ${model.approvals.size}" else "", EuriseIcons.check(2.4f), Modifier.fillMaxWidth(), strong = false) {
             account = false; approvalsSheet = true
         }
+        Pill(stringResource(R.string.af_list) + if (model.given.isNotEmpty()) " · ${model.given.size}" else "", EuriseIcons.task(2f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; givenSheet = true
+        }
+        Pill(stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), EuriseIcons.person(2f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; rolesSheet = true
+        }
+        Pill(stringResource(R.string.ls_title), EuriseIcons.work(2f), Modifier.fillMaxWidth(), strong = false) { account = false; statusSheet = true }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }
         Pill(stringResource(R.string.inv_menu), EuriseIcons.send(2f), Modifier.fillMaxWidth(), strong = false) { account = false; model.uni.openInviteList(true) }
@@ -573,7 +613,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     // con una discussione aperta ci sono solo quelle (il messaggio di partenza sta in cima).
     val thread = model.thread
     val all = model.timeline(roomId)
-    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon && !(it.kind == Event.Kind.Notice && it.data?.contains(Uscita.ANSWER) == true) } } }
+    val events by remember(roomId, thread) { derivedStateOf { all.filter { it.thread == thread && it.kind != Event.Kind.Beacon && !(it.kind == Event.Kind.Notice && (it.data?.contains(Uscita.ANSWER) == true || it.data?.contains(eu.eurise.core.insieme.Scheda.ANSWER) == true)) } } }
     val threadRoot = thread?.let { id -> all.firstOrNull { it.id == id } }
     // Proposte (tavola ChatProposta) sotto gli ultimi messaggi ricevuti; riassunto (tavola ChatRiassunto) se entrando
     // c'erano tanti messaggi da leggere.
@@ -596,6 +636,13 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
     var moreSheet by remember(roomId) { mutableStateOf(false) }
     var timeboxSheet by remember(roomId) { mutableStateOf(false) }
     var ballFor by remember(roomId) { mutableStateOf<Event?>(null) }
+    var entrustFrom by remember(roomId) { mutableStateOf<String?>(null) }
+    var slotsSheet by remember(roomId) { mutableStateOf(false) }
+    var shareSheet by remember(roomId) { mutableStateOf(false) }
+    var agendaSheet by remember(roomId) { mutableStateOf(false) }
+    var arrivalSheet by remember(roomId) { mutableStateOf(false) }
+    var openTab by remember(roomId) { mutableStateOf(-1) }
+    var translateSheet by remember(roomId) { mutableStateOf(false) }
     var liveSheet by remember(roomId) { mutableStateOf(false) }
     var laterSheet by remember(roomId) { mutableStateOf<String?>(null) }
     var plannedMenu by remember(roomId) { mutableStateOf<Programma.Planned?>(null) }
@@ -641,7 +688,10 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text((peerStart?.let { stringResource(R.string.ql_off_until, Programma.time(it.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime())) + " · " } ?: "") +
+                // Lo stato dell'altro (tavola LavStato): in ferie fino al…
+                val peerAway = peer?.let { model.statusOf(roomId, it) }?.takeIf { it.away(java.time.LocalDate.now()) }
+                Text((peerAway?.let { stringResource(R.string.ls_peer_away, java.time.LocalDate.ofEpochDay(it.to).let { d -> "${d.dayOfMonth}/${d.monthValue}" }) + " · " } ?: "") +
+                    (peerStart?.let { stringResource(R.string.ql_off_until, Programma.time(it.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime())) + " · " } ?: "") +
                     stringResource(when {
                     room?.encrypted != true -> R.string.ch_room_plain
                     peerVerified -> R.string.ch_room_verified
@@ -668,9 +718,17 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         // La mia Bussola: promemoria del 118 e azioni grandi per il paziente; per lo studio, invito e aggiornamento.
         val bussola = model.bussolaRole(roomId)
         if (bussola != null && thread == null) BussolaBar(model, actions, roomId, bussola)
+        // L'agenda con l'assistente (tavola InsAssistente), nelle chat a due.
+        if (bussola == null && thread == null && peer != null) AgendaBar(model, actions, roomId)
+        // Sono arrivato (tavola FamArrivato): chi ha l'avviso acceso in questa chat.
+        if (bussola == null && thread == null) ArrivalBar(model, roomId) { arrivalSheet = true }
         // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
         val group = room != null && !room.direct && peer == null && thread == null
-        var tab by remember(roomId) { mutableStateOf(0) }
+        // Una spesa dall'Email (tavola SpeEmail): il gruppo si apre sulle Spese, con «Nuova spesa» già compilata.
+        var tab by remember(roomId) { mutableStateOf(if (group && model.pendingExpense != null) 1 else if (group && model.pendingDeadline != null) 7
+            else if (group && model.pendingStop != null) 8 else 0) }
+        LaunchedEffect(roomId) { if (group) model.usePending(roomId) }
+        LaunchedEffect(openTab) { if (openTab >= 0) { tab = openTab; openTab = -1 } }
         if (group) Row(Modifier.horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
             Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
@@ -678,6 +736,16 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Chip(stringResource(R.string.sh_tab), selected = tab == 2) { tab = 2 }
             // Faccende a turno (tavola FamFaccende).
             Chip(stringResource(R.string.fa_tab), selected = tab == 3) { tab = 3 }
+            // Elenchi condivisi (tavola InsElenchi) e la nota della riunione (tavola InsRiunione).
+            Chip(stringResource(R.string.el_tab), selected = tab == 4) { tab = 4 }
+            Chip(stringResource(R.string.ri_tab), selected = tab == 5) { tab = 5 }
+            // La cartella di squadra (tavola InsSquadra).
+            Chip(stringResource(R.string.tm_tab), selected = tab == 6) { tab = 6 }
+            // La casa (tavole FamScadenze, FamDocumenti, FamCena, FamGenitori).
+            Chip(stringResource(R.string.fs_tab), selected = tab == 7) { tab = 7 }
+            // Viaggio e regalo (tavole AmiViaggio, AmiRegalo): si vedono quando ci sono (o dalla graffetta).
+            if (tab == 8 || model.timebox(roomId) != null || model.trip(roomId).isNotEmpty()) Chip(stringResource(R.string.vi_tab), selected = tab == 8) { tab = 8 }
+            if (tab == 9 || model.gift(roomId) != null) Chip(stringResource(R.string.rg_tab), selected = tab == 9) { tab = 9 }
             // Gruppo a tempo (tavola ChatGruppoTempo).
             Chip(stringResource(R.string.tb_chip), selected = false) { timeboxSheet = true }
         }
@@ -687,6 +755,18 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Box(Modifier.weight(1f).fillMaxWidth()) { ShiftsPane(model, actions, roomId) }
         } else if (group && tab == 3) {
             Box(Modifier.weight(1f).fillMaxWidth()) { ChoresPane(model, actions, roomId) }
+        } else if (group && tab == 4) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { ListsPane(model, actions, roomId) }
+        } else if (group && tab == 5) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { MeetingPane(model, actions, roomId) }
+        } else if (group && tab == 6) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { TeamPane(model, actions, roomId) }
+        } else if (group && tab == 7) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { HomePane(model, actions, roomId) }
+        } else if (group && tab == 8) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { TripPane(model, actions, roomId, onExpenses = { tab = 1 }, onLists = { tab = 4 }) }
+        } else if (group && tab == 9) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { GiftPane(model, actions, roomId) }
         } else {
             val roomPlanned = if (thread == null) model.planned.filter { it.roomId == roomId } else emptyList()
             // I messaggi fissati: tocco per andarci.
@@ -723,6 +803,11 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                         ApprovalBubble(model, actions, roomId, e, mine) { menuFor = e }
                         ReactionChips(model, actions, roomId, e, mine)
                     }
+                    // La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida e le altre.
+                    else if (e.kind == Event.Kind.Text && e.data?.contains(eu.eurise.core.insieme.Scheda.FIELD) == true) Column {
+                        CardBubble(model, actions, roomId, e, mine) { menuFor = e }
+                        ReactionChips(model, actions, roomId, e, mine)
+                    }
                     // Passa la palla (tavola InsPallaChat).
                     else if (e.kind == Event.Kind.Text && e.data?.contains(Palla.BALL) == true) Column {
                         BallBubble(model, actions, roomId, e, mine) { menuFor = e }
@@ -748,6 +833,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                             model.media(e) { f -> if (f != null) actions.openFile(f) else actions.toast(fileFailed) }
                         }
                         ReactionChips(model, actions, roomId, e, mine)
+                        // Traduzione (tavola SpaTraduci): i suoi messaggi in italiano, sul telefono con Leggi.
+                        if (!mine && e.kind == Event.Kind.Text) TranslationLine(model, actions, roomId, e)
                         if (!mine && e.id in recentIds && (e.kind == Event.Kind.Text || e.kind == Event.Kind.Notice) && model.bussolaRole(roomId) == null) {
                             val ins = remember(e.id) { proposals(shownText(model, e), e.time) }
                             if (ins.isNotEmpty()) ProposalCards(model, actions, e, ins)
@@ -853,6 +940,7 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
                                 thread != null -> model.sendInThread(roomId, thread, text, r?.id) { actions.toast(failed) }
                                 r != null -> model.reply(roomId, r.id, text) { actions.toast(failed) }
                                 peerStart != null && !urgent -> model.plan(roomId, text, peerStart.toInstant().toEpochMilli(), work = true)
+                                model.translateSend(roomId) != null -> model.sendTranslated(roomId, text, model.translateSend(roomId)!!) { actions.toast(failed) }
                                 else -> model.send(roomId, text) { actions.toast(failed) }
                             }
                         }.semantics { contentDescription = send },
@@ -869,12 +957,39 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             onForward = { forwarding = e; menuFor = null },
             onBall = { ballFor = e; menuFor = null },
             onApprove = { approvalFile = e.text; menuFor = null },
+            onEntrust = { entrustFrom = shownText(model, e); menuFor = null },
+            onDecide = { model.addDecision(roomId, shownText(model, e), e.sender, "chat", e.id) { actions.toast(failed) }; actions.toast(actions.text(R.string.dc_done)); menuFor = null },
             onClose = { menuFor = null; model.basiHintDone() })
     }
     forwarding?.let { e -> ForwardSheet(model, actions, e) { forwarding = null } }
     if (pollSheet) PollSheet(model, actions, roomId) { pollSheet = false }
     // Pressione lunga sulla graffetta: sondaggio o posizione dal vivo (tavola ChatPosizione).
-    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }, onApprove = { approvalFile = "" }, onOuting = if (model.room(roomId)?.direct == false) ({ outingSheet = true }) else null) { moreSheet = false }
+    if (moreSheet) AttachMoreSheet(onPoll = { pollSheet = true }, onLive = { liveSheet = true }, onApprove = { approvalFile = "" },
+        onOuting = if (model.room(roomId)?.direct == false) ({ outingSheet = true }) else null,
+        more = buildList<Triple<androidx.compose.ui.graphics.vector.ImageVector, String, () -> Unit>> {
+            add(Triple(EuriseIcons.task(2f), stringResource(R.string.af_title), { entrustFrom = "" }))
+            // Disponibilità in un link (tavola InsDisponibilita) e Condividi un appuntamento (tavola InsCondividi).
+            add(Triple(EuriseIcons.clock(2f), stringResource(R.string.di_title), { slotsSheet = true }))
+            add(Triple(EuriseIcons.share(2f), stringResource(R.string.cv_title), { shareSheet = true }))
+            // L'agenda con l'assistente (tavola InsAssistente), nelle chat a due.
+            if (model.peerOf(roomId) != null) add(Triple(EuriseIcons.calendar(2f), stringResource(R.string.as_menu), { agendaSheet = true }))
+            // Traduzione per chi scrive in un'altra lingua (tavola SpaTraduci).
+            add(Triple(EuriseIcons.translate(2f), stringResource(R.string.tr_title), { translateSheet = true }))
+            // Sono arrivato (tavola FamArrivato).
+            add(Triple(EuriseIcons.place(2f), stringResource(R.string.ar_title), { arrivalSheet = true }))
+            // Itinerario del viaggio e regalo collettivo (tavole AmiViaggio, AmiRegalo), nei gruppi.
+            if (model.room(roomId)?.direct == false) add(Triple(EuriseIcons.plane(2f), stringResource(R.string.vi_tab), { openTab = 8 }))
+            if (model.room(roomId)?.direct == false) add(Triple(EuriseIcons.gift(2f), stringResource(R.string.rg_title), { openTab = 9 }))
+            // Chi c'è a cena? (tavola FamCena), nei gruppi.
+            if (model.room(roomId)?.direct == false) add(Triple(EuriseIcons.spoon(2f), stringResource(R.string.fc_question), { model.askDinner(roomId, false) { actions.toast(failed) } }))
+        },
+    ) { moreSheet = false }
+    if (slotsSheet) SlotsSheet(model, actions, roomId) { slotsSheet = false }
+    if (shareSheet) ShareEventSheet(model, actions, roomId) { shareSheet = false }
+    if (agendaSheet) AgendaShareSheet(model, actions, roomId) { agendaSheet = false }
+    if (arrivalSheet) ArrivalSheet(model, actions, roomId) { arrivalSheet = false }
+    if (translateSheet) TranslateSheet(model, roomId) { translateSheet = false }
+    entrustFrom?.let { t -> EntrustSheet(model, actions, roomId, t) { entrustFrom = null } }
     if (outingSheet) NewOutingSheet(model, actions, roomId) { outingSheet = false }
     approvalFile?.let { f -> AskApprovalSheet(model, actions, roomId, f) { approvalFile = null } }
     if (liveSheet) LiveSheet(model, actions, roomId) { liveSheet = false }

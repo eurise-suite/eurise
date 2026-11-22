@@ -119,7 +119,7 @@ object Matrix {
                     "m.audio" -> Event(id, sender, body, time, Event.Kind.Audio, media, data = content.toString(), replyTo = reply)
                     "m.file", "m.video" -> Event(id, sender, name, time, Event.Kind.File, media, data = content.toString())
                     "m.notice" -> Event(id, sender, body, time, Event.Kind.Notice,
-                        data = if (content.has(Palla.STATUS)) content.toString() else null, replyTo = reply)
+                        data = if (content.has(Palla.STATUS) || content.has(eu.eurise.core.insieme.Scheda.ANSWER)) content.toString() else null, replyTo = reply)
                     "m.location" -> Event(id, sender, body, time, Event.Kind.Location, data = content.toString())
                     // Organizza un'uscita (tavola AmiUscita): la proposta e le risposte (date, passaggi, «Fissa»).
                     Uscita.CARD -> Event(id, sender, body, time, Event.Kind.Text, data = content.toString())
@@ -133,7 +133,8 @@ object Matrix {
                     "m.emote" -> Event(id, sender, "* " + (names[sender] ?: localpart(sender)) + " " + body, time, Event.Kind.Text)
                     // A scomparsa (tavola ChatProgramma): il contenuto resta per l'etichetta.
                     else -> if (content.has("m.new_content")) null else Event(id, sender, body, time, Event.Kind.Text,
-                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK) || content.has(Palla.BALL) || content.has(Approva.REQUEST) || content.has(Approva.ANSWER)) content.toString() else null, replyTo = reply)
+                        data = if (content.has(Programma.FADE) || content.has(Ack.ACK) || content.has(Palla.BALL) || content.has(Approva.REQUEST) || content.has(Approva.ANSWER) ||
+                            content.has(eu.eurise.core.insieme.Scheda.FIELD)) content.toString() else null, replyTo = reply)
                 }
             }
             "m.room.member" -> {

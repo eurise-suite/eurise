@@ -464,6 +464,13 @@ private fun PersonScreen(id: Long, onBack: () -> Unit, onCall: (String) -> Unit,
                 c.emails.firstOrNull()?.let { e -> Action(EuriseIcons.mail(), stringResource(R.string.ph_email), Modifier.weight(1f)) { Reach.open(context, Reach.email(e.value)) } }
             }
         }
+        // Persone e ruoli (tavola InsRuoli): chi è per te; Chat ed Email lo usano per le proposte.
+        item(key = "roles") {
+            val matrix by androidx.compose.runtime.produceState(emptyList<String>(), c.id) {
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { eu.eurise.core.contacts.PeopleLookup.forContact(context, c.id)?.matrix.orEmpty() }
+            }
+            RoleSection(c.lookupKey, c.name, c.phones.map { it.value } + c.emails.map { it.value } + matrix)
+        }
         if (invite) item(key = "invite") {
             Banner(stringResource(R.string.ph_invite_text, c.name.substringBefore(' ')), stringResource(R.string.ph_invite)) {
                 eu.eurise.core.suite.PeopleContract.inviteIntent(context, c.lookupKey, c.name, c.phones.map { it.value }, c.emails.map { it.value })

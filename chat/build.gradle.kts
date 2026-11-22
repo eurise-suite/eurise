@@ -80,6 +80,8 @@ dependencies {
     implementation(project(":core:studio"))
     // Il testo dei promemoria PDF di Millewin (codice NRE e codice fiscale), letto sul telefono.
     implementation(project(":core:pdf"))
+    // La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida, Faccende e Uscite anche a chi ha solo l'email.
+    implementation(project(":core:insieme"))
     // Proposte dai messaggi (tavola ChatProposta): le stesse di Messaggi (MessageInsights e QuickAdd). Porta con sé
     // core/data (QuickAdd usa i modelli delle attività); da staccare in un modulo piccolo insieme a Task e Recurrence.
     implementation(project(":core:data"))

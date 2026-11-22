@@ -69,11 +69,16 @@ internal fun ExpensesPane(model: ChatModel, actions: ChatActions, roomId: String
     LaunchedEffect(roomId) { model.loadExpenses(roomId) }
     val expenses = model.expenses(roomId)
     val settlements = model.settlements(roomId)
-    val members = model.members[roomId].orEmpty()
+    // Chi partecipa senza la Chat (tavola SpeEmail): persone con la sola email, ricevono il riepilogo e rispondono «ho pagato».
+    val mailPeople = model.expenseMailPeople(roomId)
+    val members = model.members[roomId].orEmpty() + mailPeople
     val people = Expenses.people(expenses, settlements, members)
+    var mailing by remember { mutableStateOf<String?>(null) }
+    val failedMail = stringResource(R.string.af_mail_failed)
     val total = expenses.sumOf { it.cents }
     val mine = people.firstOrNull { it.id == me }
-    var adding by remember { mutableStateOf(false) }
+    // Una spesa arrivata dall'Email: «Nuova spesa» già compilata.
+    var adding by remember { mutableStateOf(model.pendingExpense != null) }
     var settling by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -126,6 +131,29 @@ internal fun ExpensesPane(model: ChatModel, actions: ChatActions, roomId: String
                     }
                 }
             }
+            item {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.se_mail_title), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    if (mailPeople.isNotEmpty()) Text(mailPeople.joinToString(", ") { eu.eurise.core.insieme.Scheda.mailAddress(it).orEmpty() }, fontSize = 12.sp,
+                        color = scheme.onSurfaceVariant)
+                    val m = mailing
+                    if (m != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) { SmallField(m, stringResource(R.string.fa_mail_hint)) { mailing = it.trim().take(80) } }
+                        Spacer(Modifier.width(6.dp))
+                        Chip(stringResource(R.string.el_add), true) {
+                            if (m.contains('@') && m.contains('.')) model.addExpenseMailPerson(roomId, m) { actions.toast(actions.text(R.string.ch_send_failed)) }
+                            mailing = null
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Chip("+ " + stringResource(R.string.se_mail_add), false) { mailing = "" }
+                        if (mailPeople.isNotEmpty()) Chip(stringResource(R.string.se_mail_send), false) {
+                            model.mailExpenseSummary(roomId) { actions.toast(failedMail) }
+                            actions.toast(actions.text(R.string.se_mail_sent))
+                        }
+                    }
+                }
+            }
             item { Text(stringResource(R.string.ex_latest), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, top = 4.dp)) }
             if (expenses.isEmpty() && model.loadingHistory[roomId] != true) item {
                 Text(stringResource(R.string.ex_empty), fontSize = 13.5.sp, lineHeight = 19.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(4.dp))
@@ -149,18 +177,18 @@ internal fun ExpensesPane(model: ChatModel, actions: ChatActions, roomId: String
             Pill(stringResource(R.string.ex_add), EuriseIcons.plus(2.4f), Modifier, strong = true) { adding = true }
         }
     }
-    if (adding) AddExpenseSheet(model, actions, roomId, members.ifEmpty { listOf(me) }, onClose = { adding = false })
+    if (adding) AddExpenseSheet(model, actions, roomId, members.ifEmpty { listOf(me) }, start = model.pendingExpense, onClose = { adding = false; model.pendingExpense = null })
     if (settling) SettleSheet(model, actions, roomId, Expenses.settle(people), onClose = { settling = false })
 }
 
 // --- Nuova spesa (tavola SpeAggiungi) ---
 
 @Composable
-private fun AddExpenseSheet(model: ChatModel, actions: ChatActions, roomId: String, members: List<String>, onClose: () -> Unit) {
+private fun AddExpenseSheet(model: ChatModel, actions: ChatActions, roomId: String, members: List<String>, start: Pair<Long, String>? = null, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val me = model.session?.userId.orEmpty()
-    var amount by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf(start?.first?.let { "%d,%02d".format(it / 100, it % 100) }.orEmpty()) }
+    var title by remember { mutableStateOf(start?.second.orEmpty()) }
     var payer by remember { mutableStateOf(me) }
     var mode by remember { mutableStateOf(Expenses.Mode.Equal) }
     val included = remember { mutableStateMapOf<String, Boolean>().apply { members.forEach { put(it, true) } } }

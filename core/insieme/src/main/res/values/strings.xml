@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- La stessa scheda in Chat e in Email (tavola InsStessaScheda): i testi dell'email per chi non usa Eurise. -->
+    <string name="ins_tag_affida">Da fare</string>
+    <string name="ins_tag_faccenda">Faccenda</string>
+    <string name="ins_tag_uscita">Uscita</string>
+    <string name="ins_tag_orari">Scegli un orario</string>
+    <string name="ins_tag_spesa">Spesa</string>
+    <string name="ins_tag_condividi">Condiviso</string>
+    <string name="ins_tag_cena">Cena</string>
+    <string name="ins_tag_regalo">Regalo</string>
+    <string name="ins_tag_elenco">Elenco</string>
+    <string name="ins_tag_decisione">Deciso</string>
+
+    <string name="ins_intro_affida">%1$s ti ha affidato questa cosa.</string>
+    <string name="ins_intro_faccenda">Tocca a te, te lo ricorda %1$s.</string>
+    <string name="ins_intro_uscita">%1$s propone di vedersi: quali date ti vanno bene?</string>
+    <string name="ins_intro_orari">%1$s ti propone questi orari: scegli quello che preferisci.</string>
+    <string name="ins_intro_spesa">%1$s ha segnato una spesa del gruppo.</string>
+    <string name="ins_intro_condividi">%1$s condivide questo con te.</string>
+    <string name="ins_intro_cena">%1$s chiede: ci sei a cena stasera?</string>
+    <string name="ins_intro_regalo">%1$s organizza un regalo insieme.</string>
+    <string name="ins_intro_elenco">%1$s condivide un elenco con te.</string>
+    <string name="ins_intro_decisione">%1$s ha segnato una decisione.</string>
+
+    <string name="ins_how_affida">Quando l\'hai fatta basta rispondere «fatto»; se non puoi, «non posso». Puoi anche toccare un pulsante.</string>
+    <string name="ins_how_faccenda">Quando l\'hai fatta rispondi «fatto»: il turno passa da solo al prossimo.</string>
+    <string name="ins_how_uscita">Rispondi con i numeri delle date che ti vanno bene (per esempio «1 e 3»), o «nessuna».</string>
+    <string name="ins_how_orari">Rispondi con il numero dell\'orario: l\'appuntamento è fissato e ti arriva l\'invito.</string>
+    <string name="ins_how_spesa">Quando hai pagato rispondi «ho pagato».</string>
+    <string name="ins_how_cena">Rispondi «sì», «tardi» o «no».</string>
+    <string name="ins_how_vista">Se vuoi, rispondi «vista» per far sapere che l\'hai ricevuta.</string>
+
+    <string name="ins_due">entro %1$s</string>
+    <string name="ins_option">%1$d · %2$s</string>
+    <string name="ins_choose_many">Le date proposte:</string>
+    <string name="ins_choose_one">Gli orari liberi:</string>
+    <string name="ins_amount">Importo: %1$s</string>
+    <string name="ins_footer">Scheda mandata con Eurise</string>
+
+    <string name="ins_st_seen">Vista</string>
+    <string name="ins_st_working">Ci lavoro</string>
+    <string name="ins_st_done">Fatta</string>
+    <string name="ins_st_declined">Non posso</string>
+    <string name="ins_st_back">Tornata a te</string>
+    <string name="ins_st_yes">Sì</string>
+    <string name="ins_st_late">Tardi</string>
+    <string name="ins_st_no">No</string>
+    <string name="ins_st_paid">Ho pagato</string>
+
+    <string name="ins_w_seen">vista</string>
+    <string name="ins_w_working">ci lavoro</string>
+    <string name="ins_w_done">fatto</string>
+    <string name="ins_w_declined">non posso</string>
+    <string name="ins_w_yes">sì</string>
+    <string name="ins_w_late">tardi</string>
+    <string name="ins_w_no">no</string>
+    <string name="ins_w_paid">ho pagato</string>
+
+    <!-- Persone e ruoli (tavola InsRuoli) e spazi (tavola SpaSpazi). -->
+    <string name="ins_role_capo">Capo</string>
+    <string name="ins_role_segreteria">Segreteria</string>
+    <string name="ins_role_collab">Collaboratore</string>
+    <string name="ins_role_collega">Collega</string>
+    <string name="ins_role_famiglia">Famiglia</string>
+    <string name="ins_role_amici">Amici</string>
+    <string name="ins_level_stato">Stato</string>
+    <string name="ins_level_vede">Vede</string>
+    <string name="ins_level_modifica">Modifica</string>
+    <string name="ins_space_lavoro">Lavoro</string>
+    <string name="ins_space_famiglia">Famiglia</string>
+    <string name="ins_space_amici">Amici</string>
+    <string name="ins_roles_title">Persone e ruoli</string>
+    <string name="ins_roles_note">Dici una volta chi è chi. Da qui partono le proposte quando affidi, condividi o passi la palla. Niente esce finché non condividi tu.</string>
+    <string name="ins_roles_none">Nessun ruolo</string>
+    <string name="ins_roles_where">I ruoli stanno nella Rubrica (Eurise Telefono): li vedono Chat ed Email, solo sul telefono.</string>
+    <string name="ins_roles_missing">Per i ruoli serve Eurise Telefono (la Rubrica)</string>
+    <string name="ins_roles_sees">Di base vede</string>
+
+    <!-- L'agenda con l'assistente (tavola InsAssistente). -->
+    <string name="ins_tag_proposta">Appuntamento proposto</string>
+    <string name="ins_intro_proposta">%1$s propone questo appuntamento.</string>
+    <string name="ins_how_proposta">Rispondi «confermo» e l\'appuntamento è fissato, o «altro orario».</string>
+    <string name="ins_st_confirmed">Conferma</string>
+    <string name="ins_st_other">Altro orario</string>
+    <string name="ins_w_confirmed">confermo</string>
+    <string name="ins_w_other">altro orario</string>
+</resources>

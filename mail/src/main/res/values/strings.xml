@@ -153,4 +153,106 @@
     <string name="ml_off_add_hint">Una parola dell\'oggetto o un indirizzo</string>
     <string name="ml_off_channel">Riepilogo del mattino</string>
     <string name="ml_off_morning">Ti aspettano %1$d email di lavoro</string>
+    <!-- La stessa scheda in Chat e in Email (tavola InsStessaScheda). -->
+    <string name="ml_cd_affida">Affida</string>
+    <string name="ml_cd_uscita">Proponi le date</string>
+    <string name="ml_cd_affida_hint">L\'oggetto è la cosa da fare, il testo la riga per chi la riceve. Arriva con i pulsanti Fatta e Non posso; basta anche rispondere «fatto».</string>
+    <string name="ml_cd_uscita_hint">L\'oggetto è cosa si fa. Ognuno riceve la sua email con le date numerate e risponde con i numeri, o tocca i pulsanti.</string>
+    <string name="ml_cd_due">Entro</string>
+    <string name="ml_cd_today">oggi alle 18</string>
+    <string name="ml_cd_tomorrow">domani</string>
+    <string name="ml_cd_option_hint">Data %1$d (per esempio «sab 29, 20:00»)</string>
+    <string name="ml_cd_option_add">Un\'altra data</string>
+    <string name="ml_cd_need_title">Scrivi l\'oggetto (e almeno due date per un\'uscita)</string>
+    <string name="ml_cd_received">Scheda · %1$s</string>
+    <string name="ml_cd_answered_toast">Risposta mandata</string>
+    <string name="ml_cd_none">Nessuna</string>
+    <string name="ml_cd_none_word">nessuna</string>
+    <string name="ml_cd_silent">Nessuna risposta</string>
+    <string name="ml_cd_sent_state">Mandata</string>
+    <string name="ml_cd_list">Schede mandate per email</string>
+    <string name="ml_cd_list_n">Schede mandate per email · %1$d</string>
+    <string name="ml_cd_list_note">Le risposte si leggono da sole quando arriva la posta: «fatto», «non posso», i numeri delle date. Restano sul telefono.</string>
+    <string name="ml_cd_empty">Nessuna scheda aperta.</string>
+    <string name="ml_cd_from_chat">Dalla Chat: le risposte tornano nel gruppo</string>
+    <string name="ml_cd_votes">%1$d sì</string>
+    <string name="ml_cd_fix">Fissa</string>
+    <string name="ml_cd_fixed">Si fa: %1$s</string>
+    <string name="ml_cd_reminded">Sollecito mandato</string>
+    <string name="ml_cd_close">Chiudi</string>
+    <string name="ml_cd_remind_body">Ti ricordo questa cosa: quando puoi, rispondi con una parola o tocca un pulsante. Grazie!</string>
+    <string name="ml_cd_fixed_body">«%1$s»: si fa %2$s. Ci vediamo lì!</string>
+    <string name="ml_roles_sub">Capo, segreteria, collaboratori, famiglia, amici: per le proposte e gli spazi</string>
+    <string name="ml_cd_slot_fixed_body">Perfetto, ci vediamo %1$s. In allegato l\'invito per il calendario.</string>
+    <!-- Disponibilità, appuntamenti condivisi, nota della riunione (tavole InsDisponibilitaMail, InsCondividi, InsRiunione). -->
+    <string name="ml_cd_slots">Disponibilità</string>
+    <string name="ml_cd_share">Appuntamento</string>
+    <string name="ml_cd_slots_hint">Gli orari liberi dal tuo calendario, settimana prossima: tocca per togliere quelli che non vuoi. All\'altro arrivano solo questi; sceglie con un tocco e gli arriva l\'invito.</string>
+    <string name="ml_cd_share_hint">L\'appuntamento dal tuo calendario: arriva con i dati e l\'invito allegato.</string>
+    <string name="ml_cd_duration">Durata</string>
+    <string name="ml_cd_min">%1$d min</string>
+    <string name="ml_cd_hours">%1$d ore</string>
+    <string name="ml_cd_no_calendar">Serve il permesso del calendario: lo legge solo il telefono.</string>
+    <string name="ml_cd_loading">Guardo il calendario…</string>
+    <string name="ml_cd_no_slots">Nessun orario libero.</string>
+    <string name="ml_cd_no_events">Nessun impegno nei prossimi 14 giorni.</string>
+    <string name="ml_cd_slots_title">Incontro con %1$s · %2$s</string>
+    <string name="ml_cd_pick_event">Scegli l\'appuntamento</string>
+    <string name="ml_cd_tasks">Assegna %1$d cose da fare</string>
+    <string name="ml_cd_tasks_hint">Righe «@Paolo cosa ven 22»: ognuno riceve la sua email con i pulsanti Fatta e Non posso.</string>
+    <string name="ml_cd_tasks_unknown">%1$s: indirizzo non trovato</string>
+    <string name="ml_cd_tasks_done">Mandate %1$d cose da fare</string>
+    <string name="ml_cd_invite_hint">Apri l\'invito allegato per metterlo in calendario.</string>
+    <string name="ml_cd_from_note">Dalla riunione «%1$s»</string>
+    <!-- Spese dall'email (tavola SpeEmail). -->
+    <string name="ml_se_found">Spesa di %1$s</string>
+    <string name="ml_se_hint">Nelle spese di un gruppo della Chat, divisa fra tutti</string>
+    <string name="ml_se_add">Aggiungi</string>
+    <!-- Scadenze e scuola dalle email (tavole FamScadenze, FamScuola). -->
+    <string name="ml_fs_found">Scadenza: %1$s</string>
+    <string name="ml_fs_school">Dalla scuola · entro %1$s</string>
+    <string name="ml_fs_hint">Letta sul telefono. Il promemoria va nelle Attività tre giorni prima.</string>
+    <string name="ml_fs_task">Promemoria</string>
+    <string name="ml_fs_task_ok">Nelle Attività</string>
+    <string name="ml_fs_home">Nelle scadenze di casa</string>
+    <string name="ml_fs_ask">Chiedi in famiglia chi va</string>
+    <string name="ml_fs_who_goes">%1$s: chi va?</string>
+    <string name="ml_fs_me">Vado io</string>
+    <string name="ml_fs_you">Vai tu</string>
+    <string name="ml_fs_both">Tutti e due</string>
+    <string name="ml_fs_due_note">Scade il %1$s</string>
+    <!-- Viaggio di gruppo (tavola AmiViaggio). -->
+    <string name="ml_vi_found">Viaggio · %1$s</string>
+    <string name="ml_vi_hint">Nell\'itinerario del gruppo della Chat, per tutti</string>
+    <string name="ml_vi_add">Itinerario</string>
+    <!-- Ricordamelo e Deciso (tavole LavRicordami, LavDecisioni). -->
+    <string name="ml_rm_title_short">Ricordamelo</string>
+    <string name="ml_rm_title">%1$s · %2$s</string>
+    <string name="ml_rm_tonight">Stasera 20:00</string>
+    <string name="ml_rm_tomorrow">Domani 8:30</string>
+    <string name="ml_rm_noreply">Se non risponde entro %1$s</string>
+    <string name="ml_rm_ok">Nelle Attività</string>
+    <string name="ml_rm_watch">Se fino ad allora non risponde, te lo ricordo</string>
+    <string name="ml_rm_nudge">Non ha risposto: %1$s · %2$s</string>
+    <string name="ml_dc_mark">Deciso</string>
+    <string name="ml_sp_all">Tutto</string>
+    <!-- Stato e assenza (tavola LavStato). -->
+    <string name="ml_ab_auto">Sono assente fino al %1$s e leggerò la posta al ritorno.</string>
+    <string name="ml_ab_auto_sub">Sono assente fino al %1$s. Per urgenze scrivete a %2$s, che vi risponde lui.</string>
+    <string name="ml_ab_title">Assenza</string>
+    <string name="ml_ab_on">In ferie fino al %1$s · risposta automatica accesa</string>
+    <string name="ml_ab_off">Nessuna assenza. La si mette dalla Chat (Il tuo stato) o qui.</string>
+    <string name="ml_ab_from">Dal (23/12)</string>
+    <string name="ml_ab_to">Al (27/12)</string>
+    <string name="ml_ab_sub">Per urgenze (nome o indirizzo)</string>
+    <string name="ml_ab_msg">Il messaggio (facoltativo)</string>
+    <string name="ml_ab_save">Accendi la risposta automatica</string>
+    <string name="ml_ab_stop">Spegni</string>
+    <!-- Traduzione (tavola SpaTraduci). -->
+    <string name="ml_tr_do">Traduci dal %1$s, sul telefono</string>
+    <string name="ml_tr_busy">Traduco dal %1$s…</string>
+    <string name="ml_tr_from">Tradotto dal %1$s con Eurise Leggi</string>
+    <string name="ml_tr_missing">Manca la lingua in Eurise Leggi: si scarica lì</string>
+    <string name="ml_tr_no_app">Serve Eurise Leggi per tradurre sul telefono</string>
+    <string name="ml_tr_failed">La traduzione non è riuscita</string>
 </resources>
