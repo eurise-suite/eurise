@@ -135,3 +135,13 @@ Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): og
 
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
+
+## 22 novembre 2026, pomeriggio (progetto Eurise Sicurezza, su richiesta del proprietario)
+- **Caricare file** (giro 1055): più file insieme e da ogni app (foto, Download, cloud). GeckoView carica solo `file://`:
+  i `content://` del selettore si perdevano. Ora `FilePicker` (PagePrompts.kt) copia i file scelti in `cache/uploads` su
+  un thread a parte, con i nomi ripuliti, e passa le copie; avviso se un file non si legge. Solo file di altre app
+  (`isForeignUri`); copie cancellate dopo sei ore e all'avvio. Test `UploadNameTest`.
+- **Schede a schedario**: tavola **BrwSchedario** sulla tela (pagina Browser, da approvare): linguetta aperta, indirizzo e
+  pagina come un foglio solo; cambiare scheda porta davanti un altro foglio, con la miniatura finché la pagina non è
+  pronta. Anche con la barra in basso e in Notte. Approvata, il codice va in `TabStrip.kt`; poi le altre app con le schede.
+
