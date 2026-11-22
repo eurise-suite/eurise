@@ -296,6 +296,9 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
   piegano la mappa, che scendono la rimettono piatta (70 dp, distanza tra le dita che non cambia oltre 45 dp). Non è nel
   motore (il sorgente di CoMaps qui non si raggiunge): si riconosce nella finestra prima della mappa; riconosciuto, la
   mappa riceve «annulla». Pizzico e rotazione restano della mappa. Da provare: che non disturbi zoom e rotazione.
+- **Pubblicati** in `apk-prova` il 22 novembre alle 00:13 UTC: **Mappe 134** (commit de801be), **Eurise 995** con il
+  Ponte che accetta i luoghi, `eurise-linux.flatpak` e `eurise-linux.tar.gz` con la sezione Mappe (il Flatpak al primo
+  tentativo è fallito per il disco del runner, rilanciato).
 
 ## Prossimi passi, in ordine
 1. **Prova**: schermo diviso in auto; «Dove devi andare» in auto con Casa e Lavoro; gesto a due dita; sul computer la
