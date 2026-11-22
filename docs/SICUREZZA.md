@@ -367,6 +367,43 @@ di Hugging Face e di GitHub (che può cambiare) e finiscono in lettori scritti i
 - **Voci e suonerie** (pre-release `voci` e `suoni`): rischio accettato. Chi potesse cambiarle avrebbe già la scrittura sul
   repository; un'impronta nel codice obbligherebbe a riscriverlo a ogni rigenerazione.
 
+## Controllo di tutta la suite (22 novembre 2026, mattina)
+Richiesto dal proprietario: tutte le app, massimo livello, nessuna backdoor. Cosa si è guardato e cosa è cambiato.
+- **Porte (componenti esportati)**: in ogni manifesto, ogni componente esportato ha il permesso della suite oppure lo
+  controlla nel codice (i `PeopleProvider` di Posta, Messaggi, Telefono e Chat, `StudioProvider`), oppure è un'entrata
+  normale (avvio, Condividi, Apri con). I componenti che chiama il sistema (SMS, MMS, chiamate, filtro delle chiamate,
+  autocompilazione, passkey, tastiera, notifiche, controllo ortografico) chiedono tutti il permesso di sistema giusto.
+  I ricevitori di avvio riprogrammano soltanto.
+- **Backup della suite** (ramo `prova-backup` unito il 22 novembre): ogni app aveva un fornitore `.eurise.backup` che
+  qualunque app della suite poteva leggere (SMS, chiamate, posta, chat, cassaforte cifrata) e rimettere. **Ora solo
+  l'app Eurise** della stessa variante (`SuiteAccess.enforceHubCaller`; Tastiera `SuiteTrust.callerIsHub`; Mappe
+  `EuriseBackupProvider`). Il lato dell'app Eurise era già fatto bene: controlla il fornitore prima di mandare e tiene i
+  dati in attesa sigillati nel Keystore. Prova delle porte: la curiosa e l'amica (stessa chiave) non leggono il backup di
+  Password e non comandano il ripristino della Tastiera (24 controlli su 24); prova del backup: 48 su 48.
+- **Crittografia del backup** (`BackupCrypto`): chiave dei dati casuale AES-256-GCM, chiusa con la frase e con il codice
+  di recupero (24 caratteri, circa 119 bit) via PBKDF2-HMAC-SHA256 a 600 000 iterazioni; intestazione autenticata; pezzi
+  da 1 MB numerati con il segno dell'ultimo (troncare o riordinare fa fallire). A posto.
+- **File in arrivo** (Condividi, Apri con): solo Posta, Messaggi e Galleria rifiutavano un file privato dell'app stessa.
+  Ora anche app Eurise (un PDF condiviso), Browser, import del Calendario, PDF del Drive, Office (documenti, PDF),
+  Password e contatti del Telefono. Office apre ancora i suoi documenti nuovi (Android 9 e prima), segnati da lui.
+- **Codice**: nessun controllo TLS scavalcato, nessuna WebView con ponti JavaScript, nessun codice caricato da fuori
+  (la libreria chiusa delle gesture della Tastiera è spenta nel codice), SQL sempre con parametri, nessun dato sensibile
+  nel registro, nessun segreto scritto nel codice. Intent in attesa modificabili solo verso ricevitori della stessa app.
+  Rete: niente testo in chiaro, nessun certificato dell'utente fidato; nessuna app consente il backup di Android.
+- **Server contattati**: ogni indirizzo corrisponde a un servizio noto (meteo, mappe, notizie, ricerca, DNS cifrati,
+  Murena, Infomaniak, Have I Been Pwned, modelli); i servizi «di pagina» sono tutti nel centro privacy e spenti di base.
+  **Aperto**: gli scaricamenti dei modelli (traduzioni di Leggi, Voce, AI) non compaiono nel centro privacy.
+- **Leggi**: i modelli di traduzione si controllano con l'impronta SHA-256 dell'elenco di Mozilla quando c'è; rinvii solo
+  in https.
+- **Alfred**: le azioni (chiamare, mandare un messaggio…) partono solo dal tocco o dal «sì» dell'utente, a telefono
+  sbloccato; il riassunto di notifiche ed email si legge soltanto. Nessuna azione nasce da un contenuto ricevuto.
+- **Flussi di GitHub**: tutte le azioni fissate a un commit, permessi minimi in ogni flusso, niente
+  `pull_request_target`; gli input dei flussi di Office ora passano da variabili d'ambiente.
+- **Scelta di progetto, non cambiata**: Messaggi manda un SMS su richiesta di un'app della suite (Chat per la posta
+  unica, Mappe per «Avvisa»). Restringerlo a due app servirebbe a poco: dal ricevitore Android non dice in modo affidabile
+  chi ha mandato il comando.
+- **APK di prova non «debuggable»**: vedi sezione sotto (passo successivo).
+
 ## Aggiornamento delle librerie (22 novembre 2026, punto 7)
 - **Quali versioni ci sono**: il flusso «Versioni delle librerie» (`versioni-librerie.yml`,
   `.github/scripts/versioni_librerie.py`) confronta catalogo, versioni scritte nei `build.gradle.kts` (anche Tastiera e
