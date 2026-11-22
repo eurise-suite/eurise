@@ -112,6 +112,20 @@ class ChatActivity : ComponentActivity(), ChatActions {
             if (cents > 0) model.pendingExpense = cents to intent.getStringExtra(eu.eurise.core.insieme.SchedaContract.EXTRA_TITLE).orEmpty().take(80)
             return
         }
+        // Da Email: una scadenza per le Scadenze di casa (tavola FamScadenze), «chi va?» per la famiglia (tavola FamScuola).
+        if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ADD_DEADLINE) {
+            val C = eu.eurise.core.insieme.SchedaContract
+            val title = intent.getStringExtra(C.EXTRA_TITLE).orEmpty().take(80)
+            if (title.isNotBlank()) model.pendingDeadline = Triple(title, intent.getLongExtra(C.EXTRA_CENTS, 0L), intent.getLongExtra(C.EXTRA_DAY, 0L))
+            return
+        }
+        if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ASK_FAMILY) {
+            val C = eu.eurise.core.insieme.SchedaContract
+            val q = intent.getStringExtra(C.EXTRA_TITLE).orEmpty().take(200)
+            val opts = intent.getStringArrayExtra(C.EXTRA_OPTIONS)?.toList().orEmpty().take(6)
+            if (q.isNotBlank() && opts.size >= 2) model.pendingAsk = q to opts
+            return
+        }
         // Dalla scheda della Rubrica: «Invita sulla Chat» (tavola ChatInvita).
         if (intent?.action == eu.eurise.core.suite.PeopleContract.ACTION_INVITE) {
             val P = eu.eurise.core.suite.PeopleContract

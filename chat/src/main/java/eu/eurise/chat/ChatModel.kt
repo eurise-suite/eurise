@@ -550,7 +550,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         val card = eu.eurise.core.insieme.Scheda.Card("s" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Condividi, item.title.ifBlank { "—" },
             item.place, eu.eurise.core.insieme.Disponibilita.range(item.start, item.end, zone), item.start, nameOf(me).substringBefore(' '),
             edit = edit, endAt = item.end, origin = "chat:share")
-        to.forEach { (room, _) -> sendContent(room, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text) { failed(R.string.ch_send_failed) } }
+        to.forEach { (room, _) -> sendContent(room, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text, { failed(R.string.ch_send_failed) }) }
         if (emails.isNotEmpty()) scope.launch {
             val ok = withContext(Dispatchers.IO) { runCatching { eu.eurise.core.insieme.SchedaContract.send(context, card, emails) }.getOrDefault(false) }
             if (!ok) failed(R.string.af_mail_failed)
@@ -715,10 +715,130 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         scope.launch { if (withContext(Dispatchers.IO) { runCatching { c.setState(roomId, TEAM, content) }.isFailure }) failed() }
     }
 
+    // --- La casa (tavole FamScadenze, FamDocumenti, FamCena, FamGenitori) ---
+
+    /** Mette uno stato della stanza (lo stesso per tutti), subito anche qui; se non parte torna com'era. */
+    fun putState(roomId: String, type: String, content: JSONObject, failed: () -> Unit) {
+        val c = client ?: return
+        val s = data[roomId]
+        val before = s?.state?.get(type)
+        s?.state?.set(type, content)
+        relationsTick++
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, type, content) }.isSuccess }
+            if (!ok) { if (before != null) s?.state?.set(type, before) else s?.state?.remove(type); relationsTick++; failed() }
+        }
+    }
+
+    fun deadlines(roomId: String) = Casa.decodeDeadlines(data[roomId]?.state?.get(Casa.DEADLINES))
+
+    fun saveDeadlines(roomId: String, list: List<Casa.Deadline>, failed: () -> Unit) = putState(roomId, Casa.DEADLINES, Casa.encodeDeadlines(list), failed)
+
+    /** «Pagata»: segnata, e se va divisa entra nelle spese del gruppo (pagata da chi paga, divisa fra tutti). */
+    fun payDeadline(roomId: String, id: String, failed: () -> Unit) {
+        val list = deadlines(roomId)
+        val d = list.firstOrNull { it.id == id } ?: return
+        saveDeadlines(roomId, Casa.paid(list, id, System.currentTimeMillis()), failed)
+        if (d.split && d.cents > 0) {
+            val payer = d.payer.ifBlank { session?.userId.orEmpty() }
+            val people = members[roomId].orEmpty().ifEmpty { listOf(payer) }
+            val e = Expenses.Expense(java.util.UUID.randomUUID().toString(), d.title, d.cents, payer, Expenses.equal(d.cents, people), Expenses.Mode.Equal)
+            sendExpense(roomId, e, context.getString(R.string.ex_body, d.title, Expenses.money(d.cents), nameOf(payer), people.size), failed)
+        }
+    }
+
+    /** Il promemoria in Attività (o nel Calendario) per una scadenza: il giorno dell'avviso. */
+    fun remindDeadline(d: Casa.Deadline, calendar: Boolean, open: (android.content.Intent) -> Unit): Boolean {
+        val day = Casa.warnDay(d)
+        if (calendar) {
+            val start = java.time.LocalDate.ofEpochDay(d.due).atTime(9, 0).atZone(zone).toInstant().toEpochMilli()
+            toCalendar(d.title, start, start + 1_800_000L, "", if (d.cents > 0) Expenses.money(d.cents) else "", open)
+            return true
+        }
+        val (hubPkg, permission) = hub()
+        return eu.eurise.core.suite.HubBridge.send(context, hubPkg, permission, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            d.title + (if (d.cents > 0) " · " + Expenses.money(d.cents) else ""), due = day)
+    }
+
+    fun menu(roomId: String) = Casa.decodeMenu(data[roomId]?.state?.get(Casa.MENU))
+
+    fun saveMenu(roomId: String, menu: List<Casa.Dish>, failed: () -> Unit) = putState(roomId, Casa.MENU, Casa.encodeMenu(menu), failed)
+
+    /** «In Spesa»: gli ingredienti che mancano vanno nell'elenco Spesa del gruppo. */
+    fun menuToShopping(roomId: String, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        var lists = lists(roomId)
+        val spesa = lists.firstOrNull { it.name.equals(context.getString(R.string.el_spesa), true) } ?: lists.firstOrNull() ?: return
+        val now = System.currentTimeMillis()
+        Casa.missing(menu(roomId), spesa).forEachIndexed { i, x -> lists = Elenchi.add(lists, spesa.id, x, me, now + i, from = context.getString(R.string.fc_from_menu)) }
+        saveLists(roomId, lists, failed)
+    }
+
+    /** Chi c'è a cena? (tavola FamCena): la domanda con Sì, Tardi, No; se [daily], il tuo telefono la rifà ogni giorno alle 17. */
+    fun askDinner(roomId: String, daily: Boolean, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val card = eu.eurise.core.insieme.Scheda.Card("d" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Cena, context.getString(R.string.fc_question),
+            due = java.time.LocalTime.now().let { "%d:%02d".format(it.hour, it.minute) }, from = nameOf(me).substringBefore(' '), origin = "chat:$roomId")
+        sendContent(roomId, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text, failed)
+        dinnerPrefs.edit().putLong(account.name + "|" + roomId, java.time.LocalDate.now().toEpochDay()).apply()
+        if (daily) putState(roomId, Casa.DINNER, JSONObject().put("by", me).put("hour", 17), failed)
+    }
+
+    private val dinnerPrefs get() = context.getSharedPreferences("chat_dinner", Context.MODE_PRIVATE)
+
+    fun dinnerDaily(roomId: String): Boolean = data[roomId]?.state?.get(Casa.DINNER)?.optString("by") == session?.userId
+
+    fun stopDinner(roomId: String, failed: () -> Unit) = putState(roomId, Casa.DINNER, JSONObject(), failed)
+
+    /** Ad app aperta: dopo le 17, la domanda della cena parte da sola (una volta al giorno, dal telefono di chi l'ha chiesto). */
+    private fun refreshDinner() {
+        val me = session?.userId ?: return
+        val now = java.time.LocalDateTime.now()
+        data.values.forEach { r ->
+            val o = r.state[Casa.DINNER] ?: return@forEach
+            if (o.optString("by") != me || now.hour < o.optInt("hour", 17) || now.hour >= 21) return@forEach
+            val key = account.name + "|" + r.id
+            if (dinnerPrefs.getLong(key, 0) >= now.toLocalDate().toEpochDay()) return@forEach
+            askDinner(r.id, daily = false) {}
+        }
+    }
+
+    fun meds(roomId: String) = Casa.decodeMeds(data[roomId]?.state?.get(Casa.MEDS))
+
+    fun saveMeds(roomId: String, m: Casa.Meds?, failed: () -> Unit) {
+        putState(roomId, Casa.MEDS, m?.let(Casa::encodeMeds) ?: JSONObject(), failed)
+        saveMedsSnapshot()
+    }
+
+    fun takeMed(roomId: String, medId: String, failed: () -> Unit) {
+        val m = meds(roomId) ?: return
+        saveMeds(roomId, Casa.take(m, medId, java.time.LocalDate.now(), System.currentTimeMillis()), failed)
+    }
+
+    /** La copia sul telefono per i promemoria dei farmaci ad app chiusa (MedsWorker). */
+    private fun saveMedsSnapshot() {
+        val me = session?.userId ?: return
+        val rooms = data.values.mapNotNull { r -> Casa.decodeMeds(r.state[Casa.MEDS])?.takeIf { it.by == me || it.user == me }?.let { r.id to it } }
+        runCatching { MedsWorker.save(context, account, me, rooms.map { (id, m) -> Triple(id, room(id)?.name.orEmpty(), m) }) }
+    }
+
     // --- Spese dall'email e per email (tavola SpeEmail) ---
 
     /** Una spesa arrivata dall'Email (importo, cosa): si sceglie il gruppo e si apre «Nuova spesa» già compilata. */
     var pendingExpense by mutableStateOf<Pair<Long, String>?>(null)
+    /** Una scadenza dall'Email (cosa, importo, giorno) e una domanda per la famiglia (domanda, risposte): si sceglie il gruppo. */
+    var pendingDeadline by mutableStateOf<Triple<String, Long, Long>?>(null)
+    var pendingAsk by mutableStateOf<Pair<String, List<String>>?>(null)
+
+    /** Entrando nel gruppo scelto: la scadenza si aggiunge, la domanda parte come sondaggio. */
+    fun usePending(roomId: String) {
+        pendingDeadline?.let { (title, cents, day) ->
+            pendingDeadline = null
+            if (day > 0) saveDeadlines(roomId, deadlines(roomId) + Casa.Deadline("s" + System.nanoTime(), title, if (cents > 0) Casa.Kind.Bolletta else Casa.Kind.Altro, day,
+                cents, session?.userId.orEmpty(), source = context.getString(R.string.fs_from_mail), by = session?.userId.orEmpty())) {}
+        }
+        pendingAsk?.let { (q, opts) -> pendingAsk = null; sendPoll(roomId, q, opts, null) {} }
+    }
 
     private val EXPENSE_PEOPLE = "eu.eurise.expense.people"
 
@@ -1186,6 +1306,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     refreshMailAnswers()
                     refreshSlots()
                     refreshAgendas()
+                    refreshDinner()
+                    saveMedsSnapshot()
                     saveChoresSnapshot()
                     if (shareHours) publishHours(all = false)
                 }

@@ -198,4 +198,13 @@ class SchedaTest {
         assertEquals(52800L, Importi.cents("528.00"))
         assertEquals(null, Importi.cents("12,5"))
     }
+
+    @Test fun deadlines() {
+        val today = java.time.LocalDate.of(2026, 11, 22)
+        assertEquals(java.time.LocalDate.of(2026, 12, 12), Scadenze.due("Bolletta gas di novembre: 61,20 €. Scade il 12 dic, addebito sul conto.", today))
+        assertEquals(java.time.LocalDate.of(2026, 11, 25), Scadenze.due("Uscita didattica il 4 dicembre; quota 12 €, autorizzazione entro il 25 novembre.", today))
+        assertEquals(java.time.LocalDate.of(2027, 1, 31), Scadenze.due("Scadenza: 31/01/2027", today))
+        assertEquals(null, Scadenze.due("Ci vediamo giovedì", today))
+        assertEquals(java.time.LocalDate.of(2027, 3, 15), Scadenze.date("15 marzo", today))
+    }
 }

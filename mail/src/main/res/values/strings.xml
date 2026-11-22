@@ -206,4 +206,17 @@
     <string name="ml_se_found">Spesa di %1$s</string>
     <string name="ml_se_hint">Nelle spese di un gruppo della Chat, divisa fra tutti</string>
     <string name="ml_se_add">Aggiungi</string>
+    <!-- Scadenze e scuola dalle email (tavole FamScadenze, FamScuola). -->
+    <string name="ml_fs_found">Scadenza: %1$s</string>
+    <string name="ml_fs_school">Dalla scuola · entro %1$s</string>
+    <string name="ml_fs_hint">Letta sul telefono. Il promemoria va nelle Attività tre giorni prima.</string>
+    <string name="ml_fs_task">Promemoria</string>
+    <string name="ml_fs_task_ok">Nelle Attività</string>
+    <string name="ml_fs_home">Nelle scadenze di casa</string>
+    <string name="ml_fs_ask">Chiedi in famiglia chi va</string>
+    <string name="ml_fs_who_goes">%1$s: chi va?</string>
+    <string name="ml_fs_me">Vado io</string>
+    <string name="ml_fs_you">Vai tu</string>
+    <string name="ml_fs_both">Tutti e due</string>
+    <string name="ml_fs_due_note">Scade il %1$s</string>
 </resources>

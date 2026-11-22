@@ -302,6 +302,13 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
             ViewChips(model)
             if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
             // Una spesa arrivata dall'Email (tavola SpeEmail): si sceglie il gruppo.
+            (model.pendingDeadline?.first ?: model.pendingAsk?.first)?.let { what ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.se_pick_any, what), fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                    Text("✕", fontSize = 14.sp, modifier = Modifier.clickable(role = Role.Button) { model.pendingDeadline = null; model.pendingAsk = null }.padding(4.dp))
+                }
+            }
             model.pendingExpense?.let { (cents, what) ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically) {
@@ -697,7 +704,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
         // Nei gruppi: Messaggi e Spese (tavola SpeGruppo).
         val group = room != null && !room.direct && peer == null && thread == null
         // Una spesa dall'Email (tavola SpeEmail): il gruppo si apre sulle Spese, con «Nuova spesa» già compilata.
-        var tab by remember(roomId) { mutableStateOf(if (group && model.pendingExpense != null) 1 else 0) }
+        var tab by remember(roomId) { mutableStateOf(if (group && model.pendingExpense != null) 1 else if (group && model.pendingDeadline != null) 7 else 0) }
+        LaunchedEffect(roomId) { if (group) model.usePending(roomId) }
         if (group) Row(Modifier.horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(stringResource(R.string.ex_tab_messages), selected = tab == 0) { tab = 0 }
             Chip(stringResource(R.string.ex_tab_expenses), selected = tab == 1) { tab = 1 }
@@ -710,6 +718,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Chip(stringResource(R.string.ri_tab), selected = tab == 5) { tab = 5 }
             // La cartella di squadra (tavola InsSquadra).
             Chip(stringResource(R.string.tm_tab), selected = tab == 6) { tab = 6 }
+            // La casa (tavole FamScadenze, FamDocumenti, FamCena, FamGenitori).
+            Chip(stringResource(R.string.fs_tab), selected = tab == 7) { tab = 7 }
             // Gruppo a tempo (tavola ChatGruppoTempo).
             Chip(stringResource(R.string.tb_chip), selected = false) { timeboxSheet = true }
         }
@@ -725,6 +735,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             Box(Modifier.weight(1f).fillMaxWidth()) { MeetingPane(model, actions, roomId) }
         } else if (group && tab == 6) {
             Box(Modifier.weight(1f).fillMaxWidth()) { TeamPane(model, actions, roomId) }
+        } else if (group && tab == 7) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { HomePane(model, actions, roomId) }
         } else {
             val roomPlanned = if (thread == null) model.planned.filter { it.roomId == roomId } else emptyList()
             // I messaggi fissati: tocco per andarci.
@@ -927,6 +939,8 @@ private fun Conversation(model: ChatModel, actions: ChatActions, roomId: String,
             add(Triple(EuriseIcons.share(2f), stringResource(R.string.cv_title), { shareSheet = true }))
             // L'agenda con l'assistente (tavola InsAssistente), nelle chat a due.
             if (model.peerOf(roomId) != null) add(Triple(EuriseIcons.calendar(2f), stringResource(R.string.as_menu), { agendaSheet = true }))
+            // Chi c'è a cena? (tavola FamCena), nei gruppi.
+            if (model.room(roomId)?.direct == false) add(Triple(EuriseIcons.spoon(2f), stringResource(R.string.fc_question), { model.askDinner(roomId, false) { actions.toast(failed) } }))
         },
     ) { moreSheet = false }
     if (slotsSheet) SlotsSheet(model, actions, roomId) { slotsSheet = false }

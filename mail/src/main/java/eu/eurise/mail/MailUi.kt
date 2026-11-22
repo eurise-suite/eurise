@@ -360,6 +360,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             if (model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) CardAnswer(model, actions, o)
             // Spese dall'email (tavola SpeEmail): biglietti e ricevute nelle spese di un gruppo della Chat.
             ExpenseFromMail(actions, o)
+            // Scadenze e scuola dalle email (tavole FamScadenze, FamScuola).
+            DeadlineFromMail(model, actions, o)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->

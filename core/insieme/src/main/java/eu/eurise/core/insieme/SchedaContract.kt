@@ -62,6 +62,24 @@ object SchedaContract {
             .putExtra(EXTRA_CENTS, cents).putExtra(EXTRA_TITLE, title).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
+    /** Email → Chat (tavole FamScadenze, FamScuola): una scadenza per le Scadenze di casa, una domanda «chi va?» per la famiglia. */
+    const val ACTION_ADD_DEADLINE = "eu.eurise.action.ADD_DEADLINE"
+    const val ACTION_ASK_FAMILY = "eu.eurise.action.ASK_FAMILY"
+    const val EXTRA_DAY = "day"
+    const val EXTRA_OPTIONS = "options"
+
+    private fun chatIntent(context: Context, action: String): android.content.Intent? {
+        val pkg = chatPackage(context)
+        if (!SuiteAccess.isSuitePackage(context, pkg)) return null
+        return android.content.Intent(action).setComponent(android.content.ComponentName(pkg, "eu.eurise.chat.ChatActivity")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    fun deadlineIntent(context: Context, title: String, cents: Long, day: java.time.LocalDate): android.content.Intent? =
+        chatIntent(context, ACTION_ADD_DEADLINE)?.putExtra(EXTRA_TITLE, title)?.putExtra(EXTRA_CENTS, cents)?.putExtra(EXTRA_DAY, day.toEpochDay())
+
+    fun askIntent(context: Context, question: String, options: List<String>): android.content.Intent? =
+        chatIntent(context, ACTION_ASK_FAMILY)?.putExtra(EXTRA_TITLE, question)?.putExtra(EXTRA_OPTIONS, options.toTypedArray())
+
     fun pack(list: List<Got>): String = JSONArray().apply {
         list.forEach { g -> put(Scheda.answerToJson(g.answer).put("id", g.id).put("address", g.address).put("at", g.at)) }
     }.toString()

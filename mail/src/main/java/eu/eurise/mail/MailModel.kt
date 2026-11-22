@@ -191,6 +191,12 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    /** Una scadenza da un'email (tavola FamScadenze): nelle Attività tre giorni prima. Falso senza l'app Eurise. */
+    fun remindBill(title: String, cents: Long, due: java.time.LocalDate): Boolean =
+        eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            title + (if (cents > 0) " · %d,%02d €".format(cents / 100, cents % 100) else ""), due = due.minusDays(3),
+            notes = context.getString(R.string.ml_fs_due_note, due.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.getDefault()))))
+
     /** «Sollecita»: la stessa scheda di nuovo a chi non ha risposto. */
     fun remindCard(id: String, done: (Boolean) -> Unit) {
         val s = cards.firstOrNull { it.card.id == id } ?: return

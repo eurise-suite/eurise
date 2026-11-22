@@ -189,6 +189,13 @@ internal fun CardBubble(model: ChatModel, actions: ChatActions, roomId: String, 
                 }
             }
             if (card.kind == Scheda.Kind.Orari) SlotChoices(model, actions, roomId, e, card, mine, answers)
+            // Chi c'è a cena (tavola FamCena): quanti siete, chi arriva tardi.
+            if (card.kind == Scheda.Kind.Cena) {
+                val yes = answers.filterKeys { it != e.sender }.count { it.value.state == Scheda.State.Yes || it.value.state == Scheda.State.Late } + 1
+                val late = answers.filter { it.value.state == Scheda.State.Late }.keys.map { model.nameOf(it).substringBefore(' ') }
+                Text(stringResource(R.string.fc_count, yes) + if (late.isNotEmpty()) " · " + stringResource(R.string.fc_late, late.joinToString(", ")) else "",
+                    fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = GREEN)
+            }
             if (mine && card.kind == Scheda.Kind.Proposta) answers.filterKeys { it != me }.values.lastOrNull()?.let { CardStateChip(it.state) }
             val forMe = card.to.isEmpty() || card.to == me
             if (!mine && forMe && card.kind != Scheda.Kind.Orari) {

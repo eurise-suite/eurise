@@ -295,3 +295,32 @@ internal fun ExpenseFromMail(actions: MailActions, o: Opened) {
         BallChip(stringResource(R.string.ml_se_add), true) { actions.start(intent) }
     }
 }
+
+/**
+ * Scadenze e scuola dalle email (tavole FamScadenze, FamScuola): la data trovata sul telefono, il promemoria in Attività, le
+ * Scadenze di casa nella Chat della famiglia; per le circolari «Chiedi in famiglia chi va». Niente accesso al registro.
+ */
+@Composable
+internal fun DeadlineFromMail(model: MailModel, actions: MailActions, o: Opened) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val today = remember { java.time.LocalDate.now() }
+    val due = remember(o.summary.uid) { eu.eurise.core.insieme.Scadenze.due(o.text, today) } ?: return
+    if (due.isBefore(today) || SchedaMail.ref(o.text) != null) return
+    val cents = remember(o.summary.uid) { eu.eurise.core.insieme.Importi.total(o.text) ?: 0L }
+    val title = remember(o.summary.uid) { MailBalls.core(o.summary.subject).replaceFirstChar { it.uppercase() }.ifBlank { o.summary.fromName }.take(70) }
+    val school = remember(o.summary.uid) { Regex("(circolare|registro elettronico|scuola|classe|colloqui|uscita didattica|argo|classeviva|nuvola)", RegexOption.IGNORE_CASE).containsMatchIn(o.text + " " + o.summary.subject) }
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.getDefault())
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.08f)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(if (school) R.string.ml_fs_school else R.string.ml_fs_found, due.format(fmt)) +
+            (if (cents > 0) " · %d,%02d €".format(cents / 100, cents % 100) else ""), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.ml_fs_hint), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            BallChip(stringResource(R.string.ml_fs_task), true) { actions.toast(context.getString(if (model.remindBill(title, cents, due)) R.string.ml_fs_task_ok else R.string.ml_no_hub)) }
+            eu.eurise.core.insieme.SchedaContract.deadlineIntent(context, title, cents, due)?.let { i -> BallChip(stringResource(R.string.ml_fs_home), false) { actions.start(i) } }
+            if (school) eu.eurise.core.insieme.SchedaContract.askIntent(context, context.getString(R.string.ml_fs_who_goes, title),
+                listOf(context.getString(R.string.ml_fs_me), context.getString(R.string.ml_fs_you), context.getString(R.string.ml_fs_both)))
+                ?.let { i -> BallChip(stringResource(R.string.ml_fs_ask), false) { actions.start(i) } }
+        }
+    }
+}
