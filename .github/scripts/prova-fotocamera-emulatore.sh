@@ -25,11 +25,12 @@ echo "=== Componenti esportati ==="
 # ProfileInstallReceiver arriva da androidx ed è protetto dal permesso DUMP (solo adb e sistema).
 attesi="androidx.profileinstaller.ProfileInstallReceiver eu.eurise.camera.CameraActivity eu.eurise.camera.SecureCameraActivity eu.eurise.camera.CaptureActivity eu.eurise.camera.CameraTileService"
 esportati=$("$bt/aapt2" dump xmltree --file AndroidManifest.xml "$apk" | awk '
-  /E: (activity|activity-alias|service|receiver|provider) / { name=""; exp="" }
+  /E: (activity|activity-alias|service|receiver|provider) / { name="" }
   /A: .*android:name\(/ && name=="" { if (match($0, /="[^"]*"/)) name=substr($0, RSTART+2, RLENGTH-3) }
   /A: .*android:exported\(/ { if ($0 ~ /=true|0xffffffff/) { if (name!="") print name } }
 ' | sort -u)
 echo "$esportati" | sed 's/^/  /'
+[ -n "$esportati" ] || ko "elenco dei componenti esportati vuoto: la lettura del manifesto non ha funzionato"
 for c in $esportati; do
   case " $attesi " in *" $c "*) ok "esportato come previsto: $c";; *) ko "esportato in più: $c";; esac
 done
@@ -59,12 +60,17 @@ apri "dal blocco schermo" blocco -n "$pkg/eu.eurise.camera.SecureCameraActivity"
 echo "=== Lo scatto con il tasto del volume ==="
 apri "avvio per lo scatto" scatto -n "$pkg/eu.eurise.camera.CameraActivity"
 prima=$(adb shell content query --uri content://media/external/images/media --projection _display_name 2>/dev/null | grep -c "IMG_" || true)
+adb logcat -c
+sleep 3
 adb shell input keyevent KEYCODE_VOLUME_DOWN
-sleep 5
+sleep 6
 dopo=$(adb shell content query --uri content://media/external/images/media --projection _display_name 2>/dev/null | grep -c "IMG_" || true)
 adb exec-out screencap -p > schermate/dopo-scatto.png 2>/dev/null || true
 if [ "${dopo:-0}" -gt "${prima:-0}" ]; then ok "il volume scatta e la foto è nel Rullino"
-else nota "nessuna foto nuova dopo il volume ($prima → $dopo): con la fotocamera simulata può capitare"; fi
+else
+  nota "nessuna foto nuova dopo il volume ($prima → $dopo): con la fotocamera simulata può capitare"
+  adb logcat -d | grep -iE "EuriseCamera|ImageCapture|CameraX|Camera2CameraImpl|CameraController" | tail -20 | sed 's/^/    /'
+fi
 
 echo "=== «Scatta foto» con un indirizzo che punta ai nostri file ==="
 adb logcat -c
