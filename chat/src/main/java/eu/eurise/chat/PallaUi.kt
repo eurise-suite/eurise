@@ -123,7 +123,7 @@ internal fun BallBubble(model: ChatModel, actions: ChatActions, roomId: String, 
     val failed = stringResource(R.string.ch_send_failed)
     // L'ultima risposta di chi l'ha ricevuta (da qualunque dei due telefoni).
     val answer = model.timeline(roomId).lastOrNull { it.kind == Event.Kind.Notice && it.data?.contains(Palla.STATUS) == true &&
-        Palla.status(it.data?.let { d -> runCatching { JSONObject(d) }.getOrNull() })?.first == card.id }
+        Palla.status(it.data.let { d -> runCatching { JSONObject(d) }.getOrNull() })?.first == card.id }
         ?.let { Palla.status(JSONObject(it.data!!))?.second }
     Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
         Column(

@@ -84,7 +84,7 @@ class PlaceIndexer(private val context: Context, private val store: GalleryStore
         eu.eurise.core.suite.ServiceLog.log(context, GalHub.NAMES)
         return WebDav.sharedClient.newCall(request).execute().use { res ->
             if (!res.isSuccessful) return null
-            val json = JSONObject(res.body?.string().orEmpty())
+            val json = JSONObject(res.body.string())
             val address = json.optJSONObject("address")
             listOf("city", "town", "village", "municipality", "county", "state").firstNotNullOfOrNull { address?.optString(it)?.takeIf(String::isNotEmpty) }
                 ?: json.optString("name").takeIf(String::isNotEmpty)

@@ -61,7 +61,7 @@ object SuiteSecrets {
     fun restore(context: Context, json: ByteArray) {
         val all = runCatching { JSONObject(String(json)) }.getOrNull() ?: return
         val edit = prefs(context).edit()
-        all.keys().forEach { k -> all.optString(k, null)?.let { edit.putString(k, seal(it)) } }
+        all.keys().forEach { k -> all.optString(k).let { edit.putString(k, seal(it)) } }
         edit.commit()
     }
 

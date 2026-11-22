@@ -473,3 +473,33 @@ aperti solo se http/https.
 
 ## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
 Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.
+
+## 22 novembre 2026: controllo completo di tutte le app (chat unica del proprietario)
+Controllo a tappeto su tutte le app, fatto dalla chat dell'area Office su richiesta del proprietario. Nessuna backdoor
+né telemetria trovata.
+- **Controllato senza problemi**: i 105 componenti esportati (i provider passano tutti da `SuiteAccess`); le WebView
+  (JavaScript solo nella finestra AI e nei popup del Browser, nessuna interfaccia JavaScript, accesso ai file spento;
+  la Posta blocca le immagini remote); nessun traffico in chiaro né `TrustManager` fatti in casa; gli indirizzi nel
+  codice sono solo servizi scelti dall'utente, feed e prove; nessun segreto nel codice (solo la vecchia chiave di prova,
+  pubblica e documentata); `PendingIntent` mutabili solo per MMS e installazione, espliciti; nessun `Runtime.exec`
+  tranne `xdg-open` sul computer, limitato a http(s) e geo; SQL sempre con parametri; nessun rinvio di intent; socket
+  del Ponte 0600; broadcast con permesso o dentro lo stesso pacchetto; notifiche private di base.
+- **Corretto**:
+  1. Alfred eseguiva subito una frase mandata da un'altra app (`AlfredActivity` è aperta a tutte per «Di' Alfred»):
+     ora la frase di un'app esterna si mette solo nel campo e parte quando l'utente tocca Invia. Le aperture interne
+     (Scrivania) portano un gettone del processo (`AlfredTrust`) ed eseguono come prima.
+  2. Note bloccate: mentre una nota bloccata è aperta la finestra ha `FLAG_SECURE` (niente schermate, niente anteprima
+     tra le app recenti, niente registrazione dello schermo).
+  3. Flussi `office-prova.yml` e `prova-porte.yml`: i valori dati a mano entrano negli script come variabili
+     d'ambiente, non più incollati nel testo (iniezione di comandi).
+- **Resta per scelta**: `LOActivity` di Collabora (motore di Office) ha un'interfaccia JavaScript e l'accesso ai file
+  locali, ma carica solo le sue pagine interne.
+- **Avvisi di Dependabot (64)**: sono del ramo predefinito `main`, fermo, e quasi tutti degli strumenti di compilazione
+  (Netty, BouncyCastle di AGP, letti da `settings.gradle.kts`), che non entrano negli APK. Nelle app le librerie
+  segnalate sono già alzate (`build.gradle.kts`: BouncyCastle 1.85, Guava 33.7.2; org.json 20260814). Per avere avvisi
+  utili: rendere `brand` il ramo predefinito o portare `main` avanti (decisione del proprietario).
+- **Decisione del proprietario**: gli APK di prova sono «debuggable»: con il telefono collegato via adb e il debug USB
+  acceso si leggono i dati delle app (`run-as`) e si ispezionano le WebView, anche di Password. Proposta: build di
+  prova «chiusa» (non debuggable) per Password e per l'app Eurise; serve adattare gli script dell'emulatore che usano
+  `run-as` (`prova-porte-emulatore.sh`, `prova-avvio-browser.sh`, `office/prova/prova.sh`, `prova-firma-emulatore.sh`).
+  Finché si decide: debug USB spento sul telefono con le password vere.

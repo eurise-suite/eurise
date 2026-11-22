@@ -582,7 +582,8 @@ private fun CellCard(model: QuickModel, doc: SheetDoc, at: Pair<Int, Int>, onFul
     val sheet = doc.sheets.getOrNull(model.sheetIndex) ?: return
     val (col, row) = at
     val cell = sheet[col, row]
-    val start = cell?.let { c -> c.formula?.let { "=$it" } ?: if (c.hasFormula) null else c.display } ?: ""
+    // null = una formula che la vista rapida non sa leggere (si cambia nella modifica completa).
+    val start: String? = if (cell == null) "" else cell.formula?.let { "=$it" } ?: if (cell.hasFormula) null else cell.display
     var value by remember(at, model.sheetIndex, cell) { mutableStateOf(TextFieldValue(start ?: "", TextRange((start ?: "").length))) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(at) { if (start != null) focus.requestFocus() }

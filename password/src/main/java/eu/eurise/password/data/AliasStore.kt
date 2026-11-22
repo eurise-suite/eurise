@@ -81,7 +81,7 @@ class AliasStore(private val context: Context) {
         runCatching {
             client.newCall(request).execute().use { res ->
                 if (!res.isSuccessful) return@use null
-                val body = JSONObject(res.body?.string().orEmpty())
+                val body = JSONObject(res.body.string())
                 if (provider == AliasProvider.Addy) body.getJSONObject("data").getString("email") else body.getString("alias")
             }
         }.getOrNull()

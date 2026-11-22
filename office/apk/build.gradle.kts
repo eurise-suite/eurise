@@ -16,6 +16,8 @@ plugins {
 val releaseKeystore: String? = System.getenv("EURISE_KEYSTORE_PATH")
 
 android {
+    // Solo le lingue della suite: le librerie portano traduzioni in decine di lingue che nessuno vedrebbe.
+    androidResources { localeFilters += listOf("it", "en") }
     namespace = "eu.eurise.office"
     compileSdk = 37
 
@@ -34,7 +36,6 @@ android {
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 100 + it } ?: 1
         versionName = "0.2.0"
-        resourceConfigurations += listOf("it", "en")
         manifestPlaceholders["suitePermission"] = "eu.eurise.permission.SUITE"
         buildConfigField("String", "HUB_PACKAGE", "\"eu.eurise.hub\"")
         buildConfigField("String", "ENGINE_PACKAGE", "\"eu.eurise.office.motore\"")
