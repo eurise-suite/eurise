@@ -3422,3 +3422,4 @@ Suite nel motore (OffTelefono, OffTablet, OffCerca), presentazioni nella vista r
 - 22 novembre, Browser: Telefono e computer (segnalibri, siti fissati, Leggi dopo e schede con Firefox via Ponte; estensione 0.3.0), profilo di avvio, tavola PcImporta da approvare → `docs/stato/BROWSER.md`.
 - 22 novembre, Alfred e AI: passi 3, 4 e 5 (azioni, messaggi, in guida, «Cosa sai fare?», tendina, blocco, registro), Compila 1021, Mappe 142 → `docs/stato/ALFRED.md`.
 - 22 novembre, notte, Sicurezza: librerie aggiornate, primo passo (OkHttp 5, Media3 1.11, CameraX 1.7, android-mail 1.6.8, AndroidX, AGP 9.5.2), flusso «Versioni delle librerie»; Play Services nel Browser da decidere; giro 1023 in `apk-prova` → `docs/SICUREZZA.md`.
+- 22 novembre, Office: I miei dati nei moduli PDF, Link dal cloud, Chiedi all'AI con Alfred, mano dalla Scrivania; motore nuovo · giro 1023 → `docs/stato/OFFICE.md`.

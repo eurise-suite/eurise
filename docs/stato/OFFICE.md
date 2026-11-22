@@ -60,6 +60,13 @@ motore (`eurise-office-motore-debug.apk`); `apk-prova.yml` mette insieme i due (
   `eurise_patch.py`); `CrashGuard` in `core/designsystem/crash` (per ora solo nel Browser); «Apri con» PDF nell'APK
   principale (`PdfOpenActivity`, 15 novembre).
 
+- **22 novembre, giro 1015**: «Compila con I miei dati» nei moduli PDF (Eurise Password, `MyDataActivity` nuova in
+  `password`, contratto in `PasswordContract`; abbinamento `MyDataFill` con test); «Link dal cloud» in Prima di
+  condividere (`FilesContract.EXTRA_LINK`, `EuriseFiles.link`, solo Murena e Nextcloud); «Chiedi all'AI · Alfred» in Cerca
+  un comando sul telefono (`EuriseSuite.java` apre Alfred con la domanda; sul computer «in arrivo»); mano dominante dalla
+  Scrivania (`AppearanceContract.METHOD_HAND`, l'interruttore di Office resta solo senza l'app Eurise). Prova del
+  computer (office-computer) verde con il nuovo `Control.Eurise.js`. Parti comuni toccate: `core/suite`, `core/files`,
+  `password`.
 - **17 novembre, giri 718 e 724** (motore con `Uscite`; prova sull'emulatore 44003666557: dock a posto, motore vivo): dock della schermata iniziale Recenti / Telefono / Cloud (tavola OffOggiHome: tocco breve
   sul cloud preferito, pressione lunga «File dal cloud» con la stellina; `PlacesProvider` nell'app Eurise, `EXTRA_START`
   in `FilesContract`, `onLongSelect` in `EuriseDock`); **rapporto del problema** (OffRapporto, OffRapportoVedi):
@@ -89,20 +96,17 @@ OffOggiCaricamento, OffOggiTablet, OffOggiComputer, 14 novembre).
 approvare»; OfficeIcona pure. Si correggono la prossima volta che si tocca la tela.
 
 ## Prossimi passi (in ordine)
-1. **Testata in stile Collabora sul telefono** (segnalata il 16 novembre aprendo «Aspetto esatto»): con Office e motore
-   del giro 692 la prova sull'emulatore a schermo grande (prova 43977581784, `schermo=grande`, 1080×1920) mostra la
-   nostra testata (indietro, nome, Salvato, ricerca, annulla, condividi) e la dock. Quasi certamente sul telefono c'era
-   Office 57 (vecchia app di Collabora, stesso pacchetto). Aspettare la conferma del proprietario; se resta, chiedere una foto.
-2. **Pubblicazione condivisa**: `apk-prova` la rifanno tutte le aree. Un'area che pubblica da un ramo senza l'unione del 16
-   novembre lascia `apk-prova` senza Office (è successo con il giro 667): si ripubblica da `prova-office` portato alla
-   testa di `brand`. Dal giro 692 Compila carica sempre Office e `apk-prova` prende il motore da office-app.
-3. **Prova del proprietario sul telefono**: dock Telefono/Cloud e rapporto (giro 718), «Scarica» del motore, vista rapida (anche presentazioni), card dei gruppi,
-   PDF con «Inserisci da Scanner» (ora l'app Eurise ha `ScanForResultActivity`), accento delle icone dalla Scrivania.
-4. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
-   (Ponte), proposta 10 da rivedere, verso Flathub; poi la webapp (decisa il 15 novembre).
-5. **Peso del motore** (113/315 MB): librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
-6. **Mancanze note**: «I miei dati» nei moduli PDF, «Link dal cloud», «Salva in…» per ogni documento, «Chiedi all'AI»,
-   mano dominante presa dalla suite; tablet vero (Volla) appena arriva.
+1. **Motore nuovo fatto** (giro 1023, office-app 44965496829; prova sull'emulatore 44976944123 verde, testata nostra): porta il controllo d'origine di postMessage (area
+   Sicurezza, 19 novembre) e «Chiedi all'AI · Alfred». Prova sull'emulatore (`schermo=grande`, poi `tablet`) e
+   pubblicazione in `apk-prova`. Attenzione: un office-app vecchio in corso tiene ferma la coda del gruppo `office-app`.
+2. **Prova del proprietario sul telefono**: testata nel motore («Aspetto esatto»), dock Telefono/Cloud, rapporto,
+   «Scarica» del motore, vista rapida, PDF con «Inserisci da Scanner», «Compila con I miei dati», «Link dal cloud»,
+   «Chiedi all'AI», mano dalla Scrivania.
+3. **Computer**: esito della prova del pacchetto del 15 novembre; poi «Apri da Eurise File» e «Collegato a» con dati veri
+   (Ponte), «Chiedi all'AI» anche lì, proposta 10 da rivedere, verso Flathub; poi la webapp (decisa il 15 novembre).
+4. **Peso del motore** (113/315 MB): librerie non compresse, -Os/LTO, ICU solo europea; F-Droid con due pacchetti.
+5. **Ancora da fare**: «I miei dati» anche nei moduli aperti nel motore (oggi solo nel PDF nativo); tablet vero (Volla);
+   titoli sulla tela (OffPC* e OfficeIcona dicono ancora «da approvare»).
 
 ## Come si lavora
 - Inizio di ogni chat: `CLAUDE.md`, questo file; di `docs/STATO.md` solo le parti citate qui. Prima di ogni push
