@@ -180,4 +180,7 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   - Schede dei documenti sul computer: il guscio di Collabora 26.04 le disegna già a schedario (maschera con i piedini,
     `qtapp-tabstrip.css`); `eurise-tabstrip.css` dà solo i colori. La prova del computer ora copia i fogli della striscia
     in `office-computer-schermate` (sorgente-qtapp-tabstrip.*.txt), perché non sono su GitHub.
-
+- **Nastro a schedario** su tablet e computer (tavola SchedarioProve, decisa il 22 novembre; `eurise.css` in fondo,
+  `body.eurise-tablet`): la scheda aperta del nastro è una linguetta bianca che continua nella fascia bianca dei comandi
+  (`--eurise-band`), i gruppi sono parti della fascia divise da un filo. Provato sul computer (prova del Flatpak).
+  Sul tablet Android arriva con il motore 68.

@@ -328,3 +328,7 @@ e Galleria nel centro privacy). Poi un giro per tutte le app: che cosa salvano a
 
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
+
+## 22 novembre 2026, sera (progetto Eurise Sicurezza, tavola SchedarioProve decisa dal proprietario)
+- «Apri il backup»: Frase segreta · Codice di recupero a schedario (`FolderTabs`), il campo sul foglio della linguetta
+  aperta, in un elemento solo dell'elenco (niente spazio tra linguetta e foglio).
