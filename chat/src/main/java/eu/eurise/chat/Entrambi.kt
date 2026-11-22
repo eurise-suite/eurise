@@ -9,7 +9,7 @@ import org.json.JSONObject
  * dell'altro si legge solo un riassunto leggero, nome, ora, non lette e l'anteprima se la stanza non è cifrata. Toccando
  * una sua chat si passa a quell'account.
  */
-internal object Entrambi {
+object Entrambi {
     /** Che cosa mostra l'elenco: l'account aperto, oppure tutti e due. Si sceglie dalla pillola in alto a destra. */
     enum class Show { One, Both }
 

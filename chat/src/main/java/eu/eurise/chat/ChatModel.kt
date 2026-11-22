@@ -55,6 +55,7 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         private set
     /** Le non lette dell'altro account (null = non collegato o non ancora contate). */
     var otherUnread by mutableStateOf<Int?>(null)
+        private set
     /** «Entrambi» (tavola ChatAccountAlternative): che cosa mostra l'elenco, e il riassunto leggero dell'altro account. */
     var show by mutableStateOf(runCatching { Entrambi.Show.valueOf(context.getSharedPreferences("chat_accounts_view", Context.MODE_PRIVATE).getString("show", null) ?: "One") }.getOrDefault(Entrambi.Show.One))
         private set
@@ -78,7 +79,6 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
 
     /** Fuori orario, con «il lavoro tace» acceso, le chat del Lavoro si fanno da parte nell'elenco insieme. */
     fun workHiddenNow(): Boolean = ChatAccounts.quietNow(context, Account.Work)
-        private set
     /** La sessione dell'altro account, per la barra e il foglio degli account (null = non collegato). */
     var otherSession by mutableStateOf(SessionStore(context, account.other).load())
         private set

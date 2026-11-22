@@ -370,7 +370,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                     items(together, key = { (if (it.mine) "m:" else "o:") + it.room.id }) { row ->
                         RoomRow(model, row.room, onLong = { roomFolders = row.room }, mark = accountColor(row.account), other = !row.mine)
                     }
-                } else if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) { roomFolders = r } }
+                } else if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r, onLong = { roomFolders = r }) }
                 else peopleItems(model, query, unreadOnly = model.uni.view == Uni.View.Unread)
                 item { Spacer(Modifier.height(100.dp)) }
             }
