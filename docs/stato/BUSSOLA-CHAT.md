@@ -115,3 +115,6 @@ Questo stile è ancora in anteprima, sul solo prototipo Premium medico, versione
 Prima di andare in produzione: valutazione d’impatto privacy (DPIA, dati sanitari, art. 9 GDPR), nomina del fornitore come responsabile del trattamento e registro degli accessi.
 ## Sicurezza, 21 novembre 2026 (progetto Eurise Sicurezza)
 Chat: la chiave di recupero affidata all'app Eurise ora è sigillata nel Keystore lì (`SuiteSecrets`); nessuna modifica nella Chat. Dettagli in `docs/SICUREZZA.md`, «Crittografia».
+
+## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
+R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.

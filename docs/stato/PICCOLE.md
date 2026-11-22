@@ -391,3 +391,7 @@ Galleria: «Salva in» e «Apri da File» solo verso l'app Eurise della suite; T
 
 ## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
 Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.
+
+## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
+R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
+Leggi: «Scarica» di una lingua (Tesseract) o di una traduzione accende «Lingue e traduzioni di Leggi» (`ReadModels`) e lo annota nel centro privacy; `TessModel.download` ora chiede il `Context`; Leggi dichiara l'app Eurise nelle `<queries>`.

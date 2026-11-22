@@ -657,3 +657,7 @@ Da ora Compila e CodeQL su `brand` fermano il giro se una libreria non ha la sua
 
 ## Sicurezza, 21 novembre 2026: note bloccate legate all'impronta
 Note: la chiave delle note bloccate si apre solo dopo l'impronta o il PIN; bloccare chiede il dito; senza backup il foglio «Blocca» avvisa (tavola NoteBloccaSenzaBackup); se si toglie il blocco schermo, «Riapri le note bloccate» con la frase del backup (tavola NoteRiapri). Backup: la chiave viaggia chiusa verso la coppia del backup (`NoteSeal`, voce `lock/notes.sealed`). Dettagli in `docs/SICUREZZA.md`, «Crittografia».
+
+## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
+R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
+Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, BrainModels), spenti di base; ReadModels e VoiceModels in `PrivacyContract.SHARED`.

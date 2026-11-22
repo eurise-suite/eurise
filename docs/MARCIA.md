@@ -51,11 +51,11 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 - **In corso** (22 novembre, mattina): ramo `prova-comunicazione`, da unire a `brand` quando ha un giro verde.
 
 ## Leggi — area Piccole/Browser
-- **C**: modelli di traduzione nel centro privacy (oggi lo scaricamento non vi compare).
+- ~~**C**: modelli di traduzione nel centro privacy~~ fatto il 22 novembre (giro 1048, «Lingue e traduzioni di Leggi»).
 - **S**: impronta dei modelli di traduzione controllata quando l'elenco di Mozilla la porta, rinvii solo in https (22 novembre).
 
 ## Voce — area Alfred
-- **C**: parola di risveglio (vedi Alfred); scaricamento dei modelli nel centro privacy.
+- **C**: parola di risveglio (vedi Alfred). ~~Scaricamento dei modelli nel centro privacy~~ fatto il 22 novembre (giro 1048).
 
 ## Office — area Office
 - **P**: testata nel motore, dock, «Scarica» del motore, vista rapida, PDF con «Inserisci da Scanner», «Compila con I miei
@@ -93,5 +93,5 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
    privati con `run-as`, e girano più lenti. Serve prima riscrivere le prove sull'emulatore senza `run-as` (accesso root
    dell'emulatore, proprietario ed etichette dei file).
 2. Librerie: zxing 3.5.4 (firma), Tastiera e Office, Compose BOM 2026.11 con compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4.
-3. Scaricamenti dei modelli (Leggi, Voce, AI) nel centro privacy, come il motore di Office.
-4. Pulizia del codice e velocità (in corso).
+3. ~~Scaricamenti dei modelli (Leggi, Voce, AI) nel centro privacy~~ fatto il 22 novembre (giro 1048).
+4. Pulizia del codice e velocità (in corso): ~~R8 in tutte le app~~ (giro 1048); poi R8 meno prudente app per app.

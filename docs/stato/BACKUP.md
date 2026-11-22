@@ -325,3 +325,6 @@ e Galleria nel centro privacy). Poi un giro per tutte le app: che cosa salvano a
 - Prova sull'emulatore sul giro 1014 (run «Prova del backup» 16): **48 su 48**, con nota vocale, suoneria e dock. Poi unito
   ancora `brand` (Browser: telefono e computer; niente di nuovo da salvare: i siti fissati sono nei segnalibri, gli
   interruttori `browser-sync` restano fuori e ripartono spenti). Pubblicati su `apk-prova` il **giro 1021** e **Mappe 142**.
+
+## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
+R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.

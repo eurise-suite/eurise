@@ -2,7 +2,7 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 22 novembre 2026, mattina)
+### Per ripartire (aggiornato il 22 novembre 2026, mezzogiorno)
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
@@ -10,11 +10,17 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
   le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
   precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
-- **Ultimo giro pubblicato**: Compila **1044** da `prova-sicurezza` (22 novembre, 10:25 UTC): Backup unito, Comunicazione
-  fino al giro 1033, controllo di sicurezza di tutta la suite, microG nel Browser, **app non più debuggable**. Con Mappe
-  145 (prova-sicurezza) e Office 65. Prove sull'emulatore su quel giro: porte 24/24, backup 48/48, avvio di tutte le
-  app senza arresti (`prova-avvio.yml`, nuova). `brand` = `prova-sicurezza` (9ce3c69). Pubblicare:
+- **Ultimo giro pubblicato**: Compila **1048** da `prova-sicurezza` (22 novembre, 12:04 UTC): **R8 in tutte le app di
+  prova** e gli scaricamenti dei modelli nel centro privacy, sopra il giro 1044. Con Mappe 145 e Office 65 (invariati).
+  Prove sull'emulatore: porte verdi, avvio di tutte le 13 app senza arresti e più svelto (Eurise 944 → ~850 ms, Chat
+  1084 → ~680, AI 988 → ~530, Password ~500 → ~270). APK molto più leggeri (Eurise 19 → 6 MB, Password 10 → 2, Chat
+  26 → 18, Voce 42 → 34). `brand` = `prova-sicurezza` (b2ab5cc). Pubblicare:
   `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
+  nativo (R8): posta (IMAP/SMTP), Chat cifrata (Matrix), PDF e firma in Office e Scanner, OCR e traduzione in Leggi,
+  dettatura e voce di Alfred, cervello in AI, sincronizzazione e backup. Poi in Leggi o Voce «Scarica» una lingua o un
+  modello e guardare il centro privacy: il servizio acceso e la riga nel registro. Si installa sopra, nessuna
+  disinstallazione: stesso pacchetto, stessa chiave. Se un'app si ferma su una funzione, dirlo: si spegne R8 solo lì.
 - **Da provare sul telefono (giro 1044)**: un giro di ogni app (più veloci); una passkey su un sito nel Browser
   (webauthn.io, con microG); backup e ripristino veri; Condividi verso Eurise e Office da un'altra app.
 - **Da provare sul telefono (giro 1023, librerie nuove)**: un giro normale di ogni app, soprattutto la sincronizzazione
@@ -55,10 +61,11 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4, Haze 2 (con l'area grafica).
      ~~Play Services nel Browser~~ sostituite da microG il 22 novembre.
   8. **Pulizia e velocità** (22 novembre): ~~APK di prova non debuggable~~ (avvii a freddo da 2 a 3 volte più rapidi),
-     ~~prova d'avvio di tutte le app~~. Prossimo: **R8 app per app** (oggi solo Browser e Tastiera), con regole prudenti
-     (codice nostro tenuto, librerie con riflessione tenute: javax.mail, BouncyCastle, pdfbox, onnx, Tesseract) e la
-     prova d'avvio a ogni app; poi Mappe non debuggable (patch); modelli scaricati nel centro privacy; Office con il
-     motore nuovo ricompilato (ha già la variante dal nome del pacchetto).
+     ~~prova d'avvio di tutte le app~~, ~~R8 in tutte le app~~ (giro 1048, sezione «Porte d'ingresso»),
+     ~~Mappe non debuggable~~ (lo era già: FdroidRelease), ~~modelli scaricati nel centro privacy~~ (giro 1048).
+     Prossimo: dopo la prova sul telefono, R8 meno prudente app per app (togliere il «tieni tutto eu.eurise» dove la
+     prova d'avvio e un giro delle funzioni lo reggono; riduzione delle risorse fuori dal Launcher); Office con il
+     motore nuovo ricompilato (ha già la variante dal nome del pacchetto); librerie del punto 7.
 - **Regole del progetto**: le prove su permessi e firma passano dall'emulatore prima del telefono; sul telefono ci sono
   password vere, mai una modifica che costringa a disinstallare senza dirlo prima; a ogni consegna link diretti da
   `apk-prova`, questo file aggiornato e una sola riga in `docs/STATO.md`.
