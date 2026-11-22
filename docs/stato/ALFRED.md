@@ -211,3 +211,6 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 
 ## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
 Assistente: dettatura solo verso Eurise Voce della suite (`SuiteAccess.isSuitePackage`); Ponte: sblocco di Password solo verso Password della suite. Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».
+
+## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
+Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.

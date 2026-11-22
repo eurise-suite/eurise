@@ -470,3 +470,6 @@ aperti solo se http/https.
   come fa il Ponte (vale per tutti i portachiavi di Linux). Il file `telefoni` (segreti dell'abbinamento) resta su disco:
   senza la chiave privata non serve a nulla. La vecchia chiave tolta dal file può restare nei blocchi liberi del disco:
   cifratura del disco consigliata.
+
+## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
+Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.

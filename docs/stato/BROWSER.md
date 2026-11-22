@@ -129,3 +129,6 @@ Browser: il CSV delle password importate, «Salva in» e lo sblocco di Password 
 
 ## Sicurezza, 21 novembre 2026: verifica delle librerie bloccante su brand
 Da ora Compila e CodeQL su `brand` fermano il giro se una libreria non ha la sua impronta. Chi aggiunge o aggiorna una libreria non deve fare nulla: quel giro resta solo segnalazione, il flusso «Impronte delle librerie» scrive le impronte e rilancia Compila. Se un giro si ferma per un'impronta, non togliere la verifica: dirlo al progetto Sicurezza (docs/SICUREZZA.md, «Dove blocca»).
+
+## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
+Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.

@@ -388,3 +388,6 @@ Dettagli in `docs/SICUREZZA.md`, sezione «Computer».
 
 ## Sicurezza, 20 novembre 2026, sera (progetto Eurise Sicurezza)
 Galleria: «Salva in» e «Apri da File» solo verso l'app Eurise della suite; Tastiera: dettatura solo verso Voce della suite (`SuiteTrust`). Dettagli in `docs/SICUREZZA.md`, «Intent verso le altre app della suite».
+
+## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
+Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.

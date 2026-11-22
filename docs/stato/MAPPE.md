@@ -340,3 +340,6 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 - 22 novembre, area Alfred: guida in corso per Alfred («quanto manca?», «avvisa Anna che arrivo»): `EuriseGuideStatus.java`
   (stato e provider `eu.eurise.maps.guida`, permesso della suite in `call()`), una riga in `EuriseWit.update`, il provider
   nel manifesto da `eurise_patch.py`. Dettagli in `docs/stato/ALFRED.md`.
+
+## 22 novembre 2026: Impostazioni Eurise, proposta dell'area Organizzazione (serve la vostra risposta)
+Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): ogni app tiene le sue impostazioni, Impostazioni Eurise le mostra, le cerca e le apre. Proposta di voci, navigazione e contratto (`AppHubContract.METHOD_SETTINGS`, `EXTRA_SETTING`) in `docs/IMPOSTAZIONI.md`, con le domande per ogni area: scrivete la risposta in fondo a quel file, una riga. Finché non rispondete la vostra app compare con una riga di riserva che non tocca nulla da voi.

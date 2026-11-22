@@ -51,6 +51,25 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 - **Comuni a tutta la suite** (core/designsystem): registro errori dopo una chiusura improvvisa (`CrashInstaller`,
   `CrashActivity`, processo `:errore`), `ImportScreen`, `PrivacyMeter`, `ServiceConsentSheet`.
 
+## 22 novembre, sera: Impostazioni Eurise, proposta alle altre aree (niente codice)
+- **Proposta in `docs/IMPOSTAZIONI.md`** (sulla tavola ImpEurise approvata): tre gruppi (Per tutta la suite: Aspetto, Mano e
+  gesti, Privacy; I tuoi dati: Backup cifrato, Cloud e account; Le app: solo quelle installate), con per ogni voce cosa
+  c'è dentro, dove sta oggi e l'area che la tiene. **Nessuna impostazione cambia padrone**: Impostazioni Eurise mostra,
+  cerca e apre; tema, accento e mano restano nelle chiavi della Scrivania (nessuna migrazione).
+- **Navigazione proposta**: rotta `settings` nell'app Eurise (modulo nuovo `feature/settings`), indirizzi
+  `settings:<voce>/<punto>` per ricerca e altre app; ingranaggio del Pannello con tocco breve = Impostazioni Eurise e
+  pressione lunga = Android; icona nel cassetto (alias `.SettingsApp`); voci nella ricerca universale;
+  `LauncherActivity` con `eu.eurise.extra.SETTINGS` per aprire i fogli della Scrivania.
+- **Contratto per le altre app** (parte comune, `core/suite`, da scrivere dopo il sì): `AppHubContract.METHOD_SETTINGS`
+  (id, titolo, stato, parole per la ricerca) e `EXTRA_SETTING` con `ACTION_OPEN`; finché un'app non risponde, riga di
+  riserva (nome e icona, apre l'app). Domande aperte per Comunicazione, Alfred, Sicurezza e per il tema della suite
+  (`METHOD_THEME`).
+- **Avvisate le aree** con una sezione in fondo a `ALFRED.md`, `BROWSER.md`, `COMUNICAZIONE.md`, `MAPPE.md`, `OFFICE.md`,
+  `PICCOLE.md` e `docs/SICUREZZA.md`; le risposte vanno in fondo a `docs/IMPOSTAZIONI.md`.
+- **Da decidere dal proprietario**: ingranaggio del Pannello (tocco breve = Eurise), icona nel cassetto, Aspetto fuori
+  dalla Scrivania (con rimando). Il primo passo del codice (pagina, ricerca, nostre voci, Note › Dove salvo le
+  registrazioni) non dipende dalle altre aree e può partire subito.
+
 ## 22 novembre: tutte le tavole approvate; note vocali nel backup, microfono in Scrivania e Agenda, invitati dal +
 - **Il proprietario ha approvato tutte le tavole** ancora segnate «da approvare» in questo file (Note bloccate, Agenda,
   Drive, Collaborazione, pagine e bolle della Scrivania, pagina d'agenda, ImpEurise). Controllo nel codice: hanno già il
@@ -600,8 +619,9 @@ dell'APK Telefono (`COMUNICAZIONE.md`), schermate per il computer (`COMPUTER.md`
 4. **Codice della Rubrica** con l'area Comunicazione: campi in `core/contacts` (titolo, soprannome, numeri ed email con
    etichetta, PEC come email con etichetta «PEC», indirizzi strutturati, azienda/reparto/ruolo, CF e P.IVA come campi
    personalizzati, date, siti, relazioni, nota), editor e scheda nell'APK Telefono; «Dove lo salvo?» con gli account.
-5. **Impostazioni Eurise** (ImpEurise, approvata): concordare con le altre aree navigazione e voci, poi il codice (anche
-   «Note › Dove salvo le registrazioni»).
+5. **Impostazioni Eurise** (ImpEurise, approvata): proposta scritta il 22 novembre in `docs/IMPOSTAZIONI.md`, aree avvisate;
+   aspettare le risposte (in fondo a quel file) e le tre scelte del proprietario, poi il codice nell'ordine del punto 6 della
+   proposta (anche «Note › Dove salvo le registrazioni»).
 6. Poi: simboli nuovi nei temi «Eurise» ed «Eurise a
    colori»; pulizia di Chip, Card, Pill e Field; foto e scansioni nelle Note; schermate del computer con l'area Computer.
 - **Pagine della Scrivania a piacere**: in codice nel giro 760, da provare (creare pagine, «Aggiungi alla Scrivania…»,
