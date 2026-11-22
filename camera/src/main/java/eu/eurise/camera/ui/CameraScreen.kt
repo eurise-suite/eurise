@@ -9,6 +9,12 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CaptureRequest
+import androidx.camera.camera2.interop.Camera2CameraControl
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -129,14 +135,25 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var mode by remember { mutableStateOf(if (setup.startVideo && !setup.capture) Mode.Video else Mode.Photo) }
     val controller = remember {
         LifecycleCameraController(context).apply {
-            // Scatto senza attese dove il telefono lo permette; altrove CameraX ripiega sul più rapido.
-            imageCaptureMode = ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+            /*
+             * Scatto rapido ma con la catena delle foto vere (22 novembre 2026). Lo «zero shutter lag» prendeva un fotogramma
+             * del mirino, con riduzione del rumore e nitidezza da anteprima: sul Fairphone 6, in casa, grana e aloni.
+             * MINIMIZE_LATENCY usa il modello di richiesta per le foto (rumore e bordi in alta qualità) e resta veloce.
+             */
+            imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
             setEnabledUseCases(if (setup.capture) CameraController.IMAGE_CAPTURE else CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE)
         }
     }
     DisposableEffect(owner) {
         controller.bindToLifecycle(owner)
         onDispose { controller.unbind() }
+    }
+    // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video si torna ai 30 fotogrammi fissi.
+    LaunchedEffect(mode, front) {
+        delay(300) // dopo il cambio di obiettivo la fotocamera si ricollega
+        var waited = 0
+        while (controller.cameraControl == null && waited++ < 40) delay(50)
+        applyFrameRate(controller, still = mode == Mode.Photo)
     }
     var zoom by remember { mutableStateOf<ZoomState?>(null) }
     DisposableEffect(owner) {
@@ -574,3 +591,21 @@ private fun has(context: Context, permission: String) =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
 internal fun toast(context: Context, text: Int) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+
+/**
+ * Gamma di fotogrammi al secondo chiesta all'esposizione automatica. Per le foto la più ampia che arriva a 30 (es. 15-30):
+ * con poca luce il telefono allunga il tempo invece di alzare gli ISO, meno rumore. Per il video nessuna richiesta (la
+ * sceglie CameraX, fissa). Si sceglie solo tra le gamme che la fotocamera dichiara: niente valori inventati.
+ */
+@androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
+private fun applyFrameRate(controller: CameraController, still: Boolean) {
+    val control = controller.cameraControl ?: return
+    val info = controller.cameraInfo ?: return
+    val options = CaptureRequestOptions.Builder()
+    if (still) {
+        val ranges = Camera2CameraInfo.from(info).getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+        val best = ranges?.filter { it.upper == 30 && it.lower >= 10 }?.minByOrNull { it.lower } ?: return
+        options.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, best)
+    }
+    runCatching { Camera2CameraControl.from(control).setCaptureRequestOptions(options.build()) }
+}
