@@ -11,7 +11,7 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
   Fase 3 (prova vera sull'emulatore) superata il 21 novembre, 17 su 17; poi tutta la suite (tranne Mappe) nel backup,
   30 su 30. Il 21 sera: **Mappe nel backup** (fornitore nelle patch di CoMaps) e **tavole** della cartella protetta
   «dal backup» in Galleria (approvate e in codice). Il 22 notte: unito tutto `brand` e il backup portato al passo con le
-  novità (vedi in fondo), giro 1014 e Mappe 142. **Prossimo**: controllo del proprietario sul telefono.
+  novità (vedi in fondo), giro 1021 e Mappe 142 su `apk-prova`. **Prossimo**: controllo del proprietario sul telefono.
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -293,7 +293,7 @@ Run «Prova del backup» sul giro 958 (`.github/prova-backup-giro`). In più ris
   permesso da dentro; «battery unplug» lascia lo stato «in carica», quindi si mette anche «in scarica».
 - Consegnato con il giro **958** (Eurise; Mappe resta la 125).
 
-## 22 novembre 2026, notte: il backup al passo con tutta la suite (giro 1014, Mappe 142)
+## 22 novembre 2026, notte: il backup al passo con tutta la suite (giro 1021, Mappe 142)
 Unito `brand` fino a `0cdbb1cd` (Chat e Posta di Comunicazione, Alfred passi 3–5, Mappe, Organizzazione, Tastiera, Password
 e Galleria nel centro privacy). Poi un giro per tutte le app: che cosa salvano adesso, e se entra nel backup.
 - **Entrano ora** (prima restavano fuori):
@@ -322,3 +322,6 @@ e Galleria nel centro privacy). Poi un giro per tutte le app: che cosa salvano a
 - `apk-prova` è unica per tutte le chat: ogni pubblicazione toglie quella prima. Il 21 notte il giro 958 era stato
   sostituito dal 972 di `prova-comunicazione`, senza il backup. Per Mappe si passa sempre `mappe_run` (senza, si prende
   l'ultima Mappe riuscita su `prova-mappe` o `brand`, che il fornitore del backup non ce l'ha).
+- Prova sull'emulatore sul giro 1014 (run «Prova del backup» 16): **48 su 48**, con nota vocale, suoneria e dock. Poi unito
+  ancora `brand` (Browser: telefono e computer; niente di nuovo da salvare: i siti fissati sono nei segnalibri, gli
+  interruttori `browser-sync` restano fuori e ripartono spenti). Pubblicati su `apk-prova` il **giro 1021** e **Mappe 142**.
