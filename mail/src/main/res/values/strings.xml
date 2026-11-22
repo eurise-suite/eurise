@@ -180,4 +180,5 @@
     <string name="ml_cd_close">Chiudi</string>
     <string name="ml_cd_remind_body">Ti ricordo questa cosa: quando puoi, rispondi con una parola o tocca un pulsante. Grazie!</string>
     <string name="ml_cd_fixed_body">«%1$s»: si fa %2$s. Ci vediamo lì!</string>
+    <string name="ml_roles_sub">Capo, segreteria, collaboratori, famiglia, amici: per le proposte e gli spazi</string>
 </resources>

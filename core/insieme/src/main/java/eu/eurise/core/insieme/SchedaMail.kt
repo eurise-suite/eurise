@@ -88,7 +88,7 @@ object SchedaMail {
     }
 
     /** Il riferimento della scheda dentro il testo (anche citato in una risposta). */
-    fun ref(text: String): String? = Regex(Regex.escape(REF) + "([A-Za-z0-9]{4,40})").find(text)?.groupValues?.get(1)
+    fun ref(text: String): String? = Regex(Regex.escape(REF) + "([A-Za-z0-9]{2,40})").find(text)?.groupValues?.get(1)
 
     /** Il testo semplice: chi la manda, cosa, entro quando, la riga, le scelte numerate, come rispondere. */
     fun text(c: Card, w: Words): String = buildString {

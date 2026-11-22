@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.CallLog
 import eu.eurise.core.contacts.PeopleLookup
+import eu.eurise.core.insieme.Ruoli
+import eu.eurise.core.insieme.RuoliContract
 import eu.eurise.core.suite.PeopleContract as P
 
 /**
@@ -26,6 +28,13 @@ class PeopleProvider : ContentProvider() {
                 P.METHOD_ITEMS -> P.packItems(items(extras?.getStringArray(P.EXTRA_PHONES).orEmpty().toList(), extras?.getInt(P.EXTRA_LIMIT, 200) ?: 200))
                 P.METHOD_RESOLVE -> PeopleLookup.resolve(ctx, extras?.getStringArray(P.EXTRA_ADDRESSES).orEmpty().toList()).let { (people, index) -> P.packPeople(people, index) }
                 P.METHOD_SEARCH -> P.packPeople(PeopleLookup.search(ctx, extras?.getString(P.EXTRA_QUERY).orEmpty()))
+                // Persone e ruoli (tavola InsRuoli): Chat ed Email li leggono e li cambiano.
+                RuoliContract.METHOD_ROLES -> Bundle().apply { putString(RuoliContract.EXTRA_RESULT, Ruoli.encode(Roles.load(ctx))) }
+                RuoliContract.METHOD_SET_ROLE -> {
+                    val r = RuoliContract.readSet(extras) ?: return null
+                    Roles.set(ctx, r.key, r.name, r.role, r.level, r.addresses)
+                    Bundle().apply { putBoolean(RuoliContract.EXTRA_RESULT, true) }
+                }
                 else -> null
             }
         }.getOrNull()

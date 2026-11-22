@@ -56,4 +56,24 @@
     <string name="ins_w_late">tardi</string>
     <string name="ins_w_no">no</string>
     <string name="ins_w_paid">ho pagato</string>
+
+    <!-- Persone e ruoli (tavola InsRuoli) e spazi (tavola SpaSpazi). -->
+    <string name="ins_role_capo">Capo</string>
+    <string name="ins_role_segreteria">Segreteria</string>
+    <string name="ins_role_collab">Collaboratore</string>
+    <string name="ins_role_collega">Collega</string>
+    <string name="ins_role_famiglia">Famiglia</string>
+    <string name="ins_role_amici">Amici</string>
+    <string name="ins_level_stato">Stato</string>
+    <string name="ins_level_vede">Vede</string>
+    <string name="ins_level_modifica">Modifica</string>
+    <string name="ins_space_lavoro">Lavoro</string>
+    <string name="ins_space_famiglia">Famiglia</string>
+    <string name="ins_space_amici">Amici</string>
+    <string name="ins_roles_title">Persone e ruoli</string>
+    <string name="ins_roles_note">Dici una volta chi è chi. Da qui partono le proposte quando affidi, condividi o passi la palla. Niente esce finché non condividi tu.</string>
+    <string name="ins_roles_none">Nessun ruolo</string>
+    <string name="ins_roles_where">I ruoli stanno nella Rubrica (Eurise Telefono): li vedono Chat ed Email, solo sul telefono.</string>
+    <string name="ins_roles_missing">Per i ruoli serve Eurise Telefono (la Rubrica)</string>
+    <string name="ins_roles_sees">Di base vede</string>
 </resources>

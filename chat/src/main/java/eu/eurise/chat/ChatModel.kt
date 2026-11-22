@@ -290,6 +290,30 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
         if (next != balls) saveBalls(next)
     }
 
+    // --- Persone e ruoli (tavola InsRuoli): dalla Rubrica, per le proposte e gli spazi ---
+
+    /** I ruoli della Rubrica (Eurise Telefono); vuoti se manca. Si rileggono quando servono (fogli di Affida, Condividi…). */
+    var roles by mutableStateOf(emptyList<eu.eurise.core.insieme.Ruoli.Person>())
+        private set
+
+    fun loadRoles() {
+        scope.launch { roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) } }
+    }
+
+    fun roleOf(userId: String): eu.eurise.core.insieme.Ruoli.Role? = eu.eurise.core.insieme.Ruoli.find(roles, userId)?.role
+
+    /** Il ruolo di una persona della Chat (o di un indirizzo email): lo salva la Rubrica. */
+    fun setRole(userId: String, role: eu.eurise.core.insieme.Ruoli.Role?, failed: () -> Unit) {
+        val existing = eu.eurise.core.insieme.Ruoli.find(roles, userId)
+        val key = existing?.key ?: ("chat:" + userId.lowercase())
+        val addresses = (existing?.addresses.orEmpty() + userId).distinct()
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.set(context, key, existing?.name ?: nameOf(userId), role, existing?.level, addresses) }
+            if (!ok) failed()
+            roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) }
+        }
+    }
+
     // --- La stessa scheda in Chat e in Email (tavola InsStessaScheda) e Affida a… (tavola InsAffida) ---
 
     private val givenPrefs get() = context.getSharedPreferences("chat_given", Context.MODE_PRIVATE)

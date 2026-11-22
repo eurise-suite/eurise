@@ -194,6 +194,27 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
             o.messageId, emptyList(), done)
     }
 
+    // --- Persone e ruoli (tavola InsRuoli): dalla Rubrica ---
+
+    var roles by mutableStateOf(emptyList<eu.eurise.core.insieme.Ruoli.Person>())
+        private set
+
+    fun loadRoles() { scope.launch { roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) } } }
+
+    fun roleOf(address: String) = eu.eurise.core.insieme.Ruoli.find(roles, address)?.role
+
+    fun setRole(address: String, name: String, role: eu.eurise.core.insieme.Ruoli.Role?, failed: () -> Unit) {
+        val existing = eu.eurise.core.insieme.Ruoli.find(roles, address)
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                eu.eurise.core.insieme.RuoliContract.set(context, existing?.key ?: ("mail:" + address.lowercase()), existing?.name ?: name, role, existing?.level,
+                    (existing?.addresses.orEmpty() + address).distinct())
+            }
+            if (!ok) failed()
+            roles = withContext(Dispatchers.IO) { eu.eurise.core.insieme.RuoliContract.all(context) }
+        }
+    }
+
     // --- Fuori orario (tavola SpaFuoriOrario) ---
 
     var offRules by mutableStateOf(SyncWorker.rules(context))

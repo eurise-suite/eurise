@@ -605,6 +605,7 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
     val scheme = MaterialTheme.colorScheme
     var linking by remember { mutableStateOf<String?>(null) }
     var warning by remember { mutableStateOf(false) }
+    var roles by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -638,6 +639,10 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
             }
         }
         if (model.offRules.work.isNotEmpty()) OffHoursCard(model)
+        // Persone e ruoli (tavola InsRuoli): chi è chi, per le proposte e per gli spazi.
+        if (model.accounts.isNotEmpty()) Card {
+            AddRow(EuriseIcons.person(2.2f), stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), stringResource(R.string.ml_roles_sub)) { roles = true }
+        }
         SectionTitle(stringResource(R.string.ml_add))
         Card {
             AddRow(EuriseIcons.shield(2.2f), stringResource(R.string.ml_add_eu), stringResource(R.string.ml_add_eu_sub)) { linking = "" }
@@ -666,6 +671,7 @@ private fun AccountsScreen(model: MailModel, actions: MailActions, onBack: () ->
     }
     linking?.let { LinkSheet(model, actions, onClose = { linking = null }, onLinked = { linking = null; onBack() }) }
     if (warning) ClosedWarning(onAccept = { warning = false; linking = "" }, onClose = { warning = false })
+    if (roles) MailRolesList(model, actions) { roles = false }
 }
 
 @Composable

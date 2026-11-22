@@ -115,4 +115,21 @@ class SchedaTest {
         val list = listOf(SchedaContract.Got("c1", "anna@x.it", Answer(State.Done, note = "ok"), 5L))
         assertEquals(list, SchedaContract.unpack(SchedaContract.pack(list)))
     }
+
+    @Test fun roles() {
+        assertEquals("3331234567", Ruoli.norm("+39 333 123 4567"))
+        assertEquals("3331234567", Ruoli.norm("0039 333-1234567"))
+        assertEquals("3331234567", Ruoli.norm("333 1234567"))
+        assertEquals("anna@x.it", Ruoli.norm("mailto:Anna@X.it"))
+        assertEquals("@paolo:matrix.org", Ruoli.norm("@Paolo:matrix.org"))
+        var list = Ruoli.set(emptyList(), "k1", "Paolo Monti", Ruoli.Role.Collaboratore, null, listOf("+39 333 1234567", "@paolo:x.org", "paolo@studio.it"))
+        list = Ruoli.set(list, "k2", "Ing. Ferri", Ruoli.Role.Capo, Ruoli.Level.Vede, listOf("ferri@studio.it"))
+        assertEquals("k1", Ruoli.find(list, "3331234567")?.key)
+        assertEquals("k1", Ruoli.find(list, "@paolo:x.org")?.key)
+        assertEquals(Ruoli.Level.Modifica, Ruoli.find(list, "paolo@studio.it")?.shown)
+        assertEquals(Ruoli.Level.Vede, Ruoli.find(list, "FERRI@studio.it")?.shown)
+        assertEquals(Ruoli.Space.Lavoro, Ruoli.space(Ruoli.Role.Capo))
+        assertEquals(list, Ruoli.decode(Ruoli.encode(list)))
+        assertEquals(listOf("k2"), Ruoli.set(list, "k1", "", null, null, emptyList()).map { it.key })
+    }
 }

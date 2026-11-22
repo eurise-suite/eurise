@@ -272,6 +272,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var ballsSheet by remember { mutableStateOf(false) }
     var approvalsSheet by remember { mutableStateOf(false) }
     var givenSheet by remember { mutableStateOf(false) }
+    var rolesSheet by remember { mutableStateOf(false) }
     var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -340,6 +341,7 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     if (ballsSheet) BallsSheet(model) { ballsSheet = false }
     if (approvalsSheet) ApprovalsSheet(model, actions) { approvalsSheet = false }
     if (givenSheet) GivenSheet(model, actions) { givenSheet = false }
+    if (rolesSheet) RolesSheet(model, actions) { rolesSheet = false }
     if (offSheet) OffHoursSheet(model) { offSheet = false }
     if (foldersSheet) FoldersSheet(model, onEdit = { id -> foldersSheet = false; editFolder = id to emptySet() }) { foldersSheet = false }
     editFolder?.let { (id, preset) -> FolderEditSheet(model, actions, id, preset) { editFolder = null } }
@@ -355,6 +357,9 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
         Pill(stringResource(R.string.af_list) + if (model.given.isNotEmpty()) " · ${model.given.size}" else "", EuriseIcons.task(2f), Modifier.fillMaxWidth(), strong = false) {
             account = false; givenSheet = true
+        }
+        Pill(stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), EuriseIcons.person(2f), Modifier.fillMaxWidth(), strong = false) {
+            account = false; rolesSheet = true
         }
         Pill(stringResource(R.string.ch_rec_title), EuriseIcons.key(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onRecovery() }
         Pill(stringResource(R.string.ch_ver_menu), EuriseIcons.shield(2f), Modifier.fillMaxWidth(), strong = false) { account = false; onVerify() }

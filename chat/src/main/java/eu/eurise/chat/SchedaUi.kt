@@ -83,7 +83,9 @@ internal fun CardStateChip(st: Scheda.State?) {
 @Composable
 internal fun EntrustSheet(model: ChatModel, actions: ChatActions, roomId: String, start: String, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    val people = remember { model.colleagues() }
+    androidx.compose.runtime.LaunchedEffect(Unit) { model.loadRoles() }
+    // Le proposte partono dai ruoli (tavola InsRuoli): prima collaboratori, segreteria, colleghi.
+    val people = model.colleagues().sortedBy { eu.eurise.core.insieme.Ruoli.order(model.roleOf(it.second)) }
     val here = model.room(roomId)?.takeIf { it.direct }?.let { r -> people.firstOrNull { it.first == r.id } }
     var to by remember { mutableStateOf(here ?: people.firstOrNull()) }
     var email by remember { mutableStateOf("") }
@@ -110,7 +112,7 @@ internal fun EntrustSheet(model: ChatModel, actions: ChatActions, roomId: String
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(scheme.surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SmallField(title, stringResource(R.string.af_what)) { title = it.take(120) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                people.forEach { p -> Chip(model.nameOf(p.second).substringBefore(' '), !byMail && to == p) { to = p; byMail = false } }
+                people.forEach { p -> Chip(personLabel(model, p.second), !byMail && to == p) { to = p; byMail = false } }
                 Chip(stringResource(R.string.af_by_mail), byMail) { byMail = !byMail }
             }
             if (byMail) SmallField(email, stringResource(R.string.af_mail_hint)) { email = it.trim().take(80) }
@@ -241,5 +243,40 @@ internal fun GivenSheet(model: ChatModel, actions: ChatActions, onClose: () -> U
                 }
             }
         }
+    }
+}
+
+/** «Paolo · collaboratore»: il nome con il ruolo della Rubrica, se c'è. */
+@Composable
+internal fun personLabel(model: ChatModel, userId: String): String {
+    val name = model.nameOf(userId).substringBefore(' ')
+    return model.roleOf(userId)?.let { name + " · " + stringResource(eu.eurise.core.insieme.Ruoli.label(it)).lowercase() } ?: name
+}
+
+/** Persone e ruoli (tavola InsRuoli) dalla Chat: le persone delle chat a due con il loro ruolo; lo salva la Rubrica. */
+@Composable
+internal fun RolesSheet(model: ChatModel, actions: ChatActions, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    androidx.compose.runtime.LaunchedEffect(Unit) { model.loadRoles() }
+    val missing = stringResource(eu.eurise.core.insieme.R.string.ins_roles_missing)
+    Sheet(onClose) {
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 4.dp))
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_note), fontSize = 12.5.sp, lineHeight = 18.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+        val people = model.colleagues().map { it.second }.distinct().sortedBy { eu.eurise.core.insieme.Ruoli.order(model.roleOf(it)) }
+        Card {
+            people.forEachIndexed { i, u ->
+                if (i > 0) Divider()
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(model.nameOf(u), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val now = model.roleOf(u)
+                        eu.eurise.core.insieme.Ruoli.Role.entries.forEach { r ->
+                            Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(r)), now == r) { model.setRole(u, if (now == r) null else r) { actions.toast(missing) } }
+                        }
+                    }
+                }
+            }
+        }
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_where), fontSize = 11.5.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
     }
 }

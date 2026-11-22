@@ -80,6 +80,8 @@ dependencies {
     testImplementation(libs.junit)
     implementation(project(":core:contacts"))
     implementation(project(":core:suite"))
+    // Persone e ruoli (tavola InsRuoli): stanno nella Rubrica, Chat ed Email li leggono.
+    implementation(project(":core:insieme"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

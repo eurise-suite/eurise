@@ -186,3 +186,30 @@ internal fun MailCardsList(model: MailModel, actions: MailActions, onClose: () -
         }
     }
 }
+
+/** Persone e ruoli (tavola InsRuoli) dall'Email: le persone con cui scrivi di più, con il loro ruolo; lo salva la Rubrica. */
+@Composable
+internal fun MailRolesList(model: MailModel, actions: MailActions, onClose: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    androidx.compose.runtime.LaunchedEffect(Unit) { model.loadRoles() }
+    val missing = stringResource(eu.eurise.core.insieme.R.string.ins_roles_missing)
+    val mine = model.accounts.map { it.email.lowercase() }.toSet()
+    val people = remember(model.messages.size) { MailBalls.people(model.messages, mine, max = 20) }
+    BallDialog(onClose) {
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_title), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_note), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        people.forEach { (addr, name) ->
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surface).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                Text(addr, fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val now = model.roleOf(addr)
+                    eu.eurise.core.insieme.Ruoli.Role.entries.forEach { r ->
+                        BallChip(stringResource(eu.eurise.core.insieme.Ruoli.label(r)), now == r) { model.setRole(addr, name, if (now == r) null else r) { actions.toast(missing) } }
+                    }
+                }
+            }
+        }
+        Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_where), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+    }
+}
