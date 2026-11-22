@@ -91,7 +91,6 @@
     <string name="alfred_note_route">La strada la traccia Eurise Mappe, sul telefono.</string>
     <string name="alfred_note_alarm_day">Le sveglie ricordano l\'ora, non il giorno: suonerà alla prima occasione.</string>
     <string name="alfred_note_free">Sul telefono non so ancora rispondere alle domande libere. La passo al servizio che preferisce, senza nomi, numeri e indirizzi: tenendo premuto il globo ne sceglie un altro.</string>
-    <string name="alfred_note_free_no_ai">Le richieste libere le affiderò al modello AI del telefono. Per ora posso cercarla, se crede.</string>
     <string name="alfred_last_step">Nulla si muove finché non tocca: la scheda è sempre l\'ultimo passo.</string>
 
     <!-- Pulsanti: sono parole di chi usa il telefono, non di Alfred. -->
@@ -106,7 +105,6 @@
     <string name="alfred_do_timer">Avvia</string>
     <string name="alfred_do_search">Cerca</string>
     <string name="alfred_do_open">Apri</string>
-    <string name="alfred_do_free_ai">Chiedi a Eurise AI</string>
     <string name="alfred_do_send_sms">Apri il messaggio</string>
     <string name="alfred_do_send_app">Apri %1$s</string>
     <string name="alfred_use">Usa %1$s</string>
@@ -263,10 +261,7 @@
     <string name="alfred_s_dictation_d_voice">Eurise Voce, sul telefono</string>
     <string name="alfred_s_dictation_d_system">Riconoscimento vocale del telefono</string>
     <string name="alfred_s_dictation_d_none">Nessuna: installi Eurise Voce per parlarmi</string>
-    <string name="alfred_s_ai">Richieste libere con Eurise AI</string>
-    <string name="alfred_s_ai_d">In arrivo: oggi le passo a Eurise AI con un tocco</string>
     <string name="alfred_s_home">Tieni premuto home</string>
-    <string name="alfred_s_home_d">Mi scelga come «app di assistenza digitale» tra le app predefinite di Android</string>
     <string name="alfred_s_home_open">Apri</string>
     <string name="alfred_s_footer">Mi servo dei contratti della suite: Calendario, Note, Attività, Mappe, Telefono, Messaggi, Browser. Prima di agire le mostro sempre la scheda di conferma. Voce e testo restano sul telefono.</string>
     <string name="alfred_try">Provi: «nota: comprare il latte»</string>
@@ -468,7 +463,6 @@
     <string name="alfred_memory_person">«%1$s» è %2$s</string>
     <string name="alfred_memory_channel">Con %1$s scrive su %2$s</string>
     <string name="alfred_memory_since">dal %1$s</string>
-    <string name="alfred_memory_forget">Dimentica</string>
     <string name="alfred_memory_where">Resta sul telefono e nel backup cifrato; spenta, Alfred non impara e non usa nulla.</string>
     <!-- Domande sui dati (tavola AlfDati) -->
     <string name="alfred_data_card">Domanda sui tuoi dati</string>
@@ -514,7 +508,6 @@
     <string name="alfred_memory_word">«%1$s» si scrive «%2$s»</string>
     <!-- Azioni nuove (tavola AlfAzioni, 22 novembre) -->
     <string name="alfred_ex_help">Cosa sai fare?</string>
-    <string name="alfred_help_q">Cosa sai fare?</string>
     <string name="alfred_card_help">Cosa so fare</string>
     <string name="alfred_help_lead">Ecco cosa so fare. Basta dirlo come viene.</string>
     <string name="alfred_help_foot">Prima di cambiare o cancellare qualcosa chiedo sempre conferma. Torcia, volume e musica li faccio subito.</string>

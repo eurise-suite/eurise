@@ -109,7 +109,6 @@
     <string name="pwd_sync_now">Sincronizza adesso</string>
     <string name="pwd_sync_pc">Sul PC: sincronizza la cartella Eurise/Password del tuo cloud e apri eurise.kdbx con KeePassXC.</string>
     <string name="pwd_privacy_title">Cosa cambia per la tua privacy</string>
-    <string name="pwd_privacy_body">Cosa esce: solo il file della cassaforte, già cifrato con la tua frase principale.\n\nDove va: nella cartella Eurise/Password del tuo cloud.\n\nChi lo vede: chi gestisce il server vede un file illeggibile, il suo nome e la sua dimensione. La frase non lascia mai il telefono.\n\nCome si torna indietro: spegni l\'interruttore. Il file già caricato resta sul cloud finché non lo elimini.</string>
     <string name="pwd_privacy_ok">Accendi</string>
 
     <string name="pwd_tab_cards">Carte</string>
@@ -224,7 +223,6 @@
     <string name="pwd_breach_never">mai</string>
     <string name="pwd_breach_now">Controlla adesso</string>
     <string name="pwd_breach_failed">Controllo non riuscito: servizio non raggiungibile.</string>
-    <string name="pwd_breach_privacy">Cosa esce: per ogni password, i primi 5 caratteri della sua impronta SHA-1. Mai la password e nemmeno l\'impronta intera.\n\nDove va: al servizio pubblico Have I Been Pwned.\n\nChi lo vede: il servizio riceve quel frammento e il tuo indirizzo di rete, e risponde con centinaia di impronte simili: il confronto si fa sul telefono.\n\nCome si torna indietro: spegni l\'interruttore. I risultati vengono cancellati.</string>
     <string name="pwd_save_title">Salvare l\'accesso a %s?</string>
     <string name="pwd_save_update">Aggiorna la password di %s?</string>
     <string name="pwd_save_confirm">Salva in Password</string>

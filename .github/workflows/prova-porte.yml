@@ -36,8 +36,9 @@ jobs:
         id: giro
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
         run: |
-          id="${{ github.event.inputs.run_id }}"
+          id="$RUN_ID"
           [ -z "$id" ] && id="${{ github.event.workflow_run.id }}"
           if [ -z "$id" ]; then
             id=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?branch=prova-sicurezza&status=success&per_page=1" --jq '.workflow_runs[0].id')
