@@ -23,6 +23,23 @@ subprojects {
     plugins.withId("com.android.application") {
         extensions.configure(com.android.build.api.dsl.ApplicationExtension::class.java) {
             buildTypes.getByName("debug").isDebuggable = providers.gradleProperty("eurise.debuggable").orNull == "true"
+            /*
+             * R8 anche negli APK di prova (22 novembre 2026, docs/SICUREZZA.md, «Pulizia e velocità»): senza, Compose gira
+             * senza ottimizzazioni e l'avvio è lento. Regole prudenti in proguard-suite.pro (codice nostro tenuto, nomi
+             * leggibili, librerie con riflessione tenute) più quelle di ogni app. Niente riduzione delle risorse (Launcher e
+             * temi delle icone le cercano per nome). Il Browser ha già le sue; il motore di Office non si riduce (JNI).
+             * Per spegnerlo in un'app sola: -Peurise.r8.senza=:mail,:chat (prova d'avvio a ogni app, prova-avvio.yml).
+             */
+            val senzaR8 = providers.gradleProperty("eurise.r8.senza").orNull.orEmpty().split(',').map { it.trim() }
+            if (path != ":office:motore" && path != ":browser" && path !in senzaR8) {
+                val regoleApp = listOf(file("proguard-rules.pro")).filter { it.isFile }
+                buildTypes.getByName("debug") {
+                    isMinifyEnabled = true
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), rootProject.file("proguard-suite.pro"))
+                    regoleApp.forEach { proguardFile(it) }
+                }
+                buildTypes.getByName("release").proguardFile(rootProject.file("proguard-suite.pro"))
+            }
             // Da non debuggable Gradle farebbe girare il lint «vital» a ogni APK: il lint resta quello del lavoro apposito.
             lint.checkReleaseBuilds = false
         }
