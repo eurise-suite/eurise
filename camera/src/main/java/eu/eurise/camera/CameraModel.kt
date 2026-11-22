@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import eu.eurise.camera.data.Warmth
+import eu.eurise.camera.data.Ritocco
 import eu.eurise.camera.data.CameraPrefs
 import eu.eurise.camera.data.DestinationState
 import eu.eurise.camera.data.PhotoLocation
@@ -69,7 +69,7 @@ class CameraModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             // Prima della miniatura, così anche lei ha i colori corretti.
-            if (!isVideo) Warmth.correct(app.contentResolver, uri, app.cacheDir)
+            if (!isVideo) Ritocco.correct(app.contentResolver, uri, app.cacheDir)
             val thumb = runCatching {
                 getApplication<Application>().contentResolver.loadThumbnail(uri, Size(240, 240), null).asImageBitmap()
             }.getOrNull() ?: return@launch

@@ -163,7 +163,7 @@ class CameraEngine(private val context: Context) {
     /**
      * Tempo e ISO per la foto con poca luce, o null se va bene l'automatico. Il prodotto tempo × ISO del mirino, con un
      * terzo di stop in più ([BIAS]: in manuale il telefono non schiarisce più le ombre da sé), si distribuisce allungando il
-     * tempo finché gli ISO scendono verso [TARGET_ISO]. Tetto del tempo: 1/20 s con lo stabilizzatore ottico (1/30 s senza),
+     * tempo finché gli ISO scendono verso [TARGET_ISO]. Tetto del tempo: 1/20 s con lo stabilizzatore ottico dichiarato, 1/25 s senza (sul Fairphone 6 non risulta: le foto si fermavano a 1/30 s),
      * la metà da 2× in su.
      */
     private fun lowLight(zoom: Float): Pair<Long, Int>? {
@@ -171,7 +171,7 @@ class CameraEngine(private val context: Context) {
         if (e <= 0 || s < 320 || flashMode != ImageCapture.FLASH_MODE_OFF || !manualSensor()) return null
         val ois = (characteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION) as? IntArray)
             ?.contains(CameraCharacteristics.LENS_OPTICAL_STABILIZATION_MODE_ON) == true
-        val base = if (ois) 50_000_000L else 33_333_333L
+        val base = if (ois) 50_000_000L else 40_000_000L
         val cap = if (zoom >= 2f) base / 2 else base
         @Suppress("UNCHECKED_CAST")
         val maxExposure = (characteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE) as? Range<Long>)?.upper ?: return null

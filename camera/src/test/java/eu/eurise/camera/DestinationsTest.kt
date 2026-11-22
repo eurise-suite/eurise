@@ -83,19 +83,31 @@ class ZoomTest {
     }
 }
 
-class WarmthTest {
+class RitoccoTest {
+    private val r = eu.eurise.camera.data.Ritocco
+
     @Test
     fun neutralPhotosStayAsTheyAre() {
-        assertNull(eu.eurise.camera.data.Warmth.gains(100.0, 100.0, 100.0))
-        assertNull(eu.eurise.camera.data.Warmth.gains(110.0, 100.0, 90.0))
+        assertNull(r.gains(100.0, 100.0, 100.0))
+        assertNull(r.gains(105.0, 100.0, 95.0))
     }
 
     @Test
-    fun strongWarmCastGoesHalfWay() {
-        val (r, b) = eu.eurise.camera.data.Warmth.gains(102.0, 82.0, 47.0)!!
-        assert(r < 1f && r >= 0.85f) { r }
-        assert(b > 1.25f && b <= 1.35f) { b }
-        // Resta calda: il rosso corretto supera ancora il blu corretto.
-        assert(102 * r > 47 * b) { "${102 * r} ${47 * b}" }
+    fun strongWarmCastLeavesALittleWarmth() {
+        val (gr, gb) = r.gains(102.0, 82.0, 47.0)!!
+        assert(gr < 1f && gr >= 0.8f) { gr }
+        assert(gb > 1.4f && gb <= 1.6f) { gb }
+        assert(102 * gr > 47 * gb) { "${102 * gr} ${47 * gb}" }
+    }
+
+    @Test
+    fun darkPhotosGetBrighterMidtones() {
+        assertNull(r.gamma(120))
+        val g = r.gamma(76)!!
+        assert(g in 0.7..0.8) { g }
+        // La mediana sale verso 110, il bianco resta bianco.
+        val mid = 255 * Math.pow(76 / 255.0, g)
+        assert(mid in 105.0..115.0) { mid }
+        assertEquals(255.0, 255 * Math.pow(1.0, g), 0.001)
     }
 }

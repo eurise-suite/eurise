@@ -80,7 +80,7 @@ import eu.eurise.camera.CameraActivity
 import eu.eurise.camera.CameraModel
 import eu.eurise.camera.R
 import eu.eurise.camera.data.MediaOut
-import eu.eurise.camera.data.Warmth
+import eu.eurise.camera.data.Ritocco
 import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyConsentSheet
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -172,8 +172,8 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     scope.launch {
                         withContext(Dispatchers.IO) {
-                            val out = File(file.parentFile, "scatto-calda.jpg")
-                            if (Warmth.correctFile(file, out)) out.renameTo(file)
+                            val out = File(file.parentFile, "scatto-ritocco.jpg")
+                            if (Ritocco.correctFile(file, out)) out.renameTo(file)
                         }
                         confirm = file
                     }
