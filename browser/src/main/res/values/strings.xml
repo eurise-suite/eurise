@@ -417,6 +417,8 @@
     <string name="brw_tab_in_use">In uso</string>
     <!-- Richieste delle pagine (avvisi, conferme, menu a tendina, date, accesso) -->
     <string name="brw_ask_ok">OK</string>
+    <string name="brw_upload_failed">Non riesco a leggere il file scelto: prova a sceglierlo da un\'altra cartella o app</string>
+    <string name="brw_upload_partial">Caricati %1$d file su %2$d: gli altri non si leggono</string>
     <string name="brw_ask_cancel">Annulla</string>
     <string name="brw_ask_clear">Cancella</string>
     <string name="brw_ask_auth">Accedi a %1$s</string>
