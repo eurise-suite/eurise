@@ -9,22 +9,13 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CaptureRequest
-import androidx.camera.camera2.interop.Camera2CameraControl
-import androidx.camera.camera2.interop.Camera2CameraInfo
-import androidx.camera.camera2.interop.CaptureRequestOptions
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ZoomState
-import androidx.camera.view.video.AudioConfig
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
-import androidx.camera.view.CameraController
-import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -133,38 +124,25 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     val executor = remember { ContextCompat.getMainExecutor(context) }
 
     var mode by remember { mutableStateOf(if (setup.startVideo && !setup.capture) Mode.Video else Mode.Photo) }
-    val controller = remember {
-        LifecycleCameraController(context).apply {
-            /*
-             * Scatto rapido ma con la catena delle foto vere (22 novembre 2026). Lo «zero shutter lag» prendeva un fotogramma
-             * del mirino, con riduzione del rumore e nitidezza da anteprima: sul Fairphone 6, in casa, grana e aloni.
-             * MINIMIZE_LATENCY usa il modello di richiesta per le foto (rumore e bordi in alta qualità) e resta veloce.
-             */
-            imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-            setEnabledUseCases(if (setup.capture) CameraController.IMAGE_CAPTURE else CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE)
-        }
-    }
+    val controller = remember { CameraEngine(context) }
     DisposableEffect(owner) {
-        controller.bindToLifecycle(owner)
+        controller.bind(owner, video = !setup.capture)
         onDispose { controller.unbind() }
     }
+    val camera = controller.camera
     var zoom by remember { mutableStateOf<ZoomState?>(null) }
-    DisposableEffect(owner) {
+    DisposableEffect(owner, camera) {
+        val live = camera?.cameraInfo?.zoomState
         val obs = Observer<ZoomState> { zoom = it }
-        controller.zoomState.observe(owner, obs)
-        onDispose { controller.zoomState.removeObserver(obs) }
+        live?.observe(owner, obs)
+        onDispose { live?.removeObserver(obs) }
     }
 
     var flash by remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
     var torch by remember { mutableStateOf(false) }
     var front by remember { mutableStateOf(false) }
-    // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video si torna ai 30 fotogrammi fissi.
-    LaunchedEffect(mode, front) {
-        delay(300) // dopo il cambio di obiettivo la fotocamera si ricollega
-        var waited = 0
-        while (controller.cameraControl == null && waited++ < 40) delay(50)
-        applyFrameRate(controller, still = mode == Mode.Photo)
-    }
+    // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video 30 fotogrammi fissi.
+    LaunchedEffect(mode, camera) { controller.setStill(mode == Mode.Photo) }
     var showExposure by remember { mutableStateOf(false) }
     var exposure by remember { mutableFloatStateOf(0f) }
     var recording by remember { mutableStateOf<Recording?>(null) }
@@ -187,7 +165,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         blink = true
         if (setup.capture) {
             val file = File(context.cacheDir, "capture/scatto.jpg").apply { parentFile?.mkdirs(); delete() }
-            controller.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(), executor, object : ImageCapture.OnImageSavedCallback {
+            controller.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(), zoom?.zoomRatio ?: 1f, executor, object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) { confirm = file }
                 override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
             })
@@ -196,7 +174,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         val meta = ImageCapture.Metadata().apply { location = model.location() }
         val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.photo(dest))
             .setMetadata(meta).build()
-        controller.takePicture(options, executor, object : ImageCapture.OnImageSavedCallback {
+        controller.takePicture(options, zoom?.zoomRatio ?: 1f, executor, object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(output: ImageCapture.OutputFileResults) { output.savedUri?.let { model.onShot(it, false) } }
             override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
         })
@@ -212,7 +190,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             .build()
         recordedMs = 0
         recording = runCatching {
-            controller.startRecording(options, if (audio) AudioConfig.create(true) else AudioConfig.AUDIO_DISABLED, executor) { event ->
+            controller.startRecording(options, audio, executor) { event ->
                 when (event) {
                     is VideoRecordEvent.Status -> recordedMs = event.recordingStats.recordedDurationNanos / 1_000_000
                     is VideoRecordEvent.Finalize -> {
@@ -247,7 +225,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                     PreviewView(ctx).apply {
                         implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                         scaleType = PreviewView.ScaleType.FILL_CENTER
-                        this.controller = controller
+                        controller.surface(this)
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
@@ -263,7 +241,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 )
             }
             if (showExposure) {
-                val range = controller.cameraInfo?.exposureState?.exposureCompensationRange
+                val range = camera?.cameraInfo?.exposureState?.exposureCompensationRange
                 if (range != null && range.lower < range.upper) {
                     Row(
                         Modifier.align(Alignment.TopCenter).padding(12.dp).clip(RoundedCornerShape(22.dp)).background(Veil).padding(horizontal = 14.dp),
@@ -272,12 +250,13 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                         Text(stringResource(R.string.exposure), color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                         Slider(
                             value = exposure,
-                            onValueChange = { v -> exposure = v; controller.cameraControl?.setExposureCompensationIndex(v.toInt()) },
+                            onValueChange = { v -> exposure = v; controller.setExposureIndex(v.toInt()) },
                             valueRange = range.lower.toFloat()..range.upper.toFloat(),
                             steps = (range.upper - range.lower - 1).coerceAtLeast(0),
                             modifier = Modifier.width(200.dp).padding(start = 10.dp),
                             colors = SliderDefaults.colors(thumbColor = Accent, activeTrackColor = Accent),
                         )
+                        if (controller.meter.isNotEmpty()) Text(controller.meter, color = Soft, fontSize = 11.5.sp, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
@@ -309,7 +288,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                     ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
                     else -> ImageCapture.FLASH_MODE_OFF
                 }
-                controller.imageCaptureFlashMode = flash
+                controller.flashMode = flash
             }
         }
         when {
@@ -404,8 +383,8 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     }
 }
 
-private fun flashOffFor(controller: LifecycleCameraController) {
-    controller.imageCaptureFlashMode = ImageCapture.FLASH_MODE_OFF
+private fun flashOffFor(controller: CameraEngine) {
+    controller.flashMode = ImageCapture.FLASH_MODE_OFF
 }
 
 /** Il pulsante di scatto: tocco = foto (o avvio e fine del video), pressione lunga in Foto = video finché tieni. */
@@ -591,21 +570,3 @@ private fun has(context: Context, permission: String) =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
 internal fun toast(context: Context, text: Int) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-
-/**
- * Gamma di fotogrammi al secondo chiesta all'esposizione automatica. Per le foto la più ampia che arriva a 30 (es. 15-30):
- * con poca luce il telefono allunga il tempo invece di alzare gli ISO, meno rumore. Per il video nessuna richiesta (la
- * sceglie CameraX, fissa). Si sceglie solo tra le gamme che la fotocamera dichiara: niente valori inventati.
- */
-@androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
-private fun applyFrameRate(controller: CameraController, still: Boolean) {
-    val control = controller.cameraControl ?: return
-    val info = controller.cameraInfo ?: return
-    val options = CaptureRequestOptions.Builder()
-    if (still) {
-        val ranges = Camera2CameraInfo.from(info).getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
-        val best = ranges?.filter { it.upper == 30 && it.lower >= 10 }?.minByOrNull { it.lower } ?: return
-        options.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, best)
-    }
-    runCatching { Camera2CameraControl.from(control).setCaptureRequestOptions(options.build()) }
-}
