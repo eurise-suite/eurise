@@ -154,3 +154,11 @@ class NotteTest {
         assertEquals(3, n.frames)
     }
 }
+
+class GpsTest {
+    @Test
+    fun degreesMinutesSeconds() {
+        assertEquals("45/1,27/1,51120/1000", eu.eurise.camera.data.MediaOut.dms(45.4642))
+        assertEquals("9/1,11/1,24000/1000", eu.eurise.camera.data.MediaOut.dms(-9.19))
+    }
+}

@@ -82,7 +82,7 @@ class CameraModel(app: Application) : AndroidViewModel(app) {
             val uri = runCatching {
                 val iso = NotteFoto.isoOf(frames[0], app.cacheDir)
                 check(NotteFoto.merge(frames, out, iso, app.cacheDir))
-                if (where != null) ExifInterface(out.path).apply { setGpsInfo(where); saveAttributes() }
+                if (where != null) ExifInterface(out.path).apply { MediaOut.writeGps(this, where); saveAttributes() }
                 val target = app.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.photo(dest))!!
                 app.contentResolver.openOutputStream(target, "w")!!.use { sink -> out.inputStream().use { it.copyTo(sink) } }
                 target

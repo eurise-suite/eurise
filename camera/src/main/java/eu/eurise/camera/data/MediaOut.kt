@@ -25,6 +25,22 @@ object MediaOut {
         put(MediaStore.MediaColumns.DATE_TAKEN, now)
     }
 
+    /** La posizione nei dati della foto (android.media.ExifInterface non ha setGpsInfo). */
+    fun writeGps(exif: android.media.ExifInterface, where: Location) {
+        exif.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE, dms(where.latitude))
+        exif.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE_REF, if (where.latitude >= 0) "N" else "S")
+        exif.setAttribute(android.media.ExifInterface.TAG_GPS_LONGITUDE, dms(where.longitude))
+        exif.setAttribute(android.media.ExifInterface.TAG_GPS_LONGITUDE_REF, if (where.longitude >= 0) "E" else "W")
+    }
+
+    /** 45.4642 → «45/1,27/1,51120/1000» (gradi, minuti, secondi). */
+    fun dms(value: Double): String {
+        var v = kotlin.math.abs(value)
+        val d = v.toInt(); v = (v - d) * 60
+        val m = v.toInt(); v = (v - m) * 60
+        return "$d/1,$m/1,${Math.round(v * 1000)}/1000"
+    }
+
     fun video(dest: String?, now: Long = System.currentTimeMillis()) = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, fileName("VID", "mp4", now))
         put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
