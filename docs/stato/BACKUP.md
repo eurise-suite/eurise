@@ -10,8 +10,8 @@ suite e si ripristina senza sorprese su un telefono nuovo. Regole in `CLAUDE.md`
 - Fase 1 (cosa entra) decisa il 20 novembre; fase 2 (tavole approvate, schermate vere) consegnata il 21 col giro 909.
   Fase 3 (prova vera sull'emulatore) superata il 21 novembre, 17 su 17; poi tutta la suite (tranne Mappe) nel backup,
   30 su 30. Il 21 sera: **Mappe nel backup** (fornitore nelle patch di CoMaps) e **tavole** della cartella protetta
-  «dal backup» in Galleria (in attesa di approvazione). **Prossimo**: controllo del proprietario sul telefono; con le tavole
-  approvate, il codice della Galleria (vedi «Mappe e cartella dal backup» in fondo).
+  «dal backup» in Galleria (approvate e in codice). Il 22 notte: unito tutto `brand` e il backup portato al passo con le
+  novità (vedi in fondo), giro 1014 e Mappe 142. **Prossimo**: controllo del proprietario sul telefono.
 
 ## Cosa c'è già (al 20 novembre)
 - `core/cloud/backup`: `BackupArchive` (zip in memoria), `BackupCrypto` (AES-256-GCM, chiave dei dati chiusa con frase e
@@ -292,3 +292,33 @@ Run «Prova del backup» sul giro 958 (`.github/prova-backup-giro`). In più ris
   pianificati e i permessi non persistenti (come «Forza l'arresto»): Eurise si riapre una volta e la sonda chiede il
   permesso da dentro; «battery unplug» lascia lo stato «in carica», quindi si mette anche «in scarica».
 - Consegnato con il giro **958** (Eurise; Mappe resta la 125).
+
+## 22 novembre 2026, notte: il backup al passo con tutta la suite (giro 1014, Mappe 142)
+Unito `brand` fino a `0cdbb1cd` (Chat e Posta di Comunicazione, Alfred passi 3–5, Mappe, Organizzazione, Tastiera, Password
+e Galleria nel centro privacy). Poi un giro per tutte le app: che cosa salvano adesso, e se entra nel backup.
+- **Entrano ora** (prima restavano fuori):
+  - app Eurise: l'**audio delle note vocali** tenute nell'app (`files/note-vocali/`; senza, la nota tornava muta) e le
+    **suonerie fatte da te** (`files/sounds/mine/`), a flusso e senza tetto; al ripristino si aggiungono, un file con lo
+    stesso nome già sul telefono resta quello. Preferenze `dock` (app di riferimento della Scrivania) e `alfred_online`
+    (servizi AI scelti e aggiunti).
+  - Chat: cartelle (`chat_folders`), palle passate (`chat_balls`), approvazioni (`chat_approvals`), il lavoro che tace e
+    Fuori orario (solo `work_quiet` e `off_hours` di `chat_accounts`).
+  - Posta: palle passate (`mail_balls`), approvazioni (`mail_approvals`), Fuori orario (solo `off_hours` di `mail_sync`).
+- **Note vocali anche da brand**: la chat dell'Organizzazione le aveva aggiunte sul `BackupArchive` di `brand` (in memoria,
+  `note-vocali/`, tetto 60 MB). Nell'unione resta la versione del ramo; i backup fatti da quei giri si aprono e le note
+  vocali tornano allo stesso posto.
+- **Restano fuori, apposta** (scritto in `BackupArchive.EXTRA_PREFS`): interruttori dei servizi che fanno uscire dati
+  (`privacy_center`, `doc_reading`, filtro dello spam: sul telefono nuovo ripartono spenti), account cloud e stato delle
+  sincronizzazioni, file scaricati (`spam_list`, `alfred_brain`, pacchetto dei suoni, meteo), registro di Alfred
+  (`alfred_log`) e registri dei servizi (`privacy_log.txt`, `service_log.txt`), posizione dal vivo della Chat, bin_count
+  di Password (si ricalcola). Il cestino di Password è nella cassaforte; quello della Galleria è il cestino di Android.
+- **«Prima di accendere»** (spiegazione richiesta dalla regola della privacy) diceva che si leggono solo Eurise e
+  Tastiera: ora elenca tutte le app. Righe «Cosa salva» di Eurise, Telefono (niente più «filtro dello spam»), Posta, Chat.
+- **Corretti per far compilare**: `MailBallsTest` senza `org.json` nei test (corretto anche su brand, uguale);
+  `EuriseGuideStatus` di Mappe accettava i permessi delle due varianti scritti a mano: `eurise_patch.py` lo ferma, e nella
+  versione ufficiale un'app qualunque che dichiari `SUITE_DEBUG` avrebbe letto la guida. Ora `EuriseSuite.PERMISSION`
+  (**da portare su brand**: lì Mappe non compila finché non arriva).
+- Sonda dell'emulatore: in più la nota vocale, la suoneria tua e la scelta della dock, salvate e tornate.
+- `apk-prova` è unica per tutte le chat: ogni pubblicazione toglie quella prima. Il 21 notte il giro 958 era stato
+  sostituito dal 972 di `prova-comunicazione`, senza il backup. Per Mappe si passa sempre `mappe_run` (senza, si prende
+  l'ultima Mappe riuscita su `prova-mappe` o `brand`, che il fornitore del backup non ce l'ha).

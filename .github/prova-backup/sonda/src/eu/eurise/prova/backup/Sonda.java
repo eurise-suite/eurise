@@ -76,6 +76,12 @@ public class Sonda extends Instrumentation {
 
     private void note(String s) { log.append(s).append('\n'); }
 
+    /** File tuoi nella memoria di Eurise che il backup deve riportare (cartella/nome, contenuto). */
+    private static final String[][] FILES_PROVA = {
+        {"note-vocali/prova.m4a", "voce-di-prova della nota"},
+        {"sounds/mine/Prova mia.m4a", "suoneria-di-prova"},
+    };
+
     private static void check(boolean ok, String what) {
         if (!ok) throw new AssertionError(what);
     }
@@ -94,6 +100,13 @@ public class Sonda extends Instrumentation {
         }
         SharedPreferences p = ctx.getSharedPreferences("eurise_prova", Context.MODE_PRIVATE);
         check(p.edit().putString("segno", "42").commit(), "impostazione di prova non scritta");
+        // 22 novembre: l'audio di una nota vocale, una suoneria tua e una scelta della dock entrano anche loro.
+        check(ctx.getSharedPreferences("dock", Context.MODE_PRIVATE).edit().putString("ref_maps", "prova-dock").commit(), "scelta della dock non scritta");
+        for (String[] f : FILES_PROVA) {
+            File t = new File(ctx.getFilesDir(), f[0]);
+            t.getParentFile().mkdirs();
+            try (FileOutputStream o = new FileOutputStream(t)) { o.write(f[1].getBytes("UTF-8")); }
+        }
 
         Object phone = call(obj("BackupArchive"), "onPhone", ctx);
         note("sul telefono: " + get(phone, "getNotes") + " note, " + get(phone, "getTasks") + " attività");
@@ -110,6 +123,7 @@ public class Sonda extends Instrumentation {
         check(startsWith(file, "EURISEB1") && file[8] == 2, "il file non è un backup EURISEB1 a pezzi (versione 2)");
         check(indexOf(file, "Prova backup".getBytes("UTF-8")) < 0, "nel file cifrato si legge «Prova backup»");
         check(indexOf(file, "finta-cassaforte".getBytes("UTF-8")) < 0, "nel file cifrato si legge la cassaforte di prova");
+        check(indexOf(file, "voce-di-prova".getBytes("UTF-8")) < 0, "nel file cifrato si legge la nota vocale di prova");
         note("backup: " + file.length + " byte, a pezzi");
 
         Object contents = contentsOf(file, FRASE);
@@ -185,6 +199,12 @@ public class Sonda extends Instrumentation {
         check("42".equals(ctx.getSharedPreferences("eurise_prova", Context.MODE_PRIVATE).getString("segno", null)), "l'impostazione di prova non è tornata");
         check(ctx.getSharedPreferences("backup", Context.MODE_PRIVATE).getLong("restored_at", 0) > 0, "manca il segno del ripristino (Bentornato)");
         note("note, attività e impostazione tornate; Bentornato segnato");
+        for (String[] f : FILES_PROVA) {
+            File t = new File(ctx.getFilesDir(), f[0]);
+            check(t.exists() && f[1].equals(new String(readAll(t), "UTF-8")), "dopo il ripristino manca " + f[0]);
+        }
+        check("prova-dock".equals(ctx.getSharedPreferences("dock", Context.MODE_PRIVATE).getString("ref_maps", null)), "la scelta della dock non è tornata");
+        note("nota vocale, suoneria tua e scelta della dock tornate");
         List<String> plain = plainZips(new File(ctx.getApplicationInfo().dataDir));
         check(plain.isEmpty(), "zip in chiaro dopo il ripristino: " + plain);
     }
