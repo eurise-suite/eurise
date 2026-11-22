@@ -162,7 +162,7 @@ class CameraEngine(private val context: Context) {
 
     /**
      * Tempo e ISO per la foto con poca luce, o null se va bene l'automatico. Il prodotto tempo × ISO del mirino, con un
-     * terzo di stop in più ([BIAS]: in manuale il telefono non schiarisce più le ombre da sé), si distribuisce allungando il
+     * eventuale correzione [BIAS], si distribuisce allungando il
      * tempo finché gli ISO scendono verso [TARGET_ISO]. Tetto del tempo: 1/20 s con lo stabilizzatore ottico dichiarato, 1/25 s senza (sul Fairphone 6 non risulta: le foto si fermavano a 1/30 s),
      * la metà da 2× in su.
      */
@@ -219,12 +219,15 @@ class CameraEngine(private val context: Context) {
 
     /**
      * Quanti fotogrammi per la Notte, o null se basta uno scatto: con il flash spento e ISO del mirino da [NIGHT_ISO] in
-     * su (con il tempo già allungato dalla poca luce, se c'è) 4 sulla posteriore, 6 sulla frontale (sensore più piccolo).
+     * su (in Foto, da sola) 4 sulla posteriore, 6 sulla frontale (sensore più piccolo). Nella modalità Notte sempre, con [nightModeFrames].
      */
     fun nightFrames(): Int? {
         if (flashMode != ImageCapture.FLASH_MODE_OFF || iso < NIGHT_ISO) return null
         return if (front) 6 else 4
     }
+
+    /** Fotogrammi della modalità Notte scelta a mano: sempre la raffica, più lunga. */
+    fun nightModeFrames(): Int = if (front) 8 else 6
 
     /** Raffica di [n] JPEG in memoria, uno dopo l'altro, con la stessa esposizione. */
     fun takeBurst(n: Int, zoom: Float, done: (List<ByteArray>) -> Unit, failed: () -> Unit) {
@@ -258,10 +261,10 @@ class CameraEngine(private val context: Context) {
     companion object {
         /** Gli ISO a cui si punta con poca luce: sotto, sul sensore del Fairphone 6, la grana quasi non si vede. */
         const val TARGET_ISO = 200
-        /** Un terzo di stop in più rispetto al mirino (2^(1/3)). */
-        const val BIAS = 1.26
+        /** Nessuno stop in più rispetto al mirino: schiariva troppo e mostrava la grana (23 novembre); le ombre le apre il Ritocco. */
+        const val BIAS = 1.0
         /** Da quanti ISO del mirino in su si scatta la Notte con più fotogrammi. */
-        const val NIGHT_ISO = 400
+        const val NIGHT_ISO = 800
     }
 }
 

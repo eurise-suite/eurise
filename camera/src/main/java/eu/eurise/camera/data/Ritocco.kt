@@ -14,27 +14,31 @@ import kotlin.math.pow
 /**
  * Ritocco dopo lo scatto (22 novembre 2026), tutto sul telefono e senza librerie, per le foto di sera in casa:
  * - **Colori**: dominanti forti (gialla delle lampade, rosata della frontale: canale più alto oltre [THRESHOLD] volte il
- *   più basso sui toni medi) corrette per il 70% verso il neutro.
+ *   più basso sulle superfici chiare) corrette a metà verso il neutro. Prima si guardava tutta la foto e un albero verde
+ *   faceva virare tutto al ciano (23 novembre).
  * - **Macchioline di colore** (la parte più brutta della grana) da [NOISY_ISO] in su.
- * - **Toni medi locali** quando la mediana è sotto [DARK]: le ombre si aprono zona per zona verso [TARGET_MEDIAN].
+ * - **Toni medi locali** quando la mediana è sotto [DARK]: le ombre si aprono zona per zona verso [TARGET_MEDIAN], al
+ *   massimo di 1,6 volte (1,3 con molto rumore), le luci non si toccano.
  * Le foto che non ne hanno bisogno non si ricodificano. I dati dello scatto (EXIF, anche la posizione se accesa) si ricopiano.
  */
 object Ritocco {
-    const val THRESHOLD = 1.2
-    private const val STRENGTH = 0.7
+    const val THRESHOLD = 1.15
+    private const val STRENGTH = 0.5
     private const val MAX_CHANNEL = 1.6f
     private const val MIN_CHANNEL = 0.8f
-    const val DARK = 95
-    const val TARGET_MEDIAN = 110
-    private const val MIN_GAMMA = 0.7
+    const val DARK = 85
+    const val TARGET_MEDIAN = 95
+    private const val MIN_GAMMA = 0.8
     /** Da quanti ISO in su si tolgono le macchioline di colore. */
     const val NOISY_ISO = 400
-    private const val MAX_GAIN = 2.2f
+    private const val MAX_GAIN = 1.6f
+    private const val MAX_GAIN_NOISY = 1.3f
+    private const val VERY_NOISY_ISO = 1600
 
     /**
      * Guadagni rosso e blu per i valori medi [r], [g], [b], o null se i colori vanno bene così. Vale per ogni dominante:
      * gialla e arancione delle lampade (rosso alto, blu basso) e rosata o magenta della fotocamera frontale (rosso e blu
-     * alti sul verde). Si scala rosso e blu verso il verde per il 70%.
+     * alti sul verde). Si scala rosso e blu verso il verde, a metà strada.
      */
     fun gains(r: Double, g: Double, b: Double): Pair<Float, Float>? {
         if (r <= 0 || g <= 0 || b <= 0) return null
@@ -83,22 +87,37 @@ object Ritocco {
     fun process(bitmap: Bitmap, iso: Int): Boolean {
         val w = bitmap.width; val h = bitmap.height
         val row = IntArray(w)
-        // 1. Colori: medie sui toni medi, una riga e un pixel su quattro.
-        var sr = 0.0; var sg = 0.0; var sb = 0.0; var n = 0
+        // 1. Colori dalle superfici chiare (muri, tende, fogli: tra il 75° e il 97° percentile della luminosità, luci
+        // bruciate escluse), non dalla media di tutto: un albero verde o una sedia blu non devono spostare i colori.
+        // Una riga e un pixel su quattro.
+        val hist = IntArray(256); var all = 0
         var y = 0
         while (y < h) {
             bitmap.getPixels(row, 0, w, 0, y, w, 1)
             var x = 0
             while (x < w) {
                 val c = row[x]
-                val r = c shr 16 and 0xFF; val g = c shr 8 and 0xFF; val b = c and 0xFF
-                if (maxOf(r, g, b) in 30..235) { sr += r; sg += g; sb += b; n++ }
+                if (maxOf(c shr 16 and 0xFF, c shr 8 and 0xFF, c and 0xFF) < 240) { hist[luma8(c)]++; all++ }
                 x += 4
             }
             y += 4
         }
-        if (n < 1000) return false
-        val wb = gains(sr / n, sg / n, sb / n)
+        if (all < 1000) return false
+        val lo = percentile(hist, all, 0.75); val hi = percentile(hist, all, 0.97)
+        var sr = 0.0; var sg = 0.0; var sb = 0.0; var n = 0
+        y = 0
+        while (y < h) {
+            bitmap.getPixels(row, 0, w, 0, y, w, 1)
+            var x = 0
+            while (x < w) {
+                val c = row[x]
+                val r = c shr 16 and 0xFF; val g = c shr 8 and 0xFF; val b = c and 0xFF
+                if (maxOf(r, g, b) < 240 && luma8(c) in lo..hi) { sr += r; sg += g; sb += b; n++ }
+                x += 4
+            }
+            y += 4
+        }
+        val wb = if (n < 200) null else gains(sr / n, sg / n, sb / n)
         val (gr, gb) = wb ?: (1f to 1f)
         val chroma = iso >= NOISY_ISO
 
@@ -125,12 +144,17 @@ object Ritocco {
         val median = lum.copyOf().also { it.sort() }[lum.size / 2].toInt()
         val curve = gamma(median)
         if (wb == null && !chroma && curve == null) return false
+        // Con molto rumore si schiarisce meno: schiarire mostra la grana.
+        val maxGain = if (iso >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
         if (chroma) { boxBlur(cb, cw, ch, 1); boxBlur(cr, cw, ch, 1) }
         if (curve != null) { boxBlur(lum, lw, lh, 6); boxBlur(lum, lw, lh, 6) }
         // Guadagno dei toni in funzione della luce della zona (0-255, a passi di 1/4).
         val gainLut = FloatArray(1024) { i ->
             val l = maxOf(i / 4f, 1f)
-            if (curve == null) 1f else (255.0 * (l / 255.0).pow(curve) / l).toFloat().coerceIn(1f, MAX_GAIN)
+            if (curve == null) return@FloatArray 1f
+            val g = (255.0 * (l / 255.0).pow(curve) / l).toFloat().coerceIn(1f, maxGain)
+            // Le luci restano dove sono: il guadagno si spegne tra 80 e 180.
+            1f + (g - 1f) * ((180f - l) / 100f).coerceIn(0f, 1f)
         }
 
         // 3. Ricomposizione: luminosità piena del pixel, colore dalla griglia (o dal pixel), guadagno dalla zona.
@@ -157,6 +181,14 @@ object Ritocco {
         }
         Log.i(TAG, "Ritocco: colori ${wb != null}, rumore di colore $chroma (ISO $iso), mediana $median, curva $curve")
         return true
+    }
+
+    private fun luma8(c: Int): Int = ((c shr 16 and 0xFF) * 77 + (c shr 8 and 0xFF) * 150 + (c and 0xFF) * 29) shr 8
+
+    internal fun percentile(hist: IntArray, all: Int, q: Double): Int {
+        var acc = 0
+        for (i in hist.indices) { acc += hist[i]; if (acc >= q * all) return i }
+        return 255
     }
 
     private fun clamp(v: Float): Int = if (v <= 0f) 0 else if (v >= 255f) 255 else (v + 0.5f).toInt()

@@ -95,7 +95,7 @@ import java.util.Locale
 /** Come si apre la Fotocamera: avvio normale, dal blocco schermo, o per restituire una foto a un'altra app. */
 data class CameraSetup(val startVideo: Boolean = false, val locked: Boolean = false, val capture: Boolean = false)
 
-private enum class Mode { Photo, Video }
+private enum class Mode { Photo, Night, Video }
 
 internal val Veil = Color(0xB314171C)
 internal val Ground = Color(0xFF14171C)
@@ -145,7 +145,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var torch by remember { mutableStateOf(false) }
     var front by remember { mutableStateOf(false) }
     // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video 30 fotogrammi fissi.
-    LaunchedEffect(mode, camera) { controller.setStill(mode == Mode.Photo) }
+    LaunchedEffect(mode, camera) { controller.setStill(mode != Mode.Video) }
     var showExposure by remember { mutableStateOf(false) }
     var exposure by remember { mutableFloatStateOf(0f) }
     var recording by remember { mutableStateOf<Recording?>(null) }
@@ -182,7 +182,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             })
             return
         }
-        val frames = controller.nightFrames()
+        val frames = if (mode == Mode.Night) controller.nightModeFrames() else controller.nightFrames()
         if (frames != null) {
             model.night.value = CameraModel.NightStep.Hold
             controller.takeBurst(frames, zoom?.zoomRatio ?: 1f,
@@ -301,6 +301,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             active = (mode == Mode.Video && torch) || (mode == Mode.Photo && flash != ImageCapture.FLASH_MODE_OFF),
         ) {
             if (mode == Mode.Video) { torch = !torch; controller.enableTorch(torch) }
+            else if (mode == Mode.Night) toast(context, R.string.night_no_flash)
             else {
                 flash = when (flash) {
                     ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_AUTO
@@ -333,6 +334,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             Row(Modifier.fillMaxWidth().padding(bottom = 14.dp), horizontalArrangement = Arrangement.Center) {
                 ModeChip(stringResource(R.string.mode_video), mode == Mode.Video) { if (recording == null) { mode = Mode.Video; flashOffFor(controller) } }
                 ModeChip(stringResource(R.string.mode_photo), mode == Mode.Photo) { if (recording == null) { mode = Mode.Photo; torch = false; controller.enableTorch(false) } }
+                ModeChip(stringResource(R.string.mode_night), mode == Mode.Night) { if (recording == null) { mode = Mode.Night; torch = false; controller.enableTorch(false); flash = ImageCapture.FLASH_MODE_OFF; flashOffFor(controller) } }
                 if (scanner != null) ModeChip(stringResource(R.string.mode_document), false) { runCatching { context.startActivity(scanner) } }
             }
         }
