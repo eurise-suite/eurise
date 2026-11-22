@@ -13,7 +13,12 @@ misura() { # cartella, etichetta
     pkg=$(basename "$f" .apk)
     out=$(adb install -r -g "$f" 2>&1 | tail -1)
     case "$out" in *Success*) ;; *) echo "SALTA $2 $pkg: $out"; continue;; esac
-    act=$(adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$pkg" 2>/dev/null | tail -1 | tr -d '\r')
+    # Dove il cassetto ha più icone (alias spenti di base), la schermata principale vera.
+    case "$pkg" in
+      eu.eurise.hub.debug) act="$pkg/eu.eurise.hub.MainActivity";;
+      eu.eurise.phone.debug) act="$pkg/eu.eurise.phone.PhoneActivity";;
+      *) act=$(adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$pkg" 2>/dev/null | tail -1 | tr -d '\r');;
+    esac
     case "$act" in */*) ;; *) echo "SALTA $2 $pkg: nessuna schermata d'avvio"; continue;; esac
     adb logcat -c; adb logcat -b crash -c
     tempi=""
