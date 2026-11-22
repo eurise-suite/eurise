@@ -76,16 +76,37 @@ diario generale: lì le chat del Browser scrivono solo una riga per consegna che
   Vivaldi, Opera, Firefox (anche snap e Flatpak), segnalibri (JSON di Chromium, `jsonlz4` di Firefox), HTML di Netscape,
   password di Chromium v10/v11 dato il segreto del portachiavi.
 
+- **Telefono e computer** (21–22 novembre, tavola BrwSincro): segnalibri e siti fissati, Leggi dopo (indirizzo e
+  titolo; il testo resta sul telefono) e schede aperte tra il Browser e Firefox con Eurise, attraverso il Ponte (rete di
+  casa, cifrato). Giro: Firefox manda `sync-ask` (stato suo) → Ponte del computer → app Eurise sul telefono
+  (`feature/ponte/PonteBrowser`, `SuiteAccess.call`) → Browser `SyncProvider` (`call("sync")`, `enforceCaller`, provato
+  sull'emulatore: la shell è respinta) → `BrowserSync` unisce a tre vie (`SyncMerge`, test; base per computer in
+  `files/sync/base-*.json`) → risposta `sync` → Firefox applica (`desktop/firefox/sync.js`). In Firefox i segnalibri sono
+  la cartella «Eurise» in Altri segnalibri (permesso `bookmarks` facoltativo, chiesto accendendo; le altre cartelle non si
+  toccano), i fissati la nuova scheda, le schede del telefono il pannello «Dal telefono». Sul telefono: Impostazioni ›
+  Telefono e computer (interruttori **spenti di base**, spiegazione prima di accendere; si discosta dalla tavola, che li
+  mostrava accesi, per la regola «Spenti di base»), Schede › Sul computer. Password e passkey restano quelle del Ponte
+  (riga che apre Eurise › Telefono e computer); la cronologia è «più avanti». Fuori casa (cloud) non ancora: il Ponte oggi
+  passa solo sulla rete di casa. Estensione 0.3.0. Tetto 2000 voci (native messaging: 1 MB).
+  Parti comuni toccate: `core/ponte` (Kind.SyncAsk, Kind.Sync, Outbox), `feature/ponte` (PonteLink, PonteBrowser,
+  manifest), `desktop/ponte` (Control, Firefox, Main).
+- **Profilo di avvio del Browser** (22 novembre): `browser/src/main/baseline-prof.txt`, raccolto da ART sull'emulatore
+  (`pm dump-profiles` in `prova-avvio-browser.sh`, righe «PROF:» nel registro), solo il nostro codice, GeckoView, Kotlin
+  e coroutine. La stessa prova misura l'avvio a freddo tre volte: senza profilo 718–1098 ms, con il profilo 908–1363 ms
+  subito dopo l'installazione. Non dice nulla: Android applica il profilo quando ricompila l'app a telefono fermo, e
+  sull'emulatore le misure ballano di ±300 ms. Per un confronto vero servirebbe `cmd package compile -m speed-profile`
+  prima di misurare, da tutte e due le parti.
+- **Tavola PcImporta** (22 novembre, pagina «Eurise sul computer», da approvare): importa dagli altri browser nell'app del
+  computer (browser trovati, cosa importare e dove finisce, password a Eurise Password via Ponte con l'impronta).
+  Toccato `canvas.json` della tela solo per aggiungere la tavola (riga nuova sotto Email, x 0, y 3060).
+
 ## Prossimi passi (in ordine)
-1. Provare la nuova scheda in Firefox (about:debugging) e correggere ciò che segnala il proprietario; verificare Traduci.
-2. **Importazione dai browser nell'app del computer**: schermata (serve la tavola, partire da BrwImporta del telefono);
-   lettura SQLite (password `Login Data`, cronologia; Firefox `logins.json` + `key4.db`); le password vanno in Eurise
-   Password con un tipo del Ponte apposta, mai un CSV in Download.
-3. **Sincronizzazione Browser telefono–computer** (BrwSincro): segnalibri, schede aperte, leggi dopo, cifrati dal cloud
-   scelto o via Ponte.
+1. Il proprietario prova: Telefono e computer (telefono ed estensione 0.3.0), il giro del Browser, la nuova scheda di
+   Firefox, Traduci (ancora da verificare).
+2. Approvazione della tavola **PcImporta**; poi il codice: schermata nell'app del computer, lettura SQLite (`Login Data`,
+   cronologia; Firefox `logins.json` + `key4.db`), tipo del Ponte per le password verso Eurise Password (mai un CSV).
+3. Telefono e computer fuori casa (cloud dell'utente, quando il Ponte lo avrà); cronologia (spenta di base).
 4. Firma dell'estensione su AMO (passo del proprietario), poi pubblicazione.
-5. Telefono: ciò che il proprietario segnala provando l'APK; dire se il giro 789 è più svelto (avvio, cambio scheda,
-   pagine). Possibili passi dopo: profilo di avvio proprio del Browser (Baseline Profile), GeckoView più recente.
 
 ## Come si lavora in quest'area
 - Ramo `brand` come le altre chat; per avere un giro tutto proprio spingere la stessa testa su `prova-browser` (la
