@@ -33,14 +33,18 @@ class EuriseApplication : Application(), eu.eurise.feature.ponte.PonteToday.Sour
         eu.eurise.core.suite.PrivacyCenter.init(this)
         // Un ripristino in attesa prende il suo posto prima che si apra il database (di solito non c'è nulla da fare).
         eu.eurise.core.cloud.backup.BackupArchive.applyPending(this)
-        // Le parole imparate dalla Tastiera (APK a parte) tornano alla tastiera appena è installata.
-        Thread { eu.eurise.core.cloud.backup.KeyboardBackup.deliverPending(this) }.start()
+        // Fuori dal thread principale, per un avvio più svelto: le parole imparate dalla Tastiera (APK a parte) tornano
+        // alla tastiera appena è installata, e la sincronizzazione periodica si registra in WorkManager (legge le
+        // preferenze dal disco).
+        Thread {
+            eu.eurise.core.cloud.backup.KeyboardBackup.deliverPending(this)
+            CloudSync.get(this).schedule()
+        }.start()
         // I lavori di sincronizzazione vanno registrati prima che WorkManager ne avvii uno.
         CloudSync.register(NotesSyncJob(data.notes, data.notebooks))
         CloudSync.register(eu.eurise.feature.tasks.TasksSyncJob(data.tasks))
         CloudSync.register(eu.eurise.feature.calendar.assistant.AssistantSyncJob())
         data.tasks.onChanged = { CloudSync.get(this).requestSoon() }
-        CloudSync.get(this).schedule()
         // Quando cambia un avviso di un'attività si ricalcola la prossima sveglia dei promemoria.
         data.tasks.onRemindersChanged = { eu.eurise.feature.calendar.reminders.Reminders.refresh(this) }
     }
