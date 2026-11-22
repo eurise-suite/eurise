@@ -101,6 +101,19 @@ class RitoccoTest {
     }
 
     @Test
+    fun pinkFrontCameraCastIsCorrectedToo() {
+        val (gr, gb) = r.gains(110.0, 90.0, 108.0)!!
+        assert(gr < 1f && gb < 1f) { "$gr $gb" }
+    }
+
+    @Test
+    fun blurKeepsAFlatGridFlat() {
+        val a = FloatArray(12) { 7f }
+        r.boxBlur(a, 4, 3, 1)
+        a.forEach { assertEquals(7f, it, 0.0001f) }
+    }
+
+    @Test
     fun darkPhotosGetBrighterMidtones() {
         assertNull(r.gamma(120))
         val g = r.gamma(76)!!
