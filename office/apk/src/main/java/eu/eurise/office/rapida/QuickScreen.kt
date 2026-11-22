@@ -77,6 +77,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.eurise.core.designsystem.component.FolderTabs
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import eu.eurise.core.designsystem.component.DockItem
 import eu.eurise.core.designsystem.component.EuriseDock
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -113,6 +116,9 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
     val editing = draft?.para?.id
     var commentOn by remember { mutableStateOf<Para?>(null) }
     var firstTip by remember { mutableStateOf(!OfficePrefs.quickTipSeen(context)) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    // L'altezza di ciò che sta in basso (cella, avvisi, barra), perché il foglio e le sue linguette finiscano sopra.
+    var bottomHeight by remember { mutableStateOf(0) }
 
     BackHandler(enabled = editing != null || model.selected != null || model.searching || model.commenting) {
         when {
@@ -140,7 +146,14 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
                         }
                     },
                 )
-                is QuickState.Sheets -> SheetBody(model, s.doc, haze, Modifier.weight(1f))
+                is QuickState.Sheets -> {
+                    // Fogli a schedario (tavola OffSchedarioTelefono): la tabella finisce sopra le linguette, che pendono
+                    // dalla griglia; sotto resta lo spazio della barra in basso, che non copre più la tabella.
+                    val many = s.doc.sheets.size >= 2
+                    SheetBody(model, s.doc, haze, Modifier.weight(1f), flatBottom = many)
+                    if (many) SheetTabs(model, s.doc)
+                    Spacer(Modifier.height(with(density) { bottomHeight.toDp() }))
+                }
                 is QuickState.Slides -> {}
             }
         }
@@ -148,10 +161,9 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
         val bottom = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
         // Con la tastiera aperta (cella in modifica) la scheda sale sopra la tastiera e la barra si fa da parte.
         val typing = WindowInsets.isImeVisible
-        if (editing == null) Column(bottom.imePadding()) {
+        if (editing == null) Column(bottom.imePadding().onSizeChanged { bottomHeight = it.height }) {
             val state = model.state
             if (state is QuickState.Sheets) {
-                SheetTabs(model, state.doc)
                 model.selected?.let { sel -> CellCard(model, state.doc, sel, onFull = { model.showFull = true }) }
             }
             val waiting = model.lastResult?.pending.orEmpty()
@@ -496,7 +508,7 @@ private val HeadWidth = 40.dp
 private val RowHeight = 40.dp
 
 @Composable
-private fun SheetBody(model: QuickModel, doc: SheetDoc, haze: HazeState, modifier: Modifier) {
+private fun SheetBody(model: QuickModel, doc: SheetDoc, haze: HazeState, modifier: Modifier, flatBottom: Boolean = false) {
     val sheet = doc.sheets.getOrNull(model.sheetIndex) ?: doc.sheets.firstOrNull() ?: return
     val rows = maxOf(sheet.rows + 6, 40)
     val cols = maxOf(sheet.cols + 2, 4)
@@ -507,12 +519,26 @@ private fun SheetBody(model: QuickModel, doc: SheetDoc, haze: HazeState, modifie
         if (q.length < 2) return@LaunchedEffect
         sheet.cells.values.filter { it.display.contains(q, ignoreCase = true) }.minByOrNull { it.row }?.let { list.animateScrollToItem(it.row + 1) }
     }
-    Box(modifier.fillMaxWidth().padding(horizontal = 10.dp).clip(RoundedCornerShape(10.dp)).background(Paper).hazeSource(haze)) {
+    // Cambiando foglio, quello nuovo arriva davanti dalla sua linguetta in basso (180 ms), come le pagine del Browser.
+    val rise = remember { androidx.compose.animation.core.Animatable(1f) }
+    var shownSheet by remember { mutableStateOf(model.sheetIndex) }
+    LaunchedEffect(model.sheetIndex) {
+        if (shownSheet == model.sheetIndex) return@LaunchedEffect
+        shownSheet = model.sheetIndex
+        rise.snapTo(0f)
+        rise.animateTo(1f, androidx.compose.animation.core.tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
+    val shape = if (flatBottom) RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp) else RoundedCornerShape(10.dp)
+    Box(
+        modifier.fillMaxWidth().padding(horizontal = 10.dp)
+            .graphicsLayer { translationY = (1f - rise.value) * 14.dp.toPx(); alpha = 0.6f + 0.4f * rise.value }
+            .clip(shape).background(Paper).hazeSource(haze),
+    ) {
         Box(Modifier.fillMaxSize().horizontalScroll(side)) {
             LazyColumn(
                 state = list,
                 modifier = Modifier.width(HeadWidth + CellWidth * cols).fillMaxHeight(),
-                contentPadding = PaddingValues(bottom = 260.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 item(key = "head") {
                     Row {
@@ -561,19 +587,20 @@ private fun HeadCell(text: String, width: androidx.compose.ui.unit.Dp) {
     ) { Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF56564F)) }
 }
 
+/**
+ * I fogli del file a schedario (tavola OffSchedarioTelefono, approvata il 22 novembre): il foglio aperto è una
+ * linguetta bianca che pende dalla tabella, gli altri stanno dietro divisi da un filo.
+ */
 @Composable
 private fun SheetTabs(model: QuickModel, doc: SheetDoc) {
-    if (doc.sheets.size < 2) return
-    Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        doc.sheets.forEachIndexed { i, s ->
-            val on = i == model.sheetIndex
-            Box(
-                Modifier.height(32.dp).clip(CircleShape).background(if (on) Color(0xFF1F2A44) else MaterialTheme.colorScheme.surface)
-                    .clickable { model.sheetIndex = i; model.selected = null; model.lastResult = null }.padding(horizontal = 14.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(s.name, fontSize = 12.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold, color = if (on) Color.White else MaterialTheme.colorScheme.onSurface) }
-        }
-    }
+    FolderTabs(
+        labels = doc.sheets.map { it.name },
+        selected = model.sheetIndex,
+        onSelect = { i -> if (i != model.sheetIndex) { model.sheetIndex = i; model.selected = null; model.lastResult = null } },
+        sheet = Paper,
+        down = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+    )
 }
 
 /** La cella scelta (tavola OffLetturaFoglio): il campo è in basso, vicino al pollice; il totale si aggiorna qui. */

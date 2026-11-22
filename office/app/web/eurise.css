@@ -2163,3 +2163,75 @@ html body.eurise-desk.eurise-pdf .main-nav,
 html body.eurise-desk.eurise-pdf #main-menu { display: none !important; }
 html body.eurise-desk.eurise-pdf #toolbar-wrapper,
 html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
+
+/* Fogli a schedario (tavole OffSchedarioComputer e OffSchedarioTelefono, approvate il 22 novembre 2026): il foglio
+   aperto è una linguetta del colore della griglia che pende da lei, con due piedini concavi; gli altri stanno dietro,
+   senza fondo, divisi da un filo. Vale per telefono, tablet e computer (stessa interfaccia di Collabora). */
+#spreadsheet-tab-scroll {
+	--eurise-sheet: #FFFFFF;
+	display: flex !important;
+	align-items: flex-start;
+	gap: 2px;
+	margin-left: 0 !important;
+	padding: 0 12px;
+	box-sizing: border-box;
+}
+[data-theme='dark'] #spreadsheet-tab-scroll { --eurise-sheet: #12161D; }
+#spreadsheet-tab-scroll .spreadsheet-tab {
+	flex: none;
+	position: relative;
+	height: 30px;
+	padding: 0 14px !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	color: var(--color-text-lighter) !important;
+	font: 600 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+#spreadsheet-tab-scroll .spreadsheet-tab:hover:not(.spreadsheet-tab-selected) {
+	color: var(--color-main-text) !important;
+	background: transparent !important;
+	border: 0 !important;
+}
+/* Il filo tra due fogli chiusi. */
+#spreadsheet-tab-scroll .spreadsheet-tab:not(.spreadsheet-tab-selected) + .spreadsheet-tab:not(.spreadsheet-tab-selected)::before {
+	content: '';
+	position: absolute;
+	left: -2px;
+	top: 7px;
+	width: 1px;
+	height: 16px;
+	background: rgba(30, 29, 27, 0.16);
+}
+[data-theme='dark'] #spreadsheet-tab-scroll .spreadsheet-tab:not(.spreadsheet-tab-selected) + .spreadsheet-tab:not(.spreadsheet-tab-selected)::before {
+	background: rgba(230, 233, 240, 0.18);
+}
+#spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected,
+#spreadsheet-tab-scroll button.spreadsheet-tab-selected:hover {
+	height: 34px;
+	margin: 0 10px !important;
+	border: 0 !important;
+	border-radius: 0 0 10px 10px !important;
+	background: var(--eurise-sheet) !important;
+	color: var(--color-main-text) !important;
+	font-weight: 800;
+	overflow: visible;
+}
+/* I due piedini: il foglio aperto si salda alla griglia sopra. */
+#spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::before,
+#spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	width: 10px;
+	height: 10px;
+	pointer-events: none;
+}
+#spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::before {
+	left: -10px;
+	background: radial-gradient(circle at 0 100%, transparent 9.5px, var(--eurise-sheet) 10px);
+}
+#spreadsheet-tab-scroll .spreadsheet-tab.spreadsheet-tab-selected::after {
+	right: -10px;
+	background: radial-gradient(circle at 100% 100%, transparent 9.5px, var(--eurise-sheet) 10px);
+}

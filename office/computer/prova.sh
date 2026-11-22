@@ -110,6 +110,9 @@ find "$FILES" -name 'cool-qt.html' -path '*dist*' | while read -r COOL; do
 	python3 "$REPO/office/computer/inietta.py" "$(dirname "$COOL")" "$WEB" "$DIAG" | sed 's/^/- /' >> "$R"
 	grep -o '<script[^>]*\(bundle\|Eurise\|diag\)[^>]*>' "$COOL" | sed 's/^/    /' >> "$R"
 done
+# I fogli della striscia delle schede del guscio (non sono su GitHub): copie per le prove dello stile (schedario).
+find "$FILES" -name 'qtapp-tabstrip.*' -path '*dist*' | while read -r F; do cp "$F" "$OUT/sorgente-$(basename "$F").txt"; done
+find "$FILES" -name 'bundle.css' -path '*dist*' | head -1 | while read -r F; do grep -o '[^}]*spreadsheet-tab[^}]*}' "$F" > "$OUT/sorgente-fogli.css.txt" || true; done
 
 # Schermo virtuale e sessione D-Bus (il guscio Qt parla con il portale per il tema).
 export DISPLAY=:99
