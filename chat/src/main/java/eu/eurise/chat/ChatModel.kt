@@ -438,6 +438,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                 }
                 if (key in done) return@forEach
                 val person = eu.eurise.core.insieme.Scheda.mailPerson(g.address)
+                // Spese (tavola SpeEmail): «ho pagato» per email salda il suo debito nel gruppo.
+                if (g.answer.state == eu.eurise.core.insieme.Scheda.State.Paid) expensePaidByMail(g.id)
                 // Faccenda: «fatto» per email passa il turno, se toccava a lui.
                 val choreId = g.id.substringBeforeLast('-')
                 data.values.firstOrNull { r -> Faccende.decode(r.state[Faccende.TYPE]).any { it.id == choreId && it.by == me } }?.let { r ->
@@ -465,6 +467,315 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
             prefs.edit().putStringSet(account.name, done.toList().takeLast(300).toSet()).apply()
             if (updates.isNotEmpty()) { val next = Affida.update(given, updates); if (next != given) saveGiven(next) }
         }
+    }
+
+    // --- Disponibilità (tavola InsDisponibilita), Condividi (InsCondividi), agenda con l'assistente (InsAssistente) ---
+
+    private val zone get() = java.time.ZoneId.systemDefault()
+
+    /** Gli orari liberi della settimana prossima dal calendario del telefono (fuori dal thread principale). */
+    fun freeSlots(durationMin: Int, done: (List<eu.eurise.core.insieme.Disponibilita.Slot>) -> Unit) {
+        scope.launch {
+            val from = eu.eurise.core.insieme.Disponibilita.nextWeek(java.time.LocalDate.now())
+            val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            val slots = withContext(Dispatchers.IO) {
+                val busy = eu.eurise.core.insieme.Agenda.busy(context, start, start + 7 * 86_400_000L)
+                eu.eurise.core.insieme.Disponibilita.free(busy, from, 5, durationMin, zone, System.currentTimeMillis())
+            }
+            done(slots)
+        }
+    }
+
+    /** Manda gli orari scelti: all'altro arrivano solo quelli; scade fra 7 giorni o quando sceglie. */
+    fun sendSlots(roomId: String, durationMin: Int, slots: List<eu.eurise.core.insieme.Disponibilita.Slot>, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        if (slots.isEmpty()) return
+        val card = eu.eurise.core.insieme.Scheda.Card("o" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Orari,
+            context.getString(R.string.di_card_title, nameOf(me).substringBefore(' '), durationLabel(durationMin)),
+            dueAt = System.currentTimeMillis() + 7 * 86_400_000L, from = nameOf(me).substringBefore(' '),
+            options = slots.map { eu.eurise.core.insieme.Disponibilita.label(it.start, zone) }, times = slots.map { it.start }, durationMin = durationMin,
+            origin = "chat:$roomId")
+        sendContent(roomId, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text, failed)
+    }
+
+    fun durationLabel(min: Int): String = if (min < 60) context.getString(R.string.di_min, min) else context.getString(R.string.di_hours, min / 60)
+
+    /** Scrive un appuntamento nel calendario (o apre il Calendario già compilato, se manca il permesso). */
+    fun toCalendar(title: String, start: Long, end: Long, place: String, note: String, open: (android.content.Intent) -> Unit, done: (Boolean) -> Unit = {}) {
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.insert(context, title, start, end, place, note) }
+            if (!ok) open(eu.eurise.core.insieme.Agenda.insertIntent(title, start, end, place, note))
+            done(ok)
+        }
+    }
+
+    private val slotPrefs get() = context.getSharedPreferences("chat_slots", Context.MODE_PRIVATE)
+
+    /** Chi ha mandato gli orari: quando l'altro sceglie, l'appuntamento entra da solo nel calendario (una volta) e si dice in chat. */
+    private fun refreshSlots() {
+        val me = session?.userId ?: return
+        val done = slotPrefs.getStringSet(account.name, emptySet()).orEmpty()
+        val todo = mutableListOf<Triple<String, Event, eu.eurise.core.insieme.Scheda.Card>>()
+        data.keys.forEach { roomId ->
+            timeline(roomId).forEach { e ->
+                if (e.sender != me || e.data?.contains(eu.eurise.core.insieme.Scheda.FIELD) != true) return@forEach
+                val card = eu.eurise.core.insieme.Scheda.card(runCatching { JSONObject(e.data) }.getOrNull()) ?: return@forEach
+                if (card.kind != eu.eurise.core.insieme.Scheda.Kind.Orari || card.id in done) return@forEach
+                todo += Triple(roomId, e, card)
+            }
+        }
+        if (todo.isEmpty()) return
+        val added = mutableSetOf<String>()
+        todo.forEach { (roomId, e, card) ->
+            val (who, a) = cardAnswers(roomId, e, card.id).entries.firstOrNull { it.key != me && !it.value.choices.isNullOrEmpty() }?.toPair() ?: return@forEach
+            val i = a.choices!!.min()
+            val start = card.times.getOrNull(i) ?: return@forEach
+            val end = start + card.durationMin * 60_000L
+            added += card.id
+            scope.launch {
+                withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.insert(context, context.getString(R.string.di_event_title, nameOf(who)), start, end) }
+            }
+            sendContent(roomId, JSONObject().put("msgtype", "m.notice").put("body", context.getString(R.string.di_fixed, nameOf(who).substringBefore(' '),
+                eu.eurise.core.insieme.Disponibilita.range(start, end, zone))), Event.Kind.Notice, {})
+        }
+        if (added.isNotEmpty()) slotPrefs.edit().putStringSet(account.name, done + added).apply()
+    }
+
+    /**
+     * Condividi con… un appuntamento: a ognuno nella sua chat a due (con «Aggiungi al mio calendario») e per email a chi non usa
+     * Eurise. [edit]: vede o modifica (lo dice la scheda; la modifica vera passa dal calendario condiviso sul cloud).
+     */
+    fun shareEvent(item: eu.eurise.core.insieme.Agenda.Item, to: List<Pair<String, String>>, emails: List<String>, edit: Boolean, failed: (Int) -> Unit) {
+        val me = session?.userId ?: return
+        val card = eu.eurise.core.insieme.Scheda.Card("s" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Condividi, item.title.ifBlank { "—" },
+            item.place, eu.eurise.core.insieme.Disponibilita.range(item.start, item.end, zone), item.start, nameOf(me).substringBefore(' '),
+            edit = edit, endAt = item.end, origin = "chat:share")
+        to.forEach { (room, _) -> sendContent(room, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text) { failed(R.string.ch_send_failed) } }
+        if (emails.isNotEmpty()) scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { eu.eurise.core.insieme.SchedaContract.send(context, card, emails) }.getOrDefault(false) }
+            if (!ok) failed(R.string.af_mail_failed)
+        }
+    }
+
+    /** Gli impegni dei prossimi 14 giorni, per sceglierne uno da condividere. */
+    fun upcoming(done: (List<eu.eurise.core.insieme.Agenda.Item>) -> Unit) {
+        scope.launch {
+            val now = System.currentTimeMillis()
+            done(withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.items(context, now, now + 14 * 86_400_000L).filter { !it.allDay }.take(40) })
+        }
+    }
+
+    // Agenda condivisa con l'assistente.
+
+    private val agendaPrefs get() = context.getSharedPreferences("chat_agenda", Context.MODE_PRIVATE)
+
+    /** Per ogni chat a due in cui la condividi, cosa esce di ogni calendario. */
+    fun agendaModes(roomId: String): Map<Long, Assistente.Mode> = Assistente.decodeModes(agendaPrefs.getString(account.name + "|" + roomId, null))
+
+    fun calendars(done: (List<eu.eurise.core.insieme.Agenda.Cal>) -> Unit) { scope.launch { done(withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.calendars(context) }) } }
+
+    /** Accende, cambia o spegne (tutto «mai») l'agenda condivisa nella chat a due. */
+    fun shareAgenda(roomId: String, modes: Map<Long, Assistente.Mode>) {
+        val shown = modes.filterValues { it != Assistente.Mode.Never }
+        agendaPrefs.edit().apply { if (shown.isEmpty()) remove(account.name + "|" + roomId) else putString(account.name + "|" + roomId, Assistente.encodeModes(shown)) }.apply()
+        publishAgenda(roomId)
+    }
+
+    private var agendaAt = 0L
+
+    /** Mette (o aggiorna) gli occupati nello stato della stanza; vuoto se spenta. */
+    private fun publishAgenda(roomId: String) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val modes = agendaModes(roomId)
+        scope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val content = if (modes.isEmpty()) JSONObject() else {
+                val items = eu.eurise.core.insieme.Agenda.items(context, now, now + Assistente.DAYS * 86_400_000L, modes.keys)
+                    .filter { it.busy && !it.allDay }.map { it.calendar to eu.eurise.core.insieme.Disponibilita.Busy(it.start, it.end, it.title) }
+                Assistente.encode(Assistente.Shared(now, now, now + Assistente.DAYS * 86_400_000L, Assistente.blocks(items, modes)))
+            }
+            runCatching { c.setState(roomId, Assistente.TYPE, content, me) }
+        }
+    }
+
+    /** Ogni mezz'ora, ad app aperta: l'agenda condivisa si aggiorna. */
+    private fun refreshAgendas() {
+        val now = System.currentTimeMillis()
+        if (now - agendaAt < 30 * 60_000L) return
+        agendaAt = now
+        val prefix = account.name + "|"
+        agendaPrefs.all.keys.filter { it.startsWith(prefix) }.map { it.removePrefix(prefix) }.filter { data.containsKey(it) }.forEach { publishAgenda(it) }
+    }
+
+    /** L'agenda che l'altro condivide con te in questa chat a due, se lo fa. */
+    fun peerAgenda(roomId: String): Assistente.Shared? {
+        val peer = peerOf(roomId) ?: return null
+        return Assistente.decode(data[roomId]?.state?.get(Assistente.TYPE + "|" + peer))?.takeIf { it.blocks.isNotEmpty() || it.updated > 0 }
+    }
+
+    /** La segreteria propone un appuntamento: arriva come scheda da confermare con un tocco. */
+    fun propose(roomId: String, title: String, note: String, start: Long, end: Long, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val card = eu.eurise.core.insieme.Scheda.Card("p" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Proposta, title.trim(), note.trim(),
+            eu.eurise.core.insieme.Disponibilita.range(start, end, zone), start, nameOf(me).substringBefore(' '), endAt = end, origin = "chat:$roomId")
+        sendContent(roomId, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), Event.Kind.Text, failed)
+    }
+
+    // --- Elenchi condivisi (tavola InsElenchi) ---
+
+    fun lists(roomId: String): List<Elenchi.Lista> = Elenchi.decode(data[roomId]?.state?.get(Elenchi.TYPE)).ifEmpty {
+        Elenchi.defaults(listOf(context.getString(R.string.el_spesa), context.getString(R.string.el_casa), context.getString(R.string.el_ufficio)))
+    }
+
+    fun saveLists(roomId: String, lists: List<Elenchi.Lista>, failed: () -> Unit) {
+        val c = client ?: return
+        val content = Elenchi.encode(lists, System.currentTimeMillis())
+        val s = data[roomId]
+        val before = s?.state?.get(Elenchi.TYPE)
+        s?.state?.set(Elenchi.TYPE, content)
+        relationsTick++
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { c.setState(roomId, Elenchi.TYPE, content) }.isSuccess }
+            if (!ok) { if (before != null) s?.state?.set(Elenchi.TYPE, before) else s?.state?.remove(Elenchi.TYPE); relationsTick++; failed() }
+        }
+    }
+
+    /** L'elenco a chi non usa la Chat, per email (le voci da fare). */
+    fun mailList(roomId: String, l: Elenchi.Lista, emails: List<String>, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val card = eu.eurise.core.insieme.Scheda.Card("e" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Elenco, l.name,
+            l.items.filter { it.doneAt == 0L }.joinToString("\n") { "☐ " + it.text }, from = nameOf(me).substringBefore(' '), origin = "chat:$roomId")
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { eu.eurise.core.insieme.SchedaContract.send(context, card, emails) }.getOrDefault(false) }
+            if (!ok) failed()
+        }
+    }
+
+    // --- La nota della riunione (tavola InsRiunione) ---
+
+    data class Meeting(val title: String, val text: String, val by: String, val at: Long)
+
+    private val MEETING = "eu.eurise.meeting"
+
+    fun meeting(roomId: String): Meeting? = data[roomId]?.state?.get(MEETING)?.let { o ->
+        Meeting(o.optString("title"), o.optString("text"), o.optString("by"), o.optLong("at")).takeIf { it.text.isNotBlank() || it.title.isNotBlank() }
+    }
+
+    fun saveMeeting(roomId: String, title: String, text: String, failed: () -> Unit) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val content = JSONObject().put("title", title.trim()).put("text", text).put("by", me).put("at", System.currentTimeMillis())
+        data[roomId]?.state?.set(MEETING, content)
+        relationsTick++
+        scope.launch { if (withContext(Dispatchers.IO) { runCatching { c.setState(roomId, MEETING, content) }.isFailure }) failed() }
+    }
+
+    /** «Assegna tutte»: ogni cosa trovata nella nota diventa «Affida a…» nel gruppo, rivolta alla sua persona, con la scadenza. */
+    fun assignMeeting(roomId: String, tasks: List<eu.eurise.core.insieme.Riunione.Task>, failed: () -> Unit) {
+        val c = client ?: return
+        val me = session?.userId ?: return
+        val title = meeting(roomId)?.title.orEmpty()
+        tasks.filter { it.who != null }.forEach { t ->
+            val who = t.who!!
+            val due = t.due?.atTime(12, 0)
+            val dueLabel = due?.let { dueLabel(it) }.orEmpty()
+            val id = "c" + System.nanoTime()
+            val card = eu.eurise.core.insieme.Scheda.Card(id, eu.eurise.core.insieme.Scheda.Kind.Affida, t.text, if (title.isNotBlank()) context.getString(R.string.ri_from_note, title) else "",
+                dueLabel, due?.let { Programma.toMs(it) } ?: 0L, nameOf(me).substringBefore(' '), origin = "chat:affida", to = who)
+            if (who == me) {
+                // Le tue: direttamente nelle Attività, con la scadenza.
+                val (hubPkg, permission) = hub()
+                eu.eurise.core.suite.HubBridge.send(context, hubPkg, permission, eu.eurise.core.suite.HubBridge.ACTION_TASK, t.text, due = t.due,
+                    notes = card.note.ifBlank { null })
+                return@forEach
+            }
+            val encrypted = data[roomId]?.encrypted == true
+            scope.launch {
+                val ev = withContext(Dispatchers.IO) {
+                    runCatching { ProgrammaStore.sendNow(c, if (encrypted) cryptoFor(c.session) else null, roomId, eu.eurise.core.insieme.Scheda.content(card, cardBody(card)), encrypted) }.getOrNull()
+                }
+                if (ev == null) { failed(); return@launch }
+                saveGiven(given + Affida.Given(id, account.name, roomId, who, nameOf(who).substringBefore(' '), t.text, dueLabel, System.currentTimeMillis(), ev, 86_400_000L))
+            }
+        }
+    }
+
+    // --- La cartella di squadra (tavola InsSquadra) ---
+
+    private val TEAM = "eu.eurise.team"
+
+    fun teamFolder(roomId: String): String? = data[roomId]?.state?.get(TEAM)?.optString("url")?.takeIf { it.startsWith("https://") }
+
+    fun setTeamFolder(roomId: String, url: String, failed: () -> Unit) {
+        val c = client ?: return
+        val content = JSONObject().put("url", url.trim())
+        data[roomId]?.state?.set(TEAM, content)
+        relationsTick++
+        scope.launch { if (withContext(Dispatchers.IO) { runCatching { c.setState(roomId, TEAM, content) }.isFailure }) failed() }
+    }
+
+    // --- Spese dall'email e per email (tavola SpeEmail) ---
+
+    /** Una spesa arrivata dall'Email (importo, cosa): si sceglie il gruppo e si apre «Nuova spesa» già compilata. */
+    var pendingExpense by mutableStateOf<Pair<Long, String>?>(null)
+
+    private val EXPENSE_PEOPLE = "eu.eurise.expense.people"
+
+    /** Chi partecipa alle spese del gruppo senza la Chat: persone «mailto:», ricevono il riepilogo per email. */
+    fun expenseMailPeople(roomId: String): List<String> = data[roomId]?.state?.get(EXPENSE_PEOPLE)?.optJSONArray("people")?.let { a ->
+        (0 until a.length()).map { a.optString(it) }.filter { eu.eurise.core.insieme.Scheda.isMailPerson(it) }
+    }.orEmpty()
+
+    fun addExpenseMailPerson(roomId: String, address: String, failed: () -> Unit) {
+        val c = client ?: return
+        val p = eu.eurise.core.insieme.Scheda.mailPerson(address)
+        val list = (expenseMailPeople(roomId) + p).distinct()
+        val content = JSONObject().put("people", org.json.JSONArray(list))
+        data[roomId]?.state?.set(EXPENSE_PEOPLE, content)
+        relationsTick++
+        scope.launch { if (withContext(Dispatchers.IO) { runCatching { c.setState(roomId, EXPENSE_PEOPLE, content) }.isFailure }) failed() }
+    }
+
+    private val expenseMailPrefs get() = context.getSharedPreferences("chat_expense_mail", Context.MODE_PRIVATE)
+
+    /** Il riepilogo per email a chi non usa la Chat: l'ultima spesa, la sua quota, il saldo; risponde «ho pagato». */
+    fun mailExpenseSummary(roomId: String, failed: () -> Unit) {
+        val me = session?.userId ?: return
+        val mailPeople = expenseMailPeople(roomId)
+        if (mailPeople.isEmpty()) return
+        val expenses = expenses(roomId)
+        val people = Expenses.people(expenses, settlements(roomId), members[roomId].orEmpty() + mailPeople)
+        val last = expenses.lastOrNull()
+        val group = room(roomId)?.name.orEmpty()
+        scope.launch {
+            var ok = true
+            mailPeople.forEach { p ->
+                val address = eu.eurise.core.insieme.Scheda.mailAddress(p) ?: return@forEach
+                val bal = people.firstOrNull { it.id == p }?.balance ?: 0L
+                val id = "x" + System.nanoTime()
+                val card = eu.eurise.core.insieme.Scheda.Card(id, eu.eurise.core.insieme.Scheda.Kind.Spesa,
+                    group + (last?.let { " · " + it.title.ifBlank { "—" } + " " + Expenses.money(it.cents) } ?: ""),
+                    context.getString(when { bal < 0 -> R.string.se_you_owe; bal > 0 -> R.string.se_owed; else -> R.string.se_even }, Expenses.money(kotlin.math.abs(bal))),
+                    from = nameOf(me).substringBefore(' '), amount = last?.owed?.get(p)?.let { Expenses.money(it) }.orEmpty(), origin = "chat:spese")
+                expenseMailPrefs.edit().putString(id, roomId + "|" + p).apply()
+                ok = ok && withContext(Dispatchers.IO) { runCatching { eu.eurise.core.insieme.SchedaContract.send(context, card, listOf(address)) }.getOrDefault(false) }
+            }
+            if (!ok) failed()
+        }
+    }
+
+    /** «Ho pagato» per email: chi l'ha detto salda quello che deve a te (per conto suo). */
+    private fun expensePaidByMail(id: String) {
+        val (roomId, p) = expenseMailPrefs.getString(id, null)?.split('|', limit = 2)?.takeIf { it.size == 2 }?.let { it[0] to it[1] } ?: return
+        val people = Expenses.people(expenses(roomId), settlements(roomId), members[roomId].orEmpty() + expenseMailPeople(roomId))
+        // Un pagamento lo segna chi l'ha ricevuto: qui solo quelli verso di te (gli altri li segna chi li riceve).
+        val me = session?.userId ?: return
+        Expenses.settle(people).filter { it.from == p && it.to == me }.forEach { t ->
+            val s = Expenses.Settlement(t.from, t.to, t.cents)
+            sendSettlement(roomId, s, context.getString(R.string.se_paid_body, nameOf(p), Expenses.money(t.cents), nameOf(t.to))) {}
+        }
+        expenseMailPrefs.edit().remove(id).apply()
     }
 
     // --- Approvazioni (tavola LavApprova) ---
@@ -873,6 +1184,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                     refreshApprovals()
                     refreshGiven()
                     refreshMailAnswers()
+                    refreshSlots()
+                    refreshAgendas()
                     saveChoresSnapshot()
                     if (shareHours) publishHours(all = false)
                 }
@@ -1195,6 +1508,8 @@ class ChatModel(private val context: Context, private val scope: CoroutineScope)
                             "m.room.encryption" -> s.encrypted = true
                             // L'orario di lavoro di ognuno (tavola ChatQuandoLavora), con la chiave del suo id.
                             Orari.TYPE -> s.state[Orari.TYPE + "|" + e.optString("state_key")] = content
+                            // L'agenda condivisa con l'assistente (tavola InsAssistente), con la chiave di chi la condivide.
+                            Assistente.TYPE -> s.state[Assistente.TYPE + "|" + e.optString("state_key")] = content
                             else -> if (e.optString("state_key").isEmpty()) s.state[type] = content
                         }
                     }

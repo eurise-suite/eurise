@@ -39,10 +39,12 @@ object Scheda {
         Elenco,
         /** Il registro delle decisioni (tavola LavDecisioni). */
         Decisione,
+        /** L'agenda con l'assistente (tavola InsAssistente): un appuntamento proposto, da confermare con un tocco. */
+        Proposta,
     }
 
     /** Che cosa ha detto chi ha ricevuto la scheda. */
-    enum class State { Seen, Working, Done, Declined, Back, Yes, Late, No, Paid }
+    enum class State { Seen, Working, Done, Declined, Back, Yes, Late, No, Paid, Confirmed, Other }
 
     data class Card(
         val id: String,
@@ -62,6 +64,13 @@ object Scheda {
         val origin: String = "",
         /** Vede o modifica (per Condividi). */
         val edit: Boolean = false,
+        /** La fine, per un appuntamento ([dueAt] è l'inizio). */
+        val endAt: Long = 0,
+        /** L'inizio di ogni scelta (orari liberi), nello stesso ordine di [options]; la durata è [durationMin]. */
+        val times: List<Long> = emptyList(),
+        val durationMin: Int = 0,
+        /** In un gruppo, la persona a cui è rivolta (le altre la vedono ma non hanno i tasti); vuoto = a tutti. */
+        val to: String = "",
     )
 
     /** Una risposta: lo stato, le scelte (numeri da 0), una riga; [forWho] quando la manda qualcuno per conto di altri. */
@@ -74,6 +83,7 @@ object Scheda {
         Kind.Cena -> listOf(State.No, State.Late, State.Yes)
         Kind.Spesa, Kind.Regalo -> listOf(State.Paid)
         Kind.Condividi, Kind.Elenco, Kind.Decisione -> listOf(State.Seen)
+        Kind.Proposta -> listOf(State.Other, State.Confirmed)
         Kind.Uscita, Kind.Orari -> emptyList()
     }
 
@@ -86,14 +96,17 @@ object Scheda {
     fun toJson(c: Card): JSONObject = JSONObject().put("id", c.id).put("kind", c.kind.name).put("title", c.title.trim())
         .put("note", c.note.trim()).put("due", c.due).put("dueAt", c.dueAt).put("from", c.from).put("fromAddress", c.fromAddress)
         .put("options", JSONArray(c.options)).put("amount", c.amount).put("link", c.link).put("origin", c.origin).put("edit", c.edit)
+        .put("endAt", c.endAt).put("times", JSONArray(c.times)).put("duration", c.durationMin).put("to", c.to)
 
     fun fromJson(o: JSONObject?): Card? {
         o ?: return null
         val id = o.optString("id").ifEmpty { return null }
         val kind = runCatching { Kind.valueOf(o.optString("kind")) }.getOrNull() ?: return null
         val opts = o.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } }.orEmpty()
+        val times = o.optJSONArray("times")?.let { a -> (0 until a.length()).map { a.optLong(it) } }.orEmpty()
         return Card(id, kind, o.optString("title"), o.optString("note"), o.optString("due"), o.optLong("dueAt"), o.optString("from"),
-            o.optString("fromAddress"), opts, o.optString("amount"), o.optString("link"), o.optString("origin"), o.optBoolean("edit"))
+            o.optString("fromAddress"), opts, o.optString("amount"), o.optString("link"), o.optString("origin"), o.optBoolean("edit"),
+            o.optLong("endAt"), times, o.optInt("duration"), o.optString("to"))
             .takeIf { it.title.isNotBlank() }
     }
 

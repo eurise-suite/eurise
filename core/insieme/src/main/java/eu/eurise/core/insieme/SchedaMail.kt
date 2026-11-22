@@ -39,18 +39,18 @@ object SchedaMail {
                 Kind.Affida -> R.string.ins_tag_affida; Kind.Faccenda -> R.string.ins_tag_faccenda; Kind.Uscita -> R.string.ins_tag_uscita
                 Kind.Orari -> R.string.ins_tag_orari; Kind.Spesa -> R.string.ins_tag_spesa; Kind.Condividi -> R.string.ins_tag_condividi
                 Kind.Cena -> R.string.ins_tag_cena; Kind.Regalo -> R.string.ins_tag_regalo; Kind.Elenco -> R.string.ins_tag_elenco
-                Kind.Decisione -> R.string.ins_tag_decisione
+                Kind.Decisione -> R.string.ins_tag_decisione; Kind.Proposta -> R.string.ins_tag_proposta
             }) },
             intro = { k, from -> r.getString(when (k) {
                 Kind.Affida -> R.string.ins_intro_affida; Kind.Faccenda -> R.string.ins_intro_faccenda; Kind.Uscita -> R.string.ins_intro_uscita
                 Kind.Orari -> R.string.ins_intro_orari; Kind.Spesa -> R.string.ins_intro_spesa; Kind.Condividi -> R.string.ins_intro_condividi
                 Kind.Cena -> R.string.ins_intro_cena; Kind.Regalo -> R.string.ins_intro_regalo; Kind.Elenco -> R.string.ins_intro_elenco
-                Kind.Decisione -> R.string.ins_intro_decisione
+                Kind.Decisione -> R.string.ins_intro_decisione; Kind.Proposta -> R.string.ins_intro_proposta
             }, from) },
             howTo = { k -> s(when (k) {
                 Kind.Affida -> R.string.ins_how_affida; Kind.Faccenda -> R.string.ins_how_faccenda; Kind.Uscita -> R.string.ins_how_uscita
                 Kind.Orari -> R.string.ins_how_orari; Kind.Spesa, Kind.Regalo -> R.string.ins_how_spesa; Kind.Cena -> R.string.ins_how_cena
-                Kind.Condividi, Kind.Elenco, Kind.Decisione -> R.string.ins_how_vista
+                Kind.Condividi, Kind.Elenco, Kind.Decisione -> R.string.ins_how_vista; Kind.Proposta -> R.string.ins_how_proposta
             }) },
             button = { st -> s(label(st)) },
             reply = { st -> s(replyWord(st)) },
@@ -67,6 +67,7 @@ object SchedaMail {
         State.Seen -> R.string.ins_st_seen; State.Working -> R.string.ins_st_working; State.Done -> R.string.ins_st_done
         State.Declined -> R.string.ins_st_declined; State.Back -> R.string.ins_st_back; State.Yes -> R.string.ins_st_yes
         State.Late -> R.string.ins_st_late; State.No -> R.string.ins_st_no; State.Paid -> R.string.ins_st_paid
+        State.Confirmed -> R.string.ins_st_confirmed; State.Other -> R.string.ins_st_other
     }
 
     /** La parola che il pulsante scrive nella risposta (e che [Risposte] riconosce). */
@@ -74,6 +75,7 @@ object SchedaMail {
         State.Seen -> R.string.ins_w_seen; State.Working -> R.string.ins_w_working; State.Done -> R.string.ins_w_done
         State.Declined -> R.string.ins_w_declined; State.Back -> R.string.ins_w_seen; State.Yes -> R.string.ins_w_yes
         State.Late -> R.string.ins_w_late; State.No -> R.string.ins_w_no; State.Paid -> R.string.ins_w_paid
+        State.Confirmed -> R.string.ins_w_confirmed; State.Other -> R.string.ins_w_other
     }
 
     fun subject(c: Card, w: Words): String = "[" + w.tag(c.kind) + "] " + c.title.trim() + (if (c.due.isNotBlank()) " · " + c.due else "")

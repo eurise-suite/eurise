@@ -132,4 +132,70 @@ class SchedaTest {
         assertEquals(list, Ruoli.decode(Ruoli.encode(list)))
         assertEquals(listOf("k2"), Ruoli.set(list, "k1", "", null, null, emptyList()).map { it.key })
     }
+
+    @Test fun freeSlots() {
+        val zone = java.time.ZoneId.of("Europe/Rome")
+        val monday = java.time.LocalDate.of(2026, 11, 23)
+        assertEquals(monday, Disponibilita.nextWeek(java.time.LocalDate.of(2026, 11, 19)))
+        fun ms(d: java.time.LocalDate, h: Int, m: Int = 0) = d.atTime(h, m).atZone(zone).toInstant().toEpochMilli()
+        // Lunedì occupato 9–10:30 e tutto il pomeriggio; martedì libero.
+        val busy = listOf(Disponibilita.Busy(ms(monday, 9), ms(monday, 10, 30)), Disponibilita.Busy(ms(monday, 14), ms(monday, 19)))
+        val slots = Disponibilita.free(busy, monday, 2, 60, zone, now = 0)
+        assertEquals(listOf(ms(monday, 10, 30), ms(monday.plusDays(1), 9), ms(monday.plusDays(1), 14, 30)), slots.map { it.start })
+        assertTrue(slots.all { it.end - it.start == 3_600_000L })
+        assertEquals("Lun 23 · 10:30", Disponibilita.label(slots[0].start, zone))
+        // Sabato e domenica restano fuori; mai prima di adesso.
+        assertTrue(Disponibilita.free(emptyList(), monday.plusDays(5), 2, 30, zone, now = 0).isEmpty())
+        assertTrue(Disponibilita.free(emptyList(), monday, 1, 30, zone, now = ms(monday, 20)).isEmpty())
+    }
+
+    @Test fun ics() {
+        val text = Ics.event("u1", "Incontro, progetto; fase 1", 1_795_000_000_000L, 1_795_003_600_000L, "Via dei Mille 4", "riga\nseconda", "mario@x.it", "anna@x.it", now = 0)
+        assertTrue(text.startsWith("BEGIN:VCALENDAR\r\n"))
+        assertTrue(text.contains("SUMMARY:Incontro\\, progetto\\; fase 1\r\n"))
+        assertTrue(text.contains("UID:u1@eurise"))
+        assertTrue(text.contains("DTSTAMP:19700101T000000Z"))
+        assertTrue(text.contains("ATTENDEE;RSVP=FALSE;PARTSTAT=ACCEPTED:mailto:anna@x.it"))
+        assertTrue(text.lines().all { it.trimEnd('\r').length <= 75 })
+    }
+
+    @Test fun proposal() {
+        assertEquals(State.Confirmed, Risposte.read(Kind.Proposta, "Confermo, grazie")?.state)
+        assertEquals(State.Other, Risposte.read(Kind.Proposta, "Altro orario per favore")?.state)
+    }
+
+    @Test fun meeting() {
+        val today = java.time.LocalDate.of(2026, 11, 19) // giovedì
+        val people = listOf("@paolo:x" to "Paolo Monti", "@giulia:x" to "Giulia Bassi", "@gianni:x" to "Gianni Rossi")
+        val note = """Presenti: Ing. Ferri, Giulia, Paolo, io
+            |Cucina
+            |Il cliente conferma il top in quarzo.
+            |@Paolo manda il computo aggiornato ven 20
+            |@Giulia: chiede i campioni al fornitore lun 23
+            |@io fisso il sopralluogo con i Rossi domani
+            |@Gi prova
+            |Decidiamo che il top è in quarzo""".trimMargin()
+        val t = Riunione.tasks(note, people, "@me:x", today)
+        assertEquals(4, t.size)
+        assertEquals("@paolo:x", t[0].who)
+        assertEquals("Manda il computo aggiornato", t[0].text)
+        assertEquals(java.time.LocalDate.of(2026, 11, 20), t[0].due)
+        assertEquals("@giulia:x", t[1].who)
+        assertEquals(java.time.LocalDate.of(2026, 11, 23), t[1].due)
+        assertEquals("@me:x", t[2].who)
+        assertEquals(today.plusDays(1), t[2].due)
+        assertNull(t[3].who) // «Gi»: Giulia o Gianni, non si sa
+        assertEquals(listOf("Il top è in quarzo"), Riunione.decisions(note))
+        assertEquals("Manda il PDF" to java.time.LocalDate.of(2026, 12, 2), Riunione.dueOf("Manda il PDF entro 2/12", today))
+    }
+
+    @Test fun amounts() {
+        assertEquals(52800L, Importi.total("Prenotazione MB-48211 confermata. Livorno → Olbia, 4 passeggeri, auto. Totale pagato:\n528,00 €."))
+        assertEquals(128400L, Importi.total("Riepilogo\nCasa 1.084,00 €\nPulizie 200,00 €\nTotale: € 1.284,00"))
+        assertEquals(3850L, Importi.total("Trattoria Il Ponte\nCoperto 2,00 EUR\nIMPORTO 38,50 EUR"))
+        assertEquals(1200L, Importi.total("Uscita didattica, quota 12 €, autorizzazione entro il 25"))
+        assertEquals(null, Importi.total("Ci vediamo il 25 alle 15"))
+        assertEquals(52800L, Importi.cents("528.00"))
+        assertEquals(null, Importi.cents("12,5"))
+    }
 }

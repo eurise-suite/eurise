@@ -63,6 +63,11 @@ object Risposte {
                 else -> null
             }
             Kind.Spesa, Kind.Regalo -> if (any(head, paid) || any(head, done)) State.Paid else null
+            Kind.Proposta -> when {
+                any(head, listOf("altro orario", "un altro orario", "non va bene", "non posso", "no", "spostiamo")) -> State.Other
+                any(head, listOf("confermo", "conferma", "confermato", "va bene", "ok", "sì", "si", "perfetto", "d'accordo")) -> State.Confirmed
+                else -> null
+            }
             else -> when {
                 any(head, declined) -> State.Declined
                 head.first() == "non" -> null // «non ancora», «non l'ho fatto»: non è una risposta dei tasti

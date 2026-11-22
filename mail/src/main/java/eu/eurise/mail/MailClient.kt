@@ -223,14 +223,15 @@ class MailClient(private val account: Account) {
         if (cc.isNotBlank()) msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc, false))
         msg.setSubject(subject, "UTF-8")
         // Le schede (tavola InsStessaScheda): testo semplice e, accanto, l'HTML con i pulsanti.
-        if (html != null && files.isEmpty()) msg.setContent(javax.mail.internet.MimeMultipart("alternative").apply {
+        val alternative = html?.let { h -> javax.mail.internet.MimeMultipart("alternative").apply {
             addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(body, "UTF-8") })
-            addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(html, "UTF-8", "html") })
-        })
+            addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(h, "UTF-8", "html") })
+        } }
+        if (alternative != null && files.isEmpty()) msg.setContent(alternative)
         else if (files.isEmpty()) msg.setText(body, "UTF-8")
         else {
             val mixed = javax.mail.internet.MimeMultipart()
-            mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply { setText(body, "UTF-8") })
+            mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply { if (alternative != null) setContent(alternative) else setText(body, "UTF-8") })
             files.forEach { f ->
                 mixed.addBodyPart(javax.mail.internet.MimeBodyPart().apply {
                     attachFile(f)

@@ -152,6 +152,45 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    /** Gli orari liberi della settimana prossima dal calendario (tavola InsDisponibilitaMail). */
+    fun freeSlots(durationMin: Int, done: (List<eu.eurise.core.insieme.Disponibilita.Slot>) -> Unit) {
+        scope.launch {
+            val zone = java.time.ZoneId.systemDefault()
+            val from = eu.eurise.core.insieme.Disponibilita.nextWeek(java.time.LocalDate.now())
+            val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            done(withContext(Dispatchers.IO) {
+                eu.eurise.core.insieme.Disponibilita.free(eu.eurise.core.insieme.Agenda.busy(context, start, start + 7 * 86_400_000L), from, 5, durationMin, zone,
+                    System.currentTimeMillis())
+            })
+        }
+    }
+
+    /** Gli impegni dei prossimi 14 giorni (tavola InsCondividi). */
+    fun upcoming(done: (List<eu.eurise.core.insieme.Agenda.Item>) -> Unit) {
+        scope.launch {
+            val now = System.currentTimeMillis()
+            done(withContext(Dispatchers.IO) { eu.eurise.core.insieme.Agenda.items(context, now, now + 14 * 86_400_000L).filter { !it.allDay }.take(40) })
+        }
+    }
+
+    /** Le cose da fare della nota (tavola InsRiunione) a ognuno per email, come «Affida»; [people]: (indirizzo, nome). */
+    fun assignTasks(from: Account, tasks: List<eu.eurise.core.insieme.Riunione.Task>, title: String, done: (Int) -> Unit) {
+        val zone = java.time.ZoneId.systemDefault()
+        val fmt = java.time.format.DateTimeFormatter.ofPattern("EEE d", java.util.Locale.getDefault())
+        scope.launch {
+            val n = withContext(Dispatchers.IO) {
+                tasks.filter { it.who != null && it.who != from.email }.count { t ->
+                    val card = eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), eu.eurise.core.insieme.Scheda.Kind.Affida, t.text,
+                        if (title.isNotBlank()) context.getString(R.string.ml_cd_from_note, title) else "", t.due?.format(fmt).orEmpty(),
+                        t.due?.atTime(12, 0)?.atZone(zone)?.toInstant()?.toEpochMilli() ?: 0L, from.name, from.email, origin = "mail")
+                    runCatching { CardStore.send(context, from, card, listOf(t.who!!)) }.getOrDefault(false)
+                }
+            }
+            reloadCards()
+            done(n)
+        }
+    }
+
     /** «Sollecita»: la stessa scheda di nuovo a chi non ha risposto. */
     fun remindCard(id: String, done: (Boolean) -> Unit) {
         val s = cards.firstOrNull { it.card.id == id } ?: return

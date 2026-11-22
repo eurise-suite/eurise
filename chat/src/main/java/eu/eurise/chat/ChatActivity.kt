@@ -106,6 +106,12 @@ class ChatActivity : ComponentActivity(), ChatActions {
             model.studioOpen(intent.getStringExtra(eu.eurise.core.studio.StudioContract.EXTRA_PATIENT))
             return
         }
+        // Da Email: «Aggiungi alle spese di un gruppo» (tavola SpeEmail): si sceglie il gruppo, la spesa è già scritta.
+        if (intent?.action == eu.eurise.core.insieme.SchedaContract.ACTION_ADD_EXPENSE) {
+            val cents = intent.getLongExtra(eu.eurise.core.insieme.SchedaContract.EXTRA_CENTS, 0L)
+            if (cents > 0) model.pendingExpense = cents to intent.getStringExtra(eu.eurise.core.insieme.SchedaContract.EXTRA_TITLE).orEmpty().take(80)
+            return
+        }
         // Dalla scheda della Rubrica: «Invita sulla Chat» (tavola ChatInvita).
         if (intent?.action == eu.eurise.core.suite.PeopleContract.ACTION_INVITE) {
             val P = eu.eurise.core.suite.PeopleContract

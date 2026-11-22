@@ -90,6 +90,8 @@ interface MailActions {
     fun toast(text: String)
     fun text(id: Int): String
     fun askNotifications()
+    /** Il permesso del calendario (Disponibilità, appuntamenti condivisi); true se c'è. */
+    fun askCalendar(done: (Boolean) -> Unit)
     fun finish()
     /** Apre un'altra app (Calendario, Rubrica, Telefono, Mappe…); falso se nessuna lo sa fare. */
     fun start(intent: android.content.Intent?): Boolean
@@ -356,6 +358,8 @@ private fun Reader(model: MailModel, actions: MailActions, onForward: (Opened) -
             if (MailApprovals.isRequest(o.summary.subject) && model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) ApprovalAnswer(model, actions, o)
             // Una scheda ricevuta (tavola InsStessaScheda): gli stessi tasti della Chat.
             if (model.accounts.none { it.email.equals(o.summary.fromAddress, true) }) CardAnswer(model, actions, o)
+            // Spese dall'email (tavola SpeEmail): biglietti e ricevute nelle spese di un gruppo della Chat.
+            ExpenseFromMail(actions, o)
             if (o.attachments.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     o.attachments.forEach { a ->
@@ -518,6 +522,16 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
     var cardKind by remember { mutableStateOf<eu.eurise.core.insieme.Scheda.Kind?>(null) }
     var cardDue by remember { mutableStateOf<Pair<String, Long>?>(null) }
     val cardOptions = remember { androidx.compose.runtime.mutableStateListOf("", "", "") }
+    // Disponibilità (tavola InsDisponibilitaMail) e Appuntamento (tavola InsCondividi).
+    var slotDuration by remember { mutableStateOf(60) }
+    var slots by remember { mutableStateOf<List<eu.eurise.core.insieme.Disponibilita.Slot>?>(null) }
+    val slotsOff = remember { androidx.compose.runtime.mutableStateListOf<Long>() }
+    var event by remember { mutableStateOf<eu.eurise.core.insieme.Agenda.Item?>(null) }
+    // La nota della riunione (tavola InsRiunione): le righe «@Paolo cosa ven 22».
+    val mine = model.accounts.map { it.email.lowercase() }.toSet()
+    val known = remember(model.messages.size) { MailBalls.people(model.messages, mine, max = 40) }
+    val tasks = remember(body, known.size) { eu.eurise.core.insieme.Riunione.tasks(body, known.map { it.first to it.second }, from?.email.orEmpty(), java.time.LocalDate.now()) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val needTitle = stringResource(R.string.ml_cd_need_title)
     val sent = stringResource(R.string.ml_sent)
     val failed = stringResource(R.string.ml_send_failed)
@@ -541,13 +555,30 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                         // Approvazioni (tavola LavApprova): l'oggetto diventa «Richiesta di approvazione: …».
                         if (approval && subject.isNotBlank()) model.askApproval(account, to, subject, body, files.toList(), after)
                         else if (cardKind != null) {
-                            if (subject.isBlank()) { sending = false; return@clickable actions.toast(needTitle) }
+                            if (subject.isBlank() && cardKind != eu.eurise.core.insieme.Scheda.Kind.Condividi) { sending = false; return@clickable actions.toast(needTitle) }
                             val k = cardKind!!
                             val opts = cardOptions.map { it.trim() }.filter { it.isNotEmpty() }
                             if (k == eu.eurise.core.insieme.Scheda.Kind.Uscita && opts.size < 2) { sending = false; return@clickable actions.toast(needTitle) }
-                            model.sendCard(account, to, eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), k, subject.trim(), body.trim(),
-                                cardDue?.first.orEmpty(), cardDue?.second ?: 0L, account.name, account.email,
-                                if (k == eu.eurise.core.insieme.Scheda.Kind.Uscita) opts else emptyList()), after)
+                            val zone = java.time.ZoneId.systemDefault()
+                            val card = when (k) {
+                                eu.eurise.core.insieme.Scheda.Kind.Orari -> {
+                                    val chosen = slots.orEmpty().filter { it.start !in slotsOff }
+                                    if (chosen.isEmpty()) { sending = false; return@clickable }
+                                    eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), k, subject.trim(), body.trim(), dueAt = System.currentTimeMillis() + 7 * 86_400_000L,
+                                        from = account.name, fromAddress = account.email, options = chosen.map { eu.eurise.core.insieme.Disponibilita.label(it.start, zone) },
+                                        times = chosen.map { it.start }, durationMin = slotDuration)
+                                }
+                                eu.eurise.core.insieme.Scheda.Kind.Condividi -> {
+                                    val ev = event ?: run { sending = false; return@clickable }
+                                    eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), k, ev.title.ifBlank { subject.trim() },
+                                        listOf(ev.place, body.trim()).filter { it.isNotBlank() }.joinToString(" · "), eu.eurise.core.insieme.Disponibilita.range(ev.start, ev.end, zone),
+                                        ev.start, account.name, account.email, endAt = ev.end)
+                                }
+                                else -> eu.eurise.core.insieme.Scheda.Card("m" + System.nanoTime(), k, subject.trim(), body.trim(),
+                                    cardDue?.first.orEmpty(), cardDue?.second ?: 0L, account.name, account.email,
+                                    if (k == eu.eurise.core.insieme.Scheda.Kind.Uscita) opts else emptyList())
+                            }
+                            model.sendCard(account, to, card, after)
                         }
                         else model.send(account, to, cc, subject, body, start.inReplyTo, files.toList(), after)
                     }.padding(horizontal = 16.dp),
@@ -579,12 +610,31 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                     Chip(stringResource(R.string.ml_cd_uscita), selected = cardKind == eu.eurise.core.insieme.Scheda.Kind.Uscita) {
                         cardKind = if (cardKind == eu.eurise.core.insieme.Scheda.Kind.Uscita) null else eu.eurise.core.insieme.Scheda.Kind.Uscita; approval = false
                     }
+                    Chip(stringResource(R.string.ml_cd_slots), selected = cardKind == eu.eurise.core.insieme.Scheda.Kind.Orari) {
+                        cardKind = if (cardKind == eu.eurise.core.insieme.Scheda.Kind.Orari) null else eu.eurise.core.insieme.Scheda.Kind.Orari; approval = false
+                        if (cardKind != null && subject.isBlank()) subject = context.getString(R.string.ml_cd_slots_title, from?.name?.ifBlank { null } ?: from?.email.orEmpty(),
+                            durationLabel(context, slotDuration))
+                    }
+                    Chip(stringResource(R.string.ml_cd_share), selected = cardKind == eu.eurise.core.insieme.Scheda.Kind.Condividi) {
+                        cardKind = if (cardKind == eu.eurise.core.insieme.Scheda.Kind.Condividi) null else eu.eurise.core.insieme.Scheda.Kind.Condividi; approval = false
+                    }
+                    // La nota della riunione: le cose da fare trovate vanno a ognuno, ognuna nella sua email.
+                    if (tasks.any { it.who != null && it.who != from?.email }) Chip(stringResource(R.string.ml_cd_tasks, tasks.count { it.who != null && it.who != from?.email }), selected = false) {
+                        val account = from ?: return@Chip
+                        tasks.filter { it.who == null }.forEach { actions.toast(context.getString(R.string.ml_cd_tasks_unknown, "@" + it.name)) }
+                        model.assignTasks(account, tasks, subject) { n -> actions.toast(context.getString(R.string.ml_cd_tasks_done, n)) }
+                    }
                 }
                 files.forEach { u ->
                     Chip((u.lastPathSegment ?: "file").substringAfterLast('/') + "  ✕", selected = true) { files.remove(u) }
                 }
             }
-            cardKind?.let { k -> CardComposer(k, cardDue, { cardDue = it }, cardOptions) }
+            when (cardKind) {
+                eu.eurise.core.insieme.Scheda.Kind.Orari -> SlotsComposer(model, actions, slotDuration, { slotDuration = it }, slots, { slots = it }, slotsOff)
+                eu.eurise.core.insieme.Scheda.Kind.Condividi -> EventComposer(model, actions, event) { event = it }
+                null -> {}
+                else -> CardComposer(cardKind!!, cardDue, { cardDue = it }, cardOptions)
+            }
             Box(Modifier.fillMaxWidth().heightIn(min = 260.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surface).padding(14.dp)) {
                 if (body.isEmpty()) Text(stringResource(R.string.ml_body), fontSize = 15.sp, color = scheme.onSurfaceVariant)
                 BasicTextField(

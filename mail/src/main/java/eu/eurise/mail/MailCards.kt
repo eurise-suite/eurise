@@ -94,12 +94,44 @@ object CardStore {
         val subject = SchedaMail.subject(c, w)
         val text = SchedaMail.text(c, w)
         val html = SchedaMail.html(c, w, from.email)
+        // Un appuntamento (condiviso o proposto) porta con sé l'invito: si apre con qualunque calendario.
+        val withIcs = (c.kind == Scheda.Kind.Condividi || c.kind == Scheda.Kind.Proposta) && c.dueAt > 0
         val ok = to.map { it.trim() }.filter { Providers.isValidEmail(it) }.distinct().filter { addr ->
-            runCatching { MailClient(from).send(addr, "", subject, text, null, emptyList(), html) }.isSuccess
+            val files = if (withIcs) listOf(icsFile(context, c.id, c.title, c.dueAt, c.endAt.takeIf { it > c.dueAt } ?: (c.dueAt + 3_600_000L), c.note, from.email, addr)) else emptyList()
+            runCatching { MailClient(from).send(addr, "", subject, text, null, files, html) }.isSuccess
         }
         if (ok.isEmpty()) return false
         update(context) { list -> list.filterNot { it.card.id == c.id } + MailCards.Sent(c, ok, subject, System.currentTimeMillis()) }
         return true
+    }
+
+    /** L'invito di calendario da allegare, nella cache dell'app. */
+    fun icsFile(context: Context, id: String, title: String, start: Long, end: Long, place: String, organizer: String, attendee: String): java.io.File {
+        val dir = java.io.File(context.cacheDir, "inviti").apply { mkdirs() }
+        return java.io.File(dir, "invito.ics").also {
+            it.writeText(eu.eurise.core.insieme.Ics.event(id, title, start, end, place, "", organizer, attendee))
+        }
+    }
+
+    /**
+     * Disponibilità per email (tavola InsDisponibilitaMail): quando l'altro sceglie un orario, l'appuntamento è fissato. Gli arriva
+     * l'invito (.ics) e, se c'è il permesso, entra nel calendario di questo telefono. Una volta sola per scheda.
+     */
+    private fun confirmSlot(context: Context, accounts: List<Account>, card: String, address: String) {
+        val s = load(context).firstOrNull { it.card.id == card } ?: return
+        if (s.card.kind != Scheda.Kind.Orari || s.fixed >= 0 || !s.card.origin.startsWith("mail")) return
+        val i = s.answers[address.lowercase()]?.answer?.choices?.minOrNull() ?: return
+        val start = s.card.times.getOrNull(i) ?: return
+        val end = start + s.card.durationMin * 60_000L
+        val from = accounts.firstOrNull { it.email.equals(s.card.fromAddress, true) } ?: accounts.firstOrNull() ?: return
+        val label = s.card.options.getOrNull(i).orEmpty()
+        val title = s.card.title.substringBefore(" · ")
+        update(context) { l -> l.map { if (it.card.id == card) it.copy(fixed = i) else it } }
+        runCatching {
+            MailClient(from).send(address, "", MailText.replySubject(s.subject), context.getString(R.string.ml_cd_slot_fixed_body, label), null,
+                listOf(icsFile(context, s.card.id, title, start, end, "", from.email, address)))
+        }
+        eu.eurise.core.insieme.Agenda.insert(context, title, start, end, "", address)
     }
 
     /** Apre le risposte arrivate e le legge. Fuori dal thread principale. Vero se qualcosa è cambiato. */
@@ -111,6 +143,7 @@ object CardStore {
             val text = runCatching { MailClient(a).open(m.uid)?.text }.getOrNull() ?: return@forEach
             val answer = Risposte.read(s.card.kind, text, s.card.options.size)
             update(context) { MailCards.apply(it, s.card.id, m.fromAddress, m.uid, answer, m.date) }
+            if (answer?.choices?.isNotEmpty() == true) runCatching { confirmSlot(context, accounts, s.card.id, m.fromAddress) }
         }
         return true
     }

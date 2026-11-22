@@ -76,4 +76,13 @@
     <string name="ins_roles_where">I ruoli stanno nella Rubrica (Eurise Telefono): li vedono Chat ed Email, solo sul telefono.</string>
     <string name="ins_roles_missing">Per i ruoli serve Eurise Telefono (la Rubrica)</string>
     <string name="ins_roles_sees">Di base vede</string>
+
+    <!-- L'agenda con l'assistente (tavola InsAssistente). -->
+    <string name="ins_tag_proposta">Appuntamento proposto</string>
+    <string name="ins_intro_proposta">%1$s propone questo appuntamento.</string>
+    <string name="ins_how_proposta">Rispondi «confermo» e l\'appuntamento è fissato, o «altro orario».</string>
+    <string name="ins_st_confirmed">Conferma</string>
+    <string name="ins_st_other">Altro orario</string>
+    <string name="ins_w_confirmed">confermo</string>
+    <string name="ins_w_other">altro orario</string>
 </resources>

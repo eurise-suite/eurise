@@ -4,6 +4,7 @@ package eu.eurise.mail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,7 +114,11 @@ internal fun CardAnswer(model: MailModel, actions: MailActions, o: Opened) {
             }
         } else FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val list = Scheda.actions(kind)
-            list.forEachIndexed { i, st -> BallChip(context.getString(SchedaMail.label(st)), i == list.lastIndex) { go(context.getString(SchedaMail.replyWord(st))) } }
+            list.forEachIndexed { i, st -> BallChip(context.getString(SchedaMail.label(st)), i == list.lastIndex) {
+                go(context.getString(SchedaMail.replyWord(st)))
+                // Un appuntamento confermato o condiviso: l'invito è allegato all'email.
+                if (st == Scheda.State.Confirmed && o.attachments.isNotEmpty()) actions.toast(context.getString(R.string.ml_cd_invite_hint))
+            } }
         }
     }
 }
@@ -211,5 +216,82 @@ internal fun MailRolesList(model: MailModel, actions: MailActions, onClose: () -
             }
         }
         Text(stringResource(eu.eurise.core.insieme.R.string.ins_roles_where), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+    }
+}
+
+/** Disponibilità nello Scrivi (tavola InsDisponibilitaMail): la durata e gli orari liberi, che si tolgono con un tocco. */
+@Composable
+internal fun SlotsComposer(model: MailModel, actions: MailActions, duration: Int, onDuration: (Int) -> Unit,
+                           slots: List<eu.eurise.core.insieme.Disponibilita.Slot>?, onSlots: (List<eu.eurise.core.insieme.Disponibilita.Slot>?) -> Unit,
+                           off: SnapshotStateList<Long>) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { actions.askCalendar { allowed = it } }
+    androidx.compose.runtime.LaunchedEffect(duration, allowed) { if (allowed == true) { onSlots(null); model.freeSlots(duration) { onSlots(it) } } }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.08f)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.ml_cd_slots_hint), fontSize = 12.5.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.ml_cd_duration), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterVertically))
+            listOf(30, 60, 120).forEach { d -> BallChip(durationLabel(context, d), duration == d) { onDuration(d) } }
+        }
+        when {
+            allowed == false -> Text(stringResource(R.string.ml_cd_no_calendar), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            slots == null -> Text(stringResource(R.string.ml_cd_loading), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            slots.orEmpty().isEmpty() -> Text(stringResource(R.string.ml_cd_no_slots), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            else -> FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                slots.orEmpty().forEach { sl -> BallChip(eu.eurise.core.insieme.Disponibilita.label(sl.start, java.time.ZoneId.systemDefault()), sl.start !in off) {
+                    if (sl.start in off) off.remove(sl.start) else off.add(sl.start) } }
+            }
+        }
+    }
+}
+
+internal fun durationLabel(context: android.content.Context, min: Int) =
+    if (min < 60) context.getString(R.string.ml_cd_min, min) else context.getString(R.string.ml_cd_hours, min / 60)
+
+/** Un appuntamento dal calendario nello Scrivi (tavola InsCondividi): si sceglie, parte con l'invito allegato. */
+@Composable
+internal fun EventComposer(model: MailModel, actions: MailActions, chosen: eu.eurise.core.insieme.Agenda.Item?, onChoose: (eu.eurise.core.insieme.Agenda.Item?) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    var items by remember { mutableStateOf<List<eu.eurise.core.insieme.Agenda.Item>?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { actions.askCalendar { allowed = it } }
+    androidx.compose.runtime.LaunchedEffect(allowed) { if (allowed == true) model.upcoming { items = it } }
+    val zone = java.time.ZoneId.systemDefault()
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.08f)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.ml_cd_share_hint), fontSize = 12.5.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant)
+        if (chosen != null) {
+            Text(chosen.title + " · " + eu.eurise.core.insieme.Disponibilita.range(chosen.start, chosen.end, zone), fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+            BallChip(stringResource(R.string.ml_cd_pick_event), false) { onChoose(null) }
+        } else when {
+            allowed == false -> Text(stringResource(R.string.ml_cd_no_calendar), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            items == null -> Text(stringResource(R.string.ml_cd_loading), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            items!!.isEmpty() -> Text(stringResource(R.string.ml_cd_no_events), fontSize = 12.5.sp, color = scheme.onSurfaceVariant)
+            else -> items!!.forEach { x ->
+                Text(x.title.ifBlank { "—" } + " · " + eu.eurise.core.insieme.Disponibilita.range(x.start, x.end, zone), fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(scheme.surface)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { onChoose(x) }.padding(10.dp))
+            }
+        }
+    }
+}
+
+/** «Spesa di 528,00 € · Aggiungi alle spese di un gruppo»: si apre la Chat, si sceglie il gruppo, la spesa è già scritta. */
+@Composable
+internal fun ExpenseFromMail(actions: MailActions, o: Opened) {
+    val scheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val cents = remember(o.summary.uid) { eu.eurise.core.insieme.Importi.total(o.text) } ?: return
+    if (SchedaMail.ref(o.text) != null) return
+    val title = remember(o.summary.uid) { o.summary.fromName.ifBlank { o.summary.subject }.take(60) }
+    val intent = remember(o.summary.uid) { eu.eurise.core.insieme.SchedaContract.expenseIntent(context, cents, title) } ?: return
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.08f)).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.ml_se_found, "%d,%02d €".format(cents / 100, cents % 100)), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.ml_se_hint), fontSize = 11.5.sp, color = scheme.onSurfaceVariant)
+        }
+        BallChip(stringResource(R.string.ml_se_add), true) { actions.start(intent) }
     }
 }

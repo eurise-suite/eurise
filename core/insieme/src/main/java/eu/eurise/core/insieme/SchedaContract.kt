@@ -48,6 +48,20 @@ object SchedaContract {
     fun answers(context: Context, origin: String): List<Got> =
         unpack(call(context, METHOD_ANSWERS, Bundle().apply { putString(EXTRA_ORIGIN, origin) })?.getString(EXTRA_RESULT))
 
+    /** Email → Chat (tavola SpeEmail): «Aggiungi alle spese di un gruppo», con l'importo e cosa; nella Chat si sceglie il gruppo. */
+    const val ACTION_ADD_EXPENSE = "eu.eurise.action.ADD_EXPENSE"
+    const val EXTRA_CENTS = "cents"
+    const val EXTRA_TITLE = "title"
+
+    fun chatPackage(context: Context) = "eu.eurise.chat" + if (SuiteAccess.isDebug(context)) ".debug" else ""
+
+    fun expenseIntent(context: Context, cents: Long, title: String): android.content.Intent? {
+        val pkg = chatPackage(context)
+        if (!SuiteAccess.isSuitePackage(context, pkg)) return null
+        return android.content.Intent(ACTION_ADD_EXPENSE).setComponent(android.content.ComponentName(pkg, "eu.eurise.chat.ChatActivity"))
+            .putExtra(EXTRA_CENTS, cents).putExtra(EXTRA_TITLE, title).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
     fun pack(list: List<Got>): String = JSONArray().apply {
         list.forEach { g -> put(Scheda.answerToJson(g.answer).put("id", g.id).put("address", g.address).put("at", g.at)) }
     }.toString()
