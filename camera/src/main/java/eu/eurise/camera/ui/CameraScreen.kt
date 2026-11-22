@@ -13,16 +13,13 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ZoomState
-import androidx.camera.video.AudioConfig
+import androidx.camera.view.video.AudioConfig
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -238,7 +235,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 },
                 modifier = Modifier.fillMaxSize(),
             )
-            AnimatedVisibility(blink, enter = fadeIn(), exit = fadeOut()) { Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f))) }
+            if (blink) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)))
             ZoomRow(zoom, Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)) { controller.setZoomRatio(it) }
             if (!setup.capture) {
                 DestinationPill(
