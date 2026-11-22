@@ -113,39 +113,71 @@ Alfred, Eurise AI (cervello sul telefono e sul computer), Voce (Kokoro, dettatur
 - Sul server Supertonic genera circa 5 volte più svelto del parlato; **da misurare sul telefono** (tempo alla prima
   parola, scorrevolezza) e da sentire se M2 resta la preferita.
 
+## 22 novembre: passi 3, 4 e 5 (tavole AlfAzioni e AlfAvvio) · giro GIRO_COMPILA, Mappe GIRO_MAPPE
+- Il proprietario: «Ci son parecchie cose da fare, procedi». Fatto, con test in `ActionsTest` (frasi della tavola e quelle
+  vicine che devono restare com'erano):
+  - **Impegni per nome** (`Command.Change`): «sposta la riunione a giovedì», «cancella il dentista (di domani)»: cerca
+    l'impegno (il più vicino tra i prossimi) e passa alle schede dei seguiti, con conferma. Ricorrenti e calendari in sola
+    lettura: lo dice e rimanda al Calendario.
+  - **Cose fatte** (`Command.Complete`): «ho comprato il latte», «spunta il latte»: scheda «Segna come fatta»
+    (`tasks.setDone`). «Cosa devo fare oggi?» resta la domanda sui dati.
+  - **Messaggi** (`AskKind.Messages`, `Command.Reply`): «leggimi i messaggi», «chi mi ha scritto?», «cosa mi ha scritto
+    Anna?»: SMS non letti (o gli ultimi) da Eurise Messaggi con `PeopleContract` (solo app della suite), letti a voce per
+    intero; «rispondi che arrivo» a chi si è appena letto (10 minuti, `LastMessages`, solo in memoria) o a chi ha scritto
+    per ultimo; «rispondi a Marco che…». Scheda SMS di sempre.
+  - **Sveglie e timer** (`Command.Clock`): «ferma il timer», «quanto manca al timer?» subito; «spegni la sveglia di domani»
+    con conferma (salta la prossima, solo se è dell'Orologio di Eurise). Orologio: `ClockContract.ACTION_STOP_TIMERS` nel
+    `SuiteReceiver`, `ClockContract.nextAlarm`.
+  - **Telefono e musica** (`Command.Device`, `Gadgets.kt`), subito e senza scheda: torcia; Non disturbare (anche «fino
+    alle 8», «per un'ora», fine con `QuietEndReceiver`); volume; silenzioso, vibrazione, suoneria; modalità Lavoro, Casa,
+    Viaggio, Notte (`Modes`); play, pausa, avanti, indietro (tasti multimediali; senza musica in sospeso apre l'app della
+    musica). L'accesso «Non disturbare» si chiede la prima volta (pagina di Android).
+  - **In guida** (`Command.Guide`): «quanto manca?», «a che ora arrivo» (minuti, km, meta, ora d'arrivo); «avvisa Anna che
+    arrivo» prepara l'SMS con l'ora d'arrivo; «dov'è il benzinaio più vicino?» apre la ricerca in Mappe. **File di Mappe
+    toccati**: `EuriseGuideStatus.java` (stato e provider `eu.eurise.maps.guida`, permesso della suite controllato in
+    `call()`), una riga in `EuriseWit.update`, il provider nel manifesto da `eurise_patch.py`.
+  - **«Cosa sai fare?»** e il punto interrogativo nel pannello: l'elenco della tavola, solo con ciò che Alfred sa già fare.
+  - **Chiamare Alfred** (tavola AlfAvvio, nelle disposizioni): tasto dell'assistente (stato del ruolo e pagina di
+    Android); **riquadro nella tendina** (`AlfredTileService` nell'app, acceso di base, da Android 13 «aggiungi» con un
+    tocco); **dalla schermata di blocco** (acceso di base: torcia, volume, musica, timer, segnalazioni subito; dati,
+    messaggi e schede chiedono lo sblocco e poi riprendono da soli).
+  - **Registro delle richieste** (`AlfredLog`, file `alfred_log` fuori dal backup, spento di base, spegnerlo cancella):
+    fatta, corretta, annullata, non riuscita; «Mandalo a chi sviluppa…», «Cancella».
+- **Non ancora**: «Di' Alfred» (mostrato spento con l'avviso sulla batteria: serve il motore di parole chiave di
+  sherpa-onnx in Voce e misurare il consumo); segnare come letti i messaggi letti da Alfred (il contratto di Messaggi non
+  lo prevede ancora).
+- Da provare: tutte le frasi della tavola, a voce e scritte; il riquadro nella tendina; Alfred dalla schermata di blocco;
+  «quanto manca?» in guida (serve la Mappe nuova).
+
 ## Tavole (tela, pagina «AI»; per il computer pagina «Eurise sul computer»)
 - **Approvate e in codice**: AiCattura, AiModelli, AiAttiva; AstAscolto, AstConferma, AstMessaggio, AstLibera,
   AstImpostazioni (nella voce di Alfred); AlfGiornata, AlfSera, AlfSveglia, AlfMappe; AlfUnico, AlfUnicoMancino, AlfScegli,
-  AlfFinestra, AlfRisposta, AlfDove; AlfTelefono, AlfCapisce, AlfCervello; AlfDati, AlfSeguito, AlfQuale.
-- **Approvate, codice da fare**: AlfAzioni (passo 3), AlfAvvio (passi 4 e 5); **PcAlfred** (Alfred sul computer,
-  approvata il 16 novembre con le tavole del computer).
+  AlfFinestra, AlfRisposta, AlfDove; AlfTelefono, AlfCapisce, AlfCervello; AlfDati, AlfSeguito, AlfQuale; AlfAzioni
+  (passo 3, 22 novembre); AlfAvvio (passi 4 e 5, 22 novembre, tranne «Di' Alfred»).
+- **Approvate, codice da fare**: «Di' Alfred» di AlfAvvio; **PcAlfred** (Alfred sul computer, approvata il 16 novembre
+  con le tavole del computer).
 - **Da confermare**: AlfComputer (il PC come cervello via Ponte, 14 novembre): l'idea è approvata («Alfred unico»), ma il
   diario non registra l'approvazione della tavola; oggi il tasto PC dice che arriva col Ponte.
 
 ## Prossimi passi, in ordine
-1. **Prove del proprietario su Compila 793 e Mappe 102**: Vittorio come voce di Alfred (scaricarlo in Voce), Alfred più svelto, ironia a voce e in guida (Eurise, Eurise AI, Voce): passi 1 e 2 («cosa ho domani?», «spostalo alle 10»,
-   «annulla», «Quale Marco?»), cervello Rapido e Completo scaricati e misurati sul telefono (tempi e frasi capite), Alfred
-   ricorda, Nicola come voce. Sentire se Alfred ora capisce (la prova del giro 548 diceva «il 90 % delle volte capisce una
-   cosa per un'altra»).
-2. **Passo 3, azioni nuove** (tavola AlfAzioni), una per volta e con test: prima leggi e rispondi ai messaggi dall'APK
-   Messaggi (completa «chi mi ha scritto?»); poi sposta/cancella impegni, spunta attività, ferma timer e sveglie, torcia,
-   non disturbare, volume, modalità, musica, «quanto manca» in guida.
-3. **Passo 4** (AlfAvvio): Eurise come app assistente di Android (ROLE_ASSISTANT), riquadro nella tendina, dalla schermata
-   di blocco; «Di' Alfred» con le parole chiave di sherpa-onnx, spento di base con l'avviso sulla batteria (misurarla).
-4. **Passo 5**: registro locale delle ultime 100 richieste (`eurise_alfred_log`, fuori dal backup, spento di base, «Mandalo
-   a chi sviluppa…», «Cancella»): serve anche a capire se sbaglia l'ascolto o la comprensione.
-5. Dalla tavola AlfTelefono: azione utile proposta dalla risposta libera (es. «Timer 9 min»).
-6. Alfred ricorda nel centro privacy (serve prima un elenco dei dati locali dove agganciarlo).
-7. **Il PC come cervello** (AlfComputer, PcAlfred): col Ponte, modello scelto sulla scheda video, risveglio dalla rete;
+1. **Prove del proprietario sull'ultimo giro** (Eurise, Voce, Mappe): le frasi di AlfAzioni e AlfAvvio (vedi sopra), Vittorio
+   come voce di Alfred, il cervello sul telefono (scaricato e misurato), passi 1 e 2. Con il registro acceso, «Mandalo a
+   chi sviluppa…» dice dove sbaglia.
+2. **«Di' Alfred»**: parole chiave di sherpa-onnx in Eurise Voce (servizio in primo piano con il microfono, spento di
+   base, avviso sulla batteria, «solo in carica»), misura del consumo sul telefono.
+3. Dalla tavola AlfTelefono: azione utile proposta dalla risposta libera (es. «Timer 9 min»).
+4. Messaggi letti da Alfred segnati come letti (serve un metodo nel contratto di Messaggi, area Comunicazione).
+5. Alfred ricorda nel centro privacy (serve prima un elenco dei dati locali dove agganciarlo).
+6. **Il PC come cervello** (AlfComputer, PcAlfred): col Ponte, modello scelto sulla scheda video, risveglio dalla rete;
    insieme all'area Computer (`docs/stato/COMPUTER.md`).
-8. In attesa: Lumo con l'API ufficiale quando esce (oggi la finestra AI col suo account); musica classica scaricata per la
+7. In attesa: Lumo con l'API ufficiale quando esce (oggi la finestra AI col suo account); musica classica scaricata per la
    sveglia (servono fonti verificate); icona di Eurise AI (provvisoria).
 
 ## Come si lavora
 - Codice: Alfred in `feature/assistant` (e `app/…/alfred/`), Eurise AI in `ai/` (llama.cpp in `third_party/`), Voce in
   `voice/`, Leggi in `read/` (Tesseract e traduzione in `read/src/main/cpp`), contratti in `core/suite` (`BrainContract`,
   `VoiceContract`, `ReadContract`, `TranslateContract`), memoria e catalogo in `core/data/alfred`.
-- Prove senza telefono: `GrammarTest`, `BrainCommandsTest`, `FollowTest`, `DataQuestionsTest`, `Endpoint`; misura del
+- Prove senza telefono: `GrammarTest`, `ActionsTest`, `BrainCommandsTest`, `FollowTest`, `DataQuestionsTest`, `Endpoint`; misura del
   cervello in CI con `.github/scripts/ai_commands.py` (frasi → comandi, ogni frase nuova va aggiunta lì); qualità di Leggi
   con `.github/scripts/ocr_quality.py`.
 - Compilazione: «Compila APK» (`build.yml`) parte a ogni push. Prima di spingere `git fetch` e rebase su `origin/brand`
