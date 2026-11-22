@@ -148,13 +148,6 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         controller.bindToLifecycle(owner)
         onDispose { controller.unbind() }
     }
-    // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video si torna ai 30 fotogrammi fissi.
-    LaunchedEffect(mode, front) {
-        delay(300) // dopo il cambio di obiettivo la fotocamera si ricollega
-        var waited = 0
-        while (controller.cameraControl == null && waited++ < 40) delay(50)
-        applyFrameRate(controller, still = mode == Mode.Photo)
-    }
     var zoom by remember { mutableStateOf<ZoomState?>(null) }
     DisposableEffect(owner) {
         val obs = Observer<ZoomState> { zoom = it }
@@ -165,6 +158,13 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var flash by remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
     var torch by remember { mutableStateOf(false) }
     var front by remember { mutableStateOf(false) }
+    // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video si torna ai 30 fotogrammi fissi.
+    LaunchedEffect(mode, front) {
+        delay(300) // dopo il cambio di obiettivo la fotocamera si ricollega
+        var waited = 0
+        while (controller.cameraControl == null && waited++ < 40) delay(50)
+        applyFrameRate(controller, still = mode == Mode.Photo)
+    }
     var showExposure by remember { mutableStateOf(false) }
     var exposure by remember { mutableFloatStateOf(0f) }
     var recording by remember { mutableStateOf<Recording?>(null) }
