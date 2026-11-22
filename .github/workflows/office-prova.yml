@@ -92,6 +92,8 @@ jobs:
       - name: Prende l'APK di Office
         if: inputs.fonte != 'nativo'
         env:
+          VERSIONE_CHIESTA: ${{ inputs.versione }}
+          FONTE_CHIESTA: ${{ inputs.fonte }}
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p apk
@@ -109,11 +111,11 @@ jobs:
             gh release download apk-prova -R "${{ github.repository }}" -p eurise-office-debug.apk -O apk/office.apk
             echo "APK dalla pre-release apk-prova"
           fi
-          if [ "$RIFERIMENTO" = collabora ] || [ "${{ inputs.fonte }}" = collabora ]; then
+          if [ "$RIFERIMENTO" = collabora ] || [ "$FONTE_CHIESTA" = collabora ]; then
             # Repository F-Droid di Collabora (non è nel catalogo principale): l'APK arm64 più recente.
             repo=https://www.collaboraonline.com/downloads/fdroid/repo
             curl -sfL "$repo/index-v1.json" -o apk/index.json || echo "::warning::indice F-Droid di Collabora non raggiungibile"
-            want="${{ inputs.versione }}"
+            want="$VERSIONE_CHIESTA"
             jq -r '.packages["com.collabora.libreoffice"][] | "\(.versionName) \(.versionCode) \(.nativecode // [] | join(","))"' apk/index.json 2>/dev/null | head -40
             name=$(jq -r --arg v "$want" '.packages["com.collabora.libreoffice"] | map(select(((.nativecode // []) | index("arm64-v8a")) and (.versionName | startswith($v)))) | max_by(.versionCode) | .apkName' apk/index.json 2>/dev/null)
             echo "APK di riferimento: $name"

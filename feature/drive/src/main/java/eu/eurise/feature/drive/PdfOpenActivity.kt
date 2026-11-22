@@ -29,7 +29,7 @@ class PdfOpenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val uri = intent.data ?: run { finish(); return }
+        val uri = intent.data?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } ?: run { finish(); return }
         val writable = intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION != 0 || uri.scheme == "file"
         val edit = OfficeContract.editIntent(this, uri, "application/pdf", writable)
         val name = runCatching {

@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
     private fun handle(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "application/pdf") {
             @Suppress("DEPRECATION")
-            val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM) ?: return
+            // Mai un file privato dell'app Eurise stessa (database, segreti) fatto «condividere» da un'altra app.
+            val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } ?: return
             request = HubRequest("trip:uri:" + android.net.Uri.encode(uri.toString()), ++requestCount)
             return
         }

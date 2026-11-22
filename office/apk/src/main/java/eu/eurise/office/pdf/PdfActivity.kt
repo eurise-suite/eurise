@@ -19,6 +19,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import eu.eurise.core.designsystem.theme.EuriseTheme
 import eu.eurise.office.data.DocKind
+import eu.eurise.office.data.Engine
 import eu.eurise.office.data.OfficeDocs
 import eu.eurise.office.data.Recents
 import kotlinx.coroutines.launch
@@ -97,7 +98,8 @@ class PdfModel(app: Application, val uri: Uri, writable: Boolean) : AndroidViewM
 
 /** Editor PDF di Office: si apre dai recenti, da «Apri con» e da Eurise File. */
 class PdfActivity : ComponentActivity() {
-    private val uri: Uri by lazy { intent?.data ?: Uri.EMPTY }
+    // Da fuori mai un file privato di Office; i suoi (documenti nuovi fino ad Android 9) li apre solo Office ([Engine.opened]).
+    private val uri: Uri by lazy { intent?.data?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) || Engine.opened(it) } ?: Uri.EMPTY }
     private val writable: Boolean by lazy {
         intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION != 0 || OfficeDocs.canWrite(this, uri)
     }

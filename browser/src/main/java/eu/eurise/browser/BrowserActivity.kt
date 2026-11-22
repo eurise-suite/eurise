@@ -234,7 +234,7 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
                 (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)?.let(::add)
                 intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)?.let(::addAll)
                 intent.clipData?.let { c -> for (i in 0 until c.itemCount) c.getItemAt(i).uri?.let(::add) }
-            }.distinct()
+            }.distinct().filter { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } // mai i file del Browser stesso (profilo, password)
             if (uris.isNotEmpty()) {
                 if (model.tabs.isEmpty()) model.open(null)
                 readPicked(uris, openImport = true)

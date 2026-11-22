@@ -68,9 +68,11 @@ jobs:
           gh release upload flatpak-prova-office flatpak-eurise/eurise-office.flatpak flatpak-eurise/versione-collabora.txt -R "${{ github.repository }}" --clobber
 
       - name: Prova del Flatpak Eurise su uno schermo virtuale
+        env:
+          PACCHETTO: ${{ inputs.pacchetto || 'prototipo' }}
         run: |
           bash office/computer/prova.sh prova-computer
-          echo "- pacchetto: ${{ inputs.pacchetto || 'prototipo' }}" >> prova-computer/riassunto.md
+          echo "- pacchetto: $PACCHETTO" >> prova-computer/riassunto.md
 
       - name: Riassunto
         if: always()
@@ -80,11 +82,12 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          PACCHETTO: ${{ inputs.pacchetto }}
         run: |
           ls prova-computer/*.png > /dev/null 2>&1 || exit 0
           cat prova-computer/riassunto.md
           tag=office-computer-schermate
-          [ "${{ inputs.pacchetto }}" = sorgenti ] && tag=office-sorgenti-schermate
+          [ "$PACCHETTO" = sorgenti ] && tag=office-sorgenti-schermate
           gh release view $tag -R "${{ github.repository }}" > /dev/null 2>&1 || \
             gh release create $tag -R "${{ github.repository }}" --prerelease --target "${GITHUB_REF_NAME}" \
               --title "Schermate della prova di Office sul computer ($tag)" --notes "Sovrascritte a ogni prova."

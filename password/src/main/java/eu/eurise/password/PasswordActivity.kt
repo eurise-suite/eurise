@@ -62,11 +62,12 @@ class PasswordActivity : ComponentActivity() {
             }
             android.content.Intent.ACTION_VIEW -> {
                 val data = intent.data ?: return
-                if (data.scheme == "content" || data.scheme == "file") repo.pendingImport.value = data else repo.pendingOtp.value = data.toString()
+                if (data.scheme == "content" || data.scheme == "file") { if (eu.eurise.core.suite.SuiteAccess.isForeignUri(this, data)) repo.pendingImport.value = data } else repo.pendingOtp.value = data.toString()
             }
             android.content.Intent.ACTION_SEND -> {
                 @Suppress("DEPRECATION")
-                repo.pendingImport.value = intent.getParcelableExtra<android.net.Uri>(android.content.Intent.EXTRA_STREAM) ?: return
+                repo.pendingImport.value = intent.getParcelableExtra<android.net.Uri>(android.content.Intent.EXTRA_STREAM)
+                    ?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } ?: return
             }
         }
     }

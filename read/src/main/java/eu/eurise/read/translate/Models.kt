@@ -77,18 +77,29 @@ object Models {
         val d = dir(context, "$pair.part").apply { deleteRecursively(); mkdirs() }
         val info = StringBuilder(best.optString("architecture")).append('\n')
         for (key in listOf("model", "lexicalShortlist", "vocab", "srcVocab", "trgVocab")) {
-            val path = files.optJSONObject(key)?.optString("path")?.takeIf { it.isNotEmpty() } ?: continue
+            val entry = files.optJSONObject(key) ?: continue
+            val path = entry.optString("path").takeIf { it.isNotEmpty() } ?: continue
             val name = path.substringAfterLast('/').removeSuffix(".gz")
             val bytes = fetch("$base/$path")
-            File(d, name).outputStream().use { out ->
-                if (path.endsWith(".gz")) GZIPInputStream(bytes.inputStream()).use { it.copyTo(out) } else out.write(bytes)
-            }
+            // Il modello finisce nel motore di traduzione, scritto in C: se l'elenco di Mozilla porta l'impronta del file,
+            // deve corrispondere, altrimenti si butta (docs/SICUREZZA.md, «Contenuti scaricati»).
+            checkHash(entry.optString("hash"), bytes, name)
+            val plain = if (path.endsWith(".gz")) GZIPInputStream(bytes.inputStream()).use { it.readBytes() } else bytes
+            checkHash(entry.optString("uncompressedHash"), plain, name)
+            File(d, name).writeBytes(plain)
             info.append(if (key == "lexicalShortlist") "lex" else key).append('=').append(name).append('\n')
         }
         File(d, "info.txt").writeText(info.toString())
         val target = dir(context, pair)
         target.deleteRecursively()
         check(d.renameTo(target))
+    }
+
+    /** Se [expected] è un'impronta SHA-256 (esadecimale), [bytes] deve averla. */
+    private fun checkHash(expected: String, bytes: ByteArray, name: String) {
+        val want = expected.trim().lowercase().removePrefix("sha256:").takeIf { it.length == 64 && it.all { c -> c in "0123456789abcdef" } } ?: return
+        val got = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        check(got == want) { "impronta diversa per $name" }
     }
 
     private fun fetch(address: String): ByteArray {
@@ -101,7 +112,11 @@ object Models {
             // Senza questo Android manda «Dalvik/… (Linux; Android 14; modello del telefono)»: un'impronta del telefono.
             c.setRequestProperty("User-Agent", "EuriseLeggi")
             when (c.responseCode) {
-                in 300..399 -> { url = URL(url, c.getHeaderField("Location")); c.disconnect() }
+                in 300..399 -> {
+                    url = URL(url, c.getHeaderField("Location"))
+                    c.disconnect()
+                    check(url.protocol == "https") { "rinvio non sicuro" }
+                }
                 200 -> return c.inputStream.use { it.readBytes() }
                 else -> error("HTTP ${c.responseCode}")
             }

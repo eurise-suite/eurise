@@ -30,6 +30,12 @@ object Engine {
         sameSigner(context, packageName)
     }.getOrDefault(false)
 
+    /** Gli indirizzi aperti da Office stesso in questo processo: un'app esterna non può aggiungerne. */
+    private val openedByOffice = mutableSetOf<String>()
+
+    /** Vero se [uri] l'ha aperto Office stesso con [open]. */
+    fun opened(uri: Uri): Boolean = synchronized(openedByOffice) { uri.toString() in openedByOffice }
+
     /** Versione del motore installato, per «Informazioni». */
     fun version(context: Context): String? =
         runCatching { context.packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
@@ -41,6 +47,7 @@ object Engine {
      * Restituisce false se serve il motore e non c'è.
      */
     fun open(context: Context, uri: Uri, mime: String?, kind: DocKind, writable: Boolean, name: String? = null, full: Boolean = false): Boolean {
+        synchronized(openedByOffice) { openedByOffice += uri.toString() }
         val grants = Intent.FLAG_GRANT_READ_URI_PERMISSION or (if (writable) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
         val engine = available(context)
         val quick = !full && QuickView.supports(name, mime) && !(OfficePrefs.alwaysFull(context) && engine)

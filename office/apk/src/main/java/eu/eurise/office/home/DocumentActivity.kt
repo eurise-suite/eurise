@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 class DocumentActivity : androidx.activity.ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val uri = intent?.data
+        val uri = intent?.data?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) } // mai i file privati di Office
         if (uri == null) {
             finish()
             return

@@ -40,7 +40,8 @@ class VcfImportActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val uri: Uri? = intent.data ?: @Suppress("DEPRECATION") (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)
+        val uri: Uri? = (intent.data ?: @Suppress("DEPRECATION") (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri))
+            ?.takeIf { eu.eurise.core.suite.SuiteAccess.isForeignUri(this, it) }
         if (uri == null) { finish(); return }
         setContent { EuriseTheme { Screen(uri) } }
     }
