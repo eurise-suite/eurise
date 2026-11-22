@@ -7,5 +7,7 @@
     <!-- Senza finestra: DocumentActivity decide e passa subito al motore o alla schermata iniziale. -->
     <style name="Theme.EuriseOffice.Translucent" parent="android:Theme.Translucent.NoTitleBar" />
     <color name="office_background">#F4F4F1</color>
+    <!-- Usato solo dal tema scuro (values-night), ma deve esistere anche qui: senza, la versione ufficiale non passa il controllo di lint. -->
+    <color name="office_background_night">#161A22</color>
     <color name="office_icon_background">#1F2A44</color>
 </resources>

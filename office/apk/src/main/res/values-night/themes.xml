@@ -4,5 +4,4 @@
         <item name="android:windowBackground">@color/office_background_night</item>
         <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/office_icon_background</item>
     </style>
-    <color name="office_background_night">#161A22</color>
 </resources>
