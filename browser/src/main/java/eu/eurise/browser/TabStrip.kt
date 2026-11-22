@@ -42,7 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
+import eu.eurise.core.designsystem.component.folderPath
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -181,25 +181,6 @@ internal fun TabStrip(model: BrowserModel, modifier: Modifier, place: StripPlace
             Modifier.size(width = 40.dp, height = 32.dp).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onNewTab).semantics { contentDescription = add },
             contentAlignment = Alignment.Center,
         ) { Icon(EuriseIcons.plus(2.4f), null, tint = scheme.onSurface, modifier = Modifier.size(17.dp)) }
-    }
-}
-
-/**
- * Il contorno della linguetta aperta, largo [w] e alto [h]: angoli tondi di raggio [r] dal lato lontano dalla pagina e
- * due piedini concavi, larghi [r], che escono ai lati e la saldano alla pagina ([down]: la pagina è sopra).
- */
-internal fun folderPath(w: Float, h: Float, r: Float, down: Boolean): Path {
-    fun y(v: Float) = if (down) h - v else v
-    return Path().apply {
-        moveTo(-r, y(h))
-        quadraticTo(0f, y(h), 0f, y(h - r))
-        lineTo(0f, y(r))
-        quadraticTo(0f, y(0f), r, y(0f))
-        lineTo(w - r, y(0f))
-        quadraticTo(w, y(0f), w, y(r))
-        lineTo(w, y(h - r))
-        quadraticTo(w, y(h), w + r, y(h))
-        close()
     }
 }
 
