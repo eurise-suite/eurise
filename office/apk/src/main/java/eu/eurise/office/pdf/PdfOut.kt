@@ -46,6 +46,12 @@ object PdfOut {
         }
     }
 
+    /** «Link dal cloud»: «Salva in…» di Eurise File che torna con il link pubblico; null senza l'app Eurise. */
+    fun linkIntent(context: Context, file: File, name: String): Intent? {
+        val uri = copy(context, file, name)
+        return FilesContract.saveIn(context, Suite.hub, uri, "application/pdf", name, "office", context.getString(R.string.office_app_name), link = true)
+    }
+
     fun share(context: Context, uri: Uri, name: String) {
         val send = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
             .putExtra(Intent.EXTRA_TITLE, name).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

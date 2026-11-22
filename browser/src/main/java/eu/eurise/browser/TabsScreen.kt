@@ -77,7 +77,7 @@ private sealed interface TabFilter {
     data class Group(val name: String) : TabFilter
 }
 
-private enum class TabsSheet { None, More, Sessions, Closed, SaveName, Assign }
+private enum class TabsSheet { None, More, Sessions, Closed, SaveName, Assign, Computer }
 
 /** Il colore di un gruppo, come le tinte dei calendari (chiaro o scuro). */
 @Composable
@@ -193,7 +193,14 @@ internal fun TabsScreen(model: BrowserModel, startSearch: Boolean, onOpenTab: ()
                             Switch(checked = model.settings.closeAfterDays > 0, onCheckedChange = { on -> model.settings.setCloseAfter(if (on) 7 else 0) })
                         }
                         HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
-                        InfoRow(EuriseIcons.monitor(2.2f), stringResource(R.string.brw_on_computer), stringResource(R.string.brw_on_computer_soon), onClick = null) { }
+                        // Le schede aperte su Firefox con Eurise (Telefono e computer, tavola BrwSincro).
+                        val pc = model.computers.firstOrNull { it.tabs.isNotEmpty() }
+                        InfoRow(
+                            EuriseIcons.monitor(2.2f), stringResource(R.string.brw_on_computer),
+                            pc?.let { stringResource(R.string.brw_on_computer_n, it.tabs.size, it.name.ifBlank { stringResource(R.string.brw_on_computer) }) }
+                                ?: stringResource(R.string.brw_on_computer_soon),
+                            onClick = if (pc != null) ({ sheet = TabsSheet.Computer }) else null,
+                        ) { if (pc != null) Text("›", color = scheme.onSurfaceVariant, fontSize = 18.sp) }
                     }
                     Text(stringResource(R.string.brw_tabs_keys), fontSize = 12.sp, lineHeight = 17.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
                 }
@@ -224,6 +231,23 @@ internal fun TabsScreen(model: BrowserModel, startSearch: Boolean, onOpenTab: ()
             }
             MenuRow(EuriseIcons.trash(2f), label, stringResource(R.string.brw_close_all_sub), enabled = shown.isNotEmpty()) {
                 model.closeAll(shown); sheet = TabsSheet.None
+            }
+        }
+        TabsSheet.Computer -> BottomSheet(onClose = { sheet = TabsSheet.None }) {
+            model.computers.filter { it.tabs.isNotEmpty() }.forEach { pc ->
+                Text(stringResource(R.string.brw_tabs_on_pc, pc.name.ifBlank { stringResource(R.string.brw_on_computer) }), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
+                    pc.tabs.forEach { t ->
+                        Row(Modifier.fillMaxWidth().clickable { model.open(t.url); sheet = TabsSheet.None; onOpenTab() }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(EuriseIcons.globe(2f), null, tint = scheme.primary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(t.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(Links.host(t.url), fontSize = 12.sp, color = scheme.onSurfaceVariant, maxLines = 1)
+                            }
+                        }
+                    }
+                }
             }
         }
         TabsSheet.Closed -> BottomSheet(onClose = { sheet = TabsSheet.None }) {

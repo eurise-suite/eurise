@@ -28,6 +28,13 @@ object Appearance {
     }.getOrNull()
 
     /** Le tinte da offrire: quelle della Scrivania se l'app Eurise le dà, altrimenti le sette della suite. */
+    /**
+     * La mano dominante scelta sulla Scrivania (regola sull'ergonomia: impostazione della suite); null se l'app Eurise non
+     * c'è o non la offre, e allora vale quella di Office.
+     */
+    fun suiteLeftHanded(context: Context): Boolean? =
+        call(context, C.METHOD_HAND)?.takeIf { it.containsKey(C.KEY_LEFT) }?.getBoolean(C.KEY_LEFT)
+
     fun palette(context: Context): List<Tint> {
         val b = call(context, C.METHOD_PALETTE)
         val names = b?.getStringArray(C.KEY_NAMES)

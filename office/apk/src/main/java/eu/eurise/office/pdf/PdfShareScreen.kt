@@ -1,5 +1,9 @@
 package eu.eurise.office.pdf
 
+import eu.eurise.core.suite.FilesContract
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -196,11 +200,32 @@ fun PdfShareScreen(model: PdfModel, onClose: () -> Unit) {
                     .clickable { ready { PdfOut.share(context, PdfOut.copy(context, it, name), name) } },
                 contentAlignment = Alignment.Center,
             ) { Text(stringResource(R.string.pdf_share_copy), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary) }
-            Box(
-                Modifier.fillMaxWidth().height(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface)
-                    .clickable { ready { PdfOut.saveIn(context, it, name) } },
-                contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.pdf_more_save_in), fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
+            // «Link dal cloud» (tavola OffPdfCondividi): la copia va in un cloud che sa fare i link (Murena, Nextcloud),
+            // poi si condivide il link invece del file.
+            val linkBack = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode != android.app.Activity.RESULT_OK) return@rememberLauncherForActivityResult
+                val link = result.data?.getStringExtra(FilesContract.EXTRA_LINK_URL)
+                if (link == null) Toast.makeText(context, R.string.pdf_link_none, Toast.LENGTH_LONG).show()
+                else context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, link).putExtra(Intent.EXTRA_SUBJECT, name), null))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    Modifier.weight(1f).height(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface)
+                        .clickable { ready { PdfOut.saveIn(context, it, name) } },
+                    contentAlignment = Alignment.Center,
+                ) { Text(stringResource(R.string.pdf_more_save_in), fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
+                Box(
+                    Modifier.weight(1f).height(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface)
+                        .clickable {
+                            ready {
+                                val intent = PdfOut.linkIntent(context, it, name)
+                                if (intent == null) Toast.makeText(context, R.string.office_needs_eurise, Toast.LENGTH_LONG).show()
+                                else linkBack.launch(intent)
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) { Text(stringResource(R.string.pdf_link_cloud), fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
+            }
         }
     }
 }

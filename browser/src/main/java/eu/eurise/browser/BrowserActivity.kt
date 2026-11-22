@@ -108,6 +108,8 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
             this, downloadDone, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), androidx.core.content.ContextCompat.RECEIVER_EXPORTED,
         )
         setContent {
+            // Telefono e computer: ogni sincronizzazione arrivata dall'app Eurise rinfresca ciò che si vede.
+            androidx.compose.runtime.LaunchedEffect(Unit) { BrowserSync.changes.collect { model.reloadSynced() } }
             EuriseTheme {
                 Box(Modifier.fillMaxSize()) {
                     BrowserScreen(model = model, actions = this@BrowserActivity, installed = ::installed, onRunImport = ::runImport)
@@ -355,6 +357,11 @@ class BrowserActivity : ComponentActivity(), BrowserActions {
         val qr = Intent().setClassName(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.MainActivity").putExtra("eu.eurise.extra.SECTION", "qr")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (runCatching { startActivity(qr) }.isFailure) toast(getString(R.string.brw_no_hub))
+    }
+
+    override fun openPonte() {
+        val ponte = eu.eurise.core.suite.SuiteAccess.trusted(this, Intent("eu.eurise.action.PONTE").setPackage(BuildConfig.HUB_PACKAGE))
+        if (ponte == null) toast(getString(R.string.brw_sync_no_hub)) else runCatching { startActivity(ponte) }.onFailure { toast(getString(R.string.brw_sync_no_hub)) }
     }
 
     override fun openPassword() {

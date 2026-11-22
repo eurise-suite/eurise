@@ -279,6 +279,8 @@
     <string name="pwd_sensitive_subtitle">Conferma con l\'impronta o il PIN del telefono</string>
     <string name="pwd_fill_profile">I miei dati · Eurise Password</string>
     <string name="pwd_fill_choose_profile">Con quali dati compilare?</string>
+    <string name="pwd_mydata_for">%1$s chiede i dati per compilare un modulo. Scegli il profilo: vanno solo lì, non negli appunti.</string>
+    <string name="pwd_mydata_fields">%1$d dati</string>
     <string name="pwd_fill_no_profile">Nessun profilo: aggiungilo in Password, I miei dati.</string>
     <string name="pwd_fill_profile_count">Compila %1$d campi</string>
     <string name="pwd_fill_profile_note">Il modulo riceve solo i campi che chiede. Prima serve l\'impronta o il PIN.</string>

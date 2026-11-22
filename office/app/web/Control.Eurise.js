@@ -663,7 +663,10 @@
 		{ id: 'engine:qwant', label: 'Qwant', sub: t('Francia, UE', 'France, EU'), level: 2 },
 		{ id: 'engine:ecosia', label: 'Ecosia', sub: t('Germania, UE', 'Germany, EU'), level: 2 },
 		{ id: 'engine:ddg', label: 'DuckDuckGo', sub: t('risultati Bing · USA', 'Bing results · USA'), level: 2 },
-		{ section: t('Chiedi all\'AI', 'Ask AI'), id: 'ai:device', label: t('Eurise AI sul dispositivo', 'Eurise AI on device'), sub: t('in arrivo', 'coming soon'), level: 3, disabled: true },
+		// Sul telefono risponde Alfred con Eurise AI (niente esce); sul computer il guscio non ha ancora Alfred.
+		{ section: t('Chiedi all\'AI', 'Ask AI'), id: 'ai:device', label: t('Alfred · Eurise AI', 'Alfred · Eurise AI'),
+			sub: function () { return onDesk() ? t('in arrivo sul computer', 'coming soon on the computer') : t('sul telefono, niente esce', 'on the phone, nothing leaves'); },
+			level: 3, disabled: function () { return onDesk(); } },
 		{ id: 'ai:duck', label: 'Duck.ai', sub: t('anonimo, senza account · USA', 'anonymous, no account · USA'), level: 2 },
 		{ id: 'ai:lechat', label: 'Le Chat', sub: t('Mistral · Francia, UE', 'Mistral · France, EU'), level: 1 },
 	];
@@ -846,10 +849,13 @@
 				});
 				PLACES.forEach(function (p) {
 					if (p.section) heading(p.section);
-					row(p.label + ' «' + q + '»', p.sub, '', p.level, function () {
+					// sub e disabled possono dipendere dal formato (telefono o computer): si leggono qui, non al caricamento.
+					var sub = typeof p.sub === 'function' ? p.sub() : p.sub;
+					var off = typeof p.disabled === 'function' ? p.disabled() : p.disabled;
+					row(p.label + ' «' + q + '»', sub, '', p.level, function () {
 						closeOverlay();
 						toShell({ action: 'cerca', where: p.id, query: q });
-					}, p.disabled);
+					}, off);
 				});
 			}
 			setActive(0);

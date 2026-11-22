@@ -163,4 +163,13 @@ class EuriseFiles private constructor(private val context: Context) {
             else -> null
         }
     }
+
+    /** I cloud collegati che sanno fare un link pubblico (Nextcloud e Murena): «Link dal cloud» di Office. */
+    fun linkableAccounts(): List<String> = places().mapNotNull { it.account }.filter { accounts.dav(it)?.isNextcloud == true }
+
+    /** Un link pubblico al file [file] di un cloud (senza password né scadenza: le aggiunge chi lo condivide dal cloud). */
+    suspend fun link(file: Spot): String = withContext(Dispatchers.IO) {
+        val dav = accounts.dav(file.account) ?: throw IOException("account mancante")
+        dav.createLink(file.path, null, null)
+    }
 }

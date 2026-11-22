@@ -54,7 +54,7 @@ class Outbox(private val dir: File) {
         fun maxAge(kind: Kind): Long = when (kind) {
             Kind.Clipboard -> 15 * MINUTE
             Kind.Dictation, Kind.PasswordAsk, Kind.PasswordGive, Kind.Ping, Kind.Hello,
-            Kind.DictationAsk, Kind.TodayAsk, Kind.Today -> 2 * MINUTE
+            Kind.DictationAsk, Kind.TodayAsk, Kind.Today, Kind.SyncAsk, Kind.Sync -> 2 * MINUTE
             Kind.Notify, Kind.Reply -> 30 * MINUTE
             Kind.Handoff -> DAY
             Kind.Note, Kind.Task, Kind.File, Kind.Event -> 7 * DAY

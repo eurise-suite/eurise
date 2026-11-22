@@ -14,6 +14,9 @@
     <queries>
         <package android:name="eu.eurise.password" />
         <package android:name="eu.eurise.password.debug" />
+        <!-- Telefono e computer: la sincronizzazione del Browser passa dal suo fornitore (PonteBrowser). -->
+        <package android:name="eu.eurise.browser" />
+        <package android:name="eu.eurise.browser.debug" />
     </queries>
     <application>
         <!-- Il lavoro di WorkManager in primo piano per il collegamento con il computer. -->
