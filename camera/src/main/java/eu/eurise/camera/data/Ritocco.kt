@@ -42,6 +42,10 @@ object Ritocco {
     const val SHARPEN_FRAMES = 3
     private const val SHARPEN_AMOUNT = 0.5f
     const val SHARPEN_CORE = 4f
+    private const val SHADOW_START = 80f
+    private const val SHADOW_FULL = 20f
+    /** Nelle ombre più profonde il colore cala di tanto (le macchie di colore lì sono quasi solo rumore). */
+    private const val SHADOW_DESATURATE = 0.35f
 
     /**
      * Guadagni rosso e blu per i valori medi [r], [g], [b], o null se i colori vanno bene così. Vale per ogni dominante:
@@ -157,6 +161,10 @@ object Ritocco {
         // Con molto rumore si schiarisce meno: schiarire mostra la grana.
         val maxGain = if (iso >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
         if (chroma) { boxBlur(cb, cw, ch, 1); boxBlur(cr, cw, ch, 1) }
+        // Per le ombre un colore ancora più levigato (blocchi di circa 30 pixel): lì le macchie rosse e verdi sono
+        // larghe e il colore vero è poco (23 novembre, scaffali sotto la TV).
+        val cbWide = if (chroma) cb.copyOf().also { boxBlur(it, cw, ch, 3); boxBlur(it, cw, ch, 3) } else null
+        val crWide = if (chroma) cr.copyOf().also { boxBlur(it, cw, ch, 3); boxBlur(it, cw, ch, 3) } else null
         if (curve != null) { boxBlur(lum, lw, lh, 6); boxBlur(lum, lw, lh, 6) }
         // Guadagno dei toni in funzione della luce della zona (0-255, a passi di 1/4).
         val gainLut = FloatArray(1024) { i ->
@@ -193,9 +201,19 @@ object Ritocco {
                 var u = b - l; var v = r - l
                 if (win != null) {
                     if (grain > 0) l += GRAIN_STRENGTH * smooth(win, x, w, grain)
-                    if (crisp) l += SHARPEN_AMOUNT * detail(win, x, w)
+                    // Nelle ombre niente nitidezza: tirerebbe fuori la grana.
+                    if (crisp) l += SHARPEN_AMOUNT * (1f - shadow(l)) * detail(win, x, w)
                 }
-                if (chroma) { u = cx.sample(cb, cw, cy, x); v = cx.sample(cr, cw, cy, x) }
+                if (chroma) {
+                    u = cx.sample(cb, cw, cy, x); v = cx.sample(cr, cw, cy, x)
+                    val t = shadow(l)
+                    if (t > 0f) {
+                        // Nelle ombre: colore della zona larga e un po' meno saturo.
+                        val fade = 1f - SHADOW_DESATURATE * t
+                        u = (u + (cx.sample(cbWide!!, cw, cy, x) - u) * t) * fade
+                        v = (v + (cx.sample(crWide!!, cw, cy, x) - v) * t) * fade
+                    }
+                }
                 var k = 1f
                 if (curve != null) {
                     val zone = 0.5f * lx.sample(lum, lw, ly, x) + 0.5f * l
@@ -221,6 +239,9 @@ object Ritocco {
         val t = minOf(12.0 + (iso - GRAIN_ISO) / 60.0, 40.0) / frames.coerceAtLeast(1)
         return if (t < 6) 0 else t.toInt()
     }
+
+    /** Quanto è ombra un pixel di luminosità [l]: 0 da [SHADOW_START] in su, 1 sotto [SHADOW_FULL]. */
+    internal fun shadow(l: Float): Float = ((SHADOW_START - l) / (SHADOW_START - SHADOW_FULL)).coerceIn(0f, 1f)
 
     /**
      * Nitidezza dopo la Notte: il pixel meno la media dei 5×5 vicini (la fusione ammorbidisce un poco), con le differenze

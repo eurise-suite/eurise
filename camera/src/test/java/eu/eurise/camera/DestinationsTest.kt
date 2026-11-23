@@ -95,6 +95,13 @@ class RitoccoTest {
     }
 
     @Test
+    fun shadowsRampFromDarkToMid() {
+        assertEquals(1f, r.shadow(10f))
+        assertEquals(0.5f, r.shadow(50f))
+        assertEquals(0f, r.shadow(120f))
+    }
+
+    @Test
     fun sharpeningLeavesGrainAlone() {
         val w = 5
         val flat = Array(5) { IntArray(w) { 100 } }.also { it[2][2] = 103 }

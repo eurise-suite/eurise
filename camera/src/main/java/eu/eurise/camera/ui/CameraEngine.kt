@@ -112,8 +112,29 @@ class CameraEngine(private val context: Context) {
 
     fun surface(view: androidx.camera.view.PreviewView) = preview.setSurfaceProvider(view.surfaceProvider)
 
+    /**
+     * Il verso del telefono per foto e video: lo schermo resta in verticale, quindi CameraX non lo sa da solo
+     * (23 novembre: le foto in orizzontale uscivano girate di lato).
+     */
+    private val orientation = object : android.view.OrientationEventListener(context) {
+        override fun onOrientationChanged(degrees: Int) {
+            if (degrees == ORIENTATION_UNKNOWN) return
+            val rotation = when (degrees) {
+                in 45 until 135 -> android.view.Surface.ROTATION_270
+                in 135 until 225 -> android.view.Surface.ROTATION_180
+                in 225 until 315 -> android.view.Surface.ROTATION_90
+                else -> android.view.Surface.ROTATION_0
+            }
+            if (imageCapture.targetRotation != rotation) {
+                imageCapture.targetRotation = rotation
+                videoCapture.targetRotation = rotation
+            }
+        }
+    }
+
     fun bind(owner: LifecycleOwner, video: Boolean) {
         this.owner = owner
+        if (orientation.canDetectOrientation()) orientation.enable()
         withVideo = video
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -128,6 +149,7 @@ class CameraEngine(private val context: Context) {
     }
 
     fun unbind() {
+        orientation.disable()
         provider?.unbindAll()
         camera = null
         owner = null
