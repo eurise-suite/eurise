@@ -19,7 +19,10 @@ subprojects {
      */
     listOf("com.android.application", "com.android.library").forEach { id ->
         plugins.withId(id) {
-            extensions.configure(com.android.build.api.dsl.CommonExtension::class.java) { compileSdkMinor = 1 }
+            // Dopo il build.gradle.kts del modulo: lì «compileSdk = 37» azzera la versione minore.
+            extensions.getByType(com.android.build.api.variant.AndroidComponentsExtension::class.java).finalizeDsl { ext ->
+                if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
+            }
         }
     }
     /*
