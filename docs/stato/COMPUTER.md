@@ -48,7 +48,7 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 
 ## Prossimi passi (in ordine)
 1. **Oggi**: provare la schermata (16 novembre, sotto) e correggere ciò che segnala il proprietario. Restano: spuntare
-   un'attività dal computer (serve un tipo del Ponte «fatta»), meteo (servizio da scegliere, spento di base), note
+   un'attività dal computer (fatto il 23 novembre con il cloud collegato), meteo (servizio da scegliere, spento di base), note
    recenti ed email importanti (con le loro sezioni), proposte di Alfred, ricerca Ctrl K, Impostazioni.
 2. **Calendario e Attività** su CalDAV: scritti il 23 novembre (sotto), da provare. Restano: modificare una sola
    ripetizione, promemoria come notifica del sistema, trascinare un appuntamento nella griglia.
@@ -95,6 +95,8 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 - `TasksScreen.kt`: Oggi, In ritardo, Prossimi 7 giorni, Tutte e gli elenchi del cloud con i conteggi; campo «Aggiungi»
   (Invio), gruppi In ritardo/Oggi/Domani/giorni/Più avanti/Senza data/Fatte, casella che spunta, dettagli con scadenza
   e note.
+- Oggi: con il cloud collegato «Da fare oggi» prende le attività da lì e la casella le spunta (il passo «fatta» del
+  Ponte non serve più); senza cloud resta il riassunto del telefono, solo da leggere.
 
 ### 16 novembre: Oggi dalle tavole PcOggi e PcOggiNotte · giro 657 (prova-computer, in apk-prova)
 - `desktop/app`: `TodayScreen.kt` come la tavola (data, saluto con il nome dal sistema e «Oggi hai 4 impegni, il primo
