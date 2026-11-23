@@ -218,3 +218,21 @@ Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): og
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
 Alfred e Voce: «Scarica» di un cervello (`BrainModels`) o di un modello o una voce di Voce (`VoiceModels`) accende il servizio e lo annota nel centro privacy (`PrivacyContract.downloadStarted`); Voce dichiara l'app Eurise nelle `<queries>`.
+
+## «Di' Alfred»: prove dei modelli (23 novembre 2026, sera, progetto Eurise Sicurezza)
+Scelta del proprietario: ascolto acceso da lui, in pausa da solo quando si stacca il caricatore e di nuovo attivo quando si
+riattacca (Android 14 non lascia accendere il microfono dallo sfondo). Prima del codice si è misurato se i modelli pronti
+di sherpa-onnx (già in Voce, 1.13.7) capiscono «Alfred» detto in italiano. Frasi sintetiche con le voci italiane (Piper
+Riccardo e Paola, Kokoro Nicola e Sara), 5 frasi con «Alfred» e 12 senza («Alfredo», «al fresco», «alfa», «Alfedena»…),
+3 velocità; Python sherpa-onnx 1.13.7 sul computer della chat.
+- **Parole chiave inglesi** (gigaspeech 3,3M, ~5 MB int8): detto in inglese lo prende 10 volte su 12; detto all'italiana
+  da Piper 0 su 12. Con Kokoro e più grafie (ALFRED, ALFRID, ALFRE) 21–27 su 30, ma si sveglia anche su «al fresco»,
+  «Alfedena», «Alfredo», «alfa» (4–5 frasi su 12). Con rumore di fondo e ascolto continuo il riconoscimento cala.
+- **Parole chiave cinese-inglese per fonemi** (dicembre 2025): «Alfred» scritto all'italiana (AA1 L F R EH D) 0–7 su 30.
+- **Whisper base da solo** sulla frase: 21 su 30 con Kokoro, nessun falso allarme; con Piper 9 su 30.
+- **Due stadi** (parole chiave, poi Whisper base sui 2,5 s intorno): nessun falso allarme ma 11 su 30.
+- **Conclusione**: nessun modello pronto riconosce bene «Alfred» in italiano. Strade possibili (decide il proprietario):
+  (a) i due stadi con i modelli che ci sono (nessuna libreria nuova, pochi falsi allarmi, ma risponde circa una volta su
+  due-tre); (b) un modello nostro della parola «Alfred», allenato con molte voci italiane sintetiche e rumori (metodo di
+  openWakeWord), ~1 MB, che girerebbe con onnxruntime (libreria nuova in Voce) o con un modello compatibile con sherpa-onnx;
+  (c) rimandare. Le prove vere con la voce del proprietario contano più di quelle sintetiche.
