@@ -341,8 +341,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo (pagine Password, Integr
 4. ~~Frase intera nella fila dei suggerimenti~~ fatto nel giro 830; nel backup dal giro 1011.
 5. ~~Privacy di quest'area~~ fatta nei giri 830 e 965 (tacchette, centro privacy, cestino unico). Resta la prova sul
    telefono con Password, Galleria e app Eurise del giro 965. Frasi della Tastiera nel backup: giro 1011.
-6. ~~Galleria, resti~~ fatti nel giro 822. Restano piccoli: gli originali tenuti 30 giorni (dopo «Sostituisci») nel
-   cestino unico; una maschera per ciascun passo di Regola, Curve e Filtro (solo se serve: rallenta l'anteprima).
+6. ~~Galleria, resti~~ fatti nel giro 822; ~~originali tenuti 30 giorni nel cestino unico~~ fatti il 23 novembre, sera
+   (sezione in fondo). Resta piccolo: una maschera per ciascun passo di Regola, Curve e Filtro (solo se serve: rallenta l'anteprima).
 7. ~~Pulizia del codice di Password~~ fatta (giri 822 e 965): `PasswordApp` diviso, componenti comuni al posto delle copie.
 8. **In fondo**: Password Famiglia (tavole da approvare); kMail tra gli alias (API non verificata); kDrive (bloccato da
    Infomaniak); scrittura a mano nella Tastiera (rimandata: nessun modello libero).
@@ -398,3 +398,15 @@ Leggi: «Scarica» di una lingua (Tesseract) o di una traduzione accende «Lingu
 
 ## Sicurezza, 23 novembre 2026, sera (progetto Eurise Sicurezza)
 Password con **R8 pieno** dal giro 1103: niente più «tieni tutto eu.eurise» (`r8Pieno` in `build.gradle.kts` della radice), solo le regole comuni e il `proguard-rules.pro` dell'app; prova d'avvio verde. Da provare sul telefono: aprire la cassaforte, cercare, compilare un accesso con il riempimento automatico, le passkey. Se qualcosa si ferma: `-Peurise.r8.senza=:password` o togliere `:password` da `r8Pieno`. Si installa sopra, stessa chiave.
+
+## 23 novembre 2026, sera (progetto Eurise Sicurezza): originali della Galleria nel cestino unico
+- Gli originali messi da parte con «Sostituisci» (30 giorni, `files/originali`) compaiono nel cestino unico dell'app Eurise,
+  filtro «Foto», come «Originale di IMG_…» con il peso e i giorni che restano (icona della cronologia).
+- **Ripristina** apre la foto nella Galleria («Apri con», `OpenActivity`), che ora ha anche lei «Torna all'originale»:
+  Android chiede il permesso di riscrivere la foto, poi l'originale torna al suo posto. Dall'app Eurise non si può fare
+  direttamente: l'originale è un file privato della Galleria e il permesso di riscrittura lo chiede chi scrive.
+- **Elimina per sempre** toglie subito la copia messa da parte (file privato, nessuna conferma di Android).
+- Contratto (`AppHubContract`): id `originale:<quando>:<indirizzo della foto>`, mandati solo a chi li chiede
+  (`trash(…, withOriginals = true)`): un'app Eurise più vecchia continua a ricevere solo le foto del cestino di Android.
+  La Galleria elimina solo un originale che è nel suo elenco (`GalleryStore.kept`): da fuori non si nomina nessun altro file.
+

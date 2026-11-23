@@ -38,7 +38,7 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 
 ## Galleria — area Piccole
 - **P**: editor (ritaglio, cursori, velocità dell'anteprima, Regola, Curve, Prospettiva, Espandi, Modifiche), video, caricamento su Murena.
-- **C, piccoli**: originali tenuti 30 giorni dopo «Sostituisci»; maschere per singolo passo (solo se serve).
+- **C, piccoli**: ~~originali tenuti 30 giorni nel cestino unico~~ (23 novembre); maschere per singolo passo (solo se serve).
 
 ## Messaggi, Telefono, Chat, Posta — area Comunicazione
 - **P**: molte tavole in codice aspettano la prova (Persone e canali, ChatBasi, Vocali, Programma, Cartelle, Thread,
@@ -68,7 +68,7 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 ## Mappe — area Mappe
 - **P**: schermo diviso in auto, «Dove devi andare» con Casa e Lavoro, gesto a due dita, sezione Mappe sul computer.
 - **D**: mappa dentro la finestra di Eurise sul computer; «Avvisa» per l'impegno vicino.
-- **C**: pietre miliari della Croazia (giro mensile); in attesa di fonti: segnalazioni condivise, traffico, prezzi dei viaggi.
+- **C**: ~~pietre miliari della Croazia~~ (file del 21 novembre, 330 pietre; giro mensile più paziente dal 23 novembre); in attesa di fonti: segnalazioni condivise, traffico, prezzi dei viaggi.
 - **Rimandato alla pubblicazione** (deciso dal proprietario): accordo con Transitous oltre 720 richieste al giorno, contatto nel User-Agent.
 - **S**: variante prova/ufficiale nel patch (21 novembre); backup solo verso l'app Eurise (22 novembre).
 

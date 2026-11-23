@@ -31,6 +31,16 @@ object AppHubContract {
     /** arg: id della cosa nel cestino. Risposta [KEY_OK]. */
     const val METHOD_RESTORE = "restore"
     const val METHOD_DELETE = "delete"
+    /**
+     * Gli id del cestino della Galleria che cominciano così sono originali messi da parte con «Sostituisci»
+     * (`originale:<quando>:<indirizzo della foto>`): si eliminano con [METHOD_DELETE]; per rimetterli serve il permesso
+     * di Android di riscrivere la foto, quindi si apre la foto nella Galleria ([originalPhoto]).
+     */
+    const val ORIGINAL_PREFIX = "originale:"
+
+    /** L'indirizzo della foto di un originale messo da parte, dal suo id; null se l'id non è di un originale. */
+    fun originalPhoto(id: String): Uri? = id.takeIf { it.startsWith(ORIGINAL_PREFIX) }
+        ?.removePrefix(ORIGINAL_PREFIX)?.substringAfter(':', "")?.takeIf { it.startsWith("content://") }?.let(Uri::parse)
 
     const val KEY_IDS = "ids"
     const val KEY_TITLES = "titles"
@@ -44,6 +54,8 @@ object AppHubContract {
     const val KEY_LOCKED = "locked"
     const val KEY_COUNT = "count"
     const val KEY_OK = "ok"
+    /** Nella richiesta del cestino: mandare anche gli originali messi da parte ([ORIGINAL_PREFIX]). */
+    const val KEY_ORIGINALS = "originals"
     /** Il registro dei contatti come testo di [ServiceLog] (ultimi 30 giorni). */
     const val KEY_LOG = "log"
 
@@ -100,9 +112,13 @@ object AppHubContract {
         runCatching { SuiteAccess.call(context, uri(pkg), METHOD_DISABLE, id, null) }
     }
 
-    /** Il cestino di [pkg]; null se l'app non c'è o non risponde. */
-    fun trash(context: Context, pkg: String): Trash? = runCatching {
-        val b = SuiteAccess.call(context, uri(pkg), METHOD_TRASH, null, null) ?: return null
+    /**
+     * Il cestino di [pkg]; null se l'app non c'è o non risponde. [withOriginals]: la Galleria aggiunge gli originali
+     * messi da parte ([ORIGINAL_PREFIX]); chi non lo chiede (un'app Eurise più vecchia) non li riceve.
+     */
+    fun trash(context: Context, pkg: String, withOriginals: Boolean = false): Trash? = runCatching {
+        val extras = if (withOriginals) Bundle().apply { putBoolean(KEY_ORIGINALS, true) } else null
+        val b = SuiteAccess.call(context, uri(pkg), METHOD_TRASH, null, extras) ?: return null
         val ids = b.getStringArray(KEY_IDS).orEmpty()
         val titles = b.getStringArray(KEY_TITLES).orEmpty()
         val times = b.getLongArray(KEY_TIMES) ?: LongArray(0)

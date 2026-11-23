@@ -25,7 +25,9 @@ object GalHub {
  * La Galleria nell'app Eurise ([C]): Luoghi (nomi da OpenStreetMap) e caricamento sul cloud con le tacchette, lo stato e
  * il registro dei contatti, spegnimento senza conferme; le foto e i video nel cestino di Android per il cestino unico,
  * anche quando l'app Eurise non ha il permesso di leggere le foto. Rimettere o eliminare per sempre lo chiede Android
- * alla persona: lo fa l'app Eurise con le richieste di MediaStore, qui si danno solo i nomi. Solo app della suite.
+ * alla persona: lo fa l'app Eurise con le richieste di MediaStore, qui si danno solo i nomi. Anche gli originali messi da
+ * parte con «Sostituisci» (30 giorni): si eliminano qui; per rimetterli l'app Eurise apre la foto nella Galleria, che
+ * chiede ad Android il permesso di riscriverla. Solo app della suite.
  */
 class HubProvider : ContentProvider() {
     override fun onCreate() = true
@@ -53,9 +55,12 @@ class HubProvider : ContentProvider() {
                 }
                 Bundle().apply { putBoolean(C.KEY_OK, true) }
             }
-            C.METHOD_TRASH -> C.trashBundle(C.Trash(trashed(context.contentResolver), locked = false, count = 0).let { it.copy(count = it.items.size) })
-            // Android chiede conferma alla persona: lo fa l'app Eurise (MediaStore.createTrashRequest / createDeleteRequest).
-            C.METHOD_RESTORE, C.METHOD_DELETE -> Bundle().apply { putBoolean(C.KEY_OK, false) }
+            C.METHOD_TRASH -> C.trashBundle(C.Trash(trashed(context.contentResolver) + if (extras?.getBoolean(C.KEY_ORIGINALS) == true) originals(context) else emptyList(), locked = false, count = 0).let { it.copy(count = it.items.size) })
+            // Un originale messo da parte è un file privato della Galleria: si toglie qui, senza chiedere ad Android.
+            C.METHOD_DELETE -> Bundle().apply { putBoolean(C.KEY_OK, arg != null && dropOriginal(context, arg)) }
+            // Foto: Android chiede conferma alla persona, lo fa l'app Eurise (MediaStore.createTrashRequest /
+            // createDeleteRequest). Originali: serve il permesso di riscrivere la foto, chiesto dalla Galleria quando si apre.
+            C.METHOD_RESTORE -> Bundle().apply { putBoolean(C.KEY_OK, false) }
             else -> null
         }
     }
@@ -87,6 +92,28 @@ class HubProvider : ContentProvider() {
                 }
             }
         }.getOrNull().orEmpty()
+    }
+
+    /** Gli originali tenuti 30 giorni dopo «Sostituisci»: id con [C.ORIGINAL_PREFIX], nome della foto, peso del file. */
+    private fun originals(context: android.content.Context): List<C.Item> = GalleryStore.get(context).kept().mapNotNull { k ->
+        val file = java.io.File(k.file)
+        if (!file.isFile) return@mapNotNull null
+        val name = runCatching {
+            context.contentResolver.query(Uri.parse(k.uri), arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)
+                ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: Uri.parse(k.uri).lastPathSegment.orEmpty()
+        C.Item(originalId(k), name, k.savedAt, file.length())
+    }
+
+    private fun originalId(k: eu.eurise.gallery.logic.KeptOriginal) = "${C.ORIGINAL_PREFIX}${k.savedAt}:${k.uri}"
+
+    /** Toglie l'originale [id], solo se è tra quelli messi da parte: nessun altro file si può nominare da fuori. */
+    private fun dropOriginal(context: android.content.Context, id: String): Boolean {
+        val store = GalleryStore.get(context)
+        val k = store.kept().firstOrNull { originalId(it) == id } ?: return false
+        java.io.File(k.file).delete()
+        store.removeKept(k)
+        return true
     }
 
     override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor? = null

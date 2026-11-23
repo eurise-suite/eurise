@@ -27,8 +27,9 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      # Gentili con Geofabrik: pochi download alla volta.
-      max-parallel: 2
+      # Gentili con Geofabrik: un download alla volta. Con due insieme, dopo i primi paesi Geofabrik rifiutava i runner
+      # (22 novembre: Croazia, Slovenia, Cechia, Ungheria e Grecia, che lo specchio di openstreetmap.fr non ha).
+      max-parallel: 1
       matrix:
         include:
           # id = paese di primo livello nelle mappe di CoMaps (data/countries.txt); src = estratto di Geofabrik.
@@ -65,7 +66,9 @@ jobs:
         run: |
           set -e
           # Geofabrik a volte rifiuta i runner di GitHub dopo i primi download: allora lo specchio di openstreetmap.fr.
-          curl -fsSL --retry 3 --retry-all-errors --retry-delay 30 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf" \
+          # Prima Geofabrik con pazienza (fino a 6 tentativi a 90 s), poi lo specchio. Un paese che fallisce tiene il file
+          # del giro prima: «Pubblica» carica solo quelli nuovi.
+          curl -fsSL --retry 6 --retry-all-errors --retry-delay 90 -o in.osm.pbf "https://download.geofabrik.de/${{ matrix.src }}-latest.osm.pbf" \
             || curl -fsSL --retry 3 --retry-all-errors --retry-delay 30 -o in.osm.pbf "https://download.openstreetmap.fr/extracts/${{ matrix.src }}-latest.osm.pbf"
           ls -lh in.osm.pbf
           # Solo pietre miliari e strade con sigla; i nodi delle strade restano (servono le posizioni).

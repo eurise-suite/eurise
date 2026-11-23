@@ -86,6 +86,16 @@ private sealed interface BinRow {
         override val title get() = name
     }
 
+    /**
+     * L'originale di una foto sostituita dall'editor della Galleria, tenuto 30 giorni. Rimetterlo apre la foto nella
+     * Galleria («Torna all'originale», Android chiede il permesso di riscriverla); eliminarlo toglie la copia messa da parte.
+     */
+    data class Original(val pkg: String, val item: AppHubContract.Item, val photo: Uri) : BinRow {
+        override val key get() = "orig:" + item.id
+        override val title get() = item.title
+        override val at get() = item.at
+    }
+
     /** Una voce nel cestino della cassaforte di Password (a cassaforte aperta). */
     data class Password(val pkg: String, val item: AppHubContract.Item) : BinRow {
         override val key get() = "pwd:" + item.id
@@ -104,15 +114,18 @@ private sealed interface BinRow {
 private enum class BinFilter(val label: Int) { All(R.string.bin_all), Notes(R.string.bin_notes), Tasks(R.string.bin_tasks), Events(R.string.bin_events), Files(R.string.bin_files), Photos(R.string.bin_photos), Passwords(R.string.bin_passwords) }
 
 /** Cosa danno Password e Galleria al cestino unico ([AppHubContract]). */
-private data class AppBins(val passwordPkg: String, val password: AppHubContract.Trash?, val gallery: List<BinRow.Photo>)
+private data class AppBins(val passwordPkg: String, val password: AppHubContract.Trash?, val gallery: List<BinRow.Photo>, val originals: List<BinRow.Original>)
 
 private fun appBins(context: Context): AppBins {
     val debug = SuiteAccess.isDebug(context)
     val pwd = AppHubContract.passwordPackage(debug)
-    // Le foto dalla Galleria servono solo se l'app Eurise non può leggerle da sé.
-    val gallery = if (canReadPhotos(context)) emptyList() else AppHubContract.trash(context, AppHubContract.galleryPackage(debug))?.items.orEmpty()
+    val galleryPkg = AppHubContract.galleryPackage(debug)
+    val (kept, trashed) = AppHubContract.trash(context, galleryPkg, withOriginals = true)?.items.orEmpty().partition { it.id.startsWith(AppHubContract.ORIGINAL_PREFIX) }
+    // Le foto dalla Galleria servono solo se l'app Eurise non può leggerle da sé; gli originali messi da parte sempre.
+    val gallery = if (canReadPhotos(context)) emptyList() else trashed
         .map { BinRow.Photo(Uri.parse(it.id), it.title, it.at.takeIf { at -> at > 0 } ?: System.currentTimeMillis(), it.size) }
-    return AppBins(pwd, AppHubContract.trash(context, pwd), gallery)
+    val originals = kept.mapNotNull { k -> AppHubContract.originalPhoto(k.id)?.let { BinRow.Original(galleryPkg, k, it) } }
+    return AppBins(pwd, AppHubContract.trash(context, pwd), gallery, originals)
 }
 
 /**
@@ -158,6 +171,7 @@ internal fun AllTrash(
         addAll(photos)
         apps?.let { a ->
             addAll(a.gallery.filter { g -> photos.none { it.uri == g.uri } })
+            addAll(a.originals)
             val pwd = a.password
             if (pwd != null && pwd.locked && pwd.count > 0) add(BinRow.PasswordLocked(a.passwordPkg, pwd.count))
             if (pwd != null && !pwd.locked) addAll(pwd.items.map { BinRow.Password(a.passwordPkg, it) })
@@ -169,7 +183,7 @@ internal fun AllTrash(
             BinFilter.Tasks -> row is BinRow.Suite && row.entry.kind == TrashEntry.Kind.Task
             BinFilter.Events -> row is BinRow.Suite && row.entry.kind == TrashEntry.Kind.Event
             BinFilter.Files -> row is BinRow.FileRow
-            BinFilter.Photos -> row is BinRow.Photo
+            BinFilter.Photos -> row is BinRow.Photo || row is BinRow.Original
             BinFilter.Passwords -> row is BinRow.Password || row is BinRow.PasswordLocked
         }
     }.sortedByDescending { it.at }
@@ -185,6 +199,7 @@ internal fun AllTrash(
         is BinRow.Suite -> { scope.launch { runCatching { bin.restore(row.entry) } }; Unit }
         is BinRow.FileRow -> onRestoreFile(row.item)
         is BinRow.Photo -> photoRequest(row, restore = true)
+        is BinRow.Original -> openOriginal(context, row)
         is BinRow.Password -> { scope.launch { withContext(Dispatchers.IO) { AppHubContract.restore(context, row.pkg, row.item.id) }; localRefresh++ }; Unit }
         is BinRow.PasswordLocked -> unlockPassword(context, row.pkg)
     }
@@ -193,6 +208,7 @@ internal fun AllTrash(
         is BinRow.Suite -> { scope.launch { runCatching { bin.deleteForever(row.entry) } }; Unit }
         is BinRow.FileRow -> onDeleteFile(row.item)
         is BinRow.Photo -> photoRequest(row, restore = false)
+        is BinRow.Original -> { scope.launch { withContext(Dispatchers.IO) { AppHubContract.delete(context, row.pkg, row.item.id) }; localRefresh++ }; Unit }
         is BinRow.Password -> { scope.launch { withContext(Dispatchers.IO) { AppHubContract.delete(context, row.pkg, row.item.id) }; localRefresh++ }; Unit }
         is BinRow.PasswordLocked -> Unit
     }
@@ -238,11 +254,13 @@ internal fun AllTrash(
             ) {
                 Icon(row.icon(), null, tint = scheme.primary, modifier = Modifier.size(20.dp))
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(row.title.ifBlank { stringResource(R.string.bin_untitled) }, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    val title = row.title.ifBlank { stringResource(R.string.bin_untitled) }
+                    Text(if (row is BinRow.Original) stringResource(R.string.bin_original, title) else title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     val days = (TrashRepository.DAYS - ((System.currentTimeMillis() - row.at) / 86_400_000L).toInt()).coerceAtLeast(0)
                     val size = when (row) {
                         is BinRow.FileRow -> Formatter.formatShortFileSize(context, row.item.size) + " · "
                         is BinRow.Photo -> Formatter.formatShortFileSize(context, row.size) + " · "
+                        is BinRow.Original -> Formatter.formatShortFileSize(context, row.item.size) + " · "
                         else -> ""
                     }
                     // Il cestino della cassaforte non si svuota da sé: lì nulla scade dopo 30 giorni.
@@ -304,7 +322,15 @@ private fun BinRow.icon(): ImageVector = when (this) {
     }
     is BinRow.FileRow -> EuriseIcons.folder()
     is BinRow.Photo -> EuriseIcons.image()
+    is BinRow.Original -> EuriseIcons.history()
     is BinRow.Password, is BinRow.PasswordLocked -> EuriseIcons.key()
+}
+
+/** Apre la foto nella Galleria, dove «Torna all'originale» chiede ad Android il permesso di riscriverla. */
+private fun openOriginal(context: Context, row: BinRow.Original) {
+    val open = android.content.Intent(android.content.Intent.ACTION_VIEW).setDataAndType(row.photo, "image/*").setPackage(row.pkg)
+        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(open) }
 }
 
 /** Apre Password per lo sblocco: appena la cassaforte è aperta, Password si chiude e il cestino si rilegge. */
