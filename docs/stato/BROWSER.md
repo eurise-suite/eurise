@@ -147,3 +147,13 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   barra in basso la linguetta pende dalla pagina. `BrowserUi.kt` `SheetArrival`: cambiando scheda il foglio nuovo arriva
   davanti con la sua miniatura (180 ms) e lascia vedere la pagina vera; niente movimento con le animazioni spente.
   Prossimo: portarla nelle altre app con le schede (Office, poi le altre), dopo la prova sul telefono.
+
+## 23 novembre 2026 (progetto Eurise Sicurezza)
+- **Provato dal proprietario**: caricare più file insieme funziona (giro 1060). Passkey: non le usa, nessuna prova.
+- **Schede che si ricaricavano tutte, lente** (segnalato il 23 novembre): quando Android chiudeva il processo delle
+  pagine in secondo piano, `revive` riapriva e ricaricava da zero **tutte** le schede insieme; all'avvio le schede si
+  ricaricavano dall'indirizzo, perdendo cronologia e punto di lettura. Ora ogni scheda tiene il suo `SessionState`
+  (`onSessionStateChange`, come Firefox): si riprende solo la scheda in vista, con `restoreState` (cronologia, punto
+  di lettura, moduli, cache); le altre aspettano di tornare in vista (`Tab.resume`). Lo stato si salva con l'elenco
+  delle schede (solo normali, le 15 più recenti, fino a 48 KB l'una).
+

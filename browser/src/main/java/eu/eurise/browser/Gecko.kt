@@ -155,6 +155,17 @@ class Tab(
     var thumb by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
     /** Indirizzo da caricare quando la scheda torna in vista (schede riaperte all'avvio). */
     var pending: String? = null
+    /**
+     * Lo stato della scheda nel motore (cronologia avanti e indietro, punto di lettura, moduli), come lo salva Firefox.
+     * Serve a riprendere la scheda dov'era, dalla cache, invece di ricaricarla da zero (prova del 23 novembre).
+     */
+    var state: GeckoSession.SessionState? = null
+    /** Lo stato da riprendere quando la scheda torna in vista (riaperta all'avvio o chiusa dal sistema). */
+    var pendingState: GeckoSession.SessionState? = null
+    /** La scheda è in vista adesso ([setVisible]). */
+    private var visible = false
+    /** La sessione è stata chiusa dal sistema mentre la scheda era a riposo: al ritorno la vista si ricollega. */
+    private var closedBySystem = false
 
     /** La sessione è aperta nel motore (dichiarata prima di init: lì [ensureOpen] la mette a true). */
     private var opened = false
@@ -193,6 +204,9 @@ class Tab(
             override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
                 secure = securityInfo.isSecure
             }
+            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                state = sessionState
+            }
         }
         session.contentDelegate = object : GeckoSession.ContentDelegate {
             override fun onTitleChange(session: GeckoSession, title: String?) {
@@ -201,7 +215,8 @@ class Tab(
             }
             override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) { fullscreen = fullScreen }
             // Il processo della pagina si è chiuso (memoria, errore del motore): senza riaprire la sessione la scheda
-            // restava nera (prova del 14 novembre). Si riapre e si ricarica la stessa pagina.
+            // restava nera (prova del 14 novembre). Si riapre solo la scheda in vista, dal suo stato; le altre aspettano di
+            // tornare in vista (prima si ricaricavano tutte insieme da zero, lentissimo: prova del 23 novembre).
             override fun onCrash(session: GeckoSession) = revive(context)
             override fun onKill(session: GeckoSession) = revive(context)
             override fun onExternalResponse(session: GeckoSession, response: org.mozilla.geckoview.WebResponse) {
@@ -330,6 +345,7 @@ class Tab(
      * che si guarda. Quella in vista ha la priorità alta.
      */
     fun setVisible(on: Boolean) {
+        visible = on
         if (!opened) return
         runCatching {
             session.setActive(on)
@@ -343,12 +359,38 @@ class Tab(
 
     private fun revive(context: Context) {
         val address = url
+        val saved = state
         runCatching { if (session.isOpen) session.close() }
+        if (!visible) {
+            // A riposo: si riprende quando torna in vista ([resume]), senza caricare nulla adesso.
+            opened = false
+            closedBySystem = true
+            pendingState = saved
+            if (saved == null && address.isNotBlank() && address != "about:blank") pending = address
+            return
+        }
         runCatching {
             session.open(Gecko.runtime(context))
-            if (address.isNotBlank() && address != "about:blank") session.loadUri(address)
+            if (saved != null) session.restoreState(saved)
+            else if (address.isNotBlank() && address != "about:blank") session.loadUri(address)
         }
         revived++
+    }
+
+    /**
+     * Riporta in vita la scheda che torna in vista: dal suo stato salvato (cronologia, punto di lettura, cache) o, se non
+     * c'è, dall'indirizzo. Restituisce falso se non c'era niente da riprendere.
+     */
+    fun resume(): Boolean {
+        val saved = pendingState
+        val address = pending
+        if (saved == null && address == null) return false
+        pendingState = null
+        pending = null
+        ensureOpen()
+        if (saved != null) runCatching { session.restoreState(saved) } else if (address != null) session.loadUri(address)
+        if (closedBySystem) { closedBySystem = false; revived++ }
+        return true
     }
 
     /** Titolo, selezione e testo della pagina, letti dall'estensione Eurise solo quando servono (In Note, Ascolta). */
