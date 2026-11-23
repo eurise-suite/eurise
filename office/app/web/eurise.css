@@ -1019,7 +1019,11 @@ body.eurise-desk #toolbar-row {
 body.eurise-desk #eurise-top { gap: 0; }
 /* Tablet e computer: una riga sola (richiesta del proprietario, 14 novembre): schede a sinistra, a destra la pillola
    chiara con nome, stato e annulla/ripeti, «Cerca un comando» più corto, Condividi con la sola icona. */
-body.eurise-tablet #eurise-top { gap: 4px; }
+/* Il nastro a schedario (in fondo al file) vuole la linguetta attaccata alla fascia: niente spazio. */
+body.eurise-tablet #eurise-top {
+	gap: 0;
+	--eurise-band: #FFFFFF;
+}
 #eurise-header.riga {
 	height: 48px;
 	padding: 0;
@@ -2262,10 +2266,6 @@ html body.eurise-desk.eurise-pdf #toolbar-row { display: block !important; }
 /* Nastro a schedario su tablet e computer (tavola SchedarioProve, decisa il 22 novembre 2026): la scheda aperta del
    nastro è una linguetta bianca che continua nella fascia bianca dei comandi, con i due piedini; i gruppi diventano
    parti della stessa fascia, divise da un filo, al posto delle isole bianche. Il telefono ha il nastro nella dock. */
-body.eurise-tablet #eurise-top {
-	gap: 0 !important;
-	--eurise-band: #FFFFFF;
-}
 [data-theme='dark'] body.eurise-tablet #eurise-top { --eurise-band: #222833; }
 body.eurise-tablet #eurise-header.riga #eurise-tabs {
 	align-self: flex-end;

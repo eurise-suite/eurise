@@ -2,6 +2,12 @@
 
 package eu.eurise.chat
 
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -282,14 +288,20 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
     var statusSheet by remember { mutableStateOf(false) }
     var offSheet by remember { mutableStateOf(false) }
     if (model.uni.view != Uni.View.Chat) PeopleRefresher(model)
+    // «Entrambi» (tavola ChatEntrambi, approvata il 23 novembre): le chat dei due account in un elenco, col filo del colore.
+    val both = model.show == Entrambi.Show.Both && model.otherSession != null
+    var showWork by remember { mutableStateOf(false) }
+    val workPaused = both && !showWork && model.workHiddenNow()
+    val others = model.otherRooms.filter { q.isEmpty() || it.room.name.lowercase().contains(q) || it.room.lastText.lowercase().contains(q) }
+    val together = if (both) Entrambi.merge(shown, model.account, others, hideWork = workPaused) else emptyList()
+    val workWaiting = if (model.account == Account.Work) shown.sumOf { it.unread } else others.sumOf { it.room.unread }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.ch_title), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                     // Con due account si vede sempre in quale si è.
-                    if (model.otherSession != null) Text(accountName(model.account) + " · " + Matrix.localpart(model.session?.userId.orEmpty()),
-                        fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = accountColor(model.account), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (model.otherSession != null) AccountsPill(model)
                 }
                 // Lo Studio medico acceso: l'ingresso sta qui, con le urgenze segnate.
                 if (studio.enabled) {
@@ -305,13 +317,6 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
                 RoundIcon(EuriseIcons.person(2.2f), stringResource(R.string.ch_account)) { account = true }
             }
             SearchField(query, stringResource(R.string.ch_search)) { query = it }
-            // Persone (tutti i canali insieme), Solo Chat, Non lette (tavola UniPersone).
-            ViewChips(model)
-            if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
-            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
-                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
-            }
             // Una spesa arrivata dall'Email (tavola SpeEmail): si sceglie il gruppo.
             (model.pendingDeadline?.first ?: model.pendingAsk?.first ?: model.pendingStop?.title ?: model.pendingDecision?.first)?.let { what ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.primary.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 9.dp),
@@ -343,19 +348,39 @@ private fun RoomList(model: ChatModel, actions: ChatActions, onRecovery: () -> U
         }
         if (!model.ready) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
         model.error?.let { Text(it, fontSize = 12.5.sp, color = scheme.error, modifier = Modifier.padding(horizontal = 20.dp)) }
+        // Persone (tutti i canali insieme), Solo Chat, Non lette a schedario (tavole UniPersone e ChatSchedario, approvata il
+        // 22 novembre): l'elenco è il foglio della linguetta aperta; cartelle e spazi restano pillole sul foglio.
+        ViewTabs(model, Modifier.padding(horizontal = 6.dp).fillMaxWidth())
         Box(Modifier.weight(1f)) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 16.dp).background(scheme.surfaceContainerLow, RoundedCornerShape(topEnd = 18.dp))) {
+            if (model.uni.view == Uni.View.Chat) Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (model.uni.view == Uni.View.Chat) FolderChips(model, archived.size) { editFolder = null to emptySet() }
+            if (model.uni.view == Uni.View.Chat && model.roles.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Chip(stringResource(R.string.sp_all), selected = model.space == null) { model.space = null }
+                eu.eurise.core.insieme.Ruoli.Space.entries.forEach { sp -> Chip(stringResource(eu.eurise.core.insieme.Ruoli.label(sp)), selected = model.space == sp) { model.space = sp } }
+            }
+            }
+            Box(Modifier.weight(1f)) {
             if (model.ready && shown.isEmpty() && model.uni.view == Uni.View.Chat) Text(stringResource(R.string.ch_empty), fontSize = 14.sp, lineHeight = 20.sp,
                 color = scheme.onSurfaceVariant, modifier = Modifier.padding(24.dp))
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
                 if (model.uni.view == Uni.View.Chat && model.folder == null && q.isEmpty() && model.ready) item(key = "self") { SelfRow(model, actions) }
-                if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r) { roomFolders = r } }
+                if (model.uni.view == Uni.View.Chat && both) {
+                    if (workPaused && workWaiting > 0) item(key = "work-paused") { WorkPausedRow(workWaiting) { showWork = true } }
+                    items(together, key = { (if (it.mine) "m:" else "o:") + it.room.id }) { row ->
+                        RoomRow(model, row.room, onLong = { roomFolders = row.room }, mark = accountColor(row.account), other = !row.mine)
+                    }
+                } else if (model.uni.view == Uni.View.Chat) items(shown, key = { it.id }) { r -> RoomRow(model, r, onLong = { roomFolders = r }) }
                 else peopleItems(model, query, unreadOnly = model.uni.view == Uni.View.Unread)
                 item { Spacer(Modifier.height(100.dp)) }
             }
-            if (model.otherSession != null) AccountBar(model, Modifier.align(Alignment.BottomCenter)) { creating = true }
-            else Row(
+            }
+            }
+            // Con due account niente più barra Personale · Lavoro (tavola ChatEntrambi): la scelta è nella pillola in alto e il
+            // «+» prende il colore dell'account aperto, dove nasce la chat nuova.
+            Row(
                 Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp).height(56.dp).clip(RoundedCornerShape(28.dp))
-                    .background(scheme.primary).clickable(role = Role.Button) { creating = true }.padding(horizontal = 20.dp),
+                    .background(if (model.otherSession != null) accountColor(model.account) else scheme.primary).clickable(role = Role.Button) { creating = true }.padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(EuriseIcons.plus(2.4f), null, tint = scheme.onPrimary, modifier = Modifier.size(18.dp))
@@ -526,13 +551,15 @@ internal fun Ticks(n: Int) {
 }
 
 @Composable
-internal fun RoomRow(model: ChatModel, r: Room, onLong: (() -> Unit)? = null) {
+internal fun RoomRow(model: ChatModel, r: Room, onLong: (() -> Unit)? = null, mark: Color? = null, other: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     val tint = tintFor(r.id)
     Column {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 68.dp)
-                .combinedClickable(enabled = !r.invite, onLongClick = onLong) { model.open(r.id) }.padding(vertical = 8.dp),
+                // «Entrambi»: il filo a sinistra con il colore dell'account (tavola ChatEntrambi).
+                .then(if (mark != null) Modifier.drawBehind { drawRoundRect(mark, Offset(0f, 16.dp.toPx()), Size(4.dp.toPx(), size.height - 32.dp.toPx()), CornerRadius(2.dp.toPx())) }.padding(start = 10.dp) else Modifier)
+                .combinedClickable(enabled = !r.invite, onLongClick = if (other) null else onLong) { if (other) model.openOther(r.id) else model.open(r.id) }.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.size(46.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
@@ -547,15 +574,15 @@ internal fun RoomRow(model: ChatModel, r: Room, onLong: (() -> Unit)? = null) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (r.encrypted) { Icon(EuriseIcons.lock(2.4f), null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Spacer(Modifier.width(4.dp)) }
-                    Text(if (r.invite) stringResource(R.string.ch_invite) else r.lastText, fontSize = 13.sp, color = scheme.onSurfaceVariant,
+                    Text(if (r.invite) stringResource(R.string.ch_invite) else if (other && r.lastText.isEmpty()) stringResource(R.string.ch_other_locked) else r.lastText, fontSize = 13.sp, color = scheme.onSurfaceVariant,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     if (r.unread > 0) {
-                        Box(Modifier.heightIn(min = 20.dp).widthIn(min = 20.dp).clip(RoundedCornerShape(10.dp)).background(scheme.primary).padding(horizontal = 6.dp),
+                        Box(Modifier.heightIn(min = 20.dp).widthIn(min = 20.dp).clip(RoundedCornerShape(10.dp)).background(mark ?: scheme.primary).padding(horizontal = 6.dp),
                             contentAlignment = Alignment.Center) { Text("${r.unread}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onPrimary) }
                     }
                 }
                 // Le discussioni a filo della chat (tavola ChatCartelle e ChatThread).
-                if (!r.invite) RoomThreadsLine(model, r.id)
+                if (!r.invite && !other) RoomThreadsLine(model, r.id)
             }
         }
         if (r.invite) Row(Modifier.padding(start = 58.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1172,3 +1199,78 @@ internal fun Field(label: String, value: String, type: KeyboardType, secret: Boo
             textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary), modifier = Modifier.fillMaxWidth())
     }
 }
+
+/**
+ * La pillola degli account (tavola ChatEntrambi): un pallino per account, con le sue non lette dentro; il tocco apre la
+ * scelta Personale, Lavoro o Entrambi. Personale e Lavoro aprono quell'account soltanto, come prima.
+ */
+@Composable
+private fun AccountsPill(model: ChatModel) {
+    val scheme = MaterialTheme.colorScheme
+    var menu by remember { mutableStateOf(false) }
+    val mine = model.rooms.sumOf { it.unread }
+    val other = model.otherUnread ?: 0
+    fun unread(a: Account) = if (a == model.account) mine else other
+    val label = stringResource(R.string.ch_show_pill)
+    Box {
+        Row(
+            Modifier.padding(top = 4.dp).height(32.dp).clip(RoundedCornerShape(16.dp)).background(scheme.surfaceContainerHigh)
+                .clickable(role = Role.Button) { menu = true }.semantics { contentDescription = label }.padding(start = 6.dp, end = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            val shown = if (model.show == Entrambi.Show.Both) listOf(Account.Personal, Account.Work) else listOf(model.account)
+            shown.forEach { a ->
+                AccountDot(a, unread(a))
+                Text(accountName(a), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = accountColor(a))
+            }
+            Text("▾", fontSize = 10.sp, color = scheme.onSurfaceVariant)
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            Text(stringResource(R.string.ch_show_title), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = scheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+            listOf(Account.Personal, Account.Work).forEach { a ->
+                val on = model.show == Entrambi.Show.One && model.account == a
+                DropdownMenuItem(
+                    text = { Text(accountName(a), fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold) },
+                    leadingIcon = { AccountDot(a, unread(a)) },
+                    trailingIcon = { if (on) Icon(EuriseIcons.check(2.4f), null, modifier = Modifier.size(16.dp)) },
+                    onClick = { menu = false; model.changeShow(Entrambi.Show.One); model.switchTo(a) },
+                )
+            }
+            val on = model.show == Entrambi.Show.Both
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ch_show_both), fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold) },
+                leadingIcon = { Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) { AccountDot(Account.Personal, unread(Account.Personal)); AccountDot(Account.Work, unread(Account.Work)) } },
+                trailingIcon = { if (on) Icon(EuriseIcons.check(2.4f), null, modifier = Modifier.size(16.dp)) },
+                onClick = { menu = false; model.changeShow(Entrambi.Show.Both) },
+            )
+            Text(stringResource(R.string.ch_show_quiet_note), fontSize = 12.sp, color = scheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).widthIn(max = 240.dp))
+        }
+    }
+}
+
+/** Il pallino dell'account con le sue non lette dentro (vuoto senza non lette). */
+@Composable
+private fun AccountDot(a: Account, unread: Int) {
+    Box(
+        Modifier.heightIn(min = 20.dp).widthIn(min = 20.dp).clip(RoundedCornerShape(10.dp)).background(accountColor(a)).padding(horizontal = 5.dp),
+        contentAlignment = Alignment.Center,
+    ) { if (unread > 0) Text(if (unread > 99) "99+" else "$unread", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
+}
+
+/** Fuori orario, in «Entrambi»: il Lavoro si è fatto da parte; la riga dice quante aspettano e le riporta per ora. */
+@Composable
+private fun WorkPausedRow(waiting: Int, onShow: () -> Unit) {
+    val c = accountColor(Account.Work)
+    Row(
+        Modifier.padding(top = 8.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = 0.10f))
+            .clickable(role = Role.Button, onClick = onShow).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(c))
+        Text(stringResource(R.string.ch_work_paused, waiting), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = c, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.ch_work_show), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = c)
+    }
+}
+

@@ -212,6 +212,13 @@
     <string name="ch_acc_personal">Personale</string>
     <string name="ch_acc_work">Lavoro</string>
     <string name="ch_acc_here">qui ora</string>
+    <string name="ch_show_title">MOSTRA</string>
+    <string name="ch_show_both">Entrambi</string>
+    <string name="ch_show_pill">Scegli quali chat vedere: Personale, Lavoro o entrambi</string>
+    <string name="ch_show_quiet_note">Fuori orario il Lavoro si fa da parte (Account › Fuori orario)</string>
+    <string name="ch_other_locked">Messaggio cifrato · apri per leggerlo</string>
+    <string name="ch_work_paused">Lavoro in pausa fuori orario · %1$d non lette</string>
+    <string name="ch_work_show">Mostra</string>
     <string name="ch_acc_title">I tuoi account</string>
     <string name="ch_acc_back">Torna a %1$s</string>
     <string name="ch_acc_add_work">Collega l\'account di lavoro</string>

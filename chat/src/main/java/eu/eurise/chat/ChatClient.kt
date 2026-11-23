@@ -61,6 +61,9 @@ class ChatClient(val session: Session) {
         return join.keys().asSequence().sumOf { join.getJSONObject(it).optJSONObject("unread_notifications")?.optInt("notification_count") ?: 0 }
     }
 
+    /** Il riassunto leggero delle stanze per «Entrambi» (vedi [Entrambi.FILTER]): non sposta il punto di sincronizzazione. */
+    fun summary(): JSONObject = get("/_matrix/client/v3/sync?timeout=0&filter=" + enc(Entrambi.FILTER), 30_000)
+
     fun messages(roomId: String, from: String): JSONObject =
         get("/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=30&from=${enc(from)}")
 

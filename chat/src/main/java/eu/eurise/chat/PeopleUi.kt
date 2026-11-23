@@ -89,18 +89,26 @@ private fun channelName(c: Channel) = stringResource(when (c) {
     Channel.Chat -> R.string.pe_ch_chat; Channel.Sms -> R.string.pe_ch_sms; Channel.Email -> R.string.pe_ch_email; Channel.Call -> R.string.pe_ch_call
 })
 
-/** Le viste dell'elenco: Persone, Solo Chat, Non lette (con quante). */
+/**
+ * Le viste dell'elenco a schedario (tavola ChatSchedario, approvata il 22 novembre): Persone, Solo Chat, Non lette (con
+ * quante, anche a linguetta chiusa). La linguetta aperta ha il colore del foglio dell'elenco sotto.
+ */
 @Composable
-internal fun ViewChips(model: ChatModel) {
+internal fun ViewTabs(model: ChatModel, modifier: Modifier) {
     val uni = model.uni
     val unread = uni.rows.sumOf { it.unread } + model.rooms.filter { model.peerOf(it.id) == null }.sumOf { it.unread }
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Chip(stringResource(R.string.pe_view_people), uni.view == Uni.View.People) { uni.changeView(Uni.View.People) }
-        Chip(stringResource(R.string.pe_view_chat), uni.view == Uni.View.Chat) { uni.changeView(Uni.View.Chat) }
-        Chip(if (unread > 0) stringResource(R.string.pe_view_unread_n, unread) else stringResource(R.string.pe_view_unread), uni.view == Uni.View.Unread) {
-            uni.changeView(Uni.View.Unread)
-        }
-    }
+    val views = listOf(Uni.View.People, Uni.View.Chat, Uni.View.Unread)
+    eu.eurise.core.designsystem.component.FolderTabs(
+        labels = listOf(
+            stringResource(R.string.pe_view_people),
+            stringResource(R.string.pe_view_chat),
+            if (unread > 0) stringResource(R.string.pe_view_unread_n, unread) else stringResource(R.string.pe_view_unread),
+        ),
+        selected = views.indexOf(uni.view),
+        onSelect = { uni.changeView(views[it]) },
+        sheet = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier,
+    )
 }
 
 /** Tiene la vista Persone al passo: all'apertura rilegge tutto, a ogni messaggio della Chat solo la sua parte. */
