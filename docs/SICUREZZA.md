@@ -2,7 +2,7 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 22 novembre 2026, mezzogiorno)
+### Per ripartire (aggiornato il 23 novembre 2026, sera)
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
@@ -15,6 +15,17 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Giro 1103** (23 novembre, sera; pubblicato in apk-prova, prova d'avvio verde, `brand` portato avanti): chiude il giro
+  delle librerie con la verifica bloccante: Compose BOM 2026.11.01 con compileSdk 37.1 (impostato in `finalizeDsl`), R8
+  pieno in Password, Browser che riapre dal suo stato solo la scheda in vista (non più tutte), zxing **resta 3.5.3**
+  (sezione «Aggiornamento delle librerie»). Più due lavori di app: Computer con Calendario e Attività su CalDAV
+  (`docs/stato/COMPUTER.md`) ed Email da lavoro, prima parte (`docs/stato/COMUNICAZIONE.md`). Sicurezza dei due lavori:
+  - Computer: password per le app di Nextcloud nel portachiavi del sistema (Secret Service), mai in chiaro su disco;
+    `cloud.json` con permessi 600 e senza segreti; collegamento con Login Flow v2 nel browser (due tocchi, nessuna
+    password scritta nell'app); senza portachiavi la password resta solo in memoria e la schermata lo dice.
+  - Email: nessun servizio esterno, nessun permesso nuovo. L'invio programmato resta in `files/in_uscita` (privata
+    dell'app, fuori dal backup del sistema come il resto) e parte con WorkManager dalla propria casella; annullare toglie
+    lavoro e file. Il punto del mattino e «Per te» si calcolano dalle intestazioni già scaricate.
 - **Giro 1048 provato sul telefono** (22 novembre): le app funzionano con R8.
 - **Giro 1082** (23 novembre, notte): Chat con «Entrambi» in versione leggera. Scelta di sicurezza: resta aperto un
   account alla volta (chiavi e cifratura di uno solo in memoria); dell'altro solo il riassunto che la Chat già leggeva
@@ -68,6 +79,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   8. **Pulizia e velocità** (22 novembre): ~~APK di prova non debuggable~~ (avvii a freddo da 2 a 3 volte più rapidi),
      ~~prova d'avvio di tutte le app~~, ~~R8 in tutte le app~~ (giro 1048, sezione «Porte d'ingresso»),
      ~~Mappe non debuggable~~ (lo era già: FdroidRelease), ~~modelli scaricati nel centro privacy~~ (giro 1048).
+     ~~R8 pieno in Password~~ (giro 1103: senza «tieni tutto eu.eurise», prova d'avvio verde; da provare sul telefono
+     aprire la cassaforte, compilare un accesso, il riempimento automatico).
      Prossimo: dopo la prova sul telefono, R8 meno prudente app per app (togliere il «tieni tutto eu.eurise» dove la
      prova d'avvio e un giro delle funzioni lo reggono; riduzione delle risorse fuori dal Launcher); Office con il
      motore nuovo ricompilato (ha già la variante dal nome del pacchetto); librerie del punto 7.
