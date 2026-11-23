@@ -11,7 +11,6 @@ import java.io.File
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.pow
-import kotlin.math.sqrt
 
 /**
  * Ritocco dopo lo scatto (22 novembre 2026), tutto sul telefono e senza librerie, per le foto di sera in casa:
@@ -39,6 +38,10 @@ object Ritocco {
     /** Da qui in su si spiana la grana della luminosità (23 novembre: a ISO 2200 la grana era il difetto principale). */
     const val GRAIN_ISO = 800
     private const val GRAIN_STRENGTH = 0.8f
+    /** Nitidezza solo per le foto fuse da almeno tanti fotogrammi. */
+    const val SHARPEN_FRAMES = 3
+    private const val SHARPEN_AMOUNT = 0.5f
+    const val SHARPEN_CORE = 4f
 
     /**
      * Guadagni rosso e blu per i valori medi [r], [g], [b], o null se i colori vanno bene così. Vale per ogni dominante:
@@ -149,7 +152,8 @@ object Ritocco {
         val median = lum.copyOf().also { it.sort() }[lum.size / 2].toInt()
         val curve = gamma(median)
         val grain = grainThreshold(iso, frames)
-        if (wb == null && !chroma && curve == null && grain == 0) return false
+        val crisp = frames >= SHARPEN_FRAMES
+        if (wb == null && !chroma && curve == null && grain == 0 && !crisp) return false
         // Con molto rumore si schiarisce meno: schiarire mostra la grana.
         val maxGain = if (iso >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
         if (chroma) { boxBlur(cb, cw, ch, 1); boxBlur(cr, cw, ch, 1) }
@@ -166,7 +170,7 @@ object Ritocco {
         // 3. Ricomposizione: luminosità piena del pixel, colore dalla griglia (o dal pixel), guadagno dalla zona.
         val cx = Interp(w, 4, cw); val lx = Interp(w, 8, lw)
         // Righe di luminosità originale da yy-2 a yy+2 per la grana (la riga yy+2 non è ancora riscritta).
-        val win = if (grain > 0) Array(5) { IntArray(w) } else null
+        val win = if (grain > 0 || crisp) Array(5) { IntArray(w) } else null
         val tmp = IntArray(w)
         fun lumaRow(yy: Int, into: IntArray) {
             bitmap.getPixels(tmp, 0, w, 0, yy.coerceIn(0, h - 1), w, 1)
@@ -187,7 +191,10 @@ object Ritocco {
                 val r = (c shr 16 and 0xFF) * gr; val g = (c shr 8 and 0xFF).toFloat(); val b = (c and 0xFF) * gb
                 var l = 0.299f * r + 0.587f * g + 0.114f * b
                 var u = b - l; var v = r - l
-                if (win != null) l += GRAIN_STRENGTH * smooth(win, x, w, grain)
+                if (win != null) {
+                    if (grain > 0) l += GRAIN_STRENGTH * smooth(win, x, w, grain)
+                    if (crisp) l += SHARPEN_AMOUNT * detail(win, x, w)
+                }
                 if (chroma) { u = cx.sample(cb, cw, cy, x); v = cx.sample(cr, cw, cy, x) }
                 var k = 1f
                 if (curve != null) {
@@ -205,13 +212,31 @@ object Ritocco {
     }
 
     /**
-     * Soglia del filtro della grana (0 = spento): da [GRAIN_ISO] in su, più alta con più ISO, divisa per la radice dei
-     * fotogrammi fusi (la Notte ha già tolto parte del rumore).
+     * Soglia del filtro della grana (0 = spento): da [GRAIN_ISO] in su, più alta con più ISO, divisa per i fotogrammi
+     * fusi. Con la radice (23 novembre, giro 1099) dopo la Notte restava acceso e faceva l'effetto acquerello: la fusione
+     * aveva già portato la grana da 14 a 3.
      */
     internal fun grainThreshold(iso: Int, frames: Int): Int {
         if (iso < GRAIN_ISO) return 0
-        val t = minOf(12.0 + (iso - GRAIN_ISO) / 60.0, 40.0) / sqrt(frames.coerceAtLeast(1).toDouble())
+        val t = minOf(12.0 + (iso - GRAIN_ISO) / 60.0, 40.0) / frames.coerceAtLeast(1)
         return if (t < 6) 0 else t.toInt()
+    }
+
+    /**
+     * Nitidezza dopo la Notte: il pixel meno la media dei 5×5 vicini (la fusione ammorbidisce un poco), con le differenze
+     * sotto [SHARPEN_CORE] lasciate stare, così la grana rimasta non torna fuori.
+     */
+    internal fun detail(win: Array<IntArray>, x: Int, w: Int): Float {
+        val own = win[2][x]
+        var sum = 0; var n = 0
+        val x0 = maxOf(0, x - 2); val x1 = minOf(w - 1, x + 2)
+        for (r in win) for (i in x0..x1) { sum += r[i]; n++ }
+        val d = own - sum.toFloat() / n
+        return when {
+            d > SHARPEN_CORE -> d - SHARPEN_CORE
+            d < -SHARPEN_CORE -> d + SHARPEN_CORE
+            else -> 0f
+        }
     }
 
     /**

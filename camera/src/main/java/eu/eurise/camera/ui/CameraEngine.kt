@@ -294,6 +294,8 @@ class CameraEngine(private val context: Context) {
      */
     fun nightFrames(): Int? {
         if (flashMode != ImageCapture.FLASH_MODE_OFF || iso < NIGHT_ISO) return null
+        // Con pochissima luce quanti la modalità Notte (23 novembre: a ISO 2687 con 4 restava più grana).
+        if (iso >= DARK_ISO) return nightModeFrames()
         return if (front) 6 else 4
     }
 
@@ -336,6 +338,8 @@ class CameraEngine(private val context: Context) {
         const val BIAS = 1.0
         /** Da quanti ISO del mirino in su si scatta la Notte con più fotogrammi. */
         const val NIGHT_ISO = 800
+        /** Da qui in su anche la Notte automatica prende tutti i fotogrammi della modalità Notte. */
+        const val DARK_ISO = 1600
     }
 }
 

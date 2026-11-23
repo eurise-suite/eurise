@@ -90,7 +90,17 @@ class RitoccoTest {
     fun grainFilterOnlyWithManyIso() {
         assertEquals(0, r.grainThreshold(400, 1))
         assertEquals(35, r.grainThreshold(2200, 1))
-        assert(r.grainThreshold(2200, 6) in 10..16)
+        assertEquals(0, r.grainThreshold(2200, 6))
+        assertEquals(10, r.grainThreshold(2700, 4))
+    }
+
+    @Test
+    fun sharpeningLeavesGrainAlone() {
+        val w = 5
+        val flat = Array(5) { IntArray(w) { 100 } }.also { it[2][2] = 103 }
+        assertEquals(0f, r.detail(flat, 2, w))
+        val line = Array(5) { IntArray(w) { 100 } }.also { it[2][2] = 150 }
+        assert(r.detail(line, 2, w) > 40f)
     }
 
     @Test
