@@ -759,3 +759,17 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
 - Persone · Codici e consegne · Avvisi a schedario (`FolderTabs` di `core/designsystem`): la linguetta aperta e l'elenco
   sono un foglio bianco solo (`surfaceContainerLow`), il numero dei codici resta sulla linguetta. Le linguette stanno
   dopo gli avvisi (permessi, codice fresco), subito sopra l'elenco.
+
+## Chat, 23 novembre 2026, notte (progetto Eurise Sicurezza, tavole ChatSchedario e ChatEntrambi approvate)
+- Persone · Solo Chat · Non lette a schedario (`ViewTabs` in PeopleUi.kt, `FolderTabs`): l'elenco è il foglio della
+  linguetta aperta; cartelle e spazi restano pillole sul foglio.
+- **Personale e Lavoro insieme** (scelta C, versione leggera, giro 1082): pillola sotto il titolo con un pallino per
+  account e le sue non lette dentro; scelta Personale, Lavoro o Entrambi (`ChatModel.show`, preferenza
+  `chat_accounts_view`). In «Entrambi» un elenco solo con il filo blu o ottone (`Entrambi.merge`). Resta aperto **un
+  account alla volta** (chiavi e sincronizzazione di uno solo): dell'altro un riassunto leggero ogni due minuti
+  (`Entrambi.parse`, /sync senza since come per le non lette: nome, ora, non lette, anteprima solo se non cifrata, se no
+  «Messaggio cifrato · apri per leggerlo»). Toccando una sua chat si passa a quell'account (`openOther`) e la chat si
+  apre appena c'è. Fuori orario, con «il lavoro tace», il Lavoro si fa da parte con la riga «Lavoro in pausa · N non
+  lette · Mostra». La barra Personale · Lavoro in basso non c'è più: il «+» ha il colore dell'account aperto.
+  Test `EntrambiTest`. **Da fare se servirà**: il motore doppio (tutti e due gli account aperti insieme) per anteprime e
+  notifiche complete; scartato per ora per sicurezza (chiavi di un account solo in memoria) e batteria.

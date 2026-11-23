@@ -184,3 +184,6 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   `body.eurise-tablet`): la scheda aperta del nastro è una linguetta bianca che continua nella fascia bianca dei comandi
   (`--eurise-band`), i gruppi sono parti della fascia divise da un filo. Provato sul computer (prova del Flatpak).
   Sul tablet Android arriva con il motore 68.
+- Motore 68 fallito sul controllo di stile di Collabora (selettore doppio `body.eurise-tablet #eurise-top` nel nastro):
+  unito a quello esistente; motore 69 in corso da `brand`. Attenzione: `eurise.css` passa da stylelint
+  (`no-duplicate-selectors`) quando si compila il motore, non nella prova del computer.
