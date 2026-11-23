@@ -185,5 +185,6 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   (`--eurise-band`), i gruppi sono parti della fascia divise da un filo. Provato sul computer (prova del Flatpak).
   Sul tablet Android arriva con il motore 68.
 - Motore 68 fallito sul controllo di stile di Collabora (selettore doppio `body.eurise-tablet #eurise-top` nel nastro):
-  unito a quello esistente; motore 69 in corso da `brand`. Attenzione: `eurise.css` passa da stylelint
+  unito a quello esistente; **motore 69 riuscito e pubblicato** (23 novembre, 01:30 UTC): nastro e fogli a schedario
+  anche nella modifica completa su telefono e tablet. Attenzione: `eurise.css` passa da stylelint
   (`no-duplicate-selectors`) quando si compila il motore, non nella prova del computer.

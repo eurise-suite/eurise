@@ -20,7 +20,7 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   account alla volta (chiavi e cifratura di uno solo in memoria); dell'altro solo il riassunto che la Chat già leggeva
   per le non lette, più nomi e anteprime non cifrate, con lo stesso token e senza spostarne la sincronizzazione.
 - **Giro 1064** (22 novembre, sera): Office con i fogli a schedario e il pezzo comune `Folder.kt`; prova d'avvio verde.
-  Motore di Office 67 (con `eurise.css` nuovo) in corso da `brand`.
+  Motore di Office 69 (nastro e fogli a schedario) pubblicato il 23 novembre in apk-prova con il giro 1082.
 - **Da provare sul telefono (giro 1048)**: un giro di ogni app, soprattutto ciò che usa librerie con riflessione o codice
   nativo (R8): posta (IMAP/SMTP), Chat cifrata (Matrix), PDF e firma in Office e Scanner, OCR e traduzione in Leggi,
   dettatura e voce di Alfred, cervello in AI, sincronizzazione e backup. Poi in Leggi o Voce «Scarica» una lingua o un
