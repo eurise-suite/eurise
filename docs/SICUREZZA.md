@@ -3,6 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
+- **Ultimo giro pubblicato**: **1107** (23 novembre, sera; sotto). Prossimo: Alfred «Di' Alfred», Password Famiglia, Mappe
+  Croazia, Galleria con gli originali tenuti 30 giorni; zxing 3.5.4 aspetta un passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
   `brand`. Al 21 novembre, pomeriggio, `brand` è portato avanti veloce fino a `prova-sicurezza` (giro 932). Se `brand` è andato avanti nel frattempo, si unisce `brand` in `prova-sicurezza` (mai push forzato) e si aspetta il giro. Prima di ogni push: fetch e rebase su
   `origin/brand` (altre chat spingono lì). Mai push forzato: `brand` e `main` sono protetti (regola «Rami principali
@@ -10,11 +12,17 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Questa è la chat unica** per sicurezza, pulizia e pubblicazioni comuni (decisione del proprietario, 22 novembre):
   le chat delle aree non pubblicano più in `apk-prova` sopra un giro con il lavoro di altre (ogni pubblicazione toglie la
   precedente: il 22 mattina il giro 1033 di Comunicazione è stato sostituito e poi rimesso con il 1039).
-- **Ultimo giro pubblicato**: Compila **1060** da `prova-sicurezza` (22 novembre, 16:06 UTC; il 1057 si chiudeva
+- **Giro 1060** da `prova-sicurezza` (22 novembre, 16:06 UTC; il 1057 si chiudeva
   all'apertura del Browser, preso dalla prova d'avvio e corretto): sopra il 1048, il
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Giro 1107** (23 novembre, sera; pubblicato in apk-prova con Mappe 145 e il motore di Office di prima, `brand` portato
+  avanti): Office, pressione lunga sui fogli della vista rapida (Rinomina, Sposta, Duplica, Elimina su xlsx e ods,
+  `SheetOpsTest`; `docs/stato/OFFICE.md`). Sicurezza: nessun permesso, nessuna rete, nessuna porta nuova; le operazioni
+  lavorano solo sul file già aperto e si salvano come le celle (sola lettura → «Salva in…»). I file si leggono con il
+  parser già indurito (`Xml.parse`: niente DOCTYPE né entità esterne). Ciò che non si può fare senza rischio di rovinare il
+  file (grafici, tabelle, pivot, fogli usati da altri) si rifiuta e va alla modifica completa.
 - **Giro 1103** (23 novembre, sera; pubblicato in apk-prova, prova d'avvio verde, `brand` portato avanti): chiude il giro
   delle librerie con la verifica bloccante: Compose BOM 2026.11.01 con compileSdk 37.1 (impostato in `finalizeDsl`), R8
   pieno in Password, Browser che riapre dal suo stato solo la scheda in vista (non più tutte), zxing **resta 3.5.3**
