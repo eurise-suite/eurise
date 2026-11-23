@@ -21,6 +21,7 @@ fun main(args: Array<String>) {
     val ponte = PonteState()
     ponte.start()
     val today = TodayFeed().apply { start() }
+    val agenda = Agenda().apply { start() }
     val nav = Nav()
     application {
         val state = rememberWindowState(size = DpSize(1360.dp, 860.dp))
@@ -32,7 +33,7 @@ fun main(args: Array<String>) {
             icon = painterResource("eurise.png"),
             onPreviewKeyEvent = nav::key,
         ) {
-            EuriseTheme(dark) { EuriseApp(ponte, today, nav) }
+            EuriseTheme(dark) { EuriseApp(ponte, today, agenda, nav) }
         }
     }
 }
