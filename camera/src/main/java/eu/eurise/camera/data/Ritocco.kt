@@ -8,8 +8,10 @@ import android.net.Uri
 import android.util.Log
 import eu.eurise.camera.TAG
 import java.io.File
+import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * Ritocco dopo lo scatto (22 novembre 2026), tutto sul telefono e senza librerie, per le foto di sera in casa:
@@ -34,6 +36,9 @@ object Ritocco {
     private const val MAX_GAIN = 1.6f
     private const val MAX_GAIN_NOISY = 1.3f
     private const val VERY_NOISY_ISO = 1600
+    /** Da qui in su si spiana la grana della luminosità (23 novembre: a ISO 2200 la grana era il difetto principale). */
+    const val GRAIN_ISO = 800
+    private const val GRAIN_STRENGTH = 0.8f
 
     /**
      * Guadagni rosso e blu per i valori medi [r], [g], [b], o null se i colori vanno bene così. Vale per ogni dominante:
@@ -74,7 +79,7 @@ object Ritocco {
         } finally {
             bitmap.recycle()
         }
-        copyExif(src, out)
+        copyExif(src, out, "Eurise Fotocamera · ritocco · ISO $iso")
         return true
     }
 
@@ -84,7 +89,7 @@ object Ritocco {
      * scala di qualche decina di pixel, decide quanto schiarire: le ombre si aprono, la tenda chiara non si brucia).
      * Tre passate riga per riga, poca memoria oltre la foto. Restituisce false se non c'era niente da fare.
      */
-    fun process(bitmap: Bitmap, iso: Int): Boolean {
+    fun process(bitmap: Bitmap, iso: Int, frames: Int = 1): Boolean {
         val w = bitmap.width; val h = bitmap.height
         val row = IntArray(w)
         // 1. Colori dalle superfici chiare (muri, tende, fogli: tra il 75° e il 97° percentile della luminosità, luci
@@ -143,7 +148,8 @@ object Ritocco {
         for (i in lum.indices) if (lc[i] > 0) lum[i] /= lc[i]
         val median = lum.copyOf().also { it.sort() }[lum.size / 2].toInt()
         val curve = gamma(median)
-        if (wb == null && !chroma && curve == null) return false
+        val grain = grainThreshold(iso, frames)
+        if (wb == null && !chroma && curve == null && grain == 0) return false
         // Con molto rumore si schiarisce meno: schiarire mostra la grana.
         val maxGain = if (iso >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
         if (chroma) { boxBlur(cb, cw, ch, 1); boxBlur(cr, cw, ch, 1) }
@@ -159,14 +165,29 @@ object Ritocco {
 
         // 3. Ricomposizione: luminosità piena del pixel, colore dalla griglia (o dal pixel), guadagno dalla zona.
         val cx = Interp(w, 4, cw); val lx = Interp(w, 8, lw)
+        // Righe di luminosità originale da yy-2 a yy+2 per la grana (la riga yy+2 non è ancora riscritta).
+        val win = if (grain > 0) Array(5) { IntArray(w) } else null
+        val tmp = IntArray(w)
+        fun lumaRow(yy: Int, into: IntArray) {
+            bitmap.getPixels(tmp, 0, w, 0, yy.coerceIn(0, h - 1), w, 1)
+            for (x in 0 until w) into[x] = luma8(tmp[x])
+        }
+        if (win != null) for (i in 0 until 5) lumaRow(i - 2, win[i])
         for (yy in 0 until h) {
+            if (win != null && yy > 0) {
+                val first = win[0]
+                for (i in 0 until 4) win[i] = win[i + 1]
+                win[4] = first
+                lumaRow(yy + 2, first)
+            }
             bitmap.getPixels(row, 0, w, 0, yy, w, 1)
             val cy = Interp.at(yy, 4, ch); val ly = Interp.at(yy, 8, lh)
             for (x in 0 until w) {
                 val c = row[x]
                 val r = (c shr 16 and 0xFF) * gr; val g = (c shr 8 and 0xFF).toFloat(); val b = (c and 0xFF) * gb
-                val l = 0.299f * r + 0.587f * g + 0.114f * b
+                var l = 0.299f * r + 0.587f * g + 0.114f * b
                 var u = b - l; var v = r - l
+                if (win != null) l += GRAIN_STRENGTH * smooth(win, x, w, grain)
                 if (chroma) { u = cx.sample(cb, cw, cy, x); v = cx.sample(cr, cw, cy, x) }
                 var k = 1f
                 if (curve != null) {
@@ -179,8 +200,30 @@ object Ritocco {
             }
             bitmap.setPixels(row, 0, w, 0, yy, w, 1)
         }
-        Log.i(TAG, "Ritocco: colori ${wb != null}, rumore di colore $chroma (ISO $iso), mediana $median, curva $curve")
+        Log.i(TAG, "Ritocco: colori ${wb != null}, rumore di colore $chroma (ISO $iso), grana $grain, mediana $median, curva $curve")
         return true
+    }
+
+    /**
+     * Soglia del filtro della grana (0 = spento): da [GRAIN_ISO] in su, più alta con più ISO, divisa per la radice dei
+     * fotogrammi fusi (la Notte ha già tolto parte del rumore).
+     */
+    internal fun grainThreshold(iso: Int, frames: Int): Int {
+        if (iso < GRAIN_ISO) return 0
+        val t = minOf(12.0 + (iso - GRAIN_ISO) / 60.0, 40.0) / sqrt(frames.coerceAtLeast(1).toDouble())
+        return if (t < 6) 0 else t.toInt()
+    }
+
+    /**
+     * Filtro sigma sulla luminosità: la media dei vicini 5×5 che differiscono dal pixel meno di [t] (gli altri sono un
+     * bordo, e il bordo resta). Restituisce quanto spostare il pixel: la grana si spiana, i contorni no.
+     */
+    internal fun smooth(win: Array<IntArray>, x: Int, w: Int, t: Int): Float {
+        val own = win[2][x]
+        var sum = 0; var n = 0
+        val x0 = maxOf(0, x - 2); val x1 = minOf(w - 1, x + 2)
+        for (r in win) for (i in x0..x1) { val q = r[i]; if (abs(q - own) < t) { sum += q; n++ } }
+        return sum.toFloat() / n - own
     }
 
     private fun luma8(c: Int): Int = ((c shr 16 and 0xFF) * 77 + (c shr 8 and 0xFF) * 150 + (c and 0xFF) * 29) shr 8
@@ -248,10 +291,15 @@ object Ritocco {
         "GPSTimeStamp", "GPSDateStamp", "GPSProcessingMethod",
     )
 
-    internal fun copyExif(from: File, to: File) {
+    /**
+     * Ricopia i dati dello scatto. [how] va in «Software»: come è stata fatta la foto (ritocco, Notte e fotogrammi), così
+     * dalle foto di prova si capisce cosa è successo. Niente di personale, e resta anche quando si condivide.
+     */
+    internal fun copyExif(from: File, to: File, how: String) {
         runCatching {
             val a = ExifInterface(from.path); val b = ExifInterface(to.path)
             EXIF_TAGS.forEach { tag -> a.getAttribute(tag)?.let { b.setAttribute(tag, it) } }
+            b.setAttribute("Software", how)
             b.saveAttributes()
         }.onFailure { Log.w(TAG, "Dati dello scatto non ricopiati", it) }
     }

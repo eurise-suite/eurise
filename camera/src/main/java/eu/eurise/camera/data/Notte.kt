@@ -33,14 +33,14 @@ class Notte(private val w: Int, private val h: Int) {
      * Una riga di un altro fotogramma, già spostata: [row] è la riga y+[dy] del fotogramma, [ref] la riga y del primo.
      * [last] dice che è l'ultima riga del fotogramma.
      */
-    fun add(y: Int, ref: IntArray, row: IntArray?, dx: Int, last: Boolean) {
+    fun add(y: Int, ref: IntArray, row: IntArray?, dx: Int, last: Boolean, ghost: Int = GHOST) {
         if (row != null) {
             val o = y * w
             for (x in 0 until w) {
                 val xs = x + dx
                 if (xs < 0 || xs >= w) continue
                 val c = row[xs]; val r0 = ref[x]
-                if (abs(luma(c) - luma(r0)) > GHOST) continue
+                if (abs(luma(c) - luma(r0)) > ghost) continue
                 sr[o + x] = (sr[o + x] + (c shr 16 and 0xFF)).toShort()
                 sg[o + x] = (sg[o + x] + (c shr 8 and 0xFF)).toShort()
                 sb[o + x] = (sb[o + x] + (c and 0xFF)).toShort()
@@ -48,6 +48,13 @@ class Notte(private val w: Int, private val h: Int) {
             }
         }
         if (last) frames++
+    }
+
+    /** Quanti fotogrammi sono entrati in media in ogni pixel (1 = solo il primo). */
+    fun meanCount(): Float {
+        var sum = 0L
+        for (c in count) sum += c
+        return sum.toFloat() / count.size
     }
 
     /** La riga y del risultato, in [out] (ARGB opaco). */
@@ -61,8 +68,17 @@ class Notte(private val w: Int, private val h: Int) {
     }
 
     companion object {
-        /** Differenza di luminosità (0-255) oltre la quale un pixel si considera mosso. */
+        /** Differenza di luminosità (0-255) oltre la quale un pixel si considera mosso, con poco rumore. */
         const val GHOST = 28
+        /** Con tanto rumore la soglia sale con la grana misurata, fino a qui. */
+        const val MAX_GHOST = 64
+
+        /**
+         * Soglia dei fantasmi per un fotogramma: tre volte la deviazione della differenza dal primo, stimata dalla
+         * differenza media [meanAbs] (per una gaussiana è 0,8 volte la deviazione), tra [GHOST] e [MAX_GHOST].
+         * Una soglia fissa di 28 a ISO 2000 scartava anche la grana, e la Notte non toglieva rumore.
+         */
+        fun ghostFor(meanAbs: Double): Int = (3.0 * meanAbs / 0.8).toInt().coerceIn(GHOST, MAX_GHOST)
         /** Al massimo 8 fotogrammi: 8 × 255 sta in uno Short. */
         const val MAX_FRAMES = 8
 
