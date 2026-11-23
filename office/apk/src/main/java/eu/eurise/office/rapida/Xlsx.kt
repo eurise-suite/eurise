@@ -140,6 +140,13 @@ object Xlsx : SheetFormat {
         return (styles.looks.getOrNull(style) ?: NumberLook.GENERAL).format(n)
     }
 
+    // ---- Fogli ----
+
+    override fun renameSheet(bundle: Bundle, sheet: Int, name: String) = XlsxSheets.rename(bundle, sheet, name)
+    override fun moveSheet(bundle: Bundle, from: Int, to: Int) = XlsxSheets.move(bundle, from, to)
+    override fun duplicateSheet(bundle: Bundle, sheet: Int, name: String) = XlsxSheets.duplicate(bundle, sheet, name)
+    override fun deleteSheet(bundle: Bundle, sheet: Int) = XlsxSheets.delete(bundle, sheet)
+
     // ---- Modifica ----
 
     override fun setCell(bundle: Bundle, sheet: Int, col: Int, row: Int, input: String): CellResult {

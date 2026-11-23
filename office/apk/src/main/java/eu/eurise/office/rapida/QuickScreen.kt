@@ -593,13 +593,132 @@ private fun HeadCell(text: String, width: androidx.compose.ui.unit.Dp) {
  */
 @Composable
 private fun SheetTabs(model: QuickModel, doc: SheetDoc) {
+    var menu by remember { mutableStateOf<Int?>(null) }
+    var renaming by remember { mutableStateOf<Int?>(null) }
+    var deleting by remember { mutableStateOf<Int?>(null) }
     FolderTabs(
         labels = doc.sheets.map { it.name },
         selected = model.sheetIndex,
         onSelect = { i -> if (i != model.sheetIndex) { model.sheetIndex = i; model.selected = null; model.lastResult = null } },
         sheet = Paper,
         down = true,
+        onLongPress = { menu = it },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+    )
+    menu?.let { i ->
+        SheetMenu(
+            name = doc.sheets.getOrNull(i)?.name ?: return@let,
+            index = i, count = doc.sheets.size,
+            onDismiss = { menu = null },
+            onRename = { menu = null; renaming = i },
+            onMove = { to -> menu = to; model.moveSheet(i, to) },
+            onDuplicate = { menu = null; model.duplicateSheet(i) },
+            onDelete = { menu = null; deleting = i },
+        )
+    }
+    renaming?.let { i ->
+        RenameSheetDialog(doc.sheets.getOrNull(i)?.name.orEmpty(), doc.sheets.filterIndexed { k, _ -> k != i }.map { it.name },
+            onDismiss = { renaming = null }) { name -> renaming = null; model.renameSheet(i, name) }
+    }
+    deleting?.let { i ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text(stringResource(R.string.quick_sheet_delete_title, doc.sheets.getOrNull(i)?.name.orEmpty())) },
+            text = { Text(stringResource(R.string.quick_sheet_delete_body)) },
+            confirmButton = { TextButton(onClick = { deleting = null; model.deleteSheet(i) }) { Text(stringResource(R.string.quick_sheet_delete), color = Danger) } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.pdf_cancel)) } },
+        )
+    }
+}
+
+private val Danger = Color(0xFFB3261E)
+
+/**
+ * Le scelte su un foglio (pressione lunga sulla linguetta): Rinomina, Sposta a sinistra o a destra (il foglio resta
+ * scelto, così si sposta di più posti di fila), Duplica, Elimina. In basso, sotto il pollice.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SheetMenu(
+    name: String, index: Int, count: Int,
+    onDismiss: () -> Unit, onRename: () -> Unit, onMove: (Int) -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 12.dp)) {
+            Text(name, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.quick_sheet_position, index + 1, count), fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.padding(top = 14.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MovePill(stringResource(R.string.quick_sheet_left), EuriseIcons.chevronLeft(), index > 0, Modifier.weight(1f)) { onMove(index - 1) }
+                MovePill(stringResource(R.string.quick_sheet_right), EuriseIcons.chevronRight(), index < count - 1, Modifier.weight(1f), iconAfter = true) { onMove(index + 1) }
+            }
+            SheetAction(stringResource(R.string.quick_sheet_rename), EuriseIcons.pencil(), onClick = onRename)
+            SheetAction(stringResource(R.string.quick_sheet_duplicate), EuriseIcons.copy(), onClick = onDuplicate)
+            SheetAction(stringResource(R.string.quick_sheet_delete), EuriseIcons.trash(), enabled = count > 1, color = Danger, onClick = onDelete)
+        }
+    }
+}
+
+@Composable
+private fun MovePill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, enabled: Boolean, modifier: Modifier, iconAfter: Boolean = false, onClick: () -> Unit) {
+    val tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+    Row(
+        modifier.height(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant).clickable(enabled = enabled, onClick = onClick),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (!iconAfter) Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tint, modifier = Modifier.padding(horizontal = 6.dp))
+        if (iconAfter) Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun SheetAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, enabled: Boolean = true, color: Color = Color.Unspecified, onClick: () -> Unit) {
+    val tint = (if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color).let { if (enabled) it else it.copy(alpha = 0.35f) }
+    Row(
+        Modifier.padding(top = 6.dp).fillMaxWidth().height(52.dp).clip(RoundedCornerShape(14.dp)).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+        }
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = tint, modifier = Modifier.padding(start = 12.dp))
+    }
+}
+
+/** Il nome nuovo del foglio, con il motivo quando non va (le regole di Excel, valide anche per LibreOffice). */
+@Composable
+private fun RenameSheetDialog(current: String, others: List<String>, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var value by remember { mutableStateOf(TextFieldValue(current, TextRange(0, current.length))) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    val name = value.text.trim()
+    val problem = SheetNames.problem(name, others)
+    val ok = problem == null || name == current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.quick_sheet_rename)) },
+        text = {
+            OutlinedTextField(
+                value, { value = it }, singleLine = true,
+                isError = problem != null && name.isNotEmpty(),
+                supportingText = {
+                    val msg = when (problem) {
+                        SheetNames.Problem.TooLong -> stringResource(R.string.quick_sheet_name_long, SheetNames.MAX)
+                        SheetNames.Problem.BadChar -> stringResource(R.string.quick_sheet_name_chars)
+                        SheetNames.Problem.Taken -> stringResource(R.string.quick_sheet_name_taken)
+                        else -> null
+                    }
+                    if (msg != null) Text(msg)
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { if (problem == null) onSave(name) else if (name == current) onDismiss() }),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+        },
+        confirmButton = {
+            TextButton(enabled = ok, onClick = { if (name == current) onDismiss() else onSave(name) }) { Text(stringResource(R.string.quick_done)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.pdf_cancel)) } },
     )
 }
 
