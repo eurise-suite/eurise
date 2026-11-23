@@ -89,9 +89,10 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 - Chat nuova con le istruzioni del proprietario: studio dei migliori, proposta, anteprime, poi codice (ramo `prova-fotocamera`).
 
 ## Sicurezza e velocità di tutta la suite — questo progetto
-1. APK di prova **non «debuggable»** (oggi lo sono tutti tranne il Browser): con `adb` autorizzato si leggono i dati
-   privati con `run-as`, e girano più lenti. Serve prima riscrivere le prove sull'emulatore senza `run-as` (accesso root
-   dell'emulatore, proprietario ed etichette dei file).
+1. ~~APK di prova non «debuggable»~~ fatto il 22 novembre (prove sull'emulatore riscritte senza `run-as`).
 2. Librerie: zxing 3.5.4 (firma), Tastiera e Office, Compose BOM 2026.11 con compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4.
 3. ~~Scaricamenti dei modelli (Leggi, Voce, AI) nel centro privacy~~ fatto il 22 novembre (giro 1048).
 4. Pulizia del codice e velocità (in corso): ~~R8 in tutte le app~~ (giro 1048); poi R8 meno prudente app per app.
+5. Impronte «strict» anche nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser).
+6. Schedario (22–23 novembre, fatto: Browser, Office, Messaggi, Backup, Chat). Resta: pressione lunga sui fogli nella
+   vista rapida di Office (Rinomina, Sposta, Duplica, Elimina).
