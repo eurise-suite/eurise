@@ -14,6 +14,15 @@ plugins {
  */
 subprojects {
     /*
+     * Compose 1.13 (BOM 2026.11) chiede compileSdk 37.1 (23 novembre 2026): la versione minore si dà qui a tutti i moduli
+     * Android; chi ne vuole una più alta la scrive nel suo android {} (Browser: 37.2 per GeckoView), che viene dopo.
+     */
+    listOf("com.android.application", "com.android.library").forEach { id ->
+        plugins.withId(id) {
+            extensions.configure(com.android.build.api.dsl.CommonExtension::class.java) { compileSdkMinor = 1 }
+        }
+    }
+    /*
      * APK di prova non «debuggable» (22 novembre 2026, docs/SICUREZZA.md): sono quelli che il proprietario usa ogni giorno, con
      * dati veri. Da debuggable, con adb autorizzato, run-as leggeva i dati privati di Password, Messaggi, Posta…, e l'app
      * girava più lenta (niente codice precompilato, controlli JNI). Stesso pacchetto e stessa chiave: si aggiornano sopra.
