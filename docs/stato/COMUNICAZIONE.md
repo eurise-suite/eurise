@@ -697,8 +697,8 @@ Tela: https://claude.ai/artifact/AauRJ8e5WdH7nXTqAEXkoo
    **restano** LavNoteSpese, LavRiassunto (Email), LavOspiti (serve il server), LavRapporto. Decisioni ancora aperte: dove stanno gli strumenti del gruppo
    (cloud del gruppo o server Eurise); posta con un fornitore (Migadu, Purelymail, mailbox.org) o server nostro (Stalwart +
    Continuwuity + LiveKit); il dominio.
-2. **Email da lavoro, prima parte** (dopo l'approvazione; tutto sul telefono): viste Per te / Aspetti / Squadra, il punto
-   del mattino, risposte in un tocco, promemoria «se non risponde», invio all'ora giusta (MailSmart, MailScriviLavoro).
+2. ~~**Email da lavoro, prima parte**~~ (scritta il 23 novembre, vedi in fondo). Restano: Rimandate, tono e modelli sul
+   telefono, allegato come link che scade (serve il cloud della squadra), il punto del mattino come notifica.
 3. **Email, cose rimaste**: «Da fare» e scadenze trovate (bolletta), In breve, ricerca sul server, inoltro con gli
    allegati, MX per i domini personali (es. mx.infomaniak.ch); riassunto delle email importanti per la suite (serve a «Oggi»
    sul telefono, nel pannello di Firefox e sul computer). OAuth per Gmail/Outlook: passo una tantum del proprietario.
@@ -773,3 +773,21 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   lette · Mostra». La barra Personale · Lavoro in basso non c'è più: il «+» ha il colore dell'account aperto.
   Test `EntrambiTest`. **Da fare se servirà**: il motore doppio (tutti e due gli account aperti insieme) per anteprime e
   notifiche complete; scartato per ora per sicurezza (chiavi di un account solo in memoria) e batteria.
+
+## Email da lavoro, prima parte (23 novembre 2026, progetto Eurise Sicurezza; tavole MailSmart e MailScriviLavoro)
+- Viste nuove davanti alle tre di sempre: **Per te** (persone, non da te, senza la tua risposta, ultimi 14 giorni; prima
+  quelle non lette che chiedono qualcosa), **Aspetti** (le risposte che aspetti, le palle passate ancora in giro, le email
+  in uscita), **Squadra** (email dei colleghi: chi ha un ruolo di lavoro in Rubrica; compare solo con i ruoli).
+- **Il punto del mattino** in cima a Per te: quante email chiedono qualcosa (o quante non lette), chi non risponde da più
+  tempo, le palle ferme. Calcolato sul telefono dalle sole intestazioni; la ✕ lo chiude fino a domani.
+- **Risposte in un tocco**: dall'oggetto (`MailWork.ask`: approvare, confermare, domanda, urgente) l'etichetta sotto la
+  riga e, per approvare e confermare, «Approvo»/«Confermo» e «Ne parliamo». Il tocco apre l'email e prepara la risposta con
+  la frase in cima: si rilegge e si manda (scelta prudente: niente parte senza un secondo tocco).
+- **Se non risponde entro 3 giorni** nella scrittura (acceso di base per le caselle di lavoro): la risposta va in Aspetti; se
+  non arriva diventa un'attività una volta sola («Ricordamelo domani» e «Non aspetto più» a mano). Il vecchio «se non
+  risponde» del lettore usa lo stesso elenco (`mail_waiting`).
+- **Quando parte**: Adesso, l'ora giusta per lui (mediana delle ore a cui scrive, almeno tre email, giorni feriali,
+  arrotondata alla mezz'ora: «di solito legge la mattina») e domani alle 8:30 (lunedì se è venerdì). L'email resta nella
+  cartella privata dell'app (`files/in_uscita`, con le copie degli allegati) e parte con WorkManager solo con la rete, dalla
+  propria casella; in Aspetti «Manda ora» e «Annulla». Sicurezza: nessun servizio esterno, nessun permesso nuovo.
+- Logica senza Android in `MailWork.kt` con `MailWorkTest`; interfaccia in `MailWorkUi.kt`; invio in `MailOutbox.kt`.

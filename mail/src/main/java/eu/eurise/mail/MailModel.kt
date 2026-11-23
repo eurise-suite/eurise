@@ -207,15 +207,64 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
     private val watchPrefs get() = context.getSharedPreferences("mail_watch", Context.MODE_PRIVATE)
 
     /** «Se non risponde entro…»: se fino a quel giorno da lui non arriva niente sullo stesso oggetto, diventa un'attività. */
-    fun watchReply(o: Opened, by: java.time.LocalDate) {
-        val list = org.json.JSONArray(watchPrefs.getString("list", "[]"))
-        list.put(org.json.JSONObject().put("from", o.summary.fromAddress).put("name", o.summary.fromName).put("subject", o.summary.subject)
-            .put("since", o.summary.date).put("by", by.toEpochDay()))
-        watchPrefs.edit().putString("list", list.toString()).apply()
+    fun watchReply(o: Opened, by: java.time.LocalDate) =
+        wait(o.summary.fromAddress, o.summary.fromName, o.summary.subject, o.summary.date, by)
+
+    // --- Email da lavoro (tavole MailSmart e MailScriviLavoro) ---
+
+    private val waitPrefs get() = context.getSharedPreferences("mail_waiting", Context.MODE_PRIVATE)
+    /** Le risposte che aspetti («Aspetti»): da chi, su cosa, da quando; il giorno del promemoria. */
+    var waiting by mutableStateOf(MailWork.decode(waitPrefs.getString("list", null)))
+        private set
+    /** Le email in uscita all'ora giusta. */
+    var outbox by mutableStateOf<List<MailOutbox.Item>>(emptyList())
+        private set
+    /** Il punto del mattino chiuso oggi (epoch day). */
+    var digestClosed by mutableStateOf(prefs.getLong("digest_closed", -1L))
+        private set
+    /** Risposta in un tocco: il testo che aspetta l'email aperta per diventare la bozza della risposta. */
+    var quick by mutableStateOf<String?>(null)
+
+    private fun saveWaiting(list: List<MailWork.Waiting>) { waiting = list; waitPrefs.edit().putString("list", MailWork.encode(list)).apply() }
+
+    fun wait(to: String, name: String, subject: String, since: Long, by: java.time.LocalDate) {
+        val fresh = MailWork.decode(waitPrefs.getString("list", null))
+        saveWaiting(fresh.filterNot { it.to.equals(to, true) && MailBalls.core(it.subject) == MailBalls.core(subject) } +
+            MailWork.Waiting("w" + System.nanoTime(), to.trim(), name, subject, since, by.toEpochDay()))
     }
+
+    fun forgetWaiting(id: String) = saveWaiting(waiting.filterNot { it.id == id })
+
+    /** «Ricordamelo domani»: un'attività per domani mattina con chi e cosa; falso senza l'app Eurise. */
+    fun remindWaiting(w: MailWork.Waiting): Boolean {
+        val at = MailWork.nextMorning(java.time.LocalDateTime.now())
+        return eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION, eu.eurise.core.suite.HubBridge.ACTION_TASK,
+            context.getString(R.string.ml_rm_nudge, w.name.ifBlank { w.to }, MailBalls.core(w.subject)), due = at.toLocalDate(), time = at.toLocalTime())
+    }
+
+    fun closeDigest() { digestClosed = java.time.LocalDate.now().toEpochDay(); prefs.edit().putLong("digest_closed", digestClosed).apply() }
+
+    fun refreshOutbox() { scope.launch { outbox = withContext(Dispatchers.IO) { MailOutbox.list(context) } } }
+
+    fun cancelOutgoing(id: String) { scope.launch { withContext(Dispatchers.IO) { MailOutbox.cancel(context, id) }; refreshOutbox() } }
+
+    fun sendNow(id: String) { scope.launch { withContext(Dispatchers.IO) { MailOutbox.now(context, id) }; refreshOutbox() } }
+
+    /** Risposta in un tocco: apre l'email; la bozza con [text] in cima nasce appena è aperta (la si rilegge prima di mandarla). */
+    fun quickReply(s: Summary, text: String) { quick = text; open(s) }
 
     /** I promemoria «se non risponde» scaduti senza risposta: nelle Attività, poi via. */
     fun checkWatches() {
+        // Le attese: via quelle con risposta; scadute, un'attività una volta sola (restano in «Aspetti»).
+        val today0 = java.time.LocalDate.now().toEpochDay()
+        val stored = MailWork.decode(waitPrefs.getString("list", null))
+        val next = stored.filterNot { MailWork.answered(it, messages) }.map { w ->
+            if (!w.nudged && w.by < today0 && eu.eurise.core.suite.HubBridge.send(context, BuildConfig.HUB_PACKAGE, BuildConfig.SUITE_PERMISSION,
+                    eu.eurise.core.suite.HubBridge.ACTION_TASK, context.getString(R.string.ml_rm_nudge, w.name.ifBlank { w.to }, MailBalls.core(w.subject)),
+                    due = java.time.LocalDate.now())) w.copy(nudged = true) else w
+        }
+        if (next != waiting) saveWaiting(next)
+        refreshOutbox()
         val a = runCatching { org.json.JSONArray(watchPrefs.getString("list", "[]")) }.getOrNull() ?: return
         val today = java.time.LocalDate.now().toEpochDay()
         val keep = org.json.JSONArray()
@@ -421,7 +470,33 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    fun send(from: Account, to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<android.net.Uri>, done: (Boolean) -> Unit) {
+    fun send(from: Account, to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<android.net.Uri>, done: (Boolean) -> Unit) =
+        send(from, to, cc, subject, body, inReplyTo, files, null, 0, "", done)
+
+    /**
+     * Manda subito, o all'ora [at] (millisecondi) dalla posta in uscita. Con [waitDays] > 0 la risposta va in «Aspetti» e,
+     * se non arriva entro quei giorni, diventa un'attività.
+     */
+    fun send(from: Account, to: String, cc: String, subject: String, body: String, inReplyTo: String?, files: List<android.net.Uri>,
+             at: Long?, waitDays: Int, name: String, done: (Boolean) -> Unit) {
+        if (at != null) {
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val id = "u" + System.currentTimeMillis()
+                        val dir = MailOutbox.attachmentDir(context, id)
+                        files.forEachIndexed { i, uri ->
+                            val out = File(dir, "%02d-%s".format(i, (displayName(uri) ?: "allegato-${i + 1}").replace('/', '-')))
+                            context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
+                        }
+                        MailOutbox.schedule(context, MailOutbox.Item(id, from.id, to, cc, subject, body, inReplyTo, at, waitDays, name))
+                    }.isSuccess
+                }
+                refreshOutbox()
+                done(ok)
+            }
+            return
+        }
         scope.launch {
             val ok = withContext(Dispatchers.IO) {
                 runCatching {
@@ -436,6 +511,7 @@ class MailModel(private val context: Context, private val scope: CoroutineScope)
                     MailClient(from).send(to, cc, subject, body, inReplyTo, copies)
                 }.isSuccess
             }
+            if (ok && waitDays > 0) wait(to.split(',').first().trim(), name, subject, System.currentTimeMillis(), java.time.LocalDate.now().plusDays(waitDays.toLong()))
             done(ok)
         }
     }
