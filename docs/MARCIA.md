@@ -94,5 +94,5 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 3. ~~Scaricamenti dei modelli (Leggi, Voce, AI) nel centro privacy~~ fatto il 22 novembre (giro 1048).
 4. Pulizia del codice e velocità (in corso): ~~R8 in tutte le app~~ (giro 1048); poi R8 meno prudente app per app.
 5. Impronte «strict» anche nei flussi a parte (Office, Mappe, schermate, prova d'avvio del Browser).
-6. Schedario (22–23 novembre, fatto: Browser, Office, Messaggi, Backup, Chat). Resta: pressione lunga sui fogli nella
-   vista rapida di Office (Rinomina, Sposta, Duplica, Elimina).
+6. ~~Schedario~~ (22–23 novembre, fatto: Browser, Office, Messaggi, Backup, Chat; pressione lunga sui fogli della vista
+   rapida di Office, giro 1107).

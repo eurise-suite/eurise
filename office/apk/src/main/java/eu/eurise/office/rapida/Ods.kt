@@ -90,6 +90,13 @@ object Ods : SheetFormat {
         return Cell(col, row, display, number, raw.takeIf { it.isNotEmpty() }?.let { Formula.fromOdf(it) }, hasFormula = raw.isNotEmpty())
     }
 
+    // ---- Fogli ----
+
+    override fun renameSheet(bundle: Bundle, sheet: Int, name: String) = OdsSheets.rename(bundle, sheet, name)
+    override fun moveSheet(bundle: Bundle, from: Int, to: Int) = OdsSheets.move(bundle, from, to)
+    override fun duplicateSheet(bundle: Bundle, sheet: Int, name: String) = OdsSheets.duplicate(bundle, sheet, name)
+    override fun deleteSheet(bundle: Bundle, sheet: Int) = OdsSheets.delete(bundle, sheet)
+
     // ---- Modifica ----
 
     override fun setCell(bundle: Bundle, sheet: Int, col: Int, row: Int, input: String): CellResult {

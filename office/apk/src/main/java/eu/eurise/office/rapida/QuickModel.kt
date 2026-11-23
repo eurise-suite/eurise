@@ -122,7 +122,8 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
     var lastResult by mutableStateOf<CellResult?>(null)
 
     private var bundle: Bundle? = null
-    private val history = ArrayDeque<Bundle>()
+    /** I file di prima, con il foglio che si stava guardando: «Annulla» riporta anche lì. */
+    private val history = ArrayDeque<Pair<Bundle, Int>>()
     private val lock = Mutex()
     private var text: TextFormat? = null
     private var sheet: SheetFormat? = null
@@ -186,30 +187,75 @@ class QuickModel(app: Application, val uri: Uri, val writable: Boolean) : Androi
 
     fun undo() = viewModelScope.launch {
         lock.withLock {
-            val previous = history.removeLastOrNull() ?: return@withLock
+            val (previous, viewed) = history.removeLastOrNull() ?: return@withLock
             canUndo = history.isNotEmpty()
             lastResult = null
+            selected = null
             bundle = previous
             show(previous)
+            sheetIndex = viewed
+            fitSheetIndex()
             persist(previous)
         }
     }
 
-    private fun change(block: (Bundle) -> Bundle) = viewModelScope.launch {
+    /**
+     * Applica [block] al file. [refused] è il messaggio quando il punto non si cambia qui ([NotEditable]); [then] gira
+     * dopo che il file nuovo è mostrato (per esempio per aprire il foglio giusto).
+     */
+    private fun change(refused: Int = R.string.quick_not_editable, then: () -> Unit = {}, block: (Bundle) -> Bundle) = viewModelScope.launch {
         lock.withLock {
             val current = bundle ?: return@withLock
             val next = withContext(Dispatchers.Default) {
                 runCatching { block(current) }.onFailure { e ->
-                    notice = if (e is NotEditable) R.string.quick_not_editable to null else R.string.quick_change_failed to (e.message ?: "")
+                    notice = if (e is NotEditable) refused to null else R.string.quick_change_failed to (e.message ?: "")
                 }.getOrNull()
             } ?: return@withLock
-            history.addLast(current)
+            history.addLast(current to sheetIndex)
             while (history.size > 20) history.removeFirst()
             canUndo = true
             bundle = next
             show(next)
+            then()
+            fitSheetIndex()
             persist(next)
         }
+    }
+
+    private fun fitSheetIndex() {
+        val count = (state as? QuickState.Sheets)?.doc?.sheets?.size ?: return
+        if (sheetIndex >= count) sheetIndex = (count - 1).coerceAtLeast(0)
+    }
+
+    // ---- Fogli (pressione lunga sulla linguetta, tavola OffSchedarioTelefono) ----
+
+    /** I nomi dei fogli come sono ora. */
+    val sheetNames: List<String> get() = (state as? QuickState.Sheets)?.doc?.sheets?.map { it.name }.orEmpty()
+
+    private fun sheetChange(refused: Int, then: () -> Unit = {}, block: (SheetFormat, Bundle) -> Bundle) {
+        val format = sheet ?: return
+        selected = null
+        lastResult = null
+        change(refused, then) { b -> block(format, b) }
+    }
+
+    fun renameSheet(index: Int, name: String) = sheetChange(R.string.quick_not_editable) { f, b -> f.renameSheet(b, index, name.trim()) }
+
+    /** Sposta il foglio [from] in [to]; il foglio guardato resta lo stesso, al suo posto nuovo. */
+    fun moveSheet(from: Int, to: Int) {
+        val viewing = sheetIndex
+        sheetChange(R.string.quick_not_editable, then = { sheetIndex = movedIndex(viewing, from, to) }) { f, b -> f.moveSheet(b, from, to) }
+    }
+
+    /** Duplica il foglio e apre la copia, subito dopo l'originale. */
+    fun duplicateSheet(index: Int) {
+        val name = SheetNames.copyName(sheetNames.getOrNull(index) ?: return, sheetNames)
+        sheetChange(R.string.quick_sheet_duplicate_full, then = { sheetIndex = index + 1 }) { f, b -> f.duplicateSheet(b, index, name) }
+    }
+
+    fun deleteSheet(index: Int) {
+        val viewing = sheetIndex
+        sheetChange(R.string.quick_sheet_delete_full, then = { sheetIndex = if (viewing > index) viewing - 1 else viewing }) { f, b -> f.deleteSheet(b, index) }
     }
 
     /** Scrive sul file originale; se non si può, le correzioni aspettano «Salva in…». */

@@ -40,6 +40,15 @@ interface SheetFormat {
     fun read(bundle: Bundle): SheetDoc
     /** Scrive [input] nella cella ([col], [row], da 0) del foglio [sheet]: numero, testo, «=formula» o vuoto. */
     fun setCell(bundle: Bundle, sheet: Int, col: Int, row: Int, input: String): CellResult
+
+    // Fogli (pressione lunga sulla linguetta; regole dei nomi in [SheetNames]). Le formule che nominano il foglio lo seguono.
+    fun renameSheet(bundle: Bundle, sheet: Int, name: String): Bundle
+    /** Porta il foglio [from] alla posizione [to]. */
+    fun moveSheet(bundle: Bundle, from: Int, to: Int): Bundle
+    /** Copia il foglio [sheet] subito dopo di lui, con il nome [name]. */
+    fun duplicateSheet(bundle: Bundle, sheet: Int, name: String): Bundle
+    /** Toglie il foglio; [NotEditable] se è l'ultimo o se altri fogli e grafici lo usano. */
+    fun deleteSheet(bundle: Bundle, sheet: Int): Bundle
 }
 
 /** Riferimenti A1 e lettura dei numeri scritti all'italiana. */

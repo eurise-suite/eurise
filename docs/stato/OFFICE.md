@@ -172,8 +172,8 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   `core/designsystem/component/Folder.kt` (`FolderTabs`, `folderPath`, `folderBackground`), lo stesso del Browser.
   - Vista rapida (giro 1064): `QuickScreen.SheetTabs` usa `FolderTabs` con la linguetta che pende dalla tabella; la tabella
     finisce sopra le linguette e la barra in basso non la copre più (spazio misurato); cambiando foglio quello nuovo arriva
-    dalla linguetta (180 ms). **Da fare**: la pressione lunga della tavola (Rinomina, Sposta, Duplica, Elimina) chiede
-    le operazioni sui fogli nei lettori/scrittori della vista rapida; per ora si fanno nella modifica completa.
+    dalla linguetta (180 ms). Pressione lunga della tavola (Rinomina, Sposta, Duplica, Elimina) fatta il 23 novembre,
+    sera (giro 1107, sezione sotto).
   - Modifica completa (`office/app/web/eurise.css`, in fondo): le schede dei fogli di Collabora a schedario, con i
     piedini e senza la sottolineatura di Collabora 26.04; provate sul computer (prova del Flatpak, giro 51). Sul telefono e
     sul tablet arrivano con il motore 67.
@@ -188,3 +188,28 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   unito a quello esistente; **motore 69 riuscito e pubblicato** (23 novembre, 01:30 UTC): nastro e fogli a schedario
   anche nella modifica completa su telefono e tablet. Attenzione: `eurise.css` passa da stylelint
   (`no-duplicate-selectors`) quando si compila il motore, non nella prova del computer.
+
+## 23 novembre 2026, sera (progetto Eurise Sicurezza): pressione lunga sui fogli della vista rapida
+- **Cosa fa** (tavola OffSchedarioTelefono): sulla linguetta di un foglio xlsx o ods la pressione lunga apre in basso nome e
+  posizione («Foglio 2 di 3»), «A sinistra» / «A destra» (stessa larghezza; il menu resta aperto sul foglio, così lo si
+  sposta di più posti), Rinomina (il motivo appare sotto il campo: troppo lungo, caratteri, nome già preso), Duplica (subito
+  dopo l'originale, «Nome (2)», e si apre la copia), Elimina (con conferma; spento se il foglio è l'ultimo). Ogni operazione
+  si salva come le celle e «Annulla» riporta anche al foglio che si guardava.
+- **Codice**: `rapida/SheetOps.kt` (`SheetNames`, `ExcelRefs`, `OdfRefs`, `XlsxSheets`, `OdsSheets`); `SheetFormat` ha
+  `renameSheet`, `moveSheet`, `duplicateSheet`, `deleteSheet`; `QuickModel` le chiama con `sheetChange`; `QuickScreen`
+  ha `SheetMenu` e `RenameSheetDialog`.
+- **Cosa segue il foglio**: Excel: formule di tutti i fogli, nomi definiti, grafici (`c:f`), convalide e formati
+  condizionali, collegamenti interni (`location`), sorgente delle pivot; i nomi locali (area di stampa, titoli) seguono
+  spostamento e copia; dopo Sposta/Duplica/Elimina si toglie `calcChain.xml` (Excel la ricostruisce, niente «riparare il
+  file»). OpenDocument: formule, nomi, convalide, formati condizionali, forme ancorate, grafici incorporati (`Object
+  N/content.xml`) e le impostazioni di vista (`settings.xml`: zoom del foglio, foglio aperto). Stringhe e riferimenti ad
+  altri file restano come sono.
+- **Rifiuti verso la modifica completa** (messaggio chiaro, il file non cambia): duplicare un foglio con grafici,
+  tabelle, commenti o disegni (Excel) o con oggetti incorporati e dati collegati (ods); eliminare un foglio che altri
+  fogli, nomi o grafici usano (Excel e LibreOffice li riempirebbero di #RIF!); l'ultimo foglio.
+- **Prove**: `SheetOpsTest` (9 test: nomi, riferimenti nei due formati, le quattro operazioni su xlsx e ods, anche
+  passando dallo zip). Da provare sul telefono: un foglio Excel vero con grafici e uno di LibreOffice, rinominare e
+  spostare, poi aprirli sul computer.
+- **Resta**: con un solo foglio le linguette non si vedono (tavola), quindi niente pressione lunga: per duplicare
+  l'unico foglio serve la modifica completa. I riferimenti a più fogli di Excel (`Gen:Mar!A1`) seguono la rinomina; uno
+  spostamento cambia quali fogli stanno tra Gen e Mar, come in Excel.
