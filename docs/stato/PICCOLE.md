@@ -395,3 +395,6 @@ Un posto unico per le impostazioni della suite (tavola ImpEurise, approvata): og
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
 Leggi: «Scarica» di una lingua (Tesseract) o di una traduzione accende «Lingue e traduzioni di Leggi» (`ReadModels`) e lo annota nel centro privacy; `TessModel.download` ora chiede il `Context`; Leggi dichiara l'app Eurise nelle `<queries>`.
+
+## Sicurezza, 23 novembre 2026, sera (progetto Eurise Sicurezza)
+Password con **R8 pieno** dal giro 1103: niente più «tieni tutto eu.eurise» (`r8Pieno` in `build.gradle.kts` della radice), solo le regole comuni e il `proguard-rules.pro` dell'app; prova d'avvio verde. Da provare sul telefono: aprire la cassaforte, cercare, compilare un accesso con il riempimento automatico, le passkey. Se qualcosa si ferma: `-Peurise.r8.senza=:password` o togliere `:password` da `r8Pieno`. Si installa sopra, stessa chiave.

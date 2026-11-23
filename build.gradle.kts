@@ -14,6 +14,21 @@ plugins {
  */
 subprojects {
     /*
+     * Compose 1.13 (BOM 2026.11) chiede compileSdk 37.1 (23 novembre 2026): la versione minore si dà qui a tutti i moduli
+     * Android; chi ne vuole una più alta la scrive nel suo android {} (Browser: 37.2 per GeckoView), che viene dopo.
+     */
+    // Dopo il build.gradle.kts del modulo (finalizeDsl): lì «compileSdk = 37» azzera la versione minore.
+    plugins.withId("com.android.application") {
+        extensions.getByType(com.android.build.api.variant.ApplicationAndroidComponentsExtension::class.java).finalizeDsl { ext ->
+            if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
+        }
+    }
+    plugins.withId("com.android.library") {
+        extensions.getByType(com.android.build.api.variant.LibraryAndroidComponentsExtension::class.java).finalizeDsl { ext ->
+            if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
+        }
+    }
+    /*
      * APK di prova non «debuggable» (22 novembre 2026, docs/SICUREZZA.md): sono quelli che il proprietario usa ogni giorno, con
      * dati veri. Da debuggable, con adb autorizzato, run-as leggeva i dati privati di Password, Messaggi, Posta…, e l'app
      * girava più lenta (niente codice precompilato, controlli JNI). Stesso pacchetto e stessa chiave: si aggiornano sopra.
@@ -31,14 +46,22 @@ subprojects {
              * Per spegnerlo in un'app sola: -Peurise.r8.senza=:mail,:chat (prova d'avvio a ogni app, prova-avvio.yml).
              */
             val senzaR8 = providers.gradleProperty("eurise.r8.senza").orNull.orEmpty().split(',').map { it.trim() }
+            /*
+             * R8 meno prudente (23 novembre 2026): le app in questo elenco non tengono più tutto il codice nostro
+             * (proguard-nostro.pro), solo ciò che serve davvero. Una alla volta, con la prova d'avvio e poi un giro delle
+             * funzioni sul telefono; se un'app si guasta, si toglie da qui.
+             */
+            val r8Pieno = setOf(":password")
             if (path != ":office:motore" && path != ":browser" && path !in senzaR8) {
                 val regoleApp = listOf(file("proguard-rules.pro")).filter { it.isFile }
+                val comuni = listOfNotNull(rootProject.file("proguard-suite.pro"), rootProject.file("proguard-nostro.pro").takeIf { path !in r8Pieno })
                 buildTypes.getByName("debug") {
                     isMinifyEnabled = true
-                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), rootProject.file("proguard-suite.pro"))
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                    comuni.forEach { proguardFile(it) }
                     regoleApp.forEach { proguardFile(it) }
                 }
-                buildTypes.getByName("release").proguardFile(rootProject.file("proguard-suite.pro"))
+                comuni.forEach { buildTypes.getByName("release").proguardFile(it) }
             }
             // Da non debuggable Gradle farebbe girare il lint «vital» a ogni APK: il lint resta quello del lavoro apposito.
             lint.checkReleaseBuilds = false

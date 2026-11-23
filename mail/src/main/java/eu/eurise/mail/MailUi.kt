@@ -146,6 +146,18 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
                 inReplyTo = o.messageId, from = o.summary.accountId,
             )
         })
+        // Risposta in un tocco: appena l'email è aperta nasce la bozza con il testo scelto in cima.
+        androidx.compose.runtime.LaunchedEffect(opened, model.quick) {
+            val o = opened ?: return@LaunchedEffect
+            val text = model.quick ?: return@LaunchedEffect
+            model.quick = null
+            draft = Draft(
+                to = o.summary.fromAddress,
+                subject = MailText.replySubject(o.summary.subject),
+                body = text + "\n" + MailText.quote(o.text, "${o.summary.fromName} (${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(o.summary.date))}):"),
+                inReplyTo = o.messageId, from = o.summary.accountId,
+            )
+        }
         draft?.let { d -> Writer(model, actions, d, onClose = { draft = null }) }
     }
 }
@@ -155,7 +167,7 @@ fun MailApp(model: MailModel, actions: MailActions, startDraft: Draft?) {
 @Composable
 private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit, onWrite: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    var kind by remember { mutableStateOf(Kind.People) }
+    var view by remember { mutableStateOf(MailView.ForYou) }
     var ballsOpen by remember { mutableStateOf(false) }
     var approvalsOpen by remember { mutableStateOf(false) }
     var cardsOpen by remember { mutableStateOf(false) }
@@ -166,10 +178,21 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
     fun spaceOf(m: Summary) = if (m.accountId in model.offRules.work) eu.eurise.core.insieme.Ruoli.Space.Lavoro
         else model.roleOf(m.fromAddress)?.let(eu.eurise.core.insieme.Ruoli::space)
     val q = query.trim().lowercase()
-    val shown = model.messages.filter { m ->
-        if (q.isNotEmpty()) m.subject.lowercase().contains(q) || m.fromName.lowercase().contains(q) || m.fromAddress.lowercase().contains(q)
-        else m.kind == kind && (space == null || spaceOf(m) == space)
-    }
+    val mine = model.accounts.map { it.email.lowercase() }.toSet()
+    val now = System.currentTimeMillis()
+    // Email da lavoro (tavola MailSmart): Per te, Aspetti, Squadra; poi le tre di sempre.
+    val forYou = MailWork.forYou(model.messages, mine, now)
+    val team = model.messages.filter { m -> m.kind == Kind.People && model.roleOf(m.fromAddress)?.let(eu.eurise.core.insieme.Ruoli::space) == eu.eurise.core.insieme.Ruoli.Space.Lavoro &&
+        now - m.date <= 14 * 86_400_000L }
+    val shown = if (q.isNotEmpty()) model.messages.filter { m -> m.subject.lowercase().contains(q) || m.fromName.lowercase().contains(q) || m.fromAddress.lowercase().contains(q) }
+    else when (view) {
+        MailView.ForYou -> forYou
+        MailView.Waiting -> emptyList()
+        MailView.Team -> team
+        MailView.People -> model.messages.filter { it.kind == Kind.People }
+        MailView.Alerts -> model.messages.filter { it.kind == Kind.Alerts }
+        MailView.Newsletters -> model.messages.filter { it.kind == Kind.Newsletters }
+    }.filter { m -> space == null || spaceOf(m) == space }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -180,12 +203,21 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
             }
             SearchField(query, stringResource(R.string.ml_search)) { query = it }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Kind.entries.forEach { k ->
-                    val unread = model.messages.count { it.kind == k && !it.seen }
-                    val label = stringResource(
-                        when (k) { Kind.People -> R.string.ml_people; Kind.Alerts -> R.string.ml_alerts; Kind.Newsletters -> R.string.ml_newsletters },
-                    ) + if (unread > 0 && k != Kind.People) " · $unread" else ""
-                    Chip(label, selected = q.isEmpty() && kind == k) { kind = k; query = "" }
+                MailView.entries.forEach { v ->
+                    val count = when (v) {
+                        MailView.ForYou -> forYou.count { !it.seen }
+                        MailView.Waiting -> MailWork.open(model.waiting, model.messages).size + model.outbox.size
+                        MailView.Team -> team.count { !it.seen }
+                        MailView.People -> 0
+                        MailView.Alerts -> model.messages.count { it.kind == Kind.Alerts && !it.seen }
+                        MailView.Newsletters -> model.messages.count { it.kind == Kind.Newsletters && !it.seen }
+                    }
+                    if (v == MailView.Team && team.isEmpty() && model.roles.isEmpty()) return@forEach
+                    val label = stringResource(when (v) {
+                        MailView.ForYou -> R.string.ml_v_foryou; MailView.Waiting -> R.string.ml_v_waiting; MailView.Team -> R.string.ml_v_team
+                        MailView.People -> R.string.ml_people; MailView.Alerts -> R.string.ml_alerts; MailView.Newsletters -> R.string.ml_newsletters
+                    }) + if (count > 0) " · $count" else ""
+                    Chip(label, selected = q.isEmpty() && view == v) { view = v; query = "" }
                 }
             }
             if (model.roles.isNotEmpty() || model.offRules.work.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -198,15 +230,22 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
             Text(e, fontSize = 12.5.sp, color = scheme.error, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).clickable { model.error = null })
         }
         Box(Modifier.weight(1f)) {
-            if (shown.isEmpty()) {
+            // Per te ha il punto in cima, Aspetti e Squadra il loro elenco: lì la riga «vuota» non serve.
+            if (shown.isEmpty() && (q.isNotEmpty() || view !in setOf(MailView.ForYou, MailView.Waiting, MailView.Team))) {
                 Text(
                     stringResource(if (model.refreshing) R.string.ml_loading else R.string.ml_empty),
                     fontSize = 14.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(24.dp),
                 )
             }
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                // Il punto del mattino (tavola MailSmart), chiuso fino a domani con la ✕.
+                if (q.isEmpty() && view == MailView.ForYou && model.digestClosed != java.time.LocalDate.now().toEpochDay()) item(key = "punto") { DigestCard(model, mine) }
+                if (q.isEmpty() && view == MailView.Waiting) item(key = "aspetti") { WaitingList(model, actions) }
+                if (q.isEmpty() && view == MailView.Team && shown.isEmpty()) item(key = "squadra") {
+                    Text(stringResource(R.string.ml_team_empty), fontSize = 14.sp, color = scheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                }
                 items(shown, key = { "${it.accountId}/${it.uid}" }) { m ->
-                    MessageRow(model, m) { model.open(m) }
+                    MessageRow(model, m, extra = if (view == MailView.ForYou && q.isEmpty()) ({ AskLine(model, m) }) else null) { model.open(m) }
                 }
                 item {
                     // Le palle passate per email (tavola InsPalla).
@@ -249,7 +288,7 @@ private fun Inbox(model: MailModel, actions: MailActions, onAccounts: () -> Unit
 }
 
 @Composable
-private fun MessageRow(model: MailModel, m: Summary, onClick: () -> Unit) {
+private fun MessageRow(model: MailModel, m: Summary, extra: (@Composable () -> Unit)? = null, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val tint = model.account(m.accountId)?.let { Color(ACCOUNT_TINTS[it.tint % ACCOUNT_TINTS.size]) } ?: scheme.primary
     Row(
@@ -287,6 +326,7 @@ private fun MessageRow(model: MailModel, m: Summary, onClick: () -> Unit) {
                     Box(Modifier.size(9.dp).clip(CircleShape).background(scheme.primary))
                 }
             }
+            extra?.invoke()
         }
     }
     HorizontalDivider(color = scheme.onSurface.copy(alpha = 0.07f))
@@ -535,6 +575,9 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
     val files = remember { androidx.compose.runtime.mutableStateListOf<android.net.Uri>().apply { addAll(start.attachments) } }
     var sending by remember { mutableStateOf(false) }
     var approval by remember { mutableStateOf(false) }
+    // Da lavoro (tavola MailScriviLavoro): «Se non risponde entro 3 giorni» acceso per le caselle di lavoro; «Quando parte».
+    var waitDays by remember { mutableStateOf(if (from?.id?.let { it in model.offRules.work } == true) 3 else 0) }
+    var sendAt by remember { mutableStateOf<java.time.LocalDateTime?>(null) }
     // La stessa scheda in Chat e in Email (tavola InsStessaScheda): Affida o Uscita, con i pulsanti per chi risponde.
     var cardKind by remember { mutableStateOf<eu.eurise.core.insieme.Scheda.Kind?>(null) }
     var cardDue by remember { mutableStateOf<Pair<String, Long>?>(null) }
@@ -597,13 +640,20 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                             }
                             model.sendCard(account, to, card, after)
                         }
-                        else model.send(account, to, cc, subject, body, start.inReplyTo, files.toList(), after)
+                        else {
+                            val at = sendAt?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                            val name = known.firstOrNull { it.first.equals(to.split(',').first().trim(), true) }?.second.orEmpty()
+                            model.send(account, to, cc, subject, body, start.inReplyTo, files.toList(), at, waitDays, name) { ok ->
+                                if (ok && sendAt != null) { sending = false; actions.toast(context.getString(R.string.ml_w_scheduled, whenText(sendAt!!))); onClose() }
+                                else after(ok)
+                            }
+                        }
                     }.padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(EuriseIcons.send(2.2f), null, tint = scheme.onPrimary, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.ml_send), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary)
+                Text(stringResource(if (sendAt != null && !approval && cardKind == null) R.string.ml_w_send_at else R.string.ml_send), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = scheme.onPrimary)
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -660,6 +710,7 @@ private fun Writer(model: MailModel, actions: MailActions, start: Draft, onClose
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            if (!approval && cardKind == null) WriterWork(model, to, waitDays, { waitDays = it }, sendAt) { sendAt = it }
             Spacer(Modifier.height(24.dp))
         }
     }

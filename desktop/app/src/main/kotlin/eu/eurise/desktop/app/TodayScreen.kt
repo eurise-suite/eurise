@@ -64,7 +64,7 @@ import java.time.LocalDateTime
  * riga, senza dati inventati.
  */
 @Composable
-fun TodayScreen(feed: TodayFeed, input: FocusRequester) {
+fun TodayScreen(feed: TodayFeed, input: FocusRequester, agenda: Agenda? = null) {
     val c = LocalEurise.current
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) { while (true) { delay(30_000); now = LocalDateTime.now() } }
@@ -110,6 +110,18 @@ fun TodayScreen(feed: TodayFeed, input: FocusRequester) {
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                val cloud = agenda?.takeIf { it.account != null && it.taskLists.isNotEmpty() }
+                if (cloud != null) {
+                    // Con il cloud collegato le attività arrivano da lì e si spuntano dal computer.
+                    val rows = TaskGroups.filter(TaskGroups.rows(cloud), TaskFilter.Today, today).sortedBy { it.due }
+                    Card(if (rows.isEmpty()) "Da fare oggi" else "Da fare oggi · ${rows.size}") {
+                        if (rows.isEmpty()) Empty("Niente da fare. Goditi la giornata.")
+                        else rows.forEachIndexed { i, r ->
+                            val d = r.due!!
+                            Todo(i > 0, r.item.summary.ifBlank { "(senza titolo)" }, if (d.isBefore(today)) "in ritardo" else "oggi", d.isBefore(today)) { cloud.complete(r.uid, true) }
+                        }
+                    }
+                } else {
                 val due = s?.let { TodayData.dueToday(it, today) }.orEmpty()
                 val shown = if (due.isNotEmpty()) due else s?.tasks.orEmpty()
                 Card(if (due.isNotEmpty()) "Da fare oggi · ${due.size}" else "Da fare" + (s?.tasksOpen?.takeIf { it > 0 }?.let { " · $it" } ?: "")) {
@@ -118,6 +130,7 @@ fun TodayScreen(feed: TodayFeed, input: FocusRequester) {
                         shown.isEmpty() -> Empty("Niente da fare. Goditi la giornata.")
                         else -> shown.forEachIndexed { i, t -> Todo(i > 0, t.title, TodayData.dueLine(t, today), TodayData.overdue(t, today)) }
                     }
+                }
                 }
                 Card("Note recenti") { Empty("Le tue note compaiono qui quando la sezione Note del computer è collegata al cloud delle note.") }
             }
@@ -240,11 +253,12 @@ private fun Item(line: Boolean, icon: String, tint: Color, title: String, sub: S
  * «fatta» (prossimo passo, insieme ad Attività su CalDAV).
  */
 @Composable
-private fun Todo(line: Boolean, title: String, sub: String, late: Boolean) {
+private fun Todo(line: Boolean, title: String, sub: String, late: Boolean, onDone: (() -> Unit)? = null) {
     val c = LocalEurise.current
     if (line) Divider()
     Row(Modifier.fillMaxWidth().heightIn(min = 46.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)).border(1.6.dp, c.salvia, RoundedCornerShape(5.dp)))
+        Box(Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)).border(1.6.dp, c.salvia, RoundedCornerShape(5.dp))
+            .then(if (onDone != null) Modifier.clickable(onClick = onDone) else Modifier))
         Column(Modifier.weight(1f)) {
             Text(title, color = c.text, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(sub, color = if (late) c.borgogna else c.soft, fontSize = 12.sp, maxLines = 1)

@@ -6,10 +6,8 @@
 -dontobfuscate
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions,SourceFile,LineNumberTable
 
-# Il codice nostro si tiene tutto, con i membri: WorkManager e i ricevitori lo trovano per nome, il codice nativo di
-# Leggi (OCR, traduzione), AI e Voce lo chiama per nome, e qualche schermata usa la riflessione.
--keep class eu.eurise.** { *; }
--keep interface eu.eurise.** { *; }
+# Il «tieni tutto il codice nostro» sta in proguard-nostro.pro: lo lasciano, una alla volta, le app che reggono senza
+# (build.gradle.kts, elenco r8Pieno).
 
 # PdfBox-Android (core:pdf, quindi quasi ogni app tramite core:data): font, profili colore e filtri trovati per nome.
 -keep class com.tom_roush.pdfbox.** { *; }

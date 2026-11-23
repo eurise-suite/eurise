@@ -34,7 +34,7 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 - **D**: tavola PcImporta; firma dell'estensione su AMO.
 - **C**: import delle password dal computer (SQLite di Chrome/Firefox, tipo del Ponte, mai un CSV); Telefono e computer fuori
   casa; cronologia (spenta di base).
-- **S**: Play Services di Google sostituite da microG (22 novembre): da provare una passkey su un sito (es. webauthn.io).
+- **S**: Play Services di Google sostituite da microG (22 novembre); passkey non usate dal proprietario, nessuna prova.
 
 ## Galleria — area Piccole
 - **P**: editor (ritaglio, cursori, velocità dell'anteprima, Regola, Curve, Prospettiva, Espandi, Modifiche), video, caricamento su Murena.
@@ -69,7 +69,7 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 - **P**: schermo diviso in auto, «Dove devi andare» con Casa e Lavoro, gesto a due dita, sezione Mappe sul computer.
 - **D**: mappa dentro la finestra di Eurise sul computer; «Avvisa» per l'impegno vicino.
 - **C**: pietre miliari della Croazia (giro mensile); in attesa di fonti: segnalazioni condivise, traffico, prezzi dei viaggi.
-- **Passo del proprietario prima di pubblicare**: accordo con Transitous oltre 720 richieste al giorno, contatto nel User-Agent.
+- **Rimandato alla pubblicazione** (deciso dal proprietario): accordo con Transitous oltre 720 richieste al giorno, contatto nel User-Agent.
 - **S**: variante prova/ufficiale nel patch (21 novembre); backup solo verso l'app Eurise (22 novembre).
 
 ## Tastiera — area Piccole

@@ -48,9 +48,10 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 
 ## Prossimi passi (in ordine)
 1. **Oggi**: provare la schermata (16 novembre, sotto) e correggere ciò che segnala il proprietario. Restano: spuntare
-   un'attività dal computer (serve un tipo del Ponte «fatta»), meteo (servizio da scegliere, spento di base), note
+   un'attività dal computer (fatto il 23 novembre con il cloud collegato), meteo (servizio da scegliere, spento di base), note
    recenti ed email importanti (con le loro sezioni), proposte di Alfred, ricerca Ctrl K, Impostazioni.
-2. **Calendario e Attività** su CalDAV (`core/sync`), con il collegamento in due tocchi dal browser.
+2. **Calendario e Attività** su CalDAV: scritti il 23 novembre (sotto), da provare. Restano: modificare una sola
+   ripetizione, promemoria come notifica del sistema, trascinare un appuntamento nella griglia.
 3. **Note** su WebDAV con l'unione a tre vie.
 4. **Email** (IMAP/SMTP, `MailClient`).
 5. **Mappe**: sezione scritta dall'area Mappe il 22 novembre (`MapsScreen.kt`, la mappa si apre in CoMaps da Flathub; dettagli in `docs/stato/MAPPE.md`).
@@ -77,6 +78,25 @@ Nuovo, Alfred (Ctrl Spazio), stato del Ponte e centro privacy in fondo.
 - A ogni consegna: aggiornare questo file e scrivere una riga in `docs/STATO.md`.
 
 ## Giorni
+
+### 23 novembre: Calendario e Attività dalle tavole PcCalendario e PcAttivita (progetto Eurise Sicurezza)
+- Collegamento in due tocchi (`Cloud.kt`, `CloudConnect.kt`): «Collega Murena» o l'indirizzo del proprio Nextcloud apre
+  il browser con il Login Flow v2; approvato, la password per le app va nel portachiavi del sistema (Secret Service,
+  attributi `eurise=cloud`), l'account in `cloud.json` con permessi 600; senza portachiavi resta solo in memoria e la
+  schermata lo dice. «Scollega» toglie tutto.
+- `Agenda.kt`: calendari ed elenchi in `calendari.jsonl`, oggetti in `agenda.jsonl` (testo iCalendar intero, così non si
+  perde ciò che hanno scritto altre app), sincronizzazione ogni 5 minuti con `CalSync` del nucleo (etag, scritture
+  condizionate; nei conflitti vince la modifica più recente, come sul telefono).
+- `Occurrences.kt` (con `OccurrencesTest`): ripetizioni giornaliere, settimanali con BYDAY, mensili, annuali con
+  INTERVAL, COUNT, UNTIL, EXDATE e RECURRENCE-ID.
+- `CalendarScreen.kt`: mese piccolo, calendari con i loro colori (clic = nascondi), viste Giorno/3 giorni/Settimana/
+  Mese/Agenda, griglia delle ore 7–22 (clic su un'ora vuota = nuovo appuntamento lì), scheda a destra con Modifica ed
+  Elimina (valgono per tutte le ripetizioni), finestra per scrivere.
+- `TasksScreen.kt`: Oggi, In ritardo, Prossimi 7 giorni, Tutte e gli elenchi del cloud con i conteggi; campo «Aggiungi»
+  (Invio), gruppi In ritardo/Oggi/Domani/giorni/Più avanti/Senza data/Fatte, casella che spunta, dettagli con scadenza
+  e note.
+- Oggi: con il cloud collegato «Da fare oggi» prende le attività da lì e la casella le spunta (il passo «fatta» del
+  Ponte non serve più); senza cloud resta il riassunto del telefono, solo da leggere.
 
 ### 16 novembre: Oggi dalle tavole PcOggi e PcOggiNotte · giro 657 (prova-computer, in apk-prova)
 - `desktop/app`: `TodayScreen.kt` come la tavola (data, saluto con il nome dal sistema e «Oggi hai 4 impegni, il primo

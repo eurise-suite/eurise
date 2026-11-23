@@ -143,8 +143,7 @@ class BrowserModel(private val context: Context) {
         val c = current ?: return
         if (c === tab) return
         split = c to tab
-        tab.ensureOpen()
-        tab.pending?.let { tab.pending = null; tab.load(it) }
+        if (!tab.resume()) tab.ensureOpen()
         updateVisible()
     }
 
@@ -159,9 +158,9 @@ class BrowserModel(private val context: Context) {
         current?.lastActive = System.currentTimeMillis()
         current = tab
         tab.lastActive = System.currentTimeMillis()
-        tab.ensureOpen()
-        // Le schede riaperte all'avvio si caricano solo quando le guardi.
-        tab.pending?.let { tab.pending = null; tab.load(it) }
+        // Le schede riaperte all'avvio, o chiuse dal sistema mentre erano a riposo, si riprendono solo quando le guardi,
+        // dal loro stato (cronologia, punto di lettura, cache) invece di ricaricarle da zero.
+        if (!tab.resume()) tab.ensureOpen()
         updateVisible()
     }
 
@@ -311,8 +310,13 @@ class BrowserModel(private val context: Context) {
     /** Ricorda le schede normali per riaprirle (le private no). */
     fun saveTabs() {
         val a = org.json.JSONArray()
+        val recent = tabs.filter { !it.private }.sortedByDescending { it.lastActive }.take(15).toSet()
         tabs.filter { !it.private && (it.url.startsWith("http") || it.pending != null) }.forEach { t ->
-            a.put(org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive).put("group", t.group ?: ""))
+            val o = org.json.JSONObject().put("url", t.pending ?: t.url).put("title", t.title).put("last", t.lastActive).put("group", t.group ?: "")
+            // Lo stato della scheda (solo normali: le private non lasciano niente) per riprenderla dov'era; solo per le 15
+            // usate più di recente e fino a 48 KB l'una, perché l'elenco si legge all'avvio.
+            if (t in recent) (t.state ?: t.pendingState)?.let { st -> runCatching { st.toString() }.getOrNull()?.takeIf { it.length <= 48_000 }?.let { o.put("state", it) } }
+            a.put(o)
         }
         prefs.edit().putString("tabs", a.toString()).putLong("current", current?.id ?: -1).apply()
         Thumbs.keepOnly(tabs.filter { !it.private }.flatMap { listOfNotNull(it.url, it.pending) })
@@ -333,6 +337,9 @@ class BrowserModel(private val context: Context) {
             if (last < limit) { forgotten += SavedTab(o.optString("url"), o.optString("title"), last); continue }
             val tab = newTab(private = false, startOpen = false)
             tab.pending = o.optString("url")
+            o.optString("state").takeIf { it.isNotBlank() }?.let { st ->
+                runCatching { org.mozilla.geckoview.GeckoSession.SessionState.fromString(st) }.getOrNull()?.let { tab.pendingState = it; tab.pending = null }
+            }
             tab.url = o.optString("url")
             tab.title = o.optString("title")
             tab.group = o.optString("group").takeIf { it.isNotBlank() && group(it) != null }
@@ -372,6 +379,7 @@ class BrowserModel(private val context: Context) {
     fun go(input: String) {
         val tab = current ?: open()
         tab.pending = null
+        tab.pendingState = null
         tab.load(resolve(input))
     }
 

@@ -255,4 +255,61 @@
     <string name="ml_tr_missing">Manca la lingua in Eurise Leggi: si scarica lì</string>
     <string name="ml_tr_no_app">Serve Eurise Leggi per tradurre sul telefono</string>
     <string name="ml_tr_failed">La traduzione non è riuscita</string>
+
+    <!-- Email da lavoro (tavole MailSmart e MailScriviLavoro) -->
+    <string name="ml_v_foryou">Per te</string>
+    <string name="ml_v_waiting">Aspetti</string>
+    <string name="ml_v_team">Squadra</string>
+    <string name="ml_digest_title">Il punto delle %1$s</string>
+    <plurals name="ml_digest_asks">
+        <item quantity="one">Un\'email ti chiede qualcosa.</item>
+        <item quantity="other">%1$d email ti chiedono qualcosa.</item>
+    </plurals>
+    <plurals name="ml_digest_unread">
+        <item quantity="one">Una non letta dalle persone.</item>
+        <item quantity="other">%1$d non lette dalle persone.</item>
+    </plurals>
+    <string name="ml_digest_wait">%1$s non risponde a «%2$s» da %3$d giorni.</string>
+    <plurals name="ml_digest_stale">
+        <item quantity="one">Una palla passata è ferma da un giorno.</item>
+        <item quantity="other">%1$d palle passate sono ferme da un giorno.</item>
+    </plurals>
+    <string name="ml_digest_calm">Niente che ti aspetta. Buona giornata.</string>
+    <string name="ml_digest_local">Fatto sul telefono, niente esce</string>
+    <string name="ml_digest_close">Chiudi il punto</string>
+    <string name="ml_ask_approve">Ti chiede di approvare</string>
+    <string name="ml_ask_confirm">Ti chiede di confermare</string>
+    <string name="ml_ask_question">Ti fa una domanda</string>
+    <string name="ml_ask_urgent">Urgente</string>
+    <string name="ml_q_approve">Approvo</string>
+    <string name="ml_q_confirm">Confermo</string>
+    <string name="ml_q_talk">Ne parliamo</string>
+    <string name="ml_q_approve_text">Approvo, grazie.</string>
+    <string name="ml_q_confirm_text">Confermo, grazie.</string>
+    <string name="ml_q_talk_text">Ne parliamo: quando ti va bene una telefonata?</string>
+    <string name="ml_wait_since">Aspetti da %1$d giorni</string>
+    <string name="ml_wait_today">Aspetti da oggi</string>
+    <string name="ml_wait_you">Tu: %1$s</string>
+    <string name="ml_wait_remind">Ricordamelo domani</string>
+    <string name="ml_wait_reminded">Nelle Attività per domani</string>
+    <string name="ml_wait_forget">Non aspetto più</string>
+    <string name="ml_wait_nudged">Nelle Attività</string>
+    <string name="ml_wait_empty">Non aspetti risposte. Quando scrivi, «Se non risponde» le mette qui.</string>
+    <string name="ml_team_empty">Qui arrivano le email dei colleghi e le palle che hai passato. Dai un ruolo alle persone nella Rubrica.</string>
+    <string name="ml_out_title">In uscita</string>
+    <string name="ml_out_at">Parte %1$s</string>
+    <string name="ml_out_cancel">Annulla</string>
+    <string name="ml_out_now">Manda ora</string>
+    <string name="ml_out_cancelled">Invio annullato</string>
+    <string name="ml_w_wait">Se non risponde entro %1$d giorni</string>
+    <string name="ml_w_wait_sub">Te lo ricordo io nelle Attività</string>
+    <string name="ml_w_when">Quando parte</string>
+    <string name="ml_w_now">Adesso</string>
+    <string name="ml_w_best">%1$s · di solito legge %2$s</string>
+    <string name="ml_w_morning">Domani alle 8:30</string>
+    <string name="ml_w_part0">la mattina</string>
+    <string name="ml_w_part1">il pomeriggio</string>
+    <string name="ml_w_part2">la sera</string>
+    <string name="ml_w_send_at">Programma</string>
+    <string name="ml_w_scheduled">Partirà %1$s</string>
 </resources>
