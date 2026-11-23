@@ -306,8 +306,10 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
 2. Decidere se vale la pena avere la mappa dentro la finestra di Eurise sul computer (motore di CoMaps come libreria).
    «Avvisa» per l'impegno vicino senza chiamata, se lo vuoi.
 3. **Pietre miliari**: Germania e Austria ci sono (giro 8 di «Pietre miliari», 17 novembre, con lo specchio di
-   openstreetmap.fr; file in `pietre` alle 14:46 UTC, tutti i 17 paesi). La Croazia quel giro è fallita (Geofabrik non
-   risponde, sullo specchio il file non c'è): resta il file del 15 novembre, si rifà al giro mensile. In Italia le pietre
+   openstreetmap.fr; file in `pietre` alle 14:46 UTC, tutti i 17 paesi). Croazia: file nuovo dal giro 13 (21 novembre,
+   330 pietre su 25 sigle, pubblicato il 22 alle 00:07). Il 22 novembre Geofabrik ha rifiutato i runner dopo i primi
+   paesi e lo specchio non ha Croazia, Slovenia, Cechia, Ungheria e Grecia: dal 23 novembre il giro scarica un paese alla
+   volta con più pazienza (6 tentativi a 90 s); chi fallisce tiene il file di prima. In Italia le pietre
    in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
 5. In attesa di una fonte o di una decisione: segnalazioni brevi condivise (serve un servizio comune); traffico (nessuna
    fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio
