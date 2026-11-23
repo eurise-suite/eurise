@@ -87,6 +87,24 @@ class RitoccoTest {
     private val r = eu.eurise.camera.data.Ritocco
 
     @Test
+    fun grainFilterOnlyWithManyIso() {
+        assertEquals(0, r.grainThreshold(400, 1))
+        assertEquals(35, r.grainThreshold(2200, 1))
+        assert(r.grainThreshold(2200, 6) in 10..16)
+    }
+
+    @Test
+    fun grainSmoothsButEdgesStay() {
+        val w = 5
+        // Muro con grana: il pixel scuro al centro va verso la media.
+        val wall = Array(5) { IntArray(w) { 100 } }.also { it[2][2] = 90 }
+        assert(r.smooth(wall, 2, w, 30) > 7f)
+        // Bordo netto (0 | 200): il pixel resta dov'è.
+        val edge = Array(5) { IntArray(w) { x -> if (x < 2) 0 else 200 } }
+        assertEquals(0f, r.smooth(edge, 2, w, 30))
+    }
+
+    @Test
     fun neutralPhotosStayAsTheyAre() {
         assertNull(r.gains(100.0, 100.0, 100.0))
         assertNull(r.gains(105.0, 100.0, 95.0))
@@ -127,6 +145,13 @@ class RitoccoTest {
 
 class NotteTest {
     private fun gray(v: Int) = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
+
+    @Test
+    fun ghostThresholdFollowsTheGrain() {
+        assertEquals(eu.eurise.camera.data.Notte.GHOST, eu.eurise.camera.data.Notte.ghostFor(2.0))
+        assertEquals(60, eu.eurise.camera.data.Notte.ghostFor(16.0))
+        assertEquals(eu.eurise.camera.data.Notte.MAX_GHOST, eu.eurise.camera.data.Notte.ghostFor(40.0))
+    }
 
     @Test
     fun findsTheHandShift() {

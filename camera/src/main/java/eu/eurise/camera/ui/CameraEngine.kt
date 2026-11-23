@@ -100,6 +100,8 @@ class CameraEngine(private val context: Context) {
     private val imageCapture: ImageCapture = ImageCapture.Builder()
         // La catena delle foto vere (rumore e bordi in alta qualità), non un fotogramma del mirino.
         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+        // Riduzione del rumore del telefono al massimo, chiesta esplicitamente (obbligatoria su ogni fotocamera non «legacy»).
+        .also { Camera2Interop.Extender(it).setCaptureRequestOption(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY) }
         .build()
     private val recorder: Recorder = Recorder.Builder().build()
     private val videoCapture: VideoCapture<Recorder> = VideoCapture.withOutput(recorder)
