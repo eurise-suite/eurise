@@ -17,12 +17,15 @@ subprojects {
      * Compose 1.13 (BOM 2026.11) chiede compileSdk 37.1 (23 novembre 2026): la versione minore si dà qui a tutti i moduli
      * Android; chi ne vuole una più alta la scrive nel suo android {} (Browser: 37.2 per GeckoView), che viene dopo.
      */
-    listOf("com.android.application", "com.android.library").forEach { id ->
-        plugins.withId(id) {
-            // Dopo il build.gradle.kts del modulo: lì «compileSdk = 37» azzera la versione minore.
-            extensions.getByType(com.android.build.api.variant.AndroidComponentsExtension::class.java).finalizeDsl { ext ->
-                if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
-            }
+    // Dopo il build.gradle.kts del modulo (finalizeDsl): lì «compileSdk = 37» azzera la versione minore.
+    plugins.withId("com.android.application") {
+        extensions.getByType(com.android.build.api.variant.ApplicationAndroidComponentsExtension::class.java).finalizeDsl { ext ->
+            if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
+        }
+    }
+    plugins.withId("com.android.library") {
+        extensions.getByType(com.android.build.api.variant.LibraryAndroidComponentsExtension::class.java).finalizeDsl { ext ->
+            if ((ext.compileSdkMinor ?: 0) < 1) ext.compileSdkMinor = 1
         }
     }
     /*
