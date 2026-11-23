@@ -198,7 +198,7 @@ private fun PhotoInfoAction(item: MediaItem) {
  * permesso di riscrivere la foto, poi l'originale messo da parte torna al suo posto.
  */
 @Composable
-private fun RestoreOriginal(item: MediaItem) {
+internal fun RestoreOriginal(item: MediaItem) {
     val context = LocalContext.current
     val store = remember { GalleryStore.get(context) }
     val version by store.keptVersion.collectAsStateWithLifecycle()

@@ -66,6 +66,8 @@ class OpenActivity : ComponentActivity() {
                             Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
+                            // Una foto sostituita dall'editor (anche aperta dal cestino unico): l'originale torna per 30 giorni.
+                            eu.eurise.gallery.ui.RestoreOriginal(item)
                             RoundAction(EuriseIcons.share(), stringResource(R.string.share)) { share(uri, mime) }
                             RoundAction(EuriseIcons.pencil(), stringResource(R.string.edit)) {
                                 runCatching {

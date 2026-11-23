@@ -122,6 +122,7 @@
     <string name="bin_empty">Svuota</string>
     <string name="bin_empty_msg">Quello che togli da Note, Attività, Calendario, File e Galleria resta qui 30 giorni.</string>
     <string name="bin_untitled">Senza titolo</string>
+    <string name="bin_original">Originale di %1$s</string>
     <string name="bin_days_left">resta %1$d giorni</string>
     <string name="bin_photos_gallery">Le foto tolte si vedono qui dopo aver dato a Eurise l\'accesso alle foto; intanto sono nel cestino della Galleria.</string>
     <string name="bin_new_phone">Passa a un telefono nuovo</string>

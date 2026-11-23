@@ -38,7 +38,7 @@ Legenda: **P** = prova del proprietario sul telefono · **D** = decisione del pr
 
 ## Galleria — area Piccole
 - **P**: editor (ritaglio, cursori, velocità dell'anteprima, Regola, Curve, Prospettiva, Espandi, Modifiche), video, caricamento su Murena.
-- **C, piccoli**: originali tenuti 30 giorni dopo «Sostituisci»; maschere per singolo passo (solo se serve).
+- **C, piccoli**: ~~originali tenuti 30 giorni nel cestino unico~~ (23 novembre); maschere per singolo passo (solo se serve).
 
 ## Messaggi, Telefono, Chat, Posta — area Comunicazione
 - **P**: molte tavole in codice aspettano la prova (Persone e canali, ChatBasi, Vocali, Programma, Cartelle, Thread,
