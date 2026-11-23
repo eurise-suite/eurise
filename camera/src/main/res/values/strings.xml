@@ -22,6 +22,7 @@
     <string name="night_no_flash">In Notte niente flash: più fotogrammi al suo posto</string>
     <string name="night_hold">Notte · tieni fermo</string>
     <string name="night_working">Notte · elaborazione</string>
+    <string name="night_phone">Notte del telefono</string>
     <string name="recording">Registrazione %1$s</string>
 
     <string name="location_off">Posizione spenta</string>
