@@ -147,6 +147,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var front by remember { mutableStateOf(false) }
     // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video 30 fotogrammi fissi.
     LaunchedEffect(mode, camera) { controller.setStill(mode != Mode.Video) }
+    LaunchedEffect(mode) { controller.setNight(mode == Mode.Night) }
     var showExposure by remember { mutableStateOf(false) }
     var exposure by remember { mutableFloatStateOf(0f) }
     var recording by remember { mutableStateOf<Recording?>(null) }
@@ -186,7 +187,12 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             })
             return
         }
-        val frames = if (mode == Mode.Night) controller.nightModeFrames() else controller.nightFrames()
+        val phone = mode == Mode.Night && controller.phoneNight
+        val frames = when {
+            phone -> null
+            mode == Mode.Night -> controller.nightModeFrames()
+            else -> controller.nightFrames()
+        }
         if (frames != null) {
             model.night.value = CameraModel.NightStep.Hold
             controller.takeBurst(frames, zoom?.zoomRatio ?: 1f,
@@ -198,7 +204,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.photo(dest))
             .setMetadata(meta).build()
         controller.takePicture(options, zoom?.zoomRatio ?: 1f, executor, object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) { output.savedUri?.let { model.onShot(it, false) } }
+            override fun onImageSaved(output: ImageCapture.OutputFileResults) { output.savedUri?.let { model.onShot(it, false, retouched = phone) } }
             override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
         })
     }
@@ -336,6 +342,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             recording != null -> StatusChip(stringResource(R.string.recording, clock(recordedMs)), dot = Color(0xFFE46F5A))
             model.night.value == CameraModel.NightStep.Hold -> StatusChip(stringResource(R.string.night_hold), dot = Accent)
             model.night.value == CameraModel.NightStep.Working -> StatusChip(stringResource(R.string.night_working), dot = Accent)
+            mode == Mode.Night && controller.phoneNight -> StatusChip(stringResource(R.string.night_phone), dot = Accent)
             setup.locked -> StatusChip(stringResource(R.string.locked_status), icon = EuriseIcons.lock())
             setup.capture -> Spacer(Modifier.size(1.dp))
             else -> LocationChip(model.locationOn.value) {

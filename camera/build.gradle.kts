@@ -91,6 +91,8 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.video)
+    // La Notte del telefono dove il produttore la offre (estensioni di CameraX, codice aperto).
+    implementation(libs.androidx.camera.extensions)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

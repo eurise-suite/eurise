@@ -19,6 +19,8 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -50,6 +52,16 @@ class CameraEngine(private val context: Context) {
     private var provider: ProcessCameraProvider? = null
     private var owner: LifecycleOwner? = null
     private var withVideo = true
+    private var extensions: ExtensionsManager? = null
+    private var nightWanted = false
+    private val logged = HashSet<Int>()
+
+    /**
+     * La Notte del telefono (estensione di CameraX, 23 novembre 2026): dove il produttore la offre, nella modalità Notte
+     * lo scatto lo elabora il telefono stesso, con i suoi algoritmi su più fotogrammi. Dove non c'è, la Notte di Eurise.
+     */
+    var phoneNight by mutableStateOf(false)
+        private set
 
     /** La fotocamera collegata ora (cambia con l'obiettivo): Compose la osserva per zoom ed esposizione. */
     var camera by mutableStateOf<Camera?>(null)
@@ -102,7 +114,15 @@ class CameraEngine(private val context: Context) {
         this.owner = owner
         withVideo = video
         val future = ProcessCameraProvider.getInstance(context)
-        future.addListener({ provider = runCatching { future.get() }.getOrNull(); rebind() }, main)
+        future.addListener({
+            val p = runCatching { future.get() }.getOrNull()
+            provider = p
+            rebind()
+            if (p != null) {
+                val ext = runCatching { ExtensionsManager.getInstanceAsync(context, p) }.getOrNull()
+                ext?.addListener({ extensions = runCatching { ext.get() }.getOrNull(); logExtensions(); if (nightWanted) rebind() }, main)
+            }
+        }, main)
     }
 
     fun unbind() {
@@ -113,10 +133,46 @@ class CameraEngine(private val context: Context) {
 
     fun hasCamera(selector: CameraSelector): Boolean = provider?.hasCamera(selector) == true
 
+    /** Modalità Notte: con la Notte del telefono, se c'è, il mirino e la foto passano dall'estensione (senza video). */
+    fun setNight(on: Boolean) {
+        if (nightWanted == on) return
+        nightWanted = on
+        if (on && !nightAvailable()) return
+        if (!on && !phoneNight) return
+        rebind()
+    }
+
+    private fun nightAvailable(): Boolean =
+        runCatching { extensions?.isExtensionAvailable(cameraSelector, ExtensionMode.NIGHT) == true }.getOrDefault(false)
+
+    /** Nel registro quali elaborazioni del telefono ci sono, per obiettivo: serve a capire ogni modello. */
+    private fun logExtensions() {
+        val ext = extensions ?: return
+        val facing = if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA) 0 else 1
+        if (!logged.add(facing)) return
+        val names = mapOf(ExtensionMode.NIGHT to "notte", ExtensionMode.HDR to "HDR", ExtensionMode.AUTO to "auto",
+            ExtensionMode.BOKEH to "sfocato", ExtensionMode.FACE_RETOUCH to "volto")
+        val have = names.filterKeys { runCatching { ext.isExtensionAvailable(cameraSelector, it) }.getOrDefault(false) }.values
+        Log.i(TAG, "Elaborazioni del telefono (${if (facing == 0) "frontale" else "posteriore"}): ${have.ifEmpty { listOf("nessuna") }.joinToString()}")
+    }
+
     private fun rebind() {
         val p = provider ?: return
         val o = owner ?: return
         p.unbindAll()
+        logExtensions()
+        if (nightWanted && nightAvailable()) {
+            val selector = runCatching { extensions!!.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.NIGHT) }.getOrNull()
+            val bound = selector?.let { runCatching { p.bindToLifecycle(o, it, preview, imageCapture) }.onFailure { e -> Log.w(TAG, "Notte del telefono non riesce", e) }.getOrNull() }
+            if (bound != null) {
+                camera = bound
+                phoneNight = true
+                Log.i(TAG, "Notte del telefono attiva")
+                return
+            }
+            p.unbindAll()
+        }
+        phoneNight = false
         val cases = if (withVideo) arrayOf(preview, imageCapture, videoCapture) else arrayOf(preview, imageCapture)
         camera = runCatching { p.bindToLifecycle(o, cameraSelector, *cases) }
             .recoverCatching { Log.w(TAG, "Mirino, foto e video insieme non riescono: solo mirino e foto", it); p.bindToLifecycle(o, cameraSelector, preview, imageCapture) }
@@ -162,6 +218,7 @@ class CameraEngine(private val context: Context) {
     }
 
     private fun applyBase() {
+        if (phoneNight) return
         val control = camera?.cameraControl ?: return
         runCatching { Camera2CameraControl.from(control).setCaptureRequestOptions(baseOptions().build()) }
     }
@@ -217,6 +274,7 @@ class CameraEngine(private val context: Context) {
     }
 
     fun takePicture(options: ImageCapture.OutputFileOptions, zoom: Float, executor: Executor, done: ImageCapture.OnImageSavedCallback) {
+        if (phoneNight) { imageCapture.takePicture(options, executor, done); return }
         withLowLight(zoom) { restore ->
             imageCapture.takePicture(options, executor, object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) { restore(); done.onImageSaved(output) }
