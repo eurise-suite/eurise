@@ -30,7 +30,6 @@
          <ignored-key id="BCF4173966770193" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="BF984B4145EA13F7" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="C51E6CBC7FF46F0B" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="CE3285F320685193D11FEA01F6CE9695C9318406" reason="zxing: la firma della 3.5.4 non si verifica con questa chiave (23 novembre 2026); si fissa con l'impronta, come la 3.5.3"/>
          <ignored-key id="EB380DC13C39F675" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="F6CE9695C9318406" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>

@@ -62,8 +62,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
      firma del proprietario.
   7. Librerie (sezione «Aggiornamento delle librerie», 22 novembre). **Primo passo fatto**: OkHttp 5, Media3, CameraX,
      android-mail, AndroidX del catalogo, coroutines, AGP 9.5.2. Restano, in quest'ordine: Play Services dentro il
-     Browser (decisione del proprietario, sotto), zxing 3.5.4 (firma), Tastiera e Office, Compose BOM 2026.11 con
-     compileSdk 37.1 e i due interruttori di AGP 9, Kotlin 2.4, Haze 2 (con l'area grafica).
+     Browser (decisione del proprietario, sotto), zxing 3.5.4 (firma; ancora 3.5.3, 23 novembre), Tastiera e Office, ~~Compose BOM 2026.11 con
+     compileSdk 37.1~~ (23 novembre), i due interruttori di AGP 9, Kotlin 2.4, Haze 2 (con l'area grafica).
      ~~Play Services nel Browser~~ sostituite da microG il 22 novembre.
   8. **Pulizia e velocità** (22 novembre): ~~APK di prova non debuggable~~ (avvii a freddo da 2 a 3 volte più rapidi),
      ~~prova d'avvio di tutte le app~~, ~~R8 in tutte le app~~ (giro 1048, sezione «Porte d'ingresso»),
@@ -473,6 +473,10 @@ Richiesto dal proprietario: tutte le app, massimo livello, nessuna backdoor. Cos
     un'impronta. Nessun segno di manomissione: manca solo un'impronta di cui fidarsi. Si resta alla 3.5.3, che ha le sue
     impronte. Da fare: impronte della 3.5.4 prese da Maven Central e confrontate con la firma, e la chiave del gruppo
     sostituita o tolta (con un commit che lo spieghi).
+    **23 novembre, secondo tentativo**: con un `ignored-key` per la chiave il giro delle impronte (45213515886) l'ha rimessa
+    tra le fidate (paracadute `chiavi_fidate.py`) senza scrivere le impronte della 3.5.4, e Compila 1101 si è fermato di
+    nuovo. Si torna alla **3.5.3** (impronte già scritte, `ignored-key` tolto). Per la 3.5.4 serve un passo nel flusso
+    delle impronte che scriva lo sha256 di zxing confrontato con i `.sha1` di Maven Central (da qui Maven non si raggiunge).
 - **Scoperta: Play Services dentro il Browser.** Fra le librerie di esecuzione ci sono `play-services-fido` 21.3.1,
   `-base`, `-basement` e `-tasks`. Le porta quasi certamente GeckoView (passkey e WebAuthn sui siti; F-Droid le toglie da
   Fennec). Sono librerie Google chiuse, contro la regola «nessuna libreria Google proprietaria» e contro F-Droid. Su

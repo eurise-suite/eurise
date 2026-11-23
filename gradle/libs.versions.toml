@@ -59,8 +59,8 @@ androidx-camera-extensions = { module = "androidx.camera:camera-extensions", ver
 
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 
-# zxing: impronta senza chiave (verification-metadata, ignored-keys), 23 novembre 2026.
-zxing-core = { module = "com.google.zxing:core", version = "3.5.4" }
+# zxing: resta 3.5.3 (impronte già scritte); la 3.5.4 aspetta le sue impronte, vedi docs/SICUREZZA.md (23 novembre 2026).
+zxing-core = { module = "com.google.zxing:core", version = "3.5.3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
