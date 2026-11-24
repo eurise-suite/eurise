@@ -23,7 +23,23 @@ import eu.eurise.password.data.VaultState
  */
 class EuriseAutofillService : AutofillService() {
 
+    /**
+     * Un errore qui non deve mai fermare Password né l'app che si sta compilando: si risponde «niente da proporre» (24
+     * novembre: un modulo con la password e senza nome utente faceva cadere Password a ogni apertura).
+     */
     override fun onFillRequest(request: FillRequest, cancellationSignal: CancellationSignal, callback: FillCallback) {
+        var answered = false
+        try {
+            fill(request) { response -> answered = true; callback.onSuccess(response) }
+        } catch (e: Exception) {
+            android.util.Log.w("EuriseAutofill", "richiesta di compilazione non gestita", e)
+            if (!answered) runCatching { callback.onSuccess(null) }
+        }
+    }
+
+    /** La compilazione vera; [reply] si chiama una volta sola, con le proposte o con null. */
+    private fun fill(request: FillRequest, reply: (FillResponse?) -> Unit) {
+        val callback = object { fun onSuccess(r: FillResponse?) = reply(r) }
         val structure = request.fillContexts.lastOrNull()?.structure ?: return callback.onSuccess(null)
         val form = Form.parse(structure)
         if (form == null || form.packageName == packageName) return callback.onSuccess(null)
@@ -62,11 +78,12 @@ class EuriseAutofillService : AutofillService() {
         }
         val passwords = form.idsOf(FieldKind.Password, FieldKind.NewPassword)
         if (passwords.isNotEmpty() && !form.hasCard) {
-            response.setSaveInfo(
-                SaveInfo.Builder(SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME, passwords)
-                    .setOptionalIds(form.idsOf(FieldKind.Username))
-                    .build(),
-            )
+            // Android rifiuta un elenco vuoto di campi facoltativi: senza campo del nome si salva solo la password.
+            val usernames = form.idsOf(FieldKind.Username)
+            val type = if (usernames.isEmpty()) SaveInfo.SAVE_DATA_TYPE_PASSWORD else SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME
+            val save = SaveInfo.Builder(type, passwords)
+            if (usernames.isNotEmpty()) save.setOptionalIds(usernames)
+            response.setSaveInfo(save.build())
         }
         callback.onSuccess(if (count > 0) response.build() else null)
     }

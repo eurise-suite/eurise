@@ -18,6 +18,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Password cadeva nella compilazione automatica** (24 novembre, sera, segnalato dal proprietario): moduli con la password e
+  senza nome utente; corretto e `onFillRequest` protetta (`docs/stato/PASSWORD.md`). Giro e link alla consegna.
 - **Backup che si fermava uscendo** (24 novembre, segnalato dal proprietario): backup, configurazione, frasi e ripristino
   ora girano nel processo e non nella schermata; il ripristino non resta mai a metà (`applyAndRestart`); le interruzioni non
   si scrivono come errore (`docs/stato/BACKUP.md`). **Giro 1116**, pubblicato con Mappe 145, `brand` portato avanti; prova
