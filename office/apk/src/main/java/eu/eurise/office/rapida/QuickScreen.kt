@@ -120,18 +120,34 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
     // L'altezza di ciò che sta in basso (cella, avvisi, barra), perché il foglio e le sue linguette finiscano sopra.
     var bottomHeight by remember { mutableStateOf(0) }
 
-    BackHandler(enabled = editing != null || model.selected != null || model.searching || model.commenting) {
+    // Tutto schermo (25 novembre): con il telefono orizzontale parte da solo; in verticale dal pulsante in alto. Si ricorda
+    // la scelta finché non si ruota. Via intestazione, linguette, barra e barre di sistema; una maniglia dal lato della
+    // mano richiama la barra, che dopo qualche secondo si rinasconde.
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    var fullChoice by androidx.compose.runtime.saveable.rememberSaveable(landscape) { mutableStateOf<Boolean?>(null) }
+    val immersive = (fullChoice ?: landscape) && (model.state is QuickState.Text || model.state is QuickState.Sheets)
+    var dockUp by remember(immersive) { mutableStateOf(false) }
+    val leftHanded = remember { eu.eurise.office.home.OfficePrefs.leftHanded(context) }
+    eu.eurise.core.designsystem.component.SystemBarsHidden(immersive)
+    LaunchedEffect(dockUp, model.searching, model.commenting, model.selected) {
+        if (dockUp && !model.searching && !model.commenting) { kotlinx.coroutines.delay(5_000); dockUp = false }
+    }
+
+    BackHandler(enabled = editing != null || model.selected != null || model.searching || model.commenting || immersive) {
         when {
             editing != null -> draft = null
             model.selected != null -> model.selected = null
             model.searching -> model.searching = false
-            else -> model.commenting = false
+            model.commenting -> model.commenting = false
+            dockUp -> dockUp = false
+            else -> fullChoice = false
         }
     }
+    val barsShown = !immersive || dockUp
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))) {
         Column(Modifier.fillMaxSize()) {
-            Header(model, onBack, onExact = onFull)
+            if (!immersive) Header(model, onBack, onExact = onFull, onFullscreen = { fullChoice = true })
             when (val s = model.state) {
                 QuickState.Loading -> Message(stringResource(R.string.quick_loading))
                 is QuickState.Failed -> Message(stringResource(s.reason))
@@ -151,8 +167,9 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
                     // dalla griglia; sotto resta lo spazio della barra in basso, che non copre più la tabella.
                     val many = s.doc.sheets.size >= 2
                     SheetBody(model, s.doc, haze, Modifier.weight(1f), flatBottom = many)
-                    if (many) SheetTabs(model, s.doc)
-                    Spacer(Modifier.height(with(density) { bottomHeight.toDp() }))
+                    if (many && barsShown) SheetTabs(model, s.doc)
+                    // A tutto schermo la barra richiamata sta sopra il foglio senza spingerlo; la cella scelta sì.
+                    Spacer(Modifier.height(if (immersive && model.selected == null) 0.dp else with(density) { bottomHeight.toDp() }))
                 }
                 is QuickState.Slides -> {}
             }
@@ -167,7 +184,8 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
                 model.selected?.let { sel -> CellCard(model, state.doc, sel, onFull = { model.showFull = true }) }
             }
             val waiting = model.lastResult?.pending.orEmpty()
-            when {
+            if (immersive && dockUp) eu.eurise.core.designsystem.component.ExitFullscreen(leftHanded) { fullChoice = false }
+            if (barsShown) when {
                 model.selected == null && waiting.isNotEmpty() ->
                     Hint(stringResource(R.string.quick_pending, waiting.joinToString(", ")), stringResource(R.string.quick_full)) { model.showFull = true }
                 model.unsaved -> Hint(stringResource(R.string.quick_unsaved_hint), stringResource(R.string.quick_save_in)) { model.saveIn(context) }
@@ -175,7 +193,7 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
                 firstTip && state is QuickState.Text -> Hint(stringResource(R.string.quick_tip))
             }
             if (model.searching) SearchField(model)
-            if (!typing || model.searching) EuriseDock(
+            if (barsShown && (!typing || model.searching)) EuriseDock(
                 items = listOf(
                     DockItem(stringResource(R.string.quick_correct)) { EuriseIcons.pencil(it) },
                     DockItem(stringResource(R.string.quick_comment)) { EuriseIcons.chat(it) },
@@ -197,6 +215,11 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
                 onAction = { model.searching = !model.searching },
             )
         }
+
+        // La maniglia del tutto schermo, dal lato della mano: richiama la barra.
+        if (immersive && !dockUp && editing == null && model.selected == null) eu.eurise.core.designsystem.component.FullscreenHandle(
+            Modifier.align(if (leftHanded) Alignment.BottomStart else Alignment.BottomEnd),
+        ) { dockUp = true }
 
         draft?.let { d ->
         val doc = (model.state as? QuickState.Text)?.doc
@@ -220,7 +243,7 @@ private fun DocScreen(model: QuickModel, engineReady: Boolean, onBack: () -> Uni
 }
 
 @Composable
-private fun Header(model: QuickModel, onBack: () -> Unit, onExact: () -> Unit) {
+private fun Header(model: QuickModel, onBack: () -> Unit, onExact: () -> Unit, onFullscreen: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars)) {
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(EuriseIcons.chevronLeft(), contentDescription = stringResource(R.string.pdf_back)) }
@@ -235,6 +258,7 @@ private fun Header(model: QuickModel, onBack: () -> Unit, onExact: () -> Unit) {
                 Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (model.canUndo) IconButton(onClick = { model.undo() }) { Icon(EuriseIcons.undo(), contentDescription = stringResource(R.string.quick_undo)) }
+            IconButton(onClick = onFullscreen) { Icon(EuriseIcons.fullscreen(), contentDescription = stringResource(eu.eurise.core.designsystem.R.string.ds_fullscreen)) }
         }
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(

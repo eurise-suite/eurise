@@ -127,17 +127,31 @@ fun PdfScreen(model: PdfModel, writable: Boolean, onBack: () -> Unit) {
         PdfShareScreen(model, onClose = { model.showShare = false })
         return
     }
-    BackHandler(enabled = model.tool != Tool.None || model.searching || model.panel) {
+    // Tutto schermo come nella vista rapida (25 novembre): da solo in orizzontale, dal pulsante in alto in verticale.
+    // Mentre si annota, si cerca o è aperto un pannello, la barra resta.
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    var fullChoice by androidx.compose.runtime.saveable.rememberSaveable(landscape) { mutableStateOf<Boolean?>(null) }
+    val immersive = (fullChoice ?: landscape) && state.pages.isNotEmpty() && !state.needsPassword
+    var dockUp by remember(immersive) { mutableStateOf(false) }
+    val busy = model.tool != Tool.None || model.searching || model.panel
+    val leftHanded = remember { eu.eurise.office.home.OfficePrefs.leftHanded(context) }
+    eu.eurise.core.designsystem.component.SystemBarsHidden(immersive)
+    LaunchedEffect(dockUp, busy) { if (dockUp && !busy) { kotlinx.coroutines.delay(5_000); dockUp = false } }
+    val barsShown = !immersive || dockUp || busy
+
+    BackHandler(enabled = model.tool != Tool.None || model.searching || model.panel || immersive) {
         when {
             model.searching -> model.searching = false
             model.tool != Tool.None -> model.tool = Tool.None
-            else -> model.panel = false
+            model.panel -> model.panel = false
+            dockUp -> dockUp = false
+            else -> fullChoice = false
         }
     }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))) {
         Column(Modifier.fillMaxSize()) {
-            Header(model, state, onBack)
+            if (barsShown) Header(model, state, onBack, onFullscreen = { fullChoice = true }.takeIf { !immersive })
             if (model.searching) SearchBar(model)
             when {
                 state.needsPassword -> PasswordPrompt(onPassword = { model.session.open(it) }, onCancel = onBack)
@@ -146,7 +160,9 @@ fun PdfScreen(model: PdfModel, writable: Boolean, onBack: () -> Unit) {
                 else -> Pages(model, state, Modifier.weight(1f))
             }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
+        if (immersive && !barsShown) eu.eurise.core.designsystem.component.FullscreenHandle(Modifier.align(if (leftHanded) Alignment.BottomStart else Alignment.BottomEnd)) { dockUp = true }
+        if (barsShown) Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
+            if (immersive) eu.eurise.core.designsystem.component.ExitFullscreen(leftHanded) { fullChoice = false }
             if (state.hasForm && model.panel && model.tab == PdfTab.Annotate && model.tool == Tool.None) {
                 Hint(stringResource(R.string.pdf_form_hint))
             }
@@ -167,7 +183,7 @@ fun PdfScreen(model: PdfModel, writable: Boolean, onBack: () -> Unit) {
 }
 
 @Composable
-private fun Header(model: PdfModel, state: PdfState, onBack: () -> Unit) {
+private fun Header(model: PdfModel, state: PdfState, onBack: () -> Unit, onFullscreen: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.statusBars).padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 6.dp),
@@ -190,6 +206,7 @@ private fun Header(model: PdfModel, state: PdfState, onBack: () -> Unit) {
                 color = if (ok) Color(0xFF3F5E4B) else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        onFullscreen?.let { IconButton(onClick = it) { Icon(EuriseIcons.fullscreen(), contentDescription = stringResource(eu.eurise.core.designsystem.R.string.ds_fullscreen)) } }
         IconButton(onClick = { model.searching = !model.searching }) {
             Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.pdf_search))
         }

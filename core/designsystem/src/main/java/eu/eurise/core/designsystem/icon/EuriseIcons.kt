@@ -205,6 +205,11 @@ object EuriseIcons {
     fun zoomIn(stroke: Float = Stroke) = icon("zoomIn", stroke,
         "M11 4.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z", "M16 16l4.5 4.5M8 11h6M11 8v6")
 
+    /** Tutto schermo: quattro angoli verso fuori; [fullscreenExit] verso dentro. */
+    fun fullscreen(stroke: Float = Stroke) = icon("fullscreen", stroke, "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5")
+
+    fun fullscreenExit(stroke: Float = Stroke) = icon("fullscreenExit", stroke, "M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5")
+
     fun history(stroke: Float = Stroke) = icon("history", stroke, "M4 12a8 8 0 1 0 2.4-5.7L4 8.5", "M4 4v4.5h4.5M12 8v4l3 2")
 
     // Segni zodiacali, tratto della suite.

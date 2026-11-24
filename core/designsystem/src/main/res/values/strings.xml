@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ds_today">Oggi</string>
+    <string name="ds_fullscreen">Tutto schermo</string>
+    <string name="ds_fullscreen_exit">Esci dal tutto schermo</string>
+    <string name="ds_show_bar">Mostra la barra</string>
     <string name="ds_secret_show">Mostra quello che hai scritto</string>
     <string name="ds_secret_hide">Nascondi</string>
     <string name="ds_tomorrow">Domani</string>
