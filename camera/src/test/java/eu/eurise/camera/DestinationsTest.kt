@@ -95,6 +95,13 @@ class RitoccoTest {
     }
 
     @Test
+    fun noiseThresholdFromMeasuredGrain() {
+        assertEquals(0, r.noiseThreshold(1.0f))
+        assertEquals(12, r.noiseThreshold(2.1f))
+        assertEquals(40, r.noiseThreshold(8f))
+    }
+
+    @Test
     fun shadowsRampFromDarkToMid() {
         assertEquals(1f, r.shadow(10f))
         assertEquals(0.5f, r.shadow(50f))

@@ -79,8 +79,8 @@ class Notte(private val w: Int, private val h: Int) {
          * Una soglia fissa di 28 a ISO 2000 scartava anche la grana, e la Notte non toglieva rumore.
          */
         fun ghostFor(meanAbs: Double): Int = (3.0 * meanAbs / 0.8).toInt().coerceIn(GHOST, MAX_GHOST)
-        /** Al massimo 8 fotogrammi: 8 × 255 sta in uno Short. */
-        const val MAX_FRAMES = 8
+        /** Al massimo 12 fotogrammi (12 × 255 sta largo in uno Short). */
+        const val MAX_FRAMES = 12
 
         fun luma(c: Int): Int = ((c shr 16 and 0xFF) * 77 + (c shr 8 and 0xFF) * 150 + (c and 0xFF) * 29) shr 8
 

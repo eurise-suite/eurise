@@ -42,6 +42,8 @@ object Ritocco {
     const val SHARPEN_FRAMES = 3
     private const val SHARPEN_AMOUNT = 0.5f
     const val SHARPEN_CORE = 4f
+    /** Sotto questo indice di grana la foto fusa è pulita e non si filtra. */
+    const val NOISE_OFF = 1.4f
     private const val SHADOW_START = 80f
     private const val SHADOW_FULL = 20f
     /** Nelle ombre più profonde il colore cala di tanto (le macchie di colore lì sono quasi solo rumore). */
@@ -155,11 +157,15 @@ object Ritocco {
         for (i in lum.indices) if (lc[i] > 0) lum[i] /= lc[i]
         val median = lum.copyOf().also { it.sort() }[lum.size / 2].toInt()
         val curve = gamma(median)
-        val grain = grainThreshold(iso, frames)
-        val crisp = frames >= SHARPEN_FRAMES
+        // Dopo la Notte la grana rimasta si misura sulla foto stessa (24 novembre: armadio a ISO 2745, 6 fotogrammi,
+        // grana ancora visibile; l'albero a ISO 2153 era pulito con la stessa formula basata sugli ISO).
+        val noise = if (frames > 1) noiseIndex(bitmap) else 0f
+        val grain = if (frames > 1) noiseThreshold(noise) else grainThreshold(iso, frames)
+        val crisp = frames >= SHARPEN_FRAMES && grain == 0
         if (wb == null && !chroma && curve == null && grain == 0 && !crisp) return false
         // Con molto rumore si schiarisce meno: schiarire mostra la grana.
-        val maxGain = if (iso >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
+        // Dopo la Notte conta il rumore rimasto: gli ISO divisi per i fotogrammi.
+        val maxGain = if (iso / frames.coerceAtLeast(1) >= VERY_NOISY_ISO) MAX_GAIN_NOISY else MAX_GAIN
         if (chroma) { boxBlur(cb, cw, ch, 1); boxBlur(cr, cw, ch, 1) }
         // Per le ombre un colore ancora più levigato (blocchi di circa 30 pixel): lì le macchie rosse e verdi sono
         // larghe e il colore vero è poco (23 novembre, scaffali sotto la TV).
@@ -225,9 +231,44 @@ object Ritocco {
             }
             bitmap.setPixels(row, 0, w, 0, yy, w, 1)
         }
-        Log.i(TAG, "Ritocco: colori ${wb != null}, rumore di colore $chroma (ISO $iso), grana $grain, mediana $median, curva $curve")
+        Log.i(TAG, "Ritocco: colori ${wb != null}, rumore di colore $chroma (ISO $iso), grana $grain (indice $noise), mediana $median, curva $curve")
         return true
     }
+
+    /**
+     * Quanta grana c'è: la mediana di |pixel − media dei 3×3 vicini| tra i toni medi (luminosità 60-160), su una riga ogni
+     * otto. La mediana ignora i contorni. Tarata sulle foto di Sun: ~1 pulita, ~2 grana visibile, 4-5 una foto sola a ISO 2000.
+     */
+    internal fun noiseIndex(bitmap: Bitmap): Float {
+        val w = bitmap.width; val h = bitmap.height
+        if (w < 3 || h < 3) return 0f
+        val rows = Array(3) { IntArray(w) }
+        val hist = IntArray(256); var n = 0
+        var y = 1
+        while (y < h - 1) {
+            for (k in 0 until 3) {
+                bitmap.getPixels(rows[k], 0, w, 0, y - 1 + k, w, 1)
+                for (x in 0 until w) rows[k][x] = luma8(rows[k][x])
+            }
+            var x = 1
+            while (x < w - 1) {
+                val c = rows[1][x]
+                if (c in 60..160) {
+                    var sum = 0
+                    for (k in 0 until 3) sum += rows[k][x - 1] + rows[k][x] + rows[k][x + 1]
+                    val d = abs(c * 9 - sum) * 4 / 9
+                    hist[minOf(d, 255)]++; n++
+                }
+                x += 2
+            }
+            y += 8
+        }
+        if (n < 1000) return 0f
+        return percentile(hist, n, 0.5) / 4f
+    }
+
+    /** Soglia del filtro della grana dopo la Notte, dall'indice di [noiseIndex]: spento sotto 1,4, poi 6 volte l'indice. */
+    internal fun noiseThreshold(index: Float): Int = if (index < NOISE_OFF) 0 else (6f * index).toInt().coerceAtMost(40)
 
     /**
      * Soglia del filtro della grana (0 = spento): da [GRAIN_ISO] in su, più alta con più ISO, divisa per i fotogrammi

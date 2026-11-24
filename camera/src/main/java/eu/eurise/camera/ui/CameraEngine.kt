@@ -322,7 +322,7 @@ class CameraEngine(private val context: Context) {
     }
 
     /** Fotogrammi della modalità Notte scelta a mano: sempre la raffica, più lunga. */
-    fun nightModeFrames(): Int = if (front) 8 else 6
+    fun nightModeFrames(): Int = if (front) 12 else 10
 
     /** Raffica di [n] JPEG in memoria, uno dopo l'altro, con la stessa esposizione. */
     fun takeBurst(n: Int, zoom: Float, done: (List<ByteArray>) -> Unit, failed: () -> Unit) {
