@@ -18,6 +18,9 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Backup che si fermava uscendo** (24 novembre, segnalato dal proprietario): backup, configurazione, frasi e ripristino
+  ora girano nel processo e non nella schermata; il ripristino non resta mai a metà (`applyAndRestart`); le interruzioni non
+  si scrivono come errore (`docs/stato/BACKUP.md`). Giro e link alla consegna.
 - **Giro 1109** (23 novembre, notte; pubblicato con Mappe 145, `brand` portato avanti): Galleria, gli originali tenuti 30
   giorni nel cestino unico (`docs/stato/PICCOLE.md`). Sicurezza: il fornitore della Galleria resta solo per la suite; elimina
   solo un originale del proprio elenco (nessun percorso nominabile da fuori); gli originali arrivano solo a chi li chiede

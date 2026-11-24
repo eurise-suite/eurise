@@ -299,9 +299,10 @@ fun BackupRoute(onBack: () -> Unit, onConnectCloud: () -> Unit = {}, start: Stri
         is BkPage.Confirm -> ConfirmPage(p.opened, replacesBackupSettings = state.configured, working = busy, onBack = { manager.discard(p.opened); page = null }) {
             busy = true
             scope.launch {
-                val r = runCatching { manager.apply(p.opened) }
+                // Prepara e riavvia anche se nel frattempo si esce dalla schermata.
+                val r = runCatching { manager.applyAndRestart(p.opened) }
                 busy = false
-                if (r.isSuccess) manager.restartApp() else toast(R.string.backup_bad_file)
+                if (r.isFailure) toast(R.string.backup_bad_file)
             }
         }
         BkPage.NewPhrase -> PhrasePage(back = stringResource(R.string.backup_title), title = stringResource(R.string.bk_new_title), sub = stringResource(R.string.bk_new_sub), onBack = { page = null }) { phrase ->

@@ -15,7 +15,11 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import eu.eurise.core.cloud.CloudAccounts
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -90,6 +94,15 @@ data class BackupState(
 class BackupManager private constructor(private val context: Context) {
     private val prefs = context.getSharedPreferences("backup", Context.MODE_PRIVATE)
     private val mutex = Mutex()
+
+    /**
+     * Le operazioni che non si devono fermare a metà (backup, prima configurazione, frasi, ripristino) girano qui, nel
+     * processo, e non nella schermata che le chiede: chi esce dalla schermata smette solo di aspettare. Prima un backup
+     * partito con «Fai il backup ora» si interrompeva uscendo («The coroutine was canceled…», 24 novembre).
+     */
+    private val work = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private suspend fun <T> detached(block: suspend () -> T): T = work.async { block() }.await()
     private val _state = MutableStateFlow(load())
     val state: StateFlow<BackupState> = _state.asStateFlow()
 
@@ -108,7 +121,9 @@ class BackupManager private constructor(private val context: Context) {
     private fun refresh(running: Boolean = _state.value.running) { _state.value = load().copy(running = running) }
 
     /** Prima attivazione: chiavi nuove per la frase e il codice di recupero. Lento di proposito. */
-    suspend fun setup(passphrase: String, recoveryCode: String) = withContext(Dispatchers.Default) {
+    suspend fun setup(passphrase: String, recoveryCode: String) = detached { setupIn(passphrase, recoveryCode) }
+
+    private suspend fun setupIn(passphrase: String, recoveryCode: String) = withContext(Dispatchers.Default) {
         val keys = BackupCrypto.setup(passphrase.toCharArray(), recoveryCode)
         storeKeys(keys)
         // La coppia per la copia della chiave delle note: il backup automatico la chiude senza poterla riaprire.
@@ -117,7 +132,9 @@ class BackupManager private constructor(private val context: Context) {
     }
 
     /** Cambia la frase segreta (serve quella attuale o il codice di recupero). Il codice resta lo stesso. */
-    suspend fun changePassphrase(current: String, next: String): Boolean = withContext(Dispatchers.Default) {
+    suspend fun changePassphrase(current: String, next: String): Boolean = detached { changePassphraseIn(current, next) }
+
+    private suspend fun changePassphraseIn(current: String, next: String): Boolean = withContext(Dispatchers.Default) {
         val header = header() ?: return@withContext false
         val dataKey = runCatching { BackupCrypto.unlock(header, current) }.getOrNull() ?: return@withContext false
         // Si tiene la chiusura per il codice di recupero già consegnato all'utente.
@@ -130,7 +147,9 @@ class BackupManager private constructor(private val context: Context) {
      * Frase e codice di recupero nuovi senza quelli vecchi: si chiama solo dopo che l'utente si è riconosciuto con lo
      * sblocco del telefono. La chiave dei dati resta la stessa; i backup già fatti si aprono con frase e codice vecchi.
      */
-    suspend fun resetSecrets(passphrase: String, recoveryCode: String): Boolean = withContext(Dispatchers.Default) {
+    suspend fun resetSecrets(passphrase: String, recoveryCode: String): Boolean = detached { resetSecretsIn(passphrase, recoveryCode) }
+
+    private suspend fun resetSecretsIn(passphrase: String, recoveryCode: String): Boolean = withContext(Dispatchers.Default) {
         val keys = keys() ?: return@withContext false
         storeKeys(BackupCrypto.Keys(keys.dataKey, BackupCrypto.rewrapAll(keys.dataKey, passphrase.toCharArray(), recoveryCode)))
         // La frase vecchia non c'è: la coppia della copia delle note si rifà nuova (la copia si richiude subito se la
@@ -187,7 +206,7 @@ class BackupManager private constructor(private val context: Context) {
      * Fa un backup: archivio, cifratura, caricamento, verifica (lo si rilegge e lo si apre), poi la regola dei tre
      * più il mensile e il trimestrale. I vecchi si toccano solo dopo la verifica.
      */
-    suspend fun backupNow(): Result<BackupFile> = backupTo(null)
+    suspend fun backupNow(): Result<BackupFile> = detached { backupTo(null) }
 
     /**
      * Come [backupNow], verso [into] invece della destinazione scelta: lo usa la prova sull'emulatore per un WebDAV
@@ -234,7 +253,8 @@ class BackupManager private constructor(private val context: Context) {
                 back.delete()
             }
         }
-        result.exceptionOrNull()?.let { e -> prefs.edit().putString("last_error", e.message ?: e.javaClass.simpleName).apply() }
+        // Un'interruzione (processo chiuso, lavoro fermato da Android) non è un errore del backup: non si scrive.
+        result.exceptionOrNull()?.takeIf { it !is CancellationException }?.let { e -> prefs.edit().putString("last_error", e.message ?: e.javaClass.simpleName).apply() }
         refresh(running = false)
         result
     }
@@ -316,6 +336,9 @@ class BackupManager private constructor(private val context: Context) {
      * Dopo la conferma: prepara i file (prendono il loro posto al riavvio, [restartApp]), sigilla i dati delle app
      * separate in attesa e tiene le chiavi del backup ripristinato per i prossimi backup di questo telefono.
      */
+    /** Prepara il ripristino e fa ripartire l'app, anche se la schermata nel frattempo si è chiusa. */
+    suspend fun applyAndRestart(opened: Opened) = detached { apply(opened); restartApp() }
+
     suspend fun apply(opened: Opened) = withContext(Dispatchers.IO) {
         try {
             opened.file.inputStream().buffered(1 shl 16).use { input ->

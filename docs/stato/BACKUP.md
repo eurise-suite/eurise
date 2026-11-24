@@ -332,3 +332,15 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
 ## 22 novembre 2026, sera (progetto Eurise Sicurezza, tavola SchedarioProve decisa dal proprietario)
 - «Apri il backup»: Frase segreta · Codice di recupero a schedario (`FolderTabs`), il campo sul foglio della linguetta
   aperta, in un elemento solo dell'elenco (niente spazio tra linguetta e foglio).
+
+## 24 novembre 2026 (progetto Eurise Sicurezza): il backup non si ferma più uscendo dalla schermata
+- **Segnalato dal proprietario**: «Ultimo tentativo non riuscito: The coroutine was canceled because it left the
+  composition». «Fai il backup ora» girava nella schermata (`rememberCoroutineScope`): uscendo, il backup si fermava a metà
+  e l'interruzione finiva nell'ultimo errore, in inglese.
+- **Correzione** (`BackupManager`): backup, prima configurazione, cambio e rinnovo della frase e ripristino girano nel
+  processo (`detached`, ambito con `SupervisorJob`); chi esce dalla schermata smette solo di aspettare. Il ripristino
+  (`applyAndRestart`) prepara i file e fa ripartire l'app da sé, anche a schermata chiusa: niente ripristini a metà.
+  Un'interruzione (`CancellationException`) non si scrive più come errore. Il messaggio vecchio resta finché il prossimo
+  backup riesce.
+- **Resta**: se Android chiude il processo durante l'invio, quel backup si perde (il file a metà non conta: non si verifica
+  e non tocca i backup vecchi); il giro automatico riprova da sé.
