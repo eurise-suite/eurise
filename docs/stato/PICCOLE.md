@@ -418,3 +418,20 @@ Password con **R8 pieno** dal giro 1103: niente più «tieni tutto eu.eurise» (
 - **Correzione**: i campi del nome si passano solo se ci sono; senza, il salvataggio dichiara solo la password
   (`SAVE_DATA_TYPE_PASSWORD`). In più `onFillRequest` è protetta: un errore imprevisto risponde «niente da proporre» e
   finisce nel registro, senza fermare Password né l'app che si compila.
+
+## 24 novembre 2026, sera (progetto Eurise Sicurezza): immagini nelle note sicure di Password
+- Chiesto dal proprietario. Nella modifica di una voce (accesso o carta), sotto «Note sicure»: «Aggiungi immagine» (selettore
+  di foto di Android, nessun permesso; fino a 20 per voce), miniature con la crocetta per toglierle; si applica con «Salva».
+  Nella scheda: sezione «Immagini» sotto le note; il tocco apre l'immagine grande dentro Password (due dita per ingrandire,
+  indietro per chiudere).
+- **Dove stanno**: nel file della cassaforte, come allegati di KeePass (intestazione interna KDBX 4, segnati protetti):
+  cifrate con tutto il resto, sincronizzate e nel backup con il file, aperte anche da KeePassXC. Mai su disco in chiaro, né
+  miniature; il visore è nella finestra di Password (coperta da FLAG_SECURE), non in una finestra a parte.
+- **Entrando**: lato lungo al massimo 2048 px e riscritte in JPEG 85: il file resta leggero e spariscono posizione GPS e
+  altri dati dello scatto.
+- **Togliere** un'immagine la toglie anche dalle versioni in cronologia della voce; gli allegati che nessuna voce usa più
+  (anche dopo «Elimina per sempre» o un'unione) escono dal file (`Vault.compactBinaries`). Nell'unione con la copia
+  sincronizzata i riferimenti si rinumerano (`adoptBinaries`): prima un allegato di KeePassXC arrivato da un'altra copia
+  puntava all'elenco sbagliato.
+- **Prove**: `AttachmentsTest` (4: cifrate e uguali dopo scrittura e lettura, nessuna traccia dopo averle tolte, eliminate
+  per sempre, unione tra due copie). Tavola non fatta: richiesta diretta del proprietario, nello stile della scheda.

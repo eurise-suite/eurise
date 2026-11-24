@@ -32,7 +32,8 @@ sealed class KdbxException(message: String) : Exception(message) {
 class KdbxFile internal constructor(
     internal val version: Int,
     internal val fields: LinkedHashMap<Int, ByteArray>,
-    internal val binaries: List<ByteArray>,
+    /** Gli allegati (KDBX 4, intestazione interna): primo byte i segni (1 = protetto), poi il contenuto. Lo condivide [Vault]. */
+    internal val binaries: MutableList<ByteArray>,
     val document: Document,
     internal val transformedKey: ByteArray,
 )
@@ -203,7 +204,7 @@ object Kdbx {
         val now = Base64.getEncoder().encodeToString(Vault.timeBytes(System.currentTimeMillis()))
         val xml = """<?xml version="1.0" encoding="utf-8"?>
 <KeePassFile><Meta><Generator>Eurise</Generator><DatabaseName>${escape(name)}</DatabaseName><DatabaseNameChanged>$now</DatabaseNameChanged><MemoryProtection><ProtectTitle>False</ProtectTitle><ProtectUserName>False</ProtectUserName><ProtectPassword>True</ProtectPassword><ProtectURL>False</ProtectURL><ProtectNotes>False</ProtectNotes></MemoryProtection><RecycleBinEnabled>True</RecycleBinEnabled></Meta><Root><Group><UUID>${Vault.newUuid()}</UUID><Name>${escape(name)}</Name><Times><CreationTime>$now</CreationTime><LastModificationTime>$now</LastModificationTime><LastAccessTime>$now</LastAccessTime><ExpiryTime>$now</ExpiryTime><Expires>False</Expires><UsageCount>0</UsageCount><LocationChanged>$now</LocationChanged></Times><IsExpanded>True</IsExpanded></Group><DeletedObjects></DeletedObjects></Root></KeePassFile>"""
-        return KdbxFile(VERSION_4, fields, emptyList(), parseXml(xml.toByteArray(Charsets.UTF_8)), transform(compositeKey, kdf))
+        return KdbxFile(VERSION_4, fields, ArrayList(), parseXml(xml.toByteArray(Charsets.UTF_8)), transform(compositeKey, kdf))
     }
 
     private fun transform(composite: ByteArray, kdfBytes: ByteArray): ByteArray {

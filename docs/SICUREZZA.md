@@ -18,6 +18,10 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Immagini nelle note di Password e occhio nei campi password** (24 novembre, sera, richieste del proprietario): le
+  immagini sono allegati KeePass dentro il file cifrato, ridotte e senza dati dello scatto, mai su disco in chiaro, tolte
+  anche dalla cronologia; l'occhio è in tutti i 15 campi password della suite che non l'avevano (`core/designsystem`,
+  `Secret.kt`; regola in CLAUDE.md). Dettagli in `docs/stato/PICCOLE.md`.
 - **Password cadeva nella compilazione automatica** (24 novembre, sera, segnalato dal proprietario): moduli con la password e
   senza nome utente; corretto e `onFillRequest` protetta (`docs/stato/PICCOLE.md`). Giro e link alla consegna.
 - **Backup che si fermava uscendo** (24 novembre, segnalato dal proprietario): backup, configurazione, frasi e ripristino

@@ -27,7 +27,14 @@ data class VaultEntry(
     val passkey: PasskeyData? = null,
     /** I miei dati: i campi del profilo (nome del campo, valore) nell'ordine del file; null se la voce non è un profilo. */
     val profile: List<Pair<String, String>>? = null,
+    /** Gli allegati della voce (immagini delle note, file messi da KeePassXC), nell'ordine del file. */
+    val attachments: List<Attachment> = emptyList(),
 )
+
+/** Un allegato: il nome nella voce e quanto pesa. Il contenuto si legge con [Vault.attachment], solo quando serve. */
+data class Attachment(val name: String, val size: Int) {
+    val isImage get() = name.substringAfterLast('.', "").lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif", "heic", "bmp")
+}
 
 /** Una passkey, nei campi usati anche da KeePassXC e KeePassDX: il file resta apribile con quei programmi. */
 data class PasskeyData(val credentialId: String, val privateKeyPem: String, val rpId: String, val username: String, val userHandle: String)
@@ -48,6 +55,10 @@ data class EntryDraft(
     val passkey: PasskeyData? = null,
     /** I campi del profilo dei miei dati; nullo vuol dire "non è un profilo" (o "non toccarlo"). */
     val profile: List<Pair<String, String>>? = null,
+    /** Allegati da aggiungere (nome, contenuto): finiscono cifrati nel file, come allegati di KeePass. */
+    val addAttachments: List<Pair<String, ByteArray>> = emptyList(),
+    /** Allegati da togliere, per nome: spariscono anche dalla cronologia della voce. */
+    val removeAttachments: Set<String> = emptySet(),
 )
 
 /** Esito di un'unione: [localChanged] se è cambiato qualcosa qui, [remoteBehind] se qui c'è qualcosa che là manca. */
@@ -57,7 +68,7 @@ data class MergeResult(val localChanged: Boolean, val remoteBehind: Boolean)
 data class ImportCounts(val added: Int, val attached: Int, val duplicates: Int)
 
 /** Le voci dentro il documento di un file KeePass: legge e scrive solo i campi che conosce, il resto non si tocca. */
-class Vault(val document: Document) {
+class Vault(val document: Document, private val binaries: MutableList<ByteArray> = ArrayList()) {
     private val root: Element = document.documentElement.child("Root") ?: error("Root mancante")
     private val meta: Element? = document.documentElement.child("Meta")
     private val rootGroup: Element = root.child("Group") ?: error("Gruppo principale mancante")
@@ -117,8 +128,91 @@ class Vault(val document: Document) {
                 setString(element, key, value, eu.eurise.password.logic.Profiles.isSensitive(key))
             }
         }
+        if (draft.removeAttachments.isNotEmpty()) removeAttachments(element, draft.removeAttachments)
+        draft.addAttachments.forEach { (name, data) -> addAttachment(element, name, data) }
         setTime(element, "LastModificationTime", now)
+        compactBinaries()
         return element.child("UUID")!!.textContent
+    }
+
+    // --- Allegati (immagini delle note) ---
+
+    /** Il contenuto dell'allegato [name] della voce [uuid]; null se non c'è. Resta in memoria, mai su disco. */
+    fun attachment(uuid: String, name: String): ByteArray? {
+        val entry = findEntry(uuid) ?: return null
+        val ref = entry.children("Binary").firstOrNull { it.child("Key")?.textContent == name }?.let(::refOf) ?: return null
+        return binaries.getOrNull(ref)?.let { it.copyOfRange(1, it.size) }
+    }
+
+    private fun refOf(binary: Element): Int? = binary.child("Value")?.getAttribute("Ref")?.toIntOrNull()
+
+    /** Aggiunge un allegato protetto; un nome già usato diventa «nome (2).jpg». */
+    private fun addAttachment(entry: Element, name: String, data: ByteArray) {
+        val used = entry.children("Binary").mapNotNull { it.child("Key")?.textContent }.toSet()
+        val base = name.substringBeforeLast('.')
+        val ext = if (name.contains('.')) "." + name.substringAfterLast('.') else ""
+        var unique = name
+        var n = 2
+        while (unique in used) { unique = "$base ($n)$ext"; n++ }
+        binaries += byteArrayOf(1) + data
+        val binary = document.createElement("Binary")
+        binary.appendChild(textElement("Key", unique))
+        binary.appendChild(document.createElement("Value").also { it.setAttribute("Ref", (binaries.size - 1).toString()) })
+        // Come KeePass: dopo i campi, prima di AutoType e della cronologia.
+        val before = entry.child("AutoType") ?: entry.child("History")
+        if (before != null) entry.insertBefore(binary, before) else entry.appendChild(binary)
+    }
+
+    /**
+     * Toglie gli allegati [names] dalla voce e dalle sue versioni in cronologia: chi elimina un'immagine da una nota
+     * (un documento, una ricevuta) si aspetta che sparisca davvero, non che resti nelle versioni vecchie.
+     */
+    private fun removeAttachments(entry: Element, names: Set<String>) {
+        val refs = entry.children("Binary").filter { it.child("Key")?.textContent in names }.mapNotNull(::refOf).toSet()
+        fun strip(e: Element) {
+            e.children("Binary").filter { it.child("Key")?.textContent in names || refOf(it) in refs }.forEach { e.removeChild(it) }
+        }
+        strip(entry)
+        entry.child("History")?.children("Entry")?.forEach(::strip)
+    }
+
+    /**
+     * Tiene nell'elenco degli allegati solo quelli che qualche voce usa (anche in cronologia o nel cestino), nell'ordine
+     * in cui compaiono, e rinumera i riferimenti. Così un'immagine tolta, o una voce eliminata per sempre, non resta
+     * nel file.
+     */
+    fun compactBinaries() {
+        val values = ArrayList<Element>()
+        fun walk(e: Element) {
+            if (e.tagName == "Binary") e.child("Value")?.takeIf { it.hasAttribute("Ref") }?.let { values += it }
+            var c = e.firstChild
+            while (c != null) { if (c is Element) walk(c); c = c.nextSibling }
+        }
+        walk(root)
+        val order = LinkedHashMap<Int, Int>()
+        values.forEach { v -> v.getAttribute("Ref").toIntOrNull()?.takeIf { it in binaries.indices }?.let { order.getOrPut(it) { order.size } } }
+        if (order.size == binaries.size && order.all { (old, new) -> old == new }) return
+        val kept = order.keys.map { binaries[it] }
+        values.forEach { v -> v.getAttribute("Ref").toIntOrNull()?.let { old -> order[old]?.let { v.setAttribute("Ref", it.toString()) } } }
+        binaries.clear()
+        binaries.addAll(kept)
+    }
+
+    /** Un elemento preso da [other]: i suoi riferimenti agli allegati puntano all'elenco di [other], si portano qui. */
+    private fun adoptBinaries(node: Element, other: Vault) {
+        fun walk(e: Element) {
+            if (e.tagName == "Binary") e.child("Value")?.let { v ->
+                val data = v.getAttribute("Ref").toIntOrNull()?.let { other.binaries.getOrNull(it) }
+                if (data != null) {
+                    val same = binaries.indexOfFirst { it.contentEquals(data) }
+                    val index = if (same >= 0) same else { binaries += data; binaries.size - 1 }
+                    v.setAttribute("Ref", index.toString())
+                }
+            }
+            var c = e.firstChild
+            while (c != null) { if (c is Element) walk(c); c = c.nextSibling }
+        }
+        walk(node)
     }
 
     /**
@@ -205,6 +299,7 @@ class Vault(val document: Document) {
         val entry = binnedEntry(uuid) ?: return false
         entry.parentNode.removeChild(entry)
         writeDeletedObjects(deletedObjects() + (uuid to now))
+        compactBinaries()
         return true
     }
 
@@ -257,14 +352,14 @@ class Vault(val document: Document) {
             val remoteTime = timeOf(remote, "LastModificationTime")
             if (local == null) {
                 if ((deleted[id] ?: Long.MIN_VALUE) >= remoteTime) { remoteBehind = true; continue }
-                ensureGroup(otherGroupOf[id], other).appendChild(document.importNode(remote, true))
+                ensureGroup(otherGroupOf[id], other).appendChild((document.importNode(remote, true) as Element).also { adoptBinaries(it, other) })
                 localChanged = true
                 continue
             }
             val localTime = timeOf(local, "LastModificationTime")
             when {
                 remoteTime > localTime -> {
-                    val incoming = document.importNode(remote, true) as Element
+                    val incoming = (document.importNode(remote, true) as Element).also { adoptBinaries(it, other) }
                     val keep = snapshot(local)
                     val known = historyOf(incoming).children("Entry").mapTo(HashSet()) { timeOf(it, "LastModificationTime") }
                     local.child("History")?.children("Entry")?.forEach { old ->
@@ -278,7 +373,7 @@ class Vault(val document: Document) {
                 }
                 localTime > remoteTime -> {
                     val known = local.child("History")?.children("Entry")?.map { timeOf(it, "LastModificationTime") }.orEmpty()
-                    if (remoteTime !in known) pushHistory(local, document.importNode(other.snapshot(remote), true) as Element)
+                    if (remoteTime !in known) pushHistory(local, (document.importNode(other.snapshot(remote), true) as Element).also { adoptBinaries(it, other) })
                     remoteBehind = true
                 }
             }
@@ -293,6 +388,7 @@ class Vault(val document: Document) {
             }
         }
         writeDeletedObjects(deleted)
+        compactBinaries()
         return MergeResult(localChanged, remoteBehind)
     }
 
@@ -330,6 +426,10 @@ class Vault(val document: Document) {
             } else null,
             apps = strings.filterKeys { it.startsWith(F_APP) }.values.filter { it.isNotBlank() } +
                 listOfNotNull(strings["URL"]?.takeIf { it.startsWith(APP_SCHEME) }?.removePrefix(APP_SCHEME)),
+            attachments = e.children("Binary").mapNotNull { b ->
+                val name = b.child("Key")?.textContent ?: return@mapNotNull null
+                Attachment(name, refOf(b)?.let { binaries.getOrNull(it) }?.let { it.size - 1 } ?: 0)
+            },
         )
     }
 

@@ -22,7 +22,7 @@ class KdbxTest {
     private fun hex(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
     private val fixture get() = javaClass.getResource("/prova.kdbx")!!.readBytes()
     private val key = Kdbx.compositeKey("prova-eurise")
-    private fun vault(file: eu.eurise.password.kdbx.KdbxFile) = Vault(file.document)
+    private fun vault(file: eu.eurise.password.kdbx.KdbxFile) = Vault(file.document, file.binaries)
     private val draft = EntryDraft("Sito", "io", "S3greta&<x>", "https://sito.it", "nota", null)
 
     @Test fun blake2bAbc() = assertEquals(
@@ -414,4 +414,5 @@ class KdbxTest {
     @Test fun keepassFileIsRecognised() {
         assertTrue(eu.eurise.password.logic.Importer.read(fixture.inputStream()) is eu.eurise.password.logic.ImportOutcome.Keepass)
     }
+
 }

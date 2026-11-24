@@ -296,6 +296,9 @@ class PasswordViewModel(app: Application) : AndroidViewModel(app) {
 
     fun lock() = repo.lock()
     fun save(draft: EntryDraft, uuid: String?) = viewModelScope.launch { repo.saveEntry(draft, uuid) }
+
+    /** Il contenuto di un'immagine della voce, solo in memoria. */
+    suspend fun attachment(uuid: String, name: String): ByteArray? = repo.attachment(uuid, name)
     fun delete(uuid: String) = viewModelScope.launch { repo.deleteEntry(uuid) }
     fun markUsed(uuid: String) = viewModelScope.launch { repo.markUsed(uuid) }
     fun syncNow() = viewModelScope.launch { repo.syncNow() }

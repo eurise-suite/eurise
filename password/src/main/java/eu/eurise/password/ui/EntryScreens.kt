@@ -153,6 +153,8 @@ internal fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vau
     val scheme = MaterialTheme.colorScheme
     var reveal by remember(entry.uuid) { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
+    var viewing by remember(entry.uuid) { mutableStateOf<eu.eurise.password.kdbx.Attachment?>(null) }
+    viewing?.let { return ImageViewer(vm, entry.uuid, it) { viewing = null } }
     val strength = remember(entry.password) { Generator.strength(entry.password) }
     val reused = remember(entry, all) { entry.password.isNotEmpty() && all.count { it.password == entry.password } > 1 }
     val title = entry.title.ifBlank { stringResource(R.string.pwd_untitled) }
@@ -215,6 +217,7 @@ internal fun EntryDetail(vm: PasswordViewModel, entry: VaultEntry, all: List<Vau
                 Text(entry.notes, fontSize = 14.sp, lineHeight = 21.sp)
             }
         }
+        EntryImages(vm, entry) { viewing = it }
         TextButton(onClick = { confirm = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(stringResource(R.string.pwd_delete), color = scheme.error)
         }
@@ -245,7 +248,7 @@ internal fun cardBrand(number: String): String {
 }
 
 @Composable
-internal fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDraft?, onBack: () -> Unit, onSave: (EntryDraft) -> Unit) {
+internal fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryDraft?, onBack: () -> Unit, vm: PasswordViewModel? = null, onSave: (EntryDraft) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var title by remember { mutableStateOf(entry?.title ?: prefill?.title.orEmpty()) }
     var user by remember { mutableStateOf(entry?.username ?: prefill?.username.orEmpty()) }
@@ -260,6 +263,9 @@ internal fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryD
     var expiry by remember { mutableStateOf(entry?.card?.expiry.orEmpty()) }
     var cvv by remember { mutableStateOf(entry?.card?.cvv.orEmpty()) }
     var type by remember { mutableStateOf(entry?.card?.type.orEmpty()) }
+    var addedImages by remember { mutableStateOf(listOf<Pair<String, ByteArray>>()) }
+    var removedImages by remember { mutableStateOf(setOf<String>()) }
+    fun withImages(d: EntryDraft) = d.copy(addAttachments = addedImages, removeAttachments = removedImages)
     val otpValid = otp.isBlank() || Totp.parse(otp) != null
     val strength = remember(password) { Generator.strength(password) }
 
@@ -267,8 +273,8 @@ internal fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryD
         BackHeader(stringResource(R.string.pwd_back), onBack) {
             PillAction(stringResource(R.string.pwd_save)) {
                 when {
-                    isCard -> if (number.isNotBlank()) onSave(EntryDraft(title.trim(), "", "", "", notes, null, CardData(number.trim(), holder.trim(), expiry.trim(), cvv.trim(), type.trim())))
-                    otpValid -> onSave(EntryDraft(title.trim(), user.trim(), password, url.trim(), notes, otp.trim().ifEmpty { null }))
+                    isCard -> if (number.isNotBlank()) onSave(withImages(EntryDraft(title.trim(), "", "", "", notes, null, CardData(number.trim(), holder.trim(), expiry.trim(), cvv.trim(), type.trim()))))
+                    otpValid -> onSave(withImages(EntryDraft(title.trim(), user.trim(), password, url.trim(), notes, otp.trim().ifEmpty { null })))
                 }
             }
         }
@@ -308,6 +314,12 @@ internal fun EntryEdit(entry: VaultEntry?, startAsCard: Boolean, prefill: EntryD
             OutlinedTextField(otp, { otp = it }, label = { Text(stringResource(R.string.pwd_f_otp)) }, singleLine = true, isError = !otpValid, modifier = Modifier.fillMaxWidth())
             }
             OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.pwd_notes)) }, minLines = 3, modifier = Modifier.fillMaxWidth())
+            EditImages(
+                vm, entry, addedImages, removedImages,
+                onAdd = { addedImages = addedImages + it },
+                onRemoveExisting = { removedImages = removedImages + it },
+                onRemoveAdded = { i -> addedImages = addedImages.filterIndexed { k, _ -> k != i } },
+            )
         }
     }
 }
@@ -321,6 +333,8 @@ internal fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> 
     val context = LocalContext.current
     var showNumber by remember(entry.uuid) { mutableStateOf(false) }
     var showCvv by remember(entry.uuid) { mutableStateOf(false) }
+    var viewing by remember(entry.uuid) { mutableStateOf<eu.eurise.password.kdbx.Attachment?>(null) }
+    viewing?.let { return ImageViewer(vm, entry.uuid, it) { viewing = null } }
     var confirm by remember { mutableStateOf(false) }
     val masked = "•••• •••• •••• " + Cards.lastFour(card.number)
     val months = remember(card.expiry) { Cards.monthsLeft(card.expiry, LocalDate.now()) }
@@ -372,6 +386,7 @@ internal fun CardDetail(vm: PasswordViewModel, entry: VaultEntry, onBack: () -> 
                 Text(entry.notes, fontSize = 14.sp, lineHeight = 21.sp)
             }
         }
+        EntryImages(vm, entry) { viewing = it }
         TextButton(onClick = { confirm = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(stringResource(R.string.pwd_delete), color = scheme.error)
         }

@@ -73,6 +73,11 @@
     <string name="pwd_otp_invalid">Segreto 2FA non valido</string>
     <string name="pwd_otp_remaining">Il codice cambia tra %d secondi</string>
     <string name="pwd_notes">Note sicure</string>
+    <string name="pwd_images">Immagini</string>
+    <string name="pwd_image_add">Aggiungi immagine</string>
+    <string name="pwd_image_remove">Togli l\'immagine</string>
+    <string name="pwd_image_default">Immagine</string>
+    <string name="pwd_image_note">Restano cifrate nella cassaforte, come il resto. Si rimpiccioliscono e perdono posizione e dati dello scatto.</string>
     <string name="pwd_changed">Cambiata il %s</string>
     <plurals name="pwd_history">
         <item quantity="one">la precedente resta nella cronologia</item>

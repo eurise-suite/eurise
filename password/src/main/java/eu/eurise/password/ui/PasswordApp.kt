@@ -190,7 +190,7 @@ internal fun OpenVault(vm: PasswordViewModel, entries: List<VaultEntry>) {
             else if (entry.profile != null) ProfileDetail(vm, entry, back, onEdit = { screen = Screen.ProfileEdit(s.uuid) })
             else EntryDetail(vm, entry, entries, back, onEdit = { screen = Screen.Edit(s.uuid) })
         }
-        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, s.prefill, back) { draft ->
+        is Screen.Edit -> EntryEdit(entries.firstOrNull { it.uuid == s.uuid }, s.card, s.prefill, back, vm) { draft ->
             vm.save(draft, s.uuid)
             back()
         }

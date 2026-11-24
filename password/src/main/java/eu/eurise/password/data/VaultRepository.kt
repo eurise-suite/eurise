@@ -162,6 +162,11 @@ class VaultRepository private constructor(private val appContext: Context) {
         return id
     }
 
+    /** Il contenuto di un allegato (un'immagine della nota), solo in memoria; null se la cassaforte è chiusa. */
+    suspend fun attachment(uuid: String, name: String): ByteArray? = withContext(Dispatchers.Default) {
+        mutex.withLock { vault?.attachment(uuid, name) }
+    }
+
     suspend fun deleteEntry(uuid: String) {
         edit { it.delete(uuid) }
         syncNow()
@@ -300,7 +305,7 @@ class VaultRepository private constructor(private val appContext: Context) {
                 }
                 if (remote.etag != known) {
                     val bytes = dav.getBytes(REMOTE_FILE) ?: return@repeat
-                    val merge = local.mergeFrom(Vault(Kdbx.read(bytes, key).document))
+                    val merge = local.mergeFrom(Kdbx.read(bytes, key).let { Vault(it.document, it.binaries) })
                     if (merge.localChanged) {
                         persist(current)
                         publish()
@@ -335,7 +340,7 @@ class VaultRepository private constructor(private val appContext: Context) {
 
     private fun attach(read: KdbxFile, key: ByteArray) {
         opened = read
-        vault = Vault(read.document)
+        vault = Vault(read.document, read.binaries)
         compositeKey = key
         publish()
     }
