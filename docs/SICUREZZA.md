@@ -3,7 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1116** (24 novembre; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
+- **Ultimo giro pubblicato**: **1120** (24 novembre, sera: Password che cadeva nella compilazione, occhio in tutti i campi
+  password, immagini nelle note di Password; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -23,7 +24,7 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   anche dalla cronologia; l'occhio è in tutti i 15 campi password della suite che non l'avevano (`core/designsystem`,
   `Secret.kt`; regola in CLAUDE.md). Dettagli in `docs/stato/PICCOLE.md`.
 - **Password cadeva nella compilazione automatica** (24 novembre, sera, segnalato dal proprietario): moduli con la password e
-  senza nome utente; corretto e `onFillRequest` protetta (`docs/stato/PICCOLE.md`). Giro e link alla consegna.
+  senza nome utente; corretto e `onFillRequest` protetta (`docs/stato/PICCOLE.md`). Giro 1118 (pubblicato), poi 1120.
 - **Backup che si fermava uscendo** (24 novembre, segnalato dal proprietario): backup, configurazione, frasi e ripristino
   ora girano nel processo e non nella schermata; il ripristino non resta mai a metà (`applyAndRestart`); le interruzioni non
   si scrivono come errore (`docs/stato/BACKUP.md`). **Giro 1116**, pubblicato con Mappe 145, `brand` portato avanti; prova
