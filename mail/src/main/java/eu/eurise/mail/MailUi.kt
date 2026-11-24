@@ -1,5 +1,7 @@
 package eu.eurise.mail
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -967,15 +969,19 @@ private fun SearchField(value: String, hint: String, onChange: (String) -> Unit)
 @Composable
 private fun Field(label: String, value: String, type: KeyboardType, secret: Boolean = false, onChange: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    var shown by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(scheme.surface).padding(horizontal = 14.dp, vertical = 8.dp)) {
         Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
-        BasicTextField(
-            value = value, onValueChange = onChange, singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = type, autoCorrectEnabled = false),
-            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
-            textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
-            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
+                value = value, onValueChange = onChange, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = type, autoCorrectEnabled = false),
+                visualTransformation = if (secret) secretText(shown) else VisualTransformation.None,
+                textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary),
+                modifier = Modifier.weight(1f).padding(top = 2.dp),
+            )
+            if (secret) SecretEye(shown, Modifier.size(36.dp)) { shown = !shown }
+        }
     }
 }
 

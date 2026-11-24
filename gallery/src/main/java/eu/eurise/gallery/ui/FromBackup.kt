@@ -1,5 +1,7 @@
 package eu.eurise.gallery.ui
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.app.Activity
 import android.view.WindowManager
 import android.widget.Toast
@@ -236,11 +238,13 @@ private fun FromBackupUnlock(onClose: () -> Unit, onForgot: () -> Unit, onUnlock
                     }
                 }
             }
+            var shown by remember { mutableStateOf(false) }
             OutlinedTextField(
                 secret, { secret = it; wrong = false }, singleLine = true, isError = wrong,
                 label = { Text(stringResource(if (byCode) R.string.fb_code_label else R.string.fb_phrase_label)) },
                 supportingText = { if (wrong) Text(stringResource(R.string.secure_wrong)) },
-                visualTransformation = if (byCode) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (byCode) VisualTransformation.None else secretText(shown),
+                trailingIcon = if (byCode) null else { { SecretEye(shown) { shown = !shown } } },
                 keyboardOptions = if (byCode) KeyboardOptions(capitalization = KeyboardCapitalization.Characters, keyboardType = KeyboardType.Ascii, autoCorrectEnabled = false)
                 else KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),

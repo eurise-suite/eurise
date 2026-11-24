@@ -1,5 +1,7 @@
 package eu.eurise.feature.cloud
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.content.Intent
 import android.net.Uri
 import android.text.format.DateUtils
@@ -574,13 +576,15 @@ private fun ConnectForm(form: Form, onConfirm: (String, String, String) -> Unit,
 
 @Composable
 private fun Field(value: String, onChange: (String) -> Unit, label: Int, type: KeyboardType, secret: Boolean = false) {
+    var shown by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(stringResource(label)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = type, autoCorrectEnabled = false),
-        visualTransformation = if (secret) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        visualTransformation = if (secret) secretText(shown) else androidx.compose.ui.text.input.VisualTransformation.None,
+        trailingIcon = if (secret) { { SecretEye(shown) { shown = !shown } } } else null,
         modifier = Modifier.fillMaxWidth(),
     )
 }

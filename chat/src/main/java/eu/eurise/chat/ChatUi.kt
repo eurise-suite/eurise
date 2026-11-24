@@ -2,6 +2,8 @@
 
 package eu.eurise.chat
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -1191,12 +1193,16 @@ internal fun SearchField(value: String, hint: String, onChange: (String) -> Unit
 @Composable
 internal fun Field(label: String, value: String, type: KeyboardType, secret: Boolean = false, onChange: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    var shown by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).clip(RoundedCornerShape(14.dp)).background(scheme.background).padding(horizontal = 14.dp, vertical = 8.dp)) {
         Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = scheme.onSurfaceVariant)
-        BasicTextField(value = value, onValueChange = onChange, singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = type, autoCorrectEnabled = false),
-            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
-            textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary), modifier = Modifier.fillMaxWidth())
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(value = value, onValueChange = onChange, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = type, autoCorrectEnabled = false),
+                visualTransformation = if (secret) secretText(shown) else VisualTransformation.None,
+                textStyle = TextStyle(fontSize = 15.sp, color = scheme.onSurface), cursorBrush = SolidColor(scheme.primary), modifier = Modifier.weight(1f))
+            if (secret) SecretEye(shown, Modifier.size(36.dp)) { shown = !shown }
+        }
     }
 }
 

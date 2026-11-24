@@ -1,5 +1,7 @@
 package eu.eurise.feature.notes.lock
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -195,6 +197,7 @@ internal fun ReopenNotesView(busy: Boolean, wrong: Boolean, onReopen: (String) -
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                     ) { Text(stringResource(R.string.notes_lock_open_settings), fontWeight = FontWeight.Bold) }
                 } else {
+                    var shown by rememberSaveable { mutableStateOf(false) }
                     OutlinedTextField(
                         value = secret,
                         onValueChange = { secret = it },
@@ -202,7 +205,7 @@ internal fun ReopenNotesView(busy: Boolean, wrong: Boolean, onReopen: (String) -
                         singleLine = true,
                         isError = wrong,
                         supportingText = if (wrong) { { Text(stringResource(R.string.notes_reopen_wrong)) } } else null,
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { if (secret.isNotBlank()) onReopen(secret) }),
                         shape = RoundedCornerShape(16.dp),

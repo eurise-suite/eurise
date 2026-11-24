@@ -143,6 +143,8 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
 - I comandi usati spesso stanno dal lato della mano dominante: a destra per i destrimani, a sinistra per i mancini
   (impostazione «mano» già usata dalla ricerca); il comando principale sotto il pollice, il più usato dopo subito accanto.
 - Tasti dello stesso gruppo della stessa larghezza.
+- Campi password (regola fissa, 24 novembre 2026): ogni campo che nasconde ciò che si scrive ha sempre l'occhio per
+  vederlo (`SecretEye` e `secretText` in `core/designsystem`, `component/Secret.kt`).
 - Tocco breve = l'opzione preferita; pressione lunga = l'elenco delle opzioni, con la stellina per scegliere il preferito
   e «Aggiungi» (da un'app installata o dal web) dove ha senso. Vale ovunque ci sia una scelta di servizio.
 - Sempre massima attenzione all'ergonomia: ciò che si usa spesso sta dove arriva il pollice. Se serve, la stessa funzione

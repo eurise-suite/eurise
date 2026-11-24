@@ -1,5 +1,7 @@
 package eu.eurise.feature.cloud
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Intent
@@ -1011,9 +1013,10 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SecretField(value: String, onChange: (String) -> Unit, label: String) {
+    var shown by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = value, onValueChange = onChange, singleLine = true, label = { Text(label) },
-        visualTransformation = PasswordVisualTransformation(),
+        visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
         modifier = Modifier.fillMaxWidth(),
     )

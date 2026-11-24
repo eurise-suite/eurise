@@ -1,5 +1,7 @@
 package eu.eurise.gallery.ui
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.app.Activity
 import android.text.format.Formatter
 import android.view.WindowManager
@@ -435,8 +437,9 @@ private fun SecureSetup(onCreate: (String) -> Unit) {
     var busy by remember { mutableStateOf(false) }
     Column(Modifier.padding(20.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.secure_setup_message), fontSize = 15.sp, lineHeight = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(pass, { pass = it }, singleLine = true, label = { Text(stringResource(R.string.secure_pass)) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(again, { again = it }, singleLine = true, label = { Text(stringResource(R.string.secure_pass_again)) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        var shown by remember { mutableStateOf(false) }
+        OutlinedTextField(pass, { pass = it }, singleLine = true, label = { Text(stringResource(R.string.secure_pass)) }, visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(again, { again = it }, singleLine = true, label = { Text(stringResource(R.string.secure_pass_again)) }, visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } }, modifier = Modifier.fillMaxWidth())
         val valid = pass.length >= 8 && pass == again
         if (pass.isNotEmpty() && !valid) Text(stringResource(R.string.secure_pass_short), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(enabled = valid && !busy, onClick = { busy = true; onCreate(pass) }) { Text(stringResource(R.string.secure_create)) }
@@ -458,6 +461,7 @@ private fun SecureUnlock(onFingerprint: (() -> Unit)? = null, onUnlock: (String,
     var secret by remember { mutableStateOf("") }
     var wrong by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var shown by remember { mutableStateOf(false) }
     // Con l'impronta accesa la richiesta parte da sola; la frase resta lì sotto.
     LaunchedEffect(Unit) { onFingerprint?.invoke() }
     Column(Modifier.padding(20.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -466,7 +470,7 @@ private fun SecureUnlock(onFingerprint: (() -> Unit)? = null, onUnlock: (String,
             secret, { secret = it; wrong = false }, singleLine = true, isError = wrong,
             label = { Text(stringResource(R.string.secure_unlock_message)) },
             supportingText = { if (wrong) Text(stringResource(R.string.secure_wrong)) },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } },
             modifier = Modifier.fillMaxWidth(),
         )
         Button(enabled = secret.isNotEmpty() && !busy, onClick = {

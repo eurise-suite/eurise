@@ -1,5 +1,7 @@
 package eu.eurise.browser
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.content.Intent
 import android.net.Uri
 import android.webkit.MimeTypeMap
@@ -238,8 +240,9 @@ internal fun PagePromptDialog(tab: Tab) {
                     Column {
                         p.message?.takeIf { it.isNotBlank() }?.let { Text(it, fontSize = 13.sp) }
                         if (!onlyPassword) OutlinedTextField(user, { user = it }, label = { Text(stringResource(R.string.brw_ask_user)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                        var shown by remember { mutableStateOf(false) }
                         OutlinedTextField(pass, { pass = it }, label = { Text(stringResource(R.string.brw_ask_password)) }, singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+                            visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
                     }
                 },
                 confirmButton = { TextButton(onClick = { ask.reply { if (onlyPassword) p.confirm(pass) else p.confirm(user, pass) }; done() }) { Text(stringResource(R.string.brw_ask_login)) } },

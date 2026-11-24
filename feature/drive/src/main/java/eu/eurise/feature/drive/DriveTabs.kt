@@ -1,5 +1,7 @@
 package eu.eurise.feature.drive
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -266,8 +268,9 @@ internal fun VaultDialog(
                     OutlinedTextField(name, { name = it }, singleLine = true, label = { Text(stringResource(R.string.drive_name)) })
                     Text(stringResource(R.string.drive_vault_warning), fontSize = 13.sp)
                 }
-                OutlinedTextField(password, { password = it; error = null }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_password)) }, visualTransformation = PasswordVisualTransformation())
-                if (create) OutlinedTextField(again, { again = it }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_again)) }, visualTransformation = PasswordVisualTransformation())
+                var shown by remember { mutableStateOf(false) }
+                OutlinedTextField(password, { password = it; error = null }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_password)) }, visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } })
+                if (create) OutlinedTextField(again, { again = it }, singleLine = true, label = { Text(stringResource(R.string.drive_vault_again)) }, visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } })
                 error?.let { Text(stringResource(it), fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
                 if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             }

@@ -1,5 +1,7 @@
 package eu.eurise.office.pdf
 
+import eu.eurise.core.designsystem.component.SecretEye
+import eu.eurise.core.designsystem.component.secretText
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -252,6 +254,7 @@ private fun Hint(text: String) {
 @Composable
 private fun PasswordPrompt(onPassword: (String) -> Unit, onCancel: () -> Unit) {
     var password by remember { mutableStateOf("") }
+    var shown by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text(stringResource(R.string.pdf_password_title)) },
@@ -259,7 +262,7 @@ private fun PasswordPrompt(onPassword: (String) -> Unit, onCancel: () -> Unit) {
             OutlinedTextField(
                 value = password, onValueChange = { password = it }, singleLine = true,
                 label = { Text(stringResource(R.string.pdf_password_label)) },
-                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                visualTransformation = secretText(shown), trailingIcon = { SecretEye(shown) { shown = !shown } },
             )
         },
         confirmButton = { TextButton(onClick = { onPassword(password) }) { Text(stringResource(R.string.pdf_open)) } },
