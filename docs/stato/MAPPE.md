@@ -309,7 +309,9 @@ Mappe (APK CoMaps), guida, Android Auto, Meteo, segnalazioni OSM, Mappe sul comp
    openstreetmap.fr; file in `pietre` alle 14:46 UTC, tutti i 17 paesi). Croazia: file nuovo dal giro 13 (21 novembre,
    330 pietre su 25 sigle, pubblicato il 22 alle 00:07). Il 22 novembre Geofabrik ha rifiutato i runner dopo i primi
    paesi e lo specchio non ha Croazia, Slovenia, Cechia, Ungheria e Grecia: dal 23 novembre il giro scarica un paese alla
-   volta con più pazienza (6 tentativi a 90 s); chi fallisce tiene il file di prima. In Italia le pietre
+   volta con più pazienza (6 tentativi a 90 s); chi fallisce tiene il file di prima. Giro del 23–24 novembre: 15 paesi su
+   18 (Croazia e Grecia comprese); Slovenia, Cechia e Ungheria no (Geofabrik rifiuta la connessione anche con la pazienza,
+   lo specchio non le ha): restano i file di prima. Se si ripete, serve un terzo specchio per quei paesi. In Italia le pietre
    in OpenStreetMap sono poche: il km compare soprattutto in autostrada.
 5. In attesa di una fonte o di una decisione: segnalazioni brevi condivise (serve un servizio comune); traffico (nessuna
    fonte libera nazionale); nei viaggi lontani prezzi di treni e aerei, pedaggi, auto + treno, Cose da fare e «Il mio

@@ -342,5 +342,7 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
   (`applyAndRestart`) prepara i file e fa ripartire l'app da sé, anche a schermata chiusa: niente ripristini a metà.
   Un'interruzione (`CancellationException`) non si scrive più come errore. Il messaggio vecchio resta finché il prossimo
   backup riesce.
+- **Giro 1116** (pubblicato); `prova-backup.yml` tutta verde (era rossa dal 22 novembre per R8 negli APK di prova: la
+  sonda cerca per nome WorkManager, WorkInfo, Constraints e `OkHttpClient.Builder`, ora tenuti in `app/proguard-rules.pro`).
 - **Resta**: se Android chiude il processo durante l'invio, quel backup si perde (il file a metà non conta: non si verifica
   e non tocca i backup vecchi); il giro automatico riprova da sé.

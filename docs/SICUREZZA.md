@@ -3,7 +3,7 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1109** (23 novembre, notte; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
+- **Ultimo giro pubblicato**: **1116** (24 novembre; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -20,7 +20,11 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
 - **Backup che si fermava uscendo** (24 novembre, segnalato dal proprietario): backup, configurazione, frasi e ripristino
   ora girano nel processo e non nella schermata; il ripristino non resta mai a metà (`applyAndRestart`); le interruzioni non
-  si scrivono come errore (`docs/stato/BACKUP.md`). Giro e link alla consegna.
+  si scrivono come errore (`docs/stato/BACKUP.md`). **Giro 1116**, pubblicato con Mappe 145, `brand` portato avanti; prova
+  del backup sull'emulatore tutta verde. Era rossa dal 22 novembre senza che nessuno lo vedesse: con R8 negli APK di prova
+  (d367bba) la sonda non trovava più WorkManager, WorkInfo, Constraints e un metodo di OkHttp; tenuti in
+  `app/proguard-rules.pro`. **Da ricordare**: ogni allargamento di R8 si prova anche con `prova-backup.yml`, non solo con la
+  prova d'avvio.
 - **Giro 1109** (23 novembre, notte; pubblicato con Mappe 145, `brand` portato avanti): Galleria, gli originali tenuti 30
   giorni nel cestino unico (`docs/stato/PICCOLE.md`). Sicurezza: il fornitore della Galleria resta solo per la suite; elimina
   solo un originale del proprio elenco (nessun percorso nominabile da fuori); gli originali arrivano solo a chi li chiede
