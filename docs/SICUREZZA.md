@@ -3,8 +3,7 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1120** (24 novembre, sera: Password che cadeva nella compilazione, occhio in tutti i campi
-  password, immagini nelle note di Password; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
+- **Ultimo giro pubblicato**: **1122** (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -19,6 +18,9 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
   Browser carica più file insieme e da ogni app (copie private in `cache/uploads`, solo file di altre app) e ha le
   schede a schedario (tavola BrwSchedario). Prova d'avvio verde. Mappe 145 e Office 65 invariati. `brand` = `prova-sicurezza`.
   Pubblicare: `gh workflow run apk-prova.yml --ref brand -f run_id=<id> -f mappe_run=<id>`.
+- **Flatpak che cadeva** (24–25 novembre): «Invalid cross-device link» mentre il contenitore aggiornava l'SDK 25.08
+  (ostree tra gli strati di overlayfs); ora `/var/lib/flatpak` si copia nello strato scrivibile prima di compilare. Nello
+  stesso giro il tutto schermo nei documenti (`docs/stato/OFFICE.md`; nessun permesso nuovo).
 - **Immagini nelle note di Password e occhio nei campi password** (24 novembre, sera, richieste del proprietario): le
   immagini sono allegati KeePass dentro il file cifrato, ridotte e senza dati dello scatto, mai su disco in chiaro, tolte
   anche dalla cronologia; l'occhio è in tutti i 15 campi password della suite che non l'avevano (`core/designsystem`,

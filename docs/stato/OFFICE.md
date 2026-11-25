@@ -213,3 +213,14 @@ R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-sui
 - **Resta**: con un solo foglio le linguette non si vedono (tavola), quindi niente pressione lunga: per duplicare
   l'unico foglio serve la modifica completa. I riferimenti a più fogli di Excel (`Gen:Mar!A1`) seguono la rinomina; uno
   spostamento cambia quali fogli stanno tra Gen e Mar, come in Excel.
+
+## 25 novembre 2026 (progetto Eurise Sicurezza): tutto schermo nei documenti
+- Chiesto dal proprietario («soprattutto con il telefono orizzontale»). Vista rapida (testi e fogli), PDF di Office e
+  lettore PDF di File: in orizzontale si entra da soli a tutto schermo; in verticale con il pulsante a quattro angoli in
+  alto. Spariscono intestazione, linguette dei fogli, barra in basso e barre di sistema (uno scorrimento dal bordo le
+  mostra per un momento).
+- Una maniglia piccola e velata, in basso dal lato della mano, richiama la barra sopra il documento (senza spingerlo),
+  con «Esci dal tutto schermo»; dopo 5 secondi si rinasconde. Nel PDF la barra resta mentre si annota, si cerca o è aperto
+  un pannello. Indietro chiude prima la barra, poi il tutto schermo. La scelta vale finché non si ruota il telefono.
+- Pezzi comuni in `core/designsystem` (`component/Fullscreen.kt`: `SystemBarsHidden`, `FullscreenHandle`,
+  `ExitFullscreen`; icone `fullscreen` e `fullscreenExit`). Le diapositive hanno già «Presenta».

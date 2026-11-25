@@ -311,11 +311,26 @@ internal fun PdfViewer(file: File, title: String, onEdit: (() -> Unit)? = null, 
         return
     }
 
+    // Tutto schermo (25 novembre): da solo in orizzontale, dal pulsante in alto in verticale; la maniglia dal lato della
+    // mano richiama l'intestazione, che dopo qualche secondo si rinasconde.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    var fullChoice by androidx.compose.runtime.saveable.rememberSaveable(landscape) { mutableStateOf<Boolean?>(null) }
+    val immersive = (fullChoice ?: landscape) && source != null && !searching
+    var barUp by remember(immersive) { mutableStateOf(false) }
+    val leftHanded = remember { context.getSharedPreferences("eurise_launcher", Context.MODE_PRIVATE).getBoolean("left_handed", false) }
+    eu.eurise.core.designsystem.component.SystemBarsHidden(immersive)
+    androidx.compose.runtime.LaunchedEffect(barUp) { if (barUp) { kotlinx.coroutines.delay(5_000); barUp = false } }
+    BackHandler(enabled = immersive) { if (barUp) barUp = false else fullChoice = false }
+
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(scheme.surfaceVariant)) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (!immersive || barUp) Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(EuriseIcons.chevronLeft(), contentDescription = stringResource(R.string.drive_back), tint = scheme.primary) }
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (source != null) {
+                if (immersive) IconButton(onClick = { fullChoice = false }) { Icon(EuriseIcons.fullscreenExit(), contentDescription = stringResource(eu.eurise.core.designsystem.R.string.ds_fullscreen_exit)) }
+                else IconButton(onClick = { fullChoice = true }) { Icon(EuriseIcons.fullscreen(), contentDescription = stringResource(eu.eurise.core.designsystem.R.string.ds_fullscreen)) }
                 if (canSearch) IconButton(onClick = { searching = !searching; results = null }) { Icon(EuriseIcons.search(), contentDescription = stringResource(R.string.drive_pdf_search)) }
                 if (onEdit != null) {
                     // Office c'è: annotare, firmare e lavorare sulle pagine si fa lì, sul file stesso.
@@ -364,5 +379,7 @@ internal fun PdfViewer(file: File, title: String, onEdit: (() -> Unit)? = null, 
                 }
             }
         }
+    }
+    if (immersive && !barUp) eu.eurise.core.designsystem.component.FullscreenHandle(Modifier.align(if (leftHanded) Alignment.BottomStart else Alignment.BottomEnd)) { barUp = true }
     }
 }
