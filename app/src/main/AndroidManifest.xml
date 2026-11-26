@@ -286,6 +286,12 @@
             android:authorities="${applicationId}.todaylinks"
             android:exported="true"
             android:permission="${suitePermission}" />
+        <!-- «La tua giornata» per Eurise Postazione: prossimi impegni e cose da fare, senza rete. -->
+        <provider
+            android:name=".PostazioneProvider"
+            android:authorities="${applicationId}.postazione"
+            android:exported="true"
+            android:permission="${suitePermission}" />
         <!-- Meteo sul percorso per Eurise Mappe (passa dal centro privacy). -->
         <provider
             android:name=".RouteWeatherProvider"

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Il cielo lo disegna la Postazione: la finestra parte già del colore della Perla, senza lampi. -->
+    <style name="Theme.EurisePostazione" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/postazione_fondo</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/postazione_fondo</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowShowWallpaper">false</item>
+    </style>
+    <color name="postazione_fondo">#F2F0EB</color>
+</resources>

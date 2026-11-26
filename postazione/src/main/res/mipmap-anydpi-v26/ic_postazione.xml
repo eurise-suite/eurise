@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La lente della Postazione con la stellina della suite al centro (tela «Eurise · nuova interfaccia»). -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_postazione_background" />
+    <foreground android:drawable="@drawable/ic_postazione_foreground" />
+    <monochrome android:drawable="@drawable/ic_postazione_foreground" />
+</adaptive-icon>

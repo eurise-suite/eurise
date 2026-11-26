@@ -62,6 +62,7 @@ attesa "$r" accessi CHIUSA "la curiosa non arriva alle password dei siti"
 attesa "$r" sms CHIUSA "la curiosa non legge gli SMS"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
+attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"
 attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"
 attesa "$r" ponte CHIUSA "la curiosa non collega un suo computer al Ponte"
 attesa "$r" backup CHIUSA "la curiosa non legge il backup di Password"
@@ -81,6 +82,7 @@ g=$(adb shell dumpsys package org.esempio.amica | grep -m1 "eu.eurise.permission
 echo "  amica: granted=$g"
 r=$(bussa org.esempio.amica); echo "$r" | sed 's/^/  amica: /'
 attesa "$r" segreti APERTA "l'amica (stessa chiave) usa ancora i segreti"
+attesa "$r" giornata APERTA "l'amica (stessa chiave) legge la giornata, come la Postazione"
 attesa "$r" affida UGUALE "l'amica affida un segreto all'app Eurise e lo rilegge uguale"
 attesa "$r" migra UGUALE "un segreto del vecchio file in chiaro arriva ancora, sigillato nel Keystore"
 chiaro=$(adb shell "$RUN_AS eu.eurise.hub.debug sh -c 'grep -rl EURISE-SEGRETO shared_prefs files databases 2>/dev/null'" | tr -d '\r')

@@ -21,6 +21,8 @@ rootProject.name = "eurise"
 include(":app")
 include(":gallery")
 include(":camera")
+// Eurise Postazione: la nuova schermata iniziale (tela «Eurise · nuova interfaccia»), APK a parte per provarla accanto alla vecchia.
+include(":postazione")
 include(":password")
 include(":voice")
 include(":phone")

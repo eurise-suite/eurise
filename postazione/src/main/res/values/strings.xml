@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="postazione_app_name">Postazione</string>
+
+    <string name="saluto_giorno">Buongiorno</string>
+    <string name="saluto_pomeriggio">Buon pomeriggio</string>
+    <string name="saluto_sera">Buonasera</string>
+    <string name="saluto_nome">%1$s, %2$s</string>
+    <string name="apri_agenda">Apri l\'Agenda</string>
+    <string name="apri_calendario">Apri il Calendario</string>
+    <string name="apri_orologio">Apri l\'Orologio</string>
+    <string name="apri_meteo">Meteo</string>
+
+    <string name="scheda_lavoro">Lavoro</string>
+    <string name="scheda_personale">Personale</string>
+    <string name="scheda_viaggio">Viaggio</string>
+    <string name="scheda_auto">Auto</string>
+    <string name="scheda_mano">A mano</string>
+
+    <string name="g_lavoro">Lavoro</string>
+    <string name="g_foto">Foto</string>
+    <string name="g_mappe">Mappe</string>
+    <string name="g_webai">Web e AI</string>
+    <string name="g_comunica">Comunica</string>
+    <string name="g_musica">Musica</string>
+    <string name="g_casa">Casa</string>
+    <string name="g_appunti">Appunti</string>
+    <string name="cerca">Cerca</string>
+    <string name="cerca_desc">Cerca o fai; tieni premuto per Alfred</string>
+    <string name="tutte_le_app">Tutte le app</string>
+
+    <string name="prossimo">PROSSIMO</string>
+    <string name="adesso">ADESSO</string>
+    <string name="tra_min">TRA %1$d MIN</string>
+    <string name="tra_ore">TRA %1$d H</string>
+    <string name="domani">DOMANI</string>
+    <string name="poi">POI</string>
+    <string name="tutto_il_giorno">tutto il giorno</string>
+    <string name="naviga">Naviga</string>
+    <string name="avvia_navigatore">Avvia il navigatore</string>
+    <string name="calendario">Calendario</string>
+    <string name="nessun_impegno">Nessun impegno nelle prossime ore</string>
+    <string name="da_fare_oggi">Da fare oggi · %1$d</string>
+    <string name="da_fare_fatte">Da fare oggi · %1$d di %2$d</string>
+    <string name="attivita">Attività</string>
+    <string name="scaduta">Scaduta</string>
+    <string name="niente_da_fare">Niente in scadenza oggi</string>
+    <string name="senza_eurise">Installa l\'app Eurise per vedere qui impegni e cose da fare. La Postazione funziona anche da sola.</string>
+    <string name="personale_presto">Musica, notizie e oroscopo arrivano qui nel prossimo giro: ognuno si accende e si spegne a scelta.</string>
+    <string name="viaggio_presto">Preferiti da chiamare con un tocco e «dove hai lasciato l\'auto» arrivano nel prossimo giro.</string>
+    <string name="viaggio_meta">Dove vai</string>
+
+    <string name="ventaglio_aiuto">Un tocco sul gruppo apre la preferita, quella con la stellina.</string>
+    <string name="aggiungi_app">Aggiungi un\'app</string>
+    <string name="aggiungi_a">Aggiungi a «%1$s»</string>
+    <string name="preferita">Preferita</string>
+    <string name="rendi_preferita">Rendi preferita</string>
+    <string name="togli">Togli dal gruppo</string>
+    <string name="gruppo_vuoto">Nessuna app qui: aggiungine una.</string>
+    <string name="chiudi">Chiudi</string>
+
+    <string name="cassetto_titolo">Tutte le app · %1$d</string>
+    <string name="cassetto_cerca">Scrivi due lettere</string>
+    <string name="cassetto_nessuna">Nessuna app con «%1$s»</string>
+    <string name="impostazioni">Impostazioni</string>
+    <string name="imp_nome">Come ti chiami (per il saluto)</string>
+    <string name="imp_mano">Mano</string>
+    <string name="imp_destra">Destra</string>
+    <string name="imp_sinistra">Sinistra</string>
+    <string name="imp_fatto">Fatto</string>
+    <string name="imp_predefinita">Rendila la schermata iniziale</string>
+</resources>

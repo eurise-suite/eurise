@@ -123,6 +123,26 @@ jobs:
           path: camera/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # Eurise Postazione (la nuova schermata iniziale, 26 novembre 2026): senza rete come la Fotocamera.
+      - name: Postazione senza rete
+        run: |
+          set -e
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          apk=$(ls postazione/build/outputs/apk/debug/*.apk | head -1)
+          "$bt/aapt2" dump permissions "$apk" | tee postazione-permessi.txt
+          if grep -Eq "android.permission.(INTERNET|ACCESS_NETWORK_STATE|ACCESS_WIFI_STATE|CHANGE_NETWORK_STATE)" postazione-permessi.txt; then
+            echo "::error title=Postazione::La Postazione ha un permesso di rete: non deve averlo"
+            exit 1
+          fi
+          { echo "### Postazione: permessi (nessuna rete)"; echo '```'; cat postazione-permessi.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Carica l'APK della Postazione
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: eurise-postazione-debug-${{ github.run_number }}
+          path: postazione/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
       - name: Carica l'APK di Voce
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

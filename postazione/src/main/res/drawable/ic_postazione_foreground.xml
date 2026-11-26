@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Lente: anello e manico. -->
+    <path android:pathData="M50,34 A16,16 0 1,1 49.99,34 Z" android:strokeColor="#FFF6E6" android:strokeWidth="5.4" android:fillColor="#00000000" />
+    <path android:pathData="M61.5,61.5 L73,73" android:strokeColor="#FFF6E6" android:strokeWidth="6" android:strokeLineCap="round" />
+    <!-- La stellina della suite al centro della lente. -->
+    <path android:pathData="M50,40.5 Q51.1,48.9 59.5,50 Q51.1,51.1 50,59.5 Q48.9,51.1 40.5,50 Q48.9,48.9 50,40.5 Z" android:fillColor="#FFF6E6" />
+</vector>
