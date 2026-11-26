@@ -124,6 +124,12 @@ internal fun SuiteDrawingCanvas(drawing: SuiteDrawings.Drawing, series: SuiteIco
                         "p" -> drawPath(p, fillBrush)
                         "h" -> drawPath(p, pal.hole, style = Stroke(pal.stroke, cap = StrokeCap.Round, join = StrokeJoin.Round))
                         "hf" -> drawPath(p, pal.hole)
+                        // Bestiario del 26 novembre 2026: secondo piano a velo, tagli e filo di contorno.
+                        "q" -> drawPath(p, fillBrush, alpha = 0.5f)
+                        "v" -> drawPath(p, fillBrush, alpha = 0.62f, style = Stroke(2.1f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                        "k" -> drawPath(p, pal.hole, style = Stroke(1.7f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                        "H" -> drawPath(p, pal.hole, style = Stroke(pal.stroke + 1.3f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                        "o" -> drawPath(p, pal.hole, alpha = 0.55f, style = Stroke(1.3f, join = StrokeJoin.Round))
                     }
                 }
             }

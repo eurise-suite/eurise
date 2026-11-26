@@ -4,8 +4,9 @@
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
     <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
-        <path android:pathData="M14 8 H29 L36 15 V37 Q36 40 33 40 H14 Q11 40 11 37 V11 Q11 8 14 8 Z M29 8 V15 H36" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" />
-        <path android:pathData="M5 25 C15 19.5 27 30 43 21.5 V26.5 C27 35 15 24.5 5 30 Z" android:fillColor="#FFFFFFFF" />
-        <path android:pathData="M41 9 Q41.48 12.52 45 13 Q41.48 13.48 41 17 Q40.52 13.48 37 13 Q40.52 12.52 41 9 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M5.6 22 C5.6 13.6 9.4 8 14.4 5.8 L26.2 1.8 L24.6 6.6 C29.4 8.2 32.4 11.8 32.4 16 L32.4 23.6 C32.4 30.4 26.4 34.6 19.2 34.6 C11 34.6 5.6 29.6 5.6 22 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M15.6 17.6 a4.6 4.6 0 1 0 9.2 0 a4.6 4.6 0 1 0 -9.2 0 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M29.599999999999998 23 H38.800000000000004 Q42.2 23 42.2 26.4 V41.0 Q42.2 44.4 38.800000000000004 44.4 H29.599999999999998 Q26.2 44.4 26.2 41.0 V26.4 Q26.2 23 29.599999999999998 23 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M22.0 32.3 H43.599999999999994 Q44.8 32.3 44.8 33.5 V33.49999999999999 Q44.8 34.699999999999996 43.599999999999994 34.699999999999996 H22.0 Q20.8 34.699999999999996 20.8 33.49999999999999 V33.5 Q20.8 32.3 22.0 32.3 Z" android:fillColor="#FFFFFFFF" />
     </group>
 </vector>

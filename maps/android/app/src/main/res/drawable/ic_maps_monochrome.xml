@@ -4,8 +4,9 @@
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
     <group android:translateX="26.571" android:translateY="26.571" android:scaleX="1.1429" android:scaleY="1.1429">
+        <path android:pathData="M24.6 18.8 C23.8 12.6 26.8 8.2 32.8 6 C32.2 10.6 33.2 14.8 35.4 17.6 Z" android:fillColor="#80FFFFFF" />
         <path android:pathData="M10 24 C14 19 21 17 28 18 L33 15.5 C35 14.5 37.5 15 38.5 17 L41.5 18 L38.4 19.4 C38 22 36 24 33 25 C29 28 22 29 16 27.5 L8 31 L11 26.5 Z M20 19 C19 12 22 7 28 4.5 C27.5 9.5 28.5 14 31 18 Z" android:fillColor="#FFFFFFFF" />
-        <path android:pathData="M9 39.1 A1.4 1.4 0 1 0 9 41.9 A1.4 1.4 0 1 0 9 39.1 Z M13.8 37.0 A1.4 1.4 0 1 0 13.8 39.8 A1.4 1.4 0 1 0 13.8 37.0 Z M18.8 36.0 A1.4 1.4 0 1 0 18.8 38.8 A1.4 1.4 0 1 0 18.8 36.0 Z M23.8 36.2 A1.4 1.4 0 1 0 23.8 39.0 A1.4 1.4 0 1 0 23.8 36.2 Z" android:fillColor="#FFFFFFFF" />
-        <path android:pathData="M33 44 C33 44 27.5 39 27.5 35 A5.5 5.5 0 0 1 38.5 35 C38.5 39 33 44 33 44 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M7.6 40.5 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z M12.4 38.4 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z M17.400000000000002 37.4 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z M22.400000000000002 37.6 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z" android:fillColor="#FFFFFFFF" />
+        <path android:pathData="M33 44 C33 44 27.6 39 27.6 35 A5.4 5.4 0 0 1 38.4 35 C38.4 39 33 44 33 44 Z" android:fillColor="#FFFFFFFF" />
     </group>
 </vector>

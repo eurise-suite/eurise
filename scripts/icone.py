@@ -7,6 +7,9 @@ color crema con la stellina della suite dentro il disegno. I disegni e i colori 
 esportato dalla tela: per cambiarne uno si cambia lì e si rilancia. Su una griglia di 48 le parti sono:
   t  campitura tenue (bianco al 20 %)      s  tratto sfumato crema          S  tratto pieno più spesso
   p  pieno sfumato crema                   h  tratto nel colore del fondo  hf pieno nel colore del fondo (incavi)
+Dal bestiario del 26 novembre 2026 (tela «Eurise · nuova interfaccia», pagina Icone): meno tratti, sagome piene, due piani.
+  q  pieno crema a metà (secondo piano)    v  tratto crema a velo           k  taglio sottile nel colore del fondo
+  H  taglio spesso nel colore del fondo    o  filo di contorno nel colore del fondo, a metà
 
 Scrive per ogni icona, nel modulo che la usa: primo piano, fondo (sfumatura del colore con la luce in alto a sinistra),
 livello monocromatico (icone a tema di Android 13+, solo la sagoma) e icona adattiva; per i moduli che girano anche
@@ -93,6 +96,16 @@ def part(kind: str, d: str, hole: str, mono: bool, flat: bool, indent: str) -> s
             return f'{indent}<path android:pathData="{d}" android:fillColor="{col}" />\n'
         return (f'{indent}<path android:pathData="{d}">\n'
                 + grad("android:fillColor", CREAM_FILL, indent + "    ") + f'{indent}</path>\n')
+    if kind == "q":
+        if mono or flat:
+            col = "#80FFFFFF" if mono else argb(CREAM_FILL[0], 0.5)
+            return f'{indent}<path android:pathData="{d}" android:fillColor="{col}" />\n'
+        veil = (argb(CREAM_FILL[0], 0.5), argb(CREAM_FILL[1], 0.5))
+        return (f'{indent}<path android:pathData="{d}">\n'
+                + grad("android:fillColor", veil, indent + "    ") + f'{indent}</path>\n')
+    if kind == "v":
+        col = "#9EFFFFFF" if mono else argb(CREAM_FILL[0], 0.62)
+        return f'{indent}<path android:pathData="{d}" android:strokeColor="{col}" android:strokeWidth="2.1" {cap} />\n'
     # Incavi: nel livello monocromatico non si possono scavare, quindi restano fuori (resta la sagoma).
     if mono:
         return ""
@@ -100,6 +113,13 @@ def part(kind: str, d: str, hole: str, mono: bool, flat: bool, indent: str) -> s
         return f'{indent}<path android:pathData="{d}" android:strokeColor="{hole}" android:strokeWidth="{STROKE}" {cap} />\n'
     if kind == "hf":
         return f'{indent}<path android:pathData="{d}" android:fillColor="{hole}" />\n'
+    if kind == "k":
+        return f'{indent}<path android:pathData="{d}" android:strokeColor="{hole}" android:strokeWidth="1.7" {cap} />\n'
+    if kind == "H":
+        return f'{indent}<path android:pathData="{d}" android:strokeColor="{hole}" android:strokeWidth="{STROKE + 1.3}" {cap} />\n'
+    if kind == "o":
+        return (f'{indent}<path android:pathData="{d}" android:strokeColor="{argb(hole, 0.55)}" android:strokeWidth="1.3" '
+                f'android:strokeLineJoin="round" />\n')
     raise ValueError(kind)
 
 

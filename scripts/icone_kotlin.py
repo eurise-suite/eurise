@@ -75,7 +75,8 @@ import androidx.compose.ui.graphics.Color
 /**
  * I disegni nuovi delle app della suite, su una griglia di 48 (la tela li mostra in un riquadro da -7,5 a 55,5).
  * Parti: «t» campitura tenue, «s» tratto sfumato, «S» tratto pieno più spesso, «p» pieno sfumato, «h» tratto e «hf»
- * pieno nel colore del fondo (incavi). Ogni disegno ha i colori delle tre serie: bolle chiare, bolle scure, colorate.
+ * pieno nel colore del fondo (incavi); dal bestiario del 26 novembre «q» pieno a velo, «v» tratto a velo, «k» taglio
+ * sottile, «H» taglio spesso, «o» filo di contorno. Ogni disegno ha i colori delle tre serie: bolle chiare, bolle scure, colorate.
  */
 internal object SuiteDrawings {{
     class Part(val kind: String, val path: String)

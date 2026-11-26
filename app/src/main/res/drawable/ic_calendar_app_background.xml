@@ -6,17 +6,17 @@
     <path android:pathData="M0,0 H108 V108 H0 Z">
         <aapt:attr name="android:fillColor">
             <gradient android:type="linear" android:startX="40" android:startY="18" android:endX="68" android:endY="92">
-                <item android:offset="0" android:color="#2DD2C0" />
-                <item android:offset="0.45" android:color="#16CDB9" />
-                <item android:offset="1" android:color="#2562C5" />
+                <item android:offset="0" android:color="#3FE0A0" />
+                <item android:offset="0.45" android:color="#1C7FB0" />
+                <item android:offset="1" android:color="#2A2478" />
             </gradient>
         </aapt:attr>
     </path>
     <path android:pathData="M0,0 H108 V108 H0 Z">
         <aapt:attr name="android:fillColor">
             <gradient android:type="radial" android:centerX="39.6" android:centerY="33.8" android:gradientRadius="40">
-                <item android:offset="0" android:color="#FF61DDCF" />
-                <item android:offset="1" android:color="#0061DDCF" />
+                <item android:offset="0" android:color="#FF8CF0C8" />
+                <item android:offset="1" android:color="#008CF0C8" />
             </gradient>
         </aapt:attr>
     </path>
