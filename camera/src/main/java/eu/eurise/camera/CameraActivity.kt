@@ -33,12 +33,15 @@ open class CameraActivity : ComponentActivity() {
 
     protected open fun setup(intent: Intent): CameraSetup? = CameraSetup(
         startVideo = intent.action == MediaStore.INTENT_ACTION_VIDEO_CAMERA,
+        startFront = intent.action == ACTION_SELFIE,
+        startNight = intent.action == ACTION_NIGHT,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val setup = setup(intent) ?: return
+        if (javaClass == CameraActivity::class.java) shortcuts()
         setContent { EuriseTheme(darkTheme = true) { CameraRoute(setup, shutterKeys, ::onCaptured) } }
     }
 
@@ -48,6 +51,27 @@ open class CameraActivity : ComponentActivity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    /**
+     * Le scorciatoie dell'icona (pressione lunga nel cassetto): Video, Selfie, Notte. Dinamiche perché il nome del
+     * pacchetto cambia tra prova e ufficiale; si scrivono una volta sola.
+     */
+    private fun shortcuts() {
+        val manager = getSystemService(android.content.pm.ShortcutManager::class.java) ?: return
+        if (manager.dynamicShortcuts.size >= 3) return
+        fun item(id: String, label: Int, icon: Int, action: String) = android.content.pm.ShortcutInfo.Builder(this, id)
+            .setShortLabel(getString(label))
+            .setIcon(android.graphics.drawable.Icon.createWithResource(this, icon))
+            .setIntent(Intent(action).setClass(this, CameraActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+            .build()
+        runCatching {
+            manager.dynamicShortcuts = listOf(
+                item("video", R.string.shortcut_video, R.drawable.ic_shortcut_video, MediaStore.INTENT_ACTION_VIDEO_CAMERA),
+                item("selfie", R.string.shortcut_selfie, R.drawable.ic_shortcut_selfie, ACTION_SELFIE),
+                item("notte", R.string.shortcut_night, R.drawable.ic_shortcut_night, ACTION_NIGHT),
+            )
+        }
     }
 
     /** Solo per [CaptureActivity]: la foto confermata da restituire. */
@@ -126,3 +150,5 @@ class CaptureActivity : CameraActivity() {
 }
 
 internal const val TAG = "EuriseCamera"
+internal const val ACTION_SELFIE = "eu.eurise.camera.SELFIE"
+internal const val ACTION_NIGHT = "eu.eurise.camera.NIGHT"

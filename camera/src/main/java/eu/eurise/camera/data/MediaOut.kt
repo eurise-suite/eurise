@@ -25,6 +25,14 @@ object MediaOut {
         put(MediaStore.MediaColumns.DATE_TAKEN, now)
     }
 
+    /** L'affiancata prima/dopo: PRIMADOPO_….jpg nella stessa cartella. */
+    fun pair(dest: String?, now: Long = System.currentTimeMillis()) = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName("PRIMADOPO", "jpg", now))
+        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        put(MediaStore.MediaColumns.RELATIVE_PATH, Destinations.relativePath(dest))
+        put(MediaStore.MediaColumns.DATE_TAKEN, now)
+    }
+
     /** La posizione nei dati della foto (android.media.ExifInterface non ha setGpsInfo). */
     fun writeGps(exif: android.media.ExifInterface, where: Location) {
         exif.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE, dms(where.latitude))

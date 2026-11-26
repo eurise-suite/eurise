@@ -93,6 +93,8 @@ dependencies {
     implementation(libs.androidx.camera.video)
     // La Notte del telefono dove il produttore la offre (estensioni di CameraX, codice aperto).
     implementation(libs.androidx.camera.extensions)
+    // Codici QR dal mirino: zxing, aperto e già nella suite con la sua impronta.
+    implementation(libs.zxing.core)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

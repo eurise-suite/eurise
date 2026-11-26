@@ -21,6 +21,8 @@ import eu.eurise.camera.data.Ritocco
 import eu.eurise.camera.data.CameraPrefs
 import eu.eurise.camera.data.DestinationState
 import eu.eurise.camera.data.PhotoLocation
+import eu.eurise.camera.data.PrimaDopo
+import eu.eurise.camera.data.Rapporto
 import eu.eurise.core.suite.AppearanceContract
 import eu.eurise.core.suite.CleanMedia
 import eu.eurise.core.suite.SuiteAccess
@@ -72,6 +74,70 @@ class CameraModel(app: Application) : AndroidViewModel(app) {
 
     enum class NightStep { Hold, Working }
 
+    /** Prima/dopo: la copia della foto di prima (già dritta e ridotta) e la sua data, o null. */
+    val before = mutableStateOf<ImageBitmap?>(null)
+    private var beforeFile: File? = null
+    private var beforeTaken = 0L
+
+    /** Sceglie la foto di prima (dal selettore di Android, nessun permesso): resta sul mirino finché la si toglie. */
+    fun pickBefore(uri: Uri, failed: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val file = File(app.cacheDir, "prima.jpg")
+            val taken = runCatching {
+                app.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATE_TAKEN), null, null, null)?.use { c ->
+                    if (c.moveToFirst() && !c.isNull(0)) c.getLong(0) else 0L
+                }
+            }.getOrNull() ?: 0L
+            val bitmap = if (PrimaDopo.keep(app.contentResolver, uri, file)) {
+                runCatching { android.graphics.BitmapFactory.decodeFile(file.path)?.asImageBitmap() }.getOrNull()
+            } else null
+            withContext(Dispatchers.Main) {
+                if (bitmap == null) { failed(); return@withContext }
+                beforeFile = file; beforeTaken = taken; before.value = bitmap
+            }
+        }
+    }
+
+    fun clearBefore() {
+        before.value = null
+        beforeFile?.delete(); beforeFile = null
+    }
+
+    /** L'affiancata prima/dopo, nella stessa cartella della foto nuova [after]. */
+    private fun pair(after: Uri, dest: String?) {
+        val file = beforeFile ?: return
+        val app = getApplication<Application>()
+        val day = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ITALY)
+        val first = app.getString(R.string.before_label, if (beforeTaken > 0) day.format(java.util.Date(beforeTaken)) else "")
+            .trimEnd(' ', '·')
+        val second = app.getString(R.string.after_label, day.format(java.util.Date()))
+        val uri = runCatching {
+            val target = app.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.pair(dest))!!
+            app.contentResolver.openOutputStream(target, "w")!!.use { PrimaDopo.compose(app.contentResolver, file, after, first, second, it) }
+            target
+        }.onFailure { android.util.Log.w(TAG, "Prima/dopo non riuscita", it) }.getOrNull() ?: return
+        val thumb = runCatching { app.contentResolver.loadThumbnail(uri, Size(240, 240), null).asImageBitmap() }.getOrNull()
+        viewModelScope.launch(Dispatchers.Main) { session.add(0, Shot(uri, false, thumb)) }
+    }
+
+    /** Il rapporto fotografico in PDF della cartella [dest]: restituisce il foglio Condividi, o null se non ci sono foto. */
+    suspend fun report(dest: String): Intent? = withContext(Dispatchers.IO) {
+        val app = getApplication<Application>()
+        val photos = Rapporto.photos(app.contentResolver, dest)
+        val uri = runCatching {
+            Rapporto.write(
+                app.contentResolver, dest, photos, app.getString(R.string.report_title),
+                countLabel = { app.resources.getQuantityString(R.plurals.report_count, it, it) },
+                periodLabel = { a, b -> if (a == b) a else app.getString(R.string.report_period, a, b) },
+            )
+        }.onFailure { android.util.Log.w(TAG, "Rapporto non riuscito", it) }.getOrNull() ?: return@withContext null
+        val send = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        send.clipData = ClipData.newRawUri(null, uri)
+        Intent.createChooser(send, null)
+    }
+
     /** I fotogrammi della Notte: si fondono in sottofondo e la foto finisce dove andrebbe uno scatto normale. */
     fun onNight(frames: List<ByteArray>, dest: String?, failed: () -> Unit) {
         night.value = NightStep.Working
@@ -90,18 +156,20 @@ class CameraModel(app: Application) : AndroidViewModel(app) {
             out.delete()
             withContext(Dispatchers.Main) {
                 night.value = null
-                if (uri != null) onShot(uri, false, retouched = true) else failed()
+                if (uri != null) onShot(uri, false, retouched = true, dest = dest) else failed()
             }
         }
     }
 
-    fun onShot(uri: Uri, isVideo: Boolean, retouched: Boolean = false) {
+    fun onShot(uri: Uri, isVideo: Boolean, retouched: Boolean = false, dest: String? = null) {
         val shot = Shot(uri, isVideo, null)
         session.add(0, shot)
+        val pairing = !isVideo && beforeFile != null
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             // Prima della miniatura, così anche lei ha i colori corretti.
             if (!isVideo && !retouched) Ritocco.correct(app.contentResolver, uri, app.cacheDir)
+            if (pairing) pair(uri, dest)
             val thumb = runCatching {
                 getApplication<Application>().contentResolver.loadThumbnail(uri, Size(240, 240), null).asImageBitmap()
             }.getOrNull() ?: return@launch
